@@ -60,3 +60,19 @@ creative-engines/
 ## Project-Independent
 
 This framework works in any Cursor project, any repository, any musical style. Reference from your project; do not duplicate.
+
+---
+
+## Push to GitHub
+
+To push this repository to GitHub:
+
+1. Create a new repository on GitHub named `creative-engines`
+2. Run: `git remote add origin https://github.com/YOUR_USERNAME/creative-engines.git`
+3. Run: `git push -u origin main`
+
+Or, after `gh auth login`:
+
+```bash
+gh repo create creative-engines --public --source=. --remote=origin --push
+```
