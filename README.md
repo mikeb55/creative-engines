@@ -1,0 +1,62 @@
+# Creative Engines — Global Composition Framework
+
+**Version 1.0**  
+**Style-agnostic, instrumentation-agnostic**
+
+---
+
+## Purpose
+
+Universal composition engine framework for all Cursor music projects. Works across any instrumentation, genre, or style. Enforces mandatory GCE ≥ 9.0 before MusicXML output.
+
+---
+
+## Structure
+
+```
+creative-engines/
+├── engines/          # 10 engine definitions
+├── rules/            # GCE, anti-monotony, ensemble, engraving, structure
+├── palettes/         # Tonality Vault, interval cycles, triad pairs, polychords
+├── templates/        # Composition request, revision loop
+└── docs/             # Master palette, rotation examples
+```
+
+---
+
+## Universal Rules
+
+1. **GCE Iteration** — No MusicXML until GCE ≥ 9.0
+2. **Anti Monotony** — No cell > 4 bars × 2 without transformation
+3. **Density Arc** — low → development → peak → release
+4. **Ensemble Awareness** — Idiomatic parts
+5. **Section Clarity** — Boxed rehearsal letters
+6. **Harmonic Depth** — Use palettes (Tonality Vault, etc.)
+7. **Engraving Quality** — Correct MusicXML
+
+---
+
+## Engine List
+
+1. Scofield–Holland Groove  
+2. Shorter Narrative  
+3. Frisell Atmosphere  
+4. Wheeler Lyric  
+5. Stravinsky Pulse  
+6. Zappa Disruption (secondary only)  
+7. Slonimsky Harmonic  
+8. Bartók Night  
+9. Counterpoint Hybrid  
+10. Polyphonic Labyrinth  
+
+---
+
+## Optional Integration
+
+**gml-harmonic-engine:** If available, integrate for voice-leading and chord voicing logic. The creative-engines framework does not depend on it; it enhances harmonic decision support when present.
+
+---
+
+## Project-Independent
+
+This framework works in any Cursor project, any repository, any musical style. Reference from your project; do not duplicate.
