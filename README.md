@@ -5,14 +5,27 @@
 
 ---
 
-## Repo Roles
+## Repository Roles
 
-- **creative-engines** (this repo) = **Platform / infrastructure only**
-- **creative-rule-engines** = **Engine-definition repo** — source of truth for all composer engine specs
+**creative-engines**
 
-Engine specs such as Monk, Barry Harris, Bartók, Zappa, Scofield–Holland, Shorter, Frisell, Wheeler, Stravinsky, Slonimsky, and others are maintained in **creative-rule-engines**.
+Platform infrastructure including:
+- runtime
+- palettes
+- rules
+- templates
+- shared documentation
 
-This repo contains **runtime**, **palettes**, **rules**, **templates**, and shared infrastructure. See `docs/repo_roles.md` for full role definitions.
+**creative-rule-engines**
+
+Composer engine definitions including:
+- Monk engine
+- Barry Harris engine
+- Bartok engine
+- Slonimsky engine
+- other composition engines
+
+Engine definition files must exist only in creative-rule-engines.
 
 ---
 
