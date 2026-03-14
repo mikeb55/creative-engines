@@ -1,7 +1,18 @@
-# Creative Engines — Global Composition Framework
+# Creative Engines — Platform & Infrastructure
 
 **Version 1.0**  
 **Style-agnostic, instrumentation-agnostic**
+
+---
+
+## Repo Roles
+
+- **creative-engines** (this repo) = **Platform / infrastructure only**
+- **creative-rule-engines** = **Engine-definition repo** — source of truth for all composer engine specs
+
+Engine specs such as Monk, Barry Harris, Bartók, Zappa, Scofield–Holland, Shorter, Frisell, Wheeler, Stravinsky, Slonimsky, and others are maintained in **creative-rule-engines**.
+
+This repo contains **runtime**, **palettes**, **rules**, **templates**, and shared infrastructure. See `docs/repo_roles.md` for full role definitions.
 
 ---
 
@@ -15,11 +26,12 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 ```
 creative-engines/
-├── engines/          # 10 engine definitions
-├── rules/            # GCE, anti-monotony, ensemble, engraving, structure
+├── docs/             # Documentation, consolidation report, repo roles
 ├── palettes/         # Tonality Vault, interval cycles, triad pairs, polychords
+├── rules/            # GCE, anti-monotony, ensemble, engraving, structure
+├── runtime/          # Run scripts, desktop icon
 ├── templates/        # Composition request, revision loop
-└── docs/             # Master palette, rotation examples
+└── README.md
 ```
 
 ---
@@ -36,21 +48,6 @@ creative-engines/
 
 ---
 
-## Engine List
-
-1. Scofield–Holland Groove  
-2. Shorter Narrative  
-3. Frisell Atmosphere  
-4. Wheeler Lyric  
-5. Stravinsky Pulse  
-6. Zappa Disruption (secondary only)  
-7. Slonimsky Harmonic  
-8. Bartók Night  
-9. Counterpoint Hybrid  
-10. Polyphonic Labyrinth  
-
----
-
 ## Optional Integration
 
 **gml-harmonic-engine:** If available, integrate for voice-leading and chord voicing logic. The creative-engines framework does not depend on it; it enhances harmonic decision support when present.
@@ -60,19 +57,3 @@ creative-engines/
 ## Project-Independent
 
 This framework works in any Cursor project, any repository, any musical style. Reference from your project; do not duplicate.
-
----
-
-## Push to GitHub
-
-To push this repository to GitHub:
-
-1. Create a new repository on GitHub named `creative-engines`
-2. Run: `git remote add origin https://github.com/YOUR_USERNAME/creative-engines.git`
-3. Run: `git push -u origin main`
-
-Or, after `gh auth login`:
-
-```bash
-gh repo create creative-engines --public --source=. --remote=origin --push
-```
