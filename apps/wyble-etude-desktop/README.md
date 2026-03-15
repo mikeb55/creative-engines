@@ -27,3 +27,13 @@ npm run shortcut
 ```
 
 Creates "Wyble Etude Generator" on the Windows desktop.
+
+### Launcher and Path Handling
+
+The shortcut uses a Node-based launcher (`launchWybleDesktop.js`) to avoid Windows path-with-spaces issues:
+
+- **Target:** `node.exe`
+- **Arguments:** Quoted path to `launchWybleDesktop.js` (e.g. `"C:\...\launchWybleDesktop.js"`)
+- **Working directory:** App directory
+
+The launcher resolves the absolute app path and starts Electron with the correct working directory. Paths containing spaces (e.g. "Cursor AI Projects") are handled correctly. The shortcut is recreated by `npm run shortcut`; replace any stale shortcut by running it again.
