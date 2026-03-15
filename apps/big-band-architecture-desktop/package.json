@@ -1,0 +1,13 @@
+{
+  "name": "big-band-architecture-desktop",
+  "version": "0.1.0",
+  "description": "Big Band Architecture Generator - Desktop Launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "shortcut": "node createShortcut.js"
+  },
+  "dependencies": {
+    "electron": "^28.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "big-band-architecture-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npx ts-node --project tsconfig.json architectureValidation.ts",
+    "generate": "npx ts-node --project tsconfig.json architectureDesktopGenerate.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
