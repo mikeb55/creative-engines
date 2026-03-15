@@ -1,41 +1,85 @@
 /**
  * Ellington Desktop Generator — Run by Electron app
- * Generates candidate orchestration plans, scores them, exports top 3.
+ * Generates orchestration with voicings, scores with GCE heuristic, exports top 3.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { runEllingtonEngine } from './ellingtonEngine';
-import type { OrchestrationPlan, ChordSegment } from './ellingtonTypes';
+import { generateEllingtonOrchestration, runEllingtonEngine } from './ellingtonEngine';
+import type { EllingtonOrchestration } from './ellingtonEngine';
+import type { ChordSegment, ArrangementMode, OrchestrationPlan } from './ellingtonTypes';
+import { exportOrchestrationToMusicXML } from './ellingtonMusicXMLExporter';
 import { parseMusicXMLToProgression } from '../jimmy-wyble-engine/import/parseMusicXMLToProgression';
+import { TEMPLATE_LIBRARY } from './templates/templateLibrary';
 
-const CANDIDATE_COUNT = 20;
+const CANDIDATE_COUNT = 40;
 const EXPORT_COUNT = 3;
 
-const PROGRESSION_PRESETS: Record<string, ChordSegment[]> = {
-  ii_v_i: [
+function getProgressionPresets(): Record<string, ChordSegment[]> {
+  const presets: Record<string, ChordSegment[]> = {};
+  for (const [id, tpl] of Object.entries(TEMPLATE_LIBRARY)) {
+    presets[id] = tpl.segments;
+  }
+  presets.ii_v_i = presets.ii_V_I_major || [
     { chord: 'Dm7', bars: 2 },
     { chord: 'G7', bars: 2 },
     { chord: 'Cmaj7', bars: 4 },
-  ],
-  jazz_cycle: [
-    { chord: 'Dm7', bars: 2 },
-    { chord: 'G7', bars: 2 },
-    { chord: 'Cmaj7', bars: 2 },
-    { chord: 'Am7', bars: 2 },
-    { chord: 'D7', bars: 2 },
-    { chord: 'Gmaj7', bars: 2 },
-  ],
-  blues_basic: [
-    { chord: 'C7', bars: 4 },
-    { chord: 'F7', bars: 2 },
-    { chord: 'C7', bars: 2 },
-    { chord: 'G7', bars: 2 },
-    { chord: 'F7', bars: 2 },
-    { chord: 'C7', bars: 4 },
-  ],
-};
+  ];
+  return presets;
+}
 
+const PROGRESSION_PRESETS = getProgressionPresets();
+
+/** GCE-style heuristic for orchestration voicings */
+function scoreOrchestration(orch: EllingtonOrchestration): number {
+  let score = 10;
+
+  // Voice leading smoothness (≤ minor third preferred)
+  for (const section of [orch.trumpets, orch.trombones, orch.saxes]) {
+    let prev: number[] = [];
+    for (const v of section) {
+      if (prev.length > 0 && v.pitches.length > 0) {
+        const maxJump = Math.max(
+          ...v.pitches.map((p, i) => Math.abs(p - (prev[i] ?? prev[0])))
+        );
+        if (maxJump <= 3) score += 0.1;
+        else if (maxJump > 6) score -= 0.2;
+      }
+      prev = v.pitches;
+    }
+  }
+
+  // Register balance (spread across sections)
+  const allPitches = [
+    ...orch.trumpets.flatMap((v) => v.pitches),
+    ...orch.trombones.flatMap((v) => v.pitches),
+    ...orch.saxes.flatMap((v) => v.pitches),
+  ];
+  if (allPitches.length > 0) {
+    const minP = Math.min(...allPitches);
+    const maxP = Math.max(...allPitches);
+    const span = maxP - minP;
+    if (span >= 24 && span <= 48) score += 0.2;
+  }
+
+  // Orchestral density (all sections populated)
+  const sectionsPopulated =
+    (orch.trumpets.some((v) => v.pitches.length > 0) ? 1 : 0) +
+    (orch.trombones.some((v) => v.pitches.length > 0) ? 1 : 0) +
+    (orch.saxes.some((v) => v.pitches.length > 0) ? 1 : 0) +
+    (orch.rhythm.some((v) => v.pitches.length > 0) ? 1 : 0);
+  score += sectionsPopulated * 0.25;
+
+  // Chord completeness (4+ notes in full sections)
+  for (const section of [orch.trumpets, orch.trombones, orch.saxes]) {
+    const complete = section.filter((v) => v.pitches.length >= 3).length;
+    score += (complete / section.length) * 0.1;
+  }
+
+  return Math.max(0, Math.min(10, score));
+}
+
+/** GCE-style heuristic for orchestration plans */
 function scorePlan(plan: OrchestrationPlan): number {
   let s = 10;
   for (const b of plan.bars) {
@@ -43,19 +87,35 @@ function scorePlan(plan: OrchestrationPlan): number {
   }
   const leads = new Set(plan.bars.map((b) => b.leadSection));
   s = Math.min(10, s + leads.size * 0.2);
+  const densities = new Set(plan.bars.map((b) => b.density));
+  s = Math.min(10, s + (densities.size > 1 ? 0.2 : 0));
   return Math.max(0, s);
 }
 
-function planToMarkdown(plan: OrchestrationPlan): string {
-  const lines: string[] = [
-    '# Ellington Orchestration Plan',
-    '',
-    '| Bar | Chord | Lead | Support | Density |',
-    '|-----|-------|------|---------|---------|',
-  ];
+function planToMarkdownFromPlan(plan: OrchestrationPlan): string {
+  const lines = ['# Ellington Orchestration Plan', '', '| Bar | Chord | Lead | Support | Density |', '|-----|-------|------|---------|---------|'];
   for (const b of plan.bars) {
     lines.push(`| ${b.bar} | ${b.chord} | ${b.leadSection} | ${b.supportSection} | ${b.density} |`);
   }
+  return lines.join('\n');
+}
+
+function orchestrationToSummary(orch: EllingtonOrchestration, score: number): string {
+  const lines: string[] = [
+    'ELLINGTON ORCHESTRATION SUMMARY',
+    '==============================',
+    '',
+    `Progression: ${orch.progression.map((s) => s.chord).join(' - ')}`,
+    `Total bars: ${orch.totalBars}`,
+    `Score: ${score.toFixed(2)}`,
+    '',
+    'Sections:',
+    `  Trumpets: ${orch.trumpets.length} bars`,
+    `  Trombones: ${orch.trombones.length} bars`,
+    `  Saxes: ${orch.saxes.length} bars`,
+    `  Rhythm: ${orch.rhythm.length} bars`,
+    '',
+  ];
   return lines.join('\n');
 }
 
@@ -83,7 +143,9 @@ interface DesktopResult {
 }
 
 function main(): DesktopResult {
-  const arg2 = process.argv[2] || 'ii_v_i';
+  const arg2 = process.argv[2] || 'ii_V_I_major';
+  const arg3 = (process.argv[3] || 'classic') as ArrangementMode;
+  const mode = ['classic', 'ballad', 'shout'].includes(arg3) ? arg3 : 'classic';
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
   const outDir = path.join(rootDir, 'apps', 'ellington-orchestration-desktop', 'outputs', 'ellington');
@@ -98,25 +160,30 @@ function main(): DesktopResult {
     const result = parseMusicXMLToProgression(xml);
     if (!result.success) {
       return {
-        generated: 0, exported: 0, runFolderPath: '', progressionName: '',
-        avgScore: 0, bestScore: 0, worstScore: 0, error: result.error,
+        generated: 0,
+        exported: 0,
+        runFolderPath: '',
+        progressionName: '',
+        avgScore: 0,
+        bestScore: 0,
+        worstScore: 0,
+        error: result.error,
       };
     }
     progression = result.progression;
     progressionName = path.basename(arg2);
   } else {
-    progression = PROGRESSION_PRESETS[arg2] || PROGRESSION_PRESETS.ii_v_i;
+    progression = PROGRESSION_PRESETS[arg2] || PROGRESSION_PRESETS.ii_V_I_major || PROGRESSION_PRESETS.ii_v_i;
     progressionName = arg2;
   }
 
-  const candidates: { plan: OrchestrationPlan; score: number }[] = [];
+  const candidates: { orch: EllingtonOrchestration; plan: OrchestrationPlan; score: number }[] = [];
   for (let i = 0; i < CANDIDATE_COUNT; i++) {
-    const plan = runEllingtonEngine({
-      progression,
-      seed: Date.now() + i * 13,
-    });
-    const score = scorePlan(plan);
-    candidates.push({ plan, score });
+    const seed = Date.now() + i * 13;
+    const plan = runEllingtonEngine({ progression, parameters: { arrangementMode: mode }, seed });
+    const orch = generateEllingtonOrchestration(progression, seed);
+    const score = (scoreOrchestration(orch) + scorePlan(plan)) / 2;
+    candidates.push({ orch, plan, score });
   }
 
   const sorted = [...candidates].sort((a, b) => b.score - a.score);
@@ -132,26 +199,33 @@ function main(): DesktopResult {
   const worstScore = Math.min(...scores);
 
   for (let i = 0; i < toExport.length; i++) {
-    const { plan, score } = toExport[i];
+    const { orch, plan, score } = toExport[i];
     const rank = String(i + 1).padStart(2, '0');
-    const scoreStr = score.toFixed(2);
+
     fs.writeFileSync(
-      path.join(runPath, `ellington_plan_${rank}.md`),
-      planToMarkdown(plan),
+      path.join(runPath, `ellington_plan_GCE${score.toFixed(2)}_rank${rank}.md`),
+      planToMarkdownFromPlan(plan),
       'utf-8'
     );
     fs.writeFileSync(
-      path.join(runPath, `ellington_plan_${rank}.json`),
-      JSON.stringify(plan, null, 2),
+      path.join(runPath, `ellington_plan_rank${rank}.json`),
+      JSON.stringify(orch, null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(runPath, `ellington_plan_rank${rank}.musicxml`),
+      exportOrchestrationToMusicXML(orch, { title: `Ellington Orchestration #${i + 1}` }),
       'utf-8'
     );
   }
 
+  const best = toExport[0];
   const summary = `# Ellington Run Summary
 
 ## Settings
 - **Timestamp:** ${new Date().toISOString()}
 - **Progression:** ${progressionName}
+- **Mode:** ${mode}
 - **Candidates:** ${CANDIDATE_COUNT}
 - **Exported:** ${toExport.length}
 
@@ -160,8 +234,9 @@ function main(): DesktopResult {
 - **Best:** ${bestScore.toFixed(2)}
 - **Worst:** ${worstScore.toFixed(2)}
 
-## Exported
-${toExport.map((c, i) => `- ellington_plan_${String(i + 1).padStart(2, '0')}.md / .json (score: ${c.score.toFixed(2)})`).join('\n')}
+## Outputs
+${toExport.map((c, i) => `- ellington_plan_GCE${c.score.toFixed(2)}_rank${String(i + 1).padStart(2, '0')}.md`).join('\n')}
+${toExport.map((_, i) => `- ellington_plan_rank${String(i + 1).padStart(2, '0')}.json, .musicxml`).join('\n')}
 `;
   fs.writeFileSync(path.join(runPath, 'run_summary.md'), summary, 'utf-8');
 
@@ -180,9 +255,17 @@ try {
   const result = main();
   console.log(JSON.stringify(result));
 } catch (e) {
-  console.log(JSON.stringify({
-    generated: 0, exported: 0, runFolderPath: '', progressionName: '',
-    avgScore: 0, bestScore: 0, worstScore: 0, error: String(e),
-  }));
+  console.log(
+    JSON.stringify({
+      generated: 0,
+      exported: 0,
+      runFolderPath: '',
+      progressionName: '',
+      avgScore: 0,
+      bestScore: 0,
+      worstScore: 0,
+      error: String(e),
+    })
+  );
   process.exit(1);
 }

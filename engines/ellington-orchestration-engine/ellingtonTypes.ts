@@ -68,12 +68,15 @@ export interface OrchestrationPlan {
   progression: ChordSegment[];
 }
 
+export type ArrangementMode = 'classic' | 'ballad' | 'shout';
+
 export interface EllingtonParameters {
   densityBias: number;
   contrastBias: number;
   backgroundFigureDensity: number;
   tuttiThreshold: number;
   callResponseStrength: number;
+  arrangementMode?: ArrangementMode;
 }
 
 export const DEFAULT_PARAMS: EllingtonParameters = {
@@ -82,4 +85,28 @@ export const DEFAULT_PARAMS: EllingtonParameters = {
   backgroundFigureDensity: 0.4,
   tuttiThreshold: 0.85,
   callResponseStrength: 0.6,
+};
+
+export const MODE_PARAMS: Record<ArrangementMode, Partial<EllingtonParameters>> = {
+  classic: {
+    densityBias: 0.5,
+    contrastBias: 0.65,
+    backgroundFigureDensity: 0.4,
+    tuttiThreshold: 0.85,
+    callResponseStrength: 0.6,
+  },
+  ballad: {
+    densityBias: 0.3,
+    contrastBias: 0.4,
+    backgroundFigureDensity: 0.25,
+    tuttiThreshold: 0.95,
+    callResponseStrength: 0.35,
+  },
+  shout: {
+    densityBias: 0.7,
+    contrastBias: 0.75,
+    backgroundFigureDensity: 0.55,
+    tuttiThreshold: 0.75,
+    callResponseStrength: 0.7,
+  },
 };

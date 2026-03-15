@@ -37,7 +37,7 @@ ipcMain.handle('show-musicxml-picker', async () => {
   return result.canceled ? null : result.filePaths[0];
 });
 
-ipcMain.handle('generate-orchestration', async (event, progressionName, musicXmlPath) => {
+ipcMain.handle('generate-orchestration', async (event, progressionName, musicXmlPath, arrangementMode) => {
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
   const engineDir = path.join(rootDir, 'engines', 'ellington-orchestration-engine');
@@ -45,10 +45,11 @@ ipcMain.handle('generate-orchestration', async (event, progressionName, musicXml
 
   fs.mkdirSync(outDir, { recursive: true });
 
-  const prog = musicXmlPath || progressionName || 'ii_v_i';
+  const prog = musicXmlPath || progressionName || 'ii_V_I_major';
+  const mode = arrangementMode || 'classic';
 
   return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['ts-node', 'ellingtonDesktopGenerate.ts', prog], {
+    const child = spawn('npx', ['ts-node', '--project', 'tsconfig.json', 'ellingtonDesktopGenerate.ts', prog, mode], {
       cwd: engineDir,
       shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -86,7 +87,7 @@ ipcMain.handle('open-output-folder', async (event, folderPath) => {
   } else {
     const entries = fs.readdirSync(ellingtonOutDir, { withFileTypes: true });
     const runFolders = entries
-      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d{4}_run\d+$/.test(e.name))
+      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d+_run\d+$/.test(e.name))
       .map((e) => ({ name: e.name, path: path.join(ellingtonOutDir, e.name) }))
       .sort((a, b) => b.name.localeCompare(a.name));
     const target = runFolders.length > 0 ? runFolders[0].path : ellingtonOutDir;

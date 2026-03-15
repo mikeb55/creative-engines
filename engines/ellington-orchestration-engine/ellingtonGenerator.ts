@@ -10,10 +10,16 @@ import type {
   EllingtonParameters,
   DensityLevel,
   ContrastMode,
+  ArrangementMode,
 } from './ellingtonTypes';
-import { DEFAULT_PARAMS } from './ellingtonTypes';
+import { DEFAULT_PARAMS, MODE_PARAMS } from './ellingtonTypes';
 
 const SECTIONS: string[] = ['saxes', 'trumpets', 'trombones'];
+const LEAD_WEIGHTS: Record<ArrangementMode, number[]> = {
+  classic: [2, 1, 1],
+  ballad: [3, 0.5, 0.5],
+  shout: [0.5, 2, 1.5],
+};
 const DENSITY_LEVELS: DensityLevel[] = ['sparse', 'medium', 'dense', 'tutti'];
 const CONTRAST_MODES: ContrastMode[] = ['colour', 'weight', 'response', 'combined'];
 
@@ -47,14 +53,18 @@ export function generateOrchestrationPlan(
   params: Partial<EllingtonParameters> = {},
   seed: number = Date.now()
 ): OrchestrationPlan {
-  const p = { ...DEFAULT_PARAMS, ...params };
+  const mode = params.arrangementMode ?? 'classic';
+  const modeP = MODE_PARAMS[mode];
+  const p = { ...DEFAULT_PARAMS, ...modeP, ...params };
   const rnd = seededRandom(seed);
+  const leadWeights = LEAD_WEIGHTS[mode];
 
   const totalBars = progression.reduce((sum, seg) => sum + seg.bars, 0);
   const bars: OrchestrationBarPlan[] = [];
 
+  const pickLead = () => weightedPick(SECTIONS, leadWeights, rnd);
   let barIndex = 0;
-  let currentLead: string = pick(SECTIONS, rnd);
+  let currentLead: string = pickLead();
   let currentDensity: DensityLevel = 'sparse';
   let phraseIndex = 0;
 
@@ -99,7 +109,7 @@ export function generateOrchestrationPlan(
 
       if (phraseProgress > 0.7 && rnd() > 0.6) {
         phraseIndex++;
-        const nextLead = pick(SECTIONS, rnd) as string;
+        const nextLead = pickLead();
         if (nextLead !== currentLead) {
           currentLead = nextLead;
           comments.push('lead change');

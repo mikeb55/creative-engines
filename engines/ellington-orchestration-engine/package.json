@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "scripts": {
     "example": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json runEllingtonExample.ts",
-    "test": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonAutoTest.ts",
-    "verify": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonVerificationTest.ts"
+    "test": "npx ts-node --project tsconfig.json ellingtonValidation.ts",
+    "test:engine": "npx ts-node --project tsconfig.json tests/ellingtonEngine.test.ts",
+    "verify": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonVerificationTest.ts",
+    "validate": "npx ts-node --project tsconfig.json ellingtonValidation.ts",
+    "realworld": "npx ts-node --project tsconfig.json ellingtonRealWorldTest.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

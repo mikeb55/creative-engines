@@ -1,39 +1,31 @@
 # Ellington Orchestration Engine
 
-Converts chord progressions into sectional orchestration plans for big band.
+Converts chord progressions into sectional orchestration plans and voicings for big band.
 
-## What it generates
+## Preset Templates
 
-Orchestration **plans**, not full note-level scores. For each bar:
+- ii_V_I_major, jazz_blues, rhythm_changes_A, beatrice_A, orbit_A
 
-- Lead section (saxes, trumpets, trombones)
-- Support section
-- Density level (sparse → medium → dense → tutti)
-- Brass/reed contrast mode
-- Call/response behavior
-- Background figure usage
-- Tutti placements
+See `templates/templateLibrary.ts` and `templates/README.md`.
 
-## Inputs
+## Arrangement Modes
 
-- JSON progression: `[{ chord: "Dm7", bars: 2 }, ...]`
-- MusicXML: via existing import (same approach as Wyble)
+- **classic** — Saxes often lead, brass answers, moderate density
+- **ballad** — Reeds/pads favored, sparse brass, lower density
+- **shout** — Brass-forward, stronger tutti, higher density
 
-## Sections
+## Output Location
 
-- **Saxes:** Alto 1/2, Tenor 1/2, Baritone
-- **Trumpets:** 1–4
-- **Trombones:** 1–3, Bass
-- **Rhythm:** Piano, Guitar, Bass, Drums
+`apps/ellington-orchestration-desktop/outputs/ellington/`
 
-## Output
+Timestamped run folders with ranked exports (top 3), run_summary.md.
 
-- Bar-by-bar plan with section roles, density map, contrast notes, background usage, tutti placements
+## Real-World Test
 
-## Output location
+`npx ts-node ellingtonRealWorldTest.ts`
 
-Desktop app outputs go to `apps/ellington-orchestration-desktop/outputs/ellington/` in timestamped run folders.
+Generates 120+ plans across 5 templates × 3 modes. Evaluates section-role clarity, density contour, brass/reed contrast, background support, orchestration variety, mode differentiation, plausibility. Exports top 3 for beatrice_A and orbit_A.
 
 ## Self-tests
 
-Run `npm test` in this directory. Validates section-role conflict avoidance, density logic, brass/reed contrast, background figure logic, call/response, and orchestration variety. Target average score ≥ 9.0.
+`npm test` — Full validation (engine load, generation, MusicXML, desktop integration).

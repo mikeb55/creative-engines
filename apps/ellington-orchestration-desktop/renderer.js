@@ -6,6 +6,7 @@ const statusEl = document.getElementById('status');
 const generateBtn = document.getElementById('generate');
 const openFolderBtn = document.getElementById('openFolder');
 const progressionSelect = document.getElementById('progression');
+const modeSelect = document.getElementById('mode');
 const inputModeSelect = document.getElementById('inputMode');
 const presetRow = document.getElementById('presetRow');
 const musicxmlRow = document.getElementById('musicxmlRow');
@@ -50,9 +51,11 @@ generateBtn.addEventListener('click', async () => {
   }
 
   try {
+    const mode = modeSelect ? modeSelect.value : 'classic';
     const result = await window.ellington.generateOrchestration(
       progression,
-      useMusicXml ? selectedMusicXmlPath : null
+      useMusicXml ? selectedMusicXmlPath : null,
+      mode
     );
     if (result.error) {
       setStatus('Error: ' + result.error, false);

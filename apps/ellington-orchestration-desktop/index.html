@@ -71,11 +71,23 @@
     </select>
   </div>
   <div class="control-row" id="presetRow">
-    <label for="progression">Progression:</label>
+    <label for="progression">Preset Template:</label>
     <select id="progression">
-      <option value="ii_v_i">ii-V-I</option>
-      <option value="jazz_cycle">Jazz cycle</option>
-      <option value="blues_basic">Blues basic</option>
+      <optgroup label="Preset Template">
+        <option value="ii_V_I_major">ii-V-I Major</option>
+        <option value="jazz_blues">Jazz Blues</option>
+        <option value="rhythm_changes_A">Rhythm Changes A</option>
+        <option value="beatrice_A">Beatrice A</option>
+        <option value="orbit_A">Orbit A</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="control-row">
+    <label for="mode">Arrangement Mode:</label>
+    <select id="mode">
+      <option value="classic">Classic</option>
+      <option value="ballad">Ballad</option>
+      <option value="shout">Shout</option>
     </select>
   </div>
   <div class="control-row" id="musicxmlRow" style="display:none">
