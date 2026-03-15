@@ -1,0 +1,12 @@
+{
+  "name": "ellington-orchestration-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "example": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json runEllingtonExample.ts",
+    "test": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonAutoTest.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
