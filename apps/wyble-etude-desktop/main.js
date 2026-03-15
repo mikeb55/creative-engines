@@ -41,9 +41,9 @@ ipcMain.handle('generate-etudes', async (event, progressionName, practiceMode, m
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
   const engineDir = path.join(rootDir, 'engines', 'jimmy-wyble-engine');
-  const outDir = path.join(rootDir, 'outputs', 'wyble', 'desktop');
+  const wybleOutDir = path.join(appDir, 'outputs', 'wyble');
 
-  fs.mkdirSync(outDir, { recursive: true });
+  fs.mkdirSync(wybleOutDir, { recursive: true });
 
   const prog = musicXmlPath || progressionName || 'ii_v_i';
   const mode = practiceMode || 'etude';
@@ -80,12 +80,17 @@ ipcMain.handle('generate-etudes', async (event, progressionName, practiceMode, m
 
 ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const appDir = __dirname;
-  const rootDir = path.join(appDir, '..', '..');
-  const desktopOutDir = path.join(rootDir, 'outputs', 'wyble', 'desktop');
-  fs.mkdirSync(desktopOutDir, { recursive: true });
+  const wybleOutDir = path.join(appDir, 'outputs', 'wyble');
+  fs.mkdirSync(wybleOutDir, { recursive: true });
   if (folderPath && fs.existsSync(folderPath)) {
     shell.openPath(folderPath);
   } else {
-    shell.openPath(desktopOutDir);
+    const entries = fs.readdirSync(wybleOutDir, { withFileTypes: true });
+    const runFolders = entries
+      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d{4}_run\d+$/.test(e.name))
+      .map((e) => ({ name: e.name, path: path.join(wybleOutDir, e.name) }))
+      .sort((a, b) => b.name.localeCompare(a.name));
+    const target = runFolders.length > 0 ? runFolders[0].path : wybleOutDir;
+    shell.openPath(target);
   }
 });

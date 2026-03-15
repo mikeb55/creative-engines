@@ -10,14 +10,14 @@ Windows desktop launcher for the Wyble two-line guitar etude generator. Double-c
 
 ## Output
 
-Each run creates a timestamped folder under `outputs/wyble/desktop/` (e.g. `2026-03-15_1930_run01/`):
+Each run creates a timestamped folder under `apps/wyble-etude-desktop/outputs/wyble/` (e.g. `2026-03-15_1930_run01/`):
 
 - `wyble_etude_GCE9.21_rank01.musicxml` — filenames include GCE score and rank
 - `wyble_etude_GCE9.18_rank02.musicxml`
 - `wyble_etude_GCE9.14_rank03.musicxml`
 - `run_summary.md` — generation settings, candidate scores, exported files
 
-The root `outputs/wyble/desktop/` contains only run folders (no flat dump of many files).
+The root `apps/wyble-etude-desktop/outputs/wyble/` contains only run folders (no flat dump of many files).
 
 ## Requirements
 

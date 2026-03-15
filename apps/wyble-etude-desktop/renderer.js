@@ -67,7 +67,7 @@ generateBtn.addEventListener('click', async () => {
         `Progression: ${progLabel} | Mode: ${result.practiceMode || practiceMode}\n` +
         `Candidates generated: ${result.generated} | Exported: ${result.exported}\n` +
         `Scores: avg ${result.avgScore?.toFixed(2) || '—'} | best ${result.bestScore?.toFixed(2) || '—'}\n` +
-        `Top ${result.exported} etudes exported to:\n${result.runFolderPath || 'outputs/wyble/desktop/'}`,
+        `Top ${result.exported} etudes exported to:\n${result.runFolderPath || 'apps/wyble-etude-desktop/outputs/wyble/'}`,
         false
       );
     }
