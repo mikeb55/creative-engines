@@ -8,7 +8,8 @@
     "example": "npx ts-node runWybleExample.ts",
     "etude": "npx ts-node runWybleEtudeExample.ts",
     "export": "npx ts-node exportWybleExample.ts",
-    "batch": "npx ts-node generateWybleBatch.ts"
+    "batch": "npx ts-node generateWybleBatch.ts",
+    "wyble:batch": "npx ts-node --project tsconfig.json generateWybleBatch.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

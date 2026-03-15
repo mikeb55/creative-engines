@@ -5,6 +5,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('wyble', {
-  generateEtudes: (progression) => ipcRenderer.invoke('generate-etudes', progression),
+  generateEtudes: (progression, practiceMode) => ipcRenderer.invoke('generate-etudes', progression, practiceMode),
   openOutputFolder: () => ipcRenderer.invoke('open-output-folder'),
 });

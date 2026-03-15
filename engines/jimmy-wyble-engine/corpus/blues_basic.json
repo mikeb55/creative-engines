@@ -1,0 +1,11 @@
+{
+  "name": "blues_basic",
+  "progression": [
+    { "chord": "C7", "bars": 4 },
+    { "chord": "F7", "bars": 2 },
+    { "chord": "C7", "bars": 2 },
+    { "chord": "G7", "bars": 2 },
+    { "chord": "F7", "bars": 2 },
+    { "chord": "C7", "bars": 4 }
+  ]
+}

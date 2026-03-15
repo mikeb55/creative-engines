@@ -29,6 +29,9 @@ const SCALE_DEGREES: Record<string, number[]> = {
   dom: [0, 2, 4, 5, 7, 9, 10],
 };
 
+const ALTERED_DOMINANT_TONES = [1, 3, 6, 8];
+const HALF_WHOLE_DIM = [0, 1, 3, 4, 6, 7, 9, 10];
+
 const ROOT_MIDI: Record<string, number> = {
   C: 60, 'C#': 61, Db: 61, D: 62, 'D#': 63, Eb: 63, E: 64, F: 65,
   'F#': 66, Gb: 66, G: 67, 'G#': 68, Ab: 68, A: 69, 'A#': 70, Bb: 70, B: 71,
@@ -39,6 +42,22 @@ function getChordTones(root: string, quality: string, octave: number): number[] 
   const base = rootMidi + (octave - 4) * 12;
   const degrees = SCALE_DEGREES[quality] ?? SCALE_DEGREES.maj;
   return degrees.map(d => base + d);
+}
+
+function getChordTonesWithAltered(
+  root: string,
+  quality: string,
+  octave: number,
+  alteredBias: number
+): number[] {
+  const base = getChordTones(root, quality, octave);
+  if (quality !== 'dom' || alteredBias <= 0) return base;
+  const rootMidi = ROOT_MIDI[root] ?? 60;
+  const baseRoot = rootMidi + (octave - 4) * 12;
+  const altered = ALTERED_DOMINANT_TONES.map(d => baseRoot + d);
+  const hw = HALF_WHOLE_DIM.map(d => baseRoot + d);
+  const extra = Math.random() < alteredBias ? altered : hw;
+  return [...new Set([...base, ...extra])];
 }
 
 function parseChord(chord: string): { root: string; quality: string } {
@@ -93,14 +112,15 @@ function generateUpperVoice(
   chords: HarmonicContext['chords'],
   params: WybleParameters
 ): number[] {
-  const { motifSeed, chromaticismLevel = 0.2 } = params;
+  const { motifSeed, chromaticismLevel = 0.2, alteredDominantBias = 0 } = params;
   const beatsPerBar = 4;
   const upper: number[] = [];
   let last = motifSeed?.[0] ?? 67;
 
   for (let b = 0; b < totalBeats; b++) {
     const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
-    const chordTones = getChordTones(root, quality, 5).filter(t => t >= UPPER_MIN && t <= UPPER_MAX);
+    const chordTones = getChordTonesWithAltered(root, quality, 5, alteredDominantBias)
+      .filter(t => t >= UPPER_MIN && t <= UPPER_MAX);
     const isStrongBeat = b % 2 === 0;
 
     let candidates: number[] = chordTones;
@@ -137,10 +157,19 @@ function generateLowerVoice(
   upperPitches: number[],
   params: WybleParameters
 ): number[] {
-  const { motifSeed, contraryMotionBias = 0.7 } = params;
+  const { motifSeed, contraryMotionBias = 0.7, pedalToneEnabled = false } = params;
   const beatsPerBar = 4;
   const lower: number[] = [];
   let last = motifSeed?.[1] ?? 55;
+
+  if (pedalToneEnabled && chords.length > 0) {
+    const first = chords[0];
+    const parsed = typeof first === 'string' ? parseChord(first) : { root: (first as { root: string }).root, quality: 'maj' };
+    const rootMidi = ROOT_MIDI[parsed.root] ?? 60;
+    const pedal = clamp(rootMidi - 12, LOWER_MIN, LOWER_MAX);
+    for (let b = 0; b < totalBeats; b++) lower.push(pedal);
+    return lower;
+  }
 
   for (let b = 0; b < totalBeats; b++) {
     const beatInBar = b % beatsPerBar;
@@ -221,12 +250,20 @@ function pickLowerForDyad(upper: number, lastLower: number, chordTones: number[]
   return pool.reduce((a, c) => Math.abs(c - lastLower) < Math.abs(a - lastLower) ? c : a);
 }
 
+function shouldUpperPlaySolo(beat: number, voiceRatioMode: string): boolean {
+  if (voiceRatioMode === 'two_to_one') return beat % 3 !== 2;
+  if (voiceRatioMode === 'three_to_one') return beat % 4 !== 3;
+  if (voiceRatioMode === 'one_to_one') return beat % 2 === 0;
+  return beat % 2 === 0;
+}
+
 function deriveDyadsFromVoices(
   upper: number[],
   lower: number[],
   chords: HarmonicContext['chords'],
   beatsPerBar: number,
-  dyadDensity: number
+  dyadDensity: number,
+  voiceRatioMode: string = 'mixed'
 ): { upperEvents: NoteEvent[]; lowerEvents: NoteEvent[]; impliedHarmony: ImpliedHarmony[] } {
   const upperEvents: NoteEvent[] = [];
   const lowerEvents: NoteEvent[] = [];
@@ -260,7 +297,8 @@ function deriveDyadsFromVoices(
         confidence: 0.8,
       });
     } else {
-      if (beat % 2 === 0) {
+      const upperSolo = voiceRatioMode === 'mixed' ? beat % 2 === 0 : shouldUpperPlaySolo(beat, voiceRatioMode);
+      if (upperSolo) {
         upperEvents.push({ pitch: upperPitch, duration: 1, beat, isDyad: false });
       } else {
         lowerEvents.push({ pitch: lowerPitch, duration: 1, beat, isDyad: false });
@@ -306,6 +344,7 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
     harmonicContext,
     phraseLength = 8,
     dyadDensity = 0.6,
+    voiceRatioMode = 'mixed',
   } = params;
 
   const beatsPerBar = 4;
@@ -318,7 +357,7 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
   const { upper: u, lower: l } = enforceCounterpoint(upperPitches, lowerPitches);
 
   const { upperEvents, lowerEvents, impliedHarmony } = deriveDyadsFromVoices(
-    u, l, chords, beatsPerBar, dyadDensity
+    u, l, chords, beatsPerBar, dyadDensity, voiceRatioMode
   );
 
   const rawOutput: WybleOutput = {

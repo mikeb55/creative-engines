@@ -6,6 +6,7 @@ const statusEl = document.getElementById('status');
 const generateBtn = document.getElementById('generate');
 const openFolderBtn = document.getElementById('openFolder');
 const progressionSelect = document.getElementById('progression');
+const practiceModeSelect = document.getElementById('practiceMode');
 
 function setStatus(text, isEmpty = false) {
   statusEl.textContent = text;
@@ -17,9 +18,10 @@ generateBtn.addEventListener('click', async () => {
   setStatus('Generating etudes...', false);
 
   const progression = progressionSelect.value;
+  const practiceMode = practiceModeSelect ? practiceModeSelect.value : 'etude';
 
   try {
-    const result = await window.wyble.generateEtudes(progression);
+    const result = await window.wyble.generateEtudes(progression, practiceMode);
     setStatus(
       `Generation complete.\n` +
       `Studies generated: ${result.generated}\n` +

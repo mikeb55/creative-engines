@@ -26,6 +26,9 @@ export interface HarmonicContext {
   key?: string;
 }
 
+export type VoiceRatioMode = 'one_to_one' | 'two_to_one' | 'three_to_one' | 'mixed';
+export type PracticeMode = 'etude' | 'exercise' | 'improvisation';
+
 export interface WybleParameters {
   harmonicContext: HarmonicContext;
   phraseLength?: number;
@@ -36,6 +39,11 @@ export interface WybleParameters {
   chromaticismLevel?: number;
   registerOverlapTolerance?: number;
   guitarPositionSpan?: number;
+  voiceRatioMode?: VoiceRatioMode;
+  alteredDominantBias?: number;
+  staggeredAttackFeel?: boolean;
+  practiceMode?: PracticeMode;
+  pedalToneEnabled?: boolean;
 }
 
 export interface ImpliedHarmony {

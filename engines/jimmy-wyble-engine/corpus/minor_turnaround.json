@@ -1,0 +1,8 @@
+{
+  "name": "minor_turnaround",
+  "progression": [
+    { "chord": "Em7b5", "bars": 2 },
+    { "chord": "A7", "bars": 2 },
+    { "chord": "Dm7", "bars": 4 }
+  ]
+}

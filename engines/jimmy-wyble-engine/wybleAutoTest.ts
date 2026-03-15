@@ -32,6 +32,8 @@ const TEST_CONTEXTS: { name: string; harmonicContext: HarmonicContext }[] = [
   { name: 'modal vamp', harmonicContext: { chords: [{ root: 'D', quality: 'm', bars: 8 }], key: 'D' } },
   { name: 'dominant chain', harmonicContext: { chords: [{ root: 'A', quality: '7', bars: 2 }, { root: 'Ab', quality: '7', bars: 2 }, { root: 'G', quality: '7', bars: 2 }, { root: 'C', quality: 'maj7', bars: 2 }], key: 'C' } },
   { name: 'blues', harmonicContext: { chords: [{ root: 'C', quality: '7', bars: 4 }, { root: 'F', quality: '7', bars: 2 }, { root: 'G', quality: '7', bars: 2 }], key: 'C' } },
+  { name: 'jazz_cycle', harmonicContext: { chords: [{ root: 'D', quality: 'm7', bars: 2 }, { root: 'G', quality: '7', bars: 2 }, { root: 'C', quality: 'maj7', bars: 2 }, { root: 'A', quality: 'm7', bars: 2 }, { root: 'D', quality: '7', bars: 2 }, { root: 'G', quality: 'maj7', bars: 2 }], key: 'G' } },
+  { name: 'altered_dominant', harmonicContext: { chords: [{ root: 'D', quality: 'm7', bars: 2 }, { root: 'G', quality: '7', bars: 2 }, { root: 'C', quality: 'maj7', bars: 2 }, { root: 'Ab', quality: '7', bars: 1 }, { root: 'G', quality: '7', bars: 1 }], key: 'C' } },
 ];
 
 function scoreVoiceIndependence(output: WybleOutput): number {
@@ -51,13 +53,17 @@ function scoreContraryMotion(output: WybleOutput): number {
   const lowerDyads = output.lower_line.events.filter(e => e.isDyad);
   if (upperDyads.length < 2 || lowerDyads.length < 2) return 9;
   let contrary = 0;
+  let oblique = 0;
   for (let i = 0; i < Math.min(upperDyads.length, lowerDyads.length) - 1; i++) {
     const uDir = upperDyads[i + 1].pitch - upperDyads[i].pitch;
     const lDir = lowerDyads[i + 1].pitch - lowerDyads[i].pitch;
     if (uDir * lDir < 0) contrary++;
+    else if (uDir === 0 || lDir === 0) oblique++;
   }
   const total = Math.max(1, Math.min(upperDyads.length, lowerDyads.length) - 1);
-  return Math.min(10, 7 + (contrary / total) * 3);
+  const contraryRatio = contrary / total;
+  const obliqueBonus = oblique / total * 0.5;
+  return Math.min(10, 6 + contraryRatio * 3.5 + obliqueBonus);
 }
 
 function scoreIntervalQuality(output: WybleOutput): number {
@@ -139,16 +145,15 @@ function runBatch(params: WybleParameters, count: number): { outputs: WybleOutpu
 }
 
 function main() {
-  const TOTAL_STUDIES = 150;
+  const TOTAL_STUDIES = 120;
   const TARGET_AVG = 9.0;
   const MAX_ITERATIONS = 20;
 
-  let bestOutput: WybleOutput | null = null;
-  let bestScore = -1;
+  let bestOutputs: { output: WybleOutput; score: number }[] = [];
   let avgScore = 0;
+  let bestScore = -1;
   let worstScore = 10;
   let iteration = 0;
-  let allScoresFinal: number[] = [];
   let params: WybleParameters = {
     harmonicContext: TEST_CONTEXTS[0].harmonicContext,
     phraseLength: 8,
@@ -156,6 +161,7 @@ function main() {
     contraryMotionBias: 0.75,
     dyadDensity: 0.55,
     chromaticismLevel: 0.15,
+    alteredDominantBias: 0.2,
   };
 
   for (iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
@@ -170,16 +176,18 @@ function main() {
         const score = computeWybleTestScore(out);
         allOutputs.push(out);
         allScores.push(score);
-        if (score.total > bestScore) {
-          bestScore = score.total;
-          bestOutput = out;
-        }
       }
     }
 
-    allScoresFinal = allScores.map(s => s.total);
+    const allScoresFinal = allScores.map(s => s.total);
     avgScore = allScoresFinal.reduce((a, s) => a + s, 0) / allScoresFinal.length;
     worstScore = Math.min(...allScoresFinal);
+    bestScore = Math.max(...allScoresFinal);
+
+    bestOutputs = allOutputs
+      .map((o, i) => ({ output: o, score: allScores[i].total }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
 
     if (avgScore >= TARGET_AVG) break;
 
@@ -190,17 +198,30 @@ function main() {
 
   const outDir = path.join(__dirname, '..', '..', 'outputs', 'wyble');
   fs.mkdirSync(outDir, { recursive: true });
-  const outPath = path.join(outDir, 'wyble_etude_best.musicxml');
+  fs.writeFileSync(
+    path.join(outDir, 'wyble_etude_best.musicxml'),
+    exportToMusicXML(
+      { upper_line: bestOutputs[0].output.upper_line, lower_line: bestOutputs[0].output.lower_line, implied_harmony: bestOutputs[0].output.implied_harmony, bars: 8 },
+      { title: 'Wyble Etude Best' }
+    ),
+    'utf-8'
+  );
 
-  if (bestOutput) {
+  const refinedDir = path.join(outDir, 'refined');
+  fs.mkdirSync(refinedDir, { recursive: true });
+  for (let i = 0; i < bestOutputs.length; i++) {
+    const r = bestOutputs[i];
     const result: WybleEtudeResult = {
-      upper_line: bestOutput.upper_line,
-      lower_line: bestOutput.lower_line,
-      implied_harmony: bestOutput.implied_harmony,
+      upper_line: r.output.upper_line,
+      lower_line: r.output.lower_line,
+      implied_harmony: r.output.implied_harmony,
       bars: 8,
     };
-    const musicXml = exportToMusicXML(result, { title: 'Wyble Etude Best' });
-    fs.writeFileSync(outPath, musicXml, 'utf-8');
+    fs.writeFileSync(
+      path.join(refinedDir, `wyble_refined_${String(i + 1).padStart(2, '0')}.musicxml`),
+      exportToMusicXML(result, { title: `Wyble Refined ${i + 1} (GCE ${r.score.toFixed(1)})` }),
+      'utf-8'
+    );
   }
 
   console.log('\nWYBLE ENGINE UPGRADE COMPLETE\n');
@@ -210,7 +231,8 @@ function main() {
   console.log('Best score: ' + bestScore.toFixed(2));
   console.log('Worst score: ' + worstScore.toFixed(2));
   console.log('GCE ≥9 reached: ' + (avgScore >= TARGET_AVG ? 'YES' : 'NO'));
-  console.log('Exported file: outputs/wyble/wyble_etude_best.musicxml\n');
+  console.log('Exported: outputs/wyble/wyble_etude_best.musicxml');
+  console.log('Refined: outputs/wyble/refined/wyble_refined_01–05.musicxml\n');
 }
 
 if (require.main === module) {

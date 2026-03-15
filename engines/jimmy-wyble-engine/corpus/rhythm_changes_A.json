@@ -1,0 +1,13 @@
+{
+  "name": "rhythm_changes_A",
+  "progression": [
+    { "chord": "Am7", "bars": 2 },
+    { "chord": "D7", "bars": 2 },
+    { "chord": "Gmaj7", "bars": 2 },
+    { "chord": "Gmaj7", "bars": 2 },
+    { "chord": "Bm7", "bars": 2 },
+    { "chord": "E7", "bars": 2 },
+    { "chord": "Amaj7", "bars": 2 },
+    { "chord": "Amaj7", "bars": 2 }
+  ]
+}

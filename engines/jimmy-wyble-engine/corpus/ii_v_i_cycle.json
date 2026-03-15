@@ -1,0 +1,8 @@
+{
+  "name": "ii_v_i_cycle",
+  "progression": [
+    { "chord": "Dm7", "bars": 2 },
+    { "chord": "G7", "bars": 2 },
+    { "chord": "Cmaj7", "bars": 4 }
+  ]
+}

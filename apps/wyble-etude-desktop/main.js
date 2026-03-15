@@ -28,7 +28,7 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
-ipcMain.handle('generate-etudes', async (event, progressionName) => {
+ipcMain.handle('generate-etudes', async (event, progressionName, practiceMode) => {
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
   const engineDir = path.join(rootDir, 'engines', 'jimmy-wyble-engine');
@@ -37,9 +37,10 @@ ipcMain.handle('generate-etudes', async (event, progressionName) => {
   fs.mkdirSync(outDir, { recursive: true });
 
   const prog = progressionName || 'ii_v_i';
+  const mode = practiceMode || 'etude';
 
   return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['ts-node', 'wybleDesktopGenerate.ts', prog], {
+    const child = spawn('npx', ['ts-node', 'wybleDesktopGenerate.ts', prog, mode], {
       cwd: engineDir,
       shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],

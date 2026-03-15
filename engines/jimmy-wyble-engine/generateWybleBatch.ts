@@ -1,58 +1,51 @@
 /**
- * Wyble Batch Generator
- * Generates 60 studies, keeps only GCE ≥ 9, exports to outputs/wyble/desktop/
+ * Wyble Batch Etude Generator
+ * Loads corpus presets, generates 20 studies, exports only those scoring ≥ 9.0
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateWybleEtude } from './wybleEngine';
-import { evaluateWybleStudy } from './wybleAutoTest';
 import { exportToMusicXML } from './wybleMusicXMLExporter';
-import type { WybleParameters, HarmonicContext, WybleOutput } from './wybleTypes';
+import { evaluateWybleStudy } from './wybleAutoTest';
+import type { WybleOutput, WybleParameters, HarmonicContext } from './wybleTypes';
 import type { WybleEtudeResult } from './wybleEtudeGenerator';
 
-interface ProgressionSegment {
-  chord: string;
-  bars: number;
+const GCE_THRESHOLD = 9.0;
+const BATCH_SIZE = 20;
+
+interface CorpusPreset {
+  name: string;
+  progression: Array<{ chord: string; bars: number }>;
 }
 
-function loadProgression(filePath: string): ProgressionSegment[] {
+function loadCorpusPreset(filePath: string): CorpusPreset {
   const json = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(json) as ProgressionSegment[];
+  return JSON.parse(json) as CorpusPreset;
 }
 
-function progressionToHarmonicContext(progression: ProgressionSegment[]): HarmonicContext {
-  const chords = progression.map(({ chord, bars }) => {
-    const match = chord.match(/^([A-G][#b]?)(maj7|min7|m7|7|m|dom7)?/i);
-    if (!match) return { root: 'C', quality: 'maj', bars };
-    let q = (match[2] ?? 'maj').toLowerCase();
-    if (q === 'm7' || q === 'min7') q = 'min';
-    if (q === '7' || q === 'dom7') q = 'dom';
-    if (q === 'maj7') q = 'maj';
-    return { root: match[1], quality: q, bars };
-  });
-  return { chords, key: 'C' };
+function progressionToHarmonicContext(progression: CorpusPreset['progression']): HarmonicContext {
+  return {
+    chords: progression.map(({ chord, bars }) => {
+      const match = chord.match(/^([A-G][#b]?)(maj7|min7|m7|7|m|m7b5|dom7)?/i);
+      if (!match) return { root: 'C', quality: 'maj', bars };
+      let q = (match[2] ?? 'maj').toLowerCase();
+      if (q === 'm7' || q === 'min7' || q === 'm7b5') q = 'min';
+      if (q === '7' || q === 'dom7') q = 'dom';
+      if (q === 'maj7') q = 'maj';
+      return { root: match[1], quality: q, bars };
+    }),
+    key: 'C',
+  };
 }
-
-const PROGRESSION_FILES: Record<string, string> = {
-  ii_v_i: 'ii_v_i.json',
-  jazz_cycle: 'jazz_cycle.json',
-  blues_basic: 'blues_basic.json',
-};
 
 function main() {
-  const BATCH_SIZE = 60;
-  const GCE_THRESHOLD = 9.0;
-  const progressionName = process.argv[2] || 'ii_v_i';
-  const progressionFile = PROGRESSION_FILES[progressionName] || 'ii_v_i.json';
+  const corpusDir = path.join(__dirname, 'corpus');
+  const presetPath = path.join(corpusDir, 'ii_v_i_cycle.json');
+  const preset = loadCorpusPreset(presetPath);
 
-  const progressionPath = path.join(__dirname, '..', '..', 'progressions', progressionFile);
-  const progression = loadProgression(progressionPath);
-  const harmonicContext = progressionToHarmonicContext(progression);
-  const bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
-
-  const outDir = path.join(__dirname, '..', '..', 'outputs', 'wyble', 'desktop');
-  fs.mkdirSync(outDir, { recursive: true });
+  const harmonicContext = progressionToHarmonicContext(preset.progression);
+  const bars = preset.progression.reduce((sum, seg) => sum + seg.bars, 0);
 
   const params: WybleParameters = {
     harmonicContext,
@@ -63,32 +56,39 @@ function main() {
     chromaticismLevel: 0.15,
   };
 
-  const accepted: { output: WybleOutput; score: number }[] = [];
-  let exportIndex = 0;
+  const results: { output: WybleOutput; score: number }[] = [];
 
   for (let i = 0; i < BATCH_SIZE; i++) {
     const output = generateWybleEtude(params);
     const score = evaluateWybleStudy(output);
-    if (score >= GCE_THRESHOLD) {
-      accepted.push({ output, score });
-      exportIndex++;
-      const result: WybleEtudeResult = {
-        upper_line: output.upper_line,
-        lower_line: output.lower_line,
-        implied_harmony: output.implied_harmony,
-        bars,
-      };
-      const filename = `wyble_etude_${String(exportIndex).padStart(2, '0')}.musicxml`;
-      const outPath = path.join(outDir, filename);
-      const musicXml = exportToMusicXML(result, { title: `Wyble Etude ${exportIndex}` });
-      fs.writeFileSync(outPath, musicXml, 'utf-8');
-    }
+    results.push({ output, score });
   }
 
+  const passing = results.filter(r => r.score >= GCE_THRESHOLD);
+
+  const outDir = path.join(__dirname, '..', '..', 'outputs', 'wyble', 'etudes');
+  fs.mkdirSync(outDir, { recursive: true });
+
+  passing.forEach((r, idx) => {
+    const result: WybleEtudeResult = {
+      upper_line: r.output.upper_line,
+      lower_line: r.output.lower_line,
+      implied_harmony: r.output.implied_harmony,
+      bars,
+    };
+    const filename = `wyble_etude_${String(idx + 1).padStart(2, '0')}.musicxml`;
+    const outPath = path.join(outDir, filename);
+    const musicXml = exportToMusicXML(result, {
+      title: `Wyble Etude ${idx + 1} (GCE ${r.score.toFixed(1)})`,
+    });
+    fs.writeFileSync(outPath, musicXml, 'utf-8');
+  });
+
   console.log('\nWYBLE BATCH GENERATION COMPLETE\n');
+  console.log('Corpus preset: ' + preset.name);
   console.log('Studies generated: ' + BATCH_SIZE);
-  console.log('Studies accepted (GCE ≥9): ' + accepted.length);
-  console.log('\nFiles exported:\noutputs/wyble/desktop/\n');
+  console.log('Studies exported (≥' + GCE_THRESHOLD + '): ' + passing.length);
+  console.log('Output directory: outputs/wyble/etudes\n');
 }
 
 main();

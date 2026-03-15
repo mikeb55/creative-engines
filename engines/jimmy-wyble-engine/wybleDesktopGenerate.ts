@@ -46,6 +46,7 @@ function main() {
   const BATCH_SIZE = 10;
   const GCE_THRESHOLD = 9.0;
   const progressionName = process.argv[2] || 'ii_v_i';
+  const practiceMode = (process.argv[3] || 'etude') as 'etude' | 'exercise' | 'improvisation';
   const progressionFile = PROGRESSION_FILES[progressionName] || 'ii_v_i.json';
 
   const engineDir = __dirname;
@@ -66,6 +67,8 @@ function main() {
     contraryMotionBias: 0.75,
     dyadDensity: 0.55,
     chromaticismLevel: 0.15,
+    practiceMode,
+    voiceRatioMode: practiceMode === 'exercise' ? 'two_to_one' : practiceMode === 'improvisation' ? 'mixed' : 'one_to_one',
   };
 
   let exportIndex = 0;
