@@ -96,6 +96,40 @@ ipcMain.handle('generate-score-skeleton', async (event, progressionId, style) =>
   });
 });
 
+ipcMain.handle('generate-arranger-assist', async (event, progressionId, style) => {
+  const appDir = __dirname;
+  const rootDir = path.join(appDir, '..', '..');
+  const engineDir = path.join(rootDir, 'engines', 'arranger-assist-engine');
+  const prog = progressionId || 'ii_V_I_major';
+  const styleArg = style || 'standard_swing';
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'npx',
+      ['ts-node', '--project', 'tsconfig.json', 'arrangerAssistDesktopGenerate.ts', prog, styleArg],
+      { cwd: engineDir, shell: true, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr || 'Arranger-assist export failed'));
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch (e) {
+        reject(new Error('Invalid output: ' + stdout));
+      }
+    });
+    child.on('error', reject);
+  });
+});
+
 ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const appDir = __dirname;
   if (folderPath && fs.existsSync(folderPath)) {
@@ -104,8 +138,10 @@ ipcMain.handle('open-output-folder', async (event, folderPath) => {
   }
   const archDir = path.join(appDir, 'outputs', 'architecture');
   const scoreDir = path.join(appDir, 'outputs', 'score');
+  const assistDir = path.join(appDir, 'outputs', 'arranger-assist');
   fs.mkdirSync(archDir, { recursive: true });
   fs.mkdirSync(scoreDir, { recursive: true });
+  fs.mkdirSync(assistDir, { recursive: true });
 
   const collectRunFolders = (dir) => {
     if (!fs.existsSync(dir)) return [];
@@ -118,7 +154,8 @@ ipcMain.handle('open-output-folder', async (event, folderPath) => {
 
   const archRuns = collectRunFolders(archDir);
   const scoreRuns = collectRunFolders(scoreDir);
-  const all = [...archRuns, ...scoreRuns].sort((a, b) => b.mtime - a.mtime);
-  const target = all.length > 0 ? all[0].path : scoreRuns.length > 0 ? scoreDir : archDir;
+  const assistRuns = collectRunFolders(assistDir);
+  const all = [...archRuns, ...scoreRuns, ...assistRuns].sort((a, b) => b.mtime - a.mtime);
+  const target = all.length > 0 ? all[0].path : assistRuns.length > 0 ? assistDir : scoreRuns.length > 0 ? scoreDir : archDir;
   shell.openPath(target);
 });

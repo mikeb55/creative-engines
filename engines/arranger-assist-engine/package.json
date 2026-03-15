@@ -1,0 +1,12 @@
+{
+  "name": "arranger-assist-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npx ts-node --project tsconfig.json arrangerAssistValidation.ts",
+    "generate": "npx ts-node --project tsconfig.json arrangerAssistDesktopGenerate.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}

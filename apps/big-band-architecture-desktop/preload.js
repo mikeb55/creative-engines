@@ -9,5 +9,7 @@ contextBridge.exposeInMainWorld('bigBandArch', {
     ipcRenderer.invoke('generate-architecture', progressionId, style),
   generateScoreSkeleton: (progressionId, style) =>
     ipcRenderer.invoke('generate-score-skeleton', progressionId, style),
+  generateArrangerAssist: (progressionId, style) =>
+    ipcRenderer.invoke('generate-arranger-assist', progressionId, style),
   openOutputFolder: (folderPath) => ipcRenderer.invoke('open-output-folder', folderPath),
 });

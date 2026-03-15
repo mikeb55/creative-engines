@@ -1,0 +1,8 @@
+{
+  "name": "creative-engines",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine"
+  }
+}

@@ -5,6 +5,7 @@
 const statusEl = document.getElementById('status');
 const generateBtn = document.getElementById('generate');
 const generateScoreBtn = document.getElementById('generateScore');
+const generateAssistBtn = document.getElementById('generateAssist');
 const openFolderBtn = document.getElementById('openFolder');
 const progressionSelect = document.getElementById('progression');
 const styleSelect = document.getElementById('style');
@@ -69,6 +70,34 @@ generateScoreBtn.addEventListener('click', async () => {
     setStatus('Error: ' + (err.message || String(err)), false);
   } finally {
     generateScoreBtn.disabled = false;
+  }
+});
+
+generateAssistBtn.addEventListener('click', async () => {
+  generateAssistBtn.disabled = true;
+  setStatus('Generating arranger-assist (architecture + Ellington + suggestions)...', false);
+
+  try {
+    const result = await window.bigBandArch.generateArrangerAssist(
+      progressionSelect.value,
+      styleSelect.value
+    );
+    if (result.error) {
+      setStatus('Error: ' + result.error, false);
+    } else {
+      lastRunFolderPath = result.runFolderPath || null;
+      setStatus(
+        `Arranger-assist complete.\n` +
+        `Progression: ${result.architecture?.progressionTemplate || progressionSelect.value}\n` +
+        `Sections: ${result.architecture?.sections?.length || 0}\n` +
+        `Output: ${result.runFolderPath || 'outputs/arranger-assist/'}`,
+        false
+      );
+    }
+  } catch (err) {
+    setStatus('Error: ' + (err.message || String(err)), false);
+  } finally {
+    generateAssistBtn.disabled = false;
   }
 });
 
