@@ -13,15 +13,26 @@ Output is exported as MusicXML (two staves, treble clef) for use in Sibelius or 
 
 ---
 
-## 2. Preset Progression Mode
+## 2. Practice Templates
 
-Use built-in chord progressions:
+The desktop app includes a library of preset progressions for quick etude generation:
 
-- **ii_v_i** — Dm7 → G7 → Cmaj7 (8 bars)
-- **jazz_cycle** — ii–V–I cycle in G
-- **blues_basic** — 12-bar blues in C
+| Template | Description |
+|----------|--------------|
+| ii_V_I_major | Dm7 → G7 → Cmaj7 (8 bars) |
+| minor_ii_V | Bm7b5 → E7alt → Am6 |
+| jazz_blues | 12-bar jazz blues in F |
+| minor_blues | 12-bar minor blues |
+| rhythm_changes_A | Bb6 → G7 → Cm7 → F7 |
+| autumn_leaves_fragment | Am7b5 → D7 → Gm |
+| solar_cycle | Cm7 → F7 → Bbmaj7 |
+| giant_steps_fragment | Bmaj7 → D7 → Gmaj7 → Bb7 |
+| beatrice_A | Beatrice (Sam Rivers) A section |
+| orbit_A | Orbit (Mike Bryant) A section |
 
-Select a preset from the desktop app or specify the progression name when running batch/export scripts.
+**Selecting a template:** In the desktop app, choose "Use preset progression" and pick a template from the Progression dropdown. The generator produces 40 candidates and exports the top 3.
+
+**Adding custom templates:** Edit `engines/jimmy-wyble-engine/templates/templateLibrary.ts` and add a new entry to `TEMPLATE_LIBRARY`. Add the template id to `TEMPLATE_ORDER` to include it in the desktop selector.
 
 ---
 
@@ -56,7 +67,7 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 
 1. Launch the Wyble Etude Generator (Electron app).
 2. Choose **Input**: "Use preset progression" or "Import MusicXML".
-3. If preset: select progression (ii_v_i, jazz_cycle, blues_basic).
+3. If preset: select a template from the Progression dropdown (e.g. ii_V_I_major, beatrice_A, orbit_A).
 4. If MusicXML: click "Select MusicXML file..." and choose a supported file.
 5. Select **Practice mode** (etude, exercise, improvisation).
 6. Click **Generate Etudes** — one click generates 40 candidates internally, scores them, and exports the top 3 to a timestamped run folder.

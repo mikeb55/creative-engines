@@ -26,7 +26,7 @@ inputModeSelect.addEventListener('change', () => {
   presetRow.style.display = usePreset ? 'flex' : 'none';
   musicxmlRow.style.display = usePreset ? 'none' : 'flex';
   if (usePreset) selectedMusicXmlPath = null;
-  musicxmlFileName.textContent = selectedMusicXmlPath ? path.basename(selectedMusicXmlPath) : '';
+  musicxmlFileName.textContent = selectedMusicXmlPath ? selectedMusicXmlPath.split(/[/\\]/).pop() : '';
 });
 
 pickMusicXmlBtn.addEventListener('click', async () => {

@@ -17,6 +17,7 @@ import { generateWybleEtude } from './wybleEngine';
 import { evaluateWybleStudy } from './wybleAutoTest';
 import { exportToMusicXML } from './wybleMusicXMLExporter';
 import { parseMusicXMLToProgression } from './import/parseMusicXMLToProgression';
+import { getTemplate } from './templates/templateLibrary';
 import type { WybleParameters, HarmonicContext } from './wybleTypes';
 import type { WybleEtudeResult } from './wybleEtudeGenerator';
 
@@ -113,11 +114,18 @@ function main(): DesktopResult {
     bars = parseResult.totalBars;
     progressionName = path.basename(arg2);
   } else {
-    const progressionFile = PROGRESSION_FILES[arg2] || 'ii_v_i.json';
-    const progressionPath = path.join(rootDir, 'progressions', progressionFile);
-    progression = loadProgression(progressionPath);
-    bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
-    progressionName = arg2;
+    const template = getTemplate(arg2);
+    if (template) {
+      progression = template.progression;
+      bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
+      progressionName = arg2;
+    } else {
+      const progressionFile = PROGRESSION_FILES[arg2] || 'ii_v_i.json';
+      const progressionPath = path.join(rootDir, 'progressions', progressionFile);
+      progression = loadProgression(progressionPath);
+      bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
+      progressionName = arg2;
+    }
   }
 
   const harmonicContext = progressionToHarmonicContext(progression);
