@@ -1,0 +1,17 @@
+{
+  "name": "jimmy-wyble-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npx ts-node --project tsconfig.json wybleAutoTest.ts",
+    "validate": "npm run test",
+    "test:guitar": "npx ts-node --project tsconfig.json wybleGuitarTest.ts",
+    "example": "npx ts-node runWybleExample.ts",
+    "etude": "npx ts-node runWybleEtudeExample.ts",
+    "export": "npx ts-node exportWybleExample.ts",
+    "batch": "npx ts-node generateWybleBatch.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
