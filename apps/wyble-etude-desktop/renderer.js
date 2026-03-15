@@ -14,6 +14,7 @@ const pickMusicXmlBtn = document.getElementById('pickMusicXml');
 const musicxmlFileName = document.getElementById('musicxmlFileName');
 
 let selectedMusicXmlPath = null;
+let lastRunFolderPath = null;
 
 function setStatus(text, isEmpty = false) {
   statusEl.textContent = text;
@@ -59,11 +60,14 @@ generateBtn.addEventListener('click', async () => {
     if (result.error) {
       setStatus('MusicXML error: ' + result.error + '\n\nV1 requires: explicit chord symbols, 4/4, linear form.', false);
     } else {
+      lastRunFolderPath = result.runFolderPath || null;
+      const progLabel = result.progressionName || progression;
       setStatus(
         `Generation complete.\n` +
-        `Studies generated: ${result.generated}\n` +
-        `Studies exported (GCE ≥ 9): ${result.exported}\n` +
-        `Output: outputs/wyble/desktop/`,
+        `Progression: ${progLabel} | Mode: ${result.practiceMode || practiceMode}\n` +
+        `Candidates generated: ${result.generated} | Exported: ${result.exported}\n` +
+        `Scores: avg ${result.avgScore?.toFixed(2) || '—'} | best ${result.bestScore?.toFixed(2) || '—'}\n` +
+        `Top ${result.exported} etudes exported to:\n${result.runFolderPath || 'outputs/wyble/desktop/'}`,
         false
       );
     }
@@ -76,7 +80,7 @@ generateBtn.addEventListener('click', async () => {
 
 openFolderBtn.addEventListener('click', async () => {
   try {
-    await window.wyble.openOutputFolder();
+    await window.wyble.openOutputFolder(lastRunFolderPath);
   } catch (err) {
     setStatus('Error opening folder: ' + (err.message || String(err)), false);
   }

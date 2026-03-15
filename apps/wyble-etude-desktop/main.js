@@ -78,10 +78,14 @@ ipcMain.handle('generate-etudes', async (event, progressionName, practiceMode, m
   });
 });
 
-ipcMain.handle('open-output-folder', async () => {
+ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
-  const outDir = path.join(rootDir, 'outputs', 'wyble', 'desktop');
-  fs.mkdirSync(outDir, { recursive: true });
-  shell.openPath(outDir);
+  const desktopOutDir = path.join(rootDir, 'outputs', 'wyble', 'desktop');
+  fs.mkdirSync(desktopOutDir, { recursive: true });
+  if (folderPath && fs.existsSync(folderPath)) {
+    shell.openPath(folderPath);
+  } else {
+    shell.openPath(desktopOutDir);
+  }
 });

@@ -5,15 +5,19 @@ Windows desktop launcher for the Wyble two-line guitar etude generator. Double-c
 ## Usage
 
 1. **Launch:** Run `npm start` or double-click the desktop shortcut (after running `npm run shortcut`).
-2. **Generate Etudes:** Click "Generate Etudes" to create 10 studies (GCE ≥ 9).
-3. **Open Output:** Click "Open Output Folder" to view exported MusicXML files.
+2. **Generate Etudes:** Click "Generate Etudes" — one click generates 40 candidates internally, scores them, and exports the top 3.
+3. **Open Output:** Click "Open Latest Output Folder" to open the run folder containing the exported etudes.
 
 ## Output
 
-Files are saved to `outputs/wyble/desktop/`:
-- wyble_etude_01.musicxml
-- wyble_etude_02.musicxml
-- ...
+Each run creates a timestamped folder under `outputs/wyble/desktop/` (e.g. `2026-03-15_1930_run01/`):
+
+- `wyble_etude_GCE9.21_rank01.musicxml` — filenames include GCE score and rank
+- `wyble_etude_GCE9.18_rank02.musicxml`
+- `wyble_etude_GCE9.14_rank03.musicxml`
+- `run_summary.md` — generation settings, candidate scores, exported files
+
+The root `outputs/wyble/desktop/` contains only run folders (no flat dump of many files).
 
 ## Requirements
 

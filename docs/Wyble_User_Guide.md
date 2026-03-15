@@ -45,7 +45,7 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 
 | Location | Contents |
 |----------|----------|
-| `outputs/wyble/desktop/` | Desktop app exports |
+| `outputs/wyble/desktop/` | Desktop app run folders (e.g. `2026-03-15_1930_run01/`) — each run exports top 3 etudes |
 | `outputs/wyble/etudes/` | Batch generator exports (GCE ≥ 9) |
 | `outputs/wyble/refined/` | Top 5 from auto-test run |
 | `outputs/wyble/imported/` | Top 5 from MusicXML-imported progressions |
@@ -59,9 +59,8 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 3. If preset: select progression (ii_v_i, jazz_cycle, blues_basic).
 4. If MusicXML: click "Select MusicXML file..." and choose a supported file.
 5. Select **Practice mode** (etude, exercise, improvisation).
-6. Click **Generate Etudes**.
-7. Studies scoring GCE ≥ 9 are exported to `outputs/wyble/desktop/`.
-8. Click **Open Output Folder** to view results.
+6. Click **Generate Etudes** — one click generates 40 candidates internally, scores them, and exports the top 3 to a timestamped run folder.
+7. Click **Open Latest Output Folder** to open the run folder containing the exported etudes and `run_summary.md`.
 
 ---
 
@@ -73,7 +72,7 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 | "Unsupported time signature" | V1 requires 4/4 only. Convert or simplify your file. |
 | "Repeats/coda/D.S./D.C. not supported" | Use a linear (unfolded) version of the score. |
 | "Please select a MusicXML file first" | In Import MusicXML mode, click "Select MusicXML file..." before generating. |
-| Few or no studies exported | Generation is stochastic. Studies below GCE 9 are not exported. Try again or adjust practice mode. |
+| Few or no studies exported | The app exports the best available (top 3 by default). If fewer than 3 meet GCE ≥ 9, the best available are still exported and marked in `run_summary.md`. |
 
 ---
 
