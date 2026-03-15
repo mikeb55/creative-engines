@@ -68,12 +68,23 @@
 <body>
   <h1>Wyble Etude Generator</h1>
   <div class="control-row">
+    <label>Input:</label>
+    <select id="inputMode">
+      <option value="preset">Use preset progression</option>
+      <option value="musicxml">Import MusicXML</option>
+    </select>
+  </div>
+  <div class="control-row" id="presetRow">
     <label for="progression">Progression:</label>
     <select id="progression">
       <option value="ii_v_i">ii_v_i</option>
       <option value="jazz_cycle">jazz_cycle</option>
       <option value="blues_basic">blues_basic</option>
     </select>
+  </div>
+  <div class="control-row" id="musicxmlRow" style="display:none">
+    <button id="pickMusicXml" class="secondary">Select MusicXML file...</button>
+    <span id="musicxmlFileName" style="font-size:12px;color:#888"></span>
   </div>
   <div class="control-row">
     <label for="practiceMode">Practice mode:</label>

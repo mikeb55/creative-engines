@@ -1,7 +1,8 @@
 /**
  * Wyble Desktop Generator — Run by Electron app
  * Generates etudes, keeps GCE ≥ 9, exports to outputs/wyble/desktop/
- * Accepts progression name via argv[2]: ii_v_i | jazz_cycle | blues_basic
+ * Accepts: argv[2] = preset name (ii_v_i | jazz_cycle | blues_basic) OR path to MusicXML file
+ *          argv[3] = practice mode
  * Outputs JSON result to stdout for IPC.
  */
 
@@ -10,6 +11,7 @@ import * as path from 'path';
 import { generateWybleEtude } from './wybleEngine';
 import { evaluateWybleStudy } from './wybleAutoTest';
 import { exportToMusicXML } from './wybleMusicXMLExporter';
+import { parseMusicXMLToProgression } from './import/parseMusicXMLToProgression';
 import type { WybleParameters, HarmonicContext } from './wybleTypes';
 import type { WybleEtudeResult } from './wybleEtudeGenerator';
 
@@ -31,10 +33,10 @@ function loadProgression(filePath: string): ProgressionSegment[] {
 
 function progressionToHarmonicContext(progression: ProgressionSegment[]): HarmonicContext {
   const chords = progression.map(({ chord, bars }) => {
-    const match = chord.match(/^([A-G][#b]?)(maj7|min7|m7|7|m|dom7)?/i);
+    const match = chord.match(/^([A-G][#b]?)(maj7|min7|m7|7|m|dom7|m7b5)?/i);
     if (!match) return { root: 'C', quality: 'maj', bars };
     let q = (match[2] ?? 'maj').toLowerCase();
-    if (q === 'm7' || q === 'min7') q = 'min';
+    if (q === 'm7' || q === 'min7' || q === 'm7b5') q = 'min';
     if (q === '7' || q === 'dom7') q = 'dom';
     if (q === 'maj7') q = 'maj';
     return { root: match[1], quality: q, bars };
@@ -42,23 +44,37 @@ function progressionToHarmonicContext(progression: ProgressionSegment[]): Harmon
   return { chords, key: 'C' };
 }
 
-function main() {
+function main(): { generated: number; exported: number; outputDir: string; error?: string } {
   const BATCH_SIZE = 10;
   const GCE_THRESHOLD = 9.0;
-  const progressionName = process.argv[2] || 'ii_v_i';
+  const arg2 = process.argv[2] || 'ii_v_i';
   const practiceMode = (process.argv[3] || 'etude') as 'etude' | 'exercise' | 'improvisation';
-  const progressionFile = PROGRESSION_FILES[progressionName] || 'ii_v_i.json';
 
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const progressionPath = path.join(rootDir, 'progressions', progressionFile);
   const outDir = path.join(rootDir, 'outputs', 'wyble', 'desktop');
-
-  const progression = loadProgression(progressionPath);
-  const harmonicContext = progressionToHarmonicContext(progression);
-  const bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
-
   fs.mkdirSync(outDir, { recursive: true });
+
+  let progression: ProgressionSegment[];
+  let bars: number;
+
+  const isMusicXML = /\.(xml|musicxml)$/i.test(arg2) && fs.existsSync(arg2);
+  if (isMusicXML) {
+    const xml = fs.readFileSync(arg2, 'utf-8');
+    const parseResult = parseMusicXMLToProgression(xml);
+    if (!parseResult.success) {
+      return { generated: 0, exported: 0, outputDir: outDir, error: parseResult.error };
+    }
+    progression = parseResult.progression;
+    bars = parseResult.totalBars;
+  } else {
+    const progressionFile = PROGRESSION_FILES[arg2] || 'ii_v_i.json';
+    const progressionPath = path.join(rootDir, 'progressions', progressionFile);
+    progression = loadProgression(progressionPath);
+    bars = progression.reduce((sum, seg) => sum + seg.bars, 0);
+  }
+
+  const harmonicContext = progressionToHarmonicContext(progression);
 
   const params: WybleParameters = {
     harmonicContext,
@@ -100,5 +116,10 @@ function main() {
   };
 }
 
-const result = main();
-console.log(JSON.stringify(result));
+try {
+  const result = main();
+  console.log(JSON.stringify(result));
+} catch (e) {
+  console.log(JSON.stringify({ generated: 0, exported: 0, outputDir: '', error: String(e) }));
+  process.exit(1);
+}

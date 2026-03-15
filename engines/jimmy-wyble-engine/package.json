@@ -9,7 +9,9 @@
     "etude": "npx ts-node runWybleEtudeExample.ts",
     "export": "npx ts-node exportWybleExample.ts",
     "batch": "npx ts-node generateWybleBatch.ts",
-    "wyble:batch": "npx ts-node --project tsconfig.json generateWybleBatch.ts"
+    "wyble:batch": "npx ts-node --project tsconfig.json generateWybleBatch.ts",
+    "wyble:test-import": "npx ts-node --project tsconfig.json import/testMusicXMLImport.ts && npx ts-node --project tsconfig.json import/testMusicXMLValidation.ts && npx ts-node --project tsconfig.json import/testMusicXMLToWybleIntegration.ts",
+    "wyble:test-all": "npm run test && npm run wyble:test-import"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
