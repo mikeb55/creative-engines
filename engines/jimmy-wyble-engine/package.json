@@ -11,7 +11,8 @@
     "batch": "npx ts-node generateWybleBatch.ts",
     "wyble:batch": "npx ts-node --project tsconfig.json generateWybleBatch.ts",
     "wyble:test-import": "npx ts-node --project tsconfig.json import/testMusicXMLImport.ts && npx ts-node --project tsconfig.json import/testMusicXMLValidation.ts && npx ts-node --project tsconfig.json import/testMusicXMLToWybleIntegration.ts",
-    "wyble:test-all": "npm run test && npm run wyble:test-import"
+    "wyble:test-all": "npm run test && npm run wyble:test-import",
+    "wyble:test-templates": "npx ts-node --project tsconfig.json testTemplateIntegration.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
