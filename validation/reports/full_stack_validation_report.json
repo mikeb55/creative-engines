@@ -1,0 +1,2017 @@
+{
+  "runs": 100,
+  "failures": 0,
+  "averageScore": 9.240000000000007,
+  "bestScore": 9.440000000000001,
+  "worstScore": 9.040000000000001,
+  "engineTimings": {
+    "architecture": 0.01,
+    "ellington": 0.02,
+    "arrangerAssist": 0.02,
+    "selective": 0.01,
+    "musicXml": 0.13
+  },
+  "results": [
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610751275,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 1,
+        "arrangerAssist": 1,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610751296,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610751369,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 1,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610751359,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610751369,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610751436,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610751453,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610751526,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610751515,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610751525,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610751592,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610751609,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610751682,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610751671,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610751681,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610751748,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610751765,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610751838,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610751827,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610751837,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610751904,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610751921,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610751994,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610751983,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610751993,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752059,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752077,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752151,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752140,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752151,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752217,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752234,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752307,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752296,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752307,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752373,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752390,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752463,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752452,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 1,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752463,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752529,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752546,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752619,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752609,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752619,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752685,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752702,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752775,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752765,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752775,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752841,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610752858,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610752931,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610752920,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 1,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610752931,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610752997,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753014,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753087,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753076,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753087,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753153,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753170,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753243,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753232,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753244,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 1,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753311,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753328,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753401,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753390,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753401,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753467,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753484,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753557,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753546,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753556,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753623,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753640,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753713,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753702,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753712,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753779,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753796,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610753869,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610753858,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610753868,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610753935,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610753952,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610754025,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610754014,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610754024,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610754091,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610754108,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610754181,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610754170,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610754180,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "ii_V_I_major",
+      "seed": 1773610754246,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "jazz_blues",
+      "seed": 1773610754264,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 9,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "rhythm_changes_A",
+      "seed": 1773610754337,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 8,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "beatrice_A",
+      "seed": 1773610754326,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 0
+      }
+    },
+    {
+      "progressionId": "orbit_A",
+      "seed": 1773610754336,
+      "success": true,
+      "musicXml": "[truncated]",
+      "scores": {
+        "architectureQuality": 10,
+        "orchestrationPlausibility": 7.2,
+        "arrangerUsefulness": 10,
+        "noteGenerationPlausibility": 10,
+        "musicXmlValidity": 10
+      },
+      "timings": {
+        "architecture": 0,
+        "ellington": 0,
+        "arrangerAssist": 0,
+        "selective": 0,
+        "musicXml": 1
+      }
+    }
+  ],
+  "generatedAt": "2026-03-15T21:39:11.222Z"
+}
