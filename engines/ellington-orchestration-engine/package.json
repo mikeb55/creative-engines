@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "scripts": {
     "example": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json runEllingtonExample.ts",
-    "test": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonAutoTest.ts"
+    "test": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonAutoTest.ts",
+    "verify": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonVerificationTest.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
