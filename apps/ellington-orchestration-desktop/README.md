@@ -12,9 +12,9 @@ Windows desktop launcher for the Ellington orchestration engine. Generates secti
 
 ## Arrangement Modes
 
-- **Classic** — Saxes often lead, brass answers, moderate density
-- **Ballad** — Reeds/pads favored, sparse brass, lower density
-- **Shout** — Brass-forward, stronger tutti, higher density
+- **Classic** — Saxes lead 2–4 bar spans, brass answers in short punctuations
+- **Ballad** — Reeds/trombone pads persist, sparse brass, more release
+- **Shout** — Brass-forward, stronger tutti, short setup + intensification
 
 ## Usage
 

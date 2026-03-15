@@ -1,8 +1,8 @@
 /**
  * Ellington Real-World Auto Test
- * 120+ plans across 5 templates × 3 modes.
- * Evaluates: section-role clarity, density contour, brass/reed contrast,
- * background support, orchestration variety, mode differentiation, plausibility.
+ * 150+ plans across 5 templates × 3 modes.
+ * Evaluates: phrase coherence, role persistence, mode authenticity,
+ * density arc, brass/reed contrast, background discipline, orchestration variety.
  */
 
 import * as fs from 'fs';
@@ -15,11 +15,36 @@ import { generateEllingtonOrchestration } from './ellingtonEngine';
 
 const TEMPLATE_IDS = ['ii_V_I_major', 'jazz_blues', 'rhythm_changes_A', 'beatrice_A', 'orbit_A'];
 const MODES: ArrangementMode[] = ['classic', 'ballad', 'shout'];
-const TARGET_AVG = 8.8;
+const TARGET_AVG = 8.9;
 const EXPORT_TEMPLATES = ['beatrice_A', 'orbit_A'];
-const PLANS_PER_COMBO = 8;
+const PLANS_PER_COMBO = 10;
 
-function scoreSectionRoleClarity(plan: OrchestrationPlan): number {
+function scorePhraseCoherence(plan: OrchestrationPlan): number {
+  if (!plan.phrasePlans || plan.phrasePlans.length === 0) return 7;
+  let s = 8;
+  for (const p of plan.phrasePlans) {
+    if (p.span >= 2) s += 0.05;
+    if (['setup', 'response', 'intensification', 'release'].includes(p.phraseType)) s += 0.02;
+  }
+  return Math.min(10, s);
+}
+
+function scoreRolePersistence(plan: OrchestrationPlan): number {
+  let leadChanges = 0;
+  let supportChanges = 0;
+  for (let i = 1; i < plan.bars.length; i++) {
+    if (plan.bars[i].leadSection !== plan.bars[i - 1].leadSection) leadChanges++;
+    if (plan.bars[i].supportSection !== plan.bars[i - 1].supportSection) supportChanges++;
+  }
+  const maxAcceptableLead = Math.ceil(plan.bars.length / 4);
+  const maxAcceptableSupport = Math.ceil(plan.bars.length / 3);
+  let s = 10;
+  if (leadChanges > maxAcceptableLead) s -= (leadChanges - maxAcceptableLead) * 0.3;
+  if (supportChanges > maxAcceptableSupport) s -= (supportChanges - maxAcceptableSupport) * 0.2;
+  return Math.max(0, Math.min(10, s));
+}
+
+function scoreSectionClarity(plan: OrchestrationPlan): number {
   let s = 10;
   for (const b of plan.bars) {
     if (!b.tutti && b.leadSection === b.supportSection) s -= 0.5;
@@ -33,58 +58,70 @@ function scoreDensityContour(plan: OrchestrationPlan): number {
   );
   let changes = 0;
   for (let i = 1; i < levels.length; i++) if (levels[i] !== levels[i - 1]) changes++;
-  return Math.min(10, 6 + Math.min(changes / 2, 4));
+  const hasArc = levels.some((d) => d >= 3) || (levels[0] <= 2 && levels[levels.length - 1] >= 2);
+  let s = hasArc ? 7 : 5;
+  s += Math.min(changes / 3, 3);
+  return Math.min(10, s);
 }
 
 function scoreBrassReedContrast(plan: OrchestrationPlan): number {
   const modes = new Set(plan.bars.map((b) => b.contrastMode));
   const callResp = plan.bars.filter((b) => b.callResponse !== 'none').length;
-  return Math.min(10, 6 + modes.size * 0.5 + (callResp > 0 ? 1.5 : 0));
+  const hasContrast = plan.bars.some((b, i) => i > 0 && b.leadSection !== plan.bars[i - 1].leadSection);
+  return Math.min(10, 6 + modes.size * 0.4 + (callResp > 0 ? 1 : 0) + (hasContrast ? 1 : 0));
 }
 
-function scoreBackgroundSupport(plan: OrchestrationPlan): number {
+function scoreBackgroundDiscipline(plan: OrchestrationPlan): number {
   let violations = 0;
   for (const b of plan.bars) {
     if (b.background !== 'none' && b.leadSection === b.supportSection && !b.tutti) violations++;
   }
-  return Math.max(0, 10 - violations * 2);
+  const bgBars = plan.bars.filter((b) => b.background !== 'none').length;
+  const persistent = plan.phrasePlans?.filter((p) => p.background !== 'none').length ?? 0;
+  let s = Math.max(0, 10 - violations * 2);
+  if (persistent > 0 && bgBars > 0) s = Math.min(10, s + 0.5);
+  return s;
 }
 
 function scoreOrchestrationVariety(plan: OrchestrationPlan): number {
   const leads = new Set(plan.bars.map((b) => b.leadSection));
   const supports = new Set(plan.bars.map((b) => b.supportSection));
-  return Math.min(10, 4 + leads.size + supports.size * 0.5);
+  return Math.min(10, 5 + leads.size * 0.5 + supports.size * 0.3);
 }
 
-function scoreModeDifferentiation(plan: OrchestrationPlan, mode: ArrangementMode): number {
+function scoreModeAuthenticity(plan: OrchestrationPlan, mode: ArrangementMode): number {
   const saxLead = plan.bars.filter((b) => b.leadSection === 'saxes').length;
   const trumpetLead = plan.bars.filter((b) => b.leadSection === 'trumpets').length;
   const tromboneLead = plan.bars.filter((b) => b.leadSection === 'trombones').length;
   const tuttiCount = plan.bars.filter((b) => b.tutti).length;
-  if (mode === 'classic' && saxLead >= plan.bars.length * 0.2) return 9;
-  if (mode === 'ballad' && tuttiCount <= plan.bars.length * 0.1) return 9;
-  if (mode === 'shout' && (trumpetLead + tromboneLead) >= plan.bars.length * 0.3) return 9;
+  const brassLead = trumpetLead + tromboneLead;
+  const total = plan.bars.length;
+
+  if (mode === 'classic') {
+    if (saxLead >= total * 0.25 && brassLead >= total * 0.15) return 9;
+    if (saxLead >= total * 0.2) return 8;
+  }
+  if (mode === 'ballad') {
+    if (tuttiCount <= total * 0.08 && saxLead + tromboneLead >= total * 0.4) return 9;
+    if (tuttiCount <= total * 0.12) return 8;
+  }
+  if (mode === 'shout') {
+    if (brassLead >= total * 0.35 && tuttiCount >= total * 0.1) return 9;
+    if (brassLead >= total * 0.25) return 8;
+  }
   return 7;
 }
 
-function scorePlausibility(plan: OrchestrationPlan): number {
-  const densities = plan.bars.map((b) =>
-    b.density === 'sparse' ? 1 : b.density === 'medium' ? 2 : b.density === 'dense' ? 3 : 4
-  );
-  const lastThird = densities.slice(-Math.floor(densities.length / 3));
-  const hasBuild = lastThird.some((d) => d >= 3) || lastThird.some((d) => d > 1);
-  return hasBuild ? 9 : 7;
-}
-
 function scorePlan(plan: OrchestrationPlan, mode: ArrangementMode): number {
-  const s1 = scoreSectionRoleClarity(plan);
-  const s2 = scoreDensityContour(plan);
-  const s3 = scoreBrassReedContrast(plan);
-  const s4 = scoreBackgroundSupport(plan);
-  const s5 = scoreOrchestrationVariety(plan);
-  const s6 = scoreModeDifferentiation(plan, mode);
-  const s7 = scorePlausibility(plan);
-  return (s1 + s2 + s3 + s4 + s5 + s6 + s7) / 7;
+  const s1 = scorePhraseCoherence(plan);
+  const s2 = scoreRolePersistence(plan);
+  const s3 = scoreSectionClarity(plan);
+  const s4 = scoreDensityContour(plan);
+  const s5 = scoreBrassReedContrast(plan);
+  const s6 = scoreBackgroundDiscipline(plan);
+  const s7 = scoreOrchestrationVariety(plan);
+  const s8 = scoreModeAuthenticity(plan, mode);
+  return (s1 * 1.2 + s2 * 1.2 + s3 + s4 + s5 + s6 + s7 * 0.8 + s8 * 1.2) / 8.2;
 }
 
 function main(): void {
@@ -121,13 +158,21 @@ function main(): void {
   let worstScore = Math.min(...allScores);
 
   let iterations = 0;
-  const maxIter = 5;
+  const maxIter = 6;
+  let tunedParams = {};
   while (avgScore < TARGET_AVG && iterations < maxIter) {
     iterations++;
+    tunedParams = {
+      densityBias: 0.5 + iterations * 0.02,
+      contrastBias: 0.6 + iterations * 0.02,
+      tuttiThreshold: 0.85 - iterations * 0.01,
+    };
     const retryScores: number[] = [];
+    const retryByTemplate: Record<string, { mode: string; plan: OrchestrationPlan; score: number }[]> = {};
     for (const templateId of TEMPLATE_IDS) {
       const template = TEMPLATE_LIBRARY[templateId];
       if (!template) continue;
+      retryByTemplate[templateId] = [];
       for (const mode of MODES) {
         for (let i = 0; i < PLANS_PER_COMBO; i++) {
           const seed = 5000 + iterations * 1000 + templateId.length * 100 + i * 11;
@@ -135,22 +180,25 @@ function main(): void {
             progression: template.segments,
             parameters: {
               arrangementMode: mode,
-              densityBias: 0.45 + iterations * 0.03,
-              contrastBias: 0.6 + iterations * 0.02,
-              tuttiThreshold: 0.88 - iterations * 0.01,
+              ...tunedParams,
+              minLeadPersistence: 2 + (mode === 'ballad' ? 1 : 0),
+              phraseSpan: mode === 'shout' ? 2 : 4,
             },
             seed,
           });
           const score = scorePlan(plan, mode);
           retryScores.push(score);
+          retryByTemplate[templateId].push({ mode, plan, score });
         }
       }
     }
     const retryAvg = retryScores.reduce((a, b) => a + b, 0) / retryScores.length;
-    if (retryAvg <= avgScore) break;
-    avgScore = retryAvg;
-    bestScore = Math.max(...retryScores);
-    worstScore = Math.min(...retryScores);
+    if (retryAvg > avgScore) {
+      avgScore = retryAvg;
+      bestScore = Math.max(...retryScores);
+      worstScore = Math.min(...retryScores);
+      for (const id of TEMPLATE_IDS) resultsByTemplate[id] = retryByTemplate[id] ?? [];
+    }
   }
 
   const now = new Date();
@@ -219,7 +267,7 @@ Top 3 for: ${EXPORT_TEMPLATES.join(', ')}
   console.log('Output:', runPath);
 
   if (avgScore < TARGET_AVG) {
-    console.log('Note: Average below 8.8 target after tuning attempts');
+    console.log('Note: Average below 8.9 target after tuning attempts');
   }
 }
 

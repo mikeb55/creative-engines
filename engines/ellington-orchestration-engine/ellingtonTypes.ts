@@ -8,6 +8,51 @@ export type DensityLevel = 'sparse' | 'medium' | 'dense' | 'tutti';
 
 export type ContrastMode = 'colour' | 'weight' | 'response' | 'combined';
 
+export type PhraseType = 'setup' | 'response' | 'intensification' | 'release' | 'arrival';
+
+export type PhraseSpan = 2 | 4;
+
+export interface PhraseRolePlan {
+  startBar: number;
+  endBar: number;
+  span: number;
+  leadSection: string;
+  supportSection: string;
+  phraseType: PhraseType;
+  densityTarget: DensityLevel;
+  background: string;
+  leadSectionPersistence: number;
+  answerSectionPersistence: number;
+}
+
+export interface PhraseDensityArc {
+  phraseIndex: number;
+  startBar: number;
+  endBar: number;
+  densityTarget: DensityLevel;
+  phraseType: PhraseType;
+}
+
+export interface FormLiteArc {
+  bar: number;
+  phraseType: PhraseType;
+  densityTarget: DensityLevel;
+}
+
+export interface EllingtonParameters {
+  densityBias: number;
+  contrastBias: number;
+  backgroundFigureDensity: number;
+  tuttiThreshold: number;
+  callResponseStrength: number;
+  arrangementMode?: ArrangementMode;
+  phraseSpan?: PhraseSpan;
+  minLeadPersistence?: number;
+  minSupportPersistence?: number;
+  releaseBars?: number;
+  intensificationBars?: number;
+}
+
 export type SectionId =
   | 'saxes'
   | 'trumpets'
@@ -66,18 +111,10 @@ export interface OrchestrationPlan {
   bars: OrchestrationBarPlan[];
   totalBars: number;
   progression: ChordSegment[];
+  phrasePlans?: PhraseRolePlan[];
 }
 
 export type ArrangementMode = 'classic' | 'ballad' | 'shout';
-
-export interface EllingtonParameters {
-  densityBias: number;
-  contrastBias: number;
-  backgroundFigureDensity: number;
-  tuttiThreshold: number;
-  callResponseStrength: number;
-  arrangementMode?: ArrangementMode;
-}
 
 export const DEFAULT_PARAMS: EllingtonParameters = {
   densityBias: 0.5,
@@ -85,6 +122,11 @@ export const DEFAULT_PARAMS: EllingtonParameters = {
   backgroundFigureDensity: 0.4,
   tuttiThreshold: 0.85,
   callResponseStrength: 0.6,
+  phraseSpan: 4,
+  minLeadPersistence: 2,
+  minSupportPersistence: 1,
+  releaseBars: 2,
+  intensificationBars: 2,
 };
 
 export const MODE_PARAMS: Record<ArrangementMode, Partial<EllingtonParameters>> = {
@@ -94,6 +136,11 @@ export const MODE_PARAMS: Record<ArrangementMode, Partial<EllingtonParameters>> 
     backgroundFigureDensity: 0.4,
     tuttiThreshold: 0.85,
     callResponseStrength: 0.6,
+    phraseSpan: 4,
+    minLeadPersistence: 2,
+    minSupportPersistence: 2,
+    releaseBars: 2,
+    intensificationBars: 2,
   },
   ballad: {
     densityBias: 0.3,
@@ -101,6 +148,11 @@ export const MODE_PARAMS: Record<ArrangementMode, Partial<EllingtonParameters>> 
     backgroundFigureDensity: 0.25,
     tuttiThreshold: 0.95,
     callResponseStrength: 0.35,
+    phraseSpan: 4,
+    minLeadPersistence: 3,
+    minSupportPersistence: 3,
+    releaseBars: 3,
+    intensificationBars: 1,
   },
   shout: {
     densityBias: 0.7,
@@ -108,5 +160,10 @@ export const MODE_PARAMS: Record<ArrangementMode, Partial<EllingtonParameters>> 
     backgroundFigureDensity: 0.55,
     tuttiThreshold: 0.75,
     callResponseStrength: 0.7,
+    phraseSpan: 2,
+    minLeadPersistence: 1,
+    minSupportPersistence: 1,
+    releaseBars: 1,
+    intensificationBars: 3,
   },
 };
