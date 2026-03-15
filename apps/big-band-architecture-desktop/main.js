@@ -32,9 +32,6 @@ ipcMain.handle('generate-architecture', async (event, progressionId, style) => {
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
   const engineDir = path.join(rootDir, 'engines', 'big-band-architecture-engine');
-  const outDir = path.join(appDir, 'outputs');
-  fs.mkdirSync(outDir, { recursive: true });
-
   const prog = progressionId || 'ii_V_I_major';
   const styleArg = style || 'standard_swing';
 
@@ -47,7 +44,6 @@ ipcMain.handle('generate-architecture', async (event, progressionId, style) => {
 
     let stdout = '';
     let stderr = '';
-
     child.stdout.on('data', (data) => { stdout += data.toString(); });
     child.stderr.on('data', (data) => { stderr += data.toString(); });
 
@@ -57,30 +53,72 @@ ipcMain.handle('generate-architecture', async (event, progressionId, style) => {
         return;
       }
       try {
-        const result = JSON.parse(stdout.trim());
-        resolve(result);
+        resolve(JSON.parse(stdout.trim()));
       } catch (e) {
         reject(new Error('Invalid output: ' + stdout));
       }
     });
+    child.on('error', reject);
+  });
+});
 
+ipcMain.handle('generate-score-skeleton', async (event, progressionId, style) => {
+  const appDir = __dirname;
+  const rootDir = path.join(appDir, '..', '..');
+  const engineDir = path.join(rootDir, 'engines', 'big-band-architecture-engine');
+  const prog = progressionId || 'ii_V_I_major';
+  const styleArg = style || 'standard_swing';
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'npx',
+      ['ts-node', '--project', 'tsconfig.json', 'scoreDesktopGenerate.ts', prog, styleArg],
+      { cwd: engineDir, shell: true, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr || 'Score export failed'));
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch (e) {
+        reject(new Error('Invalid output: ' + stdout));
+      }
+    });
     child.on('error', reject);
   });
 });
 
 ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const appDir = __dirname;
-  const outDir = path.join(appDir, 'outputs', 'architecture');
-  fs.mkdirSync(outDir, { recursive: true });
   if (folderPath && fs.existsSync(folderPath)) {
     shell.openPath(folderPath);
-  } else {
-    const entries = fs.readdirSync(outDir, { withFileTypes: true });
-    const runFolders = entries
-      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d+_run\d+$/.test(e.name))
-      .map((e) => ({ name: e.name, path: path.join(outDir, e.name) }))
-      .sort((a, b) => b.name.localeCompare(a.name));
-    const target = runFolders.length > 0 ? runFolders[0].path : outDir;
-    shell.openPath(target);
+    return;
   }
+  const archDir = path.join(appDir, 'outputs', 'architecture');
+  const scoreDir = path.join(appDir, 'outputs', 'score');
+  fs.mkdirSync(archDir, { recursive: true });
+  fs.mkdirSync(scoreDir, { recursive: true });
+
+  const collectRunFolders = (dir) => {
+    if (!fs.existsSync(dir)) return [];
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    return entries
+      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d+_run\d+$/.test(e.name))
+      .map((e) => ({ name: e.name, path: path.join(dir, e.name), mtime: fs.statSync(path.join(dir, e.name)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime);
+  };
+
+  const archRuns = collectRunFolders(archDir);
+  const scoreRuns = collectRunFolders(scoreDir);
+  const all = [...archRuns, ...scoreRuns].sort((a, b) => b.mtime - a.mtime);
+  const target = all.length > 0 ? all[0].path : scoreRuns.length > 0 ? scoreDir : archDir;
+  shell.openPath(target);
 });

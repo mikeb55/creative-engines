@@ -4,6 +4,7 @@
 
 const statusEl = document.getElementById('status');
 const generateBtn = document.getElementById('generate');
+const generateScoreBtn = document.getElementById('generateScore');
 const openFolderBtn = document.getElementById('openFolder');
 const progressionSelect = document.getElementById('progression');
 const styleSelect = document.getElementById('style');
@@ -29,10 +30,10 @@ generateBtn.addEventListener('click', async () => {
     } else {
       lastRunFolderPath = result.runFolderPath || null;
       setStatus(
-        `Generation complete.\n` +
+        `Architecture complete.\n` +
         `Progression: ${result.architecture?.progressionTemplate || progressionSelect.value}\n` +
         `Sections: ${result.architecture?.sections?.length || 0}\n` +
-        `Output: ${result.runFolderPath || 'outputs/'}`,
+        `Output: ${result.runFolderPath || 'outputs/architecture/'}`,
         false
       );
     }
@@ -40,6 +41,34 @@ generateBtn.addEventListener('click', async () => {
     setStatus('Error: ' + (err.message || String(err)), false);
   } finally {
     generateBtn.disabled = false;
+  }
+});
+
+generateScoreBtn.addEventListener('click', async () => {
+  generateScoreBtn.disabled = true;
+  setStatus('Generating score skeleton (architecture + Ellington + MusicXML)...', false);
+
+  try {
+    const result = await window.bigBandArch.generateScoreSkeleton(
+      progressionSelect.value,
+      styleSelect.value
+    );
+    if (result.error) {
+      setStatus('Error: ' + result.error, false);
+    } else {
+      lastRunFolderPath = result.runFolderPath || null;
+      setStatus(
+        `Score skeleton complete.\n` +
+        `Progression: ${result.architecture?.progressionTemplate || progressionSelect.value}\n` +
+        `Sections: ${result.architecture?.sections?.length || 0}\n` +
+        `Output: ${result.runFolderPath || 'outputs/score/'}`,
+        false
+      );
+    }
+  } catch (err) {
+    setStatus('Error: ' + (err.message || String(err)), false);
+  } finally {
+    generateScoreBtn.disabled = false;
   }
 });
 
