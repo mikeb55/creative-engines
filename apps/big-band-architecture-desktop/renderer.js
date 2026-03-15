@@ -101,6 +101,33 @@ generateAssistBtn.addEventListener('click', async () => {
   }
 });
 
+function addSelectiveHandler(btnId, targetType) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    setStatus(`Generating ${targetType}...`, false);
+    try {
+      const result = await window.bigBandArch.generateSelectiveMaterial(
+        progressionSelect.value,
+        styleSelect.value,
+        targetType
+      );
+      lastRunFolderPath = result?.runFolderPath || null;
+      setStatus(`Selective material (${targetType}) complete.\nOutput: ${result?.runFolderPath || 'outputs/selective-material/'}`, false);
+    } catch (err) {
+      setStatus('Error: ' + (err.message || String(err)), false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+addSelectiveHandler('genBg', 'background_figures');
+addSelectiveHandler('genBrass', 'brass_punctuation');
+addSelectiveHandler('genSax', 'sax_soli_texture');
+addSelectiveHandler('genShout', 'shout_ramp_material');
+
 openFolderBtn.addEventListener('click', async () => {
   try {
     await window.bigBandArch.openOutputFolder(lastRunFolderPath);

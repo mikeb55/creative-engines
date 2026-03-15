@@ -1,0 +1,12 @@
+{
+  "name": "selective-big-band-generation-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npx ts-node --project tsconfig.json selectiveGenerationValidation.ts",
+    "generate": "npx ts-node --project tsconfig.json selectiveGenerationDesktopGenerate.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}

@@ -96,6 +96,41 @@ ipcMain.handle('generate-score-skeleton', async (event, progressionId, style) =>
   });
 });
 
+ipcMain.handle('generate-selective-material', async (event, progressionId, style, targetType) => {
+  const appDir = __dirname;
+  const rootDir = path.join(appDir, '..', '..');
+  const engineDir = path.join(rootDir, 'engines', 'selective-big-band-generation-engine');
+  const prog = progressionId || 'ii_V_I_major';
+  const styleArg = style || 'standard_swing';
+  const target = targetType || 'background_figures';
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'npx',
+      ['ts-node', '--project', 'tsconfig.json', 'selectiveGenerationDesktopGenerate.ts', prog, styleArg, target],
+      { cwd: engineDir, shell: true, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr || 'Selective material export failed'));
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch (e) {
+        reject(new Error('Invalid output: ' + stdout));
+      }
+    });
+    child.on('error', reject);
+  });
+});
+
 ipcMain.handle('generate-arranger-assist', async (event, progressionId, style) => {
   const appDir = __dirname;
   const rootDir = path.join(appDir, '..', '..');
@@ -139,15 +174,17 @@ ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const archDir = path.join(appDir, 'outputs', 'architecture');
   const scoreDir = path.join(appDir, 'outputs', 'score');
   const assistDir = path.join(appDir, 'outputs', 'arranger-assist');
+  const selectiveDir = path.join(appDir, 'outputs', 'selective-material');
   fs.mkdirSync(archDir, { recursive: true });
   fs.mkdirSync(scoreDir, { recursive: true });
   fs.mkdirSync(assistDir, { recursive: true });
+  fs.mkdirSync(selectiveDir, { recursive: true });
 
   const collectRunFolders = (dir) => {
     if (!fs.existsSync(dir)) return [];
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     return entries
-      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d+_run\d+$/.test(e.name))
+      .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}_\d+(_[a-z_]+)?_run\d+$/.test(e.name))
       .map((e) => ({ name: e.name, path: path.join(dir, e.name), mtime: fs.statSync(path.join(dir, e.name)).mtimeMs }))
       .sort((a, b) => b.mtime - a.mtime);
   };
@@ -155,7 +192,8 @@ ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const archRuns = collectRunFolders(archDir);
   const scoreRuns = collectRunFolders(scoreDir);
   const assistRuns = collectRunFolders(assistDir);
-  const all = [...archRuns, ...scoreRuns, ...assistRuns].sort((a, b) => b.mtime - a.mtime);
-  const target = all.length > 0 ? all[0].path : assistRuns.length > 0 ? assistDir : scoreRuns.length > 0 ? scoreDir : archDir;
+  const selectiveRuns = collectRunFolders(selectiveDir);
+  const all = [...archRuns, ...scoreRuns, ...assistRuns, ...selectiveRuns].sort((a, b) => b.mtime - a.mtime);
+  const target = all.length > 0 ? all[0].path : selectiveRuns.length > 0 ? selectiveDir : assistRuns.length > 0 ? assistDir : scoreRuns.length > 0 ? scoreDir : archDir;
   shell.openPath(target);
 });

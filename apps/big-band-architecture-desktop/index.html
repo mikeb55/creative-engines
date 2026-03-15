@@ -23,7 +23,7 @@
       border: 1px solid #0f3460;
       border-radius: 4px;
     }
-    .buttons { display: flex; gap: 12px; margin-bottom: 20px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
     button {
       padding: 10px 18px;
       font-size: 14px;
@@ -37,6 +37,8 @@
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     button.secondary { background: #16213e; color: #eee; }
     button.secondary:hover { background: #0f3460; }
+    button.selective { background: #0f3460; color: #eee; font-size: 12px; padding: 8px 12px; }
+    button.selective:hover { background: #16213e; }
     #status {
       padding: 12px;
       background: #16213e;
@@ -73,6 +75,10 @@
     <button id="generate">Generate Architecture</button>
     <button id="generateScore">Generate Score Skeleton</button>
     <button id="generateAssist">Generate Arranger Assist</button>
+    <button id="genBg" class="selective">Generate Background Figures</button>
+    <button id="genBrass" class="selective">Generate Brass Punctuation</button>
+    <button id="genSax" class="selective">Generate Sax Soli Texture</button>
+    <button id="genShout" class="selective">Generate Shout Ramp Material</button>
     <button id="openFolder" class="secondary">Open Latest Output Folder</button>
   </div>
   <div id="status" class="empty">Ready. Generates arrangement form structures (intro, head, soli, shout, etc.).</div>
