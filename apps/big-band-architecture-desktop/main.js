@@ -70,7 +70,7 @@ ipcMain.handle('generate-architecture', async (event, progressionId, style) => {
 
 ipcMain.handle('open-output-folder', async (event, folderPath) => {
   const appDir = __dirname;
-  const outDir = path.join(appDir, 'outputs');
+  const outDir = path.join(appDir, 'outputs', 'architecture');
   fs.mkdirSync(outDir, { recursive: true });
   if (folderPath && fs.existsSync(folderPath)) {
     shell.openPath(folderPath);

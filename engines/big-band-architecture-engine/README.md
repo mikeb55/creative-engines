@@ -5,7 +5,7 @@ Generates arrangement form structures (intro, head, soli, shout, etc.) that feed
 ## Architecture Patterns
 
 - **Standard Swing** — Intro, Head A/B, Background, Soli, Shout, Head out, Tag
-- **Ellington Style** — Intro reeds, Head sax, Brass answer, Background, Soli trumpet, Shout brass, Release
+- **Ellington Style** — Intro reeds, Head sax, Brass response, Background reeds, Trumpet soli, Shout chorus, Release reeds
 - **Ballad Form** — Intro pad, Head, Background, Soli, Head reprise, Tag
 
 ## Ellington Integration
@@ -14,4 +14,4 @@ Each architecture section maps to Ellington parameters (lead section, density, a
 
 ## Output
 
-`apps/big-band-architecture-desktop/outputs/` — architecture.json, architecture.md, arrangement_plan.md
+`apps/big-band-architecture-desktop/outputs/architecture/` — architecture.json, architecture.md, arrangement_plan.md, run_summary.md

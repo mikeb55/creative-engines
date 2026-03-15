@@ -6,11 +6,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { generateArchitecture } from './architectureGenerator';
 import type { ArrangementArchitecture, ArrangementSection } from './architectureTypes';
+import { runEllingtonEngine } from '../ellington-orchestration-engine/ellingtonEngine';
 import { TEMPLATE_LIBRARY } from '../ellington-orchestration-engine/templates/templateLibrary';
 
 const TEMPLATE_IDS = ['ii_V_I_major', 'jazz_blues', 'rhythm_changes_A', 'beatrice_A', 'orbit_A'];
 const STYLES = ['standard_swing', 'ellington_style', 'ballad_form'] as const;
-const PLANS_PER_COMBO = 7;
+const PLANS_PER_COMBO = 8;
 const TARGET_AVG = 9;
 
 function validateSections(arch: ArrangementArchitecture): string[] {
@@ -66,7 +67,7 @@ function scoreSectionBalance(arch: ArrangementArchitecture): number {
 
 function scoreContrast(arch: ArrangementArchitecture): number {
   const leads = new Set(arch.sections.map((s) => s.leadSection));
-  const densities = new Set(arch.sections.map((s) => s.densityLevel));
+  const densities = new Set(arch.sections.map((s) => s.density));
   return Math.min(10, 6 + leads.size * 0.5 + densities.size * 0.3);
 }
 
@@ -75,7 +76,45 @@ function scoreVariety(arch: ArrangementArchitecture): number {
   return Math.min(10, 5 + roles.size * 0.6);
 }
 
-function scoreArchitecture(arch: ArrangementArchitecture): number {
+function segmentsForLength(progression: { chord: string; bars: number }[], targetBars: number): { chord: string; bars: number }[] {
+  if (progression.length === 0) return [];
+  const out: { chord: string; bars: number }[] = [];
+  let bars = 0;
+  let i = 0;
+  while (bars < targetBars) {
+    const seg = progression[i % progression.length];
+    const take = Math.min(seg.bars, targetBars - bars);
+    if (take > 0) out.push({ chord: seg.chord, bars: take });
+    bars += take;
+    i++;
+  }
+  return out;
+}
+
+function scoreOrchestrationIntegration(arch: ArrangementArchitecture, progression: { chord: string; bars: number }[]): number {
+  try {
+    let totalBars = 0;
+    for (const section of arch.sections) {
+      const sectionProg = segmentsForLength(progression, section.length);
+      if (sectionProg.length === 0) continue;
+      const plan = runEllingtonEngine({
+        progression: sectionProg,
+        parameters: {
+          arrangementMode:
+            section.leadSection === 'trumpets' || section.leadSection === 'tutti' ? 'shout'
+            : section.density === 'sparse' ? 'ballad' : 'classic',
+        },
+        seed: Date.now() + section.startBar,
+      });
+      if (plan.bars.length > 0) totalBars += plan.bars.length;
+    }
+    return totalBars >= arch.totalBars * 0.8 ? 10 : Math.min(10, (totalBars / arch.totalBars) * 12);
+  } catch {
+    return 0;
+  }
+}
+
+function scoreArchitecture(arch: ArrangementArchitecture, progression?: { chord: string; bars: number }[]): number {
   const v1 = validateSections(arch);
   const v2 = validateNoOverlap(arch);
   const v3 = validateIntroBeforeHead(arch);
@@ -85,7 +124,8 @@ function scoreArchitecture(arch: ArrangementArchitecture): number {
   const s2 = scoreSectionBalance(arch);
   const s3 = scoreContrast(arch);
   const s4 = scoreVariety(arch);
-  let s = (s1 + s2 + s3 + s4) / 4;
+  const s5 = progression ? scoreOrchestrationIntegration(arch, progression) : 10;
+  let s = (s1 + s2 + s3 + s4 + s5) / 5;
   if (v3.length) s -= 1;
   if (v4.length) s -= 0.5;
   s = Math.min(10, s + 0.65);
@@ -95,7 +135,7 @@ function scoreArchitecture(arch: ArrangementArchitecture): number {
 function main(): void {
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const outDir = path.join(rootDir, 'apps', 'big-band-architecture-desktop', 'outputs');
+  const outDir = path.join(rootDir, 'apps', 'big-band-architecture-desktop', 'outputs', 'architecture');
   fs.mkdirSync(outDir, { recursive: true });
 
   let allScores: number[] = [];
@@ -109,7 +149,7 @@ function main(): void {
           style,
           seed: Date.now() + templateId.length * 100 + i * 13,
         });
-        const score = scoreArchitecture(arch);
+        const score = scoreArchitecture(arch, template.segments);
         allScores.push(score);
       }
     }
@@ -132,7 +172,7 @@ function main(): void {
             style,
             seed: 10000 + iter * 2000 + templateId.length * 50 + i * 17,
           });
-          retryScores.push(scoreArchitecture(arch));
+          retryScores.push(scoreArchitecture(arch, template.segments));
         }
       }
     }

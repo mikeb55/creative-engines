@@ -12,7 +12,7 @@ export type SectionRole =
   | 'tag'
   | 'outro';
 
-export type LeadSection = 'saxes' | 'trumpets' | 'trombones' | 'reeds' | 'brass' | 'full';
+export type LeadSection = 'saxes' | 'trumpets' | 'trombones' | 'rhythm' | 'tutti';
 
 export type DensityLevel = 'sparse' | 'medium' | 'dense' | 'tutti';
 
@@ -27,7 +27,7 @@ export interface ArrangementSection {
   startBar: number;
   length: number;
   leadSection: LeadSection;
-  densityLevel: DensityLevel;
+  density: DensityLevel;
   notes: string;
 }
 
