@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine",
+    "test": "npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine",
     "test:fullstack": "npx ts-node --project tsconfig.json validation/full-stack/fullStackValidation.ts"
   },
   "devDependencies": {

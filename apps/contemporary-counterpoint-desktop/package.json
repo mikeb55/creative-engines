@@ -1,0 +1,13 @@
+{
+  "name": "contemporary-counterpoint-desktop",
+  "version": "0.1.0",
+  "description": "Contemporary Counterpoint Generator - Desktop Launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "shortcut": "node createShortcut.js"
+  },
+  "dependencies": {
+    "electron": "^28.0.0"
+  }
+}
