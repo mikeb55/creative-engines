@@ -136,3 +136,16 @@ def test_messiaen_colour_interface():
     assert compiled.sections
     xml = eng.export_musicxml(compiled)
     assert "<score-partwise" in xml
+
+
+def test_big_band_interface():
+    ensure_engines_loaded()
+    eng = get_engine("big_band")
+    ir = eng.generate_ir("Sectional Opener", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml
