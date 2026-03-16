@@ -164,6 +164,30 @@ PRESETS: Dict[str, StudioPreset] = {
         population_size=8,
         finalist_count=3,
     ),
+    "big_band": StudioPreset(
+        name="big_band",
+        engine_mode="single",
+        melody_engine="big_band",
+        export_mode="composition",
+        population_size=8,
+        finalist_count=3,
+    ),
+    "shorter_form": StudioPreset(
+        name="shorter_form",
+        engine_mode="single",
+        melody_engine="shorter_form",
+        export_mode="composition",
+        population_size=8,
+        finalist_count=3,
+    ),
+    "ligeti_texture": StudioPreset(
+        name="ligeti_texture",
+        engine_mode="single",
+        melody_engine="ligeti_texture",
+        export_mode="composition",
+        population_size=8,
+        finalist_count=3,
+    ),
 }
 
 
