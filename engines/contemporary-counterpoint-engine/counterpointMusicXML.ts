@@ -58,8 +58,14 @@ export function exportCounterpointToMusicXML(out: CounterpointOutput, title = 'C
 
   const partIds = out.lines.map((_, i) => `P${i + 1}`);
   const partList = partIds.map((id, i) => `<score-part id="${id}"><part-name>Voice ${i + 1}</part-name></score-part>`).join('\n      ');
+  const firstMeasureAttrs = `        <attributes>
+          <divisions>${DIVISIONS}</divisions>
+          <key><fifths>0</fifths></key>
+          <time><beats>4</beats><beat-type>4</beat-type></time>
+          <clef><sign>G</sign><line>2</line></clef>
+        </attributes>\n`;
   const partContent = parts.map((p, i) =>
-    `    <part id="${partIds[i]}">\n      <measure number="1">\n${p}      </measure>\n    </part>`
+    `    <part id="${partIds[i]}">\n      <measure number="1">\n${firstMeasureAttrs}${p}      </measure>\n    </part>`
   ).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>

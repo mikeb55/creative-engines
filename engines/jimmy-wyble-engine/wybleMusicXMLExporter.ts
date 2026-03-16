@@ -96,6 +96,7 @@ function measureToXml(
         <beats>4</beats>
         <beat-type>4</beat-type>
       </time>
+      <staves>2</staves>
       <clef number="1">
         <sign>G</sign>
         <line>2</line>
