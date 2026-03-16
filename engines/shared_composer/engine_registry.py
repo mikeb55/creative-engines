@@ -31,16 +31,27 @@ def list_engines() -> List[str]:
     return list(_ENGINES.keys())
 
 
+_ENGINE_CONFLICT_MODULES = (
+    "compiled_composition_types", "section_compiler", "composer_ir", "composer_ir_validator",
+    "harmonic_fields", "interval_language", "motif_development", "musicxml_exporter",
+    "generator", "example_compositions",
+)
+
+
 def _load_engine_from_path(engine_dir: str, adapter_module: str, engine_class: str, reg_name: str) -> None:
     """Load engine adapter from directory and register."""
     base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(base, engine_dir, adapter_module + ".py")
     if not os.path.exists(path):
         return
+    for m in _ENGINE_CONFLICT_MODULES:
+        sys.modules.pop(m, None)
     if base not in sys.path:
         sys.path.insert(0, base)
-    if os.path.dirname(path) not in sys.path:
-        sys.path.insert(0, os.path.dirname(path))
+    engine_path = os.path.dirname(path)
+    if engine_path in sys.path:
+        sys.path.remove(engine_path)
+    sys.path.insert(0, engine_path)
     spec = importlib.util.spec_from_file_location(adapter_module, path)
     if spec and spec.loader:
         mod = importlib.util.module_from_spec(spec)

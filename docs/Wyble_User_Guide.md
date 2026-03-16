@@ -56,7 +56,6 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 
 | Location | Contents |
 |----------|----------|
-| `apps/wyble-etude-desktop/outputs/wyble/` | Desktop app run folders (e.g. `2026-03-15_1930_run01/`) — each run exports top 3 etudes |
 | `outputs/wyble/etudes/` | Batch generator exports (GCE ≥ 9) |
 | `outputs/wyble/refined/` | Top 5 from auto-test run |
 | `outputs/wyble/imported/` | Top 5 from MusicXML-imported progressions |
@@ -65,12 +64,14 @@ Import chord progressions from MusicXML files. The parser extracts explicit chor
 
 ## 6. Desktop App Usage
 
-1. Launch the Wyble Etude Generator (Electron app).
+*Note: The Wyble desktop app has been moved to a separate repository. Use the batch generator or launcher scripts for local runs.*
+
+1. Launch the Wyble Etude Generator (when available from the app repo).
 2. Choose **Input**: "Use preset progression" or "Import MusicXML".
 3. If preset: select a template from the Progression dropdown (e.g. ii_V_I_major, beatrice_A, orbit_A).
 4. If MusicXML: click "Select MusicXML file..." and choose a supported file.
 5. Select **Practice mode** (etude, exercise, improvisation).
-6. Click **Generate Etudes** — one click generates 40 candidates internally, scores them, and exports the top 3 to a timestamped run folder under `apps/wyble-etude-desktop/outputs/wyble/`.
+6. Click **Generate Etudes** — one click generates 40 candidates internally, scores them, and exports the top 3 to a timestamped run folder.
 7. Click **Open Latest Output Folder** to open the run folder (or output root if no run exists) containing the exported etudes and `run_summary.md`.
 
 ---

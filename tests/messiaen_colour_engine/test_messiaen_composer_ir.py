@@ -1,10 +1,5 @@
 """Tests for Messiaen Colour composer IR."""
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines", "messiaen-colour-engine"))
-
 from composer_ir import ComposerIR
 from composer_ir_validator import validate_composer_ir
 

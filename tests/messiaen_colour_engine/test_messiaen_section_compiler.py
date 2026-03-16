@@ -1,10 +1,5 @@
 """Tests for Messiaen Colour section compiler."""
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines", "messiaen-colour-engine"))
-
 from generator import generate_composer_ir_from_title
 from section_compiler import compile_composition_from_ir
 
