@@ -67,6 +67,7 @@ def _register_builtin_engines() -> None:
     _load_engine_from_path("scofield-holland-engine", "engine_adapter", "ScofieldHollandEngine", "scofield_holland")
     _load_engine_from_path("stravinsky-pulse-engine", "engine_adapter", "StravinskyPulseEngine", "stravinsky_pulse")
     _load_engine_from_path("zappa-disruption-engine", "engine_adapter", "ZappaDisruptionEngine", "zappa_disruption")
+    _load_engine_from_path("messiaen-colour-engine", "engine_adapter", "MessiaenColourEngine", "messiaen_colour")
 
 
 def ensure_engines_loaded() -> None:
