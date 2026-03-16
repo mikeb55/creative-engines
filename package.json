@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine",
-    "test:fullstack": "npx ts-node --project tsconfig.json validation/full-stack/fullStackValidation.ts"
+    "test": "npm run test --prefix engines/conductor-engine && npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine",
+    "test:fullstack": "npx ts-node --project tsconfig.json validation/full-stack/fullStackValidation.ts",
+    "start-desktop": "npm run start --prefix apps/conductor-composer-desktop",
+    "generate-tests": "npx ts-node --project tsconfig.json engines/conductor-engine/conductorRealWorldTest.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

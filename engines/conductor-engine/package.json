@@ -1,0 +1,12 @@
+{
+  "name": "conductor-engine",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npx ts-node --project ../../tsconfig.json conductorValidation.ts",
+    "test:realworld": "npx ts-node --project ../../tsconfig.json conductorRealWorldTest.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
