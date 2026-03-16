@@ -149,3 +149,16 @@ def test_big_band_interface():
     assert compiled.sections
     xml = eng.export_musicxml(compiled)
     assert "<score-partwise" in xml
+
+
+def test_ligeti_texture_interface():
+    ensure_engines_loaded()
+    eng = get_engine("ligeti_texture")
+    ir = eng.generate_ir("Cluster Cloud", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml

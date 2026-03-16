@@ -70,6 +70,7 @@ def _register_builtin_engines() -> None:
     _load_engine_from_path("messiaen-colour-engine", "engine_adapter", "MessiaenColourEngine", "messiaen_colour")
     _load_engine_from_path("slonimsky-harmonic-engine", "engine_adapter", "SlonimskyHarmonicEngine", "slonimsky_harmonic")
     _load_engine_from_path("big-band-engine", "engine_adapter", "BigBandEngine", "big_band")
+    _load_engine_from_path("ligeti-texture-engine", "engine_adapter", "LigetiTextureEngine", "ligeti_texture")
 
 
 def ensure_engines_loaded() -> None:
