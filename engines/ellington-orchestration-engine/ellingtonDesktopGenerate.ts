@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateEllingtonScore } from './ellingtonMeasureGenerator';
+import { generateEllingtonScore, INSTRUMENTS } from './ellingtonMeasureGenerator';
 import { exportEllingtonScoreToMusicXML } from './ellingtonScoreExporter';
 import { parseMusicXMLToProgression } from '../jimmy-wyble-engine/import/parseMusicXMLToProgression';
 import { TEMPLATE_LIBRARY } from './templates/templateLibrary';
@@ -97,9 +97,10 @@ function main(): DesktopResult {
     'utf-8'
   );
 
+  const parts = INSTRUMENTS.map((i) => i.id);
   fs.writeFileSync(
     path.join(runPath, 'ellington_plan.json'),
-    JSON.stringify({ measures: score.measures.length, parts: score.parts }, null, 2),
+    JSON.stringify({ measures: score.measures.length, parts }, null, 2),
     'utf-8'
   );
 

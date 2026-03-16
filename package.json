@@ -10,7 +10,8 @@
     "wyble": "node launchers/launch_wyble.js",
     "ellington": "node launchers/launch_ellington.js",
     "big-band": "node launchers/launch_big_band.js",
-    "counterpoint": "node launchers/launch_counterpoint.js"
+    "counterpoint": "node launchers/launch_counterpoint.js",
+    "test:musicxml": "npx ts-node scripts/testMusicXMLGeneration.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
