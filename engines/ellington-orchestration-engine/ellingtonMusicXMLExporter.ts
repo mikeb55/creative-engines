@@ -7,6 +7,26 @@ import type { EllingtonOrchestration } from './ellingtonEngine';
 
 const DIVISIONS = 4;
 
+/** Concert (sounding) MIDI range: [min, max] for practical playability */
+const INSTRUMENT_RANGES: Record<string, [number, number]> = {
+  'Alto Sax 1': [55, 79],   // Bb3 to G5
+  'Alto Sax 2': [55, 79],
+  'Tenor Sax 1': [46, 70],  // Bb2 to Bb4
+  'Tenor Sax 2': [46, 70],
+  'Baritone Sax': [36, 63], // C2 to Eb4
+  'Trumpet 1': [55, 84],    // F#3 to C6
+  'Trumpet 2': [52, 81],    // E3 to A5
+  'Trumpet 3': [48, 76],    // C3 to E5
+  'Trumpet 4': [48, 72],    // C3 to C5
+  'Trombone 1': [41, 70],   // F2 to Bb4
+  'Trombone 2': [38, 67],   // D2 to G4
+  'Trombone 3': [36, 65],   // C2 to F4
+  'Bass Trombone': [34, 58],// Bb1 to Bb3
+  'Piano': [36, 84],        // C2 to C6
+  'Bass': [28, 55],         // E1 to G3
+  'Drums': [0, 0],
+};
+
 const INSTRUMENTS: Array<{
   id: string;
   name: string;
@@ -32,6 +52,12 @@ const INSTRUMENTS: Array<{
   { id: 'P15', name: 'Bass', clef: 'bass', transposition: 0, section: 'rhythm', sectionIndex: 1 },
   { id: 'P16', name: 'Drums', clef: 'percussion', transposition: 0, section: 'rhythm', sectionIndex: 2 },
 ];
+
+function clampToInstrumentRange(concertMidi: number, instName: string): number {
+  const range = INSTRUMENT_RANGES[instName];
+  if (!range || range[0] === 0) return concertMidi;
+  return Math.max(range[0], Math.min(range[1], concertMidi));
+}
 
 function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
   const semitones = ((midi % 12) + 12) % 12;
@@ -215,7 +241,8 @@ ${partList}
         }
       }
       if (pitchForThisInst !== null) {
-        const writtenPitch = inst.transposition !== 0 ? pitchForThisInst + inst.transposition : pitchForThisInst;
+        const clampedConcert = clampToInstrumentRange(pitchForThisInst, inst.name);
+        const writtenPitch = inst.transposition !== 0 ? clampedConcert + inst.transposition : clampedConcert;
         xml += noteToXml(writtenPitch, 4, 1);
       } else {
         xml += restToXml(4, 1);

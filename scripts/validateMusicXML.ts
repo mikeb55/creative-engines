@@ -76,6 +76,18 @@ function main(): { valid: boolean; errors: string[] } {
   // 6. measure structure: at least one measure with duration elements
   if (!/<duration>\d+<\/duration>/.test(xml)) errors.push('No measure durations found');
 
+  // 6b. measure duration sum: each measure should total 16 divisions (4/4)
+  const measureRegex = /<measure\s+number="(\d+)">([\s\S]*?)<\/measure>/g;
+  let mm: RegExpExecArray | null;
+  while ((mm = measureRegex.exec(xml)) !== null) {
+    const content = mm[2];
+    const noteDurations = [...content.matchAll(/<note>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+    const backupDurations = [...content.matchAll(/<backup>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+    const forwardDurations = [...content.matchAll(/<forward>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+    const total = noteDurations.reduce((a, b) => a + b, 0) - backupDurations.reduce((a, b) => a + b, 0) + forwardDurations.reduce((a, b) => a + b, 0);
+    if (total !== 16) errors.push(`Measure ${mm[1]}: duration sum ${total} != 16`);
+  }
+
   // 7. file size > 1KB
   const stats = fs.statSync(filePath);
   if (stats.size < 1024) errors.push(`File size ${stats.size} bytes < 1KB`);
