@@ -11,14 +11,11 @@ set "LOG=%LOGDIR%\counterpoint_%TS%.log"
 
 echo [%date% %time%] Contemporary Counterpoint launcher start >> "%LOG%"
 echo CD_INITIAL: %CD% >> "%LOG%"
-echo PATH: %PATH% >> "%LOG%"
-echo NODE_EXE: %NODE_EXE% >> "%LOG%"
-if not exist "%NODE_EXE%" (echo ERROR: node.exe not found at %NODE_EXE% >> "%LOG%" & goto :fail)
+if not exist "%NODE_EXE%" (echo ERROR: node.exe not found >> "%LOG%" & goto :fail)
 
 cd /d "%REPO%"
 if errorlevel 1 (echo ERROR: Failed to change to repo root. >> "%LOG%" & goto :fail)
 echo CD_AFTER: %CD% >> "%LOG%"
-echo CMD: "%NODE_EXE%" "%REPO%\node_modules\ts-node\dist\bin.js" --project "%REPO%\tsconfig.json" "%REPO%\scripts\run_engine_desktop.ts" contemporary_counterpoint >> "%LOG%"
 
 "%NODE_EXE%" "%REPO%\node_modules\ts-node\dist\bin.js" --project "%REPO%\tsconfig.json" "%REPO%\scripts\run_engine_desktop.ts" contemporary_counterpoint >> "%LOG%" 2>&1
 set "EXIT=%ERRORLEVEL%"
@@ -30,11 +27,14 @@ if %EXIT% neq 0 (
   pause
   exit /b 1
 )
-echo SUCCESS >> "%LOG%"
-type "%LOG%"
-echo.
-echo SUCCESS. Press any key to close.
-pause
+
+REM Open most recent MusicXML in default app (matches Andrew Hill / Wayne Shorter behavior)
+for /f "delims=" %%i in ('dir /b /s /o-d "%REPO%\outputs\counterpoint\*.musicxml" 2^>nul') do (
+  start "" "%%i"
+  goto :opened
+)
+start "" "%REPO%\outputs\counterpoint"
+:opened
 exit /b 0
 
 :fail

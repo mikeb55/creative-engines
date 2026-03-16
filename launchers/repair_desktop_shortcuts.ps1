@@ -44,6 +44,7 @@ foreach ($entry in $Shortcuts.GetEnumerator()) {
     $shortcut.TargetPath = $CmdExe
     $shortcut.Arguments = "/c `"$batPath`""
     $shortcut.WorkingDirectory = $RepoRoot
+    $shortcut.WindowStyle = 7
     $shortcut.Save()
     Write-Host "Created: $($entry.Key).lnk -> cmd.exe /c `"$batPath`""
 }
