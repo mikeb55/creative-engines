@@ -1,9 +1,10 @@
 # Repair Desktop Shortcuts for Creative Engines
-# Deletes duplicates, creates one clean shortcut per app
+# Uses cmd.exe as target for maximum Explorer compatibility (avoids .bat shortcut interpretation issues)
 
 $Desktop = "C:\Users\mike\Desktop"
 $RepoRoot = "C:\Users\mike\Documents\Cursor AI Projects\creative-engines"
 $Launchers = "$RepoRoot\launchers"
+$CmdExe = "C:\Windows\System32\cmd.exe"
 
 # Shortcuts to DELETE (all engine-related duplicates)
 $ToDelete = @(
@@ -16,7 +17,6 @@ $ToDelete = @(
     "Contemporary Counterpoint.lnk"
 )
 
-# Delete duplicates
 foreach ($name in $ToDelete) {
     $path = Join-Path $Desktop $name
     if (Test-Path $path) {
@@ -25,7 +25,8 @@ foreach ($name in $ToDelete) {
     }
 }
 
-# Create new shortcuts: Name -> .bat file
+# Create shortcuts: Target = cmd.exe, Arguments = /c "path\to\bat"
+# This avoids PATH/npx/ts-node issues and .bat shortcut interpretation quirks in Explorer
 $Shortcuts = @{
     "Wyble Etude Generator" = "wyble_etude.bat"
     "Ellington Orchestration" = "ellington_orchestration.bat"
@@ -40,10 +41,11 @@ foreach ($entry in $Shortcuts.GetEnumerator()) {
     $batPath = Join-Path $Launchers $entry.Value
     
     $shortcut = $WshShell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = $batPath
+    $shortcut.TargetPath = $CmdExe
+    $shortcut.Arguments = "/c `"$batPath`""
     $shortcut.WorkingDirectory = $RepoRoot
     $shortcut.Save()
-    Write-Host "Created: $($entry.Key).lnk -> $batPath"
+    Write-Host "Created: $($entry.Key).lnk -> cmd.exe /c `"$batPath`""
 }
 
 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($WshShell) | Out-Null
