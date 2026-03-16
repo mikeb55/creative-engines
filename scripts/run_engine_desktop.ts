@@ -42,10 +42,13 @@ function run_engine(engine_name: string): Promise<void> {
   console.log(`Running ${engine_name}...`);
   console.log(`  Script: ${scriptPath}`);
 
+  const nodeExe = process.execPath;
+  const tsNodeBin = path.join(ROOT, 'node_modules', 'ts-node', 'dist', 'bin.js');
+  const tsconfigPath = path.join(entry.cwd, 'tsconfig.json');
+
   return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['ts-node', '--project', 'tsconfig.json', entry.script], {
+    const child = spawn(nodeExe, [tsNodeBin, '--project', tsconfigPath, entry.script], {
       cwd: entry.cwd,
-      shell: true,
       stdio: 'inherit',
     });
 
