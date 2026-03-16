@@ -59,7 +59,7 @@ function main(): DesktopResult {
 
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const outDir = path.join(rootDir, 'apps', 'contemporary-counterpoint-desktop', 'outputs', 'counterpoint');
+  const outDir = path.join(rootDir, 'outputs', 'counterpoint');
   fs.mkdirSync(outDir, { recursive: true });
 
   let progression: { chord: string; bars: number }[];

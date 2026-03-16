@@ -148,7 +148,7 @@ function main(): DesktopResult {
   const mode = ['classic', 'ballad', 'shout'].includes(arg3) ? arg3 : 'classic';
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const outDir = path.join(rootDir, 'apps', 'ellington-orchestration-desktop', 'outputs', 'ellington');
+  const outDir = path.join(rootDir, 'outputs', 'ellington');
   fs.mkdirSync(outDir, { recursive: true });
 
   let progression: ChordSegment[];

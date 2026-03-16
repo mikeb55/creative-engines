@@ -36,7 +36,7 @@ function main(): { runFolderPath: string; architecture: ArrangementArchitecture;
 
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const outDir = path.join(rootDir, 'apps', 'big-band-architecture-desktop', 'outputs', 'architecture');
+  const outDir = path.join(rootDir, 'outputs', 'architecture');
   fs.mkdirSync(outDir, { recursive: true });
 
   const template = TEMPLATE_LIBRARY[arg] || TEMPLATE_LIBRARY.ii_V_I_major;

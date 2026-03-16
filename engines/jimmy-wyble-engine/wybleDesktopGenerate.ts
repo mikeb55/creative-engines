@@ -92,7 +92,7 @@ function main(): DesktopResult {
 
   const engineDir = __dirname;
   const rootDir = path.join(engineDir, '..', '..');
-  const desktopOutDir = path.join(rootDir, 'apps', 'wyble-etude-desktop', 'outputs', 'wyble');
+  const desktopOutDir = path.join(rootDir, 'outputs', 'wyble');
   fs.mkdirSync(desktopOutDir, { recursive: true });
 
   let progression: ProgressionSegment[];
