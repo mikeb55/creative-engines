@@ -39,13 +39,31 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 ```
 creative-engines/
-├── docs/             # Documentation, consolidation report, repo roles
-├── palettes/         # Tonality Vault, interval cycles, triad pairs, polychords
-├── rules/            # GCE, anti-monotony, ensemble, engraving, structure
-├── runtime/          # Run scripts, desktop icon
+├── engines/          # Composer engines, hybrid, orchestration, songwriting, studio
+│   ├── composer_studio/    # Unified workflow: presets, batch, export
+│   ├── orchestration_bridge/ # Ensemble arrangements (string quartet, jazz, etc.)
+│   ├── songwriting_bridge/  # Lead sheets, vocal melody, chord symbols
+│   ├── hybrid_engine/      # Counterpoint-capable hybrid compositions
+│   └── ... (wayne_shorter, barry_harris, frisell_atmosphere, etc.)
+├── launchers/        # composer_studio_launcher.bat, etc.
+├── docs/             # Documentation
+├── palettes/         # Tonality Vault, interval cycles
+├── rules/            # GCE, anti-monotony, ensemble
+├── runtime/          # Run scripts
 ├── templates/        # Composition request, revision loop
 └── README.md
 ```
+
+## Composer Studio
+
+One integrated workflow: input → engine/hybrid → generate → rank → export (composition, orchestration, lead sheet).
+
+```python
+from composer_studio import run_composer_studio
+result = run_composer_studio("My Tune", "wheeler_lyric", seed=0)
+```
+
+Or double-click `launchers/composer_studio_launcher.bat`.
 
 ---
 
