@@ -1,136 +1,84 @@
 /**
- * Contemporary Counterpoint — MusicXML export with correct measure structure
- * Each measure sums to exactly 4/4 (16 divisions). Notes crossing barlines use ties.
+ * Contemporary Counterpoint — MusicXML export via shared canonical notation timing engine.
  */
 
 import type { CounterpointOutput, CounterpointNote } from './counterpointTypes';
+import { MEASURE_DURATION, DIVISIONS, beatsToDivisions } from '../../shared/notationTimingConstants';
+import { packEventsIntoMeasures, type TimedNoteEvent } from '../../shared/notationTimingEngine';
+import { eventsToMeasureXml } from '../../shared/musicxmlMeasurePacker';
+import { validateMeasureDurations } from '../../shared/musicxmlTimingValidation';
+import * as fs from 'fs';
+import * as path from 'path';
 
-const DIVISIONS = 4;
-const MEASURE_DURATION = 4 * DIVISIONS; // 16 for 4/4
-
-function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
-  const semitones = ((midi % 12) + 12) % 12;
-  const octave = Math.floor(midi / 12) - 1;
-  const stepMap: Record<number, { step: string; alter: number }> = {
-    0: { step: 'C', alter: 0 }, 1: { step: 'C', alter: 1 }, 2: { step: 'D', alter: 0 },
-    3: { step: 'D', alter: 1 }, 4: { step: 'E', alter: 0 }, 5: { step: 'F', alter: 0 },
-    6: { step: 'F', alter: 1 }, 7: { step: 'G', alter: 0 }, 8: { step: 'G', alter: 1 },
-    9: { step: 'A', alter: 0 }, 10: { step: 'A', alter: 1 }, 11: { step: 'B', alter: 0 },
-  };
-  const { step, alter } = stepMap[semitones];
-  return { step, alter, octave };
-}
-
-function durationToType(divs: number): string {
-  if (divs <= 1) return '16th';
-  if (divs <= 2) return 'eighth';
-  if (divs <= 4) return 'quarter';
-  if (divs <= 8) return 'half';
-  return 'whole';
-}
-
-function beatsToDivs(beats: number): number {
-  return Math.round(beats * DIVISIONS);
-}
-
-interface NoteSlice {
-  pitch: number;
-  onsetDiv: number;
-  durationDiv: number;
-  tieStart?: boolean;
-  tieStop?: boolean;
-}
-
-function sliceNotesIntoMeasures(notes: CounterpointNote[]): Map<number, NoteSlice[]> {
-  const sorted = [...notes].sort((a, b) => a.onset - b.onset);
-  const measureNotes = new Map<number, NoteSlice[]>();
-
-  for (const n of sorted) {
-    let onsetDiv = beatsToDivs(n.onset);
-    let durDiv = Math.max(1, beatsToDivs(n.duration));
-
-    while (durDiv > 0) {
-      const measureIndex = Math.floor(onsetDiv / MEASURE_DURATION);
-      const measureStart = measureIndex * MEASURE_DURATION;
-      const measureEnd = measureStart + MEASURE_DURATION;
-      const spaceInMeasure = measureEnd - onsetDiv;
-      const takeDiv = Math.min(durDiv, spaceInMeasure);
-
-      if (takeDiv <= 0) break;
-
-      const arr = measureNotes.get(measureIndex) ?? [];
-      const noteStartDiv = beatsToDivs(n.onset);
-      const isFirstSlice = onsetDiv === noteStartDiv;
-      const isLastSlice = takeDiv >= durDiv;
-      arr.push({
+/** Convert Counterpoint lines to TimedNoteEvents. */
+function counterpointToTimedEvents(out: CounterpointOutput): TimedNoteEvent[] {
+  const events: TimedNoteEvent[] = [];
+  for (let v = 0; v < out.lines.length; v++) {
+    const line = out.lines[v];
+    const partId = `P${v + 1}`;
+    for (const n of line.notes) {
+      events.push({
         pitch: n.pitch,
-        onsetDiv,
-        durationDiv: takeDiv,
-        tieStart: !isLastSlice,
-        tieStop: !isFirstSlice,
-      });
-      measureNotes.set(measureIndex, arr);
-
-      onsetDiv += takeDiv;
-      durDiv -= takeDiv;
-    }
-  }
-
-  return measureNotes;
-}
-
-function measureNotesToXmlWithCarry(
-  measureIndex: number,
-  slices: NoteSlice[],
-  allMeasures: Map<number, NoteSlice[]>
-): { xml: string; carryOver: NoteSlice[] } {
-  const sorted = [...slices].sort((a, b) => a.onsetDiv - b.onsetDiv);
-  const measureStart = measureIndex * MEASURE_DURATION;
-  const measureEnd = measureStart + MEASURE_DURATION;
-  let cursor = measureStart;
-  let xml = '';
-  const carryOver: NoteSlice[] = [];
-
-  for (const s of sorted) {
-    if (s.onsetDiv > cursor) {
-      const restDiv = s.onsetDiv - cursor;
-      xml += `        <note><rest/><duration>${restDiv}</duration><type>${durationToType(restDiv)}</type></note>\n`;
-      cursor = s.onsetDiv;
-    }
-    const spaceLeft = measureEnd - cursor;
-    const actualDur = Math.min(s.durationDiv, spaceLeft);
-    if (actualDur <= 0) continue;
-
-    const { step, alter, octave } = midiToPitch(s.pitch);
-    const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
-    const isTruncated = actualDur < s.durationDiv;
-    const notations: string[] = [];
-    if (s.tieStart || isTruncated) notations.push('<tie type="start"/>');
-    if (s.tieStop) notations.push('<tie type="stop"/>');
-    const notationsEl = notations.length ? `<notations>${notations.join('')}</notations>` : '';
-    xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${actualDur}</duration><type>${durationToType(actualDur)}</type>${notationsEl}</note>\n`;
-    cursor += actualDur;
-
-    if (actualDur < s.durationDiv) {
-      carryOver.push({
-        pitch: s.pitch,
-        onsetDiv: measureEnd,
-        durationDiv: s.durationDiv - actualDur,
+        startDivision: beatsToDivisions(n.onset),
+        durationDivisions: Math.max(1, beatsToDivisions(n.duration)),
+        voice: 1,
+        staff: 1,
+        part: partId,
         tieStart: false,
-        tieStop: true,
+        tieStop: false,
+        rest: false,
       });
     }
   }
-
-  if (cursor < measureEnd) {
-    const restDiv = measureEnd - cursor;
-    xml += `        <note><rest/><duration>${restDiv}</duration><type>${durationToType(restDiv)}</type></note>\n`;
-  }
-
-  return { xml, carryOver };
+  return events;
 }
 
-export function exportCounterpointToMusicXML(out: CounterpointOutput, title = 'Contemporary Counterpoint'): string {
+export function exportCounterpointToMusicXML(
+  out: CounterpointOutput,
+  title = 'Contemporary Counterpoint',
+  options?: { runPath?: string }
+): string {
+  const timedEvents = counterpointToTimedEvents(out);
+  const maxMeasure = Math.max(
+    ...out.lines.flatMap((l) =>
+      l.notes.map((n) => Math.floor(beatsToDivisions(n.onset + n.duration) / MEASURE_DURATION))
+    ),
+    out.totalBars - 1
+  );
+  const measureCount = Math.max(maxMeasure + 1, out.totalBars);
+
+  const measureEvents = packEventsIntoMeasures(timedEvents, measureCount);
+
+  const validation = validateMeasureDurations(measureEvents);
+  if (options?.runPath) {
+    fs.writeFileSync(
+      path.join(options.runPath, 'timing_report.json'),
+      JSON.stringify({
+        measuresChecked: validation.measuresChecked,
+        durationTotals: validation.durationTotals,
+        tiesInserted: validation.tiesInserted,
+        restsInserted: validation.restsInserted,
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+      }, null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(options.runPath, 'validation_report.json'),
+      JSON.stringify({
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+        violationsBlocking: validation.violationsBlocking,
+      }, null, 2),
+      'utf-8'
+    );
+  }
+  if (!validation.valid) {
+    throw new Error(`Counterpoint timing validation failed: ${validation.errors.join('; ')}`);
+  }
+
   const partIds = out.lines.map((_, i) => `P${i + 1}`);
   const firstMeasureAttrs = `        <attributes>
           <divisions>${DIVISIONS}</divisions>
@@ -139,30 +87,15 @@ export function exportCounterpointToMusicXML(out: CounterpointOutput, title = 'C
           <clef><sign>G</sign><line>2</line></clef>
         </attributes>\n`;
 
-  const partMeasures: Map<number, NoteSlice[]>[] = out.lines.map((line) =>
-    sliceNotesIntoMeasures(line.notes)
-  );
-
-  const maxMeasure = Math.max(
-    ...partMeasures.map((m) => (m.size > 0 ? Math.max(...m.keys()) : -1)),
-    out.totalBars - 1
-  );
-  const measureCount = Math.max(maxMeasure + 1, out.totalBars);
-
-  const partXmls = partMeasures.map((measures, partIdx) => {
-    let partXml = `    <part id="${partIds[partIdx]}">\n`;
+  const partXmls = partIds.map((partId, partIdx) => {
+    let partXml = `    <part id="${partId}">\n`;
     for (let m = 0; m < measureCount; m++) {
-      const slices = measures.get(m) ?? [];
-      const { xml, carryOver } = measureNotesToXmlWithCarry(m, slices, measures);
+      const events = (measureEvents.get(m) ?? []).filter((e) => e.part === partId);
+      const measureStart = m * MEASURE_DURATION;
       partXml += `      <measure number="${m + 1}">\n`;
       if (m === 0) partXml += firstMeasureAttrs;
-      partXml += xml;
+      partXml += eventsToMeasureXml(events, m, measureStart);
       partXml += `      </measure>\n`;
-      if (carryOver.length > 0) {
-        const nextSlices = measures.get(m + 1) ?? [];
-        nextSlices.unshift(...carryOver);
-        measures.set(m + 1, nextSlices);
-      }
     }
     partXml += `    </part>`;
     return partXml;

@@ -1,29 +1,35 @@
 /**
  * Ellington Orchestration Engine — MusicXML export
- * Big band score with proper part structure, clefs, and transpositions.
+ * Uses shared canonical notation timing engine.
+ * Big band score with proper part structure, clefs, transpositions.
+ * Range validation and voicing redistribution happen BEFORE export.
  */
 
 import type { EllingtonOrchestration } from './ellingtonEngine';
-
-const DIVISIONS = 4;
+import { MEASURE_DURATION } from '../../shared/notationTimingConstants';
+import { packEventsIntoMeasures, type TimedNoteEvent } from '../../shared/notationTimingEngine';
+import { eventsToMeasureXml } from '../../shared/musicxmlMeasurePacker';
+import { validateMeasureDurations } from '../../shared/musicxmlTimingValidation';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /** Concert (sounding) MIDI range: [min, max] for practical playability */
 const INSTRUMENT_RANGES: Record<string, [number, number]> = {
-  'Alto Sax 1': [55, 79],   // Bb3 to G5
+  'Alto Sax 1': [55, 79],
   'Alto Sax 2': [55, 79],
-  'Tenor Sax 1': [46, 70],  // Bb2 to Bb4
+  'Tenor Sax 1': [46, 70],
   'Tenor Sax 2': [46, 70],
-  'Baritone Sax': [36, 63], // C2 to Eb4
-  'Trumpet 1': [55, 84],    // F#3 to C6
-  'Trumpet 2': [52, 81],    // E3 to A5
-  'Trumpet 3': [48, 76],    // C3 to E5
-  'Trumpet 4': [48, 72],    // C3 to C5
-  'Trombone 1': [41, 70],   // F2 to Bb4
-  'Trombone 2': [38, 67],   // D2 to G4
-  'Trombone 3': [36, 65],   // C2 to F4
-  'Bass Trombone': [34, 58],// Bb1 to Bb3
-  'Piano': [36, 84],        // C2 to C6
-  'Bass': [28, 55],         // E1 to G3
+  'Baritone Sax': [36, 63],
+  'Trumpet 1': [55, 84],
+  'Trumpet 2': [52, 81],
+  'Trumpet 3': [48, 76],
+  'Trumpet 4': [48, 72],
+  'Trombone 1': [41, 70],
+  'Trombone 2': [38, 67],
+  'Trombone 3': [36, 65],
+  'Bass Trombone': [34, 58],
+  'Piano': [36, 84],
+  'Bass': [28, 55],
   'Drums': [0, 0],
 };
 
@@ -31,7 +37,7 @@ const INSTRUMENTS: Array<{
   id: string;
   name: string;
   clef: 'treble' | 'bass' | 'percussion';
-  transposition: number; // semitones to add to concert for written pitch (0 = concert)
+  transposition: number;
   section: 'saxes' | 'trumpets' | 'trombones' | 'rhythm';
   sectionIndex: number;
 }> = [
@@ -53,93 +59,16 @@ const INSTRUMENTS: Array<{
   { id: 'P16', name: 'Drums', clef: 'percussion', transposition: 0, section: 'rhythm', sectionIndex: 2 },
 ];
 
+const ROOT_MIDI: Record<string, number> = {
+  C: 60, 'C#': 61, Db: 61, D: 62, 'D#': 63, Eb: 63, E: 64, F: 65,
+  'F#': 66, Gb: 66, G: 67, 'G#': 68, Ab: 68, A: 69, 'A#': 70, Bb: 70, B: 71,
+};
+
 function clampToInstrumentRange(concertMidi: number, instName: string): number {
   const range = INSTRUMENT_RANGES[instName];
   if (!range || range[0] === 0) return concertMidi;
   return Math.max(range[0], Math.min(range[1], concertMidi));
 }
-
-function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
-  const semitones = ((midi % 12) + 12) % 12;
-  const octave = Math.floor(midi / 12) - 1;
-  const stepMap: Record<number, { step: string; alter: number }> = {
-    0: { step: 'C', alter: 0 }, 1: { step: 'C', alter: 1 }, 2: { step: 'D', alter: 0 },
-    3: { step: 'D', alter: 1 }, 4: { step: 'E', alter: 0 }, 5: { step: 'F', alter: 0 },
-    6: { step: 'F', alter: 1 }, 7: { step: 'G', alter: 0 }, 8: { step: 'G', alter: 1 },
-    9: { step: 'A', alter: 0 }, 10: { step: 'A', alter: 1 }, 11: { step: 'B', alter: 0 },
-  };
-  const { step, alter } = stepMap[semitones];
-  return { step, alter, octave };
-}
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function durationToType(beats: number): string {
-  if (beats >= 4) return 'whole';
-  if (beats >= 2) return 'half';
-  if (beats >= 1) return 'quarter';
-  if (beats >= 0.5) return 'eighth';
-  return 'quarter';
-}
-
-function noteToXml(pitch: number, duration: number, voice: number, staff?: number): string {
-  const { step, alter, octave } = midiToPitch(pitch);
-  const durVal = duration * DIVISIONS;
-  const type = durationToType(duration);
-  const alterEl = alter !== 0 ? `\n        <alter>${alter}</alter>` : '';
-  const staffEl = staff !== undefined ? `\n      <staff>${staff}</staff>` : '';
-  return `    <note>
-      <pitch>
-        <step>${step}</step>${alterEl}
-        <octave>${octave}</octave>
-      </pitch>
-      <duration>${durVal}</duration>
-      <type>${type}</type>
-      <voice>${voice}</voice>${staffEl}
-    </note>
-`;
-}
-
-function restToXml(duration: number, voice: number): string {
-  const durVal = duration * DIVISIONS;
-  return `    <note>
-      <rest/>
-      <duration>${durVal}</duration>
-      <type>whole</type>
-      <voice>${voice}</voice>
-    </note>
-`;
-}
-
-function chordToHarmonyXml(chord: string): string {
-  const m = chord.match(/^([A-Ga-g])([#b])?(maj7|min7|m7|7|dom7|m7b5|m6|6|m)?/i);
-  if (!m) return '';
-  const step = m[1].toUpperCase();
-  const alter = m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0;
-  const kindMap: Record<string, string> = {
-    maj7: 'major-seventh', min7: 'minor-seventh', m7: 'minor-seventh',
-    '7': 'dominant', dom7: 'dominant', m7b5: 'half-diminished', m6: 'minor-sixth', '6': 'major-sixth',
-  };
-  const kind = kindMap[(m[3] || 'maj7').toLowerCase()] || 'major-seventh';
-  const alterEl = alter !== 0 ? `\n      <root-alter>${alter}</root-alter>` : '';
-  return `    <harmony>
-      <root><root-step>${step}</root-step>${alterEl}</root>
-      <kind>${kind}</kind>
-    </harmony>
-`;
-}
-
-const ROOT_MIDI: Record<string, number> = {
-  C: 60, 'C#': 61, Db: 61, D: 62, 'D#': 63, Eb: 63, E: 64, F: 65,
-  'F#': 66, Gb: 66, G: 67, 'G#': 68, Ab: 68, A: 69, 'A#': 70, Bb: 70, B: 71,
-};
 
 function getRootMidi(chord: string, octave: number = 3): number {
   const base = chord.split('/')[0];
@@ -177,12 +106,144 @@ function getPitchForInstrument(
   return pitches[inst.sectionIndex] ?? null;
 }
 
+/** Convert orchestration to TimedNoteEvent[] per part using shared timing. */
+function orchestrationToTimedEvents(orch: EllingtonOrchestration): { events: TimedNoteEvent[]; rangeReport: RangeReportEntry[] } {
+  const allEvents: TimedNoteEvent[] = [];
+  const rangeReport: RangeReportEntry[] = [];
+
+  for (const inst of INSTRUMENTS) {
+    const sectionData = getSectionData(orch, inst.section);
+
+    for (let m = 1; m <= orch.totalBars; m++) {
+      const barData = sectionData.find((v) => v.bar === m);
+      const chord = barData?.chord ?? '';
+      const pitches = barData?.pitches ?? [];
+      const concertPitch = getPitchForInstrument(inst, pitches, chord);
+
+      const startDivision = (m - 1) * MEASURE_DURATION;
+
+      if (concertPitch !== null) {
+        const clampedConcert = clampToInstrumentRange(concertPitch, inst.name);
+        const writtenPitch = inst.transposition !== 0 ? clampedConcert + inst.transposition : clampedConcert;
+
+        if (clampedConcert !== concertPitch) {
+          rangeReport.push({
+            part: inst.id,
+            instrument: inst.name,
+            bar: m,
+            originalConcert: concertPitch,
+            clampedConcert,
+            writtenPitch,
+          });
+        }
+
+        allEvents.push({
+          pitch: writtenPitch,
+          startDivision,
+          durationDivisions: MEASURE_DURATION,
+          voice: 1,
+          staff: 1,
+          part: inst.id,
+          tieStart: false,
+          tieStop: false,
+          rest: false,
+        });
+      } else {
+        allEvents.push({
+          pitch: 0,
+          startDivision,
+          durationDivisions: MEASURE_DURATION,
+          voice: 1,
+          staff: 1,
+          part: inst.id,
+          tieStart: false,
+          tieStop: false,
+          rest: true,
+        });
+      }
+    }
+  }
+
+  return { events: allEvents, rangeReport };
+}
+
+interface RangeReportEntry {
+  part: string;
+  instrument: string;
+  bar: number;
+  originalConcert?: number;
+  clampedConcert?: number;
+  writtenPitch?: number;
+}
+
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function chordToHarmonyXml(chord: string): string {
+  const m = chord.match(/^([A-Ga-g])([#b])?(maj7|min7|m7|7|dom7|m7b5|m6|6|m)?/i);
+  if (!m) return '';
+  const step = m[1].toUpperCase();
+  const alter = m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0;
+  const kindMap: Record<string, string> = {
+    maj7: 'major-seventh', min7: 'minor-seventh', m7: 'minor-seventh',
+    '7': 'dominant', dom7: 'dominant', m7b5: 'half-diminished', m6: 'minor-sixth', '6': 'major-sixth',
+  };
+  const kind = kindMap[(m[3] || 'maj7').toLowerCase()] || 'major-seventh';
+  const alterEl = alter !== 0 ? `\n      <root-alter>${alter}</root-alter>` : '';
+  return `    <harmony>
+      <root><root-step>${step}</root-step>${alterEl}</root>
+      <kind>${kind}</kind>
+    </harmony>
+`;
+}
+
 export function exportOrchestrationToMusicXML(
   orch: EllingtonOrchestration,
-  options?: { title?: string }
+  options?: { title?: string; runPath?: string }
 ): string {
   const title = options?.title ?? 'Ellington Orchestration';
   const totalBars = orch.totalBars;
+
+  const { events: timedEvents, rangeReport } = orchestrationToTimedEvents(orch);
+  const measureEvents = packEventsIntoMeasures(timedEvents, totalBars);
+
+  const validation = validateMeasureDurations(measureEvents);
+
+  if (options?.runPath) {
+    fs.writeFileSync(
+      path.join(options.runPath, 'timing_report.json'),
+      JSON.stringify({
+        measuresChecked: validation.measuresChecked,
+        durationTotals: validation.durationTotals,
+        tiesInserted: validation.tiesInserted,
+        restsInserted: validation.restsInserted,
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+      }, null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(options.runPath, 'range_report.json'),
+      JSON.stringify({ entries: rangeReport }, null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(options.runPath, 'validation_report.json'),
+      JSON.stringify({
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+        violationsBlocking: validation.violationsBlocking,
+      }, null, 2),
+      'utf-8'
+    );
+  }
+
+  if (!validation.valid) {
+    throw new Error(`Ellington timing validation failed: ${validation.errors.join('; ')}`);
+  }
 
   const partList = INSTRUMENTS.map((inst) => {
     const transEl = inst.transposition !== 0
@@ -207,26 +268,24 @@ ${partList}
   </part-list>
 `;
 
+  const sectionData = getSectionData(orch, 'saxes');
+
   for (const inst of INSTRUMENTS) {
-    const sectionData = getSectionData(orch, inst.section);
-    const pitchesPerBar = sectionData.map((v) => v.pitches);
     xml += `  <part id="${inst.id}">\n`;
 
-    for (let m = 1; m <= totalBars; m++) {
-      const barData = sectionData.find((v) => v.bar === m);
-      const chord = barData?.chord ?? '';
-      const pitches = barData?.pitches ?? [];
-      const pitchForThisInst = getPitchForInstrument(inst, pitches, chord);
+    for (let m = 0; m < totalBars; m++) {
+      const measureStart = m * MEASURE_DURATION;
+      const partEvents = (measureEvents.get(m) ?? []).filter((e) => e.part === inst.id);
 
-      xml += `  <measure number="${m}">\n`;
-      if (m === 1) {
+      xml += `  <measure number="${m + 1}">\n`;
+      if (m === 0) {
         const clefSign = inst.clef === 'bass' ? 'F' : inst.clef === 'percussion' ? 'percussion' : 'G';
         const clefLine = inst.clef === 'bass' ? 4 : 2;
         const clefEl = inst.clef === 'percussion'
           ? `<clef><sign>percussion</sign><line>2</line></clef>`
           : `<clef><sign>${clefSign}</sign><line>${clefLine}</line></clef>`;
         xml += `    <attributes>
-      <divisions>${DIVISIONS}</divisions>
+      <divisions>4</divisions>
       <key><fifths>0</fifths></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
       ${clefEl}
@@ -234,19 +293,14 @@ ${partList}
 `;
       }
       if (inst.id === 'P1') {
-        const chordForBar = chord || sectionData[0]?.chord;
-        if (chordForBar) {
-          const harm = chordToHarmonyXml(chordForBar);
+        const barData = sectionData.find((v) => v.bar === m + 1);
+        const chord = barData?.chord ?? sectionData[0]?.chord;
+        if (chord) {
+          const harm = chordToHarmonyXml(chord);
           if (harm) xml += harm;
         }
       }
-      if (pitchForThisInst !== null) {
-        const clampedConcert = clampToInstrumentRange(pitchForThisInst, inst.name);
-        const writtenPitch = inst.transposition !== 0 ? clampedConcert + inst.transposition : clampedConcert;
-        xml += noteToXml(writtenPitch, 4, 1);
-      } else {
-        xml += restToXml(4, 1);
-      }
+      xml += eventsToMeasureXml(partEvents, m, measureStart);
       xml += `  </measure>\n`;
     }
     xml += `  </part>\n`;

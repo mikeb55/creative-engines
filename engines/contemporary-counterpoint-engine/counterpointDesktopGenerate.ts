@@ -112,7 +112,7 @@ function main(): DesktopResult {
 `;
   fs.writeFileSync(path.join(runFolderPath, 'counterpoint_summary.md'), summary, 'utf-8');
 
-  const musicXml = exportCounterpointToMusicXML(out, `Contemporary Counterpoint (${progressionName})`);
+  const musicXml = exportCounterpointToMusicXML(out, `Contemporary Counterpoint (${progressionName})`, { runPath: runFolderPath });
   const firstFile = path.join(runFolderPath, 'counterpoint_sketch.musicxml');
   fs.writeFileSync(firstFile, musicXml, 'utf-8');
   fs.writeFileSync(path.join(outDir, 'last_export.txt'), firstFile, 'utf-8');

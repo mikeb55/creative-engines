@@ -202,7 +202,7 @@ function main(): DesktopResult {
   const scorePath = path.join(runPath, 'ellington_score.musicxml');
   fs.writeFileSync(
     scorePath,
-    exportOrchestrationToMusicXML(best.orch, { title: 'Ellington Orchestration' }),
+    exportOrchestrationToMusicXML(best.orch, { title: 'Ellington Orchestration', runPath }),
     'utf-8'
   );
 

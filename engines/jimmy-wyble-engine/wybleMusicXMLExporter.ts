@@ -1,151 +1,141 @@
 /**
- * Wyble MusicXML Exporter
- * Two-staff guitar study with correct measure duration accounting.
- * Each measure sums exactly to 16 divisions (4/4).
+ * Wyble MusicXML Exporter — uses shared canonical notation timing engine.
+ * Two-staff guitar study: staff 1 = melody, staff 2 = bass.
  */
 
 import type { WybleEtudeResult } from './wybleEtudeGenerator';
 import type { NoteEvent } from './wybleTypes';
-
-const DIVISIONS = 4;
-const BEATS_PER_MEASURE = 4;
-const MEASURE_DURATION = BEATS_PER_MEASURE * DIVISIONS;
-
-function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
-  const semitones = ((midi % 12) + 12) % 12;
-  const octave = Math.floor(midi / 12) - 1;
-  const stepMap: Record<number, { step: string; alter: number }> = {
-    0: { step: 'C', alter: 0 }, 1: { step: 'C', alter: 1 }, 2: { step: 'D', alter: 0 },
-    3: { step: 'D', alter: 1 }, 4: { step: 'E', alter: 0 }, 5: { step: 'F', alter: 0 },
-    6: { step: 'F', alter: 1 }, 7: { step: 'G', alter: 0 }, 8: { step: 'G', alter: 1 },
-    9: { step: 'A', alter: 0 }, 10: { step: 'A', alter: 1 }, 11: { step: 'B', alter: 0 },
-  };
-  const { step, alter } = stepMap[semitones];
-  return { step, alter, octave };
-}
-
-function durationToType(divs: number): string {
-  if (divs <= 1) return '16th';
-  if (divs <= 2) return 'eighth';
-  if (divs <= 4) return 'quarter';
-  if (divs <= 8) return 'half';
-  return 'whole';
-}
+import { MEASURE_DURATION, DIVISIONS } from '../../shared/notationTimingConstants';
+import { packEventsIntoMeasures, type TimedNoteEvent } from '../../shared/notationTimingEngine';
+import { eventsToMeasureXmlWithBackup } from '../../shared/musicxmlMeasurePacker';
+import { validateMeasureDurations } from '../../shared/musicxmlTimingValidation';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-/** Build beat-indexed slots: each slot has at most one upper and one lower event. */
-function buildMeasureSlots(result: WybleEtudeResult): Array<{ upper?: NoteEvent; lower?: NoteEvent }>[] {
+/** Convert Wyble engine output to TimedNoteEvents using shared timing. */
+function wybleToTimedEvents(result: WybleEtudeResult): TimedNoteEvent[] {
+  const events: TimedNoteEvent[] = [];
   const upper = result.upper_line.events;
   const lower = result.lower_line.events;
-  const totalBeats = result.bars * BEATS_PER_MEASURE;
-  const allSlots: Array<{ upper?: NoteEvent; lower?: NoteEvent }> = [];
+  const totalBeats = result.bars * 4;
   let uIdx = 0;
   let lIdx = 0;
 
   for (let beatIndex = 0; beatIndex < totalBeats; beatIndex++) {
-    const slot: { upper?: NoteEvent; lower?: NoteEvent } = {};
+    const onsetBeats = beatIndex;
+    const durationBeats = 1;
+
     if (uIdx < upper.length && upper[uIdx].isDyad && lIdx < lower.length) {
-      slot.upper = upper[uIdx];
-      slot.lower = lower[lIdx];
+      events.push({
+        pitch: upper[uIdx].pitch,
+        startDivision: beatIndex * DIVISIONS,
+        durationDivisions: DIVISIONS,
+        voice: 1,
+        staff: 1,
+        part: 'P1',
+        tieStart: false,
+        tieStop: false,
+        rest: false,
+      });
+      events.push({
+        pitch: lower[lIdx].pitch,
+        startDivision: beatIndex * DIVISIONS,
+        durationDivisions: DIVISIONS,
+        voice: 2,
+        staff: 2,
+        part: 'P1',
+        tieStart: false,
+        tieStop: false,
+        rest: false,
+      });
       uIdx++;
       lIdx++;
     } else if (beatIndex % 2 === 0 && uIdx < upper.length) {
-      slot.upper = upper[uIdx];
+      events.push({
+        pitch: upper[uIdx].pitch,
+        startDivision: beatIndex * DIVISIONS,
+        durationDivisions: DIVISIONS,
+        voice: 1,
+        staff: 1,
+        part: 'P1',
+        tieStart: false,
+        tieStop: false,
+        rest: false,
+      });
       uIdx++;
     } else if (lIdx < lower.length) {
-      slot.lower = lower[lIdx];
+      events.push({
+        pitch: lower[lIdx].pitch,
+        startDivision: beatIndex * DIVISIONS,
+        durationDivisions: DIVISIONS,
+        voice: 2,
+        staff: 2,
+        part: 'P1',
+        tieStart: false,
+        tieStop: false,
+        rest: false,
+      });
       lIdx++;
-    }
-    allSlots.push(slot);
-  }
-
-  const measures: Array<{ upper?: NoteEvent; lower?: NoteEvent }>[] = [];
-  for (let m = 0; m < result.bars; m++) {
-    measures.push(allSlots.slice(m * BEATS_PER_MEASURE, (m + 1) * BEATS_PER_MEASURE));
-  }
-  return measures;
-}
-
-function measureToXml(
-  measureIndex: number,
-  slots: Array<{ upper?: NoteEvent; lower?: NoteEvent }>,
-  divisions: number
-): string {
-  const durVal = 1 * divisions;
-  const durType = durationToType(durVal);
-
-  let xml = `  <measure number="${measureIndex + 1}">\n`;
-
-  if (measureIndex === 0) {
-    xml += `    <attributes>
-      <divisions>${divisions}</divisions>
-      <key><fifths>0</fifths></key>
-      <time><beats>4</beats><beat-type>4</beat-type></time>
-      <staves>2</staves>
-      <clef number="1"><sign>G</sign><line>2</line></clef>
-      <clef number="2"><sign>G</sign><line>2</line></clef>
-    </attributes>\n`;
-  }
-
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
-
-    if (slot.upper) {
-      const { step, alter, octave } = midiToPitch(slot.upper.pitch);
-      const alterEl = alter !== 0 ? `\n        <alter>${alter}</alter>` : '';
-      xml += `    <note>
-      <pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>
-      <duration>${durVal}</duration>
-      <type>${durType}</type>
-      <voice>1</voice>
-      <staff>1</staff>
-    </note>\n`;
-    }
-
-    if (slot.lower) {
-      if (slot.upper) {
-        xml += `    <backup><duration>${durVal}</duration></backup>\n`;
-      }
-      const { step, alter, octave } = midiToPitch(slot.lower.pitch);
-      const alterEl = alter !== 0 ? `\n        <alter>${alter}</alter>` : '';
-      xml += `    <note>
-      <pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>
-      <duration>${durVal}</duration>
-      <type>${durType}</type>
-      <voice>2</voice>
-      <staff>2</staff>
-    </note>\n`;
-    }
-
-    if (!slot.upper && !slot.lower) {
-      xml += `    <note>
-      <rest/>
-      <duration>${durVal}</duration>
-      <type>${durType}</type>
-      <voice>1</voice>
-      <staff>1</staff>
-    </note>\n`;
+    } else {
+      events.push({
+        pitch: 0,
+        startDivision: beatIndex * DIVISIONS,
+        durationDivisions: DIVISIONS,
+        voice: 1,
+        staff: 1,
+        part: 'P1',
+        tieStart: false,
+        tieStop: false,
+        rest: true,
+      });
     }
   }
 
-  xml += `  </measure>\n`;
-  return xml;
+  return events;
 }
 
 export function exportToMusicXML(
   result: WybleEtudeResult,
-  options?: { title?: string }
+  options?: { title?: string; runPath?: string }
 ): string {
-  const measures = buildMeasureSlots(result);
   const title = options?.title ?? 'Wyble Etude';
+
+  const timedEvents = wybleToTimedEvents(result);
+  const measureEvents = packEventsIntoMeasures(timedEvents, result.bars);
+
+  const validation = validateMeasureDurations(measureEvents);
+  if (options?.runPath) {
+    fs.writeFileSync(
+      path.join(options.runPath, 'timing_report.json'),
+      JSON.stringify({
+        measuresChecked: validation.measuresChecked,
+        durationTotals: validation.durationTotals,
+        tiesInserted: validation.tiesInserted,
+        restsInserted: validation.restsInserted,
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+      }, null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(options.runPath, 'validation_report.json'),
+      JSON.stringify({
+        valid: validation.valid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+        violationsBlocking: validation.violationsBlocking,
+      }, null, 2),
+      'utf-8'
+    );
+  }
+  if (!validation.valid) {
+    throw new Error(`Wyble timing validation failed: ${validation.errors.join('; ')}`);
+  }
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
@@ -160,8 +150,21 @@ export function exportToMusicXML(
   <part id="P1">
 `;
 
-  for (let m = 0; m < measures.length; m++) {
-    xml += measureToXml(m, measures[m], DIVISIONS);
+  for (let m = 0; m < result.bars; m++) {
+    const events = measureEvents.get(m) ?? [];
+    xml += `  <measure number="${m + 1}">\n`;
+    if (m === 0) {
+      xml += `    <attributes>
+      <divisions>${DIVISIONS}</divisions>
+      <key><fifths>0</fifths></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>2</staves>
+      <clef number="1"><sign>G</sign><line>2</line></clef>
+      <clef number="2"><sign>G</sign><line>2</line></clef>
+    </attributes>\n`;
+    }
+    xml += eventsToMeasureXmlWithBackup(events, m, m * MEASURE_DURATION);
+    xml += `  </measure>\n`;
   }
 
   xml += `  </part>

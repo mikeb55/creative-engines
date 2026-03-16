@@ -168,7 +168,7 @@ function main(): DesktopResult {
       implied_harmony: r.output.implied_harmony,
       bars,
     };
-    const musicXml = exportToMusicXML(result, { title: `Wyble Etude rank ${i + 1} (GCE ${scoreStr})` });
+    const musicXml = exportToMusicXML(result, { title: `Wyble Etude rank ${i + 1} (GCE ${scoreStr})`, runPath: runFolderPath });
     fs.writeFileSync(path.join(runFolderPath, filename), musicXml, 'utf-8');
     exportedScores.push(r.score);
   }
