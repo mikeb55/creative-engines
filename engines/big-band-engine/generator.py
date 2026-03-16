@@ -2,7 +2,7 @@
 Big Band Generator — Assemble ComposerIR from title/premise.
 """
 
-from typing import List
+from typing import List, Optional
 
 try:
     from .composer_ir import ComposerIR, MotivicCell, IntervalLanguage, HarmonicField, PhrasePlan, ContrastPlan, DevelopmentPlan, SectionPlan
@@ -21,7 +21,7 @@ except ImportError:
 
 PROFILES = ["brass_punch", "sax_counterline", "shout_leap", "sectional_unison", "layered_ensemble_motion"]
 HARMONY_PROFILES = ["modern_big_band_modal", "layered_chromatic", "brass_axis_field", "shout_dominant_field", "sectional_pedal_field"]
-FORM_PROFILES = ["chart_arc", "modular_big_band_form", "asymmetrical_shout_form", "sectional_wave_form", "episode_return_chart"]
+FORM_PROFILES = ["chart_arc", "modular_big_band_form", "asymmetrical_shout_form", "sectional_wave_form", "episode_return_chart", "narrative_big_band_form"]
 
 
 def _hash_str(s: str, seed: int) -> int:
@@ -31,13 +31,14 @@ def _hash_str(s: str, seed: int) -> int:
     return h
 
 
-def generate_composer_ir_from_title(title: str, seed: int = 0, profile: str = "brass_punch") -> ComposerIR:
-    """Generate ComposerIR from title. Deterministic."""
+def generate_composer_ir_from_title(title: str, seed: int = 0, profile: str = "brass_punch", form_profile: Optional[str] = None) -> ComposerIR:
+    """Generate ComposerIR from title. Deterministic. form_profile overrides form selection."""
     h = _hash_str(title, seed)
     il = build_interval_language(seed + h % 1000, PROFILES[(h >> 4) % len(PROFILES)])
     hf = build_harmonic_field(seed + (h >> 8) % 1000, HARMONY_PROFILES[(h >> 12) % len(HARMONY_PROFILES)])
     cells = generate_motivic_cells(seed + (h >> 16) % 1000, 4)
-    form = plan_form(seed + (h >> 20) % 1000, FORM_PROFILES[(h >> 24) % len(FORM_PROFILES)])
+    form_prof = form_profile or FORM_PROFILES[(h >> 24) % len(FORM_PROFILES)]
+    form = plan_form(seed + (h >> 20) % 1000, form_prof)
     pp = build_phrase_plan(form, "asymmetric")
     dev = build_development_plan(cells, seed)
     section_order = form["section_order"]
@@ -85,11 +86,11 @@ def generate_composer_ir_from_title(title: str, seed: int = 0, profile: str = "b
     return ir
 
 
-def generate_composer_ir_from_premise(premise: str, seed: int = 0, profile: str = "brass_punch") -> ComposerIR:
+def generate_composer_ir_from_premise(premise: str, seed: int = 0, profile: str = "brass_punch", form_profile: Optional[str] = None) -> ComposerIR:
     """Generate ComposerIR from premise."""
     words = (premise or "").strip().split()[:3]
     title = " ".join(words).title() if words else "Untitled"
-    return generate_composer_ir_from_title(title, seed, profile)
+    return generate_composer_ir_from_title(title, seed, profile, form_profile=form_profile)
 
 
 def generate_composer_ir_candidates(input_text: str, mode: str = "title", count: int = 12, seed: int = 0) -> List[ComposerIR]:

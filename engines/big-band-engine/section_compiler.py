@@ -67,6 +67,10 @@ def compile_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_
         return compile_shout_section(section_plan, composer_ir, section_id, bar_start)
     if section_plan.role in ("return", "coda"):
         return compile_return_section(section_plan, composer_ir, section_id, bar_start)
+    if section_plan.role == "intro":
+        return _compile_intro_section(section_plan, composer_ir, section_id, bar_start)
+    if section_plan.role == "solo":
+        return _compile_solo_section(section_plan, composer_ir, section_id, bar_start)
     return _compile_generic_section(section_plan, composer_ir, section_id, bar_start)
 
 
@@ -140,6 +144,37 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
         melody_events=events, harmony=harmony, phrase_lengths=[4, 4], motif_refs=["m1_return"],
         register_hint=reg,
         rhythm_section_plan={"style": "comp", "density": 0.7},
+    )
+
+
+def _compile_intro_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+    """Narrative intro/atmosphere: sparse, suspended texture."""
+    bars = section_plan.bar_count or 6
+    bar_end = bar_start + bars
+    cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[3, 5])
+    events = _melody_from_sectional(cell, bars, bar_start, section_id, cell.registral_center - 7, composer_ir.seed)
+    harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
+    harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
+    return CompiledSection(
+        section_id=section_id, role="intro", bar_start=bar_start, bar_end=bar_end,
+        melody_events=events[: len(events) // 2], harmony=harmony, phrase_lengths=[bars],
+        register_hint=cell.registral_center - 7, rhythm_section_plan={"style": "sparse", "density": 0.2},
+    )
+
+
+def _compile_solo_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+    """Narrative solo environment: open, fragmented."""
+    bars = section_plan.bar_count or 16
+    bar_end = bar_start + bars
+    cell = composer_ir.motivic_cells[1] if len(composer_ir.motivic_cells) > 1 else (composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[5, 7]))
+    developed = develop_motif_cell(cell, "sax_fragmentation")
+    events = _melody_from_sectional(developed, bars, bar_start, section_id, cell.registral_center, composer_ir.seed + 10)
+    harm = derive_section_harmony(composer_ir.harmonic_field, "contrast")
+    harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
+    return CompiledSection(
+        section_id=section_id, role="solo", bar_start=bar_start, bar_end=bar_end,
+        melody_events=events, harmony=harmony, phrase_lengths=[4] * (bars // 4),
+        register_hint=cell.registral_center, rhythm_section_plan={"style": "sparse", "density": 0.35},
     )
 
 

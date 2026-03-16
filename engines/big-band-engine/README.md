@@ -30,4 +30,19 @@ Models modern big band architecture: sectional writing for saxes, trombones, tru
 
 - **Interval**: brass_punch, sax_counterline, shout_leap, sectional_unison, layered_ensemble_motion
 - **Harmony**: modern_big_band_modal, layered_chromatic, brass_axis_field, shout_dominant_field, sectional_pedal_field
-- **Form**: chart_arc, modular_big_band_form, asymmetrical_shout_form, sectional_wave_form, episode_return_chart
+- **Form**: chart_arc, modular_big_band_form, asymmetrical_shout_form, sectional_wave_form, episode_return_chart, **narrative_big_band_form**
+
+## Narrative Big Band Form
+
+The `narrative_big_band_form` module (`form_modules/narrative_big_band_form.py`) provides a modern narrative large-ensemble form profile inspired by lyrical, atmospheric, evolving jazz-orchestra writing. It builds on:
+
+- Big Band Engine (sectional orchestration)
+- Wayne Shorter Form Engine (form logic)
+- Ligeti Texture Engine (density, texture)
+- Big Band bridge (form + texture merge)
+
+**When to use:** Lyrical, atmospheric, or evolving large-ensemble pieces; narrative arcs; solo environments; transformed returns; codas.
+
+**How it differs from chart forms:** Chart forms (chart_arc, modular_big_band_form) are more compact and sectional. Narrative form adds intro-atmosphere, solo-environment, recomposition, and coda types.
+
+**Shorter + Ligeti interaction:** Use the bridge with `big_band_form_profile="narrative_big_band_form"` to combine Shorter form + Ligeti texture + narrative big band host.

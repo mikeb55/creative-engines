@@ -45,6 +45,7 @@ def run_big_band_form_texture_bridge(
     form_seed: int = 0,
     texture_seed: int = 0,
     ensemble_seed: int = 0,
+    big_band_form_profile: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Pipeline: generate Shorter form IR, Ligeti texture IR, Big Band IR;
@@ -53,13 +54,13 @@ def run_big_band_form_texture_bridge(
     """
     ensure_engines_loaded()
     compile_composition_from_ir, export_composition_to_musicxml = _load_bb_compile_and_export()
-    shorter_eng = get_engine("wayne_shorter")
+    shorter_eng = get_engine("shorter_form")
     ligeti_eng = get_engine("ligeti_texture")
     big_band_eng = get_engine("big_band")
     title = (input_text or "Form Texture Bridge").strip() or "Untitled"
     form_ir = shorter_eng.generate_ir(title, mode="title", seed=form_seed)
     texture_ir = ligeti_eng.generate_ir(title, mode="title", seed=texture_seed)
-    big_band_ir = big_band_eng.generate_ir(title, mode="title", seed=ensemble_seed)
+    big_band_ir = big_band_eng.generate_ir(title, mode="title", seed=ensemble_seed, form_profile=big_band_form_profile)
     merged_ir = merge_form_and_texture(form_ir, texture_ir, big_band_ir)
     compiled = compile_composition_from_ir(merged_ir)
     musicxml = export_composition_to_musicxml(compiled)

@@ -15,6 +15,7 @@ PROFILES = {
     "asymmetrical_shout_form": ([5, 7, 9, 13], ["primary", "contrast", "shout", "return"]),
     "sectional_wave_form": ([7, 5, 9, 7, 5], ["primary", "contrast", "return"]),
     "episode_return_chart": ([5, 9, 7, 9], ["primary", "contrast", "return"]),
+    "narrative_big_band_form": None,  # Handled by form_modules.narrative_big_band_form
 }
 
 
@@ -25,7 +26,23 @@ def _hash_int(seed: int, extra: int = 0) -> int:
 def plan_form(seed: int, profile: str = "chart_arc") -> Dict[str, Any]:
     """Plan form. Phrase groups 5–7, 7–9, 9–13 bars. Deterministic."""
     prof = profile
+    if prof == "narrative_big_band_form":
+        try:
+            from .form_modules.narrative_big_band_form import build_narrative_form_plan, map_narrative_to_big_band_sections
+        except ImportError:
+            from form_modules.narrative_big_band_form import build_narrative_form_plan, map_narrative_to_big_band_sections
+        np = build_narrative_form_plan(seed, "luminous_arc_form")
+        bb_roles = map_narrative_to_big_band_sections(np)
+        return {
+            "phrase_lengths": np["phrase_lengths"],
+            "section_order": bb_roles,
+            "total_bars": np["total_bars"],
+            "profile": prof,
+            "narrative_plan": np,
+        }
     phrase_lengths, section_order = PROFILES.get(prof, PROFILES["chart_arc"])
+    if phrase_lengths is None:
+        phrase_lengths, section_order = [5, 7, 9], ["primary", "contrast", "return"]
     h = _hash_int(seed)
     phrase_lengths = list(phrase_lengths)
     if h % 2 == 0:
