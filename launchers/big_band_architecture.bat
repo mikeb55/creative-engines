@@ -35,15 +35,15 @@ if not exist "%LAST_EXPORT%" (
 for /f "usebackq delims=" %%a in ("%LAST_EXPORT%") do set "OPEN_PATH=%%a"
 
 if not exist "!OPEN_PATH!" (
-  echo ERROR: Export folder not found: !OPEN_PATH! >> "%LOG%"
+  echo ERROR: Export file not found: !OPEN_PATH! >> "%LOG%"
   explorer "%REPO%\outputs\architecture"
   exit /b 0
 )
 
 echo OPEN_PATH: !OPEN_PATH! >> "%LOG%"
-echo FOLDER_EXISTS: 1 >> "%LOG%"
+echo FILE_EXISTS: 1 >> "%LOG%"
 
-explorer "!OPEN_PATH!"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO%\launchers\open_in_default_app.ps1" "!OPEN_PATH!"
 echo OPEN_EXIT: !ERRORLEVEL! >> "%LOG%"
 exit /b 0
 

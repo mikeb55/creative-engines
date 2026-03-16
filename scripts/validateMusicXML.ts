@@ -62,6 +62,24 @@ function main(): { valid: boolean; errors: string[] } {
   if (!/<beats>/.test(xml) && !/<time>/.test(xml)) errors.push('Required: <time> in attributes');
   if (!/<clef[\s>]/.test(xml)) errors.push('Required: <clef> in attributes');
 
+  // 4. part-list present
+  if (!/<part-list>/.test(xml)) errors.push('Required: <part-list> in score');
+  if (!/<score-part\s+id=/.test(xml)) errors.push('Required: <score-part> entries in part-list');
+
+  // 5. part entries: each score-part should have a matching part
+  const partIds = [...xml.matchAll(/<score-part\s+id="([^"]+)"/g)].map((m) => m[1]);
+  for (const id of partIds) {
+    const partRegex = new RegExp(`<part\\s+id="${id}"`);
+    if (!partRegex.test(xml)) errors.push(`Part ${id} declared in part-list but no matching <part id="${id}">`);
+  }
+
+  // 6. measure structure: at least one measure with duration elements
+  if (!/<duration>\d+<\/duration>/.test(xml)) errors.push('No measure durations found');
+
+  // 7. file size > 1KB
+  const stats = fs.statSync(filePath);
+  if (stats.size < 1024) errors.push(`File size ${stats.size} bytes < 1KB`);
+
   return {
     valid: errors.length === 0,
     errors,

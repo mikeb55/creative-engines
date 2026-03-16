@@ -198,6 +198,14 @@ function main(): DesktopResult {
   const bestScore = Math.max(...scores);
   const worstScore = Math.min(...scores);
 
+  const best = toExport[0];
+  const scorePath = path.join(runPath, 'ellington_score.musicxml');
+  fs.writeFileSync(
+    scorePath,
+    exportOrchestrationToMusicXML(best.orch, { title: 'Ellington Orchestration' }),
+    'utf-8'
+  );
+
   for (let i = 0; i < toExport.length; i++) {
     const { orch, plan, score } = toExport[i];
     const rank = String(i + 1).padStart(2, '0');
@@ -212,14 +220,8 @@ function main(): DesktopResult {
       JSON.stringify(orch, null, 2),
       'utf-8'
     );
-    fs.writeFileSync(
-      path.join(runPath, `ellington_plan_rank${rank}.musicxml`),
-      exportOrchestrationToMusicXML(orch, { title: `Ellington Orchestration #${i + 1}` }),
-      'utf-8'
-    );
   }
 
-  const best = toExport[0];
   const summary = `# Ellington Run Summary
 
 ## Settings
@@ -235,13 +237,13 @@ function main(): DesktopResult {
 - **Worst:** ${worstScore.toFixed(2)}
 
 ## Outputs
+- ellington_score.musicxml (big band score)
 ${toExport.map((c, i) => `- ellington_plan_GCE${c.score.toFixed(2)}_rank${String(i + 1).padStart(2, '0')}.md`).join('\n')}
-${toExport.map((_, i) => `- ellington_plan_rank${String(i + 1).padStart(2, '0')}.json, .musicxml`).join('\n')}
+${toExport.map((_, i) => `- ellington_plan_rank${String(i + 1).padStart(2, '0')}.json`).join('\n')}
 `;
   fs.writeFileSync(path.join(runPath, 'run_summary.md'), summary, 'utf-8');
 
-  const firstFile = path.join(runPath, 'ellington_plan_rank01.musicxml');
-  fs.writeFileSync(path.join(outDir, 'last_export.txt'), firstFile, 'utf-8');
+  fs.writeFileSync(path.join(outDir, 'last_export.txt'), scorePath, 'utf-8');
 
   return {
     generated: CANDIDATE_COUNT,
