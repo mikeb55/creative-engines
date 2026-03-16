@@ -46,12 +46,35 @@ def run_population_search(
     elite_ratio: float = 0.3,
     mutation_prob: float = 0.5,
     crossover_prob: float = 0.5,
+    hybrid_mode: bool = False,
+    input_text: str = "Population",
 ) -> List[PopulationCandidate]:
     """
     Run evolutionary population search.
     Pipeline: generate → score → select → mutate/crossover → repeat.
+    If hybrid_mode=True, uses hybrid population search instead.
     Returns best candidates from final generation (sorted by score desc).
     """
+    if hybrid_mode:
+        try:
+            from hybrid_engine.hybrid_population_runtime import run_hybrid_population_search
+            top = run_hybrid_population_search(
+                input_text=input_text,
+                count=population_size,
+                generations=generations,
+                top_n=population_size,
+                seed=seed,
+            )
+            return [
+                PopulationCandidate(
+                    composition=c.compiled_result.get("compiled"),
+                    score=c.adjusted_score,
+                    engine_source=f"hybrid:{c.melody_engine}+{c.harmony_engine}",
+                )
+                for c in top
+            ]
+        except ImportError:
+            pass
     rng = random.Random(seed)
     pop = generate_population(engine_name, population_size, seed)
     elite_n = max(1, int(population_size * elite_ratio))

@@ -85,25 +85,42 @@ bh_ir = bh_eng.generate_ir("Target", seed=1)
 bh_ir = inject_motif(bh_ir, motif_for_bh)
 ```
 
-## Appendix: 20 Hybrid Composition Ideas
+## Style-Aware Hybrid Population Search
+
+Generate many hybrids, score with evaluator + Style DNA, rank and export best:
+
+```python
+from hybrid_engine.hybrid_population_runtime import run_hybrid_population_search, export_top_hybrids
+
+top = run_hybrid_population_search(
+    input_text="My Hybrid",
+    count=12,
+    generations=2,
+    top_n=5,
+    seed=0,
+)
+export_top_hybrids(top, output_dir="output")
+```
+
+## Appendix: 20 Useful Hybrid Combinations
 
 1. Shorter melody + Barry Harris harmony
-2. Hill melody + Monk rhythm
-3. Monk melody + Shorter harmony
-4. Barry Harris melody + Hill harmony
-5. Shorter melody + Monk harmony
-6. Hill melody + Barry Harris harmony
-7. Monk melody + Hill harmony
-8. Barry Harris melody + Shorter harmony
-9. Shorter + Harris (melody + harmony)
-10. Hill + Monk (angular + rhythmic)
-11. Monk + Shorter (blues + ambiguous)
-12. Harris + Hill (bebop + cluster)
-13. Extract motifs from Shorter, inject into Monk
-14. Extract harmony from Harris, translate for Hill
-15. Hill countermelody over Shorter melody
-16. Monk rhythm over Barry Harris melody
-17. Shorter + Harris + Monk (three-engine)
-18. Hill melody, Harris harmony, Monk rhythm
-19. Cross-engine motif development
-20. Harmony from one engine, melody from another
+2. Hill melody + Monk rhythm + Shorter harmony
+3. Monk melody + Barry Harris harmony + Hill counterline
+4. Shorter melody + Monk harmony
+5. Barry Harris melody + Hill harmony
+6. Monk melody + Shorter harmony
+7. Hill melody + Barry Harris harmony
+8. Shorter melody + Harris + Monk rhythm
+9. Harris melody + Shorter harmony
+10. Hill melody + Monk harmony
+11. Monk melody + Hill harmony
+12. Shorter melody + Hill harmony
+13. Harris melody + Monk harmony
+14. Hill melody + Shorter harmony
+15. Monk melody + Harris harmony
+16. Shorter + Harris (melody + harmony)
+17. Hill + Monk (angular + rhythmic)
+18. Monk + Shorter (blues + ambiguous)
+19. Harris + Hill (bebop + cluster)
+20. Shorter + Harris + Monk (three-engine)

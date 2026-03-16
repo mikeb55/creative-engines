@@ -34,5 +34,7 @@ def compile_hybrid_composition(hybrid_ir: HybridComposerIR, input_text: str = "U
         "compiled": compiled,
         "melody_engine": hybrid_ir.primary_engine,
         "harmony_engine": hybrid_ir.harmony_engine,
+        "counter_engine": hybrid_ir.counter_engine,
+        "rhythm_engine": hybrid_ir.rhythm_engine,
         "ir": ir,
     }
