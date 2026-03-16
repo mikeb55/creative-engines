@@ -240,6 +240,9 @@ ${toExport.map((_, i) => `- ellington_plan_rank${String(i + 1).padStart(2, '0')}
 `;
   fs.writeFileSync(path.join(runPath, 'run_summary.md'), summary, 'utf-8');
 
+  const firstFile = path.join(runPath, 'ellington_plan_rank01.musicxml');
+  fs.writeFileSync(path.join(outDir, 'last_export.txt'), firstFile, 'utf-8');
+
   return {
     generated: CANDIDATE_COUNT,
     exported: toExport.length,

@@ -200,6 +200,9 @@ ${toExport.map((r, i) => `- wyble_etude_GCE${r.score.toFixed(2)}_rank${String(i 
 
   fs.writeFileSync(path.join(runFolderPath, 'run_summary.md'), summary, 'utf-8');
 
+  const firstFile = path.join(runFolderPath, `wyble_etude_GCE${toExport[0].score.toFixed(2)}_rank01.musicxml`);
+  fs.writeFileSync(path.join(desktopOutDir, 'last_export.txt'), firstFile, 'utf-8');
+
   return {
     generated: candidateCount,
     exported: toExport.length,
