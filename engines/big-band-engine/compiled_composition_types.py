@@ -18,6 +18,13 @@ class CompiledHarmonyPlan:
 
 
 @dataclass
+class CompiledRhythmicPlan:
+    """Per-section rhythm support: comp, sparse, shout styles."""
+    section_plans: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    global_style: str = "comp"
+
+
+@dataclass
 class CompiledSection:
     section_id: str
     role: str
@@ -39,4 +46,5 @@ class CompiledComposition:
     sections: List[CompiledSection] = field(default_factory=list)
     melody: CompiledMelodyBlueprint = field(default_factory=CompiledMelodyBlueprint)
     harmony: CompiledHarmonyPlan = field(default_factory=CompiledHarmonyPlan)
+    rhythmic_plan: CompiledRhythmicPlan = field(default_factory=CompiledRhythmicPlan)
     metadata: Dict[str, Any] = field(default_factory=dict)

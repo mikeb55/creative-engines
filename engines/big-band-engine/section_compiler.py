@@ -7,13 +7,13 @@ from typing import Any, Dict, List
 try:
     from .composer_ir import ComposerIR, SectionPlan, MotivicCell
     from .composer_ir_validator import validate_composer_ir
-    from .compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
+    from .compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan, CompiledRhythmicPlan
     from .harmonic_fields import derive_section_harmony
     from .motif_development import develop_motif_cell
 except ImportError:
     from composer_ir import ComposerIR, SectionPlan, MotivicCell
     from composer_ir_validator import validate_composer_ir
-    from compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
+    from compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan, CompiledRhythmicPlan
     from harmonic_fields import derive_section_harmony
     from motif_development import develop_motif_cell
 
@@ -43,12 +43,17 @@ def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
     for s in sections:
         all_chords.extend(s.harmony)
     harmony = CompiledHarmonyPlan(chords=all_chords)
+    rhythmic_plan = CompiledRhythmicPlan(
+        section_plans={s.section_id: s.rhythm_section_plan for s in sections},
+        global_style="comp",
+    )
     key_hint = composer_ir.export_hints.key_hint if composer_ir.export_hints else "Bb"
     return CompiledComposition(
         title=composer_ir.title,
         sections=sections,
         melody=melody,
         harmony=harmony,
+        rhythmic_plan=rhythmic_plan,
         metadata={"seed": composer_ir.seed, "form": composer_ir.form_plan, "tempo": composer_ir.tempo_hint, "key_hint": key_hint},
     )
 
@@ -56,8 +61,8 @@ def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
 def compile_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
     if section_plan.role == "primary":
         return compile_primary_theme(section_plan, composer_ir, section_id, bar_start)
-    if section_plan.role == "contrast":
-        return compile_contrast_section(section_plan, composer_ir, section_id, bar_start)
+    if section_plan.role in ("contrast", "development"):
+        return compile_development_section(section_plan, composer_ir, section_id, bar_start)
     if section_plan.role == "shout":
         return compile_shout_section(section_plan, composer_ir, section_id, bar_start)
     if section_plan.role in ("return", "coda"):
@@ -83,7 +88,8 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     )
 
 
-def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def compile_development_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+    """Compile development/contrast section: sax fragmentation, brass punches, layered density."""
     bars = section_plan.bar_count or 6
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[1] if len(composer_ir.motivic_cells) > 1 else (composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[5, 7]))

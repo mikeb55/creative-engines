@@ -90,3 +90,21 @@ def generate_composer_ir_from_premise(premise: str, seed: int = 0, profile: str 
     words = (premise or "").strip().split()[:3]
     title = " ".join(words).title() if words else "Untitled"
     return generate_composer_ir_from_title(title, seed, profile)
+
+
+def generate_composer_ir_candidates(input_text: str, mode: str = "title", count: int = 12, seed: int = 0) -> List[ComposerIR]:
+    """Generate count varied ComposerIR candidates. Deterministic, profile cycling."""
+    out = []
+    for i in range(count):
+        s = seed + i * 1007
+        prof = PROFILES[i % len(PROFILES)]
+        try:
+            if mode == "title":
+                ir = generate_composer_ir_from_title(input_text or "Untitled", s, prof)
+            else:
+                ir = generate_composer_ir_from_premise(input_text or "Untitled", s, prof)
+            out.append(ir)
+        except ValueError:
+            ir = generate_composer_ir_from_title("Untitled", s, "brass_punch")
+            out.append(ir)
+    return out[:count]
