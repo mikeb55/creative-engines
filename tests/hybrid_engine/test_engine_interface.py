@@ -58,3 +58,16 @@ def test_bartok_night_interface():
     assert compiled.sections
     xml = eng.export_musicxml(compiled)
     assert "<score-partwise" in xml
+
+
+def test_wheeler_lyric_interface():
+    ensure_engines_loaded()
+    eng = get_engine("wheeler_lyric")
+    ir = eng.generate_ir("Lyrical Study", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml
