@@ -1,4 +1,10 @@
 """Tests for Wheeler Lyric interval language."""
+import sys
+import os
+for m in ("interval_language", "composer_ir"):
+    sys.modules.pop(m, None)
+_eng = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "engines", "wheeler-lyric-engine"))
+sys.path.insert(0, _eng)
 
 from interval_language import (
     build_interval_language,

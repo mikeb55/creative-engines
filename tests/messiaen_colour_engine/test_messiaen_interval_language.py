@@ -1,9 +1,11 @@
 """Tests for Messiaen Colour interval language."""
-
 import importlib.util
 import os
 import sys
-_messiaen = os.path.join(os.path.dirname(__file__), "..", "..", "engines", "messiaen-colour-engine")
+for m in ("composer_ir", "interval_language"):
+    sys.modules.pop(m, None)
+_messiaen = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "engines", "messiaen-colour-engine"))
+sys.path.insert(0, _messiaen)
 _spec = importlib.util.spec_from_file_location("messiaen_interval", os.path.join(_messiaen, "interval_language.py"))
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)

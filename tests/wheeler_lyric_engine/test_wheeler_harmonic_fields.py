@@ -1,4 +1,10 @@
 """Tests for Wheeler Lyric harmonic fields."""
+import sys
+import os
+for m in ("harmonic_fields",):
+    sys.modules.pop(m, None)
+_eng = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "engines", "wheeler-lyric-engine"))
+sys.path.insert(0, _eng)
 
 from harmonic_fields import (
     build_harmonic_field,

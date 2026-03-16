@@ -23,6 +23,11 @@ print(len(result["finalists"]))
 | bartok_night | Bartok Night | Single engine |
 | wheeler_lyric | Wheeler Lyric | Single engine |
 | frisell_atmosphere | Frisell Atmosphere | Single engine |
+| scofield_holland | Scofield Holland | Single engine |
+| stravinsky_pulse | Stravinsky Pulse | Single engine |
+| zappa_disruption | Zappa Disruption | Single engine |
+| messiaen_colour | Messiaen Colour | Single engine |
+| slonimsky_harmonic | Slonimsky Harmonic | Single engine (requires engine) |
 | hybrid_counterpoint | Shorter + Harris + Hill + Monk | Hybrid |
 | chamber_jazz | Wheeler + Frisell + Bartok | Hybrid + orchestration |
 | lead_sheet_song | Wheeler | Single + lead sheet |

@@ -1,9 +1,10 @@
 """Tests for Zappa Disruption interval language."""
-
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "engines", "zappa-disruption-engine"))
+for m in ("composer_ir", "interval_language"):
+    sys.modules.pop(m, None)
+_eng = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "engines", "zappa-disruption-engine"))
+sys.path.insert(0, _eng)
 
 from interval_language import build_interval_language
 

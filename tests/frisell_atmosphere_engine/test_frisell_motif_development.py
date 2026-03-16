@@ -1,4 +1,10 @@
 """Tests for Frisell Atmosphere motif development."""
+import sys
+import os
+for m in ("composer_ir", "motif_development"):
+    sys.modules.pop(m, None)
+_eng = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "engines", "frisell-atmosphere-engine"))
+sys.path.insert(0, _eng)
 
 from composer_ir import MotivicCell
 from motif_development import (

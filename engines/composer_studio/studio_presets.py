@@ -156,6 +156,14 @@ PRESETS: Dict[str, StudioPreset] = {
         population_size=8,
         finalist_count=3,
     ),
+    "slonimsky_harmonic": StudioPreset(
+        name="slonimsky_harmonic",
+        engine_mode="single",
+        melody_engine="slonimsky_harmonic",
+        export_mode="composition",
+        population_size=8,
+        finalist_count=3,
+    ),
 }
 
 
