@@ -45,3 +45,16 @@ def test_monk_interface():
     ir = eng.generate_ir("Blues Head", mode="title", seed=0)
     compiled = eng.compile_from_ir(ir)
     assert compiled.sections
+
+
+def test_bartok_night_interface():
+    ensure_engines_loaded()
+    eng = get_engine("bartok_night")
+    ir = eng.generate_ir("Night Study", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml

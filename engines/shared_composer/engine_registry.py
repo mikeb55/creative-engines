@@ -61,6 +61,7 @@ def _register_builtin_engines() -> None:
     _load_engine_from_path("barry-harris-engine", "engine_adapter", "BarryHarrisEngine", "barry_harris")
     _load_engine_from_path("andrew-hill-engine", "engine_adapter", "AndrewHillEngine", "andrew_hill")
     _load_engine_from_path("monk-engine", "engine_adapter", "MonkEngine", "monk")
+    _load_engine_from_path("bartok-night-engine", "engine_adapter", "BartokNightEngine", "bartok_night")
 
 
 def ensure_engines_loaded() -> None:
