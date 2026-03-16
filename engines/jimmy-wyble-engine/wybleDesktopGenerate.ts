@@ -13,13 +13,12 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateWybleEtude } from './wybleEngine';
-import { evaluateWybleStudy } from './wybleAutoTest';
-import { exportToMusicXML } from './wybleMusicXMLExporter';
+import { generateWybleScore } from './wybleMeasureGenerator';
+import { scoreWybleMeasureFirst } from './wybleScoreEvaluator';
+import { exportScoreToMusicXML } from './wybleMusicXMLExporter';
 import { parseMusicXMLToProgression } from './import/parseMusicXMLToProgression';
 import { getTemplate } from './templates/templateLibrary';
-import type { WybleParameters, HarmonicContext } from './wybleTypes';
-import type { WybleEtudeResult } from './wybleEtudeGenerator';
+import type { ChordProgression } from './wybleEtudeGenerator';
 
 interface ProgressionSegment {
   chord: string;
@@ -39,19 +38,6 @@ const MIN_GCE_TARGET = 9.0;
 function loadProgression(filePath: string): ProgressionSegment[] {
   const json = fs.readFileSync(filePath, 'utf-8');
   return JSON.parse(json) as ProgressionSegment[];
-}
-
-function progressionToHarmonicContext(progression: ProgressionSegment[]): HarmonicContext {
-  const chords = progression.map(({ chord, bars }) => {
-    const match = chord.match(/^([A-G][#b]?)(maj7|min7|m7|7|m|dom7|m7b5)?/i);
-    if (!match) return { root: 'C', quality: 'maj', bars };
-    let q = (match[2] ?? 'maj').toLowerCase();
-    if (q === 'm7' || q === 'min7' || q === 'm7b5') q = 'min';
-    if (q === '7' || q === 'dom7') q = 'dom';
-    if (q === 'maj7') q = 'maj';
-    return { root: match[1], quality: q, bars };
-  });
-  return { chords, key: 'C' };
 }
 
 function getRunFolderName(desktopOutDir: string): string {
@@ -128,28 +114,15 @@ function main(): DesktopResult {
     }
   }
 
-  const harmonicContext = progressionToHarmonicContext(progression);
-
-  const params: WybleParameters = {
-    harmonicContext,
-    phraseLength: bars,
-    independenceBias: 0.85,
-    contraryMotionBias: 0.75,
-    dyadDensity: 0.55,
-    chromaticismLevel: 0.15,
-    practiceMode,
-    voiceRatioMode: practiceMode === 'exercise' ? 'two_to_one' : practiceMode === 'improvisation' ? 'mixed' : 'one_to_one',
-  };
-
-  const candidates: { output: import('./wybleTypes').WybleOutput; score: number }[] = [];
+  const candidates: { score: import('../../shared/scoreModel').Score; gceScore: number }[] = [];
   for (let i = 0; i < candidateCount; i++) {
-    const output = generateWybleEtude(params);
-    const score = evaluateWybleStudy(output);
-    candidates.push({ output, score });
+    const score = generateWybleScore(progression as ChordProgression, { seed: Date.now() + i * 13 });
+    const gceScore = scoreWybleMeasureFirst(score);
+    candidates.push({ score, gceScore });
   }
 
-  const scores = candidates.map((c) => c.score);
-  const sorted = [...candidates].sort((a, b) => b.score - a.score);
+  const scores = candidates.map((c) => c.gceScore);
+  const sorted = [...candidates].sort((a, b) => b.gceScore - a.gceScore);
   const toExport = sorted.slice(0, exportCount);
 
   const runFolder = getRunFolderName(desktopOutDir);
@@ -159,18 +132,12 @@ function main(): DesktopResult {
   const exportedScores: number[] = [];
   for (let i = 0; i < toExport.length; i++) {
     const r = toExport[i];
-    const scoreStr = r.score.toFixed(2);
+    const scoreStr = r.gceScore.toFixed(2);
     const rankStr = String(i + 1).padStart(2, '0');
     const filename = `wyble_etude_GCE${scoreStr}_rank${rankStr}.musicxml`;
-    const result: WybleEtudeResult = {
-      upper_line: r.output.upper_line,
-      lower_line: r.output.lower_line,
-      implied_harmony: r.output.implied_harmony,
-      bars,
-    };
-    const musicXml = exportToMusicXML(result, { title: `Wyble Etude rank ${i + 1} (GCE ${scoreStr})`, runPath: runFolderPath });
+    const musicXml = exportScoreToMusicXML(r.score, { title: `Wyble Etude rank ${i + 1} (GCE ${scoreStr})`, runPath: runFolderPath });
     fs.writeFileSync(path.join(runFolderPath, filename), musicXml, 'utf-8');
-    exportedScores.push(r.score);
+    exportedScores.push(r.gceScore);
   }
 
   const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -195,13 +162,10 @@ function main(): DesktopResult {
 - **GCE ≥ ${minGce} threshold met:** ${gceThresholdMet ? 'YES' : 'NO'}
 
 ## Exported Files
-${toExport.map((r, i) => `- wyble_etude_GCE${r.score.toFixed(2)}_rank${String(i + 1).padStart(2, '0')}.musicxml (score: ${r.score.toFixed(2)})`).join('\n')}
+${toExport.map((r, i) => `- wyble_etude_GCE${r.gceScore.toFixed(2)}_rank${String(i + 1).padStart(2, '0')}.musicxml (score: ${r.gceScore.toFixed(2)})`).join('\n')}
 `;
 
   fs.writeFileSync(path.join(runFolderPath, 'run_summary.md'), summary, 'utf-8');
-
-  const firstFile = path.join(runFolderPath, `wyble_etude_GCE${toExport[0].score.toFixed(2)}_rank01.musicxml`);
-  fs.writeFileSync(path.join(desktopOutDir, 'last_export.txt'), firstFile, 'utf-8');
 
   return {
     generated: candidateCount,

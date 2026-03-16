@@ -26,35 +26,7 @@ if %EXIT% neq 0 (
   exit /b 1
 )
 
-if not exist "%LAST_EXPORT%" (
-  echo ERROR: last_export.txt not found >> "%LOG%"
-  explorer "%REPO%\outputs\counterpoint"
-  exit /b 0
-)
-
-for /f "usebackq delims=" %%a in ("%LAST_EXPORT%") do set "OPEN_PATH=%%a"
-
-if not exist "!OPEN_PATH!" (
-  echo ERROR: Export file not found: !OPEN_PATH! >> "%LOG%"
-  explorer "%REPO%\outputs\counterpoint"
-  exit /b 0
-)
-
-for %%A in ("!OPEN_PATH!") do set "SIZE=%%~zA"
-echo OPEN_PATH: !OPEN_PATH! >> "%LOG%"
-echo FILE_EXISTS: 1 >> "%LOG%"
-echo FILE_SIZE: !SIZE! >> "%LOG%"
-
-"%NODE_EXE%" "%REPO%\node_modules\ts-node\dist\bin.js" --project "%REPO%\tsconfig.json" "%REPO%\scripts\validateMusicXML.ts" "!OPEN_PATH!" >> "%LOG%" 2>&1
-if errorlevel 1 (
-  echo VALIDATION_FAILED: MusicXML did not pass validation - not opening Sibelius >> "%LOG%"
-  explorer "%REPO%\outputs\counterpoint"
-  exit /b 0
-)
-echo VALIDATION_PASSED: 1 >> "%LOG%"
-
-powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO%\launchers\open_in_default_app.ps1" "!OPEN_PATH!"
-echo OPEN_EXIT: !ERRORLEVEL! >> "%LOG%"
+echo QUARANTINE: Auto-open disabled. Generation complete. >> "%LOG%"
 exit /b 0
 
 :fail

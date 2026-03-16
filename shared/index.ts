@@ -6,3 +6,8 @@ export * from './notationTimingConstants';
 export * from './notationTimingEngine';
 export * from './musicxmlMeasurePacker';
 export * from './musicxmlTimingValidation';
+export * from './scoreModel';
+export * from './barComposer';
+export * from './scoreToTimedEvents';
+export * from './notationValidation';
+export * from './barFirstMusicXMLWriter';

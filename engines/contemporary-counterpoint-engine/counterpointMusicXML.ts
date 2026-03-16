@@ -1,66 +1,30 @@
 /**
- * Contemporary Counterpoint — MusicXML export via shared canonical notation timing engine.
+ * Contemporary Counterpoint — MusicXML export (measure-first).
+ * Iterate score → measures → voices → notes. No measure packing.
  */
 
-import type { CounterpointOutput, CounterpointNote } from './counterpointTypes';
-import { MEASURE_DURATION, DIVISIONS, beatsToDivisions } from '../../shared/notationTimingConstants';
-import { packEventsIntoMeasures, type TimedNoteEvent } from '../../shared/notationTimingEngine';
+import type { Score } from '../../shared/scoreModel';
+import { validateScore } from '../../shared/barComposer';
+import { scoreToMeasureEvents } from '../../shared/scoreToTimedEvents';
+import { MEASURE_DURATION, DIVISIONS } from '../../shared/notationTimingConstants';
 import { eventsToMeasureXml } from '../../shared/musicxmlMeasurePacker';
-import { validateMeasureDurations } from '../../shared/musicxmlTimingValidation';
 import * as fs from 'fs';
 import * as path from 'path';
 
-/** Convert Counterpoint lines to TimedNoteEvents. */
-function counterpointToTimedEvents(out: CounterpointOutput): TimedNoteEvent[] {
-  const events: TimedNoteEvent[] = [];
-  for (let v = 0; v < out.lines.length; v++) {
-    const line = out.lines[v];
-    const partId = `P${v + 1}`;
-    for (const n of line.notes) {
-      events.push({
-        pitch: n.pitch,
-        startDivision: beatsToDivisions(n.onset),
-        durationDivisions: Math.max(1, beatsToDivisions(n.duration)),
-        voice: 1,
-        staff: 1,
-        part: partId,
-        tieStart: false,
-        tieStop: false,
-        rest: false,
-      });
-    }
-  }
-  return events;
-}
-
-export function exportCounterpointToMusicXML(
-  out: CounterpointOutput,
+/** Export Score to MusicXML. Throws if validation fails. */
+export function exportCounterpointScoreToMusicXML(
+  score: Score,
   title = 'Contemporary Counterpoint',
   options?: { runPath?: string }
 ): string {
-  const timedEvents = counterpointToTimedEvents(out);
-  const maxMeasure = Math.max(
-    ...out.lines.flatMap((l) =>
-      l.notes.map((n) => Math.floor(beatsToDivisions(n.onset + n.duration) / MEASURE_DURATION))
-    ),
-    out.totalBars - 1
-  );
-  const measureCount = Math.max(maxMeasure + 1, out.totalBars);
-
-  const measureEvents = packEventsIntoMeasures(timedEvents, measureCount);
-
-  const validation = validateMeasureDurations(measureEvents);
+  const validation = validateScore(score.measures);
   if (options?.runPath) {
     fs.writeFileSync(
       path.join(options.runPath, 'timing_report.json'),
       JSON.stringify({
-        measuresChecked: validation.measuresChecked,
-        durationTotals: validation.durationTotals,
-        tiesInserted: validation.tiesInserted,
-        restsInserted: validation.restsInserted,
+        measuresChecked: score.measures.length,
         valid: validation.valid,
         errors: validation.errors,
-        warnings: validation.warnings,
       }, null, 2),
       'utf-8'
     );
@@ -69,17 +33,17 @@ export function exportCounterpointToMusicXML(
       JSON.stringify({
         valid: validation.valid,
         errors: validation.errors,
-        warnings: validation.warnings,
-        violationsBlocking: validation.violationsBlocking,
+        violationsBlocking: validation.errors,
       }, null, 2),
       'utf-8'
     );
   }
   if (!validation.valid) {
-    throw new Error(`Counterpoint timing validation failed: ${validation.errors.join('; ')}`);
+    throw new Error(`Counterpoint score validation failed: ${validation.errors.join('; ')}`);
   }
 
-  const partIds = out.lines.map((_, i) => `P${i + 1}`);
+  const measureEvents = scoreToMeasureEvents(score);
+  const partIds = score.parts ?? [...new Set(score.measures.flatMap((m) => m.voices.map((v) => v.part)))];
   const firstMeasureAttrs = `        <attributes>
           <divisions>${DIVISIONS}</divisions>
           <key><fifths>0</fifths></key>
@@ -89,7 +53,7 @@ export function exportCounterpointToMusicXML(
 
   const partXmls = partIds.map((partId, partIdx) => {
     let partXml = `    <part id="${partId}">\n`;
-    for (let m = 0; m < measureCount; m++) {
+    for (let m = 0; m < score.measures.length; m++) {
       const events = (measureEvents.get(m) ?? []).filter((e) => e.part === partId);
       const measureStart = m * MEASURE_DURATION;
       partXml += `      <measure number="${m + 1}">\n`;

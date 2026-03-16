@@ -10,9 +10,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { runContemporaryCounterpointEngine } from './counterpointEngine';
-import { exportCounterpointToMusicXML } from './counterpointMusicXML';
-import type { CounterpointOutput } from './counterpointTypes';
+import { generateCounterpointScore } from './counterpointMeasureGenerator';
+import { exportCounterpointScoreToMusicXML } from './counterpointMusicXML';
 
 const PROGRESSIONS: Record<string, { chord: string; bars: number }[]> = {
   ii_v_i: [
@@ -74,15 +73,10 @@ function main(): DesktopResult {
     progressionName = arg2;
   }
 
-  const out = runContemporaryCounterpointEngine({
-    harmonicContext: progression,
-    parameters: {
-      lineCount,
-      rhythmicOffsetBias: density,
-      dissonanceLevel: 0.5,
-      overlapTolerance: 0.5,
-    },
+  const score = generateCounterpointScore(progression, {
+    lineCount,
     seed: Date.now(),
+    title: `Contemporary Counterpoint (${progressionName})`,
   });
 
   const runFolder = getRunFolderName(outDir);
@@ -90,7 +84,7 @@ function main(): DesktopResult {
   fs.mkdirSync(runFolderPath, { recursive: true });
 
   const planPath = path.join(runFolderPath, 'counterpoint_plan.json');
-  fs.writeFileSync(planPath, JSON.stringify(out, null, 2), 'utf-8');
+  fs.writeFileSync(planPath, JSON.stringify({ measures: score.measures.length, parts: score.parts }, null, 2), 'utf-8');
 
   const summary = `# Contemporary Counterpoint Summary
 
@@ -98,12 +92,11 @@ function main(): DesktopResult {
 - **Timestamp:** ${new Date().toISOString()}
 - **Progression:** ${progressionName}
 - **Voice count:** ${lineCount}
-- **Total bars:** ${out.totalBars}
+- **Total bars:** ${score.measures.length}
 
 ## Output
-- Lines: ${out.lines.length}
-- Handoff points: ${out.handoffPoints.length}
-- Overlap points: ${out.overlapPoints.length}
+- Measures: ${score.measures.length}
+- Parts: ${score.parts?.join(', ') ?? ''}
 
 ## Files
 - counterpoint_plan.json
@@ -112,10 +105,8 @@ function main(): DesktopResult {
 `;
   fs.writeFileSync(path.join(runFolderPath, 'counterpoint_summary.md'), summary, 'utf-8');
 
-  const musicXml = exportCounterpointToMusicXML(out, `Contemporary Counterpoint (${progressionName})`, { runPath: runFolderPath });
-  const firstFile = path.join(runFolderPath, 'counterpoint_sketch.musicxml');
-  fs.writeFileSync(firstFile, musicXml, 'utf-8');
-  fs.writeFileSync(path.join(outDir, 'last_export.txt'), firstFile, 'utf-8');
+  const musicXml = exportCounterpointScoreToMusicXML(score, `Contemporary Counterpoint (${progressionName})`, { runPath: runFolderPath });
+  fs.writeFileSync(path.join(runFolderPath, 'counterpoint_sketch.musicxml'), musicXml, 'utf-8');
 
   return {
     outputDir: outDir,
@@ -123,7 +114,7 @@ function main(): DesktopResult {
     runFolderPath,
     progressionName,
     lineCount,
-    totalBars: out.totalBars,
+    totalBars: score.measures.length,
   };
 }
 

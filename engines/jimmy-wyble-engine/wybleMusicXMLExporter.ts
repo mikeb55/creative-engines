@@ -1,14 +1,13 @@
 /**
- * Wyble MusicXML Exporter — uses shared canonical notation timing engine.
- * Two-staff guitar study: staff 1 = melody, staff 2 = bass.
+ * Wyble MusicXML Exporter — measure-first architecture.
+ * Iterate score → measures → voices → notes. No measure packing.
  */
 
-import type { WybleEtudeResult } from './wybleEtudeGenerator';
-import type { NoteEvent } from './wybleTypes';
+import type { Score } from '../../shared/scoreModel';
+import { validateScore } from '../../shared/barComposer';
+import { scoreToMeasureEvents } from '../../shared/scoreToTimedEvents';
 import { MEASURE_DURATION, DIVISIONS } from '../../shared/notationTimingConstants';
-import { packEventsIntoMeasures, type TimedNoteEvent } from '../../shared/notationTimingEngine';
-import { eventsToMeasureXmlWithBackup } from '../../shared/musicxmlMeasurePacker';
-import { validateMeasureDurations } from '../../shared/musicxmlTimingValidation';
+import { eventsToMeasureXml } from '../../shared/musicxmlMeasurePacker';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -16,109 +15,22 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-/** Convert Wyble engine output to TimedNoteEvents using shared timing. */
-function wybleToTimedEvents(result: WybleEtudeResult): TimedNoteEvent[] {
-  const events: TimedNoteEvent[] = [];
-  const upper = result.upper_line.events;
-  const lower = result.lower_line.events;
-  const totalBeats = result.bars * 4;
-  let uIdx = 0;
-  let lIdx = 0;
-
-  for (let beatIndex = 0; beatIndex < totalBeats; beatIndex++) {
-    const onsetBeats = beatIndex;
-    const durationBeats = 1;
-
-    if (uIdx < upper.length && upper[uIdx].isDyad && lIdx < lower.length) {
-      events.push({
-        pitch: upper[uIdx].pitch,
-        startDivision: beatIndex * DIVISIONS,
-        durationDivisions: DIVISIONS,
-        voice: 1,
-        staff: 1,
-        part: 'P1',
-        tieStart: false,
-        tieStop: false,
-        rest: false,
-      });
-      events.push({
-        pitch: lower[lIdx].pitch,
-        startDivision: beatIndex * DIVISIONS,
-        durationDivisions: DIVISIONS,
-        voice: 2,
-        staff: 2,
-        part: 'P1',
-        tieStart: false,
-        tieStop: false,
-        rest: false,
-      });
-      uIdx++;
-      lIdx++;
-    } else if (beatIndex % 2 === 0 && uIdx < upper.length) {
-      events.push({
-        pitch: upper[uIdx].pitch,
-        startDivision: beatIndex * DIVISIONS,
-        durationDivisions: DIVISIONS,
-        voice: 1,
-        staff: 1,
-        part: 'P1',
-        tieStart: false,
-        tieStop: false,
-        rest: false,
-      });
-      uIdx++;
-    } else if (lIdx < lower.length) {
-      events.push({
-        pitch: lower[lIdx].pitch,
-        startDivision: beatIndex * DIVISIONS,
-        durationDivisions: DIVISIONS,
-        voice: 2,
-        staff: 2,
-        part: 'P1',
-        tieStart: false,
-        tieStop: false,
-        rest: false,
-      });
-      lIdx++;
-    } else {
-      events.push({
-        pitch: 0,
-        startDivision: beatIndex * DIVISIONS,
-        durationDivisions: DIVISIONS,
-        voice: 1,
-        staff: 1,
-        part: 'P1',
-        tieStart: false,
-        tieStop: false,
-        rest: true,
-      });
-    }
-  }
-
-  return events;
-}
-
-export function exportToMusicXML(
-  result: WybleEtudeResult,
+/** Export Score to MusicXML. Throws if validation fails. */
+export function exportScoreToMusicXML(
+  score: Score,
   options?: { title?: string; runPath?: string }
 ): string {
-  const title = options?.title ?? 'Wyble Etude';
+  const title = options?.title ?? score.title ?? 'Wyble Etude';
 
-  const timedEvents = wybleToTimedEvents(result);
-  const measureEvents = packEventsIntoMeasures(timedEvents, result.bars);
-
-  const validation = validateMeasureDurations(measureEvents);
+  const validation = validateScore(score.measures);
   if (options?.runPath) {
     fs.writeFileSync(
       path.join(options.runPath, 'timing_report.json'),
       JSON.stringify({
-        measuresChecked: validation.measuresChecked,
-        durationTotals: validation.durationTotals,
-        tiesInserted: validation.tiesInserted,
-        restsInserted: validation.restsInserted,
+        measuresChecked: score.measures.length,
         valid: validation.valid,
         errors: validation.errors,
-        warnings: validation.warnings,
+        warnings: [],
       }, null, 2),
       'utf-8'
     );
@@ -127,15 +39,16 @@ export function exportToMusicXML(
       JSON.stringify({
         valid: validation.valid,
         errors: validation.errors,
-        warnings: validation.warnings,
-        violationsBlocking: validation.violationsBlocking,
+        violationsBlocking: validation.errors,
       }, null, 2),
       'utf-8'
     );
   }
   if (!validation.valid) {
-    throw new Error(`Wyble timing validation failed: ${validation.errors.join('; ')}`);
+    throw new Error(`Wyble score validation failed: ${validation.errors.join('; ')}`);
   }
+
+  const measureEvents = scoreToMeasureEvents(score);
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
@@ -150,7 +63,7 @@ export function exportToMusicXML(
   <part id="P1">
 `;
 
-  for (let m = 0; m < result.bars; m++) {
+  for (let m = 0; m < score.measures.length; m++) {
     const events = measureEvents.get(m) ?? [];
     xml += `  <measure number="${m + 1}">\n`;
     if (m === 0) {
@@ -163,7 +76,7 @@ export function exportToMusicXML(
       <clef number="2"><sign>G</sign><line>2</line></clef>
     </attributes>\n`;
     }
-    xml += eventsToMeasureXmlWithBackup(events, m, m * MEASURE_DURATION);
+    xml += eventsToMeasureXml(events, m, m * MEASURE_DURATION);
     xml += `  </measure>\n`;
   }
 
