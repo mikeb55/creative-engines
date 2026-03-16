@@ -1,0 +1,20 @@
+"""Tests for Scofield Holland MusicXML exporter."""
+
+from generator import generate_composer_ir_from_title
+from section_compiler import compile_composition_from_ir
+from musicxml_exporter import export_composition_to_musicxml
+
+
+def test_scofield_export_musicxml():
+    ir = generate_composer_ir_from_title("Export Test", seed=0)
+    comp = compile_composition_from_ir(ir)
+    xml = export_composition_to_musicxml(comp)
+    assert "score-partwise" in xml
+    assert "Export Test" in xml
+
+
+def test_scofield_export_has_notes():
+    ir = generate_composer_ir_from_title("Notes", seed=0)
+    comp = compile_composition_from_ir(ir)
+    xml = export_composition_to_musicxml(comp)
+    assert "<note>" in xml
