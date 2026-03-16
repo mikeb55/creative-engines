@@ -2,7 +2,7 @@
 Composition Evaluator — Pipeline to score compositions from any composer engine.
 """
 
-from typing import Any
+from typing import Any, Optional
 
 try:
     from .composition_score_types import CompositionScore
@@ -30,9 +30,15 @@ WEIGHTS = {
     "asymmetry": 0.15,
 }
 
+STYLE_WEIGHT = 0.3
 
-def evaluate_composition(compiled_composition: Any) -> CompositionScore:
-    """Evaluate composition. Returns CompositionScore with 0–10 scores."""
+
+def evaluate_composition(
+    compiled_composition: Any,
+    engine_name: Optional[str] = None,
+) -> CompositionScore:
+    """Evaluate composition. Returns CompositionScore with 0–10 scores.
+    If engine_name is provided, adds style fit and returns style-adjusted total_score."""
     motif_score = score_motif_coherence(compiled_composition)
     harmony_score = score_harmonic_interest(compiled_composition)
     interval_score = score_interval_language(compiled_composition)
@@ -55,7 +61,21 @@ def evaluate_composition(compiled_composition: Any) -> CompositionScore:
         + voice_score * WEIGHTS["voice_leading"]
         + asym_score * WEIGHTS["asymmetry"]
     ) / sum(WEIGHTS.values())
-    total = max(0.0, min(10.0, total))
+    base_score = max(0.0, min(10.0, total))
+    style_fit_score = 0.0
+    if engine_name:
+        try:
+            from style_dna.style_ranker import style_adjusted_score
+            total = style_adjusted_score(
+                compiled_composition,
+                engine_name,
+                base_score,
+                style_weight=STYLE_WEIGHT,
+            )
+            from style_dna.style_dna_analyzer import analyze_composition_style
+            style_fit_score = analyze_composition_style(compiled_composition, engine_name) * 10.0
+        except ImportError:
+            pass
     return CompositionScore(
         total_score=total,
         motif_score=motif_score,
@@ -65,4 +85,6 @@ def evaluate_composition(compiled_composition: Any) -> CompositionScore:
         voice_leading_score=voice_score,
         asymmetry_score=asym_score,
         breakdown=breakdown,
+        style_fit_score=style_fit_score,
+        base_score=base_score,
     )

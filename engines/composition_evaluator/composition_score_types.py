@@ -17,3 +17,5 @@ class CompositionScore:
     voice_leading_score: float = 0.0
     asymmetry_score: float = 0.0
     breakdown: Dict[str, float] = field(default_factory=dict)
+    style_fit_score: float = 0.0
+    base_score: float = 0.0
