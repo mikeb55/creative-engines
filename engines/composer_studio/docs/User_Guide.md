@@ -27,7 +27,7 @@ print(len(result["finalists"]))
 | stravinsky_pulse | Stravinsky Pulse | Single engine |
 | zappa_disruption | Zappa Disruption | Single engine |
 | messiaen_colour | Messiaen Colour | Single engine |
-| slonimsky_harmonic | Slonimsky Harmonic | Single engine (requires engine) |
+| slonimsky_harmonic | Slonimsky Harmonic | Single engine (stub) |
 | hybrid_counterpoint | Shorter + Harris + Hill + Monk | Hybrid |
 | chamber_jazz | Wheeler + Frisell + Bartok | Hybrid + orchestration |
 | lead_sheet_song | Wheeler | Single + lead sheet |
@@ -46,9 +46,25 @@ outputs/composer_studio/studio_runs/<timestamp>/
   finalists_summary.json
 ```
 
+## Composer Studio Pipeline
+
+The full workflow runs as follows:
+
+1. **Input idea** — Title, premise, or theme text
+2. **Preset** — Choose engine or hybrid combination (e.g. `wheeler_lyric`, `chamber_jazz`)
+3. **Engine generation** — Composer engines generate candidate compositions
+4. **Ranking** — Candidates are scored and ranked; top finalists selected
+5. **Orchestration bridge** — Optional: map composition to ensemble (string quartet, chamber jazz, etc.)
+6. **Lead sheet export** — Optional: build vocal melody, chord symbols, lyric placeholders
+7. **Export** — MusicXML files written to `outputs/composer_studio/studio_runs/<timestamp>/`
+
+Output folders include `compositions_musicxml/`, `ensemble_musicxml/`, `lead_sheets_musicxml/`, `summaries/`, `metadata/`, plus `run_summary.txt` and `finalists_summary.json`.
+
+If a preset references an engine not in the registry, the system falls back to `shorter_head` and logs a warning.
+
 ## Launcher
 
-Double-click `launchers/composer_studio_launcher.bat` for a default run.
+Double-click `launchers/composer_studio_launcher.bat` for a default run. Outputs go to `outputs/composer_studio/studio_runs/`.
 
 ## Appendix: 20 Useful Workflows
 
