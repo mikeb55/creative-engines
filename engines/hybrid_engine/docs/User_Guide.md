@@ -1,8 +1,12 @@
 # Hybrid Engine — User Guide
 
+## Counterpoint-Capable Hybrid Layer
+
+The hybrid engine supports **2–4 voice counterpoint**: lead, counterline, optional inner voice, optional bass motion. Use `counter_engine` to add a counterline; the compiler builds polyphonic texture and the MusicXML exporter outputs separate parts.
+
 ## How Composer Engines Interact
 
-The creative-engines project has four composer engines. Each engine exposes the same interface:
+The creative-engines project has seven composer engines. Each engine exposes the same interface:
 
 - **generate_ir** — Create a composition plan from title or premise
 - **compile_from_ir** — Turn the plan into a compiled composition
@@ -102,25 +106,60 @@ top = run_hybrid_population_search(
 export_top_hybrids(top, output_dir="output")
 ```
 
+## 2–4 Voice Use Cases
+
+- **2 voices**: Lead + counterline (e.g. Wheeler melody + Frisell counterline)
+- **3 voices**: Lead + counterline + inner (e.g. Shorter + Bartok counter + Harris harmony)
+- **4 voices**: Lead + counterline + inner + bass (e.g. Monk + Hill + Harris + Barry)
+
+## Suggested Counterpoint Combinations
+
+- Wheeler melody + Frisell harmony + Bartok counterline
+- Shorter melody + Barry Harris harmony + Monk rhythm + Hill counterline
+- Frisell melody + Wheeler counterline + Bartok texture
+
 ## Appendix: 20 Useful Hybrid Combinations
 
 1. Shorter melody + Barry Harris harmony
 2. Hill melody + Monk rhythm + Shorter harmony
 3. Monk melody + Barry Harris harmony + Hill counterline
 4. Shorter melody + Monk harmony
-5. Barry Harris melody + Hill harmony
+5. Wheeler melody + Frisell harmony + Bartok counterline
 6. Monk melody + Shorter harmony
 7. Hill melody + Barry Harris harmony
 8. Shorter melody + Harris + Monk rhythm
-9. Harris melody + Shorter harmony
+9. Frisell melody + Wheeler counterline
 10. Hill melody + Monk harmony
 11. Monk melody + Hill harmony
 12. Shorter melody + Hill harmony
 13. Harris melody + Monk harmony
-14. Hill melody + Shorter harmony
+14. Wheeler melody + Frisell atmosphere
 15. Monk melody + Harris harmony
 16. Shorter + Harris (melody + harmony)
 17. Hill + Monk (angular + rhythmic)
-18. Monk + Shorter (blues + ambiguous)
+18. Bartok + Frisell (night + ambient)
 19. Harris + Hill (bebop + cluster)
 20. Shorter + Harris + Monk (three-engine)
+
+## Appendix: 20 Useful Counterpoint Hybrid Combinations
+
+1. Wheeler melody + Frisell harmony + Bartok counterline
+2. Shorter melody + Barry Harris harmony + Monk rhythm + Hill counterline
+3. Frisell melody + Wheeler counterline + Bartok texture
+4. Monk melody + Barry Harris harmony + Hill counterline
+5. Wheeler melody + Frisell counterline
+6. Bartok melody + Frisell harmony + Wheeler counterline
+7. Shorter melody + Monk harmony + Bartok counterline
+8. Hill melody + Frisell harmony + Wheeler counterline
+9. Frisell melody + Bartok counterline
+10. Wheeler melody + Shorter harmony + Frisell counterline
+11. Monk melody + Wheeler harmony + Bartok counterline
+12. Bartok melody + Wheeler counterline
+13. Shorter melody + Frisell harmony + Wheeler counterline
+14. Hill melody + Bartok counterline
+15. Barry Harris melody + Wheeler harmony + Monk counterline
+16. Wheeler + Frisell (lyrical + ambient)
+17. Bartok + Wheeler (night + lyrical)
+18. Frisell + Bartok (ambient + fragmented)
+19. Shorter + Frisell (angular + open)
+20. Monk + Wheeler + Bartok (three-engine counterpoint)

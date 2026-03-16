@@ -11,6 +11,10 @@ try:
         score_hybrid_style_balance,
         score_primary_engine_identity,
         score_harmony_engine_fit,
+        score_counterpoint_coherence,
+        score_voice_independence,
+        score_texture_balance,
+        score_asymmetry_preservation,
     )
 except ImportError:
     import sys
@@ -24,6 +28,10 @@ except ImportError:
         score_hybrid_style_balance,
         score_primary_engine_identity,
         score_harmony_engine_fit,
+        score_counterpoint_coherence,
+        score_voice_independence,
+        score_texture_balance,
+        score_asymmetry_preservation,
     )
 
 BASE_WEIGHT = 0.4
@@ -64,12 +72,20 @@ def evaluate_hybrid_candidate(candidate: dict) -> HybridCandidate:
     balance = score_hybrid_style_balance(candidate, mel, harm, cnt, rhy)
     identity = score_primary_engine_identity(candidate, mel)
     harm_fit = score_harmony_engine_fit(candidate, harm)
+    cpt_coherence = score_counterpoint_coherence(candidate)
+    voice_indep = score_voice_independence(candidate)
+    texture_bal = score_texture_balance(candidate)
+    asym_pres = score_asymmetry_preservation(candidate)
     raw = (
         base_score * BASE_WEIGHT
         + style_fit * 10.0 * STYLE_WEIGHT
         + balance * 10.0 * BALANCE_WEIGHT
         + identity * 10.0 * IDENTITY_WEIGHT * 0.5
         + harm_fit * 10.0 * IDENTITY_WEIGHT * 0.5
+        + cpt_coherence * 10.0 * 0.05
+        + voice_indep * 10.0 * 0.05
+        + texture_bal * 10.0 * 0.03
+        + asym_pres * 10.0 * 0.02
     )
     adjusted = max(0.0, min(10.0, raw))
     return HybridCandidate(

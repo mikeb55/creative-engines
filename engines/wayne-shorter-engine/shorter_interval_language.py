@@ -3,12 +3,16 @@ Shorter Interval Language — Deterministic interval fingerprints.
 2nds, 4ths, 5ths, tritone; avoid bland scalar.
 """
 
+import os
+import importlib.util
 from typing import List, Tuple
 
-try:
-    from .composer_ir import IntervalLanguage
-except ImportError:
-    from composer_ir import IntervalLanguage
+# Load composer_ir from same directory to avoid cross-engine import collision
+_ws_dir = os.path.dirname(os.path.abspath(__file__))
+_spec = importlib.util.spec_from_file_location("ws_composer_ir", os.path.join(_ws_dir, "composer_ir.py"))
+_ws_ir = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_ws_ir)
+IntervalLanguage = _ws_ir.IntervalLanguage
 
 PROFILES = {
     "balanced": ([2, 5, 7], [6, 1], []),

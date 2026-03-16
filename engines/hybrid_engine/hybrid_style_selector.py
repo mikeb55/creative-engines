@@ -92,3 +92,65 @@ def score_hybrid_style_balance(
     if primary < 0.3:
         balance *= 0.7
     return max(0.0, min(1.0, balance))
+
+
+def score_counterpoint_coherence(compiled_result: Any) -> float:
+    """Score 0-1: counterpoint coherence when multiple voices present."""
+    counter = compiled_result.get("counterline_events", []) if isinstance(compiled_result, dict) else []
+    if not counter:
+        return 0.5
+    lead = []
+    compiled = compiled_result.get("compiled") if isinstance(compiled_result, dict) else None
+    if compiled and hasattr(compiled, "sections"):
+        for sec in compiled.sections:
+            lead.extend(getattr(sec, "melody_events", []))
+    if not lead:
+        return 0.4
+    return min(1.0, 0.5 + len(counter) / max(len(lead) * 0.5, 1) * 0.3)
+
+
+def score_voice_independence(compiled_result: Any) -> float:
+    """Score 0-1: voice independence (different registers, complementary rhythm)."""
+    counter = compiled_result.get("counterline_events", []) if isinstance(compiled_result, dict) else []
+    if not counter:
+        return 0.5
+    lead = []
+    compiled = compiled_result.get("compiled") if isinstance(compiled_result, dict) else None
+    if compiled and hasattr(compiled, "sections"):
+        for sec in compiled.sections:
+            lead.extend(getattr(sec, "melody_events", []))
+    if not lead:
+        return 0.4
+    avg_lead = sum(e.get("pitch", 60) for e in lead) / max(len(lead), 1)
+    avg_cnt = sum(e.get("pitch", 60) for e in counter) / max(len(counter), 1)
+    reg_sep = abs(avg_lead - avg_cnt)
+    return min(1.0, 0.5 + reg_sep / 24.0 * 0.5)
+
+
+def score_texture_balance(compiled_result: Any) -> float:
+    """Score 0-1: texture balance across voices."""
+    counter = compiled_result.get("counterline_events", []) if isinstance(compiled_result, dict) else []
+    lead_count = 0
+    compiled = compiled_result.get("compiled") if isinstance(compiled_result, dict) else None
+    if compiled and hasattr(compiled, "sections"):
+        for sec in compiled.sections:
+            lead_count += len(getattr(sec, "melody_events", []))
+    if not counter:
+        return 0.5
+    ratio = len(counter) / max(lead_count, 1)
+    if 0.3 <= ratio <= 1.2:
+        return 0.8
+    return max(0.3, 0.8 - abs(ratio - 0.7))
+
+
+def score_asymmetry_preservation(compiled_result: Any) -> float:
+    """Score 0-1: asymmetry preserved across voices."""
+    compiled = compiled_result.get("compiled") if isinstance(compiled_result, dict) else compiled_result
+    if not compiled or not hasattr(compiled, "sections"):
+        return 0.5
+    pl = []
+    for sec in compiled.sections:
+        pl.extend(getattr(sec, "phrase_lengths", []) or [])
+    if len(set(pl)) >= 2 or (pl and pl[0] % 2 == 1):
+        return 0.85
+    return 0.6

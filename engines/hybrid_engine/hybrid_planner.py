@@ -35,11 +35,18 @@ def plan_hybrid_composition(
         counter_engine = None
     if rhythm_engine and rhythm_engine not in available:
         rhythm_engine = None
+    voice_count = 2
+    if counter_engine:
+        voice_count = 3
     return HybridComposerIR(
         primary_engine=melody_engine,
         harmony_engine=harmony_engine,
         counter_engine=counter_engine,
         rhythm_engine=rhythm_engine,
+        voice_count=voice_count,
+        voice_roles={"lead": melody_engine, "counterline": counter_engine or ""},
+        counterpoint_density=0.5,
+        texture_strategy="complementary",
         form_plan="compact",
         section_order=["primary", "contrast", "return"],
         phrase_plan=[4, 4, 4, 4],

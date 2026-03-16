@@ -63,6 +63,7 @@ def _register_builtin_engines() -> None:
     _load_engine_from_path("monk-engine", "engine_adapter", "MonkEngine", "monk")
     _load_engine_from_path("bartok-night-engine", "engine_adapter", "BartokNightEngine", "bartok_night")
     _load_engine_from_path("wheeler-lyric-engine", "engine_adapter", "WheelerLyricEngine", "wheeler_lyric")
+    _load_engine_from_path("frisell-atmosphere-engine", "engine_adapter", "FrisellAtmosphereEngine", "frisell_atmosphere")
 
 
 def ensure_engines_loaded() -> None:

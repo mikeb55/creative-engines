@@ -87,7 +87,7 @@ def build_all_style_profiles(sample_count: int = 12, seed: int = 0) -> Dict[str,
     Build StyleProfiles for all registered engines.
     Cached for reuse.
     """
-    engine_names = ["wayne_shorter", "barry_harris", "andrew_hill", "monk"]
+    engine_names = ["wayne_shorter", "barry_harris", "andrew_hill", "monk", "bartok_night", "wheeler_lyric", "frisell_atmosphere"]
     out = {}
     for name in engine_names:
         try:

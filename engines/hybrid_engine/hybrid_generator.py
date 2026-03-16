@@ -18,7 +18,7 @@ except ImportError:
     from hybrid_engine.hybrid_section_compiler import compile_hybrid_composition
     from hybrid_engine.hybrid_composer_ir import HybridComposerIR
 
-DEFAULT_ENGINE_POOL = ["wayne_shorter", "barry_harris", "andrew_hill", "monk"]
+DEFAULT_ENGINE_POOL = ["wayne_shorter", "barry_harris", "andrew_hill", "monk", "bartok_night", "wheeler_lyric", "frisell_atmosphere"]
 
 PLAUSIBLE_COMBINATIONS = [
     ("wayne_shorter", "barry_harris", None, "monk"),
@@ -33,6 +33,10 @@ PLAUSIBLE_COMBINATIONS = [
     ("barry_harris", "monk", None, None),
     ("wayne_shorter", "monk", "barry_harris", None),
     ("monk", "wayne_shorter", None, None),
+    ("wheeler_lyric", "frisell_atmosphere", "bartok_night", None),
+    ("wheeler_lyric", "frisell_atmosphere", None, None),
+    ("frisell_atmosphere", "wheeler_lyric", "bartok_night", None),
+    ("wayne_shorter", "barry_harris", "monk", "andrew_hill"),
 ]
 
 
