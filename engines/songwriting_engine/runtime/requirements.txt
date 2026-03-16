@@ -1,0 +1,4 @@
+# Songwriting Engine Runtime
+# pip install -r requirements.txt
+
+pyyaml>=5.4
