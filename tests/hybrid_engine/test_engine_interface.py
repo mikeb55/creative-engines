@@ -97,3 +97,29 @@ def test_scofield_holland_interface():
     assert compiled.sections
     xml = eng.export_musicxml(compiled)
     assert "<score-partwise" in xml
+
+
+def test_stravinsky_pulse_interface():
+    ensure_engines_loaded()
+    eng = get_engine("stravinsky_pulse")
+    ir = eng.generate_ir("Pulse Block", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml
+
+
+def test_zappa_disruption_interface():
+    ensure_engines_loaded()
+    eng = get_engine("zappa_disruption")
+    ir = eng.generate_ir("Interruption", mode="title", seed=0)
+    assert ir.title
+    r = eng.validate_ir(ir)
+    assert r.valid
+    compiled = eng.compile_from_ir(ir)
+    assert compiled.sections
+    xml = eng.export_musicxml(compiled)
+    assert "<score-partwise" in xml

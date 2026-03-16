@@ -65,6 +65,8 @@ def _register_builtin_engines() -> None:
     _load_engine_from_path("wheeler-lyric-engine", "engine_adapter", "WheelerLyricEngine", "wheeler_lyric")
     _load_engine_from_path("frisell-atmosphere-engine", "engine_adapter", "FrisellAtmosphereEngine", "frisell_atmosphere")
     _load_engine_from_path("scofield-holland-engine", "engine_adapter", "ScofieldHollandEngine", "scofield_holland")
+    _load_engine_from_path("stravinsky-pulse-engine", "engine_adapter", "StravinskyPulseEngine", "stravinsky_pulse")
+    _load_engine_from_path("zappa-disruption-engine", "engine_adapter", "ZappaDisruptionEngine", "zappa_disruption")
 
 
 def ensure_engines_loaded() -> None:
