@@ -1,42 +1,27 @@
-# Songwriting Engine Launcher
+# Desktop Launchers
 
-## What the Launcher Does
+Batch scripts to run each engine from the desktop.
 
-Double-click `songwriting_engine_launcher.bat` to run the Song IR engine with default settings. It will:
+## Windows Shortcut Targets
 
-1. Generate song candidates from the default input ("River Road", title mode)
-2. Archive them in the QD archive
-3. Select finalists
-4. Compile and export to MusicXML
-5. Save outputs to `outputs/songwriting_engine/run_YYYYMMDD_HHMMSS/`
+Create shortcuts with these targets:
 
-## What File It Calls
+| Engine | Shortcut Target |
+|--------|-----------------|
+| Wyble Etude Generator | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\wyble_etude.bat` |
+| Ellington Orchestration | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\ellington_orchestration.bat` |
+| Big Band Architecture | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\big_band_architecture.bat` |
+| Contemporary Counterpoint | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\contemporary_counterpoint.bat` |
 
-The launcher runs:
+## How to Create a Shortcut
 
-```
-engines/songwriting_engine/runtime/launcher_entry.py
-```
+1. Right-click on Desktop → New → Shortcut
+2. Target: path to the .bat file (e.g. `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\wyble_etude.bat`)
+3. Name: e.g. "Wyble Etude Generator"
+4. Finish
 
-That script uses `launcher_config.py` for defaults and `songwriting_engine_runtime.run_songwriting_engine` for the main pipeline.
+## Prerequisites
 
-## Where Outputs Go
-
-- **Base folder:** `outputs/songwriting_engine/`
-- **Each run:** `run_YYYYMMDD_HHMMSS/` (e.g. `run_20250314_143022`)
-- **Contents:**
-  - `finalists_musicxml/` — MusicXML files for each finalist
-  - `finalists_summary.json` — Metadata (titles, archive stats)
-  - `run_summary.txt` — Human-readable run summary
-
-## Creating a Desktop Shortcut
-
-1. Right-click `songwriting_engine_launcher.bat`
-2. Send to → Desktop (create shortcut)
-3. Or: Create shortcut, set Target to the full path of the .bat file
-4. Set "Start in" to the `creative-engines` repo root folder
-
-## Requirements
-
-- Python 3 installed (`py -3` or `python3` in PATH)
-- Run from `creative-engines` repo root (the .bat changes to parent directory of `launchers/`)
+- Node.js and npm installed
+- Run `npm install` from repo root
+- ts-node available (via npx)
