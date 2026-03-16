@@ -1,24 +1,31 @@
 # Desktop Launchers
 
-Batch scripts to run each engine from the desktop.
+Node.js launchers for each engine. No .bat files.
 
-## Windows Shortcut Targets
+## Create Shortcuts
 
-Create shortcuts with these targets:
+From repo root:
 
-| Engine | Shortcut Target |
-|--------|-----------------|
-| Wyble Etude Generator | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\wyble_etude.bat` |
-| Ellington Orchestration | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\ellington_orchestration.bat` |
-| Big Band Architecture | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\big_band_architecture.bat` |
-| Contemporary Counterpoint | `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\contemporary_counterpoint.bat` |
+```bash
+node launchers/create_shortcuts.js
+```
 
-## How to Create a Shortcut
+Creates 4 shortcuts on Desktop:
+- Wyble Etude Generator
+- Ellington Orchestration
+- Big Band Architecture
+- Contemporary Counterpoint
 
-1. Right-click on Desktop → New → Shortcut
-2. Target: path to the .bat file (e.g. `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\launchers\wyble_etude.bat`)
-3. Name: e.g. "Wyble Etude Generator"
-4. Finish
+## Launcher Scripts
+
+| Engine | Launcher |
+|--------|----------|
+| Wyble Etude Generator | `launchers/launch_wyble.js` |
+| Ellington Orchestration | `launchers/launch_ellington.js` |
+| Big Band Architecture | `launchers/launch_big_band.js` |
+| Contemporary Counterpoint | `launchers/launch_counterpoint.js` |
+
+Shortcuts target `node.exe` with the launcher path as argument. Handles paths with spaces.
 
 ## Prerequisites
 
