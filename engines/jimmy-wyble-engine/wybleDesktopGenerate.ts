@@ -114,7 +114,7 @@ function main(): DesktopResult {
     }
   }
 
-  const candidates: { score: import('../../shared/scoreModel').Score; gceScore: number }[] = [];
+  const candidates: { score: import('../core/timing').Score; gceScore: number }[] = [];
   for (let i = 0; i < candidateCount; i++) {
     const score = generateWybleScore(progression as ChordProgression, { seed: Date.now() + i * 13 });
     const gceScore = scoreWybleMeasureFirst(score);

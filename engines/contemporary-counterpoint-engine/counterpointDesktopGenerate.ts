@@ -76,15 +76,15 @@ function main(): DesktopResult {
   const score = generateCounterpointScore(progression, {
     lineCount,
     seed: Date.now(),
-    title: `Contemporary Counterpoint (${progressionName})`,
   });
 
   const runFolder = getRunFolderName(outDir);
   const runFolderPath = path.join(outDir, runFolder);
   fs.mkdirSync(runFolderPath, { recursive: true });
 
+  const parts = ['Voice 1', 'Voice 2'];
   const planPath = path.join(runFolderPath, 'counterpoint_plan.json');
-  fs.writeFileSync(planPath, JSON.stringify({ measures: score.measures.length, parts: score.parts }, null, 2), 'utf-8');
+  fs.writeFileSync(planPath, JSON.stringify({ measures: score.measures.length, parts }, null, 2), 'utf-8');
 
   const summary = `# Contemporary Counterpoint Summary
 
@@ -96,7 +96,7 @@ function main(): DesktopResult {
 
 ## Output
 - Measures: ${score.measures.length}
-- Parts: ${score.parts?.join(', ') ?? ''}
+- Parts: ${parts.join(', ')}
 
 ## Files
 - counterpoint_plan.json
