@@ -11,22 +11,26 @@ import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
 
-const ENGINE_REGISTRY: Record<string, { script: string; cwd: string }> = {
+const ENGINE_REGISTRY: Record<string, { script: string; cwd: string; outputPath: string }> = {
   jimmy_wyble: {
-    script: 'wybleDesktopGenerate.ts',
+    script: 'wybleCleanGenerate.ts',
     cwd: path.join(ROOT, 'engines/jimmy-wyble-engine'),
+    outputPath: path.join(ROOT, 'outputs/wyble/clean/wyble_clean.musicxml'),
   },
   ellington_orchestration: {
-    script: 'ellingtonDesktopGenerate.ts',
+    script: 'ellingtonCleanGenerate.ts',
     cwd: path.join(ROOT, 'engines/ellington-orchestration-engine'),
+    outputPath: path.join(ROOT, 'outputs/ellington/clean/ellington_clean.musicxml'),
   },
   big_band_architecture: {
     script: 'architectureDesktopGenerate.ts',
     cwd: path.join(ROOT, 'engines/big-band-architecture-engine'),
+    outputPath: path.join(ROOT, 'outputs/architecture'),
   },
   contemporary_counterpoint: {
-    script: 'counterpointDesktopGenerate.ts',
+    script: 'counterpointCleanGenerate.ts',
     cwd: path.join(ROOT, 'engines/contemporary-counterpoint-engine'),
+    outputPath: path.join(ROOT, 'outputs/counterpoint/clean/counterpoint_clean.musicxml'),
   },
 };
 

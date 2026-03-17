@@ -1,17 +1,15 @@
 /**
  * Run baseline export and validation.
- * Output: outputs/baseline/baseline_test.musicxml
- * Report: outputs/baseline/validation_report.json
+ * Uses PATHS. Output: outputs/baseline/baseline_test.musicxml
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PATHS, ensureDir } from '../../engines/core/paths';
 import { writeBaselineMusicXML } from './baselineMusicXMLWriter';
 
-const ROOT = path.resolve(__dirname, '..', '..');
-const OUT_DIR = path.join(ROOT, 'outputs', 'baseline');
-const XML_PATH = path.join(OUT_DIR, 'baseline_test.musicxml');
-const REPORT_PATH = path.join(OUT_DIR, 'validation_report.json');
+const XML_PATH = path.join(PATHS.baseline, 'baseline_test.musicxml');
+const REPORT_PATH = path.join(PATHS.baseline, 'validation_report.json');
 
 interface ValidationReport {
   fileExists: boolean;
@@ -100,13 +98,21 @@ function validate(): ValidationReport {
 }
 
 function main(): void {
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+  ensureDir(PATHS.baseline);
 
   const xml = writeBaselineMusicXML();
   fs.writeFileSync(XML_PATH, xml, 'utf8');
 
   const report = validate();
   fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2), 'utf8');
+
+  const runLog = {
+    outputPath: XML_PATH,
+    fileExists: fs.existsSync(XML_PATH),
+    timestamp: new Date().toISOString(),
+    validationPassed: report.passed,
+  };
+  fs.writeFileSync(path.join(PATHS.baseline, 'run_log.json'), JSON.stringify(runLog, null, 2), 'utf8');
 
   console.log('Baseline export complete.');
   console.log('Output:', XML_PATH);

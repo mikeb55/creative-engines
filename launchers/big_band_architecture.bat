@@ -3,7 +3,6 @@ setlocal enabledelayedexpansion
 set "REPO=C:\Users\mike\Documents\Cursor AI Projects\creative-engines"
 set "NODE_EXE=C:\Program Files\nodejs\node.exe"
 set "LOGDIR=%REPO%\launchers\logs"
-set "LAST_EXPORT=%REPO%\outputs\architecture\last_export.txt"
 if not exist "%LOGDIR%" mkdir "%LOGDIR%"
 set "TS=%date:~-4,4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%%time:~3,2%%time:~6,2%"
 set "TS=%TS: =0%"
@@ -26,25 +25,7 @@ if %EXIT% neq 0 (
   exit /b 1
 )
 
-if not exist "%LAST_EXPORT%" (
-  echo ERROR: last_export.txt not found >> "%LOG%"
-  explorer "%REPO%\outputs\architecture"
-  exit /b 0
-)
-
-for /f "usebackq delims=" %%a in ("%LAST_EXPORT%") do set "OPEN_PATH=%%a"
-
-if not exist "!OPEN_PATH!" (
-  echo ERROR: Export file not found: !OPEN_PATH! >> "%LOG%"
-  explorer "%REPO%\outputs\architecture"
-  exit /b 0
-)
-
-echo OPEN_PATH: !OPEN_PATH! >> "%LOG%"
-echo FILE_EXISTS: 1 >> "%LOG%"
-
-powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO%\launchers\open_in_default_app.ps1" "!OPEN_PATH!"
-echo OPEN_EXIT: !ERRORLEVEL! >> "%LOG%"
+explorer "%REPO%\outputs\architecture"
 exit /b 0
 
 :fail

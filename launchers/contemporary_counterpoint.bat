@@ -3,7 +3,6 @@ setlocal enabledelayedexpansion
 set "REPO=C:\Users\mike\Documents\Cursor AI Projects\creative-engines"
 set "NODE_EXE=C:\Program Files\nodejs\node.exe"
 set "LOGDIR=%REPO%\launchers\logs"
-set "LAST_EXPORT=%REPO%\outputs\counterpoint\last_export.txt"
 if not exist "%LOGDIR%" mkdir "%LOGDIR%"
 set "TS=%date:~-4,4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%%time:~3,2%%time:~6,2%"
 set "TS=%TS: =0%"

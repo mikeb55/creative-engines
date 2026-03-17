@@ -143,9 +143,6 @@ Outputs: architecture.json, architecture.md, arrangement_plan.md
 `;
   fs.writeFileSync(path.join(runPath, 'run_summary.md'), runSummary, 'utf-8');
 
-  const planPath = path.join(runPath, 'arrangement_plan.md');
-  fs.writeFileSync(path.join(outDir, 'last_export.txt'), planPath, 'utf-8');
-
   return { runFolderPath: runPath, architecture };
 }
 

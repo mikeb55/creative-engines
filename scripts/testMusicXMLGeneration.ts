@@ -30,18 +30,11 @@ if (ellington.status !== 0) {
 
 console.log('\nChecking MusicXML validity...');
 
-function findLatestMusicXML(dir: string): string | null {
-  if (!fs.existsSync(dir)) return null;
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort().reverse();
-  for (const d of dirs) {
-    const sub = path.join(dir, d);
-    const files = fs.readdirSync(sub);
-    const xml = files.find((f) => /\.(musicxml|xml)$/i.test(f));
-    if (xml) return path.join(sub, xml);
-  }
-  return null;
-}
+const PATHS = {
+  wyble: path.join(ROOT, 'outputs', 'wyble', 'clean', 'wyble_clean.musicxml'),
+  counterpoint: path.join(ROOT, 'outputs', 'counterpoint', 'clean', 'counterpoint_clean.musicxml'),
+  ellington: path.join(ROOT, 'outputs', 'ellington', 'clean', 'ellington_clean.musicxml'),
+};
 
 function check(file: string): void {
   const text = fs.readFileSync(file, 'utf8');
@@ -50,9 +43,9 @@ function check(file: string): void {
   }
 }
 
-const wybleFile = findLatestMusicXML(path.join(ROOT, 'outputs', 'wyble'));
-const counterpointFile = findLatestMusicXML(path.join(ROOT, 'outputs', 'counterpoint'));
-const ellingtonFile = findLatestMusicXML(path.join(ROOT, 'outputs', 'ellington'));
+const wybleFile = fs.existsSync(PATHS.wyble) ? PATHS.wyble : null;
+const counterpointFile = fs.existsSync(PATHS.counterpoint) ? PATHS.counterpoint : null;
+const ellingtonFile = fs.existsSync(PATHS.ellington) ? PATHS.ellington : null;
 
 if (wybleFile) {
   check(wybleFile);
