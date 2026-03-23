@@ -40,6 +40,19 @@ Evaluate each category. Calculate overall score (average or weighted).
 
 ---
 
+## Extension Modules (Activation-Based)
+
+When contextually relevant, apply these scoring lenses. They do not apply to all pieces.
+
+| Module | Activates when | Reference |
+|--------|----------------|-----------|
+| **Swing Authority** | Idiom is swing, groove, jazz-pop | [rules/gce/swing-authority.md](gce/swing-authority.md) |
+| **Countermelody / Line Interaction** | 2+ meaningful lines present | [rules/gce/countermelody-line-interaction.md](gce/countermelody-line-interaction.md) |
+
+These are evaluative lenses, not rigid universal constraints. They preserve musical judgment.
+
+---
+
 ## Threshold
 
 - **Minimum for export:** 9.0
