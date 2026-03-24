@@ -28,6 +28,11 @@ import {
   seededUnit,
 } from './guitarBassDuoHarmony';
 import { emitMelodicBassBar, scrubBassFirstAttackIfRoot, type BassSectionRole } from './bassMelodicLines';
+import {
+  computeEnsembleStagger,
+  emitGuitarPhraseBar,
+  getDuoPhraseIntent,
+} from './guitarPhraseAuthority';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -71,27 +76,6 @@ function getBassRegisterForBar(bassMap: InstrumentRegisterMap, bar: number): [nu
 
 function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMotif[] {
   return placements.filter((p) => p.startBar === bar);
-}
-
-/** Conversational stagger: seed-driven call/response; avoids both on beat 1. */
-function staggerForBar(bar: number, seed: number): { guitar: number; bass: number } {
-  if (bar <= 4) {
-    const aPatterns = [
-      { guitar: 0, bass: 0.5 },
-      { guitar: 0.5, bass: 0 },
-      { guitar: 0.25, bass: 0.75 },
-      { guitar: 0.75, bass: 0.25 },
-    ];
-    return aPatterns[(bar + seed * 3) % 4];
-  }
-  const bPatterns = [
-    { guitar: 0, bass: 0.5 },
-    { guitar: 0.5, bass: 0 },
-    { guitar: 0, bass: 0.25 },
-    { guitar: 0.25, bass: 0.5 },
-    { guitar: 0.5, bass: 0.25 },
-  ];
-  return bPatterns[(bar + seed * 2) % 5];
 }
 
 interface StyleHints {
@@ -211,7 +195,8 @@ function buildGuitarPart(
     const density = getDensityForBar(densityPlan, b);
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const reduceAttack = interaction?.coupling?.guitarReduceAttack;
-    const stagger = staggerForBar(b, seed);
+    const phraseIntent = getDuoPhraseIntent(b, seed);
+    const stagger = computeEnsembleStagger(b, seed, phraseIntent);
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b);
     const sectionBump = b > 4 ? 5 : 0;
     const effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
@@ -221,9 +206,9 @@ function buildGuitarPart(
     const bach = hints.bacharach;
 
     if (bach && (b === 2 || b === 6)) {
-      measures.push(
-        buildBacharachAnchorMeasure(b, chordForBar(b), rehearsalForBar(b), effectiveLow, effectiveHigh)
-      );
+      const bm = buildBacharachAnchorMeasure(b, chordForBar(b), rehearsalForBar(b), effectiveLow, effectiveHigh);
+      normalizeMeasureQuarterGrid(bm);
+      measures.push(bm);
       continue;
     }
 
@@ -269,53 +254,23 @@ function buildGuitarPart(
       collapseRestsInsideNotes(m);
       dropRestsSameStartAsNote(m);
     } else {
-      const dyadBar = b === 4 || b === 8;
-      if (density === 'sparse') {
-        if (useOffbeat) {
-          const g = stagger.guitar;
-          const head = 0.5 + g * 0.5;
-          addEvent(m, createRest(0, head));
-          addEvent(m, createNote(effectiveLow + 5, head, 1.25));
-          const t1 = head + 1.25;
-          addEvent(m, createRest(t1, 1));
-          const t2 = t1 + 1;
-          addEvent(m, createNote(effectiveLow + 9, t2, 4 - t2));
-        } else {
-          const g = stagger.guitar;
-          const t0 = 0.75 + g;
-          addEvent(m, createRest(0, t0));
-          addEvent(m, createNote(effectiveLow + 7, t0, 2));
-          const t2 = t0 + 2;
-          addEvent(m, createNote(effectiveLow + 4, t2, 4 - t2));
-        }
-      } else if (density === 'medium') {
-        if (dyadBar) {
-          addEvent(m, createRest(0, 0.5));
-          addEvent(m, createNote(effectiveLow + 4, 0.5, 1));
-          addEvent(m, createNote(effectiveLow + 7, 1.5, 1));
-          addEvent(m, createRest(2.5, 0.5));
-          addEvent(m, createNote(effectiveLow + 9, 3, 1));
-        } else {
-          const g = stagger.guitar;
-          if (g > 0) {
-            addEvent(m, createRest(0, g));
-          }
-          addEvent(m, createNote(effectiveLow + 5, g, 1.5));
-          addEvent(m, createRest(1.5 + g, 1));
-          const tLast = 2.5 + g;
-          addEvent(m, createNote(effectiveLow + 8, tLast, 4 - tLast));
-        }
-      } else {
-        const g = stagger.guitar;
-        if (g > 0) {
-          addEvent(m, createRest(0, g));
-        }
-        addEvent(m, createNote(effectiveLow + 7, g, 1));
-        addEvent(m, createNote(effectiveLow + 5, g + 1, 1));
-        addEvent(m, createRest(g + 2, 0.5));
-        const tLast = g + 2.5;
-        addEvent(m, createNote(effectiveLow + 9, tLast, 4 - tLast));
-      }
+      const densityLevel =
+        density === 'very_dense' ? 'dense' : (density as 'sparse' | 'medium' | 'dense');
+      emitGuitarPhraseBar({
+        m,
+        bar: b,
+        chord: chordForBar(b),
+        effectiveLow,
+        effectiveHigh,
+        density: densityLevel,
+        useOffbeat,
+        reduceAttack: !!reduceAttack,
+        intent: phraseIntent,
+        staggerG: stagger.guitar,
+        isMomentBar: b === 4 || b === 7,
+        seed,
+        methenyShortenLong: meth?.attackDensityReduced,
+      });
     }
 
     normalizeMeasureQuarterGrid(m);
@@ -354,6 +309,7 @@ function buildBassPart(
   const bassCeiling = Math.min(walkHigh, 52);
   const seed = context.seed;
   const measures: MeasureModel[] = [];
+  let prevBassPitch: number | undefined = walkLow;
 
   for (let b = 1; b <= 8; b++) {
     const chord = chordForBar(b);
@@ -370,9 +326,14 @@ function buildBassPart(
 
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
-    const stagger = staggerForBar(b, seed);
+    const phraseIntent = getDuoPhraseIntent(b, seed);
+    const stagger = computeEnsembleStagger(b, seed, phraseIntent);
     const placements = getPlacementsForBar(motifState.placements, b);
-    const firstStart = stagger.bass;
+    let firstStart = stagger.bass;
+    if (interaction?.coupling?.bassDeferToGuitar && !simplify && phraseIntent === 'guitar_lead') {
+      firstStart = Math.max(firstStart, qBeat(0.5 + seededUnit(seed, b, 188) * 0.35));
+    }
+    firstStart = qBeat(firstStart + (seededUnit(seed, b, 701) - 0.5) * 0.14);
 
     let guitarEchoSource = firstGuitarPitchInBar(guitarPart, b);
     if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
@@ -408,9 +369,13 @@ function buildBassPart(
         firstStart,
         section,
         guitarFirstPitchInBar: guitarEchoSource,
+        prevBassPitch,
       });
       scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh);
     }
+
+    const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
+    if (lastBass) prevBassPitch = lastBass.pitch;
 
     measures.push(m);
   }

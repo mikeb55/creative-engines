@@ -7,6 +7,8 @@ export type InteractionMode = 'call_response' | 'overlap' | 'support' | 'indepen
 export interface InteractionCoupling {
   bassSimplify?: boolean;
   guitarReduceAttack?: boolean;
+  /** Section A: bass hangs back so guitar statements read clearly (used with phrase intent). */
+  bassDeferToGuitar?: boolean;
 }
 
 export interface SectionInteractionPlan {

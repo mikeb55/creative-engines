@@ -21,10 +21,52 @@ export function echoGuitarToBass(guitarPitch: number, walkLow: number, high: num
   return clampPitch(p, walkLow, high);
 }
 
-function perturbWeights(pieces: Array<{ w: number; pitch: number }>, bar: number): Array<{ w: number; pitch: number }> {
+/** Pick octave of `pitch` nearest to `prev` to keep Barry Harris / walking line jumps ≤ ~8 st. */
+function nearestRegisterToPrev(pitch: number, prev: number, walkLow: number, high: number): number {
+  let p = pitch;
+  for (let k = 0; k < 4; k++) {
+    if (Math.abs(p - prev) <= 9) break;
+    if (p > prev) p -= 12;
+    else p += 12;
+    p = clampPitch(p, walkLow, high);
+  }
+  return p;
+}
+
+/** Prefer a chord-tone echo that lands within 12 semitones of previous bass (BH gate). */
+function pickEchoPitchForLine(
+  prev: number | undefined,
+  rawEcho: number,
+  third: number,
+  fifth: number,
+  guide: number,
+  rootClamped: number,
+  walkLow: number,
+  high: number
+): number {
+  if (prev === undefined) return rawEcho;
+  const candidates = [rawEcho, third, fifth, guide, rootClamped];
+  let best = rawEcho;
+  let bestGap = 999;
+  for (const c of candidates) {
+    const n = nearestRegisterToPrev(c, prev, walkLow, high);
+    const g = Math.abs(n - prev);
+    if (g < bestGap) {
+      bestGap = g;
+      best = n;
+    }
+  }
+  return bestGap <= 12 ? best : clampPitch(prev + Math.sign(rawEcho - prev) * 7, walkLow, high);
+}
+
+function perturbWeights(
+  pieces: Array<{ w: number; pitch: number }>,
+  bar: number,
+  seed: number
+): Array<{ w: number; pitch: number }> {
   return pieces.map((p, i) => ({
     ...p,
-    w: p.w * (1 + ((bar * 3 + i * 5) % 5) * 0.12),
+    w: p.w * (1 + ((bar * 3 + i * 5 + seed) % 5) * 0.12) * (1 + seededUnit(seed, bar, 500 + i) * 0.14),
   }));
 }
 
@@ -109,6 +151,8 @@ export function emitMelodicBassBar(params: {
   firstStart: number;
   section: BassSectionRole;
   guitarFirstPitchInBar?: number;
+  /** Last bass pitch of previous bar (smooth echo / BH jumps). */
+  prevBassPitch?: number;
 }): void {
   const {
     m,
@@ -124,6 +168,7 @@ export function emitMelodicBassBar(params: {
     firstStart,
     section,
     guitarFirstPitchInBar,
+    prevBassPitch,
   } = params;
 
   const span = 4 - firstStart;
@@ -135,16 +180,16 @@ export function emitMelodicBassBar(params: {
   const land = seededUnit(seed, bar, 41) < 0.68 ? fifth : rootClamped;
   const lastLead = seededUnit(seed, bar, 43) < 0.58 ? fifth : rootClamped;
 
-  const useEcho =
-    section === 'B' &&
-    guitarFirstPitchInBar !== undefined &&
-    seededUnit(seed, bar, 71) < 0.72;
+  const useEcho = section === 'B' && guitarFirstPitchInBar !== undefined;
   let echoPitch =
     guitarFirstPitchInBar !== undefined
       ? echoGuitarToBass(guitarFirstPitchInBar, walkLow, effectiveHigh)
       : guide;
   if (echoPitch % 12 === rootClamped % 12) {
     echoPitch = third;
+  }
+  if (prevBassPitch !== undefined) {
+    echoPitch = pickEchoPitchForLine(prevBassPitch, echoPitch, third, fifth, guide, rootClamped, walkLow, effectiveHigh);
   }
 
   const u = seededUnit(seed, bar, 61);
@@ -157,11 +202,26 @@ export function emitMelodicBassBar(params: {
       { w: 5, pitch: guide },
       { w: 4, pitch: land },
     ];
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar));
+    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
     return;
   }
 
   if (section === 'B' && useEcho) {
+    const echoShape = (bar * 5 + seed * 2) % 3;
+    const t0 = firstStart;
+    if (echoShape === 0) {
+      addEvent(m, createNote(echoPitch, t0, 1));
+      addEvent(m, createNote(guide, t0 + 1, 0.75));
+      addEvent(m, createNote(land, t0 + 1.75, qBeat(4 - t0 - 1.75)));
+      return;
+    }
+    if (echoShape === 1) {
+      addEvent(m, createNote(third, t0, 0.5));
+      addEvent(m, createNote(echoPitch, t0 + 0.5, 1.25));
+      addEvent(m, createNote(seventh, t0 + 1.75, 0.75));
+      addEvent(m, createNote(land, t0 + 2.5, qBeat(4 - t0 - 2.5)));
+      return;
+    }
     const pat = (bar + seed + rot) % 3;
     let base: Array<{ w: number; pitch: number }>;
     if (pat === 0) {
@@ -189,7 +249,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: land },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar));
+    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
     return;
   }
 
@@ -221,15 +281,32 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: lastLead },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar));
+    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
     return;
   }
 
   const lf = leadPitch(seed, bar + 1, third, guide, fifth, rootClamped);
   const pivot = seededUnit(seed, bar, 83) < 0.5 ? third : seventh;
+  const bRhythm = (bar + seed * 2) % 3;
 
   let base: Array<{ w: number; pitch: number }>;
-  if (u < 0.35) {
+  if (bRhythm === 0) {
+    base = [
+      { w: 1.2, pitch: ap },
+      { w: 1, pitch: lf },
+      { w: 2.8, pitch: fifth },
+      { w: 1.1, pitch: guide },
+      { w: 2.9, pitch: land },
+    ];
+  } else if (bRhythm === 1) {
+    base = [
+      { w: 1.4, pitch: fifth },
+      { w: 1.2, pitch: pivot },
+      { w: 1.8, pitch: seventh },
+      { w: 1.3, pitch: guide },
+      { w: 3.3, pitch: lastLead },
+    ];
+  } else if (u < 0.35) {
     base = [
       { w: 1, pitch: ap },
       { w: 1, pitch: lf },
@@ -254,5 +331,5 @@ export function emitMelodicBassBar(params: {
       { w: 3, pitch: land },
     ];
   }
-  addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar));
+  addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
 }

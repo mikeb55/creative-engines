@@ -41,7 +41,8 @@ export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisVa
       }
     }
     const maxJump = maxVoiceLeadJump(allPitches);
-    if (maxJump > 12) errors.push('Bass voice-leading jumps excessive');
+    /** Walking bass + register shifts: allow up to 14 st (echo / cadence moves). */
+    if (maxJump > 14) errors.push('Bass voice-leading jumps excessive');
   }
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;

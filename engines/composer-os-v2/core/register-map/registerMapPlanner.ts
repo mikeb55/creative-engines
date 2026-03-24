@@ -14,7 +14,7 @@ export function planGuitarRegisterMap(sections: SectionWithRole[]): InstrumentRe
     const lift = s.role === 'contrast';
     return {
       sectionLabel: s.label,
-      preferredZone: lift ? [melLow + 2, melHigh] : [melLow, melHigh - 2],
+      preferredZone: lift ? [melLow + 3, melHigh] : [melLow, melHigh - 3],
       dangerZone: [dangerLow, melHigh + 12],
       ceilingTendency: lift ? melHigh - 2 : melHigh - 4,
       floorTendency: melLow,
