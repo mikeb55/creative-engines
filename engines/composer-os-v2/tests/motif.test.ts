@@ -13,9 +13,9 @@ function testGenerateMotifReturns1To2Motifs(): boolean {
   return motifs.length >= 1 && motifs.length <= 2;
 }
 
-function testMotifHas3To5Notes(): boolean {
+function testMotifHas2To5Notes(): boolean {
   const motifs = generateMotif(123, 55, 75);
-  return motifs.every((m) => m.notes.length >= 3 && m.notes.length <= 5);
+  return motifs.every((m) => m.notes.length >= 2 && m.notes.length <= 5);
 }
 
 function testPlaceMotifsAcrossBars(): boolean {
@@ -64,7 +64,7 @@ function testGoldenPathMotifsRecur(): boolean {
 export function runMotifTests(): { name: string; ok: boolean }[] {
   return [
     ['Generate returns 1-2 motifs', testGenerateMotifReturns1To2Motifs],
-    ['Motif has 3-5 notes', testMotifHas3To5Notes],
+    ['Motif has 2-5 notes', testMotifHas2To5Notes],
     ['Place motifs across bars', testPlaceMotifsAcrossBars],
     ['Vary motif transpose', testVaryMotifTranspose],
     ['Transpose motif', testTransposeMotif],

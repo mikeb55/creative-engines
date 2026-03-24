@@ -33,6 +33,7 @@ import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMa
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
 import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
 import { scoreJazzDuoBehaviourSoft } from '../score-integrity/jazzDuoBehaviourValidation';
+import { scoreFormIdentitySoft } from './duoFormIdentity';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -162,7 +163,9 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     const r = runGoldenPathOnce(s, options);
     last = r;
     if (r.success) {
-      const soft = scoreJazzDuoBehaviourSoft(r.score);
+      const soft =
+        scoreJazzDuoBehaviourSoft(r.score) +
+        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack });
       if (soft > bestSoft) {
         bestSoft = soft;
         best = r;

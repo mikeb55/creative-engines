@@ -35,7 +35,7 @@ export function generateMotif(
   const steps1 = useTriad ? intervalsTriad : intervalsDefault;
 
   const m1: MotifNote[] = [];
-  const count1 = useMetheny ? 3 : Math.min(4, 3 + Math.floor(rnd() * 2));
+  const count1 = useMetheny ? 3 : Math.min(4, 2 + Math.floor(rnd() * 3));
   let pitch = registerLow + Math.floor(rnd() * 8);
   const dur1 = 4 / count1;
   for (let i = 0; i < count1; i++) {
@@ -48,7 +48,7 @@ export function generateMotif(
 
   const steps2 = useTriad ? [0, -3, 5, -4] : [0, -2, 1, -3];
   const m2: MotifNote[] = [];
-  const count2 = useMetheny ? 3 : Math.min(4, 3 + Math.floor(rnd() * 2));
+  const count2 = useMetheny ? 3 : Math.min(4, 2 + Math.floor(rnd() * 3));
   pitch = registerLow + 5 + Math.floor(rnd() * 4);
   const dur2 = 4 / count2;
   for (let i = 0; i < count2; i++) {
