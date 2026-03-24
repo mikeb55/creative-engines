@@ -18,6 +18,7 @@ import { runControlTests } from './control.test';
 import { runPerformanceTests } from './performance.test';
 import { runExportHardeningTests } from './exportHardening.test';
 import { runAppApiTests } from './appApi.test';
+import { runComposerOsOutputPathsTests } from './composerOsOutputPaths.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -37,6 +38,7 @@ const suites = [
   { name: 'Performance', run: runPerformanceTests },
   { name: 'Export Hardening', run: runExportHardeningTests },
   { name: 'App API', run: runAppApiTests },
+  { name: 'Composer output paths', run: runComposerOsOutputPathsTests },
   ...retroSuites,
 ];
 

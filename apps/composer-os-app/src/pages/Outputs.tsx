@@ -1,24 +1,52 @@
 import { useState, useEffect } from 'react';
 import { api, displayOutputPath } from '../services/api';
 
+type OutputRow = {
+  filename: string;
+  filepath: string;
+  presetFolderLabel: string;
+  timestamp: string;
+  presetId: string;
+  styleStack: string[];
+  seed: number;
+  validation?: Record<string, unknown>;
+};
+
+function dirnameOnly(fp: string): string {
+  const p = fp.replace(/[/\\]+$/, '');
+  const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
+  return li >= 0 ? p.slice(0, li) : p;
+}
+
 export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
-  const [outputs, setOutputs] = useState<Array<{ filename: string; filepath: string; timestamp: string; presetId: string; styleStack: string[]; seed: number; validation?: Record<string, unknown> }>>([]);
+  const [outputs, setOutputs] = useState<OutputRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [outputDir, setOutputDir] = useState<{ path: string; displayPath?: string } | null>(null);
+  const [outputDir, setOutputDir] = useState<{
+    path: string;
+    displayPath?: string;
+    presetFolders?: Record<string, string>;
+  } | null>(null);
 
   const load = () => {
     setLoading(true);
-    api.getOutputs().then((r) => {
-      setOutputs(r.outputs);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    api
+      .getOutputs()
+      .then((r) => setOutputs(r.outputs as OutputRow[]))
+      .catch(() => setOutputs([]))
+      .finally(() => setLoading(false));
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   };
 
-  useEffect(() => { load(); }, [refreshTrigger]);
+  useEffect(() => {
+    load();
+  }, [refreshTrigger]);
 
-  const openFolder = () => {
+  const openLibraryFolder = () => {
     api.openOutputFolder().catch(() => {});
+  };
+
+  const openFileFolder = (filepath: string) => {
+    api.openOutputFolder({ path: dirnameOnly(filepath) }).catch(() => {});
   };
 
   return (
@@ -26,18 +54,29 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
       <h2>Outputs</h2>
       {outputDir && (
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem', wordBreak: 'break-word' }}>
-          Folder: <strong style={{ color: 'var(--text)' }}>{displayOutputPath(outputDir)}</strong>
+          Library folder:{' '}
+          <strong style={{ color: 'var(--text)' }}>{displayOutputPath(outputDir)}</strong>
+        </p>
+      )}
+      {outputDir?.presetFolders && (
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+          Preset folders:{' '}
+          {Object.entries(outputDir.presetFolders).map(([id, name]) => (
+            <span key={id} style={{ marginRight: '0.75rem' }}>
+              <code style={{ fontSize: '0.85rem' }}>{name}</code>
+            </span>
+          ))}
         </p>
       )}
       <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-        Generated MusicXML files and validation summaries.
+        Generated MusicXML files and validation summaries (newest first).
       </p>
 
       <button className="secondary" onClick={load} disabled={loading} style={{ marginBottom: '1rem' }}>
         {loading ? 'Loading…' : 'Refresh'}
       </button>
-      <button onClick={openFolder} style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
-        Open Output Folder
+      <button onClick={openLibraryFolder} style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
+        Open library folder
       </button>
 
       {outputs.length === 0 && !loading && (
@@ -56,9 +95,14 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
             }}
           >
             <div style={{ fontWeight: 600 }}>{o.filename}</div>
+            {o.presetFolderLabel ? (
+              <div style={{ fontSize: 0.85, color: 'var(--text-muted)', marginTop: 4 }}>
+                Folder: {o.presetFolderLabel}
+              </div>
+            ) : null}
             <div style={{ fontSize: 0.85, color: 'var(--text-muted)', marginTop: 0.3 }}>{o.filepath}</div>
             <div style={{ fontSize: 0.85, marginTop: 0.5 }}>
-              {o.timestamp} · {o.presetId} · seed {o.seed}
+              {o.timestamp} · {o.presetId}
             </div>
             {o.styleStack?.length ? (
               <div style={{ fontSize: 0.85, color: 'var(--text-muted)' }}>Styles: {o.styleStack.join(', ')}</div>
@@ -72,6 +116,9 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
                 Release {(o.validation.readinessRelease as number) ?? '-'} / MX {(o.validation.readinessMx as number) ?? '-'}
               </div>
             )}
+            <button type="button" className="secondary" style={{ marginTop: '0.75rem' }} onClick={() => openFileFolder(o.filepath)}>
+              Open this file&apos;s folder
+            </button>
           </div>
         ))}
       </div>

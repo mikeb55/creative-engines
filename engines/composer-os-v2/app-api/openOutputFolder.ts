@@ -1,15 +1,12 @@
 /**
- * Composer OS V2 — App API: open output folder (no visible shell window on Windows)
+ * Open a directory in the OS file manager (Explorer / Finder / xdg-open).
  */
 
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export interface OpenOutputFolderResult {
-  success: boolean;
-  message?: string;
-}
+export type OpenOutputFolderResult = { success: boolean; message?: string };
 
 export function openOutputFolder(outputDir: string): Promise<OpenOutputFolderResult> {
   return new Promise((resolve) => {
@@ -48,36 +45,42 @@ export function openOutputFolder(outputDir: string): Promise<OpenOutputFolderRes
         stdio: 'ignore',
         windowsHide: true,
       });
-      child.on('error', () =>
+      child.once('error', () =>
         resolve({
           success: false,
           message: 'Could not open File Explorer for the output folder.',
         })
       );
-      child.unref();
-      resolve({ success: true });
+      child.once('spawn', () => {
+        child.unref();
+        resolve({ success: true });
+      });
       return;
     }
     if (process.platform === 'darwin') {
       const child = spawn('open', [dir], { detached: true, stdio: 'ignore' });
-      child.on('error', () =>
+      child.once('error', () =>
         resolve({
           success: false,
           message: 'Could not open Finder for the output folder.',
         })
       );
-      child.unref();
-      resolve({ success: true });
+      child.once('spawn', () => {
+        child.unref();
+        resolve({ success: true });
+      });
       return;
     }
     const child = spawn('xdg-open', [dir], { detached: true, stdio: 'ignore' });
-    child.on('error', () =>
+    child.once('error', () =>
       resolve({
         success: false,
         message: 'Could not open the file manager for the output folder.',
       })
     );
-    child.unref();
-    resolve({ success: true });
+    child.once('spawn', () => {
+      child.unref();
+      resolve({ success: true });
+    });
   });
 }

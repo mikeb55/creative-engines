@@ -5,7 +5,11 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { app } from 'electron';
+
+/** Must match engines/composer-os-v2/app-api/composerOsOutputPaths.ts (MIKE_COMPOSER_FILES_ROOT). */
+const MIKE_COMPOSER_FILES_ROOT = 'Mike Composer Files';
 
 export const DESKTOP_APP_ID = 'com.mikeb55.composeros.desktop';
 export const DESKTOP_PRODUCT_NAME = 'Composer OS Desktop';
@@ -66,11 +70,16 @@ export function resolveUiPath(): string {
   return devUi;
 }
 
+/**
+ * Composer files root (<Documents>/Mike Composer Files, or COMPOSER_OS_OUTPUT_DIR).
+ * Preset-specific files go in subfolders; must stay aligned with composerOsOutputPaths.ts.
+ */
 export function resolveDefaultOutputDir(): string {
-  if (!app.isPackaged) {
-    return path.resolve(app.getAppPath(), '..', '..', 'outputs', 'composer-os-v2');
+  const env = process.env.COMPOSER_OS_OUTPUT_DIR?.trim();
+  if (env) {
+    return path.resolve(env);
   }
-  return path.join(app.getPath('userData'), 'outputs', 'composer-os-v2');
+  return path.join(os.homedir(), 'Documents', MIKE_COMPOSER_FILES_ROOT);
 }
 
 export function getWindowIconPath(): string {

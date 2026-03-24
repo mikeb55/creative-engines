@@ -8,7 +8,7 @@ import cors from 'cors';
 import * as path from 'path';
 import * as fs from 'fs';
 import {
-  getConfiguredOutputDir,
+  getComposerFilesRoot,
   apiGetPresets,
   apiGetStyleModules,
   apiGenerate,
@@ -27,7 +27,8 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', app: 'composer-os' });
 });
 
-const OUTPUT_DIR = getConfiguredOutputDir();
+const OUTPUT_DIR = getComposerFilesRoot();
+process.env.COMPOSER_OS_OUTPUT_DIR = OUTPUT_DIR;
 
 app.get('/api/presets', (_req: Request, res: Response) => {
   try {
@@ -84,8 +85,8 @@ app.get('/api/diagnostics', (_req: Request, res: Response) => {
   }
 });
 
-app.post('/api/open-output-folder', (_req: Request, res: Response) => {
-  apiOpenOutputFolder(OUTPUT_DIR).then((r) => {
+app.post('/api/open-output-folder', (req: Request, res: Response) => {
+  apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
     res.json(r);
   });
 });

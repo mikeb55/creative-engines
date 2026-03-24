@@ -55,6 +55,8 @@ export interface ValidationSummary {
 export interface OutputEntry {
   filename: string;
   filepath: string;
+  /** Subfolder under Mike Composer Files, e.g. Guitar-Bass Duos */
+  presetFolderLabel: string;
   timestamp: string;
   presetId: string;
   styleStack: string[];

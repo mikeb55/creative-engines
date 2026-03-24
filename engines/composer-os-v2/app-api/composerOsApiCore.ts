@@ -6,17 +6,22 @@ import { getPresets } from './getPresets';
 import { getStyleModules } from './getStyleModules';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { listOutputs } from './listOutputs';
-import { openOutputFolder } from './openOutputFolder';
+import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolder';
 import { buildDiagnostics } from './buildDiagnostics';
 import { friendlyGenerateError, friendlyOutputDirError } from './apiErrorMessages';
 import type { GenerateRequest } from './appApiTypes';
+import {
+  ensureOutputDirectoryForPreset,
+  getComposerFilesRoot,
+  isPathUnderComposerRoot,
+  PRESET_OUTPUT_SUBFOLDER,
+} from './composerOsOutputPaths';
 
+export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
+
+/** @deprecated use getComposerFilesRoot */
 export function getConfiguredOutputDir(): string {
-  if (process.env.COMPOSER_OS_OUTPUT_DIR && process.env.COMPOSER_OS_OUTPUT_DIR.trim() !== '') {
-    return path.resolve(process.env.COMPOSER_OS_OUTPUT_DIR);
-  }
-  const repoRoot = path.resolve(__dirname, '..');
-  return path.join(repoRoot, 'outputs', 'composer-os-v2');
+  return getComposerFilesRoot();
 }
 
 export function displayPathForApi(p: string): string {
@@ -35,7 +40,7 @@ export function apiGetStyleModules(): { modules: ReturnType<typeof getStyleModul
 
 export function apiGenerate(
   body: Partial<GenerateRequest>,
-  outputDir: string
+  _composerRoot: string
 ): GenerateResult | { success: false; error: string; detail?: string } {
   try {
     const req_: GenerateRequest = {
@@ -44,7 +49,8 @@ export function apiGenerate(
       seed: typeof body.seed === 'number' ? body.seed : Math.floor(Math.random() * 1e9),
       locks: body.locks,
     };
-    return generateComposition(req_, outputDir);
+    const presetDir = ensureOutputDirectoryForPreset(req_.presetId);
+    return generateComposition(req_, presetDir);
   } catch (err) {
     return {
       success: false,
@@ -54,16 +60,21 @@ export function apiGenerate(
   }
 }
 
-export function apiListOutputs(outputDir: string) {
+export function apiListOutputs(composerRoot: string) {
   try {
-    return { outputs: listOutputs(outputDir) };
+    return { outputs: listOutputs(composerRoot) };
   } catch (err) {
     throw new Error(friendlyOutputDirError(err));
   }
 }
 
-export function apiGetOutputDirectory(outputDir: string) {
-  return { path: outputDir, displayPath: displayPathForApi(outputDir) };
+export function apiGetOutputDirectory(composerRoot: string) {
+  const root = getComposerFilesRoot();
+  return {
+    path: root,
+    displayPath: displayPathForApi(root),
+    presetFolders: { ...PRESET_OUTPUT_SUBFOLDER },
+  };
 }
 
 export function apiGetDiagnostics(outputDir: string, activePort: number) {
@@ -72,6 +83,20 @@ export function apiGetDiagnostics(outputDir: string, activePort: number) {
   });
 }
 
-export async function apiOpenOutputFolder(outputDir: string) {
-  return openOutputFolder(outputDir);
+export async function apiOpenOutputFolder(
+  composerRoot: string,
+  body?: { path?: string }
+): Promise<OpenOutputFolderResult> {
+  let target = composerRoot;
+  if (body?.path && typeof body.path === 'string' && body.path.trim()) {
+    const resolved = path.resolve(body.path.trim());
+    if (!isPathUnderComposerRoot(composerRoot, resolved)) {
+      return {
+        success: false,
+        message: 'That folder is not part of your Composer OS output library.',
+      };
+    }
+    target = resolved;
+  }
+  return openOutputFolder(target);
 }

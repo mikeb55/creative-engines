@@ -23,7 +23,7 @@ function friendlyHttpMessage(status: number, bodyText: string): string {
     return 'That feature was not found. Update Composer OS.';
   }
   if (status === 408 || status === 504) {
-    return 'The request took too long. Try again with a different seed.';
+    return 'The request took too long. Try again or use another variation.';
   }
   return msg || `Request failed (${status})`;
 }
@@ -78,7 +78,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       return ipcInvoke<T>('composer-os-api:generate', body);
     }
     if (path === '/open-output-folder') {
-      return ipcInvoke<T>('composer-os-api:open-output-folder', body);
+      return ipcInvoke<T>('composer-os-api:open-output-folder', body ?? {});
     }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
@@ -104,6 +104,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export interface OutputDirectoryResponse {
   path: string;
   displayPath?: string;
+  /** Preset id → subfolder under Mike Composer Files */
+  presetFolders?: Record<string, string>;
 }
 
 export interface AppStyleModuleDto {
@@ -154,7 +156,8 @@ export const api = {
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
   getOutputs: () => get<{ outputs: Array<Record<string, unknown>> }>('/outputs'),
-  openOutputFolder: () => post<OpenOutputFolderResponse>('/open-output-folder', {}),
+  openOutputFolder: (opts?: { path?: string }) =>
+    post<OpenOutputFolderResponse>('/open-output-folder', opts ?? {}),
 };
 
 /** Shape checks for generation receipts (tests). */

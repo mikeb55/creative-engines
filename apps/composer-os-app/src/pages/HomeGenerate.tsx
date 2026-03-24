@@ -42,7 +42,8 @@ export function HomeGenerate({
   }) => void;
 }) {
   const [presetId, setPresetId] = useState('guitar_bass_duo');
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  /** Hidden variation value sent to the engine (not shown as a raw number). */
+  const [variationSeed, setVariationSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [presets, setPresets] = useState<{ id: string; name: string; supported: boolean }[]>([]);
   const [styleStack, setStyleStack] = useState({
     primary: 'barry_harris',
@@ -96,7 +97,7 @@ export function HomeGenerate({
             colour: styleStack.weights.colour ?? 0,
           },
         },
-        seed,
+        seed: variationSeed,
         locks,
       })) as GenResult;
       setResult(r);
@@ -123,10 +124,16 @@ export function HomeGenerate({
     }
   };
 
-  const openFolder = async () => {
+  function dirnameOnly(fp: string): string {
+    const p = fp.replace(/[/\\]+$/, '');
+    const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
+    return li >= 0 ? p.slice(0, li) : p;
+  }
+
+  const openFolder = async (folderPath?: string) => {
     setError(null);
     try {
-      const r = await api.openOutputFolder();
+      const r = await api.openOutputFolder(folderPath ? { path: folderPath } : {});
       if (!r.success && r.message) {
         setError(r.message);
       }
@@ -163,8 +170,11 @@ export function HomeGenerate({
             wordBreak: 'break-word',
           }}
         >
-          Output folder:{' '}
+          Library folder:{' '}
           <strong style={{ color: 'var(--text)' }}>{displayOutputPath(outputDir)}</strong>
+          <span style={{ display: 'block', marginTop: 6, fontSize: '0.8rem' }}>
+            Files are saved in preset subfolders (e.g. Guitar-Bass Duos) under this location.
+          </span>
         </p>
       )}
 
@@ -305,17 +315,10 @@ export function HomeGenerate({
         </div>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Seed
-        </label>
-        <input
-          type="number"
-          value={seed}
-          onChange={(e) => setSeed(Number(e.target.value) || 0)}
-          style={{ width: 160 }}
-        />
-      </div>
+      <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: 520 }}>
+        Each generation uses a random <strong style={{ color: 'var(--text)' }}>variation</strong> behind the scenes.
+        Use <em>Try another variation</em> before generating if you want a different roll of the dice.
+      </p>
 
       <div style={{ marginBottom: '1rem' }}>
         <span style={{ color: 'var(--text-muted)', fontSize: 0.9 }}>Locks</span>
@@ -337,11 +340,11 @@ export function HomeGenerate({
         <button onClick={generate} disabled={loading || !!modulesError || modules.length === 0}>
           {loading ? 'Generating…' : 'Generate'}
         </button>
-        <button className="secondary" onClick={() => setSeed(Math.floor(Math.random() * 1e9))}>
-          New seed
+        <button className="secondary" type="button" onClick={() => setVariationSeed(Math.floor(Math.random() * 1e9))}>
+          Try another variation
         </button>
-        <button className="secondary" type="button" onClick={openFolder}>
-          Open output folder
+        <button className="secondary" type="button" onClick={() => openFolder()}>
+          Open library folder
         </button>
       </div>
 
@@ -447,8 +450,12 @@ export function HomeGenerate({
             </>
           )}
 
-          <button type="button" onClick={openFolder} style={{ marginTop: '1rem' }}>
-            Open output folder
+          <button
+            type="button"
+            onClick={() => result?.filepath && openFolder(dirnameOnly(result.filepath))}
+            style={{ marginTop: '1rem' }}
+          >
+            Open this file&apos;s folder
           </button>
         </div>
       )}

@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Opens UI at http://localhost:5173. Choose preset, **style stack** (Barry Harris, Metheny, Triad Pairs — loaded from the backend), seed; generate; view outputs and validation. The **Style stack** tab and **Generate** tab both list the same modules; if they fail to load, you see an explicit message instead of empty dropdowns.
+Opens UI at http://localhost:5173. Choose preset, **style stack** (Barry Harris, Metheny, Triad Pairs — loaded from the backend), optional **Try another variation**; generate; view outputs and validation. The **Style stack** tab and **Generate** tab both list the same modules; if they fail to load, you see an explicit message instead of empty dropdowns.
 
 ## Running the Desktop App (Windows)
 
@@ -57,6 +57,12 @@ Output: `outputs/composer-os-v2/golden_path_demo.musicxml`
 
 ## Where Outputs Go
 
-- **Web / dev desktop:** `outputs/composer-os-v2/` (repo root)
-- **Packaged desktop:** `%APPDATA%/composer-os-desktop/outputs/composer-os-v2/`
-- Run manifest: `.manifest.json` alongside each `.musicxml`
+Primary saves go under **Documents → Mike Composer Files** (resolved from your Windows user profile, not a hardcoded username), with one subfolder per preset:
+
+- **Guitar-Bass Duos**
+- **Big-Band Compositions**
+- **ECM Chamber Compositions**
+
+Each MusicXML file has a sibling `.manifest.json`. **Open output folder** opens the real library or preset folder in Explorer. **Diagnostics** (advanced) may still show a numeric seed; the main Generate screen does not expose raw seed values.
+
+Override for tests or custom installs: set `COMPOSER_OS_OUTPUT_DIR` to replace the **Mike Composer Files** root (preset subfolders are still used under that root).

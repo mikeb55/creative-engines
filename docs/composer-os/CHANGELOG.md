@@ -1,5 +1,11 @@
 # Composer OS Changelog
 
+## Desktop UX — outputs, bass export, variation UI
+
+- Default output root: **`Documents\\Mike Composer Files`**, with preset subfolders (`Guitar-Bass Duos`, `Big-Band Compositions`, `ECM Chamber Compositions`). Folders are created as needed. `COMPOSER_OS_OUTPUT_DIR` overrides the root only. Listing, receipts, manifests, and **Open output folder** use the same canonical paths.
+- Guitar–Bass Duo MusicXML exports **acoustic/upright bass** GM metadata (`midi-program` 33 in MusicXML; GM program 32), not vocal/choir bass.
+- Main UI: no raw **Seed** field; use **Try another variation** (internal randomness unchanged). Seed may still appear in manifests/diagnostics only.
+
 ## Desktop packaging (Windows exe)
 
 - `npm run desktop:package` uses `CSC_IDENTITY_AUTO_DISCOVERY=false` and `win.signAndEditExecutable: false` so unsigned builds do not require **winCodeSign** extraction (avoids symlink privilege failures). Canonical artifact: `release/Composer-OS-Desktop-*-portable.exe`. `npm run verify:packaged-exe` fails if no portable exe exists. `desktop:self-test-install` = package → verify exe → UI + shortcut + launch.

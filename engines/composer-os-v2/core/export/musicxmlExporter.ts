@@ -84,11 +84,17 @@ function eventsToXml(measure: MeasureModel, measureIndex: number): string {
 export function exportScoreModelToMusicXml(score: ScoreModel): MusicXmlExportResult {
   try {
     const partList = score.parts
-      .map((p) => `    <score-part id="${p.id}">
+      .map((p) => {
+        const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
+        return `    <score-part id="${p.id}">
       <part-name>${escapeXml(p.name)}</part-name>
       <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(p.name)}</instrument-name></score-instrument>
-    </score-part>`)
-    .join('\n');
+      <midi-instrument id="${p.id}-I1">
+        <midi-program>${mxProg}</midi-program>
+      </midi-instrument>
+    </score-part>`;
+      })
+      .join('\n');
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">

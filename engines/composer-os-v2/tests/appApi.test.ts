@@ -10,6 +10,7 @@ import { generateComposition } from '../app-api/generateComposition';
 import { listOutputs } from '../app-api/listOutputs';
 import { buildDiagnostics } from '../app-api/buildDiagnostics';
 import { friendlyGenerateError } from '../app-api/apiErrorMessages';
+import { getOutputDirectoryForPreset, expectedPresetFolderName } from '../app-api/composerOsOutputPaths';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const TEST_OUTPUT_DIR = path.join(REPO_ROOT, 'outputs', 'composer-os-v2-test');
@@ -20,6 +21,10 @@ export function runAppApiTests(): TestResult[] {
   const results: TestResult[] = [];
   const pass = (name: string) => results.push({ name, ok: true });
   const fail = (name: string) => results.push({ name, ok: false });
+
+  const prevEnv = process.env.COMPOSER_OS_OUTPUT_DIR;
+  process.env.COMPOSER_OS_OUTPUT_DIR = TEST_OUTPUT_DIR;
+  const TEST_GBD_DIR = getOutputDirectoryForPreset('guitar_bass_duo');
 
   try {
     const presets = getPresets();
@@ -43,18 +48,26 @@ export function runAppApiTests(): TestResult[] {
   }
 
   try {
-    fs.mkdirSync(TEST_OUTPUT_DIR, { recursive: true });
+    if (expectedPresetFolderName('guitar_bass_duo') !== 'Guitar-Bass Duos') fail('Preset folder mapping');
+    else pass('Preset folder mapping');
+  } catch (e) {
+    fail(`Preset folder mapping: ${e}`);
+  }
+
+  try {
+    fs.mkdirSync(TEST_GBD_DIR, { recursive: true });
     const result = generateComposition(
       {
         presetId: 'guitar_bass_duo',
         styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
         seed: 999,
       },
-      TEST_OUTPUT_DIR
+      TEST_GBD_DIR
     );
     if (!result.success) fail('Generation request: success');
     else if (!result.validation) fail('Generation request: validation present');
     else if (!result.manifestPath?.endsWith('.manifest.json')) fail('Generation request: manifest path');
+    else if (!result.filepath?.includes('Guitar-Bass Duos')) fail('Generation request: file under preset folder');
     else pass('Generation request');
   } catch (e) {
     fail(`Generation request: ${e}`);
@@ -64,6 +77,7 @@ export function runAppApiTests(): TestResult[] {
     const outputs = listOutputs(TEST_OUTPUT_DIR);
     if (outputs.length < 1) fail('Output listing: at least one output');
     else if (!outputs[0].filename?.endsWith('.musicxml')) fail('Output listing: musicxml suffix');
+    else if (!outputs[0].presetFolderLabel) fail('Output listing: preset folder label');
     else pass('Output listing');
   } catch (e) {
     fail(`Output listing: ${e}`);
@@ -76,7 +90,7 @@ export function runAppApiTests(): TestResult[] {
         styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
         seed: 888,
       },
-      TEST_OUTPUT_DIR
+      TEST_GBD_DIR
     );
     const v = result.validation;
     if (!v) fail('Validation summary: present');
@@ -93,7 +107,7 @@ export function runAppApiTests(): TestResult[] {
         styleStack: { primary: 'metheny', weights: { primary: 1 } },
         seed: 5555,
       },
-      TEST_OUTPUT_DIR
+      TEST_GBD_DIR
     );
     const am = result.runManifest?.activeModules ?? [];
     if (am[0] !== 'metheny' || am.length !== 1) fail('Generation: requested primary in manifest');
@@ -117,7 +131,7 @@ export function runAppApiTests(): TestResult[] {
   }
 
   try {
-    fs.mkdirSync(TEST_OUTPUT_DIR, { recursive: true });
+    fs.mkdirSync(TEST_GBD_DIR, { recursive: true });
     const runs = 5;
     for (let i = 0; i < runs; i++) {
       const result = generateComposition(
@@ -126,7 +140,7 @@ export function runAppApiTests(): TestResult[] {
           styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
           seed: 7000 + i,
         },
-        TEST_OUTPUT_DIR
+        TEST_GBD_DIR
       );
       if (!result.success) fail(`Multi-run smoke: success run ${i}`);
       else if (!result.filepath) fail(`Multi-run smoke: filepath run ${i}`);
@@ -154,15 +168,14 @@ export function runAppApiTests(): TestResult[] {
   // Cleanup test outputs
   try {
     if (fs.existsSync(TEST_OUTPUT_DIR)) {
-      for (const f of fs.readdirSync(TEST_OUTPUT_DIR)) {
-        fs.unlinkSync(path.join(TEST_OUTPUT_DIR, f));
-      }
-      fs.rmdirSync(TEST_OUTPUT_DIR);
+      fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true });
     }
   } catch {
     // ignore
   }
 
+  if (prevEnv !== undefined) process.env.COMPOSER_OS_OUTPUT_DIR = prevEnv;
+  else delete process.env.COMPOSER_OS_OUTPUT_DIR;
+
   return results;
 }
-

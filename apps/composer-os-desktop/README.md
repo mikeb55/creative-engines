@@ -63,8 +63,8 @@ No manual server start. No Python. No .bat files.
 
 ## Output Location
 
-- **Dev:** `outputs/composer-os-v2/` (repo root)
-- **Packaged:** `%APPDATA%/composer-os-desktop/outputs/composer-os-v2/`
+- **Default (dev and packaged):** `Documents\\Mike Composer Files\\` with preset subfolders (**Guitar-Bass Duos**, **Big-Band Compositions**, **ECM Chamber Compositions**). MusicXML and `.manifest.json` files live together per preset.
+- **Override:** `COMPOSER_OS_OUTPUT_DIR` replaces the **Mike Composer Files** root (preset subfolders still apply).
 
 ## Icon
 

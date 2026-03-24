@@ -108,7 +108,7 @@ function testBassBehaviourValidation(): boolean {
     id: 'bass',
     name: 'Bass',
     instrumentIdentity: 'acoustic_upright_bass',
-    midiProgram: 43,
+    midiProgram: 32,
     clef: 'bass',
     measures: [m],
   }]);

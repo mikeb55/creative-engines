@@ -34,6 +34,8 @@
 
 **Hardening:** `electron/startupState.ts` + transitions in `main.ts`; `electron/config.ts` centralises paths (bundle, UI, output, icon). Preload exposes `getStartupState`, `getDesktopMeta`, `notifyGenerationPhase`. App API: `composerOsConfig.ts`, `buildDiagnostics.ts`, `apiErrorMessages.ts`, `GET /api/diagnostics`, canonical `output-directory` + `displayPath`. Vitest: `packagingSmoke.test.ts`, `startupState.test.ts`; engine `appApi.test.ts` includes multi-run smoke and diagnostics checks.
 
+**Output paths:** `engines/composer-os-v2/app-api/composerOsOutputPaths.ts` is the single source of truth for `Mike Composer Files` root, preset subfolders, and `ensureOutputDirectoryForPreset`. HTTP API and desktop IPC both use `composerOsApiCore.ts`. If you edit `app-api/*.ts` or `core/export/musicxmlExporter.ts`, keep the matching **`.js`** copies in sync when present (Node/ts-node may resolve `.js` first), or remove duplicate `.js` so only TypeScript is used.
+
 ## Next Planned Stage
 - Form variability
 - Additional presets (ECM, Big Band)

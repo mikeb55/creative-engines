@@ -22,6 +22,28 @@ function testMusicXmlExporterReturnsXml(): boolean {
   return r.success && r.xml !== undefined && r.xml.includes('score-partwise');
 }
 
+/** GM Acoustic Bass = 0-based 32 → MusicXML midi-program 33 */
+function testBassMusicXmlUsesAcousticBassMidi(): boolean {
+  const m = createMeasure(1, 'Cmaj7');
+  addEvent(m, createNote(40, 0, 4));
+  const score = createScore('Bass test', [{
+    id: 'bass',
+    name: 'Acoustic Upright Bass',
+    instrumentIdentity: 'acoustic_upright_bass',
+    midiProgram: 32,
+    clef: 'bass',
+    measures: [m],
+  }]);
+  const r = exportScoreModelToMusicXml(score);
+  const xml = r.xml ?? '';
+  const bassPartList = xml.match(/<score-part id="bass"[\s\S]*?<\/score-part>/)?.[0] ?? '';
+  return (
+    r.success &&
+    bassPartList.includes('<midi-program>33</midi-program>') &&
+    !bassPartList.toLowerCase().includes('choir')
+  );
+}
+
 function testSchemaValidationPassesForValid(): boolean {
   const xml = '<?xml?><score-partwise version="3.1"/>';
   const r = validateMusicXmlSchema(xml);
@@ -55,6 +77,7 @@ function testSibeliusSafeFailsForInvalid(): boolean {
 export function runExportTests(): { name: string; ok: boolean }[] {
   return [
     ['MusicXML exporter returns XML', testMusicXmlExporterReturnsXml],
+    ['Bass MusicXML uses acoustic bass MIDI (not vocal)', testBassMusicXmlUsesAcousticBassMidi],
     ['Schema validation passes for valid', testSchemaValidationPassesForValid],
     ['Schema validation fails for invalid', testSchemaValidationFailsForInvalid],
     ['Re-parse returns result', testReParseReturnsResult],

@@ -8,7 +8,7 @@ import type { BassProfile } from './instrumentProfileTypes';
 /** Acoustic Upright Bass — hard range E1–G4 (MIDI 28–67). */
 export const ACOUSTIC_UPRIGHT_BASS: BassProfile = {
   instrumentIdentity: 'acoustic_upright_bass',
-  midiProgram: 43, // Acoustic Bass
+  midiProgram: 32, // GM Acoustic Bass (0-based); MusicXML uses midi-program 33 (1-based)
   hardRange: [28, 67], // E1–G4
   preferredWalkingZone: [36, 55], // E2–G3
   upperDangerZone: [60, 67], // C4–G4
