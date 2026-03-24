@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "npm run test --prefix engines/conductor-engine && npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine",
+    "test": "npm run test --prefix engines/conductor-engine && npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine && npm run test --prefix engines/composer-os-v2",
     "test:fullstack": "npx ts-node --project tsconfig.json validation/full-stack/fullStackValidation.ts",
     "generate-tests": "npx ts-node --project tsconfig.json engines/conductor-engine/conductorRealWorldTest.ts",
     "shortcuts": "node launchers/create_shortcuts.js",
@@ -11,7 +11,8 @@
     "ellington": "node launchers/launch_ellington.js",
     "big-band": "node launchers/launch_big_band.js",
     "counterpoint": "node launchers/launch_counterpoint.js",
-    "test:musicxml": "npx ts-node scripts/testMusicXMLGeneration.ts"
+    "test:musicxml": "npx ts-node scripts/testMusicXMLGeneration.ts",
+    "orbit-v16": "npx ts-node --project tsconfig.json scripts/createOrbitV16.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
