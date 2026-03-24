@@ -7,12 +7,13 @@ import * as path from 'path';
 const desktopRoot = path.resolve(__dirname, '..');
 
 describe('desktop deploy / install wiring', () => {
-  it('package.json defines desktop:deploy and desktop:install', () => {
+  it('package.json defines desktop:clean-install and desktop:install', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
-    expect(pkg.scripts['desktop:deploy']).toBeDefined();
-    expect(pkg.scripts['desktop:install']).toContain('desktop:deploy');
-    expect(pkg.scripts['desktop:deploy']).toContain('desktop:package');
-    expect(pkg.scripts['desktop:deploy']).toContain('installComposerOsDesktop');
+    expect(pkg.scripts['desktop:clean-install']).toBeDefined();
+    expect(pkg.scripts['desktop:install']).toContain('desktop:clean-install');
+    expect(pkg.scripts['desktop:deploy']).toContain('desktop:clean-install');
+    expect(pkg.scripts['desktop:clean-install']).toContain('desktop:package');
+    expect(pkg.scripts['desktop:clean-install']).toContain('installComposerOsDesktop');
   });
 
   it('install sources exist and avoid .bat / launchers / composer-studio in active flow', () => {

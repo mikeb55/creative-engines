@@ -1,22 +1,19 @@
 /**
  * Composer OS Desktop — Electron main process
- * Single window, single instance, no browser spawn, API in-process.
- *
- * Quarantine: only Composer OS UI (composer-os-app → resources/ui). No legacy app paths or script runtimes.
+ * Packaged UI loads from disk (no localhost). API via IPC + shared engine (no HTTP for desktop).
  */
 
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as http from 'http';
-import { resolveComposerOsPort } from './utils/portUtils';
 import type { StartupState } from './startupState';
 import {
+  DESKTOP_APP_ID,
   DESKTOP_PRODUCT_NAME,
-  resolveApiBundlePath,
   resolveDefaultOutputDir,
   resolveUiPath,
   getWindowIconPath,
+  resolveDesktopIpcBundlePath,
 } from './config';
 import {
   verifyUiBundleAtPath,
@@ -24,11 +21,7 @@ import {
   type UiBundleVerifyFail,
 } from './uiBundleVerify';
 
-const API_READY_TIMEOUT_MS = 20000;
-const POLL_INTERVAL_MS = 200;
-
 let mainWindow: BrowserWindow | null = null;
-let resolvedPort = 3001;
 let startupState: StartupState = 'booting';
 let cachedUiStamp: ComposerOsUiStamp | null = null;
 let cachedUiPath = '';
@@ -58,11 +51,15 @@ ipcMain.handle('composer-os:get-desktop-meta', () => ({
   packaged: app.isPackaged,
   version: app.getVersion(),
   productName: DESKTOP_PRODUCT_NAME,
+  appId: DESKTOP_APP_ID,
+  exePath: app.getPath('exe'),
+  integration: 'ipc' as const,
 }));
 
 ipcMain.handle('composer-os:get-ui-provenance', () => ({
   verified: cachedUiStamp !== null,
   productName: DESKTOP_PRODUCT_NAME,
+  appId: DESKTOP_APP_ID,
   desktopVersion: app.getVersion(),
   uiBundlePath: cachedUiPath,
   uiProductId: cachedUiStamp?.productId ?? null,
@@ -70,6 +67,7 @@ ipcMain.handle('composer-os:get-ui-provenance', () => ({
   uiGitCommit: cachedUiStamp?.gitCommit ?? null,
   uiAppShellVersion: cachedUiStamp?.appShellVersion ?? null,
   outputDirectory: process.env.COMPOSER_OS_OUTPUT_DIR ?? '',
+  desktopMode: 'ipc' as const,
 }));
 
 ipcMain.on(
@@ -83,96 +81,25 @@ ipcMain.on(
   }
 );
 
-function httpGet(url: string): Promise<{ ok: boolean }> {
-  return new Promise((resolve) => {
-    const req = http.get(url, { timeout: 3000 }, (res) => {
-      resolve({ ok: res.statusCode === 200 });
-    });
-    req.on('error', () => resolve({ ok: false }));
-    req.on('timeout', () => {
-      req.destroy();
-      resolve({ ok: false });
-    });
-  });
-}
-
-function waitForApiReady(port: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const tryOnce = async () => {
-      const health = await httpGet(`http://127.0.0.1:${port}/health`);
-      if (health.ok) {
-        resolve();
-        return;
-      }
-      const presets = await httpGet(`http://127.0.0.1:${port}/api/presets`);
-      if (presets.ok) {
-        resolve();
-        return;
-      }
-      if (Date.now() - start > API_READY_TIMEOUT_MS) {
-        reject(
-          new Error(
-            `Composer OS did not respond in time (${API_READY_TIMEOUT_MS / 1000}s). The API may be stuck starting. Try closing other apps using this port, then restart Composer OS.`
-          )
-        );
-        return;
-      }
-      setTimeout(tryOnce, POLL_INTERVAL_MS);
-    };
-    setTimeout(tryOnce, POLL_INTERVAL_MS);
-  });
-}
-
-async function startApi(): Promise<void> {
-  const bundlePath = resolveApiBundlePath();
-  const uiPath = resolveUiPath();
-  const outputDir = resolveDefaultOutputDir();
-
+function registerDesktopIpc(outputDir: string): void {
+  const bundlePath = resolveDesktopIpcBundlePath();
   if (!bundlePath) {
-    return Promise.reject(
-      new Error(
-        'The Composer OS engine bundle is missing (resources/api.bundle.js). Reinstall the app or run a full desktop build from the developer environment.'
-      )
+    throw new Error(
+      'Composer OS desktop IPC bundle is missing (resources/desktop-ipc.bundle.cjs). Rebuild the app.'
     );
   }
-
-  try {
-    fs.mkdirSync(outputDir, { recursive: true });
-    fs.accessSync(outputDir, fs.constants.W_OK);
-  } catch {
-    return Promise.reject(
-      new Error(
-        'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
-      )
-    );
-  }
-
   process.env.COMPOSER_OS_OUTPUT_DIR = outputDir;
-  if (fs.existsSync(uiPath)) process.env.COMPOSER_OS_STATIC_DIR = uiPath;
-
-  setStartupState('resolving_port');
-  const { port, reuseExisting } = await resolveComposerOsPort();
-  resolvedPort = port;
-  process.env.PORT = String(port);
-
-  if (reuseExisting) {
-    setStartupState('waiting_for_backend');
-    await waitForApiReady(port);
-    return;
-  }
-
-  setStartupState('starting_backend');
-  require(bundlePath);
-  setStartupState('waiting_for_backend');
-  await waitForApiReady(port);
+  const { registerComposerOsIpc } = require(bundlePath) as {
+    registerComposerOsIpc: (im: typeof ipcMain, dir: string) => void;
+  };
+  registerComposerOsIpc(ipcMain, outputDir);
 }
 
 function createWindowShell(): BrowserWindow {
   const preloadPath = path.join(__dirname, 'preload.js');
   const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
-    title: `${DESKTOP_PRODUCT_NAME} - v${app.getVersion()} desktop`,
+    title: `${DESKTOP_PRODUCT_NAME} — v${app.getVersion()}`,
     width: 900,
     height: 700,
     minWidth: 600,
@@ -193,10 +120,7 @@ function createWindowShell(): BrowserWindow {
     try {
       const u = new URL(url);
       if (u.protocol === 'http:' || u.protocol === 'https:') {
-        const h = u.hostname;
-        if (h !== '127.0.0.1' && h !== 'localhost') {
-          event.preventDefault();
-        }
+        event.preventDefault();
       }
     } catch {
       /* ignore malformed */
@@ -224,7 +148,7 @@ function loadErrorPage(win: BrowserWindow, message: string): void {
       h1{color:#f87171;font-size:1.25rem;}p{line-height:1.5;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-word;display:block;margin-top:0.75rem;}</style></head>
       <body>
         <h1>${DESKTOP_PRODUCT_NAME} could not start</h1>
-        <p>Something went wrong while starting the app. You can try again after closing other copies of Composer OS.</p>
+        <p>Something went wrong while starting the app. You can try again after closing other copies.</p>
         <p><code>${safe}</code></p>
       </body></html>
     `)}`
@@ -255,7 +179,7 @@ function loadWrongBundleUiPage(win: BrowserWindow, vr: UiBundleVerifyFail): void
       h1{color:#f87171;font-size:1.25rem;}p{line-height:1.5;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-word;display:block;margin-top:0.75rem;}</style></head>
       <body>
         <h1>Wrong or stale UI bundle</h1>
-        <p>${DESKTOP_PRODUCT_NAME} refused to load the UI because the bundle identity check failed. A legacy or non–Composer OS shell may be present in <code>resources/ui</code>. Rebuild the desktop app or reinstall.</p>
+        <p>${DESKTOP_PRODUCT_NAME} refused to load the UI because the bundle identity check failed. Rebuild the desktop app or reinstall.</p>
         <p><strong>Reason:</strong> ${safeReason}</p>
         <p><strong>Resolved UI path:</strong> <code>${safePath}</code></p>
         <p><strong>productId found:</strong> <code>${safePid}</code></p>
@@ -283,11 +207,29 @@ async function launchApp(): Promise<void> {
   cachedUiStamp = vr.stamp;
   cachedUiPath = vr.resolvedPath;
 
+  const outputDir = resolveDefaultOutputDir();
   try {
-    await startApi();
-    const url = `http://127.0.0.1:${resolvedPort}`;
+    fs.mkdirSync(outputDir, { recursive: true });
+    fs.accessSync(outputDir, fs.constants.W_OK);
+  } catch {
+    setStartupState('fatal_error');
+    loadErrorPage(
+      win,
+      'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
+    );
+    win.once('ready-to-show', () => win.show());
+    return;
+  }
+
+  try {
+    setStartupState('starting_backend');
+    registerDesktopIpc(outputDir);
+    const indexHtml = path.join(uiPath, 'index.html');
+    if (!fs.existsSync(indexHtml)) {
+      throw new Error(`UI index missing: ${indexHtml}`);
+    }
     setStartupState('loading_ui');
-    await win.loadURL(url);
+    await win.loadFile(indexHtml);
     setStartupState('ready');
     win.once('ready-to-show', () => win.show());
   } catch (err) {
@@ -301,6 +243,9 @@ async function launchApp(): Promise<void> {
 if (gotLock) {
   app.whenReady().then(() => {
     app.setName(DESKTOP_PRODUCT_NAME);
+    if (process.platform === 'win32') {
+      app.setAppUserModelId(DESKTOP_APP_ID);
+    }
     launchApp().catch((err) => {
       console.error(err);
       setStartupState('fatal_error');

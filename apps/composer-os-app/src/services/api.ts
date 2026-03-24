@@ -28,7 +28,35 @@ function friendlyHttpMessage(status: number, bodyText: string): string {
   return msg || `Request failed (${status})`;
 }
 
+function isDesktopIpc(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!window.composerOsDesktop &&
+    window.composerOsDesktop.integration === 'ipc'
+  );
+}
+
+async function ipcInvoke<T>(channel: string, payload?: unknown): Promise<T> {
+  const bridge = window.composerOsDesktop;
+  if (!bridge?.invokeApi) {
+    throw new Error('Composer OS desktop IPC bridge is not available.');
+  }
+  return bridge.invokeApi(channel, payload) as Promise<T>;
+}
+
 async function get<T>(path: string): Promise<T> {
+  if (isDesktopIpc()) {
+    const map: Record<string, string> = {
+      '/presets': 'composer-os-api:get-presets',
+      '/style-modules': 'composer-os-api:get-style-modules',
+      '/output-directory': 'composer-os-api:get-output-directory',
+      '/diagnostics': 'composer-os-api:get-diagnostics',
+      '/outputs': 'composer-os-api:get-outputs',
+    };
+    const ch = map[path];
+    if (!ch) throw new Error(`Unknown IPC path: ${path}`);
+    return ipcInvoke<T>(ch);
+  }
   let r: Response;
   try {
     r = await fetch(`${BASE}${path}`);
@@ -45,6 +73,15 @@ async function get<T>(path: string): Promise<T> {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
+  if (isDesktopIpc()) {
+    if (path === '/generate') {
+      return ipcInvoke<T>('composer-os-api:generate', body);
+    }
+    if (path === '/open-output-folder') {
+      return ipcInvoke<T>('composer-os-api:open-output-folder', body);
+    }
+    throw new Error(`Unknown IPC POST path: ${path}`);
+  }
   let r: Response;
   try {
     r = await fetch(`${BASE}${path}`, {
@@ -81,6 +118,7 @@ export interface DiagnosticsResponse {
   version: string;
   apiBasePath: string;
   activePort: number;
+  desktopTransport?: 'ipc' | 'http';
   outputDirectory: string;
   outputDirectoryDisplay: string;
   outputDirectoryExists: boolean;

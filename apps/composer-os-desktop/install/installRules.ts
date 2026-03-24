@@ -45,15 +45,15 @@ export function looksLikeComposerOsPackagedExe(targetPath: string): boolean {
   return false;
 }
 
-/** Exact "Composer OS" shortcut (display name), case-insensitive, optional .lnk. */
-export function isComposerOsDesktopShortcutName(fileName: string): boolean {
-  const base = fileName.replace(/\.lnk$/i, '').trim();
-  return /^composer os$/i.test(base);
+/** User-facing shortcuts for this product line (clean-room + legacy exact names). */
+export function isCleanDesktopShortcutName(fileName: string): boolean {
+  const base = fileName.replace(/\.lnk$/i, '').trim().toLowerCase();
+  return base === 'composer os' || base === 'composer os desktop';
 }
 
 /**
  * Whether to remove/quarantine a .lnk in search locations.
- * Legacy Studio / forbidden targets always; exact "Composer OS" shortcut only if target !== current portable exe.
+ * Legacy Studio / forbidden targets always; exact "Composer OS" / "Composer OS Desktop" shortcut only if target !== current portable exe.
  */
 export function shouldQuarantineShortcut(
   shortcutFileName: string,
@@ -66,7 +66,7 @@ export function shouldQuarantineShortcut(
   const canon = normalizeFsPath(canonicalPortableExe);
   const tgt = targetPath.trim() ? normalizeFsPath(targetPath) : '';
 
-  if (isComposerOsDesktopShortcutName(shortcutFileName)) {
+  if (isCleanDesktopShortcutName(shortcutFileName)) {
     if (!tgt || tgt !== canon) return true;
     return false;
   }
@@ -74,7 +74,7 @@ export function shouldQuarantineShortcut(
   return false;
 }
 
-/** Resolve newest Composer-OS-*-portable.exe in release dir by mtime. */
+/** Resolve newest Composer-OS-Desktop-*-portable.exe in release dir by mtime. */
 export function findCanonicalPortableExe(releaseDir: string): string | null {
   if (!fs.existsSync(releaseDir)) return null;
   let names: string[];
@@ -83,7 +83,7 @@ export function findCanonicalPortableExe(releaseDir: string): string | null {
   } catch {
     return null;
   }
-  const portable = names.filter((f) => /^Composer-OS-[\d.]+-portable\.exe$/i.test(f));
+  const portable = names.filter((f) => /^Composer-OS-Desktop-[\d.]+-portable\.exe$/i.test(f));
   if (portable.length === 0) return null;
   const withMtime = portable.map((f) => {
     const p = path.join(releaseDir, f);

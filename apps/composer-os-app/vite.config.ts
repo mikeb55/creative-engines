@@ -5,6 +5,7 @@ import { composerOsUiStampPlugin } from './vite/composerOsUiStampPlugin';
 const apiPort = process.env.VITE_API_PORT ?? process.env.PORT ?? '3001';
 
 export default defineConfig({
+  base: './',
   plugins: [react(), composerOsUiStampPlugin()],
   server: {
     port: 5173,

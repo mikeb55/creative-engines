@@ -5,18 +5,20 @@
   "main": "dist/main.js",
   "author": "Creative Engines",
   "scripts": {
-    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
-    "desktop:build": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
+    "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "npm run desktop:build && electron-builder --win",
-    "desktop:deploy": "npm run desktop:package && tsx install/installComposerOsDesktop.ts",
-    "desktop:install": "npm run desktop:deploy",
+    "desktop:clean-install": "npm run desktop:package && npm run verify:ui-resources && tsx install/installComposerOsDesktop.ts",
+    "desktop:deploy": "npm run desktop:clean-install",
+    "desktop:install": "npm run desktop:clean-install",
     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
-    "build": "npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "build": "npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "build:api": "node scripts/build-api-bundle.js",
+    "build:desktop-ipc": "node scripts/build-desktop-ipc-bundle.js",
     "build:icon": "node scripts/generate-icon.js",
     "build:ui": "cd ../composer-os-app && npm run build && cd ../composer-os-desktop && node scripts/copy-ui.js",
     "build:electron": "tsc -p tsconfig.json",
-    "test": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources && vitest run",
+    "test": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources && vitest run",
     "start": "electron ."
   },
   "dependencies": {
@@ -32,8 +34,8 @@
     "vitest": "^1.2.0"
   },
   "build": {
-    "appId": "com.creative-engines.composer-os",
-    "productName": "Composer OS",
+    "appId": "com.mikeb55.composeros.desktop",
+    "productName": "Composer OS Desktop",
     "directories": {
       "output": "release",
       "buildResources": "resources"
@@ -42,12 +44,17 @@
       "dist/**/*",
       "resources/icon.png",
       "resources/api.bundle.js",
+      "resources/desktop-ipc.bundle.cjs",
       "resources/ui/**/*"
     ],
     "extraResources": [
       {
         "from": "resources/api.bundle.js",
         "to": "api.bundle.js"
+      },
+      {
+        "from": "resources/desktop-ipc.bundle.cjs",
+        "to": "desktop-ipc.bundle.cjs"
       },
       {
         "from": "resources/ui",
@@ -64,7 +71,7 @@
       "createDesktopShortcut": true
     },
     "portable": {
-      "artifactName": "Composer-OS-${version}-portable.exe"
+      "artifactName": "Composer-OS-Desktop-${version}-portable.exe"
     }
   }
 }

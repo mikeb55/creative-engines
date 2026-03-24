@@ -10,12 +10,21 @@ declare global {
   interface Window {
     composerOsDesktop?: {
       mode: 'desktop';
+      integration?: 'ipc';
       productName: string;
       getStartupState: () => Promise<ComposerOsStartupState>;
-      getDesktopMeta: () => Promise<{ packaged: boolean; version: string; productName: string }>;
+      getDesktopMeta: () => Promise<{
+        packaged: boolean;
+        version: string;
+        productName: string;
+        appId: string;
+        exePath: string;
+        integration: 'ipc';
+      }>;
       getUiProvenance: () => Promise<{
         verified: boolean;
         productName: string;
+        appId: string;
         desktopVersion: string;
         uiBundlePath: string;
         uiProductId: string | null;
@@ -23,7 +32,9 @@ declare global {
         uiGitCommit: string | null;
         uiAppShellVersion: string | null;
         outputDirectory: string;
+        desktopMode: 'ipc';
       }>;
+      invokeApi: (channel: string, payload?: unknown) => Promise<unknown>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };

@@ -17,6 +17,8 @@ export interface DiagnosticsPayload {
   version: string;
   apiBasePath: string;
   activePort: number;
+  /** When desktop uses IPC, this is 0 and desktopTransport is "ipc". */
+  desktopTransport?: 'ipc' | 'http';
   outputDirectory: string;
   outputDirectoryDisplay: string;
   outputDirectoryExists: boolean;
@@ -31,7 +33,11 @@ function toDisplayPath(p: string): string {
   return n;
 }
 
-export function buildDiagnostics(outputDir: string, activePort: number): DiagnosticsPayload {
+export function buildDiagnostics(
+  outputDir: string,
+  activePort: number,
+  opts?: { desktopTransport?: 'ipc' | 'http' }
+): DiagnosticsPayload {
   const resolved = path.resolve(outputDir);
   const exists = fs.existsSync(resolved);
   let writable = false;
@@ -56,6 +62,7 @@ export function buildDiagnostics(outputDir: string, activePort: number): Diagnos
     version: COMPOSER_OS_VERSION,
     apiBasePath: COMPOSER_OS_API_BASE_PATH,
     activePort,
+    desktopTransport: opts?.desktopTransport,
     outputDirectory: resolved,
     outputDirectoryDisplay: toDisplayPath(resolved),
     outputDirectoryExists: fs.existsSync(resolved),

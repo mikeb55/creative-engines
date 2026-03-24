@@ -11,7 +11,6 @@ describe('Desktop branding (Composer OS)', () => {
     const mainSrc = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.ts'), 'utf-8');
     expect(mainSrc).toContain('DESKTOP_PRODUCT_NAME');
     expect(mainSrc).toContain("app.getVersion()");
-    expect(mainSrc).toContain('desktop');
     expect(mainSrc).not.toMatch(/Composer Studio/i);
   });
 

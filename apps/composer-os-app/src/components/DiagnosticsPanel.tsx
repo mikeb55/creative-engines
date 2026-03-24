@@ -15,6 +15,9 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
   const [provenance, setProvenance] = useState<Awaited<
     ReturnType<NonNullable<Window['composerOsDesktop']>['getUiProvenance']>
   > | null>(null);
+  const [desktopMeta, setDesktopMeta] = useState<Awaited<
+    ReturnType<NonNullable<Window['composerOsDesktop']>['getDesktopMeta']>
+  > | null>(null);
 
   const load = () => {
     fetchDiagnostics().then((d) => {
@@ -22,11 +25,15 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
       setBackendOk(!!d?.backendReachable);
     });
     if (typeof window !== 'undefined' && window.composerOsDesktop) {
-      window.composerOsDesktop.getDesktopMeta().then((m) => setPackaged(m.packaged));
+      window.composerOsDesktop.getDesktopMeta().then((m) => {
+        setPackaged(m.packaged);
+        setDesktopMeta(m);
+      });
       window.composerOsDesktop.getUiProvenance().then((p) => setProvenance(p));
     } else {
       setPackaged(false);
       setProvenance(null);
+      setDesktopMeta(null);
     }
   };
 
@@ -80,6 +87,18 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
                 )}
               </p>
               <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
+                <strong style={{ color: 'var(--text)' }}>App ID:</strong> {provenance.appId}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>Desktop integration:</strong>{' '}
+                {provenance.desktopMode === 'ipc' ? 'IPC (no localhost HTTP)' : '—'}
+              </p>
+              {desktopMeta?.exePath && (
+                <p style={{ margin: '0.25rem 0', wordBreak: 'break-all' }}>
+                  <strong style={{ color: 'var(--text)' }}>Executable:</strong> {desktopMeta.exePath}
+                </p>
+              )}
+              <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
                 <strong style={{ color: 'var(--text)' }}>Desktop app version:</strong> {provenance.desktopVersion}
               </p>
               <p style={{ margin: '0.25rem 0' }}>
@@ -107,7 +126,16 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
           {diag && (
             <>
               <p style={{ margin: '0.25rem 0' }}>
-                <strong style={{ color: 'var(--text)' }}>Active port:</strong> {diag.activePort}
+                <strong style={{ color: 'var(--text)' }}>API transport:</strong>{' '}
+                {diag.desktopTransport === 'ipc'
+                  ? 'IPC (desktop)'
+                  : diag.desktopTransport === 'http'
+                    ? 'HTTP (web dev server)'
+                    : '—'}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>Active port:</strong>{' '}
+                {diag.desktopTransport === 'ipc' ? '— (not used)' : diag.activePort}
               </p>
               <p style={{ margin: '0.25rem 0' }}>
                 <strong style={{ color: 'var(--text)' }}>App mode:</strong> {surfaceLabel} · {modeLabel}

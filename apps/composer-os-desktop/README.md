@@ -1,6 +1,8 @@
 # Composer OS Desktop
 
-Windows desktop application for **Composer OS** only: Electron loads `resources/api.bundle.js` (Composer OS API) and `resources/ui` copied from `apps/composer-os-app/dist`. Before loading the UI, the main process reads `resources/ui/composer-os-ui-stamp.json` and **refuses to start** if the bundle is not stamped `composer-os` or lists forbidden legacy tabs (Hybrid / Projects / Score). Stale or wrong UI trees are fully replaced on each `build:ui` (no merge). One visible window; API runs in-process (no extra console window).
+Windows desktop app identity: **Composer OS Desktop** (`appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`). The renderer loads from **packaged files** (`loadFile` on `resources/ui/index.html`) — **no localhost / no browser URL** in packaged mode. Composer OS engine calls run through **preload `invokeApi` → IPC** (`resources/desktop-ipc.bundle.cjs`), not HTTP. The legacy `resources/api.bundle.js` remains for the **web** dev server (`npm run dev` + API) only.
+
+Before loading the UI, main reads `resources/ui/composer-os-ui-stamp.json` and **refuses to start** if the bundle is wrong or lists forbidden tabs. Stale UI trees are fully replaced on each `build:ui`. One window; no separate backend window.
 
 ## Run (Dev)
 
@@ -12,7 +14,7 @@ npm run desktop:dev
 
 Builds API bundle, UI, and Electron main; launches the desktop app.
 
-Do **not** run `electron .` alone — the API must be built first (`npm run build:api` or `desktop:dev`). The app does not use `npx` or system Node; it loads `resources/api.bundle.js` inside Electron.
+Do **not** run `electron .` alone — run the full `desktop:dev` pipeline so UI, IPC bundle, and Electron main are built. Packaged mode uses **IPC + file UI**, not the HTTP API bundle inside Electron.
 
 **Port conflicts:** The app prefers port 3001. If it is busy, it checks whether Composer OS is already running (`GET /health`) and reuses it; otherwise it picks the next free port (3002, 3003, …). No manual restart or killing processes.
 
@@ -26,24 +28,23 @@ npm run desktop:package
 ```
 
 Produces:
-- `release/Composer-OS-1.0.0-portable.exe` — portable
-- `release/Composer OS Setup 1.0.0.exe` — NSIS installer with desktop shortcut
+- `release/Composer-OS-Desktop-1.0.0-portable.exe` — portable
+- `release/Composer OS Desktop Setup 1.0.0.exe` — NSIS installer
 
 ## Deploy shortcut (Windows, developer machine)
 
 After packaging, run **one** of:
 
 ```bash
-npm run desktop:deploy
-# or
-npm run desktop:install
+npm run desktop:clean-install
+# aliases: desktop:deploy, desktop:install
 ```
 
-This runs `desktop:package`, then `install/installComposerOsDesktop.ts`: it scans Desktop, Public Desktop, and Start Menu `.lnk` files, **quarantines** legacy Composer Studio / stale “Composer OS” shortcuts (moved under `%USERPROFILE%\ComposerOsDesktop\shortcut-quarantine\`), and creates a fresh desktop shortcut named **Composer OS** pointing at the **current** `release/Composer-OS-*-portable.exe`. Use that shortcut for day-to-day launches so old shortcuts cannot point at stale builds.
+This runs `desktop:package`, verifies UI stamp, then `install/installComposerOsDesktop.ts`: quarantines legacy Studio / stale shortcuts and creates **Composer OS Desktop.lnk** → current `Composer-OS-Desktop-*-portable.exe`. Use only that shortcut.
 
 ## End User Flow
 
-1. Double-click **Composer OS** on the desktop (after deploy), or the packaged portable/installed executable directly.
+1. Double-click **Composer OS Desktop** on the desktop (after `desktop:clean-install`), or the packaged portable exe directly.
 2. API starts in-process (no extra cmd window, no Python).
 3. **One** Electron window only — no separate browser, no Composer Studio / legacy launchers.
 4. Second launch focuses the existing window (`requestSingleInstanceLock`).

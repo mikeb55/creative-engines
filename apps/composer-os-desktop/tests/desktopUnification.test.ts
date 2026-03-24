@@ -7,9 +7,10 @@ import * as path from 'path';
 const desktopRoot = path.resolve(__dirname, '..');
 
 describe('Composer OS desktop unification', () => {
-  it('package metadata names Composer OS', () => {
+  it('package metadata names Composer OS Desktop with clean app id', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
-    expect(pkg.build.productName).toBe('Composer OS');
+    expect(pkg.build.productName).toBe('Composer OS Desktop');
+    expect(pkg.build.appId).toBe('com.mikeb55.composeros.desktop');
     expect(JSON.stringify(pkg)).not.toMatch(/Composer Studio/i);
   });
 
@@ -22,9 +23,9 @@ describe('Composer OS desktop unification', () => {
     expect(mainSrc).not.toContain('openExternal');
   });
 
-  it('preload exposes Composer OS only', () => {
+  it('preload exposes Composer OS Desktop only', () => {
     const pre = fs.readFileSync(path.join(desktopRoot, 'electron', 'preload.ts'), 'utf-8');
-    expect(pre).toContain('Composer OS');
+    expect(pre).toContain('Composer OS Desktop');
     expect(pre).not.toMatch(/Composer Studio/i);
   });
 

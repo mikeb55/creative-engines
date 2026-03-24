@@ -28,13 +28,14 @@ describe('Desktop config', () => {
     expect(pkg.scripts['desktop:dev']).toBeDefined();
     expect(pkg.scripts['desktop:build']).toBeDefined();
     expect(pkg.scripts['desktop:package']).toBeDefined();
+    expect(pkg.scripts['desktop:clean-install']).toBeDefined();
   });
 
   it('electron-builder config valid', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(appRoot, 'package.json'), 'utf-8'));
     expect(pkg.build).toBeDefined();
-    expect(pkg.build.appId).toBe('com.creative-engines.composer-os');
-    expect(pkg.build.productName).toBe('Composer OS');
+    expect(pkg.build.appId).toBe('com.mikeb55.composeros.desktop');
+    expect(pkg.build.productName).toBe('Composer OS Desktop');
     expect(pkg.build.win).toBeDefined();
     expect(pkg.build.win.icon).toBeDefined();
   });

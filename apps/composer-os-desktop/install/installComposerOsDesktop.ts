@@ -13,7 +13,7 @@ import {
 } from './shortcutUtils';
 import { findCanonicalPortableExe, normalizeFsPath } from './installRules';
 
-const SHORTCUT_NAME = 'Composer OS.lnk';
+const SHORTCUT_NAME = 'Composer OS Desktop.lnk';
 
 function desktopAppRoot(): string {
   return path.resolve(__dirname, '..');
@@ -25,7 +25,7 @@ function resolvePortableExe(): string {
   const fileName = findCanonicalPortableExe(releaseDir);
   if (!fileName) {
     throw new Error(
-      `No Composer-OS-*-portable.exe in ${releaseDir}. Run npm run desktop:package first.`
+      `No Composer-OS-Desktop-*-portable.exe in ${releaseDir}. Run npm run desktop:package first.`
     );
   }
   const full = path.join(releaseDir, fileName);
@@ -117,8 +117,14 @@ function main(): void {
   verifyShortcut(shortcutPath, portableExe);
   verifyNoLegacyOnDesktop(desktopDir);
 
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf-8')) as {
+    build?: { appId?: string; productName?: string };
+  };
+
   console.log('');
-  console.log('OK — Composer OS desktop shortcut is ready.');
+  console.log('OK — Composer OS Desktop shortcut is ready.');
+  console.log('  Product:', pkg.build?.productName ?? 'Composer OS Desktop');
+  console.log('  App ID:', pkg.build?.appId ?? '(see package.json)');
   console.log('  Packaged exe:', portableExe);
   console.log('  Shortcut:', shortcutPath);
 }

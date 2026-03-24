@@ -7,13 +7,16 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getPresets } from '../engines/composer-os-v2/app-api/getPresets';
-import { getStyleModules } from '../engines/composer-os-v2/app-api/getStyleModules';
-import { generateComposition } from '../engines/composer-os-v2/app-api/generateComposition';
-import { listOutputs } from '../engines/composer-os-v2/app-api/listOutputs';
-import { openOutputFolder } from '../engines/composer-os-v2/app-api/openOutputFolder';
-import { buildDiagnostics } from '../engines/composer-os-v2/app-api/buildDiagnostics';
-import { friendlyGenerateError, friendlyOutputDirError } from '../engines/composer-os-v2/app-api/apiErrorMessages';
+import {
+  getConfiguredOutputDir,
+  apiGetPresets,
+  apiGetStyleModules,
+  apiGenerate,
+  apiListOutputs,
+  apiGetOutputDirectory,
+  apiGetDiagnostics,
+  apiOpenOutputFolder,
+} from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
 const app = express();
@@ -24,19 +27,11 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', app: 'composer-os' });
 });
 
-const REPO_ROOT = path.resolve(__dirname, '..');
-const OUTPUT_DIR = path.resolve(process.env.COMPOSER_OS_OUTPUT_DIR ?? path.join(REPO_ROOT, 'outputs', 'composer-os-v2'));
-
-function displayPath(p: string): string {
-  const n = path.normalize(p);
-  if (process.platform === 'win32') return n.replace(/\//g, '\\');
-  return n;
-}
+const OUTPUT_DIR = getConfiguredOutputDir();
 
 app.get('/api/presets', (_req: Request, res: Response) => {
   try {
-    const presets = getPresets();
-    res.json({ presets });
+    res.json(apiGetPresets());
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -44,8 +39,7 @@ app.get('/api/presets', (_req: Request, res: Response) => {
 
 app.get('/api/style-modules', (_req: Request, res: Response) => {
   try {
-    const modules = getStyleModules();
-    res.json({ modules });
+    res.json(apiGetStyleModules());
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -54,18 +48,16 @@ app.get('/api/style-modules', (_req: Request, res: Response) => {
 app.post('/api/generate', (req: Request, res: Response) => {
   try {
     const body = req.body as Partial<GenerateRequest>;
-    const req_: GenerateRequest = {
-      presetId: body.presetId ?? 'guitar_bass_duo',
-      styleStack: body.styleStack ?? { primary: 'barry_harris', weights: { primary: 1 } },
-      seed: typeof body.seed === 'number' ? body.seed : Math.floor(Math.random() * 1e9),
-      locks: body.locks,
-    };
-    const result = generateComposition(req_, OUTPUT_DIR);
+    const result = apiGenerate(body, OUTPUT_DIR);
+    if ('error' in result && !('validation' in result)) {
+      res.status(500).json(result);
+      return;
+    }
     res.json(result);
   } catch (err) {
     res.status(500).json({
       success: false,
-      error: friendlyGenerateError(err),
+      error: String(err),
       detail: process.env.NODE_ENV === 'development' ? String(err) : undefined,
     });
   }
@@ -73,34 +65,32 @@ app.post('/api/generate', (req: Request, res: Response) => {
 
 app.get('/api/outputs', (_req: Request, res: Response) => {
   try {
-    const outputs = listOutputs(OUTPUT_DIR);
-    res.json({ outputs });
+    res.json(apiListOutputs(OUTPUT_DIR));
   } catch (err) {
-    res.status(500).json({ error: friendlyOutputDirError(err) });
+    res.status(500).json({ error: String(err) });
   }
 });
 
 app.get('/api/output-directory', (_req: Request, res: Response) => {
-  res.json({ path: OUTPUT_DIR, displayPath: displayPath(OUTPUT_DIR) });
+  res.json(apiGetOutputDirectory(OUTPUT_DIR));
 });
 
 app.get('/api/diagnostics', (_req: Request, res: Response) => {
   try {
     const port = parseInt(process.env.PORT ?? '3001', 10);
-    const payload = buildDiagnostics(OUTPUT_DIR, port);
-    res.json(payload);
+    res.json(apiGetDiagnostics(OUTPUT_DIR, port));
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
 });
 
 app.post('/api/open-output-folder', (_req: Request, res: Response) => {
-  openOutputFolder(OUTPUT_DIR).then((r) => {
+  apiOpenOutputFolder(OUTPUT_DIR).then((r) => {
     res.json(r);
   });
 });
 
-const staticPath = process.env.COMPOSER_OS_STATIC_DIR ?? path.join(REPO_ROOT, 'apps', 'composer-os-app', 'dist');
+const staticPath = process.env.COMPOSER_OS_STATIC_DIR ?? path.join(path.resolve(__dirname, '..'), 'apps', 'composer-os-app', 'dist');
 if (fs.existsSync(staticPath)) {
   app.use(express.static(staticPath));
   app.get('*', (_req: Request, res: Response) => {

@@ -13,14 +13,16 @@ function readUtf8(rel: string): string {
 describe('Packaging smoke (desktop)', () => {
   it('electron-builder config is present and icon resolves', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
-    expect(pkg.build?.productName).toBe('Composer OS');
+    expect(pkg.build?.productName).toBe('Composer OS Desktop');
+    expect(pkg.build?.appId).toBe('com.mikeb55.composeros.desktop');
     expect(pkg.build?.win?.icon).toBeDefined();
     const iconRel = pkg.build.win.icon as string;
     expect(fs.existsSync(path.join(desktopRoot, iconRel))).toBe(true);
   });
 
-  it('API bundle and UI bundle exist after build', () => {
+  it('API bundle, IPC bundle, and UI bundle exist after build', () => {
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'api.bundle.js'))).toBe(true);
+    expect(fs.existsSync(path.join(desktopRoot, 'resources', 'desktop-ipc.bundle.cjs'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
     const stampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
     expect(fs.existsSync(stampPath)).toBe(true);

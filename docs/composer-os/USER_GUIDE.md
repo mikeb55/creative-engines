@@ -27,7 +27,7 @@ npm run desktop:dev
 Or double-click the packaged executable (`Composer-OS-*-portable.exe` or installed shortcut). No manual server start; no Python or .bat.
 The desktop app resolves port 3001 automatically if it is busy (reuses Composer OS or switches to the next free port).
 
-**Recommended on Windows:** From the repo, run `npm run desktop:deploy` in `apps/composer-os-desktop` after `npm install`. That packages the app, removes/quarantines misleading **Composer Studio** or stale **Composer OS** shortcuts, and creates a single desktop shortcut named **Composer OS** that targets the current portable build. Use that shortcut—not old Composer Studio shortcuts or copies from other folders.
+**Recommended on Windows:** From the repo, run `npm run desktop:clean-install` in `apps/composer-os-desktop` after `npm install`. That packages **Composer OS Desktop**, verifies the UI stamp, quarantines legacy **Composer Studio** / stale shortcuts, and creates **Composer OS Desktop.lnk** pointing at the current `Composer-OS-Desktop-*-portable.exe`. The packaged app uses **IPC** for presets, generation, outputs, and diagnostics—not a localhost browser session.
 
 **Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows a **Generation receipt** (file name, full paths, manifest path when present, preset, style stack, readiness scores, pass/fail) and **Open output folder** opens the active save directory in File Explorer. If startup fails, you see a clear error in the same window (no extra browser).
 

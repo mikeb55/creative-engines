@@ -7,8 +7,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { app } from 'electron';
 
-export const DESKTOP_APP_ID = 'com.creative-engines.composer-os';
-export const DESKTOP_PRODUCT_NAME = 'Composer OS';
+export const DESKTOP_APP_ID = 'com.mikeb55.composeros.desktop';
+export const DESKTOP_PRODUCT_NAME = 'Composer OS Desktop';
 export const COMPOSER_OS_PREFERRED_PORT_DEFAULT = 3001;
 
 export function isPackagedMode(): boolean {
@@ -36,6 +36,18 @@ export function getApiBundleCandidates(): string[] {
 
 export function resolveApiBundlePath(): string | null {
   for (const p of getApiBundleCandidates()) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+export function resolveDesktopIpcBundlePath(): string | null {
+  const candidates = [
+    path.join(process.resourcesPath, 'desktop-ipc.bundle.cjs'),
+    path.join(__dirname, '..', 'resources', 'desktop-ipc.bundle.cjs'),
+    path.join(app.getAppPath(), 'resources', 'desktop-ipc.bundle.cjs'),
+  ];
+  for (const p of candidates) {
     if (fs.existsSync(p)) return p;
   }
   return null;
