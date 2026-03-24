@@ -8,6 +8,8 @@ import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
 import { runReadinessTests } from './readiness.test';
 import { runExportTests } from './export.test';
+import { runScoreModelTests } from './scoreModel.test';
+import { runGoldenPathTests } from './goldenPath.test';
 
 const suites = [
   { name: 'Conductor', run: runConductorTests },
@@ -16,6 +18,8 @@ const suites = [
   { name: 'Score Integrity', run: runScoreIntegrityTests },
   { name: 'Readiness', run: runReadinessTests },
   { name: 'Export', run: runExportTests },
+  { name: 'Score Model', run: runScoreModelTests },
+  { name: 'Golden Path', run: runGoldenPathTests },
 ];
 
 function main(): void {

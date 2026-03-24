@@ -65,7 +65,7 @@ form
   → release gate
 ```
 
-At this stage, the pipeline is implemented as types and stub logic. Deep music generation is intentionally deferred; the skeleton prioritises architecture, contracts, validation, and anti-drift design.
+The **golden path** implements a real first-pass generation flow: preset → feel → harmony → phrase → score construction → integrity gate → MusicXML export → MX validation → run manifest. Deep style-specific generation is deferred; the golden path proves correctness.
 
 ---
 
@@ -103,15 +103,60 @@ First-pass presets:
 
 ---
 
+## Golden Path Demo
+
+The **first golden path** proves that Composer OS can generate one correct score end-to-end through the full pipeline.
+
+### What It Does
+
+- Generates an 8-bar guitar-bass duo score (Clean Electric Guitar + Acoustic/Upright Bass)
+- Sections A (bars 1–4) and B (bars 5–8) with rehearsal marks at bars 1 and 5
+- Chord symbols: Dmin9, G13, Cmaj9, A7alt (2 bars each)
+- Sparse guitar melody/dyads in mid register; walking-style bass in upright bass register
+- Passes Score Integrity Gate, MusicXML validation, and Sibelius-safe checks
+- Produces a valid MusicXML file and run manifest
+
+### Why It Is Intentionally Simple
+
+This is a **correctness-first pass**, not a high-art composition pass. The goal is to prove the system can:
+
+1. Build a real score from the score model
+2. Validate it through the integrity gate
+3. Export to MusicXML
+4. Pass MX validation and readiness thresholds
+
+### What It Proves
+
+- The score model is the single source of truth for export
+- No direct-to-MusicXML hacks; everything flows through the core pipeline
+- Instrument identities, register discipline, and measure math are enforced
+- Chord symbols and rehearsal marks are structurally complete
+
+### What Remains to Be Built Next
+
+- Composer-specific style modules (Metheny, Bacharach, Barry Harris, Triad Pairs)
+- Deeper music generation (motif, phrase, counterpoint from context)
+- Launcher integration
+- Full big band instrumentation
+
+### Running the Golden Path Demo
+
+```bash
+npx ts-node --project tsconfig.json engines/composer-os-v2/scripts/runGoldenPathDemo.ts
+```
+
+Output is written to `outputs/composer-os-v2/golden_path_demo.musicxml`.
+
+---
+
 ## What Is Intentionally Not Built Yet
 
 - Composer-specific style modules (Metheny, Bacharach, Barry Harris, Triad Pairs)
 - Deep music generation (motif generation, phrase generation, counterpoint)
 - UI/launcher integration
-- Full MusicXML rendering (stub only)
 - Full big band instrumentation
 
-This first build is the **skeleton**. Future modules plug in cleanly without architectural drift.
+The golden path proves the core system works; future modules plug in cleanly without architectural drift.
 
 ---
 
@@ -142,11 +187,13 @@ engines/composer-os-v2/
     primitives/          # Shared data model
     instrument-profiles/ # Guitar, bass profiles
     style-modules/       # Registry for modifiers
+    score-model/         # Score types, event builder, validation
     score-integrity/     # Pre-export gates
     export/              # MusicXML exporter, validation, Sibelius-safe
     readiness/           # RRG + MX readiness scoring
     run-ledger/          # Run manifest for replay/debug
+    goldenPath/          # Golden path generator and runner
 
   presets/               # guitarBassDuo, ecmChamber, bigBand
-  tests/                 # Conductor, rhythm, instruments, integrity, readiness, export
+  tests/                 # Conductor, rhythm, instruments, integrity, readiness, export, scoreModel, goldenPath
 ```

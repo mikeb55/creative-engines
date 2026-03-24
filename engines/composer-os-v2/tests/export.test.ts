@@ -2,12 +2,23 @@
  * Composer OS V2 — Export subsystem tests
  */
 
-import { exportToMusicXml } from '../core/export/musicxmlExporter';
+import { exportScoreModelToMusicXml, exportToMusicXml } from '../core/export/musicxmlExporter';
 import { validateMusicXmlSchema, reParseMusicXml } from '../core/export/musicxmlValidation';
 import { checkSibeliusSafe } from '../core/export/sibeliusSafeProfile';
+import { createMeasure, createNote, addEvent, createScore } from '../core/score-model/scoreEventBuilder';
 
 function testMusicXmlExporterReturnsXml(): boolean {
-  const r = exportToMusicXml({});
+  const m = createMeasure(1, 'Cmaj7');
+  addEvent(m, createNote(60, 0, 4));
+  const score = createScore('Minimal', [{
+    id: 'p1',
+    name: 'Part 1',
+    instrumentIdentity: 'guitar',
+    midiProgram: 27,
+    clef: 'treble',
+    measures: [m],
+  }]);
+  const r = exportScoreModelToMusicXml(score);
   return r.success && r.xml !== undefined && r.xml.includes('score-partwise');
 }
 
