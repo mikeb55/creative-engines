@@ -28,6 +28,16 @@
 - Additional presets
 - Deeper motif development
 
+## Retro Self-Test Suite
+
+A retro self-test suite protects all implemented stages (Foundation → Style System). Run with `npm run test:retro` or as part of `npm run test`.
+
+**Rule:** No future Composer OS stage is complete unless:
+1. New subsystem tests are added
+2. Retro self-tests still pass
+3. Stage exit gate tests still pass
+4. Commit/push only happens after passing tests
+
 ## Anti-Drift Rules
 
 - No second pipeline

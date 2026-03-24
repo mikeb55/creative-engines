@@ -5,7 +5,8 @@
   "description": "V2.0 - Composer OS unified generative composition system",
   "main": "core/conductor/conductor.js",
   "scripts": {
-    "test": "npx ts-node --project ../../tsconfig.json tests/runAllTests.ts"
+    "test": "npx ts-node --project ../../tsconfig.json tests/runAllTests.ts",
+    "test:retro": "npx ts-node --project ../../tsconfig.json scripts/runRetroSelfTests.ts"
   },
   "types": "./core/conductor/conductorTypes.ts"
 }

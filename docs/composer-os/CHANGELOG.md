@@ -32,3 +32,11 @@
 - Triad Pairs module
 - Style stack: primary, secondary, colour
 - Style blend and triad-pair validation gates
+
+## Retro Self-Test / Hardening Pass
+
+- Retro test suite for Foundation, Golden Path, Musical Core, First Intelligence, Style System
+- Regression fixtures (bar count, event counts, pitch ranges, style metadata)
+- Stage exit gate tests per implemented stage
+- Negative tests proving gates catch failures (rehearsal marks, chord symbols, register, motif, style stack)
+- `npm run test:retro` to run retro suite only

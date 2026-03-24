@@ -192,11 +192,19 @@ The golden path proves the core system works; future modules plug in cleanly wit
 npm run test --prefix engines/composer-os-v2
 ```
 
+Retro self-test suite (stage regression + negative tests):
+
+```bash
+npm run test:retro --prefix engines/composer-os-v2
+```
+
 Or from the repo root:
 
 ```bash
 npx ts-node --project tsconfig.json engines/composer-os-v2/tests/runAllTests.ts
 ```
+
+**Rule:** No future stage is complete unless new tests are added, retro tests pass, and stage exit gates pass before commit/push.
 
 ---
 
