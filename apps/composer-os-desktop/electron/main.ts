@@ -99,7 +99,7 @@ function createWindowShell(): BrowserWindow {
   const preloadPath = path.join(__dirname, 'preload.js');
   const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
-    title: `${DESKTOP_PRODUCT_NAME} — v${app.getVersion()}`,
+    title: `Composer OS - v${app.getVersion()}`,
     width: 900,
     height: 700,
     minWidth: 600,

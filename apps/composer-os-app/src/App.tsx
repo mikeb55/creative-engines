@@ -39,7 +39,7 @@ export default function App() {
 
   useEffect(() => {
     if (embeddedStamp) {
-      document.title = `Composer OS · v${embeddedStamp.appShellVersion}`;
+      document.title = `Composer OS - v${embeddedStamp.appShellVersion}`;
     }
   }, [embeddedStamp]);
 

@@ -33,8 +33,10 @@ describe('Packaging smoke (desktop)', () => {
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
     const stampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
     expect(fs.existsSync(stampPath)).toBe(true);
-    const stamp = JSON.parse(fs.readFileSync(stampPath, 'utf-8')) as { productId: string };
+    const stamp = JSON.parse(fs.readFileSync(stampPath, 'utf-8')) as { productId: string; appShellVersion: string };
     expect(stamp.productId).toBe('composer-os');
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8')) as { version: string };
+    expect(stamp.appShellVersion).toBe(pkg.version);
   });
 
   it('main and preload have no python or composer-studio references', () => {

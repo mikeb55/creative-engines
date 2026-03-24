@@ -45,6 +45,12 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
   const surfaceLabel =
     typeof window !== 'undefined' && window.composerOsDesktop ? 'Desktop' : 'Browser';
 
+  const uiDesktopMismatch =
+    provenance &&
+    provenance.desktopVersion &&
+    provenance.uiAppShellVersion &&
+    provenance.desktopVersion !== provenance.uiAppShellVersion;
+
   return (
     <div
       style={{
@@ -101,6 +107,25 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
               <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
                 <strong style={{ color: 'var(--text)' }}>Desktop app version:</strong> {provenance.desktopVersion}
               </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>UI bundle version:</strong>{' '}
+                {provenance.uiAppShellVersion ?? '—'}
+              </p>
+              {uiDesktopMismatch && (
+                <p
+                  style={{
+                    margin: '0.5rem 0',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.12)',
+                    border: '1px solid var(--error)',
+                    color: 'var(--error)',
+                  }}
+                >
+                  <strong>UI / Desktop version mismatch</strong> — rebuild the desktop app (copy UI) so the bundled UI
+                  matches the Electron shell version.
+                </p>
+              )}
               <p style={{ margin: '0.25rem 0' }}>
                 <strong style={{ color: 'var(--text)' }}>UI bundle productId:</strong>{' '}
                 {provenance.uiProductId ?? '—'}

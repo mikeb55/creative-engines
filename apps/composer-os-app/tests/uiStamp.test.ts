@@ -13,9 +13,14 @@ describe('composer-os-ui-stamp.json', () => {
       productId: string;
       productName: string;
       supportedPages: string[];
+      appShellVersion: string;
+      buildTimestamp: string;
+      gitCommit: string;
     };
     expect(raw.productId).toBe('composer-os');
     expect(raw.productName).toBe('Composer OS');
+    expect(raw.appShellVersion).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(raw.buildTimestamp?.length).toBeGreaterThan(10);
     expect(raw.supportedPages.map((p) => p.toLowerCase())).not.toContain('hybrid');
     expect(raw.supportedPages.map((p) => p.toLowerCase())).not.toContain('projects');
     expect(raw.supportedPages.map((p) => p.toLowerCase())).not.toContain('score');

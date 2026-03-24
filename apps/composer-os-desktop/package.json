@@ -1,6 +1,6 @@
 {
   "name": "composer-os-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Composer OS Windows Desktop Application",
   "main": "dist/main.js",
   "author": "Creative Engines",
@@ -75,7 +75,8 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "artifactName": "Composer-OS-Desktop-${version}-Setup.exe"
     },
     "portable": {
       "artifactName": "Composer-OS-Desktop-${version}-portable.exe"

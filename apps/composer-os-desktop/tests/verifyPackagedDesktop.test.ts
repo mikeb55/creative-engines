@@ -21,7 +21,7 @@ describe('verifyPackagedPortableExe', () => {
 
   it('throws when exe is too small', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-tiny-'));
-    const p = path.join(dir, 'Composer-OS-Desktop-1.0.0-portable.exe');
+    const p = path.join(dir, 'Composer-OS-Desktop-1.0.1-portable.exe');
     fs.writeFileSync(p, Buffer.alloc(100));
     expect(() => verifyPackagedPortableExe(dir)).toThrow(/too small/i);
     fs.rmSync(dir, { recursive: true, force: true });

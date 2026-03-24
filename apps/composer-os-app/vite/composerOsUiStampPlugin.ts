@@ -1,5 +1,6 @@
 /**
  * Writes composer-os-ui-stamp.json to dist (and public/ for dev) and injects stamp into the bundle.
+ * App shell semver is read from ../composer-os-desktop/package.json when present (single source of truth).
  */
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -20,9 +21,20 @@ export type ComposerOsUiStamp = {
 
 const SUPPORTED_PAGES = ['Generate', 'Presets', 'Style Stack', 'Outputs', 'Diagnostics'] as const;
 
-function buildStamp(appRoot: string): ComposerOsUiStamp {
+/** Prefer Composer OS Desktop package.json version in the monorepo layout. */
+export function resolveAppShellVersion(appRoot: string): string {
+  const desktopPkgPath = path.join(appRoot, '..', 'composer-os-desktop', 'package.json');
+  if (fs.existsSync(desktopPkgPath)) {
+    const pkg = JSON.parse(fs.readFileSync(desktopPkgPath, 'utf-8')) as { version: string };
+    if (pkg.version?.trim()) return pkg.version.trim();
+  }
   const pkgPath = path.join(appRoot, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version: string };
+  return pkg.version;
+}
+
+function buildStamp(appRoot: string): ComposerOsUiStamp {
+  const appShellVersion = resolveAppShellVersion(appRoot);
   let gitCommit = '';
   try {
     const repoRoot = path.resolve(appRoot, '..', '..');
@@ -33,7 +45,7 @@ function buildStamp(appRoot: string): ComposerOsUiStamp {
   return {
     productId: 'composer-os',
     productName: 'Composer OS',
-    appShellVersion: pkg.version,
+    appShellVersion,
     buildTimestamp: new Date().toISOString(),
     gitCommit,
     supportedPages: [...SUPPORTED_PAGES],
