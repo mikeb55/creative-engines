@@ -59,6 +59,14 @@
 - Packaging-ready structure for future Windows desktop wrapper
 - No Python or .bat dependency for user workflow
 
+## Desktop bugfix / unification
+
+- Single Electron window; single-instance lock; no second window for errors (inline loading/error pages)
+- No `openExternal` / browser auto-open; `setWindowOpenHandler` denies popups
+- `GET /api/output-directory` for UI; `openOutputFolder` uses `spawn(explorer)` with `windowsHide` (no visible cmd)
+- Generate panel shows full path, manifest fields, gates, and open-folder actions
+- `launchers/COMPOSER_OS.md` clarifies Composer OS vs legacy Composer Studio
+
 ## Desktop port handling
 
 - Automatic port resolution: prefer 3001, reuse Composer OS via `GET /health`, or fall back to next free port

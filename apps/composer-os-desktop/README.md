@@ -32,10 +32,11 @@ Produces:
 ## End User Flow
 
 1. Double-click the executable (portable or installed).
-2. API starts automatically.
-3. UI opens in a desktop window.
-4. Generate, browse outputs, open folder — same as web app.
-5. Close window to exit.
+2. API starts in-process (no extra cmd window, no Python).
+3. **One** Electron window only — no separate browser, no Composer Studio / legacy launchers.
+4. Second launch focuses the existing window (`requestSingleInstanceLock`).
+5. Generate shows full file path and output folder; **Open output folder** uses Explorer without a visible shell window.
+6. Close window to exit.
 
 No manual server start. No Python. No .bat files.
 

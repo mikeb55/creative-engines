@@ -68,6 +68,10 @@ app.get('/api/outputs', (_req: Request, res: Response) => {
   }
 });
 
+app.get('/api/output-directory', (_req: Request, res: Response) => {
+  res.json({ path: OUTPUT_DIR });
+});
+
 app.post('/api/open-output-folder', (_req: Request, res: Response) => {
   openOutputFolder(OUTPUT_DIR).then((ok) => {
     res.json({ success: ok });

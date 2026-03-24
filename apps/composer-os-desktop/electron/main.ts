@@ -1,6 +1,6 @@
 /**
  * Composer OS Desktop — Electron main process
- * Starts API (in-process when packaged), resolves port conflicts, opens window.
+ * Single window, single instance, no browser spawn, API in-process.
  */
 
 import { app, BrowserWindow } from 'electron';
@@ -14,6 +14,18 @@ const POLL_INTERVAL_MS = 200;
 
 let mainWindow: BrowserWindow | null = null;
 let resolvedPort = 3001;
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 function getResourcesPath(): string {
   if (!app.isPackaged) {
@@ -117,8 +129,9 @@ async function startApi(): Promise<void> {
   await waitForApiReady(port);
 }
 
-function createWindow(): void {
-  mainWindow = new BrowserWindow({
+function createWindowShell(): BrowserWindow {
+  const preloadPath = path.join(__dirname, 'preload.js');
+  const win = new BrowserWindow({
     title: 'Composer OS',
     width: 900,
     height: 700,
@@ -129,54 +142,78 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
     },
     icon: path.join(app.getAppPath(), 'resources', 'icon.png'),
   });
 
-  const url = `http://127.0.0.1:${resolvedPort}`;
-  mainWindow.loadURL(url);
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
-
-  mainWindow.on('closed', () => {
+  win.on('closed', () => {
     mainWindow = null;
   });
+
+  return win;
 }
 
-function onApiReady(): void {
-  createWindow();
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function onApiError(err: Error): void {
-  console.error('API failed:', err);
-  mainWindow = new BrowserWindow({
-    width: 500,
-    height: 300,
-    title: 'Composer OS - Error',
-    webPreferences: { nodeIntegration: false, contextIsolation: true },
-  });
-  mainWindow.loadURL(
-    `data:text/html,${encodeURIComponent(`
+function loadErrorPage(win: BrowserWindow, message: string): void {
+  const safe = escapeHtml(message);
+  win.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(`
       <!DOCTYPE html>
-      <html><head><meta charset="utf-8"><title>Composer OS - Error</title>
+      <html><head><meta charset="utf-8"><title>Composer OS</title>
       <style>body{font-family:system-ui;background:#1a1a1a;color:#e4e4e7;padding:2rem;margin:0;}
-      h1{color:#ef4444;}code{background:#27272a;padding:2px 6px;border-radius:4px;}</style></head>
+      h1{color:#ef4444;font-size:1.25rem;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-all;}</style></head>
       <body>
-        <h1>Failed to start Composer OS</h1>
+        <h1>Composer OS could not start</h1>
         <p>The API backend could not be started.</p>
-        <p><code>${err.message}</code></p>
-        <p>Please check your installation and try again.</p>
+        <p><code>${safe}</code></p>
       </body></html>
     `)}`
   );
 }
 
-app.whenReady().then(() => {
-  startApi().then(onApiReady).catch(onApiError);
-});
+function loadLoadingPage(win: BrowserWindow): void {
+  win.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(`
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><title>Composer OS</title>
+      <style>body{font-family:system-ui;background:#0f0f12;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
+      p{color:#a1a1aa;}</style></head>
+      <body><p>Starting Composer OS…</p></body></html>
+    `)}`
+  );
+}
 
-app.on('window-all-closed', () => {
-  app.quit();
-});
+async function launchApp(): Promise<void> {
+  mainWindow = createWindowShell();
+  const win = mainWindow;
+  loadLoadingPage(win);
+
+  try {
+    await startApi();
+    const url = `http://127.0.0.1:${resolvedPort}`;
+    await win.loadURL(url);
+    win.once('ready-to-show', () => win.show());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    loadErrorPage(win, msg);
+    win.once('ready-to-show', () => win.show());
+  }
+}
+
+if (gotLock) {
+  app.whenReady().then(() => {
+    launchApp().catch((err) => {
+      console.error(err);
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    app.quit();
+  });
+}

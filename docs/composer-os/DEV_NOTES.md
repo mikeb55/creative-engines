@@ -28,6 +28,8 @@
 
 **Desktop ports:** `electron/utils/portUtils.ts` resolves preferred port (default 3001), reuses Composer OS via `GET /health`, or picks next free port. API `startComposerOsAppApi.ts` uses `process.env.PORT` and registers `/health`.
 
+**Desktop product:** One window (`main.ts` + `preload.ts`), no legacy Composer Studio wiring. App API routes only under `/api/*` and `/health`.
+
 ## Next Planned Stage
 - Form variability
 - Additional presets (ECM, Big Band)

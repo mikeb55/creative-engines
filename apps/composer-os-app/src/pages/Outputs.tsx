@@ -4,6 +4,7 @@ import { api } from '../services/api';
 export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
   const [outputs, setOutputs] = useState<Array<{ filename: string; filepath: string; timestamp: string; presetId: string; styleStack: string[]; seed: number; validation?: Record<string, unknown> }>>([]);
   const [loading, setLoading] = useState(true);
+  const [outputDir, setOutputDir] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -11,6 +12,7 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
       setOutputs(r.outputs);
       setLoading(false);
     }).catch(() => setLoading(false));
+    api.getOutputDirectory().then((r) => setOutputDir(r.path)).catch(() => {});
   };
 
   useEffect(() => { load(); }, [refreshTrigger]);
@@ -22,6 +24,11 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
   return (
     <section>
       <h2>Outputs</h2>
+      {outputDir && (
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem', wordBreak: 'break-all' }}>
+          Folder: <strong style={{ color: 'var(--text)' }}>{outputDir}</strong>
+        </p>
+      )}
       <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
         Generated MusicXML files and validation summaries.
       </p>
