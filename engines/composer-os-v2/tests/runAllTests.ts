@@ -19,6 +19,8 @@ import { runPerformanceTests } from './performance.test';
 import { runExportHardeningTests } from './exportHardening.test';
 import { runAppApiTests } from './appApi.test';
 import { runComposerOsOutputPathsTests } from './composerOsOutputPaths.test';
+import { runMapStyleStackTests } from './mapStyleStack.test';
+import { runOpenOutputFolderGateTests } from './openOutputFolderGate.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -39,6 +41,8 @@ const suites = [
   { name: 'Export Hardening', run: runExportHardeningTests },
   { name: 'App API', run: runAppApiTests },
   { name: 'Composer output paths', run: runComposerOsOutputPathsTests },
+  { name: 'Style Blend mapping', run: runMapStyleStackTests },
+  { name: 'Open output folder gate', run: runOpenOutputFolderGateTests },
   ...retroSuites,
 ];
 

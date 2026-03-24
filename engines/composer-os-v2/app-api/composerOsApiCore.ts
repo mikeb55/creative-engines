@@ -45,7 +45,10 @@ export function apiGenerate(
   try {
     const req_: GenerateRequest = {
       presetId: body.presetId ?? 'guitar_bass_duo',
-      styleStack: body.styleStack ?? { primary: 'barry_harris', weights: { primary: 1 } },
+      styleStack: body.styleStack ?? {
+        primary: 'barry_harris',
+        styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+      },
       seed: typeof body.seed === 'number' ? body.seed : Math.floor(Math.random() * 1e9),
       locks: body.locks,
     };

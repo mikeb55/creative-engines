@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Opens UI at http://localhost:5173. Choose preset, **style stack** (Barry Harris, Metheny, Triad Pairs — loaded from the backend), optional **Try another variation**; generate; view outputs and validation. The **Style stack** tab and **Generate** tab both list the same modules; if they fail to load, you see an explicit message instead of empty dropdowns.
+Opens UI at http://localhost:5173. Choose preset, **style stack** modules, **Style Blend** (Strong/Medium/Light for the primary line; optional secondary and colour blends when those slots are filled — no raw numeric weights), optional **Try Another** before a run; generate; view outputs and validation. The **Style stack** tab mirrors the same ideas; if modules fail to load, you see an explicit message instead of empty dropdowns.
 
 ## Running the Desktop App (Windows)
 

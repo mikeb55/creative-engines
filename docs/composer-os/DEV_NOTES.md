@@ -36,6 +36,8 @@
 
 **Output paths:** `engines/composer-os-v2/app-api/composerOsOutputPaths.ts` is the single source of truth for `Mike Composer Files` root, preset subfolders, and `ensureOutputDirectoryForPreset`. HTTP API and desktop IPC both use `composerOsApiCore.ts`. If you edit `app-api/*.ts` or `core/export/musicxmlExporter.ts`, keep the matching **`.js`** copies in sync when present (Node/ts-node may resolve `.js` first), or remove duplicate `.js` so only TypeScript is used.
 
+**Style Blend:** App requests send `styleBlend` on `AppStyleStack` (see `appApiTypes.ts`). `mapStyleStack.ts` converts blend steps to engine `StyleStack` weights (normalized). `openOutputFolder.ts` uses `explorer.exe` on Windows with `detached` / `stdio: 'ignore'` / `windowsHide: true`; `apiOpenOutputFolder` restricts opens to paths under the composer library root.
+
 ## Next Planned Stage
 - Form variability
 - Additional presets (ECM, Big Band)

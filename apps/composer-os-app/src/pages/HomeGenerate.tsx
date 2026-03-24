@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useStyleModules, STYLE_MODULES_UNAVAILABLE_MSG } from '../hooks/useStyleModules';
+import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';
 
 type GenResult = {
   success?: boolean;
@@ -49,7 +50,11 @@ export function HomeGenerate({
     primary: 'barry_harris',
     secondary: '' as string,
     colour: '' as string,
-    weights: { primary: 1, secondary: 0.5, colour: 0.3 },
+  });
+  const [styleBlend, setStyleBlend] = useState<StyleBlendState>({
+    primary: 'strong',
+    secondary: 'medium',
+    colour: 'subtle',
   });
   const { modules, error: modulesError, loading: modulesLoading, reload: reloadModules } = useStyleModules();
   const [locks, setLocks] = useState({
@@ -91,11 +96,7 @@ export function HomeGenerate({
           primary: styleStack.primary,
           secondary: styleStack.secondary || undefined,
           colour: styleStack.colour || undefined,
-          weights: {
-            primary: styleStack.weights.primary,
-            secondary: styleStack.weights.secondary ?? 0,
-            colour: styleStack.weights.colour ?? 0,
-          },
+          styleBlend,
         },
         seed: variationSeed,
         locks,
@@ -267,57 +268,16 @@ export function HomeGenerate({
         </select>
       </div>
 
-      <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-        <span style={{ display: 'block', marginBottom: 0.3 }}>Weights (primary / secondary / colour)</span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            type="number"
-            step="0.05"
-            min={0}
-            value={styleStack.weights.primary}
-            disabled={moduleSelectDisabled}
-            onChange={(e) =>
-              setStyleStack((s) => ({
-                ...s,
-                weights: { ...s.weights, primary: Number(e.target.value) || 0 },
-              }))
-            }
-            style={{ width: 88 }}
-          />
-          <input
-            type="number"
-            step="0.05"
-            min={0}
-            value={styleStack.weights.secondary}
-            disabled={moduleSelectDisabled}
-            onChange={(e) =>
-              setStyleStack((s) => ({
-                ...s,
-                weights: { ...s.weights, secondary: Number(e.target.value) || 0 },
-              }))
-            }
-            style={{ width: 88 }}
-          />
-          <input
-            type="number"
-            step="0.05"
-            min={0}
-            value={styleStack.weights.colour}
-            disabled={moduleSelectDisabled}
-            onChange={(e) =>
-              setStyleStack((s) => ({
-                ...s,
-                weights: { ...s.weights, colour: Number(e.target.value) || 0 },
-              }))
-            }
-            style={{ width: 88 }}
-          />
-        </div>
-      </div>
+      <StyleBlendControls
+        blend={styleBlend}
+        onChange={setStyleBlend}
+        hasSecondary={!!styleStack.secondary?.trim()}
+        hasColour={!!styleStack.colour?.trim()}
+        disabled={moduleSelectDisabled}
+      />
 
       <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: 520 }}>
-        Each generation uses a random <strong style={{ color: 'var(--text)' }}>variation</strong> behind the scenes.
-        Use <em>Try another variation</em> before generating if you want a different roll of the dice.
+        Use <strong style={{ color: 'var(--text)' }}>Try Another</strong> before generating if you want a different musical idea.
       </p>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -341,7 +301,7 @@ export function HomeGenerate({
           {loading ? 'Generating…' : 'Generate'}
         </button>
         <button className="secondary" type="button" onClick={() => setVariationSeed(Math.floor(Math.random() * 1e9))}>
-          Try another variation
+          Try Another
         </button>
         <button className="secondary" type="button" onClick={() => openFolder()}>
           Open library folder
@@ -412,9 +372,6 @@ export function HomeGenerate({
                 <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Style stack (applied):</span>{' '}
                   {rm.activeModules.map((id) => labelForModuleId(id, modules)).join(' · ')}
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'block', marginTop: 4 }}>
-                    ({rm.activeModules.join(', ')})
-                  </span>
                 </p>
               ) : null}
               {rm?.timestamp && (
@@ -450,13 +407,17 @@ export function HomeGenerate({
             </>
           )}
 
-          <button
-            type="button"
-            onClick={() => result?.filepath && openFolder(dirnameOnly(result.filepath))}
-            style={{ marginTop: '1rem' }}
-          >
-            Open this file&apos;s folder
-          </button>
+          <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <button type="button" className="secondary" onClick={() => openFolder()}>
+              Open library folder
+            </button>
+            <button
+              type="button"
+              onClick={() => result?.filepath && openFolder(dirnameOnly(result.filepath))}
+            >
+              Open this file&apos;s folder
+            </button>
+          </div>
         </div>
       )}
     </section>

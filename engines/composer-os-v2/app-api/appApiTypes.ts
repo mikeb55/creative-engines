@@ -17,11 +17,32 @@ export interface AppStyleModule {
   type?: 'primary' | 'secondary' | 'colour' | 'any';
 }
 
+/** Musical intensity for the primary module (maps to internal weights). */
+export type StyleBlendPrimary = 'strong' | 'medium' | 'light';
+
+/** Blend for the secondary slot (only used when a secondary module is selected). */
+export type StyleBlendSecondary = 'off' | 'light' | 'medium';
+
+/** Blend for the colour slot (only used when a colour module is selected). */
+export type StyleBlendColour = 'off' | 'subtle' | 'present';
+
+export interface StyleBlendSettings {
+  primary: StyleBlendPrimary;
+  secondary: StyleBlendSecondary;
+  colour: StyleBlendColour;
+}
+
 export interface AppStyleStack {
   primary: string;
   secondary?: string;
   colour?: string;
-  weights: { primary: number; secondary?: number; colour?: number };
+  /**
+   * Musical blend (preferred). Maps to internal weights; no raw numbers in UI.
+   * If omitted, legacy `weights` is used when present.
+   */
+  styleBlend?: StyleBlendSettings;
+  /** @deprecated Prefer styleBlend; kept for tests and older clients */
+  weights?: { primary: number; secondary?: number; colour?: number };
 }
 
 export interface AppLocks {

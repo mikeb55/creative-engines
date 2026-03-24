@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useStyleModules } from '../hooks/useStyleModules';
+import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';
 
 export function StyleStack() {
   const { modules, error: modulesError, loading, reload } = useStyleModules();
   const [primary, setPrimary] = useState('barry_harris');
   const [secondary, setSecondary] = useState<string>('');
   const [colour, setColour] = useState<string>('');
-  const [wPrimary, setWPrimary] = useState(1);
-  const [wSecondary, setWSecondary] = useState(0.5);
-  const [wColour, setWColour] = useState(0.3);
+  const [styleBlend, setStyleBlend] = useState<StyleBlendState>({
+    primary: 'strong',
+    secondary: 'medium',
+    colour: 'subtle',
+  });
 
   useEffect(() => {
     if (modules.length > 0 && !modules.some((m) => m.id === primary)) {
@@ -22,8 +25,8 @@ export function StyleStack() {
     <section>
       <h2>Style Stack</h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-        Primary, secondary, and colour modules with simple weighting. Selection matches the Generate tab; use Generate to
-        run the pipeline.
+        Primary, optional secondary and colour modules, and <strong>Style Blend</strong> for how strongly each layer
+        speaks. The same choices appear on Generate; run generation from there.
       </p>
 
       {modulesError && (
@@ -46,7 +49,9 @@ export function StyleStack() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>Primary</label>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Primary
+          </label>
           <select value={primary} disabled={selectDisabled} onChange={(e) => setPrimary(e.target.value)}>
             {modules.length === 0 ? (
               <option value={primary}>{loading ? 'Loading…' : '—'}</option>
@@ -58,11 +63,12 @@ export function StyleStack() {
               ))
             )}
           </select>
-          <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)' }}>weight {wPrimary}</span>
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>Secondary</label>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Secondary (optional)
+          </label>
           <select value={secondary} disabled={selectDisabled} onChange={(e) => setSecondary(e.target.value)}>
             <option value="">—</option>
             {modules.map((m) => (
@@ -71,11 +77,12 @@ export function StyleStack() {
               </option>
             ))}
           </select>
-          <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)' }}>weight {wSecondary}</span>
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>Colour</label>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Colour (optional)
+          </label>
           <select value={colour} disabled={selectDisabled} onChange={(e) => setColour(e.target.value)}>
             <option value="">—</option>
             {modules.map((m) => (
@@ -84,8 +91,15 @@ export function StyleStack() {
               </option>
             ))}
           </select>
-          <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)' }}>weight {wColour}</span>
         </div>
+
+        <StyleBlendControls
+          blend={styleBlend}
+          onChange={setStyleBlend}
+          hasSecondary={!!secondary.trim()}
+          hasColour={!!colour.trim()}
+          disabled={selectDisabled}
+        />
       </div>
     </section>
   );

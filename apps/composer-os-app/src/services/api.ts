@@ -23,7 +23,7 @@ function friendlyHttpMessage(status: number, bodyText: string): string {
     return 'That feature was not found. Update Composer OS.';
   }
   if (status === 408 || status === 504) {
-    return 'The request took too long. Try again or use another variation.';
+    return 'The request took too long. Try again or use Try Another.';
   }
   return msg || `Request failed (${status})`;
 }

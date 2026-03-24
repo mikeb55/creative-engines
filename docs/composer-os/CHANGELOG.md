@@ -1,10 +1,15 @@
 # Composer OS Changelog
 
+## Style Blend (composer-facing controls)
+
+- **Weights** UI replaced by **Style Blend**: primary (Strong / Medium / Light), optional secondary (Off / Light / Medium) and colour (Off / Subtle / Present) when those modules are selected. Values map to internal normalized weights in `mapStyleStack.ts` (`deriveRawWeightsFromAppStyleStack`). Legacy numeric `weights` in the API still work for tests; when both are sent, **Style Blend** wins.
+- Generate uses **Try Another** (no raw seed field). Seed may still appear in manifests/diagnostics only.
+
 ## Desktop UX — outputs, bass export, variation UI
 
 - Default output root: **`Documents\\Mike Composer Files`**, with preset subfolders (`Guitar-Bass Duos`, `Big-Band Compositions`, `ECM Chamber Compositions`). Folders are created as needed. `COMPOSER_OS_OUTPUT_DIR` overrides the root only. Listing, receipts, manifests, and **Open output folder** use the same canonical paths.
 - Guitar–Bass Duo MusicXML exports **acoustic/upright bass** GM metadata (`midi-program` 33 in MusicXML; GM program 32), not vocal/choir bass.
-- Main UI: no raw **Seed** field; use **Try another variation** (internal randomness unchanged). Seed may still appear in manifests/diagnostics only.
+- Main UI: no raw **Seed** field; **Try Another** re-rolls internal randomness.
 
 ## Desktop packaging (Windows exe)
 
