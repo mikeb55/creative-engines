@@ -4,6 +4,8 @@
 
 Composer OS is a unified generative composition system. It produces guitar-bass duo scores through a single pipeline: preset → feel → section roles → density → register → motif → style modules → score → integrity → export.
 
+Use **Composer OS** (`apps/composer-os-app` + `engines/composer-os-v2` app API) for the supported workflow: Generate, Presets, Style Stack, Outputs. The Windows desktop build (`apps/composer-os-desktop`) ships that UI only — not other products in this repository.
+
 ## Running the App (Web)
 
 ```bash

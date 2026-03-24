@@ -1,3 +1,4 @@
+/** Copies only composer-os-app/dist → resources/ui (Composer OS only; no other frontend). */
 const fs = require('fs');
 const path = require('path');
 const src = path.join(__dirname, '..', '..', 'composer-os-app', 'dist');

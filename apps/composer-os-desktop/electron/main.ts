@@ -1,6 +1,8 @@
 /**
  * Composer OS Desktop — Electron main process
  * Single window, single instance, no browser spawn, API in-process.
+ *
+ * Quarantine: only Composer OS UI (composer-os-app → resources/ui). No legacy app paths or script runtimes.
  */
 
 import { app, BrowserWindow, ipcMain } from 'electron';
@@ -168,6 +170,20 @@ function createWindowShell(): BrowserWindow {
 
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
+  win.webContents.on('will-navigate', (event, url) => {
+    try {
+      const u = new URL(url);
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        const h = u.hostname;
+        if (h !== '127.0.0.1' && h !== 'localhost') {
+          event.preventDefault();
+        }
+      }
+    } catch {
+      /* ignore malformed */
+    }
+  });
+
   win.on('closed', () => {
     mainWindow = null;
   });
@@ -231,6 +247,7 @@ async function launchApp(): Promise<void> {
 
 if (gotLock) {
   app.whenReady().then(() => {
+    app.setName(DESKTOP_PRODUCT_NAME);
     launchApp().catch((err) => {
       console.error(err);
       setStartupState('fatal_error');

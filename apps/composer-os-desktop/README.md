@@ -1,6 +1,6 @@
 # Composer OS Desktop
 
-Windows desktop application for Composer OS — packaged executable with no Python or .bat workflow.
+Windows desktop application for **Composer OS** only: Electron loads `resources/api.bundle.js` (Composer OS API) and `resources/ui` copied from `apps/composer-os-app/dist`. It does not load other frontends or legacy stacks. One visible window; API runs in-process (no extra console window).
 
 ## Run (Dev)
 

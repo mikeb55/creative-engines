@@ -1,5 +1,9 @@
 # Composer OS Changelog
 
+## Desktop legacy quarantine
+
+- `apps/composer-os-desktop` loads only `composer-os-app` UI (`copy-ui.js` → `resources/ui`) and the bundled Composer OS API. Electron `main.ts` uses one `BrowserWindow`, `setWindowOpenHandler` deny, navigation guard to non-localhost HTTP(S), `app.setName('Composer OS')`. No script runtimes or legacy app paths in Electron sources (enforced by `desktopQuarantine.test.ts`). Web shell is only Generate / Presets / Style Stack / Outputs plus Diagnostics panel — no Hybrid / Projects / Score tabs.
+
 ## Style modules (UI)
 
 - Style modules are listed from the engine registry (`getStyleModules`, `GET /api/style-modules`); diagnostics includes the same `styleModules` list. Generate and Style Stack load from the API (no silent empty dropdowns); if the list is empty or the request fails, the UI shows: “No style modules available — check backend.” Generation passes the selected primary/secondary/colour stack into the golden path so run manifests and receipts match the request.
