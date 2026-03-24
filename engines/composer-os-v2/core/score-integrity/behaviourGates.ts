@@ -13,6 +13,10 @@ import type { DensityCurvePlan } from '../density/densityCurveTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
 import { validateMotifIntegrity } from '../motif/motifValidation';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
+import { validateMethenyConformance } from '../style-modules/metheny/moduleValidation';
+import { validateTriadPairConformance } from '../style-modules/triad-pairs/moduleValidation';
+import type { StyleStack } from '../style-modules/styleModuleTypes';
+import { normalizeStyleWeights } from '../style-modules/styleModuleTypes';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -56,8 +60,19 @@ export interface BehaviourGatesResult {
   sectionContrastValid: boolean;
   motifValid: boolean;
   styleValid: boolean;
+  styleBlendValid: boolean;
+  triadPairValid: boolean;
+  methenyValid: boolean;
   allValid: boolean;
   errors: string[];
+}
+
+function validateStyleBlendIntegrity(stack: StyleStack): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const w = normalizeStyleWeights(stack);
+  if (w.primary <= 0) errors.push('Style stack primary weight must be > 0');
+  if (w.primary + w.secondary + w.colour < 0.01) errors.push('Style stack has no effective influence');
+  return { valid: errors.length === 0, errors };
 }
 
 export function runBehaviourGates(
@@ -67,9 +82,13 @@ export function runBehaviourGates(
   bassPlan: BassBehaviourPlan,
   sections: SectionWithRole[],
   densityPlan: DensityCurvePlan,
-  opts?: { motifState?: MotifTrackerState; styleModules?: string[] }
+  opts?: { motifState?: MotifTrackerState; styleStack?: StyleStack }
 ): BehaviourGatesResult {
   const errors: string[] = [];
+  const styleStack = opts?.styleStack;
+  const styleModules = styleStack
+    ? [styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[]
+    : [];
 
   const rhythm = validateRhythmBehaviour(score, rhythmConstraints);
   if (!rhythm.valid) errors.push(...rhythm.errors);
@@ -90,11 +109,32 @@ export function runBehaviourGates(
     if (!motif.valid) errors.push(...motif.errors);
   }
 
+  let styleBlendValid = true;
   let styleValid = true;
-  if (opts?.styleModules?.includes('barry_harris')) {
-    const style = validateBarryHarrisConformance(score);
-    styleValid = style.valid;
-    if (!style.valid) errors.push(...style.errors);
+  if (styleStack) {
+    const blend = validateStyleBlendIntegrity(styleStack);
+    styleBlendValid = blend.valid;
+    if (!blend.valid) errors.push(...blend.errors);
+
+    if (styleModules.includes('barry_harris')) {
+      const style = validateBarryHarrisConformance(score);
+      styleValid = style.valid;
+      if (!style.valid) errors.push(...style.errors);
+    }
+  }
+
+  let triadPairValid = true;
+  if (styleModules.includes('triad_pairs')) {
+    const tp = validateTriadPairConformance(score);
+    triadPairValid = tp.valid;
+    if (!tp.valid) errors.push(...tp.errors);
+  }
+
+  let methenyValid = true;
+  if (styleModules.includes('metheny')) {
+    const metheny = validateMethenyConformance(score);
+    methenyValid = metheny.valid;
+    if (!metheny.valid) errors.push(...metheny.errors);
   }
 
   return {
@@ -104,6 +144,9 @@ export function runBehaviourGates(
     sectionContrastValid: contrast.valid,
     motifValid,
     styleValid,
+    styleBlendValid,
+    triadPairValid,
+    methenyValid,
     allValid: errors.length === 0,
     errors,
   };

@@ -2,6 +2,21 @@
 
 **Composer OS** is a unified generative composition system — not a collection of isolated engines. It provides a single, disciplined pipeline through which all musical output flows, with validation gates and readiness scoring before any export is marked shareable.
 
+**Docs:** [USER_GUIDE](../../docs/composer-os/USER_GUIDE.md) | [CHANGELOG](../../docs/composer-os/CHANGELOG.md) | [DEV_NOTES](../../docs/composer-os/DEV_NOTES.md)  
+**Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md)
+
+---
+
+## Implemented Stages
+
+- **Foundation** — Conductor, rhythm engine, primitives, score integrity, MusicXML export
+- **Golden Path** — 8-bar guitar-bass duo end-to-end
+- **Stage 2** — Musical core (section roles, density, register maps, instrument behaviours)
+- **Stage 3** — Motif tracker, Barry Harris module
+- **Stage 4** — Style system: Metheny, Triad Pairs, weighted style stack
+
+**Demo stack:** primary barry-harris, secondary metheny, colour triad-pairs.
+
 ---
 
 ## What Composer OS Is
@@ -73,7 +88,11 @@ Adds section roles (statement, development, contrast, return), section-aware reg
 
 ### Stage 3 — First Intelligence
 
-Adds motif tracker (generate, vary, place across A/B) and first style module (Barry Harris). Motif-driven melody; bass echoes motif fragments. Barry Harris: movement over static chords, guide-tone emphasis, stepwise voice-leading. Validation: motif integrity (recurrence, variation), style conformance.
+Adds motif tracker (generate, vary, place across A/B) and first style module (Barry Harris). Motif-driven melody; bass echoes motif fragments. Barry Harris: movement over static chords, guide-tone emphasis, stepwise voice-leading. Validation: motif integrity, style conformance.
+
+### Stage 4 — Style System
+
+Adds Metheny (lyrical, intervallic, longer arcs, reduced density) and Triad Pairs (Bergonzi/Klemons guitar-aware triad cells). Style stack: primary, secondary, colour with normalized weights. Validation: style blend integrity, triad pair integrity, Metheny conformance.
 
 ---
 
@@ -142,8 +161,8 @@ This is a **correctness-first pass**, not a high-art composition pass. The goal 
 
 ### What Remains to Be Built Next
 
-- Composer-specific style modules (Metheny, Bacharach, Barry Harris, Triad Pairs)
-- Deeper music generation (motif, phrase, counterpoint from context)
+- Additional style modules (Bacharach, etc.)
+- Deeper music generation (phrase, counterpoint from context)
 - Launcher integration
 - Full big band instrumentation
 
@@ -159,10 +178,9 @@ Output is written to `outputs/composer-os-v2/golden_path_demo.musicxml`.
 
 ## What Is Intentionally Not Built Yet
 
-- Composer-specific style modules (Metheny, Bacharach, Barry Harris, Triad Pairs)
-- Deep music generation (motif generation, phrase generation, counterpoint)
 - UI/launcher integration
 - Full big band instrumentation
+- Orchestration modules
 
 The golden path proves the core system works; future modules plug in cleanly without architectural drift.
 
@@ -199,7 +217,7 @@ engines/composer-os-v2/
     instrument-behaviours/ # Guitar/bass behaviour planners
     primitives/          # Shared data model
     instrument-profiles/ # Guitar, bass profiles
-    style-modules/       # Registry; barry-harris module
+    style-modules/       # Registry; barry-harris, metheny, triad-pairs
     score-model/         # Score types, event builder, validation
     score-integrity/     # Pre-export gates, behaviour gates
     export/              # MusicXML exporter, validation, Sibelius-safe

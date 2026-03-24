@@ -17,7 +17,8 @@ import type { GuitarBehaviourPlan, BassBehaviourPlan } from '../instrument-behav
 import type { RhythmicConstraints } from '../rhythm-engine/rhythmTypes';
 import type { MotifTrackerState, PlacedMotif } from '../motif/motifTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
-import { applyStyleModules } from '../style-modules/styleModuleRegistry';
+import { applyStyleStack } from '../style-modules/styleModuleRegistry';
+import type { StyleStack } from '../style-modules/styleModuleTypes';
 
 const CHORD_ROOTS: Record<string, number> = {
   'Dmin9': 38, 'Dm9': 38, 'D-9': 38,
@@ -174,16 +175,15 @@ export interface GoldenPathPlans {
   bassBehaviour: BassBehaviourPlan;
   rhythmConstraints: RhythmicConstraints;
   motifState: MotifTrackerState;
-  styleModules: string[];
-  styleWeighting?: { primary: string; weight: number };
+  styleStack?: StyleStack;
 }
 
 /**
  * Generate golden path duo score.
  */
 export function generateGoldenPathDuoScore(context: CompositionContext, plans: GoldenPathPlans): ScoreModel {
-  const styleContext = plans.styleModules.length > 0
-    ? applyStyleModules(context, plans.styleModules, plans.styleWeighting)
+  const styleContext = plans.styleStack
+    ? applyStyleStack(context, plans.styleStack)
     : context;
 
   const guitarPart = buildGuitarPart(

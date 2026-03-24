@@ -85,9 +85,10 @@ function testMotifStatePresent(): boolean {
   return !!r.plans?.motifState?.baseMotifs?.length && !!r.plans?.motifState?.placements?.length;
 }
 
-function testStyleModulePresent(): boolean {
+function testStyleStackPresent(): boolean {
   const r = runGoldenPath(12);
-  return r.plans?.styleModules?.includes('barry_harris') ?? false;
+  const stack = r.plans?.styleStack;
+  return !!stack && stack.primary === 'barry_harris' && stack.secondary === 'metheny' && stack.colour === 'triad_pairs';
 }
 
 export function runGoldenPathTests(): { name: string; ok: boolean }[] {
@@ -103,6 +104,6 @@ export function runGoldenPathTests(): { name: string; ok: boolean }[] {
     ['MX validation passes', testMxValidationPasses],
     ['Run manifest created', testRunManifestCreated],
     ['Motif state present', testMotifStatePresent],
-    ['Style module present', testStyleModulePresent],
+    ['Style stack present (BH/Metheny/Triad Pairs)', testStyleStackPresent],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

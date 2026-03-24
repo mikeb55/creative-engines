@@ -12,30 +12,49 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-/** Generate 1–2 base motifs (3–5 notes each). */
-export function generateMotif(seed: number, registerLow: number, registerHigh: number): BaseMotif[] {
+export interface MotifStyleHints {
+  triadPairs?: boolean;
+  metheny?: boolean;
+}
+
+/** Generate 1–2 base motifs. Triad pairs → 3rd/4th intervals. Metheny → longer durations, fewer attacks. */
+export function generateMotif(
+  seed: number,
+  registerLow: number,
+  registerHigh: number,
+  hints?: MotifStyleHints
+): BaseMotif[] {
   const rnd = seededRandom(seed);
   const motifs: BaseMotif[] = [];
+  const useTriad = hints?.triadPairs ?? false;
+  const useMetheny = hints?.metheny ?? false;
+
+  const intervalsTriad = [0, 4, 7, 5, 3];
+  const intervalsDefault = [0, 2, -1, 3, 2];
+  const steps1 = useTriad ? intervalsTriad : intervalsDefault;
 
   const m1: MotifNote[] = [];
-  const count1 = Math.min(4, 3 + Math.floor(rnd() * 2));
+  const count1 = useMetheny ? 3 : Math.min(4, 3 + Math.floor(rnd() * 2));
   let pitch = registerLow + Math.floor(rnd() * 8);
-  const dur1 = 4 / count1;
+  const dur1 = useMetheny ? 4 / count1 : 4 / count1;
   for (let i = 0; i < count1; i++) {
-    const step = [0, 2, -1, 3][i % 4];
+    const step = steps1[i % steps1.length];
     pitch = Math.max(registerLow, Math.min(registerHigh, pitch + step));
-    m1.push({ pitch, startBeat: i * dur1, duration: dur1 });
+    const beatOffset = useTriad && i > 0 ? 0.5 : 0;
+    m1.push({ pitch, startBeat: i * dur1 + beatOffset, duration: dur1 });
   }
   motifs.push({ id: 'm1', notes: m1, barCount: 1 });
 
+  const steps2 = useTriad ? [0, -3, 5, -4] : [0, -2, 1, -3];
   const m2: MotifNote[] = [];
-  const count2 = Math.min(4, 3 + Math.floor(rnd() * 2));
+  const count2 = useMetheny ? 3 : Math.min(4, 3 + Math.floor(rnd() * 2));
   pitch = registerLow + 5 + Math.floor(rnd() * 4);
   const dur2 = 4 / count2;
   for (let i = 0; i < count2; i++) {
-    const step = [0, -2, 1, -3][i % 4];
+    const step = steps2[i % steps2.length];
     pitch = Math.max(registerLow, Math.min(registerHigh, pitch + step));
-    m2.push({ pitch, startBeat: i * dur2, duration: dur2 });
+    const off2 = useTriad && i > 0 ? 0.5 : 0;
+    m2.push({ pitch, startBeat: i * dur2 + off2, duration: dur2 });
   }
   motifs.push({ id: 'm2', notes: m2, barCount: 1 });
 

@@ -14,7 +14,8 @@ import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/regi
 import { planGuitarBehaviour } from '../instrument-behaviours/guitarBehaviour';
 import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
-import { generateMotif } from '../motif/motifGenerator';
+import { generateMotif, type MotifStyleHints } from '../motif/motifGenerator';
+import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { placeMotifsAcrossBars } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
@@ -130,12 +131,19 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const rhythmConstraints = computeRhythmicConstraints(context.feel);
 
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
-  const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20);
+  const styleStack: StyleStack = {
+    primary: 'barry_harris',
+    secondary: 'metheny',
+    colour: 'triad_pairs',
+    weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+  };
+  const motifHints: MotifStyleHints = {
+    triadPairs: true,
+    metheny: true,
+  };
+  const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
   const placements = placeMotifsAcrossBars(baseMotifs, seed);
   const motifState = { baseMotifs, placements };
-
-  const styleModules = ['barry_harris'];
-  const styleWeighting = { primary: 'barry_harris', weight: 1.0 };
 
   const plans: GoldenPathPlans = {
     sections,
@@ -146,8 +154,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     bassBehaviour,
     rhythmConstraints,
     motifState,
-    styleModules,
-    styleWeighting,
+    styleStack,
   };
 
   const score = generateGoldenPathDuoScore(context, plans);
@@ -189,7 +196,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     bassBehaviour,
     sections,
     densityPlan,
-    { motifState, styleModules }
+    { motifState, styleStack }
   );
   if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 
@@ -219,7 +226,13 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     version: '2.0.0',
     seed,
     presetId: 'guitar_bass_duo',
-    activeModules: styleModules,
+    activeModules: (() => {
+      if (!styleStack) return [];
+      const a: string[] = [styleStack.primary];
+      if (styleStack.secondary) a.push(styleStack.secondary);
+      if (styleStack.colour) a.push(styleStack.colour);
+      return a;
+    })(),
     feelMode: context.feel.mode,
     instrumentProfiles: context.instrumentProfiles.map((p) => p.instrumentIdentity),
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },
