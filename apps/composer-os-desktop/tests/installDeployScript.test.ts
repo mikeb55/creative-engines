@@ -14,6 +14,13 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:deploy']).toContain('desktop:clean-install');
     expect(pkg.scripts['desktop:clean-install']).toContain('desktop:package');
     expect(pkg.scripts['desktop:clean-install']).toContain('installComposerOsDesktop');
+    expect(pkg.scripts['desktop:clean-install']).not.toContain('verify:ui-resources');
+  });
+
+  it('install script uses exact Composer OS Desktop shortcut name', () => {
+    const src = fs.readFileSync(path.join(desktopRoot, 'install', 'installComposerOsDesktop.ts'), 'utf-8');
+    expect(src).toContain("SHORTCUT_DISPLAY_NAME = 'Composer OS Desktop'");
+    expect(src).toContain('SHORTCUT_FILE_NAME = `${SHORTCUT_DISPLAY_NAME}.lnk`');
   });
 
   it('install sources exist and avoid .bat / launchers / composer-studio in active flow', () => {
@@ -22,6 +29,7 @@ describe('desktop deploy / install wiring', () => {
     expect(fs.existsSync(path.join(installDir, 'cleanupLegacyShortcuts.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'shortcutUtils.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'installRules.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'launchInstalledDesktopApp.ts'))).toBe(true);
 
     const walk = (dir: string): string[] => {
       const out: string[] = [];

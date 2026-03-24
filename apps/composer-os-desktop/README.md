@@ -33,14 +33,15 @@ Produces:
 
 ## Deploy shortcut (Windows, developer machine)
 
-After packaging, run **one** of:
+Run **once** from `apps/composer-os-desktop` (after `npm install`):
 
 ```bash
 npm run desktop:clean-install
-# aliases: desktop:deploy, desktop:install
 ```
 
-This runs `desktop:package`, verifies UI stamp, then `install/installComposerOsDesktop.ts`: quarantines legacy Studio / stale shortcuts and creates **Composer OS Desktop.lnk** → current `Composer-OS-Desktop-*-portable.exe`. Use only that shortcut.
+Aliases: `desktop:deploy`, `desktop:install` (same script).
+
+This runs `desktop:package`, then `install/installComposerOsDesktop.ts`: verifies the UI stamp, quarantines legacy Studio / stale shortcuts, creates or refreshes **Composer OS Desktop.lnk** → newest `Composer-OS-Desktop-*-portable.exe` (working directory = exe folder, icon from exe), and **starts the packaged app once**. Final output is three lines: packaged exe path, shortcut path, `Launched: yes` or `Launched: no` (install fails if launch fails). No separate cmd step or manual shortcut creation.
 
 ## End User Flow
 

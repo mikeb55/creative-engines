@@ -5,11 +5,11 @@
 - Windows desktop product: **Composer OS Desktop**, `appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`.
 - Packaged app loads UI from disk (`loadFile`); engine access is **IPC only** via `desktop-ipc.bundle.cjs` + preload `invokeApi` — **no localhost** for the Electron shell.
 - Web workflow unchanged: `startComposerOsAppApi` + HTTP for `npm run dev` in `composer-os-app`.
-- `npm run desktop:clean-install` (aliases: `desktop:deploy`, `desktop:install`) packages, verifies UI stamp, quarantines legacy shortcuts, creates **Composer OS Desktop.lnk**.
+- `npm run desktop:clean-install` (aliases: `desktop:deploy`, `desktop:install`) packages the app, verifies the UI stamp, quarantines legacy shortcuts, refreshes **Composer OS Desktop.lnk** to the newest portable exe, and **launches the packaged app once** (summary: exe path, shortcut path, `Launched: yes`).
 
 ## Desktop shortcut deploy (Windows)
 
-- `apps/composer-os-desktop/install/` — `desktop:deploy` / `desktop:install` runs `desktop:package` then a TypeScript installer: scans common shortcut locations, quarantines legacy Composer Studio / stale “Composer OS” `.lnk` files, creates **Composer OS.lnk** on the desktop targeting the newest `release/Composer-OS-*-portable.exe`, and verifies the shortcut. Quarantined files go to `%USERPROFILE%\ComposerOsDesktop\shortcut-quarantine\`.
+- `apps/composer-os-desktop/install/` — `desktop:clean-install` runs `desktop:package` then the TypeScript installer: verifies UI resources, scans shortcut locations, quarantines legacy Composer Studio / stale “Composer OS” / **Composer OS Desktop** `.lnk` files when the target is not the current portable exe, creates **Composer OS Desktop.lnk** on the desktop targeting the newest `release/Composer-OS-Desktop-*-portable.exe`, verifies the shortcut, and launches that exe once. Quarantined files go to `%USERPROFILE%\ComposerOsDesktop\shortcut-quarantine\`.
 
 ## Desktop UI bundle provenance
 

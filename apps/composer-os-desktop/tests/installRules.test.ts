@@ -53,6 +53,18 @@ describe('installRules', () => {
     expect(shouldQuarantineShortcut('Composer OS.lnk', canon, canon)).toBe(false);
   });
 
+  it('shouldQuarantineShortcut removes Composer OS Desktop shortcut when target is stale', () => {
+    const canon = 'C:\\r\\Composer-OS-Desktop-2.0.0-portable.exe';
+    expect(
+      shouldQuarantineShortcut(
+        'Composer OS Desktop.lnk',
+        'C:\\old\\Composer-OS-Desktop-1.0.0-portable.exe',
+        canon
+      )
+    ).toBe(true);
+    expect(shouldQuarantineShortcut('Composer OS Desktop.lnk', canon, canon)).toBe(false);
+  });
+
   it('normalizeFsPath lowercases for comparison', () => {
     expect(normalizeFsPath('C:\\A\\b.exe')).toBe('c:\\a\\b.exe');
   });
