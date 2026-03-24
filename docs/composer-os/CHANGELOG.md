@@ -33,6 +33,13 @@
 - Style stack: primary, secondary, colour
 - Style blend and triad-pair validation gates
 
+## Stage 6 Output & Control
+
+- Export hardening: stricter MusicXML validation (divisions, structure, chord symbols)
+- Lock system: melody, bass, harmony, rhythm, sections locks
+- Performance pass: articulation (staccato/tenuto), no pitch changes
+- Export Integrity, Lock Integrity, Performance Integrity gates
+
 ## Stage 5 Interaction Layer
 
 - Interaction modes: support, call_response, overlap, independent

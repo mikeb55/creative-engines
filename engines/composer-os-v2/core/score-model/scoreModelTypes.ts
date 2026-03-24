@@ -12,6 +12,9 @@ export const BEATS_PER_MEASURE = 4;
 /** Measure duration in divisions. */
 export const MEASURE_DIVISIONS = DIVISIONS * BEATS_PER_MEASURE;
 
+/** Articulation metadata (performance pass). */
+export type Articulation = 'staccato' | 'tenuto' | 'accent';
+
 /** Note event: pitch in MIDI, startBeat 0–4, duration in beats. */
 export interface NoteEvent {
   kind: 'note';
@@ -19,6 +22,7 @@ export interface NoteEvent {
   startBeat: number;
   duration: number;
   voice?: number;
+  articulation?: Articulation;
 }
 
 /** Rest event. */

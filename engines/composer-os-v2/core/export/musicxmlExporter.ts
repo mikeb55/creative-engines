@@ -63,7 +63,9 @@ function eventsToXml(measure: MeasureModel, measureIndex: number): string {
       } else {
         const { step, alter, octave } = midiToPitch(e.pitch);
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
-        xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice></note>\n`;
+        const art = (e as { articulation?: string }).articulation;
+        const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
+        xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice>${notationsEl}</note>\n`;
       }
       cursor += durDiv;
     }

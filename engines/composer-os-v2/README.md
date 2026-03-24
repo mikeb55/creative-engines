@@ -15,6 +15,7 @@
 - **Stage 3** — Motif tracker, Barry Harris module
 - **Stage 4** — Style system: Metheny, Triad Pairs, weighted style stack
 - **Stage 5** — Interaction layer: guitar-bass coupling, register separation
+- **Stage 6** — Output & Control: export hardening, locks, performance pass
 
 **Demo stack:** primary barry-harris, secondary metheny, colour triad-pairs. **Interaction:** A support, B call_response.
 
@@ -81,7 +82,7 @@ form
   → release gate
 ```
 
-The **golden path** implements: preset → feel → section roles → density curve → register map → motif → style modules → **interaction planning** → instrument behaviours → score construction → integrity gate → behaviour gates → MusicXML export → MX validation → run manifest.
+The **golden path** implements: preset → feel → section roles → density curve → register map → motif → style modules → interaction planning → instrument behaviours → score construction → **performance pass** → export → integrity gate → behaviour gates → MusicXML export → MX validation → run manifest.
 
 ### Stage 2 — Musical Core
 
@@ -228,6 +229,8 @@ engines/composer-os-v2/
     instrument-profiles/ # Guitar, bass profiles
     style-modules/       # Registry; barry-harris, metheny, triad-pairs
     interaction/         # Interaction planner, validation
+    control/             # Lock system
+    performance/         # Performance pass (articulation, no pitch change)
     score-model/         # Score types, event builder, validation
     score-integrity/     # Pre-export gates, behaviour gates
     export/              # MusicXML exporter, validation, Sibelius-safe

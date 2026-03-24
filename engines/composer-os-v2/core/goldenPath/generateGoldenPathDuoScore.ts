@@ -21,6 +21,7 @@ import { applyStyleStack } from '../style-modules/styleModuleRegistry';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
+import { applyPerformancePass } from '../performance/performancePass';
 
 /** Min guitar pitch to maintain register separation from bass (bass typically to 55). */
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
@@ -218,5 +219,6 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     plans.interactionPlan
   );
   const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState, plans.interactionPlan);
-  return createScore('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
+  const rawScore = createScore('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
+  return applyPerformancePass(rawScore);
 }

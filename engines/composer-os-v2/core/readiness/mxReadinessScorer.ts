@@ -8,7 +8,8 @@ export type MxCategory =
   | 'register_correctness'
   | 'musicxml_validity'
   | 'sibelius_safe_profile'
-  | 'chord_rehearsal_completeness';
+  | 'chord_rehearsal_completeness'
+  | 'export_integrity';
 
 /** Single MX category score. */
 export interface MxCategoryScore {
@@ -33,6 +34,7 @@ const MX_CATEGORIES: MxCategory[] = [
   'musicxml_validity',
   'sibelius_safe_profile',
   'chord_rehearsal_completeness',
+  'export_integrity',
 ];
 
 /** Stub: compute MX readiness. */
@@ -42,6 +44,7 @@ export function computeMxReadiness(input: {
   musicXmlValid: boolean;
   sibeliusSafe: boolean;
   chordRehearsalComplete: boolean;
+  exportIntegrity?: boolean;
 }): MxReadinessResult {
   const scores: MxCategoryScore[] = MX_CATEGORIES.map((cat) => {
     let score = 0;
@@ -50,6 +53,7 @@ export function computeMxReadiness(input: {
     if (cat === 'musicxml_validity' && input.musicXmlValid) score = 1;
     if (cat === 'sibelius_safe_profile' && input.sibeliusSafe) score = 1;
     if (cat === 'chord_rehearsal_completeness' && input.chordRehearsalComplete) score = 1;
+    if (cat === 'export_integrity') score = input.exportIntegrity !== false ? 1 : 0.5;
     if (score === 0) score = 0.5; // placeholder when unknown
     return { category: cat, score, passed: score >= MX_READINESS_THRESHOLD };
   });

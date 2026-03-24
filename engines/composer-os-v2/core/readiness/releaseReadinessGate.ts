@@ -18,6 +18,7 @@ export interface ReleaseGateInput {
   registerCorrect?: boolean;
   sibeliusSafe?: boolean;
   chordRehearsalComplete?: boolean;
+  exportIntegrity?: boolean;
 }
 
 export interface ReleaseGateResult {
@@ -40,6 +41,7 @@ export function runReleaseReadinessGate(input: ReleaseGateInput): ReleaseGateRes
     musicXmlValid: input.mxValid ?? false,
     sibeliusSafe: input.sibeliusSafe ?? false,
     chordRehearsalComplete: input.chordRehearsalComplete ?? false,
+    exportIntegrity: input.exportIntegrity ?? true,
   });
 
   const shareable =

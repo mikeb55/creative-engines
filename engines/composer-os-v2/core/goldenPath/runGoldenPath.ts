@@ -23,6 +23,7 @@ import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
+import { validateExportIntegrity } from '../export/exportHardening';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
 import { validateScoreModel } from '../score-model/scoreModelValidation';
@@ -208,10 +209,14 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   let xml: string | undefined;
   let mxValidationPassed = false;
   let sibeliusSafe = false;
+  let exportIntegrityPassed = true;
   if (exportResult.success && exportResult.xml) {
     xml = exportResult.xml;
     mxValidationPassed = validateMusicXmlSchema(xml).valid;
     sibeliusSafe = checkSibeliusSafe(xml).safe;
+    const exportIntegrity = validateExportIntegrity(xml);
+    exportIntegrityPassed = exportIntegrity.valid;
+    if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
   } else {
     errors.push(...exportResult.errors);
   }
@@ -224,6 +229,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
     chordRehearsalComplete: chordSymbols.length >= 8 && rehearsalMarks.length >= 2,
+    exportIntegrity: exportIntegrityPassed,
   });
 
   const runManifest = createRunManifest({
@@ -252,6 +258,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     behaviourResult.allValid &&
     exportResult.success &&
     mxValidationPassed &&
+    exportIntegrityPassed &&
     errors.length === 0;
 
   return {

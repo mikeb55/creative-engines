@@ -14,6 +14,9 @@ import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
 import { runStyleModuleTests } from './styleModule.test';
 import { runInteractionTests } from './interaction.test';
+import { runControlTests } from './control.test';
+import { runPerformanceTests } from './performance.test';
+import { runExportHardeningTests } from './exportHardening.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -29,6 +32,9 @@ const suites = [
   { name: 'Motif', run: runMotifTests },
   { name: 'Style Module', run: runStyleModuleTests },
   { name: 'Interaction', run: runInteractionTests },
+  { name: 'Control', run: runControlTests },
+  { name: 'Performance', run: runPerformanceTests },
+  { name: 'Export Hardening', run: runExportHardeningTests },
   ...retroSuites,
 ];
 

@@ -22,6 +22,7 @@
 4. First Intelligence (motif tracker, Barry Harris)
 5. Style System (Metheny, Triad Pairs, style stack)
 6. Interaction Layer (guitar-bass coupling, register separation, interaction modes)
+7. Output & Control (export hardening, lock system, performance pass)
 
 ## Next Planned Stage
 
