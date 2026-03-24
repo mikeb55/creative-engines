@@ -27,4 +27,12 @@ describe('Composer OS Desktop versioning', () => {
     const mainSrc = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.ts'), 'utf-8');
     expect(mainSrc).toContain('Composer OS - v${app.getVersion()}');
   });
+
+  it('web shell header shows Composer OS - v when desktop version is available', () => {
+    const appSrc = fs.readFileSync(
+      path.join(desktopRoot, '..', 'composer-os-app', 'src', 'App.tsx'),
+      'utf-8'
+    );
+    expect(appSrc).toContain('Composer OS - v${desktopVersion}');
+  });
 });

@@ -36,4 +36,17 @@ describe('verifyPackagedPortableExe', () => {
     expect(r.fileName).toBe('Composer-OS-Desktop-9.9.9-portable.exe');
     fs.rmSync(dir, { recursive: true, force: true });
   });
+
+  it('picks newest portable exe by mtime when multiple exist', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-multi-'));
+    const older = path.join(dir, 'Composer-OS-Desktop-1.0.0-portable.exe');
+    const newer = path.join(dir, 'Composer-OS-Desktop-2.0.0-portable.exe');
+    fs.writeFileSync(older, Buffer.alloc(5000));
+    fs.utimesSync(older, new Date(2000, 0, 1), new Date(2000, 0, 1));
+    fs.writeFileSync(newer, Buffer.alloc(5000));
+    fs.utimesSync(newer, new Date(2025, 0, 1), new Date(2025, 0, 1));
+    const r = verifyPackagedPortableExe(dir);
+    expect(r.fileName).toBe('Composer-OS-Desktop-2.0.0-portable.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
 });

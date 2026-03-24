@@ -1,6 +1,7 @@
 /**
  * One-shot: close stale portable → package → verify exe + UI stamp → launch → smoke checks.
  * Windows-focused (packaging uses electron-builder --win).
+ * `desktop:package` bumps semver patch first, so the verified exe is always the newest `Composer-OS-Desktop-*-portable.exe` by mtime.
  */
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';

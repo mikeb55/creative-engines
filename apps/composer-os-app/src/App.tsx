@@ -35,10 +35,16 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [refreshOutputs, setRefreshOutputs] = useState(0);
   const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
+  const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
   const embeddedStamp = parseEmbeddedUiStamp();
 
   useEffect(() => {
-    if (embeddedStamp) {
+    if (window.composerOsDesktop?.getDesktopMeta) {
+      void window.composerOsDesktop.getDesktopMeta().then((m) => {
+        setDesktopVersion(m.version);
+        document.title = `Composer OS - v${m.version}`;
+      });
+    } else if (embeddedStamp) {
       document.title = `Composer OS - v${embeddedStamp.appShellVersion}`;
     }
   }, [embeddedStamp]);
@@ -62,7 +68,9 @@ export default function App() {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>
       <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Composer OS</h1>
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
+          {desktopVersion ? `Composer OS - v${desktopVersion}` : 'Composer OS'}
+        </h1>
         {embeddedStamp && (
           <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             UI bundle · v{embeddedStamp.appShellVersion} · {embeddedStamp.buildTimestamp}

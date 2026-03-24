@@ -24,7 +24,7 @@ npm install
 npm run desktop:dev
 ```
 
-Or double-click the packaged executable (`Composer-OS-*-portable.exe` or installed shortcut). No manual server start; no Python or .bat.
+Or double-click the packaged executable (`Composer-OS-Desktop-*-portable.exe` or installed shortcut). Each **`npm run desktop:package`** bumps the desktop **patch version** in `apps/composer-os-desktop/package.json` before building, so the new portable exe has a **unique filename** (avoids Windows file-lock issues when overwriting the same exe). No manual server start; no Python or .bat.
 The desktop app resolves port 3001 automatically if it is busy (reuses Composer OS or switches to the next free port).
 
 **Automated local verification (Windows):** From `apps/composer-os-desktop`, run `npm run desktop:rebuild-and-smoke`. That closes stale portable instances if possible, rebuilds the packaged app, verifies the portable exe and UI bundle stamp, launches the newest exe, and prints a **PASS** or **FAIL** summary (exact path, launched yes/no, app version, UI build timestamp). Use this for a single-command rebuild loop instead of manual steps.

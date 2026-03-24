@@ -3,6 +3,7 @@
  *
  * Output convention (electron-builder, `win.target` includes `portable`):
  *   <apps/composer-os-desktop>/release/Composer-OS-Desktop-<semver>-portable.exe
+ *   (`desktop:package` bumps patch in package.json before each build so `<semver>` changes and the exe is not overwritten in place.)
  *
  * Other artifacts (not used by deploy scripts): `release/win-unpacked/Composer OS Desktop.exe`,
  * NSIS `release/*Setup*.exe`. Loose JS under `dist/` is not a packaged app.

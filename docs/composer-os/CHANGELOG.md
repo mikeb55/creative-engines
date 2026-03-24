@@ -1,5 +1,11 @@
 # Composer OS Changelog
 
+## Desktop packaging — auto version bump
+
+- **`npm run desktop:package`** runs **`install/bumpDesktopVersionCli.ts`** first so `package.json` **patch** increments (`1.0.1` → `1.0.2` → …) before **electron-builder**. The portable artifact is always **`Composer-OS-Desktop-${version}-portable.exe`**, so each build writes a **new** file and avoids Windows locking the previous exe. Set **`COMPOSER_OS_SKIP_VERSION_BUMP=1`** to skip the bump (rare).
+- After packaging, **`install/pruneOldPortableExesCli.ts`** keeps the **newest 3** portable exes in `release/` and deletes older ones (best-effort; failures do not fail the build).
+- The web shell shows **`Composer OS - v{version}`** in the header when running inside the desktop shell (IPC), matching the Electron window title.
+
 ## Bacharach behaviour strengthening
 
 - **Bacharach** validation uses shared **bacharachSignal** helpers: each section (A/B) must show chromatic colour, off–strong-grid placement, or rhythmic variety; fully diatonic + square lines fail; global chromatic density is capped.

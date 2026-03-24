@@ -26,6 +26,8 @@
 8. **Stage 7 App Productisation** (web app, preset UI, output management) — in `apps/composer-os-app/`, engine bridge in `engines/composer-os-v2/app-api/`
 9. **Stage 8 Windows Desktop Product** — in `apps/composer-os-desktop/`, Electron + electron-builder, single-click launch
 
+**Desktop version bump:** `desktop:package` runs `tsx install/bumpDesktopVersionCli.ts` before `electron-builder` so every packaged portable exe uses a new semver patch and a new `Composer-OS-Desktop-x.y.z-portable.exe` path (reduces antivirus / file-lock stalls on Windows). `tsx install/pruneOldPortableExesCli.ts` afterward keeps the three newest portables in `release/`. `app.getVersion()` and the UI header read the same `package.json` version.
+
 **Desktop ports:** `electron/utils/portUtils.ts` resolves preferred port (default 3001), reuses Composer OS via `GET /health`, or picks next free port. API `startComposerOsAppApi.ts` uses `process.env.PORT` and registers `/health`.
 
 **Desktop product:** One window (`main.ts` + `preload.ts`). Packaged UI is only from `composer-os-app/dist` (see `scripts/copy-ui.js`; full directory replace + `verify:ui-resources` after copy). Each UI build emits `composer-os-ui-stamp.json`; `electron/uiBundleVerify.ts` enforces product id/name and blocks Hybrid/Projects/Score in the stamp before any UI URL load. Preload exposes `getUiProvenance` for diagnostics. App API routes only under `/api/*` and `/health`. Legacy stacks under `engines/composer_studio/` and similar are not imported by the desktop app; tests in `desktopQuarantine.test.ts` + `desktopUnification.test.ts` guard the Electron folder; `launcherPaths.test.ts` ensures desktop npm scripts do not reference repo `launchers/`.

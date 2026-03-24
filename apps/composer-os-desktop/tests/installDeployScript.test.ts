@@ -17,6 +17,8 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:self-test-install']).toContain('desktop:package');
     expect(pkg.scripts['desktop:self-test-install']).toContain('verify:packaged-exe');
     expect(pkg.scripts['desktop:self-test-install']).toContain('installComposerOsDesktop');
+    expect(pkg.scripts['desktop:package']).toContain('bumpDesktopVersionCli');
+    expect(pkg.scripts['desktop:package']).toContain('pruneOldPortableExesCli');
   });
 
   it('install script uses exact Composer OS Desktop shortcut name', () => {
@@ -33,6 +35,8 @@ describe('desktop deploy / install wiring', () => {
     expect(fs.existsSync(path.join(installDir, 'installRules.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'launchInstalledDesktopApp.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'verifyPackagedDesktop.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'bumpDesktopVersionCli.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'pruneOldPortableExesCli.ts'))).toBe(true);
 
     const walk = (dir: string): string[] => {
       const out: string[] = [];
