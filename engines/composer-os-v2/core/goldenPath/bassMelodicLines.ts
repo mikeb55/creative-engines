@@ -137,6 +137,27 @@ export function scrubBassFirstAttackIfRoot(
 /**
  * Emit one bar of bass: phrase contour, varied rhythm, target tones.
  */
+function applyGuideToneWeightBias(
+  pieces: Array<{ w: number; pitch: number }>,
+  rootClamped: number,
+  third: number,
+  seventh: number,
+  guide: number,
+  bias: number
+): Array<{ w: number; pitch: number }> {
+  const rp = rootClamped % 12;
+  const tp = third % 12;
+  const sp = seventh % 12;
+  const gp = guide % 12;
+  return pieces.map((p) => {
+    const pc = p.pitch % 12;
+    let w = p.w;
+    if (pc === tp || pc === sp || pc === gp) w *= bias;
+    else if (pc === rp) w /= bias * 0.88;
+    return { ...p, w };
+  });
+}
+
 export function emitMelodicBassBar(params: {
   m: MeasureModel;
   bar: number;
@@ -153,6 +174,10 @@ export function emitMelodicBassBar(params: {
   guitarFirstPitchInBar?: number;
   /** Last bass pitch of previous bar (smooth echo / BH jumps). */
   prevBassPitch?: number;
+  /** Guitar is hot this bar — favour guide tones / fewer roots on strong beats (soft weighting). */
+  guitarActivityHot?: boolean;
+  /** Multiplier on 3rd/7th/guide vs root (default 1). */
+  guideToneBias?: number;
 }): void {
   const {
     m,
@@ -169,7 +194,10 @@ export function emitMelodicBassBar(params: {
     section,
     guitarFirstPitchInBar,
     prevBassPitch,
+    guitarActivityHot,
+    guideToneBias,
   } = params;
+  const gtBias = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
 
   const span = 4 - firstStart;
   if (firstStart > 0) {
@@ -179,6 +207,9 @@ export function emitMelodicBassBar(params: {
   const ap = approachFromBelow(rootClamped, walkLow, effectiveHigh);
   const land = seededUnit(seed, bar, 41) < 0.68 ? fifth : rootClamped;
   const lastLead = seededUnit(seed, bar, 43) < 0.58 ? fifth : rootClamped;
+
+  const biasPieces = (base: Array<{ w: number; pitch: number }>) =>
+    applyGuideToneWeightBias(base, rootClamped, third, seventh, guide, gtBias);
 
   const useEcho = section === 'B' && guitarFirstPitchInBar !== undefined;
   let echoPitch =
@@ -196,12 +227,12 @@ export function emitMelodicBassBar(params: {
   const rot = (bar + seed * 3) % 3;
 
   if (section === 'cadence') {
-    const base = [
-      { w: 1, pitch: ap },
+    const base = biasPieces([
+      { w: bar % 2 === 0 ? 1.25 : 1, pitch: ap },
       { w: 3, pitch: rootClamped },
       { w: 5, pitch: guide },
       { w: 4, pitch: land },
-    ];
+    ]);
     addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
     return;
   }
@@ -249,7 +280,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: land },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
+    addWeightedPhrase(m, firstStart, span, perturbWeights(biasPieces(base), bar, seed));
     return;
   }
 
@@ -257,29 +288,29 @@ export function emitMelodicBassBar(params: {
     const lf = leadPitch(seed, bar, third, guide, fifth, rootClamped);
     let base: Array<{ w: number; pitch: number }>;
     if (u < 0.38) {
-      base = [
+      base = biasPieces([
         { w: 1, pitch: lf },
         { w: 1, pitch: fifth },
         { w: 2, pitch: guide },
         { w: 2, pitch: rootClamped },
         { w: 2, pitch: land },
-      ];
+      ]);
     } else if (u < 0.72) {
-      base = [
-        { w: 1, pitch: ap },
+      base = biasPieces([
+        { w: bar % 2 === 0 ? 1.2 : 1, pitch: ap },
         { w: 3, pitch: rootClamped },
         { w: 2.5, pitch: seventh },
         { w: 1, pitch: third },
         { w: 2.5, pitch: land },
-      ];
+      ]);
     } else {
-      base = [
+      base = biasPieces([
         { w: 2.5, pitch: fifth },
         { w: 0.5, pitch: lf },
         { w: 1, pitch: guide },
         { w: 2, pitch: seventh },
         { w: 2, pitch: lastLead },
-      ];
+      ]);
     }
     addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
     return;
@@ -291,45 +322,45 @@ export function emitMelodicBassBar(params: {
 
   let base: Array<{ w: number; pitch: number }>;
   if (bRhythm === 0) {
-    base = [
-      { w: 1.2, pitch: ap },
+    base = biasPieces([
+      { w: bar % 2 === 0 ? 1.25 : 1.2, pitch: ap },
       { w: 1, pitch: lf },
       { w: 2.8, pitch: fifth },
       { w: 1.1, pitch: guide },
       { w: 2.9, pitch: land },
-    ];
+    ]);
   } else if (bRhythm === 1) {
-    base = [
+    base = biasPieces([
       { w: 1.4, pitch: fifth },
       { w: 1.2, pitch: pivot },
       { w: 1.8, pitch: seventh },
       { w: 1.3, pitch: guide },
       { w: 3.3, pitch: lastLead },
-    ];
+    ]);
   } else if (u < 0.35) {
-    base = [
-      { w: 1, pitch: ap },
+    base = biasPieces([
+      { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
       { w: 1, pitch: lf },
       { w: 3, pitch: fifth },
       { w: 1, pitch: guide },
       { w: 3, pitch: land },
-    ];
+    ]);
   } else if (u < 0.7) {
-    base = [
+    base = biasPieces([
       { w: 1, pitch: fifth },
       { w: 1, pitch: pivot },
       { w: 2, pitch: seventh },
       { w: 1, pitch: guide },
       { w: 3, pitch: lastLead },
-    ];
+    ]);
   } else {
-    base = [
+    base = biasPieces([
       { w: 2, pitch: guide },
       { w: 1, pitch: rootClamped },
-      { w: 1, pitch: ap },
+      { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
       { w: 1, pitch: lf },
       { w: 3, pitch: land },
-    ];
+    ]);
   }
   addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
 }

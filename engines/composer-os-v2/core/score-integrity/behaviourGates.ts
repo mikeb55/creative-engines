@@ -23,6 +23,7 @@ import { validateInteractionIntegrity, validateRegisterSeparation } from '../int
 import { validateDuoMusicalQuality } from './duoMusicalQuality';
 import { validateBassIdentity } from './bassIdentityValidation';
 import { validateDuoPhraseAuthority } from './phraseAuthorityValidation';
+import { validateJazzDuoBehaviourRules } from './jazzDuoBehaviourValidation';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -73,6 +74,7 @@ export interface BehaviourGatesResult {
   duoMusicalValid: boolean;
   bassIdentityValid: boolean;
   phraseAuthorityValid: boolean;
+  jazzDuoBehaviourValid: boolean;
   interactionValid: boolean;
   registerSeparationValid: boolean;
   allValid: boolean;
@@ -168,6 +170,10 @@ export function runBehaviourGates(
   if (!phraseAuthority.valid) errors.push(...phraseAuthority.errors);
   const phraseAuthorityValid = phraseAuthority.valid;
 
+  const jazzDuoBehaviour = validateJazzDuoBehaviourRules(score);
+  if (!jazzDuoBehaviour.valid) errors.push(...jazzDuoBehaviour.errors);
+  const jazzDuoBehaviourValid = jazzDuoBehaviour.valid;
+
   let interactionValid = true;
   let registerSeparationValid = true;
   if (opts?.interactionPlan) {
@@ -193,6 +199,7 @@ export function runBehaviourGates(
     duoMusicalValid,
     bassIdentityValid,
     phraseAuthorityValid,
+    jazzDuoBehaviourValid,
     interactionValid,
     registerSeparationValid,
     allValid: errors.length === 0,

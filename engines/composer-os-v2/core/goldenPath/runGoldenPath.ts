@@ -32,6 +32,7 @@ import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
 import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
+import { scoreJazzDuoBehaviourSoft } from '../score-integrity/jazzDuoBehaviourValidation';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -145,7 +146,33 @@ export interface RunGoldenPathOptions {
   scoreTitle?: string;
 }
 
+/** Offsets tried by the duo lock (requested seed + each offset). */
+export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009] as const;
+
+export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
+  return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
+}
+
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
+  const seeds = candidateSeedsForGoldenPath(seed);
+  let best: GoldenPathResult | null = null;
+  let bestSoft = -Infinity;
+  let last: GoldenPathResult | null = null;
+  for (const s of seeds) {
+    const r = runGoldenPathOnce(s, options);
+    last = r;
+    if (r.success) {
+      const soft = scoreJazzDuoBehaviourSoft(r.score);
+      if (soft > bestSoft) {
+        bestSoft = soft;
+        best = r;
+      }
+    }
+  }
+  return best ?? last!;
+}
+
+function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
   const context = buildGoldenPathContext(seed);

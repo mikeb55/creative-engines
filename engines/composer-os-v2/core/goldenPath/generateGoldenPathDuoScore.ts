@@ -27,6 +27,7 @@ import {
   clampPitch,
   seededUnit,
 } from './guitarBassDuoHarmony';
+import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import { emitMelodicBassBar, scrubBassFirstAttackIfRoot, type BassSectionRole } from './bassMelodicLines';
 import {
   computeEnsembleStagger,
@@ -293,6 +294,45 @@ function firstGuitarPitchInBar(guitar: PartModel, bar: number): number | undefin
   return ev ? (ev as { pitch: number }).pitch : undefined;
 }
 
+function lastGuitarNoteEndInBar(m: MeasureModel | undefined): number | undefined {
+  if (!m) return undefined;
+  let best = -1;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as { startBeat: number; duration: number };
+    best = Math.max(best, n.startBeat + n.duration);
+  }
+  return best < 0 ? undefined : best;
+}
+
+/** When both parts are in high activity on a non-climax bar, thin bass to two half notes (bar math preserved). */
+function resolveOverlapInDuoScore(
+  guitarPart: PartModel,
+  bassPart: PartModel,
+  bassMap: InstrumentRegisterMap,
+  walkLow: number,
+  bassCeiling: number
+): void {
+  const climax = new Set([4, 8]);
+  for (let b = 1; b <= 8; b++) {
+    if (climax.has(b)) continue;
+    if (activityScoreForBar(guitarPart, b) < HIGH_ACTIVITY || activityScoreForBar(bassPart, b) < HIGH_ACTIVITY) continue;
+    const chord = chordForBar(b);
+    const tones = chordTonesForGoldenChord(chord);
+    const root = CHORD_ROOTS[chord] ?? tones.root;
+    const [low, high] = getBassRegisterForBar(bassMap, b);
+    const effectiveHigh = Math.min(high, bassCeiling);
+    const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+    const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
+    const m = bassPart.measures.find((x) => x.index === b);
+    if (!m) continue;
+    m.events = [];
+    addEvent(m, createNote(rootClamped, 0, 2));
+    addEvent(m, createNote(fifth, 2, 2));
+    normalizeMeasureQuarterGrid(m);
+  }
+}
+
 function buildBassPart(
   context: CompositionContext,
   _bassPlan: BassBehaviourPlan,
@@ -335,6 +375,17 @@ function buildBassPart(
     }
     firstStart = qBeat(firstStart + (seededUnit(seed, b, 701) - 0.5) * 0.14);
 
+    if (b > 1) {
+      const gPrev = guitarPart.measures.find((x) => x.index === b - 1);
+      const gEnd = lastGuitarNoteEndInBar(gPrev);
+      if (gEnd !== undefined && gEnd >= 2.5) {
+        firstStart = Math.min(firstStart, qBeat(0.25 + seededUnit(seed, b, 702) * 0.75));
+      }
+    }
+
+    const gAct = activityScoreForBar(guitarPart, b);
+    const guitarActivityHot = gAct >= HIGH_ACTIVITY;
+
     let guitarEchoSource = firstGuitarPitchInBar(guitarPart, b);
     if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
       guitarEchoSource = clampPitch(placements[0].notes[0].pitch - 12, walkLow, effectiveHigh);
@@ -370,6 +421,8 @@ function buildBassPart(
         section,
         guitarFirstPitchInBar: guitarEchoSource,
         prevBassPitch,
+        guitarActivityHot,
+        guideToneBias: b <= 4 ? 1.06 : 1.12,
       });
       scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh);
     }
@@ -425,6 +478,13 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     guitarPart,
     plans.interactionPlan
   );
+  const profile = guitarBassDuoPreset.instrumentProfiles.find(
+    (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
+  ) ?? ACOUSTIC_UPRIGHT_BASS;
+  const [walkLow] = profile.preferredWalkingZone;
+  const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
+  resolveOverlapInDuoScore(guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: 120 });
   return applyPerformancePass(rawScore);
 }

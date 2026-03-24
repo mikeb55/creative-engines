@@ -2,7 +2,7 @@
  * Composer OS V2 — Golden path tests
  */
 
-import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { runGoldenPath, candidateSeedsForGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE } from '../app-api/scoreTitleDefaults';
 
 function testGoldenPathReturnsValidScore(): boolean {
@@ -73,11 +73,12 @@ function testMxValidationPasses(): boolean {
 }
 
 function testRunManifestCreated(): boolean {
-  const r = runGoldenPath(10);
+  const requested = 10;
+  const r = runGoldenPath(requested);
   return (
     r.runManifest !== undefined &&
     r.runManifest.presetId === 'guitar_bass_duo' &&
-    r.runManifest.seed === 10
+    candidateSeedsForGoldenPath(requested).includes(r.runManifest.seed)
   );
 }
 
