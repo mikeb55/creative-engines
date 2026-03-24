@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
+import { useStyleModules, STYLE_MODULES_UNAVAILABLE_MSG } from '../hooks/useStyleModules';
 
 type GenResult = {
   success?: boolean;
@@ -25,6 +26,13 @@ function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): voi
   window.composerOsDesktop?.notifyGenerationPhase(phase);
 }
 
+function labelForModuleId(
+  id: string,
+  modules: { id: string; name: string }[]
+): string {
+  return modules.find((m) => m.id === id)?.name ?? id;
+}
+
 export function HomeGenerate({
   onResult,
 }: {
@@ -36,8 +44,13 @@ export function HomeGenerate({
   const [presetId, setPresetId] = useState('guitar_bass_duo');
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [presets, setPresets] = useState<{ id: string; name: string; supported: boolean }[]>([]);
-  const [styleStack, setStyleStack] = useState({ primary: 'barry_harris', weights: { primary: 1 } });
-  const [modules, setModules] = useState<{ id: string; name: string }[]>([]);
+  const [styleStack, setStyleStack] = useState({
+    primary: 'barry_harris',
+    secondary: '' as string,
+    colour: '' as string,
+    weights: { primary: 1, secondary: 0.5, colour: 0.3 },
+  });
+  const { modules, error: modulesError, loading: modulesLoading, reload: reloadModules } = useStyleModules();
   const [locks, setLocks] = useState({
     melody: false,
     bass: false,
@@ -53,11 +66,20 @@ export function HomeGenerate({
 
   useEffect(() => {
     api.getPresets().then((r) => setPresets(r.presets)).catch(() => {});
-    api.getStyleModules().then((r) => setModules(r.modules)).catch(() => {});
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (modules.length > 0 && !modules.some((m) => m.id === styleStack.primary)) {
+      setStyleStack((s) => ({ ...s, primary: modules[0].id }));
+    }
+  }, [modules, styleStack.primary]);
+
   const generate = async () => {
+    if (modulesError || modules.length === 0) {
+      setError(STYLE_MODULES_UNAVAILABLE_MSG);
+      return;
+    }
     setLoading(true);
     setError(null);
     notifyGenPhase('running');
@@ -65,9 +87,11 @@ export function HomeGenerate({
       const r = (await api.generate({
         presetId,
         styleStack: {
-          ...styleStack,
+          primary: styleStack.primary,
+          secondary: styleStack.secondary || undefined,
+          colour: styleStack.colour || undefined,
           weights: {
-            primary: 1,
+            primary: styleStack.weights.primary,
             secondary: styleStack.weights.secondary ?? 0,
             colour: styleStack.weights.colour ?? 0,
           },
@@ -124,6 +148,8 @@ export function HomeGenerate({
   const receiptFail = result && (!result.success || !passed);
   const showBigReceipt = result || error;
 
+  const moduleSelectDisabled = !!modulesError || modules.length === 0 || modulesLoading;
+
   return (
     <section>
       <h2>Generate</h2>
@@ -142,6 +168,24 @@ export function HomeGenerate({
         </p>
       )}
 
+      {modulesError && (
+        <div
+          style={{
+            background: 'rgba(239,68,68,0.12)',
+            border: '1px solid var(--error)',
+            padding: '0.75rem 1rem',
+            borderRadius: 8,
+            marginBottom: '1rem',
+            fontSize: '0.95rem',
+          }}
+        >
+          {modulesError}
+          <button type="button" className="secondary" style={{ marginLeft: '0.75rem' }} onClick={reloadModules}>
+            Retry
+          </button>
+        </div>
+      )}
+
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Preset
@@ -158,18 +202,107 @@ export function HomeGenerate({
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Style Stack — Primary
+          Style stack — Primary
         </label>
         <select
           value={styleStack.primary}
+          disabled={moduleSelectDisabled}
           onChange={(e) => setStyleStack((s) => ({ ...s, primary: e.target.value }))}
         >
+          {modules.length === 0 ? (
+            <option value={styleStack.primary}>{modulesLoading ? 'Loading…' : '—'}</option>
+          ) : (
+            modules.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))
+          )}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Secondary (optional)
+        </label>
+        <select
+          value={styleStack.secondary}
+          disabled={moduleSelectDisabled}
+          onChange={(e) => setStyleStack((s) => ({ ...s, secondary: e.target.value }))}
+        >
+          <option value="">—</option>
           {modules.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
             </option>
           ))}
         </select>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Colour (optional)
+        </label>
+        <select
+          value={styleStack.colour}
+          disabled={moduleSelectDisabled}
+          onChange={(e) => setStyleStack((s) => ({ ...s, colour: e.target.value }))}
+        >
+          <option value="">—</option>
+          {modules.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+        <span style={{ display: 'block', marginBottom: 0.3 }}>Weights (primary / secondary / colour)</span>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="number"
+            step="0.05"
+            min={0}
+            value={styleStack.weights.primary}
+            disabled={moduleSelectDisabled}
+            onChange={(e) =>
+              setStyleStack((s) => ({
+                ...s,
+                weights: { ...s.weights, primary: Number(e.target.value) || 0 },
+              }))
+            }
+            style={{ width: 88 }}
+          />
+          <input
+            type="number"
+            step="0.05"
+            min={0}
+            value={styleStack.weights.secondary}
+            disabled={moduleSelectDisabled}
+            onChange={(e) =>
+              setStyleStack((s) => ({
+                ...s,
+                weights: { ...s.weights, secondary: Number(e.target.value) || 0 },
+              }))
+            }
+            style={{ width: 88 }}
+          />
+          <input
+            type="number"
+            step="0.05"
+            min={0}
+            value={styleStack.weights.colour}
+            disabled={moduleSelectDisabled}
+            onChange={(e) =>
+              setStyleStack((s) => ({
+                ...s,
+                weights: { ...s.weights, colour: Number(e.target.value) || 0 },
+              }))
+            }
+            style={{ width: 88 }}
+          />
+        </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -201,7 +334,7 @@ export function HomeGenerate({
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={generate} disabled={loading}>
+        <button onClick={generate} disabled={loading || !!modulesError || modules.length === 0}>
           {loading ? 'Generating…' : 'Generate'}
         </button>
         <button className="secondary" onClick={() => setSeed(Math.floor(Math.random() * 1e9))}>
@@ -219,7 +352,7 @@ export function HomeGenerate({
             padding: '1.25rem',
             borderRadius: 10,
             border: `3px solid ${
-              error || receiptFail ? 'var(--error)' : receiptOk ? 'var(--success, #22c55e)' : 'var(--border)'
+              error || receiptFail ? 'var(--error)' : receiptOk ? 'var(--success)' : 'var(--border)'
             }`,
             background: error || receiptFail ? 'rgba(239,68,68,0.08)' : 'var(--bg-panel)',
             boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
@@ -274,7 +407,11 @@ export function HomeGenerate({
               )}
               {rm?.activeModules?.length ? (
                 <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Style stack:</span> {rm.activeModules.join(', ')}
+                  <span style={{ color: 'var(--text-muted)' }}>Style stack (applied):</span>{' '}
+                  {rm.activeModules.map((id) => labelForModuleId(id, modules)).join(' · ')}
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'block', marginTop: 4 }}>
+                    ({rm.activeModules.join(', ')})
+                  </span>
                 </p>
               ) : null}
               {rm?.timestamp && (

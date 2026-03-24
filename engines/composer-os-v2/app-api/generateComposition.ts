@@ -5,6 +5,7 @@
 import type { GenerateRequest } from './appApiTypes';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { mapAppStyleStackToEngine } from './mapStyleStack';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -32,7 +33,10 @@ export interface GenerateResult {
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
-  const result = runGoldenPath(req.seed);
+  const result = runGoldenPath(req.seed, {
+    styleStack: mapAppStyleStackToEngine(req.styleStack),
+    presetId: req.presetId,
+  });
   const validation = {
     integrityPassed: result.integrityPassed,
     behaviourGatesPassed: result.behaviourGatesPassed,

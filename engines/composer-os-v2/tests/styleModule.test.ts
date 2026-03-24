@@ -2,7 +2,12 @@
  * Composer OS V2 — Style module tests
  */
 
-import { getStyleModule, applyStyleModules, applyStyleStack } from '../core/style-modules/styleModuleRegistry';
+import {
+  getStyleModule,
+  applyStyleModules,
+  applyStyleStack,
+  listRegisteredStyleModuleInfos,
+} from '../core/style-modules/styleModuleRegistry';
 import { validateBarryHarrisConformance } from '../core/style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../core/style-modules/metheny/moduleValidation';
 import { validateTriadPairConformance } from '../core/style-modules/triad-pairs/moduleValidation';
@@ -13,6 +18,28 @@ import { createMeasure, createNote, addEvent, createScore } from '../core/score-
 function testBarryHarrisModuleRegistered(): boolean {
   const mod = getStyleModule('barry_harris');
   return mod !== undefined && mod.id === 'barry_harris';
+}
+
+function testRegistryListsBarryMethenyTriad(): boolean {
+  const list = listRegisteredStyleModuleInfos();
+  const ids = list.map((m) => m.id);
+  return (
+    list.length >= 3 &&
+    ids.includes('barry_harris') &&
+    ids.includes('metheny') &&
+    ids.includes('triad_pairs')
+  );
+}
+
+function testRunManifestReflectsRequestedPrimary(): boolean {
+  const r = runGoldenPath(123, {
+    styleStack: {
+      primary: 'metheny',
+      weights: { primary: 1, secondary: 0, colour: 0 },
+    },
+  });
+  const mods = r.runManifest?.activeModules ?? [];
+  return mods.length === 1 && mods[0] === 'metheny';
 }
 
 function testApplyStyleModule(): boolean {
@@ -149,6 +176,8 @@ function testTriadPairValidation(): boolean {
 export function runStyleModuleTests(): { name: string; ok: boolean }[] {
   return [
     ['Barry Harris registered', testBarryHarrisModuleRegistered],
+    ['Registry lists Barry, Metheny, Triad Pairs', testRegistryListsBarryMethenyTriad],
+    ['Run manifest reflects requested primary', testRunManifestReflectsRequestedPrimary],
     ['Apply style module', testApplyStyleModule],
     ['Barry Harris validation passes', testBarryHarrisValidationPasses],
     ['Style stack normalization', testStyleStackNormalization],

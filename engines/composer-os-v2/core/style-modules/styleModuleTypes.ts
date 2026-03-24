@@ -14,9 +14,9 @@ export interface StyleModule {
 
 /** Style stack: primary shapes behaviour, secondary modifies, colour adds detail. */
 export interface StyleStack {
-  primary: 'barry_harris' | 'metheny';
-  secondary?: 'metheny' | 'barry_harris';
-  colour?: 'triad_pairs';
+  primary: StyleModuleId;
+  secondary?: StyleModuleId;
+  colour?: StyleModuleId;
   weights: {
     primary: number;
     secondary?: number;

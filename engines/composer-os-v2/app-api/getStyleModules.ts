@@ -1,15 +1,15 @@
 /**
- * Composer OS V2 — App API: get style modules
+ * Composer OS V2 — App API: get style modules (from engine registry)
  */
 
 import type { AppStyleModule } from './appApiTypes';
-
-const MODULES: AppStyleModule[] = [
-  { id: 'barry_harris', name: 'Barry Harris' },
-  { id: 'metheny', name: 'Metheny' },
-  { id: 'triad_pairs', name: 'Triad Pairs' },
-];
+import { listRegisteredStyleModuleInfos } from '../core/style-modules/styleModuleRegistry';
 
 export function getStyleModules(): AppStyleModule[] {
-  return [...MODULES];
+  return listRegisteredStyleModuleInfos().map((m) => ({
+    id: m.id,
+    name: m.displayName,
+    enabled: true,
+    type: 'any',
+  }));
 }

@@ -9,6 +9,8 @@ import {
   COMPOSER_OS_VERSION,
   COMPOSER_OS_API_BASE_PATH,
 } from './composerOsConfig';
+import { getStyleModules } from './getStyleModules';
+import type { AppStyleModule } from './appApiTypes';
 
 export interface DiagnosticsPayload {
   appName: string;
@@ -20,6 +22,7 @@ export interface DiagnosticsPayload {
   outputDirectoryExists: boolean;
   outputDirectoryWritable: boolean;
   backendReachable: true;
+  styleModules: AppStyleModule[];
 }
 
 function toDisplayPath(p: string): string {
@@ -58,5 +61,6 @@ export function buildDiagnostics(outputDir: string, activePort: number): Diagnos
     outputDirectoryExists: fs.existsSync(resolved),
     outputDirectoryWritable: writable,
     backendReachable: true,
+    styleModules: getStyleModules(),
   };
 }

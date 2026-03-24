@@ -33,8 +33,10 @@ export function runAppApiTests(): TestResult[] {
 
   try {
     const modules = getStyleModules();
-    if (modules.length < 1) fail('Style module loading: non-empty list');
-    else if (!modules.some((m) => m.id === 'barry_harris')) fail('Style module loading: barry_harris exists');
+    if (modules.length < 3) fail('Style module loading: three modules from registry');
+    else if (!modules.every((m) => m.enabled)) fail('Style module loading: enabled');
+    else if (!['barry_harris', 'metheny', 'triad_pairs'].every((id) => modules.some((m) => m.id === id)))
+      fail('Style module loading: barry_harris, metheny, triad_pairs');
     else pass('Style module loading');
   } catch (e) {
     fail(`Style module loading: ${e}`);
@@ -85,12 +87,29 @@ export function runAppApiTests(): TestResult[] {
   }
 
   try {
+    const result = generateComposition(
+      {
+        presetId: 'guitar_bass_duo',
+        styleStack: { primary: 'metheny', weights: { primary: 1 } },
+        seed: 5555,
+      },
+      TEST_OUTPUT_DIR
+    );
+    const am = result.runManifest?.activeModules ?? [];
+    if (am[0] !== 'metheny' || am.length !== 1) fail('Generation: requested primary in manifest');
+    else pass('Generation: style stack from request');
+  } catch (e) {
+    fail(`Generation: style stack from request: ${e}`);
+  }
+
+  try {
     const diagDir = path.join(REPO_ROOT, 'outputs', 'composer-os-v2-test-diag');
     fs.mkdirSync(diagDir, { recursive: true });
     const d = buildDiagnostics(diagDir, 3001);
     if (d.appName !== 'Composer OS') fail('Diagnostics payload: app name');
     else if (d.activePort !== 3001) fail('Diagnostics payload: port');
     else if (!path.isAbsolute(d.outputDirectory)) fail('Diagnostics payload: canonical output');
+    else if (!d.styleModules?.length || d.styleModules.length < 3) fail('Diagnostics payload: styleModules');
     else pass('Diagnostics payload');
     fs.rmSync(diagDir, { recursive: true, force: true });
   } catch (e) {

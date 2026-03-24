@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-Opens UI at http://localhost:5173. Choose preset, style stack, seed; generate; view outputs and validation.
+Opens UI at http://localhost:5173. Choose preset, **style stack** (Barry Harris, Metheny, Triad Pairs — loaded from the backend), seed; generate; view outputs and validation. The **Style stack** tab and **Generate** tab both list the same modules; if they fail to load, you see an explicit message instead of empty dropdowns.
 
 ## Running the Desktop App (Windows)
 

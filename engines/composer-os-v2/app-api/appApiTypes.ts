@@ -12,6 +12,9 @@ export interface AppPreset {
 export interface AppStyleModule {
   id: string;
   name: string;
+  enabled: boolean;
+  /** Registered modules may be used in primary, secondary, or colour slots */
+  type?: 'primary' | 'secondary' | 'colour' | 'any';
 }
 
 export interface AppStyleStack {

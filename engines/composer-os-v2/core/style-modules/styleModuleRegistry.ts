@@ -11,6 +11,13 @@ import { triadPairsModule } from './triad-pairs/moduleApply';
 
 const registry = new Map<string, StyleModule>();
 
+/** Display labels for app API / UI (ids come from module definitions). */
+const MODULE_DISPLAY_NAMES: Record<string, string> = {
+  barry_harris: 'Barry Harris',
+  metheny: 'Metheny',
+  triad_pairs: 'Triad Pairs',
+};
+
 function registerBuiltIn(): void {
   if (registry.size > 0) return;
   registerStyleModule(barryHarrisModule);
@@ -18,6 +25,22 @@ function registerBuiltIn(): void {
   registerStyleModule(triadPairsModule);
 }
 registerBuiltIn();
+
+export interface RegisteredStyleModuleInfo {
+  id: string;
+  displayName: string;
+}
+
+/** Ordered list of built-in modules for App API (single source of truth with registry keys). */
+export function listRegisteredStyleModuleInfos(): RegisteredStyleModuleInfo[] {
+  registerBuiltIn();
+  return Array.from(registry.keys())
+    .sort()
+    .map((id) => ({
+      id,
+      displayName: MODULE_DISPLAY_NAMES[id] ?? id,
+    }));
+}
 
 export function registerStyleModule(module: StyleModule): void {
   registry.set(module.id, module);

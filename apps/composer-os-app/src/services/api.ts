@@ -69,6 +69,13 @@ export interface OutputDirectoryResponse {
   displayPath?: string;
 }
 
+export interface AppStyleModuleDto {
+  id: string;
+  name: string;
+  enabled: boolean;
+  type?: string;
+}
+
 export interface DiagnosticsResponse {
   appName: string;
   version: string;
@@ -79,6 +86,7 @@ export interface DiagnosticsResponse {
   outputDirectoryExists: boolean;
   outputDirectoryWritable: boolean;
   backendReachable: true;
+  styleModules?: AppStyleModuleDto[];
 }
 
 export function displayOutputPath(r: OutputDirectoryResponse): string {
@@ -103,7 +111,7 @@ export const api = {
     get<{ presets: { id: string; name: string; description?: string; supported: boolean }[] }>(
       '/presets'
     ),
-  getStyleModules: () => get<{ modules: { id: string; name: string }[] }>('/style-modules'),
+  getStyleModules: () => get<{ modules: AppStyleModuleDto[] }>('/style-modules'),
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),

@@ -16,7 +16,7 @@ import { planGuitarBehaviour } from '../instrument-behaviours/guitarBehaviour';
 import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
 import { generateMotif, type MotifStyleHints } from '../motif/motifGenerator';
-import type { StyleStack } from '../style-modules/styleModuleTypes';
+import { styleStackToModuleIds, type StyleStack } from '../style-modules/styleModuleTypes';
 import { placeMotifsAcrossBars } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
@@ -120,7 +120,19 @@ function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string
   });
 }
 
-export function runGoldenPath(seed: number = 12345): GoldenPathResult {
+const DEFAULT_STYLE_STACK: StyleStack = {
+  primary: 'barry_harris',
+  secondary: 'metheny',
+  colour: 'triad_pairs',
+  weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+};
+
+export interface RunGoldenPathOptions {
+  styleStack?: StyleStack;
+  presetId?: string;
+}
+
+export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
   const context = buildGoldenPathContext(seed);
@@ -133,15 +145,12 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const rhythmConstraints = computeRhythmicConstraints(context.feel);
 
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
-  const styleStack: StyleStack = {
-    primary: 'barry_harris',
-    secondary: 'metheny',
-    colour: 'triad_pairs',
-    weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
-  };
+  const styleStack: StyleStack = options?.styleStack ?? DEFAULT_STYLE_STACK;
+  const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
+  const stackIds = styleStackToModuleIds(styleStack);
   const motifHints: MotifStyleHints = {
-    triadPairs: true,
-    metheny: true,
+    triadPairs: stackIds.includes('triad_pairs'),
+    metheny: stackIds.includes('metheny'),
   };
   const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
   const placements = placeMotifsAcrossBars(baseMotifs, seed);
@@ -235,7 +244,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const runManifest = createRunManifest({
     version: '2.0.0',
     seed,
-    presetId: 'guitar_bass_duo',
+    presetId: manifestPresetId,
     activeModules: (() => {
       if (!styleStack) return [];
       const a: string[] = [styleStack.primary];
