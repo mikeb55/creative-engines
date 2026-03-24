@@ -59,6 +59,16 @@
 - Packaging-ready structure for future Windows desktop wrapper
 - No Python or .bat dependency for user workflow
 
+## Stage 8 Windows Desktop Product
+
+- Electron desktop wrapper around Composer OS
+- Packaged executable (portable + NSIS installer)
+- Desktop shortcut and icon support
+- Single-click launch: API auto-starts, UI opens
+- Outputs: dev uses repo `outputs/`, packaged uses `%APPDATA%`
+- electron-builder for Windows distribution
+- No Python, no .bat for end user
+
 ## Retro Self-Test / Hardening Pass
 
 - Retro test suite for Foundation, Golden Path, Musical Core, First Intelligence, Style System

@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const OUTPUT_DIR = path.join(REPO_ROOT, 'outputs', 'composer-os-v2');
+const OUTPUT_DIR = process.env.COMPOSER_OS_OUTPUT_DIR ?? path.join(REPO_ROOT, 'outputs', 'composer-os-v2');
 
 app.get('/api/presets', (_req: Request, res: Response) => {
   try {
@@ -70,11 +70,11 @@ app.post('/api/open-output-folder', (_req: Request, res: Response) => {
   });
 });
 
-const distPath = path.join(REPO_ROOT, 'apps', 'composer-os-app', 'dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+const staticPath = process.env.COMPOSER_OS_STATIC_DIR ?? path.join(REPO_ROOT, 'apps', 'composer-os-app', 'dist');
+if (fs.existsSync(staticPath)) {
+  app.use(express.static(staticPath));
   app.get('*', (_req: Request, res: Response) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
 

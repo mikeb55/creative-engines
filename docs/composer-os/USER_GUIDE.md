@@ -4,7 +4,7 @@
 
 Composer OS is a unified generative composition system. It produces guitar-bass duo scores through a single pipeline: preset → feel → section roles → density → register → motif → style modules → score → integrity → export.
 
-## Running the App
+## Running the App (Web)
 
 ```bash
 cd apps/composer-os-app
@@ -13,6 +13,16 @@ npm run dev
 ```
 
 Opens UI at http://localhost:5173. Choose preset, style stack, seed; generate; view outputs and validation.
+
+## Running the Desktop App (Windows)
+
+```bash
+cd apps/composer-os-desktop
+npm install
+npm run desktop:dev
+```
+
+Or double-click the packaged executable (`Composer-OS-*-portable.exe` or installed shortcut). No manual server start; no Python or .bat.
 
 ## Running the Demo (CLI)
 
@@ -35,10 +45,9 @@ Output: `outputs/composer-os-v2/golden_path_demo.musicxml`
 - 8 bars only; no variable form
 - Single preset path (guitar-bass duo) supported in app
 - Style modules modify context; no deep orchestration yet
-- Single preset path (guitar-bass duo)
-- Style modules modify context; no deep orchestration yet
 
 ## Where Outputs Go
 
-- MusicXML: `outputs/composer-os-v2/` (from app or demo)
+- **Web / dev desktop:** `outputs/composer-os-v2/` (repo root)
+- **Packaged desktop:** `%APPDATA%/composer-os-desktop/outputs/composer-os-v2/`
 - Run manifest: `.manifest.json` alongside each `.musicxml`

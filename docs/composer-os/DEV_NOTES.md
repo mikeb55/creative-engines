@@ -24,10 +24,9 @@
 6. Interaction Layer (guitar-bass coupling, register separation, interaction modes)
 7. Output & Control (export hardening, lock system, performance pass)
 8. **Stage 7 App Productisation** (web app, preset UI, output management) — in `apps/composer-os-app/`, engine bridge in `engines/composer-os-v2/app-api/`
+9. **Stage 8 Windows Desktop Product** — in `apps/composer-os-desktop/`, Electron + electron-builder, single-click launch
 
 ## Next Planned Stage
-
-- Windows desktop wrapper (Electron or similar)
 - Form variability
 - Additional presets (ECM, Big Band)
 - Deeper motif development
