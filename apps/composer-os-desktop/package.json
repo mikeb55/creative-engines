@@ -5,15 +5,16 @@
   "main": "dist/main.js",
   "author": "Creative Engines",
   "scripts": {
-    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:ui && npm run build:electron && electron .",
-    "desktop:build": "npm run build:icon && npm run build:api && npm run build:ui && npm run build:electron",
+    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
+    "desktop:build": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "npm run desktop:build && electron-builder --win",
-    "build": "npm run build:api && npm run build:ui && npm run build:electron",
+    "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
+    "build": "npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "build:api": "node scripts/build-api-bundle.js",
     "build:icon": "node scripts/generate-icon.js",
     "build:ui": "cd ../composer-os-app && npm run build && cd ../composer-os-desktop && node scripts/copy-ui.js",
     "build:electron": "tsc -p tsconfig.json",
-    "test": "npm run build:icon && npm run build:api && npm run build:ui && npm run build:electron && vitest run",
+    "test": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources && vitest run",
     "start": "electron ."
   },
   "dependencies": {

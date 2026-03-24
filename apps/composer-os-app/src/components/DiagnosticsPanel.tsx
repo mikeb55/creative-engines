@@ -12,6 +12,9 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
   const [diag, setDiag] = useState<DiagnosticsResponse | null>(null);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [packaged, setPackaged] = useState<boolean | null>(null);
+  const [provenance, setProvenance] = useState<Awaited<
+    ReturnType<NonNullable<Window['composerOsDesktop']>['getUiProvenance']>
+  > | null>(null);
 
   const load = () => {
     fetchDiagnostics().then((d) => {
@@ -20,8 +23,10 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
     });
     if (typeof window !== 'undefined' && window.composerOsDesktop) {
       window.composerOsDesktop.getDesktopMeta().then((m) => setPackaged(m.packaged));
+      window.composerOsDesktop.getUiProvenance().then((p) => setProvenance(p));
     } else {
       setPackaged(false);
+      setProvenance(null);
     }
   };
 
@@ -66,6 +71,39 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
             <strong style={{ color: 'var(--text)' }}>Backend connected:</strong>{' '}
             {backendOk === null ? '…' : backendOk ? 'Yes' : 'No'}
           </p>
+          {provenance && (
+            <>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>Product:</strong> {provenance.productName}
+                {!provenance.verified && (
+                  <span style={{ color: 'var(--error)', marginLeft: 6 }}>(UI bundle not verified)</span>
+                )}
+              </p>
+              <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
+                <strong style={{ color: 'var(--text)' }}>Desktop app version:</strong> {provenance.desktopVersion}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>UI bundle productId:</strong>{' '}
+                {provenance.uiProductId ?? '—'}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>UI build time:</strong>{' '}
+                {provenance.uiBuildTimestamp ?? '—'}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong style={{ color: 'var(--text)' }}>UI git commit:</strong>{' '}
+                {provenance.uiGitCommit
+                  ? provenance.uiGitCommit.length > 12
+                    ? `${provenance.uiGitCommit.slice(0, 12)}…`
+                    : provenance.uiGitCommit
+                  : '—'}
+              </p>
+              <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
+                <strong style={{ color: 'var(--text)' }}>Resolved UI path (desktop):</strong>{' '}
+                {provenance.uiBundlePath || '—'}
+              </p>
+            </>
+          )}
           {diag && (
             <>
               <p style={{ margin: '0.25rem 0' }}>
@@ -75,8 +113,8 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
                 <strong style={{ color: 'var(--text)' }}>App mode:</strong> {surfaceLabel} · {modeLabel}
               </p>
               <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
-                <strong style={{ color: 'var(--text)' }}>Output folder:</strong>{' '}
-                {diag.outputDirectoryDisplay || diag.outputDirectory}
+                <strong style={{ color: 'var(--text)' }}>Active output directory:</strong>{' '}
+                {provenance?.outputDirectory || diag.outputDirectoryDisplay || diag.outputDirectory}
                 {!diag.outputDirectoryWritable && (
                   <span style={{ color: 'var(--error)', marginLeft: 6 }}>(not writable)</span>
                 )}

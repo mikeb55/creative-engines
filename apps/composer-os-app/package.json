@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "cd ../.. && npx ts-node --project tsconfig.json scripts/startComposerOsAppApi.ts",
-    "test": "vitest run"
+    "test": "npm run build && vitest run"
   },
   "dependencies": {
     "cors": "^2.8.5",

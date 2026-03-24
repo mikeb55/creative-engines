@@ -29,7 +29,7 @@ The desktop app resolves port 3001 automatically if it is busy (reuses Composer 
 
 **Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows a **Generation receipt** (file name, full paths, manifest path when present, preset, style stack, readiness scores, pass/fail) and **Open output folder** opens the active save directory in File Explorer. If startup fails, you see a clear error in the same window (no extra browser).
 
-Use the **Diagnostics** section (expandable at the top) to confirm the backend, active port, dev vs packaged mode, output folder, app version, and last generation status.
+Use the **Diagnostics** section (expandable at the top) to confirm the backend, active port, dev vs packaged mode, output folder, app version, **desktop vs UI bundle identity** (product id, UI build time, resolved UI path on desktop), and last generation status. The desktop app verifies the UI bundle stamp at startup; if an old or wrong shell is in `resources/ui`, startup stops with a clear error instead of loading the wrong product.
 
 ## Running the Demo (CLI)
 

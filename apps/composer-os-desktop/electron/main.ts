@@ -18,6 +18,11 @@ import {
   resolveUiPath,
   getWindowIconPath,
 } from './config';
+import {
+  verifyUiBundleAtPath,
+  type ComposerOsUiStamp,
+  type UiBundleVerifyFail,
+} from './uiBundleVerify';
 
 const API_READY_TIMEOUT_MS = 20000;
 const POLL_INTERVAL_MS = 200;
@@ -25,6 +30,8 @@ const POLL_INTERVAL_MS = 200;
 let mainWindow: BrowserWindow | null = null;
 let resolvedPort = 3001;
 let startupState: StartupState = 'booting';
+let cachedUiStamp: ComposerOsUiStamp | null = null;
+let cachedUiPath = '';
 
 function setStartupState(next: StartupState): void {
   startupState = next;
@@ -51,6 +58,18 @@ ipcMain.handle('composer-os:get-desktop-meta', () => ({
   packaged: app.isPackaged,
   version: app.getVersion(),
   productName: DESKTOP_PRODUCT_NAME,
+}));
+
+ipcMain.handle('composer-os:get-ui-provenance', () => ({
+  verified: cachedUiStamp !== null,
+  productName: DESKTOP_PRODUCT_NAME,
+  desktopVersion: app.getVersion(),
+  uiBundlePath: cachedUiPath,
+  uiProductId: cachedUiStamp?.productId ?? null,
+  uiBuildTimestamp: cachedUiStamp?.buildTimestamp ?? null,
+  uiGitCommit: cachedUiStamp?.gitCommit ?? null,
+  uiAppShellVersion: cachedUiStamp?.appShellVersion ?? null,
+  outputDirectory: process.env.COMPOSER_OS_OUTPUT_DIR ?? '',
 }));
 
 ipcMain.on(
@@ -153,7 +172,7 @@ function createWindowShell(): BrowserWindow {
   const preloadPath = path.join(__dirname, 'preload.js');
   const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
-    title: DESKTOP_PRODUCT_NAME,
+    title: `${DESKTOP_PRODUCT_NAME} - v${app.getVersion()} desktop`,
     width: 900,
     height: 700,
     minWidth: 600,
@@ -224,11 +243,45 @@ function loadLoadingPage(win: BrowserWindow): void {
   );
 }
 
+function loadWrongBundleUiPage(win: BrowserWindow, vr: UiBundleVerifyFail): void {
+  const safePath = escapeHtml(vr.resolvedPath);
+  const safeReason = escapeHtml(vr.reason);
+  const safePid = escapeHtml(vr.foundProductId ?? '(none)');
+  win.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(`
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><title>${DESKTOP_PRODUCT_NAME}</title>
+      <style>body{font-family:system-ui;background:#1a1a1a;color:#e4e4e7;padding:2rem;margin:0;max-width:44rem;}
+      h1{color:#f87171;font-size:1.25rem;}p{line-height:1.5;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-word;display:block;margin-top:0.75rem;}</style></head>
+      <body>
+        <h1>Wrong or stale UI bundle</h1>
+        <p>${DESKTOP_PRODUCT_NAME} refused to load the UI because the bundle identity check failed. A legacy or non–Composer OS shell may be present in <code>resources/ui</code>. Rebuild the desktop app or reinstall.</p>
+        <p><strong>Reason:</strong> ${safeReason}</p>
+        <p><strong>Resolved UI path:</strong> <code>${safePath}</code></p>
+        <p><strong>productId found:</strong> <code>${safePid}</code></p>
+      </body></html>
+    `)}`
+  );
+}
+
 async function launchApp(): Promise<void> {
   setStartupState('booting');
   mainWindow = createWindowShell();
   const win = mainWindow;
   loadLoadingPage(win);
+
+  const uiPath = resolveUiPath();
+  const vr = verifyUiBundleAtPath(uiPath);
+  if (!vr.ok) {
+    cachedUiStamp = null;
+    cachedUiPath = vr.resolvedPath;
+    setStartupState('fatal_error');
+    loadWrongBundleUiPage(win, vr);
+    win.once('ready-to-show', () => win.show());
+    return;
+  }
+  cachedUiStamp = vr.stamp;
+  cachedUiPath = vr.resolvedPath;
 
   try {
     await startApi();

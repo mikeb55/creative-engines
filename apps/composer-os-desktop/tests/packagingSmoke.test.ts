@@ -22,6 +22,10 @@ describe('Packaging smoke (desktop)', () => {
   it('API bundle and UI bundle exist after build', () => {
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'api.bundle.js'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
+    const stampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
+    expect(fs.existsSync(stampPath)).toBe(true);
+    const stamp = JSON.parse(fs.readFileSync(stampPath, 'utf-8')) as { productId: string };
+    expect(stamp.productId).toBe('composer-os');
   });
 
   it('main and preload have no python or composer-studio references', () => {

@@ -1,6 +1,6 @@
 # Composer OS Desktop
 
-Windows desktop application for **Composer OS** only: Electron loads `resources/api.bundle.js` (Composer OS API) and `resources/ui` copied from `apps/composer-os-app/dist`. It does not load other frontends or legacy stacks. One visible window; API runs in-process (no extra console window).
+Windows desktop application for **Composer OS** only: Electron loads `resources/api.bundle.js` (Composer OS API) and `resources/ui` copied from `apps/composer-os-app/dist`. Before loading the UI, the main process reads `resources/ui/composer-os-ui-stamp.json` and **refuses to start** if the bundle is not stamped `composer-os` or lists forbidden legacy tabs (Hybrid / Projects / Score). Stale or wrong UI trees are fully replaced on each `build:ui` (no merge). One visible window; API runs in-process (no extra console window).
 
 ## Run (Dev)
 

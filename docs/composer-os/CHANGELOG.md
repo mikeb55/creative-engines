@@ -1,5 +1,10 @@
 # Composer OS Changelog
 
+## Desktop UI bundle provenance
+
+- `apps/composer-os-app` Vite build writes `composer-os-ui-stamp.json` (product id, name, shell version, timestamp, git commit, allowed page list).
+- `apps/composer-os-desktop` deletes and recopies `resources/ui` on each UI build, verifies the stamp after copy, and Electron **main** refuses to load `http://127.0.0.1:…` until the on-disk stamp passes (wrong/stale bundles show a single error page with path and product id). Window title and in-app diagnostics show Composer OS identity, desktop version, and UI path.
+
 ## Desktop legacy quarantine
 
 - `apps/composer-os-desktop` loads only `composer-os-app` UI (`copy-ui.js` → `resources/ui`) and the bundled Composer OS API. Electron `main.ts` uses one `BrowserWindow`, `setWindowOpenHandler` deny, navigation guard to non-localhost HTTP(S), `app.setName('Composer OS')`. No script runtimes or legacy app paths in Electron sources (enforced by `desktopQuarantine.test.ts`). Web shell is only Generate / Presets / Style Stack / Outputs plus Diagnostics panel — no Hybrid / Projects / Score tabs.

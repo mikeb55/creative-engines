@@ -51,4 +51,8 @@ describe('Desktop quarantine (Composer OS only)', () => {
     expect(mainSrc).toContain('setWindowOpenHandler');
     expect(mainSrc).toContain("'deny'");
   });
+
+  it('no browser auto-open helper strings in electron sources', () => {
+    expect(combined).not.toMatch(/Opening browser/i);
+  });
 });
