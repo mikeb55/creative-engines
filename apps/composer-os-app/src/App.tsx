@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { StyleStack } from './pages/StyleStack';
@@ -43,17 +43,21 @@ export default function App() {
     }
   }, [embeddedStamp]);
 
-  const onResult = (payload: {
-    record: Record<string, unknown>;
-    summary: { status: 'success' | 'failed'; shareable?: boolean; at?: string };
-  }) => {
-    setRefreshOutputs((n) => n + 1);
-    setLastGeneration({
-      status: payload.summary.status === 'success' ? 'success' : 'failed',
-      shareable: payload.summary.shareable,
-      at: payload.summary.at,
-    });
-  };
+  const onResult = useCallback(
+    (payload: {
+      record: Record<string, unknown>;
+      summary: { status: 'success' | 'failed'; shareable?: boolean; at?: string };
+    }) => {
+      setRefreshOutputs((n) => n + 1);
+      window.dispatchEvent(new CustomEvent('composer-os:outputs-changed'));
+      setLastGeneration({
+        status: payload.summary.status === 'success' ? 'success' : 'failed',
+        shareable: payload.summary.shareable,
+        at: payload.summary.at,
+      });
+    },
+    []
+  );
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>

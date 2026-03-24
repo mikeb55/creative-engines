@@ -63,8 +63,8 @@ function generateComposition(req, outputDir) {
     let filepath;
     if (result.xml) {
         const ts = new Date().toISOString();
-        const tsSafe = ts.replace(/[:.]/g, '-').slice(0, 19);
-        filename = `composer_os_${req.presetId}_${tsSafe}.musicxml`;
+        const tsSafe = ts.replace(/[:.]/g, '-');
+        filename = `composer_os_${req.presetId}_${tsSafe}_${req.seed}.musicxml`;
         fs.mkdirSync(outputDir, { recursive: true });
         filepath = path.join(outputDir, filename);
         fs.writeFileSync(filepath, result.xml, 'utf-8');

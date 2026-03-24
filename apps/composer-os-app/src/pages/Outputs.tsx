@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api, displayOutputPath } from '../services/api';
 
 type OutputRow = {
@@ -28,7 +28,7 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
     presetFolders?: Record<string, string>;
   } | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     api
       .getOutputs()
@@ -36,11 +36,17 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
       .catch(() => setOutputs([]))
       .finally(() => setLoading(false));
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, load]);
+
+  useEffect(() => {
+    const onChanged = () => load();
+    window.addEventListener('composer-os:outputs-changed', onChanged);
+    return () => window.removeEventListener('composer-os:outputs-changed', onChanged);
+  }, [load]);
 
   const openLibraryFolder = async () => {
     setFolderError(null);

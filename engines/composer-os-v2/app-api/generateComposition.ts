@@ -61,8 +61,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   if (result.xml) {
     const ts = new Date().toISOString();
-    const tsSafe = ts.replace(/[:.]/g, '-').slice(0, 19);
-    filename = `composer_os_${req.presetId}_${tsSafe}.musicxml`;
+    /** Full precision + seed avoids same-second overwrites (e.g. Try Another back-to-back). */
+    const tsSafe = ts.replace(/[:.]/g, '-');
+    filename = `composer_os_${req.presetId}_${tsSafe}_${req.seed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');

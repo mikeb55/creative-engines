@@ -158,6 +158,32 @@ export function runAppApiTests(): TestResult[] {
   }
 
   try {
+    fs.mkdirSync(TEST_GBD_DIR, { recursive: true });
+    const a = generateComposition(
+      {
+        presetId: 'guitar_bass_duo',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 111_111_111,
+      },
+      TEST_GBD_DIR
+    );
+    const b = generateComposition(
+      {
+        presetId: 'guitar_bass_duo',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 222_222_222,
+      },
+      TEST_GBD_DIR
+    );
+    if (!a.filepath || !b.filepath) fail('Try Another filenames: paths present');
+    else if (a.filepath === b.filepath) fail('Try Another filenames: different seed → different file');
+    else if (!b.filename?.includes('222222222')) fail('Try Another filenames: seed in filename');
+    else pass('Try Another filenames: distinct paths per seed');
+  } catch (e) {
+    fail(`Try Another filenames: ${e}`);
+  }
+
+  try {
     const msg = friendlyGenerateError(new Error('EACCES: permission denied'));
     if (msg.length < 10 || !msg.toLowerCase().includes('folder')) fail('Friendly error: message');
     else pass('Friendly error messages');

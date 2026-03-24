@@ -8,7 +8,7 @@
 
 - **Packaged folder actions:** `openFolderMain` loads **`resources/open-folder-helpers.cjs`** (esbuild bundle of `composerOsOutputPaths` + `ensureFolderForOpen`), not loose `engines/...` paths — fixes `Cannot find module ... composerOsOutputPaths.js` in the portable exe. `config.resolveOpenFolderHelpersBundlePath()` mirrors other bundled assets (`process.resourcesPath` + dev fallbacks).
 - **Score titles:** Guitar–Bass Duo default work title is **Guitar-Bass Duo Study** (not “Golden Path Duo”). Optional **`title`** on generate requests flows through `runGoldenPath` → score model → MusicXML `<work-title>` → run manifest and disk manifest.
-- **Try Another:** Runs a **new generation immediately** with a fresh hidden seed (no dead button).
+- **Try Another:** Runs a **full generation** immediately with a fresh hidden seed (same pipeline as **Generate**). Output filenames include timestamp and **seed** so rapid back-to-back runs never overwrite the previous file. After success, the **Generation receipt** and **Outputs** list update (custom `composer-os:outputs-changed` event + existing refresh trigger).
 
 ## Correctness gates (desktop, MusicXML, bass identity)
 

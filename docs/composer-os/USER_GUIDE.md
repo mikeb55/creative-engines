@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Opens UI at http://localhost:5173. Choose preset, optional **Score title** (or leave blank for the preset default, e.g. **Guitar-Bass Duo Study**), **style stack** modules, **Style Blend** (Strong/Medium/Light for the primary line; optional secondary and colour blends when those slots are filled — no raw numeric weights). **Generate** runs once; **Try Another** picks a new variation and **generates immediately**. View outputs and validation. The **Style stack** tab mirrors the same ideas; if modules fail to load, you see an explicit message instead of empty dropdowns.
+Opens UI at http://localhost:5173. Choose preset, optional **Score title** (or leave blank for the preset default, e.g. **Guitar-Bass Duo Study**), **style stack** modules, **Style Blend** (Strong/Medium/Light for the primary line; optional secondary and colour blends when those slots are filled — no raw numeric weights). **Generate** runs once; **Try Another** picks a new hidden variation, runs the **same** generation pipeline immediately, writes a **new** MusicXML file, and updates the on-screen receipt and **Outputs** list when generation succeeds. Failures show an in-app error. The **Style stack** tab mirrors the same ideas; if modules fail to load, you see an explicit message instead of empty dropdowns.
 
 ## Running the Desktop App (Windows)
 

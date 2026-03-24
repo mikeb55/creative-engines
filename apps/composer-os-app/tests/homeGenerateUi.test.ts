@@ -21,6 +21,13 @@ describe('HomeGenerate musical UI', () => {
     expect(src).toMatch(/>[\s\n]*Try Another[\s\n]*</);
   });
 
+  it('Try Another rolls seed and calls generate with override (same pipeline as Generate)', () => {
+    expect(src).toContain('setVariationSeed(next)');
+    expect(src).toContain('void generate(next)');
+    expect(src).toMatch(/async \(seedOverride\?: number\)/);
+    expect(src).toMatch(/seedOverride \?\? variationSeed/);
+  });
+
   it('has optional score title field', () => {
     expect(src).toContain('Score title (optional)');
     expect(src).toMatch(/title:\s*scoreTitle\.trim/);

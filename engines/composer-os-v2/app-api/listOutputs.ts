@@ -34,7 +34,7 @@ export function listOutputs(composerRoot: string): OutputEntry[] {
     }
   }
 
-  entries.sort((a, b) => (b.timestamp > a.timestamp ? 1 : -1));
+  entries.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
   return entries;
 }
 

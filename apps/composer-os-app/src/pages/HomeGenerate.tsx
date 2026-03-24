@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useStyleModules, STYLE_MODULES_UNAVAILABLE_MSG } from '../hooks/useStyleModules';
 import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';
@@ -88,51 +88,66 @@ export function HomeGenerate({
     }
   }, [modules, styleStack.primary]);
 
-  const generate = async (seedOverride?: number) => {
-    if (modulesError || modules.length === 0) {
-      setError(STYLE_MODULES_UNAVAILABLE_MSG);
-      return;
-    }
-    const seed = seedOverride ?? variationSeed;
-    setLoading(true);
-    setError(null);
-    notifyGenPhase('running');
-    try {
-      const r = (await api.generate({
-        presetId,
-        styleStack: {
-          primary: styleStack.primary,
-          secondary: styleStack.secondary || undefined,
-          colour: styleStack.colour || undefined,
-          styleBlend,
-        },
-        seed,
-        locks,
-        title: scoreTitle.trim() || undefined,
-      })) as GenResult;
-      setResult(r);
-      const ok = !!r.success;
-      notifyGenPhase(ok ? 'succeeded' : 'failed');
-      const shareable = r.validation?.readiness?.shareable;
-      const at = new Date().toISOString();
-      onResult({
-        record: r as Record<string, unknown>,
-        summary: { status: ok ? 'success' : 'failed', shareable, at },
-      });
-      api.getOutputDirectory().then((o) => setOutputDir(o)).catch(() => {});
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
-      setResult(null);
-      notifyGenPhase('failed');
-      onResult({
-        record: {},
-        summary: { status: 'failed', at: new Date().toISOString() },
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const generate = useCallback(
+    async (seedOverride?: number) => {
+      if (modulesError || modules.length === 0) {
+        setError(STYLE_MODULES_UNAVAILABLE_MSG);
+        return;
+      }
+      const seed = seedOverride ?? variationSeed;
+      setLoading(true);
+      setError(null);
+      notifyGenPhase('running');
+      try {
+        const r = (await api.generate({
+          presetId,
+          styleStack: {
+            primary: styleStack.primary,
+            secondary: styleStack.secondary || undefined,
+            colour: styleStack.colour || undefined,
+            styleBlend,
+          },
+          seed,
+          locks,
+          title: scoreTitle.trim() || undefined,
+        })) as GenResult;
+        setResult(r);
+        const ok = !!r.success;
+        notifyGenPhase(ok ? 'succeeded' : 'failed');
+        const shareable = r.validation?.readiness?.shareable;
+        const at = new Date().toISOString();
+        onResult({
+          record: r as Record<string, unknown>,
+          summary: { status: ok ? 'success' : 'failed', shareable, at },
+        });
+        api.getOutputDirectory().then((o) => setOutputDir(o)).catch(() => {});
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(msg);
+        setResult(null);
+        notifyGenPhase('failed');
+        onResult({
+          record: {},
+          summary: { status: 'failed', at: new Date().toISOString() },
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      variationSeed,
+      presetId,
+      styleStack.primary,
+      styleStack.secondary,
+      styleStack.colour,
+      styleBlend,
+      locks,
+      scoreTitle,
+      modulesError,
+      modules.length,
+      onResult,
+    ]
+  );
 
   function dirnameOnly(fp: string): string {
     const p = fp.replace(/[/\\]+$/, '');
@@ -331,17 +346,17 @@ export function HomeGenerate({
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => generate()} disabled={loading || !!modulesError || modules.length === 0}>
+        <button onClick={() => void generate()} disabled={loading || !!modulesError || modules.length === 0}>
           {loading ? 'Generating…' : 'Generate'}
         </button>
         <button
           className="secondary"
           type="button"
           disabled={loading || !!modulesError || modules.length === 0}
-          onClick={async () => {
+          onClick={() => {
             const next = Math.floor(Math.random() * 1e9);
             setVariationSeed(next);
-            await generate(next);
+            void generate(next);
           }}
         >
           Try Another

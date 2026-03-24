@@ -66,7 +66,7 @@ function listOutputs(composerRoot) {
             pushEntry(path.join(composerRoot, d.name), '', entries);
         }
     }
-    entries.sort((a, b) => (b.timestamp > a.timestamp ? 1 : -1));
+    entries.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
     return entries;
 }
 function collectMusicXmlInDir(dir, folderLabel, entries) {

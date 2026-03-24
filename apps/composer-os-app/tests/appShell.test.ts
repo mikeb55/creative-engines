@@ -6,6 +6,7 @@ import * as path from 'path';
 
 describe('Composer OS app shell', () => {
   const appTs = fs.readFileSync(path.join(__dirname, '../src/App.tsx'), 'utf-8');
+  const outputsTs = fs.readFileSync(path.join(__dirname, '../src/pages/Outputs.tsx'), 'utf-8');
 
   it('nav is only Generate, Presets, Style Stack, Outputs', () => {
     expect(appTs).toMatch(/Generate/);
@@ -20,5 +21,11 @@ describe('Composer OS app shell', () => {
   it('title branding is Composer OS', () => {
     expect(appTs).toContain('Composer OS');
     expect(appTs).not.toMatch(/Composer Studio/i);
+  });
+
+  it('signals outputs refresh after generation so Outputs list can reload', () => {
+    expect(appTs).toContain('composer-os:outputs-changed');
+    expect(outputsTs).toContain('composer-os:outputs-changed');
+    expect(outputsTs).toContain('addEventListener');
   });
 });
