@@ -15,6 +15,7 @@ describe('style modules API wire', () => {
         { id: 'barry_harris', name: 'Barry Harris', enabled: true, type: 'any' },
         { id: 'metheny', name: 'Metheny', enabled: true, type: 'any' },
         { id: 'triad_pairs', name: 'Triad Pairs', enabled: true, type: 'any' },
+        { id: 'bacharach', name: 'Bacharach', enabled: true, type: 'any' },
       ],
     };
     global.fetch = vi.fn(() =>
@@ -25,7 +26,7 @@ describe('style modules API wire', () => {
       } as Response)
     );
     const r = await api.getStyleModules();
-    expect(r.modules.length).toBe(3);
-    expect(r.modules.map((m) => m.id).sort().join(',')).toBe('barry_harris,metheny,triad_pairs');
+    expect(r.modules.length).toBe(4);
+    expect(r.modules.map((m) => m.id).sort().join(',')).toBe('bacharach,barry_harris,metheny,triad_pairs');
   });
 });

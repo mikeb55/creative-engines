@@ -15,10 +15,12 @@ import { validateMotifIntegrity } from '../motif/motifValidation';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../style-modules/metheny/moduleValidation';
 import { validateTriadPairConformance } from '../style-modules/triad-pairs/moduleValidation';
+import { validateBacharachConformance } from '../style-modules/bacharach/moduleValidation';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { normalizeStyleWeights } from '../style-modules/styleModuleTypes';
 import type { InteractionPlan } from '../interaction/interactionTypes';
 import { validateInteractionIntegrity, validateRegisterSeparation } from '../interaction/interactionValidation';
+import { validateDuoMusicalQuality } from './duoMusicalQuality';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -65,6 +67,8 @@ export interface BehaviourGatesResult {
   styleBlendValid: boolean;
   triadPairValid: boolean;
   methenyValid: boolean;
+  bacharachValid: boolean;
+  duoMusicalValid: boolean;
   interactionValid: boolean;
   registerSeparationValid: boolean;
   allValid: boolean;
@@ -141,6 +145,17 @@ export function runBehaviourGates(
     if (!metheny.valid) errors.push(...metheny.errors);
   }
 
+  let bacharachValid = true;
+  if (styleModules.includes('bacharach')) {
+    const bach = validateBacharachConformance(score);
+    bacharachValid = bach.valid;
+    if (!bach.valid) errors.push(...bach.errors);
+  }
+
+  const duoMusical = validateDuoMusicalQuality(score, { styleStack });
+  if (!duoMusical.valid) errors.push(...duoMusical.errors);
+  const duoMusicalValid = duoMusical.valid;
+
   let interactionValid = true;
   let registerSeparationValid = true;
   if (opts?.interactionPlan) {
@@ -162,6 +177,8 @@ export function runBehaviourGates(
     styleBlendValid,
     triadPairValid,
     methenyValid,
+    bacharachValid,
+    duoMusicalValid,
     interactionValid,
     registerSeparationValid,
     allValid: errors.length === 0,

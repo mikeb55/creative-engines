@@ -5,7 +5,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 
-export type StyleModuleId = 'barry_harris' | 'metheny' | 'triad_pairs' | string;
+export type StyleModuleId = 'barry_harris' | 'metheny' | 'triad_pairs' | 'bacharach' | string;
 
 export interface StyleModule {
   id: StyleModuleId;

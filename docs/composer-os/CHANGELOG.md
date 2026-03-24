@@ -1,5 +1,11 @@
 # Composer OS Changelog
 
+## Guitar–Bass Duo musical pass + Bacharach module
+
+- **Guitar–Bass Duo** golden-path output is more musical: guide-tone–oriented bass lines (with staggered entries and quarter-safe rhythms), improved guitar phrasing (rests, dyad-style bars, stagger), A/B interaction via conversational downbeats, motif merge uses quarter-beat quantization for stable MusicXML bar math.
+- **Bacharach** is a registered Composer OS style module (`bacharach`) with `moduleApply` / `moduleValidation`; it appears in the style-module list and Style Blend like other modules. Behaviour gates include **Bacharach conformance** when Bacharach is in the stack and **duo musical quality** checks (bass variety, guitar rest/onset spread, simultaneous downbeats).
+- **Tests:** Stale `tests/styleModule.test.js` was removed so `ts-node` runs the TypeScript tests (avoids shadowing `styleModule.test.ts`).
+
 ## Output manifests (`_meta`)
 
 - **Disk manifests** (`.manifest.json`) are stored under each preset folder’s **`_meta`** subfolder so user-facing folders (e.g. **Guitar-Bass Duos**) contain **only `.musicxml`**. Listing still reads metadata from `_meta` or from the legacy **next-to-MusicXML** path. **Open folder** unwraps `_meta` so Explorer opens the composition folder. On Windows, `_meta` is marked **hidden** (`attrib +h`) when creation succeeds.

@@ -3,7 +3,7 @@
 **Composer OS** is a unified generative composition system — not a collection of isolated engines. It provides a single, disciplined pipeline through which all musical output flows, with validation gates and readiness scoring before any export is marked shareable.
 
 **Docs:** [USER_GUIDE](../../docs/composer-os/USER_GUIDE.md) | [CHANGELOG](../../docs/composer-os/CHANGELOG.md) | [DEV_NOTES](../../docs/composer-os/DEV_NOTES.md)  
-**Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md)
+**Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md) | [Bacharach](core/style-modules/bacharach/README.md)
 
 ---
 

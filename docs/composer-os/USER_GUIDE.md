@@ -46,8 +46,8 @@ Output: `outputs/composer-os-v2/golden_path_demo.musicxml`
 ## Current Capabilities
 
 - 8-bar guitar-bass duo (Clean Electric Guitar + **Double Bass** in MusicXML — GM acoustic bass, not a generic vocal “bass”)
-- Motif-driven melody with recurrence across A/B
-- Style stack: Barry Harris (primary), Metheny (secondary), Triad Pairs (colour)
+- Motif-driven melody with recurrence across A/B; upgraded phrasing, bass guide-tone behaviour, and conversational interaction in the live duo preset
+- Style stack: **Barry Harris**, **Metheny**, **Triad Pairs**, and **Bacharach** — pick any as primary / secondary / colour (Style Blend maps to engine weights as before)
 - Chord symbols, rehearsal marks, MusicXML export
 - All integrity and readiness gates
 

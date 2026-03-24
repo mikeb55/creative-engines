@@ -42,10 +42,12 @@ export function runAppApiTests(): TestResult[] {
 
   try {
     const modules = getStyleModules();
-    if (modules.length < 3) fail('Style module loading: three modules from registry');
+    if (modules.length < 4) fail('Style module loading: four modules from registry');
     else if (!modules.every((m) => m.enabled)) fail('Style module loading: enabled');
-    else if (!['barry_harris', 'metheny', 'triad_pairs'].every((id) => modules.some((m) => m.id === id)))
-      fail('Style module loading: barry_harris, metheny, triad_pairs');
+    else if (
+      !['barry_harris', 'metheny', 'triad_pairs', 'bacharach'].every((id) => modules.some((m) => m.id === id))
+    )
+      fail('Style module loading: barry_harris, metheny, triad_pairs, bacharach');
     else pass('Style module loading');
   } catch (e) {
     fail(`Style module loading: ${e}`);

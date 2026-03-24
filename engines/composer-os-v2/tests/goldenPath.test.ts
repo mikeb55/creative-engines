@@ -110,6 +110,13 @@ function testCustomScoreTitleFlowsToXml(): boolean {
   );
 }
 
+function testBacharachPrimaryStackPasses(): boolean {
+  const r = runGoldenPath(555, {
+    styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+  });
+  return r.success && r.plans?.styleStack?.primary === 'bacharach' && r.behaviourGatesPassed;
+}
+
 export function runGoldenPathTests(): { name: string; ok: boolean }[] {
   return [
     ['Golden path returns valid score', testGoldenPathReturnsValidScore],
@@ -126,5 +133,6 @@ export function runGoldenPathTests(): { name: string; ok: boolean }[] {
     ['Style stack present (BH/Metheny/Triad Pairs)', testStyleStackPresent],
     ['Default score title is preset default (not Golden Path Duo)', testDefaultScoreTitleNotGoldenPathDemo],
     ['Custom score title flows to manifest and MusicXML', testCustomScoreTitleFlowsToXml],
+    ['Bacharach primary stack passes gates', testBacharachPrimaryStackPasses],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

@@ -8,10 +8,10 @@
 - **Register Map**: Per-section pitch zones
 - **Density**: Sparse / medium / dense
 - **Motif**: Generator, tracker, validation
-- **Style Modules**: Barry Harris, Metheny, Triad Pairs
+- **Style Modules**: Barry Harris, Metheny, Triad Pairs, Bacharach (`core/style-modules/bacharach/`)
 - **Instrument Behaviours**: Guitar, bass planners
 - **Score Integrity**: Bar math, register, chords, rehearsal; **strict bar math** (`strictBarMath.ts`) per voice before export; **post-export** `validateExportedMusicXmlBarMath` for MusicXML round-trip bar fills
-- **Behaviour Gates**: Rhythm, texture, motif, style conformance
+- **Behaviour Gates**: Rhythm, texture, motif, style conformance; duo **musical quality** (`duoMusicalQuality.ts`); Bacharach module validation when selected
 - **Export**: MusicXML only
 
 ## Implemented Stages

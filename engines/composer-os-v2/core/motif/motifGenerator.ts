@@ -15,6 +15,7 @@ function seededRandom(seed: number): () => number {
 export interface MotifStyleHints {
   triadPairs?: boolean;
   metheny?: boolean;
+  bacharach?: boolean;
 }
 
 /** Generate 1–2 base motifs. Triad pairs → 3rd/4th intervals. Metheny → longer durations, fewer attacks. */
@@ -36,7 +37,7 @@ export function generateMotif(
   const m1: MotifNote[] = [];
   const count1 = useMetheny ? 3 : Math.min(4, 3 + Math.floor(rnd() * 2));
   let pitch = registerLow + Math.floor(rnd() * 8);
-  const dur1 = useMetheny ? 4 / count1 : 4 / count1;
+  const dur1 = 4 / count1;
   for (let i = 0; i < count1; i++) {
     const step = steps1[i % steps1.length];
     pitch = Math.max(registerLow, Math.min(registerHigh, pitch + step));

@@ -16,6 +16,7 @@ const uprightBassBehaviour_1 = require("../instrument-behaviours/uprightBassBeha
 const rhythmEngine_1 = require("../rhythm-engine/rhythmEngine");
 const motifGenerator_1 = require("../motif/motifGenerator");
 const styleModuleTypes_1 = require("../style-modules/styleModuleTypes");
+const styleModuleRegistry_1 = require("../style-modules/styleModuleRegistry");
 const motifTracker_1 = require("../motif/motifTracker");
 const scoreIntegrityGate_1 = require("../score-integrity/scoreIntegrityGate");
 const behaviourGates_1 = require("../score-integrity/behaviourGates");
@@ -127,6 +128,7 @@ function runGoldenPath(seed = 12345, options) {
     const motifHints = {
         triadPairs: stackIds.includes('triad_pairs'),
         metheny: stackIds.includes('metheny'),
+        bacharach: stackIds.includes('bacharach'),
     };
     const baseMotifs = (0, motifGenerator_1.generateMotif)(seed, guitarReg, guitarReg + 20, motifHints);
     const placements = (0, motifTracker_1.placeMotifsAcrossBars)(baseMotifs, seed);
@@ -145,7 +147,8 @@ function runGoldenPath(seed = 12345, options) {
         interactionPlan,
         scoreTitle,
     };
-    const score = (0, generateGoldenPathDuoScore_1.generateGoldenPathDuoScore)(context, plans);
+    const appliedContext = styleStack ? (0, styleModuleRegistry_1.applyStyleStack)(context, styleStack) : context;
+    const score = (0, generateGoldenPathDuoScore_1.generateGoldenPathDuoScore)(appliedContext, plans);
     const modelValidation = (0, scoreModelValidation_1.validateScoreModel)(score);
     if (!modelValidation.valid)
         errors.push(...modelValidation.errors);

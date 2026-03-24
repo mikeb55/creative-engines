@@ -8,6 +8,7 @@ import { styleStackToModuleIds } from './styleModuleTypes';
 import { barryHarrisModule } from './barry-harris/moduleApply';
 import { methenyModule } from './metheny/moduleApply';
 import { triadPairsModule } from './triad-pairs/moduleApply';
+import { bacharachModule } from './bacharach/moduleApply';
 
 const registry = new Map<string, StyleModule>();
 
@@ -16,6 +17,7 @@ const MODULE_DISPLAY_NAMES: Record<string, string> = {
   barry_harris: 'Barry Harris',
   metheny: 'Metheny',
   triad_pairs: 'Triad Pairs',
+  bacharach: 'Bacharach',
 };
 
 function registerBuiltIn(): void {
@@ -23,6 +25,7 @@ function registerBuiltIn(): void {
   registerStyleModule(barryHarrisModule);
   registerStyleModule(methenyModule);
   registerStyleModule(triadPairsModule);
+  registerStyleModule(bacharachModule);
 }
 registerBuiltIn();
 

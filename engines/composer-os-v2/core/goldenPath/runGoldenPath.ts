@@ -17,6 +17,7 @@ import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
 import { generateMotif, type MotifStyleHints } from '../motif/motifGenerator';
 import { styleStackToModuleIds, type StyleStack } from '../style-modules/styleModuleTypes';
+import { applyStyleStack } from '../style-modules/styleModuleRegistry';
 import { placeMotifsAcrossBars } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
@@ -164,6 +165,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   const motifHints: MotifStyleHints = {
     triadPairs: stackIds.includes('triad_pairs'),
     metheny: stackIds.includes('metheny'),
+    bacharach: stackIds.includes('bacharach'),
   };
   const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
   const placements = placeMotifsAcrossBars(baseMotifs, seed);
@@ -185,7 +187,8 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     scoreTitle,
   };
 
-  const score = generateGoldenPathDuoScore(context, plans);
+  const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
+  const score = generateGoldenPathDuoScore(appliedContext, plans);
 
   const modelValidation = validateScoreModel(score);
   if (!modelValidation.valid) errors.push(...modelValidation.errors);

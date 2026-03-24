@@ -11,6 +11,7 @@ import {
 import { validateBarryHarrisConformance } from '../core/style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../core/style-modules/metheny/moduleValidation';
 import { validateTriadPairConformance } from '../core/style-modules/triad-pairs/moduleValidation';
+import { validateBacharachConformance } from '../core/style-modules/bacharach/moduleValidation';
 import { normalizeStyleWeights } from '../core/style-modules/styleModuleTypes';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { createMeasure, createNote, addEvent, createScore } from '../core/score-model/scoreEventBuilder';
@@ -20,15 +21,21 @@ function testBarryHarrisModuleRegistered(): boolean {
   return mod !== undefined && mod.id === 'barry_harris';
 }
 
-function testRegistryListsBarryMethenyTriad(): boolean {
+function testRegistryListsBarryMethenyTriadBacharach(): boolean {
   const list = listRegisteredStyleModuleInfos();
   const ids = list.map((m) => m.id);
   return (
-    list.length >= 3 &&
+    list.length >= 4 &&
     ids.includes('barry_harris') &&
     ids.includes('metheny') &&
-    ids.includes('triad_pairs')
+    ids.includes('triad_pairs') &&
+    ids.includes('bacharach')
   );
+}
+
+function testBacharachModuleRegistered(): boolean {
+  const mod = getStyleModule('bacharach');
+  return mod !== undefined && mod.id === 'bacharach';
 }
 
 function testRunManifestReflectsRequestedPrimary(): boolean {
@@ -156,6 +163,23 @@ function testMethenyValidation(): boolean {
   return r.valid;
 }
 
+function testBacharachValidation(): boolean {
+  const m1 = createMeasure(1, 'Dm7');
+  addEvent(m1, createNote(62, 0.5, 1));
+  addEvent(m1, createNote(65, 1.5, 1));
+  addEvent(m1, createNote(67, 2.5, 1.5));
+  const score = createScore('B', [{
+    id: 'guitar',
+    name: 'G',
+    instrumentIdentity: 'clean_electric_guitar',
+    midiProgram: 27,
+    clef: 'treble',
+    measures: [m1],
+  }]);
+  const r = validateBacharachConformance(score);
+  return r.valid;
+}
+
 function testTriadPairValidation(): boolean {
   const m = createMeasure(1, 'Dm7');
   addEvent(m, createNote(62, 0.5, 1));
@@ -176,13 +200,15 @@ function testTriadPairValidation(): boolean {
 export function runStyleModuleTests(): { name: string; ok: boolean }[] {
   return [
     ['Barry Harris registered', testBarryHarrisModuleRegistered],
-    ['Registry lists Barry, Metheny, Triad Pairs', testRegistryListsBarryMethenyTriad],
+    ['Registry lists Barry, Metheny, Triad Pairs, Bacharach', testRegistryListsBarryMethenyTriadBacharach],
+    ['Bacharach registered', testBacharachModuleRegistered],
     ['Run manifest reflects requested primary', testRunManifestReflectsRequestedPrimary],
     ['Apply style module', testApplyStyleModule],
     ['Barry Harris validation passes', testBarryHarrisValidationPasses],
     ['Style stack normalization', testStyleStackNormalization],
     ['Apply style stack', testApplyStyleStack],
     ['Metheny validation', testMethenyValidation],
+    ['Bacharach validation', testBacharachValidation],
     ['Triad pair validation', testTriadPairValidation],
     ['Golden path uses style stack', testGoldenPathStyleStackAffectsOutput],
     ['Run manifest has active modules', testRunManifestHasActiveModules],
