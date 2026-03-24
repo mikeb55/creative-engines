@@ -6,6 +6,24 @@
 import type { MusicXmlExportResult } from './exportTypes';
 import type { ScoreModel, PartModel, MeasureModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
+import {
+  GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
+  GUITAR_BASS_DUO_BASS_PART_NAME,
+} from '../instrument-profiles/guitarBassDuoExportNames';
+
+function partDisplayNameForExport(p: PartModel): string {
+  if (p.instrumentIdentity === 'acoustic_upright_bass') {
+    return GUITAR_BASS_DUO_BASS_PART_NAME;
+  }
+  return p.name;
+}
+
+function instrumentSoundXmlForPart(p: PartModel): string {
+  if (p.instrumentIdentity === 'acoustic_upright_bass') {
+    return `<instrument-sound>${GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
+  }
+  return '';
+}
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -86,9 +104,11 @@ export function exportScoreModelToMusicXml(score: ScoreModel): MusicXmlExportRes
     const partList = score.parts
       .map((p) => {
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
+        const display = partDisplayNameForExport(p);
+        const soundEl = instrumentSoundXmlForPart(p);
         return `    <score-part id="${p.id}">
-      <part-name>${escapeXml(p.name)}</part-name>
-      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(p.name)}</instrument-name></score-instrument>
+      <part-name>${escapeXml(display)}</part-name>
+      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
       <midi-instrument id="${p.id}-I1">
         <midi-program>${mxProg}</midi-program>
       </midi-instrument>

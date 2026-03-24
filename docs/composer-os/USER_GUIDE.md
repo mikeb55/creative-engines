@@ -29,7 +29,7 @@ The desktop app resolves port 3001 automatically if it is busy (reuses Composer 
 
 **Recommended on Windows:** From the repo, run `npm run desktop:self-test-install` (or `desktop:clean-install`) in `apps/composer-os-desktop` after `npm install`. That runs **electron-builder** to produce a real `release/Composer-OS-Desktop-*-portable.exe`, runs `verify:packaged-exe`, verifies the UI stamp, quarantines legacy **Composer Studio** / stale shortcuts, creates or refreshes **Composer OS Desktop.lnk** pointing at that exe, and **launches the packaged app once**. The packaged app uses **IPC** for presets, generation, outputs, and diagnostics—not a localhost browser session.
 
-**Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows a **Generation receipt** (file name, full paths, manifest path when present, preset, style stack, readiness scores, pass/fail) and **Open output folder** opens the active save directory in File Explorer. If startup fails, you see a clear error in the same window (no extra browser).
+**Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows a **Generation receipt** (file name, full paths, manifest path when present, preset, style stack, validation gates including bar math and export round-trip, readiness scores, pass/fail). **Open library folder** and **Open this file’s folder** use the same library-root rules; failures show an in-app message. If startup fails, you see a clear error in the same window (no extra browser).
 
 Use the **Diagnostics** section (expandable at the top) to confirm the backend, active port, dev vs packaged mode, output folder, app version, **desktop vs UI bundle identity** (product id, UI build time, resolved UI path on desktop), and last generation status. The desktop app verifies the UI bundle stamp at startup; if an old or wrong shell is in `resources/ui`, startup stops with a clear error instead of loading the wrong product.
 
@@ -43,7 +43,7 @@ Output: `outputs/composer-os-v2/golden_path_demo.musicxml`
 
 ## Current Capabilities
 
-- 8-bar guitar-bass duo (Clean Electric Guitar + Acoustic Upright Bass)
+- 8-bar guitar-bass duo (Clean Electric Guitar + **Double Bass** in MusicXML — GM acoustic bass, not a generic vocal “bass”)
 - Motif-driven melody with recurrence across A/B
 - Style stack: Barry Harris (primary), Metheny (secondary), Triad Pairs (colour)
 - Chord symbols, rehearsal marks, MusicXML export

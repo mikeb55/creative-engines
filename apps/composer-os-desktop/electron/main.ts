@@ -20,6 +20,7 @@ import {
   type ComposerOsUiStamp,
   type UiBundleVerifyFail,
 } from './uiBundleVerify';
+import { registerOpenOutputFolderIpc } from './openFolderMain';
 
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';
@@ -93,6 +94,7 @@ function registerDesktopIpc(outputDir: string): void {
     registerComposerOsIpc: (im: typeof ipcMain, dir: string) => void;
   };
   registerComposerOsIpc(ipcMain, outputDir);
+  registerOpenOutputFolderIpc(ipcMain, outputDir);
 }
 
 function createWindowShell(): BrowserWindow {

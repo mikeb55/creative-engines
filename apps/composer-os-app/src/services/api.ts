@@ -135,6 +135,7 @@ export function displayOutputPath(r: OutputDirectoryResponse): string {
 
 export interface OpenOutputFolderResponse {
   success: boolean;
+  openedPath?: string;
   message?: string;
 }
 

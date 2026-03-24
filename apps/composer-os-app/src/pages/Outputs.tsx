@@ -21,6 +21,7 @@ function dirnameOnly(fp: string): string {
 export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
   const [outputs, setOutputs] = useState<OutputRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [folderError, setFolderError] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<{
     path: string;
     displayPath?: string;
@@ -41,12 +42,24 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
     load();
   }, [refreshTrigger]);
 
-  const openLibraryFolder = () => {
-    api.openOutputFolder().catch(() => {});
+  const openLibraryFolder = async () => {
+    setFolderError(null);
+    try {
+      const r = await api.openOutputFolder();
+      if (!r.success && r.message) setFolderError(r.message);
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    }
   };
 
-  const openFileFolder = (filepath: string) => {
-    api.openOutputFolder({ path: dirnameOnly(filepath) }).catch(() => {});
+  const openFileFolder = async (filepath: string) => {
+    setFolderError(null);
+    try {
+      const r = await api.openOutputFolder({ path: dirnameOnly(filepath) });
+      if (!r.success && r.message) setFolderError(r.message);
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   return (
@@ -78,6 +91,10 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
       <button onClick={openLibraryFolder} style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
         Open library folder
       </button>
+
+      {folderError && (
+        <p style={{ color: 'var(--error)', fontSize: '0.9rem', marginBottom: '1rem' }}>{folderError}</p>
+      )}
 
       {outputs.length === 0 && !loading && (
         <p style={{ color: 'var(--text-muted)' }}>No outputs yet. Generate a composition first.</p>

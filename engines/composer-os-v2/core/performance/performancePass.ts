@@ -1,13 +1,14 @@
 /**
  * Composer OS V2 — Performance pass
- * Post-generation refinement: NO pitch changes.
+ * Post-generation refinement: articulation / phrasing metadata only.
+ * Duration-safe: see performanceRules (no bar-structure or timing edits).
  */
 
 import type { ScoreModel, NoteEvent } from '../score-model/scoreModelTypes';
 import type { PerformancePassOptions } from './performanceTypes';
 import { DEFAULT_PERFORMANCE_OPTIONS } from './performanceTypes';
 
-/** Apply performance pass: articulation, optional micro-shifts. Does NOT change pitches. */
+/** Apply performance pass: articulation only; timing unchanged (see performanceRules.ts). */
 export function applyPerformancePass(
   score: ScoreModel,
   options: Partial<PerformancePassOptions> = {}

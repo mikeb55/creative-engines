@@ -150,6 +150,9 @@ export function HomeGenerate({
     !!v?.integrityPassed &&
     !!v?.behaviourGatesPassed &&
     !!v?.mxValidationPassed &&
+    !!v?.strictBarMathPassed &&
+    !!v?.exportRoundTripPassed &&
+    !!v?.instrumentMetadataPassed &&
     !!result.success;
 
   const receiptOk = result && !error && result.success && passed;
@@ -382,8 +385,9 @@ export function HomeGenerate({
               {v && (
                 <div style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Validation gates:</span>{' '}
-                  Score {v.integrityPassed ? '✓' : '✗'} · Export {v.behaviourGatesPassed ? '✓' : '✗'} · MX{' '}
-                  {v.mxValidationPassed ? '✓' : '✗'}
+                  Score {v.integrityPassed ? '✓' : '✗'} · Bar math {v.strictBarMathPassed ? '✓' : '✗'} · Behaviour{' '}
+                  {v.behaviourGatesPassed ? '✓' : '✗'} · MX {v.mxValidationPassed ? '✓' : '✗'} · Round-trip{' '}
+                  {v.exportRoundTripPassed ? '✓' : '✗'} · Bass metadata {v.instrumentMetadataPassed ? '✓' : '✗'}
                 </div>
               )}
               {v?.readiness && (

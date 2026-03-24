@@ -27,6 +27,9 @@ import { validateExportIntegrity } from '../export/exportHardening';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
 import { validateScoreModel } from '../score-model/scoreModelValidation';
+import { validateStrictBarMath } from '../score-integrity/strictBarMath';
+import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
+import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -37,6 +40,12 @@ export interface GoldenPathResult {
   integrityPassed: boolean;
   behaviourGatesPassed: boolean;
   mxValidationPassed: boolean;
+  /** MusicXML schema + structural checks */
+  strictBarMathPassed: boolean;
+  /** Post-export measure duration sums match score model expectations */
+  exportRoundTripPassed: boolean;
+  /** Bass part lists as upright/acoustic in MusicXML metadata */
+  instrumentMetadataPassed: boolean;
   sibeliusSafe: boolean;
   readiness: { shareable: boolean; release: number; mx: number };
   runManifest: RunManifest;
@@ -176,6 +185,9 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   const modelValidation = validateScoreModel(score);
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
+  const strictBarMath = validateStrictBarMath(score);
+  if (!strictBarMath.valid) errors.push(...strictBarMath.errors);
+
   const bars = score.parts[0]?.measures.map((m) => ({ index: m.index - 1, duration: 4 })) ?? [];
   const chordByBar = new Map<number, string>();
   for (const p of score.parts) {
@@ -219,6 +231,8 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   let mxValidationPassed = false;
   let sibeliusSafe = false;
   let exportIntegrityPassed = true;
+  let exportRoundTripPassed = false;
+  let instrumentMetadataPassed = false;
   if (exportResult.success && exportResult.xml) {
     xml = exportResult.xml;
     mxValidationPassed = validateMusicXmlSchema(xml).valid;
@@ -226,14 +240,27 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     const exportIntegrity = validateExportIntegrity(xml);
     exportIntegrityPassed = exportIntegrity.valid;
     if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
+
+    const mxBar = validateExportedMusicXmlBarMath(xml);
+    exportRoundTripPassed = mxBar.valid;
+    if (!mxBar.valid) errors.push(...mxBar.errors);
+
+    const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
+    instrumentMetadataPassed = bassMeta.valid;
+    if (!bassMeta.valid) errors.push(...bassMeta.errors);
   } else {
     errors.push(...exportResult.errors);
   }
 
   const readinessResult = runReleaseReadinessGate({
-    validationPassed: integrityResult.passed && modelValidation.valid && behaviourResult.allValid,
+    validationPassed:
+      integrityResult.passed &&
+      modelValidation.valid &&
+      behaviourResult.allValid &&
+      strictBarMath.valid &&
+      instrumentMetadataPassed,
     exportValid: exportResult.success,
-    mxValid: mxValidationPassed,
+    mxValid: mxValidationPassed && exportRoundTripPassed,
     rhythmicCorrect: behaviourResult.rhythmValid,
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
@@ -255,7 +282,12 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     feelMode: context.feel.mode,
     instrumentProfiles: context.instrumentProfiles.map((p) => p.instrumentIdentity),
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },
-    validationPassed: integrityResult.passed && behaviourResult.allValid,
+    validationPassed:
+      integrityResult.passed &&
+      behaviourResult.allValid &&
+      strictBarMath.valid &&
+      exportRoundTripPassed &&
+      instrumentMetadataPassed,
     validationErrors: errors.length > 0 ? errors : undefined,
     exportTarget: xml ? 'musicxml' : undefined,
     timestamp: new Date().toISOString(),
@@ -263,11 +295,14 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 
   const success =
     modelValidation.valid &&
+    strictBarMath.valid &&
     integrityResult.passed &&
     behaviourResult.allValid &&
     exportResult.success &&
     mxValidationPassed &&
     exportIntegrityPassed &&
+    exportRoundTripPassed &&
+    instrumentMetadataPassed &&
     errors.length === 0;
 
   return {
@@ -279,6 +314,9 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     integrityPassed: integrityResult.passed,
     behaviourGatesPassed: behaviourResult.allValid,
     mxValidationPassed,
+    strictBarMathPassed: strictBarMath.valid,
+    exportRoundTripPassed,
+    instrumentMetadataPassed,
     sibeliusSafe,
     readiness: {
       shareable: readinessResult.shareable,

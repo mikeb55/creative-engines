@@ -21,6 +21,7 @@ import { runAppApiTests } from './appApi.test';
 import { runComposerOsOutputPathsTests } from './composerOsOutputPaths.test';
 import { runMapStyleStackTests } from './mapStyleStack.test';
 import { runOpenOutputFolderGateTests } from './openOutputFolderGate.test';
+import { runCorrectnessGatesTests } from './correctnessGates.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -43,6 +44,7 @@ const suites = [
   { name: 'Composer output paths', run: runComposerOsOutputPathsTests },
   { name: 'Style Blend mapping', run: runMapStyleStackTests },
   { name: 'Open output folder gate', run: runOpenOutputFolderGateTests },
+  { name: 'Correctness gates', run: runCorrectnessGatesTests },
   ...retroSuites,
 ];
 

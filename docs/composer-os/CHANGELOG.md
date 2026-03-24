@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## Correctness gates (desktop, MusicXML, bass identity)
+
+- **Desktop:** Open library / open file folder uses Electron **main** `shell.openPath` after `resolveOpenFolderTarget` (same rules as `apiOpenOutputFolder`). IPC handler is registered in `openFolderMain.ts` after the API bundle; structured result includes `openedPath` when successful.
+- **Score model:** `validateStrictBarMath` (per-voice bar fill, no overlap) runs before export; golden-path guitar motif measures insert rests for leading gaps and merge sequential motif notes without overrunning the bar.
+- **Export:** `validateExportedMusicXmlBarMath` re-validates measure duration sums per voice after export; generation fails if round-trip bar math does not match.
+- **Guitar–Bass Duo bass:** Part/instrument name **Double Bass**, `instrument-sound` `pluck.bass.acoustic`, GM **midi-program 33** (see `guitarBassDuoExportNames.ts`).
+- **Receipt:** “Passed” requires strict bar math, export round-trip, instrument metadata, and existing integrity/MX gates; `GenerateResult.validation` includes `strictBarMathPassed`, `exportRoundTripPassed`, `instrumentMetadataPassed`.
+- **Performance pass:** Duration/bar structure unchanged (`performanceRules.ts`); articulation only.
+
 ## Style Blend (composer-facing controls)
 
 - **Weights** UI replaced by **Style Blend**: primary (Strong / Medium / Light), optional secondary (Off / Light / Medium) and colour (Off / Subtle / Present) when those modules are selected. Values map to internal normalized weights in `mapStyleStack.ts` (`deriveRawWeightsFromAppStyleStack`). Legacy numeric `weights` in the API still work for tests; when both are sent, **Style Blend** wins.

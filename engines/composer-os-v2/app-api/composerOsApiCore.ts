@@ -13,8 +13,8 @@ import type { GenerateRequest } from './appApiTypes';
 import {
   ensureOutputDirectoryForPreset,
   getComposerFilesRoot,
-  isPathUnderComposerRoot,
   PRESET_OUTPUT_SUBFOLDER,
+  resolveOpenFolderTarget,
 } from './composerOsOutputPaths';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
@@ -90,16 +90,9 @@ export async function apiOpenOutputFolder(
   composerRoot: string,
   body?: { path?: string }
 ): Promise<OpenOutputFolderResult> {
-  let target = composerRoot;
-  if (body?.path && typeof body.path === 'string' && body.path.trim()) {
-    const resolved = path.resolve(body.path.trim());
-    if (!isPathUnderComposerRoot(composerRoot, resolved)) {
-      return {
-        success: false,
-        message: 'That folder is not part of your Composer OS output library.',
-      };
-    }
-    target = resolved;
+  const resolved = resolveOpenFolderTarget(composerRoot, body);
+  if (!resolved.ok) {
+    return { success: false, message: resolved.message };
   }
-  return openOutputFolder(target);
+  return openOutputFolder(resolved.target);
 }

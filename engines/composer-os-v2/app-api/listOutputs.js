@@ -50,6 +50,7 @@ function readManifest(filepath) {
         return null;
     }
 }
+/** List all .musicxml outputs under composer root (each preset has its own subfolder). */
 function listOutputs(composerRoot) {
     if (!fs.existsSync(composerRoot))
         return [];
@@ -61,6 +62,7 @@ function listOutputs(composerRoot) {
             collectMusicXmlInDir(subDir, d.name, entries);
         }
         else if (d.isFile() && d.name.toLowerCase().endsWith('.musicxml')) {
+            // Legacy flat file at root
             pushEntry(path.join(composerRoot, d.name), '', entries);
         }
     }
@@ -98,6 +100,9 @@ function pushEntry(filepath, presetFolderLabel, entries) {
             exportIntegrity: false,
             behaviourGates: false,
             mxValid: false,
+            strictBarMath: false,
+            exportRoundTrip: false,
+            instrumentMetadata: false,
             sibeliusSafe: false,
             readinessRelease: 0,
             readinessMx: 0,

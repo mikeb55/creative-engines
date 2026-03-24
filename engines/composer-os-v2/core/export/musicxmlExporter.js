@@ -7,6 +7,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.exportScoreModelToMusicXml = exportScoreModelToMusicXml;
 exports.exportToMusicXml = exportToMusicXml;
 const scoreModelTypes_1 = require("../score-model/scoreModelTypes");
+const guitarBassDuoExportNames_1 = require("../instrument-profiles/guitarBassDuoExportNames");
+function partDisplayNameForExport(p) {
+    if (p.instrumentIdentity === 'acoustic_upright_bass') {
+        return guitarBassDuoExportNames_1.GUITAR_BASS_DUO_BASS_PART_NAME;
+    }
+    return p.name;
+}
+function instrumentSoundXmlForPart(p) {
+    if (p.instrumentIdentity === 'acoustic_upright_bass') {
+        return `<instrument-sound>${guitarBassDuoExportNames_1.GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
+    }
+    return '';
+}
 function escapeXml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
@@ -79,9 +92,11 @@ function exportScoreModelToMusicXml(score) {
         const partList = score.parts
             .map((p) => {
             const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
+            const display = partDisplayNameForExport(p);
+            const soundEl = instrumentSoundXmlForPart(p);
             return `    <score-part id="${p.id}">
-      <part-name>${escapeXml(p.name)}</part-name>
-      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(p.name)}</instrument-name></score-instrument>
+      <part-name>${escapeXml(display)}</part-name>
+      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
       <midi-instrument id="${p.id}-I1">
         <midi-program>${mxProg}</midi-program>
       </midi-instrument>

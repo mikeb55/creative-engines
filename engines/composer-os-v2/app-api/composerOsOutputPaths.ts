@@ -68,3 +68,25 @@ export function isPathUnderComposerRoot(composerRoot: string, candidate: string)
   const prefix = r.endsWith(path.sep) ? r : r + path.sep;
   return c.startsWith(prefix);
 }
+
+/**
+ * Canonical folder to open for "library" or "this file's folder" (desktop + API).
+ * Same rules for IPC, HTTP, and Electron main process.
+ */
+export function resolveOpenFolderTarget(
+  composerRoot: string,
+  body?: { path?: string }
+): { ok: true; target: string } | { ok: false; message: string } {
+  let target = path.resolve(composerRoot);
+  if (body?.path && typeof body.path === 'string' && body.path.trim()) {
+    const resolved = path.resolve(body.path.trim());
+    if (!isPathUnderComposerRoot(composerRoot, resolved)) {
+      return {
+        ok: false,
+        message: 'That folder is not part of your Composer OS output library.',
+      };
+    }
+    target = resolved;
+  }
+  return { ok: true, target };
+}

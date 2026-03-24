@@ -66,6 +66,9 @@ export interface ValidationSummary {
   exportIntegrity: boolean;
   behaviourGates: boolean;
   mxValid: boolean;
+  strictBarMath: boolean;
+  exportRoundTrip: boolean;
+  instrumentMetadata: boolean;
   sibeliusSafe: boolean;
   readinessRelease: number;
   readinessMx: number;

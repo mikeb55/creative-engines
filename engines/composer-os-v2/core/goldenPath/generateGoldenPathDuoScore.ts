@@ -6,10 +6,11 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
-import { createMeasure, createNote, addEvent, createScore } from '../score-model/scoreEventBuilder';
+import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
+import { GUITAR_BASS_DUO_BASS_PART_NAME } from '../instrument-profiles/guitarBassDuoExportNames';
 import type { SectionWithRole } from '../section-roles/sectionRoleTypes';
 import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
@@ -88,21 +89,37 @@ function buildGuitarPart(
     const useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
 
     if (placements.length > 0) {
+      const raw: { pitch: number; start: number; dur: number }[] = [];
       for (const pl of placements) {
         for (const n of pl.notes) {
           const pitch = Math.max(effectiveLow, Math.min(79, n.pitch));
-          addEvent(m, createNote(pitch, n.startBeat, n.duration));
+          const dur = Math.min(n.duration, Math.max(0, 4 - n.startBeat));
+          if (dur > 0 && n.startBeat < 4) {
+            raw.push({ pitch, start: n.startBeat, dur });
+          }
         }
       }
-      const totalDuration = m.events.reduce((s, e) => s + e.duration, 0);
-      if (totalDuration < 4) {
-        addEvent(m, createNote(effectiveLow + 5, totalDuration, 4 - totalDuration));
+      raw.sort((a, b) => a.start - b.start);
+      let cursor = 0;
+      for (const e of raw) {
+        const start = Math.max(e.start, cursor);
+        if (start > cursor) {
+          addEvent(m, createRest(cursor, start - cursor));
+        }
+        const dur = Math.min(e.dur, 4 - start);
+        if (dur <= 0) continue;
+        addEvent(m, createNote(e.pitch, start, dur));
+        cursor = start + dur;
+      }
+      if (cursor < 4 - 1e-4) {
+        addEvent(m, createNote(effectiveLow + 5, cursor, 4 - cursor));
       }
     } else {
       if (density === 'sparse') {
         if (useOffbeat) {
-          addEvent(m, createNote(effectiveLow + 5, 0.5, 2));
-          addEvent(m, createNote(effectiveLow + 7, 2.5, 2));
+          addEvent(m, createRest(0, 0.5));
+          addEvent(m, createNote(effectiveLow + 5, 0.5, 1.5));
+          addEvent(m, createNote(effectiveLow + 7, 2, 2));
         } else {
           addEvent(m, createNote(effectiveLow + 7, 0, 2));
           addEvent(m, createNote(effectiveLow + 9, 2, 2));
@@ -160,20 +177,36 @@ function buildBassPart(
       const first = placements[0].notes[0].pitch;
       const bassEcho = Math.max(walkLow, Math.min(effectiveHigh, first - 12));
       const beatOffset = isCallResponse && (b === 6 || b === 8) ? 0.5 : 0;
-      addEvent(m, createNote(rootClamped, beatOffset, 1));
-      addEvent(m, createNote(bassEcho, 1 + beatOffset, 1));
-      addEvent(m, createNote(rootClamped, 2 + beatOffset, 1));
-      addEvent(m, createNote(rootClamped + 5, 3 + beatOffset, 1));
+      if (beatOffset > 0) {
+        addEvent(m, createRest(0, 0.5));
+        addEvent(m, createNote(rootClamped, 0.5, 0.5));
+        addEvent(m, createNote(bassEcho, 1, 1));
+        addEvent(m, createNote(rootClamped, 2, 1));
+        addEvent(m, createNote(rootClamped + 5, 3, 1));
+      } else {
+        addEvent(m, createNote(rootClamped, 0, 1));
+        addEvent(m, createNote(bassEcho, 1, 1));
+        addEvent(m, createNote(rootClamped, 2, 1));
+        addEvent(m, createNote(rootClamped + 5, 3, 1));
+      }
     } else if (simplify) {
       const fifth = Math.min(effectiveHigh, rootClamped + 5);
       addEvent(m, createNote(rootClamped, 0, 2));
       addEvent(m, createNote(fifth, 2, 2));
     } else {
       const beatOffset = isCallResponse && (b === 6 || b === 8) ? 0.5 : 0;
-      addEvent(m, createNote(rootClamped, beatOffset, 1));
-      addEvent(m, createNote(rootClamped + 7, 1 + beatOffset, 1));
-      addEvent(m, createNote(rootClamped, 2 + beatOffset, 1));
-      addEvent(m, createNote(rootClamped + 5, 3 + beatOffset, 1));
+      if (beatOffset > 0) {
+        addEvent(m, createRest(0, 0.5));
+        addEvent(m, createNote(rootClamped, 0.5, 0.5));
+        addEvent(m, createNote(rootClamped + 7, 1, 1));
+        addEvent(m, createNote(rootClamped, 2, 1));
+        addEvent(m, createNote(rootClamped + 5, 3, 1));
+      } else {
+        addEvent(m, createNote(rootClamped, 0, 1));
+        addEvent(m, createNote(rootClamped + 7, 1, 1));
+        addEvent(m, createNote(rootClamped, 2, 1));
+        addEvent(m, createNote(rootClamped + 5, 3, 1));
+      }
     }
 
     measures.push(m);
@@ -181,7 +214,7 @@ function buildBassPart(
 
   return {
     id: 'bass',
-    name: 'Acoustic Upright Bass',
+    name: GUITAR_BASS_DUO_BASS_PART_NAME,
     instrumentIdentity: profile.instrumentIdentity,
     midiProgram: profile.midiProgram,
     clef: 'bass',
