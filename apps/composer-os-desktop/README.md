@@ -22,26 +22,31 @@ Do **not** run `electron .` alone — run the full `desktop:dev` pipeline so UI,
 
 ## Package (Windows)
 
+Real artifacts are produced by **electron-builder** (not the TypeScript `dist/` folder alone).
+
 ```bash
 cd apps/composer-os-desktop
 npm run desktop:package
 ```
 
-Produces:
-- `release/Composer-OS-Desktop-1.0.0-portable.exe` — portable
-- `release/Composer OS Desktop Setup 1.0.0.exe` — NSIS installer
+`desktop:package` sets `CSC_IDENTITY_AUTO_DISCOVERY=false` so unsigned dev machines do not pull **winCodeSign** (can fail on symlink privileges). `build.win.signAndEditExecutable` is `false`.
+
+**Canonical deploy artifact (used by clean install):**  
+`release/Composer-OS-Desktop-<version>-portable.exe`
+
+Also built: `release/win-unpacked/Composer OS Desktop.exe` (unpacked), `release/Composer OS Desktop Setup <version>.exe` (NSIS).
+
+**Hard check after packaging:** `npm run verify:packaged-exe` — fails if no portable `.exe` in `release/`.
 
 ## Deploy shortcut (Windows, developer machine)
 
 Run **once** from `apps/composer-os-desktop` (after `npm install`):
 
 ```bash
-npm run desktop:clean-install
+npm run desktop:self-test-install
 ```
 
-Aliases: `desktop:deploy`, `desktop:install` (same script).
-
-This runs `desktop:package`, then `install/installComposerOsDesktop.ts`: verifies the UI stamp, quarantines legacy Studio / stale shortcuts, creates or refreshes **Composer OS Desktop.lnk** → newest `Composer-OS-Desktop-*-portable.exe` (working directory = exe folder, icon from exe), and **starts the packaged app once**. Final output is three lines: packaged exe path, shortcut path, `Launched: yes` or `Launched: no` (install fails if launch fails). No separate cmd step or manual shortcut creation.
+Same end-to-end flow: `desktop:clean-install`, `desktop:deploy`, `desktop:install` (all call `desktop:self-test-install`). Steps: `desktop:package` → `verify:packaged-exe` (must find a real `.exe`) → `installComposerOsDesktop.ts` (UI stamp, legacy shortcut cleanup, **Composer OS Desktop** shortcut, launch, assert launch target matches portable exe). Final output: packaged exe path, shortcut path, `Launched: yes` / `no`.
 
 ## End User Flow
 

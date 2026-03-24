@@ -7,14 +7,16 @@ import * as path from 'path';
 const desktopRoot = path.resolve(__dirname, '..');
 
 describe('desktop deploy / install wiring', () => {
-  it('package.json defines desktop:clean-install and desktop:install', () => {
+  it('package.json defines self-test, clean-install, and packaged-exe verify', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
     expect(pkg.scripts['desktop:clean-install']).toBeDefined();
+    expect(pkg.scripts['desktop:self-test-install']).toBeDefined();
     expect(pkg.scripts['desktop:install']).toContain('desktop:clean-install');
     expect(pkg.scripts['desktop:deploy']).toContain('desktop:clean-install');
-    expect(pkg.scripts['desktop:clean-install']).toContain('desktop:package');
-    expect(pkg.scripts['desktop:clean-install']).toContain('installComposerOsDesktop');
-    expect(pkg.scripts['desktop:clean-install']).not.toContain('verify:ui-resources');
+    expect(pkg.scripts['desktop:clean-install']).toContain('desktop:self-test-install');
+    expect(pkg.scripts['desktop:self-test-install']).toContain('desktop:package');
+    expect(pkg.scripts['desktop:self-test-install']).toContain('verify:packaged-exe');
+    expect(pkg.scripts['desktop:self-test-install']).toContain('installComposerOsDesktop');
   });
 
   it('install script uses exact Composer OS Desktop shortcut name', () => {
@@ -30,6 +32,7 @@ describe('desktop deploy / install wiring', () => {
     expect(fs.existsSync(path.join(installDir, 'shortcutUtils.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'installRules.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'launchInstalledDesktopApp.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'verifyPackagedDesktop.ts'))).toBe(true);
 
     const walk = (dir: string): string[] => {
       const out: string[] = [];

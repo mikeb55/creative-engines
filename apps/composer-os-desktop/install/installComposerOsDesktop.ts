@@ -13,7 +13,8 @@ import {
   isWindows,
   readShortcutTarget,
 } from './shortcutUtils';
-import { findCanonicalPortableExe, normalizeFsPath } from './installRules';
+import { normalizeFsPath } from './installRules';
+import { desktopReleaseDir, verifyPackagedPortableExe } from './verifyPackagedDesktop';
 
 const SHORTCUT_DISPLAY_NAME = 'Composer OS Desktop';
 const SHORTCUT_FILE_NAME = `${SHORTCUT_DISPLAY_NAME}.lnk`;
@@ -33,22 +34,6 @@ function verifyUiResourcesStamp(): void {
     stdio: 'inherit',
     env: process.env,
   });
-}
-
-function resolvePortableExe(): string {
-  const root = desktopAppRoot();
-  const releaseDir = path.join(root, 'release');
-  const fileName = findCanonicalPortableExe(releaseDir);
-  if (!fileName) {
-    throw new Error(
-      `No Composer-OS-Desktop-*-portable.exe in ${releaseDir}. Run npm run desktop:package first.`
-    );
-  }
-  const full = path.join(releaseDir, fileName);
-  if (!fs.existsSync(full)) {
-    throw new Error(`Portable exe missing: ${full}`);
-  }
-  return path.resolve(full);
 }
 
 function verifyShortcut(shortcutPath: string, canonicalExe: string): void {
@@ -104,7 +89,7 @@ function main(): void {
 
   verifyUiResourcesStamp();
 
-  const portableExe = resolvePortableExe();
+  const { absolutePath: portableExe } = verifyPackagedPortableExe(desktopReleaseDir(desktopAppRoot()));
   const desktopDir = getUserDesktopDir();
   const shortcutPath = path.join(desktopDir, SHORTCUT_FILE_NAME);
 
@@ -141,6 +126,14 @@ function main(): void {
   verifyNoLegacyOnDesktop(desktopDir);
 
   const launch = launchInstalledDesktopApp(portableExe);
+
+  if (launch.launched) {
+    if (normalizeFsPath(launch.launchTarget) !== normalizeFsPath(portableExe)) {
+      throw new Error(
+        `Launch target does not match packaged exe.\nExe: ${portableExe}\nLaunch: ${launch.launchTarget}`
+      );
+    }
+  }
 
   console.log('');
   console.log('Packaged exe:', portableExe);

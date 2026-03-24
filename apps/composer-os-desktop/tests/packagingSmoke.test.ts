@@ -16,8 +16,15 @@ describe('Packaging smoke (desktop)', () => {
     expect(pkg.build?.productName).toBe('Composer OS Desktop');
     expect(pkg.build?.appId).toBe('com.mikeb55.composeros.desktop');
     expect(pkg.build?.win?.icon).toBeDefined();
+    expect(pkg.build?.win?.signAndEditExecutable).toBe(false);
     const iconRel = pkg.build.win.icon as string;
     expect(fs.existsSync(path.join(desktopRoot, iconRel))).toBe(true);
+  });
+
+  it('desktop:package disables auto code-sign discovery (avoids winCodeSign symlink failures)', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
+    expect(pkg.scripts['desktop:package']).toContain('CSC_IDENTITY_AUTO_DISCOVERY=false');
+    expect(pkg.scripts['desktop:package']).toContain('electron-builder');
   });
 
   it('API bundle, IPC bundle, and UI bundle exist after build', () => {

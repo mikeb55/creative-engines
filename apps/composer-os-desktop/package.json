@@ -7,8 +7,10 @@
   "scripts": {
     "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
-    "desktop:package": "npm run desktop:build && electron-builder --win",
-    "desktop:clean-install": "npm run desktop:package && tsx install/installComposerOsDesktop.ts",
+    "desktop:package": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
+    "verify:packaged-exe": "tsx install/verifyPackagedDesktop.ts",
+    "desktop:self-test-install": "npm run desktop:package && npm run verify:packaged-exe && tsx install/installComposerOsDesktop.ts",
+    "desktop:clean-install": "npm run desktop:self-test-install",
     "desktop:deploy": "npm run desktop:clean-install",
     "desktop:install": "npm run desktop:clean-install",
     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "cross-env": "^10.1.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
     "esbuild": "^0.19.0",
@@ -62,8 +65,12 @@
       }
     ],
     "win": {
-      "target": ["portable", "nsis"],
-      "icon": "resources/icon.png"
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "resources/icon.png",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,

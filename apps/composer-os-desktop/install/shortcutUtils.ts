@@ -6,8 +6,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-function psEscapeSingleQuoted(s: string): string {
-  return s.replace(/'/g, "''");
+/** Pass file paths into PowerShell without fragile quoting (apostrophes, Unicode). */
+function pathToPowerShellFromBase64(filePath: string): string {
+  const resolved = path.resolve(filePath);
+  return Buffer.from(resolved, 'utf16le').toString('base64');
 }
 
 function runPowerShell(script: string): string {
@@ -85,10 +87,11 @@ export function collectLnkFiles(root: string, maxDepth: number): string[] {
 }
 
 export function readShortcutTarget(lnkPath: string): string {
-  const q = psEscapeSingleQuoted(path.resolve(lnkPath));
+  const b64 = pathToPowerShellFromBase64(lnkPath);
   const script =
+    `$p = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${b64}')); ` +
     `$w = New-Object -ComObject WScript.Shell; ` +
-    `$s = $w.CreateShortcut('${q}'); ` +
+    `$s = $w.CreateShortcut($p); ` +
     `$s.TargetPath`;
   return runPowerShell(script);
 }
@@ -99,16 +102,21 @@ export function createShortcut(opts: {
   workingDirectory: string;
   iconPath?: string;
 }): void {
-  const sc = psEscapeSingleQuoted(path.resolve(opts.shortcutPath));
-  const tg = psEscapeSingleQuoted(path.resolve(opts.targetPath));
-  const wd = psEscapeSingleQuoted(path.resolve(opts.workingDirectory));
-  const icon = psEscapeSingleQuoted(opts.iconPath ? path.resolve(opts.iconPath) : path.resolve(opts.targetPath));
+  const scB64 = pathToPowerShellFromBase64(opts.shortcutPath);
+  const tgB64 = pathToPowerShellFromBase64(opts.targetPath);
+  const wdB64 = pathToPowerShellFromBase64(opts.workingDirectory);
+  const iconSrc = opts.iconPath ? path.resolve(opts.iconPath) : path.resolve(opts.targetPath);
+  const iconB64 = pathToPowerShellFromBase64(iconSrc);
   const script =
+    `$sc = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${scB64}')); ` +
+    `$tg = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${tgB64}')); ` +
+    `$wd = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${wdB64}')); ` +
+    `$ic = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${iconB64}')); ` +
     `$w = New-Object -ComObject WScript.Shell; ` +
-    `$l = $w.CreateShortcut('${sc}'); ` +
-    `$l.TargetPath = '${tg}'; ` +
-    `$l.WorkingDirectory = '${wd}'; ` +
-    `$l.IconLocation = '${icon},0'; ` +
+    `$l = $w.CreateShortcut($sc); ` +
+    `$l.TargetPath = $tg; ` +
+    `$l.WorkingDirectory = $wd; ` +
+    `$l.IconLocation = ($ic + ',0'); ` +
     `$l.Save()`;
   runPowerShell(script);
 }

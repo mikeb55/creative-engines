@@ -1,5 +1,9 @@
 # Composer OS Changelog
 
+## Desktop packaging (Windows exe)
+
+- `npm run desktop:package` uses `CSC_IDENTITY_AUTO_DISCOVERY=false` and `win.signAndEditExecutable: false` so unsigned builds do not require **winCodeSign** extraction (avoids symlink privilege failures). Canonical artifact: `release/Composer-OS-Desktop-*-portable.exe`. `npm run verify:packaged-exe` fails if no portable exe exists. `desktop:self-test-install` = package → verify exe → UI + shortcut + launch.
+
 ## Desktop clean-room (IPC + new identity)
 
 - Windows desktop product: **Composer OS Desktop**, `appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`.
