@@ -48,6 +48,17 @@
 - Behaviour coupling: bass simplifies, guitar reduces attack in call_response
 - Interaction Integrity and Register Separation gates
 
+## Stage 7 App Productisation
+
+- Local web app: React + TypeScript + Vite
+- App API bridge: presets, style modules, generate, outputs, open-output-folder
+- Preset-driven UI: Guitar-Bass Duo, ECM Chamber, Big Band (latter two coming soon)
+- Style stack: primary / secondary / colour (Barry Harris, Metheny, Triad Pairs)
+- Generation controls: seed, lock toggles (melody, bass, harmony, rhythm, section A/B)
+- Output management: list outputs, validation summary, open folder
+- Packaging-ready structure for future Windows desktop wrapper
+- No Python or .bat dependency for user workflow
+
 ## Retro Self-Test / Hardening Pass
 
 - Retro test suite for Foundation, Golden Path, Musical Core, First Intelligence, Style System
