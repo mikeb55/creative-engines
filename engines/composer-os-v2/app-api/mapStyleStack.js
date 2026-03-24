@@ -12,6 +12,7 @@ function normalizeOptionalId(s) {
     const t = String(s).trim();
     return t === '' ? undefined : t;
 }
+/** Raw weights before normalization (sum may be > 1). */
 const PRIMARY_BLEND = {
     strong: 1.0,
     medium: 0.6,
@@ -27,15 +28,17 @@ const COLOUR_BLEND = {
     subtle: 0.2,
     present: 0.4,
 };
+/**
+ * Derive raw primary/secondary/colour weights from Style Blend or legacy numeric weights.
+ * Exported for unit tests.
+ */
 function deriveRawWeightsFromAppStyleStack(stack) {
     if (stack.styleBlend) {
         const p = PRIMARY_BLEND[stack.styleBlend.primary];
         const sec = normalizeOptionalId(stack.secondary) !== undefined
             ? SECONDARY_BLEND[stack.styleBlend.secondary]
             : 0;
-        const col = normalizeOptionalId(stack.colour) !== undefined
-            ? COLOUR_BLEND[stack.styleBlend.colour]
-            : 0;
+        const col = normalizeOptionalId(stack.colour) !== undefined ? COLOUR_BLEND[stack.styleBlend.colour] : 0;
         return { primary: p, secondary: sec, colour: col };
     }
     const w = stack.weights;
