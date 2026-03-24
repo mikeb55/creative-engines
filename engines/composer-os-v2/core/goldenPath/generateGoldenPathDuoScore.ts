@@ -100,6 +100,30 @@ function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
 }
 
+/**
+ * One bar of guaranteed Bacharach signal: chromatic neighbour + 3+5 beat asymmetry, off-grid onsets.
+ * Used on bar 2 (section A) and bar 6 (section B) when Bacharach is active — matches bacharachSignal / moduleValidation.
+ */
+function buildBacharachAnchorMeasure(
+  barIndex: number,
+  chord: string,
+  rehearsal: string | undefined,
+  low: number,
+  high: number
+): MeasureModel {
+  const m = createMeasure(barIndex, chord, rehearsal);
+  const tones = chordTonesForGoldenChord(chord);
+  const target = clampPitch(tones.third, low, high);
+  const pass = target - 1;
+  const fifth = clampPitch(tones.fifth, low, high);
+  addEvent(m, createRest(0, 0.5));
+  addEvent(m, createNote(pass, 0.5, 0.25));
+  addEvent(m, createNote(target, 0.75, 1.25));
+  addEvent(m, createRest(2, 0.5));
+  addEvent(m, createNote(fifth, 2.5, 1.5));
+  return m;
+}
+
 function buildGuitarPart(
   context: CompositionContext,
   _guitarPlan: GuitarBehaviourPlan,
@@ -132,6 +156,14 @@ function buildGuitarPart(
     const effectiveHigh = Math.min(79, zHigh + sectionBump);
     const useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
     const meth = hints.metheny;
+    const bach = hints.bacharach;
+
+    if (bach && (b === 2 || b === 6)) {
+      measures.push(
+        buildBacharachAnchorMeasure(b, chordForBar(b), rehearsalForBar(b), effectiveLow, effectiveHigh)
+      );
+      continue;
+    }
 
     if (placements.length > 0) {
       const raw: { pitch: number; start: number; dur: number }[] = [];

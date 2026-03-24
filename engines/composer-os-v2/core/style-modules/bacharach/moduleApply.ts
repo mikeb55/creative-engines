@@ -15,7 +15,7 @@ export function applyBacharach(context: CompositionContext): CompositionContext 
       bacharach: {
         phraseAsymmetry: true,
         melodyFirstHarmony: true,
-        chromaticPassingWeight: 0.28,
+        chromaticPassingWeight: 0.32,
         avoidCadenceCliches: true,
         elegantColour: true,
       },

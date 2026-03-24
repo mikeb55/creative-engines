@@ -1,5 +1,10 @@
 # Composer OS Changelog
 
+## Bacharach behaviour strengthening
+
+- **Bacharach** validation uses shared **bacharachSignal** helpers: each section (A/B) must show chromatic colour, off–strong-grid placement, or rhythmic variety; fully diatonic + square lines fail; global chromatic density is capped.
+- **Golden path** injects deterministic **anchor bars** (2 and 6) when Bacharach is active—chromatic neighbour + 3+5 asymmetry—so conformance matches generation without bar-math drift.
+
 ## Stabilisation + Bacharach visibility
 
 - **Guitar–Bass Duo** golden-path generation is regression-tested across many seeds (default style stack and **Bacharach** primary) so **strict bar math**, **MusicXML round-trip**, and **bass metadata** gates stay green; the Generate screen lists loaded style modules by name (**Barry Harris**, **Metheny**, **Triad Pairs**, **Bacharach**) when the API returns them.

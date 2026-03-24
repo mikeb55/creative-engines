@@ -164,20 +164,47 @@ function testMethenyValidation(): boolean {
 }
 
 function testBacharachValidation(): boolean {
-  const m1 = createMeasure(1, 'Dm7');
-  addEvent(m1, createNote(62, 0.5, 1));
-  addEvent(m1, createNote(65, 1.5, 1));
-  addEvent(m1, createNote(67, 2.5, 1.5));
+  const r = runGoldenPath(301, {
+    styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+  });
+  if (!r.success) return false;
+  return validateBacharachConformance(r.score).valid;
+}
+
+/** Fully diatonic + square sections — must fail Bacharach conformance when checked. */
+function testBacharachValidationFailsSquareDiatonic(): boolean {
+  const measures = [];
+  for (let i = 1; i <= 8; i++) {
+    const m = createMeasure(i, 'Dm7');
+    addEvent(m, createNote(60, 0, 2));
+    addEvent(m, createNote(64, 2, 2));
+    measures.push(m);
+  }
   const score = createScore('B', [{
     id: 'guitar',
     name: 'G',
     instrumentIdentity: 'clean_electric_guitar',
     midiProgram: 27,
     clef: 'treble',
-    measures: [m1],
+    measures,
   }]);
-  const r = validateBacharachConformance(score);
-  return r.valid;
+  return !validateBacharachConformance(score).valid;
+}
+
+/** Default style stack does not run Bacharach as a failing gate — generation still succeeds. */
+function testBacharachGateInertWhenNotInStack(): boolean {
+  const r = runGoldenPath(404);
+  return r.success && r.behaviourGatesPassed;
+}
+
+function testBacharachThreeSeedsPassConformanceAndGates(): boolean {
+  for (const seed of [11, 22, 33]) {
+    const r = runGoldenPath(seed, {
+      styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+    });
+    if (!r.success || !validateBacharachConformance(r.score).valid) return false;
+  }
+  return true;
 }
 
 function testTriadPairValidation(): boolean {
@@ -208,7 +235,10 @@ export function runStyleModuleTests(): { name: string; ok: boolean }[] {
     ['Style stack normalization', testStyleStackNormalization],
     ['Apply style stack', testApplyStyleStack],
     ['Metheny validation', testMethenyValidation],
-    ['Bacharach validation', testBacharachValidation],
+    ['Bacharach validation (golden path + conformance)', testBacharachValidation],
+    ['Bacharach validation fails square diatonic stub', testBacharachValidationFailsSquareDiatonic],
+    ['Bacharach gate inert when not in stack', testBacharachGateInertWhenNotInStack],
+    ['Bacharach three seeds: conformance + success', testBacharachThreeSeedsPassConformanceAndGates],
     ['Triad pair validation', testTriadPairValidation],
     ['Golden path uses style stack', testGoldenPathStyleStackAffectsOutput],
     ['Run manifest has active modules', testRunManifestHasActiveModules],
