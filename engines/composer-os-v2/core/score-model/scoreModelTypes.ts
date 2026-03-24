@@ -72,12 +72,17 @@ export interface TimeSignatureEvent {
   beatType: number;
 }
 
+/** Narrative / moment hint for duo shaping (metadata only; not read by exporter). */
+export type MomentTag = 'peak' | 'cadence' | 'handoff';
+
 /** One measure: events + optional chord + optional rehearsal mark. */
 export interface MeasureModel {
   index: number; // 1-based
   events: ScoreEvent[];
   chord?: string;
   rehearsalMark?: string;
+  /** Optional duo narrative tag (peak bar, handoff, final cadence). */
+  momentTag?: MomentTag;
 }
 
 /** One part (e.g. guitar, bass). */

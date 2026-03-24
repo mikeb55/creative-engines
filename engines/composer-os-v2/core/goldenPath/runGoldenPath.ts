@@ -34,6 +34,7 @@ import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateB
 import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
 import { scoreJazzDuoBehaviourSoft } from '../score-integrity/jazzDuoBehaviourValidation';
 import { scoreFormIdentitySoft } from './duoFormIdentity';
+import { scoreNarrativeMomentsSoft } from './duoNarrativeMoments';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -165,7 +166,8 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     if (r.success) {
       const soft =
         scoreJazzDuoBehaviourSoft(r.score) +
-        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack });
+        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
+        scoreNarrativeMomentsSoft(r.score);
       if (soft > bestSoft) {
         bestSoft = soft;
         best = r;

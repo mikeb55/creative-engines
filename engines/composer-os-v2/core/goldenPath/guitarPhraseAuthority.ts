@@ -87,7 +87,6 @@ export function emitGuitarPhraseBar(params: {
   reduceAttack: boolean;
   intent: PhraseIntent;
   staggerG: number;
-  isMomentBar: boolean;
   seed: number;
   methenyShortenLong?: boolean;
 }): void {
@@ -102,7 +101,6 @@ export function emitGuitarPhraseBar(params: {
     reduceAttack,
     intent,
     staggerG,
-    isMomentBar,
     seed,
     methenyShortenLong,
   } = params;
@@ -112,6 +110,13 @@ export function emitGuitarPhraseBar(params: {
   const endStrong = u < 0.52 ? tones.third : tones.seventh;
   const pen = u < 0.4 ? tones.fifth : tones.root;
   const lead = seededUnit(seed, bar, 403) < 0.45 ? tones.fifth : tones.third;
+
+  /** Final bar: stable chord tone, minimal motion (resolution). */
+  if (bar === 8) {
+    addEvent(m, createRest(0, 1.5));
+    addEvent(m, createNote(endStrong, 1.5, 2.5));
+    return;
+  }
 
   let headRest =
     intent === 'answer_guitar' || intent === 'cadence'
@@ -124,8 +129,9 @@ export function emitGuitarPhraseBar(params: {
     headRest = Math.min(headRest, 1.75);
   }
 
-  const bump = isMomentBar ? 2 : 0;
-  const hi = Math.min(effectiveHigh, endStrong + bump);
+  /** Bar 4: reach higher register; bar 7: slight lift for tension line. */
+  const regBump = bar === 4 ? 4 : bar === 7 ? 1 : 0;
+  const hi = Math.min(effectiveHigh, endStrong + regBump);
   const mid = clampPitch(pen + (bar % 2), effectiveLow, effectiveHigh);
   const lo = clampPitch(lead - (intent === 'guitar_lead' ? 0 : 1), effectiveLow, effectiveHigh);
 
@@ -157,16 +163,18 @@ export function emitGuitarPhraseBar(params: {
       }
       return;
     }
-    const n1 = shorten(1.25);
+    const n1 = bar === 4 ? shorten(1) : shorten(1.25);
     addEvent(m, createNote(lo, t0, n1));
-    addEvent(m, createRest(t0 + n1, 0.5));
-    const lastStart = qBeat(t0 + n1 + 0.5);
-    addEvent(m, createNote(endStrong, lastStart, qBeat(4 - lastStart)));
+    const gapAfter = bar === 4 ? 0.25 : 0.5;
+    addEvent(m, createRest(t0 + n1, gapAfter));
+    const lastStart = qBeat(t0 + n1 + gapAfter);
+    const tailDur = qBeat(4 - lastStart);
+    addEvent(m, createNote(endStrong, lastStart, tailDur));
     return;
   }
 
   if (density === 'medium') {
-    const dyadBar = bar === 4 || bar === 8;
+    const dyadBar = bar === 4;
     if (dyadBar && intent !== 'answer_guitar') {
       addEvent(m, createRest(0, 0.5));
       addEvent(m, createNote(tones.third, 0.5, 1));
@@ -185,6 +193,17 @@ export function emitGuitarPhraseBar(params: {
     }
     const d1 = qBeat(Math.min(1.5, rem * 0.48));
     addEvent(m, createNote(lo, t0, d1));
+    if (bar === 7 && intent !== 'answer_guitar') {
+      const chrom = clampPitch(mid - 1, effectiveLow, effectiveHigh);
+      const dCh = qBeat(Math.min(0.75, (rem - d1) * 0.35));
+      addEvent(m, createNote(chrom, t0 + d1, dCh));
+      const afterChrom = rem - d1 - dCh;
+      const r1 = qBeat(Math.min(1, afterChrom * 0.42));
+      addEvent(m, createRest(t0 + d1 + dCh, r1));
+      const tEnd = qBeat(t0 + d1 + dCh + r1);
+      addEvent(m, createNote(endStrong, tEnd, qBeat(4 - tEnd)));
+      return;
+    }
     const r1 = qBeat(Math.min(1, (rem - d1) * 0.42));
     addEvent(m, createRest(t0 + d1, r1));
     const tEnd = qBeat(t0 + d1 + r1);
@@ -204,6 +223,18 @@ export function emitGuitarPhraseBar(params: {
   const d1 = qBeat(Math.min(1, rem * 0.34));
   const d2 = qBeat(Math.min(1, (rem - d1) * 0.4));
   addEvent(m, createNote(lo, t0, d1));
+  if (bar === 7) {
+    const pass = clampPitch(mid - 1, effectiveLow, effectiveHigh);
+    const dPass = qBeat(Math.min(0.5, (rem - d1) * 0.28));
+    addEvent(m, createNote(pass, t0 + d1, dPass));
+    const d2b = qBeat(Math.min(1, (rem - d1 - dPass) * 0.45));
+    addEvent(m, createNote(mid, t0 + d1 + dPass, d2b));
+    const r = qBeat(Math.min(0.5, rem - d1 - dPass - d2b));
+    addEvent(m, createRest(t0 + d1 + dPass + d2b, r));
+    const tLast = qBeat(t0 + d1 + dPass + d2b + r);
+    addEvent(m, createNote(hi, tLast, qBeat(4 - tLast)));
+    return;
+  }
   addEvent(m, createNote(mid, t0 + d1, d2));
   const r = qBeat(Math.min(0.5, rem - d1 - d2));
   addEvent(m, createRest(t0 + d1 + d2, r));

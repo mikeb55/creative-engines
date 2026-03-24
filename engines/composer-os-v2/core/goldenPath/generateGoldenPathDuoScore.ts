@@ -35,6 +35,7 @@ import {
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
 } from './guitarPhraseAuthority';
+import { momentTagForBar } from './duoNarrativeMoments';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -269,7 +270,6 @@ function buildGuitarPart(
         reduceAttack: !!reduceAttack,
         intent: phraseIntent,
         staggerG: stagger.guitar,
-        isMomentBar: b === 4 || b === 7,
         seed,
         methenyShortenLong: meth?.attackDensityReduced,
       });
@@ -304,6 +304,37 @@ function lastGuitarNoteEndInBar(m: MeasureModel | undefined): number | undefined
     best = Math.max(best, n.startBeat + n.duration);
   }
   return best < 0 ? undefined : best;
+}
+
+function tagMomentBarsOnParts(parts: PartModel[]): void {
+  for (const p of parts) {
+    for (const m of p.measures) {
+      m.momentTag = momentTagForBar(m.index);
+    }
+  }
+}
+
+/** Bar 4: bass supports peak — two half notes (same shape as overlap thinning; does not touch bass engine module). */
+function simplifyBassAtPeakBar(
+  bassPart: PartModel,
+  bassMap: InstrumentRegisterMap,
+  bar: number,
+  walkLow: number,
+  bassCeiling: number
+): void {
+  const chord = chordForBar(bar);
+  const tones = chordTonesForGoldenChord(chord);
+  const root = CHORD_ROOTS[chord] ?? tones.root;
+  const [low, high] = getBassRegisterForBar(bassMap, bar);
+  const effectiveHigh = Math.min(high, bassCeiling);
+  const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+  const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
+  const m = bassPart.measures.find((x) => x.index === bar);
+  if (!m) return;
+  m.events = [];
+  addEvent(m, createNote(rootClamped, 0, 2));
+  addEvent(m, createNote(fifth, 2, 2));
+  normalizeMeasureQuarterGrid(m);
 }
 
 /** When both parts are in high activity on a non-climax bar, thin bass to two half notes (bar math preserved). */
@@ -484,6 +515,8 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   ) ?? ACOUSTIC_UPRIGHT_BASS;
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
+  tagMomentBarsOnParts([guitarPart, bassPart]);
+  simplifyBassAtPeakBar(bassPart, plans.bassMap, 4, walkLow, bassCeiling);
   resolveOverlapInDuoScore(guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
 
   const bpm = 120;
