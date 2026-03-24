@@ -80,6 +80,16 @@ function testRunManifestCreated(): boolean {
   );
 }
 
+function testMotifStatePresent(): boolean {
+  const r = runGoldenPath(11);
+  return !!r.plans?.motifState?.baseMotifs?.length && !!r.plans?.motifState?.placements?.length;
+}
+
+function testStyleModulePresent(): boolean {
+  const r = runGoldenPath(12);
+  return r.plans?.styleModules?.includes('barry_harris') ?? false;
+}
+
 export function runGoldenPathTests(): { name: string; ok: boolean }[] {
   return [
     ['Golden path returns valid score', testGoldenPathReturnsValidScore],
@@ -92,5 +102,7 @@ export function runGoldenPathTests(): { name: string; ok: boolean }[] {
     ['MusicXML export succeeds', testMusicXmlExportSucceeds],
     ['MX validation passes', testMxValidationPasses],
     ['Run manifest created', testRunManifestCreated],
+    ['Motif state present', testMotifStatePresent],
+    ['Style module present', testStyleModulePresent],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

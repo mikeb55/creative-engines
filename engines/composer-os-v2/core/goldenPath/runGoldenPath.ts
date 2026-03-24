@@ -14,6 +14,8 @@ import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/regi
 import { planGuitarBehaviour } from '../instrument-behaviours/guitarBehaviour';
 import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
+import { generateMotif } from '../motif/motifGenerator';
+import { placeMotifsAcrossBars } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
@@ -127,6 +129,14 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const bassBehaviour = planBassBehaviour(sections, densityPlan, bassMap);
   const rhythmConstraints = computeRhythmicConstraints(context.feel);
 
+  const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
+  const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20);
+  const placements = placeMotifsAcrossBars(baseMotifs, seed);
+  const motifState = { baseMotifs, placements };
+
+  const styleModules = ['barry_harris'];
+  const styleWeighting = { primary: 'barry_harris', weight: 1.0 };
+
   const plans: GoldenPathPlans = {
     sections,
     guitarMap,
@@ -135,6 +145,9 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     guitarBehaviour,
     bassBehaviour,
     rhythmConstraints,
+    motifState,
+    styleModules,
+    styleWeighting,
   };
 
   const score = generateGoldenPathDuoScore(context, plans);
@@ -175,7 +188,8 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     guitarBehaviour,
     bassBehaviour,
     sections,
-    densityPlan
+    densityPlan,
+    { motifState, styleModules }
   );
   if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 
@@ -205,7 +219,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     version: '2.0.0',
     seed,
     presetId: 'guitar_bass_duo',
-    activeModules: [],
+    activeModules: styleModules,
     feelMode: context.feel.mode,
     instrumentProfiles: context.instrumentProfiles.map((p) => p.instrumentIdentity),
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },

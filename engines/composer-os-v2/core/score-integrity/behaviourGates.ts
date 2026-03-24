@@ -10,6 +10,9 @@ import { validateRhythmBehaviour } from '../rhythm-engine/rhythmBehaviourValidat
 import type { RhythmicConstraints } from '../rhythm-engine/rhythmTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
+import type { MotifTrackerState } from '../motif/motifTypes';
+import { validateMotifIntegrity } from '../motif/motifValidation';
+import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -51,6 +54,8 @@ export interface BehaviourGatesResult {
   guitarValid: boolean;
   bassValid: boolean;
   sectionContrastValid: boolean;
+  motifValid: boolean;
+  styleValid: boolean;
   allValid: boolean;
   errors: string[];
 }
@@ -61,7 +66,8 @@ export function runBehaviourGates(
   guitarPlan: GuitarBehaviourPlan,
   bassPlan: BassBehaviourPlan,
   sections: SectionWithRole[],
-  densityPlan: DensityCurvePlan
+  densityPlan: DensityCurvePlan,
+  opts?: { motifState?: MotifTrackerState; styleModules?: string[] }
 ): BehaviourGatesResult {
   const errors: string[] = [];
 
@@ -77,11 +83,27 @@ export function runBehaviourGates(
   const contrast = validateSectionContrast(sections, densityPlan, score);
   if (!contrast.valid) errors.push(...contrast.errors);
 
+  let motifValid = true;
+  if (opts?.motifState) {
+    const motif = validateMotifIntegrity(opts.motifState, score);
+    motifValid = motif.valid;
+    if (!motif.valid) errors.push(...motif.errors);
+  }
+
+  let styleValid = true;
+  if (opts?.styleModules?.includes('barry_harris')) {
+    const style = validateBarryHarrisConformance(score);
+    styleValid = style.valid;
+    if (!style.valid) errors.push(...style.errors);
+  }
+
   return {
     rhythmValid: rhythm.valid,
     guitarValid: guitar.valid,
     bassValid: bass.valid,
     sectionContrastValid: contrast.valid,
+    motifValid,
+    styleValid,
     allValid: errors.length === 0,
     errors,
   };

@@ -71,6 +71,10 @@ The **golden path** implements: preset → feel → section roles → density cu
 
 Adds section roles (statement, development, contrast, return), section-aware register maps, density curves, guitar/bass behaviour planners, and deepened rhythm engine (offbeat tendency, sustain tendency, attack density). New behaviour validation gates: rhythm identity, guitar texture integrity, bass harmonic integrity, section contrast.
 
+### Stage 3 — First Intelligence
+
+Adds motif tracker (generate, vary, place across A/B) and first style module (Barry Harris). Motif-driven melody; bass echoes motif fragments. Barry Harris: movement over static chords, guide-tone emphasis, stepwise voice-leading. Validation: motif integrity (recurrence, variation), style conformance.
+
 ---
 
 ## CompositionContext
@@ -188,13 +192,14 @@ engines/composer-os-v2/
   core/
     conductor/           # Pipeline coordinator
     rhythm-engine/       # Feel, syncopation, subdivision
+    motif/               # Motif generator, tracker, validation
     section-roles/       # Section role planner and validation
     register-map/        # Section-aware register planning
     density/             # Density curve planner
     instrument-behaviours/ # Guitar/bass behaviour planners
     primitives/          # Shared data model
     instrument-profiles/ # Guitar, bass profiles
-    style-modules/       # Registry for modifiers
+    style-modules/       # Registry; barry-harris module
     score-model/         # Score types, event builder, validation
     score-integrity/     # Pre-export gates, behaviour gates
     export/              # MusicXML exporter, validation, Sibelius-safe

@@ -58,6 +58,7 @@ export interface CompositionContext {
 
   generationMetadata: GenerationMetadata;
   validation: ValidationResults;
+  styleOverrides?: Record<string, unknown>;
   readiness: {
     release: ReleaseReadinessResult;
     mx: MxReadinessResult;

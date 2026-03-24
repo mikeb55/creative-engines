@@ -1,6 +1,6 @@
 /**
  * Composer OS V2 — Golden path duo score generator
- * Uses section roles, density, register maps, instrument behaviours, rhythm.
+ * Motif-driven melody, style-influenced, section-aware.
  */
 
 import type { CompositionContext } from '../compositionContext';
@@ -15,7 +15,9 @@ import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
 import type { GuitarBehaviourPlan, BassBehaviourPlan } from '../instrument-behaviours/behaviourTypes';
 import type { RhythmicConstraints } from '../rhythm-engine/rhythmTypes';
+import type { MotifTrackerState, PlacedMotif } from '../motif/motifTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
+import { applyStyleModules } from '../style-modules/styleModuleRegistry';
 
 const CHORD_ROOTS: Record<string, number> = {
   'Dmin9': 38, 'Dm9': 38, 'D-9': 38,
@@ -49,12 +51,17 @@ function getBassRegisterForBar(bassMap: InstrumentRegisterMap, bar: number): [nu
   return plan?.preferredZone ?? [36, 55];
 }
 
-/** Build guitar part using behaviour plan, register map, density, rhythm. */
+function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMotif[] {
+  return placements.filter((p) => p.startBar === bar);
+}
+
+/** Build guitar part: motif-driven where placed, filler elsewhere. */
 function buildGuitarPart(
   guitarPlan: GuitarBehaviourPlan,
   guitarMap: InstrumentRegisterMap,
   densityPlan: DensityCurvePlan,
-  rhythm: RhythmicConstraints
+  rhythm: RhythmicConstraints,
+  motifState: MotifTrackerState
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is GuitarProfile => p.instrumentIdentity === 'clean_electric_guitar'
@@ -65,31 +72,36 @@ function buildGuitarPart(
 
   for (let b = 1; b <= 8; b++) {
     const m = createMeasure(b, chordForBar(b), rehearsalForBar(b));
-    const beh = guitarPlan.perBar.find((x) => x.bar === b)!;
-    const [low, high] = getRegisterForBar(guitarMap, b);
+    const placements = getPlacementsForBar(motifState.placements, b);
     const density = getDensityForBar(densityPlan, b);
-
-    const eventCount = Math.min(beh.eventCount, 3);
     const useOffbeat = rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8);
 
-    if (density === 'sparse') {
-      if (useOffbeat) {
-        addEvent(m, createNote(baseLow + 5, 0.5, 2));
-        addEvent(m, createNote(baseLow + 7, 2.5, 2));
-      } else {
-        addEvent(m, createNote(baseLow + 7, 0, 2));
-        addEvent(m, createNote(baseLow + 9, 2, 2));
+    if (placements.length > 0) {
+      for (const pl of placements) {
+        for (const n of pl.notes) {
+          const pitch = Math.max(baseLow, Math.min(79, n.pitch));
+          addEvent(m, createNote(pitch, n.startBeat, n.duration));
+        }
       }
-    } else if (density === 'medium') {
-      if (b <= 4) {
-        addEvent(m, createNote(baseLow + 5, 0, 4));
-      } else {
-        addEvent(m, createNote(baseLow + 2, 0, 2));
-        addEvent(m, createNote(baseLow + 4, 2, 2));
+      const totalDuration = m.events.reduce((s, e) => s + e.duration, 0);
+      if (totalDuration < 4) {
+        addEvent(m, createNote(baseLow + 5, totalDuration, 4 - totalDuration));
       }
     } else {
-      addEvent(m, createNote(baseLow + 7, 0, 2));
-      addEvent(m, createNote(baseLow + 4, 2, 2));
+      if (density === 'sparse') {
+        if (useOffbeat) {
+          addEvent(m, createNote(baseLow + 5, 0.5, 2));
+          addEvent(m, createNote(baseLow + 7, 2.5, 2));
+        } else {
+          addEvent(m, createNote(baseLow + 7, 0, 2));
+          addEvent(m, createNote(baseLow + 9, 2, 2));
+        }
+      } else if (density === 'medium') {
+        addEvent(m, createNote(baseLow + 5, 0, 4));
+      } else {
+        addEvent(m, createNote(baseLow + 7, 0, 2));
+        addEvent(m, createNote(baseLow + 4, 2, 2));
+      }
     }
 
     measures.push(m);
@@ -105,8 +117,12 @@ function buildGuitarPart(
   };
 }
 
-/** Build bass part using behaviour plan and register map. */
-function buildBassPart(bassPlan: BassBehaviourPlan, bassMap: InstrumentRegisterMap): PartModel {
+/** Build bass part: anchor + light motif echoes. */
+function buildBassPart(
+  bassPlan: BassBehaviourPlan,
+  bassMap: InstrumentRegisterMap,
+  motifState: MotifTrackerState
+): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
   ) ?? ACOUSTIC_UPRIGHT_BASS;
@@ -121,10 +137,20 @@ function buildBassPart(bassPlan: BassBehaviourPlan, bassMap: InstrumentRegisterM
     const [low, high] = getBassRegisterForBar(bassMap, b);
     const rootClamped = Math.max(walkLow, Math.min(walkHigh, Math.max(low, Math.min(high, root))));
 
-    addEvent(m, createNote(rootClamped, 0, 1));
-    addEvent(m, createNote(rootClamped + 7, 1, 1));
-    addEvent(m, createNote(rootClamped, 2, 1));
-    addEvent(m, createNote(rootClamped + 5, 3, 1));
+    const placements = getPlacementsForBar(motifState.placements, b);
+    if (placements.length > 0 && placements[0].notes.length > 0) {
+      const first = placements[0].notes[0].pitch;
+      const bassEcho = Math.max(walkLow, Math.min(walkHigh, first - 12));
+      addEvent(m, createNote(rootClamped, 0, 1));
+      addEvent(m, createNote(bassEcho, 1, 1));
+      addEvent(m, createNote(rootClamped, 2, 1));
+      addEvent(m, createNote(rootClamped + 5, 3, 1));
+    } else {
+      addEvent(m, createNote(rootClamped, 0, 1));
+      addEvent(m, createNote(rootClamped + 7, 1, 1));
+      addEvent(m, createNote(rootClamped, 2, 1));
+      addEvent(m, createNote(rootClamped + 5, 3, 1));
+    }
 
     measures.push(m);
   }
@@ -147,18 +173,26 @@ export interface GoldenPathPlans {
   guitarBehaviour: GuitarBehaviourPlan;
   bassBehaviour: BassBehaviourPlan;
   rhythmConstraints: RhythmicConstraints;
+  motifState: MotifTrackerState;
+  styleModules: string[];
+  styleWeighting?: { primary: string; weight: number };
 }
 
 /**
- * Generate golden path duo score from plans.
+ * Generate golden path duo score.
  */
 export function generateGoldenPathDuoScore(context: CompositionContext, plans: GoldenPathPlans): ScoreModel {
+  const styleContext = plans.styleModules.length > 0
+    ? applyStyleModules(context, plans.styleModules, plans.styleWeighting)
+    : context;
+
   const guitarPart = buildGuitarPart(
     plans.guitarBehaviour,
     plans.guitarMap,
     plans.densityPlan,
-    plans.rhythmConstraints
+    plans.rhythmConstraints,
+    plans.motifState
   );
-  const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap);
+  const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState);
   return createScore('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
 }

@@ -1,12 +1,18 @@
 /**
  * Composer OS V2 — Style module registry
- * Registers style modules; applies them in order as modifiers.
  */
 
 import type { StyleModule } from './styleModuleTypes';
 import type { CompositionContext } from '../compositionContext';
+import { barryHarrisModule } from './barry-harris/moduleApply';
 
 const registry = new Map<string, StyleModule>();
+
+function registerBuiltIn(): void {
+  if (registry.size > 0) return;
+  registerStyleModule(barryHarrisModule);
+}
+registerBuiltIn();
 
 /** Register a style module. */
 export function registerStyleModule(module: StyleModule): void {
@@ -18,17 +24,22 @@ export function getStyleModule(id: string): StyleModule | undefined {
   return registry.get(id);
 }
 
-/** Apply registered modules to context in order. */
+/** Style weighting config. */
+export interface StyleWeighting {
+  primary: string;
+  weight: number;
+}
+
+/** Apply registered modules. */
 export function applyStyleModules(
   context: CompositionContext,
-  moduleIds: string[]
+  moduleIds: string[],
+  _weighting?: StyleWeighting
 ): CompositionContext {
   let result = context;
   for (const id of moduleIds) {
     const mod = registry.get(id);
-    if (mod) {
-      result = mod.modify(result);
-    }
+    if (mod) result = mod.modify(result);
   }
   return result;
 }

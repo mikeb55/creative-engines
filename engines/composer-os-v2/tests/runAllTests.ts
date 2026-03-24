@@ -11,6 +11,8 @@ import { runExportTests } from './export.test';
 import { runScoreModelTests } from './scoreModel.test';
 import { runGoldenPathTests } from './goldenPath.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
+import { runMotifTests } from './motif.test';
+import { runStyleModuleTests } from './styleModule.test';
 
 const suites = [
   { name: 'Conductor', run: runConductorTests },
@@ -22,6 +24,8 @@ const suites = [
   { name: 'Score Model', run: runScoreModelTests },
   { name: 'Golden Path', run: runGoldenPathTests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
+  { name: 'Motif', run: runMotifTests },
+  { name: 'Style Module', run: runStyleModuleTests },
 ];
 
 function main(): void {
