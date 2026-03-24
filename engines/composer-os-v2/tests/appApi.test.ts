@@ -10,7 +10,11 @@ import { generateComposition } from '../app-api/generateComposition';
 import { listOutputs } from '../app-api/listOutputs';
 import { buildDiagnostics } from '../app-api/buildDiagnostics';
 import { friendlyGenerateError } from '../app-api/apiErrorMessages';
-import { getOutputDirectoryForPreset, expectedPresetFolderName } from '../app-api/composerOsOutputPaths';
+import {
+  getOutputDirectoryForPreset,
+  expectedPresetFolderName,
+  manifestPathForMusicXml,
+} from '../app-api/composerOsOutputPaths';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const TEST_OUTPUT_DIR = path.join(REPO_ROOT, 'outputs', 'composer-os-v2-test');
@@ -67,6 +71,9 @@ export function runAppApiTests(): TestResult[] {
     if (!result.success) fail('Generation request: success');
     else if (!result.validation) fail('Generation request: validation present');
     else if (!result.manifestPath?.endsWith('.manifest.json')) fail('Generation request: manifest path');
+    else if (!result.manifestPath?.includes('_meta')) fail('Generation request: manifest under _meta');
+    else if (result.manifestPath !== manifestPathForMusicXml(result.filepath!)) fail('Generation request: manifest path helper');
+    else if (!fs.existsSync(result.manifestPath)) fail('Generation request: manifest on disk');
     else if (!result.filepath?.includes('Guitar-Bass Duos')) fail('Generation request: file under preset folder');
     else pass('Generation request');
   } catch (e) {
@@ -78,6 +85,7 @@ export function runAppApiTests(): TestResult[] {
     if (outputs.length < 1) fail('Output listing: at least one output');
     else if (!outputs[0].filename?.endsWith('.musicxml')) fail('Output listing: musicxml suffix');
     else if (!outputs[0].presetFolderLabel) fail('Output listing: preset folder label');
+    else if (outputs.some((o) => o.filepath.includes('_meta'))) fail('Output listing: no paths inside _meta');
     else pass('Output listing');
   } catch (e) {
     fail(`Output listing: ${e}`);
@@ -147,8 +155,7 @@ export function runAppApiTests(): TestResult[] {
       else if (typeof result.validation?.readiness?.release !== 'number')
         fail(`Multi-run smoke: readiness run ${i}`);
       else {
-        const manifestPath =
-          result.manifestPath ?? result.filepath.replace(/\.musicxml$/i, '.manifest.json');
+        const manifestPath = result.manifestPath ?? manifestPathForMusicXml(result.filepath);
         if (!fs.existsSync(manifestPath)) fail(`Multi-run smoke: manifest run ${i}`);
       }
     }

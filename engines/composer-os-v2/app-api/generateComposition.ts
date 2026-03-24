@@ -3,6 +3,7 @@
  */
 
 import type { GenerateRequest } from './appApiTypes';
+import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
@@ -95,7 +96,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     xml: result.xml,
     filename,
     filepath,
-    manifestPath: filepath ? filepath.replace(/\.musicxml$/i, '.manifest.json') : undefined,
+    manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
     validation,
     runManifest: result.runManifest
       ? {

@@ -36,4 +36,8 @@ describe('HomeGenerate musical UI', () => {
   it('does not show a Seed label in the UI', () => {
     expect(src).not.toMatch(/>\s*Seed\s*</i);
   });
+
+  it('receipt does not surface manifest JSON paths', () => {
+    expect(src).not.toMatch(/Manifest:/);
+  });
 });

@@ -65,6 +65,6 @@ Primary saves go under **Documents → Mike Composer Files** (resolved from your
 - **Big-Band Compositions**
 - **ECM Chamber Compositions**
 
-Each MusicXML file has a sibling `.manifest.json`. **Open output folder** opens the real library or preset folder in Explorer. **Diagnostics** (advanced) may still show a numeric seed; the main Generate screen does not expose raw seed values.
+Each composition’s validation metadata is stored as JSON under a hidden **`_meta`** subfolder inside the preset folder (not next to the `.musicxml` file), so your working folder shows **only MusicXML** scores. **Open output folder** opens the preset or library folder in Explorer (not `_meta`). **Diagnostics** (advanced) may still show a numeric seed; the main Generate screen does not expose raw seed values.
 
 Override for tests or custom installs: set `COMPOSER_OS_OUTPUT_DIR` to replace the **Mike Composer Files** root (preset subfolders are still used under that root).

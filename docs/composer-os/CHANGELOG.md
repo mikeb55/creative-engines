@@ -1,5 +1,9 @@
 # Composer OS Changelog
 
+## Output manifests (`_meta`)
+
+- **Disk manifests** (`.manifest.json`) are stored under each preset folder’s **`_meta`** subfolder so user-facing folders (e.g. **Guitar-Bass Duos**) contain **only `.musicxml`**. Listing still reads metadata from `_meta` or from the legacy **next-to-MusicXML** path. **Open folder** unwraps `_meta` so Explorer opens the composition folder. On Windows, `_meta` is marked **hidden** (`attrib +h`) when creation succeeds.
+
 ## Automated desktop rebuild + smoke
 
 - **Command:** `npm run desktop:rebuild-and-smoke` in `apps/composer-os-desktop` (or repo root: same name) runs: close stale `Composer-OS-Desktop-*-portable.exe` processes (Windows), `desktop:package`, resolve newest portable exe, verify `resources/ui` stamp, launch the exe, confirm the process stays up, compare UI `buildTimestamp` to the last successful run (stored in `.last-smoke-ui-timestamp.txt`). Prints **PASS** or **FAIL** with the blocking step — no fake success.

@@ -3,19 +3,22 @@
  */
 
 import type { OutputEntry } from './appApiTypes';
+import { legacyManifestPathForMusicXml, manifestPathForMusicXml } from './composerOsOutputPaths';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const MANIFEST_SUFFIX = '.manifest.json';
-
-function readManifest(filepath: string): Partial<OutputEntry> | null {
-  const manifestPath = filepath.replace(/\.musicxml$/i, MANIFEST_SUFFIX);
-  try {
-    const raw = fs.readFileSync(manifestPath, 'utf-8');
-    return JSON.parse(raw) as Partial<OutputEntry>;
-  } catch {
-    return null;
+function readManifest(xmlFilepath: string): Partial<OutputEntry> | null {
+  const candidates = [manifestPathForMusicXml(xmlFilepath), legacyManifestPathForMusicXml(xmlFilepath)];
+  for (const manifestPath of candidates) {
+    try {
+      if (!fs.existsSync(manifestPath)) continue;
+      const raw = fs.readFileSync(manifestPath, 'utf-8');
+      return JSON.parse(raw) as Partial<OutputEntry>;
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 /** List all .musicxml outputs under composer root (each preset has its own subfolder). */
@@ -39,15 +42,16 @@ export function listOutputs(composerRoot: string): OutputEntry[] {
 }
 
 function collectMusicXmlInDir(dir: string, folderLabel: string, entries: OutputEntry[]): void {
-  let files: string[];
+  let dirents: fs.Dirent[];
   try {
-    files = fs.readdirSync(dir);
+    dirents = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
     return;
   }
-  for (const f of files) {
-    if (!f.toLowerCase().endsWith('.musicxml')) continue;
-    pushEntry(path.join(dir, f), folderLabel, entries);
+  for (const d of dirents) {
+    if (!d.isFile()) continue;
+    if (!d.name.toLowerCase().endsWith('.musicxml')) continue;
+    pushEntry(path.join(dir, d.name), folderLabel, entries);
   }
 }
 

@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Composer OS V2 — App API: write output manifest alongside MusicXML
+ * Composer OS V2 — App API: write output manifest under `_meta` (MusicXML stays in preset folder).
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -37,9 +37,24 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.writeOutputManifest = writeOutputManifest;
+const composerOsOutputPaths_1 = require("./composerOsOutputPaths");
 const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+function tryHideMetaFolderOnWindows(metaDir) {
+    if (process.platform !== 'win32')
+        return;
+    try {
+        const { execSync } = require('child_process');
+        execSync(`attrib +h "${metaDir.replace(/"/g, '\\"')}"`, { stdio: 'ignore' });
+    }
+    catch {
+        /* optional */
+    }
+}
 function writeOutputManifest(xmlFilepath, meta) {
-    const manifestPath = xmlFilepath.replace(/\.musicxml$/i, '.manifest.json');
+    const manifestPath = (0, composerOsOutputPaths_1.manifestPathForMusicXml)(xmlFilepath);
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+    tryHideMetaFolderOnWindows(path.dirname(manifestPath));
     const entry = {
         presetId: meta.presetId,
         styleStack: meta.styleStack,

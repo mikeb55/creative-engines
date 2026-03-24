@@ -7,7 +7,6 @@ type GenResult = {
   success?: boolean;
   filename?: string;
   filepath?: string;
-  manifestPath?: string;
   validation?: {
     integrityPassed?: boolean;
     behaviourGatesPassed?: boolean;
@@ -412,13 +411,6 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Full path:</span>
                   <br />
                   {result.filepath}
-                </p>
-              )}
-              {result.manifestPath && (
-                <p style={{ fontSize: '0.9rem', wordBreak: 'break-word', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Manifest:</span>
-                  <br />
-                  {result.manifestPath}
                 </p>
               )}
               {(result.scoreTitle ?? rm?.scoreTitle) && (

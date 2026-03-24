@@ -9,6 +9,8 @@ import {
   getOutputDirectoryForPreset,
   ensureOutputDirectoryForPreset,
   PRESET_OUTPUT_SUBFOLDER,
+  manifestPathForMusicXml,
+  normalizeLibraryFolderOpenTarget,
 } from '../app-api/composerOsOutputPaths';
 
 type TestResult = { name: string; ok: boolean };
@@ -38,6 +40,19 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     ensureOutputDirectoryForPreset('guitar_bass_duo');
     if (!fs.existsSync(gbd)) fail('ensureOutputDirectoryForPreset');
     else pass('ensureOutputDirectoryForPreset creates folder');
+
+    const xml = path.join(gbd, 'composer_os_test.musicxml');
+    const mp = manifestPathForMusicXml(xml);
+    if (!mp.includes('_meta') || !mp.endsWith('composer_os_test.manifest.json')) fail('manifestPathForMusicXml layout');
+    else pass('manifestPathForMusicXml layout');
+
+    const metaDir = path.join(gbd, '_meta');
+    fs.mkdirSync(metaDir, { recursive: true });
+    const mf = path.join(metaDir, 'x.manifest.json');
+    fs.writeFileSync(mf, '{}', 'utf-8');
+    const opened = normalizeLibraryFolderOpenTarget(mf);
+    if (path.resolve(opened) !== path.resolve(gbd)) fail('normalizeLibraryFolderOpenTarget strips _meta');
+    else pass('normalizeLibraryFolderOpenTarget strips _meta');
   } catch (e) {
     fail(`composerOsOutputPaths: ${e}`);
   }

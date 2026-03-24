@@ -5,7 +5,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { isPathUnderComposerRoot } from '../app-api/composerOsOutputPaths';
+import { isPathUnderComposerRoot, resolveOpenFolderTarget } from '../app-api/composerOsOutputPaths';
 
 function testInsideSubfolderIsAllowed(): boolean {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'coos-root-'));
@@ -25,6 +25,16 @@ function testRootEqualsComposerRoot(): boolean {
   return isPathUnderComposerRoot(root, root);
 }
 
+function testOpenFolderTargetUnwrapsMeta(): boolean {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'coos-root-'));
+  const duos = path.join(root, 'Guitar-Bass Duos');
+  const meta = path.join(duos, '_meta');
+  fs.mkdirSync(meta, { recursive: true });
+  const r = resolveOpenFolderTarget(root, { path: meta });
+  if (!r.ok) return false;
+  return path.resolve(r.target) === path.resolve(duos);
+}
+
 export function runOpenOutputFolderGateTests(): { name: string; ok: boolean }[] {
   const results: { name: string; ok: boolean }[] = [];
   const t = (name: string, fn: () => boolean) => results.push({ name, ok: fn() });
@@ -32,6 +42,7 @@ export function runOpenOutputFolderGateTests(): { name: string; ok: boolean }[] 
   t('Open folder gate: preset subfolder under root', testInsideSubfolderIsAllowed);
   t('Open folder gate: path outside library rejected', testOutsideTreeRejected);
   t('Open folder gate: composer root equals target', testRootEqualsComposerRoot);
+  t('Open folder gate: _meta unwraps to preset folder', testOpenFolderTargetUnwrapsMeta);
 
   return results;
 }

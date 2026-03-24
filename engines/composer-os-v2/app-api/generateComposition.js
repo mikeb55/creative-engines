@@ -38,6 +38,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateComposition = generateComposition;
 const writeOutputManifest_1 = require("./writeOutputManifest");
+const composerOsOutputPaths_1 = require("./composerOsOutputPaths");
 const runGoldenPath_1 = require("../core/goldenPath/runGoldenPath");
 const mapStyleStack_1 = require("./mapStyleStack");
 const fs = __importStar(require("fs"));
@@ -95,7 +96,7 @@ function generateComposition(req, outputDir) {
         xml: result.xml,
         filename,
         filepath,
-        manifestPath: filepath ? filepath.replace(/\.musicxml$/i, '.manifest.json') : undefined,
+        manifestPath: filepath ? (0, composerOsOutputPaths_1.manifestPathForMusicXml)(filepath) : undefined,
         validation,
         runManifest: result.runManifest
             ? {

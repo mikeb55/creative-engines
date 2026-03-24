@@ -47,7 +47,7 @@ export function expectedPresetFolderName(presetId: string): string {
   return getPresetOutputSubfolder(presetId);
 }
 
-/** Canonical directory where MusicXML + manifests for this preset are written. */
+/** Canonical directory where MusicXML is written (manifests go under `_meta`). */
 export function getOutputDirectoryForPreset(presetId: string): string {
   const root = getComposerFilesRoot();
   const sub = getPresetOutputSubfolder(presetId);
@@ -58,6 +58,42 @@ export function ensureOutputDirectoryForPreset(presetId: string): string {
   const dir = getOutputDirectoryForPreset(presetId);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+/** Internal subfolder under each preset output dir for `.manifest.json` files (MusicXML stays next to user). */
+export const OUTPUT_META_FOLDER = '_meta';
+
+/** Canonical path for the disk manifest JSON for a given MusicXML file. */
+export function manifestPathForMusicXml(xmlFilepath: string): string {
+  const dir = path.dirname(xmlFilepath);
+  const base = path.basename(xmlFilepath).replace(/\.musicxml$/i, '');
+  return path.join(dir, OUTPUT_META_FOLDER, `${base}.manifest.json`);
+}
+
+/** Pre-`_meta` layout (read fallback only). */
+export function legacyManifestPathForMusicXml(xmlFilepath: string): string {
+  return xmlFilepath.replace(/\.musicxml$/i, '.manifest.json');
+}
+
+/**
+ * When opening Explorer/Finder, never land inside `_meta` — strip to the composition folder.
+ * Accepts a folder path or a file path (e.g. manifest or MusicXML).
+ */
+export function normalizeLibraryFolderOpenTarget(pathOrFile: string): string {
+  let r = path.resolve(pathOrFile);
+  try {
+    if (fs.existsSync(r) && fs.statSync(r).isFile()) {
+      r = path.dirname(r);
+    }
+  } catch {
+    /* use path as-is */
+  }
+  while (path.basename(r) === OUTPUT_META_FOLDER) {
+    const parent = path.dirname(r);
+    if (parent === r) break;
+    r = parent;
+  }
+  return r;
 }
 
 /** Whether `candidate` is the composer root or any preset subfolder under it. */
@@ -86,7 +122,13 @@ export function resolveOpenFolderTarget(
         message: 'That folder is not part of your Composer OS output library.',
       };
     }
-    target = resolved;
+    target = normalizeLibraryFolderOpenTarget(resolved);
+    if (!isPathUnderComposerRoot(composerRoot, target)) {
+      return {
+        ok: false,
+        message: 'That folder is not part of your Composer OS output library.',
+      };
+    }
   }
   return { ok: true, target };
 }
