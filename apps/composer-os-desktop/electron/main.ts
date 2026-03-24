@@ -6,14 +6,11 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { spawn, ChildProcess } from 'child_process';
 import * as http from 'http';
 
 const PORT = 3001;
 const API_READY_TIMEOUT_MS = 15000;
 const POLL_INTERVAL_MS = 200;
-
-let apiProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
 
 function getResourcesPath(): string {
@@ -23,12 +20,19 @@ function getResourcesPath(): string {
   return process.resourcesPath;
 }
 
-function getApiBundlePath(): string {
-  const resources = getResourcesPath();
-  const packagedPath = path.join(resources, 'api.bundle.js');
-  const devPath = path.join(app.getAppPath(), '..', '..', 'scripts', 'startComposerOsAppApi.ts');
-  if (fs.existsSync(packagedPath)) return packagedPath;
-  return devPath;
+/**
+ * Resolve api.bundle.js. Never fall back to npx/ts-node — packaged users have no Node on PATH.
+ */
+function getApiBundlePath(): string | null {
+  const candidates = [
+    path.join(process.resourcesPath, 'api.bundle.js'),
+    path.join(__dirname, '..', 'resources', 'api.bundle.js'),
+    path.join(app.getAppPath(), 'resources', 'api.bundle.js'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
 }
 
 function getUiPath(): string {
@@ -65,9 +69,17 @@ function waitForApi(): Promise<void> {
 }
 
 function startApi(): Promise<void> {
-  const apiPath = getApiBundlePath();
+  const bundlePath = getApiBundlePath();
   const uiPath = getUiPath();
   const outputDir = getOutputDir();
+
+  if (!bundlePath) {
+    return Promise.reject(
+      new Error(
+        'API bundle missing (resources/api.bundle.js). Run: npm run build:api in apps/composer-os-desktop, then npm run desktop:dev.'
+      )
+    );
+  }
 
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -75,34 +87,11 @@ function startApi(): Promise<void> {
   if (fs.existsSync(uiPath)) process.env.COMPOSER_OS_STATIC_DIR = uiPath;
   process.env.PORT = String(PORT);
 
-  const isTs = apiPath.endsWith('.ts');
-  if (isTs) {
-    return new Promise((resolve, reject) => {
-      apiProcess = spawn(
-        'npx',
-        ['ts-node', '--project', path.join(app.getAppPath(), '..', '..', 'tsconfig.json'), apiPath],
-        {
-          env: process.env,
-          cwd: path.join(app.getAppPath(), '..', '..'),
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }
-      );
-      apiProcess.stdout?.on('data', (d) => console.log('[API]', d.toString().trim()));
-      apiProcess.stderr?.on('data', (d) => console.error('[API]', d.toString().trim()));
-      apiProcess.on('error', reject);
-      apiProcess.on('exit', (code) => {
-        if (code !== 0 && code !== null) console.error('[API] exited', code);
-        apiProcess = null;
-      });
-      waitForApi().then(resolve).catch(reject);
-    });
-  }
-
   try {
-    require(apiPath);
+    require(bundlePath);
     return waitForApi();
   } catch (err) {
-    return Promise.reject(err);
+    return Promise.reject(err instanceof Error ? err : new Error(String(err)));
   }
 }
 
@@ -167,16 +156,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (apiProcess) {
-    apiProcess.kill();
-    apiProcess = null;
-  }
   app.quit();
-});
-
-app.on('before-quit', () => {
-  if (apiProcess) {
-    apiProcess.kill();
-    apiProcess = null;
-  }
 });

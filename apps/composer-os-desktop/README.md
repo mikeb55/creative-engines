@@ -12,6 +12,8 @@ npm run desktop:dev
 
 Builds API bundle, UI, and Electron main; launches the desktop app.
 
+Do **not** run `electron .` alone — the API must be built first (`npm run build:api` or `desktop:dev`). The app does not use `npx` or system Node; it loads `resources/api.bundle.js` inside Electron.
+
 ## Package (Windows)
 
 ```bash
