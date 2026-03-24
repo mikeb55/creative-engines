@@ -21,6 +21,7 @@ import type { StyleStack } from '../style-modules/styleModuleTypes';
 import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
+import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
 import {
   chordTonesForGoldenChord,
   pickGuideTone,
@@ -485,6 +486,10 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   resolveOverlapInDuoScore(guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
 
-  const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: 120 });
-  return applyPerformancePass(rawScore);
+  const bpm = 120;
+  const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], {
+    tempo: bpm,
+    feelProfile: buildFeelProfileFromTempo(bpm),
+  });
+  return applyExpressiveDuoFeel(applyPerformancePass(rawScore, { applyArticulation: false }));
 }

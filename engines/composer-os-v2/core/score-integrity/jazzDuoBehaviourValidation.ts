@@ -5,6 +5,7 @@
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { activityScoreForBar, HIGH_ACTIVITY } from '../goldenPath/activityScore';
+import { expressiveFeelSoftScore } from '../goldenPath/expressiveDuoFeel';
 
 export interface JazzDuoBehaviourResult {
   valid: boolean;
@@ -218,7 +219,8 @@ export function scoreJazzDuoBehaviourSoft(score: ScoreModel): number {
     8;
   const sectionSpread = Math.abs(meanA - meanB);
   const contourPenalty = Math.max(0, maxSameDirectionSteps(b) - 4) * 2;
-  return gc * 10 + (0.5 - rr) * 5 + sectionSpread * 3 - contourPenalty;
+  const feel = expressiveFeelSoftScore(score);
+  return gc * 10 + (0.5 - rr) * 5 + sectionSpread * 3 - contourPenalty + feel;
 }
 
 export function validateJazzDuoBehaviourRules(score: ScoreModel): JazzDuoBehaviourResult {

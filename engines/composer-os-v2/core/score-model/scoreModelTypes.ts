@@ -12,8 +12,17 @@ export const BEATS_PER_MEASURE = 4;
 /** Measure duration in divisions. */
 export const MEASURE_DIVISIONS = DIVISIONS * BEATS_PER_MEASURE;
 
-/** Articulation metadata (performance pass). */
+/** Articulation metadata (performance pass / expressive feel). */
 export type Articulation = 'staccato' | 'tenuto' | 'accent';
+
+/** Playback / feel metadata (does not change bar structure). */
+export interface FeelProfile {
+  /** Long:short eighth ratio for swing interpretation (e.g. 2.0 ≈ triplet swing). */
+  swingRatio: number;
+  tempoFeel: 'slow' | 'medium' | 'fast';
+  /** Smooth drift budget across the form (beats), for display / playback hints only. */
+  driftTotalBeats: number;
+}
 
 /** Note event: pitch in MIDI, startBeat 0–4, duration in beats. */
 export interface NoteEvent {
@@ -23,6 +32,8 @@ export interface NoteEvent {
   duration: number;
   voice?: number;
   articulation?: Articulation;
+  /** MIDI velocity 1–127; optional expressive shaping (ghost notes, comp). */
+  velocity?: number;
 }
 
 /** Rest event. */
@@ -84,5 +95,7 @@ export interface ScoreModel {
   title: string;
   tempo?: number;
   timeSignature?: { beats: number; beatType: number };
+  /** Optional duo feel hint (export as direction text; no structural change). */
+  feelProfile?: FeelProfile;
   parts: PartModel[];
 }

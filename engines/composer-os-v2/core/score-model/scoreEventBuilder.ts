@@ -10,6 +10,7 @@ import type {
   NoteEvent,
   RestEvent,
   ScoreEvent,
+  FeelProfile,
 } from './scoreModelTypes';
 
 /** Create empty measure. */
@@ -61,12 +62,13 @@ export function createPart(
 export function createScore(
   title: string,
   parts: PartModel[],
-  options?: { tempo?: number }
+  options?: { tempo?: number; feelProfile?: FeelProfile }
 ): ScoreModel {
   return {
     title,
     tempo: options?.tempo,
     timeSignature: { beats: 4, beatType: 4 },
+    feelProfile: options?.feelProfile,
     parts,
   };
 }

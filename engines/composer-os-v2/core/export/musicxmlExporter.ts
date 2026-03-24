@@ -4,7 +4,7 @@
  */
 
 import type { MusicXmlExportResult } from './exportTypes';
-import type { ScoreModel, PartModel, MeasureModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
@@ -83,7 +83,12 @@ function eventsToXml(measure: MeasureModel, measureIndex: number): string {
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
         const art = (e as { articulation?: string }).articulation;
         const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
-        xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice>${notationsEl}</note>\n`;
+        const vel = (e as { velocity?: number }).velocity;
+        const dynAttr =
+          vel !== undefined
+            ? ` dynamics="${Math.min(100, Math.max(0, (vel / 127) * 100)).toFixed(2)}"`
+            : '';
+        xml += `        <note${dynAttr}><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice>${notationsEl}</note>\n`;
       }
       cursor += durDiv;
     }
@@ -125,7 +130,8 @@ ${partList}
   </part-list>
 `;
 
-    for (const part of score.parts) {
+    for (let partIndex = 0; partIndex < score.parts.length; partIndex++) {
+      const part = score.parts[partIndex];
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
       xml += `  <part id="${part.id}">\n`;
@@ -136,13 +142,19 @@ ${partList}
 
         if (i === 0) {
           const tempoEl = score.tempo ? `\n    <sound tempo="${score.tempo}"/>` : '';
+          const feelEl =
+            partIndex === 0 && score.feelProfile
+              ? `    <direction placement="below"><direction-type><words>${escapeXml(
+                  `Feel: ${score.feelProfile.tempoFeel} swing (~${score.feelProfile.swingRatio}:1 eighths); laid-back; duo`
+                )}</words></direction-type></direction>\n`
+              : '';
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key><fifths>0</fifths></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
       <clef><sign>${clefSign}</sign><line>${clefLine}</line></clef>
     </attributes>${tempoEl}
-`;
+${feelEl}`;
         }
 
         if (m.rehearsalMark) {
