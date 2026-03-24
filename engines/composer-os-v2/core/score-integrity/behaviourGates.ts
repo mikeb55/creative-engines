@@ -21,6 +21,7 @@ import { normalizeStyleWeights } from '../style-modules/styleModuleTypes';
 import type { InteractionPlan } from '../interaction/interactionTypes';
 import { validateInteractionIntegrity, validateRegisterSeparation } from '../interaction/interactionValidation';
 import { validateDuoMusicalQuality } from './duoMusicalQuality';
+import { validateBassIdentity } from './bassIdentityValidation';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -69,6 +70,7 @@ export interface BehaviourGatesResult {
   methenyValid: boolean;
   bacharachValid: boolean;
   duoMusicalValid: boolean;
+  bassIdentityValid: boolean;
   interactionValid: boolean;
   registerSeparationValid: boolean;
   allValid: boolean;
@@ -156,6 +158,10 @@ export function runBehaviourGates(
   if (!duoMusical.valid) errors.push(...duoMusical.errors);
   const duoMusicalValid = duoMusical.valid;
 
+  const bassIdentity = validateBassIdentity(score);
+  if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
+  const bassIdentityValid = bassIdentity.valid;
+
   let interactionValid = true;
   let registerSeparationValid = true;
   if (opts?.interactionPlan) {
@@ -179,6 +185,7 @@ export function runBehaviourGates(
     methenyValid,
     bacharachValid,
     duoMusicalValid,
+    bassIdentityValid,
     interactionValid,
     registerSeparationValid,
     allValid: errors.length === 0,

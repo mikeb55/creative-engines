@@ -23,6 +23,7 @@ import { runMapStyleStackTests } from './mapStyleStack.test';
 import { runOpenOutputFolderGateTests } from './openOutputFolderGate.test';
 import { runCorrectnessGatesTests } from './correctnessGates.test';
 import { runGceEvaluationTests } from './gceEvaluation.test';
+import { runBassIdentityTests } from './bassIdentity.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -47,6 +48,7 @@ const suites = [
   { name: 'Open output folder gate', run: runOpenOutputFolderGateTests },
   { name: 'Correctness gates', run: runCorrectnessGatesTests },
   { name: 'GCE evaluation', run: runGceEvaluationTests },
+  { name: 'Bass identity', run: runBassIdentityTests },
   ...retroSuites,
 ];
 

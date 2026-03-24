@@ -24,10 +24,10 @@ import { applyPerformancePass } from '../performance/performancePass';
 import {
   chordTonesForGoldenChord,
   pickGuideTone,
-  approachFromBelow,
   clampPitch,
   seededUnit,
 } from './guitarBassDuoHarmony';
+import { emitMelodicBassBar, scrubBassFirstAttackIfRoot, type BassSectionRole } from './bassMelodicLines';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -110,6 +110,56 @@ function readStyleHints(context: CompositionContext): StyleHints {
 /** Quarter-beat grid — keeps MusicXML division sums stable. */
 function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
+}
+
+/** Remove rests fully covered by a note span (motif tail rounding can leave orphan rests). */
+function collapseRestsInsideNotes(m: MeasureModel): void {
+  const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
+  if (notes.length === 0) return;
+  m.events = m.events.filter((e) => {
+    if (e.kind !== 'rest') return true;
+    const r = e as { startBeat: number; duration: number };
+    const rs = r.startBeat;
+    const re = r.startBeat + r.duration;
+    for (const n of notes) {
+      const ns = n.startBeat;
+      const ne = n.startBeat + n.duration;
+      if (rs >= ns - 1e-4 && re <= ne + 1e-4) return false;
+    }
+    return true;
+  });
+}
+
+/** Drop rests that share a start time with a note (motif rounding can create duplicate onsets). */
+function dropRestsSameStartAsNote(m: MeasureModel): void {
+  m.events = m.events.filter((e) => {
+    if (e.kind !== 'rest') return true;
+    const r = e as { startBeat: number };
+    return !m.events.some(
+      (o) => o !== e && o.kind === 'note' && Math.abs((o as { startBeat: number }).startBeat - r.startBeat) < 1e-4
+    );
+  });
+}
+
+/** Snap to quarter-beat grid and fix floating drift so MusicXML divisions sum to 16 per 4/4 bar. */
+function normalizeMeasureQuarterGrid(m: MeasureModel): void {
+  for (const e of m.events) {
+    if (e.kind === 'note' || e.kind === 'rest') {
+      (e as { startBeat: number }).startBeat = qBeat((e as { startBeat: number }).startBeat);
+      (e as { duration: number }).duration = qBeat((e as { duration: number }).duration);
+    }
+  }
+  let sum = 0;
+  for (const e of m.events) {
+    if (e.kind === 'note' || e.kind === 'rest') sum += (e as { duration: number }).duration;
+  }
+  const gap = 4 - sum;
+  if (Math.abs(gap) > 1e-4) {
+    const last = [...m.events].reverse().find((e) => e.kind === 'note' || e.kind === 'rest') as
+      | { duration: number }
+      | undefined;
+    if (last) last.duration = qBeat(last.duration + gap);
+  }
 }
 
 /**
@@ -216,6 +266,8 @@ function buildGuitarPart(
           addEvent(m, createNote(effectiveLow + (b % 3 === 0 ? 9 : 5), cursor, tail));
         }
       }
+      collapseRestsInsideNotes(m);
+      dropRestsSameStartAsNote(m);
     } else {
       const dyadBar = b === 4 || b === 8;
       if (density === 'sparse') {
@@ -266,6 +318,7 @@ function buildGuitarPart(
       }
     }
 
+    normalizeMeasureQuarterGrid(m);
     measures.push(m);
   }
 
@@ -279,17 +332,10 @@ function buildGuitarPart(
   };
 }
 
-/** Four quarter-style bass slices: three full beats + remainder — avoids MusicXML rounding drift. */
-function addBassQuarterLine(m: MeasureModel, start: number, p: [number, number, number, number]): void {
-  if (start > 0) {
-    addEvent(m, createRest(0, start));
-  }
-  let t = start;
-  for (let i = 0; i < 3; i++) {
-    addEvent(m, createNote(p[i], t, 1));
-    t += 1;
-  }
-  addEvent(m, createNote(p[3], t, 4 - t));
+function firstGuitarPitchInBar(guitar: PartModel, bar: number): number | undefined {
+  const m = guitar.measures.find((x) => x.index === bar);
+  const ev = m?.events.find((e) => e.kind === 'note');
+  return ev ? (ev as { pitch: number }).pitch : undefined;
 }
 
 function buildBassPart(
@@ -297,6 +343,7 @@ function buildBassPart(
   _bassPlan: BassBehaviourPlan,
   bassMap: InstrumentRegisterMap,
   motifState: MotifTrackerState,
+  guitarPart: PartModel,
   interactionPlan?: InteractionPlan
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
@@ -325,28 +372,18 @@ function buildBassPart(
     const simplify = interaction?.coupling?.bassSimplify;
     const stagger = staggerForBar(b, seed);
     const placements = getPlacementsForBar(motifState.placements, b);
-    const u = seededUnit(seed, b, 13);
-    const uFirst = seededUnit(seed, b, 17);
-
-    const startNonRoot = u < 0.66 && !simplify;
-    let firstPitch = rootClamped;
-    if (startNonRoot) {
-      if (uFirst < 0.38) firstPitch = third;
-      else if (uFirst < 0.78) firstPitch = guide;
-      else firstPitch = fifth;
-    }
     const firstStart = stagger.bass;
 
+    let guitarEchoSource = firstGuitarPitchInBar(guitarPart, b);
     if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
-      const first = placements[0].notes[0].pitch;
-      const bassEcho = clampPitch(first - 12, walkLow, effectiveHigh);
-      const landM = seededUnit(seed, b, 47) < 0.72 ? fifth : rootClamped;
-      const line: [number, number, number, number] =
-        seededUnit(seed, b, 19) < 0.5
-          ? [firstPitch, guide, bassEcho, fifth]
-          : [firstPitch, seventh, guide, landM];
-      addBassQuarterLine(m, firstStart, line);
-    } else if (simplify) {
+      guitarEchoSource = clampPitch(placements[0].notes[0].pitch - 12, walkLow, effectiveHigh);
+    }
+
+    let section: BassSectionRole = 'A';
+    if (b === 8) section = 'cadence';
+    else if (b >= 5) section = 'B';
+
+    if (simplify) {
       if (firstStart > 0) {
         addEvent(m, createRest(0, firstStart));
       }
@@ -356,29 +393,23 @@ function buildBassPart(
       const half2 = span - half;
       addEvent(m, createNote(rootClamped, t0, half));
       addEvent(m, createNote(fifth, t0 + half, half2));
-    } else if (u < 0.82) {
-      const ap = approachFromBelow(rootClamped, walkLow, effectiveHigh);
-      if (firstStart > 0) {
-        addEvent(m, createRest(0, firstStart));
-      }
-      const t0 = firstStart;
-      addEvent(m, createNote(ap, t0, 0.25));
-      addEvent(m, createNote(rootClamped, t0 + 0.25, 0.75));
-      addEvent(m, createNote(guide, t0 + 1, 1));
-      addEvent(m, createNote(fifth, t0 + 2, 1));
-      const lastDur = 4 - (t0 + 3);
-      const lastPitch = seededUnit(seed, b, 43) < 0.62 ? fifth : rootClamped;
-      addEvent(m, createNote(lastPitch, t0 + 3, lastDur));
     } else {
-      const uLine = seededUnit(seed, b, 31);
-      const land = seededUnit(seed, b, 41) < 0.72 ? fifth : rootClamped;
-      const line: [number, number, number, number] =
-        uLine < 0.34
-          ? [firstPitch, seventh, guide, land]
-          : uLine < 0.67
-            ? [third, fifth, guide, land]
-            : [firstPitch, guide, fifth, land];
-      addBassQuarterLine(m, firstStart, line);
+      emitMelodicBassBar({
+        m,
+        bar: b,
+        seed,
+        rootClamped,
+        third,
+        fifth,
+        seventh,
+        guide,
+        walkLow,
+        effectiveHigh,
+        firstStart,
+        section,
+        guitarFirstPitchInBar: guitarEchoSource,
+      });
+      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh);
     }
 
     measures.push(m);
@@ -426,6 +457,7 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     plans.bassBehaviour,
     plans.bassMap,
     plans.motifState,
+    guitarPart,
     plans.interactionPlan
   );
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: 120 });
