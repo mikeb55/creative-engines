@@ -14,6 +14,10 @@ Builds API bundle, UI, and Electron main; launches the desktop app.
 
 Do **not** run `electron .` alone — the API must be built first (`npm run build:api` or `desktop:dev`). The app does not use `npx` or system Node; it loads `resources/api.bundle.js` inside Electron.
 
+**Port conflicts:** The app prefers port 3001. If it is busy, it checks whether Composer OS is already running (`GET /health`) and reuses it; otherwise it picks the next free port (3002, 3003, …). No manual restart or killing processes.
+
+**Web dev (`npm run dev` in composer-os-app):** If the API runs on a non-default port, set `PORT` or `VITE_API_PORT` when starting Vite so the proxy matches.
+
 ## Package (Windows)
 
 ```bash

@@ -18,6 +18,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', app: 'composer-os' });
+});
+
 const REPO_ROOT = path.resolve(__dirname, '..');
 const OUTPUT_DIR = process.env.COMPOSER_OS_OUTPUT_DIR ?? path.join(REPO_ROOT, 'outputs', 'composer-os-v2');
 
@@ -78,7 +82,16 @@ if (fs.existsSync(staticPath)) {
   });
 }
 
-const PORT = 3001;
-app.listen(PORT, () => {
+const PORT = parseInt(process.env.PORT ?? '3001', 10);
+
+const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`Composer OS API on http://localhost:${PORT}`);
+});
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} already in use (EADDRINUSE). Set PORT to a free port.`);
+  } else {
+    console.error(err);
+  }
 });

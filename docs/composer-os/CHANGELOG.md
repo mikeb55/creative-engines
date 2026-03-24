@@ -59,6 +59,11 @@
 - Packaging-ready structure for future Windows desktop wrapper
 - No Python or .bat dependency for user workflow
 
+## Desktop port handling
+
+- Automatic port resolution: prefer 3001, reuse Composer OS via `GET /health`, or fall back to next free port
+- API exposes `GET /health` with `{ status, app: "composer-os" }`
+
 ## Stage 8 Windows Desktop Product
 
 - Electron desktop wrapper around Composer OS

@@ -1,17 +1,19 @@
 /**
  * Composer OS Desktop — Electron main process
- * Starts API (in-process when packaged, spawned when dev), opens window, shuts down cleanly.
+ * Starts API (in-process when packaged), resolves port conflicts, opens window.
  */
 
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as http from 'http';
+import { resolveComposerOsPort } from './utils/portUtils';
 
-const PORT = 3001;
-const API_READY_TIMEOUT_MS = 15000;
+const API_READY_TIMEOUT_MS = 20000;
 const POLL_INTERVAL_MS = 200;
+
 let mainWindow: BrowserWindow | null = null;
+let resolvedPort = 3001;
 
 function getResourcesPath(): string {
   if (!app.isPackaged) {
@@ -20,9 +22,6 @@ function getResourcesPath(): string {
   return process.resourcesPath;
 }
 
-/**
- * Resolve api.bundle.js. Never fall back to npx/ts-node — packaged users have no Node on PATH.
- */
 function getApiBundlePath(): string | null {
   const candidates = [
     path.join(process.resourcesPath, 'api.bundle.js'),
@@ -50,25 +49,44 @@ function getOutputDir(): string {
   return path.join(app.getPath('userData'), 'outputs', 'composer-os-v2');
 }
 
-function waitForApi(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      const req = http.get(`http://localhost:${PORT}/api/presets`, (res) => {
-        if (res.statusCode === 200) resolve();
-        else if (Date.now() - start > API_READY_TIMEOUT_MS) reject(new Error('API failed to start'));
-        else setTimeout(check, POLL_INTERVAL_MS);
-      });
-      req.on('error', () => {
-        if (Date.now() - start > API_READY_TIMEOUT_MS) reject(new Error('API failed to start'));
-        else setTimeout(check, POLL_INTERVAL_MS);
-      });
-    };
-    setTimeout(check, POLL_INTERVAL_MS);
+function httpGet(url: string): Promise<{ ok: boolean }> {
+  return new Promise((resolve) => {
+    const req = http.get(url, { timeout: 3000 }, (res) => {
+      resolve({ ok: res.statusCode === 200 });
+    });
+    req.on('error', () => resolve({ ok: false }));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ ok: false });
+    });
   });
 }
 
-function startApi(): Promise<void> {
+function waitForApiReady(port: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const tryOnce = async () => {
+      const health = await httpGet(`http://127.0.0.1:${port}/health`);
+      if (health.ok) {
+        resolve();
+        return;
+      }
+      const presets = await httpGet(`http://127.0.0.1:${port}/api/presets`);
+      if (presets.ok) {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > API_READY_TIMEOUT_MS) {
+        reject(new Error(`API did not become ready on port ${port}`));
+        return;
+      }
+      setTimeout(tryOnce, POLL_INTERVAL_MS);
+    };
+    setTimeout(tryOnce, POLL_INTERVAL_MS);
+  });
+}
+
+async function startApi(): Promise<void> {
   const bundlePath = getApiBundlePath();
   const uiPath = getUiPath();
   const outputDir = getOutputDir();
@@ -85,14 +103,18 @@ function startApi(): Promise<void> {
 
   process.env.COMPOSER_OS_OUTPUT_DIR = outputDir;
   if (fs.existsSync(uiPath)) process.env.COMPOSER_OS_STATIC_DIR = uiPath;
-  process.env.PORT = String(PORT);
 
-  try {
-    require(bundlePath);
-    return waitForApi();
-  } catch (err) {
-    return Promise.reject(err instanceof Error ? err : new Error(String(err)));
+  const { port, reuseExisting } = await resolveComposerOsPort();
+  resolvedPort = port;
+  process.env.PORT = String(port);
+
+  if (reuseExisting) {
+    await waitForApiReady(port);
+    return;
   }
+
+  require(bundlePath);
+  await waitForApiReady(port);
 }
 
 function createWindow(): void {
@@ -111,7 +133,7 @@ function createWindow(): void {
     icon: path.join(app.getAppPath(), 'resources', 'icon.png'),
   });
 
-  const url = `http://localhost:${PORT}`;
+  const url = `http://127.0.0.1:${resolvedPort}`;
   mainWindow.loadURL(url);
 
   mainWindow.once('ready-to-show', () => {

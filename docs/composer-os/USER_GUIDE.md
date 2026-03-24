@@ -23,6 +23,7 @@ npm run desktop:dev
 ```
 
 Or double-click the packaged executable (`Composer-OS-*-portable.exe` or installed shortcut). No manual server start; no Python or .bat.
+The desktop app resolves port 3001 automatically if it is busy (reuses Composer OS or switches to the next free port).
 
 ## Running the Demo (CLI)
 
