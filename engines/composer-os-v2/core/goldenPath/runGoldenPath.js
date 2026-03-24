@@ -29,6 +29,7 @@ const scoreModelValidation_1 = require("../score-model/scoreModelValidation");
 const strictBarMath_1 = require("../score-integrity/strictBarMath");
 const validateMusicXmlBarMath_1 = require("../export/validateMusicXmlBarMath");
 const validateBassIdentityInMusicXml_1 = require("../export/validateBassIdentityInMusicXml");
+const scoreTitleDefaults_1 = require("../../app-api/scoreTitleDefaults");
 function buildGoldenPathContext(seed) {
     const preset = guitarBassDuoPreset_1.guitarBassDuoPreset;
     const feel = preset.defaultFeel;
@@ -121,6 +122,7 @@ function runGoldenPath(seed = 12345, options) {
     const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
     const styleStack = options?.styleStack ?? DEFAULT_STYLE_STACK;
     const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
+    const scoreTitle = (0, scoreTitleDefaults_1.resolveScoreTitleForPreset)(manifestPresetId, options?.scoreTitle);
     const stackIds = (0, styleModuleTypes_1.styleStackToModuleIds)(styleStack);
     const motifHints = {
         triadPairs: stackIds.includes('triad_pairs'),
@@ -141,6 +143,7 @@ function runGoldenPath(seed = 12345, options) {
         motifState,
         styleStack,
         interactionPlan,
+        scoreTitle,
     };
     const score = (0, generateGoldenPathDuoScore_1.generateGoldenPathDuoScore)(context, plans);
     const modelValidation = (0, scoreModelValidation_1.validateScoreModel)(score);
@@ -225,6 +228,7 @@ function runGoldenPath(seed = 12345, options) {
         version: '2.0.0',
         seed,
         presetId: manifestPresetId,
+        scoreTitle,
         activeModules: (() => {
             if (!styleStack)
                 return [];

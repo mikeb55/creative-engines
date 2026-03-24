@@ -12,5 +12,5 @@
     "resolveJsonModule": true
   },
   "include": ["electron/**/*.ts"],
-  "exclude": ["electron/ipcEntry.ts"]
+  "exclude": ["electron/ipcEntry.ts", "electron/openFolderHelpersBundleEntry.ts"]
 }

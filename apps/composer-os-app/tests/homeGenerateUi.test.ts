@@ -21,6 +21,11 @@ describe('HomeGenerate musical UI', () => {
     expect(src).toMatch(/>[\s\n]*Try Another[\s\n]*</);
   });
 
+  it('has optional score title field', () => {
+    expect(src).toContain('Score title (optional)');
+    expect(src).toMatch(/title:\s*scoreTitle\.trim/);
+  });
+
   it('does not show a Seed label in the UI', () => {
     expect(src).not.toMatch(/>\s*Seed\s*</i);
   });

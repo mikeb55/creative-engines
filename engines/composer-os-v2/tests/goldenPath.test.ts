@@ -3,6 +3,7 @@
  */
 
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE } from '../app-api/scoreTitleDefaults';
 
 function testGoldenPathReturnsValidScore(): boolean {
   const r = runGoldenPath(1);
@@ -91,6 +92,24 @@ function testStyleStackPresent(): boolean {
   return !!stack && stack.primary === 'barry_harris' && stack.secondary === 'metheny' && stack.colour === 'triad_pairs';
 }
 
+function testDefaultScoreTitleNotGoldenPathDemo(): boolean {
+  const r = runGoldenPath(8);
+  return (
+    r.score.title === DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE &&
+    !r.score.title.includes('Golden Path Duo') &&
+    r.xml?.includes(`<work-title>${DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE}</work-title>`) === true
+  );
+}
+
+function testCustomScoreTitleFlowsToXml(): boolean {
+  const r = runGoldenPath(8, { scoreTitle: 'Custom Duo Title' });
+  return (
+    r.score.title === 'Custom Duo Title' &&
+    r.runManifest?.scoreTitle === 'Custom Duo Title' &&
+    r.xml?.includes('<work-title>Custom Duo Title</work-title>') === true
+  );
+}
+
 export function runGoldenPathTests(): { name: string; ok: boolean }[] {
   return [
     ['Golden path returns valid score', testGoldenPathReturnsValidScore],
@@ -105,5 +124,7 @@ export function runGoldenPathTests(): { name: string; ok: boolean }[] {
     ['Run manifest created', testRunManifestCreated],
     ['Motif state present', testMotifStatePresent],
     ['Style stack present (BH/Metheny/Triad Pairs)', testStyleStackPresent],
+    ['Default score title is preset default (not Golden Path Duo)', testDefaultScoreTitleNotGoldenPathDemo],
+    ['Custom score title flows to manifest and MusicXML', testCustomScoreTitleFlowsToXml],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

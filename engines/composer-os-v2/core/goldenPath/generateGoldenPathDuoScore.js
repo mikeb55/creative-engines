@@ -199,6 +199,6 @@ function generateGoldenPathDuoScore(context, plans) {
         : context;
     const guitarPart = buildGuitarPart(plans.guitarBehaviour, plans.guitarMap, plans.densityPlan, plans.rhythmConstraints, plans.motifState, plans.interactionPlan);
     const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState, plans.interactionPlan);
-    const rawScore = (0, scoreEventBuilder_1.createScore)('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
+    const rawScore = (0, scoreEventBuilder_1.createScore)(plans.scoreTitle, [guitarPart, bassPart], { tempo: 120 });
     return (0, performancePass_1.applyPerformancePass)(rawScore);
 }

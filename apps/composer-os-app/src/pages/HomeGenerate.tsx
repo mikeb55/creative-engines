@@ -12,6 +12,9 @@ type GenResult = {
     integrityPassed?: boolean;
     behaviourGatesPassed?: boolean;
     mxValidationPassed?: boolean;
+    strictBarMathPassed?: boolean;
+    exportRoundTripPassed?: boolean;
+    instrumentMetadataPassed?: boolean;
     readiness?: { release?: number; mx?: number; shareable?: boolean };
     errors?: string[];
   };
@@ -20,7 +23,9 @@ type GenResult = {
     presetId?: string;
     activeModules?: string[];
     timestamp?: string;
+    scoreTitle?: string;
   };
+  scoreTitle?: string;
 };
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
@@ -45,6 +50,8 @@ export function HomeGenerate({
   const [presetId, setPresetId] = useState('guitar_bass_duo');
   /** Hidden variation value sent to the engine (not shown as a raw number). */
   const [variationSeed, setVariationSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  /** Optional work title for MusicXML / score (default comes from the engine when empty). */
+  const [scoreTitle, setScoreTitle] = useState('');
   const [presets, setPresets] = useState<{ id: string; name: string; supported: boolean }[]>([]);
   const [styleStack, setStyleStack] = useState({
     primary: 'barry_harris',
@@ -81,11 +88,12 @@ export function HomeGenerate({
     }
   }, [modules, styleStack.primary]);
 
-  const generate = async () => {
+  const generate = async (seedOverride?: number) => {
     if (modulesError || modules.length === 0) {
       setError(STYLE_MODULES_UNAVAILABLE_MSG);
       return;
     }
+    const seed = seedOverride ?? variationSeed;
     setLoading(true);
     setError(null);
     notifyGenPhase('running');
@@ -98,8 +106,9 @@ export function HomeGenerate({
           colour: styleStack.colour || undefined,
           styleBlend,
         },
-        seed: variationSeed,
+        seed,
         locks,
+        title: scoreTitle.trim() || undefined,
       })) as GenResult;
       setResult(r);
       const ok = !!r.success;
@@ -279,8 +288,30 @@ export function HomeGenerate({
         disabled={moduleSelectDisabled}
       />
 
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Score title (optional)
+        </label>
+        <input
+          type="text"
+          value={scoreTitle}
+          onChange={(e) => setScoreTitle(e.target.value)}
+          placeholder="e.g. My duo sketch — or leave blank for a default title"
+          disabled={moduleSelectDisabled}
+          style={{
+            width: '100%',
+            maxWidth: 520,
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        />
+      </div>
+
       <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: 520 }}>
-        Use <strong style={{ color: 'var(--text)' }}>Try Another</strong> before generating if you want a different musical idea.
+        <strong style={{ color: 'var(--text)' }}>Try Another</strong> picks a new variation and runs generation immediately.
       </p>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -300,10 +331,19 @@ export function HomeGenerate({
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={generate} disabled={loading || !!modulesError || modules.length === 0}>
+        <button onClick={() => generate()} disabled={loading || !!modulesError || modules.length === 0}>
           {loading ? 'Generating…' : 'Generate'}
         </button>
-        <button className="secondary" type="button" onClick={() => setVariationSeed(Math.floor(Math.random() * 1e9))}>
+        <button
+          className="secondary"
+          type="button"
+          disabled={loading || !!modulesError || modules.length === 0}
+          onClick={async () => {
+            const next = Math.floor(Math.random() * 1e9);
+            setVariationSeed(next);
+            await generate(next);
+          }}
+        >
           Try Another
         </button>
         <button className="secondary" type="button" onClick={() => openFolder()}>
@@ -364,6 +404,12 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Manifest:</span>
                   <br />
                   {result.manifestPath}
+                </p>
+              )}
+              {(result.scoreTitle ?? rm?.scoreTitle) && (
+                <p style={{ fontSize: '0.95rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Score title:</span>{' '}
+                  {result.scoreTitle ?? rm?.scoreTitle}
                 </p>
               )}
               {rm?.presetId && (

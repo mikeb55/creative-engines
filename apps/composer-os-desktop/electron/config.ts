@@ -57,6 +57,19 @@ export function resolveDesktopIpcBundlePath(): string | null {
   return null;
 }
 
+/** Packaged-safe bundle for open-folder IPC (same logic as composerOsOutputPaths + ensureFolderForOpen). */
+export function resolveOpenFolderHelpersBundlePath(): string | null {
+  const candidates = [
+    path.join(process.resourcesPath, 'open-folder-helpers.cjs'),
+    path.join(__dirname, '..', 'resources', 'open-folder-helpers.cjs'),
+    path.join(app.getAppPath(), 'resources', 'open-folder-helpers.cjs'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 export function getUiSearchPaths(): { packagedUi: string; devUi: string } {
   const resources = getResourcesPath();
   const packagedUi = path.join(resources, 'ui');

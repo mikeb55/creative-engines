@@ -3,5 +3,6 @@ dist/
 release/
 resources/api.bundle.js
 resources/desktop-ipc.bundle.cjs
+resources/open-folder-helpers.cjs
 resources/ui/
 *.test.js

@@ -27,9 +27,10 @@ describe('Packaging smoke (desktop)', () => {
     expect(pkg.scripts['desktop:package']).toContain('electron-builder');
   });
 
-  it('API bundle, IPC bundle, and UI bundle exist after build', () => {
+  it('API bundle, IPC bundle, open-folder helpers, and UI bundle exist after build', () => {
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'api.bundle.js'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'desktop-ipc.bundle.cjs'))).toBe(true);
+    expect(fs.existsSync(path.join(desktopRoot, 'resources', 'open-folder-helpers.cjs'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
     const stampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
     expect(fs.existsSync(stampPath)).toBe(true);

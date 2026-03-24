@@ -233,6 +233,8 @@ export interface GoldenPathPlans {
   motifState: MotifTrackerState;
   styleStack?: StyleStack;
   interactionPlan?: InteractionPlan;
+  /** Work title for score + MusicXML */
+  scoreTitle: string;
 }
 
 /**
@@ -252,6 +254,6 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     plans.interactionPlan
   );
   const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState, plans.interactionPlan);
-  const rawScore = createScore('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
+  const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: 120 });
   return applyPerformancePass(rawScore);
 }

@@ -59,6 +59,8 @@ export interface GenerateRequest {
   styleStack: AppStyleStack;
   seed: number;
   locks?: AppLocks;
+  /** Omitted → preset default title (e.g. Guitar-Bass Duo Study). */
+  title?: string;
 }
 
 export interface ValidationSummary {
@@ -85,5 +87,7 @@ export interface OutputEntry {
   presetId: string;
   styleStack: string[];
   seed: number;
+  /** Title written to the score / MusicXML */
+  scoreTitle?: string;
   validation: ValidationSummary;
 }

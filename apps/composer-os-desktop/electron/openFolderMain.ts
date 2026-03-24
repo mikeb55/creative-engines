@@ -1,11 +1,11 @@
 /**
  * Electron main-process folder open: canonical path resolution + shell.openPath.
- * Loads engine helpers via require() so tsc rootDir (electron/) stays self-contained.
+ * Loads a packaged-safe esbuild bundle (resources/open-folder-helpers.cjs), not loose engine paths.
  */
 
 import { shell } from 'electron';
 import type { IpcMain } from 'electron';
-import * as path from 'path';
+import { resolveOpenFolderHelpersBundlePath } from './config';
 
 export type OpenFolderMainResult = {
   success: boolean;
@@ -23,17 +23,18 @@ function loadComposerOsApiHelpers(): {
   resolveOpenFolderTarget: (composerRoot: string, body?: { path?: string }) => ResolveResult;
   ensureFolderForOpen: (dir: string) => EnsureFolderResult;
 } {
-  const modPath = path.join(__dirname, '../../../engines/composer-os-v2/app-api/composerOsOutputPaths.js');
-  const openPath = path.join(__dirname, '../../../engines/composer-os-v2/app-api/openOutputFolder.js');
+  const bundlePath = resolveOpenFolderHelpersBundlePath();
+  if (!bundlePath) {
+    throw new Error(
+      'Composer OS open-folder helpers bundle is missing (resources/open-folder-helpers.cjs). Rebuild the desktop app.'
+    );
+  }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { resolveOpenFolderTarget } = require(modPath) as {
+  const mod = require(bundlePath) as {
     resolveOpenFolderTarget: (composerRoot: string, body?: { path?: string }) => ResolveResult;
-  };
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ensureFolderForOpen } = require(openPath) as {
     ensureFolderForOpen: (dir: string) => EnsureFolderResult;
   };
-  return { resolveOpenFolderTarget, ensureFolderForOpen };
+  return { resolveOpenFolderTarget: mod.resolveOpenFolderTarget, ensureFolderForOpen: mod.ensureFolderForOpen };
 }
 
 let cachedHelpers: ReturnType<typeof loadComposerOsApiHelpers> | null = null;
@@ -47,7 +48,16 @@ export async function openOutputFolderInMain(
   composerRoot: string,
   body?: { path?: string }
 ): Promise<OpenFolderMainResult> {
-  const { resolveOpenFolderTarget, ensureFolderForOpen } = helpers();
+  let resolveOpenFolderTarget: ReturnType<typeof helpers>['resolveOpenFolderTarget'];
+  let ensureFolderForOpen: ReturnType<typeof helpers>['ensureFolderForOpen'];
+  try {
+    const h = helpers();
+    resolveOpenFolderTarget = h.resolveOpenFolderTarget;
+    ensureFolderForOpen = h.ensureFolderForOpen;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, message: msg };
+  }
   const resolved = resolveOpenFolderTarget(composerRoot, body);
   if (!resolved.ok) {
     return { success: false, message: resolved.message };

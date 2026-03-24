@@ -3,6 +3,10 @@
  */
 
 export { resolveOpenFolderTarget } from '../../app-api/composerOsOutputPaths';
+export {
+  DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE,
+  resolveScoreTitleForPreset,
+} from '../../app-api/scoreTitleDefaults';
 export { validateStrictBarMath } from '../score-integrity/strictBarMath';
 export { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 export { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';

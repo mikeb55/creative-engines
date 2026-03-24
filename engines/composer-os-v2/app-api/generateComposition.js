@@ -46,6 +46,7 @@ function generateComposition(req, outputDir) {
     const result = (0, runGoldenPath_1.runGoldenPath)(req.seed, {
         styleStack: (0, mapStyleStack_1.mapAppStyleStackToEngine)(req.styleStack),
         presetId: req.presetId,
+        scoreTitle: req.title,
     });
     const validation = {
         integrityPassed: result.integrityPassed,
@@ -72,6 +73,7 @@ function generateComposition(req, outputDir) {
             styleStack: result.runManifest?.activeModules ?? [],
             seed: req.seed,
             timestamp: ts,
+            scoreTitle: result.runManifest?.scoreTitle,
             validation: {
                 scoreIntegrity: result.integrityPassed,
                 exportIntegrity: result.behaviourGatesPassed,
@@ -101,7 +103,9 @@ function generateComposition(req, outputDir) {
                 presetId: result.runManifest.presetId,
                 activeModules: result.runManifest.activeModules,
                 timestamp: result.runManifest.timestamp,
+                scoreTitle: result.runManifest.scoreTitle,
             }
             : undefined,
+        scoreTitle: result.runManifest?.scoreTitle,
     };
 }

@@ -30,6 +30,7 @@ import { validateScoreModel } from '../score-model/scoreModelValidation';
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
+import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -139,6 +140,8 @@ const DEFAULT_STYLE_STACK: StyleStack = {
 export interface RunGoldenPathOptions {
   styleStack?: StyleStack;
   presetId?: string;
+  /** User-provided work title; default comes from resolveScoreTitleForPreset */
+  scoreTitle?: string;
 }
 
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
@@ -156,6 +159,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
   const styleStack: StyleStack = options?.styleStack ?? DEFAULT_STYLE_STACK;
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
+  const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle);
   const stackIds = styleStackToModuleIds(styleStack);
   const motifHints: MotifStyleHints = {
     triadPairs: stackIds.includes('triad_pairs'),
@@ -178,6 +182,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     motifState,
     styleStack,
     interactionPlan,
+    scoreTitle,
   };
 
   const score = generateGoldenPathDuoScore(context, plans);
@@ -272,6 +277,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     version: '2.0.0',
     seed,
     presetId: manifestPresetId,
+    scoreTitle,
     activeModules: (() => {
       if (!styleStack) return [];
       const a: string[] = [styleStack.primary];

@@ -1,6 +1,6 @@
 # Composer OS Desktop
 
-Windows desktop app identity: **Composer OS Desktop** (`appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`). The renderer loads from **packaged files** (`loadFile` on `resources/ui/index.html`) — **no localhost / no browser URL** in packaged mode. Composer OS engine calls run through **preload `invokeApi` → IPC** (`resources/desktop-ipc.bundle.cjs`), not HTTP. The legacy `resources/api.bundle.js` remains for the **web** dev server (`npm run dev` + API) only.
+Windows desktop app identity: **Composer OS Desktop** (`appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`). The renderer loads from **packaged files** (`loadFile` on `resources/ui/index.html`) — **no localhost / no browser URL** in packaged mode. Composer OS engine calls run through **preload `invokeApi` → IPC** (`resources/desktop-ipc.bundle.cjs`), not HTTP. **Open library / file folder** uses a separate **`open-folder-helpers.cjs`** bundle (same path logic as the API) so the packaged exe does not depend on loose engine paths under `engines/`. The legacy `resources/api.bundle.js` remains for the **web** dev server (`npm run dev` + API) only.
 
 Before loading the UI, main reads `resources/ui/composer-os-ui-stamp.json` and **refuses to start** if the bundle is wrong or lists forbidden tabs. Stale UI trees are fully replaced on each `build:ui`. One window; no separate backend window.
 
@@ -12,7 +12,7 @@ npm install
 npm run desktop:dev
 ```
 
-Builds API bundle, UI, and Electron main; launches the desktop app.
+Builds API bundle, IPC bundle, **open-folder-helpers** bundle (`resources/open-folder-helpers.cjs`), UI, and Electron main; launches the desktop app.
 
 Do **not** run `electron .` alone — run the full `desktop:dev` pipeline so UI, IPC bundle, and Electron main are built. Packaged mode uses **IPC + file UI**, not the HTTP API bundle inside Electron.
 

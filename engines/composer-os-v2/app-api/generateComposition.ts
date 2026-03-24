@@ -32,13 +32,17 @@ export interface GenerateResult {
     presetId: string;
     activeModules: string[];
     timestamp: string;
+    scoreTitle?: string;
   };
+  /** Resolved title used for the score (user or default). */
+  scoreTitle?: string;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
   const result = runGoldenPath(req.seed, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: req.presetId,
+    scoreTitle: req.title,
   });
   const validation = {
     integrityPassed: result.integrityPassed,
@@ -67,6 +71,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       styleStack: result.runManifest?.activeModules ?? [],
       seed: req.seed,
       timestamp: ts,
+      scoreTitle: result.runManifest?.scoreTitle,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.behaviourGatesPassed,
@@ -97,7 +102,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           presetId: result.runManifest.presetId,
           activeModules: result.runManifest.activeModules,
           timestamp: result.runManifest.timestamp,
+          scoreTitle: result.runManifest.scoreTitle,
         }
       : undefined,
+    scoreTitle: result.runManifest?.scoreTitle,
   };
 }

@@ -7,6 +7,8 @@ export interface RunManifest {
   composerOsVersion: string;
   seed: number;
   presetId: string;
+  /** Title applied to the exported score */
+  scoreTitle?: string;
   activeModules: string[];
   feelMode: string;
   instrumentProfiles: string[];
