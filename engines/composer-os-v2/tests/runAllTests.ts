@@ -22,6 +22,7 @@ import { runComposerOsOutputPathsTests } from './composerOsOutputPaths.test';
 import { runMapStyleStackTests } from './mapStyleStack.test';
 import { runOpenOutputFolderGateTests } from './openOutputFolderGate.test';
 import { runCorrectnessGatesTests } from './correctnessGates.test';
+import { runGceEvaluationTests } from './gceEvaluation.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -45,6 +46,7 @@ const suites = [
   { name: 'Style Blend mapping', run: runMapStyleStackTests },
   { name: 'Open output folder gate', run: runOpenOutputFolderGateTests },
   { name: 'Correctness gates', run: runCorrectnessGatesTests },
+  { name: 'GCE evaluation', run: runGceEvaluationTests },
   ...retroSuites,
 ];
 

@@ -73,13 +73,25 @@ function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMoti
   return placements.filter((p) => p.startBar === bar);
 }
 
-/** Conversational stagger: rarely both on downbeat. */
+/** Conversational stagger: seed-driven call/response; avoids both on beat 1. */
 function staggerForBar(bar: number, seed: number): { guitar: number; bass: number } {
   if (bar <= 4) {
-    return bar % 2 === 1 ? { guitar: 0, bass: 0.5 } : { guitar: 0.5, bass: 0 };
+    const aPatterns = [
+      { guitar: 0, bass: 0.5 },
+      { guitar: 0.5, bass: 0 },
+      { guitar: 0.25, bass: 0.75 },
+      { guitar: 0.75, bass: 0.25 },
+    ];
+    return aPatterns[(bar + seed * 3) % 4];
   }
-  const row = [0, 0.5, 0.25, 0.5][(bar - 5) % 4];
-  return seededUnit(seed, bar, 7) < 0.5 ? { guitar: 0, bass: row } : { guitar: row, bass: 0 };
+  const bPatterns = [
+    { guitar: 0, bass: 0.5 },
+    { guitar: 0.5, bass: 0 },
+    { guitar: 0, bass: 0.25 },
+    { guitar: 0.25, bass: 0.5 },
+    { guitar: 0.5, bass: 0.25 },
+  ];
+  return bPatterns[(bar + seed * 2) % 5];
 }
 
 interface StyleHints {
@@ -151,7 +163,7 @@ function buildGuitarPart(
     const reduceAttack = interaction?.coupling?.guitarReduceAttack;
     const stagger = staggerForBar(b, seed);
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b);
-    const sectionBump = b > 4 ? 2 : 0;
+    const sectionBump = b > 4 ? 5 : 0;
     const effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
     const effectiveHigh = Math.min(79, zHigh + sectionBump);
     const useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
@@ -314,18 +326,25 @@ function buildBassPart(
     const stagger = staggerForBar(b, seed);
     const placements = getPlacementsForBar(motifState.placements, b);
     const u = seededUnit(seed, b, 13);
+    const uFirst = seededUnit(seed, b, 17);
 
-    const startNonRoot = u < 0.32 && !simplify;
-    const firstPitch = startNonRoot ? (u < 0.16 ? third : guide) : rootClamped;
+    const startNonRoot = u < 0.66 && !simplify;
+    let firstPitch = rootClamped;
+    if (startNonRoot) {
+      if (uFirst < 0.38) firstPitch = third;
+      else if (uFirst < 0.78) firstPitch = guide;
+      else firstPitch = fifth;
+    }
     const firstStart = stagger.bass;
 
     if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
       const first = placements[0].notes[0].pitch;
       const bassEcho = clampPitch(first - 12, walkLow, effectiveHigh);
+      const landM = seededUnit(seed, b, 47) < 0.72 ? fifth : rootClamped;
       const line: [number, number, number, number] =
         seededUnit(seed, b, 19) < 0.5
           ? [firstPitch, guide, bassEcho, fifth]
-          : [firstPitch, seventh, rootClamped, guide];
+          : [firstPitch, seventh, guide, landM];
       addBassQuarterLine(m, firstStart, line);
     } else if (simplify) {
       if (firstStart > 0) {
@@ -337,7 +356,7 @@ function buildBassPart(
       const half2 = span - half;
       addEvent(m, createNote(rootClamped, t0, half));
       addEvent(m, createNote(fifth, t0 + half, half2));
-    } else if (u < 0.45) {
+    } else if (u < 0.82) {
       const ap = approachFromBelow(rootClamped, walkLow, effectiveHigh);
       if (firstStart > 0) {
         addEvent(m, createRest(0, firstStart));
@@ -348,9 +367,17 @@ function buildBassPart(
       addEvent(m, createNote(guide, t0 + 1, 1));
       addEvent(m, createNote(fifth, t0 + 2, 1));
       const lastDur = 4 - (t0 + 3);
-      addEvent(m, createNote(rootClamped, t0 + 3, lastDur));
+      const lastPitch = seededUnit(seed, b, 43) < 0.62 ? fifth : rootClamped;
+      addEvent(m, createNote(lastPitch, t0 + 3, lastDur));
     } else {
-      const line: [number, number, number, number] = [firstPitch, seventh, guide, rootClamped];
+      const uLine = seededUnit(seed, b, 31);
+      const land = seededUnit(seed, b, 41) < 0.72 ? fifth : rootClamped;
+      const line: [number, number, number, number] =
+        uLine < 0.34
+          ? [firstPitch, seventh, guide, land]
+          : uLine < 0.67
+            ? [third, fifth, guide, land]
+            : [firstPitch, guide, fifth, land];
       addBassQuarterLine(m, firstStart, line);
     }
 

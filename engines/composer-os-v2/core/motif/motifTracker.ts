@@ -59,11 +59,12 @@ export function placeMotifAtBar(
 export function placeMotifsAcrossBars(motifs: BaseMotif[], seed: number): PlacedMotif[] {
   const placements: PlacedMotif[] = [];
   const r = (n: number) => ((seed + n) % 5) - 2;
+  const phase = (seed % 11) / 20;
   placements.push(placeMotifAtBar(motifs[0], 1, 'original', 0, 0));
-  placements.push(placeMotifAtBar(motifs[0], 5, 'transposed', r(1), 0.5));
+  placements.push(placeMotifAtBar(motifs[0], 5, 'transposed', r(1), 0.5 + phase));
   if (motifs.length > 1) {
-    placements.push(placeMotifAtBar(motifs[1], 3, 'rhythm_shift', 0, (seed % 3) * 0.5));
-    placements.push(placeMotifAtBar(motifs[1], 7, 'inversion_lite', r(2), 0));
+    placements.push(placeMotifAtBar(motifs[1], 3, 'rhythm_shift', 0, ((seed * 3) % 5) * 0.25));
+    placements.push(placeMotifAtBar(motifs[1], 7, 'inversion_lite', r(2), ((seed * 7) % 5) * 0.25));
   }
   return placements;
 }

@@ -53,7 +53,7 @@ function testBehaviourCouplingInPlan(): boolean {
   );
   const plan = planInteraction(sections, 8);
   const bSection = plan.perSection.find((s) => s.sectionLabel === 'B');
-  return bSection?.coupling?.bassSimplify === true && bSection?.coupling?.guitarReduceAttack === true;
+  return bSection?.coupling?.guitarReduceAttack === true && bSection?.coupling?.bassSimplify !== true;
 }
 
 function testInteractionValidationPasses(): boolean {

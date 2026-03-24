@@ -22,9 +22,7 @@ export function planInteraction(
       startBar: s.startBar,
       length: s.length,
       mode: resolvedMode,
-      coupling: isA
-        ? undefined
-        : { bassSimplify: true, guitarReduceAttack: true },
+      coupling: isA ? undefined : { guitarReduceAttack: true },
     };
   });
   return {
