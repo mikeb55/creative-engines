@@ -8,6 +8,7 @@
     "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
+    "desktop:rebuild-and-smoke": "tsx install/rebuildAndSmoke.ts",
     "verify:packaged-exe": "tsx install/verifyPackagedDesktop.ts",
     "desktop:self-test-install": "npm run desktop:package && npm run verify:packaged-exe && tsx install/installComposerOsDesktop.ts",
     "desktop:clean-install": "npm run desktop:self-test-install",

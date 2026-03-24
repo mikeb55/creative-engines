@@ -12,7 +12,8 @@
     "big-band": "node launchers/launch_big_band.js",
     "counterpoint": "node launchers/launch_counterpoint.js",
     "test:musicxml": "npx ts-node scripts/testMusicXMLGeneration.ts",
-    "orbit-v16": "npx ts-node --project tsconfig.json scripts/createOrbitV16.ts"
+    "orbit-v16": "npx ts-node --project tsconfig.json scripts/createOrbitV16.ts",
+    "desktop:rebuild-and-smoke": "npm run desktop:rebuild-and-smoke --prefix apps/composer-os-desktop"
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",

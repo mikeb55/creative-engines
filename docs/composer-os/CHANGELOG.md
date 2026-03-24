@@ -1,5 +1,9 @@
 # Composer OS Changelog
 
+## Automated desktop rebuild + smoke
+
+- **Command:** `npm run desktop:rebuild-and-smoke` in `apps/composer-os-desktop` (or repo root: same name) runs: close stale `Composer-OS-Desktop-*-portable.exe` processes (Windows), `desktop:package`, resolve newest portable exe, verify `resources/ui` stamp, launch the exe, confirm the process stays up, compare UI `buildTimestamp` to the last successful run (stored in `.last-smoke-ui-timestamp.txt`). Prints **PASS** or **FAIL** with the blocking step — no fake success.
+
 ## Desktop packaging + score titles
 
 - **Packaged folder actions:** `openFolderMain` loads **`resources/open-folder-helpers.cjs`** (esbuild bundle of `composerOsOutputPaths` + `ensureFolderForOpen`), not loose `engines/...` paths — fixes `Cannot find module ... composerOsOutputPaths.js` in the portable exe. `config.resolveOpenFolderHelpersBundlePath()` mirrors other bundled assets (`process.resourcesPath` + dev fallbacks).

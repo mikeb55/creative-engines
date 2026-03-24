@@ -38,6 +38,16 @@ Also built: `release/win-unpacked/Composer OS Desktop.exe` (unpacked), `release/
 
 **Hard check after packaging:** `npm run verify:packaged-exe` — fails if no portable `.exe` in `release/`.
 
+## Rebuild + smoke (one command, Windows)
+
+```bash
+npm run desktop:rebuild-and-smoke
+```
+
+Closes matching **Composer-OS-Desktop-*-portable.exe** processes if running, runs **`desktop:package`**, resolves the newest portable exe, validates **`resources/ui`** (`composer-os-ui-stamp.json`), launches that exe, checks the process stays alive briefly, and requires a **newer** UI `buildTimestamp` than the last successful run (see `.last-smoke-ui-timestamp.txt`). Final output is **PASS** or **FAIL** with paths and versions — not a cosmetic check.
+
+From the repo root: `npm run desktop:rebuild-and-smoke` (delegates to this package).
+
 ## Deploy shortcut (Windows, developer machine)
 
 Run **once** from `apps/composer-os-desktop` (after `npm install`):
