@@ -12,6 +12,11 @@ describe('HomeGenerate musical UI', () => {
     expect(src).toMatch(/styleBlend/);
   });
 
+  it('shows a line listing loaded style module names (Barry Harris, Metheny, Triad Pairs, Bacharach from API)', () => {
+    expect(src).toContain('Style modules:');
+    expect(src).toMatch(/modules\.map\(\(m\)\s*=>\s*m\.name\)/);
+  });
+
   it('does not expose numeric weight inputs', () => {
     expect(src).not.toMatch(/Weights \(primary/);
     expect(src).not.toMatch(/type="number"/);

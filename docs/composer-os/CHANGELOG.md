@@ -1,5 +1,10 @@
 # Composer OS Changelog
 
+## Stabilisation + Bacharach visibility
+
+- **Guitar–Bass Duo** golden-path generation is regression-tested across many seeds (default style stack and **Bacharach** primary) so **strict bar math**, **MusicXML round-trip**, and **bass metadata** gates stay green; the Generate screen lists loaded style modules by name (**Barry Harris**, **Metheny**, **Triad Pairs**, **Bacharach**) when the API returns them.
+- **Bacharach** remains a first-class registered style module end-to-end (registry, `/api/style-modules`, UI selectors, receipts).
+
 ## Guitar–Bass Duo musical pass + Bacharach module
 
 - **Guitar–Bass Duo** golden-path output is more musical: guide-tone–oriented bass lines (with staggered entries and quarter-safe rhythms), improved guitar phrasing (rests, dyad-style bars, stagger), A/B interaction via conversational downbeats, motif merge uses quarter-beat quantization for stable MusicXML bar math.

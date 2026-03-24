@@ -134,6 +134,35 @@ function testExportedXmlRoundTripMatchesExporter(): boolean {
   return v.valid;
 }
 
+/** Stress default duo stack + Bacharach primary across seeds — catches bar-math / round-trip drift. */
+function testMultiSeedDuoPassesStrictGates(): boolean {
+  for (let s = 0; s < 24; s++) {
+    const r = runGoldenPath(s);
+    if (
+      !r.success ||
+      !r.strictBarMathPassed ||
+      !r.exportRoundTripPassed ||
+      !r.instrumentMetadataPassed
+    ) {
+      return false;
+    }
+  }
+  for (let s = 0; s < 12; s++) {
+    const r = runGoldenPath(s, {
+      styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+    });
+    if (
+      !r.success ||
+      !r.strictBarMathPassed ||
+      !r.exportRoundTripPassed ||
+      !r.instrumentMetadataPassed
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function runCorrectnessGatesTests(): { name: string; ok: boolean }[] {
   return [
     ['resolveOpenFolderTarget: library root', testResolveOpenFolderCanonicalRoot],
@@ -146,5 +175,6 @@ export function runCorrectnessGatesTests(): { name: string; ok: boolean }[] {
     ['performance pass: durations unchanged', testPerformancePassPreservesTiming],
     ['strict bar math: invalid measure rejected for receipt', testInvalidBarMathIsDetectable],
     ['export round-trip: exporter output validates', testExportedXmlRoundTripMatchesExporter],
+    ['multi-seed duo: strict bar math + round-trip + bass (default + Bacharach)', testMultiSeedDuoPassesStrictGates],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

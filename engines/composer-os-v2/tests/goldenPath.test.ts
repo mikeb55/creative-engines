@@ -114,7 +114,15 @@ function testBacharachPrimaryStackPasses(): boolean {
   const r = runGoldenPath(555, {
     styleStack: { primary: 'bacharach', weights: { primary: 1 } },
   });
-  return r.success && r.plans?.styleStack?.primary === 'bacharach' && r.behaviourGatesPassed;
+  return (
+    r.success &&
+    r.plans?.styleStack?.primary === 'bacharach' &&
+    r.behaviourGatesPassed &&
+    r.strictBarMathPassed &&
+    r.exportRoundTripPassed &&
+    r.instrumentMetadataPassed &&
+    r.mxValidationPassed
+  );
 }
 
 export function runGoldenPathTests(): { name: string; ok: boolean }[] {

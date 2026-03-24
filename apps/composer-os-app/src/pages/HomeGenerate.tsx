@@ -223,6 +223,19 @@ export function HomeGenerate({
         </div>
       )}
 
+      {modules.length > 0 && !modulesError && (
+        <p
+          style={{
+            fontSize: '0.85rem',
+            color: 'var(--text-muted)',
+            marginBottom: '0.75rem',
+            lineHeight: 1.45,
+          }}
+        >
+          Style modules: {modules.map((m) => m.name).join(' · ')}
+        </p>
+      )}
+
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Preset

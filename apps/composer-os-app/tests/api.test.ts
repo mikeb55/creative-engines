@@ -26,4 +26,20 @@ describe('App API integration', () => {
     expect(result.validation).toBeDefined();
     expect(typeof result.validation.readiness.release).toBe('number');
   });
+
+  it('generates with Bacharach primary and passes strict gates', () => {
+    const result = generateComposition(
+      {
+        presetId: 'guitar_bass_duo',
+        styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+        seed: 7777,
+      },
+      TEST_OUTPUT
+    );
+    expect(result.success).toBe(true);
+    expect(result.validation.strictBarMathPassed).toBe(true);
+    expect(result.validation.exportRoundTripPassed).toBe(true);
+    expect(result.validation.instrumentMetadataPassed).toBe(true);
+    expect(result.runManifest?.activeModules?.[0]).toBe('bacharach');
+  });
 });
