@@ -21,6 +21,7 @@ describe('App API integration', () => {
     );
     expect(result.success).toBe(true);
     expect(result.filename).toMatch(/\.musicxml$/);
+    expect(result.manifestPath).toMatch(/\.manifest\.json$/);
     expect(result.validation).toBeDefined();
     expect(typeof result.validation.readiness.release).toBe('number');
   });

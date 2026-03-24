@@ -1,0 +1,42 @@
+/**
+ * Internal packaging / desktop path sanity (no manual steps).
+ */
+import * as fs from 'fs';
+import * as path from 'path';
+
+const desktopRoot = path.resolve(__dirname, '..');
+
+function readUtf8(rel: string): string {
+  return fs.readFileSync(path.join(desktopRoot, rel), 'utf-8');
+}
+
+describe('Packaging smoke (desktop)', () => {
+  it('electron-builder config is present and icon resolves', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
+    expect(pkg.build?.productName).toBe('Composer OS');
+    expect(pkg.build?.win?.icon).toBeDefined();
+    const iconRel = pkg.build.win.icon as string;
+    expect(fs.existsSync(path.join(desktopRoot, iconRel))).toBe(true);
+  });
+
+  it('API bundle and UI bundle exist after build', () => {
+    expect(fs.existsSync(path.join(desktopRoot, 'resources', 'api.bundle.js'))).toBe(true);
+    expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
+  });
+
+  it('main and preload have no python or composer-studio references', () => {
+    const mainSrc = readUtf8('electron/main.ts');
+    const preloadSrc = readUtf8('electron/preload.ts');
+    const configSrc = readUtf8('electron/config.ts');
+    for (const s of [mainSrc, preloadSrc, configSrc]) {
+      expect(s.toLowerCase()).not.toContain('python');
+      expect(s.toLowerCase()).not.toContain('.py');
+      expect(s).not.toMatch(/composer-studio/i);
+    }
+  });
+
+  it('dist main and preload compiled', () => {
+    expect(fs.existsSync(path.join(desktopRoot, 'dist', 'main.js'))).toBe(true);
+    expect(fs.existsSync(path.join(desktopRoot, 'dist', 'preload.js'))).toBe(true);
+  });
+});

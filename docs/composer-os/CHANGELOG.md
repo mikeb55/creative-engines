@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## Desktop product hardening
+
+- Explicit startup state machine in Electron main (`booting` → … → `ready` / `fatal_error`, plus generation phases); renderer reads state via preload; fatal startup shows a single-window error page with clear copy.
+- Central app API constants (`composerOsConfig.ts`) and `GET /api/diagnostics` (port, canonical output path, writable flag, version).
+- Web UI: expandable **Diagnostics** panel; prominent **Generation receipt** after each run (paths, manifest, preset, style stack, readiness/MX, pass/fail, open folder); friendlier errors when the API or output folder fails.
+- `openOutputFolder` validates folder existence/writability; `GET /api/output-directory` returns `displayPath` (Windows-friendly).
+- Engine tests: multi-run generation smoke (5 runs), diagnostics payload, friendly error copy; desktop tests: packaging smoke, startup helpers.
+
 ## V2.0 Foundation
 
 - Core architecture: conductor, rhythm engine, primitives, instrument profiles

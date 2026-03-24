@@ -3,17 +3,33 @@
  * Single window, single instance, no browser spawn, API in-process.
  */
 
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as http from 'http';
 import { resolveComposerOsPort } from './utils/portUtils';
+import type { StartupState } from './startupState';
+import {
+  DESKTOP_PRODUCT_NAME,
+  resolveApiBundlePath,
+  resolveDefaultOutputDir,
+  resolveUiPath,
+  getWindowIconPath,
+} from './config';
 
 const API_READY_TIMEOUT_MS = 20000;
 const POLL_INTERVAL_MS = 200;
 
 let mainWindow: BrowserWindow | null = null;
 let resolvedPort = 3001;
+let startupState: StartupState = 'booting';
+
+function setStartupState(next: StartupState): void {
+  startupState = next;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('composer-os:startup-state', next);
+  }
+}
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -27,39 +43,24 @@ if (!gotLock) {
   });
 }
 
-function getResourcesPath(): string {
-  if (!app.isPackaged) {
-    return path.join(app.getAppPath(), 'resources');
-  }
-  return process.resourcesPath;
-}
+ipcMain.handle('composer-os:get-startup-state', (): StartupState => startupState);
 
-function getApiBundlePath(): string | null {
-  const candidates = [
-    path.join(process.resourcesPath, 'api.bundle.js'),
-    path.join(__dirname, '..', 'resources', 'api.bundle.js'),
-    path.join(app.getAppPath(), 'resources', 'api.bundle.js'),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
+ipcMain.handle('composer-os:get-desktop-meta', () => ({
+  packaged: app.isPackaged,
+  version: app.getVersion(),
+  productName: DESKTOP_PRODUCT_NAME,
+}));
 
-function getUiPath(): string {
-  const resources = getResourcesPath();
-  const packagedUi = path.join(resources, 'ui');
-  const devUi = path.join(app.getAppPath(), '..', 'composer-os-app', 'dist');
-  if (fs.existsSync(packagedUi)) return packagedUi;
-  return devUi;
-}
-
-function getOutputDir(): string {
-  if (!app.isPackaged) {
-    return path.join(app.getAppPath(), '..', '..', 'outputs', 'composer-os-v2');
+ipcMain.on(
+  'composer-os:generation-phase',
+  (_event, phase: 'running' | 'succeeded' | 'failed' | 'idle') => {
+    if (startupState === 'fatal_error') return;
+    if (phase === 'running') setStartupState('generate_running');
+    else if (phase === 'succeeded') setStartupState('generate_succeeded');
+    else if (phase === 'failed') setStartupState('generate_failed');
+    else setStartupState('ready');
   }
-  return path.join(app.getPath('userData'), 'outputs', 'composer-os-v2');
-}
+);
 
 function httpGet(url: string): Promise<{ ok: boolean }> {
   return new Promise((resolve) => {
@@ -89,7 +90,11 @@ function waitForApiReady(port: number): Promise<void> {
         return;
       }
       if (Date.now() - start > API_READY_TIMEOUT_MS) {
-        reject(new Error(`API did not become ready on port ${port}`));
+        reject(
+          new Error(
+            `Composer OS did not respond in time (${API_READY_TIMEOUT_MS / 1000}s). The API may be stuck starting. Try closing other apps using this port, then restart Composer OS.`
+          )
+        );
         return;
       }
       setTimeout(tryOnce, POLL_INTERVAL_MS);
@@ -99,40 +104,54 @@ function waitForApiReady(port: number): Promise<void> {
 }
 
 async function startApi(): Promise<void> {
-  const bundlePath = getApiBundlePath();
-  const uiPath = getUiPath();
-  const outputDir = getOutputDir();
+  const bundlePath = resolveApiBundlePath();
+  const uiPath = resolveUiPath();
+  const outputDir = resolveDefaultOutputDir();
 
   if (!bundlePath) {
     return Promise.reject(
       new Error(
-        'API bundle missing (resources/api.bundle.js). Run: npm run build:api in apps/composer-os-desktop, then npm run desktop:dev.'
+        'The Composer OS engine bundle is missing (resources/api.bundle.js). Reinstall the app or run a full desktop build from the developer environment.'
       )
     );
   }
 
-  fs.mkdirSync(outputDir, { recursive: true });
+  try {
+    fs.mkdirSync(outputDir, { recursive: true });
+    fs.accessSync(outputDir, fs.constants.W_OK);
+  } catch {
+    return Promise.reject(
+      new Error(
+        'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
+      )
+    );
+  }
 
   process.env.COMPOSER_OS_OUTPUT_DIR = outputDir;
   if (fs.existsSync(uiPath)) process.env.COMPOSER_OS_STATIC_DIR = uiPath;
 
+  setStartupState('resolving_port');
   const { port, reuseExisting } = await resolveComposerOsPort();
   resolvedPort = port;
   process.env.PORT = String(port);
 
   if (reuseExisting) {
+    setStartupState('waiting_for_backend');
     await waitForApiReady(port);
     return;
   }
 
+  setStartupState('starting_backend');
   require(bundlePath);
+  setStartupState('waiting_for_backend');
   await waitForApiReady(port);
 }
 
 function createWindowShell(): BrowserWindow {
   const preloadPath = path.join(__dirname, 'preload.js');
+  const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
-    title: 'Composer OS',
+    title: DESKTOP_PRODUCT_NAME,
     width: 900,
     height: 700,
     minWidth: 600,
@@ -144,7 +163,7 @@ function createWindowShell(): BrowserWindow {
       contextIsolation: true,
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
     },
-    icon: path.join(app.getAppPath(), 'resources', 'icon.png'),
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
   });
 
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -165,12 +184,12 @@ function loadErrorPage(win: BrowserWindow, message: string): void {
   win.loadURL(
     `data:text/html;charset=utf-8,${encodeURIComponent(`
       <!DOCTYPE html>
-      <html><head><meta charset="utf-8"><title>Composer OS</title>
-      <style>body{font-family:system-ui;background:#1a1a1a;color:#e4e4e7;padding:2rem;margin:0;}
-      h1{color:#ef4444;font-size:1.25rem;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-all;}</style></head>
+      <html><head><meta charset="utf-8"><title>${DESKTOP_PRODUCT_NAME}</title>
+      <style>body{font-family:system-ui;background:#1a1a1a;color:#e4e4e7;padding:2rem;margin:0;max-width:42rem;}
+      h1{color:#f87171;font-size:1.25rem;}p{line-height:1.5;}code{background:#27272a;padding:2px 6px;border-radius:4px;word-break:break-word;display:block;margin-top:0.75rem;}</style></head>
       <body>
-        <h1>Composer OS could not start</h1>
-        <p>The API backend could not be started.</p>
+        <h1>${DESKTOP_PRODUCT_NAME} could not start</h1>
+        <p>Something went wrong while starting the app. You can try again after closing other copies of Composer OS.</p>
         <p><code>${safe}</code></p>
       </body></html>
     `)}`
@@ -181,15 +200,16 @@ function loadLoadingPage(win: BrowserWindow): void {
   win.loadURL(
     `data:text/html;charset=utf-8,${encodeURIComponent(`
       <!DOCTYPE html>
-      <html><head><meta charset="utf-8"><title>Composer OS</title>
+      <html><head><meta charset="utf-8"><title>${DESKTOP_PRODUCT_NAME}</title>
       <style>body{font-family:system-ui;background:#0f0f12;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
       p{color:#a1a1aa;}</style></head>
-      <body><p>Starting Composer OS…</p></body></html>
+      <body><p>Starting ${DESKTOP_PRODUCT_NAME}…</p></body></html>
     `)}`
   );
 }
 
 async function launchApp(): Promise<void> {
+  setStartupState('booting');
   mainWindow = createWindowShell();
   const win = mainWindow;
   loadLoadingPage(win);
@@ -197,9 +217,12 @@ async function launchApp(): Promise<void> {
   try {
     await startApi();
     const url = `http://127.0.0.1:${resolvedPort}`;
+    setStartupState('loading_ui');
     await win.loadURL(url);
+    setStartupState('ready');
     win.once('ready-to-show', () => win.show());
   } catch (err) {
+    setStartupState('fatal_error');
     const msg = err instanceof Error ? err.message : String(err);
     loadErrorPage(win, msg);
     win.once('ready-to-show', () => win.show());
@@ -210,6 +233,7 @@ if (gotLock) {
   app.whenReady().then(() => {
     launchApp().catch((err) => {
       console.error(err);
+      setStartupState('fatal_error');
     });
   });
 

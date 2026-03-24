@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, displayOutputPath } from '../services/api';
 
 export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
   const [outputs, setOutputs] = useState<Array<{ filename: string; filepath: string; timestamp: string; presetId: string; styleStack: string[]; seed: number; validation?: Record<string, unknown> }>>([]);
   const [loading, setLoading] = useState(true);
-  const [outputDir, setOutputDir] = useState<string | null>(null);
+  const [outputDir, setOutputDir] = useState<{ path: string; displayPath?: string } | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -12,21 +12,21 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
       setOutputs(r.outputs);
       setLoading(false);
     }).catch(() => setLoading(false));
-    api.getOutputDirectory().then((r) => setOutputDir(r.path)).catch(() => {});
+    api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   };
 
   useEffect(() => { load(); }, [refreshTrigger]);
 
   const openFolder = () => {
-    api.openOutputFolder();
+    api.openOutputFolder().catch(() => {});
   };
 
   return (
     <section>
       <h2>Outputs</h2>
       {outputDir && (
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem', wordBreak: 'break-all' }}>
-          Folder: <strong style={{ color: 'var(--text)' }}>{outputDir}</strong>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem', wordBreak: 'break-word' }}>
+          Folder: <strong style={{ color: 'var(--text)' }}>{displayOutputPath(outputDir)}</strong>
         </p>
       )}
       <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>

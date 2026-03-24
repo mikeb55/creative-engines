@@ -12,6 +12,8 @@ import { getStyleModules } from '../engines/composer-os-v2/app-api/getStyleModul
 import { generateComposition } from '../engines/composer-os-v2/app-api/generateComposition';
 import { listOutputs } from '../engines/composer-os-v2/app-api/listOutputs';
 import { openOutputFolder } from '../engines/composer-os-v2/app-api/openOutputFolder';
+import { buildDiagnostics } from '../engines/composer-os-v2/app-api/buildDiagnostics';
+import { friendlyGenerateError, friendlyOutputDirError } from '../engines/composer-os-v2/app-api/apiErrorMessages';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
 const app = express();
@@ -23,7 +25,13 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const OUTPUT_DIR = process.env.COMPOSER_OS_OUTPUT_DIR ?? path.join(REPO_ROOT, 'outputs', 'composer-os-v2');
+const OUTPUT_DIR = path.resolve(process.env.COMPOSER_OS_OUTPUT_DIR ?? path.join(REPO_ROOT, 'outputs', 'composer-os-v2'));
+
+function displayPath(p: string): string {
+  const n = path.normalize(p);
+  if (process.platform === 'win32') return n.replace(/\//g, '\\');
+  return n;
+}
 
 app.get('/api/presets', (_req: Request, res: Response) => {
   try {
@@ -55,7 +63,11 @@ app.post('/api/generate', (req: Request, res: Response) => {
     const result = generateComposition(req_, OUTPUT_DIR);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, error: String(err) });
+    res.status(500).json({
+      success: false,
+      error: friendlyGenerateError(err),
+      detail: process.env.NODE_ENV === 'development' ? String(err) : undefined,
+    });
   }
 });
 
@@ -64,17 +76,27 @@ app.get('/api/outputs', (_req: Request, res: Response) => {
     const outputs = listOutputs(OUTPUT_DIR);
     res.json({ outputs });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: friendlyOutputDirError(err) });
   }
 });
 
 app.get('/api/output-directory', (_req: Request, res: Response) => {
-  res.json({ path: OUTPUT_DIR });
+  res.json({ path: OUTPUT_DIR, displayPath: displayPath(OUTPUT_DIR) });
+});
+
+app.get('/api/diagnostics', (_req: Request, res: Response) => {
+  try {
+    const port = parseInt(process.env.PORT ?? '3001', 10);
+    const payload = buildDiagnostics(OUTPUT_DIR, port);
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 app.post('/api/open-output-folder', (_req: Request, res: Response) => {
-  openOutputFolder(OUTPUT_DIR).then((ok) => {
-    res.json({ success: ok });
+  openOutputFolder(OUTPUT_DIR).then((r) => {
+    res.json(r);
   });
 });
 

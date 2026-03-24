@@ -35,8 +35,10 @@ Produces:
 2. API starts in-process (no extra cmd window, no Python).
 3. **One** Electron window only — no separate browser, no Composer Studio / legacy launchers.
 4. Second launch focuses the existing window (`requestSingleInstanceLock`).
-5. Generate shows full file path and output folder; **Open output folder** uses Explorer without a visible shell window.
-6. Close window to exit.
+5. **Startup:** Main process tracks explicit states (port resolution → API ready → UI load). On failure, the same window shows an error page (no raw crash UX when avoidable).
+6. **UI:** **Diagnostics** (expandable) shows backend status, port, mode, output folder, version, last generation. **Generation receipt** summarizes each run (paths, manifest, preset, style stack, readiness, pass/fail) with **Open output folder**.
+7. Generate shows full file path and output folder; **Open output folder** uses Explorer without a visible shell window and validates the folder when possible.
+8. Close window to exit.
 
 No manual server start. No Python. No .bat files.
 

@@ -12,5 +12,6 @@ describe('API client', () => {
     expect(typeof api.generate).toBe('function');
     expect(typeof api.getOutputs).toBe('function');
     expect(typeof api.openOutputFolder).toBe('function');
+    expect(typeof api.getDiagnostics).toBe('function');
   });
 });

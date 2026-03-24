@@ -25,7 +25,9 @@ npm run desktop:dev
 Or double-click the packaged executable (`Composer-OS-*-portable.exe` or installed shortcut). No manual server start; no Python or .bat.
 The desktop app resolves port 3001 automatically if it is busy (reuses Composer OS or switches to the next free port).
 
-**Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows the full output path and readiness summary; use **Open output folder** to open the save directory in File Explorer.
+**Desktop behaviour:** Only one Composer OS window; the app does not open an external browser or legacy Composer Studio tools. After generation, the UI shows a **Generation receipt** (file name, full paths, manifest path when present, preset, style stack, readiness scores, pass/fail) and **Open output folder** opens the active save directory in File Explorer. If startup fails, you see a clear error in the same window (no extra browser).
+
+Use the **Diagnostics** section (expandable at the top) to confirm the backend, active port, dev vs packaged mode, output folder, app version, and last generation status.
 
 ## Running the Demo (CLI)
 

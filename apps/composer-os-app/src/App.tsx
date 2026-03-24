@@ -3,15 +3,25 @@ import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { StyleStack } from './pages/StyleStack';
 import { Outputs } from './pages/Outputs';
+import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 
 type Tab = 'home' | 'presets' | 'style' | 'outputs';
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [refreshOutputs, setRefreshOutputs] = useState(0);
+  const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
 
-  const onResult = (_r: Record<string, unknown>) => {
+  const onResult = (payload: {
+    record: Record<string, unknown>;
+    summary: { status: 'success' | 'failed'; shareable?: boolean; at?: string };
+  }) => {
     setRefreshOutputs((n) => n + 1);
+    setLastGeneration({
+      status: payload.summary.status === 'success' ? 'success' : 'failed',
+      shareable: payload.summary.shareable,
+      at: payload.summary.at,
+    });
   };
 
   return (
@@ -31,9 +41,9 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === 'home' && (
-        <HomeGenerate onResult={onResult} />
-      )}
+      <DiagnosticsPanel lastGeneration={lastGeneration} />
+
+      {tab === 'home' && <HomeGenerate onResult={onResult} />}
       {tab === 'presets' && <Presets />}
       {tab === 'style' && <StyleStack />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}

@@ -13,6 +13,8 @@ export interface GenerateResult {
   xml?: string;
   filename?: string;
   filepath?: string;
+  /** Path to run manifest JSON alongside MusicXML, when written */
+  manifestPath?: string;
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -74,6 +76,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     xml: result.xml,
     filename,
     filepath,
+    manifestPath: filepath ? filepath.replace(/\.musicxml$/i, '.manifest.json') : undefined,
     validation,
     runManifest: result.runManifest
       ? {

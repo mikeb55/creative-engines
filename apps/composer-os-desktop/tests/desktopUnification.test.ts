@@ -29,7 +29,16 @@ describe('Composer OS desktop unification', () => {
   });
 
   it('API route list is current app-api shape (documented in test)', () => {
-    const routes = ['/api/presets', '/api/style-modules', '/api/output-directory', '/api/generate', '/api/outputs', '/api/open-output-folder', '/health'];
+    const routes = [
+      '/api/presets',
+      '/api/style-modules',
+      '/api/output-directory',
+      '/api/diagnostics',
+      '/api/generate',
+      '/api/outputs',
+      '/api/open-output-folder',
+      '/health',
+    ];
     expect(routes.every((r) => r.startsWith('/'))).toBe(true);
     expect(routes.some((r) => r.includes('engines/'))).toBe(false);
   });

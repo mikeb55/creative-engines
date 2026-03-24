@@ -30,6 +30,8 @@
 
 **Desktop product:** One window (`main.ts` + `preload.ts`), no legacy Composer Studio wiring. App API routes only under `/api/*` and `/health`.
 
+**Hardening:** `electron/startupState.ts` + transitions in `main.ts`; `electron/config.ts` centralises paths (bundle, UI, output, icon). Preload exposes `getStartupState`, `getDesktopMeta`, `notifyGenerationPhase`. App API: `composerOsConfig.ts`, `buildDiagnostics.ts`, `apiErrorMessages.ts`, `GET /api/diagnostics`, canonical `output-directory` + `displayPath`. Vitest: `packagingSmoke.test.ts`, `startupState.test.ts`; engine `appApi.test.ts` includes multi-run smoke and diagnostics checks.
+
 ## Next Planned Stage
 - Form variability
 - Additional presets (ECM, Big Band)

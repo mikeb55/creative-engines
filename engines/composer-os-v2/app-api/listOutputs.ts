@@ -25,7 +25,7 @@ export function listOutputs(outputDir: string): OutputEntry[] {
 
   for (const f of files) {
     if (!f.toLowerCase().endsWith('.musicxml')) continue;
-    const filepath = path.join(outputDir, f);
+    const filepath = path.resolve(outputDir, f);
     const stat = fs.statSync(filepath);
     const manifest = readManifest(filepath);
     entries.push({
