@@ -22,6 +22,9 @@ export interface RhythmicConstraints {
   intensity: number;
   syncopationDensity: SyncopationDensity;
   subdivisionPreference: 'eighth' | 'sixteenth' | 'mixed';
-  offbeatWeight: number; // 0–1, likelihood of offbeat attacks
+  offbeatWeight: number;
   tripletHint: boolean;
+  phraseDisplacementTendency: number; // 0–1
+  sustainTendency: number; // 0–1, prefer longer notes
+  attackDensityTendency: number; // 0–1, events per bar tendency
 }

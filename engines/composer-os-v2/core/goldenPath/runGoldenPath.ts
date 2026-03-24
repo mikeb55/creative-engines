@@ -1,16 +1,23 @@
 /**
  * Composer OS V2 — Golden path runner
- * Full pipeline: preset → feel → harmony → phrase → score → integrity → export → validation → manifest
+ * preset → feel → section roles → density → register map → behaviours → score → integrity → export → validation → manifest
  */
 
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
-import { generateGoldenPathDuoScore } from './generateGoldenPathDuoScore';
+import { generateGoldenPathDuoScore, type GoldenPathPlans } from './generateGoldenPathDuoScore';
+import { planSectionRoles } from '../section-roles/sectionRolePlanner';
+import { planDensityCurve } from '../density/densityCurvePlanner';
+import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/registerMapPlanner';
+import { planGuitarBehaviour } from '../instrument-behaviours/guitarBehaviour';
+import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour';
+import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
+import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
-import { validateMusicXmlSchema, reParseMusicXml } from '../export/musicxmlValidation';
+import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
@@ -20,8 +27,10 @@ export interface GoldenPathResult {
   success: boolean;
   score: ScoreModel;
   context: CompositionContext;
+  plans: GoldenPathPlans;
   xml?: string;
   integrityPassed: boolean;
+  behaviourGatesPassed: boolean;
   mxValidationPassed: boolean;
   sibeliusSafe: boolean;
   readiness: { shareable: boolean; release: number; mx: number };
@@ -32,13 +41,11 @@ export interface GoldenPathResult {
 function buildGoldenPathContext(seed: number): CompositionContext {
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
-  const form = {
-    sections: [
-      { label: 'A', startBar: 1, length: 4 },
-      { label: 'B', startBar: 5, length: 4 },
-    ],
-    totalBars: 8,
-  };
+  const sections = [
+    { label: 'A', startBar: 1, length: 4 },
+    { label: 'B', startBar: 5, length: 4 },
+  ];
+  const form = { sections, totalBars: 8 };
   const harmony = {
     segments: [
       { chord: 'Dmin9', bars: 2 },
@@ -48,13 +55,7 @@ function buildGoldenPathContext(seed: number): CompositionContext {
     ],
     totalBars: 8,
   };
-  const phrase = {
-    segments: [
-      { label: 'A', startBar: 1, length: 4 },
-      { label: 'B', startBar: 5, length: 4 },
-    ],
-    totalBars: 8,
-  };
+  const phrase = { segments: sections.map((s) => ({ ...s, density: undefined })), totalBars: 8 };
   const chordSymbolPlan = {
     segments: [
       { chord: 'Dmin9', startBar: 1, bars: 2 },
@@ -64,17 +65,23 @@ function buildGoldenPathContext(seed: number): CompositionContext {
     ],
     totalBars: 8,
   };
-  const rehearsalMarkPlan = {
-    marks: [
-      { label: 'A', bar: 1 },
-      { label: 'B', bar: 5 },
-    ],
+  const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
+  const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
+
+  const sectionRoles = planSectionRoles(sections, { A: 'statement', B: 'contrast' });
+  const densityPlan = planDensityCurve(sectionRoles, 8);
+  const densityCurve = { segments: densityPlan.segments, totalBars: 8 };
+
+  const guitarMap = planGuitarRegisterMap(sectionRoles);
+  const bassMap = planBassRegisterMap(sectionRoles);
+  const register = {
+    melody: [55, 79] as [number, number],
+    bass: [36, 55] as [number, number],
+    byInstrument: {
+      clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [36, 55],
+    },
   };
-  const release = runReleaseReadinessGate({
-    validationPassed: true,
-    exportValid: true,
-    mxValid: true,
-  });
 
   return {
     systemVersion: '2.0.0',
@@ -85,8 +92,8 @@ function buildGoldenPathContext(seed: number): CompositionContext {
     harmony,
     motif: { activeMotifs: [], variants: {} },
     phrase,
-    register: {},
-    density: { segments: [], totalBars: 8 },
+    register,
+    density: densityCurve,
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
@@ -96,7 +103,6 @@ function buildGoldenPathContext(seed: number): CompositionContext {
   };
 }
 
-/** Extract pitches by instrument from score for register validation. */
 function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string; pitches: number[] }> {
   return score.parts.map((p) => {
     const pitches: number[] = [];
@@ -109,17 +115,32 @@ function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string
   });
 }
 
-/** Run full golden path pipeline. */
 export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const errors: string[] = [];
 
   const context = buildGoldenPathContext(seed);
-  const score = generateGoldenPathDuoScore(context);
+  const sections = planSectionRoles(context.form.sections, { A: 'statement', B: 'contrast' });
+  const densityPlan = planDensityCurve(sections, 8);
+  const guitarMap = planGuitarRegisterMap(sections);
+  const bassMap = planBassRegisterMap(sections);
+  const guitarBehaviour = planGuitarBehaviour(sections, densityPlan, guitarMap);
+  const bassBehaviour = planBassBehaviour(sections, densityPlan, bassMap);
+  const rhythmConstraints = computeRhythmicConstraints(context.feel);
+
+  const plans: GoldenPathPlans = {
+    sections,
+    guitarMap,
+    bassMap,
+    densityPlan,
+    guitarBehaviour,
+    bassBehaviour,
+    rhythmConstraints,
+  };
+
+  const score = generateGoldenPathDuoScore(context, plans);
 
   const modelValidation = validateScoreModel(score);
-  if (!modelValidation.valid) {
-    errors.push(...modelValidation.errors);
-  }
+  if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
   const bars = score.parts[0]?.measures.map((m) => ({ index: m.index - 1, duration: 4 })) ?? [];
   const chordByBar = new Map<number, string>();
@@ -129,7 +150,6 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     }
   }
   const chordSymbols = Array.from(chordByBar.entries()).map(([bar, chord]) => ({ bar, chord }));
-
   const rehearsalByBar = new Map<number, string>();
   for (const p of score.parts) {
     for (const m of p.measures) {
@@ -147,34 +167,35 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     rehearsalMarksRequired: true,
     pitchByInstrument: extractPitchByInstrument(score),
   });
+  if (!integrityResult.passed) errors.push(...integrityResult.errors);
 
-  if (!integrityResult.passed) {
-    errors.push(...integrityResult.errors);
-  }
+  const behaviourResult = runBehaviourGates(
+    score,
+    rhythmConstraints,
+    guitarBehaviour,
+    bassBehaviour,
+    sections,
+    densityPlan
+  );
+  if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 
   const exportResult = exportScoreModelToMusicXml(score);
   let xml: string | undefined;
   let mxValidationPassed = false;
   let sibeliusSafe = false;
-
   if (exportResult.success && exportResult.xml) {
     xml = exportResult.xml;
-    const schemaResult = validateMusicXmlSchema(xml);
-    mxValidationPassed = schemaResult.valid;
-    if (!schemaResult.valid) errors.push(...schemaResult.errors);
-
-    const sibeliusResult = checkSibeliusSafe(xml);
-    sibeliusSafe = sibeliusResult.safe;
-    if (!sibeliusResult.safe) errors.push(...sibeliusResult.issues);
+    mxValidationPassed = validateMusicXmlSchema(xml).valid;
+    sibeliusSafe = checkSibeliusSafe(xml).safe;
   } else {
     errors.push(...exportResult.errors);
   }
 
   const readinessResult = runReleaseReadinessGate({
-    validationPassed: integrityResult.passed && modelValidation.valid,
+    validationPassed: integrityResult.passed && modelValidation.valid && behaviourResult.allValid,
     exportValid: exportResult.success,
     mxValid: mxValidationPassed,
-    rhythmicCorrect: true,
+    rhythmicCorrect: behaviourResult.rhythmValid,
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
     chordRehearsalComplete: chordSymbols.length >= 8 && rehearsalMarks.length >= 2,
@@ -188,8 +209,8 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     feelMode: context.feel.mode,
     instrumentProfiles: context.instrumentProfiles.map((p) => p.instrumentIdentity),
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },
-    validationPassed: integrityResult.passed,
-    validationErrors: integrityResult.errors.length > 0 ? integrityResult.errors : undefined,
+    validationPassed: integrityResult.passed && behaviourResult.allValid,
+    validationErrors: errors.length > 0 ? errors : undefined,
     exportTarget: xml ? 'musicxml' : undefined,
     timestamp: new Date().toISOString(),
   });
@@ -197,6 +218,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const success =
     modelValidation.valid &&
     integrityResult.passed &&
+    behaviourResult.allValid &&
     exportResult.success &&
     mxValidationPassed &&
     errors.length === 0;
@@ -205,8 +227,10 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     success,
     score,
     context,
+    plans,
     xml,
     integrityPassed: integrityResult.passed,
+    behaviourGatesPassed: behaviourResult.allValid,
     mxValidationPassed,
     sibeliusSafe,
     readiness: {

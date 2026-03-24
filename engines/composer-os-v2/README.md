@@ -65,7 +65,11 @@ form
   → release gate
 ```
 
-The **golden path** implements a real first-pass generation flow: preset → feel → harmony → phrase → score construction → integrity gate → MusicXML export → MX validation → run manifest. Deep style-specific generation is deferred; the golden path proves correctness.
+The **golden path** implements: preset → feel → section roles → density curve → register map → instrument behaviours → score construction → integrity gate → behaviour gates → MusicXML export → MX validation → run manifest.
+
+### Stage 2 — Musical Core
+
+Adds section roles (statement, development, contrast, return), section-aware register maps, density curves, guitar/bass behaviour planners, and deepened rhythm engine (offbeat tendency, sustain tendency, attack density). New behaviour validation gates: rhythm identity, guitar texture integrity, bass harmonic integrity, section contrast.
 
 ---
 
@@ -184,11 +188,15 @@ engines/composer-os-v2/
   core/
     conductor/           # Pipeline coordinator
     rhythm-engine/       # Feel, syncopation, subdivision
+    section-roles/       # Section role planner and validation
+    register-map/        # Section-aware register planning
+    density/             # Density curve planner
+    instrument-behaviours/ # Guitar/bass behaviour planners
     primitives/          # Shared data model
     instrument-profiles/ # Guitar, bass profiles
     style-modules/       # Registry for modifiers
     score-model/         # Score types, event builder, validation
-    score-integrity/     # Pre-export gates
+    score-integrity/     # Pre-export gates, behaviour gates
     export/              # MusicXML exporter, validation, Sibelius-safe
     readiness/           # RRG + MX readiness scoring
     run-ledger/          # Run manifest for replay/debug

@@ -8,6 +8,7 @@ import * as path from 'path';
 const result = runGoldenPath(42);
 console.log('Success:', result.success);
 console.log('Integrity passed:', result.integrityPassed);
+console.log('Behaviour gates passed:', result.behaviourGatesPassed);
 console.log('MX validation passed:', result.mxValidationPassed);
 console.log('Sibelius safe:', result.sibeliusSafe);
 console.log('Errors:', result.errors);

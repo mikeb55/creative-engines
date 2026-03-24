@@ -25,6 +25,9 @@ export function computeRhythmicConstraints(feel: FeelConfig): RhythmicConstraint
     feel.syncopationDensity === 'medium' ? 0.5 : 0.3;
 
   const tripletHint = feel.mode === 'swing' || feel.mode === 'hybrid';
+  const phraseDisplacementTendency = feel.mode === 'swing' || feel.mode === 'hybrid' ? 0.3 : 0.1;
+  const sustainTendency = feel.intensity < 0.5 ? 0.7 : 0.5;
+  const attackDensityTendency = feel.syncopationDensity === 'high' ? 0.7 : feel.syncopationDensity === 'medium' ? 0.5 : 0.3;
 
   return {
     mode: feel.mode,
@@ -33,5 +36,8 @@ export function computeRhythmicConstraints(feel: FeelConfig): RhythmicConstraint
     subdivisionPreference: subdivision,
     offbeatWeight,
     tripletHint,
+    phraseDisplacementTendency,
+    sustainTendency,
+    attackDensityTendency,
   };
 }
