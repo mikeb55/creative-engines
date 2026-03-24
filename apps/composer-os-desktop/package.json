@@ -8,6 +8,8 @@
     "desktop:dev": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "npm run desktop:build && electron-builder --win",
+    "desktop:deploy": "npm run desktop:package && tsx install/installComposerOsDesktop.ts",
+    "desktop:install": "npm run desktop:deploy",
     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
     "build": "npm run build:api && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "build:api": "node scripts/build-api-bundle.js",
@@ -25,6 +27,7 @@
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
     "esbuild": "^0.19.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.0.0",
     "vitest": "^1.2.0"
   },

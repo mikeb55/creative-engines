@@ -29,9 +29,21 @@ Produces:
 - `release/Composer-OS-1.0.0-portable.exe` — portable
 - `release/Composer OS Setup 1.0.0.exe` — NSIS installer with desktop shortcut
 
+## Deploy shortcut (Windows, developer machine)
+
+After packaging, run **one** of:
+
+```bash
+npm run desktop:deploy
+# or
+npm run desktop:install
+```
+
+This runs `desktop:package`, then `install/installComposerOsDesktop.ts`: it scans Desktop, Public Desktop, and Start Menu `.lnk` files, **quarantines** legacy Composer Studio / stale “Composer OS” shortcuts (moved under `%USERPROFILE%\ComposerOsDesktop\shortcut-quarantine\`), and creates a fresh desktop shortcut named **Composer OS** pointing at the **current** `release/Composer-OS-*-portable.exe`. Use that shortcut for day-to-day launches so old shortcuts cannot point at stale builds.
+
 ## End User Flow
 
-1. Double-click the executable (portable or installed).
+1. Double-click **Composer OS** on the desktop (after deploy), or the packaged portable/installed executable directly.
 2. API starts in-process (no extra cmd window, no Python).
 3. **One** Electron window only — no separate browser, no Composer Studio / legacy launchers.
 4. Second launch focuses the existing window (`requestSingleInstanceLock`).

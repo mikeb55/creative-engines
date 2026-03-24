@@ -1,5 +1,9 @@
 # Composer OS Changelog
 
+## Desktop shortcut deploy (Windows)
+
+- `apps/composer-os-desktop/install/` — `desktop:deploy` / `desktop:install` runs `desktop:package` then a TypeScript installer: scans common shortcut locations, quarantines legacy Composer Studio / stale “Composer OS” `.lnk` files, creates **Composer OS.lnk** on the desktop targeting the newest `release/Composer-OS-*-portable.exe`, and verifies the shortcut. Quarantined files go to `%USERPROFILE%\ComposerOsDesktop\shortcut-quarantine\`.
+
 ## Desktop UI bundle provenance
 
 - `apps/composer-os-app` Vite build writes `composer-os-ui-stamp.json` (product id, name, shell version, timestamp, git commit, allowed page list).

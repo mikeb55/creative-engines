@@ -14,8 +14,7 @@ describe('Launcher / legacy path quarantine (desktop package)', () => {
     expect(blob).not.toContain('.bat');
   });
 
-  it('electron sources do not reference launchers folder', () => {
-    const electronDir = path.join(desktopRoot, 'electron');
+  it('electron and install sources do not reference launchers folder', () => {
     const walk = (dir: string): string[] => {
       const out: string[] = [];
       for (const name of fs.readdirSync(dir)) {
@@ -25,7 +24,9 @@ describe('Launcher / legacy path quarantine (desktop package)', () => {
       }
       return out;
     };
-    const combined = walk(electronDir).join('\n');
+    const electronDir = path.join(desktopRoot, 'electron');
+    const installDir = path.join(desktopRoot, 'install');
+    const combined = [...walk(electronDir), ...walk(installDir)].join('\n');
     expect(combined).not.toMatch(/launchers[\\/]/i);
   });
 });
