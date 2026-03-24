@@ -65,6 +65,14 @@ function testStyleSystemGatesPass(): boolean {
   return false;
 }
 
+function testInteractionLayerGatesPass(): boolean {
+  for (const seed of [100, 101, 108, 109]) {
+    const r = runGoldenPath(seed);
+    if (r.behaviourGatesPassed && !!r.plans?.interactionPlan) return true;
+  }
+  return false;
+}
+
 function testNegativeRehearsalMarkRemovedFails(): boolean {
   const r = runGoldenPath(200);
   const chordByBar = new Map<number, string>();
@@ -216,6 +224,7 @@ export function runStageExitGatesTests(): { name: string; ok: boolean }[] {
     ['Musical Core: gates pass', testMusicalCoreGatesPass],
     ['First Intelligence: motif + BH pass', testFirstIntelligenceMotifAndBHPass],
     ['Style System: gates pass', testStyleSystemGatesPass],
+    ['Interaction Layer: gates pass', testInteractionLayerGatesPass],
     ['Negative: rehearsal mark removed fails', testNegativeRehearsalMarkRemovedFails],
     ['Negative: chord symbols removed fails', testNegativeChordSymbolsRemovedFails],
     ['Negative: guitar register too high fails', testNegativeGuitarRegisterTooHighFails],

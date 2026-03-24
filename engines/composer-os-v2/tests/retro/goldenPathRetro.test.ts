@@ -64,6 +64,11 @@ function testBarCountStable(): boolean {
   return r.score.parts.every((p) => p.measures.length === 8);
 }
 
+function testInteractionPresent(): boolean {
+  const r = runGoldenPath(9);
+  return !!r.plans?.interactionPlan?.perSection?.length;
+}
+
 export function runGoldenPathRetroTests(): { name: string; ok: boolean }[] {
   return [
     ['8-bar score generated', testEightBarScore],
@@ -74,5 +79,6 @@ export function runGoldenPathRetroTests(): { name: string; ok: boolean }[] {
     ['MX validation succeeds', testMxValidationSucceeds],
     ['Run manifest created', testRunManifestCreated],
     ['Bar count stable', testBarCountStable],
+    ['Interaction plan present', testInteractionPresent],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

@@ -11,6 +11,7 @@ import { generateGoldenPathDuoScore, type GoldenPathPlans } from './generateGold
 import { planSectionRoles } from '../section-roles/sectionRolePlanner';
 import { planDensityCurve } from '../density/densityCurvePlanner';
 import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/registerMapPlanner';
+import { planInteraction } from '../interaction/interactionPlanner';
 import { planGuitarBehaviour } from '../instrument-behaviours/guitarBehaviour';
 import { planBassBehaviour } from '../instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
@@ -145,6 +146,8 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
   const placements = placeMotifsAcrossBars(baseMotifs, seed);
   const motifState = { baseMotifs, placements };
 
+  const interactionPlan = planInteraction(sections, 8);
+
   const plans: GoldenPathPlans = {
     sections,
     guitarMap,
@@ -155,6 +158,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     rhythmConstraints,
     motifState,
     styleStack,
+    interactionPlan,
   };
 
   const score = generateGoldenPathDuoScore(context, plans);
@@ -196,7 +200,7 @@ export function runGoldenPath(seed: number = 12345): GoldenPathResult {
     bassBehaviour,
     sections,
     densityPlan,
-    { motifState, styleStack }
+    { motifState, styleStack, interactionPlan }
   );
   if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 

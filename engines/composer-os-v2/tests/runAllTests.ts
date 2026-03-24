@@ -13,6 +13,7 @@ import { runGoldenPathTests } from './goldenPath.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
 import { runStyleModuleTests } from './styleModule.test';
+import { runInteractionTests } from './interaction.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -27,6 +28,7 @@ const suites = [
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
   { name: 'Motif', run: runMotifTests },
   { name: 'Style Module', run: runStyleModuleTests },
+  { name: 'Interaction', run: runInteractionTests },
   ...retroSuites,
 ];
 

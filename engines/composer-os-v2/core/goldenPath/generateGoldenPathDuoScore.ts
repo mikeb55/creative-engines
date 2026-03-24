@@ -19,6 +19,11 @@ import type { MotifTrackerState, PlacedMotif } from '../motif/motifTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
 import { applyStyleStack } from '../style-modules/styleModuleRegistry';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
+import type { InteractionPlan } from '../interaction/interactionTypes';
+import { getInteractionForBar } from '../interaction/interactionPlanner';
+
+/** Min guitar pitch to maintain register separation from bass (bass typically to 55). */
+const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
 const CHORD_ROOTS: Record<string, number> = {
   'Dmin9': 38, 'Dm9': 38, 'D-9': 38,
@@ -56,13 +61,14 @@ function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMoti
   return placements.filter((p) => p.startBar === bar);
 }
 
-/** Build guitar part: motif-driven where placed, filler elsewhere. */
+/** Build guitar part: motif-driven where placed, filler elsewhere. Enforces register separation. */
 function buildGuitarPart(
   guitarPlan: GuitarBehaviourPlan,
   guitarMap: InstrumentRegisterMap,
   densityPlan: DensityCurvePlan,
   rhythm: RhythmicConstraints,
-  motifState: MotifTrackerState
+  motifState: MotifTrackerState,
+  interactionPlan?: InteractionPlan
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is GuitarProfile => p.instrumentIdentity === 'clean_electric_guitar'
@@ -70,38 +76,41 @@ function buildGuitarPart(
 
   const measures: MeasureModel[] = [];
   const [baseLow] = profile.preferredMelodicZone;
+  const effectiveLow = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
 
   for (let b = 1; b <= 8; b++) {
     const m = createMeasure(b, chordForBar(b), rehearsalForBar(b));
     const placements = getPlacementsForBar(motifState.placements, b);
     const density = getDensityForBar(densityPlan, b);
-    const useOffbeat = rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8);
+    const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
+    const reduceAttack = interaction?.coupling?.guitarReduceAttack;
+    const useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
 
     if (placements.length > 0) {
       for (const pl of placements) {
         for (const n of pl.notes) {
-          const pitch = Math.max(baseLow, Math.min(79, n.pitch));
+          const pitch = Math.max(effectiveLow, Math.min(79, n.pitch));
           addEvent(m, createNote(pitch, n.startBeat, n.duration));
         }
       }
       const totalDuration = m.events.reduce((s, e) => s + e.duration, 0);
       if (totalDuration < 4) {
-        addEvent(m, createNote(baseLow + 5, totalDuration, 4 - totalDuration));
+        addEvent(m, createNote(effectiveLow + 5, totalDuration, 4 - totalDuration));
       }
     } else {
       if (density === 'sparse') {
         if (useOffbeat) {
-          addEvent(m, createNote(baseLow + 5, 0.5, 2));
-          addEvent(m, createNote(baseLow + 7, 2.5, 2));
+          addEvent(m, createNote(effectiveLow + 5, 0.5, 2));
+          addEvent(m, createNote(effectiveLow + 7, 2.5, 2));
         } else {
-          addEvent(m, createNote(baseLow + 7, 0, 2));
-          addEvent(m, createNote(baseLow + 9, 2, 2));
+          addEvent(m, createNote(effectiveLow + 7, 0, 2));
+          addEvent(m, createNote(effectiveLow + 9, 2, 2));
         }
       } else if (density === 'medium') {
-        addEvent(m, createNote(baseLow + 5, 0, 4));
+        addEvent(m, createNote(effectiveLow + 5, 0, 4));
       } else {
-        addEvent(m, createNote(baseLow + 7, 0, 2));
-        addEvent(m, createNote(baseLow + 4, 2, 2));
+        addEvent(m, createNote(effectiveLow + 7, 0, 2));
+        addEvent(m, createNote(effectiveLow + 4, 2, 2));
       }
     }
 
@@ -118,17 +127,19 @@ function buildGuitarPart(
   };
 }
 
-/** Build bass part: anchor + light motif echoes. */
+/** Build bass part: anchor + light motif echoes. Staggered entries in call_response. */
 function buildBassPart(
   bassPlan: BassBehaviourPlan,
   bassMap: InstrumentRegisterMap,
-  motifState: MotifTrackerState
+  motifState: MotifTrackerState,
+  interactionPlan?: InteractionPlan
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
   ) ?? ACOUSTIC_UPRIGHT_BASS;
 
   const [walkLow, walkHigh] = profile.preferredWalkingZone;
+  const bassCeiling = Math.min(walkHigh, 52);
   const measures: MeasureModel[] = [];
 
   for (let b = 1; b <= 8; b++) {
@@ -136,21 +147,32 @@ function buildBassPart(
     const root = CHORD_ROOTS[chord] ?? 48;
     const m = createMeasure(b, chord, rehearsalForBar(b));
     const [low, high] = getBassRegisterForBar(bassMap, b);
-    const rootClamped = Math.max(walkLow, Math.min(walkHigh, Math.max(low, Math.min(high, root))));
+    const effectiveHigh = Math.min(high, bassCeiling);
+    const rootClamped = Math.max(walkLow, Math.min(effectiveHigh, Math.max(low, Math.min(high, root))));
+
+    const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
+    const simplify = interaction?.coupling?.bassSimplify;
+    const isCallResponse = interaction?.mode === 'call_response';
 
     const placements = getPlacementsForBar(motifState.placements, b);
-    if (placements.length > 0 && placements[0].notes.length > 0) {
+    if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
       const first = placements[0].notes[0].pitch;
-      const bassEcho = Math.max(walkLow, Math.min(walkHigh, first - 12));
-      addEvent(m, createNote(rootClamped, 0, 1));
-      addEvent(m, createNote(bassEcho, 1, 1));
-      addEvent(m, createNote(rootClamped, 2, 1));
-      addEvent(m, createNote(rootClamped + 5, 3, 1));
+      const bassEcho = Math.max(walkLow, Math.min(effectiveHigh, first - 12));
+      const beatOffset = isCallResponse && (b === 6 || b === 8) ? 0.5 : 0;
+      addEvent(m, createNote(rootClamped, beatOffset, 1));
+      addEvent(m, createNote(bassEcho, 1 + beatOffset, 1));
+      addEvent(m, createNote(rootClamped, 2 + beatOffset, 1));
+      addEvent(m, createNote(rootClamped + 5, 3 + beatOffset, 1));
+    } else if (simplify) {
+      const fifth = Math.min(effectiveHigh, rootClamped + 5);
+      addEvent(m, createNote(rootClamped, 0, 2));
+      addEvent(m, createNote(fifth, 2, 2));
     } else {
-      addEvent(m, createNote(rootClamped, 0, 1));
-      addEvent(m, createNote(rootClamped + 7, 1, 1));
-      addEvent(m, createNote(rootClamped, 2, 1));
-      addEvent(m, createNote(rootClamped + 5, 3, 1));
+      const beatOffset = isCallResponse && (b === 6 || b === 8) ? 0.5 : 0;
+      addEvent(m, createNote(rootClamped, beatOffset, 1));
+      addEvent(m, createNote(rootClamped + 7, 1 + beatOffset, 1));
+      addEvent(m, createNote(rootClamped, 2 + beatOffset, 1));
+      addEvent(m, createNote(rootClamped + 5, 3 + beatOffset, 1));
     }
 
     measures.push(m);
@@ -176,6 +198,7 @@ export interface GoldenPathPlans {
   rhythmConstraints: RhythmicConstraints;
   motifState: MotifTrackerState;
   styleStack?: StyleStack;
+  interactionPlan?: InteractionPlan;
 }
 
 /**
@@ -191,8 +214,9 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     plans.guitarMap,
     plans.densityPlan,
     plans.rhythmConstraints,
-    plans.motifState
+    plans.motifState,
+    plans.interactionPlan
   );
-  const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState);
+  const bassPart = buildBassPart(plans.bassBehaviour, plans.bassMap, plans.motifState, plans.interactionPlan);
   return createScore('Golden Path Duo', [guitarPart, bassPart], { tempo: 120 });
 }

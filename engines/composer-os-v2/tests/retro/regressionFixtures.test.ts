@@ -24,7 +24,7 @@ function testEventCountsByPart(): boolean {
   const f = extractFixture(r.score, r.plans, r.readiness);
   const guitarCount = f.eventCountByPart['clean_electric_guitar'] ?? 0;
   const bassCount = f.eventCountByPart['acoustic_upright_bass'] ?? 0;
-  return guitarCount >= 8 && bassCount >= 24;
+  return guitarCount >= 8 && bassCount >= 16;
 }
 
 function testPitchRangeSummaries(): boolean {
@@ -32,7 +32,7 @@ function testPitchRangeSummaries(): boolean {
   const f = extractFixture(r.score, r.plans, r.readiness);
   const guitar = f.pitchRangeByPart['clean_electric_guitar'];
   const bass = f.pitchRangeByPart['acoustic_upright_bass'];
-  return !!guitar && guitar[0] >= 40 && guitar[1] <= 88 && !!bass && bass[0] >= 28 && bass[1] <= 67;
+  return !!guitar && guitar[0] >= 55 && guitar[1] <= 88 && !!bass && bass[0] >= 28 && bass[1] <= 55;
 }
 
 function testMotifPlacementBars(): boolean {
@@ -65,6 +65,12 @@ function testReadinessThresholds(): boolean {
   return f.readinessRelease >= 0 && f.readinessMx >= 0 && r.readiness.release >= 0 && r.readiness.mx >= 0;
 }
 
+function testInteractionFixture(): boolean {
+  const r = runGoldenPath(STABLE_SEED + 9);
+  const f = extractFixture(r.score, r.plans, r.readiness);
+  return f.interactionPresent === true;
+}
+
 export function runRegressionFixturesTests(): { name: string; ok: boolean }[] {
   return [
     ['Bar count fixture', testBarCountFixture],
@@ -76,5 +82,6 @@ export function runRegressionFixturesTests(): { name: string; ok: boolean }[] {
     ['Rehearsal mark bars', testRehearsalMarkBars],
     ['Style stack metadata', testStyleStackMetadata],
     ['Readiness thresholds', testReadinessThresholds],
+    ['Interaction fixture present', testInteractionFixture],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

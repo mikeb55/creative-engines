@@ -21,6 +21,7 @@
 3. Musical Core (section roles, density, register, behaviours)
 4. First Intelligence (motif tracker, Barry Harris)
 5. Style System (Metheny, Triad Pairs, style stack)
+6. Interaction Layer (guitar-bass coupling, register separation, interaction modes)
 
 ## Next Planned Stage
 

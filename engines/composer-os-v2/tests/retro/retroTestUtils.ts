@@ -13,11 +13,12 @@ export interface RegressionFixture {
   chordSymbolCount: number;
   rehearsalMarkBars: number[];
   styleStackMetadata: { primary: string; secondary?: string; colour?: string };
+  interactionPresent?: boolean;
   readinessRelease: number;
   readinessMx: number;
 }
 
-export function extractFixture(score: ScoreModel, plans?: { motifState?: { placements: Array<{ startBar: number }> }; styleStack?: { primary: string; secondary?: string; colour?: string } }, readiness?: { release: number; mx: number }): RegressionFixture {
+export function extractFixture(score: ScoreModel, plans?: { motifState?: { placements: Array<{ startBar: number }> }; styleStack?: { primary: string; secondary?: string; colour?: string }; interactionPlan?: { perSection?: unknown[] } }, readiness?: { release: number; mx: number }): RegressionFixture {
   const barCount = score.parts[0]?.measures.length ?? 0;
   const sectionLabels = barCount >= 8 ? ['A', 'B'] : [];
   const eventCountByPart: Record<string, number> = {};
@@ -64,6 +65,7 @@ export function extractFixture(score: ScoreModel, plans?: { motifState?: { place
     chordSymbolCount,
     rehearsalMarkBars: rehearsalBars,
     styleStackMetadata,
+    interactionPresent: !!plans?.interactionPlan?.perSection?.length,
     readinessRelease: readiness?.release ?? 0,
     readinessMx: readiness?.mx ?? 0,
   };

@@ -33,6 +33,14 @@
 - Style stack: primary, secondary, colour
 - Style blend and triad-pair validation gates
 
+## Stage 5 Interaction Layer
+
+- Interaction modes: support, call_response, overlap, independent
+- Golden path default: A support, B light call_response
+- Register separation: guitar floor 60, bass ceiling 52
+- Behaviour coupling: bass simplifies, guitar reduces attack in call_response
+- Interaction Integrity and Register Separation gates
+
 ## Retro Self-Test / Hardening Pass
 
 - Retro test suite for Foundation, Golden Path, Musical Core, First Intelligence, Style System

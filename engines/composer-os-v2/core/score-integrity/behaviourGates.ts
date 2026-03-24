@@ -17,6 +17,8 @@ import { validateMethenyConformance } from '../style-modules/metheny/moduleValid
 import { validateTriadPairConformance } from '../style-modules/triad-pairs/moduleValidation';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { normalizeStyleWeights } from '../style-modules/styleModuleTypes';
+import type { InteractionPlan } from '../interaction/interactionTypes';
+import { validateInteractionIntegrity, validateRegisterSeparation } from '../interaction/interactionValidation';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -63,6 +65,8 @@ export interface BehaviourGatesResult {
   styleBlendValid: boolean;
   triadPairValid: boolean;
   methenyValid: boolean;
+  interactionValid: boolean;
+  registerSeparationValid: boolean;
   allValid: boolean;
   errors: string[];
 }
@@ -82,7 +86,7 @@ export function runBehaviourGates(
   bassPlan: BassBehaviourPlan,
   sections: SectionWithRole[],
   densityPlan: DensityCurvePlan,
-  opts?: { motifState?: MotifTrackerState; styleStack?: StyleStack }
+  opts?: { motifState?: MotifTrackerState; styleStack?: StyleStack; interactionPlan?: InteractionPlan }
 ): BehaviourGatesResult {
   const errors: string[] = [];
   const styleStack = opts?.styleStack;
@@ -137,6 +141,17 @@ export function runBehaviourGates(
     if (!metheny.valid) errors.push(...metheny.errors);
   }
 
+  let interactionValid = true;
+  let registerSeparationValid = true;
+  if (opts?.interactionPlan) {
+    const ia = validateInteractionIntegrity(score, opts.interactionPlan);
+    interactionValid = ia.valid;
+    if (!ia.valid) errors.push(...ia.errors);
+    const rs = validateRegisterSeparation(score, opts.interactionPlan);
+    registerSeparationValid = rs.valid;
+    if (!rs.valid) errors.push(...rs.errors);
+  }
+
   return {
     rhythmValid: rhythm.valid,
     guitarValid: guitar.valid,
@@ -147,6 +162,8 @@ export function runBehaviourGates(
     styleBlendValid,
     triadPairValid,
     methenyValid,
+    interactionValid,
+    registerSeparationValid,
     allValid: errors.length === 0,
     errors,
   };
