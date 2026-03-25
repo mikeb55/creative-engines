@@ -1,5 +1,12 @@
 # Composer OS Changelog
 
+## Prompt 5/5 — UX polish (mode copy, result summary, honest output labels)
+
+- **Web app (`composer-os-app`)** — **`src/utils/generateUiCopy.ts`**: per-mode hints and **About this mode** cards (what it does, best for, output); **`describeOutputKind`** distinguishes planning vs lead-sheet-ready vs full MusicXML export.
+- **Generate receipt** — **Result summary** panel after a run: mode, variation, optional key/tempo/bars, style pairing, ensemble size, creative level, confidence / experimental badge + short explanation (does not block output).
+- **Terminology** — **Creative level** (replacing “Stability” as the label), **Total bars**, **Ensemble size (Big Band)**; demo button text avoids “seed”.
+- **Tests** — **`generateUiCopy.test.ts`**, extended **`homeGenerateUi.test.ts`**.
+
 ## Prompt 4/5 — Desktop build + stable shortcut path
 
 - **electron-builder** — Portable **`release/Composer-OS.exe`**, NSIS **`release/Composer-OS-Setup.exe`** (fixed names; semver stays in app metadata, not in filenames).

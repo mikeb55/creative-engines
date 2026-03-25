@@ -3,6 +3,12 @@ import { api, displayOutputPath, type OutputDirectoryResponse } from '../service
 import { useStyleModules, STYLE_MODULES_UNAVAILABLE_MSG } from '../hooks/useStyleModules';
 import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
+import {
+  describeOutputKind,
+  EXPERIMENTAL_HELP,
+  getModeUx,
+  labelCreativeLevel,
+} from '../utils/generateUiCopy';
 
 const MODE_OPTIONS: { id: string; label: string }[] = [
   { id: 'guitar_bass_duo', label: 'Guitar–Bass Duo' },
@@ -47,6 +53,10 @@ const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
 
 function modeLabelForPreset(id: string): string {
   return MODE_OPTIONS.find((m) => m.id === id)?.label ?? id;
+}
+
+function ensembleLabel(id: string): string {
+  return ENSEMBLE_OPTIONS.find((o) => o.id === id)?.label ?? id;
 }
 
 function nextVariationIdToken(current: string): string {
@@ -343,6 +353,11 @@ export function HomeGenerate({
   const moduleSelectDisabled =
     needsScoreStyle && (!!modulesError || modules.length === 0 || modulesLoading);
 
+  const modeUx = getModeUx(presetId);
+  const summaryPresetId = result?.runManifest?.presetId ?? presetId;
+  const outputKindDesc = result ? describeOutputKind(summaryPresetId) : null;
+  const echo = result?.requestEcho;
+
   return (
     <section>
       <h2>Generate</h2>
@@ -406,37 +421,60 @@ export function HomeGenerate({
             </option>
           ))}
         </select>
+        {modeUx && (
+          <p
+            style={{
+              fontSize: '0.88rem',
+              color: 'var(--text-muted)',
+              marginTop: '0.45rem',
+              marginBottom: 0,
+              lineHeight: 1.45,
+              maxWidth: 560,
+            }}
+          >
+            {modeUx.hint}
+          </p>
+        )}
       </div>
 
-      {(presetId === 'big_band' || presetId === 'string_quartet' || presetId === 'song_mode') && (
-        <p
+      {modeUx && (
+        <div
           style={{
-            fontSize: '0.85rem',
-            color: 'var(--text-muted)',
-            marginBottom: '1rem',
-            lineHeight: 1.45,
-            maxWidth: 520,
+            marginBottom: '1.25rem',
+            padding: '0.85rem 1rem',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-panel)',
+            maxWidth: 600,
+            fontSize: '0.9rem',
+            lineHeight: 1.5,
+            color: 'var(--text)',
           }}
         >
-          {presetId === 'song_mode' && (
-            <>
-              <strong>Song Mode</strong> writes a JSON summary (structure + lead-sheet contract). No MusicXML
-              export in this build.
-            </>
+          <p style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>About this mode</p>
+          <p style={{ margin: '0 0 0.5rem' }}>
+            <span style={{ color: 'var(--text-muted)' }}>What it does:</span> {modeUx.whatItDoes}
+          </p>
+          <p style={{ margin: '0 0 0.5rem' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Best for:</span> {modeUx.bestFor}
+          </p>
+          <p style={{ margin: 0 }}>
+            <span style={{ color: 'var(--text-muted)' }}>Output:</span> {modeUx.output}
+          </p>
+          {presetId === 'ecm_chamber' && (
+            <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text)' }}>Metheny</strong> leans modal and melodic;{' '}
+              <strong style={{ color: 'var(--text)' }}>Schneider / Wheeler</strong> leans expansive clouds and
+              swells — pick the flavour below.
+            </p>
           )}
-          {presetId === 'big_band' && (
-            <>
-              <strong>Big Band</strong> is <strong>planning-only</strong> here — orchestration JSON, not a full
-              big-band score.
-            </>
+          {(presetId === 'song_mode' || presetId === 'big_band') && (
+            <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text)' }}>Style pairing</strong> blends songwriter habits with
+              arranger habits for colour — it guides the plan; it does not replace the core engine.
+            </p>
           )}
-          {presetId === 'string_quartet' && (
-            <>
-              <strong>String Quartet</strong> is <strong>planning-only</strong> — quartet orchestration JSON, not
-              full quartet MusicXML.
-            </>
-          )}
-        </p>
+        </div>
       )}
 
       <div style={{ marginBottom: '1rem' }}>
@@ -484,7 +522,7 @@ export function HomeGenerate({
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            Bars
+            Total bars
           </label>
           <input
             type="number"
@@ -546,12 +584,15 @@ export function HomeGenerate({
 
       <div style={{ marginBottom: '1rem' }}>
         <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Stability
+          Creative level
         </span>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.4rem', maxWidth: 520 }}>
+          How much the engine nudges the variation — not the form of the piece.
+        </p>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
             type="radio"
-            name="stability"
+            name="creativeLevel"
             checked={creativeControlLevel === 'stable'}
             onChange={() => setCreativeControlLevel('stable')}
           />
@@ -560,7 +601,7 @@ export function HomeGenerate({
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
             type="radio"
-            name="stability"
+            name="creativeLevel"
             checked={creativeControlLevel === 'balanced'}
             onChange={() => setCreativeControlLevel('balanced')}
           />
@@ -569,7 +610,7 @@ export function HomeGenerate({
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
           <input
             type="radio"
-            name="stability"
+            name="creativeLevel"
             checked={creativeControlLevel === 'surprise'}
             onChange={() => setCreativeControlLevel('surprise')}
           />
@@ -580,7 +621,7 @@ export function HomeGenerate({
       {showEnsemble && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            Big Band ensemble
+            Ensemble size (Big Band)
           </label>
           <select
             value={ensembleConfigId}
@@ -866,7 +907,7 @@ export function HomeGenerate({
             void generate({ seedOverride: 42, variationOverride: 'demo-42' });
           }}
         >
-          Demo (seed 42)
+          Demo (fixed variation)
         </button>
         <button className="secondary" type="button" onClick={() => openFolder()}>
           Open library folder
@@ -893,6 +934,124 @@ export function HomeGenerate({
               {(result as { planningNotice?: string }).planningNotice}
             </p>
           )}
+
+          {result && outputKindDesc && (
+            <div
+              style={{
+                marginTop: '0.75rem',
+                marginBottom: '1rem',
+                padding: '0.9rem 1rem',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'rgba(0,0,0,0.12)',
+                fontSize: '0.9rem',
+                lineHeight: 1.45,
+              }}
+            >
+              <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>Result summary</h4>
+              <p style={{ margin: '0 0 0.35rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Output type:</span>{' '}
+                <strong>{outputKindDesc.headline}</strong>
+                <span style={{ color: 'var(--text-muted)' }}> — {outputKindDesc.subtitle}</span>
+              </p>
+              <p style={{ margin: '0.5rem 0 0.25rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Mode:</span> {modeLabelForPreset(summaryPresetId)}
+              </p>
+              {(echo?.variationId ?? rm?.variationId) != null &&
+                String(echo?.variationId ?? rm?.variationId).trim() !== '' && (
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Variation:</span>{' '}
+                    {echo?.variationId ?? rm?.variationId}
+                  </p>
+                )}
+              {echo?.tonalCenter?.trim() ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Key / tonal centre:</span> {echo.tonalCenter}
+                </p>
+              ) : null}
+              {echo?.bpm != null && echo.bpm > 0 ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Tempo:</span> {echo.bpm} BPM
+                </p>
+              ) : null}
+              {echo?.totalBars != null && echo.totalBars > 0 ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Total bars:</span> {echo.totalBars}
+                </p>
+              ) : null}
+              {(echo?.stylePairing || result.stylePairingReceipt) && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Style pairing:</span>{' '}
+                  {result.stylePairingReceipt
+                    ? result.stylePairingReceipt.summary
+                    : echo?.stylePairing
+                      ? `${echo.stylePairing.songwriterStyle} × ${echo.stylePairing.arrangerStyle}${
+                          echo.stylePairing.era ? ` · ${echo.stylePairing.era}` : ''
+                        }`
+                      : null}
+                </p>
+              )}
+              {echo?.ensembleConfigId ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Ensemble size:</span>{' '}
+                  {ensembleLabel(echo.ensembleConfigId)}
+                </p>
+              ) : null}
+              {(echo?.creativeControlLevel ?? rm?.creativeControlLevel) != null && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Creative level:</span>{' '}
+                  {labelCreativeLevel(
+                    (echo?.creativeControlLevel ?? rm?.creativeControlLevel) as
+                      | 'stable'
+                      | 'balanced'
+                      | 'surprise'
+                  )}
+                </p>
+              )}
+              {result.stylePairingReceipt?.confidenceScore != null && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Confidence:</span>{' '}
+                  {result.stylePairingReceipt.confidenceScore.toFixed(2)} (style pairing)
+                </p>
+              )}
+              {result.stylePairingReceipt?.experimentalFlag && (
+                <p style={{ margin: '0.35rem 0 0' }}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      marginRight: 8,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      background: 'rgba(234,179,8,0.2)',
+                      border: '1px solid rgba(234,179,8,0.5)',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    Experimental
+                  </span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{EXPERIMENTAL_HELP}</span>
+                </p>
+              )}
+              {!result.stylePairingReceipt?.experimentalFlag && rm?.experimentalCreativeLabel && (
+                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Creative note:</span> {rm.experimentalCreativeLabel}
+                </p>
+              )}
+              {result.filepath && (
+                <p style={{ margin: '0.5rem 0 0', wordBreak: 'break-word' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>File path:</span> {result.filepath}
+                </p>
+              )}
+              {v?.readiness?.mx != null && result.stylePairingReceipt?.confidenceScore == null && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Readiness (MX):</span> {v.readiness.mx}
+                </p>
+              )}
+            </div>
+          )}
+
           {(result as { composerOsVersion?: string })?.composerOsVersion && (
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
               Engine version: {(result as { composerOsVersion?: string }).composerOsVersion}
@@ -925,68 +1084,13 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>File name:</span> {result.filename}
                 </p>
               )}
-              {result.filepath && (
-                <p style={{ fontSize: '0.9rem', wordBreak: 'break-word', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Full path:</span>
-                  <br />
-                  {result.filepath}
-                </p>
-              )}
               {(result.scoreTitle ?? rm?.scoreTitle) && (
                 <p style={{ fontSize: '0.95rem', margin: '0.35rem 0 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Score title:</span>{' '}
                   {result.scoreTitle ?? rm?.scoreTitle}
                 </p>
               )}
-              {rm?.presetId && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Mode:</span>{' '}
-                  {modeLabelForPreset(rm.presetId)}
-                </p>
-              )}
-              {(result.requestEcho?.variationId ?? rm?.variationId) != null &&
-                (result.requestEcho?.variationId ?? rm?.variationId) !== '' && (
-                  <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Variation id:</span>{' '}
-                    {result.requestEcho?.variationId ?? rm?.variationId}
-                  </p>
-                )}
-              {result.requestEcho?.stylePairing && !result.stylePairingReceipt && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Style pairing:</span>{' '}
-                  {result.requestEcho.stylePairing.songwriterStyle} ×{' '}
-                  {result.requestEcho.stylePairing.arrangerStyle}
-                  {result.requestEcho.stylePairing.era
-                    ? ` · ${result.requestEcho.stylePairing.era}`
-                    : ''}
-                </p>
-              )}
-              {result.stylePairingReceipt && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Style pairing:</span> {result.stylePairingReceipt.summary}
-                </p>
-              )}
-              {(result.stylePairingReceipt?.experimentalFlag ||
-                rm?.experimentalCreativeLabel) && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Experimental:</span>{' '}
-                  {result.stylePairingReceipt?.experimentalFlag
-                    ? 'yes (unusual pairing)'
-                    : (rm?.experimentalCreativeLabel ?? '—')}
-                </p>
-              )}
-              {(result.stylePairingReceipt?.confidenceScore != null ||
-                v?.readiness?.mx != null) && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Confidence / readiness:</span>{' '}
-                  {result.stylePairingReceipt?.confidenceScore != null
-                    ? `pairing ${result.stylePairingReceipt.confidenceScore.toFixed(2)}`
-                    : ''}
-                  {result.stylePairingReceipt?.confidenceScore != null && v?.readiness?.mx != null ? ' · ' : ''}
-                  {v?.readiness?.mx != null ? `MX readiness ${v.readiness.mx}` : ''}
-                </p>
-              )}
-              {presetId === 'guitar_bass_duo' &&
+              {rm?.presetId === 'guitar_bass_duo' &&
                 (result.harmonySource ||
                   result.progressionMode ||
                   result.chordProgressionParseFailed) && (

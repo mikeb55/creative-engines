@@ -44,4 +44,26 @@ describe('HomeGenerate musical UI', () => {
   it('receipt does not surface manifest JSON paths', () => {
     expect(src).not.toMatch(/Manifest:/);
   });
+
+  it('shows mode description card and result summary (UX polish)', () => {
+    expect(src).toContain('About this mode');
+    expect(src).toContain('Result summary');
+    expect(src).toContain('Output type:');
+    expect(src).toContain('getModeUx');
+  });
+
+  it('uses creative level terminology instead of stability', () => {
+    expect(src).toContain('Creative level');
+    expect(src).toContain('name="creativeLevel"');
+    expect(src).not.toMatch(/>\s*Stability\s*</);
+  });
+
+  it('labels total bars and ensemble size clearly', () => {
+    expect(src).toContain('Total bars');
+    expect(src).toContain('Ensemble size (Big Band)');
+  });
+
+  it('shows experimental help when pairing flag is set', () => {
+    expect(src).toContain('EXPERIMENTAL_HELP');
+  });
 });
