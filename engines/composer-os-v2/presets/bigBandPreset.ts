@@ -24,5 +24,8 @@ export const bigBandPreset: Preset = {
     leadSheetChordAware: true,
     rehearsalMarkReady: true,
     sectionPlanReady: true,
+    defaultEra: 'post_bop',
+    supportedEras: ['swing', 'bebop', 'post_bop', 'contemporary'],
+    supportedComposerStyles: ['ellington', 'basie', 'thad', 'schneider'],
   },
 };

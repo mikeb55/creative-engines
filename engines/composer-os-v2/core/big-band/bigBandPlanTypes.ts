@@ -53,3 +53,18 @@ export interface BigBandPlanningBundle {
   sectionPlan: BigBandSectionPlan;
   densityPlan: BigBandDensityPlan;
 }
+
+/** Research-driven behaviour metadata per form slice (no notes). */
+export interface BigBandBehaviourSlice {
+  formSliceIndex: number;
+  phase: BigBandFormPhase;
+  spaceEmphasis: boolean;
+  linePrimary: boolean;
+  riffPrimary: boolean;
+  smoothTransitionToNext: boolean;
+  shoutMotivicDevelopment: boolean;
+}
+
+export interface BigBandEnhancedPlanning {
+  behaviourSlices: BigBandBehaviourSlice[];
+}

@@ -1,5 +1,17 @@
 # Composer OS Changelog
 
+## Prompt 5.6/7 — Big Band research integration (rule engine, eras, bebop line metadata)
+
+- **Research file** — `engines/composer-os-v2/core/big-band/data/BigBandResearch.md` (repo copy). Optional env **`COMPOSER_OS_BIG_BAND_RESEARCH`** points to an alternate path.
+- **Parser** — `bigBandResearchParser.ts` extracts ENGINE RULES bullets (composers, eras, foundations, shout/riff/soli); invalid/short input fails safely.
+- **Registry** — `bigBandRuleRegistry.ts` (composer / era / foundational / functional rule ids + effect types).
+- **Era system** — `bigBandEraResolver.ts`; preset `bigBandPreset` adds `defaultEra: post_bop` and supported eras/composers in `presetTypes`.
+- **Bebop** — `bebopLinePlanner.ts` sets continuous-line + chromatic-approach metadata when `era === 'bebop'`.
+- **Application** — `applyBigBandRules.ts` produces `BigBandEnhancedPlanning` (per-slice behaviour flags).
+- **Validation** — `bigBandResearchDrivenValidation.ts` (swing density cap, bebop line rules, basie space, thad shout, schneider transitions).
+- **`runBigBandMode`** — extended input/output; default behaviour unchanged for `post_bop` + no composer.
+- **Tests** — `bigBandResearchParsing`, `bigBandEraSystem`, `bebopLinePlanner`, `bigBandRuleApplication`.
+
 ## Stable desktop build filenames (Composer-OS.exe)
 
 - **electron-builder** — Portable output is always **`release/Composer-OS.exe`**; NSIS installer **`release/Composer-OS-Setup.exe`** (no `${version}` in filenames). In-app version still comes from **`package.json`** (patch bump before build is unchanged).

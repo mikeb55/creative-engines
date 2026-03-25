@@ -147,6 +147,12 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     manifestHints: bb.manifestHints,
     formSequence: bb.manifestHints.bigBandFormSequence,
     orchestrationReady: bb.manifestHints.bigBandOrchestrationReady,
+    era: bb.era,
+    composerStyle: bb.composerStyle,
+    researchParseOk: bb.researchParseOk,
+    resolvedRuleCount: bb.resolvedRules.ruleIds.length,
+    bebopLineMetadata: bb.bebopLineMetadata,
+    enhancedPlanning: bb.enhancedPlanning,
   };
   const { filepath } = writeArtifactJson(outputDir, filename, payload);
   return {

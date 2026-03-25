@@ -42,6 +42,10 @@ import { runBigBandTypesTests } from './bigBandTypes.test';
 import { runBigBandPlanningTests } from './bigBandPlanning.test';
 import { runBigBandValidationTests } from './bigBandValidation.test';
 import { runBigBandModeTests } from './bigBandMode.test';
+import { runBigBandResearchParsingTests } from './bigBandResearchParsing.test';
+import { runBigBandEraSystemTests } from './bigBandEraSystem.test';
+import { runBebopLinePlannerTests } from './bebopLinePlanner.test';
+import { runBigBandRuleApplicationTests } from './bigBandRuleApplication.test';
 import { runStringQuartetTypesTests } from './stringQuartetTypes.test';
 import { runStringQuartetPlanningTests } from './stringQuartetPlanning.test';
 import { runStringQuartetValidationTests } from './stringQuartetValidation.test';
@@ -94,6 +98,10 @@ const suites = [
   { name: 'Big Band planning', run: runBigBandPlanningTests },
   { name: 'Big Band validation', run: runBigBandValidationTests },
   { name: 'Big Band mode', run: runBigBandModeTests },
+  { name: 'Big Band research parsing', run: runBigBandResearchParsingTests },
+  { name: 'Big Band era system', run: runBigBandEraSystemTests },
+  { name: 'Bebop line planner', run: runBebopLinePlannerTests },
+  { name: 'Big Band rule application', run: runBigBandRuleApplicationTests },
   { name: 'String Quartet types', run: runStringQuartetTypesTests },
   { name: 'String Quartet planning', run: runStringQuartetPlanningTests },
   { name: 'String Quartet validation', run: runStringQuartetValidationTests },

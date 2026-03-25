@@ -14,14 +14,31 @@ export function runBigBandModeTests(): { ok: boolean; name: string }[] {
     ok:
       bigBandPreset.id === 'big_band' &&
       bigBandPreset.bigBandMetadata?.ensembleFamily === 'big_band' &&
-      bigBandPreset.bigBandMetadata.sectionPlanReady === true,
+      bigBandPreset.bigBandMetadata.sectionPlanReady === true &&
+      bigBandPreset.bigBandMetadata.defaultEra === 'post_bop' &&
+      bigBandPreset.bigBandMetadata.supportedEras?.includes('bebop') === true,
     name: 'big_band preset loads as planning preset',
   });
 
   const r = runBigBandMode({ seed: 50_001, title: 'Test Big Band Plan' });
   out.push({
-    ok: r.validation.ok && r.manifestHints.bigBandOrchestrationReady === true,
+    ok:
+      r.validation.ok &&
+      r.manifestHints.bigBandOrchestrationReady === true &&
+      r.era === 'post_bop' &&
+      r.manifestHints.bigBandEra === 'post_bop' &&
+      r.resolvedRules.ruleIds.length > 10 &&
+      r.enhancedPlanning.behaviourSlices.length === r.formPlan.slices.length,
     name: 'runBigBandMode produces valid planning + manifest hints',
+  });
+
+  const bebop = runBigBandMode({ seed: 12, title: 'Bebop', era: 'bebop' });
+  out.push({
+    ok:
+      bebop.era === 'bebop' &&
+      bebop.bebopLineMetadata?.lineVsRiff === 'line_primary' &&
+      bebop.validation.ok,
+    name: 'bebop era: line behaviour metadata active',
   });
 
   out.push({
