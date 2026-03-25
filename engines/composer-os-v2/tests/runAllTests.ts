@@ -28,6 +28,8 @@ import { runPhraseAuthorityTests } from './phraseAuthority.test';
 import { runJazzDuoBehaviourTests } from './jazzDuoBehaviour.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
+import { runModuleInvocationTests } from './moduleInvocation.test';
+import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -57,6 +59,8 @@ const suites = [
   { name: 'Jazz duo behaviour', run: runJazzDuoBehaviourTests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
+  { name: 'Module invocation', run: runModuleInvocationTests },
+  { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   ...retroSuites,
 ];
 
