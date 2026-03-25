@@ -29,6 +29,8 @@
 
 **Prompt 6/7 (V3 track):** **String Quartet planning module** — `core/string-quartet/` (`runStringQuartetMode`, form/texture/density planners, `buildQuartetOrchestrationPlan` on shared orchestration), preset `string_quartet`, registry `string_quartet_plan`. Full quartet MusicXML and contrapuntal writing not implemented yet. See [STRING_QUARTET_INTEGRATION_NOTES](../../docs/composer-os/STRING_QUARTET_INTEGRATION_NOTES.md).
 
+**Prompt 7/7 (V3 track — V1 product baseline):** **Web app + app/API boundary** — UI talks to `app-api/composerOsApiCore.ts` only; `composerOsAppGeneration.ts` maps presets to `generateComposition`, `runSongMode`, or planning-only JSON for big band / string quartet. **V1 capabilities** (see `releaseMetadata.ts` and `/api/diagnostics`): Guitar–Bass Duo and ECM Chamber = MusicXML generation; Song Mode = structural JSON + lead-sheet contract (no MusicXML lead sheet in this build); Big Band and String Quartet = planning JSON only. **Desktop:** `apps/composer-os-desktop` (Electron). See [CHANGELOG](../../docs/composer-os/CHANGELOG.md) and [apps/composer-os-app README](../../apps/composer-os-app/README.md).
+
 ---
 
 ## What Composer OS Is

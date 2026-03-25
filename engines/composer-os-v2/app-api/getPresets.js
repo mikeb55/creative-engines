@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPresets = getPresets;
 const guitarBassDuoPreset_1 = require("../presets/guitarBassDuoPreset");
 const ecmChamberPreset_1 = require("../presets/ecmChamberPreset");
+const songModePreset_1 = require("../presets/songModePreset");
 const bigBandPreset_1 = require("../presets/bigBandPreset");
 const stringQuartetPreset_1 = require("../presets/stringQuartetPreset");
 const PRESETS = [
@@ -20,6 +21,12 @@ const PRESETS = [
         id: ecmChamberPreset_1.ecmChamberPreset.id,
         name: ecmChamberPreset_1.ecmChamberPreset.name,
         description: 'ECM chamber jazz: Metheny-style quartet or Schneider/Wheeler-style chamber modes (straight feel, modal harmony).',
+        supported: true,
+    },
+    {
+        id: songModePreset_1.songModePreset.id,
+        name: songModePreset_1.songModePreset.name,
+        description: 'Song Mode: structural song + lead-sheet-ready contract (JSON summary; no MusicXML lead sheet export in this build).',
         supported: true,
     },
     {

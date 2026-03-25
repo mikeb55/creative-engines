@@ -15,6 +15,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   big_band: 'Big-Band Compositions',
   ecm_chamber: 'ECM Chamber Compositions',
   string_quartet: 'String Quartet Compositions',
+  song_mode: 'Song Mode Compositions',
 };
 
 export function getUserDocumentsPath(): string {

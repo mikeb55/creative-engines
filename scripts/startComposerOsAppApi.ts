@@ -1,6 +1,9 @@
 /**
  * Start Composer OS App API server from repo root.
  * Uses root tsconfig (CommonJS) so engine imports resolve correctly.
+ *
+ * `startComposerOsAppApi.js` is kept for `node scripts/startComposerOsAppApi.js`; it registers
+ * ts-node and requires `composerOsApiCore.ts` explicitly so no stale `composerOsApiCore.js` is needed.
  */
 
 import express, { Request, Response } from 'express';

@@ -7,6 +7,7 @@ import { guitarBassDuoPreset } from '../presets/guitarBassDuoPreset';
 import { ecmChamberPreset } from '../presets/ecmChamberPreset';
 import { bigBandPreset } from '../presets/bigBandPreset';
 import { stringQuartetPreset } from '../presets/stringQuartetPreset';
+import { songModePreset } from '../presets/songModePreset';
 
 const PRESETS: AppPreset[] = [
   {
@@ -20,6 +21,13 @@ const PRESETS: AppPreset[] = [
     name: ecmChamberPreset.name,
     description:
       'ECM chamber jazz: Metheny-style quartet or Schneider/Wheeler-style chamber modes (straight feel, modal harmony).',
+    supported: true,
+  },
+  {
+    id: songModePreset.id,
+    name: songModePreset.name,
+    description:
+      'Song Mode: structural song + lead-sheet-ready contract (JSON summary; no MusicXML lead sheet export in this build).',
     supported: true,
   },
   {

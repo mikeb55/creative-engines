@@ -4,7 +4,8 @@
 import * as path from 'path';
 import { getPresets } from './getPresets';
 import { getStyleModules } from './getStyleModules';
-import { generateComposition, type GenerateResult } from './generateComposition';
+import { type GenerateResult } from './generateComposition';
+import { runAppGeneration } from './composerOsAppGeneration';
 import { listOutputs } from './listOutputs';
 import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolder';
 import { buildDiagnostics } from './buildDiagnostics';
@@ -62,7 +63,7 @@ export function apiGenerate(
           : undefined,
     };
     const presetDir = ensureOutputDirectoryForPreset(req_.presetId);
-    return generateComposition(req_, presetDir);
+    return runAppGeneration(req_, presetDir);
   } catch (err) {
     return {
       success: false,

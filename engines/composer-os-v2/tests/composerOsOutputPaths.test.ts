@@ -41,6 +41,10 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     if (!sq.endsWith(PRESET_OUTPUT_SUBFOLDER.string_quartet)) fail('string_quartet subfolder');
     else pass('string_quartet subfolder');
 
+    const sm = getOutputDirectoryForPreset('song_mode');
+    if (!sm.endsWith(PRESET_OUTPUT_SUBFOLDER.song_mode)) fail('song_mode subfolder');
+    else pass('song_mode subfolder');
+
     ensureOutputDirectoryForPreset('guitar_bass_duo');
     if (!fs.existsSync(gbd)) fail('ensureOutputDirectoryForPreset');
     else pass('ensureOutputDirectoryForPreset creates folder');

@@ -46,6 +46,11 @@ import { runStringQuartetTypesTests } from './stringQuartetTypes.test';
 import { runStringQuartetPlanningTests } from './stringQuartetPlanning.test';
 import { runStringQuartetValidationTests } from './stringQuartetValidation.test';
 import { runStringQuartetModeTests } from './stringQuartetMode.test';
+import { runAppApiBoundaryTests } from './appApiBoundary.test';
+import { runModeExposureTests } from './modeExposure.test';
+import { runWindowsPackagingPrepTests } from './windowsPackagingPrep.test';
+import { runOutputUxTests } from './outputUx.test';
+import { runAppShellTests } from './appShell.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -93,6 +98,11 @@ const suites = [
   { name: 'String Quartet planning', run: runStringQuartetPlanningTests },
   { name: 'String Quartet validation', run: runStringQuartetValidationTests },
   { name: 'String Quartet mode', run: runStringQuartetModeTests },
+  { name: 'App API boundary', run: runAppApiBoundaryTests },
+  { name: 'Mode exposure (V1)', run: runModeExposureTests },
+  { name: 'Windows packaging prep', run: runWindowsPackagingPrepTests },
+  { name: 'Output UX', run: runOutputUxTests },
+  { name: 'App shell (product)', run: runAppShellTests },
   ...retroSuites,
 ];
 

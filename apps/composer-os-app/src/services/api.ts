@@ -118,6 +118,12 @@ export interface AppStyleModuleDto {
 export interface DiagnosticsResponse {
   appName: string;
   version: string;
+  supportedModes?: Array<{
+    presetId: string;
+    displayName: string;
+    capability: string;
+    honestNote: string;
+  }>;
   apiBasePath: string;
   activePort: number;
   desktopTransport?: 'ipc' | 'http';

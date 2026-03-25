@@ -31,6 +31,7 @@ export function listOutputs(composerRoot: string): OutputEntry[] {
     if (d.isDirectory()) {
       const subDir = path.join(composerRoot, d.name);
       collectMusicXmlInDir(subDir, d.name, entries);
+      collectJsonArtifactsInDir(subDir, d.name, entries);
     } else if (d.isFile() && d.name.toLowerCase().endsWith('.musicxml')) {
       // Legacy flat file at root
       pushEntry(path.join(composerRoot, d.name), '', entries);
@@ -39,6 +40,82 @@ export function listOutputs(composerRoot: string): OutputEntry[] {
 
   entries.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
   return entries;
+}
+
+function collectJsonArtifactsInDir(dir: string, folderLabel: string, entries: OutputEntry[]): void {
+  let dirents: fs.Dirent[];
+  try {
+    dirents = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const d of dirents) {
+    if (!d.isFile()) continue;
+    const name = d.name;
+    if (!name.endsWith('.json')) continue;
+    if (
+      !name.includes('_plan_') &&
+      !name.startsWith('song_mode_run_')
+    ) {
+      continue;
+    }
+    pushJsonArtifactEntry(path.join(dir, name), folderLabel, entries);
+  }
+}
+
+function pushJsonArtifactEntry(filepath: string, presetFolderLabel: string, entries: OutputEntry[]): void {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(filepath, 'utf-8');
+  } catch {
+    return;
+  }
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return;
+  }
+  const art = data.composerOsArtifact;
+  if (
+    art !== 'big_band_planning' &&
+    art !== 'string_quartet_planning' &&
+    art !== 'song_structure'
+  ) {
+    return;
+  }
+  const presetId = typeof data.presetId === 'string' ? data.presetId : 'guitar_bass_duo';
+  const seed = typeof data.seed === 'number' ? data.seed : 0;
+  const timestamp = typeof data.timestamp === 'string' ? data.timestamp : '';
+  const passed = data.validationPassed === true;
+  const errsRaw = data.validationErrors;
+  const errs = Array.isArray(errsRaw) ? (errsRaw as unknown[]).map((e) => String(e)) : [];
+
+  entries.push({
+    filename: path.basename(filepath),
+    filepath,
+    presetFolderLabel,
+    timestamp,
+    presetId,
+    styleStack: [],
+    seed,
+    scoreTitle: typeof data.title === 'string' ? data.title : undefined,
+    artifactKind: art === 'song_structure' ? 'song_structure' : 'planning',
+    validation: {
+      scoreIntegrity: passed,
+      exportIntegrity: passed,
+      behaviourGates: passed,
+      mxValid: passed,
+      strictBarMath: passed,
+      exportRoundTrip: passed,
+      instrumentMetadata: passed,
+      sibeliusSafe: passed,
+      readinessRelease: passed ? 1 : 0,
+      readinessMx: passed ? 1 : 0,
+      shareable: false,
+      errors: passed ? [] : errs,
+    },
+  });
 }
 
 function collectMusicXmlInDir(dir: string, folderLabel: string, entries: OutputEntry[]): void {
@@ -67,6 +144,7 @@ function pushEntry(filepath: string, presetFolderLabel: string, entries: OutputE
     presetId: manifest?.presetId ?? 'guitar_bass_duo',
     styleStack: manifest?.styleStack ?? ['barry_harris'],
     seed: manifest?.seed ?? 0,
+    artifactKind: 'musicxml',
     validation: manifest?.validation ?? {
       scoreIntegrity: false,
       exportIntegrity: false,

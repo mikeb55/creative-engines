@@ -3,6 +3,7 @@
  */
 
 import type { GenerateRequest } from './appApiTypes';
+import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
@@ -12,6 +13,14 @@ import * as path from 'path';
 
 export interface GenerateResult {
   success: boolean;
+  /** Short user-facing failure reason (API / UI). */
+  error?: string;
+  /** What the Generate action produced (default musicxml when omitted). */
+  productKind?: 'musicxml' | 'planning' | 'song_structure';
+  /** User-facing note for planning / structural runs (no MusicXML). */
+  planningNotice?: string;
+  /** Composer OS product version echoed for manifests and UI. */
+  composerOsVersion?: string;
   xml?: string;
   filename?: string;
   filepath?: string;
@@ -119,6 +128,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   return {
     success: result.success,
+    productKind: 'musicxml',
+    composerOsVersion: COMPOSER_OS_VERSION,
     xml: result.xml,
     filename,
     filepath,

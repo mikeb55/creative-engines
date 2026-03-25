@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## Prompt 7/7 — Web app shell, app/API boundary, desktop path, V1 baseline
+
+- **App API** — `composerOsAppGeneration.ts` routes `apiGenerate` by preset: duo/ECM → `generateComposition`; `song_mode` → `runSongMode` (JSON); `big_band` / `string_quartet` → planning JSON only. Invalid `presetId` fails with a clear error (no stale `composerOsApiCore.js` shadowing TypeScript).
+- **`scripts/startComposerOsAppApi.js`** — registers `ts-node` and requires `composerOsApiCore.ts` so plain `node` works without a duplicate compiled `composerOsApiCore.js`.
+- **Web UI** — `apps/composer-os-app`: preset-first flow, five modes, seed, generate, outputs, diagnostics with `supportedModes` + product version (`releaseMetadata.ts`, `buildDiagnostics`).
+- **Desktop** — existing Electron path unchanged; IPC uses shared `composerOsApiCore.ts`.
+- **Tests** — `appShell`, `appApiBoundary`, `modeExposure`, `windowsPackagingPrep`, `outputUx`; `runAllTests` wired.
+- **Docs** — README / DEV_NOTES / this file updated for V1 supported modes and limitations.
+
 ## Prompt 6/7 — String Quartet planning module (no quartet MusicXML yet)
 
 - **`core/string-quartet/`** — Types, role mapping, form/texture/density planners, `buildQuartetOrchestrationPlan` / `assembleQuartetOrchestrationPlan`, quartet validation, **`runStringQuartetMode.ts`**.

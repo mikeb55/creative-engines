@@ -57,6 +57,7 @@ exports.PRESET_OUTPUT_SUBFOLDER = {
     big_band: 'Big-Band Compositions',
     ecm_chamber: 'ECM Chamber Compositions',
     string_quartet: 'String Quartet Compositions',
+    song_mode: 'Song Mode Compositions',
 };
 function getUserDocumentsPath() {
     const home = os.homedir();

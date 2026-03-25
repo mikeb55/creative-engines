@@ -101,9 +101,12 @@ export function HomeGenerate({
     }
   }, [modules, styleStack.primary]);
 
+  const needsScoreStyle =
+    presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber';
+
   const generate = useCallback(
     async (seedOverride?: number) => {
-      if (modulesError || modules.length === 0) {
+      if (needsScoreStyle && (modulesError || modules.length === 0)) {
         setError(STYLE_MODULES_UNAVAILABLE_MSG);
         return;
       }
@@ -114,14 +117,19 @@ export function HomeGenerate({
       try {
         const r = (await api.generate({
           presetId,
-          styleStack: {
-            primary: styleStack.primary,
-            secondary: styleStack.secondary || undefined,
-            colour: styleStack.colour || undefined,
-            styleBlend,
-          },
+          styleStack: needsScoreStyle
+            ? {
+                primary: styleStack.primary,
+                secondary: styleStack.secondary || undefined,
+                colour: styleStack.colour || undefined,
+                styleBlend,
+              }
+            : {
+                primary: 'barry_harris',
+                styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+              },
           seed,
-          locks,
+          locks: needsScoreStyle ? locks : undefined,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'guitar_bass_duo'
             ? {
@@ -170,6 +178,7 @@ export function HomeGenerate({
       styleBlend,
       locks,
       scoreTitle,
+      needsScoreStyle,
       modulesError,
       modules.length,
       onResult,
@@ -199,21 +208,25 @@ export function HomeGenerate({
 
   const v = result?.validation;
   const rm = result?.runManifest;
-  const passed =
-    result &&
-    !!v?.integrityPassed &&
-    !!v?.behaviourGatesPassed &&
-    !!v?.mxValidationPassed &&
-    !!v?.strictBarMathPassed &&
-    !!v?.exportRoundTripPassed &&
-    !!v?.instrumentMetadataPassed &&
-    !!result.success;
+  const productKind = (result as { productKind?: string } | null)?.productKind;
+  const passed = result
+    ? productKind && productKind !== 'musicxml'
+      ? !!result.success && !(v?.errors?.length)
+      : !!v?.integrityPassed &&
+        !!v?.behaviourGatesPassed &&
+        !!v?.mxValidationPassed &&
+        !!v?.strictBarMathPassed &&
+        !!v?.exportRoundTripPassed &&
+        !!v?.instrumentMetadataPassed &&
+        !!result.success
+    : false;
 
   const receiptOk = result && !error && result.success && passed;
   const receiptFail = result && (!result.success || !passed);
   const showBigReceipt = result || error;
 
-  const moduleSelectDisabled = !!modulesError || modules.length === 0 || modulesLoading;
+  const moduleSelectDisabled =
+    needsScoreStyle && (!!modulesError || modules.length === 0 || modulesLoading);
 
   return (
     <section>
@@ -236,7 +249,7 @@ export function HomeGenerate({
         </p>
       )}
 
-      {modulesError && (
+      {needsScoreStyle && modulesError && (
         <div
           style={{
             background: 'rgba(239,68,68,0.12)',
@@ -254,7 +267,7 @@ export function HomeGenerate({
         </div>
       )}
 
-      {modules.length > 0 && !modulesError && (
+      {needsScoreStyle && modules.length > 0 && !modulesError && (
         <p
           style={{
             fontSize: '0.85rem',
@@ -281,6 +294,57 @@ export function HomeGenerate({
         </select>
       </div>
 
+      {(presetId === 'big_band' || presetId === 'string_quartet' || presetId === 'song_mode') && (
+        <p
+          style={{
+            fontSize: '0.85rem',
+            color: 'var(--text-muted)',
+            marginBottom: '1rem',
+            lineHeight: 1.45,
+            maxWidth: 520,
+          }}
+        >
+          {presetId === 'song_mode' && (
+            <>
+              <strong>Song Mode</strong> writes a JSON summary (structure + lead-sheet contract). No MusicXML
+              export in this build.
+            </>
+          )}
+          {presetId === 'big_band' && (
+            <>
+              <strong>Big Band</strong> is <strong>planning-only</strong> here — orchestration JSON, not a full
+              big-band score.
+            </>
+          )}
+          {presetId === 'string_quartet' && (
+            <>
+              <strong>String Quartet</strong> is <strong>planning-only</strong> — quartet orchestration JSON, not
+              full quartet MusicXML.
+            </>
+          )}
+        </p>
+      )}
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Seed
+        </label>
+        <input
+          type="number"
+          value={variationSeed}
+          onChange={(e) => setVariationSeed(parseInt(e.target.value, 10) || 0)}
+          disabled={loading}
+          style={{
+            maxWidth: 220,
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        />
+      </div>
+
       {presetId === 'ecm_chamber' && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
@@ -298,70 +362,74 @@ export function HomeGenerate({
         </div>
       )}
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Style stack — Primary
-        </label>
-        <select
-          value={styleStack.primary}
-          disabled={moduleSelectDisabled}
-          onChange={(e) => setStyleStack((s) => ({ ...s, primary: e.target.value }))}
-        >
-          {modules.length === 0 ? (
-            <option value={styleStack.primary}>{modulesLoading ? 'Loading…' : '—'}</option>
-          ) : (
-            modules.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))
-          )}
-        </select>
-      </div>
+      {needsScoreStyle && (
+        <>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+              Style stack — Primary
+            </label>
+            <select
+              value={styleStack.primary}
+              disabled={moduleSelectDisabled}
+              onChange={(e) => setStyleStack((s) => ({ ...s, primary: e.target.value }))}
+            >
+              {modules.length === 0 ? (
+                <option value={styleStack.primary}>{modulesLoading ? 'Loading…' : '—'}</option>
+              ) : (
+                modules.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Secondary (optional)
-        </label>
-        <select
-          value={styleStack.secondary}
-          disabled={moduleSelectDisabled}
-          onChange={(e) => setStyleStack((s) => ({ ...s, secondary: e.target.value }))}
-        >
-          <option value="">—</option>
-          {modules.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+              Secondary (optional)
+            </label>
+            <select
+              value={styleStack.secondary}
+              disabled={moduleSelectDisabled}
+              onChange={(e) => setStyleStack((s) => ({ ...s, secondary: e.target.value }))}
+            >
+              <option value="">—</option>
+              {modules.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Colour (optional)
-        </label>
-        <select
-          value={styleStack.colour}
-          disabled={moduleSelectDisabled}
-          onChange={(e) => setStyleStack((s) => ({ ...s, colour: e.target.value }))}
-        >
-          <option value="">—</option>
-          {modules.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+              Colour (optional)
+            </label>
+            <select
+              value={styleStack.colour}
+              disabled={moduleSelectDisabled}
+              onChange={(e) => setStyleStack((s) => ({ ...s, colour: e.target.value }))}
+            >
+              <option value="">—</option>
+              {modules.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <StyleBlendControls
-        blend={styleBlend}
-        onChange={setStyleBlend}
-        hasSecondary={!!styleStack.secondary?.trim()}
-        hasColour={!!styleStack.colour?.trim()}
-        disabled={moduleSelectDisabled}
-      />
+          <StyleBlendControls
+            blend={styleBlend}
+            onChange={setStyleBlend}
+            hasSecondary={!!styleStack.secondary?.trim()}
+            hasColour={!!styleStack.colour?.trim()}
+            disabled={moduleSelectDisabled}
+          />
+        </>
+      )}
 
       {presetId === 'guitar_bass_duo' && (
         <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
@@ -429,7 +497,7 @@ export function HomeGenerate({
           value={scoreTitle}
           onChange={(e) => setScoreTitle(e.target.value)}
           placeholder="e.g. My duo sketch — or leave blank for a default title"
-          disabled={moduleSelectDisabled}
+          disabled={loading}
           style={{
             width: '100%',
             maxWidth: 520,
@@ -446,30 +514,35 @@ export function HomeGenerate({
         <strong style={{ color: 'var(--text)' }}>Try Another</strong> picks a new variation and runs generation immediately.
       </p>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <span style={{ color: 'var(--text-muted)', fontSize: 0.9 }}>Locks</span>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, marginTop: 0.3 }}>
-          {(['melody', 'bass', 'harmony', 'rhythm', 'sectionA', 'sectionB'] as const).map((k) => (
-            <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-              <input
-                type="checkbox"
-                checked={locks[k]}
-                onChange={(e) => setLocks((s) => ({ ...s, [k]: e.target.checked }))}
-              />
-              <span style={{ fontSize: 0.9 }}>{k.replace(/([A-Z])/g, ' $1').trim()}</span>
-            </label>
-          ))}
+      {needsScoreStyle && (
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 0.9 }}>Locks</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, marginTop: 0.3 }}>
+            {(['melody', 'bass', 'harmony', 'rhythm', 'sectionA', 'sectionB'] as const).map((k) => (
+              <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                <input
+                  type="checkbox"
+                  checked={locks[k]}
+                  onChange={(e) => setLocks((s) => ({ ...s, [k]: e.target.checked }))}
+                />
+                <span style={{ fontSize: 0.9 }}>{k.replace(/([A-Z])/g, ' $1').trim()}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => void generate()} disabled={loading || !!modulesError || modules.length === 0}>
+        <button
+          onClick={() => void generate()}
+          disabled={loading || (needsScoreStyle && (!!modulesError || modules.length === 0))}
+        >
           {loading ? 'Generating…' : 'Generate'}
         </button>
         <button
           className="secondary"
           type="button"
-          disabled={loading || !!modulesError || modules.length === 0}
+          disabled={loading || (needsScoreStyle && (!!modulesError || modules.length === 0))}
           onClick={() => {
             const next = Math.floor(Math.random() * 1e9);
             setVariationSeed(next);
@@ -477,6 +550,17 @@ export function HomeGenerate({
           }}
         >
           Try Another
+        </button>
+        <button
+          className="secondary"
+          type="button"
+          disabled={loading || (needsScoreStyle && (!!modulesError || modules.length === 0))}
+          onClick={() => {
+            setVariationSeed(42);
+            void generate(42);
+          }}
+        >
+          Demo (seed 42)
         </button>
         <button className="secondary" type="button" onClick={() => openFolder()}>
           Open library folder
@@ -497,6 +581,17 @@ export function HomeGenerate({
           }}
         >
           <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Generation receipt</h3>
+
+          {(result as { planningNotice?: string })?.planningNotice && (
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 0 }}>
+              {(result as { planningNotice?: string }).planningNotice}
+            </p>
+          )}
+          {(result as { composerOsVersion?: string })?.composerOsVersion && (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+              Engine version: {(result as { composerOsVersion?: string }).composerOsVersion}
+            </p>
+          )}
 
           {error && (
             <div

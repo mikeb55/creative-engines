@@ -113,4 +113,6 @@ export interface OutputEntry {
   chordProgressionParseFailed?: boolean;
   builtInHarmonyFallbackOccurred?: boolean;
   validation: ValidationSummary;
+  /** When listing non-MusicXML artifacts from the library */
+  artifactKind?: 'musicxml' | 'planning' | 'song_structure';
 }

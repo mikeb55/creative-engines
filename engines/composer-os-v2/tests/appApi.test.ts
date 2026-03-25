@@ -137,6 +137,7 @@ export function runAppApiTests(): TestResult[] {
     else if (d.activePort !== 3001) fail('Diagnostics payload: port');
     else if (!path.isAbsolute(d.outputDirectory)) fail('Diagnostics payload: canonical output');
     else if (!d.styleModules?.length || d.styleModules.length < 3) fail('Diagnostics payload: styleModules');
+    else if (!d.supportedModes || d.supportedModes.length !== 5) fail('Diagnostics payload: supportedModes V1');
     else pass('Diagnostics payload');
     fs.rmSync(diagDir, { recursive: true, force: true });
   } catch (e) {
