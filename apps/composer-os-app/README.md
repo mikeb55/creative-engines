@@ -37,6 +37,8 @@ Details and honest capability strings: `engines/composer-os-v2/app-api/releaseMe
 
 **UX polish (V3):** User-facing copy lives in `src/utils/generateUiCopy.ts` (`MODE_UX`, `describeOutputKind`). Internal “seed” is not shown as the primary control — **variation** and **creative level** are.
 
+**Diagnostics — system check:** Expand **Diagnostics** and use **Run system check** to run Composer OS engine tests, retro tests, and this app’s tests from the development repo (no terminal). Optional **Show technical details** expands npm output. Requires a full `creative-engines` checkout with `npm` available; packaged desktop without a repo shows a clear message.
+
 ## Build
 
 ```bash

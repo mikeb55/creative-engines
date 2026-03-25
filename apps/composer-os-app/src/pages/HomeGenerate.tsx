@@ -15,7 +15,7 @@ const MODE_OPTIONS: { id: string; label: string }[] = [
   { id: 'song_mode', label: 'Song Mode' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'big_band', label: 'Big Band' },
-  { id: 'string_quartet', label: 'Quartet' },
+  { id: 'string_quartet', label: 'String Quartet' },
 ];
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [

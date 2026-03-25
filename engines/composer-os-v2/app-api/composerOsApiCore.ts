@@ -5,7 +5,10 @@ import * as path from 'path';
 import { getPresets } from './getPresets';
 import { getStyleModules } from './getStyleModules';
 import { type GenerateResult } from './generateComposition';
-import { runAppGeneration } from './composerOsAppGeneration';
+import { COMPOSER_OS_VERSION } from './composerOsConfig';
+import { runAppGeneration, SUPPORTED_APP_PRESET_IDS } from './composerOsAppGeneration';
+import type { SupportedAppPresetId } from './composerOsAppGeneration';
+import { isSystemCheckDisabled, runSystemCheck } from './systemCheck';
 import { listOutputs } from './listOutputs';
 import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolder';
 import { buildDiagnostics } from './buildDiagnostics';
@@ -44,8 +47,17 @@ export function apiGenerate(
   _composerRoot: string
 ): GenerateResult | { success: false; error: string; detail?: string } {
   try {
+    const rawPreset = typeof body.presetId === 'string' ? body.presetId : undefined;
+    const presetIdResolved = rawPreset ?? 'guitar_bass_duo';
+    if (!SUPPORTED_APP_PRESET_IDS.includes(presetIdResolved as SupportedAppPresetId)) {
+      return {
+        success: false,
+        error: `Unsupported preset: ${rawPreset ?? '(missing)'}`,
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
     const req_: GenerateRequest = {
-      presetId: body.presetId ?? 'guitar_bass_duo',
+      presetId: presetIdResolved,
       styleStack: body.styleStack ?? {
         primary: 'barry_harris',
         styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
@@ -140,4 +152,17 @@ export async function apiOpenOutputFolder(
     return { success: false, message: resolved.message };
   }
   return openOutputFolder(resolved.target);
+}
+
+export async function apiSystemCheck(): Promise<
+  Awaited<ReturnType<typeof runSystemCheck>> | { success: false; error: string; blocked?: true }
+> {
+  if (isSystemCheckDisabled()) {
+    return {
+      success: false,
+      error: 'System check is disabled (COMPOSER_OS_DISABLE_SYSTEM_CHECK).',
+      blocked: true,
+    };
+  }
+  return runSystemCheck();
 }

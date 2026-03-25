@@ -89,6 +89,9 @@ function registerDesktopIpc(outputDir: string): void {
       'Composer OS desktop IPC bundle is missing (resources/desktop-ipc.bundle.cjs). Rebuild the app.'
     );
   }
+  if (!process.env.COMPOSER_OS_REPO_ROOT) {
+    process.env.COMPOSER_OS_REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+  }
   process.env.COMPOSER_OS_OUTPUT_DIR = outputDir;
   const { registerComposerOsIpc } = require(bundlePath) as {
     registerComposerOsIpc: (im: typeof ipcMain, dir: string) => void;

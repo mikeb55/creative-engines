@@ -39,6 +39,8 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build). **Docs:** `docs/composer-os/` (CHANGELOG, DEV_NOTES, USER_GUIDE). Supported modes and limitations for V1 are summarized in `engines/composer-os-v2/app-api/releaseMetadata.ts` and the Composer OS README — no Python or `.bat` is required for normal app use.
 
+**V3 app wiring:** The web/desktop app includes a **Run system check** action (Diagnostics) that runs Composer OS–scoped tests without using the terminal; the **Outputs** panel is mode- and type-aware; **Open library folder** / **Open this file’s folder** use normalized Windows paths; unknown presets are rejected by the API before generation. See `docs/composer-os/CHANGELOG.md`.
+
 ---
 
 ## Structure

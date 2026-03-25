@@ -19,6 +19,7 @@ import {
   apiGetOutputDirectory,
   apiGetDiagnostics,
   apiOpenOutputFolder,
+  apiSystemCheck,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -92,6 +93,19 @@ app.post('/api/open-output-folder', (req: Request, res: Response) => {
   apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
     res.json(r);
   });
+});
+
+app.post('/api/system-check', async (_req: Request, res: Response) => {
+  try {
+    const r = await apiSystemCheck();
+    if ('blocked' in r && r.blocked) {
+      res.status(403).json(r);
+      return;
+    }
+    res.json(r);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 const staticPath = process.env.COMPOSER_OS_STATIC_DIR ?? path.join(path.resolve(__dirname, '..'), 'apps', 'composer-os-app', 'dist');

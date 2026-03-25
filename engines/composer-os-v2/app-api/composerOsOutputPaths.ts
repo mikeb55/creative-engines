@@ -15,7 +15,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   big_band: 'Big-Band Compositions',
   ecm_chamber: 'ECM Chamber Compositions',
   string_quartet: 'String Quartet Compositions',
-  song_mode: 'Song Mode Compositions',
+  song_mode: 'Song Mode',
 };
 
 export function getUserDocumentsPath(): string {
@@ -100,8 +100,15 @@ export function normalizeLibraryFolderOpenTarget(pathOrFile: string): string {
 
 /** Whether `candidate` is the composer root or any preset subfolder under it. */
 export function isPathUnderComposerRoot(composerRoot: string, candidate: string): boolean {
-  const r = path.resolve(composerRoot);
-  const c = path.resolve(candidate);
+  const r = path.normalize(path.resolve(composerRoot));
+  const c = path.normalize(path.resolve(candidate));
+  if (process.platform === 'win32') {
+    const rl = r.toLowerCase();
+    const cl = c.toLowerCase();
+    if (cl === rl) return true;
+    const prefix = rl.endsWith('\\') ? rl : `${rl}\\`;
+    return cl.startsWith(prefix);
+  }
   if (c === r) return true;
   const prefix = r.endsWith(path.sep) ? r : r + path.sep;
   return c.startsWith(prefix);
@@ -117,7 +124,7 @@ export function resolveOpenFolderTarget(
 ): { ok: true; target: string } | { ok: false; message: string } {
   let target = path.resolve(composerRoot);
   if (body?.path && typeof body.path === 'string' && body.path.trim()) {
-    const resolved = path.resolve(body.path.trim());
+    const resolved = path.normalize(path.resolve(body.path.trim()));
     if (!isPathUnderComposerRoot(composerRoot, resolved)) {
       return {
         ok: false,

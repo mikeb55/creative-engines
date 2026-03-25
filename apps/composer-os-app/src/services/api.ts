@@ -1,3 +1,5 @@
+import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
+
 const BASE = '/api';
 
 function parseOkJson<T>(text: string): T {
@@ -79,6 +81,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     }
     if (path === '/open-output-folder') {
       return ipcInvoke<T>('composer-os-api:open-output-folder', body ?? {});
+    }
+    if (path === '/system-check') {
+      return ipcInvoke<T>('composer-os-api:run-system-check', body ?? {});
     }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
@@ -165,6 +170,7 @@ export const api = {
   getOutputs: () => get<{ outputs: Array<Record<string, unknown>> }>('/outputs'),
   openOutputFolder: (opts?: { path?: string }) =>
     post<OpenOutputFolderResponse>('/open-output-folder', opts ?? {}),
+  runSystemCheck: () => post<SystemCheckResponse>('/system-check', {}),
 };
 
 /** Shape checks for generation receipts (tests). */

@@ -54,7 +54,7 @@ export const MODE_UX: ModeUx[] = [
   },
   {
     id: 'string_quartet',
-    label: 'Quartet',
+    label: 'String Quartet',
     hint: 'Use for chamber form, texture, and role distribution.',
     whatItDoes:
       'Plans quartet sections, textures, and who carries melody or anchor roles across the piece.',

@@ -35,6 +35,24 @@ function testOpenFolderTargetUnwrapsMeta(): boolean {
   return path.resolve(r.target) === path.resolve(duos);
 }
 
+function testWin32MixedCasePathUnderRoot(): boolean {
+  if (process.platform !== 'win32') return true;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'coos-root-'));
+  const inside = path.join(root, 'Guitar-Bass Duos');
+  fs.mkdirSync(inside, { recursive: true });
+  const mixed = path.join(root, 'guitar-bass duos');
+  return isPathUnderComposerRoot(root, mixed);
+}
+
+function testResolveOpenFolderAcceptsForwardSlashes(): boolean {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'coos-root-'));
+  const duos = path.join(root, 'Guitar-Bass Duos');
+  fs.mkdirSync(duos, { recursive: true });
+  const forward = duos.replace(/\\/g, '/');
+  const r = resolveOpenFolderTarget(root, { path: forward });
+  return r.ok && path.resolve(r.target) === path.resolve(duos);
+}
+
 export function runOpenOutputFolderGateTests(): { name: string; ok: boolean }[] {
   const results: { name: string; ok: boolean }[] = [];
   const t = (name: string, fn: () => boolean) => results.push({ name, ok: fn() });
@@ -43,6 +61,8 @@ export function runOpenOutputFolderGateTests(): { name: string; ok: boolean }[] 
   t('Open folder gate: path outside library rejected', testOutsideTreeRejected);
   t('Open folder gate: composer root equals target', testRootEqualsComposerRoot);
   t('Open folder gate: _meta unwraps to preset folder', testOpenFolderTargetUnwrapsMeta);
+  t('Open folder gate: Windows paths compare case-insensitively under root', testWin32MixedCasePathUnderRoot);
+  t('Open folder gate: forward slashes resolve under library root', testResolveOpenFolderAcceptsForwardSlashes);
 
   return results;
 }

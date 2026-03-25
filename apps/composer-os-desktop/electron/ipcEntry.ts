@@ -10,6 +10,7 @@ import {
   apiListOutputs,
   apiGetOutputDirectory,
   apiGetDiagnostics,
+  apiSystemCheck,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
@@ -21,4 +22,5 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-outputs', () => apiListOutputs(outputDir));
   ipcMain.handle('composer-os-api:get-output-directory', () => apiGetOutputDirectory(outputDir));
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));
+  ipcMain.handle('composer-os-api:run-system-check', () => apiSystemCheck());
 }

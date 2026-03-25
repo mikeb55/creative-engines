@@ -137,4 +137,8 @@ export interface OutputEntry {
   validation: ValidationSummary;
   /** When listing non-MusicXML artifacts from the library */
   artifactKind?: 'musicxml' | 'planning' | 'song_structure';
+  /** Populated by listOutputs for UI (mode / product clarity) */
+  modeLabel?: string;
+  outputTypeLabel?: string;
+  presetDisplayName?: string;
 }

@@ -57,7 +57,7 @@ exports.PRESET_OUTPUT_SUBFOLDER = {
     big_band: 'Big-Band Compositions',
     ecm_chamber: 'ECM Chamber Compositions',
     string_quartet: 'String Quartet Compositions',
-    song_mode: 'Song Mode Compositions',
+    song_mode: 'Song Mode',
 };
 function getUserDocumentsPath() {
     const home = os.homedir();
@@ -80,7 +80,11 @@ function getComposerFilesRoot() {
     return path.join(getUserDocumentsPath(), exports.MIKE_COMPOSER_FILES_ROOT);
 }
 function getPresetOutputSubfolder(presetId) {
-    return exports.PRESET_OUTPUT_SUBFOLDER[presetId] ?? exports.PRESET_OUTPUT_SUBFOLDER.guitar_bass_duo;
+    const sub = exports.PRESET_OUTPUT_SUBFOLDER[presetId];
+    if (sub === undefined) {
+        throw new Error(`Unknown preset output subfolder for presetId: ${presetId}`);
+    }
+    return sub;
 }
 /** For tests / UI: folder name for a preset id. */
 function expectedPresetFolderName(presetId) {
@@ -129,8 +133,16 @@ exports.legacyManifestPathForMusicXml = legacyManifestPathForMusicXml;
 exports.normalizeLibraryFolderOpenTarget = normalizeLibraryFolderOpenTarget;
 /** Whether `candidate` is the composer root or any preset subfolder under it. */
 function isPathUnderComposerRoot(composerRoot, candidate) {
-    const r = path.resolve(composerRoot);
-    const c = path.resolve(candidate);
+    const r = path.normalize(path.resolve(composerRoot));
+    const c = path.normalize(path.resolve(candidate));
+    if (process.platform === 'win32') {
+        const rl = r.toLowerCase();
+        const cl = c.toLowerCase();
+        if (cl === rl)
+            return true;
+        const prefix = rl.endsWith('\\') ? rl : `${rl}\\`;
+        return cl.startsWith(prefix);
+    }
     if (c === r)
         return true;
     const prefix = r.endsWith(path.sep) ? r : r + path.sep;
@@ -143,7 +155,7 @@ function isPathUnderComposerRoot(composerRoot, candidate) {
 function resolveOpenFolderTarget(composerRoot, body) {
     let target = path.resolve(composerRoot);
     if (body?.path && typeof body.path === 'string' && body.path.trim()) {
-        const resolved = path.resolve(body.path.trim());
+        const resolved = path.normalize(path.resolve(body.path.trim()));
         if (!isPathUnderComposerRoot(composerRoot, resolved)) {
             return {
                 ok: false,

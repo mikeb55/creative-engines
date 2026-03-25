@@ -5,6 +5,7 @@
 
 import { shell } from 'electron';
 import type { IpcMain } from 'electron';
+import * as path from 'path';
 import { resolveOpenFolderHelpersBundlePath } from './config';
 
 export type OpenFolderMainResult = {
@@ -66,7 +67,10 @@ export async function openOutputFolderInMain(
   if (!prep.ok) {
     return { success: false, message: prep.message };
   }
-  const dir = prep.path;
+  const dir =
+    process.platform === 'win32'
+      ? path.normalize(prep.path).replace(/\//g, '\\')
+      : path.normalize(prep.path);
   const errMsg = await shell.openPath(dir);
   if (errMsg) {
     return {

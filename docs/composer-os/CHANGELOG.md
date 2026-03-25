@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## V3.0 app wiring — system check, outputs clarity, preset validation, folder fixes
+
+- **One-click system check** — `POST /api/system-check` and IPC `composer-os-api:run-system-check` run Composer OS engine tests, retro tests, and `composer-os-app` tests from the repo root (with `COMPOSER_OS_REPO_ROOT` / `resolveComposerOsRepoRoot`). Diagnostics panel: **Run system check** + optional technical details. Set `COMPOSER_OS_DISABLE_SYSTEM_CHECK=1` to block.
+- **Preset validation** — `apiGenerate` rejects unknown `presetId` before creating output dirs; HTTP `POST /api/generate` returns **400** for unsupported presets (no silent fallback to another preset folder).
+- **Outputs list** — `listOutputs` infers preset from folder / artifact type; adds `modeLabel`, `outputTypeLabel`, `presetDisplayName`; legacy **Song Mode Compositions** folder still maps to `song_mode`. Song Mode output folder name is **`Song Mode`** under Mike Composer Files.
+- **Outputs UI** — primary line: mode + output type + variation + path; filename secondary.
+- **Open folder** — Windows: normalized paths for Explorer and Electron `shell.openPath`; `isPathUnderComposerRoot` is case-insensitive on Windows; forward-slash paths accepted.
+- **Tests** — `systemCheck.test.ts`, extended `openOutputFolderGate.test.ts`.
+
 ## Prompt 5/5 — UX polish (mode copy, result summary, honest output labels)
 
 - **Web app (`composer-os-app`)** — **`src/utils/generateUiCopy.ts`**: per-mode hints and **About this mode** cards (what it does, best for, output); **`describeOutputKind`** distinguishes planning vs lead-sheet-ready vs full MusicXML export.

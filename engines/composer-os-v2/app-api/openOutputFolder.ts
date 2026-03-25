@@ -53,10 +53,11 @@ export function openOutputFolder(outputDir: string): Promise<OpenOutputFolderRes
       resolve({ success: false, message: prep.message });
       return;
     }
-    const dir = prep.path;
+    const dir = path.normalize(prep.path);
+    const explorerArg = process.platform === 'win32' ? dir.replace(/\//g, '\\') : dir;
 
     if (process.platform === 'win32') {
-      const child = spawn('explorer.exe', [dir], {
+      const child = spawn('explorer.exe', [explorerArg], {
         detached: true,
         stdio: 'ignore',
         windowsHide: true,

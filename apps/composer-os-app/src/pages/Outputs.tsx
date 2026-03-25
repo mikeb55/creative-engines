@@ -7,8 +7,13 @@ type OutputRow = {
   presetFolderLabel: string;
   timestamp: string;
   presetId: string;
+  modeLabel?: string;
+  outputTypeLabel?: string;
+  presetDisplayName?: string;
+  variationId?: string;
   styleStack: string[];
   seed: number;
+  artifactKind?: string;
   validation?: Record<string, unknown>;
 };
 
@@ -88,7 +93,7 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
         </p>
       )}
       <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-        Generated MusicXML files and validation summaries (newest first).
+        Newest first — each row shows mode, output type, and path; filename is secondary.
       </p>
 
       <button className="secondary" onClick={load} disabled={loading} style={{ marginBottom: '1rem' }}>
@@ -117,15 +122,36 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
               border: '1px solid var(--border)',
             }}
           >
-            <div style={{ fontWeight: 600 }}>{o.filename}</div>
-            {o.presetFolderLabel ? (
-              <div style={{ fontSize: 0.85, color: 'var(--text-muted)', marginTop: 4 }}>
-                Folder: {o.presetFolderLabel}
+            <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>
+              {o.modeLabel ?? o.presetDisplayName ?? o.presetId}
+            </div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text)', marginTop: 6 }}>
+              <strong>Output:</strong> {o.outputTypeLabel ?? '—'}
+            </div>
+            {o.variationId ? (
+              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                <strong>Variation:</strong> {o.variationId}
               </div>
             ) : null}
-            <div style={{ fontSize: 0.85, color: 'var(--text-muted)', marginTop: 0.3 }}>{o.filepath}</div>
-            <div style={{ fontSize: 0.85, marginTop: 0.5 }}>
-              {o.timestamp} · {o.presetId}
+            <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              <strong>Preset:</strong> {o.presetDisplayName ?? o.presetId}
+            </div>
+            {o.presetFolderLabel ? (
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Mode folder: {o.presetFolderLabel}
+              </div>
+            ) : null}
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              <strong>Time:</strong> {o.timestamp || '—'}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6, wordBreak: 'break-all' }}>
+              <strong>Path:</strong> {o.filepath}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4, opacity: 0.9 }}>
+              File: {o.filename}
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: 6 }}>
+              Seed {o.seed} · {o.presetId}
             </div>
             {o.styleStack?.length ? (
               <div style={{ fontSize: 0.85, color: 'var(--text-muted)' }}>Styles: {o.styleStack.join(', ')}</div>

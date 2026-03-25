@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { fetchDiagnostics, type DiagnosticsResponse } from '../services/api';
+import { api, fetchDiagnostics, type DiagnosticsResponse } from '../services/api';
+import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
 
 export type LastGenerationSummary = {
   status: 'none' | 'success' | 'failed';
@@ -18,6 +19,10 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
   const [desktopMeta, setDesktopMeta] = useState<Awaited<
     ReturnType<NonNullable<Window['composerOsDesktop']>['getDesktopMeta']>
   > | null>(null);
+  const [systemCheckRunning, setSystemCheckRunning] = useState(false);
+  const [systemCheckResult, setSystemCheckResult] = useState<SystemCheckResponse | null>(null);
+  const [systemCheckError, setSystemCheckError] = useState<string | null>(null);
+  const [systemCheckDetailsOpen, setSystemCheckDetailsOpen] = useState(false);
 
   const load = () => {
     fetchDiagnostics().then((d) => {
@@ -40,6 +45,26 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
   useEffect(() => {
     load();
   }, []);
+
+  const runSystemCheck = async () => {
+    setSystemCheckRunning(true);
+    setSystemCheckError(null);
+    setSystemCheckDetailsOpen(false);
+    try {
+      const r = await api.runSystemCheck();
+      if (r && typeof r === 'object' && 'blocked' in r && (r as { blocked?: boolean }).blocked) {
+        setSystemCheckResult(null);
+        setSystemCheckError((r as { error?: string }).error ?? 'System check unavailable.');
+        return;
+      }
+      setSystemCheckResult(r as SystemCheckResponse);
+    } catch (e) {
+      setSystemCheckResult(null);
+      setSystemCheckError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSystemCheckRunning(false);
+    }
+  };
 
   const modeLabel = packaged === true ? 'Packaged' : packaged === false ? 'Development' : '—';
   const surfaceLabel =
@@ -201,6 +226,66 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
           <button type="button" className="secondary" style={{ marginTop: '0.5rem' }} onClick={load}>
             Refresh diagnostics
           </button>
+
+          <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+            <p style={{ margin: '0 0 0.5rem', color: 'var(--text)' }}>
+              <strong>System check</strong> — runs Composer OS engine tests, retro tests, and app tests (development
+              tree with npm). No terminal required.
+            </p>
+            <button
+              type="button"
+              disabled={systemCheckRunning}
+              onClick={() => void runSystemCheck()}
+              style={{ marginBottom: '0.5rem' }}
+            >
+              {systemCheckRunning ? 'Running…' : 'Run system check'}
+            </button>
+            {systemCheckError && (
+              <p style={{ color: 'var(--error)', margin: '0.35rem 0' }}>{systemCheckError}</p>
+            )}
+            {systemCheckResult && (
+              <div style={{ marginTop: '0.35rem' }}>
+                <p
+                  style={{
+                    margin: 0,
+                    color: systemCheckResult.ok ? 'var(--success)' : 'var(--error)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {systemCheckResult.summary}
+                </p>
+                <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Repo: {systemCheckResult.repoRoot}
+                </p>
+                <button
+                  type="button"
+                  className="secondary"
+                  style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}
+                  onClick={() => setSystemCheckDetailsOpen((o) => !o)}
+                >
+                  {systemCheckDetailsOpen ? 'Hide technical details' : 'Show technical details'}
+                </button>
+                {systemCheckDetailsOpen && systemCheckResult.detailLog && (
+                  <pre
+                    style={{
+                      marginTop: '0.5rem',
+                      padding: '0.65rem',
+                      maxHeight: 240,
+                      overflow: 'auto',
+                      fontSize: '0.72rem',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {systemCheckResult.detailLog}
+                  </pre>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

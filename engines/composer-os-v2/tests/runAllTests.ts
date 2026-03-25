@@ -93,6 +93,7 @@ import { runModeExposureTests } from './modeExposure.test';
 import { runWindowsPackagingPrepTests } from './windowsPackagingPrep.test';
 import { runOutputUxTests } from './outputUx.test';
 import { runAppShellTests } from './appShell.test';
+import { runSystemCheckTests } from './systemCheck.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -187,6 +188,7 @@ const suites = [
   { name: 'Windows packaging prep', run: runWindowsPackagingPrepTests },
   { name: 'Output UX', run: runOutputUxTests },
   { name: 'App shell (product)', run: runAppShellTests },
+  { name: 'System check (repo root)', run: runSystemCheckTests },
   ...retroSuites,
 ];
 
