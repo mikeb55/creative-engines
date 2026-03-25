@@ -44,6 +44,7 @@ export interface GenerateResult {
     activeModules: string[];
     timestamp: string;
     scoreTitle?: string;
+    ecmMode?: string;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -59,6 +60,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     scoreTitle: req.title,
     harmonyMode: duo ? req.harmonyMode : undefined,
     chordProgressionText: chordText,
+    ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
   });
   const validation = {
     integrityPassed: result.integrityPassed,
@@ -90,6 +92,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       seed: req.seed,
       timestamp: ts,
       scoreTitle: result.runManifest?.scoreTitle,
+      ecmMode: result.runManifest?.ecmMode,
       harmonySource: result.context.generationMetadata.harmonySource,
       customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
       progressionMode: result.context.generationMetadata.progressionMode,
@@ -135,6 +138,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           activeModules: result.runManifest.activeModules,
           timestamp: result.runManifest.timestamp,
           scoreTitle: result.runManifest.scoreTitle,
+          ecmMode: result.runManifest.ecmMode,
         }
       : undefined,
     scoreTitle: result.runManifest?.scoreTitle,

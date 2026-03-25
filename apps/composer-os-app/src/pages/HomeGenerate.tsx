@@ -56,6 +56,9 @@ export function HomeGenerate({
   }) => void;
 }) {
   const [presetId, setPresetId] = useState('guitar_bass_duo');
+  const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
+    'ECM_METHENY_QUARTET'
+  );
   /** Hidden variation value sent to the engine (not shown as a raw number). */
   const [variationSeed, setVariationSeed] = useState(() => Math.floor(Math.random() * 1e9));
   /** Optional work title for MusicXML / score (default comes from the engine when empty). */
@@ -126,6 +129,7 @@ export function HomeGenerate({
                 ...(harmonyMode === 'custom' ? { chordProgressionText: chordProgressionText } : {}),
               }
             : {}),
+          ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
         })) as GenResult;
         setResult(r);
         const ok = !!r.success;
@@ -171,6 +175,7 @@ export function HomeGenerate({
       onResult,
       harmonyMode,
       chordProgressionText,
+      ecmMode,
     ]
   );
 
@@ -275,6 +280,23 @@ export function HomeGenerate({
           ))}
         </select>
       </div>
+
+      {presetId === 'ecm_chamber' && (
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            ECM chamber mode
+          </label>
+          <select
+            value={ecmMode}
+            onChange={(e) =>
+              setEcmMode(e.target.value as 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER')
+            }
+          >
+            <option value="ECM_METHENY_QUARTET">Metheny-style quartet (modal, single-line focus)</option>
+            <option value="ECM_SCHNEIDER_CHAMBER">Schneider / Wheeler chamber (clouds, swells)</option>
+          </select>
+        </div>
+      )}
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>

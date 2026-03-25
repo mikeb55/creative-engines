@@ -9,6 +9,7 @@ export interface CreateRunManifestInput {
   version: string;
   seed: number;
   presetId: string;
+  ecmMode?: string;
   scoreTitle?: string;
   activeModules: string[];
   feelMode: string;
@@ -26,6 +27,7 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     composerOsVersion: input.version,
     seed: input.seed,
     presetId: input.presetId,
+    ecmMode: input.ecmMode,
     scoreTitle: input.scoreTitle,
     activeModules: input.activeModules,
     feelMode: input.feelMode,

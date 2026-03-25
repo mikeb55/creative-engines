@@ -29,12 +29,15 @@ export function runAppApiTests(): TestResult[] {
   const prevEnv = process.env.COMPOSER_OS_OUTPUT_DIR;
   process.env.COMPOSER_OS_OUTPUT_DIR = TEST_OUTPUT_DIR;
   const TEST_GBD_DIR = getOutputDirectoryForPreset('guitar_bass_duo');
+  const TEST_ECM_DIR = getOutputDirectoryForPreset('ecm_chamber');
 
   try {
     const presets = getPresets();
     if (presets.length < 1) fail('Preset loading: non-empty list');
     else if (!presets.some((p) => p.id === 'guitar_bass_duo')) fail('Preset loading: guitar_bass_duo exists');
     else if (!presets.some((p) => p.supported)) fail('Preset loading: at least one supported');
+    else if (!presets.some((p) => p.id === 'ecm_chamber' && p.supported))
+      fail('Preset loading: ecm_chamber supported');
     else pass('Preset loading');
   } catch (e) {
     fail(`Preset loading: ${e}`);
@@ -190,6 +193,36 @@ export function runAppApiTests(): TestResult[] {
     else pass('Try Another filenames: distinct paths per seed');
   } catch (e) {
     fail(`Try Another filenames: ${e}`);
+  }
+
+  try {
+    fs.mkdirSync(TEST_ECM_DIR, { recursive: true });
+    const metheny = generateComposition(
+      {
+        presetId: 'ecm_chamber',
+        ecmMode: 'ECM_METHENY_QUARTET',
+        styleStack: { primary: 'metheny', weights: { primary: 1 } },
+        seed: 42_001,
+      },
+      TEST_ECM_DIR
+    );
+    const schneider = generateComposition(
+      {
+        presetId: 'ecm_chamber',
+        ecmMode: 'ECM_SCHNEIDER_CHAMBER',
+        styleStack: { primary: 'bacharach', weights: { primary: 1 } },
+        seed: 42_002,
+      },
+      TEST_ECM_DIR
+    );
+    if (!metheny.success || !schneider.success) fail('ECM Chamber: both modes generate');
+    else if (metheny.runManifest?.ecmMode !== 'ECM_METHENY_QUARTET') fail('ECM Chamber: Metheny manifest');
+    else if (schneider.runManifest?.ecmMode !== 'ECM_SCHNEIDER_CHAMBER') fail('ECM Chamber: Schneider manifest');
+    else if (!metheny.xml?.includes('Dmin9') || !schneider.xml?.includes('Cmaj7'))
+      fail('ECM Chamber: distinct harmony in XML');
+    else pass('ECM Chamber: Metheny + Schneider modes');
+  } catch (e) {
+    fail(`ECM Chamber modes: ${e}`);
   }
 
   try {

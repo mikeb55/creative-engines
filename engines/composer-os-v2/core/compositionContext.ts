@@ -13,6 +13,7 @@ import type { InstrumentProfile } from './instrument-profiles/instrumentProfileT
 import type { ReleaseReadinessResult } from './readiness/readinessTypes';
 import type { MxReadinessResult } from './readiness/mxReadinessScorer';
 import type { ValidationResults } from './conductor/conductorTypes';
+import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -50,6 +51,9 @@ export interface GenerationMetadata {
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */
   builtInHarmonyFallbackOccurred?: boolean;
+  /** ECM Chamber preset only */
+  ecmMode?: EcmChamberMode;
+  ecmMetrics?: EcmGenerationMetrics;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

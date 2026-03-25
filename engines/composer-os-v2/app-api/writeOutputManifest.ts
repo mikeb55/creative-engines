@@ -25,6 +25,7 @@ export function writeOutputManifest(
     seed: number;
     timestamp: string;
     scoreTitle?: string;
+    ecmMode?: string;
     harmonySource?: 'builtin' | 'custom';
     customChordProgressionSummary?: string;
     progressionMode?: 'builtin' | 'custom';
@@ -44,6 +45,7 @@ export function writeOutputManifest(
     seed: meta.seed,
     timestamp: meta.timestamp,
     scoreTitle: meta.scoreTitle,
+    ecmMode: meta.ecmMode,
     harmonySource: meta.harmonySource,
     customChordProgressionSummary: meta.customChordProgressionSummary,
     progressionMode: meta.progressionMode,

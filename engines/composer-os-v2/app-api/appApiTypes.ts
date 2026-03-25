@@ -45,6 +45,9 @@ export interface AppStyleStack {
   weights?: { primary: number; secondary?: number; colour?: number };
 }
 
+/** ECM Chamber engine — mutually exclusive chamber behaviours */
+export type EcmChamberMode = 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER';
+
 export interface AppLocks {
   melody?: boolean;
   bass?: boolean;
@@ -71,6 +74,8 @@ export interface GenerateRequest {
    * Only used when `harmonyMode` is `custom` or inferred from non-empty text (legacy).
    */
   chordProgressionText?: string;
+  /** When `presetId` is `ecm_chamber`, selects Metheny vs Schneider chamber logic */
+  ecmMode?: EcmChamberMode;
 }
 
 export interface ValidationSummary {
@@ -99,6 +104,7 @@ export interface OutputEntry {
   seed: number;
   /** Title written to the score / MusicXML */
   scoreTitle?: string;
+  ecmMode?: string;
   harmonySource?: 'builtin' | 'custom';
   customChordProgressionSummary?: string;
   progressionMode?: 'builtin' | 'custom';

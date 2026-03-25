@@ -17,8 +17,9 @@ const PRESETS: AppPreset[] = [
   {
     id: ecmChamberPreset.id,
     name: ecmChamberPreset.name,
-    description: 'Minimal chamber jazz configuration.',
-    supported: false,
+    description:
+      'ECM chamber jazz: Metheny-style quartet or Schneider/Wheeler-style chamber modes (straight feel, modal harmony).',
+    supported: true,
   },
   {
     id: bigBandPreset.id,

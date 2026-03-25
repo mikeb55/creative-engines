@@ -7,6 +7,8 @@ export interface RunManifest {
   composerOsVersion: string;
   seed: number;
   presetId: string;
+  /** ECM Chamber only — which chamber mode was active */
+  ecmMode?: string;
   /** Title applied to the exported score */
   scoreTitle?: string;
   activeModules: string[];

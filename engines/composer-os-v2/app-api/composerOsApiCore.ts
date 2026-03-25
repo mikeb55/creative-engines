@@ -56,6 +56,10 @@ export function apiGenerate(
         body.harmonyMode === 'custom' || body.harmonyMode === 'builtin' ? body.harmonyMode : undefined,
       chordProgressionText:
         typeof body.chordProgressionText === 'string' ? body.chordProgressionText : undefined,
+      ecmMode:
+        body.ecmMode === 'ECM_METHENY_QUARTET' || body.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
+          ? body.ecmMode
+          : undefined,
     };
     const presetDir = ensureOutputDirectoryForPreset(req_.presetId);
     return generateComposition(req_, presetDir);

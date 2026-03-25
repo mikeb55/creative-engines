@@ -41,6 +41,9 @@ import {
   buildChordSymbolPlanFromBars,
 } from '../harmony/chordProgressionParser';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { buildEcmChamberContext } from '../ecm/buildEcmChamberContext';
+import type { EcmChamberMode } from '../ecm/ecmChamberTypes';
+import { scoreEcmMethenyFeel, scoreEcmSchneiderFeel } from '../ecm/ecmChamberScoring';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -164,6 +167,18 @@ function buildGoldenPathContext(
   };
 }
 
+function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
+  const presetId = options?.presetId ?? 'guitar_bass_duo';
+  if (presetId === 'ecm_chamber') {
+    const mode: EcmChamberMode = options?.ecmMode ?? 'ECM_METHENY_QUARTET';
+    return buildEcmChamberContext(seed, mode);
+  }
+  return buildGoldenPathContext(seed, options?.parsedChordBars, {
+    chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+    progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
+  });
+}
+
 function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string; pitches: number[] }> {
   return score.parts.map((p) => {
     const pitches: number[] = [];
@@ -217,7 +232,7 @@ function buildGoldenPathPlans(
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
   const styleStack: StyleStack = options?.styleStack ?? DEFAULT_STYLE_STACK;
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
-  const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle);
+  const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle, options?.ecmMode);
   const stackIds = styleStackToModuleIds(styleStack);
   const motifHints: MotifStyleHints = {
     triadPairs: stackIds.includes('triad_pairs'),
@@ -312,6 +327,8 @@ export interface RunGoldenPathOptions {
   chordProgressionText?: string;
   /** Filled by runGoldenPath after a successful parse (internal) */
   parsedChordBars?: string[];
+  /** ECM Chamber: distinct Metheny vs Schneider modes */
+  ecmMode?: EcmChamberMode;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -323,6 +340,16 @@ export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
 
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
   let opts = options ? { ...options } : undefined;
+  const presetIdEarly = opts?.presetId ?? 'guitar_bass_duo';
+  if (presetIdEarly !== 'guitar_bass_duo') {
+    opts = {
+      ...(opts ?? {}),
+      harmonyMode: 'builtin',
+      chordProgressionText: undefined,
+      parsedChordBars: undefined,
+    };
+  }
+
   const inferredCustom = !!(opts?.chordProgressionText?.trim());
   const harmonyMode: 'builtin' | 'custom' =
     opts?.harmonyMode ?? (inferredCustom ? 'custom' : 'builtin');
@@ -331,7 +358,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     opts = opts ? { ...opts, chordProgressionText: undefined, parsedChordBars: undefined } : undefined;
   }
 
-  if (harmonyMode === 'custom' && !(opts?.chordProgressionText?.trim())) {
+  if (presetIdEarly === 'guitar_bass_duo' && harmonyMode === 'custom' && !(opts?.chordProgressionText?.trim())) {
     return harmonyParseFailureGoldenPathResult(
       seed,
       opts,
@@ -355,10 +382,15 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     const r = runGoldenPathOnce(s, resolved);
     last = r;
     if (r.success) {
+      const pid = resolved?.presetId ?? 'guitar_bass_duo';
       const soft =
-        scoreJazzDuoBehaviourSoft(r.score) +
-        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
-        scoreNarrativeMomentsSoft(r.score);
+        pid === 'ecm_chamber'
+          ? (resolved?.ecmMode ?? 'ECM_METHENY_QUARTET') === 'ECM_SCHNEIDER_CHAMBER'
+            ? scoreEcmSchneiderFeel(r.score, r.context, r.plans)
+            : scoreEcmMethenyFeel(r.score, r.context, r.plans)
+          : scoreJazzDuoBehaviourSoft(r.score) +
+            scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
+            scoreNarrativeMomentsSoft(r.score);
       if (soft > bestSoft) {
         bestSoft = soft;
         best = r;
@@ -371,10 +403,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
-  const context = buildGoldenPathContext(seed, options?.parsedChordBars, {
-    chordProgressionInputRaw: options?.chordProgressionText?.trim(),
-    progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
-  });
+  const context = buildContextForGoldenPath(seed, options);
 
   const plans = buildGoldenPathPlans(seed, context, options);
   const { sections, densityPlan, guitarBehaviour, bassBehaviour, rhythmConstraints, motifState, styleStack, interactionPlan } =
@@ -474,11 +503,13 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
 
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
   const scoreTitle = plans.scoreTitle;
+  const ecmMode = options?.ecmMode;
 
   const runManifest = createRunManifest({
     version: '2.0.0',
     seed,
     presetId: manifestPresetId,
+    ecmMode: manifestPresetId === 'ecm_chamber' && ecmMode ? ecmMode : undefined,
     scoreTitle,
     activeModules: (() => {
       if (!styleStack) return [];
