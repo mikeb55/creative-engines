@@ -5,6 +5,7 @@
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
+import { guitarRestRatio } from './duoLockQuality';
 
 export interface DuoMusicalQualityResult {
   valid: boolean;
@@ -58,22 +59,21 @@ export function validateDuoMusicalQuality(
     errors.push('Duo: bass rhythm too static across the piece');
   }
 
-  let restBeats = 0;
-  let totalBeats = 0;
+  const restRatio = guitarRestRatio(guitar);
+  if (restRatio < 0.1) {
+    errors.push('Duo: guitar lacks breathing space (rest ratio below LOCK minimum ~10%)');
+  }
+  if (restRatio > 0.42) {
+    errors.push('Duo: guitar too sparse (rest ratio above practical ceiling)');
+  }
+
   const guitarStarts: number[] = [];
   for (const m of guitar.measures) {
-    let barRest = 0;
     for (const e of m.events) {
-      if (e.kind === 'rest') barRest += (e as { duration: number }).duration;
       if (e.kind === 'note') {
         guitarStarts.push((e as { startBeat: number }).startBeat);
       }
     }
-    totalBeats += 4;
-    restBeats += barRest;
-  }
-  if (totalBeats > 0 && restBeats / totalBeats < 0.03) {
-    errors.push('Duo: guitar lacks breathing space (rest ratio too low)');
   }
 
   if (guitarStarts.length > 1) {

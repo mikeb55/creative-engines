@@ -48,7 +48,8 @@ export function validateMotifIntegrity(
   const scoreNoteCount = [...guitarPitches.values()].reduce((s, arr) => s + arr.length, 0);
   if (scoreNoteCount > 0 && totalNotes > 0) {
     const motifRatio = totalNotes / scoreNoteCount;
-    if (motifRatio < 0.3) errors.push('Excessive new-note rate: motif content too low');
+    const minRatio = state.placements.length >= 6 ? 0.42 : 0.3;
+    if (motifRatio < minRatio) errors.push('Excessive new-note rate: motif content too low');
   }
 
   return { valid: errors.length === 0, errors };

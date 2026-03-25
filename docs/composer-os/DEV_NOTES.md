@@ -18,7 +18,7 @@
 - **Section Roles**: Statement, development, contrast, return
 - **Register Map**: Per-section pitch zones
 - **Density**: Sparse / medium / dense
-- **Motif**: Generator, tracker, validation
+- **Motif**: Generator, tracker, validation — **Guitar–Bass Duo LOCK** uses `MotifStyleHints.duoLock` → `generateMotif` / `placeMotifsAcrossBars(..., true)` for dense bar coverage; do not add stale `.js` copies alongside `motifGenerator.ts` / `motifTracker.ts` (Node may resolve `.js` first).
 - **Style Modules**: Barry Harris, Metheny, Triad Pairs, Bacharach (`core/style-modules/bacharach/`) — listed in app API/UI; multi-seed correctness tests cover default stack + Bacharach primary against strict bar math and export round-trip
 - **Instrument Behaviours**: Guitar, bass planners
 - **Score Integrity**: Bar math, register, chords, rehearsal; **strict bar math** (`strictBarMath.ts`) per voice before export; **post-export** `validateExportedMusicXmlBarMath` for MusicXML round-trip bar fills

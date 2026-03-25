@@ -756,6 +756,7 @@ function buildBassPart(
     const phraseBar = context.presetId === 'ecm_chamber' ? phase : b;
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
+    const bassForward = interaction?.coupling?.bassForward;
     const phraseIntent = getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(phraseBar, seed, phraseIntent);
     const placements = getPlacementsForBar(motifState.placements, b);
@@ -903,7 +904,8 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     tempo: bpm,
     feelProfile,
   });
-  let afterPerf = applyPerformancePass(rawScore, { applyArticulation: false });
+  const articulationOn = context.presetId !== 'ecm_chamber';
+  let afterPerf = applyPerformancePass(rawScore, { applyArticulation: articulationOn });
   if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
     afterPerf = applyEcmSchneiderDensityEnvelope(afterPerf, tb);
   }

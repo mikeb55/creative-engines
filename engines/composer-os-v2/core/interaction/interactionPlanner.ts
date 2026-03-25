@@ -24,7 +24,7 @@ export function planInteraction(
       mode: resolvedMode,
       coupling: isA
         ? { bassDeferToGuitar: true }
-        : { guitarReduceAttack: true, bassSimplify: false },
+        : { guitarReduceAttack: true, bassSimplify: false, bassForward: true },
     };
   });
   return {

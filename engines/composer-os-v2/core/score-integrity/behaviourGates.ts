@@ -24,6 +24,7 @@ import { validateDuoMusicalQuality } from './duoMusicalQuality';
 import { validateBassIdentity } from './bassIdentityValidation';
 import { validateDuoPhraseAuthority } from './phraseAuthorityValidation';
 import { validateJazzDuoBehaviourRules } from './jazzDuoBehaviourValidation';
+import { validateDuoGceHardGate, validateDuoRhythmAntiLoop } from './duoLockQuality';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -257,6 +258,13 @@ export function runBehaviourGates(
   if (opts?.presetId === 'ecm_chamber') {
     const ecmLoop = validateEcmAntiLoop(score);
     if (!ecmLoop.valid) errors.push(...ecmLoop.errors);
+  }
+
+  if (opts?.presetId === 'guitar_bass_duo') {
+    const duoRh = validateDuoRhythmAntiLoop(score);
+    if (!duoRh.valid) errors.push(...duoRh.errors);
+    const duoGce = validateDuoGceHardGate(score);
+    if (!duoGce.valid) errors.push(...duoGce.errors);
   }
 
   let interactionValid = true;

@@ -253,12 +253,13 @@ function buildGoldenPathPlans(
     triadPairs: stackIds.includes('triad_pairs'),
     metheny: stackIds.includes('metheny'),
     bacharach: stackIds.includes('bacharach'),
+    duoLock: context.presetId === 'guitar_bass_duo',
   };
   const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
   const placements =
     context.presetId === 'ecm_chamber'
       ? placeMotifsForEcmForm(baseMotifs, seed, context.form.totalBars)
-      : placeMotifsAcrossBars(baseMotifs, seed);
+      : placeMotifsAcrossBars(baseMotifs, seed, context.presetId === 'guitar_bass_duo');
   const motifState = { baseMotifs, placements };
 
   const interactionPlan = planInteraction(sections, context.form.totalBars);

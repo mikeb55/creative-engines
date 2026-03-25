@@ -9,6 +9,8 @@ export interface InteractionCoupling {
   guitarReduceAttack?: boolean;
   /** Section A: bass hangs back so guitar statements read clearly (used with phrase intent). */
   bassDeferToGuitar?: boolean;
+  /** Section B: bass more melodically active (guide-tone + echo weight). */
+  bassForward?: boolean;
 }
 
 export interface SectionInteractionPlan {

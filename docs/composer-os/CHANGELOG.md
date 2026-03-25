@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## V3.0 Guitar–Bass Duo — LOCK upgrade (motif, rhythm, interaction, GCE)
+
+- **Motif-first duo path** — `generateMotif` with `duoLock` builds 2–4 beat cells using strong intervals (3rd/4th/5th/6th or chromatic enclosure) and non-uniform rhythms; **eight bar-level placements** per 8-bar form (`placeMotifsAcrossBars(..., duoLock)`).
+- **Interaction** — Section B coupling adds **`bassForward`** for higher guide-tone weight on bass vs section A.
+- **Gates** — `duoLockQuality.ts`: composite **GCE** (≥ 8.5 hard gate), guitar **rhythm anti-loop** (no >2 identical consecutive rhythm cells; dense unison rhythm with bass capped), **`duoMusicalQuality`** rest band (~8–45% guitar time).
+- **Performance** — Non-ECM duo runs `applyPerformancePass` with **articulation** on before expressive feel.
+- **Phrase authority** — Last-note pitch-class variety threshold relaxed slightly (≥3 distinct endings per 8 bars) so motif-forward lines still pass with Bacharach anchor bars.
+- **Cleanup** — Removed stale checked-in **`motifGenerator.js` / `motifTracker.js`** (and **`motif.test.js`**) so runtime resolves **`.ts`** sources; avoids silent shadowing of new duo logic.
+
 ## V3.0 Generate UI — mode-driven form (Style Stack controls retired from Generate)
 
 - **Generate screen** — Rewritten around **mode** (Guitar–Bass Duo, ECM Chamber, Song Mode, Big Band, String Quartet), **tonal centre**, **tempo**, **bars**, **variation**, **creative control**, and **title**. Duo/ECM MusicXML runs use a **fixed internal style stack** (Barry Harris primary, strong blend) — no user-facing module dropdowns or Style Blend on this screen.

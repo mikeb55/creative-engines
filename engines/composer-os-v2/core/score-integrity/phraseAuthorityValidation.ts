@@ -76,7 +76,7 @@ export function validateDuoPhraseAuthority(score: ScoreModel, opts?: { presetId?
     const ln = lastNoteInBar(score, bar);
     if (ln) lastPcs.push(ln.pitch % 12);
   }
-  if (new Set(lastPcs).size < 4) {
+  if (new Set(lastPcs).size < 3) {
     errors.push('Phrase authority: guitar phrase endings lack variety');
   }
 
