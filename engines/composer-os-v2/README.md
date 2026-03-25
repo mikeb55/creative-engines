@@ -35,6 +35,8 @@
 
 **Prompt 7/7 (V3 track — V1 product baseline):** **Web app + app/API boundary** — UI talks to `app-api/composerOsApiCore.ts` only; `composerOsAppGeneration.ts` maps presets to `generateComposition`, `runSongMode`, or planning-only JSON for big band / string quartet. **V1 capabilities** (see `releaseMetadata.ts` and `/api/diagnostics`): Guitar–Bass Duo and ECM Chamber = MusicXML generation; Song Mode = structural JSON + lead-sheet contract (no MusicXML lead sheet in this build); Big Band and String Quartet = planning JSON only. **Desktop:** `apps/composer-os-desktop` (Electron). See [CHANGELOG](../../docs/composer-os/CHANGELOG.md) and [apps/composer-os-app README](../../apps/composer-os-app/README.md).
 
+**Easy wins pack (usability):** **`core/presets-plus/`** — named aliases (`orbit_ecm`, `ecm_song`, `guitar_bass_recording`, `big_band_swing`, `big_band_bebop`, `quartet_lyrical`, `bacharach_song`, `songwriter_classic`) over existing base presets + merge helpers. **`core/sessions/`** — JSON session save/load (`sessionStore.ts`). **`core/candidates/`** — lightweight multi-seed `generateComposition` candidates + rank (best / second). **`core/diagnostics/`** — `buildDiagnosticsBundle` for short UI messages. **`core/lead-sheet/`** — `UniversalLeadSheet` + builders; `generateComposition` adds optional `universalLeadSheet`; `runSongMode` returns `universalLeadSheet`.
+
 ---
 
 ## What Composer OS Is

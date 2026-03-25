@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## Easy wins pack — named presets, sessions, candidates, diagnostics, universal lead sheet
+
+- **`core/presets-plus/`** — `namedPresetLibrary.ts` (8 named presets), `namedPresetTypes.ts`, `namedPresetValidation.ts`; `mergeNamedPresetIntoGenerateRequest`, `songModeInputFromNamedPreset`, `bigBandInputFromNamedPreset`.
+- **`core/sessions/`** — `sessionStore.ts` (JSON read/write), `sessionTypes.ts`, `sessionValidation.ts`.
+- **`core/candidates/`** — `candidateGenerator.ts`, `candidateRanker.ts`, `candidateCompare.ts` (Duo/ECM triplet runs + score).
+- **`core/diagnostics/`** — `diagnosticsBuilder.ts` (human-readable lines from validation/readiness).
+- **`core/lead-sheet/`** — `universalLeadSheetTypes.ts`, `universalLeadSheetBuilder.ts`; optional **`universalLeadSheet`** on `generateComposition` result; **`runSongMode`** returns **`universalLeadSheet`**.
+- **Tests** — `namedPresetLibrary`, `sessionStore`, `candidateRanker`, `diagnosticsBuilder`, `universalLeadSheetBuilder`.
+
 ## Prompt 6.5/7 — Song Mode songwriting research (styles, author overlays, hook intelligence)
 
 - **Research file** — `engines/composer-os-v2/core/song-mode/data/Songwriting.md`. Optional env **`COMPOSER_OS_SONGWRITING_RESEARCH`** for an alternate path.

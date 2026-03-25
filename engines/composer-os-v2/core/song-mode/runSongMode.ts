@@ -16,6 +16,8 @@ import {
   validateSongwritingPlanning,
   type SongModeValidationResult,
 } from './songModeValidation';
+import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
+import { buildUniversalLeadSheetFromSongContract } from '../lead-sheet/universalLeadSheetBuilder';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 
 export type SongModeStructureVariant = 'default' | 'extended';
@@ -53,6 +55,8 @@ export interface SongModeRunResult {
   leadSheetContract: LeadSheetContract;
   validation: SongModeValidationResult;
   manifestHints: SongModeRunManifestHints;
+  /** Same universal contract shape as Duo/ECM via `generateComposition`. */
+  universalLeadSheet: UniversalLeadSheet;
 }
 
 /**
@@ -105,5 +109,6 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     leadSheetContract: lead,
     validation,
     manifestHints,
+    universalLeadSheet: buildUniversalLeadSheetFromSongContract(lead),
   };
 }

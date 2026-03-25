@@ -109,6 +109,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songwritingRuleCount: sm.manifestHints.songwritingRuleCount,
     researchParseOk: sm.manifestHints.researchParseOk,
     songwritingFingerprint: sm.manifestHints.songwritingFingerprint,
+    universalLeadSheetMode: sm.universalLeadSheet.mode,
+    universalLeadSheetSectionCount: sm.universalLeadSheet.formSections.length,
   };
   const { filepath } = writeArtifactJson(outputDir, filename, payload);
   return {

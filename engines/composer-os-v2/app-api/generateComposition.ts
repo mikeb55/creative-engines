@@ -7,6 +7,8 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
+import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -57,6 +59,8 @@ export interface GenerateResult {
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
+  /** Unified lead-sheet-ready view (Duo / ECM) when generation succeeded. */
+  universalLeadSheet?: UniversalLeadSheet;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -126,6 +130,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     });
   }
 
+  const scoreTitleResolved = result.runManifest?.scoreTitle;
+  const universalLeadSheet =
+    result.success && result.context
+      ? buildUniversalLeadSheetFromCompositionContext(
+          result.context,
+          scoreTitleResolved ?? `Composer OS ${req.presetId}`
+        )
+      : undefined;
+
   return {
     success: result.success,
     productKind: 'musicxml',
@@ -152,6 +165,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           ecmMode: result.runManifest.ecmMode,
         }
       : undefined,
-    scoreTitle: result.runManifest?.scoreTitle,
+    scoreTitle: scoreTitleResolved,
+    universalLeadSheet,
   };
 }

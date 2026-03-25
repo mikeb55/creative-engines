@@ -39,6 +39,11 @@ import { runSongwriterStyleResolverTests } from './songwriterStyleResolver.test'
 import { runAuthorOverlayResolverTests } from './authorOverlayResolver.test';
 import { runHookPlannerTests } from './hookPlanner.test';
 import { runSongModeBehaviourEncodingTests } from './songModeBehaviourEncoding.test';
+import { runNamedPresetLibraryTests } from './namedPresetLibrary.test';
+import { runSessionStoreTests } from './sessionStore.test';
+import { runCandidateRankerTests } from './candidateRanker.test';
+import { runDiagnosticsBuilderTests } from './diagnosticsBuilder.test';
+import { runUniversalLeadSheetBuilderTests } from './universalLeadSheetBuilder.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
 import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
@@ -101,6 +106,11 @@ const suites = [
   { name: 'Author overlay resolver', run: runAuthorOverlayResolverTests },
   { name: 'Hook planner', run: runHookPlannerTests },
   { name: 'Song Mode behaviour encoding', run: runSongModeBehaviourEncodingTests },
+  { name: 'Named preset library', run: runNamedPresetLibraryTests },
+  { name: 'Session store', run: runSessionStoreTests },
+  { name: 'Candidate ranker', run: runCandidateRankerTests },
+  { name: 'Diagnostics builder', run: runDiagnosticsBuilderTests },
+  { name: 'Universal lead sheet builder', run: runUniversalLeadSheetBuilderTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
   { name: 'Orchestration core', run: runOrchestrationCoreTests },
   { name: 'Orchestration planner', run: runOrchestrationPlannerTests },
