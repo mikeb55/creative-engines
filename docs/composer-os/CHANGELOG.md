@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## Prompt 4/5 — Desktop build + stable shortcut path
+
+- **electron-builder** — Portable **`release/Composer-OS.exe`**, NSIS **`release/Composer-OS-Setup.exe`** (fixed names; semver stays in app metadata, not in filenames).
+- **`install/logReleaseArtifactsCli.ts`** — After each package build, logs the absolute **release** folder and stable paths for portable, installer, and shortcut target.
+- **`install/installRules.ts`** — Exported **`STABLE_PORTABLE_FILE_NAME`** / **`STABLE_SETUP_FILE_NAME`** aligned with `package.json` artifact names.
+- **Prune** — Existing **`pruneOldPortableExes`** still removes legacy **`Composer-OS-Desktop-*-portable.exe`** / **`*-Setup.exe`** from `release/` only.
+- **Shortcut** — **`installComposerOsDesktopIcon`** already targets **`Composer-OS.exe`**; no relink needed when rebuilding the same path.
+- **Tests** — **`buildOutputContract.test.ts`** (stable `release/` dir, artifact names, logger); deploy script expectations include **`logReleaseArtifactsCli`**.
+
 ## Prompt 2/2 — Control + UX (variation, creative controls, ensemble, sessions)
 
 - **`core/variation/`** — `variationTypes`, `variationAdapter` (`variationIdToSeed`, `seedToVariationDisplayToken`); UI can send **`variationId`** instead of exposing raw **`seed`**; engine still runs on a numeric seed.

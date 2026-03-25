@@ -76,7 +76,10 @@ export function shouldQuarantineShortcut(
   return false;
 }
 
-const STABLE_PORTABLE = 'Composer-OS.exe';
+/** Portable artifact from `package.json` → `build.portable.artifactName` (no version in filename). */
+export const STABLE_PORTABLE_FILE_NAME = 'Composer-OS.exe';
+/** NSIS artifact from `package.json` → `build.nsis.artifactName`. */
+export const STABLE_SETUP_FILE_NAME = 'Composer-OS-Setup.exe';
 
 /**
  * Resolve the packaged portable exe: stable `Composer-OS.exe` when present, else newest legacy
@@ -90,7 +93,7 @@ export function findCanonicalPortableExe(releaseDir: string): string | null {
   } catch {
     return null;
   }
-  const stable = names.find((f) => f.toLowerCase() === STABLE_PORTABLE.toLowerCase());
+  const stable = names.find((f) => f.toLowerCase() === STABLE_PORTABLE_FILE_NAME.toLowerCase());
   if (stable) return stable;
   const portable = names.filter((f) => /^Composer-OS-Desktop-[\d.]+-portable\.exe$/i.test(f));
   if (portable.length === 0) return null;

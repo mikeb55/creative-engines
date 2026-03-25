@@ -36,7 +36,9 @@ npm run desktop:package
 
 Also built: `release/win-unpacked/` (unpacked app), `release/Composer-OS-Setup.exe` (NSIS).
 
-**Hard check after packaging:** `npm run verify:packaged-exe` — fails if no portable `.exe` in `release/`.
+Each `npm run desktop:package` **overwrites** those filenames in place (no version in the `.exe` name). **Desktop shortcuts can stay pointed at** `…\composer-os-desktop\release\Composer-OS.exe` — relinking after every build is not required. In-app version comes from `package.json` / Electron only.
+
+**Hard check after packaging:** `npm run verify:packaged-exe` — fails if no portable `.exe` in `release/`. **`desktop:package`** prints a **build output paths** banner (portable + installer + shortcut target) right after electron-builder.
 
 ## Rebuild + smoke (one command, Windows)
 

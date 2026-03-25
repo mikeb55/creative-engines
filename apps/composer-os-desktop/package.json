@@ -7,7 +7,7 @@
   "scripts": {
     "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
-    "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
+    "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:install-icon": "tsx install/installDesktopIconCli.ts",
     "desktop:create-shortcut": "tsx install/installDesktopIconCli.ts",
     "desktop:rebuild-and-smoke": "tsx install/rebuildAndSmoke.ts",
