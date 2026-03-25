@@ -55,6 +55,20 @@ function testShareableRequiresBothGates(): boolean {
   return !r.shareable;
 }
 
+function testShareableRequiresExportRoundTrip(): boolean {
+  const r = runReleaseReadinessGate({
+    validationPassed: true,
+    exportValid: true,
+    mxValid: true,
+    rhythmicCorrect: true,
+    registerCorrect: true,
+    sibeliusSafe: true,
+    chordRehearsalComplete: true,
+    exportRoundTrip: false,
+  });
+  return !r.shareable;
+}
+
 export function runReadinessTests(): { name: string; ok: boolean }[] {
   return [
     ['Release gate passes when valid', testReleaseReadinessGatePassesWhenValid],
@@ -62,5 +76,6 @@ export function runReadinessTests(): { name: string; ok: boolean }[] {
     ['Readiness scorer returns categories', testReadinessScorerReturnsCategories],
     ['MX readiness returns categories', testMxReadinessReturnsCategories],
     ['Shareable requires both gates', testShareableRequiresBothGates],
+    ['Shareable requires export round-trip', testShareableRequiresExportRoundTrip],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

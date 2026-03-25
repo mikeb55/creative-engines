@@ -13,7 +13,7 @@ export interface MusicXmlBarMathResult {
 
 function sumDurationsPerVoice(measureInner: string): Map<number, number> {
   const voiceSums = new Map<number, number>();
-  const noteBlocks = measureInner.match(/<note>[\s\S]*?<\/note>/g) ?? [];
+  const noteBlocks = measureInner.match(/<note[^>]*>[\s\S]*?<\/note>/g) ?? [];
   for (const block of noteBlocks) {
     if (/<chord\s*\/>/.test(block)) continue;
     const dm = block.match(/<duration>(\d+)<\/duration>/);

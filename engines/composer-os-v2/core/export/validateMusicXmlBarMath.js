@@ -4,7 +4,7 @@ exports.validateExportedMusicXmlBarMath = validateExportedMusicXmlBarMath;
 const scoreModelTypes_1 = require("../score-model/scoreModelTypes");
 function sumDurationsPerVoice(measureInner) {
     const voiceSums = new Map();
-    const noteBlocks = measureInner.match(/<note>[\s\S]*?<\/note>/g) ?? [];
+    const noteBlocks = measureInner.match(/<note[^>]*>[\s\S]*?<\/note>/g) ?? [];
     for (const block of noteBlocks) {
         if (/<chord\s*\/>/.test(block))
             continue;

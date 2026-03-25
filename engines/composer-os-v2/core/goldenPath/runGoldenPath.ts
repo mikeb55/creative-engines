@@ -49,6 +49,8 @@ export interface GoldenPathResult {
   strictBarMathPassed: boolean;
   /** Post-export measure duration sums match score model expectations */
   exportRoundTripPassed: boolean;
+  /** Structural / content checks on exported XML (hardening) */
+  exportIntegrityPassed: boolean;
   /** Bass part lists as upright/acoustic in MusicXML metadata */
   instrumentMetadataPassed: boolean;
   sibeliusSafe: boolean;
@@ -306,6 +308,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     sibeliusSafe,
     chordRehearsalComplete: chordSymbols.length >= 8 && rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
+    exportRoundTrip: exportRoundTripPassed,
   });
 
   const runManifest = createRunManifest({
@@ -357,6 +360,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     mxValidationPassed,
     strictBarMathPassed: strictBarMath.valid,
     exportRoundTripPassed,
+    exportIntegrityPassed,
     instrumentMetadataPassed,
     sibeliusSafe,
     readiness: {

@@ -19,6 +19,8 @@ export interface ReleaseGateInput {
   sibeliusSafe?: boolean;
   chordRehearsalComplete?: boolean;
   exportIntegrity?: boolean;
+  /** When false, output is not shareable (MusicXML bar-math / export round-trip). */
+  exportRoundTrip?: boolean;
 }
 
 export interface ReleaseGateResult {
@@ -48,7 +50,8 @@ export function runReleaseReadinessGate(input: ReleaseGateInput): ReleaseGateRes
     release.passed &&
     release.overall >= RRG_THRESHOLD &&
     mx.passed &&
-    mx.overall >= MX_READINESS_THRESHOLD;
+    mx.overall >= MX_READINESS_THRESHOLD &&
+    input.exportRoundTrip !== false;
 
   return { shareable, release, mx };
 }

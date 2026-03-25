@@ -23,6 +23,7 @@ export interface GenerateResult {
     mxValidationPassed: boolean;
     strictBarMathPassed: boolean;
     exportRoundTripPassed: boolean;
+    exportIntegrityPassed: boolean;
     instrumentMetadataPassed: boolean;
     sibeliusSafe: boolean;
     readiness: { shareable: boolean; release: number; mx: number };
@@ -51,6 +52,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     mxValidationPassed: result.mxValidationPassed,
     strictBarMathPassed: result.strictBarMathPassed,
     exportRoundTripPassed: result.exportRoundTripPassed,
+    exportIntegrityPassed: result.exportIntegrityPassed,
     instrumentMetadataPassed: result.instrumentMetadataPassed,
     sibeliusSafe: result.sibeliusSafe,
     readiness: result.readiness,
@@ -76,7 +78,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       scoreTitle: result.runManifest?.scoreTitle,
       validation: {
         scoreIntegrity: result.integrityPassed,
-        exportIntegrity: result.behaviourGatesPassed,
+        exportIntegrity: result.exportIntegrityPassed,
         behaviourGates: result.behaviourGatesPassed,
         mxValid: result.mxValidationPassed,
         strictBarMath: result.strictBarMathPassed,

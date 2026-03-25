@@ -163,6 +163,18 @@ function testMultiSeedDuoPassesStrictGates(): boolean {
   return true;
 }
 
+/** Harmony kind text must be suffix-only (no D+Dmin9 in one attribute). */
+function testExportedHarmonyKindTextNoDuplicateRoot(): boolean {
+  const r = runGoldenPath(5);
+  if (!r.xml || !r.success) return false;
+  if (r.xml.includes('kind text="Dmin9"') || r.xml.includes('kind text="G13"') || r.xml.includes('kind text="A7alt"'))
+    return false;
+  if (!r.xml.includes('kind text="min9"')) return false;
+  const mx = validateExportedMusicXmlBarMath(r.xml);
+  if (!mx.valid) return false;
+  return mx.sums?.['guitar']?.[2]?.[1] === 16;
+}
+
 export function runCorrectnessGatesTests(): { name: string; ok: boolean }[] {
   return [
     ['resolveOpenFolderTarget: library root', testResolveOpenFolderCanonicalRoot],
@@ -176,5 +188,6 @@ export function runCorrectnessGatesTests(): { name: string; ok: boolean }[] {
     ['strict bar math: invalid measure rejected for receipt', testInvalidBarMathIsDetectable],
     ['export round-trip: exporter output validates', testExportedXmlRoundTripMatchesExporter],
     ['multi-seed duo: strict bar math + round-trip + bass (default + Bacharach)', testMultiSeedDuoPassesStrictGates],
+    ['exported harmony kind text: suffix only + guitar m2 divisions', testExportedHarmonyKindTextNoDuplicateRoot],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

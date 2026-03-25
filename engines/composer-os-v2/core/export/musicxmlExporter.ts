@@ -6,6 +6,7 @@
 import type { MusicXmlExportResult } from './exportTypes';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
+import { parseChordRootAndMusicXmlKindText } from './chordSymbolMusicXml';
 import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
   GUITAR_BASS_DUO_BASS_PART_NAME,
@@ -37,8 +38,11 @@ function divisionsToType(divs: number): string {
   return 'whole';
 }
 
-function beatsToDivisions(beats: number): number {
-  return Math.round(beats * DIVISIONS);
+/** Map beat boundaries to integer divisions so each event's length matches rounded [start,end) span (export round-trip). */
+function beatSpanToDivisions(startBeat: number, endBeat: number): { start: number; end: number } {
+  const start = Math.min(MEASURE_DIVISIONS, Math.max(0, Math.round(startBeat * DIVISIONS)));
+  const end = Math.min(MEASURE_DIVISIONS, Math.max(0, Math.round(endBeat * DIVISIONS)));
+  return { start, end: Math.max(start, end) };
 }
 
 function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
@@ -54,9 +58,8 @@ function midiToPitch(midi: number): { step: string; alter: number; octave: numbe
   return { step, alter, octave };
 }
 
-/** Convert measure events to MusicXML notes. */
-function eventsToXml(measure: MeasureModel, measureIndex: number): string {
-  const measureStart = measureIndex * MEASURE_DIVISIONS;
+/** Convert measure events to MusicXML notes (integer [start,end) spans per event so each voice sums to MEASURE_DIVISIONS). */
+function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
   const sorted = [...measure.events].sort((a, b) => a.startBeat - b.startBeat);
 
   let xml = '';
@@ -67,15 +70,21 @@ function eventsToXml(measure: MeasureModel, measureIndex: number): string {
     let cursor = 0;
 
     for (const e of voiceEvents) {
-      const startDiv = beatsToDivisions(e.startBeat);
-      const durDiv = beatsToDivisions(e.duration);
-
-      if (startDiv > cursor) {
-        const restDiv = startDiv - cursor;
-        xml += `        <note><rest/><duration>${restDiv}</duration><type>${divisionsToType(restDiv)}</type><voice>${voice}</voice></note>\n`;
-        cursor = startDiv;
+      const sb = e.startBeat;
+      const eb = sb + e.duration;
+      const { start: startDiv, end: endDiv } = beatSpanToDivisions(sb, eb);
+      const safeStart = Math.max(startDiv, cursor);
+      if (endDiv <= safeStart) {
+        continue;
       }
 
+      if (safeStart > cursor) {
+        const restDiv = safeStart - cursor;
+        xml += `        <note><rest/><duration>${restDiv}</duration><type>${divisionsToType(restDiv)}</type><voice>${voice}</voice></note>\n`;
+        cursor = safeStart;
+      }
+
+      const durDiv = endDiv - safeStart;
       if (e.kind === 'rest') {
         xml += `        <note><rest/><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice></note>\n`;
       } else {
@@ -90,12 +99,11 @@ function eventsToXml(measure: MeasureModel, measureIndex: number): string {
             : '';
         xml += `        <note${dynAttr}><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice>${notationsEl}</note>\n`;
       }
-      cursor += durDiv;
+      cursor = endDiv;
     }
 
-    const measureEnd = beatsToDivisions(4);
-    if (cursor < measureEnd) {
-      const restDiv = measureEnd - cursor;
+    if (cursor < MEASURE_DIVISIONS) {
+      const restDiv = MEASURE_DIVISIONS - cursor;
       xml += `        <note><rest/><duration>${restDiv}</duration><type>${divisionsToType(restDiv)}</type><voice>${voice}</voice></note>\n`;
     }
   }
@@ -161,11 +169,9 @@ ${feelEl}`;
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
         if (m.chord) {
-          const rootMatch = m.chord.match(/^([A-Ga-g])([#b])?/);
-          const step = rootMatch ? rootMatch[1].toUpperCase() : 'C';
-          const alter = rootMatch?.[2] === '#' ? 1 : rootMatch?.[2] === 'b' ? -1 : 0;
-          const alterEl = alter !== 0 ? `<root-alter>${alter}</root-alter>` : '';
-          xml += `    <harmony><root><root-step>${step}</root-step>${alterEl}</root><kind text="${escapeXml(m.chord)}"/></harmony>\n`;
+          const { rootStep, rootAlter, kindText } = parseChordRootAndMusicXmlKindText(m.chord);
+          const alterEl = rootAlter !== 0 ? `<root-alter>${rootAlter}</root-alter>` : '';
+          xml += `    <harmony><root><root-step>${rootStep}</root-step>${alterEl}</root><kind text="${escapeXml(kindText)}"/></harmony>\n`;
         }
 
         xml += eventsToXml(m, i);
