@@ -182,7 +182,20 @@ function buildGuitarPart(
   for (let b = 1; b <= 8; b++) {
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b));
     const placements = getPlacementsForBar(motifState.placements, b);
-    const density = getDensityForBar(densityPlan, b);
+    const ecmMode = context.generationMetadata?.ecmMode;
+    const isEcmM = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET';
+    const isEcmS = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER';
+
+    let density = getDensityForBar(densityPlan, b);
+    if (isEcmM) {
+      if (b <= 3) density = 'sparse';
+      else if (b === 4) density = 'medium';
+      else if (b >= 5 && b <= 7) density = 'sparse';
+      else density = 'medium';
+    } else if (isEcmS) {
+      if (b <= 4) density = 'sparse';
+      else density = 'dense';
+    }
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const reduceAttack = interaction?.coupling?.guitarReduceAttack;
     const phraseIntent = getDuoPhraseIntent(b, seed);
@@ -191,11 +204,14 @@ function buildGuitarPart(
     const sectionBump = b > 4 ? 5 : 0;
     const effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
     const effectiveHigh = Math.min(79, zHigh + sectionBump);
-    const useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
-    const meth = hints.metheny;
+    let useOffbeat = (rhythm.offbeatWeight > 0.2 && (b === 2 || b === 4 || b === 6 || b === 8)) || !!reduceAttack;
+    if (isEcmM || isEcmS) useOffbeat = false;
+    const meth = isEcmM
+      ? { attackDensityReduced: true, lyricalMotif: true, ...hints.metheny }
+      : hints.metheny;
     const bach = hints.bacharach;
 
-    if (bach && (b === 2 || b === 6)) {
+    if (bach && (b === 2 || b === 6) && context.presetId !== 'ecm_chamber') {
       const bm = buildBacharachAnchorMeasure(b, getChordForBar(b, context), rehearsalForBar(b), effectiveLow, effectiveHigh);
       normalizeMeasureQuarterGrid(bm);
       measures.push(bm);
@@ -301,6 +317,56 @@ function tagMomentBarsOnParts(parts: PartModel[]): void {
   }
 }
 
+/** Metheny ECM: echo bar-1 contour in bar 6 with new register + rhythm (same intervals, different spacing). */
+function applyEcmMethenyMotifEcho(guitar: PartModel, seed: number): void {
+  const m1 = guitar.measures.find((x) => x.index === 1);
+  const m6 = guitar.measures.find((x) => x.index === 6);
+  if (!m1 || !m6) return;
+  const ordered = [...m1.events]
+    .filter((e) => e.kind === 'note')
+    .sort(
+      (a, b2) => (a as { startBeat: number }).startBeat - (b2 as { startBeat: number }).startBeat
+    ) as { pitch: number; startBeat: number; duration: number }[];
+  if (ordered.length < 2) return;
+  const src = ordered.slice(0, Math.min(4, ordered.length));
+  const intervals: number[] = [];
+  for (let i = 1; i < src.length; i++) intervals.push(src[i].pitch - src[i - 1].pitch);
+  const regShift = 7 + (seed % 5);
+  const rhythms = [0.75, 0.5, 0.75, 1.0];
+  m6.events = [];
+  let t = 0;
+  let pitch = src[0].pitch + regShift;
+  for (let i = 0; i < src.length && t < 4 - 1e-4; i++) {
+    const dur = Math.min(rhythms[i % rhythms.length], 4 - t);
+    if (dur <= 0) break;
+    addEvent(m6, createNote(pitch, t, dur));
+    t += dur;
+    if (i < intervals.length) pitch += intervals[i];
+  }
+  if (t < 4 - 1e-4) addEvent(m6, createRest(t, 4 - t));
+  normalizeMeasureQuarterGrid(m6);
+  collapseRestsInsideNotes(m6);
+  dropRestsSameStartAsNote(m6);
+}
+
+/** Schneider ECM: 2–4 bar swell arc via velocities (structure unchanged). */
+function applyEcmSchneiderSwellVelocities(score: ScoreModel): ScoreModel {
+  const ramp = [40, 46, 54, 58, 66, 76, 70, 62];
+  const parts = score.parts.map((p) => ({
+    ...p,
+    measures: p.measures.map((m) => ({
+      ...m,
+      events: m.events.map((e) => {
+        if (e.kind !== 'note') return e;
+        const base = ramp[m.index - 1] ?? 62;
+        const jitter = (m.index + (p.id?.length ?? 0)) % 5;
+        return { ...e, velocity: Math.min(127, base + jitter) };
+      }),
+    })),
+  }));
+  return { ...score, parts };
+}
+
 /** Bar 4: bass supports peak — two half notes (same shape as overlap thinning; does not touch bass engine module). */
 function simplifyBassAtPeakBar(
   context: CompositionContext,
@@ -399,6 +465,29 @@ function buildBassPart(
     const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
     const third = clampPitch(tones.third, walkLow, effectiveHigh);
     const seventh = clampPitch(tones.seventh, walkLow, effectiveHigh);
+
+    const ecmMode = context.generationMetadata?.ecmMode;
+    if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET') {
+      const pitch = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+      addEvent(m, createNote(pitch, 0, 4));
+      normalizeMeasureQuarterGrid(m);
+      measures.push(m);
+      prevBassPitch = pitch;
+      continue;
+    }
+
+    if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
+      const p1 = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+      const step = (seed + b) % 3 === 0 ? 1 : 2;
+      const p2 = clampPitch(p1 + step, walkLow, effectiveHigh);
+      const split = b % 2 === 0 ? 2 : 2.25;
+      addEvent(m, createNote(p1, 0, split));
+      addEvent(m, createNote(p2, split, 4 - split));
+      normalizeMeasureQuarterGrid(m);
+      measures.push(m);
+      prevBassPitch = p2;
+      continue;
+    }
 
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
@@ -510,6 +599,9 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     plans.motifState,
     plans.interactionPlan
   );
+  if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
+    applyEcmMethenyMotifEcho(guitarPart, context.seed);
+  }
   const bassPart = buildBassPart(
     context,
     plans.bassBehaviour,
@@ -524,13 +616,25 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   tagMomentBarsOnParts([guitarPart, bassPart]);
-  simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
-  resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  if (context.presetId !== 'ecm_chamber') {
+    simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
+    resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  }
 
   const bpm = 120;
+  const feelProfile =
+    context.presetId === 'ecm_chamber'
+      ? { swingRatio: 1, tempoFeel: 'medium' as const, driftTotalBeats: 0.06 }
+      : buildFeelProfileFromTempo(bpm);
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], {
     tempo: bpm,
-    feelProfile: buildFeelProfileFromTempo(bpm),
+    feelProfile,
   });
-  return applyExpressiveDuoFeel(applyPerformancePass(rawScore, { applyArticulation: false }));
+  let afterPerf = applyPerformancePass(rawScore, { applyArticulation: false });
+  if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
+    afterPerf = applyEcmSchneiderSwellVelocities(afterPerf);
+  }
+  return applyExpressiveDuoFeel(afterPerf, {
+    ecmEvenEighths: context.presetId === 'ecm_chamber',
+  });
 }

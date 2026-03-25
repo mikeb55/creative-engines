@@ -43,7 +43,11 @@ import {
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { buildEcmChamberContext } from '../ecm/buildEcmChamberContext';
 import type { EcmChamberMode } from '../ecm/ecmChamberTypes';
-import { scoreEcmMethenyFeel, scoreEcmSchneiderFeel } from '../ecm/ecmChamberScoring';
+import {
+  scoreEcmMethenyFeel,
+  scoreEcmSchneiderFeel,
+  ecmCrossModeSimilarityPenalty,
+} from '../ecm/ecmChamberScoring';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -222,7 +226,10 @@ function buildGoldenPathPlans(
   options?: RunGoldenPathOptions
 ): GoldenPathPlans {
   const sections = planSectionRoles(context.form.sections, { A: 'statement', B: 'contrast' });
-  const densityPlan = planDensityCurve(sections, 8);
+  const densityPlan =
+    context.presetId === 'ecm_chamber'
+      ? { segments: context.density.segments, totalBars: context.density.totalBars }
+      : planDensityCurve(sections, 8);
   const guitarMap = planGuitarRegisterMap(sections);
   const bassMap = planBassRegisterMap(sections);
   const guitarBehaviour = planGuitarBehaviour(sections, densityPlan, guitarMap);
@@ -230,7 +237,10 @@ function buildGoldenPathPlans(
   const rhythmConstraints = computeRhythmicConstraints(context.feel);
 
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
-  const styleStack: StyleStack = options?.styleStack ?? DEFAULT_STYLE_STACK;
+  const styleStack: StyleStack =
+    context.presetId === 'ecm_chamber'
+      ? (options?.styleStack ?? ECM_CHAMBER_STYLE_STACK)
+      : options?.styleStack ?? DEFAULT_STYLE_STACK;
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
   const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle, options?.ecmMode);
   const stackIds = styleStackToModuleIds(styleStack);
@@ -316,6 +326,12 @@ const DEFAULT_STYLE_STACK: StyleStack = {
   weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
 };
 
+/** ECM chamber: avoid Barry Harris / triad-pair conformance that assumes the duo ii–V cycle. */
+const ECM_CHAMBER_STYLE_STACK: StyleStack = {
+  primary: 'metheny',
+  weights: { primary: 1 },
+};
+
 export interface RunGoldenPathOptions {
   styleStack?: StyleStack;
   presetId?: string;
@@ -385,9 +401,14 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
       const pid = resolved?.presetId ?? 'guitar_bass_duo';
       const soft =
         pid === 'ecm_chamber'
-          ? (resolved?.ecmMode ?? 'ECM_METHENY_QUARTET') === 'ECM_SCHNEIDER_CHAMBER'
-            ? scoreEcmSchneiderFeel(r.score, r.context, r.plans)
-            : scoreEcmMethenyFeel(r.score, r.context, r.plans)
+          ? (() => {
+              const mode = resolved?.ecmMode ?? 'ECM_METHENY_QUARTET';
+              const base =
+                mode === 'ECM_SCHNEIDER_CHAMBER'
+                  ? scoreEcmSchneiderFeel(r.score, r.context, r.plans)
+                  : scoreEcmMethenyFeel(r.score, r.context, r.plans);
+              return base - ecmCrossModeSimilarityPenalty(r.score, r.context, mode);
+            })()
           : scoreJazzDuoBehaviourSoft(r.score) +
             scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
             scoreNarrativeMomentsSoft(r.score);
@@ -454,7 +475,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     bassBehaviour,
     sections,
     densityPlan,
-    { motifState, styleStack, interactionPlan }
+    { motifState, styleStack, interactionPlan, presetId: context.presetId }
   );
   if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 

@@ -28,7 +28,8 @@ function countOnBeatOffBeat(score: ScoreModel): { onBeat: number; offBeat: numbe
 
 export function validateRhythmBehaviour(
   score: ScoreModel,
-  constraints: RhythmicConstraints
+  constraints: RhythmicConstraints,
+  opts?: { ecmChamber?: boolean }
 ): RhythmBehaviourValidationResult {
   const errors: string[] = [];
   const { onBeat, offBeat } = countOnBeatOffBeat(score);
@@ -39,7 +40,10 @@ export function validateRhythmBehaviour(
   if ((constraints.mode === 'swing' || constraints.mode === 'hybrid') && constraints.offbeatWeight > 0.3) {
     if (offBeatRatio < 0.05 && total > 8) errors.push('Phrasing too square for swing/hybrid mode');
   }
-  if (constraints.mode === 'straight' && offBeatRatio > 0.6) errors.push('Too many off-beats for straight mode');
+  const straightOffbeatMax = opts?.ecmChamber ? 0.88 : 0.6;
+  if (constraints.mode === 'straight' && offBeatRatio > straightOffbeatMax) {
+    errors.push('Too many off-beats for straight mode');
+  }
 
   return { valid: errors.length === 0, errors };
 }

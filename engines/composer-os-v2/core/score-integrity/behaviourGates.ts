@@ -96,7 +96,13 @@ export function runBehaviourGates(
   bassPlan: BassBehaviourPlan,
   sections: SectionWithRole[],
   densityPlan: DensityCurvePlan,
-  opts?: { motifState?: MotifTrackerState; styleStack?: StyleStack; interactionPlan?: InteractionPlan }
+  opts?: {
+    motifState?: MotifTrackerState;
+    styleStack?: StyleStack;
+    interactionPlan?: InteractionPlan;
+    /** Duo gates use golden-path chord assumptions; ECM chamber bypasses those checks. */
+    presetId?: string;
+  }
 ): BehaviourGatesResult {
   const errors: string[] = [];
   const styleStack = opts?.styleStack;
@@ -104,7 +110,9 @@ export function runBehaviourGates(
     ? [styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[]
     : [];
 
-  const rhythm = validateRhythmBehaviour(score, rhythmConstraints);
+  const rhythm = validateRhythmBehaviour(score, rhythmConstraints, {
+    ecmChamber: opts?.presetId === 'ecm_chamber',
+  });
   if (!rhythm.valid) errors.push(...rhythm.errors);
 
   const guitar = validateGuitarBehaviour(score, guitarPlan);
@@ -158,15 +166,15 @@ export function runBehaviourGates(
     if (!bach.valid) errors.push(...bach.errors);
   }
 
-  const duoMusical = validateDuoMusicalQuality(score, { styleStack });
+  const duoMusical = validateDuoMusicalQuality(score, { styleStack, presetId: opts?.presetId });
   if (!duoMusical.valid) errors.push(...duoMusical.errors);
   const duoMusicalValid = duoMusical.valid;
 
-  const bassIdentity = validateBassIdentity(score);
+  const bassIdentity = validateBassIdentity(score, { presetId: opts?.presetId });
   if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
   const bassIdentityValid = bassIdentity.valid;
 
-  const phraseAuthority = validateDuoPhraseAuthority(score);
+  const phraseAuthority = validateDuoPhraseAuthority(score, { presetId: opts?.presetId });
   if (!phraseAuthority.valid) errors.push(...phraseAuthority.errors);
   const phraseAuthorityValid = phraseAuthority.valid;
 

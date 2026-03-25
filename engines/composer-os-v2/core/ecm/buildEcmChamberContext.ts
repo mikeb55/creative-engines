@@ -7,28 +7,25 @@ import type { CompositionContext } from '../compositionContext';
 import type { HarmonyPlan } from '../primitives/harmonyTypes';
 import { ecmChamberPreset } from '../../presets/ecmChamberPreset';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
-import { planSectionRoles } from '../section-roles/sectionRolePlanner';
-import { planDensityCurve } from '../density/densityCurvePlanner';
+import type { DensityCurve } from '../primitives/densityTypes';
 import type { EcmChamberMode, EcmGenerationMetrics } from './ecmChamberTypes';
 
-/** Metheny quartet: paired bars echo harmony; modal centres; 4 changes / 8 bars. */
+/** Metheny: modal / hovering — sus and maj colours, avoid heavy V7alt cadential churn. */
 const HARMONY_METHEENY: HarmonyPlan = {
   segments: [
-    { chord: 'Dmin9', bars: 2 },
-    { chord: 'G13', bars: 2 },
-    { chord: 'Cmaj9', bars: 2 },
-    { chord: 'A7alt', bars: 2 },
+    { chord: 'Emin9', bars: 2 },
+    { chord: 'A7sus4', bars: 2 },
+    { chord: 'Dmaj7', bars: 2 },
+    { chord: 'Gmaj7', bars: 2 },
   ],
   totalBars: 8,
 };
 
-/** Schneider / Wheeler chamber: slower harmonic rhythm, sustained centres, fewer dominants. */
+/** Schneider: very slow harmonic rhythm (≤1 chord change / bar avg), sustained centres. */
 const HARMONY_SCHNEIDER: HarmonyPlan = {
   segments: [
-    { chord: 'Cmaj7', bars: 2 },
-    { chord: 'Cmaj7', bars: 2 },
-    { chord: 'Amin7', bars: 2 },
-    { chord: 'D7', bars: 2 },
+    { chord: 'Cmaj7', bars: 4 },
+    { chord: 'Amin9', bars: 4 },
   ],
   totalBars: 8,
 };
@@ -63,17 +60,17 @@ function buildEcmMetrics(mode: EcmChamberMode): EcmGenerationMetrics {
           label: 'B',
           startBar: 5,
           length: 4,
-          foregroundLineCount: 2,
-          backgroundComplexityScore: 3,
+          foregroundLineCount: 1,
+          backgroundComplexityScore: 2,
           avgChordsPerBar: 0.5,
           cadenceCount: 1,
           swellEvents: 1,
           textureStates: ['echo', 'plateau', 'thin'],
         },
       ],
-      motifEchoSegments: 2,
+      motifEchoSegments: 3,
       innerVoiceSmoothnessEstimate: 0.65,
-      strongCadenceEstimate: 0.35,
+      strongCadenceEstimate: 0.28,
     };
   }
   return {
@@ -85,7 +82,7 @@ function buildEcmMetrics(mode: EcmChamberMode): EcmGenerationMetrics {
         length: 4,
         foregroundLineCount: 2,
         backgroundComplexityScore: 2,
-        avgChordsPerBar: 0.5,
+        avgChordsPerBar: 0.25,
         cadenceCount: 0,
         swellEvents: 2,
         textureStates: ['cloud', 'swell', 'thin_solo'],
@@ -95,16 +92,16 @@ function buildEcmMetrics(mode: EcmChamberMode): EcmGenerationMetrics {
         startBar: 5,
         length: 4,
         foregroundLineCount: 3,
-        backgroundComplexityScore: 3,
-        avgChordsPerBar: 0.5,
-        cadenceCount: 1,
-        swellEvents: 1,
-        textureStates: ['chamber_release', 'hover', 'soft_cadence'],
+        backgroundComplexityScore: 4,
+        avgChordsPerBar: 0.25,
+        cadenceCount: 0,
+        swellEvents: 2,
+        textureStates: ['chamber_release', 'layered', 'soft_cadence'],
       },
     ],
     motifEchoSegments: 1,
-    innerVoiceSmoothnessEstimate: 0.78,
-    strongCadenceEstimate: 0.22,
+    innerVoiceSmoothnessEstimate: 0.82,
+    strongCadenceEstimate: 0.15,
   };
 }
 
@@ -114,8 +111,8 @@ export function buildEcmChamberContext(seed: number, mode: EcmChamberMode): Comp
   const chordSymbolPlan = chordPlanFromHarmony(harmony);
   const feel =
     mode === 'ECM_SCHNEIDER_CHAMBER'
-      ? { mode: 'straight' as const, intensity: 0.5, syncopationDensity: 'low' as const }
-      : { mode: 'straight' as const, intensity: 0.58, syncopationDensity: 'medium' as const };
+      ? { mode: 'straight' as const, intensity: 0.48, syncopationDensity: 'low' as const }
+      : { mode: 'straight' as const, intensity: 0.52, syncopationDensity: 'low' as const };
 
   const sections = [
     { label: 'A', startBar: 1, length: 4 },
@@ -126,9 +123,24 @@ export function buildEcmChamberContext(seed: number, mode: EcmChamberMode): Comp
   const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
   const ecmMetrics = buildEcmMetrics(mode);
-  const sectionRoles = planSectionRoles(sections, { A: 'statement', B: 'contrast' });
-  const densityPlan = planDensityCurve(sectionRoles, 8);
-  const densityCurve = { segments: densityPlan.segments, totalBars: 8 };
+  const densityCurve: DensityCurve =
+    mode === 'ECM_METHENY_QUARTET'
+      ? {
+          totalBars: 8,
+          segments: [
+            { startBar: 1, length: 3, level: 'sparse' },
+            { startBar: 4, length: 1, level: 'medium' },
+            { startBar: 5, length: 3, level: 'sparse' },
+            { startBar: 8, length: 1, level: 'medium' },
+          ],
+        }
+      : {
+          totalBars: 8,
+          segments: [
+            { startBar: 1, length: 4, level: 'sparse' },
+            { startBar: 5, length: 4, level: 'dense' },
+          ],
+        };
 
   return {
     systemVersion: '2.0.0',
@@ -160,5 +172,8 @@ export function buildEcmChamberContext(seed: number, mode: EcmChamberMode): Comp
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
+    styleOverrides: {
+      ecm: { variant: mode === 'ECM_SCHNEIDER_CHAMBER' ? 'schneider' : 'metheny' },
+    },
   };
 }

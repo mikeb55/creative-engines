@@ -218,7 +218,7 @@ export function runAppApiTests(): TestResult[] {
     if (!metheny.success || !schneider.success) fail('ECM Chamber: both modes generate');
     else if (metheny.runManifest?.ecmMode !== 'ECM_METHENY_QUARTET') fail('ECM Chamber: Metheny manifest');
     else if (schneider.runManifest?.ecmMode !== 'ECM_SCHNEIDER_CHAMBER') fail('ECM Chamber: Schneider manifest');
-    else if (!metheny.xml?.includes('Dmin9') || !schneider.xml?.includes('Cmaj7'))
+    else if (!metheny.xml?.includes('Emin9') || !schneider.xml?.includes('Cmaj7'))
       fail('ECM Chamber: distinct harmony in XML');
     else pass('ECM Chamber: Metheny + Schneider modes');
   } catch (e) {

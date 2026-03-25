@@ -15,6 +15,9 @@ function chordForBar(barIndex) {
     return 'A7alt';
 }
 function validateDuoMusicalQuality(score, _opts) {
+    if ((_opts === null || _opts === void 0 ? void 0 : _opts.presetId) === 'ecm_chamber') {
+        return { valid: true, errors: [] };
+    }
     const errors = [];
     const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');

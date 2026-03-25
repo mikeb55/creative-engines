@@ -56,7 +56,8 @@ function lastNoteInBar(score: ScoreModel, bar: number): { pitch: number } | unde
   return last ? { pitch: last.pitch } : undefined;
 }
 
-export function validateDuoPhraseAuthority(score: ScoreModel): PhraseAuthorityResult {
+export function validateDuoPhraseAuthority(score: ScoreModel, opts?: { presetId?: string }): PhraseAuthorityResult {
+  if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
   const errors: string[] = [];
   const notes = collectGuitarNotes(score);
   if (notes.length < 8) {

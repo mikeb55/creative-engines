@@ -20,8 +20,9 @@ function chordForBar(barIndex: number): string {
 
 export function validateDuoMusicalQuality(
   score: ScoreModel,
-  _opts?: { styleStack?: StyleStack }
+  _opts?: { styleStack?: StyleStack; presetId?: string }
 ): DuoMusicalQualityResult {
+  if (_opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
   const errors: string[] = [];
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');

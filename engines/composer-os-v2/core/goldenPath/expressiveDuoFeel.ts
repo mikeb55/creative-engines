@@ -44,7 +44,10 @@ function countNotesInMeasure(m: PartModel['measures'][0]): number {
 }
 
 /** Apply duo-specific articulation and light dynamics; preserves pitches and event counts. */
-export function applyExpressiveDuoFeel(score: ScoreModel): ScoreModel {
+export function applyExpressiveDuoFeel(
+  score: ScoreModel,
+  opts?: { ecmEvenEighths?: boolean }
+): ScoreModel {
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
 
@@ -78,7 +81,10 @@ export function applyExpressiveDuoFeel(score: ScoreModel): ScoreModel {
             articulation = 'staccato';
           }
         } else if (isGuitar) {
-          if (duration <= 0.625 + EPS) {
+          if (opts?.ecmEvenEighths) {
+            if (duration >= 1.5 - EPS) articulation = 'tenuto';
+            else articulation = 'staccato';
+          } else if (duration <= 0.625 + EPS) {
             articulation = isBackbeat(startBeat) && (pitch + m.index * 3) % 5 < 2 ? 'accent' : 'staccato';
           } else if (duration >= 1.5 - EPS) {
             articulation = 'tenuto';
@@ -88,11 +94,11 @@ export function applyExpressiveDuoFeel(score: ScoreModel): ScoreModel {
             articulation = 'tenuto';
           }
 
-          if (denseBoth && duration <= 0.75 && (pitch + startBeat * 7) % 11 < 2) {
+          if (!opts?.ecmEvenEighths && denseBoth && duration <= 0.75 && (pitch + startBeat * 7) % 11 < 2) {
             articulation = 'staccato';
           }
 
-          if (duration <= 0.5 && (pitch * 3 + m.index * 5) % 17 === 0) {
+          if (!opts?.ecmEvenEighths && duration <= 0.5 && (pitch * 3 + m.index * 5) % 17 === 0) {
             velocity = 38;
           }
         }
