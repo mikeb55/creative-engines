@@ -186,6 +186,33 @@ function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
 }
 
+/** Stronger landing on phrase-ending bars (2,4,6): extend last note toward ≥0.5 beats when possible. */
+function duoBoostPhraseEndLanding(m: MeasureModel, bar: number, isDuo: boolean): void {
+  if (!isDuo || bar % 2 !== 0 || bar === 8) return;
+  const notes = m.events.filter((e) => e.kind === 'note') as {
+    startBeat: number;
+    duration: number;
+  }[];
+  if (notes.length === 0) return;
+  let last = notes[0];
+  for (const n of notes) {
+    if (n.startBeat + n.duration >= last.startBeat + last.duration) last = n;
+  }
+  const maxDur = qBeat(4 - last.startBeat);
+  if (last.duration >= Math.min(0.5, maxDur)) return;
+  const target = Math.min(0.5, maxDur);
+  const need = target - last.duration;
+  if (need <= 0) return;
+  const rests = m.events.filter((e) => e.kind === 'rest') as { startBeat: number; duration: number }[];
+  const r0 = rests
+    .filter((r) => r.startBeat + r.duration <= last.startBeat + 1e-3)
+    .sort((a, b) => b.startBeat + b.duration - (a.startBeat + a.duration))[0];
+  if (r0 && r0.duration >= need + 0.15) {
+    r0.duration = qBeat(r0.duration - need);
+    last.duration = qBeat(Math.min(maxDur, last.duration + need));
+  }
+}
+
 /** Remove rests fully covered by a note span (motif tail rounding can leave orphan rests). */
 function collapseRestsInsideNotes(m: MeasureModel): void {
   const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
@@ -459,6 +486,8 @@ function buildGuitarPart(
 
     normalizeMeasureQuarterGrid(m);
     if (isDuoGolden) {
+      duoBoostPhraseEndLanding(m, b, true);
+      normalizeMeasureQuarterGrid(m);
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
     }

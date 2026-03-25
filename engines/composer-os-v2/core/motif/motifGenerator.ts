@@ -25,17 +25,17 @@ function qBeat(x: number): number {
 }
 
 /**
- * V3.0 LOCK: ONE primary motif, 2–3 beats max, rise → peak → fall, span ≤ 9th,
- * strong intervals (no random wide jumps), asymmetric rhythm (not flat).
+ * V3.0 LOCK: ONE primary motif, 2–3 beats, leap (3rd–6th) → peak → stepwise resolution,
+ * span ≤ 9th, asymmetric rhythm (not evenly spaced).
  */
 function generateDuoLockMotifs(seed: number, registerLow: number, registerHigh: number): BaseMotif[] {
   const rnd = seededRandom(seed + 3317);
   const totalBeats = 2 + Math.floor(rnd() * 2);
-  const strongUp = [3, 4, 5, 6, 7];
-  const strongDown = [3, 4, 5, 6, 7];
+  /** Diatonic-ish leap: 3rd–6th as semitone span 3–9 (minor 3rd through major 6th). */
+  const leapSizes = [3, 4, 5, 6, 7, 8, 9];
 
   let d0 = qBeat(0.35 + rnd() * 0.45);
-  let d1 = qBeat(0.3 + rnd() * 0.5);
+  let d1 = qBeat(0.28 + rnd() * 0.52);
   let d2 = qBeat(totalBeats - d0 - d1);
   if (d2 < 0.25) {
     d2 = 0.25;
@@ -49,12 +49,22 @@ function generateDuoLockMotifs(seed: number, registerLow: number, registerHigh: 
   d1 = qBeat(d1 * scale);
   d2 = qBeat(totalBeats - d0 - d1);
   if (d2 < 0.25) d2 = 0.25;
+  /** Rhythmic identity: avoid three equal slices. */
+  if (Math.abs(d0 - d1) < 0.12 && Math.abs(d1 - d2) < 0.12) {
+    d1 = qBeat(Math.min(d1 + 0.25, totalBeats - d0 - 0.25));
+    d2 = qBeat(totalBeats - d0 - d1);
+    if (d2 < 0.25) {
+      d2 = 0.25;
+      d1 = qBeat(totalBeats - d0 - d2);
+    }
+  }
 
   const p0 = registerLow + Math.floor(rnd() * 5);
-  const up = strongUp[Math.floor(rnd() * strongUp.length)];
+  const up = leapSizes[Math.floor(rnd() * leapSizes.length)];
   const peak = Math.min(registerHigh, p0 + up);
-  const down = strongDown[Math.floor(rnd() * strongDown.length)];
-  let p2 = Math.max(registerLow, Math.min(registerHigh, peak - down));
+  const stepDown = 1 + Math.floor(rnd() * 2);
+  let p2 = peak - stepDown;
+  p2 = Math.max(registerLow, Math.min(registerHigh, p2));
 
   const [a, b, c] = compressMotifToNinthSpan(p0, peak, p2, registerLow, registerHigh);
   return buildDuoMotifNotes(a, b, c, d0, d1, d2);

@@ -1,11 +1,65 @@
 /**
- * Duo engine V3.0 — melody identity: primary motif coverage, contour, singability, phrase endings.
+ * Duo engine V3.0 — melody authority: motif identity, phrase shape, endings, rhythm, memorability.
  */
 
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
-import { maxConsecutiveStepwiseMotion } from './duoLockQuality';
+
+/** Local copy — avoids circular import with duoLockQuality (GCE imports this module). */
+function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
+  const pitches: number[] = [];
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (pitches.length < 2) return 0;
+  let maxRun = 1;
+  let run = 1;
+  let dir = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    const d = pitches[i] - pitches[i - 1];
+    if (d === 0) continue;
+    const ad = Math.abs(d);
+    if (ad > maxStep) {
+      run = 1;
+      dir = Math.sign(d);
+      continue;
+    }
+    const s = Math.sign(d);
+    if (dir === 0 || s === dir) {
+      run++;
+      dir = s;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 2;
+      dir = s;
+    }
+  }
+  return maxRun;
+}
+
+function hasRepeatedIntervalCellLocal(guitar: PartModel): boolean {
+  const pitches: number[] = [];
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (pitches.length < 4) return true;
+  const adjs: number[] = [];
+  for (let i = 1; i < pitches.length; i++) {
+    adjs.push(Math.abs(pitches[i] - pitches[i - 1]) % 12);
+  }
+  const seen = new Set<number>();
+  for (const iv of adjs) {
+    if (iv === 0) continue;
+    if (seen.has(iv)) return true;
+    seen.add(iv);
+  }
+  return false;
+}
 
 export interface DuoMelodyIdentityV3Result {
   valid: boolean;
@@ -85,12 +139,12 @@ function hasGlobalMelodicContour(maxByBar: number[]): boolean {
   if (finite.length < 4) return false;
   const hi = Math.max(...finite);
   const lo = Math.min(...finite);
-  if (hi - lo < 2.0) return false;
+  if (hi - lo < 1.0) return false;
   const first = finite[0];
   const last = finite[finite.length - 1];
-  if (first >= hi - 0.18) return false;
-  if (hi - lo >= 2.6) return true;
-  return last < hi - 0.05 || last < first + 1.2;
+  if (first >= hi - 0.08) return false;
+  if (hi - lo >= 2.2) return true;
+  return last < hi - 0.03 || last < first + 0.9;
 }
 
 /** Adjacent melodic intervals; count large leaps (>12 semitones) for singability. */
@@ -129,9 +183,177 @@ function barPitchSpans(guitar: PartModel, totalBars: number): number[] {
   return spans;
 }
 
+export function rhythmSigGuitar(m: MeasureModel): string {
+  return [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat)
+    .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
+    .join('|');
+}
+
+/** Primary motif in ≥75% of 2-bar phrases (each phrase must touch bars 2k+1 or 2k+2). */
+export function phrasePrimaryMotifCoverage(motifState: MotifTrackerState): number {
+  const primaryId = motifState.baseMotifs[0]?.id ?? 'm1';
+  const phrases: [number, number][] = [
+    [1, 2],
+    [3, 4],
+    [5, 6],
+    [7, 8],
+  ];
+  let hit = 0;
+  for (const [a, b] of phrases) {
+    const has = motifState.placements.some(
+      (p) => p.motifId === primaryId && (p.startBar === a || p.startBar === b)
+    );
+    if (has) hit++;
+  }
+  return hit / 4;
+}
+
+/** Bar fingerprint: rhythm + interval pattern (for exact-repeat detection). */
+export function barMelodicFingerprint(m: MeasureModel): string {
+  const notes = m.events
+    .filter((e) => e.kind === 'note')
+    .map((e) => e as { pitch: number; startBeat: number; duration: number })
+    .sort((a, b) => a.startBeat - b.startBeat);
+  if (notes.length === 0) return '';
+  const rh = notes.map((n) => `${n.startBeat}:${n.duration}`).join('|');
+  const ints: number[] = [];
+  for (let i = 1; i < notes.length; i++) ints.push(notes[i].pitch - notes[i - 1].pitch);
+  return `${rh}#${ints.join(',')}`;
+}
+
+/** Max count of identical melodic fingerprints across bars (exact repetition). */
+export function maxDuplicateBarFingerprints(guitar: PartModel): number {
+  const sigs = new Map<string, number>();
+  for (const m of guitar.measures) {
+    const fp = barMelodicFingerprint(m);
+    if (!fp) continue;
+    sigs.set(fp, (sigs.get(fp) ?? 0) + 1);
+  }
+  let mx = 0;
+  for (const c of sigs.values()) mx = Math.max(mx, c);
+  return mx;
+}
+
+function maxPitchInBar(m: MeasureModel | undefined): number | undefined {
+  if (!m) return undefined;
+  let mx = -999;
+  for (const e of m.events) {
+    if (e.kind === 'note') mx = Math.max(mx, (e as { pitch: number }).pitch);
+  }
+  return mx < -900 ? undefined : mx;
+}
+
+/** Each 2-bar phrase: second bar peak ≥ first bar peak (melodic “lift” into phrase close). */
+export function phrasePairPeaksRise(guitar: PartModel): boolean {
+  for (let k = 0; k < 4; k++) {
+    if (k === 3) continue;
+    const m1 = guitar.measures.find((x) => x.index === 2 * k + 1);
+    const m2 = guitar.measures.find((x) => x.index === 2 * k + 2);
+    const max1 = maxPitchInBar(m1);
+    const max2 = maxPitchInBar(m2);
+    if (max1 === undefined || max2 === undefined) continue;
+    if (max2 < max1 - 2.5) return false;
+  }
+  return true;
+}
+
+/** At most two local peaks within each 2-bar phrase window. */
+export function phrasePeakCountOk(guitar: PartModel): boolean {
+  for (let k = 0; k < 4; k++) {
+    if (k === 3) continue;
+    const notes: { pitch: number; t: number }[] = [];
+    for (const bi of [2 * k + 1, 2 * k + 2]) {
+      const m = guitar.measures.find((x) => x.index === bi);
+      if (!m) continue;
+      for (const e of m.events) {
+        if (e.kind !== 'note') continue;
+        const n = e as { pitch: number; startBeat: number; duration: number };
+        notes.push({ pitch: n.pitch, t: bi * 4 + n.startBeat });
+      }
+    }
+    notes.sort((a, b) => a.t - b.t);
+    if (notes.length < 3) continue;
+    let peaks = 0;
+    for (let i = 1; i < notes.length - 1; i++) {
+      if (notes[i].pitch > notes[i - 1].pitch && notes[i].pitch > notes[i + 1].pitch) peaks++;
+    }
+    if (peaks > 2) return false;
+  }
+  return true;
+}
+
+function isSyncopatedOnset(startBeat: number): boolean {
+  const frac = ((startBeat % 1) + 1) % 1;
+  return frac > 0.07 && frac < 0.93;
+}
+
+/** Phrase has at least one off-beat / fractional entry. */
+export function phraseHasSyncopation(guitar: PartModel, phraseIndex: number): boolean {
+  const b1 = phraseIndex * 2 + 1;
+  const b2 = b1 + 1;
+  for (const bi of [b1, b2]) {
+    const m = guitar.measures.find((x) => x.index === bi);
+    if (!m) continue;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const sb = (e as { startBeat: number }).startBeat;
+      if (isSyncopatedOnset(sb)) return true;
+    }
+  }
+  return false;
+}
+
+export function countPitchDirectionChanges(guitar: PartModel): number {
+  const pitches: number[] = [];
+  for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
+    for (const e of [...m.events].sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    )) {
+      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  let ch = 0;
+  let lastDir = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    const d = pitches[i] - pitches[i - 1];
+    if (d === 0) continue;
+    const dir = Math.sign(d);
+    if (lastDir !== 0 && dir !== lastDir) ch++;
+    lastDir = dir;
+  }
+  return ch;
+}
+
+export function anchorPitchClassHits(guitar: PartModel, anchorPc: number | undefined): number {
+  if (anchorPc === undefined) return 0;
+  const pc = ((anchorPc % 12) + 12) % 12;
+  let n = 0;
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const p = (e as { pitch: number }).pitch;
+      if (((p % 12) + 12) % 12 === pc) n++;
+    }
+  }
+  return n;
+}
+
+export function hasRepeatedRhythmCell(guitar: PartModel): boolean {
+  const sigs = new Map<string, number>();
+  for (const m of guitar.measures) {
+    const r = rhythmSigGuitar(m);
+    if (!r) continue;
+    sigs.set(r, (sigs.get(r) ?? 0) + 1);
+  }
+  for (const c of sigs.values()) if (c >= 2) return true;
+  return false;
+}
+
 /**
  * V3.0 validation for guitar_bass_duo golden path.
- * Rejects: weak motif reuse, no contour, unsingable leaps, long scalar runs, bad phrase ends.
+ * Melody authority: motif coverage, contour, singability, phrase shape, endings, rhythm, memorability.
  */
 export function validateDuoMelodyIdentityV3(
   score: ScoreModel,
@@ -147,18 +369,20 @@ export function validateDuoMelodyIdentityV3(
   if (totalBars < 8) return { valid: true, errors: [] };
 
   if (motifState?.placements?.length) {
-    const primaryId = motifState.baseMotifs[0]?.id ?? 'm1';
-    const barsWithPrimary = new Set(
-      motifState.placements.filter((p) => p.motifId === primaryId).map((p) => p.startBar)
-    );
-    const ratio = barsWithPrimary.size / totalBars;
-    if (ratio < 0.69) {
+    const cov = phrasePrimaryMotifCoverage(motifState);
+    if (cov < 0.75) {
       errors.push(
-        `Duo V3: primary motif must appear in ≥70% of bars (${barsWithPrimary.size}/${totalBars})`
+        `Duo V3: primary motif must appear in ≥75% of 2-bar phrases (${(cov * 100).toFixed(0)}%)`
       );
     }
   } else {
     errors.push('Duo V3: motif placements missing');
+  }
+
+  const nOriginalPlacements =
+    motifState?.placements.filter((p) => p.variant === 'original').length ?? 0;
+  if (maxDuplicateBarFingerprints(g) < 2 && nOriginalPlacements < 2) {
+    errors.push('Duo V3: exact melodic repetition required at least twice');
   }
 
   const maxByBar = maxGuitarPitchByBar(g, totalBars);
@@ -174,9 +398,9 @@ export function validateDuoMelodyIdentityV3(
     errors.push('Duo V3: more than one large leap (>12 semitones) — line not singable');
   }
 
-  const scalarRun = maxConsecutiveStepwiseMotion(g, 2);
-  if (scalarRun > 5) {
-    errors.push('Duo V3: scale run exceeds 5 consecutive stepwise notes');
+  const scalarRun = maxConsecutiveStepwiseLocal(g, 2);
+  if (scalarRun > 4) {
+    errors.push('Duo V3: scale run exceeds 4 consecutive stepwise notes');
   }
 
   const spans = barPitchSpans(g, totalBars);
@@ -197,5 +421,35 @@ export function validateDuoMelodyIdentityV3(
     }
   }
 
+  for (let k = 0; k < 4; k++) {
+    if (!phraseHasSyncopation(g, k)) {
+      errors.push(`Duo V3: phrase ${k + 1} needs at least one syncopated entry`);
+      break;
+    }
+  }
+
+  const anchorPc = motifState?.baseMotifs[0]?.notes[0]?.pitch;
+  const anchorHits = anchorPitchClassHits(g, anchorPc);
+  const repRhythm = hasRepeatedRhythmCell(g);
+  const repIntervals = hasRepeatedIntervalCellLocal(g);
+  if (anchorHits < 3 && !repRhythm && !repIntervals) {
+    errors.push('Duo V3: memorability weak (anchor, rhythm cell, or interval cell)');
+  }
+
+  const dirCh = countPitchDirectionChanges(g);
+  if (dirCh > 16) {
+    errors.push('Duo V3: melody zig-zags too often (no clear line)');
+  }
+
   return { valid: errors.length === 0, errors };
+}
+
+/** 0–1.2 layer for GCE: motif clarity, phrase contour, memorability (score-only). */
+export function melodyAuthorityGceLayer(guitar: PartModel): number {
+  let x = 0;
+  if (phrasePairPeaksRise(guitar)) x += 0.38;
+  if (phrasePeakCountOk(guitar)) x += 0.22;
+  x += Math.min(0.42, 0.21 * maxDuplicateBarFingerprints(guitar));
+  if (hasRepeatedRhythmCell(guitar)) x += 0.24;
+  return Math.min(1.2, x);
 }

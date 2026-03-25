@@ -5,6 +5,7 @@
 
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { activityScoreForBar } from '../goldenPath/activityScore';
+import { melodyAuthorityGceLayer } from './duoMelodyIdentityV3';
 import {
   guideToneCoverage,
   hasCallResponseInWindow,
@@ -139,6 +140,7 @@ export function computeDuoGceScore(score: ScoreModel): number {
   const callB = hasCallResponseInWindow(score, 4, 5);
   const call = callA && callB ? 1 : callA || callB ? 0.72 : 0.4;
   const softN = Math.min(1, Math.max(0, (soft - 4) / 20));
+  const maLayer = melodyAuthorityGceLayer(g);
   let s =
     2.5 * gc +
     1.55 * (1 - rr) +
@@ -147,7 +149,8 @@ export function computeDuoGceScore(score: ScoreModel): number {
     0.65 * rep +
     0.95 * call +
     0.85 * (1 - Math.min(1, chrom / 7)) +
-    0.55 * (1 - Math.min(1, stepwise / 12));
+    0.55 * (1 - Math.min(1, stepwise / 12)) +
+    0.42 * maLayer;
   s = Math.min(10, s * 1.35 + 0.55);
   return Math.round(Math.max(0, s) * 10) / 10;
 }
