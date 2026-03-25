@@ -61,6 +61,27 @@ function testGoldenPathMotifsRecur(): boolean {
   return r.plans?.motifState?.placements?.length >= 2;
 }
 
+function testDuoLockV3SinglePrimaryMotif(): boolean {
+  const motifs = generateMotif(99, 55, 72, { duoLock: true });
+  if (motifs.length !== 1 || motifs[0].id !== 'm1') return false;
+  const n = motifs[0].notes;
+  if (n.length !== 3) return false;
+  const beats = n.reduce((s, x) => s + x.duration, 0);
+  if (beats < 2 - 1e-3 || beats > 3 + 1e-3) return false;
+  const p0 = n[0].pitch;
+  const pk = n[1].pitch;
+  const p2 = n[2].pitch;
+  if (!(p0 < pk && p2 < pk)) return false;
+  return Math.max(p0, pk, p2) - Math.min(p0, pk, p2) <= 14;
+}
+
+function testDuoLockPlacementsCoverEightBars(): boolean {
+  const motifs = generateMotif(1, 55, 72, { duoLock: true });
+  const pl = placeMotifsAcrossBars(motifs, 42, true);
+  const bars = new Set(pl.map((p) => p.startBar));
+  return pl.length === 8 && bars.size === 8 && pl.every((p) => p.motifId === 'm1');
+}
+
 export function runMotifTests(): { name: string; ok: boolean }[] {
   return [
     ['Generate returns 1-2 motifs', testGenerateMotifReturns1To2Motifs],
@@ -70,5 +91,7 @@ export function runMotifTests(): { name: string; ok: boolean }[] {
     ['Transpose motif', testTransposeMotif],
     ['Motif validation with placements', testMotifValidationWithPlacements],
     ['Golden path motifs recur', testGoldenPathMotifsRecur],
+    ['Duo LOCK V3: single primary motif rise-peak-fall', testDuoLockV3SinglePrimaryMotif],
+    ['Duo LOCK: 8 bars primary m1', testDuoLockPlacementsCoverEightBars],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

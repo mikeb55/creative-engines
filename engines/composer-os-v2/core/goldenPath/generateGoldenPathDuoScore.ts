@@ -31,6 +31,7 @@ import {
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
   guitarChordTonesInRange,
+  resolvePhraseEndForDuo,
   type PhraseIntent,
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
@@ -273,6 +274,7 @@ function buildGuitarPart(
   const [baseLow] = profile.preferredMelodicZone;
   const effectiveBase = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
   const tb = totalBarsFromContext(context);
+  const anchorMidi = motifState.baseMotifs[0]?.notes[0]?.pitch;
 
   for (let b = 1; b <= tb; b++) {
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -370,11 +372,14 @@ function buildGuitarPart(
         addEvent(m, createRest(cursor, 4 - cursor));
       } else if (cursor < 4 - 1e-4) {
         const tail = 4 - cursor;
+        const chord = getChordForBar(b, context);
+        const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+        const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
         if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
           addEvent(m, createRest(cursor, 0.5));
-          addEvent(m, createNote(effectiveLow + 7, cursor + 0.5, tail - 0.5));
+          addEvent(m, createNote(endTone, cursor + 0.5, tail - 0.5));
         } else {
-          addEvent(m, createNote(effectiveLow + (b % 3 === 0 ? 9 : 5), cursor, tail));
+          addEvent(m, createNote(endTone, cursor, tail));
         }
       }
       collapseRestsInsideNotes(m);
@@ -425,6 +430,7 @@ function buildGuitarPart(
           staggerG: stagger.guitar,
           seed,
           methenyShortenLong: meth?.attackDensityReduced && tex?.guitarRole !== 'sustain_pad',
+          anchorMidi,
         });
       }
     }
@@ -661,8 +667,17 @@ function resolveOverlapInDuoScore(
     const m = bassPart.measures.find((x) => x.index === b);
     if (!m) continue;
     m.events = [];
-    addEvent(m, createNote(firstHalf, 0, 2));
-    addEvent(m, createNote(fifth, 2, 2));
+    const pat = (context.seed + b * 17) % 3;
+    if (pat === 0) {
+      addEvent(m, createNote(firstHalf, 0, 2));
+      addEvent(m, createNote(fifth, 2, 2));
+    } else if (pat === 1) {
+      addEvent(m, createNote(firstHalf, 0, 1.5));
+      addEvent(m, createNote(fifth, 1.5, 2.5));
+    } else {
+      addEvent(m, createNote(firstHalf, 0, 2.5));
+      addEvent(m, createNote(fifth, 2.5, 1.5));
+    }
     normalizeMeasureQuarterGrid(m);
   }
 }

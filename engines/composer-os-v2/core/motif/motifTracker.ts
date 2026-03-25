@@ -57,18 +57,21 @@ export function placeMotifAtBar(
 
 /** Build full placement plan: m1 in A (bar 1) and B (bar 5), m2 in A (bar 3) and B (bar 7). */
 export function placeMotifsAcrossBars(motifs: BaseMotif[], seed: number, duoLock?: boolean): PlacedMotif[] {
-  if (duoLock && motifs.length >= 2) {
+  /** V3.0 duo LOCK: one primary motif in ≥70% of bars; bar 6 = identity moment (unexpected transpose + rhythm). */
+  if (duoLock && motifs.length >= 1) {
+    const m = motifs[0];
     const r = (n: number) => ((seed + n) % 5) - 2;
     const phase = (seed % 11) / 20;
+    const identityShift = Math.max(-7, Math.min(7, r(11) + ((seed % 5) - 2) * 2));
     const placements: PlacedMotif[] = [];
-    placements.push(placeMotifAtBar(motifs[0], 1, 'original', 0, 0));
-    placements.push(placeMotifAtBar(motifs[0], 2, 'rhythm_shift', 0, 0.25 + phase * 0.25));
-    placements.push(placeMotifAtBar(motifs[1], 3, 'original', 0, 0));
-    placements.push(placeMotifAtBar(motifs[0], 4, 'transposed', r(1), 0.5));
-    placements.push(placeMotifAtBar(motifs[0], 5, 'transposed', r(4), 0.5 + phase));
-    placements.push(placeMotifAtBar(motifs[1], 6, 'inversion_lite', r(2), 0.25));
-    placements.push(placeMotifAtBar(motifs[1], 7, 'rhythm_shift', 0, ((seed * 3) % 5) * 0.25));
-    placements.push(placeMotifAtBar(motifs[0], 8, 'transposed', r(8), 0.75));
+    placements.push(placeMotifAtBar(m, 1, 'original', 0, 0));
+    placements.push(placeMotifAtBar(m, 2, 'rhythm_shift', 0, 0.25 + phase * 0.25));
+    placements.push(placeMotifAtBar(m, 3, 'transposed', r(1), 0));
+    placements.push(placeMotifAtBar(m, 4, 'transposed', r(2), 0.5));
+    placements.push(placeMotifAtBar(m, 5, 'transposed', r(3), 0.5 + phase * 0.5));
+    placements.push(placeMotifAtBar(m, 6, 'transposed', identityShift, 0.75));
+    placements.push(placeMotifAtBar(m, 7, 'inversion_lite', r(4), 0.25));
+    placements.push(placeMotifAtBar(m, 8, 'rhythm_shift', 0, ((seed * 3) % 4) * 0.25));
     return placements;
   }
   const placements: PlacedMotif[] = [];

@@ -25,6 +25,7 @@ import { validateBassIdentity } from './bassIdentityValidation';
 import { validateDuoPhraseAuthority } from './phraseAuthorityValidation';
 import { validateJazzDuoBehaviourRules } from './jazzDuoBehaviourValidation';
 import { validateDuoGceHardGate, validateDuoRhythmAntiLoop } from './duoLockQuality';
+import { validateDuoMelodyIdentityV3 } from './duoMelodyIdentityV3';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -265,6 +266,8 @@ export function runBehaviourGates(
     if (!duoRh.valid) errors.push(...duoRh.errors);
     const duoGce = validateDuoGceHardGate(score);
     if (!duoGce.valid) errors.push(...duoGce.errors);
+    const duoV3 = validateDuoMelodyIdentityV3(score, opts?.motifState, { presetId: opts?.presetId });
+    if (!duoV3.valid) errors.push(...duoV3.errors);
   }
 
   let interactionValid = true;

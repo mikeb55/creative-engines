@@ -9,11 +9,32 @@ import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 export type PhraseIntent = 'guitar_lead' | 'bass_lead' | 'answer_guitar' | 'answer_bass' | 'cadence';
 
-function liftToneToRange(pitch: number, low: number, high: number): number {
+export function liftToneToRange(pitch: number, low: number, high: number): number {
   let p = pitch;
   while (p < low) p += 12;
   while (p > high) p -= 12;
   return clampPitch(p, low, high);
+}
+
+/**
+ * Phrase ending: chord 3rd/7th (or anchor pitch class when it matches harmony) — V3.0 singable landings.
+ */
+export function resolvePhraseEndForDuo(
+  tones: ReturnType<typeof guitarChordTonesInRange>,
+  anchorMidi: number | undefined,
+  effectiveLow: number,
+  effectiveHigh: number,
+  seed: number,
+  bar: number
+): number {
+  const endStrong = seededUnit(seed, bar, 401) < 0.52 ? tones.third : tones.seventh;
+  if (anchorMidi === undefined) return endStrong;
+  const anchorPc = ((anchorMidi % 12) + 12) % 12;
+  const chordPcs = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) => ((p % 12) + 12) % 12);
+  if (chordPcs.includes(anchorPc) && seededUnit(seed, bar, 406) < 0.4) {
+    return liftToneToRange(anchorMidi, effectiveLow, effectiveHigh);
+  }
+  return endStrong;
 }
 
 /** Chord tones placed in the current guitar window (idiomatic register). */
@@ -90,6 +111,8 @@ export function emitGuitarPhraseBar(params: {
   staggerG: number;
   seed: number;
   methenyShortenLong?: boolean;
+  /** Primary motif anchor — repeated pitch class when harmonically valid (duo V3.0). */
+  anchorMidi?: number;
 }): void {
   const {
     m,
@@ -104,12 +127,13 @@ export function emitGuitarPhraseBar(params: {
     staggerG,
     seed,
     methenyShortenLong,
+    anchorMidi,
   } = params;
 
   const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
-  const u = seededUnit(seed, bar, 401);
-  const endStrong = u < 0.52 ? tones.third : tones.seventh;
-  const pen = u < 0.4 ? tones.fifth : tones.root;
+  const endStrong = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, bar);
+  const uPen = seededUnit(seed, bar, 401);
+  const pen = uPen < 0.4 ? tones.fifth : tones.root;
   const lead = seededUnit(seed, bar, 403) < 0.45 ? tones.fifth : tones.third;
 
   /** Final bar: stable chord tone, minimal motion (resolution). */
