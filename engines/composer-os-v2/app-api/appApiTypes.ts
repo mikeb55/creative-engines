@@ -101,5 +101,10 @@ export interface OutputEntry {
   scoreTitle?: string;
   harmonySource?: 'builtin' | 'custom';
   customChordProgressionSummary?: string;
+  progressionMode?: 'builtin' | 'custom';
+  chordProgressionInputRaw?: string;
+  parsedCustomProgressionBars?: string[];
+  chordProgressionParseFailed?: boolean;
+  builtInHarmonyFallbackOccurred?: boolean;
   validation: ValidationSummary;
 }

@@ -5,7 +5,10 @@
 import { exportScoreModelToMusicXml, exportToMusicXml } from '../core/export/musicxmlExporter';
 import { validateMusicXmlSchema, reParseMusicXml } from '../core/export/musicxmlValidation';
 import { checkSibeliusSafe } from '../core/export/sibeliusSafeProfile';
-import { parseChordRootAndMusicXmlKindText } from '../core/export/chordSymbolMusicXml';
+import {
+  parseChordRootAndMusicXmlKindText,
+  parseChordForMusicXmlHarmony,
+} from '../core/export/chordSymbolMusicXml';
 import { validateExportedMusicXmlBarMath } from '../core/export/validateMusicXmlBarMath';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../core/score-model/scoreEventBuilder';
 import type { PartModel } from '../core/score-model/scoreModelTypes';
@@ -104,8 +107,8 @@ function testDuplicateChordRootStripped(): boolean {
 }
 
 function testSlashChordPreservesBass(): boolean {
-  const x = parseChordRootAndMusicXmlKindText('Cmaj7/E');
-  return x.rootStep === 'C' && x.kindText === 'maj7/E';
+  const x = parseChordForMusicXmlHarmony('Cmaj7/E');
+  return x.rootStep === 'C' && x.kindText === 'maj7' && x.bassStep === 'E' && x.bassAlter === 0;
 }
 
 /** Regression: rounding each duration independently used to sum to 15 in some bars; span-based export must sum to 16. */

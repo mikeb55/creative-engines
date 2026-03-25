@@ -6,7 +6,11 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { generateComposition } from '../app-api/generateComposition';
-import { parseChordProgressionInput } from '../core/harmony/chordProgressionParser';
+import {
+  parseChordProgressionInput,
+  buildChordSymbolPlanFromBars,
+  validateChordSymbolPlanCoversBars,
+} from '../core/harmony/chordProgressionParser';
 import { parseChordSymbol } from '../core/harmony/chordSymbolAnalysis';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 
@@ -55,7 +59,21 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
     name: 'harmonyMode custom + empty text fails before generation',
     ok: (() => {
       const r = runGoldenPath(9, { harmonyMode: 'custom', chordProgressionText: '' });
-      return !r.success && r.errors.some((e) => e.toLowerCase().includes('empty'));
+      return (
+        !r.success &&
+        r.errors.some((e) => e.toLowerCase().includes('empty')) &&
+        r.context.generationMetadata.chordProgressionParseFailed === true &&
+        r.context.generationMetadata.harmonySource === undefined &&
+        r.context.generationMetadata.builtInHarmonyFallbackOccurred === false
+      );
+    })(),
+  });
+
+  tests.push({
+    name: 'Chord symbol plan validator: contiguous 8 bars',
+    ok: (() => {
+      const p = buildChordSymbolPlanFromBars(['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D']);
+      return validateChordSymbolPlanCoversBars(p, 8) === null;
     })(),
   });
 
@@ -145,7 +163,12 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
       const r = runGoldenPath(56, {
         chordProgressionText: 'D/F# | G7 | Cmaj7 | A7alt | Dm9 | G13 | Cmaj9 | A7alt',
       });
-      return r.success && !!r.xml && r.xml.includes('D') && r.xml.includes('F#');
+      return (
+        r.success &&
+        !!r.xml &&
+        r.xml.includes('<bass-step>F</bass-step>') &&
+        r.xml.includes('<bass-alter>1</bass-alter>')
+      );
     })(),
   });
 
@@ -183,6 +206,31 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });
       }
+    })(),
+  });
+
+  tests.push({
+    name: 'Mixed slash + standard progression: not built-in-only labels',
+    ok: (() => {
+      const text =
+        'Dm9 | G/B | Cmaj7/E | A7/C# | Dm9 | G13 | Cmaj9 | A7alt';
+      const parsed = parseChordProgressionInput(text);
+      if (!parsed.ok) return false;
+      const r = runGoldenPath(88, { harmonyMode: 'custom', chordProgressionText: text });
+      if (!r.success || !r.xml) return false;
+      const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+      if (!g) return false;
+      for (let i = 1; i <= 8; i++) {
+        const m = g.measures.find((x) => x.index === i);
+        if (m?.chord !== parsed.bars[i - 1]) return false;
+      }
+      if (!r.xml.includes('kind text="m9"')) return false;
+      return (
+        r.xml.includes('<bass-step>B</bass-step>') &&
+        r.xml.includes('<bass-step>E</bass-step>') &&
+        r.xml.includes('<bass-step>C</bass-step>') &&
+        r.xml.includes('<bass-alter>1</bass-alter>')
+      );
     })(),
   });
 

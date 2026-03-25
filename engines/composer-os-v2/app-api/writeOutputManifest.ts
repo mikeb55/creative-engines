@@ -27,6 +27,11 @@ export function writeOutputManifest(
     scoreTitle?: string;
     harmonySource?: 'builtin' | 'custom';
     customChordProgressionSummary?: string;
+    progressionMode?: 'builtin' | 'custom';
+    chordProgressionInputRaw?: string;
+    parsedCustomProgressionBars?: string[];
+    chordProgressionParseFailed?: boolean;
+    builtInHarmonyFallbackOccurred?: boolean;
     validation: ValidationSummary;
   }
 ): void {
@@ -41,6 +46,11 @@ export function writeOutputManifest(
     scoreTitle: meta.scoreTitle,
     harmonySource: meta.harmonySource,
     customChordProgressionSummary: meta.customChordProgressionSummary,
+    progressionMode: meta.progressionMode,
+    chordProgressionInputRaw: meta.chordProgressionInputRaw,
+    parsedCustomProgressionBars: meta.parsedCustomProgressionBars,
+    chordProgressionParseFailed: meta.chordProgressionParseFailed,
+    builtInHarmonyFallbackOccurred: meta.builtInHarmonyFallbackOccurred,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

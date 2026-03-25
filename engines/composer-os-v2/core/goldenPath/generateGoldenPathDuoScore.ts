@@ -35,20 +35,15 @@ import { momentTagForBar } from './duoNarrativeMoments';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
-function builtinChordForBar(barIndex: number): string {
-  if (barIndex <= 2) return 'Dmin9';
-  if (barIndex <= 4) return 'G13';
-  if (barIndex <= 6) return 'Cmaj9';
-  return 'A7alt';
-}
-
 function getChordForBar(barIndex: number, context: CompositionContext): string {
   for (const seg of context.chordSymbolPlan.segments) {
     if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) {
       return seg.chord;
     }
   }
-  return builtinChordForBar(barIndex);
+  throw new Error(
+    `Chord symbol plan does not define bar ${barIndex} — custom and built-in plans must cover bars 1–8 contiguously.`
+  );
 }
 
 function rehearsalForBar(barIndex: number): string | undefined {

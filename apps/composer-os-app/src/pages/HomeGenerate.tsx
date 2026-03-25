@@ -11,6 +11,11 @@ type GenResult = {
   filepath?: string;
   harmonySource?: 'builtin' | 'custom';
   customChordProgressionSummary?: string;
+  progressionMode?: 'builtin' | 'custom';
+  chordProgressionInputRaw?: string;
+  parsedCustomProgressionBars?: string[];
+  chordProgressionParseFailed?: boolean;
+  builtInHarmonyFallbackOccurred?: boolean;
   validation?: {
     integrityPassed?: boolean;
     behaviourGatesPassed?: boolean;
@@ -515,17 +520,54 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Preset:</span> {rm.presetId}
                 </p>
               )}
-              {result.harmonySource && (
-                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Harmony:</span>{' '}
-                  {result.harmonySource === 'custom' ? 'Custom progression' : 'Built-in progression'}
-                  {result.customChordProgressionSummary ? (
-                    <span style={{ display: 'block', fontSize: '0.85rem', marginTop: 4, wordBreak: 'break-word' }}>
-                      {result.customChordProgressionSummary}
-                    </span>
-                  ) : null}
-                </p>
-              )}
+              {presetId === 'guitar_bass_duo' &&
+                (result.harmonySource ||
+                  result.progressionMode ||
+                  result.chordProgressionParseFailed) && (
+                  <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Harmony:</span>{' '}
+                    {result.chordProgressionParseFailed
+                      ? 'Custom progression (invalid — not applied)'
+                      : result.harmonySource === 'custom' || result.progressionMode === 'custom'
+                        ? 'Custom progression'
+                        : 'Built-in progression'}
+                    {result.customChordProgressionSummary ? (
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: '0.85rem',
+                          marginTop: 4,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {result.customChordProgressionSummary}
+                      </span>
+                    ) : result.chordProgressionInputRaw ? (
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: '0.85rem',
+                          marginTop: 4,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {result.chordProgressionInputRaw}
+                      </span>
+                    ) : null}
+                    {result.builtInHarmonyFallbackOccurred ? (
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: '0.8rem',
+                          marginTop: 4,
+                          color: 'var(--text-muted)',
+                        }}
+                      >
+                        Warning: built-in fallback flag set (unexpected)
+                      </span>
+                    ) : null}
+                  </p>
+                )}
               {rm?.activeModules?.length ? (
                 <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Style stack (applied):</span>{' '}

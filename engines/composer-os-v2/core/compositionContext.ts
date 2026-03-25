@@ -40,6 +40,16 @@ export interface GenerationMetadata {
   harmonySource?: 'builtin' | 'custom';
   /** Short readable summary when `harmonySource` is custom */
   customChordProgressionSummary?: string;
+  /** UI / request: built-in vs custom progression mode */
+  progressionMode?: 'builtin' | 'custom';
+  /** Raw user `chordProgressionText` when custom mode was requested (success or parse failure) */
+  chordProgressionInputRaw?: string;
+  /** Parsed one chord per bar when custom harmony was applied successfully */
+  parsedCustomProgressionBars?: string[];
+  /** True if user requested custom but parsing failed — no score was produced with that harmony */
+  chordProgressionParseFailed?: boolean;
+  /** True only if built-in harmony was used despite a valid custom request (must stay false) */
+  builtInHarmonyFallbackOccurred?: boolean;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

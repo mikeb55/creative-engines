@@ -7,8 +7,14 @@
 export interface ChordRootAndKindText {
   rootStep: string;
   rootAlter: number;
-  /** Suffix only, e.g. min9, 13, maj9, 7alt, maj7/E */
+  /** Suffix only, e.g. min9, 13, maj9, 7alt */
   kindText: string;
+}
+
+/** MusicXML harmony: root + kind + optional slash bass (not folded into kind text). */
+export interface MusicXmlHarmonyParts extends ChordRootAndKindText {
+  bassStep?: string;
+  bassAlter?: number;
 }
 
 /**
@@ -38,4 +44,33 @@ export function parseChordRootAndMusicXmlKindText(chord: string): ChordRootAndKi
 
   const kindText = suffix.length > 0 ? suffix : 'major';
   return { rootStep: letter, rootAlter: alter, kindText };
+}
+
+/**
+ * Chord symbol for `<harmony>`: harmonic root/kind on the upper structure; slash bass in `<bass>`.
+ */
+export function parseChordForMusicXmlHarmony(chord: string): MusicXmlHarmonyParts {
+  const t = chord.trim();
+  const slash = t.indexOf('/');
+  const harmonyPart = slash >= 0 ? t.slice(0, slash).trim() : t;
+  const bassPart = slash >= 0 ? t.slice(slash + 1).trim() : undefined;
+  const base = parseChordRootAndMusicXmlKindText(harmonyPart);
+  if (!bassPart) {
+    return base;
+  }
+  const bm = bassPart.match(/^([A-Ga-g])([#b]?)$/);
+  if (!bm) {
+    return { ...base, kindText: `${base.kindText}/${bassPart}` };
+  }
+  const letter = bm[1].toUpperCase();
+  let bassAlter = 0;
+  if (bm[2] === '#') bassAlter = 1;
+  else if (bm[2] === 'b') bassAlter = -1;
+  return {
+    rootStep: base.rootStep,
+    rootAlter: base.rootAlter,
+    kindText: base.kindText,
+    bassStep: letter,
+    bassAlter,
+  };
 }

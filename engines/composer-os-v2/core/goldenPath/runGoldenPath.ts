@@ -85,7 +85,20 @@ const BUILTIN_CHORD_SYMBOL_PLAN: CompositionContext['chordSymbolPlan'] = {
   totalBars: 8,
 };
 
-function buildGoldenPathContext(seed: number, parsedChordBars?: string[]): CompositionContext {
+interface BuildGoldenPathContextExtras {
+  /** Raw user input when custom mode was used */
+  chordProgressionInputRaw?: string;
+  /** User intent (always set when known) */
+  progressionMode?: 'builtin' | 'custom';
+  /** When parse failed — no score produced with that harmony */
+  chordProgressionParseFailed?: boolean;
+}
+
+function buildGoldenPathContext(
+  seed: number,
+  parsedChordBars?: string[],
+  extras?: BuildGoldenPathContextExtras
+): CompositionContext {
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
   const sections = [
@@ -93,7 +106,8 @@ function buildGoldenPathContext(seed: number, parsedChordBars?: string[]): Compo
     { label: 'B', startBar: 5, length: 4 },
   ];
   const form = { sections, totalBars: 8 };
-  const useCustom = parsedChordBars && parsedChordBars.length === 8;
+  const parseFailed = !!extras?.chordProgressionParseFailed;
+  const useCustom = !parseFailed && parsedChordBars && parsedChordBars.length === 8;
   const harmony = useCustom ? buildHarmonyPlanFromBars(parsedChordBars) : BUILTIN_HARMONY;
   const phrase = { segments: sections.map((s) => ({ ...s, density: undefined })), totalBars: 8 };
   const chordSymbolPlan = useCustom ? buildChordSymbolPlanFromBars(parsedChordBars) : BUILTIN_CHORD_SYMBOL_PLAN;
@@ -115,6 +129,12 @@ function buildGoldenPathContext(seed: number, parsedChordBars?: string[]): Compo
     },
   };
 
+  const progressionMode: 'builtin' | 'custom' = parseFailed
+    ? 'custom'
+    : extras?.progressionMode ?? (useCustom ? 'custom' : 'builtin');
+
+  const raw = extras?.chordProgressionInputRaw?.trim();
+
   return {
     systemVersion: '2.0.0',
     presetId: 'guitar_bass_duo',
@@ -131,8 +151,13 @@ function buildGoldenPathContext(seed: number, parsedChordBars?: string[]): Compo
     rehearsalMarkPlan,
     generationMetadata: {
       generatedAt: new Date().toISOString(),
-      harmonySource: useCustom ? 'custom' : 'builtin',
+      harmonySource: parseFailed ? undefined : useCustom ? 'custom' : 'builtin',
       customChordProgressionSummary: useCustom ? parsedChordBars.join(' | ') : undefined,
+      progressionMode,
+      chordProgressionInputRaw: parseFailed ? raw : useCustom ? raw : undefined,
+      parsedCustomProgressionBars: useCustom ? [...parsedChordBars] : undefined,
+      chordProgressionParseFailed: parseFailed || undefined,
+      builtInHarmonyFallbackOccurred: false,
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
@@ -225,7 +250,11 @@ function harmonyParseFailureGoldenPathResult(
   options: RunGoldenPathOptions | undefined,
   message: string
 ): GoldenPathResult {
-  const context = buildGoldenPathContext(seed);
+  const context = buildGoldenPathContext(seed, undefined, {
+    chordProgressionParseFailed: true,
+    chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+    progressionMode: 'custom',
+  });
   const plans = buildGoldenPathPlans(seed, context, options);
   const emptyScore: ScoreModel = {
     title: plans.scoreTitle,
@@ -342,7 +371,11 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
-  const context = buildGoldenPathContext(seed, options?.parsedChordBars);
+  const context = buildGoldenPathContext(seed, options?.parsedChordBars, {
+    chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+    progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
+  });
+
   const plans = buildGoldenPathPlans(seed, context, options);
   const { sections, densityPlan, guitarBehaviour, bassBehaviour, rhythmConstraints, motifState, styleStack, interactionPlan } =
     plans;

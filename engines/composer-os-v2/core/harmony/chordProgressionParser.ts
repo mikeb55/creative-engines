@@ -91,3 +91,25 @@ export function buildChordSymbolPlanFromBars(bars: string[]): ChordSymbolPlan {
   }
   return { segments, totalBars: bars.length };
 }
+
+/** Ensures segments are contiguous from bar 1 through `totalBars`. */
+export function validateChordSymbolPlanCoversBars(
+  plan: ChordSymbolPlan,
+  totalBars: number
+): string | null {
+  if (plan.totalBars !== totalBars) {
+    return `Chord symbol plan totalBars is ${plan.totalBars}, expected ${totalBars}.`;
+  }
+  const segs = [...plan.segments].sort((a, b) => a.startBar - b.startBar);
+  let expectedStart = 1;
+  for (const s of segs) {
+    if (s.startBar !== expectedStart) {
+      return `Chord symbol plan gap: expected segment at bar ${expectedStart}, found bar ${s.startBar}.`;
+    }
+    expectedStart += s.bars;
+  }
+  if (expectedStart !== totalBars + 1) {
+    return `Chord symbol plan does not cover bars 1–${totalBars}.`;
+  }
+  return null;
+}

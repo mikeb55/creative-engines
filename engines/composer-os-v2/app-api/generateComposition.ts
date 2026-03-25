@@ -21,6 +21,11 @@ export interface GenerateResult {
   harmonySource?: 'builtin' | 'custom';
   /** Short progression summary when custom harmony was used */
   customChordProgressionSummary?: string;
+  progressionMode?: 'builtin' | 'custom';
+  chordProgressionInputRaw?: string;
+  parsedCustomProgressionBars?: string[];
+  chordProgressionParseFailed?: boolean;
+  builtInHarmonyFallbackOccurred?: boolean;
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -87,6 +92,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       scoreTitle: result.runManifest?.scoreTitle,
       harmonySource: result.context.generationMetadata.harmonySource,
       customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
+      progressionMode: result.context.generationMetadata.progressionMode,
+      chordProgressionInputRaw: result.context.generationMetadata.chordProgressionInputRaw,
+      parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
+      chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
+      builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -112,6 +122,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
     harmonySource: result.context.generationMetadata.harmonySource,
     customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
+    progressionMode: result.context.generationMetadata.progressionMode,
+    chordProgressionInputRaw: result.context.generationMetadata.chordProgressionInputRaw,
+    parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
+    chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
+    builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
     validation,
     runManifest: result.runManifest
       ? {
