@@ -19,6 +19,7 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:self-test-install']).toContain('installComposerOsDesktop');
     expect(pkg.scripts['desktop:package']).toContain('bumpDesktopVersionCli');
     expect(pkg.scripts['desktop:package']).toContain('pruneOldPortableExesCli');
+    expect(pkg.scripts['desktop:create-shortcut']).toContain('createDesktopShortcutCli');
   });
 
   it('install script uses exact Composer OS Desktop shortcut name', () => {
