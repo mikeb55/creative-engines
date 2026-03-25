@@ -73,6 +73,11 @@ import { runBigBandResearchParsingTests } from './bigBandResearchParsing.test';
 import { runBigBandEraSystemTests } from './bigBandEraSystem.test';
 import { runBebopLinePlannerTests } from './bebopLinePlanner.test';
 import { runBigBandRuleApplicationTests } from './bigBandRuleApplication.test';
+import { runVariationAdapterTests } from './variationAdapter.test';
+import { runCreativeControlResolverTests } from './creativeControlResolver.test';
+import { runMutationEngineTests } from './mutationEngine.test';
+import { runExperimentalEvaluatorTests } from './experimentalEvaluator.test';
+import { runBigBandEnsembleConfigTests } from './bigBandEnsembleConfig.test';
 import { runStylePairingResolverTests } from './stylePairingResolver.test';
 import { runSongwriterResearchParsingTests } from './songwriterResearchParsing.test';
 import { runVoicingPlannerTests } from './voicingPlanner.test';
@@ -162,6 +167,11 @@ const suites = [
   { name: 'Big Band era system', run: runBigBandEraSystemTests },
   { name: 'Bebop line planner', run: runBebopLinePlannerTests },
   { name: 'Big Band rule application', run: runBigBandRuleApplicationTests },
+  { name: 'Variation adapter', run: runVariationAdapterTests },
+  { name: 'Creative control resolver', run: runCreativeControlResolverTests },
+  { name: 'Mutation engine', run: runMutationEngineTests },
+  { name: 'Experimental evaluator', run: runExperimentalEvaluatorTests },
+  { name: 'Big Band ensemble config', run: runBigBandEnsembleConfigTests },
   { name: 'Style pairing resolver', run: runStylePairingResolverTests },
   { name: 'Songwriter research parsing (alias)', run: runSongwriterResearchParsingTests },
   { name: 'Voicing planner', run: runVoicingPlannerTests },

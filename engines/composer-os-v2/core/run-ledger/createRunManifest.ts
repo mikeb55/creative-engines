@@ -37,6 +37,10 @@ export interface CreateRunManifestInput {
   validationErrors?: string[];
   exportTarget?: string;
   timestamp: string;
+  variationId?: string;
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  experimentalCreativeLabel?: string;
+  bigBandEnsembleConfigId?: string;
 }
 
 /** Create run manifest. */
@@ -73,5 +77,9 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     validationErrors: input.validationErrors,
     exportTarget: input.exportTarget,
     timestamp: input.timestamp,
+    variationId: input.variationId,
+    creativeControlLevel: input.creativeControlLevel,
+    experimentalCreativeLabel: input.experimentalCreativeLabel,
+    bigBandEnsembleConfigId: input.bigBandEnsembleConfigId,
   };
 }

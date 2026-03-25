@@ -57,4 +57,11 @@ export interface RunManifest {
   validationErrors?: string[];
   exportTarget?: string;
   timestamp: string;
+  /** Optional UX variation id (maps to seed). */
+  variationId?: string;
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  /** Diagnostics when non-stable creative tier applied. */
+  experimentalCreativeLabel?: string;
+  /** Big band ensemble selection when applicable. */
+  bigBandEnsembleConfigId?: string;
 }

@@ -4,6 +4,7 @@
 
 import type { GenerateRequest } from '../../app-api/appApiTypes';
 import type { GenerateResult } from '../../app-api/generateComposition';
+import { resolveEffectiveGenerationSeed } from '../creative-controls/creativeControlResolver';
 import type { CandidateEntry, CandidateRankResult, CandidateGenerateFn } from './candidateTypes';
 import { pickBestTwo } from './candidateCompare';
 import { scoreGenerateResult } from './candidateRanker';
@@ -15,18 +16,30 @@ export function generateCompositionCandidates(
   baseRequest: GenerateRequest,
   outputDir: string,
   generateFn: CandidateGenerateFn,
-  opts?: { count?: number; seedStep?: number }
+  opts?: { count?: number; seedStep?: number; baseVariationId?: string }
 ): CandidateRankResult {
   const count = opts?.count ?? DEFAULT_COUNT;
   const step = opts?.seedStep ?? DEFAULT_STEP;
+  const baseVar = opts?.baseVariationId?.trim();
   const entries: CandidateEntry[] = [];
   for (let i = 0; i < count; i++) {
-    const seed = baseRequest.seed + i * step;
-    const req: GenerateRequest = { ...baseRequest, seed };
+    const req: GenerateRequest = baseVar
+      ? {
+          ...baseRequest,
+          variationId: `${baseVar}::candidate_${i}`,
+          creativeControlLevel: 'stable',
+        }
+      : { ...baseRequest, seed: baseRequest.seed + i * step };
+    const effectiveSeed = resolveEffectiveGenerationSeed({
+      seed: req.seed,
+      variationId: req.variationId,
+      creativeControlLevel: req.creativeControlLevel,
+    });
     const result = generateFn(req, outputDir);
     entries.push({
       index: i,
-      seed,
+      seed: effectiveSeed,
+      variationId: req.variationId,
       score: scoreGenerateResult(result),
       success: result.success,
       result,

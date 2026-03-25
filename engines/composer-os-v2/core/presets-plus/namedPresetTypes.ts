@@ -3,6 +3,7 @@
  */
 
 import type { AppStyleStack, EcmChamberMode } from '../../app-api/appApiTypes';
+import type { BigBandEnsembleConfigId } from '../big-band/bigBandEnsembleConfigTypes';
 import type { BigBandComposerId, BigBandEraId } from '../big-band/bigBandResearchTypes';
 
 export type NamedPresetId =
@@ -45,4 +46,8 @@ export interface NamedPresetDefinition {
   outputFolderHint: string;
   /** Optional density bias hint for UI / performance-plus metadata (not enforced by core engines). */
   densityBias?: 'sparse' | 'medium' | 'dense';
+  /** Prompt 2/2 — optional defaults merged when applying named preset (additive). */
+  defaultVariationId?: string;
+  defaultCreativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  defaultBigBandEnsembleConfigId?: BigBandEnsembleConfigId;
 }

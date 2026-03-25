@@ -1,5 +1,16 @@
 # Composer OS Changelog
 
+## Prompt 2/2 — Control + UX (variation, creative controls, ensemble, sessions)
+
+- **`core/variation/`** — `variationTypes`, `variationAdapter` (`variationIdToSeed`, `seedToVariationDisplayToken`); UI can send **`variationId`** instead of exposing raw **`seed`**; engine still runs on a numeric seed.
+- **`core/creative-controls/`** — `creativeControlResolver` (stable / balanced / surprise), **`mutationEngine`** (deterministic XOR nudges only), **`experimentalEvaluator`**; **`stable`** preserves prior behaviour when **`variationId`** and **`creativeControlLevel`** are omitted.
+- **`GenerateRequest`** — optional **`variationId`**, **`creativeControlLevel`**; **`generateComposition`** uses **`resolveEffectiveGenerationSeed`**; **`RunManifest`** / **`OutputEntry`** carry optional variation + creative fields.
+- **`core/candidates/`** — optional **`baseVariationId`** for candidate batches; **`CandidateEntry`** may include **`variationId`**.
+- **`core/big-band/`** — **`bigBandEnsembleConfigTypes`** (`full_band` … `custom`), **`bigBandEnsembleApply`** (silence inactive horns, rebalance lead, **`bass_anchor`** on rhythm); **`assembleBigBandOrchestrationPlan`** accepts **`ensembleMask`**; **`runBigBandMode`** accepts **`ensembleConfigId`**, **`variationId`**, **`creativeControlLevel`**.
+- **`core/sessions/`** — format **v4** optional **`variationId`**, **`creativeControlLevel`**, **`stylePairingSnapshot`**, **`bigBandEnsembleConfigId`**, **`lastOutputPath`**.
+- **`core/presets-plus/`** — optional **`defaultVariationId`**, **`defaultCreativeControlLevel`**, **`defaultBigBandEnsembleConfigId`** on **`NamedPresetDefinition`**; merged in **`mergeNamedPresetIntoGenerateRequest`** / **`bigBandInputFromNamedPreset`**.
+- **Tests** — `variationAdapter`, `creativeControlResolver`, `mutationEngine`, `experimentalEvaluator`, `bigBandEnsembleConfig`, extended **`sessionStore`**.
+
 ## Prompt 1/2 — Intelligence layer (Big Band + Songwriting + style pairing)
 
 - **`BigBandRule.priority`** — registry rules carry **1–100** priority for merge/tie-break semantics.

@@ -15,6 +15,8 @@ import type { BigBandSectionPlan } from './bigBandPlanTypes';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
 import type { BigBandRoleType } from './bigBandTypes';
 import { mapBigBandRoleToOrchestrationRoles } from './bigBandRoleMapping';
+import type { BigBandEnsembleSectionMask } from './bigBandEnsembleConfigTypes';
+import { FULL_BIG_BAND_MASK } from './bigBandEnsembleConfigTypes';
 
 export const BB_PART_SAXES = 'bb_saxes';
 export const BB_PART_TRUMPETS = 'bb_trumpets';
@@ -64,13 +66,39 @@ export interface BuildBigBandOrchestrationPlanInput {
   formPlan: BigBandFormPlan;
   sectionPlan: BigBandSectionPlan;
   densityPlan: BigBandDensityPlan;
+  ensembleMask?: BigBandEnsembleSectionMask;
 }
 
 /**
  * Assembles orchestration data without throwing (caller runs `validateOrchestrationPlan`).
  */
+function normalizedDensityWeights(mask: BigBandEnsembleSectionMask): Record<string, number> {
+  const base: Record<BigBandInstrumentSection, number> = {
+    saxes: 0.28,
+    trumpets: 0.28,
+    trombones: 0.22,
+    rhythm_section: 0.22,
+  };
+  let sum = 0;
+  const raw: Record<string, number> = {};
+  for (const p of PART_ORDER) {
+    if (!mask[p]) continue;
+    const id = partIdForInstrumentSection(p);
+    raw[id] = base[p];
+    sum += base[p];
+  }
+  if (sum <= 0) return { [BB_PART_RHYTHM]: 1 };
+  const out: Record<string, number> = {};
+  for (const k of Object.keys(raw)) {
+    out[k] = raw[k] / sum;
+  }
+  return out;
+}
+
 export function assembleBigBandOrchestrationPlan(input: BuildBigBandOrchestrationPlanInput): OrchestrationPlan {
   const { formPlan, sectionPlan, densityPlan } = input;
+  const mask = input.ensembleMask ?? FULL_BIG_BAND_MASK;
+  const partOrderActive = PART_ORDER.filter((p) => mask[p]);
   const profile = getEnsembleFamilyProfile('big_band');
 
   const sections = formPlan.slices.map((s) => ({
@@ -84,7 +112,7 @@ export function assembleBigBandOrchestrationPlan(input: BuildBigBandOrchestratio
     const sl = sectionPlan.slices.find((x) => x.formSliceIndex === sec.index);
     const den = densityPlan.slices.find((x) => x.formSliceIndex === sec.index);
     const density = den?.density ?? 'moderate';
-    const rows = PART_ORDER.map((instrument) =>
+    const rows = partOrderActive.map((instrument) =>
       rowFor(instrument, sl!.rolesBySection[instrument], density)
     );
     return { section: sec, rows };
@@ -141,7 +169,7 @@ export function assembleBigBandOrchestrationPlan(input: BuildBigBandOrchestratio
   const densityOwnership = planDensityOwnership({
     sections,
     sectionDensityBias,
-    partWeights: { [BB_PART_SAXES]: 0.28, [BB_PART_TRUMPETS]: 0.28, [BB_PART_TROMBONES]: 0.22, [BB_PART_RHYTHM]: 0.22 },
+    partWeights: normalizedDensityWeights(mask),
   });
 
   const silenceEligibleByBar = Array.from({ length: formPlan.totalBars }, (_, i) => {
@@ -149,10 +177,10 @@ export function assembleBigBandOrchestrationPlan(input: BuildBigBandOrchestratio
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
     if (!slice) return false;
     const sl = sectionPlan.slices.find((x) => x.formSliceIndex === slice.index);
-    return PART_ORDER.some((p) => sl?.rolesBySection[p] === 'silence');
+    return partOrderActive.some((p) => sl?.rolesBySection[p] === 'silence');
   });
 
-  const silenceEligibility = PART_ORDER.map((p) => ({
+  const silenceEligibility = partOrderActive.map((p) => ({
     partId: partIdForInstrumentSection(p),
     eligible: true,
     reason: 'sectional_rest_allowed',

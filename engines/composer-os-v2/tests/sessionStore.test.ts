@@ -104,5 +104,28 @@ export function runSessionStoreTests(): { ok: boolean; name: string }[] {
     name: 'session v3 round-trips reference metadata',
   });
 
+  const v4path = path.join(dir, 'session-v4.json');
+  saveSessionFile(v4path, {
+    formatVersion: SESSION_FORMAT_VERSION,
+    savedAt: new Date().toISOString(),
+    presetId: 'big_band',
+    seed: 12,
+    styleStack: { primary: 'barry_harris' },
+    variationId: 'take_01',
+    creativeControlLevel: 'stable',
+    stylePairingSnapshot: { songwriterStyle: 'beatles', arrangerStyle: 'ellington', era: 'swing' },
+    bigBandEnsembleConfigId: 'medium_band',
+    lastOutputPath: 'C:\\\\out\\\\demo.musicxml',
+  });
+  const lv4 = loadSessionFile(v4path);
+  out.push({
+    ok:
+      lv4.ok &&
+      lv4.session?.variationId === 'take_01' &&
+      lv4.session?.stylePairingSnapshot?.songwriterStyle === 'beatles' &&
+      lv4.session?.bigBandEnsembleConfigId === 'medium_band',
+    name: 'session v4 round-trips variation + pairing + ensemble',
+  });
+
   return out;
 }

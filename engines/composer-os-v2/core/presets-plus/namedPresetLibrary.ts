@@ -160,6 +160,8 @@ export function mergeNamedPresetIntoGenerateRequest(namedId: NamedPresetId, req:
     ...req,
     styleStack: def.defaultStyleStack,
     ecmMode: def.ecmMode ?? req.ecmMode,
+    variationId: def.defaultVariationId ?? req.variationId,
+    creativeControlLevel: def.defaultCreativeControlLevel ?? req.creativeControlLevel,
   };
 }
 
@@ -181,5 +183,8 @@ export function bigBandInputFromNamedPreset(namedId: NamedPresetId, seed: number
     title,
     era: def.bigBandEra,
     composerStyle: def.bigBandComposer ?? null,
+    ensembleConfigId: def.defaultBigBandEnsembleConfigId,
+    variationId: def.defaultVariationId,
+    creativeControlLevel: def.defaultCreativeControlLevel,
   };
 }

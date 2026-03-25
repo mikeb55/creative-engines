@@ -7,6 +7,8 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
+import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
@@ -56,6 +58,9 @@ export interface GenerateResult {
     timestamp: string;
     scoreTitle?: string;
     ecmMode?: string;
+    variationId?: string;
+    creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+    experimentalCreativeLabel?: string;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -64,10 +69,15 @@ export interface GenerateResult {
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
+  const effectiveSeed = resolveEffectiveGenerationSeed({
+    seed: req.seed,
+    variationId: req.variationId,
+    creativeControlLevel: req.creativeControlLevel,
+  });
   const duo = req.presetId === 'guitar_bass_duo';
   const chordText =
     duo && typeof req.chordProgressionText === 'string' ? req.chordProgressionText : undefined;
-  const result = runGoldenPath(req.seed, {
+  const result = runGoldenPath(effectiveSeed, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: req.presetId,
     scoreTitle: req.title,
@@ -95,14 +105,16 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     const ts = new Date().toISOString();
     /** Full precision + seed avoids same-second overwrites (e.g. Try Another back-to-back). */
     const tsSafe = ts.replace(/[:.]/g, '-');
-    filename = `composer_os_${req.presetId}_${tsSafe}_${req.seed}.musicxml`;
+    filename = `composer_os_${req.presetId}_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');
     writeOutputManifest(filepath, {
       presetId: req.presetId,
       styleStack: result.runManifest?.activeModules ?? [],
-      seed: req.seed,
+      seed: effectiveSeed,
+      variationId: req.variationId,
+      creativeControlLevel: req.creativeControlLevel,
       timestamp: ts,
       scoreTitle: result.runManifest?.scoreTitle,
       ecmMode: result.runManifest?.ecmMode,
@@ -163,6 +175,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           timestamp: result.runManifest.timestamp,
           scoreTitle: result.runManifest.scoreTitle,
           ecmMode: result.runManifest.ecmMode,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+          experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

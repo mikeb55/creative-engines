@@ -76,6 +76,10 @@ export interface GenerateRequest {
   chordProgressionText?: string;
   /** When `presetId` is `ecm_chamber`, selects Metheny vs Schneider chamber logic */
   ecmMode?: EcmChamberMode;
+  /** User-facing variation label — maps to deterministic engine seed when set. */
+  variationId?: string;
+  /** Default `stable` — identical to raw seed resolution; other tiers nudge seed only (form unchanged). */
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
 }
 
 export interface ValidationSummary {
@@ -102,6 +106,8 @@ export interface OutputEntry {
   presetId: string;
   styleStack: string[];
   seed: number;
+  variationId?: string;
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   /** Title written to the score / MusicXML */
   scoreTitle?: string;
   ecmMode?: string;

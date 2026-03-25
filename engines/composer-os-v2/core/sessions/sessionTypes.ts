@@ -3,6 +3,7 @@
  */
 
 import type { AppLocks, AppStyleStack, EcmChamberMode } from '../../app-api/appApiTypes';
+import type { BigBandEnsembleConfigId } from '../big-band/bigBandEnsembleConfigTypes';
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import type { NamedPresetId } from '../presets-plus/namedPresetTypes';
 import type { ImportSourceKind } from '../reference-import/importSourceTypes';
@@ -49,4 +50,12 @@ export interface ComposerSessionV1 {
   referenceBehaviourSummary?: string;
   referenceInfluenceMode?: ReferenceInfluenceMode;
   referenceInfluenceStrength?: ReferenceInfluenceStrength;
+  /** Prompt 2/2 UX — optional variation label (maps to seed in engine). */
+  variationId?: string;
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  /** Serializable dual style pairing snapshot (no engine objects). */
+  stylePairingSnapshot?: { songwriterStyle: string; arrangerStyle: string; era?: string };
+  bigBandEnsembleConfigId?: BigBandEnsembleConfigId;
+  /** Last export path (may mirror `outputPath`). */
+  lastOutputPath?: string;
 }

@@ -12,7 +12,8 @@ export function validateSessionPayload(raw: unknown): { ok: boolean; errors: str
   const o = raw as Record<string, unknown>;
   const fv = o.formatVersion;
   const versionOk =
-    typeof fv === 'number' && SESSION_FORMAT_VERSIONS_SUPPORTED.includes(fv as (typeof SESSION_FORMAT_VERSIONS_SUPPORTED)[number]);
+    typeof fv === 'number' &&
+    SESSION_FORMAT_VERSIONS_SUPPORTED.includes(fv as (typeof SESSION_FORMAT_VERSIONS_SUPPORTED)[number]);
   if (!versionOk) {
     errors.push(`session: expected formatVersion one of ${SESSION_FORMAT_VERSIONS_SUPPORTED.join(', ')}`);
   }

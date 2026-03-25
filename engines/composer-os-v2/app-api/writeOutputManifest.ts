@@ -24,6 +24,8 @@ export function writeOutputManifest(
     styleStack: string[];
     seed: number;
     timestamp: string;
+    variationId?: string;
+    creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
     scoreTitle?: string;
     ecmMode?: string;
     harmonySource?: 'builtin' | 'custom';
@@ -43,6 +45,8 @@ export function writeOutputManifest(
     presetId: meta.presetId,
     styleStack: meta.styleStack,
     seed: meta.seed,
+    variationId: meta.variationId,
+    creativeControlLevel: meta.creativeControlLevel,
     timestamp: meta.timestamp,
     scoreTitle: meta.scoreTitle,
     ecmMode: meta.ecmMode,

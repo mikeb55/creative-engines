@@ -17,6 +17,11 @@ import type { BigBandComposerId, BigBandEraId, ResolvedBigBandRuleSet } from './
 import type { StylePairingInput, StylePairingResult } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { validateStylePairingResult } from '../style-pairing/stylePairingValidation';
+import { applyBigBandEnsembleMask, resolveEnsembleMaskForConfig } from './bigBandEnsembleApply';
+import type { BigBandEnsembleConfigId } from './bigBandEnsembleConfigTypes';
+import type { BigBandEnsembleSectionMask } from './bigBandEnsembleConfigTypes';
+import { resolveEffectiveSeed } from '../creative-controls/creativeControlResolver';
+import type { CreativeControlLevel } from '../creative-controls/creativeControlTypes';
 import { planBigBandSections } from './bigBandSectionPlanner';
 import { type BigBandValidationResult, mergeBigBandValidation, validateBigBandPlanningBundle } from './bigBandValidation';
 import { getEnsembleFamilyProfile } from '../orchestration/ensembleFamilyProfiles';
@@ -41,6 +46,13 @@ export interface BigBandRunInput {
   researchPathOverride?: string;
   /** Optional songwriter ↔ arranger pairing (metadata + validation warnings). */
   stylePairing?: StylePairingInput | null;
+  /** User-facing variation id — maps to deterministic seed (optional). */
+  variationId?: string;
+  creativeControlLevel?: CreativeControlLevel;
+  /** Horn section selection (default full band). */
+  ensembleConfigId?: BigBandEnsembleConfigId;
+  /** Required when `ensembleConfigId` is `custom`. */
+  customEnsembleMask?: Omit<BigBandEnsembleSectionMask, 'rhythm_section'> | null;
 }
 
 export interface BigBandRunManifestHints {
@@ -53,6 +65,7 @@ export interface BigBandRunManifestHints {
   bigBandEra: BigBandEraId;
   bigBandComposerStyle: BigBandComposerId | null;
   bigBandResearchRulesParsed: boolean;
+  bigBandEnsembleConfigId?: BigBandEnsembleConfigId;
 }
 
 export interface BigBandRunResult {
@@ -80,13 +93,24 @@ export interface BigBandRunResult {
  * Full planning path: form → sections → density → research + era/composer → rules → orchestration → validation.
  */
 export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
-  const title = input.title ?? `Big Band Plan ${input.seed}`;
+  const { effectiveSeed: runSeed } = resolveEffectiveSeed({
+    seed: input.seed,
+    variationId: input.variationId,
+    creativeControlLevel: input.creativeControlLevel,
+  });
+
+  const title = input.title ?? `Big Band Plan ${runSeed}`;
   const totalBars = Math.max(16, input.totalBars ?? 32);
   const era = input.era ?? 'post_bop';
   const composerStyle = input.composerStyle === undefined ? null : input.composerStyle;
 
-  const formPlan = planDefaultBigBandForm(input.seed, { totalBars });
-  const sectionPlan = planBigBandSections(formPlan, input.seed);
+  const formPlan = planDefaultBigBandForm(runSeed, { totalBars });
+  const ensembleMask = resolveEnsembleMaskForConfig(
+    input.ensembleConfigId ?? 'full_band',
+    input.customEnsembleMask ?? null
+  );
+  let sectionPlan = planBigBandSections(formPlan, runSeed);
+  sectionPlan = applyBigBandEnsembleMask(sectionPlan, ensembleMask);
   const densityPlan = planBigBandDensity(formPlan);
 
   const parsed = input.researchPathOverride
@@ -94,13 +118,13 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     : loadBigBandResearchFromEnvOrDefault();
 
   const resolvedRules = resolveBigBandEraRules(era, composerStyle, parsed.ok, parsed.errors);
-  const bebopLineMetadata = planBebopLineBehaviour(era, input.seed);
+  const bebopLineMetadata = planBebopLineBehaviour(era, runSeed);
   const enhancedPlanning = applyBigBandRules({
     formPlan,
     densityPlan,
     resolved: resolvedRules,
     bebopLine: bebopLineMetadata,
-    seed: input.seed,
+    seed: runSeed,
   });
 
   const bbVal = validateBigBandPlanningBundle(formPlan, sectionPlan, densityPlan);
@@ -112,7 +136,12 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     bebopLineMetadata
   );
 
-  const orchestrationPlan = assembleBigBandOrchestrationPlan({ formPlan, sectionPlan, densityPlan });
+  const orchestrationPlan = assembleBigBandOrchestrationPlan({
+    formPlan,
+    sectionPlan,
+    densityPlan,
+    ensembleMask,
+  });
   const profile = getEnsembleFamilyProfile('big_band');
   const orchVal = mergeOrchestrationValidation(
     validateOrchestrationPlan(orchestrationPlan, profile),
@@ -125,7 +154,7 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     stylePairingResolution = resolveStylePairing({
       ...input.stylePairing,
       era: input.stylePairing.era ?? era,
-      seed: input.seed,
+      seed: runSeed,
     });
     pairingWarnings.push(...validateStylePairingResult(stylePairingResolution).warnings);
   }
@@ -150,6 +179,7 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     bigBandEra: era,
     bigBandComposerStyle: composerStyle,
     bigBandResearchRulesParsed: parsed.ok,
+    bigBandEnsembleConfigId: input.ensembleConfigId ?? 'full_band',
   };
 
   const universalLeadSheet = buildUniversalLeadSheetFromPlanningForm({
