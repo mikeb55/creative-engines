@@ -6,11 +6,13 @@ import * as os from 'os';
 import * as path from 'path';
 import {
   findCanonicalPortableExe,
+  findLatestVersionedPortableExe,
   isCleanDesktopShortcutName,
   isLegacyOrForbiddenTarget,
   isLegacyProductShortcutName,
   looksLikeComposerOsPackagedExe,
   normalizeFsPath,
+  resolveRefreshDesktopExe,
   shouldQuarantineShortcut,
 } from '../install/installRules';
 
@@ -88,6 +90,33 @@ describe('installRules', () => {
     fs.utimesSync(newer, new Date(2020, 0, 1), new Date(2020, 0, 1));
     const name = findCanonicalPortableExe(dir);
     expect(name).toBe('Composer-OS-Desktop-2.0.0-portable.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('findLatestVersionedPortableExe matches Composer-OS-Desktop-*-portable.exe and picks newest by mtime', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-rel-glob-'));
+    const a = path.join(dir, 'Composer-OS-Desktop-1.2.3-portable.exe');
+    const b = path.join(dir, 'Composer-OS-Desktop-custom-tag-portable.exe');
+    fs.writeFileSync(a, 'x');
+    fs.utimesSync(a, new Date(2010, 0, 1), new Date(2010, 0, 1));
+    fs.writeFileSync(b, 'y');
+    fs.utimesSync(b, new Date(2021, 0, 1), new Date(2021, 0, 1));
+    expect(findLatestVersionedPortableExe(dir)).toBe('Composer-OS-Desktop-custom-tag-portable.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('resolveRefreshDesktopExe prefers versioned portable over stable Composer-OS.exe', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-rel-refresh-'));
+    fs.writeFileSync(path.join(dir, 'Composer-OS.exe'), 's');
+    fs.writeFileSync(path.join(dir, 'Composer-OS-Desktop-9.9.9-portable.exe'), 'v');
+    expect(resolveRefreshDesktopExe(dir)).toBe('Composer-OS-Desktop-9.9.9-portable.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('resolveRefreshDesktopExe falls back to Composer-OS.exe when no versioned portable', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-rel-stable-only-'));
+    fs.writeFileSync(path.join(dir, 'Composer-OS.exe'), 's');
+    expect(resolveRefreshDesktopExe(dir)).toBe('Composer-OS.exe');
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });

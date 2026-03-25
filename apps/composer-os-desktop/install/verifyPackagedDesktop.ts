@@ -26,17 +26,7 @@ export function desktopReleaseDir(desktopAppRoot: string): string {
  * Locates `Composer-OS.exe` in `release/` (or legacy `Composer-OS-Desktop-*-portable.exe`), asserts it exists on disk
  * and is a non-trivial `.exe` file. Prints the path when run as CLI.
  */
-export function verifyPackagedPortableExe(releaseDir: string): VerifiedPortableExe {
-  if (!fs.existsSync(releaseDir)) {
-    throw new Error(`Release directory does not exist: ${releaseDir}`);
-  }
-  const fileName = findCanonicalPortableExe(releaseDir);
-  if (!fileName) {
-    throw new Error(
-      `No packaged portable exe in ${releaseDir}. Expected Composer-OS.exe (or legacy Composer-OS-Desktop-*-portable.exe). Run npm run desktop:package (electron-builder --win).`
-    );
-  }
-  const absolutePath = path.resolve(releaseDir, fileName);
+function verifyPortableExeStats(absolutePath: string, fileName: string): VerifiedPortableExe {
   let st: fs.Stats;
   try {
     st = fs.statSync(absolutePath);
@@ -54,6 +44,29 @@ export function verifyPackagedPortableExe(releaseDir: string): VerifiedPortableE
     throw new Error(`Packaged exe is too small (${st.size} bytes) to be valid: ${absolutePath}`);
   }
   return { absolutePath, fileName };
+}
+
+export function verifyPackagedPortableExe(releaseDir: string): VerifiedPortableExe {
+  if (!fs.existsSync(releaseDir)) {
+    throw new Error(`Release directory does not exist: ${releaseDir}`);
+  }
+  const fileName = findCanonicalPortableExe(releaseDir);
+  if (!fileName) {
+    throw new Error(
+      `No packaged portable exe in ${releaseDir}. Expected Composer-OS.exe (or legacy Composer-OS-Desktop-*-portable.exe). Run npm run desktop:package (electron-builder --win).`
+    );
+  }
+  const absolutePath = path.resolve(releaseDir, fileName);
+  return verifyPortableExeStats(absolutePath, fileName);
+}
+
+/** Same size/existence checks as {@link verifyPackagedPortableExe} for a known filename in `releaseDir`. */
+export function verifyPortableExeByName(releaseDir: string, fileName: string): VerifiedPortableExe {
+  if (!fs.existsSync(releaseDir)) {
+    throw new Error(`Release directory does not exist: ${releaseDir}`);
+  }
+  const absolutePath = path.resolve(releaseDir, fileName);
+  return verifyPortableExeStats(absolutePath, fileName);
 }
 
 function cli(): void {

@@ -23,6 +23,9 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:package']).toContain('verifyStableBuildOutputCli');
     expect(pkg.scripts['desktop:install-icon']).toContain('installDesktopIconCli');
     expect(pkg.scripts['desktop:create-shortcut']).toBe(pkg.scripts['desktop:install-icon']);
+    expect(pkg.scripts['refresh:desktop']).toContain('refreshDesktopCli');
+    expect(pkg.scripts['desktop:package-no-bump']).toContain('desktop:build');
+    expect(pkg.scripts['desktop:package-no-bump']).toContain('electron-builder --win');
   });
 
   it('full install script delegates to installComposerOsDesktopIcon', () => {
@@ -43,6 +46,7 @@ describe('desktop deploy / install wiring', () => {
     expect(fs.existsSync(path.join(installDir, 'pruneOldPortableExesCli.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'verifyStableBuildOutputCli.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'logReleaseArtifactsCli.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'refreshDesktopCli.ts'))).toBe(true);
 
     const walk = (dir: string): string[] => {
       const out: string[] = [];

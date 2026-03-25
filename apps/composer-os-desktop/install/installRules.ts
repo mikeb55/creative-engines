@@ -82,6 +82,50 @@ export const STABLE_PORTABLE_FILE_NAME = 'Composer-OS.exe';
 export const STABLE_SETUP_FILE_NAME = 'Composer-OS-Setup.exe';
 
 /**
+ * Matches `Composer-OS-Desktop-*-portable.exe` (any middle segment; versioned or legacy portable builds).
+ */
+export const VERSIONED_PORTABLE_FILE_RE = /^Composer-OS-Desktop-.+-portable\.exe$/i;
+
+/**
+ * Newest `Composer-OS-Desktop-*-portable.exe` in `releaseDir` by mtime, or `null` if none.
+ */
+export function findLatestVersionedPortableExe(releaseDir: string): string | null {
+  if (!fs.existsSync(releaseDir)) return null;
+  let names: string[];
+  try {
+    names = fs.readdirSync(releaseDir);
+  } catch {
+    return null;
+  }
+  const portable = names.filter((f) => VERSIONED_PORTABLE_FILE_RE.test(f));
+  if (portable.length === 0) return null;
+  const withMtime = portable.map((f) => {
+    const p = path.join(releaseDir, f);
+    return { f, m: fs.statSync(p).mtimeMs };
+  });
+  withMtime.sort((a, b) => b.m - a.m);
+  return withMtime[0].f;
+}
+
+/**
+ * For refresh / shortcuts: prefer latest versioned `Composer-OS-Desktop-*-portable.exe` when present;
+ * otherwise stable `Composer-OS.exe` from electron-builder.
+ */
+export function resolveRefreshDesktopExe(releaseDir: string): string | null {
+  const versioned = findLatestVersionedPortableExe(releaseDir);
+  if (versioned) return versioned;
+  if (!fs.existsSync(releaseDir)) return null;
+  let names: string[];
+  try {
+    names = fs.readdirSync(releaseDir);
+  } catch {
+    return null;
+  }
+  const stable = names.find((f) => f.toLowerCase() === STABLE_PORTABLE_FILE_NAME.toLowerCase());
+  return stable ?? null;
+}
+
+/**
  * Resolve the packaged portable exe: stable `Composer-OS.exe` when present, else newest legacy
  * `Composer-OS-Desktop-*-portable.exe` (by mtime) for migration.
  */
@@ -95,7 +139,7 @@ export function findCanonicalPortableExe(releaseDir: string): string | null {
   }
   const stable = names.find((f) => f.toLowerCase() === STABLE_PORTABLE_FILE_NAME.toLowerCase());
   if (stable) return stable;
-  const portable = names.filter((f) => /^Composer-OS-Desktop-[\d.]+-portable\.exe$/i.test(f));
+  const portable = names.filter((f) => VERSIONED_PORTABLE_FILE_RE.test(f));
   if (portable.length === 0) return null;
   const withMtime = portable.map((f) => {
     const p = path.join(releaseDir, f);
