@@ -27,10 +27,18 @@ export interface LeadSheetFormSummary {
   sections: Array<{ label: string; barStart: number; barEnd: number; role: string }>;
 }
 
+/** Optional planning hints for lead-sheet consumers (no lyrics). */
+export interface LeadSheetSongwritingHints {
+  primaryStyleId: string;
+  hookTypesPriority: string[];
+  prosodyStabilityTags: 'stable_heavy' | 'balanced';
+}
+
 export interface LeadSheetContract {
   title: string;
   vocalMelody: LeadSheetVocalMelody;
   chordSymbols: LeadSheetChordSymbol[];
   lyricPlaceholders: LeadSheetLyricPlaceholder[];
   formSummary: LeadSheetFormSummary;
+  songwritingHints?: LeadSheetSongwritingHints;
 }

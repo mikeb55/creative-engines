@@ -12,8 +12,11 @@ import {
   validateCompiledSong,
   validateLeadSheetContract,
   validateSectionPlanForSongMode,
+  validateSongModeRunInput,
+  validateSongwritingPlanning,
   type SongModeValidationResult,
 } from './songModeValidation';
+import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 
 export type SongModeStructureVariant = 'default' | 'extended';
 
@@ -22,6 +25,13 @@ export interface SongModeRunInput {
   title?: string;
   variant?: SongModeStructureVariant;
   voiceType?: SongVoiceType;
+  /** Override bundled `data/Songwriting.md` (or `COMPOSER_OS_SONGWRITING_RESEARCH`). */
+  researchPathOverride?: string;
+  /** Default `beatles` when omitted. Must not be `null`. */
+  primarySongwriterStyle?: SongwriterRuleId | string | null;
+  secondarySongwriterStyle?: SongwriterRuleId | string | null;
+  authorOverlay?: AuthorRuleId | null;
+  classicalOverlay?: ClassicalSongRuleId | null;
 }
 
 export interface SongModeRunManifestHints {
@@ -32,6 +42,10 @@ export interface SongModeRunManifestHints {
   songwritingModuleIds: string[];
   presetType: 'song_mode';
   songModeVoiceType: string;
+  songwritingPrimaryStyle: string;
+  songwritingRuleCount: number;
+  researchParseOk: boolean;
+  songwritingFingerprint: string;
 }
 
 export interface SongModeRunResult {
@@ -42,7 +56,7 @@ export interface SongModeRunResult {
 }
 
 /**
- * Full structural Song Mode run: sections → hook → chord scaffold → compiled song → lead sheet → validation.
+ * Full structural Song Mode run: sections → hook/chorus/melody planners → style resolution → rules → compiled song → lead sheet → validation.
  */
 export function runSongMode(input: SongModeRunInput): SongModeRunResult {
   const title = input.title ?? `Song Mode Study ${input.seed}`;
@@ -51,27 +65,39 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     input.variant === 'extended' ? planExtendedPopStructure() : planDefaultVerseChorusStructure();
 
   const planVal = validateSectionPlanForSongMode(sections);
+  const v0 = validateSongModeRunInput(input);
   const compiled = buildCompiledSong({
     seed: input.seed,
     title,
     sections,
     voiceType,
+    researchPathOverride: input.researchPathOverride,
+    primarySongwriterStyle: input.primarySongwriterStyle ?? undefined,
+    secondarySongwriterStyle: input.secondarySongwriterStyle ?? undefined,
+    authorOverlay: input.authorOverlay ?? undefined,
+    classicalOverlay: input.classicalOverlay ?? undefined,
   });
   const lead = buildLeadSheetContractFromCompiled(compiled);
 
   const v1 = validateCompiledSong(compiled, { voiceType });
   const v2 = validateLeadSheetContract(lead);
   const v3 = planVal;
-  const validation = mergeSongModeValidation(v3, v1, v2);
+  const v4 = validateSongwritingPlanning(compiled);
+  const validation = mergeSongModeValidation(v0, v3, v1, v2, v4);
 
+  const sw = compiled.songwriting;
   const manifestHints: SongModeRunManifestHints = {
     songHookId: compiled.hook.id,
     songHookSummary: summaryStringForManifest(compiled),
     songSectionSequence: compiled.sectionSummary,
     leadSheetReady: compiled.leadSheetReady,
-    songwritingModuleIds: ['song_mode_compile'],
+    songwritingModuleIds: ['song_mode_compile', 'songwriting_research_rules'],
     presetType: 'song_mode',
     songModeVoiceType: voiceType,
+    songwritingPrimaryStyle: sw?.resolvedStyle.primaryId ?? 'unknown',
+    songwritingRuleCount: sw?.resolvedStyle.resolvedRuleIds.length ?? 0,
+    researchParseOk: sw?.researchParseOk ?? false,
+    songwritingFingerprint: sw?.resolvedStyle.styleFingerprint ?? '',
   };
 
   return {

@@ -33,6 +33,12 @@ import { runHandoffMapTests } from './handoffMap.test';
 import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { runSongModeIntegrationTests } from './songModeIntegration.test';
+import { runSongwritingResearchParsingTests } from './songwritingResearchParsing.test';
+import { runSongwriterRuleRegistryTests } from './songwriterRuleRegistry.test';
+import { runSongwriterStyleResolverTests } from './songwriterStyleResolver.test';
+import { runAuthorOverlayResolverTests } from './authorOverlayResolver.test';
+import { runHookPlannerTests } from './hookPlanner.test';
+import { runSongModeBehaviourEncodingTests } from './songModeBehaviourEncoding.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
 import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
@@ -89,6 +95,12 @@ const suites = [
   { name: 'Module invocation', run: runModuleInvocationTests },
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
+  { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
+  { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },
+  { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },
+  { name: 'Author overlay resolver', run: runAuthorOverlayResolverTests },
+  { name: 'Hook planner', run: runHookPlannerTests },
+  { name: 'Song Mode behaviour encoding', run: runSongModeBehaviourEncodingTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
   { name: 'Orchestration core', run: runOrchestrationCoreTests },
   { name: 'Orchestration planner', run: runOrchestrationPlannerTests },

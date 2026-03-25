@@ -2,11 +2,19 @@
  * Composer OS V2 — Build compiled song + lead sheet contract from section plans (scaffold level).
  */
 
+import { applySongwritingRules } from './applySongwritingRules';
+import { resolveAuthorOverlay } from './authorOverlayResolver';
+import { planChorusMetadata } from './chorusPlanner';
+import { planHookMetadata } from './hookPlanner';
+import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
+import { loadSongwritingResearchFromPath, loadSongwritingResearchFromEnvOrDefault } from './songwritingResearchParser';
 import type { SongHook } from './songHookTypes';
 import type { SongSectionKind, SongSectionPlan, SongVoiceType } from './songModeTypes';
 import { DEFAULT_SONG_VOICE_TYPE } from './songModeTypes';
+import { resolveSongwritingStyles } from './songwriterStyleResolver';
+import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
   switch (kind) {
     case 'verse':
@@ -56,17 +64,37 @@ export function buildSectionChordPlans(sections: SongSectionPlan[], seed: number
   }));
 }
 
-export function buildCompiledSong(params: {
+export interface BuildCompiledSongParams {
   seed: number;
   title: string;
   sections: SongSectionPlan[];
   voiceType?: SongVoiceType;
-}): CompiledSong {
+  researchPathOverride?: string;
+  primarySongwriterStyle?: SongwriterRuleId | string | null;
+  secondarySongwriterStyle?: SongwriterRuleId | string | null;
+  authorOverlay?: AuthorRuleId | null;
+  classicalOverlay?: ClassicalSongRuleId | null;
+}
+
+export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
   const voiceType = params.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
+  const research = params.researchPathOverride
+    ? loadSongwritingResearchFromPath(params.researchPathOverride)
+    : loadSongwritingResearchFromEnvOrDefault();
+  const resolution = resolveSongwritingStyles({
+    primary: params.primarySongwriterStyle ?? undefined,
+    secondary: params.secondarySongwriterStyle ?? undefined,
+    authorOverlay: params.authorOverlay ?? undefined,
+    classicalOverlay: params.classicalOverlay ?? undefined,
+  });
+  const hookPlan = planHookMetadata(params.seed, params.sections, resolution.primaryId);
+  const chorusPlan = planChorusMetadata(params.sections, resolution.primaryId);
+  const melodyBehaviour = planMelodyBehaviour(params.seed, resolution.primaryId);
+  const authorOverlay = resolveAuthorOverlay(params.authorOverlay ?? undefined);
   const hook = buildSongHook(params.seed);
   const chordPlan = buildSectionChordPlans(params.sections, params.seed);
   const sectionSummary = params.sections.map((s) => s.kind);
-  return {
+  const base: CompiledSong = {
     id: `song_${params.seed}_${params.title.replace(/\s+/g, '_').slice(0, 32)}`,
     title: params.title,
     voiceType,
@@ -77,6 +105,15 @@ export function buildCompiledSong(params: {
     hookFirst: true,
     leadSheetReady: true,
   };
+  return applySongwritingRules({
+    compiled: base,
+    research,
+    resolution,
+    hookPlan,
+    chorusPlan,
+    melodyBehaviour,
+    authorOverlay,
+  });
 }
 
 /** Flatten chord plan into lead-sheet chord track with measure numbers (1-based). */
@@ -111,7 +148,7 @@ export function buildLeadSheetContractFromCompiled(song: CompiledSong): LeadShee
     measureBase = barEnd + 1;
   }
 
-  return {
+  const contract: LeadSheetContract = {
     title: song.title,
     vocalMelody: {
       events: [],
@@ -122,6 +159,14 @@ export function buildLeadSheetContractFromCompiled(song: CompiledSong): LeadShee
     lyricPlaceholders: lyrics,
     formSummary: { sections: formSections },
   };
+  if (song.songwriting) {
+    contract.songwritingHints = {
+      primaryStyleId: song.songwriting.resolvedStyle.primaryId,
+      hookTypesPriority: [...song.hook.hookTypePriorityOrder ?? song.songwriting.hookPlan.hookTypePriorityOrder],
+      prosodyStabilityTags: song.songwriting.lyricProsody.stableUnstableTagging ? 'stable_heavy' : 'balanced',
+    };
+  }
+  return contract;
 }
 
 export function summaryStringForManifest(song: CompiledSong): string {

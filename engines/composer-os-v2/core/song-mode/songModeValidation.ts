@@ -67,3 +67,35 @@ export function mergeSongModeValidation(...results: SongModeValidationResult[]):
   const errors = results.flatMap((r) => r.errors);
   return { valid: errors.length === 0, errors };
 }
+
+/** Reject explicit null primary style (use undefined for default). */
+export function validateSongModeRunInput(input: { primarySongwriterStyle?: unknown }): SongModeValidationResult {
+  const errors: string[] = [];
+  if (input.primarySongwriterStyle === null) {
+    err(errors, 'Song Mode: primarySongwriterStyle cannot be null (omit for default)');
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/** Research + hook/chorus behaviour layer (Prompt 6.5/7). */
+export function validateSongwritingPlanning(
+  song: CompiledSong,
+  opts?: { requireResearchOk?: boolean }
+): SongModeValidationResult {
+  const errors: string[] = [];
+  if (!song.songwriting) err(errors, 'Song Mode: songwriting planning bundle missing');
+  const sw = song.songwriting;
+  if (sw) {
+    if (opts?.requireResearchOk !== false && !sw.researchParseOk) {
+      err(errors, 'Song Mode: songwriting research parse failed');
+    }
+    if (!sw.hookPlan?.primaryHookType) err(errors, 'Song Mode: hook plan invalid');
+    if (!sw.resolvedStyle?.styleFingerprint) err(errors, 'Song Mode: style resolution missing');
+    const hasChorus = song.sectionSummary.includes('chorus');
+    if (hasChorus && sw.chorusPlan.relativeIntensityVsVerse !== 'higher') {
+      err(errors, 'Song Mode: chorus payoff contrast not reflected in plan');
+    }
+    if (!song.hookFirst || !song.melodyFirst) err(errors, 'Song Mode: melodyFirst/hookFirst must stay true');
+  }
+  return { valid: errors.length === 0, errors };
+}

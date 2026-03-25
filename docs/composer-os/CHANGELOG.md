@@ -1,5 +1,15 @@
 # Composer OS Changelog
 
+## Prompt 6.5/7 — Song Mode songwriting research (styles, author overlays, hook intelligence)
+
+- **Research file** — `engines/composer-os-v2/core/song-mode/data/Songwriting.md`. Optional env **`COMPOSER_OS_SONGWRITING_RESEARCH`** for an alternate path.
+- **Parser** — `songwritingResearchParser.ts` extracts ENGINE RULES per songwriter, author, classical block, plus sections 4–9 (hooks, melody/harmony/lyric systems, minimum viable).
+- **Registry** — `songwriterRuleRegistry.ts` (songwriters, authors, classical, foundational categories with effect types + priority + applicability).
+- **Style system** — `songwriterStyleProfiles.ts`, `songwriterStyleResolver.ts` (primary + optional secondary + overlays); `authorOverlayResolver.ts`.
+- **Planners** — `hookPlanner.ts`, `chorusPlanner.ts`, `melodyBehaviourPlanner.ts`; `applySongwritingRules.ts` attaches `SongwritingPlanningBundle` to `CompiledSong`.
+- **`runSongMode`** — extended input; validation adds `validateSongwritingPlanning` + explicit-null primary style rejection; manifest hints include style fingerprint + rule count.
+- **Tests** — `songwritingResearchParsing`, `songwriterRuleRegistry`, `songwriterStyleResolver`, `authorOverlayResolver`, `hookPlanner`, `songModeBehaviourEncoding`.
+
 ## Prompt 5.6/7 — Big Band research integration (rule engine, eras, bebop line metadata)
 
 - **Research file** — `engines/composer-os-v2/core/big-band/data/BigBandResearch.md` (repo copy). Optional env **`COMPOSER_OS_BIG_BAND_RESEARCH`** points to an alternate path.

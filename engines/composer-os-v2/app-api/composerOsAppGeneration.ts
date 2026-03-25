@@ -105,6 +105,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     leadSheetReady: sm.manifestHints.leadSheetReady,
     compiledSongId: sm.compiledSong.id,
     sectionSummary: sm.compiledSong.sectionSummary,
+    songwritingPrimaryStyle: sm.manifestHints.songwritingPrimaryStyle,
+    songwritingRuleCount: sm.manifestHints.songwritingRuleCount,
+    researchParseOk: sm.manifestHints.researchParseOk,
+    songwritingFingerprint: sm.manifestHints.songwritingFingerprint,
   };
   const { filepath } = writeArtifactJson(outputDir, filename, payload);
   return {
@@ -119,7 +123,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     runManifest: {
       seed: req.seed,
       presetId: 'song_mode',
-      activeModules: ['song_mode_compile'],
+      activeModules: ['song_mode_compile', 'songwriting_research_rules'],
       timestamp: ts,
       scoreTitle: title,
     },
