@@ -7,6 +7,8 @@ type GenResult = {
   success?: boolean;
   filename?: string;
   filepath?: string;
+  harmonySource?: 'builtin' | 'custom';
+  customChordProgressionSummary?: string;
   validation?: {
     integrityPassed?: boolean;
     behaviourGatesPassed?: boolean;
@@ -51,6 +53,8 @@ export function HomeGenerate({
   const [variationSeed, setVariationSeed] = useState(() => Math.floor(Math.random() * 1e9));
   /** Optional work title for MusicXML / score (default comes from the engine when empty). */
   const [scoreTitle, setScoreTitle] = useState('');
+  const [harmonyMode, setHarmonyMode] = useState<'builtin' | 'custom'>('builtin');
+  const [chordProgressionText, setChordProgressionText] = useState('');
   const [presets, setPresets] = useState<{ id: string; name: string; supported: boolean }[]>([]);
   const [styleStack, setStyleStack] = useState({
     primary: 'barry_harris',
@@ -109,6 +113,10 @@ export function HomeGenerate({
           seed,
           locks,
           title: scoreTitle.trim() || undefined,
+          chordProgressionText:
+            presetId === 'guitar_bass_duo' && harmonyMode === 'custom'
+              ? chordProgressionText.trim() || undefined
+              : undefined,
         })) as GenResult;
         setResult(r);
         const ok = !!r.success;
@@ -145,6 +153,8 @@ export function HomeGenerate({
       modulesError,
       modules.length,
       onResult,
+      harmonyMode,
+      chordProgressionText,
     ]
   );
 
@@ -315,6 +325,63 @@ export function HomeGenerate({
         disabled={moduleSelectDisabled}
       />
 
+      {presetId === 'guitar_bass_duo' && (
+        <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+          <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Harmony
+          </span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
+            <input
+              type="radio"
+              name="harmonyMode"
+              checked={harmonyMode === 'builtin'}
+              onChange={() => setHarmonyMode('builtin')}
+            />
+            Built-in progression
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: '0.9rem' }}>
+            <input
+              type="radio"
+              name="harmonyMode"
+              checked={harmonyMode === 'custom'}
+              onChange={() => setHarmonyMode('custom')}
+            />
+            Custom chord progression
+          </label>
+          {harmonyMode === 'custom' && (
+            <>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600, fontSize: '0.95rem' }}>
+                Chord Progression
+              </label>
+              <textarea
+                value={chordProgressionText}
+                onChange={(e) => setChordProgressionText(e.target.value)}
+                placeholder="Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt"
+                rows={3}
+                disabled={moduleSelectDisabled}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.6rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-input, var(--bg))',
+                  color: 'var(--text)',
+                  fontFamily: 'inherit',
+                  fontSize: '0.9rem',
+                }}
+              />
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+                Example: Dm9 | G13 | Cmaj9 | A7alt
+                <br />
+                Slash chords: D/F# | G/B | Cmaj7/E
+                <br />
+                Exactly 8 bars, separated by | .
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Score title (optional)
@@ -435,6 +502,17 @@ export function HomeGenerate({
               {rm?.presetId && (
                 <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Preset:</span> {rm.presetId}
+                </p>
+              )}
+              {result.harmonySource && (
+                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Harmony:</span>{' '}
+                  {result.harmonySource === 'custom' ? 'Custom progression' : 'Built-in progression'}
+                  {result.customChordProgressionSummary ? (
+                    <span style={{ display: 'block', fontSize: '0.85rem', marginTop: 4, wordBreak: 'break-word' }}>
+                      {result.customChordProgressionSummary}
+                    </span>
+                  ) : null}
                 </p>
               )}
               {rm?.activeModules?.length ? (

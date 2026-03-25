@@ -4,7 +4,8 @@
 
 import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
-import { chordTonesForGoldenChord, clampPitch, seededUnit } from './guitarBassDuoHarmony';
+import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 export type PhraseIntent = 'guitar_lead' | 'bass_lead' | 'answer_guitar' | 'answer_bass' | 'cadence';
 
@@ -21,7 +22,7 @@ export function guitarChordTonesInRange(
   low: number,
   high: number
 ): { third: number; seventh: number; fifth: number; root: number } {
-  const t = chordTonesForGoldenChord(chord);
+  const t = chordTonesForChordSymbol(chord);
   return {
     root: liftToneToRange(t.root, low, high),
     third: liftToneToRange(t.third, low, high),

@@ -25,6 +25,8 @@ export function writeOutputManifest(
     seed: number;
     timestamp: string;
     scoreTitle?: string;
+    harmonySource?: 'builtin' | 'custom';
+    customChordProgressionSummary?: string;
     validation: ValidationSummary;
   }
 ): void {
@@ -37,6 +39,8 @@ export function writeOutputManifest(
     seed: meta.seed,
     timestamp: meta.timestamp,
     scoreTitle: meta.scoreTitle,
+    harmonySource: meta.harmonySource,
+    customChordProgressionSummary: meta.customChordProgressionSummary,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

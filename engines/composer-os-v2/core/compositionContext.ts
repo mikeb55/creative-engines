@@ -36,6 +36,10 @@ export interface GenerationMetadata {
   generatedAt: string;
   durationMs?: number;
   steps?: string[];
+  /** Guitar–Bass Duo: built-in cycle vs user progression text */
+  harmonySource?: 'builtin' | 'custom';
+  /** Short readable summary when `harmonySource` is custom */
+  customChordProgressionSummary?: string;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

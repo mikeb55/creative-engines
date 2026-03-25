@@ -17,6 +17,10 @@ export interface GenerateResult {
   filepath?: string;
   /** Path to run manifest JSON alongside MusicXML, when written */
   manifestPath?: string;
+  /** Guitar–Bass Duo: harmony source when engine ran */
+  harmonySource?: 'builtin' | 'custom';
+  /** Short progression summary when custom harmony was used */
+  customChordProgressionSummary?: string;
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -41,10 +45,15 @@ export interface GenerateResult {
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
+  const chordText =
+    req.presetId === 'guitar_bass_duo' && typeof req.chordProgressionText === 'string'
+      ? req.chordProgressionText
+      : undefined;
   const result = runGoldenPath(req.seed, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: req.presetId,
     scoreTitle: req.title,
+    chordProgressionText: chordText?.trim() ? chordText : undefined,
   });
   const validation = {
     integrityPassed: result.integrityPassed,
@@ -76,6 +85,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       seed: req.seed,
       timestamp: ts,
       scoreTitle: result.runManifest?.scoreTitle,
+      harmonySource: result.context.generationMetadata.harmonySource,
+      customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -99,6 +110,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     filename,
     filepath,
     manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
+    harmonySource: result.context.generationMetadata.harmonySource,
+    customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
     validation,
     runManifest: result.runManifest
       ? {

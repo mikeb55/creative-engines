@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { chordTonesForChordSymbol, parseChordSymbol, pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
@@ -22,12 +23,7 @@ import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
 import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
-import {
-  chordTonesForGoldenChord,
-  pickGuideTone,
-  clampPitch,
-  seededUnit,
-} from './guitarBassDuoHarmony';
+import { pickGuideTone, clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import { emitMelodicBassBar, scrubBassFirstAttackIfRoot, type BassSectionRole } from './bassMelodicLines';
 import {
@@ -39,24 +35,20 @@ import { momentTagForBar } from './duoNarrativeMoments';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
-const CHORD_ROOTS: Record<string, number> = {
-  Dmin9: 38,
-  Dm9: 38,
-  'D-9': 38,
-  G13: 43,
-  G7: 43,
-  Cmaj9: 36,
-  Cmaj7: 36,
-  C: 36,
-  A7alt: 45,
-  A7: 45,
-};
-
-function chordForBar(barIndex: number): string {
+function builtinChordForBar(barIndex: number): string {
   if (barIndex <= 2) return 'Dmin9';
   if (barIndex <= 4) return 'G13';
   if (barIndex <= 6) return 'Cmaj9';
   return 'A7alt';
+}
+
+function getChordForBar(barIndex: number, context: CompositionContext): string {
+  for (const seg of context.chordSymbolPlan.segments) {
+    if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) {
+      return seg.chord;
+    }
+  }
+  return builtinChordForBar(barIndex);
 }
 
 function rehearsalForBar(barIndex: number): string | undefined {
@@ -161,7 +153,7 @@ function buildBacharachAnchorMeasure(
   high: number
 ): MeasureModel {
   const m = createMeasure(barIndex, chord, rehearsal);
-  const tones = chordTonesForGoldenChord(chord);
+  const tones = chordTonesForChordSymbol(chord);
   const target = clampPitch(tones.third, low, high);
   const pass = target - 1;
   const fifth = clampPitch(tones.fifth, low, high);
@@ -193,7 +185,7 @@ function buildGuitarPart(
   const effectiveBase = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
 
   for (let b = 1; b <= 8; b++) {
-    const m = createMeasure(b, chordForBar(b), rehearsalForBar(b));
+    const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b));
     const placements = getPlacementsForBar(motifState.placements, b);
     const density = getDensityForBar(densityPlan, b);
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
@@ -209,7 +201,7 @@ function buildGuitarPart(
     const bach = hints.bacharach;
 
     if (bach && (b === 2 || b === 6)) {
-      const bm = buildBacharachAnchorMeasure(b, chordForBar(b), rehearsalForBar(b), effectiveLow, effectiveHigh);
+      const bm = buildBacharachAnchorMeasure(b, getChordForBar(b, context), rehearsalForBar(b), effectiveLow, effectiveHigh);
       normalizeMeasureQuarterGrid(bm);
       measures.push(bm);
       continue;
@@ -262,7 +254,7 @@ function buildGuitarPart(
       emitGuitarPhraseBar({
         m,
         bar: b,
-        chord: chordForBar(b),
+        chord: getChordForBar(b, context),
         effectiveLow,
         effectiveHigh,
         density: densityLevel,
@@ -316,29 +308,36 @@ function tagMomentBarsOnParts(parts: PartModel[]): void {
 
 /** Bar 4: bass supports peak — two half notes (same shape as overlap thinning; does not touch bass engine module). */
 function simplifyBassAtPeakBar(
+  context: CompositionContext,
   bassPart: PartModel,
   bassMap: InstrumentRegisterMap,
   bar: number,
   walkLow: number,
   bassCeiling: number
 ): void {
-  const chord = chordForBar(bar);
-  const tones = chordTonesForGoldenChord(chord);
-  const root = CHORD_ROOTS[chord] ?? tones.root;
+  const chord = getChordForBar(bar, context);
+  const tones = chordTonesForChordSymbol(chord);
+  const parsed = parseChordSymbol(chord);
+  const root = tones.root;
   const [low, high] = getBassRegisterForBar(bassMap, bar);
   const effectiveHigh = Math.min(high, bassCeiling);
   const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+  const firstHalf =
+    parsed.slashBassPc !== undefined
+      ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
+      : rootClamped;
   const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
   const m = bassPart.measures.find((x) => x.index === bar);
   if (!m) return;
   m.events = [];
-  addEvent(m, createNote(rootClamped, 0, 2));
+  addEvent(m, createNote(firstHalf, 0, 2));
   addEvent(m, createNote(fifth, 2, 2));
   normalizeMeasureQuarterGrid(m);
 }
 
 /** When both parts are in high activity on a non-climax bar, thin bass to two half notes (bar math preserved). */
 function resolveOverlapInDuoScore(
+  context: CompositionContext,
   guitarPart: PartModel,
   bassPart: PartModel,
   bassMap: InstrumentRegisterMap,
@@ -349,17 +348,22 @@ function resolveOverlapInDuoScore(
   for (let b = 1; b <= 8; b++) {
     if (climax.has(b)) continue;
     if (activityScoreForBar(guitarPart, b) < HIGH_ACTIVITY || activityScoreForBar(bassPart, b) < HIGH_ACTIVITY) continue;
-    const chord = chordForBar(b);
-    const tones = chordTonesForGoldenChord(chord);
-    const root = CHORD_ROOTS[chord] ?? tones.root;
+    const chord = getChordForBar(b, context);
+    const tones = chordTonesForChordSymbol(chord);
+    const parsed = parseChordSymbol(chord);
+    const root = tones.root;
     const [low, high] = getBassRegisterForBar(bassMap, b);
     const effectiveHigh = Math.min(high, bassCeiling);
     const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+    const firstHalf =
+      parsed.slashBassPc !== undefined
+        ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
+        : rootClamped;
     const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
     const m = bassPart.measures.find((x) => x.index === b);
     if (!m) continue;
     m.events = [];
-    addEvent(m, createNote(rootClamped, 0, 2));
+    addEvent(m, createNote(firstHalf, 0, 2));
     addEvent(m, createNote(fifth, 2, 2));
     normalizeMeasureQuarterGrid(m);
   }
@@ -384,13 +388,18 @@ function buildBassPart(
   let prevBassPitch: number | undefined = walkLow;
 
   for (let b = 1; b <= 8; b++) {
-    const chord = chordForBar(b);
-    const tones = chordTonesForGoldenChord(chord);
-    const root = CHORD_ROOTS[chord] ?? tones.root;
+    const chord = getChordForBar(b, context);
+    const tones = chordTonesForChordSymbol(chord);
+    const parsed = parseChordSymbol(chord);
+    const root = tones.root;
     const m = createMeasure(b, chord, rehearsalForBar(b));
     const [low, high] = getBassRegisterForBar(bassMap, b);
     const effectiveHigh = Math.min(high, bassCeiling);
     const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+    const slashBassPitch =
+      parsed.slashBassPc !== undefined
+        ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
+        : undefined;
     const guide = clampPitch(pickGuideTone(tones, b, seed), walkLow, effectiveHigh);
     const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
     const third = clampPitch(tones.third, walkLow, effectiveHigh);
@@ -435,7 +444,8 @@ function buildBassPart(
       const span = 4 - firstStart;
       const half = Math.round((span / 2) * 4) / 4;
       const half2 = span - half;
-      addEvent(m, createNote(rootClamped, t0, half));
+      const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+      addEvent(m, createNote(firstNote, t0, half));
       addEvent(m, createNote(fifth, t0 + half, half2));
     } else {
       emitMelodicBassBar({
@@ -455,8 +465,11 @@ function buildBassPart(
         prevBassPitch,
         guitarActivityHot,
         guideToneBias: b <= 4 ? 1.06 : 1.12,
+        slashBassPitch,
       });
-      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh);
+      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
+        slashBassPitch,
+      });
     }
 
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
@@ -516,8 +529,8 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   tagMomentBarsOnParts([guitarPart, bassPart]);
-  simplifyBassAtPeakBar(bassPart, plans.bassMap, 4, walkLow, bassCeiling);
-  resolveOverlapInDuoScore(guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
+  resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
 
   const bpm = 120;
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], {

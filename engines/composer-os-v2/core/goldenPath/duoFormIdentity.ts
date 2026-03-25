@@ -7,7 +7,7 @@ import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModel
 import type { MotifTrackerState } from '../motif/motifTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { styleStackToModuleIds } from '../style-modules/styleModuleTypes';
-import { chordTonesForGoldenChord } from './guitarBassDuoHarmony';
+import { chordTonesForChordSymbol, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { analyzeGuitarSectionMeasures } from '../style-modules/bacharach/bacharachSignal';
 
 const EPS = 1e-3;
@@ -22,7 +22,7 @@ export function goldenPathChordForBar(barIndex: number): string {
 }
 
 function isChordTone(pitch: number, chord: string): boolean {
-  const t = chordTonesForGoldenChord(chord);
+  const t = chordTonesForChordSymbol(chord);
   const pcs = [t.root, t.third, t.fifth, t.seventh].map((p) => p % 12);
   const pc = pitch % 12;
   return pcs.some((x) => x % 12 === pc);
@@ -47,9 +47,10 @@ function lastGuitarNoteInBar(guitar: PartModel, bar: number): NoteEvent | undefi
 function bassStrongBeatRootOrThird(bass: PartModel, bar: number, chord: string): boolean {
   const m = bass.measures.find((x) => x.index === bar);
   if (!m) return false;
-  const t = chordTonesForGoldenChord(chord);
+  const t = chordTonesForChordSymbol(chord);
   const rootPc = t.root % 12;
   const thirdPc = t.third % 12;
+  const slashPc = parseChordSymbol(chord).slashBassPc;
   for (const e of m.events) {
     if (e.kind !== 'note') continue;
     const n = e as NoteEvent;
@@ -57,7 +58,7 @@ function bassStrongBeatRootOrThird(bass: PartModel, bar: number, chord: string):
     const onStrong = Math.abs(sb) < EPS || Math.abs(sb - 2) < EPS;
     if (!onStrong) continue;
     const pc = n.pitch % 12;
-    if (pc === rootPc || pc === thirdPc) return true;
+    if (pc === rootPc || pc === thirdPc || (slashPc !== undefined && pc === slashPc)) return true;
   }
   return false;
 }
@@ -71,7 +72,7 @@ function scoreCadenceClarity(score: ScoreModel): number {
   let s = 0;
   for (const bar of [4, lastBar]) {
     if (bar > lastBar) continue;
-    const ch = goldenPathChordForBar(bar);
+    const ch = g.measures.find((x) => x.index === bar)?.chord ?? goldenPathChordForBar(bar);
     const gn = lastGuitarNoteInBar(g, bar);
     if (gn && isChordTone(gn.pitch, ch)) s += 1.2;
     if (bassStrongBeatRootOrThird(b, bar, ch)) s += 0.8;

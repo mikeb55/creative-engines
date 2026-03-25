@@ -61,6 +61,11 @@ export interface GenerateRequest {
   locks?: AppLocks;
   /** Omitted → preset default title (e.g. Guitar-Bass Duo Study). */
   title?: string;
+  /**
+   * Guitar–Bass Duo: optional `|`-separated chords (exactly 8 bars).
+   * Omitted or blank → built-in ii–V–I–VI cycle.
+   */
+  chordProgressionText?: string;
 }
 
 export interface ValidationSummary {
@@ -89,5 +94,7 @@ export interface OutputEntry {
   seed: number;
   /** Title written to the score / MusicXML */
   scoreTitle?: string;
+  harmonySource?: 'builtin' | 'custom';
+  customChordProgressionSummary?: string;
   validation: ValidationSummary;
 }

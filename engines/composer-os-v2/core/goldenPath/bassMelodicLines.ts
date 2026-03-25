@@ -115,8 +115,10 @@ export function scrubBassFirstAttackIfRoot(
   guide: number,
   fifth: number,
   walkLow: number,
-  effectiveHigh: number
+  effectiveHigh: number,
+  opts?: { slashBassPitch?: number }
 ): void {
+  if (opts?.slashBassPitch !== undefined) return;
   let bestI = -1;
   let bestT = Infinity;
   for (let i = 0; i < m.events.length; i++) {
@@ -178,6 +180,8 @@ export function emitMelodicBassBar(params: {
   guitarActivityHot?: boolean;
   /** Multiplier on 3rd/7th/guide vs root (default 1). */
   guideToneBias?: number;
+  /** Slash-bass target (strong anchor); line roots favour this over chord root when set. */
+  slashBassPitch?: number;
 }): void {
   const {
     m,
@@ -196,31 +200,36 @@ export function emitMelodicBassBar(params: {
     prevBassPitch,
     guitarActivityHot,
     guideToneBias,
+    slashBassPitch,
   } = params;
   const gtBias = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
+  const rootForLine =
+    slashBassPitch !== undefined
+      ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
+      : rootClamped;
 
   const span = 4 - firstStart;
   if (firstStart > 0) {
     addEvent(m, createRest(0, firstStart));
   }
 
-  const ap = approachFromBelow(rootClamped, walkLow, effectiveHigh);
-  const land = seededUnit(seed, bar, 41) < 0.68 ? fifth : rootClamped;
-  const lastLead = seededUnit(seed, bar, 43) < 0.58 ? fifth : rootClamped;
+  const ap = approachFromBelow(rootForLine, walkLow, effectiveHigh);
+  const land = seededUnit(seed, bar, 41) < 0.68 ? fifth : rootForLine;
+  const lastLead = seededUnit(seed, bar, 43) < 0.58 ? fifth : rootForLine;
 
   const biasPieces = (base: Array<{ w: number; pitch: number }>) =>
-    applyGuideToneWeightBias(base, rootClamped, third, seventh, guide, gtBias);
+    applyGuideToneWeightBias(base, rootForLine, third, seventh, guide, gtBias);
 
   const useEcho = section === 'B' && guitarFirstPitchInBar !== undefined;
   let echoPitch =
     guitarFirstPitchInBar !== undefined
       ? echoGuitarToBass(guitarFirstPitchInBar, walkLow, effectiveHigh)
       : guide;
-  if (echoPitch % 12 === rootClamped % 12) {
+  if (echoPitch % 12 === rootForLine % 12) {
     echoPitch = third;
   }
   if (prevBassPitch !== undefined) {
-    echoPitch = pickEchoPitchForLine(prevBassPitch, echoPitch, third, fifth, guide, rootClamped, walkLow, effectiveHigh);
+    echoPitch = pickEchoPitchForLine(prevBassPitch, echoPitch, third, fifth, guide, rootForLine, walkLow, effectiveHigh);
   }
 
   const u = seededUnit(seed, bar, 61);
@@ -229,7 +238,7 @@ export function emitMelodicBassBar(params: {
   if (section === 'cadence') {
     const base = biasPieces([
       { w: bar % 2 === 0 ? 1.25 : 1, pitch: ap },
-      { w: 3, pitch: rootClamped },
+      { w: 3, pitch: rootForLine },
       { w: 5, pitch: guide },
       { w: 4, pitch: land },
     ]);
@@ -275,7 +284,7 @@ export function emitMelodicBassBar(params: {
       base = [
         { w: 2, pitch: fifth },
         { w: 1, pitch: echoPitch },
-        { w: 1, pitch: rootClamped },
+        { w: 1, pitch: rootForLine },
         { w: 2, pitch: guide },
         { w: 2, pitch: land },
       ];
@@ -292,13 +301,13 @@ export function emitMelodicBassBar(params: {
         { w: 1, pitch: lf },
         { w: 1, pitch: fifth },
         { w: 2, pitch: guide },
-        { w: 2, pitch: rootClamped },
+        { w: 2, pitch: rootForLine },
         { w: 2, pitch: land },
       ]);
     } else if (u < 0.72) {
       base = biasPieces([
         { w: bar % 2 === 0 ? 1.2 : 1, pitch: ap },
-        { w: 3, pitch: rootClamped },
+        { w: 3, pitch: rootForLine },
         { w: 2.5, pitch: seventh },
         { w: 1, pitch: third },
         { w: 2.5, pitch: land },
@@ -356,7 +365,7 @@ export function emitMelodicBassBar(params: {
   } else {
     base = biasPieces([
       { w: 2, pitch: guide },
-      { w: 1, pitch: rootClamped },
+      { w: 1, pitch: rootForLine },
       { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
       { w: 1, pitch: lf },
       { w: 3, pitch: land },

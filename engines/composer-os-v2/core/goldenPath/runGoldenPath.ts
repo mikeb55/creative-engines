@@ -35,6 +35,12 @@ import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
 import { scoreJazzDuoBehaviourSoft } from '../score-integrity/jazzDuoBehaviourValidation';
 import { scoreFormIdentitySoft } from './duoFormIdentity';
 import { scoreNarrativeMomentsSoft } from './duoNarrativeMoments';
+import {
+  parseChordProgressionInput,
+  buildHarmonyPlanFromBars,
+  buildChordSymbolPlanFromBars,
+} from '../harmony/chordProgressionParser';
+import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -59,7 +65,27 @@ export interface GoldenPathResult {
   errors: string[];
 }
 
-function buildGoldenPathContext(seed: number): CompositionContext {
+const BUILTIN_HARMONY: import('../primitives/harmonyTypes').HarmonyPlan = {
+  segments: [
+    { chord: 'Dmin9', bars: 2 },
+    { chord: 'G13', bars: 2 },
+    { chord: 'Cmaj9', bars: 2 },
+    { chord: 'A7alt', bars: 2 },
+  ],
+  totalBars: 8,
+};
+
+const BUILTIN_CHORD_SYMBOL_PLAN: CompositionContext['chordSymbolPlan'] = {
+  segments: [
+    { chord: 'Dmin9', startBar: 1, bars: 2 },
+    { chord: 'G13', startBar: 3, bars: 2 },
+    { chord: 'Cmaj9', startBar: 5, bars: 2 },
+    { chord: 'A7alt', startBar: 7, bars: 2 },
+  ],
+  totalBars: 8,
+};
+
+function buildGoldenPathContext(seed: number, parsedChordBars?: string[]): CompositionContext {
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
   const sections = [
@@ -67,25 +93,10 @@ function buildGoldenPathContext(seed: number): CompositionContext {
     { label: 'B', startBar: 5, length: 4 },
   ];
   const form = { sections, totalBars: 8 };
-  const harmony = {
-    segments: [
-      { chord: 'Dmin9', bars: 2 },
-      { chord: 'G13', bars: 2 },
-      { chord: 'Cmaj9', bars: 2 },
-      { chord: 'A7alt', bars: 2 },
-    ],
-    totalBars: 8,
-  };
+  const useCustom = parsedChordBars && parsedChordBars.length === 8;
+  const harmony = useCustom ? buildHarmonyPlanFromBars(parsedChordBars) : BUILTIN_HARMONY;
   const phrase = { segments: sections.map((s) => ({ ...s, density: undefined })), totalBars: 8 };
-  const chordSymbolPlan = {
-    segments: [
-      { chord: 'Dmin9', startBar: 1, bars: 2 },
-      { chord: 'G13', startBar: 3, bars: 2 },
-      { chord: 'Cmaj9', startBar: 5, bars: 2 },
-      { chord: 'A7alt', startBar: 7, bars: 2 },
-    ],
-    totalBars: 8,
-  };
+  const chordSymbolPlan = useCustom ? buildChordSymbolPlanFromBars(parsedChordBars) : BUILTIN_CHORD_SYMBOL_PLAN;
   const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
 
@@ -118,7 +129,11 @@ function buildGoldenPathContext(seed: number): CompositionContext {
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
-    generationMetadata: { generatedAt: new Date().toISOString() },
+    generationMetadata: {
+      generatedAt: new Date().toISOString(),
+      harmonySource: useCustom ? 'custom' : 'builtin',
+      customChordProgressionSummary: useCustom ? parsedChordBars.join(' | ') : undefined,
+    },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
   };
@@ -136,53 +151,36 @@ function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string
   });
 }
 
-const DEFAULT_STYLE_STACK: StyleStack = {
-  primary: 'barry_harris',
-  secondary: 'metheny',
-  colour: 'triad_pairs',
-  weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
-};
-
-export interface RunGoldenPathOptions {
-  styleStack?: StyleStack;
-  presetId?: string;
-  /** User-provided work title; default comes from resolveScoreTitleForPreset */
-  scoreTitle?: string;
-}
-
-/** Offsets tried by the duo lock (requested seed + each offset). */
-export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009] as const;
-
-export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
-  return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
-}
-
-export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
-  const seeds = candidateSeedsForGoldenPath(seed);
-  let best: GoldenPathResult | null = null;
-  let bestSoft = -Infinity;
-  let last: GoldenPathResult | null = null;
-  for (const s of seeds) {
-    const r = runGoldenPathOnce(s, options);
-    last = r;
-    if (r.success) {
-      const soft =
-        scoreJazzDuoBehaviourSoft(r.score) +
-        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
-        scoreNarrativeMomentsSoft(r.score);
-      if (soft > bestSoft) {
-        bestSoft = soft;
-        best = r;
+/** Slash chords must appear at least once in the bass (pitch class). */
+function validateSlashBassHonoured(score: ScoreModel): string[] {
+  const out: string[] = [];
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!bass) return out;
+  for (const m of bass.measures) {
+    const chord = m.chord;
+    if (!chord) continue;
+    const { slashBassPc } = parseChordSymbol(chord);
+    if (slashBassPc === undefined) continue;
+    let hit = false;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      if ((e as { pitch: number }).pitch % 12 === slashBassPc % 12) {
+        hit = true;
+        break;
       }
     }
+    if (!hit) {
+      out.push(`Bar ${m.index}: bass must spell the slash bass pitch for "${chord}".`);
+    }
   }
-  return best ?? last!;
+  return out;
 }
 
-function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
-  const errors: string[] = [];
-
-  const context = buildGoldenPathContext(seed);
+function buildGoldenPathPlans(
+  seed: number,
+  context: CompositionContext,
+  options?: RunGoldenPathOptions
+): GoldenPathPlans {
   const sections = planSectionRoles(context.form.sections, { A: 'statement', B: 'contrast' });
   const densityPlan = planDensityCurve(sections, 8);
   const guitarMap = planGuitarRegisterMap(sections);
@@ -207,7 +205,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
 
   const interactionPlan = planInteraction(sections, 8);
 
-  const plans: GoldenPathPlans = {
+  return {
     sections,
     guitarMap,
     bassMap,
@@ -220,9 +218,120 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     interactionPlan,
     scoreTitle,
   };
+}
+
+function harmonyParseFailureGoldenPathResult(
+  seed: number,
+  options: RunGoldenPathOptions | undefined,
+  message: string
+): GoldenPathResult {
+  const context = buildGoldenPathContext(seed);
+  const plans = buildGoldenPathPlans(seed, context, options);
+  const emptyScore: ScoreModel = {
+    title: plans.scoreTitle,
+    parts: [],
+    timeSignature: { beats: 4, beatType: 4 },
+  };
+  return {
+    success: false,
+    score: emptyScore,
+    context,
+    plans,
+    xml: undefined,
+    integrityPassed: false,
+    behaviourGatesPassed: false,
+    mxValidationPassed: false,
+    strictBarMathPassed: false,
+    exportRoundTripPassed: false,
+    exportIntegrityPassed: false,
+    instrumentMetadataPassed: false,
+    sibeliusSafe: false,
+    readiness: { shareable: false, release: 0, mx: 0 },
+    runManifest: createRunManifest({
+      version: '2.0.0',
+      seed,
+      presetId: options?.presetId ?? 'guitar_bass_duo',
+      scoreTitle: plans.scoreTitle,
+      activeModules: [],
+      feelMode: context.feel.mode,
+      instrumentProfiles: context.instrumentProfiles.map((p) => p.instrumentIdentity),
+      readinessScores: { release: 0, mx: 0 },
+      validationPassed: false,
+      validationErrors: [message],
+      exportTarget: undefined,
+      timestamp: new Date().toISOString(),
+    }),
+    errors: [message],
+  };
+}
+
+const DEFAULT_STYLE_STACK: StyleStack = {
+  primary: 'barry_harris',
+  secondary: 'metheny',
+  colour: 'triad_pairs',
+  weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+};
+
+export interface RunGoldenPathOptions {
+  styleStack?: StyleStack;
+  presetId?: string;
+  /** User-provided work title; default comes from resolveScoreTitleForPreset */
+  scoreTitle?: string;
+  /** Guitar–Bass Duo: `|`-separated chords, 8 bars; parsed before generation */
+  chordProgressionText?: string;
+  /** Filled by runGoldenPath after a successful parse (internal) */
+  parsedChordBars?: string[];
+}
+
+/** Offsets tried by the duo lock (requested seed + each offset). */
+export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009] as const;
+
+export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
+  return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
+}
+
+export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
+  let resolved: RunGoldenPathOptions | undefined = options;
+  if (options?.chordProgressionText?.trim()) {
+    const parsed = parseChordProgressionInput(options.chordProgressionText);
+    if (!parsed.ok) {
+      return harmonyParseFailureGoldenPathResult(seed, options, parsed.error);
+    }
+    resolved = { ...options, parsedChordBars: parsed.bars };
+  }
+  const seeds = candidateSeedsForGoldenPath(seed);
+  let best: GoldenPathResult | null = null;
+  let bestSoft = -Infinity;
+  let last: GoldenPathResult | null = null;
+  for (const s of seeds) {
+    const r = runGoldenPathOnce(s, resolved);
+    last = r;
+    if (r.success) {
+      const soft =
+        scoreJazzDuoBehaviourSoft(r.score) +
+        scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
+        scoreNarrativeMomentsSoft(r.score);
+      if (soft > bestSoft) {
+        bestSoft = soft;
+        best = r;
+      }
+    }
+  }
+  return best ?? last!;
+}
+
+function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
+  const errors: string[] = [];
+
+  const context = buildGoldenPathContext(seed, options?.parsedChordBars);
+  const plans = buildGoldenPathPlans(seed, context, options);
+  const { sections, densityPlan, guitarBehaviour, bassBehaviour, rhythmConstraints, motifState, styleStack, interactionPlan } =
+    plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   const score = generateGoldenPathDuoScore(appliedContext, plans);
+
+  errors.push(...validateSlashBassHonoured(score));
 
   const modelValidation = validateScoreModel(score);
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
@@ -310,6 +419,9 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
   });
+
+  const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
+  const scoreTitle = plans.scoreTitle;
 
   const runManifest = createRunManifest({
     version: '2.0.0',

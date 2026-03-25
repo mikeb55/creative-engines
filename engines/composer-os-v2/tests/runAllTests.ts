@@ -26,6 +26,7 @@ import { runGceEvaluationTests } from './gceEvaluation.test';
 import { runBassIdentityTests } from './bassIdentity.test';
 import { runPhraseAuthorityTests } from './phraseAuthority.test';
 import { runJazzDuoBehaviourTests } from './jazzDuoBehaviour.test';
+import { runChordProgressionTests } from './chordProgression.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -53,6 +54,7 @@ const suites = [
   { name: 'Bass identity', run: runBassIdentityTests },
   { name: 'Phrase authority', run: runPhraseAuthorityTests },
   { name: 'Jazz duo behaviour', run: runJazzDuoBehaviourTests },
+  { name: 'Chord progression', run: runChordProgressionTests },
   ...retroSuites,
 ];
 
