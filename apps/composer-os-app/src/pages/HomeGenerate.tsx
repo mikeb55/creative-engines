@@ -2,6 +2,63 @@ import { useState, useEffect, useCallback } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useStyleModules, STYLE_MODULES_UNAVAILABLE_MSG } from '../hooks/useStyleModules';
 import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';
+import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
+
+const MODE_OPTIONS: { id: string; label: string }[] = [
+  { id: 'guitar_bass_duo', label: 'Guitar–Bass Duo' },
+  { id: 'song_mode', label: 'Song Mode' },
+  { id: 'ecm_chamber', label: 'ECM Chamber' },
+  { id: 'big_band', label: 'Big Band' },
+  { id: 'string_quartet', label: 'Quartet' },
+];
+
+const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
+  { id: 'bacharach', label: 'Bacharach' },
+  { id: 'beatles', label: 'Beatles' },
+  { id: 'stevie_wonder', label: 'Stevie Wonder' },
+  { id: 'joni_mitchell', label: 'Joni Mitchell' },
+  { id: 'donald_fagen', label: 'Donald Fagen' },
+  { id: 'paul_simon', label: 'Paul Simon' },
+  { id: 'carole_king', label: 'Carole King' },
+];
+
+const ARRANGER_OPTIONS: { id: string; label: string }[] = [
+  { id: 'ellington', label: 'Duke Ellington' },
+  { id: 'basie', label: 'Count Basie' },
+  { id: 'thad', label: 'Thad Jones' },
+  { id: 'schneider', label: 'Maria Schneider' },
+];
+
+const ERA_OPTIONS: { id: string; label: string }[] = [
+  { id: 'swing', label: 'Swing' },
+  { id: 'bebop', label: 'Bebop' },
+  { id: 'post_bop', label: 'Post-bop' },
+  { id: 'contemporary', label: 'Contemporary' },
+];
+
+const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
+  { id: 'full_band', label: 'Full' },
+  { id: 'medium_band', label: 'Medium' },
+  { id: 'small_band', label: 'Small' },
+  { id: 'reeds_only', label: 'Reeds' },
+  { id: 'brass_only', label: 'Brass' },
+  { id: 'custom', label: 'Custom' },
+];
+
+function modeLabelForPreset(id: string): string {
+  return MODE_OPTIONS.find((m) => m.id === id)?.label ?? id;
+}
+
+function nextVariationIdToken(current: string): string {
+  const t = current.trim();
+  const m = /^v-(\d+)$/.exec(t);
+  if (m) return `v-${Number(m[1]) + 1}`;
+  return `v-${Date.now().toString(36)}`;
+}
+
+function newVariationIdToken(): string {
+  return `v-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
+}
 
 type GenResult = {
   success?: boolean;
@@ -32,8 +89,29 @@ type GenResult = {
     activeModules?: string[];
     timestamp?: string;
     scoreTitle?: string;
+    variationId?: string;
+    creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+    experimentalCreativeLabel?: string;
   };
   scoreTitle?: string;
+  requestEcho?: {
+    tonalCenter?: string;
+    bpm?: number;
+    totalBars?: number;
+    variationId?: string;
+    creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+    stylePairing?: { songwriterStyle: string; arrangerStyle: string; era?: string };
+    ensembleConfigId?: string;
+    primarySongwriterStyle?: string;
+  };
+  stylePairingReceipt?: {
+    summary: string;
+    confidenceScore: number;
+    experimentalFlag: boolean;
+    songwriterStyle: string;
+    arrangerStyle: string;
+    era: string | null;
+  };
 };
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
@@ -59,13 +137,23 @@ export function HomeGenerate({
   const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
     'ECM_METHENY_QUARTET'
   );
-  /** Hidden variation value sent to the engine (not shown as a raw number). */
-  const [variationSeed, setVariationSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  /** Legacy numeric seed when `variationId` is empty; otherwise echoed for receipts. */
+  const [baseSeed, setBaseSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  const [variationId, setVariationId] = useState('v-1');
+  const [tonalCenter, setTonalCenter] = useState('');
+  const [bpm, setBpm] = useState(120);
+  const [totalBars, setTotalBars] = useState(32);
+  const [creativeControlLevel, setCreativeControlLevel] = useState<
+    'stable' | 'balanced' | 'surprise'
+  >('stable');
+  const [songwriterStyle, setSongwriterStyle] = useState('beatles');
+  const [arrangerStyle, setArrangerStyle] = useState('ellington');
+  const [era, setEra] = useState('post_bop');
+  const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   /** Optional work title for MusicXML / score (default comes from the engine when empty). */
   const [scoreTitle, setScoreTitle] = useState('');
   const [harmonyMode, setHarmonyMode] = useState<'builtin' | 'custom'>('builtin');
   const [chordProgressionText, setChordProgressionText] = useState('');
-  const [presets, setPresets] = useState<{ id: string; name: string; supported: boolean }[]>([]);
   const [styleStack, setStyleStack] = useState({
     primary: 'barry_harris',
     secondary: '' as string,
@@ -91,7 +179,6 @@ export function HomeGenerate({
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
 
   useEffect(() => {
-    api.getPresets().then((r) => setPresets(r.presets)).catch(() => {});
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   }, []);
 
@@ -104,19 +191,37 @@ export function HomeGenerate({
   const needsScoreStyle =
     presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber';
 
+  const showStylePairing = presetId === 'song_mode' || presetId === 'big_band';
+  const showEnsemble = presetId === 'big_band';
+
   const generate = useCallback(
-    async (seedOverride?: number) => {
+    async (opts?: { seedOverride?: number; variationOverride?: string }) => {
       if (needsScoreStyle && (modulesError || modules.length === 0)) {
         setError(STYLE_MODULES_UNAVAILABLE_MSG);
         return;
       }
-      const seed = seedOverride ?? variationSeed;
+      const seed = opts?.seedOverride ?? baseSeed;
+      const vid = opts?.variationOverride ?? variationId;
       setLoading(true);
       setError(null);
       notifyGenPhase('running');
       try {
-        const r = (await api.generate({
+        const coreFields = mapCoreUiToGenerationFields({
           presetId,
+          seed,
+          tonalCenter,
+          bpm,
+          totalBars,
+          variationId: vid,
+          creativeControlLevel,
+          stylePairing: showStylePairing
+            ? { songwriterStyle: songwriterStyle, arrangerStyle: arrangerStyle, era }
+            : undefined,
+          ensembleConfigId: showEnsemble ? ensembleConfigId : undefined,
+          primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
+        });
+        const r = (await api.generate({
+          ...coreFields,
           styleStack: needsScoreStyle
             ? {
                 primary: styleStack.primary,
@@ -128,7 +233,6 @@ export function HomeGenerate({
                 primary: 'barry_harris',
                 styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
               },
-          seed,
           locks: needsScoreStyle ? locks : undefined,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'guitar_bass_duo'
@@ -170,7 +274,16 @@ export function HomeGenerate({
       }
     },
     [
-      variationSeed,
+      baseSeed,
+      variationId,
+      tonalCenter,
+      bpm,
+      totalBars,
+      creativeControlLevel,
+      songwriterStyle,
+      arrangerStyle,
+      era,
+      ensembleConfigId,
       presetId,
       styleStack.primary,
       styleStack.secondary,
@@ -179,6 +292,8 @@ export function HomeGenerate({
       locks,
       scoreTitle,
       needsScoreStyle,
+      showStylePairing,
+      showEnsemble,
       modulesError,
       modules.length,
       onResult,
@@ -282,13 +397,12 @@ export function HomeGenerate({
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Preset
+          Mode
         </label>
         <select value={presetId} onChange={(e) => setPresetId(e.target.value)}>
-          {presets.map((p) => (
-            <option key={p.id} value={p.id} disabled={!p.supported}>
-              {p.name}
-              {!p.supported ? ' (coming soon)' : ''}
+          {MODE_OPTIONS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
             </option>
           ))}
         </select>
@@ -327,15 +441,16 @@ export function HomeGenerate({
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Seed
+          Key / tonal centre
         </label>
         <input
-          type="number"
-          value={variationSeed}
-          onChange={(e) => setVariationSeed(parseInt(e.target.value, 10) || 0)}
+          type="text"
+          value={tonalCenter}
+          onChange={(e) => setTonalCenter(e.target.value)}
+          placeholder="e.g. C major, F#m"
           disabled={loading}
           style={{
-            maxWidth: 220,
+            maxWidth: 320,
             padding: '0.45rem 0.6rem',
             borderRadius: 6,
             border: '1px solid var(--border)',
@@ -344,6 +459,194 @@ export function HomeGenerate({
           }}
         />
       </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Tempo (BPM)
+          </label>
+          <input
+            type="number"
+            min={20}
+            max={400}
+            value={bpm}
+            onChange={(e) => setBpm(parseInt(e.target.value, 10) || 0)}
+            disabled={loading}
+            style={{
+              width: 120,
+              padding: '0.45rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-input, var(--bg))',
+              color: 'var(--text)',
+            }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Bars
+          </label>
+          <input
+            type="number"
+            min={8}
+            max={512}
+            value={totalBars}
+            onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 0)}
+            disabled={loading}
+            style={{
+              width: 120,
+              padding: '0.45rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-input, var(--bg))',
+              color: 'var(--text)',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Variation
+        </label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+          <code
+            style={{
+              fontSize: '0.95rem',
+              padding: '0.35rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-panel)',
+            }}
+          >
+            {variationId.trim() || '(none)'}
+          </code>
+          <button
+            type="button"
+            className="secondary"
+            disabled={loading}
+            onClick={() => {
+              const next = newVariationIdToken();
+              setVariationId(next);
+              setBaseSeed(Math.floor(Math.random() * 1e9));
+            }}
+          >
+            New Variation
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            disabled={loading}
+            onClick={() => setVariationId((v) => nextVariationIdToken(v))}
+          >
+            Next Variation
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
+          Stability
+        </span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
+          <input
+            type="radio"
+            name="stability"
+            checked={creativeControlLevel === 'stable'}
+            onChange={() => setCreativeControlLevel('stable')}
+          />
+          Stable
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
+          <input
+            type="radio"
+            name="stability"
+            checked={creativeControlLevel === 'balanced'}
+            onChange={() => setCreativeControlLevel('balanced')}
+          />
+          Balanced
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+          <input
+            type="radio"
+            name="stability"
+            checked={creativeControlLevel === 'surprise'}
+            onChange={() => setCreativeControlLevel('surprise')}
+          />
+          Surprise
+        </label>
+      </div>
+
+      {showEnsemble && (
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Big Band ensemble
+          </label>
+          <select
+            value={ensembleConfigId}
+            onChange={(e) => setEnsembleConfigId(e.target.value)}
+            disabled={loading}
+          >
+            {ENSEMBLE_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {showStylePairing && (
+        <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+          <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Style pairing
+          </span>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Songwriter
+            </label>
+            <select
+              value={songwriterStyle}
+              onChange={(e) => setSongwriterStyle(e.target.value)}
+              disabled={loading}
+            >
+              {SONGWRITER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Arranger
+            </label>
+            <select
+              value={arrangerStyle}
+              onChange={(e) => setArrangerStyle(e.target.value)}
+              disabled={loading}
+            >
+              {ARRANGER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Era
+            </label>
+            <select value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
+              {ERA_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {presetId === 'ecm_chamber' && (
         <div style={{ marginBottom: '1rem' }}>
@@ -511,7 +814,8 @@ export function HomeGenerate({
       </div>
 
       <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: 520 }}>
-        <strong style={{ color: 'var(--text)' }}>Try Another</strong> picks a new variation and runs generation immediately.
+        <strong style={{ color: 'var(--text)' }}>New Variation</strong> assigns a fresh variation id;{' '}
+        <strong style={{ color: 'var(--text)' }}>Next Variation</strong> steps the id (then use Generate).
       </p>
 
       {needsScoreStyle && (
@@ -544,9 +848,10 @@ export function HomeGenerate({
           type="button"
           disabled={loading || (needsScoreStyle && (!!modulesError || modules.length === 0))}
           onClick={() => {
-            const next = Math.floor(Math.random() * 1e9);
-            setVariationSeed(next);
-            void generate(next);
+            const next = newVariationIdToken();
+            setVariationId(next);
+            setBaseSeed(Math.floor(Math.random() * 1e9));
+            void generate({ variationOverride: next });
           }}
         >
           Try Another
@@ -556,8 +861,9 @@ export function HomeGenerate({
           type="button"
           disabled={loading || (needsScoreStyle && (!!modulesError || modules.length === 0))}
           onClick={() => {
-            setVariationSeed(42);
-            void generate(42);
+            setBaseSeed(42);
+            setVariationId('demo-42');
+            void generate({ seedOverride: 42, variationOverride: 'demo-42' });
           }}
         >
           Demo (seed 42)
@@ -634,7 +940,50 @@ export function HomeGenerate({
               )}
               {rm?.presetId && (
                 <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Preset:</span> {rm.presetId}
+                  <span style={{ color: 'var(--text-muted)' }}>Mode:</span>{' '}
+                  {modeLabelForPreset(rm.presetId)}
+                </p>
+              )}
+              {(result.requestEcho?.variationId ?? rm?.variationId) != null &&
+                (result.requestEcho?.variationId ?? rm?.variationId) !== '' && (
+                  <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Variation id:</span>{' '}
+                    {result.requestEcho?.variationId ?? rm?.variationId}
+                  </p>
+                )}
+              {result.requestEcho?.stylePairing && !result.stylePairingReceipt && (
+                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Style pairing:</span>{' '}
+                  {result.requestEcho.stylePairing.songwriterStyle} ×{' '}
+                  {result.requestEcho.stylePairing.arrangerStyle}
+                  {result.requestEcho.stylePairing.era
+                    ? ` · ${result.requestEcho.stylePairing.era}`
+                    : ''}
+                </p>
+              )}
+              {result.stylePairingReceipt && (
+                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Style pairing:</span> {result.stylePairingReceipt.summary}
+                </p>
+              )}
+              {(result.stylePairingReceipt?.experimentalFlag ||
+                rm?.experimentalCreativeLabel) && (
+                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Experimental:</span>{' '}
+                  {result.stylePairingReceipt?.experimentalFlag
+                    ? 'yes (unusual pairing)'
+                    : (rm?.experimentalCreativeLabel ?? '—')}
+                </p>
+              )}
+              {(result.stylePairingReceipt?.confidenceScore != null ||
+                v?.readiness?.mx != null) && (
+                <p style={{ fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Confidence / readiness:</span>{' '}
+                  {result.stylePairingReceipt?.confidenceScore != null
+                    ? `pairing ${result.stylePairingReceipt.confidenceScore.toFixed(2)}`
+                    : ''}
+                  {result.stylePairingReceipt?.confidenceScore != null && v?.readiness?.mx != null ? ' · ' : ''}
+                  {v?.readiness?.mx != null ? `MX readiness ${v.readiness.mx}` : ''}
                 </p>
               )}
               {presetId === 'guitar_bass_duo' &&

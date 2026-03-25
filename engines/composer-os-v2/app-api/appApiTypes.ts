@@ -80,6 +80,22 @@ export interface GenerateRequest {
   variationId?: string;
   /** Default `stable` — identical to raw seed resolution; other tiers nudge seed only (form unchanged). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  /** Tonal centre / key hint (UI; echoed in artifacts — engines may ignore until wired). */
+  tonalCenter?: string;
+  /** Tempo BPM (UI; echoed in artifacts). */
+  bpm?: number;
+  /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). */
+  totalBars?: number;
+  /** Dual style pairing (songwriter vs arranger) — `song_mode` / `big_band`. */
+  stylePairing?: {
+    songwriterStyle: string;
+    arrangerStyle: string;
+    era?: string;
+  };
+  /** Big band horn footprint — `big_band` only. */
+  ensembleConfigId?: 'full_band' | 'medium_band' | 'small_band' | 'reeds_only' | 'brass_only' | 'custom';
+  /** Song Mode primary songwriter id (e.g. `beatles`). */
+  primarySongwriterStyle?: string;
 }
 
 export interface ValidationSummary {

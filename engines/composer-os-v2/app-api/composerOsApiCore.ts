@@ -61,6 +61,41 @@ export function apiGenerate(
         body.ecmMode === 'ECM_METHENY_QUARTET' || body.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
           ? body.ecmMode
           : undefined,
+      variationId: typeof body.variationId === 'string' ? body.variationId : undefined,
+      creativeControlLevel:
+        body.creativeControlLevel === 'stable' ||
+        body.creativeControlLevel === 'balanced' ||
+        body.creativeControlLevel === 'surprise'
+          ? body.creativeControlLevel
+          : undefined,
+      tonalCenter: typeof body.tonalCenter === 'string' ? body.tonalCenter : undefined,
+      bpm: typeof body.bpm === 'number' && Number.isFinite(body.bpm) ? body.bpm : undefined,
+      totalBars: typeof body.totalBars === 'number' && Number.isFinite(body.totalBars) ? body.totalBars : undefined,
+      primarySongwriterStyle:
+        typeof body.primarySongwriterStyle === 'string' ? body.primarySongwriterStyle : undefined,
+      ensembleConfigId:
+        body.ensembleConfigId === 'full_band' ||
+        body.ensembleConfigId === 'medium_band' ||
+        body.ensembleConfigId === 'small_band' ||
+        body.ensembleConfigId === 'reeds_only' ||
+        body.ensembleConfigId === 'brass_only' ||
+        body.ensembleConfigId === 'custom'
+          ? body.ensembleConfigId
+          : undefined,
+      stylePairing:
+        body.stylePairing &&
+        typeof body.stylePairing === 'object' &&
+        typeof (body.stylePairing as { songwriterStyle?: unknown }).songwriterStyle === 'string' &&
+        typeof (body.stylePairing as { arrangerStyle?: unknown }).arrangerStyle === 'string'
+          ? {
+              songwriterStyle: (body.stylePairing as { songwriterStyle: string }).songwriterStyle,
+              arrangerStyle: (body.stylePairing as { arrangerStyle: string }).arrangerStyle,
+              era:
+                typeof (body.stylePairing as { era?: unknown }).era === 'string'
+                  ? (body.stylePairing as { era: string }).era
+                  : undefined,
+            }
+          : undefined,
     };
     const presetDir = ensureOutputDirectoryForPreset(req_.presetId);
     return runAppGeneration(req_, presetDir);

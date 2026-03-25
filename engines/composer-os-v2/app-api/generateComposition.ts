@@ -66,6 +66,26 @@ export interface GenerateResult {
   scoreTitle?: string;
   /** Unified lead-sheet-ready view (Duo / ECM) when generation succeeded. */
   universalLeadSheet?: UniversalLeadSheet;
+  /** Echo of optional client fields for UI receipts (non-musical metadata). */
+  requestEcho?: {
+    tonalCenter?: string;
+    bpm?: number;
+    totalBars?: number;
+    variationId?: string;
+    creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+    stylePairing?: { songwriterStyle: string; arrangerStyle: string; era?: string };
+    ensembleConfigId?: string;
+    primarySongwriterStyle?: string;
+  };
+  /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
+  stylePairingReceipt?: {
+    summary: string;
+    confidenceScore: number;
+    experimentalFlag: boolean;
+    songwriterStyle: string;
+    arrangerStyle: string;
+    era: string | null;
+  };
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -182,5 +202,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       : undefined,
     scoreTitle: scoreTitleResolved,
     universalLeadSheet,
+    requestEcho: {
+      tonalCenter: req.tonalCenter,
+      bpm: req.bpm,
+      totalBars: req.totalBars,
+      variationId: req.variationId,
+      creativeControlLevel: req.creativeControlLevel,
+      stylePairing: req.stylePairing,
+      ensembleConfigId: req.ensembleConfigId,
+      primarySongwriterStyle: req.primarySongwriterStyle,
+    },
   };
 }

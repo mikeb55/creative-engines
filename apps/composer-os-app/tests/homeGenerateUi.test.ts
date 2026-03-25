@@ -17,20 +17,19 @@ describe('HomeGenerate musical UI', () => {
     expect(src).toMatch(/modules\.map\(\(m\)\s*=>\s*m\.name\)/);
   });
 
-  it('does not expose numeric weight inputs', () => {
+  it('does not expose numeric weight inputs (BPM/bars number fields are allowed)', () => {
     expect(src).not.toMatch(/Weights \(primary/);
-    expect(src).not.toMatch(/type="number"/);
   });
 
   it('has Try Another control', () => {
     expect(src).toMatch(/>[\s\n]*Try Another[\s\n]*</);
   });
 
-  it('Try Another rolls seed and calls generate with override (same pipeline as Generate)', () => {
-    expect(src).toContain('setVariationSeed(next)');
-    expect(src).toContain('void generate(next)');
-    expect(src).toMatch(/async \(seedOverride\?: number\)/);
-    expect(src).toMatch(/seedOverride \?\? variationSeed/);
+  it('Try Another rolls variation and calls generate with override (same pipeline as Generate)', () => {
+    expect(src).toContain('setVariationId(next)');
+    expect(src).toContain('void generate({ variationOverride: next })');
+    expect(src).toMatch(/async \(opts\?: \{ seedOverride\?: number; variationOverride\?: string \}\)/);
+    expect(src).toContain('opts?.variationOverride ?? variationId');
   });
 
   it('has optional score title field', () => {
