@@ -5,12 +5,14 @@
 import type { AppLocks, AppStyleStack, EcmChamberMode } from '../../app-api/appApiTypes';
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import type { NamedPresetId } from '../presets-plus/namedPresetTypes';
+import type { ImportSourceKind } from '../reference-import/importSourceTypes';
+import type { ReferenceInfluenceMode, ReferenceInfluenceStrength } from '../reference-import/referenceReuseTypes';
 
 /** Bump when adding optional session fields (loaders accept prior versions). */
-export const SESSION_FORMAT_VERSION = 2 as const;
+export const SESSION_FORMAT_VERSION = 3 as const;
 
 /** Supported on-disk format versions (older files remain loadable). */
-export const SESSION_FORMAT_VERSIONS_SUPPORTED = [1, 2] as const;
+export const SESSION_FORMAT_VERSIONS_SUPPORTED = [1, 2, 3] as const;
 
 export type SessionFormatVersion = (typeof SESSION_FORMAT_VERSIONS_SUPPORTED)[number];
 
@@ -41,4 +43,10 @@ export interface ComposerSessionV1 {
   continuationSourceRef?: string;
   /** Last mode label for quick restore (may mirror presetId). */
   lastModeLabel?: string;
+  /** Reference / import intelligence (optional). */
+  referenceSourceKind?: ImportSourceKind;
+  /** Short summary of extracted reference behaviour (for UI). */
+  referenceBehaviourSummary?: string;
+  referenceInfluenceMode?: ReferenceInfluenceMode;
+  referenceInfluenceStrength?: ReferenceInfluenceStrength;
 }

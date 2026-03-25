@@ -51,6 +51,11 @@ import { runContinuationPlannerTests } from './continuationPlanner.test';
 import { runSectionRegeneratorTests } from './sectionRegenerator.test';
 import { runStyleStackPresetLibraryTests } from './styleStackPresetLibrary.test';
 import { runHumanisationToggleTests } from './humanisationToggle.test';
+import { runReferenceImportTypesTests } from './referenceImportTypes.test';
+import { runMusicXmlReferenceParserTests } from './musicXmlReferenceParser.test';
+import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.test';
+import { runReferenceBehaviourExtractionTests } from './referenceBehaviourExtraction.test';
+import { runReferenceReuseAdapterTests } from './referenceReuseAdapter.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
 import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
@@ -125,6 +130,11 @@ const suites = [
   { name: 'Section regenerator', run: runSectionRegeneratorTests },
   { name: 'Style stack preset library', run: runStyleStackPresetLibraryTests },
   { name: 'Humanisation toggle', run: runHumanisationToggleTests },
+  { name: 'Reference import types', run: runReferenceImportTypesTests },
+  { name: 'MusicXML reference parser', run: runMusicXmlReferenceParserTests },
+  { name: 'Lead sheet reference parser', run: runLeadSheetReferenceParserTests },
+  { name: 'Reference behaviour extraction', run: runReferenceBehaviourExtractionTests },
+  { name: 'Reference reuse adapter', run: runReferenceReuseAdapterTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
   { name: 'Orchestration core', run: runOrchestrationCoreTests },
   { name: 'Orchestration planner', run: runOrchestrationPlannerTests },

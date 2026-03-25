@@ -40,6 +40,13 @@ export interface RunManifest {
   stringQuartetOrchestrationReady?: boolean;
   /** Optional: String Quartet planning modules (e.g. string_quartet_plan). */
   stringQuartetModuleIds?: string[];
+  /** Optional: reference import source when a behaviour profile was used as influence. */
+  referenceSourceKind?: string;
+  /** Optional: one-line summary of reference behaviour (not raw score). */
+  referenceBehaviourSummary?: string;
+  /** Optional: how reference influence was applied (metadata). */
+  referenceInfluenceMode?: string;
+  referenceInfluenceStrength?: string;
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: {

@@ -1,5 +1,12 @@
 # Composer OS Changelog
 
+## Prompt A/3 — Reference / import intelligence (Phase 1)
+
+- **`core/reference-import/`** — Types (`referencePieceTypes`, `importSourceTypes`, `behaviourExtractionTypes`, `referenceReuseTypes`); validation; **MusicXML** (first-part, regex-light), **MIDI** (SMF note-on extraction), **lead-sheet text** (via `chord-input`), **internal** adapter from `CompositionContext`; **`extractReferenceBehaviour`** + per-dimension extractors; **`applyReferenceInfluence`** (metadata hints per target mode — not cloning).
+- **Sessions** — format **v3** supported; optional **`referenceSourceKind`**, **`referenceBehaviourSummary`**, **`referenceInfluenceMode`**, **`referenceInfluenceStrength`**.
+- **Run manifest** — optional **`referenceSourceKind`**, **`referenceBehaviourSummary`**, **`referenceInfluenceMode`**, **`referenceInfluenceStrength`** on `RunManifest` / `createRunManifest`.
+- **Tests** — `referenceImportTypes`, `musicXmlReferenceParser`, `leadSheetReferenceParser`, `referenceBehaviourExtraction`, `referenceReuseAdapter`; session v3 round-trip.
+
 ## Easy wins + workflow power pack (V3.0 usability)
 
 - **`core/presets-plus/`** — Added **`songwriter_modern`**, **`chamber_development`**; optional **`densityBias`** on definitions; library now **10** named presets.

@@ -86,5 +86,23 @@ export function runSessionStoreTests(): { ok: boolean; name: string }[] {
     name: 'session v2 round-trips project memory fields',
   });
 
+  const v3path = path.join(dir, 'session-v3.json');
+  saveSessionFile(v3path, {
+    formatVersion: SESSION_FORMAT_VERSION,
+    savedAt: new Date().toISOString(),
+    presetId: 'ecm_chamber',
+    seed: 9,
+    styleStack: { primary: 'metheny' },
+    referenceSourceKind: 'musicxml',
+    referenceBehaviourSummary: 'sectional / medium',
+    referenceInfluenceMode: 'hint_only',
+    referenceInfluenceStrength: 'subtle',
+  });
+  const lv3 = loadSessionFile(v3path);
+  out.push({
+    ok: lv3.ok && lv3.session?.referenceSourceKind === 'musicxml' && lv3.session?.referenceInfluenceMode === 'hint_only',
+    name: 'session v3 round-trips reference metadata',
+  });
+
   return out;
 }

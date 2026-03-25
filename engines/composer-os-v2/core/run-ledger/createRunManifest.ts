@@ -26,6 +26,10 @@ export interface CreateRunManifestInput {
   stringQuartetFormSequence?: string[];
   stringQuartetOrchestrationReady?: boolean;
   stringQuartetModuleIds?: string[];
+  referenceSourceKind?: string;
+  referenceBehaviourSummary?: string;
+  referenceInfluenceMode?: string;
+  referenceInfluenceStrength?: string;
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: { release: number; mx: number };
@@ -58,6 +62,10 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     stringQuartetFormSequence: input.stringQuartetFormSequence,
     stringQuartetOrchestrationReady: input.stringQuartetOrchestrationReady,
     stringQuartetModuleIds: input.stringQuartetModuleIds,
+    referenceSourceKind: input.referenceSourceKind,
+    referenceBehaviourSummary: input.referenceBehaviourSummary,
+    referenceInfluenceMode: input.referenceInfluenceMode,
+    referenceInfluenceStrength: input.referenceInfluenceStrength,
     feelMode: input.feelMode,
     instrumentProfiles: input.instrumentProfiles,
     readinessScores: input.readinessScores,
