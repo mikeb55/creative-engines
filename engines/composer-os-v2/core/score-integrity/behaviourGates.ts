@@ -3,7 +3,7 @@
  */
 
 import type { SectionWithRole } from '../section-roles/sectionRoleTypes';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { GuitarBehaviourPlan, BassBehaviourPlan } from '../instrument-behaviours/behaviourTypes';
 import { validateGuitarBehaviour, validateBassBehaviour } from '../instrument-behaviours/behaviourValidation';
 import { validateRhythmBehaviour } from '../rhythm-engine/rhythmBehaviourValidation';
@@ -93,6 +93,64 @@ export interface BehaviourGatesResult {
   registerSeparationValid: boolean;
   allValid: boolean;
   errors: string[];
+}
+
+/** ECM: reject mechanical loops — identical guitar rhythm or contour for >2 consecutive bars. */
+function validateEcmAntiLoop(score: ScoreModel): { valid: boolean; errors: string[] } {
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!guitar) return { valid: true, errors: [] };
+  const errors: string[] = [];
+  const rhythmSig = (m: MeasureModel): string =>
+    [...m.events]
+      .filter((e) => e.kind === 'note')
+      .sort(
+        (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+      )
+      .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
+      .join('|');
+  const contourSig = (m: MeasureModel): string => {
+    const notes = [...m.events]
+      .filter((e) => e.kind === 'note')
+      .sort(
+        (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+      ) as { pitch: number }[];
+    if (notes.length === 0) return 'rest';
+    if (notes.length === 1) return `P${notes[0].pitch % 12}`;
+    return notes
+      .slice(1)
+      .map((n, i) => n.pitch - notes[i].pitch)
+      .join(',');
+  };
+  const sorted = [...guitar.measures].sort((a, b) => a.index - b.index);
+  let prevRh = '';
+  let prevCo = '';
+  let runRh = 0;
+  let runCo = 0;
+  let maxRh = 0;
+  let maxCo = 0;
+  for (const m of sorted) {
+    const rh = rhythmSig(m);
+    const co = contourSig(m);
+    if (rh === prevRh) runRh++;
+    else {
+      runRh = 1;
+      prevRh = rh;
+    }
+    if (co === prevCo) runCo++;
+    else {
+      runCo = 1;
+      prevCo = co;
+    }
+    maxRh = Math.max(maxRh, runRh);
+    maxCo = Math.max(maxCo, runCo);
+  }
+  if (maxRh > 2) {
+    errors.push('ECM anti-loop: guitar rhythm repeats for more than two consecutive bars');
+  }
+  if (maxCo > 2) {
+    errors.push('ECM anti-loop: guitar pitch contour repeats for more than two consecutive bars');
+  }
+  return { valid: errors.length === 0, errors };
 }
 
 function validateStyleBlendIntegrity(stack: StyleStack): { valid: boolean; errors: string[] } {
@@ -195,6 +253,11 @@ export function runBehaviourGates(
   const jazzDuoBehaviour = validateJazzDuoBehaviourRules(score);
   if (!jazzDuoBehaviour.valid) errors.push(...jazzDuoBehaviour.errors);
   const jazzDuoBehaviourValid = jazzDuoBehaviour.valid;
+
+  if (opts?.presetId === 'ecm_chamber') {
+    const ecmLoop = validateEcmAntiLoop(score);
+    if (!ecmLoop.valid) errors.push(...ecmLoop.errors);
+  }
 
   let interactionValid = true;
   let registerSeparationValid = true;

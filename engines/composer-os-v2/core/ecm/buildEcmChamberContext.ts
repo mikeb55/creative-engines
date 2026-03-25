@@ -2,6 +2,7 @@
  * ECM Chamber — composition context from research-aligned heuristics (see user research:
  * Perplexity Research / ECM_Bacharach_BarryHarris_Research.md — Part 3 Metheny/ECM: modality,
  * floating time, texture). Extended form (24 bars default): A / B / A′ harmonic rotations.
+ * Per–8-bar-cycle substitutions preserve function while avoiding identical repetition across cycles.
  */
 import type { CompositionContext } from '../compositionContext';
 import type { HarmonyPlan } from '../primitives/harmonyTypes';
@@ -13,34 +14,83 @@ import type { EcmChamberMode, EcmGenerationMetrics } from './ecmChamberTypes';
 /** Default ECM form length (4/4). */
 export const ECM_DEFAULT_TOTAL_BARS = 24;
 
-/** Metheny: three rotated 8-bar modal cycles — no 8-bar block identical to the first. */
-const HARMONY_METHEENY: HarmonyPlan = {
-  segments: [
-    { chord: 'Emin9', bars: 2 },
-    { chord: 'A7sus4', bars: 2 },
-    { chord: 'Dmaj7', bars: 2 },
-    { chord: 'Gmaj7', bars: 2 },
-    { chord: 'Dmaj7', bars: 2 },
-    { chord: 'Gmaj7', bars: 2 },
-    { chord: 'Emin9', bars: 2 },
-    { chord: 'A7sus4', bars: 2 },
-    { chord: 'Gmaj7', bars: 2 },
-    { chord: 'Emin9', bars: 2 },
-    { chord: 'A7sus4', bars: 2 },
-    { chord: 'Dmaj7', bars: 2 },
-  ],
-  totalBars: ECM_DEFAULT_TOTAL_BARS,
-};
+export interface BuildEcmChamberContextOpts {
+  /** When set (e.g. 32 for regression), harmony and form extend; default remains 24. */
+  totalBars?: number;
+}
 
-/** Schneider: slow centres across 24 bars — third area new colour, suspended flavour. */
-const HARMONY_SCHNEIDER: HarmonyPlan = {
-  segments: [
-    { chord: 'Cmaj7', bars: 8 },
-    { chord: 'Amin9', bars: 8 },
-    { chord: 'Fmaj7', bars: 8 },
-  ],
-  totalBars: ECM_DEFAULT_TOTAL_BARS,
-};
+/** Metheny: canonical 8-bar modal unit (first rotation). */
+const METHENY_EIGHT_BAR_BASE: { chord: string; bars: number }[] = [
+  { chord: 'Emin9', bars: 2 },
+  { chord: 'A7sus4', bars: 2 },
+  { chord: 'Dmaj7', bars: 2 },
+  { chord: 'Gmaj7', bars: 2 },
+];
+
+/** One 8-bar Metheny cycle — subtle functional substitutions so cycles are not identical. */
+function methenyEightBarCycle(cycleIndex: number, seed: number): { chord: string; bars: number }[] {
+  const c = cycleIndex % 3;
+  const r = (seed + cycleIndex * 31 + cycleIndex * cycleIndex) % 11;
+  if (c === 0) {
+    return METHENY_EIGHT_BAR_BASE.map((s) => ({ ...s }));
+  }
+  if (c === 1) {
+    return [
+      { chord: r < 5 ? 'Emin7' : 'Emin9', bars: 2 },
+      { chord: 'A7sus4', bars: 2 },
+      { chord: r < 6 ? 'Dmaj9' : 'Dmaj7', bars: 2 },
+      { chord: 'Gmaj9', bars: 2 },
+    ];
+  }
+  return [
+    { chord: 'Emin9', bars: 2 },
+    { chord: 'A7sus4', bars: 2 },
+    { chord: r < 5 ? 'Dmaj7/A' : 'Dmaj7', bars: 2 },
+    { chord: 'Gmaj7', bars: 2 },
+  ];
+}
+
+function buildMethenyHarmony(totalBars: number, seed: number): HarmonyPlan {
+  const segments: HarmonyPlan['segments'] = [];
+  let written = 0;
+  let cycle = 0;
+  while (written < totalBars) {
+    const unit = methenyEightBarCycle(cycle, seed);
+    for (const s of unit) {
+      if (written >= totalBars) break;
+      const take = Math.min(s.bars, totalBars - written);
+      segments.push({ chord: s.chord, bars: take });
+      written += take;
+    }
+    cycle++;
+  }
+  return { segments, totalBars };
+}
+
+/** Schneider: three areas — per-block colour shifts (same broad identity). */
+function buildSchneiderHarmony(totalBars: number, seed: number): HarmonyPlan {
+  const third = Math.floor(totalBars / 3);
+  const a = third;
+  const b = third;
+  const c = totalBars - a - b;
+  const u0 = Math.sin(seed * 11.7 + 2) * 10000;
+  const u0f = u0 - Math.floor(u0);
+  const u2 = Math.sin(seed * 9.2 + 5) * 10000;
+  const u2f = u2 - Math.floor(u2);
+
+  const blockA = u0f < 0.34 ? 'Cmaj9' : u0f < 0.67 ? 'Cmaj7' : 'Cmaj7';
+  const blockB = 'Amin9';
+  const blockC = u2f < 0.55 ? 'Fmaj7' : 'Fmaj7#11';
+
+  return {
+    segments: [
+      { chord: blockA, bars: a },
+      { chord: blockB, bars: b },
+      { chord: blockC, bars: c },
+    ],
+    totalBars,
+  };
+}
 
 function chordPlanFromHarmony(h: HarmonyPlan): CompositionContext['chordSymbolPlan'] {
   let bar = 1;
@@ -172,10 +222,17 @@ function buildEcmMetrics(mode: EcmChamberMode, totalBars: number): EcmGeneration
   };
 }
 
-export function buildEcmChamberContext(seed: number, mode: EcmChamberMode): CompositionContext {
+export function buildEcmChamberContext(
+  seed: number,
+  mode: EcmChamberMode,
+  opts?: BuildEcmChamberContextOpts
+): CompositionContext {
   const preset = ecmChamberPreset;
-  const totalBars = ECM_DEFAULT_TOTAL_BARS;
-  const harmony = mode === 'ECM_SCHNEIDER_CHAMBER' ? HARMONY_SCHNEIDER : HARMONY_METHEENY;
+  const totalBars = opts?.totalBars ?? ECM_DEFAULT_TOTAL_BARS;
+  const harmony =
+    mode === 'ECM_SCHNEIDER_CHAMBER'
+      ? buildSchneiderHarmony(totalBars, seed)
+      : buildMethenyHarmony(totalBars, seed);
   const chordSymbolPlan = chordPlanFromHarmony(harmony);
   const feel =
     mode === 'ECM_SCHNEIDER_CHAMBER'

@@ -42,7 +42,7 @@ import {
   buildChordSymbolPlanFromBars,
 } from '../harmony/chordProgressionParser';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
-import { buildEcmChamberContext } from '../ecm/buildEcmChamberContext';
+import { buildEcmChamberContext, type BuildEcmChamberContextOpts } from '../ecm/buildEcmChamberContext';
 import type { EcmChamberMode } from '../ecm/ecmChamberTypes';
 import {
   scoreEcmMethenyFeel,
@@ -176,7 +176,9 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
   const presetId = options?.presetId ?? 'guitar_bass_duo';
   if (presetId === 'ecm_chamber') {
     const mode: EcmChamberMode = options?.ecmMode ?? 'ECM_METHENY_QUARTET';
-    return buildEcmChamberContext(seed, mode);
+    const ecmOpts: BuildEcmChamberContextOpts | undefined =
+      options?.ecmTotalBars !== undefined ? { totalBars: options.ecmTotalBars } : undefined;
+    return buildEcmChamberContext(seed, mode, ecmOpts);
   }
   return buildGoldenPathContext(seed, options?.parsedChordBars, {
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
@@ -351,6 +353,8 @@ export interface RunGoldenPathOptions {
   parsedChordBars?: string[];
   /** ECM Chamber: distinct Metheny vs Schneider modes */
   ecmMode?: EcmChamberMode;
+  /** ECM Chamber: override default bar count (e.g. 32 for extended regression tests). */
+  ecmTotalBars?: number;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */

@@ -30,6 +30,8 @@ import {
   computeEnsembleStagger,
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
+  guitarChordTonesInRange,
+  type PhraseIntent,
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
@@ -61,6 +63,86 @@ function rehearsalForBar(barIndex: number, context: CompositionContext): string 
     if (m.bar === barIndex) return m.label;
   }
   return undefined;
+}
+
+/** ECM Metheny: 6–8 bar arc — fewer cadences; phrase-over-barline feel via late entries on phase 1. */
+function getEcmMethenyPhraseIntent(phase: number, cycleIndex: number, seed: number): PhraseIntent {
+  if (phase === 8) {
+    const u = seededUnit(seed, cycleIndex, 811);
+    if (u < 0.28) return 'cadence';
+    if (u < 0.62) return 'answer_guitar';
+    return 'guitar_lead';
+  }
+  if (phase === 1 && cycleIndex > 0) {
+    return seededUnit(seed, cycleIndex, 812) < 0.42 ? 'answer_guitar' : 'guitar_lead';
+  }
+  return getDuoPhraseIntent(phase, seed + cycleIndex * 101);
+}
+
+function getEcmSchneiderPhraseIntent(phase: number, seed: number): PhraseIntent {
+  if (phase === 8) {
+    return seededUnit(seed, phase, 821) < 0.45 ? 'answer_guitar' : 'guitar_lead';
+  }
+  return getDuoPhraseIntent(phase, seed);
+}
+
+/** Avoid mid-register clustering: lift guitar when zone centres on middle C–D. */
+function anchorGuitarRegister(low: number, high: number): [number, number] {
+  const mid = (low + high) / 2;
+  if (mid >= 60 && mid <= 66) {
+    return [low + 3, Math.min(79, high + 4)];
+  }
+  return [low, high];
+}
+
+/** Sustained chord tones — not constant re-articulation; rhythm varies by phase for anti-loop. */
+function emitEcmGuitarSustainBar(params: {
+  m: MeasureModel;
+  chord: string;
+  low: number;
+  high: number;
+  seed: number;
+  bar: number;
+  phase: number;
+}): void {
+  const { m, chord, low, high, seed, bar, phase } = params;
+  const tones = guitarChordTonesInRange(chord, low, high);
+  const u = seededUnit(seed, bar, 901);
+  const primary = u < 0.52 ? tones.seventh : tones.third;
+  const secondary = u < 0.48 ? tones.fifth : tones.root;
+  const pat = phase % 3;
+  if (pat === 0) {
+    addEvent(m, createNote(primary, 0, 3.5));
+    addEvent(m, createRest(3.5, 0.5));
+  } else if (pat === 1) {
+    addEvent(m, createNote(primary, 0, 2));
+    addEvent(m, createNote(secondary, 2, 2));
+  } else {
+    addEvent(m, createNote(primary, 0, 1.25));
+    addEvent(m, createNote(secondary, 1.25, 2.75));
+  }
+}
+
+/** Neighbour / passing fragments with slow contrary motion vs bass register. */
+function emitEcmGuitarInnerMotionBar(params: {
+  m: MeasureModel;
+  chord: string;
+  low: number;
+  high: number;
+  seed: number;
+  bar: number;
+}): void {
+  const { m, chord, low, high, seed, bar } = params;
+  const tones = guitarChordTonesInRange(chord, low, high);
+  const u = seededUnit(seed, bar, 902);
+  const target = u < 0.5 ? tones.third : tones.seventh;
+  const pass = clampPitch(target + (seededUnit(seed, bar, 903) < 0.5 ? -1 : 1), low, high);
+  const neigh = clampPitch(target + (seededUnit(seed, bar, 904) < 0.5 ? 1 : -1), low, high);
+  addEvent(m, createRest(0, 0.5));
+  addEvent(m, createNote(neigh, 0.5, 0.5));
+  addEvent(m, createNote(pass, 1, 1));
+  addEvent(m, createNote(target, 2, 1.5));
+  addEvent(m, createRest(3.5, 0.5));
 }
 
 function getRegisterForBar(guitarMap: InstrumentRegisterMap, bar: number, context: CompositionContext): [number, number] {
@@ -217,13 +299,24 @@ function buildGuitarPart(
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const reduceAttack = interaction?.coupling?.guitarReduceAttack;
     const phraseBar = context.presetId === 'ecm_chamber' ? phase : b;
-    const phraseIntent = getDuoPhraseIntent(phraseBar, seed);
+    const cycleIndex = Math.floor((b - 1) / 8);
+    const phraseIntent: PhraseIntent =
+      isEcmM
+        ? getEcmMethenyPhraseIntent(phase, cycleIndex, seed)
+        : isEcmS
+          ? getEcmSchneiderPhraseIntent(phase, seed)
+          : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(phraseBar, seed, phraseIntent);
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b, context);
     const lab = sectionLabelForBar(b, context);
     const sectionBump = lab === 'B' ? 5 : 0;
-    const effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
-    const effectiveHigh = Math.min(79, zHigh + sectionBump);
+    let effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
+    let effectiveHigh = Math.min(79, zHigh + sectionBump);
+    if (isEcmM || isEcmS) {
+      const anchored = anchorGuitarRegister(effectiveLow, effectiveHigh);
+      effectiveLow = anchored[0];
+      effectiveHigh = anchored[1];
+    }
     let useOffbeat =
       (rhythm.offbeatWeight > 0.2 && (phase === 2 || phase === 4 || phase === 6 || phase === 8)) || !!reduceAttack;
     if (isEcmM || isEcmS) useOffbeat = false;
@@ -264,7 +357,7 @@ function buildGuitarPart(
           addEvent(m, createRest(cursor, start - cursor));
         }
         let dur = qBeat(Math.min(e.dur, 4 - start));
-        if (meth?.attackDensityReduced && dur > 0.5) {
+        if (meth?.attackDensityReduced && dur > 0.5 && tex?.guitarRole !== 'sustain_pad') {
           dur = Math.min(dur, 1.25);
         }
         dur = qBeat(Math.min(dur, 4 - start));
@@ -287,22 +380,53 @@ function buildGuitarPart(
       collapseRestsInsideNotes(m);
       dropRestsSameStartAsNote(m);
     } else {
-      const densityLevel =
+      let densityLevel: 'sparse' | 'medium' | 'dense' =
         density === 'very_dense' ? 'dense' : (density as 'sparse' | 'medium' | 'dense');
-      emitGuitarPhraseBar({
-        m,
-        bar: b,
-        chord: getChordForBar(b, context),
-        effectiveLow,
-        effectiveHigh,
-        density: densityLevel,
-        useOffbeat,
-        reduceAttack: !!reduceAttack,
-        intent: phraseIntent,
-        staggerG: stagger.guitar,
-        seed,
-        methenyShortenLong: meth?.attackDensityReduced,
-      });
+      if (isEcmS && tex?.densityBlend !== undefined && tex.densityBlend < 0.44) {
+        densityLevel = 'sparse';
+      }
+      const phraseShapeBar = context.presetId === 'ecm_chamber' ? phase : b;
+      if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
+        addEvent(m, createRest(0, 4));
+      } else if (
+        (isEcmM || isEcmS) &&
+        tex &&
+        (tex.guitarRole === 'sustain_pad' || tex.layeringMode === 'guitar_sustains')
+      ) {
+        emitEcmGuitarSustainBar({
+          m,
+          chord: getChordForBar(b, context),
+          low: effectiveLow,
+          high: effectiveHigh,
+          seed,
+          bar: b,
+          phase,
+        });
+      } else if ((isEcmM || isEcmS) && tex?.guitarRole === 'inner_motion') {
+        emitEcmGuitarInnerMotionBar({
+          m,
+          chord: getChordForBar(b, context),
+          low: effectiveLow,
+          high: effectiveHigh,
+          seed,
+          bar: b,
+        });
+      } else {
+        emitGuitarPhraseBar({
+          m,
+          bar: phraseShapeBar,
+          chord: getChordForBar(b, context),
+          effectiveLow,
+          effectiveHigh,
+          density: densityLevel,
+          useOffbeat,
+          reduceAttack: !!reduceAttack,
+          intent: phraseIntent,
+          staggerG: stagger.guitar,
+          seed,
+          methenyShortenLong: meth?.attackDensityReduced && tex?.guitarRole !== 'sustain_pad',
+        });
+      }
     }
 
     normalizeMeasureQuarterGrid(m);
@@ -345,13 +469,23 @@ function tagMomentBarsOnParts(parts: PartModel[]): void {
   }
 }
 
-/** Metheny ECM: per 8-bar cycle, develop motif from bar 1 toward bar 6 — interval expansion + register + longer rhythm. */
+/**
+ * Metheny ECM: 6–8 bar arc per cycle — rise (1→2), suspend (3–5), fall (6–8).
+ * Motif bar 6: interval expansion + rhythmic augmentation + register shift vs bar 1.
+ * Bar 7: suspended line; bar 8: often unresolved (no bar-contained loop).
+ */
 function applyEcmMethenyMotifDevelopment(guitar: PartModel, seed: number, totalBars: number): void {
   for (let cycle = 0; cycle < totalBars / 8; cycle++) {
     const srcBar = cycle * 8 + 1;
-    const tgtBar = cycle * 8 + 6;
+    const bar2 = cycle * 8 + 2;
+    const bar6 = cycle * 8 + 6;
+    const bar7 = cycle * 8 + 7;
+    const bar8 = cycle * 8 + 8;
     const mSrc = guitar.measures.find((x) => x.index === srcBar);
-    const mTgt = guitar.measures.find((x) => x.index === tgtBar);
+    const m2 = guitar.measures.find((x) => x.index === bar2);
+    const mTgt = guitar.measures.find((x) => x.index === bar6);
+    const m7 = guitar.measures.find((x) => x.index === bar7);
+    const m8 = guitar.measures.find((x) => x.index === bar8);
     if (!mSrc || !mTgt) continue;
     const ordered = [...mSrc.events]
       .filter((e) => e.kind === 'note')
@@ -365,15 +499,17 @@ function applyEcmMethenyMotifDevelopment(guitar: PartModel, seed: number, totalB
     for (let i = 1; i < src.length; i++) {
       const raw = src[i].pitch - src[i - 1].pitch;
       const sign = raw >= 0 ? 1 : -1;
-      intervals.push(raw + sign * expand);
+      intervals.push(raw + sign * Math.min(expand, 4));
     }
     const regShift = 5 + cycle * 3 + (seed % 5);
-    const rhythms = [1.0, 0.75, 1.25, 1.0];
+    const aug = 1.15 + (cycle % 3) * 0.12;
+    const rhythms = [1.0 * aug, 0.75 * aug, 1.25 * aug, 1.0 * aug];
     mTgt.events = [];
     let t = 0;
     let pitch = src[0].pitch + regShift;
     for (let i = 0; i < src.length && t < 4 - 1e-4; i++) {
-      const dur = Math.min(rhythms[i % rhythms.length], 4 - t);
+      const rawDur = Math.min(rhythms[i % rhythms.length], 4 - t);
+      const dur = qBeat(rawDur);
       if (dur <= 0) break;
       addEvent(mTgt, createNote(pitch, t, dur));
       t += dur;
@@ -383,17 +519,64 @@ function applyEcmMethenyMotifDevelopment(guitar: PartModel, seed: number, totalB
     normalizeMeasureQuarterGrid(mTgt);
     collapseRestsInsideNotes(mTgt);
     dropRestsSameStartAsNote(mTgt);
+
+    // Rise: bar 2 slightly higher last note vs bar 1 tail
+    if (m2) {
+      const n2 = [...m2.events].filter((e) => e.kind === 'note') as {
+        pitch: number;
+        startBeat: number;
+        duration: number;
+      }[];
+      if (n2.length > 0) {
+        const last = n2.reduce((a, b) =>
+          a.startBeat + a.duration >= b.startBeat + b.duration ? a : b
+        );
+        last.pitch = clampPitch(last.pitch + 2, 55, 79);
+        normalizeMeasureQuarterGrid(m2);
+      }
+    }
+
+    // Suspend: bar 7 long tone + pick-up over barline feel (late entry)
+    if (m7) {
+      const chord = m7.chord ?? 'Gmaj7';
+      const tones = chordTonesForChordSymbol(chord);
+      const sus = clampPitch(tones.seventh + 12, 60, 79);
+      m7.events = [];
+      addEvent(m7, createRest(0, 1));
+      addEvent(m7, createNote(sus, 1, 3));
+      normalizeMeasureQuarterGrid(m7);
+      collapseRestsInsideNotes(m7);
+    }
+
+    // Fall / open: bar 8 — often unresolved colour (7th or 9th hold), not cadence loop
+    if (m8 && seededUnit(seed, cycle, 920) < 0.58) {
+      const chord = m8.chord ?? 'Gmaj7';
+      const tones = chordTonesForChordSymbol(chord);
+      const openTone = seededUnit(seed, cycle, 921) < 0.5 ? tones.seventh : tones.third;
+      const hi = clampPitch(openTone + 12, 58, 79);
+      m8.events = [];
+      addEvent(m8, createNote(hi, 0, 2.5));
+      addEvent(m8, createRest(2.5, 1.5));
+      normalizeMeasureQuarterGrid(m8);
+      collapseRestsInsideNotes(m8);
+    }
   }
 }
 
-/** Schneider ECM: sparse → bloom → release as velocity envelope (no structural edits — bar math safe). */
+/** Schneider ECM: smoothed velocity envelope; A2 suspended — guitar slightly brighter, bass softer. */
 function applyEcmSchneiderDensityEnvelope(score: ScoreModel, totalBars: number): ScoreModel {
   const third = Math.max(1, Math.floor(totalBars / 3));
-  const envVel = (bar: number): number => {
+  const rawVel = (bar: number): number => {
     if (bar <= third) return 40 + Math.round((bar / third) * 18);
     if (bar <= 2 * third) return 56 + Math.round(((bar - third) / third) * 24);
     const rel = totalBars - 2 * third;
     return 78 - Math.round(((bar - 2 * third) / Math.max(1, rel)) * 20);
+  };
+  const smoothVel = (bar: number): number => {
+    const a = rawVel(bar);
+    const p = bar > 1 ? rawVel(bar - 1) : a;
+    const n = bar < totalBars ? rawVel(bar + 1) : a;
+    return Math.round(0.28 * p + 0.44 * a + 0.28 * n);
   };
   return {
     ...score,
@@ -403,9 +586,13 @@ function applyEcmSchneiderDensityEnvelope(score: ScoreModel, totalBars: number):
         ...m,
         events: m.events.map((e) => {
           if (e.kind !== 'note') return e;
-          const base = envVel(m.index);
+          const base = smoothVel(m.index);
           const jitter = (m.index + (p.id?.length ?? 0)) % 5;
-          return { ...e, velocity: Math.min(127, base + jitter) };
+          let v = base + jitter;
+          const inA2 = m.index > 2 * third;
+          if (inA2 && p.instrumentIdentity === 'clean_electric_guitar') v = Math.min(127, v + 6);
+          if (inA2 && p.instrumentIdentity === 'acoustic_upright_bass') v = Math.max(22, v - 10);
+          return { ...e, velocity: Math.min(127, Math.max(1, v)) };
         }),
       })),
     })),
@@ -522,10 +709,17 @@ function buildBassPart(
     const tex = texturePlan?.find((t) => t.bar === b);
     if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET') {
       const pitch = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
-      addEvent(m, createNote(pitch, 0, 4));
+      if (tex?.bassRole === 'inner_motion') {
+        const p2 = clampPitch(pitch + (seededUnit(seed, b, 905) < 0.5 ? 2 : 5), walkLow, effectiveHigh);
+        addEvent(m, createNote(pitch, 0, 2));
+        addEvent(m, createNote(p2, 2, 2));
+        prevBassPitch = p2;
+      } else {
+        addEvent(m, createNote(pitch, 0, 4));
+        prevBassPitch = pitch;
+      }
       normalizeMeasureQuarterGrid(m);
       measures.push(m);
-      prevBassPitch = pitch;
       continue;
     }
 

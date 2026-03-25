@@ -52,7 +52,7 @@ function gridness(p: PartModel): number {
 export function runEcmIdentityTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
 
-  const seeds = [11_101, 22_202, 33_303, 44_404, 55_505];
+  const seeds = [11_101, 22_202, 33_303, 44_404, 55_505, 66_606, 77_707, 88_808, 99_909, 101_010];
   let allOk = true;
   for (const seed of seeds) {
     const met = runGoldenPath(seed, { presetId: 'ecm_chamber', ecmMode: 'ECM_METHENY_QUARTET' });
@@ -83,7 +83,7 @@ export function runEcmIdentityTests(): { ok: boolean; name: string }[] {
   }
   out.push({
     ok: allOk,
-    name: 'ECM identity: multi-seed Metheny vs Schneider differ (bass count, density var, phrase/rhythm)',
+    name: 'ECM identity: 10-seed Metheny vs Schneider differ (bass count, density var, phrase/rhythm)',
   });
 
   const form = runGoldenPath(42_000, { presetId: 'ecm_chamber', ecmMode: 'ECM_METHENY_QUARTET' });
@@ -107,6 +107,19 @@ export function runEcmIdentityTests(): { ok: boolean; name: string }[] {
   out.push({
     ok: nonCollapse,
     name: 'ECM non-collapse: rhythmic profiles differ at same seed across modes',
+  });
+
+  const ext32 = runGoldenPath(88_888, {
+    presetId: 'ecm_chamber',
+    ecmMode: 'ECM_METHENY_QUARTET',
+    ecmTotalBars: 32,
+  });
+  const n32 = ext32.score.parts[0]?.measures.length ?? 0;
+  const g32 = ext32.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const v32 = g32 ? variance(perBarNoteCounts(g32)) : 0;
+  out.push({
+    ok: ext32.success && n32 === 32 && v32 > 0.05,
+    name: 'ECM optional 32-bar: generation succeeds, bar count, density variation',
   });
 
   return out;
