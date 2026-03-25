@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## V3.0 Generate UI — mode-driven form (Style Stack controls retired from Generate)
+
+- **Generate screen** — Rewritten around **mode** (Guitar–Bass Duo, ECM Chamber, Song Mode, Big Band, String Quartet), **tonal centre**, **tempo**, **bars**, **variation**, **creative control**, and **title**. Duo/ECM MusicXML runs use a **fixed internal style stack** (Barry Harris primary, strong blend) — no user-facing module dropdowns or Style Blend on this screen.
+- **Big Band** — UI exposes **arranger**, **era**, and **ensemble size**; a default songwriter id is supplied for the existing pairing API (not shown as a control).
+- **Song Mode** — Songwriter, arranger, and era pairing unchanged in intent.
+- **Removed** — Style Stack tab from main nav; **Style Stack** page file kept as legacy reference only (commented). Custom chord progression and part **locks** removed from Generate (duo uses built-in harmony path only).
+- **Receipt** — Result summary leads with **mode** and **output type**; engine modules listed as plain ids.
+
 ## V3.0 app wiring — system check, outputs clarity, preset validation, folder fixes
 
 - **One-click system check** — `POST /api/system-check` and IPC `composer-os-api:run-system-check` run Composer OS engine tests, retro tests, and `composer-os-app` tests from the repo root (with `COMPOSER_OS_REPO_ROOT` / `resolveComposerOsRepoRoot`). Diagnostics panel: **Run system check** + optional technical details. Set `COMPOSER_OS_DISABLE_SYSTEM_CHECK=1` to block.

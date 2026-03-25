@@ -21,7 +21,7 @@ export const MODE_UX: ModeUx[] = [
     label: 'Guitar–Bass Duo',
     hint: 'Eight-bar jazz duo sketches with chords, rehearsal letters, and duo interplay.',
     whatItDoes:
-      'Generates a complete guitar and upright bass duo with harmony, melody, and rhythm shaped by your style stack.',
+      'Generates a complete guitar and upright bass duo with harmony, melody, and rhythm using the engine’s duo defaults (Barry Harris–led style path in this build).',
     bestFor: 'Practice charts, teaching examples, and quick duo ideas you can open in Sibelius or MuseScore.',
     output: 'Exported MusicXML — a full, bar-complete score file.',
   },

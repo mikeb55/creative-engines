@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
-import { StyleStack } from './pages/StyleStack';
 import { Outputs } from './pages/Outputs';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 
@@ -78,13 +77,13 @@ export default function App() {
           </p>
         )}
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-          {(['home', 'presets', 'style', 'outputs'] as const).map((t) => (
+          {(['home', 'presets', 'outputs'] as const).map((t) => (
             <button
               key={t}
               className={tab === t ? '' : 'secondary'}
               onClick={() => setTab(t)}
             >
-              {t === 'home' ? 'Generate' : t === 'presets' ? 'Presets' : t === 'style' ? 'Style Stack' : 'Outputs'}
+              {t === 'home' ? 'Generate' : t === 'presets' ? 'Presets' : 'Outputs'}
             </button>
           ))}
         </nav>
@@ -94,7 +93,6 @@ export default function App() {
 
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
       {tab === 'presets' && <Presets />}
-      {tab === 'style' && <StyleStack />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
     </div>
   );

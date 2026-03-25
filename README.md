@@ -41,6 +41,8 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 **V3 app wiring:** The web/desktop app includes a **Run system check** action (Diagnostics) that runs Composer OS–scoped tests without using the terminal; the **Outputs** panel is mode- and type-aware; **Open library folder** / **Open this file’s folder** use normalized Windows paths; unknown presets are rejected by the API before generation. See `docs/composer-os/CHANGELOG.md`.
 
+**V3 Generate UI:** The **Generate** screen is mode-driven (no user-facing style module/stack controls on the main form); duo/ECM use fixed internal defaults. The **Style Stack** sidebar tab was removed; see `docs/composer-os/CHANGELOG.md`.
+
 ---
 
 ## Structure

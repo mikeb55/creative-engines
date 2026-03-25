@@ -1,20 +1,22 @@
 /**
- * Generate page uses Style Blend (no numeric weights) and Try Another.
+ * Generate page — mode-driven UI (no Style Stack / blend controls on main form).
  */
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('HomeGenerate musical UI', () => {
+describe('HomeGenerate mode-driven UI', () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/pages/HomeGenerate.tsx'), 'utf-8');
 
-  it('shows Style Blend section', () => {
-    expect(src).toContain('StyleBlendControls');
-    expect(src).toMatch(/styleBlend/);
+  it('does not import Style Blend or style module dropdowns (retired from Generate)', () => {
+    expect(src).not.toContain('StyleBlendControls');
+    expect(src).not.toContain('useStyleModules');
+    expect(src).not.toContain('Style stack');
+    expect(src).not.toContain('Style modules:');
   });
 
-  it('shows a line listing loaded style module names (Barry Harris, Metheny, Triad Pairs, Bacharach from API)', () => {
-    expect(src).toContain('Style modules:');
-    expect(src).toMatch(/modules\.map\(\(m\)\s*=>\s*m\.name\)/);
+  it('uses fixed default score style stack constants for duo/ECM (not user-facing)', () => {
+    expect(src).toContain('DEFAULT_SCORE_STYLE_STACK');
+    expect(src).toContain('barry_harris');
   });
 
   it('does not expose numeric weight inputs (BPM/bars number fields are allowed)', () => {
@@ -25,15 +27,15 @@ describe('HomeGenerate musical UI', () => {
     expect(src).toMatch(/>[\s\n]*Try Another[\s\n]*</);
   });
 
-  it('Try Another rolls variation and calls generate with override (same pipeline as Generate)', () => {
+  it('Try Another rolls variation and calls generate with override', () => {
     expect(src).toContain('setVariationId(next)');
     expect(src).toContain('void generate({ variationOverride: next })');
     expect(src).toMatch(/async \(opts\?: \{ seedOverride\?: number; variationOverride\?: string \}\)/);
     expect(src).toContain('opts?.variationOverride ?? variationId');
   });
 
-  it('has optional score title field', () => {
-    expect(src).toContain('Score title (optional)');
+  it('has optional title field', () => {
+    expect(src).toContain('Title (optional)');
     expect(src).toMatch(/title:\s*scoreTitle\.trim/);
   });
 
@@ -45,25 +47,36 @@ describe('HomeGenerate musical UI', () => {
     expect(src).not.toMatch(/Manifest:/);
   });
 
-  it('shows mode description card and result summary (UX polish)', () => {
+  it('shows mode description card and result summary', () => {
     expect(src).toContain('About this mode');
     expect(src).toContain('Result summary');
     expect(src).toContain('Output type:');
     expect(src).toContain('getModeUx');
   });
 
-  it('uses creative level terminology instead of stability', () => {
-    expect(src).toContain('Creative level');
+  it('uses creative control terminology', () => {
+    expect(src).toContain('Creative control');
     expect(src).toContain('name="creativeLevel"');
     expect(src).not.toMatch(/>\s*Stability\s*</);
   });
 
-  it('labels total bars and ensemble size clearly', () => {
-    expect(src).toContain('Total bars');
-    expect(src).toContain('Ensemble size (Big Band)');
+  it('labels number of bars and ensemble size for Big Band', () => {
+    expect(src).toContain('Number of bars');
+    expect(src).toContain('Ensemble size');
   });
 
   it('shows experimental help when pairing flag is set', () => {
     expect(src).toContain('EXPERIMENTAL_HELP');
+  });
+
+  it('renders mode-specific blocks for ECM, Song, Big Band, String Quartet', () => {
+    expect(src).toContain('ECM chamber mode');
+    expect(src).toContain("presetId === 'song_mode'");
+    expect(src).toContain("presetId === 'big_band'");
+    expect(src).toContain("presetId === 'string_quartet'");
+  });
+
+  it('maps Big Band pairing with default songwriter constant', () => {
+    expect(src).toContain('BIG_BAND_DEFAULT_SONGWRITER_STYLE');
   });
 });

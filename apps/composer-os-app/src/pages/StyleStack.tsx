@@ -1,3 +1,7 @@
+/**
+ * Legacy reference page — not linked from the main app nav after the mode-driven Generate rewrite.
+ * Duo/ECM scoring uses fixed defaults in HomeGenerate; module lists remain available via /api/style-modules.
+ */
 import { useState, useEffect } from 'react';
 import { useStyleModules } from '../hooks/useStyleModules';
 import { StyleBlendControls, type StyleBlendState } from '../components/StyleBlendControls';

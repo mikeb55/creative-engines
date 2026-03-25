@@ -29,13 +29,13 @@ Details and honest capability strings: `engines/composer-os-v2/app-api/releaseMe
 
 ## Workflow
 
-1. Choose **mode** — each mode has a short **About this mode** card (what it does, best use, honest output type).
-2. For duo / ECM: set style stack and optional locks; for ECM, pick Metheny vs Schneider where shown.
-3. Set **variation**, tempo, bars, optional key, **creative level**, and (where shown) **style pairing** / **ensemble size**.
-4. **Generate** — the receipt includes a **Result summary** (output type: planning vs lead-sheet-ready vs full MusicXML, variation, pairing, confidence / experimental badge when present, file path).
-5. Open output folder or browse **Outputs**; planning and song runs list JSON artifacts as well as MusicXML where applicable.
+1. Choose **mode** — each mode has an **About this mode** card (what it does, best use, honest output type).
+2. Set **tonal centre**, **tempo**, **number of bars**, **variation** (New / Next), **creative control**, and optional **title**.
+3. Use **mode-specific** controls (ECM Metheny vs Schneider; Song Mode: songwriter × arranger × era; Big Band: arranger, era, ensemble size; String Quartet: explanatory copy only).
+4. **Generate** — duo/ECM MusicXML uses a **fixed internal style stack** (Barry Harris–led defaults) sent through the same API as before; there are no style module dropdowns on this screen.
+5. The **Result summary** includes mode, output type, variation, key/tempo/bars, pairing when relevant, ensemble for big band, creative level, confidence, experimental badge, and output path.
 
-**UX polish (V3):** User-facing copy lives in `src/utils/generateUiCopy.ts` (`MODE_UX`, `describeOutputKind`). Internal “seed” is not shown as the primary control — **variation** and **creative level** are.
+**Legacy Style Stack page:** `src/pages/StyleStack.tsx` is not linked from the app nav; it remains for reference. The **Style Stack** tab was removed in favour of the mode-driven Generate flow.
 
 **Diagnostics — system check:** Expand **Diagnostics** and use **Run system check** to run Composer OS engine tests, retro tests, and this app’s tests from the development repo (no terminal). Optional **Show technical details** expands npm output. Requires a full `creative-engines` checkout with `npm` available; packaged desktop without a repo shows a clear message.
 
