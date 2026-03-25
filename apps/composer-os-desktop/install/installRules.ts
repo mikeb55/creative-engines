@@ -38,6 +38,8 @@ export function isLegacyOrForbiddenTarget(targetPath: string): boolean {
 export function looksLikeComposerOsPackagedExe(targetPath: string): boolean {
   if (!targetPath.trim()) return false;
   const t = targetPath.toLowerCase().replace(/\//g, '\\');
+  if (t.endsWith('\\composer-os.exe')) return true;
+  if (t.endsWith('\\composer-os-setup.exe')) return true;
   if (t.includes('composer-os-') && t.endsWith('-portable.exe')) return true;
   if (t.includes('composer os setup') && t.endsWith('.exe')) return true;
   if (t.includes('composer-os-desktop') && t.endsWith('.exe')) return true;
@@ -74,7 +76,12 @@ export function shouldQuarantineShortcut(
   return false;
 }
 
-/** Resolve newest Composer-OS-Desktop-*-portable.exe in release dir by mtime. */
+const STABLE_PORTABLE = 'Composer-OS.exe';
+
+/**
+ * Resolve the packaged portable exe: stable `Composer-OS.exe` when present, else newest legacy
+ * `Composer-OS-Desktop-*-portable.exe` (by mtime) for migration.
+ */
 export function findCanonicalPortableExe(releaseDir: string): string | null {
   if (!fs.existsSync(releaseDir)) return null;
   let names: string[];
@@ -83,6 +90,8 @@ export function findCanonicalPortableExe(releaseDir: string): string | null {
   } catch {
     return null;
   }
+  const stable = names.find((f) => f.toLowerCase() === STABLE_PORTABLE.toLowerCase());
+  if (stable) return stable;
   const portable = names.filter((f) => /^Composer-OS-Desktop-[\d.]+-portable\.exe$/i.test(f));
   if (portable.length === 0) return null;
   const withMtime = portable.map((f) => {

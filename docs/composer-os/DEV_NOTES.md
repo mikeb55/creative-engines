@@ -33,7 +33,7 @@
 8. **Stage 7 App Productisation** (web app, preset UI, output management) — in `apps/composer-os-app/`, engine bridge in `engines/composer-os-v2/app-api/`
 9. **Stage 8 Windows Desktop Product** — in `apps/composer-os-desktop/`, Electron + electron-builder, single-click launch
 
-**Desktop version bump:** `desktop:package` runs `tsx install/bumpDesktopVersionCli.ts` before `electron-builder` so every packaged portable exe uses a new semver patch and a new `Composer-OS-Desktop-x.y.z-portable.exe` path (reduces antivirus / file-lock stalls on Windows). `tsx install/pruneOldPortableExesCli.ts` afterward keeps the three newest portables in `release/`. `app.getVersion()` and the UI header read the same `package.json` version.
+**Desktop version bump:** `desktop:package` runs `tsx install/bumpDesktopVersionCli.ts` before `electron-builder` so `package.json` patch increments for **in-app** semver (`app.getVersion()`, UI header). **Artifact filenames are stable:** `release/Composer-OS.exe` (portable) and `release/Composer-OS-Setup.exe` (NSIS)—no version in the exe name, so shortcuts can point at `Composer-OS.exe` permanently. `tsx install/pruneOldPortableExesCli.ts` removes legacy versioned `Composer-OS-Desktop-*-portable.exe` / `*-Setup.exe` files from `release/` when present. `tsx install/verifyStableBuildOutputCli.ts` verifies the portable exists and (Windows) smoke-launches it.
 
 **Desktop ports:** `electron/utils/portUtils.ts` resolves preferred port (default 3001), reuses Composer OS via `GET /health`, or picks next free port. API `startComposerOsAppApi.ts` uses `process.env.PORT` and registers `/health`.
 

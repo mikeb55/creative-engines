@@ -1,6 +1,6 @@
 # Composer OS Desktop
 
-Windows desktop app identity: **Composer OS Desktop** (`appId` `com.mikeb55.composeros.desktop`, portable `Composer-OS-Desktop-*-portable.exe`). The renderer loads from **packaged files** (`loadFile` on `resources/ui/index.html`) — **no localhost / no browser URL** in packaged mode. Composer OS engine calls run through **preload `invokeApi` → IPC** (`resources/desktop-ipc.bundle.cjs`), not HTTP. **Open library / file folder** uses a separate **`open-folder-helpers.cjs`** bundle (same path logic as the API) so the packaged exe does not depend on loose engine paths under `engines/`. The legacy `resources/api.bundle.js` remains for the **web** dev server (`npm run dev` + API) only.
+Windows desktop app identity: **Composer OS Desktop** (`appId` `com.mikeb55.composeros.desktop`, packaged portable **`release/Composer-OS.exe`** — stable filename). The renderer loads from **packaged files** (`loadFile` on `resources/ui/index.html`) — **no localhost / no browser URL** in packaged mode. Composer OS engine calls run through **preload `invokeApi` → IPC** (`resources/desktop-ipc.bundle.cjs`), not HTTP. **Open library / file folder** uses a separate **`open-folder-helpers.cjs`** bundle (same path logic as the API) so the packaged exe does not depend on loose engine paths under `engines/`. The legacy `resources/api.bundle.js` remains for the **web** dev server (`npm run dev` + API) only.
 
 Before loading the UI, main reads `resources/ui/composer-os-ui-stamp.json` and **refuses to start** if the bundle is wrong or lists forbidden tabs. Stale UI trees are fully replaced on each `build:ui`. One window; no separate backend window.
 
@@ -32,9 +32,9 @@ npm run desktop:package
 `desktop:package` sets `CSC_IDENTITY_AUTO_DISCOVERY=false` so unsigned dev machines do not pull **winCodeSign** (can fail on symlink privileges). `build.win.signAndEditExecutable` is `false`.
 
 **Canonical deploy artifact (used by clean install):**  
-`release/Composer-OS-Desktop-<version>-portable.exe`
+`release/Composer-OS.exe`
 
-Also built: `release/win-unpacked/Composer OS Desktop.exe` (unpacked), `release/Composer OS Desktop Setup <version>.exe` (NSIS).
+Also built: `release/win-unpacked/` (unpacked app), `release/Composer-OS-Setup.exe` (NSIS).
 
 **Hard check after packaging:** `npm run verify:packaged-exe` — fails if no portable `.exe` in `release/`.
 
@@ -44,7 +44,7 @@ Also built: `release/win-unpacked/Composer OS Desktop.exe` (unpacked), `release/
 npm run desktop:rebuild-and-smoke
 ```
 
-Closes matching **Composer-OS-Desktop-*-portable.exe** processes if running, runs **`desktop:package`**, resolves the newest portable exe, validates **`resources/ui`** (`composer-os-ui-stamp.json`), launches that exe, checks the process stays alive briefly, and requires a **newer** UI `buildTimestamp` than the last successful run (see `.last-smoke-ui-timestamp.txt`). Final output is **PASS** or **FAIL** with paths and versions — not a cosmetic check.
+Closes matching **Composer-OS** / legacy portable processes if running, runs **`desktop:package`**, verifies **`release/Composer-OS.exe`**, validates **`resources/ui`** (`composer-os-ui-stamp.json`), launches that exe, checks the process stays alive briefly, and requires a **newer** UI `buildTimestamp` than the last successful run (see `.last-smoke-ui-timestamp.txt`). Final output is **PASS** or **FAIL** with paths and versions — not a cosmetic check.
 
 From the repo root: `npm run desktop:rebuild-and-smoke` (delegates to this package).
 

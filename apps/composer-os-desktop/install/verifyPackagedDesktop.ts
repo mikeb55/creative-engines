@@ -2,8 +2,8 @@
  * Hard verification that electron-builder produced a real Windows portable executable.
  *
  * Output convention (electron-builder, `win.target` includes `portable`):
- *   <apps/composer-os-desktop>/release/Composer-OS-Desktop-<semver>-portable.exe
- *   (`desktop:package` bumps patch in package.json before each build so `<semver>` changes and the exe is not overwritten in place.)
+ *   <apps/composer-os-desktop>/release/Composer-OS.exe
+ *   (stable filename; `desktop:package` still bumps package.json patch for in-app version only.)
  *
  * Other artifacts (not used by deploy scripts): `release/win-unpacked/Composer OS Desktop.exe`,
  * NSIS `release/*Setup*.exe`. Loose JS under `dist/` is not a packaged app.
@@ -23,7 +23,7 @@ export function desktopReleaseDir(desktopAppRoot: string): string {
 }
 
 /**
- * Locates the newest `Composer-OS-Desktop-*-portable.exe` in `release/`, asserts it exists on disk
+ * Locates `Composer-OS.exe` in `release/` (or legacy `Composer-OS-Desktop-*-portable.exe`), asserts it exists on disk
  * and is a non-trivial `.exe` file. Prints the path when run as CLI.
  */
 export function verifyPackagedPortableExe(releaseDir: string): VerifiedPortableExe {
@@ -33,7 +33,7 @@ export function verifyPackagedPortableExe(releaseDir: string): VerifiedPortableE
   const fileName = findCanonicalPortableExe(releaseDir);
   if (!fileName) {
     throw new Error(
-      `No packaged portable exe in ${releaseDir}. Expected Composer-OS-Desktop-*-portable.exe. Run npm run desktop:package (electron-builder --win).`
+      `No packaged portable exe in ${releaseDir}. Expected Composer-OS.exe (or legacy Composer-OS-Desktop-*-portable.exe). Run npm run desktop:package (electron-builder --win).`
     );
   }
   const absolutePath = path.resolve(releaseDir, fileName);

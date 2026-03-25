@@ -11,7 +11,7 @@ describe('Desktop IPC clean-room (static)', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
     expect(pkg.build.appId).toBe('com.mikeb55.composeros.desktop');
     expect(pkg.build.productName).toBe('Composer OS Desktop');
-    expect(pkg.build.portable.artifactName).toContain('Composer-OS-Desktop');
+    expect(pkg.build.portable.artifactName).toBe('Composer-OS.exe');
   });
 
   it('main loads UI from file path, not localhost URL', () => {

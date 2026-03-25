@@ -7,11 +7,12 @@
   "scripts": {
     "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
-    "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/pruneOldPortableExesCli.ts",
+    "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:install-icon": "tsx install/installDesktopIconCli.ts",
     "desktop:create-shortcut": "tsx install/installDesktopIconCli.ts",
     "desktop:rebuild-and-smoke": "tsx install/rebuildAndSmoke.ts",
     "verify:packaged-exe": "tsx install/verifyPackagedDesktop.ts",
+    "verify:stable-exe": "tsx install/verifyStableBuildOutputCli.ts",
     "desktop:self-test-install": "npm run desktop:package && npm run verify:packaged-exe && tsx install/installComposerOsDesktop.ts",
     "desktop:clean-install": "npm run desktop:self-test-install",
     "desktop:deploy": "npm run desktop:clean-install",
@@ -85,10 +86,10 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "Composer-OS-Desktop-${version}-Setup.exe"
+      "artifactName": "Composer-OS-Setup.exe"
     },
     "portable": {
-      "artifactName": "Composer-OS-Desktop-${version}-portable.exe"
+      "artifactName": "Composer-OS.exe"
     }
   }
 }

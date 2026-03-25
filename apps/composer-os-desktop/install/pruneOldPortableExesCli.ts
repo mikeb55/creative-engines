@@ -1,5 +1,6 @@
 /**
- * CLI: prune old portable exes after electron-builder (best-effort).
+ * CLI: remove legacy versioned portable/setup filenames from release/ after electron-builder.
+ * Stable outputs are Composer-OS.exe and Composer-OS-Setup.exe (overwritten each build).
  */
 import * as path from 'path';
 import { pruneOldPortableExes } from './pruneOldPortableExes';

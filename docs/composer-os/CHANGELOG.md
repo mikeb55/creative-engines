@@ -1,5 +1,12 @@
 # Composer OS Changelog
 
+## Stable desktop build filenames (Composer-OS.exe)
+
+- **electron-builder** — Portable output is always **`release/Composer-OS.exe`**; NSIS installer **`release/Composer-OS-Setup.exe`** (no `${version}` in filenames). In-app version still comes from **`package.json`** (patch bump before build is unchanged).
+- **Prune** — After build, legacy **`Composer-OS-Desktop-*-portable.exe`** and **`Composer-OS-Desktop-*-Setup.exe`** files in `release/` are removed when present; stable names overwrite each build.
+- **Verify** — `desktop:package` ends with **`verifyStableBuildOutputCli.ts`**: confirms the portable exe exists and (on Windows) launches briefly.
+- **Shortcuts** — A permanent path to **`…/release/Composer-OS.exe`** no longer needs updating each release.
+
 ## Prompt 7/7 — Web app shell, app/API boundary, desktop path, V1 baseline
 
 - **App API** — `composerOsAppGeneration.ts` routes `apiGenerate` by preset: duo/ECM → `generateComposition`; `song_mode` → `runSongMode` (JSON); `big_band` / `string_quartet` → planning JSON only. Invalid `presetId` fails with a clear error (no stale `composerOsApiCore.js` shadowing TypeScript).

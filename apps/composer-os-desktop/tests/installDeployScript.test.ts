@@ -19,6 +19,7 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:self-test-install']).toContain('installComposerOsDesktop');
     expect(pkg.scripts['desktop:package']).toContain('bumpDesktopVersionCli');
     expect(pkg.scripts['desktop:package']).toContain('pruneOldPortableExesCli');
+    expect(pkg.scripts['desktop:package']).toContain('verifyStableBuildOutputCli');
     expect(pkg.scripts['desktop:install-icon']).toContain('installDesktopIconCli');
     expect(pkg.scripts['desktop:create-shortcut']).toBe(pkg.scripts['desktop:install-icon']);
   });
@@ -39,6 +40,7 @@ describe('desktop deploy / install wiring', () => {
     expect(fs.existsSync(path.join(installDir, 'verifyPackagedDesktop.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'bumpDesktopVersionCli.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'pruneOldPortableExesCli.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'verifyStableBuildOutputCli.ts'))).toBe(true);
 
     const walk = (dir: string): string[] => {
       const out: string[] = [];

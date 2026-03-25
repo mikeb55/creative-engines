@@ -34,7 +34,8 @@ describe('installRules', () => {
     expect(isLegacyOrForbiddenTarget('C:\\release\\Composer-OS-Desktop-1.0.0-portable.exe')).toBe(false);
   });
 
-  it('looksLikeComposerOsPackagedExe recognizes portable / setup patterns', () => {
+  it('looksLikeComposerOsPackagedExe recognizes stable portable / setup patterns', () => {
+    expect(looksLikeComposerOsPackagedExe('C:\\r\\Composer-OS.exe')).toBe(true);
     expect(looksLikeComposerOsPackagedExe('C:\\r\\Composer-OS-Desktop-1.0.0-portable.exe')).toBe(true);
     expect(looksLikeComposerOsPackagedExe('C:\\composer-os-desktop\\dist\\x.exe')).toBe(true);
     expect(looksLikeComposerOsPackagedExe('C:\\Windows\\notepad.exe')).toBe(false);
@@ -46,7 +47,7 @@ describe('installRules', () => {
   });
 
   it('shouldQuarantineShortcut removes Composer OS shortcut when target is not canonical portable', () => {
-    const canon = 'C:\\r\\Composer-OS-Desktop-2.0.0-portable.exe';
+    const canon = 'C:\\r\\Composer-OS.exe';
     expect(
       shouldQuarantineShortcut('Composer OS.lnk', 'C:\\old\\Composer-OS-Desktop-1.0.0-portable.exe', canon)
     ).toBe(true);
@@ -54,7 +55,7 @@ describe('installRules', () => {
   });
 
   it('shouldQuarantineShortcut removes Composer OS Desktop shortcut when target is stale', () => {
-    const canon = 'C:\\r\\Composer-OS-Desktop-2.0.0-portable.exe';
+    const canon = 'C:\\r\\Composer-OS.exe';
     expect(
       shouldQuarantineShortcut(
         'Composer OS Desktop.lnk',
@@ -69,7 +70,15 @@ describe('installRules', () => {
     expect(normalizeFsPath('C:\\A\\b.exe')).toBe('c:\\a\\b.exe');
   });
 
-  it('findCanonicalPortableExe picks newest by mtime', () => {
+  it('findCanonicalPortableExe prefers Composer-OS.exe when present', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-rel-stable-'));
+    fs.writeFileSync(path.join(dir, 'Composer-OS.exe'), 'x');
+    fs.writeFileSync(path.join(dir, 'Composer-OS-Desktop-2.0.0-portable.exe'), 'y');
+    expect(findCanonicalPortableExe(dir)).toBe('Composer-OS.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('findCanonicalPortableExe picks newest legacy portable by mtime when no stable exe', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-rel-'));
     const older = path.join(dir, 'Composer-OS-Desktop-1.0.0-portable.exe');
     const newer = path.join(dir, 'Composer-OS-Desktop-2.0.0-portable.exe');

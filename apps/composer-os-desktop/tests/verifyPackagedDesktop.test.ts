@@ -27,13 +27,24 @@ describe('verifyPackagedPortableExe', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it('returns absolute path for valid portable exe', () => {
+  it('returns absolute path for stable Composer-OS.exe', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-ok-'));
-    const p = path.join(dir, 'Composer-OS-Desktop-9.9.9-portable.exe');
+    const p = path.join(dir, 'Composer-OS.exe');
     fs.writeFileSync(p, Buffer.alloc(5000));
     const r = verifyPackagedPortableExe(dir);
     expect(r.absolutePath).toBe(path.resolve(p));
-    expect(r.fileName).toBe('Composer-OS-Desktop-9.9.9-portable.exe');
+    expect(r.fileName).toBe('Composer-OS.exe');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('prefers Composer-OS.exe over legacy portables when both exist', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-prefer-'));
+    const stable = path.join(dir, 'Composer-OS.exe');
+    const legacy = path.join(dir, 'Composer-OS-Desktop-9.9.9-portable.exe');
+    fs.writeFileSync(stable, Buffer.alloc(5000));
+    fs.writeFileSync(legacy, Buffer.alloc(5000));
+    const r = verifyPackagedPortableExe(dir);
+    expect(r.fileName).toBe('Composer-OS.exe');
     fs.rmSync(dir, { recursive: true, force: true });
   });
 

@@ -5,7 +5,7 @@ describe('formatSmokeReport', () => {
   it('formats PASS with required fields only', () => {
     const s = formatSmokeReport({
       ok: true,
-      packagedExePath: 'C:\\r\\Composer-OS-Desktop-1.0.1-portable.exe',
+      packagedExePath: 'C:\\r\\Composer-OS.exe',
       launched: true,
       buildVersion: '1.0.1',
       uiBuildTimestamp: '2026-01-01T00:00:00.000Z',
@@ -13,7 +13,7 @@ describe('formatSmokeReport', () => {
     expect(s).toBe(
       [
         'PASS',
-        'packaged exe path: C:\\r\\Composer-OS-Desktop-1.0.1-portable.exe',
+        'packaged exe path: C:\\r\\Composer-OS.exe',
         'launched: yes',
         'build version: 1.0.1',
         'ui build timestamp: 2026-01-01T00:00:00.000Z',
