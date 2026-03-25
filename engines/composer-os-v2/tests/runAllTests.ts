@@ -32,6 +32,8 @@ import { runConductorAlignmentTests } from './conductorAlignment.test';
 import { runHandoffMapTests } from './handoffMap.test';
 import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
+import { runSongModeIntegrationTests } from './songModeIntegration.test';
+import { runLeadSheetContractTests } from './leadSheetContract.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -65,6 +67,8 @@ const suites = [
   { name: 'Handoff map', run: runHandoffMapTests },
   { name: 'Module invocation', run: runModuleInvocationTests },
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
+  { name: 'Song Mode integration', run: runSongModeIntegrationTests },
+  { name: 'Lead sheet contract', run: runLeadSheetContractTests },
   ...retroSuites,
 ];
 

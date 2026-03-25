@@ -21,6 +21,8 @@
 
 **Prompt 2/7 (V3 track):** Declarative **conductor alignment** metadata (`core/conductor-alignment/`), **module invocation** capabilities + `song_mode_scaffold` registry entry, and **Song Mode** scaffold (section kinds + metadata; no new musical runtime). ECM behaviour unchanged. See [CHANGELOG](../../docs/composer-os/CHANGELOG.md).
 
+**Prompt 3/7 (V3 track):** **Song Mode** structural pipeline — `runSongMode` → compiled song + lead-sheet contract + validation; registry id `song_mode_compile`. No golden-path or ECM changes; no full lead-sheet MusicXML export yet. See [SONG_MODE_INTEGRATION_NOTES](../../docs/composer-os/SONG_MODE_INTEGRATION_NOTES.md).
+
 ---
 
 ## What Composer OS Is

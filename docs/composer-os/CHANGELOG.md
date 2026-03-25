@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## Prompt 3/7 — Song Mode structural integration (no golden path / ECM change)
+
+- **`core/song-mode/`** — `songHookTypes`, `songStructureTypes`, `songCompilationTypes`, `leadSheetContract`, `songModeBuilder`, `songModeValidation`, **`runSongMode.ts`** (default + extended section plans, chord scaffolds, compiled song, lead-sheet-ready contract).
+- **`module-invocation`** — `song_mode_compile` registry entry (`runSongMode`).
+- **`run-ledger`** — optional `songHookId`, `songHookSummary`, `songLeadSheetReady`, `songwritingModuleIds`; `createRunManifest.js` synced.
+- **`docs/composer-os/SONG_MODE_INTEGRATION_NOTES.md`** — asset audit + integration notes.
+- Tests: `songModeIntegration.test.ts`, `leadSheetContract.test.ts`; no UI, no `songwriting_engine` import.
+
 ## Prompt 2/7 — conductor alignment metadata + Song Mode scaffold (non-breaking)
 
 - **`core/conductor-alignment/`** — declarative conductor roles, stage→role map, compatibility ordering, handoff contract types + category map (no runtime rerouting).

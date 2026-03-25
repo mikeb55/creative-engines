@@ -16,6 +16,10 @@ export interface CreateRunManifestInput {
   presetType?: string;
   songModeVoiceType?: string;
   songSectionSummary?: string[];
+  songHookId?: string;
+  songHookSummary?: string;
+  songLeadSheetReady?: boolean;
+  songwritingModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: { release: number; mx: number };
@@ -38,6 +42,10 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     presetType: input.presetType,
     songModeVoiceType: input.songModeVoiceType,
     songSectionSummary: input.songSectionSummary,
+    songHookId: input.songHookId,
+    songHookSummary: input.songHookSummary,
+    songLeadSheetReady: input.songLeadSheetReady,
+    songwritingModuleIds: input.songwritingModuleIds,
     feelMode: input.feelMode,
     instrumentProfiles: input.instrumentProfiles,
     readinessScores: input.readinessScores,

@@ -3,7 +3,8 @@
  */
 
 import { createRunManifest } from '../core/run-ledger/createRunManifest';
-import { planDefaultVerseChorusStructure } from '../core/song-mode/songSectionPlanner';
+import { planDefaultVerseChorusStructure, planExtendedPopStructure } from '../core/song-mode/songSectionPlanner';
+import { PRIMARY_HOOK_SECTION_KIND } from '../core/song-mode/songModeTypes';
 import {
   DEFAULT_SONG_VOICE_TYPE,
   SONG_MODE_SECTION_KINDS,
@@ -52,6 +53,17 @@ export function runSongModeFoundationTests(): { ok: boolean; name: string }[] {
     name: 'planDefaultVerseChorusStructure is verse/chorus/verse/chorus',
   });
 
+  const ext = planExtendedPopStructure();
+  out.push({
+    ok: ext.length === 8 && ext.some((s) => s.kind === 'pre_chorus') && ext.filter((s) => s.kind === 'chorus').length >= 2,
+    name: 'planExtendedPopStructure has pre_chorus and multiple choruses',
+  });
+
+  out.push({
+    ok: PRIMARY_HOOK_SECTION_KIND === 'chorus',
+    name: 'primary hook section kind is chorus',
+  });
+
   const m = createRunManifest({
     version: '2.0.0',
     seed: 1,
@@ -61,6 +73,10 @@ export function runSongModeFoundationTests(): { ok: boolean; name: string }[] {
     presetType: 'song_mode',
     songModeVoiceType: 'male_tenor',
     songSectionSummary: ['verse', 'chorus', 'verse', 'chorus'],
+    songHookId: 'hook_test',
+    songHookSummary: 'hook=hook_test',
+    songLeadSheetReady: true,
+    songwritingModuleIds: ['song_mode_compile'],
     feelMode: 'straight',
     instrumentProfiles: ['clean_electric_guitar'],
     readinessScores: { release: 1, mx: 1 },
@@ -72,7 +88,10 @@ export function runSongModeFoundationTests(): { ok: boolean; name: string }[] {
       m.presetType === 'song_mode' &&
         m.songModeVoiceType === 'male_tenor' &&
         m.songSectionSummary?.length === 4 &&
-        m.activeModuleCategories?.includes('songwriting')
+        m.activeModuleCategories?.includes('songwriting') &&
+        m.songHookId === 'hook_test' &&
+        m.songLeadSheetReady === true &&
+        m.songwritingModuleIds?.includes('song_mode_compile')
     ),
     name: 'run manifest accepts optional song mode fields',
   });

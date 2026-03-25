@@ -20,6 +20,14 @@ export interface RunManifest {
   songModeVoiceType?: string;
   /** Optional: ordered section labels for Song Mode summaries. */
   songSectionSummary?: string[];
+  /** Optional: Song Mode hook id for manifests. */
+  songHookId?: string;
+  /** Optional: short hook + section summary string. */
+  songHookSummary?: string;
+  /** Optional: lead-sheet contract ready (structural) flag. */
+  songLeadSheetReady?: boolean;
+  /** Optional: songwriting modules used on the run (e.g. song_mode_compile). */
+  songwritingModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: {

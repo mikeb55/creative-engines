@@ -1,8 +1,9 @@
 /**
- * Composer OS V2 — static module registry (Phase 1A+1B).
+ * Composer OS V2 — static module registry (Phase 1A+1B + Prompt 3/7 Song Mode compile).
  */
 
 import type { ModuleCapabilities, ModuleDefinition } from './moduleTypes';
+import { runSongMode, type SongModeRunInput, type SongModeRunResult } from '../song-mode/runSongMode';
 
 /** Minimal echo module for tests and future bridge stubs. */
 export type EchoInput = { message: string };
@@ -40,10 +41,26 @@ const songModeScaffoldModule: ModuleDefinition<SongModeScaffoldIn, SongModeScaff
   },
 };
 
+/** Full structural Song Mode pipeline (compiled song + lead sheet contract). */
+const songModeCompileModule: ModuleDefinition<SongModeRunInput, SongModeRunResult> = {
+  id: 'song_mode_compile',
+  category: 'songwriting',
+  input: {} as SongModeRunInput,
+  output: {} as SongModeRunResult,
+  run: (input) => runSongMode(input),
+  capabilities: {
+    readsFrom: ['form'],
+    writesTo: ['score_model', 'validation'],
+    compatiblePresets: ['song_mode'],
+    stage: 'songwriting',
+  },
+};
+
 /** Static registry keyed by module id. No dynamic loading. */
 export const MODULE_REGISTRY: Record<string, ModuleDefinition<unknown, unknown>> = {
   [echoModule.id]: echoModule as ModuleDefinition<unknown, unknown>,
   [songModeScaffoldModule.id]: songModeScaffoldModule as ModuleDefinition<unknown, unknown>,
+  [songModeCompileModule.id]: songModeCompileModule as ModuleDefinition<unknown, unknown>,
 };
 
 export function getRegisteredModuleIds(): string[] {

@@ -1,6 +1,6 @@
 /**
- * Composer OS V2 — Song Mode preset (Phase 1A+1B scaffold).
- * Not wired into conductor or golden path.
+ * Composer OS V2 — Song Mode preset (structural integration Prompt 3/7).
+ * Use `runSongMode` / `song_mode_compile` for pipeline; not wired to app Generate or golden path.
  */
 
 import type { Preset } from './presetTypes';

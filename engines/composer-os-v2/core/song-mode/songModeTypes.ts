@@ -37,3 +37,6 @@ export const DEFAULT_SONG_MODE_SCAFFOLD_METADATA: SongModeScaffoldMetadata = {
   leadSheetReady: true,
   voiceType: DEFAULT_SONG_VOICE_TYPE,
 };
+
+/** Hook-first Song Mode treats chorus as the primary hook-return section. */
+export const PRIMARY_HOOK_SECTION_KIND = 'chorus' as const;
