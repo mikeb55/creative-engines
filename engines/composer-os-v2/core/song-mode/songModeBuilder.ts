@@ -6,7 +6,9 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
+import { planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
+import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
 import { loadSongwritingResearchFromPath, loadSongwritingResearchFromEnvOrDefault } from './songwritingResearchParser';
@@ -15,6 +17,8 @@ import type { SongSectionKind, SongSectionPlan, SongVoiceType } from './songMode
 import { DEFAULT_SONG_VOICE_TYPE } from './songModeTypes';
 import { resolveSongwritingStyles } from './songwriterStyleResolver';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
+import { getSingerRangeProfile } from './singerRangeProfiles';
+import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
   switch (kind) {
     case 'verse':
@@ -105,7 +109,7 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     hookFirst: true,
     leadSheetReady: true,
   };
-  return applySongwritingRules({
+  const withRules = applySongwritingRules({
     compiled: base,
     research,
     resolution,
@@ -114,6 +118,32 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     melodyBehaviour,
     authorOverlay,
   });
+
+  const leadMelodyPlan = planLeadMelody({
+    seed: params.seed,
+    sections: params.sections,
+    chordPlan: withRules.chordPlan,
+    hookPlan,
+    chorusPlan,
+    hook: withRules.hook,
+    voiceType,
+  });
+
+  const singerProfile = getSingerRangeProfile(voiceType);
+  const singerRangeValidation = validateMelodyAgainstSingerRange(leadMelodyPlan, singerProfile);
+
+  const prosodyPlaceholderPlan = planProsodyPlaceholders(
+    leadMelodyPlan,
+    withRules.songwriting?.authorOverlayBehaviour ?? null,
+    params.seed
+  );
+
+  return {
+    ...withRules,
+    leadMelodyPlan,
+    singerRangeValidation,
+    prosodyPlaceholderPlan,
+  };
 }
 
 /** Flatten chord plan into lead-sheet chord track with measure numbers (1-based). */
@@ -148,16 +178,39 @@ export function buildLeadSheetContractFromCompiled(song: CompiledSong): LeadShee
     measureBase = barEnd + 1;
   }
 
+  const profile = getSingerRangeProfile(song.voiceType);
+  const melodyEvents =
+    song.leadMelodyPlan?.notes.map((n) => ({
+      measure: n.measure,
+      beat: n.beat,
+      duration: n.duration,
+      pitch: n.midi,
+    })) ?? [];
+
   const contract: LeadSheetContract = {
     title: song.title,
     vocalMelody: {
-      events: [],
+      events: melodyEvents,
       voiceType: song.voiceType,
-      adaptedRange: [60, 72],
+      adaptedRange: [...profile.comfortRangeMidi] as [number, number],
+      singerProfileId: song.voiceType,
+      eventCount: melodyEvents.length,
     },
     chordSymbols: chords,
     lyricPlaceholders: lyrics,
     formSummary: { sections: formSections },
+    prosodySlots:
+      song.prosodyPlaceholderPlan?.lines.map((l) => ({
+        phraseId: l.phraseId,
+        syllableCount: l.syllableSlots.reduce((a, b) => a + b, 0),
+        stressSummary: l.stressPattern.slice(0, 8).join(''),
+        emotionalTag: l.emotionalContourTag,
+      })) ?? [],
+    voiceMetadata: {
+      singerProfileId: song.voiceType,
+      comfortRangeMidi: [...profile.comfortRangeMidi] as [number, number],
+      singerRangeOk: song.singerRangeValidation?.ok ?? false,
+    },
   };
   if (song.songwriting) {
     contract.songwritingHints = {

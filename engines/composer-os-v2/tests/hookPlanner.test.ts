@@ -15,7 +15,9 @@ export function runHookPlannerTests(): { ok: boolean; name: string }[] {
     ok:
       martin.hookTypePriorityOrder.length === 4 &&
       martin.minRepetitionsAcrossForm >= 3 &&
-      dylan.primaryHookType === 'lyrical_placeholder',
+      dylan.primaryHookType === 'lyrical_placeholder' &&
+      martin.expectsHookReturnInChorus === true &&
+      dylan.expectsHookReturnInChorus === true,
     name: 'hook planner encodes type priority and style-specific primary hook',
   });
 

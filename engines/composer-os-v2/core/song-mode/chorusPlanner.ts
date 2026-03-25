@@ -10,6 +10,8 @@ export interface ChorusPlan {
   relativeIntensityVsVerse: 'higher' | 'equal';
   harmonicStabilityBias: 'more_grounded' | 'neutral' | 'more_unstable';
   titleEmphasis: 'high' | 'medium' | 'low';
+  /** Planned register lift for chorus payoff (semitones), capped by singer profile. */
+  chorusLiftSemitones: number;
 }
 
 export function planChorusMetadata(sections: SongSectionPlan[], primaryStyle: SongwriterRuleId): ChorusPlan {
@@ -20,6 +22,7 @@ export function planChorusMetadata(sections: SongSectionPlan[], primaryStyle: So
       relativeIntensityVsVerse: 'equal',
       harmonicStabilityBias: 'neutral',
       titleEmphasis: 'medium',
+      chorusLiftSemitones: 0,
     };
   }
   const titleEmphasis: ChorusPlan['titleEmphasis'] =
@@ -30,10 +33,14 @@ export function planChorusMetadata(sections: SongSectionPlan[], primaryStyle: So
         : 'medium';
   const harmonicStabilityBias: ChorusPlan['harmonicStabilityBias'] =
     primaryStyle === 'donald_fagen' || primaryStyle === 'bacharach' ? 'more_unstable' : 'more_grounded';
+  const chorusLiftSemitones =
+    titleEmphasis === 'high' ? 3 : titleEmphasis === 'medium' ? 2 : 1;
+
   return {
     isPrimaryPayoffSection: true,
     relativeIntensityVsVerse: 'higher',
     harmonicStabilityBias,
     titleEmphasis,
+    chorusLiftSemitones,
   };
 }

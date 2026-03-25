@@ -57,6 +57,10 @@ import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.tes
 import { runReferenceBehaviourExtractionTests } from './referenceBehaviourExtraction.test';
 import { runReferenceReuseAdapterTests } from './referenceReuseAdapter.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
+import { runLeadMelodyPlannerTests } from './leadMelodyPlanner.test';
+import { runSingerRangeValidationTests } from './singerRangeValidation.test';
+import { runProsodyPlannerTests } from './prosodyPlanner.test';
+import { runSongModeCompletionTests } from './songModeCompletion.test';
 import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
 import { runEnsembleFamilyProfilesTests } from './ensembleFamilyProfiles.test';
@@ -117,6 +121,10 @@ const suites = [
   { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },
   { name: 'Author overlay resolver', run: runAuthorOverlayResolverTests },
   { name: 'Hook planner', run: runHookPlannerTests },
+  { name: 'Lead melody planner', run: runLeadMelodyPlannerTests },
+  { name: 'Singer range validation', run: runSingerRangeValidationTests },
+  { name: 'Prosody planner', run: runProsodyPlannerTests },
+  { name: 'Song Mode completion', run: runSongModeCompletionTests },
   { name: 'Song Mode behaviour encoding', run: runSongModeBehaviourEncodingTests },
   { name: 'Named preset library', run: runNamedPresetLibraryTests },
   { name: 'Session store', run: runSessionStoreTests },

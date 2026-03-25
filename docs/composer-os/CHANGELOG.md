@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## Prompt B/3 — Song Mode completion (Phase 2 songwriting)
+
+- **`core/song-mode/`** — **Lead melody** planning (`leadMelodyPlanner`, contour/phrase helpers, `melodyValidation`) with sparse note anchors, cadence bars, hook-return measure, chorus lift capped by singer profile.
+- **Singer range** — `singerRangeProfiles` / `singerRangeValidation` (default **male_tenor**; placeholder ids for alto, baritone, soprano).
+- **Lyric / prosody** — `prosodyPlanner`, `lyricPlaceholderPlanner`, `prosodyValidation`: syllable slots, stress placeholders, **Pattison / Webb / Perricone** alignment when author overlay is set.
+- **`runSongMode`** — extended validation: compiled song + prosody + **lead melody shape** + hook-return consistency; **lead sheet** includes top-line events, **prosodySlots**, **voiceMetadata**.
+- **Tests** — `leadMelodyPlanner`, `singerRangeValidation`, `prosodyPlanner`, `songModeCompletion`; retro stage-exit gate for Song Mode.
+
 ## Prompt A/3 — Reference / import intelligence (Phase 1)
 
 - **`core/reference-import/`** — Types (`referencePieceTypes`, `importSourceTypes`, `behaviourExtractionTypes`, `referenceReuseTypes`); validation; **MusicXML** (first-part, regex-light), **MIDI** (SMF note-on extraction), **lead-sheet text** (via `chord-input`), **internal** adapter from `CompositionContext`; **`extractReferenceBehaviour`** + per-dimension extractors; **`applyReferenceInfluence`** (metadata hints per target mode — not cloning).

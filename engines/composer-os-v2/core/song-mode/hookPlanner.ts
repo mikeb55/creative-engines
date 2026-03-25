@@ -13,6 +13,8 @@ export interface HookPlan {
   minRepetitionsAcrossForm: number;
   /** Planning estimate — bars until first hook window. */
   timeToFirstHookBarsEstimate: number;
+  /** Hook return is expected in chorus sections for pop-oriented plans. */
+  expectsHookReturnInChorus: boolean;
 }
 
 function orderForStyle(primaryStyle: SongwriterRuleId): HookTypeKind[] {
@@ -48,5 +50,6 @@ export function planHookMetadata(
     hookTypePriorityOrder: order,
     minRepetitionsAcrossForm: minRep,
     timeToFirstHookBarsEstimate,
+    expectsHookReturnInChorus: sections.some((s) => s.kind === 'chorus'),
   };
 }

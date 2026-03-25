@@ -4,9 +4,11 @@
 
 import type { LeadSheetContract } from './leadSheetContract';
 import type { CompiledSong } from './songCompilationTypes';
+import { validateHookReturnConsistency, validateLeadMelodyPlan } from './melodyValidation';
 import type { SongSectionPlan } from './songModeTypes';
-import { DEFAULT_SONG_VOICE_TYPE, type SongVoiceType } from './songModeTypes';
+import type { SongVoiceType } from './songModeTypes';
 import { structureHasChorus } from './songStructureTypes';
+import { validateProsodyPlaceholderPlan } from './prosodyValidation';
 
 export interface SongModeValidationResult {
   valid: boolean;
@@ -40,13 +42,20 @@ export function validateCompiledSong(
   const errors: string[] = [];
   if (!song.id) err(errors, 'Compiled song: missing id');
   if (!song.title) err(errors, 'Compiled song: missing title');
-  const expectedVoice = opts?.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
-  if (song.voiceType !== expectedVoice) err(errors, `Compiled song: expected voiceType ${expectedVoice}`);
+  if (opts?.voiceType != null && song.voiceType !== opts.voiceType) {
+    err(errors, `Compiled song: expected voiceType ${opts.voiceType}`);
+  }
   if (!song.hook?.id) err(errors, 'Compiled song: missing hook id');
   if (song.sectionSummary.length === 0) err(errors, 'Compiled song: empty section summary');
   if (song.chordPlan.length === 0) err(errors, 'Compiled song: empty chord plan');
   if (!song.hookFirst || !song.melodyFirst) err(errors, 'Compiled song: melodyFirst/hookFirst flags required');
   if (!song.leadSheetReady) err(errors, 'Compiled song: leadSheetReady expected for Song Mode');
+  if (!song.leadMelodyPlan) err(errors, 'Compiled song: lead melody plan required');
+  if (!song.singerRangeValidation) err(errors, 'Compiled song: singer range validation missing');
+  else {
+    for (const e of song.singerRangeValidation.errors) err(errors, e);
+  }
+  if (!song.prosodyPlaceholderPlan) err(errors, 'Compiled song: prosody placeholder plan required');
   return { valid: errors.length === 0, errors };
 }
 
@@ -54,10 +63,30 @@ export function validateLeadSheetContract(c: LeadSheetContract): SongModeValidat
   const errors: string[] = [];
   if (!c.title) err(errors, 'Lead sheet: missing title');
   if (!c.vocalMelody?.voiceType) err(errors, 'Lead sheet: missing vocal voice type');
+  if (c.vocalMelody.events.length === 0) err(errors, 'Lead sheet: no lead melody events');
   if (c.chordSymbols.length === 0) err(errors, 'Lead sheet: no chord symbols');
   if (!c.formSummary?.sections?.length) err(errors, 'Lead sheet: form summary empty');
   for (const ph of c.lyricPlaceholders) {
     if (!ph.placeholderId) err(errors, 'Lead sheet: lyric placeholder missing id');
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/** Prosody placeholder layer (Prompt B/3). */
+export function validateSongModeProsodyPlan(song: CompiledSong): SongModeValidationResult {
+  const r = validateProsodyPlaceholderPlan(song.prosodyPlaceholderPlan);
+  return { valid: r.ok, errors: r.errors };
+}
+
+/** Lead melody shape + hook-return consistency (Prompt B/3). */
+export function validateSongModeLeadMelodyPlan(song: CompiledSong): SongModeValidationResult {
+  const errors: string[] = [];
+  const m = validateLeadMelodyPlan(song.leadMelodyPlan);
+  if (!m.ok) for (const e of m.errors) err(errors, e);
+  const expects = song.songwriting?.hookPlan?.expectsHookReturnInChorus ?? false;
+  if (song.leadMelodyPlan) {
+    const h = validateHookReturnConsistency(song.leadMelodyPlan, expects);
+    if (!h.ok) for (const e of h.errors) err(errors, e);
   }
   return { valid: errors.length === 0, errors };
 }

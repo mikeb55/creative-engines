@@ -5,7 +5,10 @@
 import type { AuthorOverlayBehaviour } from './authorOverlayResolver';
 import type { ChorusPlan } from './chorusPlanner';
 import type { HookPlan } from './hookPlanner';
+import type { LeadMelodyPlan } from './leadMelodyTypes';
+import type { ProsodyPlaceholderPlan } from './lyricProsodyTypes';
 import type { MelodyBehaviourPlan } from './melodyBehaviourPlanner';
+import type { SingerRangeValidationResult } from './singerRangeTypes';
 import type { SongHook } from './songHookTypes';
 import type { SongSectionKind, SongVoiceType } from './songModeTypes';
 import type { ParsedSongwritingResearch } from './songwritingResearchTypes';
@@ -54,4 +57,8 @@ export interface CompiledSong {
   leadSheetReady: boolean;
   /** Present after Prompt 6.5/7 — research + style resolution + planners. */
   songwriting?: SongwritingPlanningBundle;
+  /** Lead melody plan (Prompt B/3 — Song Mode completion). */
+  leadMelodyPlan?: LeadMelodyPlan;
+  singerRangeValidation?: SingerRangeValidationResult;
+  prosodyPlaceholderPlan?: ProsodyPlaceholderPlan;
 }

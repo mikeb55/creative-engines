@@ -23,8 +23,12 @@ export function runLeadSheetContractTests(): { ok: boolean; name: string }[] {
   });
 
   out.push({
-    ok: ls.lyricPlaceholders.length >= 1 && ls.vocalMelody.adaptedRange[0] < ls.vocalMelody.adaptedRange[1],
-    name: 'lead sheet has lyric placeholders and vocal range',
+    ok:
+      ls.lyricPlaceholders.length >= 1 &&
+      ls.vocalMelody.adaptedRange[0] < ls.vocalMelody.adaptedRange[1] &&
+      (ls.vocalMelody.eventCount ?? 0) === ls.vocalMelody.events.length &&
+      ls.vocalMelody.events.length > 0,
+    name: 'lead sheet has lyric placeholders, vocal range, and melody events',
   });
 
   const bad = { ...ls, chordSymbols: [] };

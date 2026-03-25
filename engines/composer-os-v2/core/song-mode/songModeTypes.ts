@@ -10,8 +10,8 @@ export interface SongSectionPlan {
   kind: SongSectionKind;
 }
 
-/** Default vocal target for Song Mode V1 scaffold. */
-export type SongVoiceType = 'male_tenor';
+/** Default vocal target for Song Mode; additional ids use placeholder tessitura until expanded. */
+export type SongVoiceType = 'male_tenor' | 'female_alto' | 'baritone' | 'soprano';
 
 export const DEFAULT_SONG_VOICE_TYPE: SongVoiceType = 'male_tenor';
 

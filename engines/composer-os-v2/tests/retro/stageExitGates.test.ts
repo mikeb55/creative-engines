@@ -16,6 +16,7 @@ import { planGuitarRegisterMap, planBassRegisterMap } from '../../core/register-
 import { planGuitarBehaviour } from '../../core/instrument-behaviours/guitarBehaviour';
 import { planBassBehaviour } from '../../core/instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../../core/rhythm-engine/rhythmEngine';
+import { runSongMode } from '../../core/song-mode/runSongMode';
 
 function extractPitchByInstrument(score: { parts: Array<{ instrumentIdentity: string; measures: Array<{ events: Array<{ kind: string; pitch?: number }> }> }> }) {
   return score.parts.map((p) => {
@@ -197,6 +198,15 @@ function testNegativeMotifRecurrenceBrokenFails(): boolean {
   return !r.allValid;
 }
 
+function testSongModeLeadMelodyGatePasses(): boolean {
+  const r = runSongMode({ seed: 4242, title: 'Retro Song Mode Gate' });
+  return (
+    r.validation.valid &&
+    (r.compiledSong.leadMelodyPlan?.notes.length ?? 0) > 0 &&
+    r.leadSheetContract.vocalMelody.events.length > 0
+  );
+}
+
 function testNegativeStyleStackNeutralizedFails(): boolean {
   const r = runGoldenPath(202);
   const sections = r.plans?.sections ?? [];
@@ -234,6 +244,7 @@ export function runStageExitGatesTests(): { name: string; ok: boolean }[] {
     ['Style System: gates pass', testStyleSystemGatesPass],
     ['Interaction Layer: gates pass', testInteractionLayerGatesPass],
     ['Output & Control: gates pass', testOutputControlGatesPass],
+    ['Song Mode: lead melody + lead sheet gate passes', testSongModeLeadMelodyGatePasses],
     ['Negative: rehearsal mark removed fails', testNegativeRehearsalMarkRemovedFails],
     ['Negative: chord symbols removed fails', testNegativeChordSymbolsRemovedFails],
     ['Negative: guitar register too high fails', testNegativeGuitarRegisterTooHighFails],

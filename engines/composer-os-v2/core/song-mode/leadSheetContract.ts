@@ -3,11 +3,13 @@
  * No MusicXML export here — structural contract for future bridge.
  */
 
-/** Placeholder vocal line — events optional until melody generation exists. */
+/** Lead vocal line — events populated when `leadMelodyPlan` is present on compiled song. */
 export interface LeadSheetVocalMelody {
   events: Array<{ measure: number; beat: number; duration: number; pitch?: number }>;
   voiceType: string;
   adaptedRange: [number, number];
+  singerProfileId?: string;
+  eventCount?: number;
 }
 
 export interface LeadSheetChordSymbol {
@@ -34,6 +36,13 @@ export interface LeadSheetSongwritingHints {
   prosodyStabilityTags: 'stable_heavy' | 'balanced';
 }
 
+export interface LeadSheetProsodySlot {
+  phraseId: string;
+  syllableCount: number;
+  stressSummary: string;
+  emotionalTag?: string;
+}
+
 export interface LeadSheetContract {
   title: string;
   vocalMelody: LeadSheetVocalMelody;
@@ -41,4 +50,11 @@ export interface LeadSheetContract {
   lyricPlaceholders: LeadSheetLyricPlaceholder[];
   formSummary: LeadSheetFormSummary;
   songwritingHints?: LeadSheetSongwritingHints;
+  /** Syllable / stress planning slots (no final lyrics). */
+  prosodySlots?: LeadSheetProsodySlot[];
+  voiceMetadata?: {
+    singerProfileId: string;
+    comfortRangeMidi: [number, number];
+    singerRangeOk: boolean;
+  };
 }

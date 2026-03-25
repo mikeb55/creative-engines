@@ -13,6 +13,8 @@ import {
   validateLeadSheetContract,
   validateSectionPlanForSongMode,
   validateSongModeRunInput,
+  validateSongModeProsodyPlan,
+  validateSongModeLeadMelodyPlan,
   validateSongwritingPlanning,
   type SongModeValidationResult,
 } from './songModeValidation';
@@ -87,7 +89,9 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
   const v2 = validateLeadSheetContract(lead);
   const v3 = planVal;
   const v4 = validateSongwritingPlanning(compiled);
-  const validation = mergeSongModeValidation(v0, v3, v1, v2, v4);
+  const v5 = validateSongModeProsodyPlan(compiled);
+  const v6 = validateSongModeLeadMelodyPlan(compiled);
+  const validation = mergeSongModeValidation(v0, v3, v1, v2, v4, v5, v6);
 
   const sw = compiled.songwriting;
   const manifestHints: SongModeRunManifestHints = {
