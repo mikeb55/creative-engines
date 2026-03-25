@@ -19,6 +19,8 @@
 
 **Demo stack:** primary barry-harris, secondary metheny, colour triad-pairs. **Interaction:** A support, B call_response.
 
+**Prompt 2/7 (V3 track):** Declarative **conductor alignment** metadata (`core/conductor-alignment/`), **module invocation** capabilities + `song_mode_scaffold` registry entry, and **Song Mode** scaffold (section kinds + metadata; no new musical runtime). ECM behaviour unchanged. See [CHANGELOG](../../docs/composer-os/CHANGELOG.md).
+
 ---
 
 ## What Composer OS Is

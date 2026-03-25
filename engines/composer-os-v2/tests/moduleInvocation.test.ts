@@ -1,9 +1,9 @@
 /**
- * Phase 1A — module invocation layer (static registry).
+ * Phase 1A+1B — module invocation layer (static registry).
  */
 
 import { invokeModule } from '../core/module-invocation/invokeModule';
-import { getRegisteredModuleIds, MODULE_REGISTRY } from '../core/module-invocation/moduleRegistry';
+import { getModuleCapabilities, getRegisteredModuleIds, MODULE_REGISTRY } from '../core/module-invocation/moduleRegistry';
 
 export function runModuleInvocationTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -14,14 +14,30 @@ export function runModuleInvocationTests(): { ok: boolean; name: string }[] {
   });
 
   out.push({
-    ok: getRegisteredModuleIds().includes('phase1a_echo'),
-    name: 'getRegisteredModuleIds lists echo module',
+    ok: getRegisteredModuleIds().includes('phase1a_echo') && getRegisteredModuleIds().includes('song_mode_scaffold'),
+    name: 'getRegisteredModuleIds lists echo and song_mode_scaffold',
   });
 
   const echo = invokeModule<{ message: string }, { message: string }>('phase1a_echo', { message: 'hi' });
   out.push({
     ok: echo.message === 'hi',
     name: 'invokeModule runs echo module',
+  });
+
+  const sc = invokeModule<{ structureHint?: string }, { structureHint?: string }>('song_mode_scaffold', {});
+  out.push({
+    ok: sc.structureHint === 'default_verse_chorus',
+    name: 'invokeModule runs song_mode_scaffold',
+  });
+
+  const cap = getModuleCapabilities('phase1a_echo');
+  out.push({
+    ok: Boolean(
+      cap?.readsFrom?.length &&
+        cap?.writesTo?.length &&
+        cap?.compatiblePresets?.includes('song_mode')
+    ),
+    name: 'registry entries can expose capabilities',
   });
 
   let threw = false;

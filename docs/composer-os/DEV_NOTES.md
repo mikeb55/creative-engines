@@ -2,6 +2,9 @@
 
 ## Architecture Layers
 
+- **Conductor alignment (Prompt 2/7)**: `core/conductor-alignment/` — metadata-only mapping of Composer OS stages to conductor roles (`conductorRoleMap.ts`, `handoffMap.ts`). Does not replace or reroute the runtime conductor; no musical changes.
+- **Module invocation**: `core/module-invocation/` — static registry + optional module capabilities; `song_mode_scaffold` entry for future Song Mode wiring (not connected to golden path).
+- **Song Mode scaffold**: `core/song-mode/` + `presets/songModePreset.ts` — section kinds and metadata only; default structure remains verse/chorus/verse/chorus until full Song Mode work.
 - **Conductor**: Pipeline coordinator
 - **Rhythm Engine**: Feel, syncopation, subdivision
 - **Section Roles**: Statement, development, contrast, return

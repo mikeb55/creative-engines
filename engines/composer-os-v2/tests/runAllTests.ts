@@ -28,6 +28,8 @@ import { runPhraseAuthorityTests } from './phraseAuthority.test';
 import { runJazzDuoBehaviourTests } from './jazzDuoBehaviour.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
+import { runConductorAlignmentTests } from './conductorAlignment.test';
+import { runHandoffMapTests } from './handoffMap.test';
 import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { retroSuites } from './retro/index';
@@ -59,6 +61,8 @@ const suites = [
   { name: 'Jazz duo behaviour', run: runJazzDuoBehaviourTests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
+  { name: 'Conductor alignment', run: runConductorAlignmentTests },
+  { name: 'Handoff map', run: runHandoffMapTests },
   { name: 'Module invocation', run: runModuleInvocationTests },
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   ...retroSuites,

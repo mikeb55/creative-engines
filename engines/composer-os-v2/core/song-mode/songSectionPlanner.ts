@@ -1,5 +1,6 @@
 /**
- * Composer OS V2 — simple verse/chorus section ordering (Phase 1A).
+ * Composer OS V2 — simple verse/chorus section ordering (Phase 1A+1B).
+ * Expanded section kinds exist on types; default path stays verse/chorus only (no harmony).
  */
 
 import type { SongSectionPlan } from './songModeTypes';

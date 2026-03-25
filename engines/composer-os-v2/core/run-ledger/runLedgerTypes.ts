@@ -12,6 +12,14 @@ export interface RunManifest {
   /** Title applied to the exported score */
   scoreTitle?: string;
   activeModules: string[];
+  /** Optional: categories aligned with module registry (future recording). */
+  activeModuleCategories?: string[];
+  /** Optional: preset family for manifests (`guitar_bass_duo`, `ecm_chamber`, `song_mode`, …). */
+  presetType?: string;
+  /** Optional: Song Mode vocal target when preset is song workflow. */
+  songModeVoiceType?: string;
+  /** Optional: ordered section labels for Song Mode summaries. */
+  songSectionSummary?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: {

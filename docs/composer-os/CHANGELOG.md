@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## Prompt 2/7 — conductor alignment metadata + Song Mode scaffold (non-breaking)
+
+- **`core/conductor-alignment/`** — declarative conductor roles, stage→role map, compatibility ordering, handoff contract types + category map (no runtime rerouting).
+- **`core/module-invocation/`** — optional `ModuleCapabilities` (`readsFrom`, `writesTo`, `compatiblePresets`, `stage`); static registry includes **`song_mode_scaffold`** (songwriting).
+- **`core/song-mode/`** — section kinds expanded to **verse / pre_chorus / chorus / bridge**; metadata flags **melodyFirst**, **hookFirst**, **leadSheetReady**, **voiceType** (`male_tenor`); default planner still **verse / chorus / verse / chorus** (no harmony).
+- **`run-ledger`** — optional manifest fields: `activeModuleCategories`, `presetType`, `songModeVoiceType`, `songSectionSummary` (existing runs unchanged when omitted). **`createRunManifest.js`** kept in sync with `.ts` so optional fields (and `ecmMode`) are present when Node resolves `.js` first.
+- No musical runtime or ECM behaviour changes; no `songwriting_engine` import.
+
 ## Desktop packaging — auto version bump
 
 - **`npm run desktop:package`** runs **`install/bumpDesktopVersionCli.ts`** first so `package.json` **patch** increments (`1.0.1` → `1.0.2` → …) before **electron-builder**. The portable artifact is always **`Composer-OS-Desktop-${version}-portable.exe`**, so each build writes a **new** file and avoids Windows locking the previous exe. Set **`COMPOSER_OS_SKIP_VERSION_BUMP=1`** to skip the bump (rare).

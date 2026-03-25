@@ -2,6 +2,7 @@
 /**
  * Composer OS V2 — Run manifest generator
  * Essential for replay/debug.
+ * Keep in sync with createRunManifest.ts (Node may resolve .js first).
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRunManifest = createRunManifest;
@@ -11,8 +12,13 @@ function createRunManifest(input) {
         composerOsVersion: input.version,
         seed: input.seed,
         presetId: input.presetId,
+        ecmMode: input.ecmMode,
         scoreTitle: input.scoreTitle,
         activeModules: input.activeModules,
+        activeModuleCategories: input.activeModuleCategories,
+        presetType: input.presetType,
+        songModeVoiceType: input.songModeVoiceType,
+        songSectionSummary: input.songSectionSummary,
         feelMode: input.feelMode,
         instrumentProfiles: input.instrumentProfiles,
         readinessScores: input.readinessScores,
