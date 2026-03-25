@@ -4,6 +4,7 @@
 
 import type { ModuleCapabilities, ModuleDefinition } from './moduleTypes';
 import { runSongMode, type SongModeRunInput, type SongModeRunResult } from '../song-mode/runSongMode';
+import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from '../big-band/runBigBandMode';
 
 /** Minimal echo module for tests and future bridge stubs. */
 export type EchoInput = { message: string };
@@ -56,11 +57,28 @@ const songModeCompileModule: ModuleDefinition<SongModeRunInput, SongModeRunResul
   },
 };
 
+/** Big Band planning pipeline (form → orchestration); no full score export yet. */
+const bigBandPlanModule: ModuleDefinition<BigBandRunInput, BigBandRunResult> = {
+  id: 'big_band_plan',
+  category: 'orchestration',
+  input: {} as BigBandRunInput,
+  output: {} as BigBandRunResult,
+  run: (input) => runBigBandMode(input),
+  capabilities: {
+    readsFrom: ['register', 'density'],
+    writesTo: ['score_model', 'validation'],
+    compatiblePresets: ['big_band'],
+    stage: 'orchestration_planning',
+    orchestrationPlanning: true,
+  },
+};
+
 /** Static registry keyed by module id. No dynamic loading. */
 export const MODULE_REGISTRY: Record<string, ModuleDefinition<unknown, unknown>> = {
   [echoModule.id]: echoModule as ModuleDefinition<unknown, unknown>,
   [songModeScaffoldModule.id]: songModeScaffoldModule as ModuleDefinition<unknown, unknown>,
   [songModeCompileModule.id]: songModeCompileModule as ModuleDefinition<unknown, unknown>,
+  [bigBandPlanModule.id]: bigBandPlanModule as ModuleDefinition<unknown, unknown>,
 };
 
 export function getRegisteredModuleIds(): string[] {

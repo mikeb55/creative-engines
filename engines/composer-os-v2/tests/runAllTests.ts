@@ -38,6 +38,10 @@ import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
 import { runEnsembleFamilyProfilesTests } from './ensembleFamilyProfiles.test';
 import { runOrchestrationCompatibilityTests } from './orchestrationCompatibility.test';
+import { runBigBandTypesTests } from './bigBandTypes.test';
+import { runBigBandPlanningTests } from './bigBandPlanning.test';
+import { runBigBandValidationTests } from './bigBandValidation.test';
+import { runBigBandModeTests } from './bigBandMode.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -77,6 +81,10 @@ const suites = [
   { name: 'Orchestration planner', run: runOrchestrationPlannerTests },
   { name: 'Ensemble family profiles', run: runEnsembleFamilyProfilesTests },
   { name: 'Orchestration compatibility', run: runOrchestrationCompatibilityTests },
+  { name: 'Big Band types', run: runBigBandTypesTests },
+  { name: 'Big Band planning', run: runBigBandPlanningTests },
+  { name: 'Big Band validation', run: runBigBandValidationTests },
+  { name: 'Big Band mode', run: runBigBandModeTests },
   ...retroSuites,
 ];
 

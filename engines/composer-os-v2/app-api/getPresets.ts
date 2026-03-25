@@ -24,8 +24,9 @@ const PRESETS: AppPreset[] = [
   {
     id: bigBandPreset.id,
     name: bigBandPreset.name,
-    description: 'Placeholder for future big band instrumentation.',
-    supported: false,
+    description:
+      'Big band planning mode: form/section/density/orchestration via runBigBandMode (no full ensemble MusicXML yet).',
+    supported: true,
   },
 ];
 

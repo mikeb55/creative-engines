@@ -25,6 +25,8 @@
 
 **Prompt 4/7 (V3 track):** **Shared orchestration layer** — `core/orchestration/` (types, planners, ensemble family profiles, validation, duo/chamber plan builders, ECM + Song Mode compatibility mappers). Declarative metadata in `orchestrationLayerMetadata.ts` and handoff map; no runtime rerouting. Big Band and String Quartet **generation** are not implemented yet.
 
+**Prompt 5/7 (V3 track):** **Big Band planning module** — `core/big-band/` (`runBigBandMode`, form/section/density planners, `buildBigBandOrchestrationPlan` on shared orchestration), preset `big_band` with planning metadata, registry `big_band_plan`. Full ensemble MusicXML / voicings not implemented yet. See [BIG_BAND_INTEGRATION_NOTES](../../docs/composer-os/BIG_BAND_INTEGRATION_NOTES.md).
+
 ---
 
 ## What Composer OS Is

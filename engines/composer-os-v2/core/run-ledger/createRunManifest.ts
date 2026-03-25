@@ -20,6 +20,9 @@ export interface CreateRunManifestInput {
   songHookSummary?: string;
   songLeadSheetReady?: boolean;
   songwritingModuleIds?: string[];
+  bigBandFormSequence?: string[];
+  bigBandOrchestrationReady?: boolean;
+  bigBandModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: { release: number; mx: number };
@@ -46,6 +49,9 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songHookSummary: input.songHookSummary,
     songLeadSheetReady: input.songLeadSheetReady,
     songwritingModuleIds: input.songwritingModuleIds,
+    bigBandFormSequence: input.bigBandFormSequence,
+    bigBandOrchestrationReady: input.bigBandOrchestrationReady,
+    bigBandModuleIds: input.bigBandModuleIds,
     feelMode: input.feelMode,
     instrumentProfiles: input.instrumentProfiles,
     readinessScores: input.readinessScores,

@@ -28,6 +28,12 @@ export interface RunManifest {
   songLeadSheetReady?: boolean;
   /** Optional: songwriting modules used on the run (e.g. song_mode_compile). */
   songwritingModuleIds?: string[];
+  /** Optional: Big Band planning run — ordered form phases. */
+  bigBandFormSequence?: string[];
+  /** Optional: orchestration planning succeeded for Big Band mode. */
+  bigBandOrchestrationReady?: boolean;
+  /** Optional: Big Band planning modules (e.g. big_band_plan). */
+  bigBandModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: {

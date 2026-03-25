@@ -17,8 +17,9 @@ export function runModuleInvocationTests(): { ok: boolean; name: string }[] {
     ok:
       getRegisteredModuleIds().includes('phase1a_echo') &&
       getRegisteredModuleIds().includes('song_mode_scaffold') &&
-      getRegisteredModuleIds().includes('song_mode_compile'),
-    name: 'getRegisteredModuleIds lists echo, song_mode_scaffold, song_mode_compile',
+      getRegisteredModuleIds().includes('song_mode_compile') &&
+      getRegisteredModuleIds().includes('big_band_plan'),
+    name: 'getRegisteredModuleIds lists echo, song_mode_scaffold, song_mode_compile, big_band_plan',
   });
 
   const echo = invokeModule<{ message: string }, { message: string }>('phase1a_echo', { message: 'hi' });

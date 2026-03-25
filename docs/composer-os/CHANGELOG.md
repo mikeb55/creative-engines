@@ -1,5 +1,15 @@
 # Composer OS Changelog
 
+## Prompt 5/7 — Big Band planning module (no full big-band MusicXML yet)
+
+- **`core/big-band/`** — Types (instrument sections, BB roles, plans), `bigBandFormPlanner` / `bigBandSectionPlanner` / `bigBandDensityPlanner`, `buildBigBandOrchestrationPlan` + `assembleBigBandOrchestrationPlan`, `bigBandValidation`, **`runBigBandMode.ts`**.
+- **Preset** — `big_band` is a real planning preset (`bigBandMetadata`, guitar + bass stand-ins for manifests); **`getPresets`** marks it supported (planning path).
+- **Module registry** — `big_band_plan` (`orchestration` category, `orchestration_planning` stage).
+- **`run-ledger`** — optional `bigBandFormSequence`, `bigBandOrchestrationReady`, `bigBandModuleIds`; `createRunManifest.js` synced.
+- **`presetTypes`** — optional `BigBandPresetMetadata`.
+- **`docs/composer-os/BIG_BAND_INTEGRATION_NOTES.md`** — reuse notes vs separate engines (no heavy imports).
+- Removed stale **`presets/bigBandPreset.js`** (could shadow TS and omit metadata).
+
 ## Prompt 4/7 — Shared orchestration layer (planning only; no Big Band / Quartet generation)
 
 - **`core/orchestration/`** — Ensemble-agnostic types (`instrumentRole` / `textureRole`, `registerBand`, `densityBand`, `articulationBias`, `sustainVsAttack`), register/texture/density ownership planners, ensemble **family profiles** (duo, chamber, big_band, string_quartet, songwriting_lead_sheet), validation, ECM + Song Mode **compatibility** mappers, **`buildDuoOrchestrationPlan`** / **`buildChamberOrchestrationPlan`** (chamber reads `buildEcmChamberContext` metadata only — no ECM musical change).
