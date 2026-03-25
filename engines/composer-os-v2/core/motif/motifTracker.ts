@@ -68,3 +68,36 @@ export function placeMotifsAcrossBars(motifs: BaseMotif[], seed: number): Placed
   }
   return placements;
 }
+
+/** ECM extended form: motif entries each 8-bar cycle, varied transpose/rhythm (no bare 8-bar loop). */
+export function placeMotifsForEcmForm(motifs: BaseMotif[], seed: number, totalBars: number): PlacedMotif[] {
+  const placements: PlacedMotif[] = [];
+  const r = (n: number) => ((seed + n) % 5) - 2;
+  const phase = (seed % 11) / 20;
+  for (let start = 1; start <= totalBars; start += 8) {
+    const c = (start - 1) / 8;
+    placements.push(
+      placeMotifAtBar(motifs[0], start, c === 0 ? 'original' : 'transposed', r(start + 3), c * 0.15 + phase * 0.5)
+    );
+    if (start + 4 <= totalBars) {
+      placements.push(
+        placeMotifAtBar(motifs[0], start + 4, 'transposed', r(start + 9), 0.5 + phase + c * 0.1)
+      );
+    }
+  }
+  if (motifs.length > 1) {
+    for (let start = 3; start <= totalBars; start += 8) {
+      const c = (start - 3) / 8;
+      placements.push(
+        placeMotifAtBar(
+          motifs[1],
+          start,
+          c % 2 === 0 ? 'rhythm_shift' : 'inversion_lite',
+          r(start + 2),
+          ((seed * 3 + start) % 5) * 0.25 + c * 0.05
+        )
+      );
+    }
+  }
+  return placements;
+}

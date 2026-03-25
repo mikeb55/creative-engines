@@ -9,6 +9,7 @@ import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { generateGoldenPathDuoScore, type GoldenPathPlans } from './generateGoldenPathDuoScore';
 import { planSectionRoles } from '../section-roles/sectionRolePlanner';
+import type { SectionRole } from '../section-roles/sectionRoleTypes';
 import { planDensityCurve } from '../density/densityCurvePlanner';
 import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/registerMapPlanner';
 import { planInteraction } from '../interaction/interactionPlanner';
@@ -18,7 +19,7 @@ import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
 import { generateMotif, type MotifStyleHints } from '../motif/motifGenerator';
 import { styleStackToModuleIds, type StyleStack } from '../style-modules/styleModuleTypes';
 import { applyStyleStack } from '../style-modules/styleModuleRegistry';
-import { placeMotifsAcrossBars } from '../motif/motifTracker';
+import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
@@ -225,7 +226,9 @@ function buildGoldenPathPlans(
   context: CompositionContext,
   options?: RunGoldenPathOptions
 ): GoldenPathPlans {
-  const sections = planSectionRoles(context.form.sections, { A: 'statement', B: 'contrast' });
+  const ecmRoles: Record<string, SectionRole> = { A1: 'statement', B: 'contrast', A2: 'return' };
+  const duoRoles: Record<string, SectionRole> = { A: 'statement', B: 'contrast' };
+  const sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
   const densityPlan =
     context.presetId === 'ecm_chamber'
       ? { segments: context.density.segments, totalBars: context.density.totalBars }
@@ -250,10 +253,13 @@ function buildGoldenPathPlans(
     bacharach: stackIds.includes('bacharach'),
   };
   const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
-  const placements = placeMotifsAcrossBars(baseMotifs, seed);
+  const placements =
+    context.presetId === 'ecm_chamber'
+      ? placeMotifsForEcmForm(baseMotifs, seed, context.form.totalBars)
+      : placeMotifsAcrossBars(baseMotifs, seed);
   const motifState = { baseMotifs, placements };
 
-  const interactionPlan = planInteraction(sections, 8);
+  const interactionPlan = planInteraction(sections, context.form.totalBars);
 
   return {
     sections,
@@ -517,7 +523,9 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     rhythmicCorrect: behaviourResult.rhythmValid,
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
-    chordRehearsalComplete: chordSymbols.length >= 8 && rehearsalMarks.length >= 2,
+    chordRehearsalComplete:
+      chordSymbols.length >= (context.presetId === 'ecm_chamber' ? context.form.totalBars : 8) &&
+      rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
   });

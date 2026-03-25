@@ -14,7 +14,7 @@ export function planInteraction(
   overrides?: Partial<{ registerSeparationThreshold: number }>
 ): InteractionPlan {
   const perSection = sections.map((s) => {
-    const isA = s.label === 'A';
+    const isA = s.label === 'A' || s.label === 'A1' || s.label === 'A2';
     const mode: InteractionMode = isA ? 'support' : 'light_call_response' as InteractionMode;
     const resolvedMode = mode === ('light_call_response' as InteractionMode) ? 'call_response' : mode;
     return {

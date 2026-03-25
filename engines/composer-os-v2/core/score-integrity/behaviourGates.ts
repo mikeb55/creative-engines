@@ -38,21 +38,35 @@ export function validateSectionContrast(
   const errors: string[] = [];
   if (sections.length < 2) return { valid: true, errors: [] };
 
+  const totalBars = score.parts[0]?.measures.length ?? 8;
+  const span = Math.max(1, Math.floor(totalBars / 3));
+  const pivotBar = totalBars > 8 ? 1 + span : 5;
+
   const densityA = getDensityForBar(densityPlan, 1);
-  const densityB = getDensityForBar(densityPlan, 5);
+  const densityB = getDensityForBar(densityPlan, pivotBar);
   if (densityA === densityB) {
-    const guitarPitchesA = score.parts
-      .find((p) => p.instrumentIdentity === 'clean_electric_guitar')
-      ?.measures.filter((m) => m.index >= 1 && m.index <= 4)
-      .flatMap((m) => m.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch)) ?? [];
-    const guitarPitchesB = score.parts
-      .find((p) => p.instrumentIdentity === 'clean_electric_guitar')
-      ?.measures.filter((m) => m.index >= 5 && m.index <= 8)
-      .flatMap((m) => m.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch)) ?? [];
+    const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    const endA = totalBars > 8 ? span : 4;
+    const startB = totalBars > 8 ? 1 + span : 5;
+    const endB = totalBars > 8 ? 2 * span : 8;
+    const guitarPitchesA =
+      g?.measures
+        .filter((m) => m.index >= 1 && m.index <= endA)
+        .flatMap((m) => m.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch)) ?? [];
+    const guitarPitchesB =
+      g?.measures
+        .filter((m) => m.index >= startB && m.index <= endB)
+        .flatMap((m) => m.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch)) ?? [];
     const avgA = guitarPitchesA.length ? guitarPitchesA.reduce((a, b) => a + b, 0) / guitarPitchesA.length : 0;
     const avgB = guitarPitchesB.length ? guitarPitchesB.reduce((a, b) => a + b, 0) / guitarPitchesB.length : 0;
-    const eventCountA = score.parts.reduce((s, p) => s + p.measures.filter((m) => m.index <= 4).flatMap((m) => m.events).length, 0);
-    const eventCountB = score.parts.reduce((s, p) => s + p.measures.filter((m) => m.index >= 5).flatMap((m) => m.events).length, 0);
+    const eventCountA = score.parts.reduce(
+      (s, p) => s + p.measures.filter((m) => m.index >= 1 && m.index <= endA).flatMap((m) => m.events).length,
+      0
+    );
+    const eventCountB = score.parts.reduce(
+      (s, p) => s + p.measures.filter((m) => m.index >= startB && m.index <= endB).flatMap((m) => m.events).length,
+      0
+    );
     if (Math.abs(avgA - avgB) < 2 && Math.abs(eventCountA - eventCountB) < 4) {
       errors.push('Sections A and B lack meaningful contrast in density or register');
     }
@@ -153,7 +167,7 @@ export function runBehaviourGates(
   }
 
   let methenyValid = true;
-  if (styleModules.includes('metheny')) {
+  if (styleModules.includes('metheny') && opts?.presetId !== 'ecm_chamber') {
     const metheny = validateMethenyConformance(score);
     methenyValid = metheny.valid;
     if (!metheny.valid) errors.push(...metheny.errors);

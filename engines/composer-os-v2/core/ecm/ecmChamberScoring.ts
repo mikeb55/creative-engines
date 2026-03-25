@@ -50,7 +50,55 @@ function guitarOnsetDensity(score: ScoreModel): number {
       if (e.kind === 'note') onsets += 1;
     }
   }
-  return onsets / 8;
+  const tb = Math.max(1, g.measures.length);
+  return onsets / tb;
+}
+
+function perBarGuitarNoteCounts(score: ScoreModel): number[] {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return [];
+  return g.measures.map((m) => m.events.filter((e) => e.kind === 'note').length);
+}
+
+function variance(xs: number[]): number {
+  if (xs.length === 0) return 0;
+  const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
+  return xs.reduce((s, x) => s + (x - mean) ** 2, 0) / xs.length;
+}
+
+/** Mean note duration in beats (guitar) — phrase length proxy. */
+function meanGuitarNoteDuration(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  let sum = 0;
+  let n = 0;
+  for (const m of g.measures) {
+    for (const e of m.events) {
+      if (e.kind === 'note') {
+        sum += (e as NoteEvent).duration;
+        n++;
+      }
+    }
+  }
+  return n > 0 ? sum / n : 0;
+}
+
+/** Fraction of guitar onsets on half-beat grid (rhythmic fingerprint). */
+function guitarRhythmicGridness(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  let grid = 0;
+  let total = 0;
+  for (const m of g.measures) {
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      total++;
+      const s = (e as NoteEvent).startBeat;
+      const r = Math.round(s * 2) / 2;
+      if (Math.abs(s - r) < 0.08) grid++;
+    }
+  }
+  return total > 0 ? grid / total : 0;
 }
 
 /** Penalise scores that read like the opposite ECM mode (keeps seed search from converging). */
@@ -68,23 +116,34 @@ export function ecmCrossModeSimilarityPenalty(
   const chordRate = avgChordChangesPerBar(context);
   const onsetD = guitarOnsetDensity(score);
   const pedalBars = pedalLikeBassBars(score);
+  const bars = perBarGuitarNoteCounts(score);
+  const densVar = variance(bars);
+  const phraseLen = meanGuitarNoteDuration(score);
+  const gridness = guitarRhythmicGridness(score);
+  const tb = Math.max(1, context.form.totalBars);
 
   let pen = 0;
 
   if (mode === 'ECM_METHENY_QUARTET') {
-    if (bn > 14) pen += 28;
-    if (gn > 48) pen += 18;
-    if (chordRate > 0.55) pen += 22;
-    if (onsetD > 2.8) pen += 15;
+    if (bn > Math.round(tb * 0.65)) pen += 32;
+    if (gn > tb * 3.5) pen += 22;
+    if (chordRate > 0.55) pen += 24;
+    if (onsetD > 3.2) pen += 18;
+    if (densVar < 0.35 && tb >= 16) pen += 14;
+    if (phraseLen > 1.85) pen += 10;
+    if (gridness < 0.55) pen += 8;
   } else {
-    if (pedalBars >= 5) pen += 38;
-    if (bn < 12) pen += 12;
-    if (gn < 14) pen += 14;
-    if (chordRate > 0.45) pen += 20;
-    if (onsetD < 1.2) pen += 12;
+    if (pedalBars >= Math.round(tb * 0.35)) pen += 42;
+    if (bn < Math.round(tb * 0.45)) pen += 16;
+    if (gn < tb * 0.55) pen += 16;
+    if (chordRate > 0.2) pen += 22;
+    if (onsetD < 0.85) pen += 14;
+    if (densVar < 0.2 && tb >= 16) pen += 12;
+    if (phraseLen < 0.75) pen += 12;
+    if (gridness > 0.92) pen += 10;
   }
 
-  return pen;
+  return pen * 1.12;
 }
 
 /** Metheny: space, straight float, pedal harmony, motif reuse, low cadence churn. */
@@ -93,29 +152,30 @@ export function scoreEcmMethenyFeel(
   context: CompositionContext,
   plans: EcmScorePlans
 ): number {
+  const tb = context.form.totalBars;
   let s = 0;
   if (context.feel.mode === 'straight') s += 12;
   if (avgChordChangesPerBar(context) <= 0.55) s += 18;
   if (strongCadenceRatioFromHarmony(context) <= 0.4) s += 20;
   const plen = plans.motifState?.placements?.length ?? 0;
-  if (plen >= 2) s += 14;
+  if (plen >= 4) s += 16;
 
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (guitar) {
     const notes = noteCount(guitar);
-    if (notes >= 6 && notes <= 32) s += 18;
+    if (notes >= tb * 0.35 && notes <= tb * 4) s += 18;
   }
   if (bass) {
     const bn = noteCount(bass);
-    if (bn >= 6 && bn <= 12) s += 26;
-    if (pedalLikeBassBars(score) >= 6) s += 22;
+    if (bn >= tb * 0.35 && bn <= tb * 0.55) s += 26;
+    if (pedalLikeBassBars(score) >= Math.floor(tb * 0.75)) s += 22;
   }
 
-  const gSparse = guitar?.measures.filter((m) => m.index <= 3).reduce((n, m) => {
-    return n + m.events.filter((e) => e.kind === 'note').length;
-  }, 0);
-  if (gSparse !== undefined && gSparse <= 14) s += 12;
+  const gSparse = guitar?.measures
+    .filter((m) => m.index <= Math.min(4, tb))
+    .reduce((n, m) => n + m.events.filter((e) => e.kind === 'note').length, 0);
+  if (gSparse !== undefined && gSparse <= Math.min(18, tb * 2)) s += 12;
 
   return s;
 }
@@ -126,9 +186,11 @@ export function scoreEcmSchneiderFeel(
   context: CompositionContext,
   plans: EcmScorePlans
 ): number {
+  const tb = context.form.totalBars;
+  const third = Math.max(1, Math.floor(tb / 3));
   let s = 0;
   if (context.feel.syncopationDensity === 'low') s += 10;
-  if (avgChordChangesPerBar(context) <= 0.35) s += 28;
+  if (avgChordChangesPerBar(context) <= 0.2) s += 28;
   if (strongCadenceRatioFromHarmony(context) <= 0.35) s += 18;
   const m = context.generationMetadata.ecmMetrics;
   if (m && m.sections.some((sec) => sec.swellEvents >= 1)) s += 14;
@@ -139,13 +201,13 @@ export function scoreEcmSchneiderFeel(
     const gn = noteCount(guitar);
     const bn = noteCount(bass);
     if (gn > 0 && bn > 0 && gn / Math.max(1, bn) < 1.5) s += 22;
-    if (bn >= 14 && bn <= 22) s += 18;
+    if (bn >= Math.round(tb * 0.55) && bn <= Math.round(tb * 0.95)) s += 18;
   }
 
   let hasVelSwell = false;
   for (const p of score.parts) {
-    for (const m of p.measures) {
-      for (const e of m.events) {
+    for (const meas of p.measures) {
+      for (const e of meas.events) {
         if (e.kind === 'note' && (e as NoteEvent).velocity !== undefined) {
           hasVelSwell = true;
           break;
@@ -157,13 +219,13 @@ export function scoreEcmSchneiderFeel(
 
   const sparseA =
     guitar?.measures
-      .filter((x) => x.index <= 4)
+      .filter((x) => x.index <= third)
       .reduce((n, m) => n + m.events.filter((e) => e.kind === 'note').length, 0) ?? 0;
   const denseB =
     guitar?.measures
-      .filter((x) => x.index >= 5)
+      .filter((x) => x.index > third && x.index <= 2 * third)
       .reduce((n, m) => n + m.events.filter((e) => e.kind === 'note').length, 0) ?? 0;
-  if (sparseA > 0 && denseB > sparseA && denseB > sparseA + 4) s += 12;
+  if (sparseA > 0 && denseB > sparseA && denseB > sparseA + Math.max(4, third * 0.5)) s += 14;
 
   return s;
 }
@@ -185,7 +247,7 @@ export function passesEcmGate(
     if (m.motifEchoSegments < 2) reasons.push('motif echo segments low');
     if (m.strongCadenceEstimate > 0.45) reasons.push('cadence density high for ECM float');
   } else {
-    if (avg > 0.55) reasons.push('harmonic rhythm too dense for Schneider chamber');
+    if (avg > 0.15) reasons.push('harmonic rhythm too dense for Schneider chamber');
     const flatStates = m.sections.flatMap((sec) => sec.textureStates);
     if (new Set(flatStates).size < 3) reasons.push('texture state variety low');
     if (m.strongCadenceEstimate > 0.35) reasons.push('too many strong cadences for chamber');
