@@ -1,5 +1,11 @@
 # Composer OS Changelog
 
+## Prompt 4/7 — Shared orchestration layer (planning only; no Big Band / Quartet generation)
+
+- **`core/orchestration/`** — Ensemble-agnostic types (`instrumentRole` / `textureRole`, `registerBand`, `densityBand`, `articulationBias`, `sustainVsAttack`), register/texture/density ownership planners, ensemble **family profiles** (duo, chamber, big_band, string_quartet, songwriting_lead_sheet), validation, ECM + Song Mode **compatibility** mappers, **`buildDuoOrchestrationPlan`** / **`buildChamberOrchestrationPlan`** (chamber reads `buildEcmChamberContext` metadata only — no ECM musical change).
+- **Conductor / handoff / modules** — `orchestrationLayerMetadata.ts`, optional `orchestrationPlanningStage` on handoff map orchestration entry, optional `orchestrationPlanningNote` on register/density stages, optional `orchestrationPlanning` on `ModuleCapabilities`.
+- Tests: `orchestrationCore.test.ts`, `orchestrationPlanner.test.ts`, `ensembleFamilyProfiles.test.ts`, `orchestrationCompatibility.test.ts`. No new generation modules for big band or string quartet yet.
+
 ## Prompt 3/7 — Song Mode structural integration (no golden path / ECM change)
 
 - **`core/song-mode/`** — `songHookTypes`, `songStructureTypes`, `songCompilationTypes`, `leadSheetContract`, `songModeBuilder`, `songModeValidation`, **`runSongMode.ts`** (default + extended section plans, chord scaffolds, compiled song, lead-sheet-ready contract).

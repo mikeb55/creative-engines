@@ -32,5 +32,11 @@ export function runHandoffMapTests(): { ok: boolean; name: string }[] {
     name: 'handoff map entries are self-consistent',
   });
 
+  const orch = HANDOFF_MAP.find((e) => e.category === 'orchestration');
+  out.push({
+    ok: orch?.orchestrationPlanningStage === 'orchestration_planning',
+    name: 'orchestration handoff entry declares orchestration planning stage',
+  });
+
   return out;
 }

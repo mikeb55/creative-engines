@@ -24,6 +24,8 @@ export interface ModuleCapabilities {
   compatiblePresets?: string[];
   /** Pipeline stage hint (e.g. scaffold, planning). */
   stage?: string;
+  /** When true, module participates in shared orchestration planning metadata (Prompt 4/7). */
+  orchestrationPlanning?: boolean;
 }
 
 /**

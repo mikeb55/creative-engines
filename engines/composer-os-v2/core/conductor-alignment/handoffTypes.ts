@@ -35,6 +35,8 @@ export interface CounterpointHandoffContract {
 /** Placeholder for orchestration lane payloads (future). */
 export interface OrchestrationHandoffContract {
   readonly channel: 'orchestration';
+  /** Prompt 4/7: shared planning layer (ensemble-agnostic); not a runtime payload yet. */
+  readonly sharedLayerVersion?: '1';
 }
 
 /** Placeholder for songwriting lane payloads (future). */

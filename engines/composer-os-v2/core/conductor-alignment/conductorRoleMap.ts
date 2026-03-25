@@ -13,6 +13,8 @@ export interface ComposerOsStage {
   roles: ConductorRole[];
   /** Where it lives in code (illustrative). */
   implementationHint: string;
+  /** Optional: notes shared orchestration planning alignment (Prompt 4/7); not a router. */
+  orchestrationPlanningNote?: string;
 }
 
 /**
@@ -34,11 +36,13 @@ export const COMPOSER_OS_STAGE_TO_CONDUCTOR_ROLES: readonly ComposerOsStage[] = 
     id: 'density',
     roles: ['density'],
     implementationHint: 'densityCurvePlanner, density on context',
+    orchestrationPlanningNote: 'densityOwnershipPlanner consumes density curves',
   },
   {
     id: 'register',
     roles: ['register'],
     implementationHint: 'registerMapPlanner (guitar/bass maps)',
+    orchestrationPlanningNote: 'registerOwnershipPlanner consumes register intent',
   },
   {
     id: 'motif',

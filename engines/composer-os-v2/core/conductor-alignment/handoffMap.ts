@@ -12,6 +12,8 @@ export interface HandoffMapEntry {
   consumesFromRoles: readonly string[];
   /** Narrative: typical downstream conductor roles. */
   producesToRoles: readonly string[];
+  /** Optional: declarative orchestration planning stage (Prompt 4/7). */
+  orchestrationPlanningStage?: 'orchestration_planning';
 }
 
 export const HANDOFF_MAP: readonly HandoffMapEntry[] = [
@@ -44,6 +46,7 @@ export const HANDOFF_MAP: readonly HandoffMapEntry[] = [
     contractName: 'OrchestrationHandoffContract',
     consumesFromRoles: ['register', 'density'],
     producesToRoles: ['score_model'],
+    orchestrationPlanningStage: 'orchestration_planning',
   },
   {
     category: 'songwriting',

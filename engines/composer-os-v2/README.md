@@ -23,6 +23,8 @@
 
 **Prompt 3/7 (V3 track):** **Song Mode** structural pipeline — `runSongMode` → compiled song + lead-sheet contract + validation; registry id `song_mode_compile`. No golden-path or ECM changes; no full lead-sheet MusicXML export yet. See [SONG_MODE_INTEGRATION_NOTES](../../docs/composer-os/SONG_MODE_INTEGRATION_NOTES.md).
 
+**Prompt 4/7 (V3 track):** **Shared orchestration layer** — `core/orchestration/` (types, planners, ensemble family profiles, validation, duo/chamber plan builders, ECM + Song Mode compatibility mappers). Declarative metadata in `orchestrationLayerMetadata.ts` and handoff map; no runtime rerouting. Big Band and String Quartet **generation** are not implemented yet.
+
 ---
 
 ## What Composer OS Is

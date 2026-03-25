@@ -2,6 +2,7 @@
 
 ## Architecture Layers
 
+- **Shared orchestration (Prompt 4/7)**: `core/orchestration/` — planning-only register/texture/density ownership, ensemble family profiles, validation, duo + ECM chamber proof builders (`buildDuoOrchestrationPlan`, `buildChamberOrchestrationPlan`). Compatibility helpers map ECM texture strings and Song Mode section kinds to orchestration intents without changing golden path, ECM output, or Song Mode runtime. **`orchestrationLayerMetadata.ts`** documents handoff alignment; no Big Band or String Quartet score generation yet.
 - **Conductor alignment (Prompt 2/7)**: `core/conductor-alignment/` — metadata-only mapping of Composer OS stages to conductor roles (`conductorRoleMap.ts`, `handoffMap.ts`). Does not replace or reroute the runtime conductor; no musical changes.
 - **Module invocation**: `core/module-invocation/` — static registry + optional module capabilities; `song_mode_scaffold` entry for future Song Mode wiring (not connected to golden path).
 - **Song Mode (Prompt 3/7)**: `runSongMode.ts` produces `CompiledSong` + `LeadSheetContract` + validation; `song_mode_compile` in module registry. Not wired to app generate or golden path. See `SONG_MODE_INTEGRATION_NOTES.md`.

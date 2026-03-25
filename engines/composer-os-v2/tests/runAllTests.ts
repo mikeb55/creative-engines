@@ -34,6 +34,10 @@ import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { runSongModeIntegrationTests } from './songModeIntegration.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
+import { runOrchestrationCoreTests } from './orchestrationCore.test';
+import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
+import { runEnsembleFamilyProfilesTests } from './ensembleFamilyProfiles.test';
+import { runOrchestrationCompatibilityTests } from './orchestrationCompatibility.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -69,6 +73,10 @@ const suites = [
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
+  { name: 'Orchestration core', run: runOrchestrationCoreTests },
+  { name: 'Orchestration planner', run: runOrchestrationPlannerTests },
+  { name: 'Ensemble family profiles', run: runEnsembleFamilyProfilesTests },
+  { name: 'Orchestration compatibility', run: runOrchestrationCompatibilityTests },
   ...retroSuites,
 ];
 
