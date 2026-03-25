@@ -1,23 +1,15 @@
 /**
- * Package-aware deploy: verify UI, quarantine legacy shortcuts, create "Composer OS Desktop" shortcut, launch.
+ * Package-aware deploy: verify UI, quarantine legacy shortcuts, create "Composer OS" shortcut, launch.
  * Invoked after `npm run desktop:package` (e.g. `npm run desktop:clean-install`). Windows only.
  */
 import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cleanupLegacyShortcuts } from './cleanupLegacyShortcuts';
-import { launchInstalledDesktopApp } from './launchInstalledDesktopApp';
-import {
-  createShortcut,
-  getUserDesktopDir,
-  isWindows,
-  readShortcutTarget,
-} from './shortcutUtils';
+import { installComposerOsDesktopIcon, SHORTCUT_FILE_NAME } from './installDesktopIcon';
+import { getResolvedUserDesktopDir, isWindows, readShortcutTarget } from './shortcutUtils';
 import { normalizeFsPath } from './installRules';
 import { desktopReleaseDir, verifyPackagedPortableExe } from './verifyPackagedDesktop';
-
-const SHORTCUT_DISPLAY_NAME = 'Composer OS Desktop';
-const SHORTCUT_FILE_NAME = `${SHORTCUT_DISPLAY_NAME}.lnk`;
 
 function desktopAppRoot(): string {
   return path.resolve(__dirname, '..');
@@ -34,22 +26,6 @@ function verifyUiResourcesStamp(): void {
     stdio: 'inherit',
     env: process.env,
   });
-}
-
-function verifyShortcut(shortcutPath: string, canonicalExe: string): void {
-  if (!fs.existsSync(shortcutPath)) {
-    throw new Error(`Shortcut missing: ${shortcutPath}`);
-  }
-  const target = readShortcutTarget(shortcutPath);
-  if (normalizeFsPath(target) !== normalizeFsPath(canonicalExe)) {
-    throw new Error(
-      `Shortcut target mismatch.\nExpected: ${canonicalExe}\nGot: ${target}`
-    );
-  }
-  const base = path.basename(shortcutPath);
-  if (base !== SHORTCUT_FILE_NAME) {
-    throw new Error(`Shortcut must be named "${SHORTCUT_FILE_NAME}"`);
-  }
 }
 
 function verifyNoLegacyOnDesktop(desktopDir: string): void {
@@ -89,9 +65,8 @@ function main(): void {
 
   verifyUiResourcesStamp();
 
-  const { absolutePath: portableExe } = verifyPackagedPortableExe(desktopReleaseDir(desktopAppRoot()));
-  const desktopDir = getUserDesktopDir();
-  const shortcutPath = path.join(desktopDir, SHORTCUT_FILE_NAME);
+  const root = desktopAppRoot();
+  const { absolutePath: portableExe } = verifyPackagedPortableExe(desktopReleaseDir(root));
 
   const cleanup = cleanupLegacyShortcuts(portableExe);
   if (cleanup.quarantined.length) {
@@ -100,49 +75,20 @@ function main(): void {
     console.log('Quarantine folder:', cleanup.quarantineDir);
   }
 
-  if (fs.existsSync(shortcutPath)) {
-    try {
-      const prev = readShortcutTarget(shortcutPath);
-      if (normalizeFsPath(prev) !== normalizeFsPath(portableExe)) {
-        fs.unlinkSync(shortcutPath);
-      }
-    } catch {
-      try {
-        fs.unlinkSync(shortcutPath);
-      } catch (e) {
-        console.warn('Could not remove existing shortcut (will try overwrite):', e);
-      }
-    }
+  const r = installComposerOsDesktopIcon(root, { portableExe });
+  if (path.basename(r.shortcutPath) !== SHORTCUT_FILE_NAME) {
+    throw new Error(`Shortcut must be named "${SHORTCUT_FILE_NAME}"`);
+  }
+  if (normalizeFsPath(r.desktopDir) !== normalizeFsPath(getResolvedUserDesktopDir())) {
+    throw new Error('Desktop folder mismatch after install icon step.');
   }
 
-  createShortcut({
-    shortcutPath,
-    targetPath: portableExe,
-    workingDirectory: path.dirname(portableExe),
-    iconPath: portableExe,
-  });
-
-  verifyShortcut(shortcutPath, portableExe);
-  verifyNoLegacyOnDesktop(desktopDir);
-
-  const launch = launchInstalledDesktopApp(portableExe);
-
-  if (launch.launched) {
-    if (normalizeFsPath(launch.launchTarget) !== normalizeFsPath(portableExe)) {
-      throw new Error(
-        `Launch target does not match packaged exe.\nExe: ${portableExe}\nLaunch: ${launch.launchTarget}`
-      );
-    }
-  }
+  verifyNoLegacyOnDesktop(r.desktopDir);
 
   console.log('');
-  console.log('Packaged exe:', portableExe);
-  console.log('Shortcut:', shortcutPath);
-  console.log('Launched:', launch.launched ? 'yes' : 'no');
-
-  if (!launch.launched) {
-    throw new Error(`Failed to launch packaged app: ${launch.reason}`);
-  }
+  console.log('Packaged exe:', r.portableExe);
+  console.log('Shortcut:', r.shortcutPath);
+  console.log('Launched:', r.launched ? 'yes' : 'no');
 }
 
 try {

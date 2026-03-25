@@ -19,13 +19,14 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['desktop:self-test-install']).toContain('installComposerOsDesktop');
     expect(pkg.scripts['desktop:package']).toContain('bumpDesktopVersionCli');
     expect(pkg.scripts['desktop:package']).toContain('pruneOldPortableExesCli');
-    expect(pkg.scripts['desktop:create-shortcut']).toContain('createDesktopShortcutCli');
+    expect(pkg.scripts['desktop:install-icon']).toContain('installDesktopIconCli');
+    expect(pkg.scripts['desktop:create-shortcut']).toBe(pkg.scripts['desktop:install-icon']);
   });
 
-  it('install script uses exact Composer OS Desktop shortcut name', () => {
+  it('full install script delegates to installComposerOsDesktopIcon', () => {
     const src = fs.readFileSync(path.join(desktopRoot, 'install', 'installComposerOsDesktop.ts'), 'utf-8');
-    expect(src).toContain("SHORTCUT_DISPLAY_NAME = 'Composer OS Desktop'");
-    expect(src).toContain('SHORTCUT_FILE_NAME = `${SHORTCUT_DISPLAY_NAME}.lnk`');
+    expect(src).toContain('installComposerOsDesktopIcon');
+    expect(src).toContain('SHORTCUT_FILE_NAME');
   });
 
   it('install sources exist and avoid .bat / launchers / composer-studio in active flow', () => {

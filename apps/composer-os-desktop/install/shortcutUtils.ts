@@ -55,15 +55,66 @@ export function getShortcutSearchRoots(): string[] {
   return [...new Set(roots)];
 }
 
+/**
+ * User's Desktop Known Folder (not Public Desktop), normalized and resolved (symlinks).
+ * Throws if the path is missing or not a directory — use for install / verification.
+ */
+export function getResolvedUserDesktopDir(): string {
+  if (!isWindows()) {
+    return path.normalize(path.join(os.homedir(), 'Desktop'));
+  }
+  let raw: string;
+  try {
+    raw = runPowerShell(`[Environment]::GetFolderPath('Desktop')`);
+  } catch {
+    raw = '';
+  }
+  if (!raw || !raw.trim()) {
+    raw = path.join(os.homedir(), 'Desktop');
+  }
+  const normalized = path.normalize(raw.trim());
+  if (!fs.existsSync(normalized)) {
+    throw new Error(`User Desktop folder does not exist: ${normalized}`);
+  }
+  let resolved: string;
+  try {
+    resolved = fs.realpathSync(normalized);
+  } catch {
+    resolved = normalized;
+  }
+  const st = fs.statSync(resolved);
+  if (!st.isDirectory()) {
+    throw new Error(`User Desktop path is not a directory: ${resolved}`);
+  }
+  return path.normalize(resolved);
+}
+
+/** Best-effort user Desktop; may fall back without throwing (legacy callers). */
 export function getUserDesktopDir(): string {
   if (!isWindows()) return path.join(os.homedir(), 'Desktop');
   try {
-    const d = runPowerShell(`[Environment]::GetFolderPath('Desktop')`);
+    return getResolvedUserDesktopDir();
+  } catch {
+    try {
+      const d = runPowerShell(`[Environment]::GetFolderPath('Desktop')`);
+      if (d && fs.existsSync(d)) return path.normalize(d);
+    } catch {
+      /* fall through */
+    }
+    return path.normalize(path.join(os.homedir(), 'Desktop'));
+  }
+}
+
+/** Public "all users" Desktop (informational; primary shortcut uses user Desktop only). */
+export function getPublicDesktopDir(): string | null {
+  if (!isWindows()) return null;
+  try {
+    const d = runPowerShell(`[Environment]::GetFolderPath('CommonDesktopDirectory')`);
     if (d && fs.existsSync(d)) return path.normalize(d);
   } catch {
-    /* fall through */
+    /* ignore */
   }
-  return path.normalize(path.join(os.homedir(), 'Desktop'));
+  return null;
 }
 
 export function collectLnkFiles(root: string, maxDepth: number): string[] {
