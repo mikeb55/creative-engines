@@ -169,7 +169,7 @@ function testExportedHarmonyKindTextNoDuplicateRoot(): boolean {
   if (!r.xml || !r.success) return false;
   if (r.xml.includes('kind text="Dmin9"') || r.xml.includes('kind text="G13"') || r.xml.includes('kind text="A7alt"'))
     return false;
-  if (!r.xml.includes('kind text="min9"')) return false;
+  if (!r.xml.includes('kind text="m9"')) return false;
   const mx = validateExportedMusicXmlBarMath(r.xml);
   if (!mx.valid) return false;
   return mx.sums?.['guitar']?.[2]?.[1] === 16;

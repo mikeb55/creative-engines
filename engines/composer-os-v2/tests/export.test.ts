@@ -6,6 +6,7 @@ import { exportScoreModelToMusicXml, exportToMusicXml } from '../core/export/mus
 import { validateMusicXmlSchema, reParseMusicXml } from '../core/export/musicxmlValidation';
 import { checkSibeliusSafe } from '../core/export/sibeliusSafeProfile';
 import {
+  formatChordSymbolForDisplay,
   parseChordRootAndMusicXmlKindText,
   parseChordForMusicXmlHarmony,
 } from '../core/export/chordSymbolMusicXml';
@@ -88,7 +89,7 @@ function testChordKindTextIsSuffixNotFullSymbol(): boolean {
   const bb = parseChordRootAndMusicXmlKindText('Bbm7');
   return (
     a.rootStep === 'D' &&
-    a.kindText === 'min9' &&
+    a.kindText === 'm9' &&
     b.rootStep === 'G' &&
     b.kindText === '13' &&
     c.rootStep === 'A' &&
@@ -103,12 +104,55 @@ function testDuplicateChordRootStripped(): boolean {
   const d = parseChordRootAndMusicXmlKindText('DDmin9');
   const g = parseChordRootAndMusicXmlKindText('GG13');
   const alt = parseChordRootAndMusicXmlKindText('AA7alt');
-  return d.kindText === 'min9' && g.kindText === '13' && alt.kindText === '7alt';
+  return d.kindText === 'm9' && g.kindText === '13' && alt.kindText === '7alt';
 }
 
 function testSlashChordPreservesBass(): boolean {
   const x = parseChordForMusicXmlHarmony('Cmaj7/E');
   return x.rootStep === 'C' && x.kindText === 'maj7' && x.bassStep === 'E' && x.bassAlter === 0;
+}
+
+function testLeadSheetChordKindSuffixFormatting(): boolean {
+  const g = parseChordRootAndMusicXmlKindText('Gmajor');
+  const slash = parseChordForMusicXmlHarmony('Dmajor/F#');
+  const cm7 = parseChordRootAndMusicXmlKindText('Cmajor7');
+  const dm7 = parseChordRootAndMusicXmlKindText('Dminor7');
+  return (
+    g.rootStep === 'G' &&
+    g.kindText === '' &&
+    slash.rootStep === 'D' &&
+    slash.kindText === '' &&
+    slash.bassStep === 'F' &&
+    slash.bassAlter === 1 &&
+    cm7.kindText === 'maj7' &&
+    dm7.kindText === 'm7'
+  );
+}
+
+function testFormatChordSymbolForDisplayLeadSheet(): boolean {
+  return (
+    formatChordSymbolForDisplay('Gmajor') === 'G' &&
+    formatChordSymbolForDisplay('Dmajor/F#') === 'D/F#' &&
+    formatChordSymbolForDisplay('Cmajor7') === 'Cmaj7' &&
+    formatChordSymbolForDisplay('Dminor7') === 'Dm7' &&
+    formatChordSymbolForDisplay('Cmaj7/E') === 'Cmaj7/E'
+  );
+}
+
+function testExporterUsesEmptyKindForPlainMajor(): boolean {
+  const m = createMeasure(1, 'Gmajor');
+  addEvent(m, createNote(60, 0, 4));
+  const score = createScore('Lead sheet major', [{
+    id: 'p1',
+    name: 'Part 1',
+    instrumentIdentity: 'guitar',
+    midiProgram: 27,
+    clef: 'treble',
+    measures: [m],
+  }]);
+  const r = exportScoreModelToMusicXml(score);
+  const xml = r.xml ?? '';
+  return r.success && xml.includes('<kind text=""/>') && !xml.includes('kind text="major"');
 }
 
 /** Regression: rounding each duration independently used to sum to 15 in some bars; span-based export must sum to 16. */
@@ -157,6 +201,9 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Chord kind text is suffix (root once)', testChordKindTextIsSuffixNotFullSymbol],
     ['Duplicate chord root stripped for kind text', testDuplicateChordRootStripped],
     ['Slash chord bass preserved in kind text', testSlashChordPreservesBass],
+    ['Lead sheet chord kind suffix formatting (major/minor/maj7)', testLeadSheetChordKindSuffixFormatting],
+    ['formatChordSymbolForDisplay lead-sheet strings', testFormatChordSymbolForDisplayLeadSheet],
+    ['Exporter: plain major uses empty kind text (no "major")', testExporterUsesEmptyKindForPlainMajor],
     ['Bar math: notes with dynamics attribute counted', testBarMathIncludesNotesWithAttributes],
     ['Exporter round-trip divisions per voice (Bacharach-shaped bar)', testExporterRoundTripDivisionsPerVoice],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));

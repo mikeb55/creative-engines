@@ -2,6 +2,8 @@
  * Chord symbol handling for MusicXML harmony export.
  * Root lives in <root>; <kind text="…"> must be suffix-only so readers (e.g. Sibelius)
  * do not concatenate root + full symbol into duplicate letters (DDmin9, GG13).
+ *
+ * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.
  */
 
 export interface ChordRootAndKindText {
@@ -18,6 +20,46 @@ export interface MusicXmlHarmonyParts extends ChordRootAndKindText {
 }
 
 /**
+ * Lead-sheet suffix for `<kind text="…">` only: major/minor/maj7 wording, not harmonic semantics.
+ */
+export function formatChordKindSuffixForDisplay(rawSuffix: string): string {
+  let s = rawSuffix.trim();
+  if (s.length === 0) return '';
+
+  // Cmajor7 → maj7 (before stripping bare "major")
+  s = s.replace(/major(\d+)/gi, 'maj$1');
+
+  // Dminor7 → m7, minor → m
+  s = s.replace(/minor/gi, 'm');
+
+  // Gmajor → (empty); Dmajor/F# handled as root + empty suffix + bass
+  s = s.replace(/major/gi, '');
+
+  // min7 → m7 (display alignment with m7 from minor)
+  s = s.replace(/min(?=\d)/gi, 'm');
+
+  return s;
+}
+
+function alterToAccidental(alter: number): string {
+  if (alter === 1) return '#';
+  if (alter === -1) return 'b';
+  return '';
+}
+
+/** Full chord string as it should read on a lead sheet (for tests / UI); uses the same rules as MusicXML display. */
+export function formatChordSymbolForDisplay(chord: string): string {
+  const p = parseChordForMusicXmlHarmony(chord);
+  const root = `${p.rootStep}${alterToAccidental(p.rootAlter)}`;
+  const kind = p.kindText ?? '';
+  if (p.bassStep !== undefined) {
+    const bass = `${p.bassStep}${alterToAccidental(p.bassAlter ?? 0)}`;
+    return `${root}${kind}/${bass}`;
+  }
+  return `${root}${kind}`;
+}
+
+/**
  * Parse a chord string into MusicXML root + display suffix.
  * Strips a duplicated leading root from the suffix when present (DDmin9 → min9).
  */
@@ -25,7 +67,7 @@ export function parseChordRootAndMusicXmlKindText(chord: string): ChordRootAndKi
   const t = chord.trim();
   const m = t.match(/^([A-Ga-g])([#b]?)(.*)$/);
   if (!m) {
-    return { rootStep: 'C', rootAlter: 0, kindText: t.length > 0 ? t : 'major' };
+    return { rootStep: 'C', rootAlter: 0, kindText: t.length > 0 ? formatChordKindSuffixForDisplay(t) : '' };
   }
   const letter = m[1].toUpperCase();
   let alter = 0;
@@ -42,7 +84,7 @@ export function parseChordRootAndMusicXmlKindText(chord: string): ChordRootAndKi
     }
   }
 
-  const kindText = suffix.length > 0 ? suffix : 'major';
+  const kindText = suffix.length > 0 ? formatChordKindSuffixForDisplay(suffix) : '';
   return { rootStep: letter, rootAlter: alter, kindText };
 }
 
