@@ -277,6 +277,8 @@ export interface RunGoldenPathOptions {
   presetId?: string;
   /** User-provided work title; default comes from resolveScoreTitleForPreset */
   scoreTitle?: string;
+  /** Guitar–Bass Duo: explicit mode (custom requires non-empty `chordProgressionText`) */
+  harmonyMode?: 'builtin' | 'custom';
   /** Guitar–Bass Duo: `|`-separated chords, 8 bars; parsed before generation */
   chordProgressionText?: string;
   /** Filled by runGoldenPath after a successful parse (internal) */
@@ -291,13 +293,30 @@ export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
 }
 
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
-  let resolved: RunGoldenPathOptions | undefined = options;
-  if (options?.chordProgressionText?.trim()) {
-    const parsed = parseChordProgressionInput(options.chordProgressionText);
+  let opts = options ? { ...options } : undefined;
+  const inferredCustom = !!(opts?.chordProgressionText?.trim());
+  const harmonyMode: 'builtin' | 'custom' =
+    opts?.harmonyMode ?? (inferredCustom ? 'custom' : 'builtin');
+
+  if (harmonyMode === 'builtin') {
+    opts = opts ? { ...opts, chordProgressionText: undefined, parsedChordBars: undefined } : undefined;
+  }
+
+  if (harmonyMode === 'custom' && !(opts?.chordProgressionText?.trim())) {
+    return harmonyParseFailureGoldenPathResult(
+      seed,
+      opts,
+      'Custom chord progression is empty. Enter exactly 8 bars separated by |.'
+    );
+  }
+
+  let resolved: RunGoldenPathOptions | undefined = opts;
+  if (opts?.chordProgressionText?.trim()) {
+    const parsed = parseChordProgressionInput(opts.chordProgressionText);
     if (!parsed.ok) {
-      return harmonyParseFailureGoldenPathResult(seed, options, parsed.error);
+      return harmonyParseFailureGoldenPathResult(seed, opts, parsed.error);
     }
-    resolved = { ...options, parsedChordBars: parsed.bars };
+    resolved = { ...opts, parsedChordBars: parsed.bars };
   }
   const seeds = candidateSeedsForGoldenPath(seed);
   let best: GoldenPathResult | null = null;

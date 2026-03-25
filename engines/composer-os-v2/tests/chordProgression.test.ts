@@ -2,6 +2,10 @@
  * Chord progression input + custom harmony integration (Guitar–Bass Duo).
  */
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { generateComposition } from '../app-api/generateComposition';
 import { parseChordProgressionInput } from '../core/harmony/chordProgressionParser';
 import { parseChordSymbol } from '../core/harmony/chordSymbolAnalysis';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
@@ -34,6 +38,37 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
         'D/F# | G/B | Cmaj7/E | A7alt | D/F# | G/B | Cmaj7/E | A7alt'
       );
       return r.ok && r.bars[0] === 'D/F#' && parseChordSymbol(r.bars[2]).slashBassPc === 4;
+    })(),
+  });
+
+  tests.push({
+    name: 'Parser: A7/C# slash bass',
+    ok: (() => {
+      const r = parseChordProgressionInput(
+        'D/F# | G/B | Cmaj7/E | A7/C# | D/F# | G/B | Cmaj7/E | A7/C#'
+      );
+      return r.ok && r.bars[3] === 'A7/C#' && parseChordSymbol('A7/C#').slashBassPc === 1;
+    })(),
+  });
+
+  tests.push({
+    name: 'harmonyMode custom + empty text fails before generation',
+    ok: (() => {
+      const r = runGoldenPath(9, { harmonyMode: 'custom', chordProgressionText: '' });
+      return !r.success && r.errors.some((e) => e.toLowerCase().includes('empty'));
+    })(),
+  });
+
+  tests.push({
+    name: 'harmonyMode builtin ignores chordProgressionText',
+    ok: (() => {
+      const r = runGoldenPath(9, {
+        harmonyMode: 'builtin',
+        chordProgressionText: 'Em7 | Em7 | Em7 | Em7 | Em7 | Em7 | Em7 | Em7',
+      });
+      if (!r.success) return false;
+      const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+      return g?.measures.find((m) => m.index === 1)?.chord === 'Dmin9';
     })(),
   });
 
@@ -126,6 +161,51 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
         chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt',
       });
       return r.success && r.context.generationMetadata.harmonySource === 'custom';
+    })(),
+  });
+
+  tests.push({
+    name: 'generateComposition: custom progression writes MusicXML file',
+    ok: (() => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-duo-chord-'));
+      try {
+        const r = generateComposition(
+          {
+            presetId: 'guitar_bass_duo',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 4242,
+            harmonyMode: 'custom',
+            chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt',
+          },
+          dir
+        );
+        return r.success && !!r.filepath && fs.existsSync(r.filepath);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    })(),
+  });
+
+  tests.push({
+    name: 'generateComposition: custom + slash progression writes file',
+    ok: (() => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-duo-slash-'));
+      try {
+        const r = generateComposition(
+          {
+            presetId: 'guitar_bass_duo',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 77,
+            harmonyMode: 'custom',
+            chordProgressionText:
+              'D/F# | G/B | Cmaj7/E | A7/C# | D/F# | G/B | Cmaj7/E | A7/C#',
+          },
+          dir
+        );
+        return r.success && !!r.filepath && fs.existsSync(r.filepath);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
     })(),
   });
 

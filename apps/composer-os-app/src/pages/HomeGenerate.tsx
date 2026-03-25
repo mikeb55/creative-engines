@@ -5,6 +5,8 @@ import { StyleBlendControls, type StyleBlendState } from '../components/StyleBle
 
 type GenResult = {
   success?: boolean;
+  /** API exception path (desktop/HTTP) */
+  error?: string;
   filename?: string;
   filepath?: string;
   harmonySource?: 'builtin' | 'custom';
@@ -113,13 +115,22 @@ export function HomeGenerate({
           seed,
           locks,
           title: scoreTitle.trim() || undefined,
-          chordProgressionText:
-            presetId === 'guitar_bass_duo' && harmonyMode === 'custom'
-              ? chordProgressionText.trim() || undefined
-              : undefined,
+          ...(presetId === 'guitar_bass_duo'
+            ? {
+                harmonyMode,
+                ...(harmonyMode === 'custom' ? { chordProgressionText: chordProgressionText } : {}),
+              }
+            : {}),
         })) as GenResult;
         setResult(r);
         const ok = !!r.success;
+        if (!ok) {
+          const errMsg =
+            (r as { error?: string }).error ??
+            (r.validation?.errors?.length ? r.validation.errors.join(' ') : undefined);
+          if (errMsg) setError(errMsg);
+          else if (!r.success) setError('Generation failed.');
+        }
         notifyGenPhase(ok ? 'succeeded' : 'failed');
         const shareable = r.validation?.readiness?.shareable;
         const at = new Date().toISOString();

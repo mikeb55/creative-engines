@@ -45,15 +45,15 @@ export interface GenerateResult {
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
+  const duo = req.presetId === 'guitar_bass_duo';
   const chordText =
-    req.presetId === 'guitar_bass_duo' && typeof req.chordProgressionText === 'string'
-      ? req.chordProgressionText
-      : undefined;
+    duo && typeof req.chordProgressionText === 'string' ? req.chordProgressionText : undefined;
   const result = runGoldenPath(req.seed, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: req.presetId,
     scoreTitle: req.title,
-    chordProgressionText: chordText?.trim() ? chordText : undefined,
+    harmonyMode: duo ? req.harmonyMode : undefined,
+    chordProgressionText: chordText,
   });
   const validation = {
     integrityPassed: result.integrityPassed,

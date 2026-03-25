@@ -36,7 +36,10 @@ export type ParseChordProgressionResult =
 export function parseChordProgressionInput(input: string): ParseChordProgressionResult {
   const trimmed = input.trim();
   if (!trimmed) {
-    return { ok: false, error: 'Chord progression is empty.' };
+    return {
+      ok: false,
+      error: 'Chord progression is empty. Enter exactly 8 bars separated by |.',
+    };
   }
   const rawBars = trimmed.split('|').map((s) => s.trim());
   const bars: string[] = [];
@@ -55,7 +58,7 @@ export function parseChordProgressionInput(input: string): ParseChordProgression
   if (bars.length !== BAR_COUNT) {
     return {
       ok: false,
-      error: `Guitar–Bass Duo requires exactly ${BAR_COUNT} bars (found ${bars.length}). Use | between bars.`,
+      error: `Expected exactly ${BAR_COUNT} bars separated by | (found ${bars.length}).`,
     };
   }
   return { ok: true, bars };

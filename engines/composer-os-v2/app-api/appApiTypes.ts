@@ -62,8 +62,13 @@ export interface GenerateRequest {
   /** Omitted → preset default title (e.g. Guitar-Bass Duo Study). */
   title?: string;
   /**
+   * Guitar–Bass Duo: built-in cycle vs user progression.
+   * When `custom`, `chordProgressionText` is required (may be empty string from client → error).
+   */
+  harmonyMode?: 'builtin' | 'custom';
+  /**
    * Guitar–Bass Duo: optional `|`-separated chords (exactly 8 bars).
-   * Omitted or blank → built-in ii–V–I–VI cycle.
+   * Only used when `harmonyMode` is `custom` or inferred from non-empty text (legacy).
    */
   chordProgressionText?: string;
 }

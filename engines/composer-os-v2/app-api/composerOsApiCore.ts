@@ -52,6 +52,8 @@ export function apiGenerate(
       seed: typeof body.seed === 'number' ? body.seed : Math.floor(Math.random() * 1e9),
       locks: body.locks,
       title: typeof body.title === 'string' ? body.title : undefined,
+      harmonyMode:
+        body.harmonyMode === 'custom' || body.harmonyMode === 'builtin' ? body.harmonyMode : undefined,
       chordProgressionText:
         typeof body.chordProgressionText === 'string' ? body.chordProgressionText : undefined,
     };
