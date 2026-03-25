@@ -67,7 +67,7 @@ export function validateDuoPhraseAuthority(score: ScoreModel, opts?: { presetId?
 
   const pitches = notes.map((n) => n.pitch);
   const span = Math.max(...pitches) - Math.min(...pitches);
-  if (span < 7) {
+  if (span < 6) {
     errors.push('Phrase authority: guitar register span too narrow (phrase lacks contour authority)');
   }
 

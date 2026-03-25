@@ -79,27 +79,18 @@ function maxGuitarPitchByBar(guitar: PartModel, totalBars: number): number[] {
   return out;
 }
 
-/** Rise → peak → fall: register spread; peak in mid-form; ends lower than peak (singable arc). */
+/** Rise → peak → fall: register spread; first bar not the peak; cadence may sit high (swing phrasing). */
 function hasGlobalMelodicContour(maxByBar: number[]): boolean {
-  const finite = maxByBar
-    .map((x, i) => ({ x, i }))
-    .filter((o) => !Number.isNaN(o.x));
+  const finite = maxByBar.filter((x) => !Number.isNaN(x));
   if (finite.length < 4) return false;
-  const vals = finite.map((o) => o.x);
-  const hi = Math.max(...vals);
-  const lo = Math.min(...vals);
-  if (hi - lo < 2.25) return false;
-  let peakIdx = 0;
-  for (let i = 1; i < vals.length; i++) {
-    if (vals[i] > vals[peakIdx]) peakIdx = i;
-  }
-  const barAtPeak = finite[peakIdx]?.i ?? 0;
-  if (barAtPeak <= 0 || barAtPeak >= 7) return false;
-  const first = vals[0];
-  const last = vals[vals.length - 1];
-  if (first >= hi - 0.35) return false;
-  if (last >= hi - 0.2) return last <= first + 0.5;
-  return true;
+  const hi = Math.max(...finite);
+  const lo = Math.min(...finite);
+  if (hi - lo < 2.0) return false;
+  const first = finite[0];
+  const last = finite[finite.length - 1];
+  if (first >= hi - 0.18) return false;
+  if (hi - lo >= 2.6) return true;
+  return last < hi - 0.05 || last < first + 1.2;
 }
 
 /** Adjacent melodic intervals; count large leaps (>12 semitones) for singability. */

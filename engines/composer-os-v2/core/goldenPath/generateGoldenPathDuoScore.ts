@@ -25,7 +25,13 @@ import { applyPerformancePass } from '../performance/performancePass';
 import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
 import { pickGuideTone, clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
-import { emitMelodicBassBar, scrubBassFirstAttackIfRoot, type BassSectionRole } from './bassMelodicLines';
+import {
+  emitDuoSwingBassBar,
+  emitMelodicBassBar,
+  scrubBassFirstAttackIfRoot,
+  type BassSectionRole,
+} from './bassMelodicLines';
+import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
   computeEnsembleStagger,
   emitGuitarPhraseBar,
@@ -275,6 +281,7 @@ function buildGuitarPart(
   const effectiveBase = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
   const tb = totalBarsFromContext(context);
   const anchorMidi = motifState.baseMotifs[0]?.notes[0]?.pitch;
+  let consecutiveBusyGuitarBars = 0;
 
   for (let b = 1; b <= tb; b++) {
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -309,6 +316,9 @@ function buildGuitarPart(
           ? getEcmSchneiderPhraseIntent(phase, seed)
           : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(phraseBar, seed, phraseIntent);
+    const isDuoGolden =
+      context.presetId === 'guitar_bass_duo' && !isEcmM && !isEcmS;
+    const swingBump = duoGuitarSwingStaggerBump(seed, b, isDuoGolden);
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b, context);
     const lab = sectionLabelForBar(b, context);
     const sectionBump = lab === 'B' ? 5 : 0;
@@ -341,18 +351,22 @@ function buildGuitarPart(
     }
 
     if (placements.length > 0) {
+      let cursor = 0;
+      if (isDuoGolden && consecutiveBusyGuitarBars >= 2) {
+        addEvent(m, createRest(0, 1));
+        cursor = 1;
+      }
       const raw: { pitch: number; start: number; dur: number }[] = [];
       for (const pl of placements) {
         for (const n of pl.notes) {
           let pitch = Math.max(effectiveLow, Math.min(effectiveHigh, n.pitch));
           const dur = Math.min(n.duration, Math.max(0, 4 - n.startBeat));
           if (dur > 0 && n.startBeat < 4) {
-            raw.push({ pitch, start: n.startBeat + stagger.guitar, dur });
+            raw.push({ pitch, start: n.startBeat + stagger.guitar + swingBump, dur });
           }
         }
       }
       raw.sort((a, b2) => a.start - b2.start);
-      let cursor = 0;
       for (const e of raw) {
         const start = Math.max(qBeat(e.start), cursor);
         if (start > cursor) {
@@ -390,6 +404,13 @@ function buildGuitarPart(
       if (isEcmS && tex?.densityBlend !== undefined && tex.densityBlend < 0.44) {
         densityLevel = 'sparse';
       }
+      if (isDuoGolden && consecutiveBusyGuitarBars >= 2) {
+        densityLevel = 'sparse';
+      }
+      if (isDuoGolden && phraseIntent === 'bass_lead') {
+        if (densityLevel === 'dense') densityLevel = 'medium';
+        if (densityLevel === 'medium') densityLevel = 'sparse';
+      }
       const phraseShapeBar = context.presetId === 'ecm_chamber' ? phase : b;
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
         addEvent(m, createRest(0, 4));
@@ -424,18 +445,23 @@ function buildGuitarPart(
           effectiveLow,
           effectiveHigh,
           density: densityLevel,
-          useOffbeat,
+          useOffbeat: useOffbeat || isDuoGolden,
           reduceAttack: !!reduceAttack,
           intent: phraseIntent,
-          staggerG: stagger.guitar,
+          staggerG: qBeat(stagger.guitar + swingBump),
           seed,
           methenyShortenLong: meth?.attackDensityReduced && tex?.guitarRole !== 'sustain_pad',
           anchorMidi,
+          swingDuo: isDuoGolden,
         });
       }
     }
 
     normalizeMeasureQuarterGrid(m);
+    if (isDuoGolden) {
+      if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
+      else consecutiveBusyGuitarBars = 0;
+    }
     measures.push(m);
   }
 
@@ -791,6 +817,7 @@ function buildBassPart(
 
     const gAct = activityScoreForBar(guitarPart, b);
     const guitarActivityHot = gAct >= HIGH_ACTIVITY;
+    const duoGoldenBass = context.presetId === 'guitar_bass_duo';
 
     let guitarEchoSource = firstGuitarPitchInBar(guitarPart, b);
     if (placements.length > 0 && placements[0].notes.length > 0 && !simplify) {
@@ -801,7 +828,11 @@ function buildBassPart(
     if (phraseBar === 8) section = 'cadence';
     else if (phraseBar >= 5) section = 'B';
 
-    if (simplify) {
+    const simplifyForDuo = simplify || (duoGoldenBass && guitarActivityHot);
+    const swingBassMode = (seed + b * 11) % 10 < 3;
+    const swingModes = ['hold', 'anticipate', 'offbeat'] as const;
+
+    if (simplifyForDuo) {
       if (firstStart > 0) {
         addEvent(m, createRest(0, firstStart));
       }
@@ -812,6 +843,20 @@ function buildBassPart(
       const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
       addEvent(m, createNote(firstNote, t0, half));
       addEvent(m, createNote(fifth, t0 + half, half2));
+    } else if (duoGoldenBass && swingBassMode) {
+      emitDuoSwingBassBar({
+        m,
+        mode: swingModes[(seed + b * 3) % 3],
+        rootClamped,
+        third,
+        fifth,
+        guide,
+        walkLow,
+        effectiveHigh,
+        firstStart,
+        seed,
+        bar: b,
+      });
     } else {
       emitMelodicBassBar({
         m,

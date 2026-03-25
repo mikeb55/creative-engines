@@ -6,6 +6,49 @@ import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { approachFromBelow, clampPitch, seededUnit } from './guitarBassDuoHarmony';
 
+export type DuoSwingBassMode = 'hold' | 'anticipate' | 'offbeat';
+
+/**
+ * Non-walking bass: held tones, anticipations, off-beat entries (duo swing identity).
+ */
+export function emitDuoSwingBassBar(params: {
+  m: MeasureModel;
+  mode: DuoSwingBassMode;
+  rootClamped: number;
+  third: number;
+  fifth: number;
+  guide: number;
+  walkLow: number;
+  effectiveHigh: number;
+  firstStart: number;
+  seed: number;
+  bar: number;
+}): void {
+  const { m, mode, rootClamped, third, fifth, guide, firstStart, seed, bar, walkLow, effectiveHigh } = params;
+  const span = 4 - firstStart;
+  if (firstStart > 0) addEvent(m, createRest(0, firstStart));
+  const t0 = firstStart;
+  if (mode === 'hold') {
+    const p1 = seededUnit(seed, bar, 901) < 0.55 ? clampPitch(guide, walkLow, effectiveHigh) : rootClamped;
+    const dur = qBeat(Math.min(3.5, span));
+    addEvent(m, createNote(p1, t0, dur));
+    if (span - dur > 0.2) addEvent(m, createRest(t0 + dur, qBeat(span - dur)));
+    return;
+  }
+  if (mode === 'anticipate') {
+    const restLen = qBeat(Math.max(0.5, Math.min(3.25, span - 0.5)));
+    addEvent(m, createRest(t0, restLen));
+    const hit = qBeat(t0 + restLen);
+    const target = seededUnit(seed, bar, 902) < 0.5 ? fifth : third;
+    addEvent(m, createNote(clampPitch(target, walkLow, effectiveHigh), hit, qBeat(4 - hit)));
+    return;
+  }
+  addEvent(m, createRest(t0, 0.5));
+  addEvent(m, createNote(third, t0 + 0.5, 1));
+  addEvent(m, createNote(guide, t0 + 1.5, 1));
+  addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, 4 - t0 - 2.5))));
+}
+
 export function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
 }

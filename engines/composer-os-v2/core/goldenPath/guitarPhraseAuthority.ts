@@ -113,6 +113,8 @@ export function emitGuitarPhraseBar(params: {
   methenyShortenLong?: boolean;
   /** Primary motif anchor — repeated pitch class when harmonically valid (duo V3.0). */
   anchorMidi?: number;
+  /** Duo swing: delayed downbeats, short–long cells, stronger syncopation. */
+  swingDuo?: boolean;
 }): void {
   const {
     m,
@@ -128,6 +130,7 @@ export function emitGuitarPhraseBar(params: {
     seed,
     methenyShortenLong,
     anchorMidi,
+    swingDuo,
   } = params;
 
   const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
@@ -200,6 +203,14 @@ export function emitGuitarPhraseBar(params: {
 
   if (density === 'medium') {
     const dyadBar = bar === 4;
+    if (swingDuo && bar % 3 === 1 && intent !== 'answer_guitar') {
+      addEvent(m, createRest(0, 0.5));
+      addEvent(m, createNote(tones.third, 0.5, 0.5));
+      addEvent(m, createNote(tones.fifth, 1, 1.25));
+      addEvent(m, createRest(2.25, 0.25));
+      addEvent(m, createNote(endStrong, 2.5, 1.5));
+      return;
+    }
     if (dyadBar && intent !== 'answer_guitar') {
       addEvent(m, createRest(0, 0.5));
       addEvent(m, createNote(tones.third, 0.5, 1));

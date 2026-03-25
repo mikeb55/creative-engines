@@ -4,6 +4,7 @@
  */
 
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import { activityScoreForBar } from '../goldenPath/activityScore';
 import {
   guideToneCoverage,
   hasCallResponseInWindow,
@@ -142,7 +143,7 @@ export function computeDuoGceScore(score: ScoreModel): number {
     2.5 * gc +
     1.55 * (1 - rr) +
     1.75 * softN +
-    1.35 * Math.min(1.25, restR / 0.16) +
+    1.4 * Math.min(1.35, restR / 0.14) +
     0.65 * rep +
     0.95 * call +
     0.85 * (1 - Math.min(1, chrom / 7)) +
@@ -203,6 +204,68 @@ export function validateDuoRhythmAntiLoop(score: ScoreModel): DuoLockValidationR
   }
   if (maxUnison > 3) {
     errors.push('Duo LOCK: guitar and bass share identical dense rhythm for too many consecutive bars');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+const DUAL_DENSE_ACTIVITY = 6;
+
+/**
+ * V3.0 swing: ≥20% guitar rests, no long dual-density runs, bass not constant walking, bass rhythm variety.
+ */
+export function validateDuoSwingRhythm(score: ScoreModel): DuoLockValidationResult {
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const errors: string[] = [];
+  if (!guitar || !bass) return { valid: true, errors: [] };
+
+  const rr = guitarRestRatio(guitar);
+  if (rr < 0.2) {
+    errors.push('Duo swing: guitar melody needs at least 20% rests (breathing / phrasing)');
+  }
+
+  const tb = guitar.measures.length;
+  let dualRun = 0;
+  let maxDual = 0;
+  for (let b = 1; b <= tb; b++) {
+    const ga = activityScoreForBar(guitar, b);
+    const ba = activityScoreForBar(bass, b);
+    if (ga >= DUAL_DENSE_ACTIVITY && ba >= DUAL_DENSE_ACTIVITY) {
+      dualRun++;
+      maxDual = Math.max(maxDual, dualRun);
+    } else {
+      dualRun = 0;
+    }
+  }
+  if (maxDual > 2) {
+    errors.push('Duo swing: both instruments dense for more than two consecutive bars');
+  }
+
+  let walkLikeBars = 0;
+  for (const m of bass.measures) {
+    const nNotes = m.events.filter((e) => e.kind === 'note').length;
+    if (nNotes >= 5) walkLikeBars++;
+  }
+  if (walkLikeBars > 4) {
+    errors.push('Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)');
+  }
+
+  const sortedBass = [...bass.measures].sort((a, b) => a.index - b.index);
+  let prevBRh = '';
+  let runBRh = 0;
+  let maxBRh = 0;
+  for (const m of sortedBass) {
+    const rh = rhythmSig(m);
+    if (rh.length > 0 && rh === prevBRh) runBRh++;
+    else {
+      runBRh = 1;
+      prevBRh = rh;
+    }
+    maxBRh = Math.max(maxBRh, runBRh);
+  }
+  if (maxBRh > 2) {
+    errors.push('Duo swing: bass rhythmic cell repeats more than two consecutive bars');
   }
 
   return { valid: errors.length === 0, errors };

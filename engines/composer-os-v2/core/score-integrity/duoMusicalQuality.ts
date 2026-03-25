@@ -60,8 +60,8 @@ export function validateDuoMusicalQuality(
   }
 
   const restRatio = guitarRestRatio(guitar);
-  if (restRatio < 0.1) {
-    errors.push('Duo: guitar lacks breathing space (rest ratio below LOCK minimum ~10%)');
+  if (restRatio < 0.2) {
+    errors.push('Duo: guitar lacks breathing space (rest ratio below swing minimum ~20%)');
   }
   if (restRatio > 0.42) {
     errors.push('Duo: guitar too sparse (rest ratio above practical ceiling)');

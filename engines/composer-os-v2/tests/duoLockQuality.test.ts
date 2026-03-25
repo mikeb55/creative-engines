@@ -9,6 +9,7 @@ import {
   hasRepeatedIntervalCell,
   validateDuoGceHardGate,
   validateDuoRhythmAntiLoop,
+  validateDuoSwingRhythm,
 } from '../core/score-integrity/duoLockQuality';
 
 function testDuoLockGcePassesGoldenPath(): boolean {
@@ -45,6 +46,11 @@ function testDuoLockPlacementsDense(): boolean {
   return n >= 6;
 }
 
+function testDuoSwingRhythmGatePasses(): boolean {
+  const r = runGoldenPath(108);
+  return r.success && validateDuoSwingRhythm(r.score).valid;
+}
+
 export function runDuoLockQualityTests(): { name: string; ok: boolean }[] {
   return [
     ['Duo LOCK GCE ≥ 8.5 on golden path', testDuoLockGcePassesGoldenPath],
@@ -52,5 +58,6 @@ export function runDuoLockQualityTests(): { name: string; ok: boolean }[] {
     ['Duo rhythm anti-loop passes', testRhythmAntiLoopPasses],
     ['Repeated interval cell in guitar line', testRepeatedIntervalCellPresent],
     ['Duo LOCK motif placements (8-bar coverage)', testDuoLockPlacementsDense],
+    ['Duo swing rhythm gate passes', testDuoSwingRhythmGatePasses],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
