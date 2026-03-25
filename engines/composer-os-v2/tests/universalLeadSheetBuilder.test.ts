@@ -3,9 +3,11 @@
  */
 
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { runBigBandMode } from '../core/big-band/runBigBandMode';
 import type { StyleStack } from '../core/style-modules/styleModuleTypes';
 import { buildUniversalLeadSheetFromCompositionContext, buildUniversalLeadSheetFromSongContract } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
 
 export function runUniversalLeadSheetBuilderTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -34,6 +36,21 @@ export function runUniversalLeadSheetBuilderTests(): { ok: boolean; name: string
   out.push({
     ok: fromContract.title === sm.leadSheetContract.title && fromContract.source === 'song_lead_sheet',
     name: 'buildUniversalLeadSheetFromSongContract matches contract',
+  });
+
+  const bb = runBigBandMode({ seed: 101, title: 'ULS BB' });
+  out.push({
+    ok:
+      bb.universalLeadSheet?.mode === 'big_band' &&
+      bb.universalLeadSheet.source === 'big_band_plan' &&
+      (bb.universalLeadSheet.sectionLabels?.length ?? 0) > 0,
+    name: 'runBigBandMode exposes universalLeadSheet planning contract',
+  });
+
+  const sq = runStringQuartetMode({ seed: 202, title: 'ULS SQ' });
+  out.push({
+    ok: sq.universalLeadSheet?.mode === 'quartet' && sq.universalLeadSheet.source === 'quartet_plan',
+    name: 'runStringQuartetMode exposes universalLeadSheet planning contract',
   });
 
   return out;

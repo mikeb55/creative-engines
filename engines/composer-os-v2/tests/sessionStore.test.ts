@@ -58,5 +58,33 @@ export function runSessionStoreTests(): { ok: boolean; name: string }[] {
     name: 'negative: wrong session formatVersion rejected',
   });
 
+  const v1 = validateSessionPayload({
+    formatVersion: 1,
+    savedAt: new Date().toISOString(),
+    presetId: 'ecm_chamber',
+    seed: 2,
+    styleStack: { primary: 'metheny' },
+  });
+  out.push({
+    ok: v1.ok && v1.session?.presetId === 'ecm_chamber',
+    name: 'session format v1 still validates',
+  });
+
+  const v2path = path.join(dir, 'session-v2.json');
+  saveSessionFile(v2path, {
+    formatVersion: 2,
+    savedAt: new Date().toISOString(),
+    presetId: 'song_mode',
+    seed: 3,
+    styleStack: { primary: 'bacharach' },
+    lastBestCandidateSeed: 777,
+    continuationSourceRef: 'manifest:abc',
+  });
+  const lv2 = loadSessionFile(v2path);
+  out.push({
+    ok: lv2.ok && lv2.session?.lastBestCandidateSeed === 777 && lv2.session?.continuationSourceRef === 'manifest:abc',
+    name: 'session v2 round-trips project memory fields',
+  });
+
   return out;
 }

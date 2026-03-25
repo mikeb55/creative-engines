@@ -23,6 +23,8 @@ import {
   validateDensityNoOverload,
   validateOrchestrationPlan,
 } from '../orchestration/orchestrationValidation';
+import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
+import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 
 export interface BigBandRunInput {
   seed: number;
@@ -63,6 +65,8 @@ export interface BigBandRunResult {
   orchestrationPlan: OrchestrationPlan;
   validation: BigBandValidationResult;
   manifestHints: BigBandRunManifestHints;
+  /** Unified lead-sheet view (planning placeholders — N.C. per section). */
+  universalLeadSheet?: UniversalLeadSheet;
 }
 
 /**
@@ -130,6 +134,17 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     bigBandResearchRulesParsed: parsed.ok,
   };
 
+  const universalLeadSheet = buildUniversalLeadSheetFromPlanningForm({
+    mode: 'big_band',
+    title,
+    presetId: 'big_band',
+    slices: formPlan.slices.map((s) => ({
+      phase: String(s.phase),
+      startBar: s.startBar,
+      endBar: s.endBar,
+    })),
+  });
+
   return {
     title,
     era,
@@ -145,5 +160,6 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     orchestrationPlan,
     validation,
     manifestHints,
+    universalLeadSheet,
   };
 }

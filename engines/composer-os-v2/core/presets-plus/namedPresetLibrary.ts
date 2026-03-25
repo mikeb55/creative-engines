@@ -30,6 +30,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'offset_for_variation',
     suggestedSeedStep: 10_007,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.ecm_chamber,
+    densityBias: 'sparse',
   },
   ecm_song: {
     id: 'ecm_song',
@@ -41,6 +42,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'prefer_prime',
     suggestedSeedStep: 5003,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.ecm_chamber,
+    densityBias: 'medium',
   },
   guitar_bass_recording: {
     id: 'guitar_bass_recording',
@@ -51,6 +53,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'any',
     suggestedSeedStep: 3331,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.guitar_bass_duo,
+    densityBias: 'medium',
   },
   big_band_swing: {
     id: 'big_band_swing',
@@ -63,6 +66,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'offset_for_variation',
     suggestedSeedStep: 8803,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.big_band,
+    densityBias: 'dense',
   },
   big_band_bebop: {
     id: 'big_band_bebop',
@@ -75,6 +79,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'offset_for_variation',
     suggestedSeedStep: 9901,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.big_band,
+    densityBias: 'dense',
   },
   quartet_lyrical: {
     id: 'quartet_lyrical',
@@ -85,6 +90,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'prefer_prime',
     suggestedSeedStep: 7001,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.string_quartet,
+    densityBias: 'sparse',
   },
   bacharach_song: {
     id: 'bacharach_song',
@@ -96,6 +102,7 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'any',
     suggestedSeedStep: 4242,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.song_mode,
+    densityBias: 'medium',
   },
   songwriter_classic: {
     id: 'songwriter_classic',
@@ -107,6 +114,31 @@ export const NAMED_PRESET_LIBRARY: Record<NamedPresetId, NamedPresetDefinition> 
     seedBehaviourHint: 'any',
     suggestedSeedStep: 1964,
     outputFolderHint: PRESET_OUTPUT_SUBFOLDER.song_mode,
+    densityBias: 'medium',
+  },
+  songwriter_modern: {
+    id: 'songwriter_modern',
+    displayName: 'Modern Songwriter',
+    description: 'Song Mode with contemporary hook-forward profile (Max Martin–oriented rules) and colour stack.',
+    basePresetId: 'song_mode',
+    defaultStyleStack: stack('metheny', 'triad_pairs', 'bacharach'),
+    primarySongwriterStyle: 'max_martin',
+    seedBehaviourHint: 'offset_for_variation',
+    suggestedSeedStep: 2010,
+    outputFolderHint: PRESET_OUTPUT_SUBFOLDER.song_mode,
+    densityBias: 'dense',
+  },
+  chamber_development: {
+    id: 'chamber_development',
+    displayName: 'Chamber Development',
+    description: 'ECM chamber preset biased toward developmental arcs (Schneider-style narrative).',
+    basePresetId: 'ecm_chamber',
+    defaultStyleStack: stack('metheny', 'triad_pairs', 'bacharach'),
+    ecmMode: 'ECM_SCHNEIDER_CHAMBER',
+    seedBehaviourHint: 'prefer_prime',
+    suggestedSeedStep: 6101,
+    outputFolderHint: PRESET_OUTPUT_SUBFOLDER.ecm_chamber,
+    densityBias: 'medium',
   },
 };
 

@@ -2,7 +2,7 @@
  * Universal lead-sheet-ready contract across Duo / ECM / Song (planning-level).
  */
 
-export type UniversalLeadSheetMode = 'duo' | 'ecm' | 'song' | 'planning_other';
+export type UniversalLeadSheetMode = 'duo' | 'ecm' | 'song' | 'big_band' | 'quartet' | 'planning_other';
 
 export interface UniversalChordEntry {
   measure: number;
@@ -37,5 +37,12 @@ export interface UniversalLeadSheet {
   formSections: UniversalFormSection[];
   rehearsalMarks: UniversalRehearsalMark[];
   topLine: UniversalTopLinePlaceholder;
-  source: 'composition_context' | 'song_lead_sheet' | 'manual';
+  /** Section phase labels (parallel to form slices when available). */
+  sectionLabels?: string[];
+  source:
+    | 'composition_context'
+    | 'song_lead_sheet'
+    | 'manual'
+    | 'big_band_plan'
+    | 'quartet_plan';
 }

@@ -17,7 +17,7 @@ export function runNamedPresetLibraryTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
 
   out.push({
-    ok: listNamedPresetIds().length === 8 && getNamedPreset('orbit_ecm')?.basePresetId === 'ecm_chamber',
+    ok: listNamedPresetIds().length === 10 && getNamedPreset('orbit_ecm')?.basePresetId === 'ecm_chamber',
     name: 'named presets list and resolve orbit_ecm',
   });
 
@@ -64,6 +64,13 @@ export function runNamedPresetLibraryTests(): { ok: boolean; name: string }[] {
   out.push({
     ok: NAMED_PRESET_LIBRARY.bacharach_song.outputFolderHint.includes('Song'),
     name: 'output folder hints align with preset subfolders',
+  });
+
+  out.push({
+    ok:
+      getNamedPreset('songwriter_modern')?.primarySongwriterStyle === 'max_martin' &&
+      getNamedPreset('chamber_development')?.densityBias === 'medium',
+    name: 'songwriter_modern and chamber_development presets',
   });
 
   return out;

@@ -18,6 +18,8 @@ import {
 import { getEnsembleFamilyProfile } from '../orchestration/ensembleFamilyProfiles';
 import type { OrchestrationPlan } from '../orchestration/orchestrationPlanTypes';
 import { validateOrchestrationPlan } from '../orchestration/orchestrationValidation';
+import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
+import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 
 export interface StringQuartetRunInput {
   seed: number;
@@ -42,6 +44,7 @@ export interface StringQuartetRunResult {
   orchestrationPlan: OrchestrationPlan;
   validation: QuartetValidationResult;
   manifestHints: StringQuartetRunManifestHints;
+  universalLeadSheet?: UniversalLeadSheet;
 }
 
 export function runStringQuartetMode(input: StringQuartetRunInput): StringQuartetRunResult {
@@ -72,6 +75,17 @@ export function runStringQuartetMode(input: StringQuartetRunInput): StringQuarte
     ensembleFamily: 'string_quartet',
   };
 
+  const universalLeadSheet = buildUniversalLeadSheetFromPlanningForm({
+    mode: 'quartet',
+    title,
+    presetId: 'string_quartet',
+    slices: formPlan.slices.map((s) => ({
+      phase: String(s.phase),
+      startBar: s.startBar,
+      endBar: s.endBar,
+    })),
+  });
+
   return {
     title,
     formPlan,
@@ -80,5 +94,6 @@ export function runStringQuartetMode(input: StringQuartetRunInput): StringQuarte
     orchestrationPlan,
     validation,
     manifestHints,
+    universalLeadSheet,
   };
 }

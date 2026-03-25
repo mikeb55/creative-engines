@@ -4,7 +4,19 @@
 
 import type { CompositionContext } from '../compositionContext';
 import type { LeadSheetContract } from '../song-mode/leadSheetContract';
-import type { UniversalLeadSheet, UniversalChordEntry, UniversalFormSection, UniversalRehearsalMark } from './universalLeadSheetTypes';
+import type {
+  UniversalLeadSheet,
+  UniversalChordEntry,
+  UniversalFormSection,
+  UniversalRehearsalMark,
+} from './universalLeadSheetTypes';
+
+/** Minimal slice shape shared by Big Band / String Quartet form plans. */
+export interface PlanningFormSliceLike {
+  phase: string;
+  startBar: number;
+  endBar: number;
+}
 
 function chordsFromChordSymbolPlan(ctx: CompositionContext): UniversalChordEntry[] {
   const out: UniversalChordEntry[] = [];
@@ -55,6 +67,49 @@ export function buildUniversalLeadSheetFromCompositionContext(
     rehearsalMarks: rehearsalFromContext(ctx),
     topLine: { hasEvents: false, note: 'Top line from score export when present' },
     source: 'composition_context',
+  };
+}
+
+/**
+ * Planning-only lead sheet: placeholder harmony (N.C.) per section; real chords come from orchestration later.
+ */
+export function buildUniversalLeadSheetFromPlanningForm(opts: {
+  mode: 'big_band' | 'quartet';
+  title: string;
+  presetId?: string;
+  slices: PlanningFormSliceLike[];
+}): UniversalLeadSheet {
+  const chordSymbols: UniversalChordEntry[] = [];
+  for (const s of opts.slices) {
+    const bars = Math.max(1, s.endBar - s.startBar + 1);
+    chordSymbols.push({
+      measure: s.startBar,
+      beat: 0,
+      symbol: 'N.C.',
+      durationInBeats: bars * 4,
+    });
+  }
+  const formSections: UniversalFormSection[] = opts.slices.map((s) => ({
+    label: s.phase,
+    barStart: s.startBar,
+    barEnd: s.endBar,
+    role: s.phase,
+  }));
+  const rehearsalMarks: UniversalRehearsalMark[] = opts.slices.map((s) => ({
+    measure: s.startBar,
+    label: s.phase.replace(/_/g, ' '),
+  }));
+  const sectionLabels = opts.slices.map((s) => s.phase);
+  return {
+    mode: opts.mode,
+    title: opts.title,
+    presetId: opts.presetId,
+    chordSymbols,
+    formSections,
+    rehearsalMarks,
+    topLine: { hasEvents: false, note: 'Planning — replace N.C. when harmonizing' },
+    sectionLabels,
+    source: opts.mode === 'big_band' ? 'big_band_plan' : 'quartet_plan',
   };
 }
 

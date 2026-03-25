@@ -13,7 +13,9 @@ export type NamedPresetId =
   | 'big_band_bebop'
   | 'quartet_lyrical'
   | 'bacharach_song'
-  | 'songwriter_classic';
+  | 'songwriter_classic'
+  | 'songwriter_modern'
+  | 'chamber_development';
 
 export type BaseAppPresetId =
   | 'guitar_bass_duo'
@@ -41,4 +43,6 @@ export interface NamedPresetDefinition {
   suggestedSeedStep: number;
   /** Matches `PRESET_OUTPUT_SUBFOLDER` for the base preset. */
   outputFolderHint: string;
+  /** Optional density bias hint for UI / performance-plus metadata (not enforced by core engines). */
+  densityBias?: 'sparse' | 'medium' | 'dense';
 }

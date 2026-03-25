@@ -45,14 +45,24 @@ export function buildDiagnosticsBundle(input: BuildDiagnosticsInput): Diagnostic
     const lower = e.toLowerCase();
     if (lower.includes('chorus') && lower.includes('required')) {
       lines.push(line('warning', 'Song form: chorus is required for this mode'));
+    } else if (lower.includes('shout') && lower.includes('contrast')) {
+      lines.push(line('warning', 'Big Band shout chorus missing contrast'));
     } else if (lower.includes('shout') || lower.includes('big band')) {
       lines.push(line('warning', 'Big band: shout or contrast may be weak in the plan'));
+    } else if (lower.includes('density') && lower.includes('b section')) {
+      lines.push(line('warning', 'Density too uniform in B section'));
     } else if (lower.includes('density')) {
       lines.push(line('warning', 'Density: section may be overloaded or too uniform'));
+    } else if (lower.includes('hook') && lower.includes('return')) {
+      lines.push(line('warning', 'Hook return weak'));
     } else if (lower.includes('hook')) {
       lines.push(line('warning', 'Hook return or placement needs attention'));
     } else if (lower.includes('contrast')) {
       lines.push(line('warning', 'Section contrast could be stronger'));
+    } else if (lower.includes('quartet') && lower.includes('texture')) {
+      lines.push(line('warning', 'Quartet texture too uniform'));
+    } else if (lower.includes('motif') && lower.includes('reuse')) {
+      lines.push(line('positive', 'Motif reuse strong'));
     } else if (e.length > 0) {
       lines.push(line('neutral', e.length > 120 ? `${e.slice(0, 117)}…` : e));
     }

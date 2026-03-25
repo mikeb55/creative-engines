@@ -44,6 +44,13 @@ import { runSessionStoreTests } from './sessionStore.test';
 import { runCandidateRankerTests } from './candidateRanker.test';
 import { runDiagnosticsBuilderTests } from './diagnosticsBuilder.test';
 import { runUniversalLeadSheetBuilderTests } from './universalLeadSheetBuilder.test';
+import { runChordInputParserTests } from './chordInputParser.test';
+import { runMotifExtractorPlusTests } from './motifExtractorPlus.test';
+import { runMotifReusePlannerTests } from './motifReusePlanner.test';
+import { runContinuationPlannerTests } from './continuationPlanner.test';
+import { runSectionRegeneratorTests } from './sectionRegenerator.test';
+import { runStyleStackPresetLibraryTests } from './styleStackPresetLibrary.test';
+import { runHumanisationToggleTests } from './humanisationToggle.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
 import { runOrchestrationCoreTests } from './orchestrationCore.test';
 import { runOrchestrationPlannerTests } from './orchestrationPlanner.test';
@@ -111,6 +118,13 @@ const suites = [
   { name: 'Candidate ranker', run: runCandidateRankerTests },
   { name: 'Diagnostics builder', run: runDiagnosticsBuilderTests },
   { name: 'Universal lead sheet builder', run: runUniversalLeadSheetBuilderTests },
+  { name: 'Chord input parser', run: runChordInputParserTests },
+  { name: 'Motif extractor plus', run: runMotifExtractorPlusTests },
+  { name: 'Motif reuse planner', run: runMotifReusePlannerTests },
+  { name: 'Continuation planner', run: runContinuationPlannerTests },
+  { name: 'Section regenerator', run: runSectionRegeneratorTests },
+  { name: 'Style stack preset library', run: runStyleStackPresetLibraryTests },
+  { name: 'Humanisation toggle', run: runHumanisationToggleTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
   { name: 'Orchestration core', run: runOrchestrationCoreTests },
   { name: 'Orchestration planner', run: runOrchestrationPlannerTests },

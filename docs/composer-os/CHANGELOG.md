@@ -1,5 +1,19 @@
 # Composer OS Changelog
 
+## Easy wins + workflow power pack (V3.0 usability)
+
+- **`core/presets-plus/`** — Added **`songwriter_modern`**, **`chamber_development`**; optional **`densityBias`** on definitions; library now **10** named presets.
+- **`core/sessions/`** — Session format **v2** (loaders accept **v1**); optional **`lastBestCandidateSeed`**, **`lastCandidateSelection`**, **`styleStackPresetId`**, **`continuationSourceRef`**, **`lastModeLabel`**.
+- **`core/lead-sheet/`** — Modes **`big_band`** / **`quartet`**; **`sectionLabels`**; **`runBigBandMode`** / **`runStringQuartetMode`** return **`universalLeadSheet`** (planning placeholders).
+- **`core/chord-input/`** — `chordInputParser`, `chordInputAdapter`, `chordInputValidation` (line blocks + pipe lines → harmony scaffold).
+- **`core/motif-plus/`** — `motifExtractor`, `motifLibrary`, `motifReusePlanner`.
+- **`core/continuation/`** — `continuationPlanner` + validation (same-mode metadata).
+- **`core/regeneration/`** — `sectionRegenerator` + validation (locks-aware).
+- **`core/style-stack-presets/`** — `styleStackPresetLibrary` (e.g. `bacharach_pattison_ecm`, `thad_bebop_swing`).
+- **`core/performance-plus/`** — `densityControlAdapter`, `humanisationToggle` (metadata only).
+- **`core/diagnostics/`** — Richer heuristic lines (big band shout, quartet texture, motif reuse, etc.).
+- **Tests** — `chordInputParser`, `motifExtractorPlus`, `motifReusePlanner`, `continuationPlanner`, `sectionRegenerator`, `styleStackPresetLibrary`, `humanisationToggle`; extended session / named preset / universal lead sheet tests.
+
 ## Easy wins pack — named presets, sessions, candidates, diagnostics, universal lead sheet
 
 - **`core/presets-plus/`** — `namedPresetLibrary.ts` (8 named presets), `namedPresetTypes.ts`, `namedPresetValidation.ts`; `mergeNamedPresetIntoGenerateRequest`, `songModeInputFromNamedPreset`, `bigBandInputFromNamedPreset`.

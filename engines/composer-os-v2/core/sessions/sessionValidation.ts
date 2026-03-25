@@ -2,7 +2,7 @@
  * Session payload validation.
  */
 
-import { SESSION_FORMAT_VERSION, type ComposerSessionV1 } from './sessionTypes';
+import { SESSION_FORMAT_VERSIONS_SUPPORTED, type ComposerSessionV1 } from './sessionTypes';
 
 export function validateSessionPayload(raw: unknown): { ok: boolean; errors: string[]; session?: ComposerSessionV1 } {
   const errors: string[] = [];
@@ -10,8 +10,11 @@ export function validateSessionPayload(raw: unknown): { ok: boolean; errors: str
     return { ok: false, errors: ['session: not an object'] };
   }
   const o = raw as Record<string, unknown>;
-  if (o.formatVersion !== SESSION_FORMAT_VERSION) {
-    errors.push(`session: expected formatVersion ${SESSION_FORMAT_VERSION}`);
+  const fv = o.formatVersion;
+  const versionOk =
+    typeof fv === 'number' && SESSION_FORMAT_VERSIONS_SUPPORTED.includes(fv as (typeof SESSION_FORMAT_VERSIONS_SUPPORTED)[number]);
+  if (!versionOk) {
+    errors.push(`session: expected formatVersion one of ${SESSION_FORMAT_VERSIONS_SUPPORTED.join(', ')}`);
   }
   if (typeof o.presetId !== 'string' || !o.presetId) errors.push('session: presetId required');
   if (typeof o.seed !== 'number' || !Number.isFinite(o.seed)) errors.push('session: seed must be a number');
