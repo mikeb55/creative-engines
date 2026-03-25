@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## Prompt C/3 — Full ensemble realisation (Phase 3)
+
+- **`core/voicing/`** — `voicingTypes`, `voicingProfiles`, `voicingPlanner`, `voicingValidation`, `ensembleHarmonyUtils` (register-aware spread vs cluster from section density).
+- **Big Band** — `bigBandVoicingPlanner.ts`, `bigBandScoreBuilder.ts`, `runBigBandRealisation.ts`: planning → voicing → **ScoreModel** (four section parts, harmonic rhythm + rehearsal marks) → **`runEnsembleExportPipeline`** (same score-model → MusicXML path as duo: `validateScoreModel`, `validateStrictBarMath`, `exportScoreModelToMusicXml`, schema + bar-math checks).
+- **String Quartet** — `quartetVoicingPlanner.ts`, `quartetScoreBuilder.ts`, `runQuartetRealisation.ts`: same pattern for four string parts.
+- **`core/export/ensembleExport.ts`** — `runEnsembleExportPipeline` reuses existing exporter and gates (no duplicate exporter).
+- **Module registry** — `big_band_realise`, `string_quartet_realise`.
+- **Tests** — `voicingPlanner`, `bigBandRealisation`, `quartetRealisation`, `ensembleExport`; retro stage-exit gate for Big Band realisation export.
+
 ## Prompt B/3 — Song Mode completion (Phase 2 songwriting)
 
 - **`core/song-mode/`** — **Lead melody** planning (`leadMelodyPlanner`, contour/phrase helpers, `melodyValidation`) with sparse note anchors, cadence bars, hook-return measure, chorus lift capped by singer profile.

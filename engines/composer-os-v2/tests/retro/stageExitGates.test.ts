@@ -17,6 +17,7 @@ import { planGuitarBehaviour } from '../../core/instrument-behaviours/guitarBeha
 import { planBassBehaviour } from '../../core/instrument-behaviours/uprightBassBehaviour';
 import { computeRhythmicConstraints } from '../../core/rhythm-engine/rhythmEngine';
 import { runSongMode } from '../../core/song-mode/runSongMode';
+import { runBigBandRealisation } from '../../core/big-band/runBigBandRealisation';
 
 function extractPitchByInstrument(score: { parts: Array<{ instrumentIdentity: string; measures: Array<{ events: Array<{ kind: string; pitch?: number }> }> }> }) {
   return score.parts.map((p) => {
@@ -207,6 +208,11 @@ function testSongModeLeadMelodyGatePasses(): boolean {
   );
 }
 
+function testBigBandRealisationExportGatePasses(): boolean {
+  const r = runBigBandRealisation({ seed: 9000, title: 'Retro BB Realise' });
+  return r.planning.validation.ok && r.exportPipeline.ok && (r.score?.parts.length ?? 0) === 4;
+}
+
 function testNegativeStyleStackNeutralizedFails(): boolean {
   const r = runGoldenPath(202);
   const sections = r.plans?.sections ?? [];
@@ -245,6 +251,7 @@ export function runStageExitGatesTests(): { name: string; ok: boolean }[] {
     ['Interaction Layer: gates pass', testInteractionLayerGatesPass],
     ['Output & Control: gates pass', testOutputControlGatesPass],
     ['Song Mode: lead melody + lead sheet gate passes', testSongModeLeadMelodyGatePasses],
+    ['Big Band: realisation + MusicXML export gate passes', testBigBandRealisationExportGatePasses],
     ['Negative: rehearsal mark removed fails', testNegativeRehearsalMarkRemovedFails],
     ['Negative: chord symbols removed fails', testNegativeChordSymbolsRemovedFails],
     ['Negative: guitar register too high fails', testNegativeGuitarRegisterTooHighFails],

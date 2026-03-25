@@ -5,11 +5,13 @@
 import type { ModuleCapabilities, ModuleDefinition } from './moduleTypes';
 import { runSongMode, type SongModeRunInput, type SongModeRunResult } from '../song-mode/runSongMode';
 import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from '../big-band/runBigBandMode';
+import { runBigBandRealisation, type BigBandRealisationResult } from '../big-band/runBigBandRealisation';
 import {
   runStringQuartetMode,
   type StringQuartetRunInput,
   type StringQuartetRunResult,
 } from '../string-quartet/runStringQuartetMode';
+import { runQuartetRealisation, type QuartetRealisationResult } from '../string-quartet/runQuartetRealisation';
 
 /** Minimal echo module for tests and future bridge stubs. */
 export type EchoInput = { message: string };
@@ -94,6 +96,36 @@ const stringQuartetPlanModule: ModuleDefinition<StringQuartetRunInput, StringQua
   },
 };
 
+/** Big Band — planning + voicing + score model + MusicXML (Prompt C/3). */
+const bigBandRealiseModule: ModuleDefinition<BigBandRunInput, BigBandRealisationResult> = {
+  id: 'big_band_realise',
+  category: 'orchestration',
+  input: {} as BigBandRunInput,
+  output: {} as BigBandRealisationResult,
+  run: (input) => runBigBandRealisation(input),
+  capabilities: {
+    readsFrom: ['register', 'density'],
+    writesTo: ['score_model', 'export', 'validation'],
+    compatiblePresets: ['big_band'],
+    stage: 'realisation',
+  },
+};
+
+/** String Quartet — planning + voicing + score model + MusicXML (Prompt C/3). */
+const stringQuartetRealiseModule: ModuleDefinition<StringQuartetRunInput, QuartetRealisationResult> = {
+  id: 'string_quartet_realise',
+  category: 'orchestration',
+  input: {} as StringQuartetRunInput,
+  output: {} as QuartetRealisationResult,
+  run: (input) => runQuartetRealisation(input),
+  capabilities: {
+    readsFrom: ['register', 'density'],
+    writesTo: ['score_model', 'export', 'validation'],
+    compatiblePresets: ['string_quartet'],
+    stage: 'realisation',
+  },
+};
+
 /** Static registry keyed by module id. No dynamic loading. */
 export const MODULE_REGISTRY: Record<string, ModuleDefinition<unknown, unknown>> = {
   [echoModule.id]: echoModule as ModuleDefinition<unknown, unknown>,
@@ -101,6 +133,8 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition<unknown, unknown>>
   [songModeCompileModule.id]: songModeCompileModule as ModuleDefinition<unknown, unknown>,
   [bigBandPlanModule.id]: bigBandPlanModule as ModuleDefinition<unknown, unknown>,
   [stringQuartetPlanModule.id]: stringQuartetPlanModule as ModuleDefinition<unknown, unknown>,
+  [bigBandRealiseModule.id]: bigBandRealiseModule as ModuleDefinition<unknown, unknown>,
+  [stringQuartetRealiseModule.id]: stringQuartetRealiseModule as ModuleDefinition<unknown, unknown>,
 };
 
 export function getRegisteredModuleIds(): string[] {
