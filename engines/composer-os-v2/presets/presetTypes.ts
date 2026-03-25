@@ -13,6 +13,14 @@ export interface BigBandPresetMetadata {
   sectionPlanReady: true;
 }
 
+/** String quartet — planning metadata (Prompt 6/7); not used by golden path. */
+export interface StringQuartetPresetMetadata {
+  ensembleFamily: 'string_quartet';
+  leadSheetChordAware: true;
+  rehearsalMarkReady: true;
+  sectionPlanReady: true;
+}
+
 /** Preset definition. */
 export interface Preset {
   id: string;
@@ -23,4 +31,6 @@ export interface Preset {
   defaultFeel: FeelConfig;
   /** Present on `big_band` — declarative planning flags. */
   bigBandMetadata?: BigBandPresetMetadata;
+  /** Present on `string_quartet` — declarative planning flags. */
+  stringQuartetMetadata?: StringQuartetPresetMetadata;
 }

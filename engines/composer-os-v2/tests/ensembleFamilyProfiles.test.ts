@@ -12,7 +12,11 @@ export function runEnsembleFamilyProfilesTests(): { ok: boolean; name: string }[
 
   const families = listEnsembleFamilies();
   out.push({
-    ok: families.length >= 5 && families.includes('duo') && families.includes('songwriting_lead_sheet'),
+    ok:
+      families.length >= 5 &&
+      families.includes('duo') &&
+      families.includes('songwriting_lead_sheet') &&
+      families.includes('string_quartet'),
     name: 'family profiles load correctly',
   });
 

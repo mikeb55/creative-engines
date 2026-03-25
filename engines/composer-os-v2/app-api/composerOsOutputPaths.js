@@ -56,6 +56,7 @@ exports.PRESET_OUTPUT_SUBFOLDER = {
     guitar_bass_duo: 'Guitar-Bass Duos',
     big_band: 'Big-Band Compositions',
     ecm_chamber: 'ECM Chamber Compositions',
+    string_quartet: 'String Quartet Compositions',
 };
 function getUserDocumentsPath() {
     const home = os.homedir();

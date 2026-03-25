@@ -23,9 +23,11 @@
 
 **Prompt 3/7 (V3 track):** **Song Mode** structural pipeline — `runSongMode` → compiled song + lead-sheet contract + validation; registry id `song_mode_compile`. No golden-path or ECM changes; no full lead-sheet MusicXML export yet. See [SONG_MODE_INTEGRATION_NOTES](../../docs/composer-os/SONG_MODE_INTEGRATION_NOTES.md).
 
-**Prompt 4/7 (V3 track):** **Shared orchestration layer** — `core/orchestration/` (types, planners, ensemble family profiles, validation, duo/chamber plan builders, ECM + Song Mode compatibility mappers). Declarative metadata in `orchestrationLayerMetadata.ts` and handoff map; no runtime rerouting. Big Band and String Quartet **generation** are not implemented yet.
+**Prompt 4/7 (V3 track):** **Shared orchestration layer** — `core/orchestration/` (types, planners, ensemble family profiles, validation, duo/chamber plan builders, ECM + Song Mode compatibility mappers). Declarative metadata in `orchestrationLayerMetadata.ts` and handoff map; no runtime rerouting. Big Band and String Quartet **full score generation** are not implemented yet (planning modes are).
 
 **Prompt 5/7 (V3 track):** **Big Band planning module** — `core/big-band/` (`runBigBandMode`, form/section/density planners, `buildBigBandOrchestrationPlan` on shared orchestration), preset `big_band` with planning metadata, registry `big_band_plan`. Full ensemble MusicXML / voicings not implemented yet. See [BIG_BAND_INTEGRATION_NOTES](../../docs/composer-os/BIG_BAND_INTEGRATION_NOTES.md).
+
+**Prompt 6/7 (V3 track):** **String Quartet planning module** — `core/string-quartet/` (`runStringQuartetMode`, form/texture/density planners, `buildQuartetOrchestrationPlan` on shared orchestration), preset `string_quartet`, registry `string_quartet_plan`. Full quartet MusicXML and contrapuntal writing not implemented yet. See [STRING_QUARTET_INTEGRATION_NOTES](../../docs/composer-os/STRING_QUARTET_INTEGRATION_NOTES.md).
 
 ---
 

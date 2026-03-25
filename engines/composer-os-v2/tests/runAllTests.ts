@@ -42,6 +42,10 @@ import { runBigBandTypesTests } from './bigBandTypes.test';
 import { runBigBandPlanningTests } from './bigBandPlanning.test';
 import { runBigBandValidationTests } from './bigBandValidation.test';
 import { runBigBandModeTests } from './bigBandMode.test';
+import { runStringQuartetTypesTests } from './stringQuartetTypes.test';
+import { runStringQuartetPlanningTests } from './stringQuartetPlanning.test';
+import { runStringQuartetValidationTests } from './stringQuartetValidation.test';
+import { runStringQuartetModeTests } from './stringQuartetMode.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -85,6 +89,10 @@ const suites = [
   { name: 'Big Band planning', run: runBigBandPlanningTests },
   { name: 'Big Band validation', run: runBigBandValidationTests },
   { name: 'Big Band mode', run: runBigBandModeTests },
+  { name: 'String Quartet types', run: runStringQuartetTypesTests },
+  { name: 'String Quartet planning', run: runStringQuartetPlanningTests },
+  { name: 'String Quartet validation', run: runStringQuartetValidationTests },
+  { name: 'String Quartet mode', run: runStringQuartetModeTests },
   ...retroSuites,
 ];
 

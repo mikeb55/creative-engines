@@ -23,6 +23,9 @@ export interface CreateRunManifestInput {
   bigBandFormSequence?: string[];
   bigBandOrchestrationReady?: boolean;
   bigBandModuleIds?: string[];
+  stringQuartetFormSequence?: string[];
+  stringQuartetOrchestrationReady?: boolean;
+  stringQuartetModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: { release: number; mx: number };
@@ -52,6 +55,9 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     bigBandFormSequence: input.bigBandFormSequence,
     bigBandOrchestrationReady: input.bigBandOrchestrationReady,
     bigBandModuleIds: input.bigBandModuleIds,
+    stringQuartetFormSequence: input.stringQuartetFormSequence,
+    stringQuartetOrchestrationReady: input.stringQuartetOrchestrationReady,
+    stringQuartetModuleIds: input.stringQuartetModuleIds,
     feelMode: input.feelMode,
     instrumentProfiles: input.instrumentProfiles,
     readinessScores: input.readinessScores,

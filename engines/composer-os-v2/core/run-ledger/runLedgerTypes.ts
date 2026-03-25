@@ -34,6 +34,12 @@ export interface RunManifest {
   bigBandOrchestrationReady?: boolean;
   /** Optional: Big Band planning modules (e.g. big_band_plan). */
   bigBandModuleIds?: string[];
+  /** Optional: String Quartet planning — ordered form phases. */
+  stringQuartetFormSequence?: string[];
+  /** Optional: orchestration planning succeeded for String Quartet mode. */
+  stringQuartetOrchestrationReady?: boolean;
+  /** Optional: String Quartet planning modules (e.g. string_quartet_plan). */
+  stringQuartetModuleIds?: string[];
   feelMode: string;
   instrumentProfiles: string[];
   readinessScores: {

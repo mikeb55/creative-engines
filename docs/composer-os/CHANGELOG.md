@@ -1,5 +1,16 @@
 # Composer OS Changelog
 
+## Prompt 6/7 — String Quartet planning module (no quartet MusicXML yet)
+
+- **`core/string-quartet/`** — Types, role mapping, form/texture/density planners, `buildQuartetOrchestrationPlan` / `assembleQuartetOrchestrationPlan`, quartet validation, **`runStringQuartetMode.ts`**.
+- **Preset** — `string_quartet` (`stringQuartetMetadata`, guitar + bass stand-ins for manifests); **`getPresets`** lists it supported; output subfolder **`String Quartet Compositions`**.
+- **Module registry** — `string_quartet_plan` (`orchestration` category, `orchestration_planning` stage).
+- **`run-ledger`** — optional `stringQuartetFormSequence`, `stringQuartetOrchestrationReady`, `stringQuartetModuleIds`; `createRunManifest.js` synced.
+- **`presetTypes`** — optional `StringQuartetPresetMetadata`.
+- **`docs/composer-os/STRING_QUARTET_INTEGRATION_NOTES.md`** — reuse vs later work.
+- Tests: `stringQuartetTypes`, `stringQuartetPlanning`, `stringQuartetValidation`, `stringQuartetMode`; `runAllTests` + module registry + output paths + ensemble profiles updated.
+- **`app-api/getPresets.js`** and **`app-api/composerOsOutputPaths.js`** synced with `.ts` (Node may resolve `.js` first).
+
 ## Prompt 5/7 — Big Band planning module (no full big-band MusicXML yet)
 
 - **`core/big-band/`** — Types (instrument sections, BB roles, plans), `bigBandFormPlanner` / `bigBandSectionPlanner` / `bigBandDensityPlanner`, `buildBigBandOrchestrationPlan` + `assembleBigBandOrchestrationPlan`, `bigBandValidation`, **`runBigBandMode.ts`**.

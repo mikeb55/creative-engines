@@ -14,6 +14,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   guitar_bass_duo: 'Guitar-Bass Duos',
   big_band: 'Big-Band Compositions',
   ecm_chamber: 'ECM Chamber Compositions',
+  string_quartet: 'String Quartet Compositions',
 };
 
 export function getUserDocumentsPath(): string {

@@ -6,6 +6,7 @@ import type { AppPreset } from './appApiTypes';
 import { guitarBassDuoPreset } from '../presets/guitarBassDuoPreset';
 import { ecmChamberPreset } from '../presets/ecmChamberPreset';
 import { bigBandPreset } from '../presets/bigBandPreset';
+import { stringQuartetPreset } from '../presets/stringQuartetPreset';
 
 const PRESETS: AppPreset[] = [
   {
@@ -26,6 +27,13 @@ const PRESETS: AppPreset[] = [
     name: bigBandPreset.name,
     description:
       'Big band planning mode: form/section/density/orchestration via runBigBandMode (no full ensemble MusicXML yet).',
+    supported: true,
+  },
+  {
+    id: stringQuartetPreset.id,
+    name: stringQuartetPreset.name,
+    description:
+      'String quartet planning: form/texture/density/orchestration via runStringQuartetMode (no quartet MusicXML yet).',
     supported: true,
   },
 ];
