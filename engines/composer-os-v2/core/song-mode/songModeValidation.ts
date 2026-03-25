@@ -125,6 +125,13 @@ export function validateSongwritingPlanning(
       err(errors, 'Song Mode: chorus payoff contrast not reflected in plan');
     }
     if (!song.hookFirst || !song.melodyFirst) err(errors, 'Song Mode: melodyFirst/hookFirst must stay true');
+    const pair = sw.stylePairingResolution;
+    if (pair) {
+      const c = pair.confidenceScore;
+      if (typeof c !== 'number' || c < 0 || c > 1 || Number.isNaN(c)) {
+        err(errors, 'Song Mode: style pairing confidenceScore must be in [0, 1]');
+      }
+    }
   }
   return { valid: errors.length === 0, errors };
 }

@@ -14,6 +14,9 @@ import type { BigBandSectionPlan } from './bigBandPlanTypes';
 import { loadBigBandResearchFromPath, loadBigBandResearchFromEnvOrDefault } from './bigBandResearchParser';
 import { validateResearchDrivenBigBand } from './bigBandResearchDrivenValidation';
 import type { BigBandComposerId, BigBandEraId, ResolvedBigBandRuleSet } from './bigBandResearchTypes';
+import type { StylePairingInput, StylePairingResult } from '../style-pairing/stylePairingTypes';
+import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
+import { validateStylePairingResult } from '../style-pairing/stylePairingValidation';
 import { planBigBandSections } from './bigBandSectionPlanner';
 import { type BigBandValidationResult, mergeBigBandValidation, validateBigBandPlanningBundle } from './bigBandValidation';
 import { getEnsembleFamilyProfile } from '../orchestration/ensembleFamilyProfiles';
@@ -36,6 +39,8 @@ export interface BigBandRunInput {
   composerStyle?: BigBandComposerId | null;
   /** Override path to BigBandResearch.md (defaults to bundled data + env). */
   researchPathOverride?: string;
+  /** Optional songwriter ↔ arranger pairing (metadata + validation warnings). */
+  stylePairing?: StylePairingInput | null;
 }
 
 export interface BigBandRunManifestHints {
@@ -67,6 +72,8 @@ export interface BigBandRunResult {
   manifestHints: BigBandRunManifestHints;
   /** Unified lead-sheet view (planning placeholders — N.C. per section). */
   universalLeadSheet?: UniversalLeadSheet;
+  /** Present when `stylePairing` was supplied on input. */
+  stylePairingResolution?: StylePairingResult;
 }
 
 /**
@@ -112,13 +119,24 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     validateDensityNoOverload(orchestrationPlan)
   );
 
+  let stylePairingResolution: StylePairingResult | undefined;
+  const pairingWarnings: string[] = [];
+  if (input.stylePairing != null) {
+    stylePairingResolution = resolveStylePairing({
+      ...input.stylePairing,
+      era: input.stylePairing.era ?? era,
+      seed: input.seed,
+    });
+    pairingWarnings.push(...validateStylePairingResult(stylePairingResolution).warnings);
+  }
+
   const validation: BigBandValidationResult = mergeBigBandValidation(
     bbVal,
     researchVal,
     {
       ok: orchVal.ok,
       errors: orchVal.errors,
-      warnings: orchVal.warnings,
+      warnings: [...orchVal.warnings, ...pairingWarnings],
     }
   );
 
@@ -161,5 +179,6 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     validation,
     manifestHints,
     universalLeadSheet,
+    stylePairingResolution,
   };
 }

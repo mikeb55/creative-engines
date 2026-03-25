@@ -8,6 +8,7 @@ import {
   loadBigBandResearchFromPath,
   parseBigBandResearchMarkdown,
 } from '../core/big-band/bigBandResearchParser';
+import { BIG_BAND_RULE_REGISTRY } from '../core/big-band/bigBandRuleRegistry';
 
 export function runBigBandResearchParsingTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -28,6 +29,19 @@ export function runBigBandResearchParsingTests(): { ok: boolean; name: string }[
   out.push({
     ok: !missing.ok && missing.errors.some((e) => /failed to read/i.test(e)),
     name: 'negative: missing file returns parse failure',
+  });
+
+  const allRegistry = [
+    ...BIG_BAND_RULE_REGISTRY.foundationalRules,
+    ...Object.values(BIG_BAND_RULE_REGISTRY.composerRules).flat(),
+    ...Object.values(BIG_BAND_RULE_REGISTRY.eraRules).flat(),
+    ...BIG_BAND_RULE_REGISTRY.functionalRules.shout,
+    ...BIG_BAND_RULE_REGISTRY.functionalRules.riff,
+    ...BIG_BAND_RULE_REGISTRY.functionalRules.soli,
+  ];
+  out.push({
+    ok: allRegistry.every((r) => r.priority >= 1 && r.priority <= 100),
+    name: 'registry rules include priority in 1–100',
   });
 
   return out;

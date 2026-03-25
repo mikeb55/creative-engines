@@ -244,6 +244,19 @@ export function loadBigBandResearchFromPath(filePath: string): ParsedBigBandRese
 
 export function loadBigBandResearchFromEnvOrDefault(): ParsedBigBandResearch {
   const override = process.env.COMPOSER_OS_BIG_BAND_RESEARCH;
-  const p = override && override.length > 0 ? override : getDefaultBigBandResearchPath();
-  return loadBigBandResearchFromPath(p);
+  if (override && override.length > 0) {
+    return loadBigBandResearchFromPath(override);
+  }
+  const dir = process.env.COMPOSER_OS_RESEARCH_DIR;
+  if (dir && dir.length > 0) {
+    const candidate = path.join(dir, 'BigBandResearch.md');
+    try {
+      if (fs.existsSync(candidate)) {
+        return loadBigBandResearchFromPath(candidate);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return loadBigBandResearchFromPath(getDefaultBigBandResearchPath());
 }

@@ -10,6 +10,7 @@ import type { CompiledSong, LyricProsodyPlaceholderMetadata, SongwritingPlanning
 import type { SongHook } from './songHookTypes';
 import type { ParsedSongwritingResearch } from './songwritingResearchTypes';
 import type { ResolvedSongwritingStyle } from './songwriterStyleResolver';
+import type { StylePairingResult } from '../style-pairing/stylePairingTypes';
 
 function buildLyricProsodyMeta(
   primaryId: ResolvedSongwritingStyle['primaryId'],
@@ -59,9 +60,28 @@ export function applySongwritingRules(params: {
   chorusPlan: ChorusPlan;
   melodyBehaviour: MelodyBehaviourPlan;
   authorOverlay: AuthorOverlayBehaviour | null;
+  stylePairingResolution?: StylePairingResult | null;
 }): CompiledSong {
-  const { compiled, research, resolution, hookPlan, chorusPlan, melodyBehaviour, authorOverlay } = params;
+  const {
+    compiled,
+    research,
+    resolution,
+    hookPlan,
+    chorusPlan,
+    melodyBehaviour,
+    authorOverlay,
+    stylePairingResolution,
+  } = params;
   const lyricProsody = buildLyricProsodyMeta(resolution.primaryId, authorOverlay);
+  const baseContrast = sectionContrastDims(resolution.primaryId);
+  const conf = stylePairingResolution?.confidenceScore ?? 0;
+  const sectionContrastDimensions = stylePairingResolution
+    ? {
+        melody: Math.min(0.95, baseContrast.melody + 0.06 * conf),
+        harmony: Math.min(0.95, baseContrast.harmony + 0.05 * conf),
+        rhythm: Math.min(0.95, baseContrast.rhythm + 0.03 * conf),
+      }
+    : baseContrast;
   const songwriting: SongwritingPlanningBundle = {
     researchParseOk: research.ok,
     researchErrors: [...research.errors],
@@ -72,7 +92,8 @@ export function applySongwritingRules(params: {
     melodyBehaviour,
     lyricProsody,
     authorOverlayBehaviour: authorOverlay,
-    sectionContrastDimensions: sectionContrastDims(resolution.primaryId),
+    sectionContrastDimensions,
+    stylePairingResolution: stylePairingResolution ?? undefined,
   };
   return {
     ...compiled,

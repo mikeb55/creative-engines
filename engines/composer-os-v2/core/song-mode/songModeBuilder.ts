@@ -17,6 +17,8 @@ import type { SongSectionKind, SongSectionPlan, SongVoiceType } from './songMode
 import { DEFAULT_SONG_VOICE_TYPE } from './songModeTypes';
 import { resolveSongwritingStyles } from './songwriterStyleResolver';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
+import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
+import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
@@ -78,6 +80,8 @@ export interface BuildCompiledSongParams {
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
   authorOverlay?: AuthorRuleId | null;
   classicalOverlay?: ClassicalSongRuleId | null;
+  /** Optional songwriter ↔ arranger pairing (metadata + light contrast nudge). */
+  stylePairing?: StylePairingInput | null;
 }
 
 export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
@@ -95,6 +99,10 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   const chorusPlan = planChorusMetadata(params.sections, resolution.primaryId);
   const melodyBehaviour = planMelodyBehaviour(params.seed, resolution.primaryId);
   const authorOverlay = resolveAuthorOverlay(params.authorOverlay ?? undefined);
+  const stylePairingResolution =
+    params.stylePairing != null
+      ? resolveStylePairing({ ...params.stylePairing, seed: params.seed })
+      : null;
   const hook = buildSongHook(params.seed);
   const chordPlan = buildSectionChordPlans(params.sections, params.seed);
   const sectionSummary = params.sections.map((s) => s.kind);
@@ -117,6 +125,7 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     chorusPlan,
     melodyBehaviour,
     authorOverlay,
+    stylePairingResolution,
   });
 
   const leadMelodyPlan = planLeadMelody({

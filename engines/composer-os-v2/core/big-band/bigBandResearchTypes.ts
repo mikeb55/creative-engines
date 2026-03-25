@@ -24,6 +24,8 @@ export interface BigBandRule {
   description: string;
   category: RuleCategory;
   effectType: RuleEffectType;
+  /** 1–100 — planning tie-breaker when merging rule sets. */
+  priority: number;
 }
 
 /** Raw bullets grouped by research section (from parser). */

@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## Prompt 1/2 — Intelligence layer (Big Band + Songwriting + style pairing)
+
+- **`BigBandRule.priority`** — registry rules carry **1–100** priority for merge/tie-break semantics.
+- **`core/style-pairing/`** — `stylePairingTypes`, `stylePairingResolver`, `stylePairingValidation` (non-blocking; **confidenceScore** 0–1, **experimentalFlag**). Optional **`stylePairing`** on **`runSongMode`** / **`buildCompiledSong`** → `songwriting.stylePairingResolution` + light **section contrast** nudge; optional on **`runBigBandMode`** → **`stylePairingResolution`** + validation **warnings**.
+- **Research paths** — optional **`COMPOSER_OS_RESEARCH_DIR`**: when set, **`BigBandResearch.md`** / **`Songwriting.md`** in that folder are used if explicit per-file env vars are unset (and the file exists).
+- **Validation** — `schneider`: **warning** when density slices do not vary (texture-led flow); Song Mode checks pairing **confidence** in **[0, 1]** when present.
+- **Tests** — `stylePairingResolver`, `songwriterResearchParsing` (alias of songwriting parsing suite).
+
 ## Prompt C/3 — Full ensemble realisation (Phase 3)
 
 - **`core/voicing/`** — `voicingTypes`, `voicingProfiles`, `voicingPlanner`, `voicingValidation`, `ensembleHarmonyUtils` (register-aware spread vs cluster from section density).

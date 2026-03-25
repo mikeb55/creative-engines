@@ -320,6 +320,19 @@ export function loadSongwritingResearchFromPath(filePath: string): ParsedSongwri
 
 export function loadSongwritingResearchFromEnvOrDefault(): ParsedSongwritingResearch {
   const override = process.env.COMPOSER_OS_SONGWRITING_RESEARCH;
-  const p = override && override.length > 0 ? override : getDefaultSongwritingResearchPath();
-  return loadSongwritingResearchFromPath(p);
+  if (override && override.length > 0) {
+    return loadSongwritingResearchFromPath(override);
+  }
+  const dir = process.env.COMPOSER_OS_RESEARCH_DIR;
+  if (dir && dir.length > 0) {
+    const candidate = path.join(dir, 'Songwriting.md');
+    try {
+      if (fs.existsSync(candidate)) {
+        return loadSongwritingResearchFromPath(candidate);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return loadSongwritingResearchFromPath(getDefaultSongwritingResearchPath());
 }

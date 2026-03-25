@@ -53,6 +53,11 @@ export function validateResearchDrivenBigBand(
     if (!enhanced.behaviourSlices.some((b) => b.smoothTransitionToNext)) {
       errors.push('schneider: smooth transitions required between sections');
     }
+    const densities = densityPlan.slices.map((s) => s.density);
+    const uniqueD = new Set(densities).size;
+    if (uniqueD < 2) {
+      warnings.push('schneider: density should vary across sections for texture-led flow');
+    }
   }
 
   return { ok: errors.length === 0, errors, warnings };

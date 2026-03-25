@@ -13,6 +13,7 @@ import type { SongHook } from './songHookTypes';
 import type { SongSectionKind, SongVoiceType } from './songModeTypes';
 import type { ParsedSongwritingResearch } from './songwritingResearchTypes';
 import type { ResolvedSongwritingStyle } from './songwriterStyleResolver';
+import type { StylePairingResult } from '../style-pairing/stylePairingTypes';
 
 /** Placeholder structure for future lyric/prosody lane. */
 export interface LyricProsodyPlaceholderMetadata {
@@ -33,6 +34,8 @@ export interface SongwritingPlanningBundle {
   lyricProsody: LyricProsodyPlaceholderMetadata;
   authorOverlayBehaviour: AuthorOverlayBehaviour | null;
   sectionContrastDimensions: { melody: number; harmony: number; rhythm: number };
+  /** Optional dual style pairing (songwriter vs arranger); additive to Phase B. */
+  stylePairingResolution?: StylePairingResult;
 }
 
 /** Simple per-section chord scaffold (metadata / planning level). */

@@ -73,6 +73,8 @@ import { runBigBandResearchParsingTests } from './bigBandResearchParsing.test';
 import { runBigBandEraSystemTests } from './bigBandEraSystem.test';
 import { runBebopLinePlannerTests } from './bebopLinePlanner.test';
 import { runBigBandRuleApplicationTests } from './bigBandRuleApplication.test';
+import { runStylePairingResolverTests } from './stylePairingResolver.test';
+import { runSongwriterResearchParsingTests } from './songwriterResearchParsing.test';
 import { runVoicingPlannerTests } from './voicingPlanner.test';
 import { runBigBandRealisationTests } from './bigBandRealisation.test';
 import { runQuartetRealisationTests } from './quartetRealisation.test';
@@ -160,6 +162,8 @@ const suites = [
   { name: 'Big Band era system', run: runBigBandEraSystemTests },
   { name: 'Bebop line planner', run: runBebopLinePlannerTests },
   { name: 'Big Band rule application', run: runBigBandRuleApplicationTests },
+  { name: 'Style pairing resolver', run: runStylePairingResolverTests },
+  { name: 'Songwriter research parsing (alias)', run: runSongwriterResearchParsingTests },
   { name: 'Voicing planner', run: runVoicingPlannerTests },
   { name: 'Big Band realisation', run: runBigBandRealisationTests },
   { name: 'String Quartet realisation', run: runQuartetRealisationTests },

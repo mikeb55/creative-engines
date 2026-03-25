@@ -21,6 +21,7 @@ import {
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 import { buildUniversalLeadSheetFromSongContract } from '../lead-sheet/universalLeadSheetBuilder';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
+import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 
 export type SongModeStructureVariant = 'default' | 'extended';
 
@@ -36,6 +37,8 @@ export interface SongModeRunInput {
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
   authorOverlay?: AuthorRuleId | null;
   classicalOverlay?: ClassicalSongRuleId | null;
+  /** Optional songwriter ↔ arranger pairing (additive metadata). */
+  stylePairing?: StylePairingInput | null;
 }
 
 export interface SongModeRunManifestHints {
@@ -82,6 +85,7 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     secondarySongwriterStyle: input.secondarySongwriterStyle ?? undefined,
     authorOverlay: input.authorOverlay ?? undefined,
     classicalOverlay: input.classicalOverlay ?? undefined,
+    stylePairing: input.stylePairing ?? undefined,
   });
   const lead = buildLeadSheetContractFromCompiled(compiled);
 
