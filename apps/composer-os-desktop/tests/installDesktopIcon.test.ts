@@ -6,7 +6,12 @@ import * as os from 'os';
 import * as path from 'path';
 import { describe, expect, it } from 'vitest';
 import { createOrUpdateComposerOsDesktopShortcut } from '../install/createDesktopShortcut';
-import { LEGACY_SHORTCUT_FILE_NAME, SHORTCUT_FILE_NAME } from '../install/installDesktopIcon';
+import {
+  isDuplicateComposerOsShortcutName,
+  LEGACY_SHORTCUT_FILE_NAME,
+  removeDuplicateComposerOsDesktopShortcuts,
+  SHORTCUT_FILE_NAME,
+} from '../install/installDesktopIcon';
 
 const desktopRoot = path.resolve(__dirname, '..');
 
@@ -23,6 +28,7 @@ describe('desktop:install-icon', () => {
     expect(src).toContain('createShortcut');
     expect(src).toContain('launchInstalledDesktopApp');
     expect(src).toContain('LEGACY_SHORTCUT_FILE_NAME');
+    expect(src).toContain('removeDuplicateComposerOsDesktopShortcuts');
     expect(src).toContain('getResolvedUserDesktopDir');
   });
 
@@ -62,5 +68,33 @@ describe('desktop:install-icon', () => {
     const src = fs.readFileSync(path.join(desktopRoot, 'install', 'installComposerOsDesktop.ts'), 'utf-8');
     expect(src).toContain('installComposerOsDesktopIcon');
     expect(src).toContain('cleanupLegacyShortcuts');
+  });
+});
+
+describe('duplicate Desktop shortcut cleanup', () => {
+  it('isDuplicateComposerOsShortcutName flags Copy / (n) patterns only', () => {
+    expect(isDuplicateComposerOsShortcutName('Composer OS.lnk')).toBe(false);
+    expect(isDuplicateComposerOsShortcutName('Composer OS Desktop.lnk')).toBe(false);
+    expect(isDuplicateComposerOsShortcutName('Composer OS - Copy.lnk')).toBe(true);
+    expect(isDuplicateComposerOsShortcutName('Composer OS - Copy (2).lnk')).toBe(true);
+    expect(isDuplicateComposerOsShortcutName('Composer OS (1).lnk')).toBe(true);
+    expect(isDuplicateComposerOsShortcutName('Composer OS (1).txt')).toBe(false);
+    expect(isDuplicateComposerOsShortcutName('Other.lnk')).toBe(false);
+  });
+
+  it('removeDuplicateComposerOsDesktopShortcuts deletes matching .lnk only', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-dup-'));
+    try {
+      fs.writeFileSync(path.join(dir, 'Composer OS.lnk'), '');
+      fs.writeFileSync(path.join(dir, 'Composer OS Desktop.lnk'), '');
+      fs.writeFileSync(path.join(dir, 'Composer OS - Copy.lnk'), '');
+      fs.writeFileSync(path.join(dir, 'Composer OS (1).lnk'), '');
+      const removed = removeDuplicateComposerOsDesktopShortcuts(dir);
+      expect(removed.sort()).toEqual(['Composer OS (1).lnk', 'Composer OS - Copy.lnk'].sort());
+      expect(fs.existsSync(path.join(dir, 'Composer OS.lnk'))).toBe(true);
+      expect(fs.existsSync(path.join(dir, 'Composer OS Desktop.lnk'))).toBe(true);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

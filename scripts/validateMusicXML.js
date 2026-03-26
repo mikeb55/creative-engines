@@ -1,0 +1,137 @@
+"use strict";
+/**
+ * MusicXML validation for Sibelius handoff.
+ * Exits 0 if valid, 1 if invalid. Logs errors to stderr.
+ *
+ * Checks:
+ * - XML well-formedness
+ * - Multi-staff: <staves> present when multiple clefs or staff numbers
+ * - Required attributes in first measure: divisions, key, time, clef
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+function main() {
+    const filePath = process.argv[2];
+    if (!filePath || !fs.existsSync(filePath)) {
+        return { valid: false, errors: ['File not found or path not provided'] };
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext !== '.musicxml' && ext !== '.xml') {
+        return { valid: false, errors: ['Not a MusicXML file'] };
+    }
+    let xml;
+    try {
+        xml = fs.readFileSync(filePath, 'utf-8');
+    }
+    catch (e) {
+        return { valid: false, errors: [`Read error: ${e}`] };
+    }
+    const errors = [];
+    // 1. XML well-formedness (basic check)
+    if (!xml.trim().startsWith('<?xml') && !xml.trim().startsWith('<')) {
+        errors.push('Invalid XML: missing declaration or root');
+    }
+    if (!xml.includes('<score-partwise') && !xml.includes('<score-timewise')) {
+        errors.push('Invalid MusicXML: missing score-partwise or score-timewise');
+    }
+    if (!xml.includes('</score-partwise>') && !xml.includes('</score-timewise>')) {
+        errors.push('Invalid MusicXML: unclosed root element');
+    }
+    // Basic bracket balance
+    const open = (xml.match(/</g) || []).length;
+    const close = (xml.match(/>/g) || []).length;
+    if (open !== close) {
+        errors.push('XML may be malformed: tag mismatch');
+    }
+    // 2. Multi-staff check: if multiple clefs (number="1" and number="2") or staff 2 used, need <staves>
+    const hasClef2 = /<clef\s+number="2"/.test(xml) || /<clef number='2'/.test(xml);
+    const hasStaff2 = /<staff>2<\/staff>/.test(xml);
+    const hasStaves = /<staves>\s*\d+\s*<\/staves>/.test(xml);
+    if ((hasClef2 || hasStaff2) && !hasStaves) {
+        errors.push('Multi-staff: missing <staves> element (required when using multiple clefs or staff numbers)');
+    }
+    // 3. Required attributes: at least one measure must have divisions, key, time, clef
+    if (!/<divisions>/.test(xml))
+        errors.push('Required: <divisions> in attributes');
+    if (!/<fifths>/.test(xml) && !/<key>/.test(xml))
+        errors.push('Required: <key> in attributes');
+    if (!/<beats>/.test(xml) && !/<time>/.test(xml))
+        errors.push('Required: <time> in attributes');
+    if (!/<clef[\s>]/.test(xml))
+        errors.push('Required: <clef> in attributes');
+    // 4. part-list present
+    if (!/<part-list>/.test(xml))
+        errors.push('Required: <part-list> in score');
+    if (!/<score-part\s+id=/.test(xml))
+        errors.push('Required: <score-part> entries in part-list');
+    // 5. part entries: each score-part should have a matching part
+    const partIds = [...xml.matchAll(/<score-part\s+id="([^"]+)"/g)].map((m) => m[1]);
+    for (const id of partIds) {
+        const partRegex = new RegExp(`<part\\s+id="${id}"`);
+        if (!partRegex.test(xml))
+            errors.push(`Part ${id} declared in part-list but no matching <part id="${id}">`);
+    }
+    // 6. measure structure: at least one measure with duration elements
+    if (!/<duration>\d+<\/duration>/.test(xml))
+        errors.push('No measure durations found');
+    // 6b. measure duration sum: each measure should total 16 divisions (4/4)
+    const measureRegex = /<measure\s+number="(\d+)">([\s\S]*?)<\/measure>/g;
+    let mm;
+    while ((mm = measureRegex.exec(xml)) !== null) {
+        const content = mm[2];
+        const noteDurations = [...content.matchAll(/<note>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+        const backupDurations = [...content.matchAll(/<backup>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+        const forwardDurations = [...content.matchAll(/<forward>[\s\S]*?<duration>(\d+)<\/duration>/g)].map((m) => parseInt(m[1], 10));
+        const total = noteDurations.reduce((a, b) => a + b, 0) - backupDurations.reduce((a, b) => a + b, 0) + forwardDurations.reduce((a, b) => a + b, 0);
+        if (total !== 16)
+            errors.push(`Measure ${mm[1]}: duration sum ${total} != 16`);
+    }
+    // 7. file size > 1KB
+    const stats = fs.statSync(filePath);
+    if (stats.size < 1024)
+        errors.push(`File size ${stats.size} bytes < 1KB`);
+    return {
+        valid: errors.length === 0,
+        errors,
+    };
+}
+const result = main();
+if (!result.valid) {
+    result.errors.forEach((e) => console.error(`[validateMusicXML] ${e}`));
+    process.exit(1);
+}
+process.exit(0);

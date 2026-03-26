@@ -34,6 +34,9 @@ function main(): void {
   console.log('SUCCESS');
   console.log('  exe:', r.exePath);
   console.log('  shortcut:', r.shortcutPath);
+  if (r.removedDuplicateShortcuts.length > 0) {
+    console.log('  removed duplicate shortcut(s):', r.removedDuplicateShortcuts.join(', '));
+  }
   if (r.launched) {
     console.log('  launched: yes');
   } else {

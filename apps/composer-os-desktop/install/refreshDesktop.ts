@@ -10,7 +10,13 @@ import { pruneVersionedPortablesKeepLast } from './pruneOldPortableExes';
 import { isWindows } from './shortcutUtils';
 
 export type RefreshDesktopResult =
-  | { ok: true; exePath: string; shortcutPath: string; launched: boolean }
+  | {
+      ok: true;
+      exePath: string;
+      shortcutPath: string;
+      launched: boolean;
+      removedDuplicateShortcuts: string[];
+    }
   | { ok: false; message: string };
 
 export type RefreshDesktopOptions = {
@@ -86,6 +92,7 @@ export function runRefreshDesktop(opts: RefreshDesktopOptions): RefreshDesktopRe
       exePath: verified.absolutePath,
       shortcutPath: r.shortcutPath,
       launched: r.launched,
+      removedDuplicateShortcuts: r.removedDuplicateShortcuts,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

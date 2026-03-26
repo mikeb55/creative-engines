@@ -1,0 +1,117 @@
+### **Tier 1 — Most Developed / Production-Ready**
+
+1. **Andrew Hill Engine**
+   Interval-cell driven composition with asymmetric phrasing and harmonic ambiguity; includes full generator, validator, and export pipeline.
+
+2. **Wayne Shorter Engine**
+   Motif-first, form-aware modal engine with ambiguity handling; includes runtime generator, validator, MusicXML export, and UI/launcher workflow.
+
+3. **Songwriting Engine (Compiler / Song IR System)**
+   Fully re-architected “compiler-style” system using Song IR, hook-first generation, identity scoring, and section compilers; strongest system-level design.
+
+4. **Guitar–Bass Duo Engine (LOCK + DCR Integrated)**
+   High-precision duo composer enforcing counterpoint, bass-as-co-composer, motivic integrity, and strict GCE validation with MusicXML output.
+
+---
+
+### **Tier 2 — Strong but Not Fully Unified**
+
+5. **Jimmy Wyble Counterpoint Engine**
+   Two-line polyphonic guitar system focusing on independence, contrary motion, and idiomatic dyads; musically strong, narrower scope.
+
+6. **Ellington Orchestration Engine**
+   Big band orchestration logic engine for section colour, density control, and voicing strategies; strong concept, less runtime integration.
+
+7. **Big Band Architecture Engine**
+   Structural planner for large ensemble form (intro, shout, solos, backgrounds); excellent macro-design, lacks full generation pipeline.
+
+---
+
+### **Tier 3 — Emerging / Partially Implemented**
+
+8. **Conductor Engine (Concept / Prototype Stage)**
+   Meta-engine coordinating: form → harmony → counterpoint → orchestration → export across engines; not fully implemented yet.
+
+9. **Polyphonic Labyrinth Engine**
+   Barry Harris–influenced polyphonic system with density layers and diminished pivots; conceptually rich, not yet fully built.
+
+10. **Triad Pair / Jordan Klemons Integration Layer**
+    Harmonic colour system using triad pairs for melodic generation; partially embedded but not formalised as a standalone engine.
+
+---
+
+### **Tier 4 — Modifiers / System-Wide Rules (Critical but Non-Standalone Engines)**
+
+11. **LOCK System (Global Generation Protocol)**
+    Hard constraint framework enforcing DCR, GCE ≥9, chord-melody alignment, bass integrity, and export validation.
+
+12. **DCR Protocol (Design → Commit → Refine)**
+    Internal iteration system ensuring high-quality single-pass outputs (5–7 internal drafts before commit).
+
+13. **Grand Criteria of Excellence (GCE) Engine**
+    Evaluation framework for musical quality across melody, harmony, rhythm, interaction, and form.
+
+14. **DTE v2.1 (Double Time Excellence Framework)**
+    Specialized evaluator for perceived velocity, harmonic motion, and counterpoint clarity in double-time contexts.
+
+15. **Bass Harmonic Integrity Gate**
+    Ensures bass lines imply harmony correctly (root/3rd/7th presence, voice-leading, no harmonic ambiguity failures).
+
+16. **Melody Lock + Chord Alignment Gate**
+    Prevents harmonic clashes with melody; enforces legality of tensions and structural coherence.
+
+17. **Rhythm Anti-Loop Rule**
+    Prevents repetitive rhythmic cells beyond two bars unless intentionally varied.
+
+18. **Section Contrast Gate**
+    Forces A/B/C sections to differ in density, register, and rhythmic identity.
+
+19. **Export Validation Gate**
+    Ensures MusicXML structural correctness (measures, parts, parsing integrity).
+
+---
+
+### **Tier 5 — Conceptual / Directional Extensions**
+
+20. **“Mighty Ten Engines” Expansion Concept**
+    Framework for adding composers (Messiaen, Stravinsky, etc.) into a unified engine ecosystem.
+
+21. **Generative Music Primitives System**
+    Underlying architecture of motif, harmony, rhythm, phrase, orchestration modules; partially distributed across engines.
+
+22. **Song Identity / DNA Scoring System**
+    Evaluates uniqueness, hook strength, and memorability; strongest in songwriting engine but not global yet.
+
+---
+
+## **Blunt Ranking Summary (Top → Bottom)**
+
+1. Songwriting Engine (IR Compiler)
+2. Andrew Hill Engine
+3. Wayne Shorter Engine
+4. Guitar–Bass Duo Engine
+5. Jimmy Wyble Counterpoint Engine
+6. Ellington Orchestration Engine
+7. Big Band Architecture Engine
+8. Conductor Engine (concept)
+9. Polyphonic Labyrinth Engine
+10. Triad Pair Integration
+    11–19. LOCK / DCR / GCE / validation systems (essential but not standalone engines)
+    20–22. Future architecture concepts
+
+---
+
+## **Reality Check (Important Insight)**
+
+* The **most advanced “thing” is not an engine** → it’s the **system layer (LOCK + DCR + GCE)**
+* The **best musical outputs currently come from Guitar–Bass + Hill/Shorter hybrids**
+* The **biggest gap is orchestration integration** (Conductor Engine not finished)
+* The **next leap is NOT another engine** → it’s **unifying everything under Conductor + Primitives**
+
+---
+
+If you start V2.0, the hierarchy should flip to:
+
+**System (Conductor + Primitives) → Engines → Modifiers → Export**
+
+Right now it’s the reverse, which is why things are slowing down.

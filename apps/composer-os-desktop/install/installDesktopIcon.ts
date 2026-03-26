@@ -19,11 +19,49 @@ export const SHORTCUT_FILE_NAME = `${SHORTCUT_CANONICAL_NAME}.lnk`;
 /** Older full-install name; removed so only one product icon remains. */
 export const LEGACY_SHORTCUT_FILE_NAME = 'Composer OS Desktop.lnk';
 
+/**
+ * Windows duplicate names (e.g. user copied shortcut → "Composer OS - Copy.lnk") or auto-renamed "Composer OS (1).lnk".
+ * Not the canonical `Composer OS.lnk` — those are removed before recreating the single official shortcut.
+ */
+export function isDuplicateComposerOsShortcutName(fileName: string): boolean {
+  if (!fileName.toLowerCase().endsWith('.lnk')) return false;
+  const base = fileName.slice(0, -4).trim();
+  if (base === SHORTCUT_CANONICAL_NAME) return false;
+  if (base === LEGACY_SHORTCUT_FILE_NAME.replace(/\.lnk$/i, '')) return false;
+  if (/^Composer\s+OS\s*-\s*Copy/i.test(base)) return true;
+  if (/^Composer\s+OS\s*\(\d+\)\s*$/i.test(base)) return true;
+  return false;
+}
+
+/** Deletes duplicate Composer OS shortcuts on the user Desktop; returns removed file names. */
+export function removeDuplicateComposerOsDesktopShortcuts(desktopDir: string): string[] {
+  const removed: string[] = [];
+  let names: string[];
+  try {
+    names = fs.readdirSync(desktopDir);
+  } catch {
+    return removed;
+  }
+  for (const name of names) {
+    if (!isDuplicateComposerOsShortcutName(name)) continue;
+    const full = path.join(desktopDir, name);
+    try {
+      fs.unlinkSync(full);
+      removed.push(name);
+    } catch {
+      /* ignore locked */
+    }
+  }
+  return removed;
+}
+
 export type InstallIconResult = {
   portableExe: string;
   shortcutPath: string;
   launched: boolean;
   desktopDir: string;
+  /** Duplicate Desktop .lnk files removed (e.g. "Composer OS - Copy.lnk"). */
+  removedDuplicateShortcuts: string[];
 };
 
 export type InstallIconOptions = {
@@ -59,6 +97,11 @@ export function installComposerOsDesktopIcon(
   const desktopDir = getResolvedUserDesktopDir();
   const shortcutPath = path.join(desktopDir, SHORTCUT_FILE_NAME);
   const legacyPath = path.join(desktopDir, LEGACY_SHORTCUT_FILE_NAME);
+
+  const removedDuplicateShortcuts = removeDuplicateComposerOsDesktopShortcuts(desktopDir);
+  if (removedDuplicateShortcuts.length > 0) {
+    console.log('[desktop] removed duplicate shortcut(s):', removedDuplicateShortcuts.join(', '));
+  }
 
   if (fs.existsSync(legacyPath)) {
     try {
@@ -113,5 +156,5 @@ export function installComposerOsDesktopIcon(
     launched = true;
   }
 
-  return { portableExe, shortcutPath, launched, desktopDir };
+  return { portableExe, shortcutPath, launched, desktopDir, removedDuplicateShortcuts };
 }
