@@ -416,3 +416,50 @@ export function emitMelodicBassBar(params: {
   }
   addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
 }
+
+/**
+ * V3.1 — Bass authority (bars 3–4): longer tones, at least one leap, not a walking line (≤3 attacks).
+ */
+export function emitDuoBassAuthorityMomentBar(params: {
+  m: MeasureModel;
+  rootClamped: number;
+  third: number;
+  fifth: number;
+  seventh: number;
+  guide: number;
+  walkLow: number;
+  effectiveHigh: number;
+  firstStart: number;
+  seed: number;
+  bar: number;
+  slashBassPitch?: number;
+}): void {
+  const { m, rootClamped, third, fifth, seventh, guide, walkLow, effectiveHigh, firstStart, seed, bar, slashBassPitch } =
+    params;
+  const t0 = qBeat(firstStart);
+  if (t0 > 0) addEvent(m, createRest(0, t0));
+  const span = qBeat(4 - t0);
+  const p1 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : clampPitch(third, walkLow, effectiveHigh);
+  const pLeap = clampPitch(seventh, walkLow, effectiveHigh);
+  const pAlt = clampPitch(fifth, walkLow, effectiveHigh);
+  const pat = (seed + bar * 7) % 2;
+  if (pat === 0) {
+    const d1 = qBeat(Math.min(2.5, span * 0.62));
+    addEvent(m, createNote(p1, t0, d1));
+    const rem = qBeat(span - d1);
+    if (rem > 0.3) {
+      const p2 = Math.abs(pLeap - p1) >= 4 ? pLeap : pAlt;
+      addEvent(m, createNote(p2, t0 + d1, rem));
+    }
+  } else {
+    const pLow =
+      slashBassPitch !== undefined
+        ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
+        : clampPitch(rootClamped, walkLow, effectiveHigh);
+    const d1 = qBeat(Math.min(1.75, span * 0.48));
+    addEvent(m, createNote(pLow, t0, d1));
+    const p2 = Math.abs(guide - pLow) >= 5 ? guide : pLeap;
+    const d2 = qBeat(span - d1);
+    if (d2 > 0.25) addEvent(m, createNote(clampPitch(p2, walkLow, effectiveHigh), t0 + d1, d2));
+  }
+}

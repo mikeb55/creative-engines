@@ -27,6 +27,7 @@ import { runBassIdentityTests } from './bassIdentity.test';
 import { runPhraseAuthorityTests } from './phraseAuthority.test';
 import { runJazzDuoBehaviourTests } from './jazzDuoBehaviour.test';
 import { runDuoLockQualityTests } from './duoLockQuality.test';
+import { runDuoInteractionV31Tests } from './duoInteractionV31.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
@@ -123,6 +124,7 @@ const suites = [
   { name: 'Phrase authority', run: runPhraseAuthorityTests },
   { name: 'Jazz duo behaviour', run: runJazzDuoBehaviourTests },
   { name: 'Duo LOCK quality', run: runDuoLockQualityTests },
+  { name: 'Duo interaction V3.1', run: runDuoInteractionV31Tests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },

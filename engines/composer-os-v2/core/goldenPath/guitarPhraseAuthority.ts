@@ -72,6 +72,21 @@ export function getDuoPhraseIntent(bar: number, seed: number): PhraseIntent {
   return 'guitar_lead';
 }
 
+/**
+ * V3.1 — Duo interaction authority: fixed 8-bar roles (cycle phase 1–8).
+ * Phrase A (1–2): guitar lead / bass support; B (3–4): bass lead / guitar reduced;
+ * (5–6): shared interlock; (7–8): guitar lead + cadence.
+ */
+export function getDuoPhraseIntentV31(phase: number): PhraseIntent {
+  const p = ((phase - 1) % 8) + 1;
+  if (p === 8) return 'cadence';
+  if (p === 7) return 'guitar_lead';
+  if (p === 5) return 'answer_bass';
+  if (p === 6) return 'answer_guitar';
+  if (p === 3 || p === 4) return 'bass_lead';
+  return 'guitar_lead';
+}
+
 /** Ensemble stagger (quarter beats) from phrase intent — favors handoffs over unison downbeats. */
 export function computeEnsembleStagger(bar: number, seed: number, intent: PhraseIntent): { guitar: number; bass: number } {
   const j = seededUnit(seed, bar, 201);
@@ -139,6 +154,25 @@ export function emitGuitarPhraseBar(params: {
   const pen = uPen < 0.4 ? tones.fifth : tones.root;
   const lead = seededUnit(seed, bar, 403) < 0.45 ? tones.fifth : tones.third;
 
+  /** V3.1: bass-lead phrase — guitar stabs / rests / fragments (few attacks → keeps V3 line clarity). */
+  if (intent === 'bass_lead' && swingDuo) {
+    const u = seededUnit(seed, bar, 551);
+    if (u < 0.45) {
+      addEvent(m, createRest(0, 2.5));
+      addEvent(m, createNote(tones.third, 2.5, 1.5));
+      return;
+    }
+    if (u < 0.82) {
+      addEvent(m, createRest(0, 1.75));
+      addEvent(m, createNote(tones.seventh, 1.75, 0.5));
+      addEvent(m, createRest(2.25, 1.75));
+      return;
+    }
+    addEvent(m, createRest(0, 3));
+    addEvent(m, createNote(tones.fifth, 3, 1));
+    return;
+  }
+
   /** Final bar: stable chord tone, minimal motion (resolution). */
   if (bar === 8) {
     addEvent(m, createRest(0, 1.5));
@@ -149,9 +183,11 @@ export function emitGuitarPhraseBar(params: {
   let headRest =
     intent === 'answer_guitar' || intent === 'cadence'
       ? qBeat(0.75 + staggerG * 0.5 + seededUnit(seed, bar, 405) * 0.5)
-      : intent === 'bass_lead'
-        ? qBeat(1.1 + Math.min(staggerG, 0.75) + seededUnit(seed, bar, 407) * 0.35)
-        : qBeat(0.35 + staggerG * 0.6 + (useOffbeat ? 0.35 : 0));
+      : intent === 'answer_bass'
+        ? qBeat(0.2 + staggerG * 0.45 + seededUnit(seed, bar, 410) * 0.4)
+        : intent === 'bass_lead'
+          ? qBeat(1.1 + Math.min(staggerG, 0.75) + seededUnit(seed, bar, 407) * 0.35)
+          : qBeat(0.35 + staggerG * 0.6 + (useOffbeat ? 0.35 : 0));
 
   if (density === 'sparse') {
     headRest = Math.min(headRest, 1.75);

@@ -7,6 +7,7 @@ import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreMo
 import { activityScoreForBar } from '../goldenPath/activityScore';
 import { melodyAuthorityGceLayer } from './duoMelodyIdentityV3';
 import {
+  countCallResponseEvents,
   guideToneCoverage,
   hasCallResponseInWindow,
   rootRatioStrongBeats,
@@ -122,6 +123,47 @@ export function hasRepeatedIntervalCell(guitar: PartModel): boolean {
   return false;
 }
 
+/** V3.1 — Guitar rests in 15–45% window (conversational space; upper slack for motif variance). */
+export function spaceUsageScore(restRatio: number): number {
+  if (restRatio < 0.15 || restRatio > 0.45) return Math.max(0, 0.45 - Math.min(restRatio, 1 - restRatio) * 0.5);
+  const mid = 0.3;
+  return Math.min(1, 1 - Math.abs(restRatio - mid) / 0.15);
+}
+
+/** V3.1 — Phrase A vs B: guitar vs bass activity swap (lead vs support). */
+export function roleContrastScore(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return 0;
+  const g12 = (activityScoreForBar(g, 1) + activityScoreForBar(g, 2)) / 2;
+  const g34 = (activityScoreForBar(g, 3) + activityScoreForBar(g, 4)) / 2;
+  const b12 = (activityScoreForBar(b, 1) + activityScoreForBar(b, 2)) / 2;
+  const b34 = (activityScoreForBar(b, 3) + activityScoreForBar(b, 4)) / 2;
+  const contrast = Math.abs(g12 - g34) + Math.abs(b34 - b12);
+  return Math.min(1, contrast / 14);
+}
+
+/** V3.1 — Call/response density + phrase boundaries (soft). */
+export function conversationalFlowScore(score: ScoreModel): number {
+  const cr = countCallResponseEvents(score);
+  return Math.min(1, cr / 5);
+}
+
+/**
+ * V3.1 — Composite 0–1.2 layer: call/response clarity, role contrast, flow, space.
+ */
+export function interactionAuthorityGceLayer(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  const restR = guitarRestRatio(g);
+  const cr = countCallResponseEvents(score);
+  const crN = Math.min(1, cr / 4);
+  const rc = roleContrastScore(score);
+  const flow = conversationalFlowScore(score);
+  const space = spaceUsageScore(restR);
+  return Math.min(1.2, 0.28 * crN + 0.24 * rc + 0.26 * flow + 0.22 * space + 0.1);
+}
+
 /**
  * Composite 0–10 “GCE-style” score: melody memorability, motif-like intervals, bass clarity, interaction.
  */
@@ -141,16 +183,18 @@ export function computeDuoGceScore(score: ScoreModel): number {
   const call = callA && callB ? 1 : callA || callB ? 0.72 : 0.4;
   const softN = Math.min(1, Math.max(0, (soft - 4) / 20));
   const maLayer = melodyAuthorityGceLayer(g);
+  const iaLayer = interactionAuthorityGceLayer(score);
   let s =
     2.5 * gc +
     1.55 * (1 - rr) +
     1.75 * softN +
-    1.4 * Math.min(1.35, restR / 0.14) +
+    1.15 * Math.min(1.35, restR / 0.14) +
     0.65 * rep +
     0.95 * call +
     0.85 * (1 - Math.min(1, chrom / 7)) +
     0.55 * (1 - Math.min(1, stepwise / 12)) +
-    0.42 * maLayer;
+    0.38 * maLayer +
+    0.38 * iaLayer;
   s = Math.min(10, s * 1.35 + 0.55);
   return Math.round(Math.max(0, s) * 10) / 10;
 }
@@ -205,8 +249,8 @@ export function validateDuoRhythmAntiLoop(score: ScoreModel): DuoLockValidationR
       unisonRun = 0;
     }
   }
-  if (maxUnison > 3) {
-    errors.push('Duo LOCK: guitar and bass share identical dense rhythm for too many consecutive bars');
+  if (maxUnison > 2) {
+    errors.push('Duo LOCK: guitar and bass share identical dense rhythm for more than two consecutive bars');
   }
 
   return { valid: errors.length === 0, errors };
@@ -224,8 +268,11 @@ export function validateDuoSwingRhythm(score: ScoreModel): DuoLockValidationResu
   if (!guitar || !bass) return { valid: true, errors: [] };
 
   const rr = guitarRestRatio(guitar);
-  if (rr < 0.2) {
-    errors.push('Duo swing: guitar melody needs at least 20% rests (breathing / phrasing)');
+  if (rr < 0.15) {
+    errors.push('Duo swing: guitar needs at least 15% rests (conversational space)');
+  }
+  if (rr > 0.45) {
+    errors.push('Duo swing: guitar rests exceed 45% (needs more melodic presence)');
   }
 
   const tb = guitar.measures.length;
@@ -271,5 +318,49 @@ export function validateDuoSwingRhythm(score: ScoreModel): DuoLockValidationResu
     errors.push('Duo swing: bass rhythmic cell repeats more than two consecutive bars');
   }
 
+  return { valid: errors.length === 0, errors };
+}
+
+/** Bars where summed note durations ≥ threshold (full activity). */
+export function maxConsecutiveNoteHeavyBars(part: PartModel, thresholdBeats = 3.5): number {
+  const sorted = [...part.measures].sort((a, b) => a.index - b.index);
+  let run = 0;
+  let maxRun = 0;
+  for (const m of sorted) {
+    let noteBeats = 0;
+    for (const e of m.events) {
+      if (e.kind === 'note') noteBeats += (e as { duration: number }).duration;
+    }
+    if (noteBeats >= thresholdBeats) {
+      run++;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 0;
+    }
+  }
+  return maxRun;
+}
+
+/**
+ * V3.1 — Explicit interaction floor: call/response count, anti-streaming, role contrast.
+ */
+export function validateDuoInteractionAuthorityGate(score: ScoreModel): DuoLockValidationResult {
+  const errors: string[] = [];
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return { valid: true, errors: [] };
+  if (countCallResponseEvents(score) < 2) {
+    errors.push('Duo interaction V3.1: need at least 2 call/response events per 8 bars');
+  }
+  /** Wall-to-wall sustained activity: ≥3.95 beats of notes, no meaningful breath (anti-streaming). */
+  if (maxConsecutiveNoteHeavyBars(g, 3.95) > 2) {
+    errors.push('Duo interaction V3.1: guitar sustained wall-to-wall activity exceeds two bars');
+  }
+  if (maxConsecutiveNoteHeavyBars(b, 3.95) > 2) {
+    errors.push('Duo interaction V3.1: bass sustained wall-to-wall activity exceeds two bars');
+  }
+  if (roleContrastScore(score) < 0.06) {
+    errors.push('Duo interaction V3.1: role contrast between phrase A and B is too weak');
+  }
   return { valid: errors.length === 0, errors };
 }

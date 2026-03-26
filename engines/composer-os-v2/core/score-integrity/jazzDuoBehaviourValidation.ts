@@ -90,6 +90,17 @@ export function violatesOverlap(score: ScoreModel): boolean {
   return false;
 }
 
+function lastNoteEndBeat(m: { events: Array<{ kind: string; startBeat?: number; duration?: number }> } | undefined): number | undefined {
+  if (!m) return undefined;
+  let best = -1;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as { startBeat: number; duration: number };
+    best = Math.max(best, n.startBeat + n.duration);
+  }
+  return best < 0 ? undefined : best;
+}
+
 /**
  * Light call/response: staggered entries and/or cross-bar answer after a late guitar phrase end.
  */
@@ -122,15 +133,32 @@ export function hasCallResponseInWindow(score: ScoreModel, window: number, start
   return staggeredPairs >= 1 || handoff;
 }
 
-function lastNoteEndBeat(m: { events: Array<{ kind: string; startBeat?: number; duration?: number }> } | undefined): number | undefined {
-  if (!m) return undefined;
-  let best = -1;
-  for (const e of m.events) {
-    if (e.kind !== 'note') continue;
-    const n = e as { startBeat: number; duration: number };
-    best = Math.max(best, n.startBeat + n.duration);
+/** V3.1 — Count staggered onsets + cross-bar handoffs (full 8-bar form). */
+export function countCallResponseEvents(score: ScoreModel): number {
+  const gPart = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bPart = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!gPart || !bPart) return 0;
+  let n = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const gm = gPart.measures.find((m) => m.index === bar);
+    const bm = bPart.measures.find((m) => m.index === bar);
+    const g1 = gm?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    const b1 = bm?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    if (g1 && b1 && Math.abs(g1.startBeat - b1.startBeat) >= 0.5) n++;
   }
-  return best < 0 ? undefined : best;
+  for (let bar = 1; bar < 8; bar++) {
+    const gm = gPart.measures.find((m) => m.index === bar);
+    const bm = bPart.measures.find((m) => m.index === bar);
+    const bmNext = bPart.measures.find((m) => m.index === bar + 1);
+    const gmNext = gPart.measures.find((m) => m.index === bar + 1);
+    const gLast = lastNoteEndBeat(gm);
+    const bLast = lastNoteEndBeat(bm);
+    const bNextFirst = bmNext?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    const gNextFirst = gmNext?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    if (gLast !== undefined && gLast >= 2.5 && bNextFirst && bNextFirst.startBeat <= 1.25) n++;
+    if (bLast !== undefined && bLast >= 2.5 && gNextFirst && gNextFirst.startBeat <= 1.25) n++;
+  }
+  return n;
 }
 
 export function rootRatioStrongBeats(part: PartModel): number {

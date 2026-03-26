@@ -20,13 +20,13 @@ function duoSignature(score: import('../core/score-model/scoreModelTypes').Score
   if (!guitar || !bass) return '';
   const parts: string[] = [];
   for (let b = 1; b <= 8; b++) {
-    const gn = guitar.measures.find((m) => m.index === b)?.events.find((e) => e.kind === 'note') as
-      | { pitch: number }
-      | undefined;
-    const bn = bass.measures.find((m) => m.index === b)?.events.find((e) => e.kind === 'note') as
-      | { pitch: number }
-      | undefined;
-    parts.push(`${gn?.pitch ?? 'x'}:${bn?.pitch ?? 'x'}`);
+    const gm = guitar.measures.find((m) => m.index === b);
+    const bm = bass.measures.find((m) => m.index === b);
+    const gNotes = gm?.events.filter((e) => e.kind === 'note') as { pitch: number }[] | undefined;
+    const bn = bm?.events.find((e) => e.kind === 'note') as { pitch: number } | undefined;
+    const g0 = gNotes?.[0]?.pitch ?? 'x';
+    const gL = gNotes?.length ? gNotes[gNotes.length - 1]?.pitch : 'x';
+    parts.push(`${g0}:${gL}:${bn?.pitch ?? 'x'}`);
   }
   return parts.join('|');
 }

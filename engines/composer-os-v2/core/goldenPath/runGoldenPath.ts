@@ -359,7 +359,7 @@ export interface RunGoldenPathOptions {
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
-export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009] as const;
+export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009, 50021] as const;
 
 export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
   return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
