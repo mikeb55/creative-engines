@@ -1,12 +1,28 @@
 /**
- * V3.4 — Key signature inference + export metadata.
+ * V3.4 / V3.4b — Key signature inference + MusicXML export wiring.
  */
 
-import { inferKeyFromChords, parseTonalCenterString, resolveKeySignatureForExport } from '../core/harmony/keyInference';
+import {
+  inferKeyFromChords,
+  minorKeyFifthsForTonicPc,
+  parseTonalCenterString,
+  resolveKeySignatureForExport,
+} from '../core/harmony/keyInference';
 import { validateTonalCenterOverride } from '../core/harmony/keyInferenceValidation';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { createMeasure, createNote, createScore, addEvent } from '../core/score-model/scoreEventBuilder';
+
+const BB_MINOR_EIGHT = [
+  'Bbm9',
+  'Gbmaj7/Bb',
+  'Eb7(#11)/G',
+  'Dbmaj7/F',
+  'Ab13/C',
+  'E7(#11)/G#',
+  'Bbm9/Db',
+  'F7alt/A',
+];
 
 function testMajorDiatonicInference(): boolean {
   const ch = ['Cmaj7', 'Fmaj7', 'G7', 'Cmaj7'];
@@ -17,7 +33,7 @@ function testMajorDiatonicInference(): boolean {
 function testMinorInference(): boolean {
   const ch = ['Am7', 'Dm7', 'G7', 'Am7', 'Dm7', 'E7', 'Am7'];
   const r = inferKeyFromChords(ch);
-  return r.inferredTonicPc === 9 && r.recommendedMode === 'minor';
+  return r.inferredTonicPc === 9 && r.recommendedMode === 'minor' && r.recommendedFifths === 0;
 }
 
 function testSlashBassDoesNotDominate(): boolean {
@@ -27,9 +43,10 @@ function testSlashBassDoesNotDominate(): boolean {
 }
 
 function testChromaticFallback(): boolean {
-  const ch = ['C7alt', 'F#7alt', 'B7alt', 'E7alt', 'A7alt', 'D7alt', 'G7alt', 'C7alt'];
+  const roots = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G'];
+  const ch = roots.map((r) => `${r}7alt`);
   const r = inferKeyFromChords(ch);
-  return r.noKeySignatureRecommended === true;
+  return r.noKeySignatureRecommended === true && r.confidence < 0.2;
 }
 
 function testOverrideBeatsInference(): boolean {
@@ -41,7 +58,11 @@ function testOverrideBeatsInference(): boolean {
 function testNoneMode(): boolean {
   const inf = inferKeyFromChords(['Cmaj7']);
   const res = resolveKeySignatureForExport(inf, { requestMode: 'none' });
-  return res.export.hideKeySignature === true && res.metadata.noneMode === true;
+  return (
+    res.export.hideKeySignature === true &&
+    res.metadata.noneMode === true &&
+    res.metadata.exportKeyWritten === false
+  );
 }
 
 function testMusicXmlContainsFifths(): boolean {
@@ -70,10 +91,13 @@ function testMusicXmlHideKeyPrintObject(): boolean {
 
 function testGoldenPathHasReceipt(): boolean {
   const r = runGoldenPath(12001);
+  const rec = r.context.generationMetadata.keySignatureReceipt;
   return (
     r.success &&
-    !!r.context.generationMetadata.keySignatureReceipt &&
-    typeof r.context.generationMetadata.keySignatureReceipt?.confidence === 'number'
+    !!rec &&
+    typeof rec.confidence === 'number' &&
+    typeof rec.exportKeyWritten === 'boolean' &&
+    typeof rec.keySignatureModeApplied === 'string'
   );
 }
 
@@ -84,6 +108,59 @@ function testParseTonalCenter(): boolean {
     validateTonalCenterOverride('Eb major').valid === true &&
     validateTonalCenterOverride('').valid === false
   );
+}
+
+/** V3.4b — Bb minor / Db major area → 5 flats (not C# +7). */
+function testBbMinorProgressionFiveFlats(): boolean {
+  const r = inferKeyFromChords(BB_MINOR_EIGHT);
+  const res = resolveKeySignatureForExport(r, { requestMode: 'auto' });
+  return (
+    r.inferredTonicPc === 10 &&
+    r.recommendedMode === 'minor' &&
+    r.recommendedFifths === -5 &&
+    !r.noKeySignatureRecommended &&
+    res.export.fifths === -5 &&
+    res.export.hideKeySignature === false &&
+    res.metadata.exportKeyWritten === true
+  );
+}
+
+/** D minor: natural minor signature = 1 flat (F major relative). */
+function testDMinorOneFlat(): boolean {
+  const ch = ['Dm7', 'A7', 'Dm7', 'A7', 'Dm7', 'Gm7', 'A7', 'Dm7'];
+  const r = inferKeyFromChords(ch);
+  const res = resolveKeySignatureForExport(r, { requestMode: 'auto' });
+  return (
+    r.inferredTonicPc === 2 &&
+    r.recommendedMode === 'minor' &&
+    minorKeyFifthsForTonicPc(2) === -1 &&
+    res.export.fifths === -1 &&
+    res.export.mode === 'minor'
+  );
+}
+
+function testCMajorZero(): boolean {
+  const r = inferKeyFromChords(['Cmaj7', 'Fmaj7', 'G7', 'Cmaj7']);
+  const res = resolveKeySignatureForExport(r, { requestMode: 'auto' });
+  return r.inferredTonicPc === 0 && res.export.fifths === 0 && res.export.mode === 'major';
+}
+
+function testGoldenPathCustomBbXmlFiveFlats(): boolean {
+  const text = BB_MINOR_EIGHT.join(' | ');
+  const r = runGoldenPath(10000, { chordProgressionText: text, harmonyMode: 'custom' });
+  if (!r.success || !r.xml) return false;
+  return (
+    r.xml.includes('<fifths>-5</fifths>') &&
+    r.xml.includes('<mode>minor</mode>') &&
+    !r.xml.includes('print-object="no"') &&
+    r.context.generationMetadata.keySignatureReceipt?.exportKeyWritten === true
+  );
+}
+
+/** Clear diatonic progression should not be flagged ambiguous-only. */
+function testAmbiguousNotOverused(): boolean {
+  const r = inferKeyFromChords(['Cmaj7', 'Fmaj7', 'G7', 'Cmaj7']);
+  return r.mode !== 'ambiguous' && r.noKeySignatureRecommended === false;
 }
 
 export function runKeyInferenceTests(): { name: string; ok: boolean }[] {
@@ -98,5 +175,10 @@ export function runKeyInferenceTests(): { name: string; ok: boolean }[] {
     ['MusicXML: hide key print-object', testMusicXmlHideKeyPrintObject],
     ['Golden path: key receipt', testGoldenPathHasReceipt],
     ['Key: parse / validate tonal centre', testParseTonalCenter],
+    ['V3.4b: Bb minor progression → 5 flats', testBbMinorProgressionFiveFlats],
+    ['V3.4b: D minor → 1 flat', testDMinorOneFlat],
+    ['V3.4b: C major → 0 fifths', testCMajorZero],
+    ['V3.4b: golden path custom Bb XML', testGoldenPathCustomBbXmlFiveFlats],
+    ['V3.4b: ambiguity not overused (diatonic)', testAmbiguousNotOverused],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

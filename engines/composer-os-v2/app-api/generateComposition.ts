@@ -68,6 +68,11 @@ export interface GenerateResult {
     keySignatureHide?: boolean;
     keySignatureFifths?: number;
     keySignatureExportMode?: 'major' | 'minor';
+    keySignatureInferredKey?: string;
+    keySignatureInferredMode?: 'major' | 'minor' | 'ambiguous';
+    keySignatureInferredFifths?: number;
+    keySignatureModeApplied?: 'auto' | 'override' | 'none';
+    keySignatureExportKeyWritten?: boolean;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -164,6 +169,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       keySignatureHide: result.context.generationMetadata.keySignatureReceipt?.hideKeySignature,
       keySignatureFifths: result.context.generationMetadata.keySignatureReceipt?.exportFifths,
       keySignatureExportMode: result.context.generationMetadata.keySignatureReceipt?.exportMode,
+      keySignatureInferredKey: result.context.generationMetadata.keySignatureReceipt?.inferredKey,
+      keySignatureInferredMode: result.context.generationMetadata.keySignatureReceipt?.inferredMode,
+      keySignatureInferredFifths: result.context.generationMetadata.keySignatureReceipt?.inferredFifths,
+      keySignatureModeApplied: result.context.generationMetadata.keySignatureReceipt?.keySignatureModeApplied,
+      keySignatureExportKeyWritten: result.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -224,6 +234,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           keySignatureHide: result.runManifest.keySignatureHide,
           keySignatureFifths: result.runManifest.keySignatureFifths,
           keySignatureExportMode: result.runManifest.keySignatureExportMode,
+          keySignatureInferredKey: result.runManifest.keySignatureInferredKey,
+          keySignatureInferredMode: result.runManifest.keySignatureInferredMode,
+          keySignatureInferredFifths: result.runManifest.keySignatureInferredFifths,
+          keySignatureModeApplied: result.runManifest.keySignatureModeApplied,
+          keySignatureExportKeyWritten: result.runManifest.keySignatureExportKeyWritten,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

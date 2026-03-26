@@ -9,11 +9,15 @@ export interface KeyInferenceResult {
   inferredTonicPc: number;
   /** Display name for tonic (e.g. Eb, F#) — single spelling choice. */
   inferredTonicName: string;
+  /** e.g. `Bb minor`, `Db major` — for receipts. */
+  inferredKey: string;
   mode: InferredMode;
   /** 0 = no evidence, 1 = strong consensus. */
   confidence: number;
   /** MusicXML fifths for the recommended key signature (major or natural minor spelling). */
   recommendedFifths: number;
+  /** Same as `recommendedFifths` — explicit for receipts / debug. */
+  inferredFifths: number;
   /** Major vs minor for MusicXML `<mode>`. */
   recommendedMode: 'major' | 'minor';
   /** When true, avoid implying a single diatonic centre in notation. */
@@ -42,10 +46,18 @@ export interface KeySignatureReceiptMetadata {
   inferredTonicPc: number;
   inferredTonicName: string;
   inferredMode: InferredMode;
+  /** Human-readable key label, e.g. `Bb minor`, `Db major`. */
+  inferredKey: string;
+  /** Fifths implied by inference before export policy (same as `recommendedFifths` in result). */
+  inferredFifths: number;
   confidence: number;
   noKeySignatureRecommended: boolean;
   overrideUsed: boolean;
   noneMode: boolean;
+  /** Request mode that produced the export (default `auto`). */
+  keySignatureModeApplied: KeySignatureRequestMode;
+  /** True when a visible `<key>` was written (not `print-object="none"`). */
+  exportKeyWritten: boolean;
   exportFifths: number;
   exportMode: 'major' | 'minor';
   hideKeySignature: boolean;

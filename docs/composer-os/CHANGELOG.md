@@ -1,5 +1,13 @@
 # Composer OS Changelog
 
+## V3.4b Force key signature export (additive)
+
+- **Natural minor fifths** — Fixed **Bb minor** (and all minor tonics) using a **12-entry** `NATURAL_MINOR_FIFTHS_BY_PC` table so **Bb minor → −5 fifths** (Db major area), not enharmonic **C# +7** from `(minor+3) % 12` alone.
+- **Major enharmonics** — `majorKeyFifthsForTonicPc(pc, flatBias)` uses **flat** spellings when progression / override string has **flat** roots (`Db`, `Eb`, …) vs sharp defaults.
+- **Ambiguity** — Tuned thresholds + **tonic repetition boost** + **capped** confidence at **1**; **hide key** only when confidence/separation/chromatic stress genuinely fail (not for clear **Bb minor** / **ii–V** progressions).
+- **Receipt (V3.4b)** — Manifest / API: **`inferredKey`**, **`inferredFifths`**, **`keySignatureModeApplied`**, **`exportKeyWritten`**, plus existing tonic/confidence fields.
+- **Tests** — Bb minor 8-bar progression asserts **`<fifths>-5</fifths>`** in MusicXML (inference + full golden path with custom chords).
+
 ## V3.4 Key signature inference + override (additive)
 
 - **Inference** — `core/harmony/keyInference.ts` (+ `keyInferenceTypes`, `keyInferenceValidation`): infers tonic, major/minor tendency, and confidence from chord roots (opening/final weight, frequency, ii–V / V–I motion, chromatic penalty). **Slash bass** does not vote for tonal centre (harmonic root only).

@@ -42,6 +42,11 @@ export function writeOutputManifest(
     keySignatureHide?: boolean;
     keySignatureFifths?: number;
     keySignatureExportMode?: 'major' | 'minor';
+    keySignatureInferredKey?: string;
+    keySignatureInferredMode?: 'major' | 'minor' | 'ambiguous';
+    keySignatureInferredFifths?: number;
+    keySignatureModeApplied?: 'auto' | 'override' | 'none';
+    keySignatureExportKeyWritten?: boolean;
     validation: ValidationSummary;
   }
 ): void {
@@ -71,6 +76,11 @@ export function writeOutputManifest(
     keySignatureHide: meta.keySignatureHide,
     keySignatureFifths: meta.keySignatureFifths,
     keySignatureExportMode: meta.keySignatureExportMode,
+    keySignatureInferredKey: meta.keySignatureInferredKey,
+    keySignatureInferredMode: meta.keySignatureInferredMode,
+    keySignatureInferredFifths: meta.keySignatureInferredFifths,
+    keySignatureModeApplied: meta.keySignatureModeApplied,
+    keySignatureExportKeyWritten: meta.keySignatureExportKeyWritten,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

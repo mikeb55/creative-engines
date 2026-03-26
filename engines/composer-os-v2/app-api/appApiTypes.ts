@@ -148,6 +148,11 @@ export interface OutputEntry {
   keySignatureHide?: boolean;
   keySignatureFifths?: number;
   keySignatureExportMode?: 'major' | 'minor';
+  keySignatureInferredKey?: string;
+  keySignatureInferredMode?: 'major' | 'minor' | 'ambiguous';
+  keySignatureInferredFifths?: number;
+  keySignatureModeApplied?: 'auto' | 'override' | 'none';
+  keySignatureExportKeyWritten?: boolean;
   validation: ValidationSummary;
   /** When listing non-MusicXML artifacts from the library */
   artifactKind?: 'musicxml' | 'planning' | 'song_structure';

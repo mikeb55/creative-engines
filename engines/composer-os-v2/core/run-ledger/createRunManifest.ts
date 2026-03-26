@@ -48,6 +48,11 @@ export interface CreateRunManifestInput {
   keySignatureHide?: boolean;
   keySignatureFifths?: number;
   keySignatureExportMode?: 'major' | 'minor';
+  keySignatureInferredKey?: string;
+  keySignatureInferredMode?: 'major' | 'minor' | 'ambiguous';
+  keySignatureInferredFifths?: number;
+  keySignatureModeApplied?: 'auto' | 'override' | 'none';
+  keySignatureExportKeyWritten?: boolean;
 }
 
 /** Create run manifest. */
@@ -95,5 +100,10 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     keySignatureHide: input.keySignatureHide,
     keySignatureFifths: input.keySignatureFifths,
     keySignatureExportMode: input.keySignatureExportMode,
+    keySignatureInferredKey: input.keySignatureInferredKey,
+    keySignatureInferredMode: input.keySignatureInferredMode,
+    keySignatureInferredFifths: input.keySignatureInferredFifths,
+    keySignatureModeApplied: input.keySignatureModeApplied,
+    keySignatureExportKeyWritten: input.keySignatureExportKeyWritten,
   };
 }

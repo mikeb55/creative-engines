@@ -72,4 +72,10 @@ export interface RunManifest {
   keySignatureHide?: boolean;
   keySignatureFifths?: number;
   keySignatureExportMode?: 'major' | 'minor';
+  /** V3.4b — full receipt for key export. */
+  keySignatureInferredKey?: string;
+  keySignatureInferredMode?: 'major' | 'minor' | 'ambiguous';
+  keySignatureInferredFifths?: number;
+  keySignatureModeApplied?: 'auto' | 'override' | 'none';
+  keySignatureExportKeyWritten?: boolean;
 }

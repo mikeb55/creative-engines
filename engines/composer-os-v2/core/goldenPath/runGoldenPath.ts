@@ -617,6 +617,11 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     keySignatureHide: ksRec?.hideKeySignature,
     keySignatureFifths: ksRec?.exportFifths,
     keySignatureExportMode: ksRec?.exportMode,
+    keySignatureInferredKey: ksRec?.inferredKey,
+    keySignatureInferredMode: ksRec?.inferredMode,
+    keySignatureInferredFifths: ksRec?.inferredFifths,
+    keySignatureModeApplied: ksRec?.keySignatureModeApplied,
+    keySignatureExportKeyWritten: ksRec?.exportKeyWritten,
   });
 
   const success =

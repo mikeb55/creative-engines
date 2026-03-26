@@ -6,6 +6,7 @@ import { parseChordForMusicXmlHarmony } from '../export/chordSymbolMusicXml';
 import type { CompositionContext, ChordSymbolPlan } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type {
+  InferredMode,
   KeyInferenceResult,
   KeySignatureExport,
   KeySignatureReceiptMetadata,
@@ -23,8 +24,8 @@ const STEP_TO_PC: Record<string, number> = {
   B: 11,
 };
 
-/** Major-key fifths (Circle of fifths); enharmonic spelling fixed per PC. */
-const MAJOR_FIFTHS_BY_PC: Record<number, number> = {
+/** Major-key fifths (Circle of fifths); PC 1 / 3 / 6 / 8 / 10 have sharp enharmonics — use `majorKeyFifthsForTonicPc` with flat bias. */
+const MAJOR_FIFTHS_SHARP_BY_PC: Record<number, number> = {
   0: 0,
   1: 7,
   2: 2,
@@ -37,6 +38,41 @@ const MAJOR_FIFTHS_BY_PC: Record<number, number> = {
   9: 3,
   10: -2,
   11: 5,
+};
+
+/** Flat-side spellings for same PC (Db vs C#, etc.). */
+const MAJOR_FIFTHS_FLAT_BY_PC: Record<number, number> = {
+  0: 0,
+  1: -5,
+  2: 2,
+  3: -3,
+  4: 4,
+  5: -1,
+  6: -6,
+  7: 1,
+  8: -4,
+  9: 3,
+  10: -2,
+  11: 5,
+};
+
+/**
+ * Natural minor tonic PC → MusicXML fifths (key signature of relative major).
+ * Bb minor (10) → Db major area → **-5** (not C# +7).
+ */
+const NATURAL_MINOR_FIFTHS_BY_PC: Record<number, number> = {
+  0: -3,
+  1: 4,
+  2: -1,
+  3: -6,
+  4: 1,
+  5: -4,
+  6: 3,
+  7: -2,
+  8: 5,
+  9: 0,
+  10: -5,
+  11: 2,
 };
 
 const PC_TO_SHARP_NAME: Record<number, string> = {
@@ -60,14 +96,37 @@ export function rootLetterAlterToPc(step: string, alter: number): number {
   return ((base + alter) % 12 + 12) % 12;
 }
 
-export function majorKeyFifthsForTonicPc(pc: number): number {
-  return MAJOR_FIFTHS_BY_PC[pc] ?? 0;
+/** Count `#` vs `b` on chord roots (first letter of harmony portion) for Db vs C# style keys. */
+export function computeFlatBiasFromChordStrings(chords: string[]): number {
+  let bias = 0;
+  for (const raw of chords) {
+    const t = raw.trim();
+    const slash = t.indexOf('/');
+    const harmonyPart = slash >= 0 ? t.slice(0, slash) : t;
+    const m = harmonyPart.match(/^([A-Ga-g])([#b]?)/);
+    if (!m) continue;
+    if (m[2] === 'b') bias -= 1;
+    else if (m[2] === '#') bias += 1;
+  }
+  return bias;
 }
 
-/** Natural minor: same signature as relative major (3 semitones above tonic). */
+/**
+ * Major-key fifths; when `flatBias < 0`, prefer flat spellings (Db, Gb, …) for enharmonic PCs.
+ */
+export function majorKeyFifthsForTonicPc(pc: number, flatBias = 0): number {
+  if (flatBias < 0) return MAJOR_FIFTHS_FLAT_BY_PC[pc] ?? MAJOR_FIFTHS_SHARP_BY_PC[pc] ?? 0;
+  return MAJOR_FIFTHS_SHARP_BY_PC[pc] ?? 0;
+}
+
+/** Natural minor key signature (relative-major fifths). */
 export function minorKeyFifthsForTonicPc(pc: number): number {
-  const relMaj = (pc + 3) % 12;
-  return MAJOR_FIFTHS_BY_PC[relMaj] ?? 0;
+  return NATURAL_MINOR_FIFTHS_BY_PC[pc] ?? 0;
+}
+
+function formatInferredKeyLabel(tonicName: string, mode: InferredMode, recMode: 'major' | 'minor'): string {
+  const m = mode === 'ambiguous' ? recMode : mode === 'major' || mode === 'minor' ? mode : recMode;
+  return `${tonicName} ${m}`;
 }
 
 function displayTonicName(pc: number): string {
@@ -164,9 +223,11 @@ export function inferKeyFromChords(chords: string[]): KeyInferenceResult {
     return {
       inferredTonicPc: 0,
       inferredTonicName: 'C',
+      inferredKey: 'C major',
       mode: 'ambiguous',
       confidence: 0,
       recommendedFifths: 0,
+      inferredFifths: 0,
       recommendedMode: 'major',
       noKeySignatureRecommended: true,
       reason: 'no_chords',
@@ -224,32 +285,40 @@ export function inferKeyFromChords(chords: string[]): KeyInferenceResult {
     }
   }
 
+  const flatBias = computeFlatBiasFromChordStrings(chords);
+
   const uniqRoots = new Set(chords.map((c) => chordHarmonyRootOnly(c).pc)).size;
   let chromaticPenalty = 0;
   for (const c of chords) {
     const { kindLower } = chordHarmonyRootOnly(c);
-    if (isHighlyChromaticSuffix(kindLower)) chromaticPenalty += 0.07;
+    if (isHighlyChromaticSuffix(kindLower)) chromaticPenalty += 0.045;
   }
-  chromaticPenalty += Math.min(0.45, (uniqRoots / Math.max(4, n)) * 0.35);
+  chromaticPenalty = Math.min(0.32, chromaticPenalty);
+  chromaticPenalty += Math.min(0.22, (uniqRoots / Math.max(8, n)) * 0.28);
 
   const top = scores[best];
   const runner = scores[second];
   const separation = top > 0 ? (top - runner) / (top + 0.01) : 0;
 
-  let mode: 'major' | 'minor' | 'ambiguous' = 'ambiguous';
+  let mode: InferredMode = 'ambiguous';
   const mScore = minorPull[best];
   const MJScore = majorPull[best];
   if (mScore > MJScore + 0.12) mode = 'minor';
   else if (MJScore > mScore + 0.12) mode = 'major';
   else mode = 'ambiguous';
 
-  let confidence = Math.min(1, top * 1.4 * (0.55 + separation * 0.45));
+  let confidence = Math.min(1, top * 1.45 * (0.52 + separation * 0.48));
+  const tonicHits = chords.reduce((acc, c) => acc + (chordHarmonyRootOnly(c).pc === best ? 1 : 0), 0);
+  if (tonicHits >= 2) confidence += 0.11;
+  if (tonicHits >= 3) confidence += 0.06;
   confidence = Math.max(0, confidence - chromaticPenalty);
+  confidence = Math.min(1, confidence);
 
   const ambiguousMode = mode === 'ambiguous';
-  const lowSep = separation < 0.12 && n >= 4;
   const noKeySignatureRecommended =
-    confidence < 0.38 || chromaticPenalty > 0.42 || (ambiguousMode && confidence < 0.55) || lowSep;
+    (confidence < 0.22 && separation < 0.06) ||
+    (chromaticPenalty > 0.52 && confidence < 0.3) ||
+    (ambiguousMode && separation < 0.04 && confidence < 0.26);
 
   let recommendedMode: 'major' | 'minor' = 'major';
   if (mode === 'minor') recommendedMode = 'minor';
@@ -257,22 +326,26 @@ export function inferKeyFromChords(chords: string[]): KeyInferenceResult {
   else recommendedMode = minorPull[best] >= majorPull[best] ? 'minor' : 'major';
 
   const recommendedFifths =
-    recommendedMode === 'major' ? majorKeyFifthsForTonicPc(best) : minorKeyFifthsForTonicPc(best);
+    recommendedMode === 'major' ? majorKeyFifthsForTonicPc(best, flatBias) : minorKeyFifthsForTonicPc(best);
 
   let reason: string | undefined;
   if (noKeySignatureRecommended) {
-    if (chromaticPenalty > 0.38) reason = 'chromatic_or_wandering_harmony';
-    else if (confidence < 0.38) reason = 'low_confidence';
+    if (chromaticPenalty > 0.48) reason = 'chromatic_or_wandering_harmony';
+    else if (confidence < 0.24) reason = 'low_confidence';
     else if (ambiguousMode) reason = 'ambiguous_mode';
     else reason = 'weak_tonal_centre';
   }
 
+  const inferredModeOut: InferredMode = ambiguousMode ? 'ambiguous' : recommendedMode === 'major' ? 'major' : 'minor';
+
   return {
     inferredTonicPc: best,
     inferredTonicName: displayTonicName(best),
-    mode: ambiguousMode ? 'ambiguous' : recommendedMode === 'major' ? 'major' : 'minor',
+    inferredKey: formatInferredKeyLabel(displayTonicName(best), mode, recommendedMode),
+    mode: inferredModeOut,
     confidence,
     recommendedFifths,
+    inferredFifths: recommendedFifths,
     recommendedMode,
     noKeySignatureRecommended,
     reason,
@@ -285,6 +358,47 @@ export interface ResolveKeyOptions {
   tonalCenterOverride?: string;
 }
 
+/** Prefer Db over C# when user / progression spells flats (override string). */
+export function flatBiasFromTonalCenterString(raw: string): number {
+  const token = raw.trim().split(/\s+/)[0] ?? '';
+  if (!token) return 0;
+  const p = parseChordForMusicXmlHarmony(`${token}maj`);
+  if (p.rootAlter < 0) return -1;
+  if (p.rootAlter > 0) return 1;
+  return 0;
+}
+
+function buildReceiptMetadata(
+  inference: KeyInferenceResult,
+  args: {
+    requestMode: KeySignatureRequestMode;
+    exportFifths: number;
+    exportMode: 'major' | 'minor';
+    hideKeySignature: boolean;
+    overrideUsed: boolean;
+    noneMode: boolean;
+    inferredKeyLabel?: string;
+  }
+): KeySignatureReceiptMetadata {
+  const inferredKey = args.inferredKeyLabel ?? inference.inferredKey;
+  return {
+    inferredTonicPc: inference.inferredTonicPc,
+    inferredTonicName: inference.inferredTonicName,
+    inferredMode: inference.mode,
+    inferredKey,
+    inferredFifths: inference.inferredFifths,
+    confidence: inference.confidence,
+    noKeySignatureRecommended: inference.noKeySignatureRecommended,
+    overrideUsed: args.overrideUsed,
+    noneMode: args.noneMode,
+    keySignatureModeApplied: args.requestMode,
+    exportKeyWritten: !args.hideKeySignature,
+    exportFifths: args.exportFifths,
+    exportMode: args.exportMode,
+    hideKeySignature: args.hideKeySignature,
+  };
+}
+
 export function resolveKeySignatureForExport(
   inference: KeyInferenceResult,
   opts: ResolveKeyOptions
@@ -293,24 +407,20 @@ export function resolveKeySignatureForExport(
   const overrideRaw = opts.tonalCenterOverride?.trim();
 
   if (noneMode) {
-    const meta: KeySignatureReceiptMetadata = {
-      inferredTonicPc: inference.inferredTonicPc,
-      inferredTonicName: inference.inferredTonicName,
-      inferredMode: inference.mode === 'ambiguous' ? 'ambiguous' : inference.mode,
-      confidence: inference.confidence,
-      noKeySignatureRecommended: true,
-      overrideUsed: false,
-      noneMode: true,
+    const meta = buildReceiptMetadata(inference, {
+      requestMode: 'none',
       exportFifths: 0,
       exportMode: 'major',
       hideKeySignature: true,
-    };
+      overrideUsed: false,
+      noneMode: true,
+    });
     return {
       export: {
         fifths: 0,
         mode: 'major',
         hideKeySignature: true,
-        caption: 'Key signature suppressed (user: none / chromatic-friendly)',
+        caption: 'Key signature suppressed (user: none)',
       },
       metadata: meta,
     };
@@ -320,43 +430,38 @@ export function resolveKeySignatureForExport(
     if (overrideRaw) {
       const parsed = parseTonalCenterString(overrideRaw);
       if (parsed) {
+        const fb = flatBiasFromTonalCenterString(overrideRaw);
         const fifths =
-          parsed.mode === 'major' ? majorKeyFifthsForTonicPc(parsed.tonicPc) : minorKeyFifthsForTonicPc(parsed.tonicPc);
-        const meta: KeySignatureReceiptMetadata = {
-          inferredTonicPc: inference.inferredTonicPc,
-          inferredTonicName: inference.inferredTonicName,
-          inferredMode: inference.mode,
-          confidence: inference.confidence,
-          noKeySignatureRecommended: inference.noKeySignatureRecommended,
-          overrideUsed: true,
-          noneMode: false,
+          parsed.mode === 'major'
+            ? majorKeyFifthsForTonicPc(parsed.tonicPc, fb)
+            : minorKeyFifthsForTonicPc(parsed.tonicPc);
+        const label = `${displayTonicName(parsed.tonicPc)} ${parsed.mode}`;
+        const meta = buildReceiptMetadata(inference, {
+          requestMode: 'override',
           exportFifths: fifths,
           exportMode: parsed.mode,
           hideKeySignature: false,
-        };
+          overrideUsed: true,
+          noneMode: false,
+          inferredKeyLabel: label,
+        });
         return {
           export: { fifths, mode: parsed.mode, hideKeySignature: false },
           metadata: meta,
         };
       }
     }
-    // override requested but missing / unparseable → fall through to auto behaviour
   }
 
-  // auto (or failed override → fall back to inference)
   if (inference.noKeySignatureRecommended) {
-    const meta: KeySignatureReceiptMetadata = {
-      inferredTonicPc: inference.inferredTonicPc,
-      inferredTonicName: inference.inferredTonicName,
-      inferredMode: inference.mode,
-      confidence: inference.confidence,
-      noKeySignatureRecommended: true,
-      overrideUsed: false,
-      noneMode: false,
+    const meta = buildReceiptMetadata(inference, {
+      requestMode: opts.requestMode,
       exportFifths: 0,
       exportMode: 'major',
       hideKeySignature: true,
-    };
+      overrideUsed: false,
+      noneMode: false,
+    });
     return {
       export: {
         fifths: 0,
@@ -368,18 +473,14 @@ export function resolveKeySignatureForExport(
     };
   }
 
-  const meta: KeySignatureReceiptMetadata = {
-    inferredTonicPc: inference.inferredTonicPc,
-    inferredTonicName: inference.inferredTonicName,
-    inferredMode: inference.mode === 'ambiguous' ? 'ambiguous' : inference.mode,
-    confidence: inference.confidence,
-    noKeySignatureRecommended: false,
-    overrideUsed: false,
-    noneMode: false,
+  const meta = buildReceiptMetadata(inference, {
+    requestMode: 'auto',
     exportFifths: inference.recommendedFifths,
     exportMode: inference.recommendedMode,
     hideKeySignature: false,
-  };
+    overrideUsed: false,
+    noneMode: false,
+  });
 
   const exp: KeySignatureExport = {
     fifths: inference.recommendedFifths,
