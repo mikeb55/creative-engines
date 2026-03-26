@@ -8,6 +8,7 @@ import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
 import { runReadinessTests } from './readiness.test';
 import { runExportTests } from './export.test';
+import { runKeyInferenceTests } from './keyInference.test';
 import { runScoreModelTests } from './scoreModel.test';
 import { runGoldenPathTests } from './goldenPath.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
@@ -108,6 +109,7 @@ const suites = [
   { name: 'Score Integrity', run: runScoreIntegrityTests },
   { name: 'Readiness', run: runReadinessTests },
   { name: 'Export', run: runExportTests },
+  { name: 'Key inference (V3.4)', run: runKeyInferenceTests },
   { name: 'Score Model', run: runScoreModelTests },
   { name: 'Golden Path', run: runGoldenPathTests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },

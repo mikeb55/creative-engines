@@ -35,6 +35,13 @@ export function writeOutputManifest(
     parsedCustomProgressionBars?: string[];
     chordProgressionParseFailed?: boolean;
     builtInHarmonyFallbackOccurred?: boolean;
+    keySignatureInferredTonic?: string;
+    keySignatureConfidence?: number;
+    keySignatureOverrideUsed?: boolean;
+    keySignatureNoneMode?: boolean;
+    keySignatureHide?: boolean;
+    keySignatureFifths?: number;
+    keySignatureExportMode?: 'major' | 'minor';
     validation: ValidationSummary;
   }
 ): void {
@@ -57,6 +64,13 @@ export function writeOutputManifest(
     parsedCustomProgressionBars: meta.parsedCustomProgressionBars,
     chordProgressionParseFailed: meta.chordProgressionParseFailed,
     builtInHarmonyFallbackOccurred: meta.builtInHarmonyFallbackOccurred,
+    keySignatureInferredTonic: meta.keySignatureInferredTonic,
+    keySignatureConfidence: meta.keySignatureConfidence,
+    keySignatureOverrideUsed: meta.keySignatureOverrideUsed,
+    keySignatureNoneMode: meta.keySignatureNoneMode,
+    keySignatureHide: meta.keySignatureHide,
+    keySignatureFifths: meta.keySignatureFifths,
+    keySignatureExportMode: meta.keySignatureExportMode,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

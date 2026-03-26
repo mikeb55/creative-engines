@@ -45,6 +45,8 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 **V4 (Composer OS track — Prompt 1/8):** Guitar–Bass Duo can request **32 bars** (`totalBars: 32`) for an opt-in **A / A′ / B / A″** long-form route with a **modulation planning** layer; the default **8-bar** golden path is unchanged. See `docs/composer-os/CHANGELOG.md`.
 
+**V3.4 (Composer OS):** MusicXML **key signatures** are **inferred from harmony** (optional **`keySignatureMode`** / tonal centre override); ambiguous or chromatic progressions avoid a misleading default signature. See `docs/composer-os/CHANGELOG.md`.
+
 ---
 
 ## Structure

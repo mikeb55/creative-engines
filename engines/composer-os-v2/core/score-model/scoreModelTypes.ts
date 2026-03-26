@@ -95,6 +95,14 @@ export interface PartModel {
   measures: MeasureModel[];
 }
 
+/** MusicXML key signature line (additive; does not change harmony generation). */
+export interface KeySignatureLine {
+  fifths: number;
+  mode: 'major' | 'minor';
+  hideKeySignature: boolean;
+  caption?: string;
+}
+
 /** Full score model. */
 export interface ScoreModel {
   title: string;
@@ -102,5 +110,7 @@ export interface ScoreModel {
   timeSignature?: { beats: number; beatType: number };
   /** Optional duo feel hint (export as direction text; no structural change). */
   feelProfile?: FeelProfile;
+  /** V3.4 — exporter reads this for `<key>`; when omitted, defaults to C / visible. */
+  keySignature?: KeySignatureLine;
   parts: PartModel[];
 }

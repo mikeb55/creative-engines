@@ -14,6 +14,7 @@ import type { ReleaseReadinessResult } from './readiness/readinessTypes';
 import type { MxReadinessResult } from './readiness/mxReadinessScorer';
 import type { ValidationResults } from './conductor/conductorTypes';
 import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes';
+import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -59,6 +60,8 @@ export interface GenerationMetadata {
   modulationPlanActive?: boolean;
   /** Explicit bar count when long-form or extended forms are used */
   totalBars?: number;
+  /** V3.4 — key signature inference / export metadata (additive). */
+  keySignatureReceipt?: KeySignatureReceiptMetadata;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

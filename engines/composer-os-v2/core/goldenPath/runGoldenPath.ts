@@ -23,6 +23,7 @@ import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTrac
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
+import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
 import { validateExportIntegrity } from '../export/exportHardening';
@@ -386,6 +387,12 @@ export interface RunGoldenPathOptions {
   /** Guitar–Bass Duo: opt-in 32-bar long-form (with `totalBars: 32`). */
   totalBars?: number;
   longFormEnabled?: boolean;
+  /** V3.4 — key signature: infer (default), user override, or hide. */
+  keySignatureMode?: 'auto' | 'override' | 'none';
+  /** When `keySignatureMode` is `override`, e.g. `Bb`, `F# minor`. */
+  tonalCenterOverride?: string;
+  /** Echo of UI tonal centre — used for override when `tonalCenterOverride` omitted. */
+  tonalCenter?: string;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -476,6 +483,11 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   const score = generateGoldenPathDuoScore(appliedContext, plans);
+  applyKeySignatureToScoreAndContext(score, appliedContext, {
+    keySignatureMode: options?.keySignatureMode,
+    tonalCenterOverride: options?.tonalCenterOverride,
+    tonalCenter: options?.tonalCenter,
+  });
 
   errors.push(...validateSlashBassHonoured(score));
 
@@ -572,6 +584,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
   const scoreTitle = plans.scoreTitle;
   const ecmMode = options?.ecmMode;
 
+  const ksRec = appliedContext.generationMetadata.keySignatureReceipt;
   const runManifest = createRunManifest({
     version: '2.0.0',
     seed,
@@ -597,6 +610,13 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     validationErrors: errors.length > 0 ? errors : undefined,
     exportTarget: xml ? 'musicxml' : undefined,
     timestamp: new Date().toISOString(),
+    keySignatureInferredTonic: ksRec?.inferredTonicName,
+    keySignatureConfidence: ksRec?.confidence,
+    keySignatureOverrideUsed: ksRec?.overrideUsed,
+    keySignatureNoneMode: ksRec?.noneMode,
+    keySignatureHide: ksRec?.hideKeySignature,
+    keySignatureFifths: ksRec?.exportFifths,
+    keySignatureExportMode: ksRec?.exportMode,
   });
 
   const success =

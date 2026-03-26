@@ -41,6 +41,13 @@ export interface CreateRunManifestInput {
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   experimentalCreativeLabel?: string;
   bigBandEnsembleConfigId?: string;
+  keySignatureInferredTonic?: string;
+  keySignatureConfidence?: number;
+  keySignatureOverrideUsed?: boolean;
+  keySignatureNoneMode?: boolean;
+  keySignatureHide?: boolean;
+  keySignatureFifths?: number;
+  keySignatureExportMode?: 'major' | 'minor';
 }
 
 /** Create run manifest. */
@@ -81,5 +88,12 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     creativeControlLevel: input.creativeControlLevel,
     experimentalCreativeLabel: input.experimentalCreativeLabel,
     bigBandEnsembleConfigId: input.bigBandEnsembleConfigId,
+    keySignatureInferredTonic: input.keySignatureInferredTonic,
+    keySignatureConfidence: input.keySignatureConfidence,
+    keySignatureOverrideUsed: input.keySignatureOverrideUsed,
+    keySignatureNoneMode: input.keySignatureNoneMode,
+    keySignatureHide: input.keySignatureHide,
+    keySignatureFifths: input.keySignatureFifths,
+    keySignatureExportMode: input.keySignatureExportMode,
   };
 }

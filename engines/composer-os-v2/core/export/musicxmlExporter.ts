@@ -156,13 +156,22 @@ ${partList}
                   `Feel: ${score.feelProfile.tempoFeel} swing (~${score.feelProfile.swingRatio}:1 eighths); laid-back; duo`
                 )}</words></direction-type></direction>\n`
               : '';
+          const ks = score.keySignature;
+          const fifths = ks?.fifths ?? 0;
+          const keyMode = ks?.mode ?? 'major';
+          const hideKey = ks?.hideKeySignature ?? false;
+          const printAttr = hideKey ? ' print-object="no"' : '';
+          const keyCaption =
+            partIndex === 0 && ks?.caption
+              ? `    <direction placement="above"><direction-type><words>${escapeXml(ks.caption)}</words></direction-type></direction>\n`
+              : '';
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
-      <key><fifths>0</fifths></key>
+      <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
       <clef><sign>${clefSign}</sign><line>${clefLine}</line></clef>
     </attributes>${tempoEl}
-${feelEl}`;
+${keyCaption}${feelEl}`;
         }
 
         if (m.rehearsalMark) {

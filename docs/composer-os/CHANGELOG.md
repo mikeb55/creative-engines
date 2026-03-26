@@ -1,5 +1,14 @@
 # Composer OS Changelog
 
+## V3.4 Key signature inference + override (additive)
+
+- **Inference** — `core/harmony/keyInference.ts` (+ `keyInferenceTypes`, `keyInferenceValidation`): infers tonic, major/minor tendency, and confidence from chord roots (opening/final weight, frequency, ii–V / V–I motion, chromatic penalty). **Slash bass** does not vote for tonal centre (harmonic root only).
+- **Conservative export** — When confidence is low or harmony is highly chromatic, export uses **no visible key signature** (`print-object="no"` on `<key>`, fifths 0) plus an optional direction caption — avoids misleading C-major defaults.
+- **MusicXML** — `exportScoreModelToMusicXml` reads optional `score.keySignature` (fifths, mode, hide, caption). Default when absent matches prior behaviour (C, visible).
+- **API** — Optional `keySignatureMode`: `auto` (default), `override` (with `tonalCenterOverride` or `tonalCenter`), `none` (suppress key signature).
+- **Receipt / manifest** — `generationMetadata.keySignatureReceipt`, disk manifest + `GenerateRequest` / `runManifest` echo: inferred tonic, confidence, override / none flags, export fifths/mode.
+- **Tests** — `tests/keyInference.test.ts`.
+
 ## V4.0 Composer OS — Prompt 1/8: Safe modulation layer + 32-bar Duo route (Phase 1/8)
 
 - **Long-form route (opt-in)** — `resolveLongFormRoute` / `longFormRouteResolver.ts`: **`duo32`** only when preset is **`guitar_bass_duo`** and **`totalBars === 32`** (not the default). Default generation remains **8-bar** golden path unchanged.

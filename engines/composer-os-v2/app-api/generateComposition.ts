@@ -61,6 +61,13 @@ export interface GenerateResult {
     variationId?: string;
     creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
     experimentalCreativeLabel?: string;
+    keySignatureInferredTonic?: string;
+    keySignatureConfidence?: number;
+    keySignatureOverrideUsed?: boolean;
+    keySignatureNoneMode?: boolean;
+    keySignatureHide?: boolean;
+    keySignatureFifths?: number;
+    keySignatureExportMode?: 'major' | 'minor';
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -106,6 +113,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
     totalBars: req.totalBars,
     longFormEnabled: req.longFormEnabled,
+    keySignatureMode: req.keySignatureMode,
+    tonalCenterOverride: req.tonalCenterOverride,
+    tonalCenter: req.tonalCenter,
   });
   const validation = {
     integrityPassed: result.integrityPassed,
@@ -147,6 +157,13 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
       chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
       builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
+      keySignatureInferredTonic: result.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
+      keySignatureConfidence: result.context.generationMetadata.keySignatureReceipt?.confidence,
+      keySignatureOverrideUsed: result.context.generationMetadata.keySignatureReceipt?.overrideUsed,
+      keySignatureNoneMode: result.context.generationMetadata.keySignatureReceipt?.noneMode,
+      keySignatureHide: result.context.generationMetadata.keySignatureReceipt?.hideKeySignature,
+      keySignatureFifths: result.context.generationMetadata.keySignatureReceipt?.exportFifths,
+      keySignatureExportMode: result.context.generationMetadata.keySignatureReceipt?.exportMode,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -200,6 +217,13 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           variationId: req.variationId,
           creativeControlLevel: req.creativeControlLevel,
           experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+          keySignatureInferredTonic: result.runManifest.keySignatureInferredTonic,
+          keySignatureConfidence: result.runManifest.keySignatureConfidence,
+          keySignatureOverrideUsed: result.runManifest.keySignatureOverrideUsed,
+          keySignatureNoneMode: result.runManifest.keySignatureNoneMode,
+          keySignatureHide: result.runManifest.keySignatureHide,
+          keySignatureFifths: result.runManifest.keySignatureFifths,
+          keySignatureExportMode: result.runManifest.keySignatureExportMode,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

@@ -80,7 +80,7 @@ export interface GenerateRequest {
   variationId?: string;
   /** Default `stable` — identical to raw seed resolution; other tiers nudge seed only (form unchanged). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
-  /** Tonal centre / key hint (UI; echoed in artifacts — engines may ignore until wired). */
+  /** Tonal centre / key hint (UI; echoed in artifacts). Used as override string when `keySignatureMode` is `override` if `tonalCenterOverride` omitted. */
   tonalCenter?: string;
   /** Tempo BPM (UI; echoed in artifacts). */
   bpm?: number;
@@ -88,6 +88,10 @@ export interface GenerateRequest {
   totalBars?: number;
   /** Guitar–Bass Duo: explicit opt-in for 32-bar long-form (with `totalBars: 32`). */
   longFormEnabled?: boolean;
+  /** V3.4 — how to set MusicXML key signature (default `auto` = infer from harmony). */
+  keySignatureMode?: 'auto' | 'override' | 'none';
+  /** When `keySignatureMode` is `override`, e.g. `Eb`, `A minor` (optional if `tonalCenter` set). */
+  tonalCenterOverride?: string;
   /** Dual style pairing (songwriter vs arranger) — `song_mode` / `big_band`. */
   stylePairing?: {
     songwriterStyle: string;
@@ -136,6 +140,14 @@ export interface OutputEntry {
   parsedCustomProgressionBars?: string[];
   chordProgressionParseFailed?: boolean;
   builtInHarmonyFallbackOccurred?: boolean;
+  /** V3.4 — key signature receipt (when MusicXML was written). */
+  keySignatureInferredTonic?: string;
+  keySignatureConfidence?: number;
+  keySignatureOverrideUsed?: boolean;
+  keySignatureNoneMode?: boolean;
+  keySignatureHide?: boolean;
+  keySignatureFifths?: number;
+  keySignatureExportMode?: 'major' | 'minor';
   validation: ValidationSummary;
   /** When listing non-MusicXML artifacts from the library */
   artifactKind?: 'musicxml' | 'planning' | 'song_structure';

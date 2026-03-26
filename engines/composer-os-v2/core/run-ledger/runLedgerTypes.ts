@@ -64,4 +64,12 @@ export interface RunManifest {
   experimentalCreativeLabel?: string;
   /** Big band ensemble selection when applicable. */
   bigBandEnsembleConfigId?: string;
+  /** V3.4 — key signature inference (MusicXML export metadata). */
+  keySignatureInferredTonic?: string;
+  keySignatureConfidence?: number;
+  keySignatureOverrideUsed?: boolean;
+  keySignatureNoneMode?: boolean;
+  keySignatureHide?: boolean;
+  keySignatureFifths?: number;
+  keySignatureExportMode?: 'major' | 'minor';
 }
