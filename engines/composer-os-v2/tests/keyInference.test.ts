@@ -163,6 +163,21 @@ function testAmbiguousNotOverused(): boolean {
   return r.mode !== 'ambiguous' && r.noKeySignatureRecommended === false;
 }
 
+/** V3.4c — low-confidence inference still writes MusicXML key (no hidden C fallback). */
+function testV34cWritesKeyWhenInferenceWouldSuppress(): boolean {
+  const roots = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G'];
+  const ch = roots.map((r) => `${r}7alt`);
+  const inf = inferKeyFromChords(ch);
+  const res = resolveKeySignatureForExport(inf, { requestMode: 'auto' });
+  return (
+    inf.noKeySignatureRecommended === true &&
+    res.export.hideKeySignature === false &&
+    res.metadata.exportKeyWritten === true &&
+    res.export.fifths === inf.recommendedFifths &&
+    res.export.mode === inf.recommendedMode
+  );
+}
+
 export function runKeyInferenceTests(): { name: string; ok: boolean }[] {
   return [
     ['Key inference: diatonic major', testMajorDiatonicInference],
@@ -180,5 +195,6 @@ export function runKeyInferenceTests(): { name: string; ok: boolean }[] {
     ['V3.4b: C major → 0 fifths', testCMajorZero],
     ['V3.4b: golden path custom Bb XML', testGoldenPathCustomBbXmlFiveFlats],
     ['V3.4b: ambiguity not overused (diatonic)', testAmbiguousNotOverused],
+    ['V3.4c: write key when inference would suppress (no silent C)', testV34cWritesKeyWhenInferenceWouldSuppress],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

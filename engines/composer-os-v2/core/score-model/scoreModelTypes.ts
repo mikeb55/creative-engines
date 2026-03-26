@@ -112,5 +112,7 @@ export interface ScoreModel {
   feelProfile?: FeelProfile;
   /** V3.4 — exporter reads this for `<key>`; when omitted, defaults to C / visible. */
   keySignature?: KeySignatureLine;
+  /** TEMP V3.4c — mirror receipt for export debug log; remove when stable. */
+  keySignatureExportDebug?: { inferredKey: string; inferredFifths: number; exportKeyWritten: boolean };
   parts: PartModel[];
 }

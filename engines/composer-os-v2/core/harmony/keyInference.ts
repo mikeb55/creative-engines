@@ -453,28 +453,9 @@ export function resolveKeySignatureForExport(
     }
   }
 
-  if (inference.noKeySignatureRecommended) {
-    const meta = buildReceiptMetadata(inference, {
-      requestMode: opts.requestMode,
-      exportFifths: 0,
-      exportMode: 'major',
-      hideKeySignature: true,
-      overrideUsed: false,
-      noneMode: false,
-    });
-    return {
-      export: {
-        fifths: 0,
-        mode: 'major',
-        hideKeySignature: true,
-        caption: 'Key signature suppressed (harmony ambiguous or highly chromatic)',
-      },
-      metadata: meta,
-    };
-  }
-
+  /** V3.4c — auto / override (incl. failed override parse): always write inferred fifths/mode; do not fall back to hidden C. */
   const meta = buildReceiptMetadata(inference, {
-    requestMode: 'auto',
+    requestMode: opts.requestMode,
     exportFifths: inference.recommendedFifths,
     exportMode: inference.recommendedMode,
     hideKeySignature: false,
@@ -514,5 +495,18 @@ export function applyKeySignatureToScoreAndContext(
     tonalCenterOverride: reqMode === 'override' ? overrideStr : undefined,
   });
   score.keySignature = resolved.export;
+  score.keySignatureExportDebug = {
+    inferredKey: resolved.metadata.inferredKey,
+    inferredFifths: resolved.metadata.inferredFifths,
+    exportKeyWritten: resolved.metadata.exportKeyWritten,
+  };
   context.generationMetadata.keySignatureReceipt = resolved.metadata;
+  // TEMP V3.4c — set COMPOSER_OS_DEBUG_KEY_XML=1 to log; remove after Sibelius verification
+  if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_KEY_XML === '1') {
+    console.log('[V3.4c applyKeySignature]', {
+      inferredKey: resolved.metadata.inferredKey,
+      inferredFifths: resolved.metadata.inferredFifths,
+      exportKeyWritten: resolved.metadata.exportKeyWritten,
+    });
+  }
 }

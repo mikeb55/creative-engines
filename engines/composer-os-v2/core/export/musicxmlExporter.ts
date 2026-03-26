@@ -114,6 +114,20 @@ function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
 /** Export ScoreModel to MusicXML string. */
 export function exportScoreModelToMusicXml(score: ScoreModel): MusicXmlExportResult {
   try {
+    const dbg = score.keySignatureExportDebug;
+    const ks0 = score.keySignature;
+    // TEMP V3.4c — set COMPOSER_OS_DEBUG_KEY_XML=1 to log; remove after Sibelius verification
+    if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_KEY_XML === '1') {
+      console.log('[V3.4c exportScoreModelToMusicXml]', {
+        inferredKey: dbg?.inferredKey,
+        inferredFifths: dbg?.inferredFifths,
+        exportKeyWritten: dbg?.exportKeyWritten,
+        xmlFifths: ks0?.fifths ?? 0,
+        xmlMode: ks0?.mode ?? 'major',
+        xmlHideKey: ks0?.hideKeySignature ?? false,
+      });
+    }
+
     const partList = score.parts
       .map((p) => {
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
