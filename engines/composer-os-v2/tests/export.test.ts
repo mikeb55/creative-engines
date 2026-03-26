@@ -11,6 +11,7 @@ import {
   parseChordForMusicXmlHarmony,
 } from '../core/export/chordSymbolMusicXml';
 import { validateExportedMusicXmlBarMath } from '../core/export/validateMusicXmlBarMath';
+import { validateExportIntegrity } from '../core/export/exportHardening';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../core/score-model/scoreEventBuilder';
 import type { PartModel } from '../core/score-model/scoreModelTypes';
 import { MEASURE_DIVISIONS } from '../core/score-model/scoreModelTypes';
@@ -166,6 +167,119 @@ function testBarMathIncludesNotesWithAttributes(): boolean {
   return v.valid;
 }
 
+/** V3.4e — extract measure numbers in document order per part */
+function measureNumbersByPartId(xml: string): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  const partBlocks = xml.match(/<part id="([^"]+)"[\s\S]*?<\/part>/g) ?? [];
+  for (const pb of partBlocks) {
+    const id = pb.match(/^<part id="([^"]+)"/)?.[1] ?? '';
+    out[id] = [...pb.matchAll(/<measure[^>]*\snumber="(\d+)"/g)].map((m) => parseInt(m[1], 10));
+  }
+  return out;
+}
+
+function assertSequentialOneToN(nums: number[]): boolean {
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] !== i + 1) return false;
+  }
+  return nums.length > 0;
+}
+
+function makeMinimalDuoScore(measureCount: number, opts?: { rehearsal?: boolean }): ReturnType<typeof createScore> {
+  const rot = ['Dmin9', 'G13', 'Cmaj9', 'A7alt'];
+  const g: PartModel['measures'] = [];
+  const b: PartModel['measures'] = [];
+  for (let bar = 1; bar <= measureCount; bar++) {
+    const ch = rot[(bar - 1) % rot.length]!;
+    const rm =
+      opts?.rehearsal && (bar === 1 || bar === 5 || bar === 9 || bar === 13 || bar === 17 || bar === 21 || bar === 25 || bar === 29)
+        ? bar === 1 || bar === 9 || bar === 17 || bar === 25
+          ? 'A'
+          : 'B'
+        : undefined;
+    const gm = createMeasure(bar, ch, rm);
+    const bm = createMeasure(bar, ch, rm);
+    addEvent(gm, createNote(60, 0, 4));
+    addEvent(bm, createNote(40, 0, 4));
+    g.push(gm);
+    b.push(bm);
+  }
+  const score = createScore(`V34e ${measureCount}b`, [
+    {
+      id: 'guitar',
+      name: 'Guitar',
+      instrumentIdentity: 'clean_electric_guitar',
+      midiProgram: 27,
+      clef: 'treble',
+      measures: g,
+    },
+    {
+      id: 'bass',
+      name: 'Bass',
+      instrumentIdentity: 'acoustic_upright_bass',
+      midiProgram: 32,
+      clef: 'bass',
+      measures: b,
+    },
+  ]);
+  score.keySignature = { fifths: -1, mode: 'major', hideKeySignature: false };
+  return score;
+}
+
+/** V3.4e — 8-bar duo: consecutive measure numbers, integrity gate, bar math */
+function testV34eEightBarDuoMeasureNumbers(): boolean {
+  const score = makeMinimalDuoScore(8, { rehearsal: true });
+  const r = exportScoreModelToMusicXml(score);
+  if (!r.success || !r.xml) return false;
+  const integ = validateExportIntegrity(r.xml);
+  if (!integ.valid) return false;
+  const byPart = measureNumbersByPartId(r.xml);
+  const g = byPart['guitar'] ?? [];
+  const bs = byPart['bass'] ?? [];
+  if (g.length !== 8 || bs.length !== 8) return false;
+  if (!assertSequentialOneToN(g) || !assertSequentialOneToN(bs)) return false;
+  const mx = validateExportedMusicXmlBarMath(r.xml);
+  return mx.valid;
+}
+
+/** V3.4e — 32-bar duo: same guarantees at long form length */
+function testV34eThirtyTwoBarDuoMeasureNumbers(): boolean {
+  const score = makeMinimalDuoScore(32, { rehearsal: true });
+  const r = exportScoreModelToMusicXml(score);
+  if (!r.success || !r.xml) return false;
+  const integ = validateExportIntegrity(r.xml);
+  if (!integ.valid) return false;
+  const byPart = measureNumbersByPartId(r.xml);
+  const g = byPart['guitar'] ?? [];
+  const bs = byPart['bass'] ?? [];
+  if (g.length !== 32 || bs.length !== 32) return false;
+  if (!assertSequentialOneToN(g) || !assertSequentialOneToN(bs)) return false;
+  return validateExportedMusicXmlBarMath(r.xml).valid;
+}
+
+/** V3.4e — model indices out of array order still export as measure 1..n in score order */
+function testV34eExportSortsMeasuresThenNumbersSequentially(): boolean {
+  const a = createMeasure(3, 'Cmaj7');
+  const c = createMeasure(1, 'Dmin9');
+  const b = createMeasure(2, 'G13');
+  addEvent(a, createNote(60, 0, 4));
+  addEvent(b, createNote(62, 0, 4));
+  addEvent(c, createNote(64, 0, 4));
+  const part: PartModel = {
+    id: 'guitar',
+    name: 'G',
+    instrumentIdentity: 'clean_electric_guitar',
+    midiProgram: 27,
+    clef: 'treble',
+    measures: [a, b, c],
+  };
+  const score = createScore('Order test', [part]);
+  const r = exportScoreModelToMusicXml(score);
+  if (!r.success || !r.xml) return false;
+  const nums = measureNumbersByPartId(r.xml)['guitar'] ?? [];
+  return nums.length === 3 && nums[0] === 1 && nums[1] === 2 && nums[2] === 3;
+}
+
 function testExporterRoundTripDivisionsPerVoice(): boolean {
   const m = createMeasure(1, 'Dmin9');
   addEvent(m, createNote(60, 0, 0.5));
@@ -206,5 +320,8 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Exporter: plain major uses empty kind text (no "major")', testExporterUsesEmptyKindForPlainMajor],
     ['Bar math: notes with dynamics attribute counted', testBarMathIncludesNotesWithAttributes],
     ['Exporter round-trip divisions per voice (Bacharach-shaped bar)', testExporterRoundTripDivisionsPerVoice],
+    ['V3.4e: 8-bar duo sequential measure numbers + integrity', testV34eEightBarDuoMeasureNumbers],
+    ['V3.4e: 32-bar duo sequential measure numbers', testV34eThirtyTwoBarDuoMeasureNumbers],
+    ['V3.4e: out-of-order measure indices export 1..n', testV34eExportSortsMeasuresThenNumbersSequentially],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

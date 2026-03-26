@@ -39,5 +39,20 @@ export function validateExportIntegrity(xml: string): ExportIntegrityResult {
   const partCountForChords = partCountForTime;
   if (partCountForChords > 0 && measureCount >= 8 && chordCount < 8) errors.push('Chord symbols missing for measures');
 
+  /** V3.4e — Sibelius: each part must have <measure number="1">..<measure number="N"> with no gaps or duplicates. */
+  const partBlocks = xml.match(/<part id="([^"]+)"[\s\S]*?<\/part>/g) ?? [];
+  for (const block of partBlocks) {
+    const idMatch = block.match(/^<part id="([^"]+)"/);
+    const partId = idMatch?.[1] ?? '?';
+    const nums = [...block.matchAll(/<measure[^>]*\snumber="(\d+)"/g)].map((m) => parseInt(m[1], 10));
+    for (let i = 0; i < nums.length; i++) {
+      if (nums[i] !== i + 1) {
+        errors.push(
+          `Part ${partId}: measure slot ${i + 1} has number="${nums[i]}" (expected sequential ${i + 1})`
+        );
+      }
+    }
+  }
+
   return { valid: errors.length === 0, errors };
 }

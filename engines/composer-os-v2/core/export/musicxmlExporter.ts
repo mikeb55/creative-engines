@@ -30,6 +30,11 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
+/** V3.4e — stable bar order for export; MusicXML `number` is assigned 1..n separately (Sibelius-safe). */
+function measuresInExportOrder(part: PartModel): MeasureModel[] {
+  return [...part.measures].sort((a, b) => a.index - b.index);
+}
+
 function divisionsToType(divs: number): string {
   if (divs <= 1) return '16th';
   if (divs <= 2) return 'eighth';
@@ -158,9 +163,11 @@ ${partList}
       const clefLine = part.clef === 'bass' ? 4 : 2;
       xml += `  <part id="${part.id}">\n`;
 
-      for (let i = 0; i < part.measures.length; i++) {
-        const m = part.measures[i];
-        xml += `  <measure number="${m.index}">\n`;
+      const orderedMeasures = measuresInExportOrder(part);
+      for (let i = 0; i < orderedMeasures.length; i++) {
+        const m = orderedMeasures[i];
+        const measureNumber = i + 1;
+        xml += `  <measure number="${measureNumber}">\n`;
 
         if (i === 0) {
           const tempoEl = score.tempo ? `\n    <sound tempo="${score.tempo}"/>` : '';
