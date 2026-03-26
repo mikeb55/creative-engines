@@ -164,6 +164,8 @@ export function HomeGenerate({
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
+  /** Guitar–Bass Duo: optional `|`-separated chords (exactly 8 bars). When non-empty, engine uses custom harmony. */
+  const [chordProgressionText, setChordProgressionText] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -209,12 +211,15 @@ export function HomeGenerate({
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
         });
 
+        const chordTrim = chordProgressionText.trim();
         const r = (await api.generate({
           ...coreFields,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
-          ...(presetId === 'guitar_bass_duo' ? { harmonyMode: 'builtin' as const } : {}),
+          ...(presetId === 'guitar_bass_duo' && chordTrim
+            ? { harmonyMode: 'custom' as const, chordProgressionText: chordTrim }
+            : {}),
         })) as GenResult;
         setResult(r);
         const ok = !!r.success;
@@ -259,6 +264,7 @@ export function HomeGenerate({
       ensembleConfigId,
       presetId,
       scoreTitle,
+      chordProgressionText,
       ecmMode,
       onResult,
     ]
@@ -420,6 +426,43 @@ export function HomeGenerate({
           }}
         />
       </div>
+
+      {presetId === 'guitar_bass_duo' && (
+        <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
+          <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Chord progression (optional)
+          </label>
+          <p
+            style={{
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              margin: '0 0 0.5rem',
+              lineHeight: 1.45,
+            }}
+          >
+            Custom harmony: exactly <strong style={{ color: 'var(--text)' }}>8</strong> chords separated by{' '}
+            <code>|</code>. Leave empty to use the built-in study progression (e.g. Dm9 … A7alt).
+          </p>
+          <textarea
+            value={chordProgressionText}
+            onChange={(e) => setChordProgressionText(e.target.value)}
+            disabled={loading}
+            placeholder="Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt"
+            rows={3}
+            style={{
+              width: '100%',
+              maxWidth: 600,
+              padding: '0.5rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-input, var(--bg))',
+              color: 'var(--text)',
+              fontFamily: 'inherit',
+              fontSize: '0.9rem',
+            }}
+          />
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
         <div>

@@ -434,7 +434,14 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   if (opts?.chordProgressionText?.trim()) {
     const parsed = parseChordProgressionInput(opts.chordProgressionText);
     if (!parsed.ok) {
-      return harmonyParseFailureGoldenPathResult(seed, opts, parsed.error);
+      return harmonyParseFailureGoldenPathResult(
+        seed,
+        opts,
+        `Invalid chord progression — not applied. ${parsed.error}`
+      );
+    }
+    if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_CUSTOM_CHORDS === '1') {
+      console.log('[V3.5] USING CUSTOM CHORDS:', parsed.bars);
     }
     resolved = { ...opts, parsedChordBars: parsed.bars };
   }

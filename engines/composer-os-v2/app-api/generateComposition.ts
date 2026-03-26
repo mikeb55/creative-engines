@@ -202,6 +202,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   return {
     success: result.success,
+    error: result.success ? undefined : result.errors[0] ?? 'Generation failed',
     productKind: 'musicxml',
     composerOsVersion: COMPOSER_OS_VERSION,
     xml: result.xml,

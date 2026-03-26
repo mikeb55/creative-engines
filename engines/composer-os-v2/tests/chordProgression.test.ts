@@ -257,5 +257,62 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
     })(),
   });
 
+  tests.push({
+    name: 'V3.5: C# symbols — custom harmony applied (not builtin Dm9)',
+    ok: (() => {
+      const text =
+        'C#maj7 | D#m7 | G#7 | C#maj7 | C#maj7 | D#m7 | G#7 | C#maj7';
+      const p = parseChordProgressionInput(text);
+      if (!p.ok) return false;
+      const r = runGoldenPath(15001, { harmonyMode: 'custom', chordProgressionText: text });
+      if (!r.success) return false;
+      const g = r.score.parts.find((x) => x.instrumentIdentity === 'clean_electric_guitar');
+      const c1 = g?.measures.find((m) => m.index === 1)?.chord;
+      return c1 === p.bars[0] && c1 !== 'Dmin9' && r.context.generationMetadata.harmonySource === 'custom';
+    })(),
+  });
+
+  tests.push({
+    name: 'V3.5: Cb symbols — custom harmony applied (not builtin Dm9)',
+    ok: (() => {
+      const text =
+        'Cbmaj7 | Dbm7 | Gb7 | Cbmaj7 | Cbmaj7 | Dbm7 | Gb7 | Cbmaj7';
+      const p = parseChordProgressionInput(text);
+      if (!p.ok) return false;
+      const r = runGoldenPath(15002, { harmonyMode: 'custom', chordProgressionText: text });
+      if (!r.success) return false;
+      const g = r.score.parts.find((x) => x.instrumentIdentity === 'clean_electric_guitar');
+      const c1 = g?.measures.find((m) => m.index === 1)?.chord;
+      return c1 === p.bars[0] && c1 !== 'Dmin9' && r.context.generationMetadata.harmonySource === 'custom';
+    })(),
+  });
+
+  tests.push({
+    name: 'V3.5: invalid bar count — generateComposition error + parse failed flag',
+    ok: (() => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-duo-v35-'));
+      try {
+        const r = generateComposition(
+          {
+            presetId: 'guitar_bass_duo',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 99,
+            harmonyMode: 'custom',
+            chordProgressionText: 'C | D',
+          },
+          dir
+        );
+        return (
+          !r.success &&
+          typeof r.error === 'string' &&
+          r.error.includes('Invalid chord progression') &&
+          r.chordProgressionParseFailed === true
+        );
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    })(),
+  });
+
   return tests;
 }
