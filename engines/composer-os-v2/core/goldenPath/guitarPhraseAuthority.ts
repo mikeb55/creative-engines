@@ -98,9 +98,9 @@ export function computeEnsembleStagger(bar: number, seed: number, intent: Phrase
     case 'bass_lead':
       return { guitar: qBeat(1 + j * 0.75), bass: qBeat(0.1 + j * 0.15) };
     case 'answer_guitar':
-      return { guitar: qBeat(1.15 + j * 0.35), bass: qBeat(0.05 + j * 0.2) };
+      return { guitar: qBeat(1.27 + j * 0.35), bass: qBeat(0.05 + j * 0.2) };
     case 'answer_bass':
-      return { guitar: qBeat(0.2 + j * 0.25), bass: qBeat(1 + j * 0.5) };
+      return { guitar: qBeat(0.28 + j * 0.25), bass: qBeat(1 + j * 0.5) };
     default:
       return { guitar: 0, bass: 0.5 };
   }
@@ -129,7 +129,7 @@ export function emitGuitarDuoIdentityBar7(params: {
   const endStrong = resolvePhraseEndForDuo(tones, undefined, effectiveLow, effectiveHigh, seed, DUO_IDENTITY_MOMENT_BAR);
   const u = seededUnit(seed, DUO_IDENTITY_MOMENT_BAR, 702);
   const lo = clampPitch(tones.third, effectiveLow, effectiveHigh);
-  const tOff = qBeat(0.75 + Math.min(0.5, staggerG));
+  const tOff = qBeat(0.75 + Math.min(0.5, staggerG) + 0.2);
 
   if (u < 0.34) {
     const leap = clampPitch(lo + (seededUnit(seed, 7, 703) < 0.5 ? 8 : 9), effectiveLow, effectiveHigh);
@@ -141,15 +141,15 @@ export function emitGuitarDuoIdentityBar7(params: {
   }
   if (u < 0.67) {
     const hi = clampPitch(tones.fifth + (seededUnit(seed, 7, 704) < 0.5 ? 0 : 1), effectiveLow, effectiveHigh);
-    addEvent(m, createRest(0, 0.5));
-    addEvent(m, createNote(hi, 0.5, 2.5));
+    addEvent(m, createRest(0, 0.75));
+    addEvent(m, createNote(hi, 0.75, 2.25));
     addEvent(m, createRest(3, 0.25));
     addEvent(m, createNote(lo, 3.25, 0.75));
     return;
   }
   const rep = clampPitch(tones.fifth, effectiveLow, effectiveHigh);
-  addEvent(m, createRest(0, 1.25));
-  addEvent(m, createNote(rep, 1.25, 1.25));
+  addEvent(m, createRest(0, 1.5));
+  addEvent(m, createNote(rep, 1.5, 1.0));
   addEvent(m, createRest(2.5, 0.25));
   addEvent(m, createNote(endStrong, 2.75, 1.25));
 }
@@ -240,6 +240,12 @@ export function emitGuitarPhraseBar(params: {
 
   if (density === 'sparse') {
     headRest = Math.min(headRest, 1.75);
+  }
+
+  /** V3.3 — uneven phrase entries (3+5 / late peak) without adding note density. */
+  if (swingDuo && (bar === 2 || bar === 4 || bar === 6) && intent !== 'cadence') {
+    headRest = qBeat(headRest + 0.12 + seededUnit(seed, bar, 772) * 0.16);
+    headRest = Math.min(headRest, 2.4);
   }
 
   /** Bar 4: reach higher register; bar 7: slight lift for tension line. */

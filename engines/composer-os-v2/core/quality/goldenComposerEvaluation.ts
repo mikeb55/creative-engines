@@ -25,6 +25,8 @@ export interface GceBreakdown {
   interaction: number;
   motifReuse: number;
   formContrast: number;
+  /** V3.3 — phrase onset spread / inevitability (0–10). */
+  phraseAsymmetry: number;
 }
 
 export interface GceResult {
@@ -34,13 +36,14 @@ export interface GceResult {
 }
 
 const W = {
-  bassMelodic: 0.22,
+  bassMelodic: 0.2,
   bassRhythm: 0.12,
-  guitarSpace: 0.12,
-  guitarContour: 0.12,
-  interaction: 0.18,
-  motifReuse: 0.12,
-  formContrast: 0.12,
+  guitarSpace: 0.11,
+  guitarContour: 0.11,
+  interaction: 0.17,
+  motifReuse: 0.11,
+  formContrast: 0.11,
+  phraseAsymmetry: 0.07,
 };
 
 export function evaluateGoldenComposerGce(score: ScoreModel): GceResult {
@@ -56,6 +59,7 @@ export function evaluateGoldenComposerGce(score: ScoreModel): GceResult {
       interaction: z,
       motifReuse: z,
       formContrast: z,
+      phraseAsymmetry: z,
     };
     return { total: 0, breakdown: b };
   }
@@ -147,6 +151,17 @@ export function evaluateGoldenComposerGce(score: ScoreModel): GceResult {
     formContrast = 4 + 6 * clamp01(Math.max(meanDiff / 4.5, maxDiff / 8));
   }
 
+  const firstStarts: number[] = [];
+  for (const m of guitar.measures) {
+    const gn = m.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    if (gn) firstStarts.push(gn.startBeat);
+  }
+  let phraseAsymmetry = 5;
+  if (firstStarts.length >= 4) {
+    const sp = Math.max(...firstStarts) - Math.min(...firstStarts);
+    phraseAsymmetry = 4 + 6 * clamp01(sp / 2.25);
+  }
+
   const breakdown: GceBreakdown = {
     bassMelodic,
     bassRhythm,
@@ -155,6 +170,7 @@ export function evaluateGoldenComposerGce(score: ScoreModel): GceResult {
     interaction,
     motifReuse,
     formContrast,
+    phraseAsymmetry,
   };
 
   const total =
@@ -164,7 +180,8 @@ export function evaluateGoldenComposerGce(score: ScoreModel): GceResult {
     W.guitarContour * guitarContour +
     W.interaction * interaction +
     W.motifReuse * motifReuse +
-    W.formContrast * formContrast;
+    W.formContrast * formContrast +
+    W.phraseAsymmetry * phraseAsymmetry;
 
   return { total: Math.round(total * 100) / 100, breakdown };
 }

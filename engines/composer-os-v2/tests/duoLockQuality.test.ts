@@ -23,7 +23,7 @@ function testDuoLockGcePassesGoldenPath(): boolean {
   return (
     r.success &&
     validateDuoGceHardGate(r.score).valid &&
-    computeDuoGceScore(r.score) >= 8.5
+    computeDuoGceScore(r.score) >= 9.0
   );
 }
 
@@ -87,7 +87,7 @@ function testMelodyAuthorityGceLayerPositive(): boolean {
 
 export function runDuoLockQualityTests(): { name: string; ok: boolean }[] {
   return [
-    ['Duo LOCK GCE ≥ 8.5 on golden path', testDuoLockGcePassesGoldenPath],
+    ['Duo LOCK GCE ≥ 9.0 on golden path', testDuoLockGcePassesGoldenPath],
     ['Guitar rest density in practical range', testGuitarRestDensityInRange],
     ['Duo rhythm anti-loop passes', testRhythmAntiLoopPasses],
     ['Repeated interval cell in guitar line', testRepeatedIntervalCellPresent],

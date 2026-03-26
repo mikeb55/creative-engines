@@ -28,6 +28,7 @@ import {
   validateDuoGceHardGate,
   validateDuoIdentityMomentGate,
   validateDuoInteractionAuthorityGate,
+  validateDuoPolishV33Gate,
   validateDuoRhythmAntiLoop,
   validateDuoSwingRhythm,
 } from './duoLockQuality';
@@ -280,6 +281,8 @@ export function runBehaviourGates(
     if (!duoIx.valid) errors.push(...duoIx.errors);
     const duoId = validateDuoIdentityMomentGate(score);
     if (!duoId.valid) errors.push(...duoId.errors);
+    const duoP33 = validateDuoPolishV33Gate(score);
+    if (!duoP33.valid) errors.push(...duoP33.errors);
   }
 
   let interactionValid = true;

@@ -263,8 +263,129 @@ export function identityMomentGceLayer(score: ScoreModel): number {
   return Math.min(1.2, (computeDuoIdentityMomentScore(score) / 10) * 1.18);
 }
 
+function guitarBarRestBeats(m: MeasureModel): number {
+  let r = 0;
+  for (const e of m.events) {
+    if (e.kind === 'rest') r += (e as { duration: number }).duration;
+  }
+  return r;
+}
+
+export function firstGuitarAttackInBar(m: MeasureModel): number | undefined {
+  const notes = [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    );
+  if (!notes.length) return undefined;
+  return (notes[0] as { startBeat: number }).startBeat;
+}
+
+function lastGuitarNoteEndInBar(m: MeasureModel): number | undefined {
+  let best = -1;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as { startBeat: number; duration: number };
+    best = Math.max(best, n.startBeat + n.duration);
+  }
+  return best < 0 ? undefined : best;
+}
+
+/** Bar resolves after meaningful rest (delayed resolution / across-the-barline feel in 4/4 slice). */
+export function barHasDelayedResolutionGesture(m: MeasureModel): boolean {
+  const notes = [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    );
+  if (notes.length === 0) return false;
+  const first = (notes[0] as { startBeat: number }).startBeat;
+  const last = notes[notes.length - 1] as { startBeat: number; duration: number };
+  const lastEnd = last.startBeat + last.duration;
+  if (first >= 1.0 && lastEnd >= 3.35) return true;
+  if (first >= 1.5) return true;
+  return false;
+}
+
+/**
+ * V3.3 — Phrasing polish: asymmetry, delayed resolution, attack variety, restraint; penalise mirror phrases.
+ */
+export function computeDuoPolishV33Score(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  const attacks: number[] = [];
+  let asymmetryHits = 0;
+  let delayedBars = 0;
+  let totalNotes = 0;
+  let overResolvedBars = 0;
+
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    const le = lastGuitarNoteEndInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+    totalNotes += m.events.filter((e) => e.kind === 'note').length;
+    if (fa !== undefined && fa >= 0.62) asymmetryHits++;
+    if (fa !== undefined && le !== undefined && le <= 3.15) asymmetryHits++;
+    if (barHasDelayedResolutionGesture(m)) delayedBars++;
+
+    let bestEnd = -1;
+    let bestStart = 0;
+    let bestDur = 0;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const n = e as { startBeat: number; duration: number };
+      const end = n.startBeat + n.duration;
+      if (end > bestEnd) {
+        bestEnd = end;
+        bestStart = n.startBeat;
+        bestDur = n.duration;
+      }
+    }
+    if (bestEnd >= 0 && bestStart <= 0.85 && bestDur >= 2.25) overResolvedBars++;
+  }
+
+  let s = 0;
+  const spread = attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+  s += Math.min(2.9, spread * 3.1);
+  s += Math.min(2.4, asymmetryHits * 0.48);
+  s += Math.min(2.4, delayedBars * 1.0);
+
+  const uniq = new Set(attacks.map((a) => Math.round(a * 4) / 4));
+  s += Math.min(1.5, Math.max(0, uniq.size - 2) * 0.32);
+
+  if (totalNotes <= 32) s += 1.15;
+  else if (totalNotes <= 36) s += 0.7;
+  else if (totalNotes <= 40) s += 0.35;
+  else s -= 0.75;
+
+  const a4 = attacks.slice(0, 4);
+  const b4 = attacks.slice(4);
+  const meanA = a4.length ? a4.reduce((x, y) => x + y, 0) / a4.length : 0;
+  const meanB = b4.length ? b4.reduce((x, y) => x + y, 0) / b4.length : 0;
+  if (attacks.length >= 6 && Math.abs(meanA - meanB) < 0.14 && spread < 0.42) s -= 1.65;
+
+  if (overResolvedBars >= 5) s -= 1.1;
+
+  const m7 = g.measures.find((x) => x.index === 7);
+  if (m7) {
+    const rb = guitarBarRestBeats(m7);
+    const nc = m7.events.filter((e) => e.kind === 'note').length;
+    if (rb >= 0.45 && nc <= 4) s += 1.05;
+  }
+
+  return Math.min(10, Math.max(0, s * 1.04 + 0.45));
+}
+
+/** V3.3 — 0–1.2 layer: inevitability / restraint (score-only). */
+export function polishV33GceLayer(score: ScoreModel): number {
+  return Math.min(1.2, (computeDuoPolishV33Score(score) / 10) * 1.15);
+}
+
 /**
  * Composite 0–10 “GCE-style” score: melody memorability, motif-like intervals, bass clarity, interaction.
+ * V3.3 adds polish layer (asymmetry, delayed resolution, restraint).
  */
 export function computeDuoGceScore(score: ScoreModel): number {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -284,31 +405,89 @@ export function computeDuoGceScore(score: ScoreModel): number {
   const maLayer = melodyAuthorityGceLayer(g);
   const iaLayer = interactionAuthorityGceLayer(score);
   const idLayer = identityMomentGceLayer(score);
+  const p33Layer = polishV33GceLayer(score);
   let s =
-    2.5 * gc +
-    1.55 * (1 - rr) +
-    1.75 * softN +
-    1.15 * Math.min(1.35, restR / 0.14) +
-    0.65 * rep +
-    0.95 * call +
-    0.85 * (1 - Math.min(1, chrom / 7)) +
-    0.55 * (1 - Math.min(1, stepwise / 12)) +
-    0.36 * maLayer +
-    0.34 * iaLayer +
-    0.32 * idLayer;
-  s = Math.min(10, s * 1.35 + 0.55);
+    2.45 * gc +
+    1.52 * (1 - rr) +
+    1.72 * softN +
+    1.12 * Math.min(1.35, restR / 0.14) +
+    0.62 * rep +
+    0.92 * call +
+    0.82 * (1 - Math.min(1, chrom / 7)) +
+    0.52 * (1 - Math.min(1, stepwise / 12)) +
+    0.32 * maLayer +
+    0.3 * iaLayer +
+    0.28 * idLayer +
+    0.3 * p33Layer;
+  s = Math.min(10, s * 1.38 + 0.62);
   return Math.round(Math.max(0, s) * 10) / 10;
 }
+
+const DUO_GCE_FLOOR = 9.0;
 
 export function validateDuoGceHardGate(score: ScoreModel): DuoLockValidationResult {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!g || !b) return { valid: true, errors: [] };
   const gce = computeDuoGceScore(score);
-  if (gce < 8.5) {
-    return { valid: false, errors: [`Duo LOCK: GCE ${gce.toFixed(1)} < 8.5 (motif, interaction, bass clarity)`] };
+  if (gce < DUO_GCE_FLOOR) {
+    return {
+      valid: false,
+      errors: [`Duo LOCK: GCE ${gce.toFixed(1)} < ${DUO_GCE_FLOOR} (V3.3 polish, motif, interaction, bass clarity)`],
+    };
   }
   return { valid: true, errors: [] };
+}
+
+/**
+ * V3.3 — Soft gate: minimum phrasing polish (asymmetry / timing / restraint signals).
+ */
+export function validateDuoPolishV33Gate(score: ScoreModel): DuoLockValidationResult {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return { valid: true, errors: [] };
+  const p = computeDuoPolishV33Score(score);
+  if (p < 7.2) {
+    return { valid: false, errors: [`Duo polish V3.3: phrasing score ${p.toFixed(1)} < 7.2 (asymmetry / resolution / restraint)`] };
+  }
+  const attacks: number[] = [];
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+  }
+  const spread = attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+  let delayed = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m && barHasDelayedResolutionGesture(m)) delayed++;
+  }
+  if (spread < 0.28 && delayed === 0) {
+    return { valid: false, errors: ['Duo polish V3.3: phrasing too square (need late entry, early cut, or delayed resolution)'] };
+  }
+  return { valid: true, errors: [] };
+}
+
+/** V3.3 — max − min first-attack onset across bars (asymmetry proxy). */
+export function guitarPhraseOnsetSpread(guitar: PartModel): number {
+  const attacks: number[] = [];
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+  }
+  return attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+}
+
+/** V3.3 — bars with delayed-resolution gesture. */
+export function countDelayedResolutionBars(guitar: PartModel): number {
+  let n = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (m && barHasDelayedResolutionGesture(m)) n++;
+  }
+  return n;
 }
 
 /** Guitar rhythm loop + rest window + unison rhythm with bass (duo-specific). */

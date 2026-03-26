@@ -862,6 +862,11 @@ function buildBassPart(
       firstStart = qBeat(Math.min(firstStart, 0.75 + seededUnit(seed, b, 705) * 0.35));
     }
 
+    /** V3.3 — guitar-answer bar: bass enters slightly later (less mechanical lockstep). */
+    if (duoGoldenBass && phase === 6) {
+      firstStart = qBeat(firstStart + 0.12 + seededUnit(seed, b, 733) * 0.12);
+    }
+
     if (b > 1) {
       const gPrev = guitarPart.measures.find((x) => x.index === b - 1);
       const gEnd = lastGuitarNoteEndInBar(gPrev);
