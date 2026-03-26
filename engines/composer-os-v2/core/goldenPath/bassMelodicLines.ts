@@ -463,3 +463,60 @@ export function emitDuoBassAuthorityMomentBar(params: {
     if (d2 > 0.25) addEvent(m, createNote(clampPitch(p2, walkLow, effectiveHigh), t0 + d1, d2));
   }
 }
+
+/**
+ * V3.2 — Bar 7: support (held / minimal) OR contrast (active under guitar); never mirror guitar rhythm.
+ */
+export function emitDuoBassIdentityBar7(params: {
+  m: MeasureModel;
+  supportMode: boolean;
+  rootClamped: number;
+  third: number;
+  fifth: number;
+  guide: number;
+  walkLow: number;
+  effectiveHigh: number;
+  firstStart: number;
+  seed: number;
+  bar: number;
+  slashBassPitch?: number;
+}): void {
+  const {
+    m,
+    supportMode,
+    rootClamped,
+    third,
+    fifth,
+    guide,
+    walkLow,
+    effectiveHigh,
+    firstStart,
+    seed,
+    bar,
+    slashBassPitch,
+  } = params;
+  const anchor = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+  const t0 = qBeat(firstStart);
+  if (t0 > 0) addEvent(m, createRest(0, t0));
+  const span = qBeat(4 - t0);
+  if (supportMode) {
+    const p1 = clampPitch(anchor, walkLow, effectiveHigh);
+    const d1 = qBeat(Math.min(3, span * 0.7));
+    addEvent(m, createNote(p1, t0, d1));
+    const rem = qBeat(span - d1);
+    if (rem > 0.35) {
+      addEvent(m, createNote(clampPitch(fifth, walkLow, effectiveHigh), t0 + d1, rem));
+    }
+  } else {
+    const u = seededUnit(seed, bar, 808);
+    const pA = u < 0.5 ? third : guide;
+    const dA = qBeat(Math.min(1, span * 0.35));
+    addEvent(m, createNote(clampPitch(pA, walkLow, effectiveHigh), t0, dA));
+    const dB = qBeat(Math.min(0.75, (span - dA) * 0.45));
+    addEvent(m, createNote(clampPitch(fifth, walkLow, effectiveHigh), t0 + dA, dB));
+    const rem = qBeat(span - dA - dB);
+    if (rem > 0.3) {
+      addEvent(m, createNote(clampPitch(rootClamped, walkLow, effectiveHigh), t0 + dA + dB, rem));
+    }
+  }
+}

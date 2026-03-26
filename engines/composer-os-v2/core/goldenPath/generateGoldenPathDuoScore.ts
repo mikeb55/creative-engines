@@ -28,6 +28,7 @@ import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
   emitDuoBassAuthorityMomentBar,
+  emitDuoBassIdentityBar7,
   emitMelodicBassBar,
   scrubBassFirstAttackIfRoot,
   type BassSectionRole,
@@ -35,6 +36,7 @@ import {
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
   computeEnsembleStagger,
+  emitGuitarDuoIdentityBar7,
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
   getDuoPhraseIntentV31,
@@ -382,7 +384,8 @@ function buildGuitarPart(
       continue;
     }
 
-    if (placements.length > 0) {
+    const skipMotifForIdentity = isDuoGolden && phase === 7;
+    if (placements.length > 0 && !skipMotifForIdentity) {
       let cursor = 0;
       if (isDuoGolden && consecutiveBusyGuitarBars >= 2) {
         addEvent(m, createRest(0, 1));
@@ -470,6 +473,15 @@ function buildGuitarPart(
           high: effectiveHigh,
           seed,
           bar: b,
+        });
+      } else if (isDuoGolden && phase === 7) {
+        emitGuitarDuoIdentityBar7({
+          m,
+          chord: getChordForBar(b, context),
+          effectiveLow,
+          effectiveHigh,
+          staggerG: qBeat(stagger.guitar + swingBump),
+          seed,
         });
       } else {
         emitGuitarPhraseBar({
@@ -878,6 +890,32 @@ function buildBassPart(
     const forceBassSupportSparse = duoGoldenBass && (phase === 1 || phase === 2);
     const thinForOverlap = duoGoldenBass && guitarActivityHot && (phase < 5 || phase > 6);
     const simplifyForDuo = simplify || thinForOverlap || forceBassSupportSparse;
+
+    if (duoGoldenBass && phase === 7) {
+      const supportMode = seededUnit(seed, b, 807) < 0.52;
+      emitDuoBassIdentityBar7({
+        m,
+        supportMode,
+        rootClamped,
+        third,
+        fifth,
+        guide,
+        walkLow,
+        effectiveHigh,
+        firstStart,
+        seed,
+        bar: b,
+        slashBassPitch,
+      });
+      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
+        slashBassPitch,
+      });
+      normalizeMeasureQuarterGrid(m);
+      const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
+      if (lastBass7) prevBassPitch = lastBass7.pitch;
+      measures.push(m);
+      continue;
+    }
 
     if (duoGoldenBass && (phase === 3 || phase === 4)) {
       emitDuoBassAuthorityMomentBar({

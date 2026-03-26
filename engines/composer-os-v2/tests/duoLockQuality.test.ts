@@ -79,7 +79,7 @@ function testDuoMelodyIdentityV3Passes(): boolean {
 }
 
 function testMelodyAuthorityGceLayerPositive(): boolean {
-  const r = runGoldenPath(112);
+  const r = runGoldenPath(113);
   const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) return false;
   return melodyAuthorityGceLayer(g) >= 0.35;

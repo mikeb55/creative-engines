@@ -164,6 +164,105 @@ export function interactionAuthorityGceLayer(score: ScoreModel): number {
   return Math.min(1.2, 0.28 * crN + 0.24 * rc + 0.26 * flow + 0.22 * space + 0.1);
 }
 
+/** Largest |Δpitch| between consecutive note attacks in a bar (time-ordered). */
+export function guitarBarMaxAdjacentInterval(m: MeasureModel): number {
+  const notes = [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    ) as { pitch: number }[];
+  if (notes.length < 2) return 0;
+  let max = 0;
+  for (let i = 1; i < notes.length; i++) {
+    max = Math.max(max, Math.abs(notes[i].pitch - notes[i - 1].pitch));
+  }
+  return max;
+}
+
+function maxNoteDurationInBar(m: MeasureModel): number {
+  let max = 0;
+  for (const e of m.events) {
+    if (e.kind === 'note') max = Math.max(max, (e as { duration: number }).duration);
+  }
+  return max;
+}
+
+function syncopationStrengthBar(m: MeasureModel): number {
+  let s = 0;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const sb = (e as { startBeat: number }).startBeat;
+    const frac = sb % 1;
+    if (sb > 0.15 && frac > 0.15 && frac < 0.85) s += 0.35;
+  }
+  return Math.min(1, s);
+}
+
+function barDistinctivenessRaw(gm: MeasureModel, bar: number): number {
+  const maxIv = guitarBarMaxAdjacentInterval(gm);
+  const maxDur = maxNoteDurationInBar(gm);
+  const sync = syncopationStrengthBar(gm);
+  const nNotes = gm.events.filter((e) => e.kind === 'note').length;
+  return (
+    maxIv * 0.11 +
+    maxDur * 1.75 +
+    sync * 2.1 +
+    (nNotes >= 3 ? 0.45 : 0) +
+    (bar === 7 ? 2.6 : 0)
+  );
+}
+
+/** Heuristic: which 1–8 bar has the strongest “signature” profile (bar 7 structurally favoured). */
+export function distinctiveGuitarBarIndex(guitar: PartModel): number {
+  let best = 1;
+  let bestS = -1;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const s = barDistinctivenessRaw(m, bar);
+    if (s > bestS) {
+      bestS = s;
+      best = bar;
+    }
+  }
+  return best;
+}
+
+/**
+ * V3.2 — 0–10 identity moment: bar 7 peak, contrast vs 6/8, bass non-mirror.
+ */
+export function computeDuoIdentityMomentScore(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return 0;
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  const m8 = g.measures.find((x) => x.index === 8);
+  const b7 = b.measures.find((x) => x.index === 7);
+  if (!m7 || !m8) return 0;
+  let s = 0;
+  s += Math.min(2.8, guitarBarMaxAdjacentInterval(m7) / 3.2);
+  s += Math.min(2.2, maxNoteDurationInBar(m7) * 1.05);
+  s += syncopationStrengthBar(m7) * 1.1;
+  if (m6) s += rhythmSig(m7) !== rhythmSig(m6) ? 1.5 : 0;
+  s += rhythmSig(m7) !== rhythmSig(m8) ? 1.5 : 0;
+  if (b7) {
+    const gRh = rhythmSig(m7);
+    const bRh = rhythmSig(b7);
+    if (gRh !== bRh || gRh.split('|').length < 3) s += 1.3;
+    else s += 0.25;
+  }
+  const a7 = activityScoreForBar(g, 7);
+  const a8 = activityScoreForBar(g, 8);
+  if (a7 > a8 + 0.05) s += 0.9;
+  return Math.min(10, s * 1.08 + 0.95);
+}
+
+/** V3.2 — 0–1.2 layer for composite GCE. */
+export function identityMomentGceLayer(score: ScoreModel): number {
+  return Math.min(1.2, (computeDuoIdentityMomentScore(score) / 10) * 1.18);
+}
+
 /**
  * Composite 0–10 “GCE-style” score: melody memorability, motif-like intervals, bass clarity, interaction.
  */
@@ -184,6 +283,7 @@ export function computeDuoGceScore(score: ScoreModel): number {
   const softN = Math.min(1, Math.max(0, (soft - 4) / 20));
   const maLayer = melodyAuthorityGceLayer(g);
   const iaLayer = interactionAuthorityGceLayer(score);
+  const idLayer = identityMomentGceLayer(score);
   let s =
     2.5 * gc +
     1.55 * (1 - rr) +
@@ -193,8 +293,9 @@ export function computeDuoGceScore(score: ScoreModel): number {
     0.95 * call +
     0.85 * (1 - Math.min(1, chrom / 7)) +
     0.55 * (1 - Math.min(1, stepwise / 12)) +
-    0.38 * maLayer +
-    0.38 * iaLayer;
+    0.36 * maLayer +
+    0.34 * iaLayer +
+    0.32 * idLayer;
   s = Math.min(10, s * 1.35 + 0.55);
   return Math.round(Math.max(0, s) * 10) / 10;
 }
@@ -361,6 +462,41 @@ export function validateDuoInteractionAuthorityGate(score: ScoreModel): DuoLockV
   }
   if (roleContrastScore(score) < 0.06) {
     errors.push('Duo interaction V3.1: role contrast between phrase A and B is too weak');
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * V3.2 — Bar 7 identity moment: score floor, distinctiveness peak, contrast vs bars 6 & 8.
+ */
+export function validateDuoIdentityMomentGate(score: ScoreModel): DuoLockValidationResult {
+  const errors: string[] = [];
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return { valid: true, errors: [] };
+  const id = computeDuoIdentityMomentScore(score);
+  if (id < 8.5) {
+    errors.push(`Duo identity V3.2: identity moment score ${id.toFixed(1)} < 8.5`);
+  }
+  if (distinctiveGuitarBarIndex(g) !== 7) {
+    errors.push('Duo identity V3.2: bar 7 is not the most distinctive guitar bar');
+  }
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  const m8 = g.measures.find((x) => x.index === 8);
+  const b7 = b.measures.find((x) => x.index === 7);
+  if (m7 && m6 && rhythmSig(m7) === rhythmSig(m6)) {
+    errors.push('Duo identity V3.2: bar 7 rhythm must differ from bar 6');
+  }
+  if (m7 && m8 && rhythmSig(m7) === rhythmSig(m8)) {
+    errors.push('Duo identity V3.2: bar 7 rhythm must differ from bar 8');
+  }
+  if (m7 && b7) {
+    const gr = rhythmSig(m7);
+    const br = rhythmSig(b7);
+    if (gr.length > 0 && gr === br && gr.split('|').length >= 3) {
+      errors.push('Duo identity V3.2: bass mirrors guitar rhythm on bar 7');
+    }
   }
   return { valid: errors.length === 0, errors };
 }

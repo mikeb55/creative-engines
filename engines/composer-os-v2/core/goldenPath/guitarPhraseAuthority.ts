@@ -110,6 +110,50 @@ function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
 }
 
+/** V3.2 — Fixed chorus “signature” bar (listener hook). */
+export const DUO_IDENTITY_MOMENT_BAR = 7 as const;
+
+/**
+ * V3.2 — Bar 7 identity: clear interval gesture, syncopation or long hold, peak before cadence.
+ */
+export function emitGuitarDuoIdentityBar7(params: {
+  m: MeasureModel;
+  chord: string;
+  effectiveLow: number;
+  effectiveHigh: number;
+  staggerG: number;
+  seed: number;
+}): void {
+  const { m, chord, effectiveLow, effectiveHigh, staggerG, seed } = params;
+  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+  const endStrong = resolvePhraseEndForDuo(tones, undefined, effectiveLow, effectiveHigh, seed, DUO_IDENTITY_MOMENT_BAR);
+  const u = seededUnit(seed, DUO_IDENTITY_MOMENT_BAR, 702);
+  const lo = clampPitch(tones.third, effectiveLow, effectiveHigh);
+  const tOff = qBeat(0.75 + Math.min(0.5, staggerG));
+
+  if (u < 0.34) {
+    const leap = clampPitch(lo + (seededUnit(seed, 7, 703) < 0.5 ? 8 : 9), effectiveLow, effectiveHigh);
+    addEvent(m, createRest(0, tOff));
+    addEvent(m, createNote(lo, tOff, 0.5));
+    addEvent(m, createNote(leap, qBeat(tOff + 0.5), 1));
+    addEvent(m, createNote(endStrong, qBeat(tOff + 1.5), qBeat(4 - tOff - 1.5)));
+    return;
+  }
+  if (u < 0.67) {
+    const hi = clampPitch(tones.fifth + (seededUnit(seed, 7, 704) < 0.5 ? 0 : 1), effectiveLow, effectiveHigh);
+    addEvent(m, createRest(0, 0.5));
+    addEvent(m, createNote(hi, 0.5, 2.5));
+    addEvent(m, createRest(3, 0.25));
+    addEvent(m, createNote(lo, 3.25, 0.75));
+    return;
+  }
+  const rep = clampPitch(tones.fifth, effectiveLow, effectiveHigh);
+  addEvent(m, createRest(0, 1.25));
+  addEvent(m, createNote(rep, 1.25, 1.25));
+  addEvent(m, createRest(2.5, 0.25));
+  addEvent(m, createNote(endStrong, 2.75, 1.25));
+}
+
 /**
  * Non-motif guitar bar: phrase contour, decisive endings on 3rd/7th, space when answering bass.
  */
@@ -173,8 +217,13 @@ export function emitGuitarPhraseBar(params: {
     return;
   }
 
-  /** Final bar: stable chord tone, minimal motion (resolution). */
+  /** Final bar: stable chord tone, minimal motion (resolution). V3.2 duo: longer breath vs bar 7 peak. */
   if (bar === 8) {
+    if (swingDuo) {
+      addEvent(m, createRest(0, 2));
+      addEvent(m, createNote(endStrong, 2, 2));
+      return;
+    }
     addEvent(m, createRest(0, 1.5));
     addEvent(m, createNote(endStrong, 1.5, 2.5));
     return;

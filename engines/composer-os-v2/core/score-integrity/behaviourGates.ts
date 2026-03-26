@@ -26,6 +26,7 @@ import { validateDuoPhraseAuthority } from './phraseAuthorityValidation';
 import { validateJazzDuoBehaviourRules } from './jazzDuoBehaviourValidation';
 import {
   validateDuoGceHardGate,
+  validateDuoIdentityMomentGate,
   validateDuoInteractionAuthorityGate,
   validateDuoRhythmAntiLoop,
   validateDuoSwingRhythm,
@@ -277,6 +278,8 @@ export function runBehaviourGates(
     if (!duoSwing.valid) errors.push(...duoSwing.errors);
     const duoIx = validateDuoInteractionAuthorityGate(score);
     if (!duoIx.valid) errors.push(...duoIx.errors);
+    const duoId = validateDuoIdentityMomentGate(score);
+    if (!duoId.valid) errors.push(...duoId.errors);
   }
 
   let interactionValid = true;
