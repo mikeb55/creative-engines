@@ -1,0 +1,136 @@
+/**
+ * Builds a 32-bar CompositionContext for Duo long-form — wraps harmony planning; does not replace the 8-bar builder.
+ */
+
+import type { CompositionContext } from '../compositionContext';
+import type { HarmonyPlan } from '../primitives/harmonyTypes';
+import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
+import { planSectionRoles } from '../section-roles/sectionRolePlanner';
+import type { SectionRole } from '../section-roles/sectionRoleTypes';
+import { planDensityCurve } from '../density/densityCurvePlanner';
+import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/registerMapPlanner';
+import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
+import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
+import { generateModulationPlan } from '../modulation/modulationPlanner';
+import { transposeChordSymbol } from '../modulation/modulationTransitions';
+import type { ModulationPlan } from '../modulation/modulationPlanTypes';
+import { validateModulationPlan } from '../modulation/modulationValidation';
+import { buildDuoLongFormPlan } from './duoLongFormPlanner';
+import { LONG_FORM_DUO_BARS } from './longFormRouteResolver';
+
+const BUILTIN_EIGHT: readonly string[] = ['Dmin9', 'G13', 'Cmaj9', 'A7alt', 'Dmin9', 'G13', 'Cmaj9', 'A7alt'];
+
+const LONG_FORM_ROLE_MAP: Record<string, SectionRole> = {
+  A: 'statement',
+  "A'": 'development',
+  B: 'contrast',
+  "A''": 'return',
+};
+
+function build32ChordBars(mod: ModulationPlan, seed: number): string[] {
+  const bars: string[] = [];
+  if (!mod.active || mod.sections.length < 4) {
+    for (let c = 0; c < 4; c++) {
+      bars.push(...BUILTIN_EIGHT);
+    }
+    return bars;
+  }
+  for (const sec of mod.sections) {
+    const off = sec.semitoneOffset;
+    for (let i = 0; i < 8; i++) {
+      bars.push(transposeChordSymbol(BUILTIN_EIGHT[i], off));
+    }
+  }
+  return bars;
+}
+
+export interface BuildDuoLongFormContextOptions {
+  parsedChordBars8?: string[];
+}
+
+/**
+ * 32-bar Duo context — same preset DNA as 8-bar; extended form + optional tiled custom harmony.
+ */
+export function buildDuoLongFormCompositionContext(
+  seed: number,
+  options?: BuildDuoLongFormContextOptions
+): { context: CompositionContext; modulationPlan: ModulationPlan } {
+  const preset = guitarBassDuoPreset;
+  const feel = preset.defaultFeel;
+  const lf = buildDuoLongFormPlan();
+  const form = {
+    sections: lf.sections.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
+    totalBars: LONG_FORM_DUO_BARS,
+  };
+
+  const modulationPlan = generateModulationPlan(seed, LONG_FORM_DUO_BARS);
+  const v = validateModulationPlan(modulationPlan);
+  if (!v.valid) {
+    modulationPlan.active = false;
+  }
+
+  let bars32: string[];
+  if (options?.parsedChordBars8?.length === 8) {
+    const t = options.parsedChordBars8;
+    bars32 = [...t, ...t, ...t, ...t];
+  } else {
+    bars32 = build32ChordBars(modulationPlan, seed);
+  }
+
+  const harmony: HarmonyPlan = buildHarmonyPlanFromBars(bars32);
+  const chordSymbolPlan = buildChordSymbolPlanFromBars(bars32);
+  const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: LONG_FORM_DUO_BARS };
+
+  const sectionRoles = planSectionRoles(form.sections, LONG_FORM_ROLE_MAP);
+  const densityPlan = planDensityCurve(sectionRoles, LONG_FORM_DUO_BARS);
+  const densityCurve = { segments: densityPlan.segments, totalBars: LONG_FORM_DUO_BARS };
+
+  const guitarMap = planGuitarRegisterMap(sectionRoles);
+  const bassMap = planBassRegisterMap(sectionRoles);
+  const register = {
+    melody: [55, 79] as [number, number],
+    bass: [36, 55] as [number, number],
+    byInstrument: {
+      clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [36, 55],
+    },
+  };
+
+  const rehearsalMarkPlan = {
+    marks: [
+      { label: 'A', bar: 1 },
+      { label: "A'", bar: 9 },
+      { label: 'B', bar: 17 },
+      { label: "A''", bar: 25 },
+    ],
+  };
+
+  const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
+
+  const context: CompositionContext = {
+    systemVersion: '2.0.0',
+    presetId: 'guitar_bass_duo',
+    seed,
+    form,
+    feel,
+    harmony,
+    motif: { activeMotifs: [], variants: {} },
+    phrase,
+    register,
+    density: densityCurve,
+    instrumentProfiles: preset.instrumentProfiles,
+    chordSymbolPlan,
+    rehearsalMarkPlan,
+    generationMetadata: {
+      generatedAt: new Date().toISOString(),
+      harmonySource: options?.parsedChordBars8 ? 'custom' : 'builtin',
+      longFormDuo: true,
+      modulationPlanActive: modulationPlan.active,
+      totalBars: LONG_FORM_DUO_BARS,
+    },
+    validation: { gates: [], passed: true },
+    readiness: { release: release.release, mx: release.mx },
+  };
+
+  return { context, modulationPlan };
+}

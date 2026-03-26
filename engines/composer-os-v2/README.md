@@ -10,7 +10,7 @@
 ## Implemented Stages
 
 - **Foundation** — Conductor, rhythm engine, primitives, score integrity, MusicXML export
-- **Golden Path** — 8-bar guitar-bass duo end-to-end (LOCK: motif-first `duoLock`, `duoLockQuality` GCE ≥ 8.5 + rhythm anti-loop, interaction `bassForward` in B)
+- **Golden Path** — 8-bar guitar-bass duo end-to-end (LOCK: motif-first `duoLock`, `duoLockQuality` GCE ≥ 8.5 + rhythm anti-loop, interaction `bassForward` in B); **V4 Prompt 1/8** adds optional **32-bar** duo (`totalBars === 32`, `longFormRouteResolver` → `duo32`) with modulation **planning**, long-form motif/interaction/quality layers — **8-bar remains default and reference**
 - **Stage 2** — Musical core (section roles, density, register maps, instrument behaviours)
 - **Stage 3** — Motif tracker, Barry Harris module
 - **Stage 4** — Style system: Metheny, Triad Pairs, weighted style stack

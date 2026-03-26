@@ -4,6 +4,17 @@
 
 import type { SectionWithRole } from '../section-roles/sectionRoleTypes';
 import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
+
+/** Duo LOCK gates are 8-bar-calibrated; long-form scores use the opening chorus for the same thresholds. */
+function sliceScoreToFirstEightBars(score: ScoreModel): ScoreModel {
+  return {
+    ...score,
+    parts: score.parts.map((p) => ({
+      ...p,
+      measures: p.measures.filter((m) => m.index >= 1 && m.index <= 8),
+    })),
+  };
+}
 import type { GuitarBehaviourPlan, BassBehaviourPlan } from '../instrument-behaviours/behaviourTypes';
 import { validateGuitarBehaviour, validateBassBehaviour } from '../instrument-behaviours/behaviourValidation';
 import { validateRhythmBehaviour } from '../rhythm-engine/rhythmBehaviourValidation';
@@ -186,6 +197,10 @@ export function runBehaviourGates(
   }
 ): BehaviourGatesResult {
   const errors: string[] = [];
+  const guitarBarCount =
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
+  const duoGateScore =
+    opts?.presetId === 'guitar_bass_duo' && guitarBarCount > 8 ? sliceScoreToFirstEightBars(score) : score;
   const styleStack = opts?.styleStack;
   const styleModules = styleStack
     ? [styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[]
@@ -235,7 +250,7 @@ export function runBehaviourGates(
 
   let methenyValid = true;
   if (styleModules.includes('metheny') && opts?.presetId !== 'ecm_chamber') {
-    const metheny = validateMethenyConformance(score);
+    const metheny = validateMethenyConformance(guitarBarCount > 8 ? duoGateScore : score);
     methenyValid = metheny.valid;
     if (!metheny.valid) errors.push(...metheny.errors);
   }
@@ -269,19 +284,19 @@ export function runBehaviourGates(
   }
 
   if (opts?.presetId === 'guitar_bass_duo') {
-    const duoRh = validateDuoRhythmAntiLoop(score);
+    const duoRh = validateDuoRhythmAntiLoop(duoGateScore);
     if (!duoRh.valid) errors.push(...duoRh.errors);
-    const duoGce = validateDuoGceHardGate(score);
+    const duoGce = validateDuoGceHardGate(duoGateScore);
     if (!duoGce.valid) errors.push(...duoGce.errors);
-    const duoV3 = validateDuoMelodyIdentityV3(score, opts?.motifState, { presetId: opts?.presetId });
+    const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, { presetId: opts?.presetId });
     if (!duoV3.valid) errors.push(...duoV3.errors);
-    const duoSwing = validateDuoSwingRhythm(score);
+    const duoSwing = validateDuoSwingRhythm(duoGateScore);
     if (!duoSwing.valid) errors.push(...duoSwing.errors);
-    const duoIx = validateDuoInteractionAuthorityGate(score);
+    const duoIx = validateDuoInteractionAuthorityGate(duoGateScore);
     if (!duoIx.valid) errors.push(...duoIx.errors);
-    const duoId = validateDuoIdentityMomentGate(score);
+    const duoId = validateDuoIdentityMomentGate(duoGateScore);
     if (!duoId.valid) errors.push(...duoId.errors);
-    const duoP33 = validateDuoPolishV33Gate(score);
+    const duoP33 = validateDuoPolishV33Gate(duoGateScore);
     if (!duoP33.valid) errors.push(...duoP33.errors);
   }
 

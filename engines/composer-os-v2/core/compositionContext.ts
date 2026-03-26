@@ -54,6 +54,11 @@ export interface GenerationMetadata {
   /** ECM Chamber preset only */
   ecmMode?: EcmChamberMode;
   ecmMetrics?: EcmGenerationMetrics;
+  /** Guitar–Bass Duo: opt-in 32-bar long-form route (V4.0) */
+  longFormDuo?: boolean;
+  modulationPlanActive?: boolean;
+  /** Explicit bar count when long-form or extended forms are used */
+  totalBars?: number;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

@@ -43,6 +43,8 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 **V3 Generate UI:** The **Generate** screen is mode-driven (no user-facing style module/stack controls on the main form); duo/ECM use fixed internal defaults. The **Style Stack** sidebar tab was removed; see `docs/composer-os/CHANGELOG.md`.
 
+**V4 (Composer OS track — Prompt 1/8):** Guitar–Bass Duo can request **32 bars** (`totalBars: 32`) for an opt-in **A / A′ / B / A″** long-form route with a **modulation planning** layer; the default **8-bar** golden path is unchanged. See `docs/composer-os/CHANGELOG.md`.
+
 ---
 
 ## Structure

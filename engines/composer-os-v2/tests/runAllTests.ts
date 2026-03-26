@@ -30,6 +30,7 @@ import { runDuoLockQualityTests } from './duoLockQuality.test';
 import { runDuoInteractionV31Tests } from './duoInteractionV31.test';
 import { runDuoIdentityV32Tests } from './duoIdentityV32.test';
 import { runDuoPolishV33Tests } from './duoPolishV33.test';
+import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
@@ -129,6 +130,7 @@ const suites = [
   { name: 'Duo interaction V3.1', run: runDuoInteractionV31Tests },
   { name: 'Duo identity V3.2', run: runDuoIdentityV32Tests },
   { name: 'Duo polish V3.3', run: runDuoPolishV33Tests },
+  { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },

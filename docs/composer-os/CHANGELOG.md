@@ -1,5 +1,15 @@
 # Composer OS Changelog
 
+## V4.0 Composer OS — Prompt 1/8: Safe modulation layer + 32-bar Duo route (Phase 1/8)
+
+- **Long-form route (opt-in)** — `resolveLongFormRoute` / `longFormRouteResolver.ts`: **`duo32`** only when preset is **`guitar_bass_duo`** and **`totalBars === 32`** (not the default). Default generation remains **8-bar** golden path unchanged.
+- **Modulation (planning only)** — `core/modulation/`: **`ModulationPlan`** / **`generateModulationPlan`** guides section colour and contrast; **inactive** for 8-bar runs. **`modulationTransitions`** (transpose, pivot helpers) and **`validateModulationPlan`** keep plans coherent; harmony still flows through existing **`buildHarmonyPlanFromBars`** / golden path (wrap, not replace).
+- **32-bar form** — **`buildDuoLongFormPlan`**: **A / A′ / B / A″** (bars 1–8, 9–16, 17–24, 25–32). **`buildDuoLongFormCompositionContext`** tiles builtin or **4×** custom 8-bar chords; metadata: **`longFormDuo`**, **`modulationPlanActive`**, **`totalBars`**.
+- **Section reuse** — Motifs: **`placeMotifsLongFormDuo32`**; interaction: **`planDuoLongFormInteraction`**; quality: **`evaluateDuoLongFormQuality`** (extra soft score weight when long-form). **LOCK gates** for duo still evaluate **bars 1–8** when output is 32 bars (`sliceScoreToFirstEightBars` in **`behaviourGates`**).
+- **API** — Optional **`longFormEnabled`** / **`totalBars`** on generate request; app can omit UI — resolver keys off **`totalBars === 32`** for duo.
+- **Tests** — `tests/longFormDuo.test.ts` + suite in **`runAllTests.ts`**.
+- **Summaries** — For Cursor handoffs, label **prompt N/8**, **phase name**, and **remaining master-plan phases** (2/8 … 8/8).
+
 ## V3.0 Guitar–Bass Duo — LOCK upgrade (motif, rhythm, interaction, GCE)
 
 - **Motif-first duo path** — `generateMotif` with `duoLock` builds 2–4 beat cells using strong intervals (3rd/4th/5th/6th or chromatic enclosure) and non-uniform rhythms; **eight bar-level placements** per 8-bar form (`placeMotifsAcrossBars(..., duoLock)`).

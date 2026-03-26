@@ -49,6 +49,11 @@ import {
   scoreEcmSchneiderFeel,
   ecmCrossModeSimilarityPenalty,
 } from '../ecm/ecmChamberScoring';
+import { resolveLongFormRoute } from '../form/longFormRouteResolver';
+import { buildDuoLongFormCompositionContext } from '../form/buildLongFormFromDuoSections';
+import { placeMotifsLongFormDuo32 } from '../motif/longFormMotifPlanner';
+import { planDuoLongFormInteraction } from '../interaction/duoLongFormInteractionMap';
+import { evaluateDuoLongFormQuality } from '../quality/duoLongFormQuality';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -180,6 +185,15 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       options?.ecmTotalBars !== undefined ? { totalBars: options.ecmTotalBars } : undefined;
     return buildEcmChamberContext(seed, mode, ecmOpts);
   }
+  const lf = resolveLongFormRoute(presetId, {
+    totalBars: options?.totalBars,
+    longFormEnabled: options?.longFormEnabled,
+  });
+  if (lf.kind === 'duo32') {
+    return buildDuoLongFormCompositionContext(seed, {
+      parsedChordBars8: options?.parsedChordBars?.length === 8 ? options.parsedChordBars : undefined,
+    }).context;
+  }
   return buildGoldenPathContext(seed, options?.parsedChordBars, {
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
     progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
@@ -229,12 +243,21 @@ function buildGoldenPathPlans(
   options?: RunGoldenPathOptions
 ): GoldenPathPlans {
   const ecmRoles: Record<string, SectionRole> = { A1: 'statement', B: 'contrast', A2: 'return' };
-  const duoRoles: Record<string, SectionRole> = { A: 'statement', B: 'contrast' };
+  const duoRoles8: Record<string, SectionRole> = { A: 'statement', B: 'contrast' };
+  const duoRoles32: Record<string, SectionRole> = {
+    A: 'statement',
+    "A'": 'development',
+    B: 'contrast',
+    "A''": 'return',
+  };
+  const isDuoLong = context.presetId === 'guitar_bass_duo' && context.form.totalBars === 32;
+  const duoRoles = isDuoLong ? duoRoles32 : duoRoles8;
   const sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
+  const tb = context.form.totalBars;
   const densityPlan =
     context.presetId === 'ecm_chamber'
       ? { segments: context.density.segments, totalBars: context.density.totalBars }
-      : planDensityCurve(sections, 8);
+      : planDensityCurve(sections, tb);
   const guitarMap = planGuitarRegisterMap(sections);
   const bassMap = planBassRegisterMap(sections);
   const guitarBehaviour = planGuitarBehaviour(sections, densityPlan, guitarMap);
@@ -259,10 +282,14 @@ function buildGoldenPathPlans(
   const placements =
     context.presetId === 'ecm_chamber'
       ? placeMotifsForEcmForm(baseMotifs, seed, context.form.totalBars)
-      : placeMotifsAcrossBars(baseMotifs, seed, context.presetId === 'guitar_bass_duo');
+      : isDuoLong
+        ? placeMotifsLongFormDuo32(baseMotifs, seed)
+        : placeMotifsAcrossBars(baseMotifs, seed, context.presetId === 'guitar_bass_duo');
   const motifState = { baseMotifs, placements };
 
-  const interactionPlan = planInteraction(sections, context.form.totalBars);
+  const interactionPlan = isDuoLong
+    ? planDuoLongFormInteraction(sections, tb)
+    : planInteraction(sections, tb);
 
   return {
     sections,
@@ -356,6 +383,9 @@ export interface RunGoldenPathOptions {
   ecmMode?: EcmChamberMode;
   /** ECM Chamber: override default bar count (e.g. 32 for extended regression tests). */
   ecmTotalBars?: number;
+  /** Guitar–Bass Duo: opt-in 32-bar long-form (with `totalBars: 32`). */
+  totalBars?: number;
+  longFormEnabled?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -422,7 +452,10 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
             })()
           : scoreJazzDuoBehaviourSoft(r.score) +
             scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
-            scoreNarrativeMomentsSoft(r.score);
+            scoreNarrativeMomentsSoft(r.score) +
+            (r.context.generationMetadata?.longFormDuo
+              ? evaluateDuoLongFormQuality(r.score, r.context).total * 0.15
+              : 0);
       if (soft > bestSoft) {
         bestSoft = soft;
         best = r;

@@ -86,6 +86,8 @@ export interface GenerateRequest {
   bpm?: number;
   /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). */
   totalBars?: number;
+  /** Guitar–Bass Duo: explicit opt-in for 32-bar long-form (with `totalBars: 32`). */
+  longFormEnabled?: boolean;
   /** Dual style pairing (songwriter vs arranger) — `song_mode` / `big_band`. */
   stylePairing?: {
     songwriterStyle: string;

@@ -104,6 +104,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     harmonyMode: duo ? req.harmonyMode : undefined,
     chordProgressionText: chordText,
     ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
+    totalBars: req.totalBars,
+    longFormEnabled: req.longFormEnabled,
   });
   const validation = {
     integrityPassed: result.integrityPassed,
