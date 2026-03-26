@@ -14,7 +14,7 @@
     "test:musicxml": "npx ts-node scripts/testMusicXMLGeneration.ts",
     "orbit-v16": "npx ts-node --project tsconfig.json scripts/createOrbitV16.ts",
     "desktop:rebuild-and-smoke": "npm run desktop:rebuild-and-smoke --prefix apps/composer-os-desktop",
-    "refresh:desktop": "npm run refresh:desktop --prefix apps/composer-os-desktop"
+    "refresh:desktop": "npm --prefix apps/composer-os-desktop run refresh:desktop --"
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",
