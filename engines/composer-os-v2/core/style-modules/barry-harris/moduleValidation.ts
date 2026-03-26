@@ -29,7 +29,7 @@ export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisVa
       }
     }
     const maxJump = maxVoiceLeadJump(allPitches);
-    if (maxJump > 12) errors.push('Voice-leading jumps excessive for Barry Harris');
+    if (maxJump > 12) errors.push('Voice-leading jumps excessive for current duo grammar');
   }
 
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
@@ -46,7 +46,7 @@ export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisVa
   }
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
-  if (chordCount < 3) errors.push('Harmony too static: Barry Harris requires movement');
+  if (chordCount < 3) errors.push('Harmony too static for current duo grammar');
 
   return { valid: errors.length === 0, errors };
 }

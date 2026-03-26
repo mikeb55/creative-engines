@@ -47,6 +47,7 @@ import {
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
+import { assertScoreBarMathExact } from '../score-integrity/duoBarMathFinalize';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -247,24 +248,13 @@ function dropRestsSameStartAsNote(m: MeasureModel): void {
   });
 }
 
-/** Snap to quarter-beat grid and fix floating drift so MusicXML divisions sum to 16 per 4/4 bar. */
+/** Snap to quarter-beat grid (floating drift). Final bar fill / overlap fix runs in assertScoreBarMathExact. */
 function normalizeMeasureQuarterGrid(m: MeasureModel): void {
   for (const e of m.events) {
     if (e.kind === 'note' || e.kind === 'rest') {
       (e as { startBeat: number }).startBeat = qBeat((e as { startBeat: number }).startBeat);
       (e as { duration: number }).duration = qBeat((e as { duration: number }).duration);
     }
-  }
-  let sum = 0;
-  for (const e of m.events) {
-    if (e.kind === 'note' || e.kind === 'rest') sum += (e as { duration: number }).duration;
-  }
-  const gap = 4 - sum;
-  if (Math.abs(gap) > 1e-4) {
-    const last = [...m.events].reverse().find((e) => e.kind === 'note' || e.kind === 'rest') as
-      | { duration: number }
-      | undefined;
-    if (last) last.duration = qBeat(last.duration + gap);
   }
 }
 
@@ -1146,7 +1136,9 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
     afterPerf = applyEcmSchneiderDensityEnvelope(afterPerf, tb);
   }
-  return applyExpressiveDuoFeel(afterPerf, {
+  const expressive = applyExpressiveDuoFeel(afterPerf, {
     ecmEvenEighths: context.presetId === 'ecm_chamber',
   });
+  assertScoreBarMathExact(expressive);
+  return expressive;
 }

@@ -64,7 +64,7 @@ export function echoGuitarToBass(guitarPitch: number, walkLow: number, high: num
   return clampPitch(p, walkLow, high);
 }
 
-/** Pick octave of `pitch` nearest to `prev` to keep Barry Harris / walking line jumps ≤ ~8 st. */
+/** Pick octave of `pitch` nearest to `prev` to keep walking-line jumps ≤ ~8 st. */
 function nearestRegisterToPrev(pitch: number, prev: number, walkLow: number, high: number): number {
   let p = pitch;
   for (let k = 0; k < 4; k++) {

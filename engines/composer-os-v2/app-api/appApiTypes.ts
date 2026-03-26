@@ -153,6 +153,14 @@ export interface OutputEntry {
   keySignatureInferredFifths?: number;
   keySignatureModeApplied?: 'auto' | 'override' | 'none';
   keySignatureExportKeyWritten?: boolean;
+  /** V3.6b — Same as generationMetadata: chord source vs built-in (receipt clarity). */
+  harmonySourceUsed?: 'builtin' | 'custom';
+  /** V3.6b — Internal duo engine grammar label (not a claim the user picked Barry Harris). */
+  styleGrammarLabel?: string;
+  styleStackPrimaryModuleId?: string;
+  styleStackPrimaryDisplayName?: string;
+  userSelectedStyleDisplayNames?: string[];
+  userExplicitPrimaryStyle?: boolean;
   validation: ValidationSummary;
   /** When listing non-MusicXML artifacts from the library */
   artifactKind?: 'musicxml' | 'planning' | 'song_structure';

@@ -30,7 +30,8 @@ import { validateExportIntegrity } from '../export/exportHardening';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
 import { validateScoreModel } from '../score-model/scoreModelValidation';
-import { validateStrictBarMath } from '../score-integrity/strictBarMath';
+import { validateStrictBarMath, validateStrictBarMathSibeliusSafe } from '../score-integrity/strictBarMath';
+import { getStyleModuleDisplayName } from '../style-modules/styleModuleRegistry';
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
 import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
@@ -98,6 +99,24 @@ const BUILTIN_CHORD_SYMBOL_PLAN: CompositionContext['chordSymbolPlan'] = {
   ],
   totalBars: 8,
 };
+
+/** V3.6b — Receipt fields: separate harmony source from internal duo grammar / style stack. */
+function augmentGuitarBassDuoReceiptMetadata(ctx: CompositionContext, styleStack: StyleStack | undefined): void {
+  if (ctx.presetId !== 'guitar_bass_duo') return;
+  const primary = styleStack?.primary ?? 'barry_harris';
+  const ids = styleStack
+    ? ([styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[])
+    : [];
+  const userSelectedStyleDisplayNames = ids.map((id) => getStyleModuleDisplayName(id));
+  ctx.generationMetadata.styleGrammarLabel =
+    'Duo default jazz grammar (Barry Harris–derived internal rules)';
+  ctx.generationMetadata.harmonySourceUsed = ctx.generationMetadata.harmonySource;
+  ctx.generationMetadata.styleStackPrimaryModuleId = primary;
+  ctx.generationMetadata.styleStackPrimaryDisplayName = getStyleModuleDisplayName(primary);
+  ctx.generationMetadata.userSelectedStyleDisplayNames =
+    userSelectedStyleDisplayNames.length > 0 ? userSelectedStyleDisplayNames : undefined;
+  ctx.generationMetadata.userExplicitPrimaryStyle = primary !== 'barry_harris';
+}
 
 interface BuildGoldenPathContextExtras {
   /** Raw user input when custom mode was used */
@@ -489,6 +508,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
+  augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   const score = generateGoldenPathDuoScore(appliedContext, plans);
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,
@@ -502,7 +522,17 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
   const strictBarMath = validateStrictBarMath(score);
-  if (!strictBarMath.valid) errors.push(...strictBarMath.errors);
+  if (!strictBarMath.valid) {
+    errors.push(...strictBarMath.errors);
+    const rich = validateStrictBarMathSibeliusSafe(score);
+    const seen = new Set<string>();
+    for (const d of rich.details) {
+      const line = `[bar-math-debug] part=${d.partId} (${d.instrumentIdentity}) bar=${d.measureIndex} voice=${d.voice} sum=${d.summedDuration} cursorEnd=${d.timelineCursorEnd} events=${d.eventsJson}`;
+      if (seen.has(line)) continue;
+      seen.add(line);
+      errors.push(line);
+    }
+  }
 
   const bars = score.parts[0]?.measures.map((m) => ({ index: m.index - 1, duration: 4 })) ?? [];
   const chordByBar = new Map<number, string>();
@@ -629,6 +659,12 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     keySignatureInferredFifths: ksRec?.inferredFifths,
     keySignatureModeApplied: ksRec?.keySignatureModeApplied,
     keySignatureExportKeyWritten: ksRec?.exportKeyWritten,
+    harmonySourceUsed: appliedContext.generationMetadata.harmonySource,
+    styleGrammarLabel: appliedContext.generationMetadata.styleGrammarLabel,
+    styleStackPrimaryModuleId: appliedContext.generationMetadata.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: appliedContext.generationMetadata.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: appliedContext.generationMetadata.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: appliedContext.generationMetadata.userExplicitPrimaryStyle,
   });
 
   const success =

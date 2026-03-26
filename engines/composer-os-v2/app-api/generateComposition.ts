@@ -39,6 +39,13 @@ export interface GenerateResult {
   parsedCustomProgressionBars?: string[];
   chordProgressionParseFailed?: boolean;
   builtInHarmonyFallbackOccurred?: boolean;
+  /** V3.6b — Receipt: echoes generationMetadata.harmonySourceUsed when duo. */
+  harmonySourceUsed?: 'builtin' | 'custom';
+  styleGrammarLabel?: string;
+  styleStackPrimaryModuleId?: string;
+  styleStackPrimaryDisplayName?: string;
+  userSelectedStyleDisplayNames?: string[];
+  userExplicitPrimaryStyle?: boolean;
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -73,6 +80,12 @@ export interface GenerateResult {
     keySignatureInferredFifths?: number;
     keySignatureModeApplied?: 'auto' | 'override' | 'none';
     keySignatureExportKeyWritten?: boolean;
+    harmonySourceUsed?: 'builtin' | 'custom';
+    styleGrammarLabel?: string;
+    styleStackPrimaryModuleId?: string;
+    styleStackPrimaryDisplayName?: string;
+    userSelectedStyleDisplayNames?: string[];
+    userExplicitPrimaryStyle?: boolean;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -162,6 +175,12 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
       chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
       builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
+      harmonySourceUsed: result.context.generationMetadata.harmonySourceUsed,
+      styleGrammarLabel: result.context.generationMetadata.styleGrammarLabel,
+      styleStackPrimaryModuleId: result.context.generationMetadata.styleStackPrimaryModuleId,
+      styleStackPrimaryDisplayName: result.context.generationMetadata.styleStackPrimaryDisplayName,
+      userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
+      userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
       keySignatureInferredTonic: result.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
       keySignatureConfidence: result.context.generationMetadata.keySignatureReceipt?.confidence,
       keySignatureOverrideUsed: result.context.generationMetadata.keySignatureReceipt?.overrideUsed,
@@ -216,6 +235,12 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
     chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
     builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
+    harmonySourceUsed: result.context.generationMetadata.harmonySourceUsed,
+    styleGrammarLabel: result.context.generationMetadata.styleGrammarLabel,
+    styleStackPrimaryModuleId: result.context.generationMetadata.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: result.context.generationMetadata.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
     validation,
     runManifest: result.runManifest
       ? {
@@ -228,6 +253,12 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           variationId: req.variationId,
           creativeControlLevel: req.creativeControlLevel,
           experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+          harmonySourceUsed: result.runManifest.harmonySourceUsed,
+          styleGrammarLabel: result.runManifest.styleGrammarLabel,
+          styleStackPrimaryModuleId: result.runManifest.styleStackPrimaryModuleId,
+          styleStackPrimaryDisplayName: result.runManifest.styleStackPrimaryDisplayName,
+          userSelectedStyleDisplayNames: result.runManifest.userSelectedStyleDisplayNames,
+          userExplicitPrimaryStyle: result.runManifest.userExplicitPrimaryStyle,
           keySignatureInferredTonic: result.runManifest.keySignatureInferredTonic,
           keySignatureConfidence: result.runManifest.keySignatureConfidence,
           keySignatureOverrideUsed: result.runManifest.keySignatureOverrideUsed,

@@ -78,4 +78,12 @@ export interface RunManifest {
   keySignatureInferredFifths?: number;
   keySignatureModeApplied?: 'auto' | 'override' | 'none';
   keySignatureExportKeyWritten?: boolean;
+  /** V3.6b — Receipt: harmony source (custom progression vs built-in cycle). */
+  harmonySourceUsed?: 'builtin' | 'custom';
+  /** V3.6b — Honest label for internal duo grammar (Barry Harris–derived default engine). */
+  styleGrammarLabel?: string;
+  styleStackPrimaryModuleId?: string;
+  styleStackPrimaryDisplayName?: string;
+  userSelectedStyleDisplayNames?: string[];
+  userExplicitPrimaryStyle?: boolean;
 }

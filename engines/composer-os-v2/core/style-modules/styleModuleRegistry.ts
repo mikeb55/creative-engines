@@ -45,6 +45,12 @@ export function listRegisteredStyleModuleInfos(): RegisteredStyleModuleInfo[] {
     }));
 }
 
+/** Single-module display name for manifests / receipts (ids are stable; labels are for humans). */
+export function getStyleModuleDisplayName(id: string): string {
+  registerBuiltIn();
+  return MODULE_DISPLAY_NAMES[id] ?? id;
+}
+
 export function registerStyleModule(module: StyleModule): void {
   registry.set(module.id, module);
 }

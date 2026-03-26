@@ -48,6 +48,18 @@ export interface GenerationMetadata {
   chordProgressionInputRaw?: string;
   /** Parsed one chord per bar when custom harmony was applied successfully */
   parsedCustomProgressionBars?: string[];
+  /** V3.6b — Receipt echo of `harmonySource` for clarity (chord source vs style grammar). */
+  harmonySourceUsed?: 'builtin' | 'custom';
+  /** V3.6b — Honest label: internal duo engine uses Barry Harris–derived rules by default; not a claim the user picked BH. */
+  styleGrammarLabel?: string;
+  /** V3.6b — Primary style module id driving gates (technical; often engine default `barry_harris`). */
+  styleStackPrimaryModuleId?: string;
+  /** V3.6b — Registry display name for primary module. */
+  styleStackPrimaryDisplayName?: string;
+  /** V3.6b — Human-readable active stack (primary → secondary → colour) for receipts. */
+  userSelectedStyleDisplayNames?: string[];
+  /** V3.6b — True when primary module is not the duo default primary (`barry_harris`). */
+  userExplicitPrimaryStyle?: boolean;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */

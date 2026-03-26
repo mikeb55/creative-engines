@@ -33,6 +33,7 @@ import { runDuoIdentityV32Tests } from './duoIdentityV32.test';
 import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
+import { runDuoV36bTests } from './duoV36b.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
 import { runHandoffMapTests } from './handoffMap.test';
@@ -134,6 +135,7 @@ const suites = [
   { name: 'Duo polish V3.3', run: runDuoPolishV33Tests },
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
+  { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },
   { name: 'Handoff map', run: runHandoffMapTests },

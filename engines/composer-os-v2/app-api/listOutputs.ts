@@ -232,6 +232,13 @@ function pushEntry(filepath: string, presetFolderLabel: string, entries: OutputE
     variationId: manifest?.variationId,
     creativeControlLevel: manifest?.creativeControlLevel,
     scoreTitle: manifest?.scoreTitle,
+    harmonySourceUsed: manifest?.harmonySourceUsed,
+    harmonySource: manifest?.harmonySource,
+    styleGrammarLabel: manifest?.styleGrammarLabel,
+    styleStackPrimaryModuleId: manifest?.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: manifest?.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: manifest?.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: manifest?.userExplicitPrimaryStyle,
     validation: manifest?.validation ?? {
       scoreIntegrity: false,
       exportIntegrity: false,

@@ -4,6 +4,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listRegisteredStyleModuleInfos = listRegisteredStyleModuleInfos;
+exports.getStyleModuleDisplayName = getStyleModuleDisplayName;
 exports.registerStyleModule = registerStyleModule;
 exports.getStyleModule = getStyleModule;
 exports.applyStyleStack = applyStyleStack;
@@ -39,6 +40,10 @@ function listRegisteredStyleModuleInfos() {
         id,
         displayName: MODULE_DISPLAY_NAMES[id] ?? id,
     }));
+}
+function getStyleModuleDisplayName(id) {
+    registerBuiltIn();
+    return MODULE_DISPLAY_NAMES[id] ?? id;
 }
 function registerStyleModule(module) {
     registry.set(module.id, module);

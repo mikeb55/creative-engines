@@ -53,6 +53,12 @@ export interface CreateRunManifestInput {
   keySignatureInferredFifths?: number;
   keySignatureModeApplied?: 'auto' | 'override' | 'none';
   keySignatureExportKeyWritten?: boolean;
+  harmonySourceUsed?: 'builtin' | 'custom';
+  styleGrammarLabel?: string;
+  styleStackPrimaryModuleId?: string;
+  styleStackPrimaryDisplayName?: string;
+  userSelectedStyleDisplayNames?: string[];
+  userExplicitPrimaryStyle?: boolean;
 }
 
 /** Create run manifest. */
@@ -105,5 +111,11 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     keySignatureInferredFifths: input.keySignatureInferredFifths,
     keySignatureModeApplied: input.keySignatureModeApplied,
     keySignatureExportKeyWritten: input.keySignatureExportKeyWritten,
+    harmonySourceUsed: input.harmonySourceUsed,
+    styleGrammarLabel: input.styleGrammarLabel,
+    styleStackPrimaryModuleId: input.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: input.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: input.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: input.userExplicitPrimaryStyle,
   };
 }

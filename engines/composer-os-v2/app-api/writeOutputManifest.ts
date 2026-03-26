@@ -47,6 +47,12 @@ export function writeOutputManifest(
     keySignatureInferredFifths?: number;
     keySignatureModeApplied?: 'auto' | 'override' | 'none';
     keySignatureExportKeyWritten?: boolean;
+    harmonySourceUsed?: 'builtin' | 'custom';
+    styleGrammarLabel?: string;
+    styleStackPrimaryModuleId?: string;
+    styleStackPrimaryDisplayName?: string;
+    userSelectedStyleDisplayNames?: string[];
+    userExplicitPrimaryStyle?: boolean;
     validation: ValidationSummary;
   }
 ): void {
@@ -81,6 +87,12 @@ export function writeOutputManifest(
     keySignatureInferredFifths: meta.keySignatureInferredFifths,
     keySignatureModeApplied: meta.keySignatureModeApplied,
     keySignatureExportKeyWritten: meta.keySignatureExportKeyWritten,
+    harmonySourceUsed: meta.harmonySourceUsed,
+    styleGrammarLabel: meta.styleGrammarLabel,
+    styleStackPrimaryModuleId: meta.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: meta.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: meta.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: meta.userExplicitPrimaryStyle,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
