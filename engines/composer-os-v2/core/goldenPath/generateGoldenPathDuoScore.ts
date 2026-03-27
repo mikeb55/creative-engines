@@ -53,6 +53,7 @@ import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFin
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
+import { applyEcmIdentityCellPass } from './identityCell';
 import {
   normalizeMeasureToEighthBeatGrid,
   snapAttackBeatToGrid,
@@ -1182,6 +1183,8 @@ export interface GenerateGoldenPathDuoScoreOpts {
   ecmShapingEnabled?: boolean;
   /** Duo / ECM: section contrast + register / phrase arc (default on). */
   orchestrationEnabled?: boolean;
+  /** ECM chamber: A1→B→A2 identity cell coherence (default on). */
+  identityCellEnabled?: boolean;
 }
 
 /**
@@ -1260,6 +1263,9 @@ export function generateGoldenPathDuoScore(
   }
   if (context.presetId === 'ecm_chamber' && opts?.ecmShapingEnabled !== false) {
     applyECMShapingPass(afterExpressive, context, context.seed);
+  }
+  if (context.presetId === 'ecm_chamber' && opts?.identityCellEnabled !== false) {
+    applyEcmIdentityCellPass(afterExpressive, context, context.seed);
   }
   if (
     (context.presetId === 'guitar_bass_duo' || context.presetId === 'ecm_chamber') &&

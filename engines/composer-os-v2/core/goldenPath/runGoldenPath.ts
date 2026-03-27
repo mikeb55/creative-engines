@@ -433,6 +433,8 @@ export interface RunGoldenPathOptions {
   ecmShapingEnabled?: boolean;
   /** Duo / ECM: orchestration pass after ECM shaping (default on). */
   orchestrationEnabled?: boolean;
+  /** ECM chamber: identity cell A1→B→A2 (default on). */
+  identityCellEnabled?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -539,6 +541,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     variationEnabled: options?.variationEnabled === true,
     ecmShapingEnabled: options?.ecmShapingEnabled,
     orchestrationEnabled: options?.orchestrationEnabled,
+    identityCellEnabled: options?.identityCellEnabled,
   });
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,

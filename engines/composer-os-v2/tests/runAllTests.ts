@@ -41,6 +41,7 @@ import { runMusicXmlWrittenBarRegressionTests } from './musicXmlWrittenBarRegres
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runEcmShapingPassTests } from './ecmShapingPass.test';
 import { runDuoOrchestrationPassTests } from './duoOrchestrationPass.test';
+import { runIdentityCellTests } from './identityCell.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
 import { runHandoffMapTests } from './handoffMap.test';
 import { runModuleInvocationTests } from './moduleInvocation.test';
@@ -151,6 +152,7 @@ const suites = [
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'ECM shaping pass', run: runEcmShapingPassTests },
   { name: 'Duo orchestration pass', run: runDuoOrchestrationPassTests },
+  { name: 'ECM identity cell', run: runIdentityCellTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },
   { name: 'Handoff map', run: runHandoffMapTests },
   { name: 'Module invocation', run: runModuleInvocationTests },
