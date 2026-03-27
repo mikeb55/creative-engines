@@ -428,6 +428,8 @@ export interface RunGoldenPathOptions {
   tonalCenter?: string;
   /** When true, apply deterministic chord-safe pitch mutation to guitar melody after duo build (Duo / ECM). */
   variationEnabled?: boolean;
+  /** ECM: aesthetic shaping pass after variation (default on). */
+  ecmShapingEnabled?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -529,6 +531,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   const score = generateGoldenPathDuoScore(appliedContext, plans, {
     variationEnabled: options?.variationEnabled === true,
+    ecmShapingEnabled: options?.ecmShapingEnabled,
   });
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,

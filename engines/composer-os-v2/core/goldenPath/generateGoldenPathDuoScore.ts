@@ -51,6 +51,7 @@ import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
+import { applyECMShapingPass } from './ecmShapingPass';
 import {
   normalizeMeasureToEighthBeatGrid,
   snapAttackBeatToGrid,
@@ -1176,6 +1177,8 @@ export interface GoldenPathPlans {
 export interface GenerateGoldenPathDuoScoreOpts {
   /** Pitch-only mutation on guitar melody before bar-math seal (after expressive pass). */
   variationEnabled?: boolean;
+  /** ECM chamber: post-variation aesthetic pass (default on; set false for A/B tests). */
+  ecmShapingEnabled?: boolean;
 }
 
 /**
@@ -1251,6 +1254,9 @@ export function generateGoldenPathDuoScore(
   });
   if (opts?.variationEnabled === true) {
     applyDuoPitchVariationToGuitar(afterExpressive, context, context.seed);
+  }
+  if (context.presetId === 'ecm_chamber' && opts?.ecmShapingEnabled !== false) {
+    applyECMShapingPass(afterExpressive, context, context.seed);
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
