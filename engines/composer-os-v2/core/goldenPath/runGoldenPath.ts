@@ -426,6 +426,8 @@ export interface RunGoldenPathOptions {
   tonalCenterOverride?: string;
   /** Echo of UI tonal centre — used for override when `tonalCenterOverride` omitted. */
   tonalCenter?: string;
+  /** When true, apply deterministic chord-safe pitch mutation to guitar melody after duo build (Duo / ECM). */
+  variationEnabled?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -525,7 +527,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
-  const score = generateGoldenPathDuoScore(appliedContext, plans);
+  const score = generateGoldenPathDuoScore(appliedContext, plans, {
+    variationEnabled: options?.variationEnabled === true,
+  });
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,
     tonalCenterOverride: options?.tonalCenterOverride,

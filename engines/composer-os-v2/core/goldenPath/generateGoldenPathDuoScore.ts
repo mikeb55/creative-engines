@@ -50,6 +50,7 @@ import {
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
+import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import {
   normalizeMeasureToEighthBeatGrid,
   snapAttackBeatToGrid,
@@ -1172,10 +1173,19 @@ export interface GoldenPathPlans {
   scoreTitle: string;
 }
 
+export interface GenerateGoldenPathDuoScoreOpts {
+  /** Pitch-only mutation on guitar melody before bar-math seal (after expressive pass). */
+  variationEnabled?: boolean;
+}
+
 /**
  * Generate golden path duo score. `context` must already include any `applyStyleStack` transforms.
  */
-export function generateGoldenPathDuoScore(context: CompositionContext, plans: GoldenPathPlans): ScoreModel {
+export function generateGoldenPathDuoScore(
+  context: CompositionContext,
+  plans: GoldenPathPlans,
+  opts?: GenerateGoldenPathDuoScoreOpts
+): ScoreModel {
   const tb = totalBarsFromContext(context);
   const texturePlan =
     context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode
@@ -1239,6 +1249,9 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
   const afterExpressive = applyExpressiveDuoFeel(afterPerf, {
     ecmEvenEighths: context.presetId === 'ecm_chamber',
   });
+  if (opts?.variationEnabled === true) {
+    applyDuoPitchVariationToGuitar(afterExpressive, context, context.seed);
+  }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (context.presetId === 'guitar_bass_duo') {

@@ -134,6 +134,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     keySignatureMode: req.keySignatureMode,
     tonalCenterOverride: req.tonalCenterOverride,
     tonalCenter: req.tonalCenter,
+    variationEnabled: req.variationEnabled === true ? true : undefined,
   });
   const validation = {
     integrityPassed: result.integrityPassed,

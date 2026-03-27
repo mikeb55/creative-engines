@@ -11,6 +11,7 @@ import { runExportTests } from './export.test';
 import { runKeyInferenceTests } from './keyInference.test';
 import { runScoreModelTests } from './scoreModel.test';
 import { runGoldenPathTests } from './goldenPath.test';
+import { runDuoPitchVariationTests } from './duoPitchVariation.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
 import { runStyleModuleTests } from './styleModule.test';
@@ -118,6 +119,7 @@ const suites = [
   { name: 'Key inference (V3.4)', run: runKeyInferenceTests },
   { name: 'Score Model', run: runScoreModelTests },
   { name: 'Golden Path', run: runGoldenPathTests },
+  { name: 'Duo pitch variation (variationEnabled)', run: runDuoPitchVariationTests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
   { name: 'Motif', run: runMotifTests },
   { name: 'Style Module', run: runStyleModuleTests },
