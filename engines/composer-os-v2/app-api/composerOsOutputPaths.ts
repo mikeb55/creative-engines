@@ -16,6 +16,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   ecm_chamber: 'ECM Chamber Compositions',
   string_quartet: 'String Quartet Compositions',
   song_mode: 'Song Mode',
+  riff_generator: 'Riffs',
 };
 
 export function getUserDocumentsPath(): string {
@@ -49,17 +50,46 @@ export function expectedPresetFolderName(presetId: string): string {
   return getPresetOutputSubfolder(presetId);
 }
 
+/**
+ * Resolves the Composer OS library root: explicit `libraryRoot` (from IPC / HTTP) wins;
+ * otherwise `COMPOSER_OS_OUTPUT_DIR` or default Documents/Mike Composer Files.
+ */
+export function resolveComposerLibraryRoot(libraryRoot?: string): string {
+  const t = libraryRoot?.trim();
+  if (t) {
+    return path.resolve(t);
+  }
+  return getComposerFilesRoot();
+}
+
 /** Canonical directory where MusicXML is written (manifests go under `_meta`). */
-export function getOutputDirectoryForPreset(presetId: string): string {
-  const root = getComposerFilesRoot();
+export function getOutputDirectoryForPreset(presetId: string, libraryRoot?: string): string {
+  const root = resolveComposerLibraryRoot(libraryRoot);
   const sub = getPresetOutputSubfolder(presetId);
   return path.join(root, sub);
 }
 
-export function ensureOutputDirectoryForPreset(presetId: string): string {
-  const dir = getOutputDirectoryForPreset(presetId);
+export function ensureOutputDirectoryForPreset(presetId: string, libraryRoot?: string): string {
+  const dir = getOutputDirectoryForPreset(presetId, libraryRoot);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+/** Songwriting engine (Phase 1) — subfolder under the Composer OS library root only. */
+export const SONG_ENGINE_OUTPUT_KINDS = ['songs'] as const;
+export type SongEngineOutputKind = (typeof SONG_ENGINE_OUTPUT_KINDS)[number];
+
+const SONG_ENGINE_SUBFOLDER: Record<SongEngineOutputKind, string> = {
+  songs: 'Songs',
+};
+
+/**
+ * Canonical output directory for the minimal songwriting engine, e.g. `getOutputPath('songs')`
+ * → `<library root>/Songs`. Uses `resolveComposerLibraryRoot` (IPC / env / Documents) — no AppData bundle paths.
+ */
+export function getOutputPath(kind: SongEngineOutputKind, libraryRoot?: string): string {
+  const sub = SONG_ENGINE_SUBFOLDER[kind];
+  return path.join(resolveComposerLibraryRoot(libraryRoot), sub);
 }
 
 /** Internal subfolder under each preset output dir for `.manifest.json` files (MusicXML stays next to user). */

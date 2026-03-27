@@ -1,12 +1,39 @@
 /**
- * User chord progression input: bar-separated tokens (|), one primary chord per bar for duo engine.
+ * User chord progression input: bar-separated tokens (`|`, `,`, `;`, and sometimes spaced `/`),
+ * one primary chord per bar for duo engine.
  * Multiple chords in a cell → first chord drives harmony for that bar (documented in UI).
+ * Internally normalized to `|` before validation.
  */
 
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ChordSegment, HarmonyPlan } from '../primitives/harmonyTypes';
 
 const BAR_COUNT = 8;
+
+/**
+ * Normalize user bar separators to `|` for parsing. Accepts `|`, `,`, and `;`.
+ * Spaced `/` (`\s+/\s+`) becomes a bar separator only when the **original** input had no `|`
+ * (comma/semicolon style). If the user already used `|`, each pipe-delimited cell stays one bar
+ * and spaced `/` is left as multiple tokens in that cell (first chord wins) — slash bass like
+ * `D/F#` is never split because it has no spaces around `/`.
+ * Collapses redundant spaces; does not alter chord spellings inside tokens.
+ */
+export function normalizeChordProgressionSeparators(input: string): string {
+  const hadBarPipeChar = input.includes('|');
+  let s = input.trim();
+  if (!s) return '';
+  s = s.replace(/\s*,\s*/g, ' | ');
+  s = s.replace(/\s*;\s*/g, ' | ');
+  if (!hadBarPipeChar) {
+    s = s.replace(/\s+\/\s+/g, ' | ');
+  }
+  s = s.replace(/\s*\|\s*/g, ' | ');
+  s = s.replace(/\s+/g, ' ').trim();
+  while (s.includes('| |')) {
+    s = s.replace(/\|\s*\|/g, '|');
+  }
+  return s.trim();
+}
 
 /** Root (incl. Bb, F#) + quality + optional slash bass (e.g. Cmaj7/E, D/F#). */
 const CHORD_TOKEN =
@@ -31,15 +58,19 @@ export type ParseChordProgressionResult =
   | { ok: false; error: string };
 
 /**
- * Parse `|`-separated bars. Requires exactly 8 bars for Guitar–Bass Duo.
+ * Parse bar-separated chords (after normalizing `,` `;` and spaced `/` to `|`).
+ * Single parsing path — `parseChordProgressionInput` fixes bar count at 8 for duo.
  * Within a bar, whitespace separates chords — the first chord is used for that measure.
  */
-export function parseChordProgressionInput(input: string): ParseChordProgressionResult {
-  const trimmed = input.trim();
+export function parseChordProgressionInputWithBarCount(
+  input: string,
+  expectedBarCount: number
+): ParseChordProgressionResult {
+  const trimmed = normalizeChordProgressionSeparators(input);
   if (!trimmed) {
     return {
       ok: false,
-      error: 'Chord progression is empty. Enter exactly 8 bars separated by |.',
+      error: `Chord progression is empty. Enter exactly ${expectedBarCount} bars (use | , ; or spaced / between chords).`,
     };
   }
   const rawBars = trimmed.split('|').map((s) => s.trim());
@@ -56,13 +87,21 @@ export function parseChordProgressionInput(input: string): ParseChordProgression
     }
     bars.push(primary);
   }
-  if (bars.length !== BAR_COUNT) {
+  if (bars.length !== expectedBarCount) {
     return {
       ok: false,
-      error: `Expected exactly ${BAR_COUNT} bars separated by | (found ${bars.length}).`,
+      error: `Expected exactly ${expectedBarCount} bars (use | , ; or spaced / between chords) (found ${bars.length}).`,
     };
   }
   return { ok: true, bars };
+}
+
+/**
+ * Parse bar-separated chords (after normalizing `,` `;` and spaced `/` to `|`).
+ * Requires exactly 8 bars for Guitar–Bass Duo.
+ */
+export function parseChordProgressionInput(input: string): ParseChordProgressionResult {
+  return parseChordProgressionInputWithBarCount(input, BAR_COUNT);
 }
 
 /** Merge consecutive identical chords into segments (exactly 8 bars). */

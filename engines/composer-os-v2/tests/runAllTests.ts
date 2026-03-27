@@ -104,6 +104,8 @@ import { runWindowsPackagingPrepTests } from './windowsPackagingPrep.test';
 import { runOutputUxTests } from './outputUx.test';
 import { runAppShellTests } from './appShell.test';
 import { runSystemCheckTests } from './systemCheck.test';
+import { runRiffGeneratorTests } from './riffGenerator.test';
+import { runSongwritingEngineTests } from './songwritingEngine.test';
 import { retroSuites } from './retro/index';
 
 const suites = [
@@ -209,6 +211,8 @@ const suites = [
   { name: 'Output UX', run: runOutputUxTests },
   { name: 'App shell (product)', run: runAppShellTests },
   { name: 'System check (repo root)', run: runSystemCheckTests },
+  { name: 'Riff Generator', run: runRiffGeneratorTests },
+  { name: 'Songwriting Engine (Phase 1)', run: runSongwritingEngineTests },
   ...retroSuites,
 ];
 
