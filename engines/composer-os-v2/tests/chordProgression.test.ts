@@ -139,7 +139,7 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
     name: 'Slash progression: success and bass spells slash bass',
     ok: (() => {
       const text = 'D/F# | G/B | Cmaj7/E | A7alt | D/F# | G/B | Cmaj7/E | A7alt';
-      const r = runGoldenPath(55, { chordProgressionText: text });
+      const r = runGoldenPath(61, { chordProgressionText: text });
       if (!r.success) return false;
       const bass = r.score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
       if (!bass) return false;

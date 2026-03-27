@@ -3,7 +3,6 @@
  */
 
 import type { MeasureModel } from '../score-model/scoreModelTypes';
-import { seededUnit } from './guitarBassDuoHarmony';
 
 export function qBeatSwing(x: number): number {
   return Math.round(x * 4) / 4;
@@ -23,9 +22,10 @@ export function guitarBarIsBusy(m: MeasureModel): boolean {
   return guitarNoteCoverageBeats(m) >= 3.0;
 }
 
-/** Extra stagger for anticipations / delayed downbeats (swing phrasing). */
-export function duoGuitarSwingStaggerBump(seed: number, bar: number, isDuo: boolean): number {
-  if (!isDuo) return 0;
-  if (seededUnit(seed, bar, 920) >= 0.48) return 0;
-  return qBeatSwing(0.25 + seededUnit(seed, bar, 921) * 0.55);
+/**
+ * Swing feel is articulation / accent only — never duration offsets (Sibelius + import safety).
+ * @deprecated Kept for call-site stability; always returns 0.
+ */
+export function duoGuitarSwingStaggerBump(_seed: number, _bar: number, _isDuo: boolean): number {
+  return 0;
 }

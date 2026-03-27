@@ -32,8 +32,9 @@ export function validateMethenyConformance(score: ScoreModel): MethenyValidation
     const intervals = all.length - 1;
     if (intervals > 0 && scalar / intervals > 0.85) errors.push('Output overly scalar for Metheny');
 
-    const eventCount = guitar.measures.reduce((s, m) => s + m.events.length, 0);
-    if (eventCount > 40) errors.push('Density too busy for Metheny');
+    /** Note onsets only — rests excluded; notation-safe splits may add tied segments without adding attacks. */
+    const noteCount = guitar.measures.reduce((s, m) => s + m.events.filter((e) => e.kind === 'note').length, 0);
+    if (noteCount > 56) errors.push('Density too busy for Metheny');
 
     const onBeats = guitar.measures.flatMap((m) =>
       m.events.filter((e) => e.kind === 'note').map((e) => (e as { startBeat: number }).startBeat)

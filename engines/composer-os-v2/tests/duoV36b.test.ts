@@ -96,5 +96,20 @@ export function runDuoV36bTests(): { name: string; ok: boolean }[] {
     })(),
   });
 
+  tests.push({
+    name: 'V3.6b sealed score rejects mutating frozen measure events',
+    ok: (() => {
+      const r = runGoldenPath(43, { chordProgressionText: CUSTOM_8, harmonyMode: 'custom' });
+      if (!r.success) return false;
+      const ev = r.score.parts[0].measures[0].events;
+      try {
+        (ev as unknown[]).push({ kind: 'rest', startBeat: 0, duration: 0.25, voice: 1 } as never);
+        return false;
+      } catch {
+        return true;
+      }
+    })(),
+  });
+
   return tests;
 }

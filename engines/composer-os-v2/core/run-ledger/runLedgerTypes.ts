@@ -86,4 +86,12 @@ export interface RunManifest {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  /** Exact submitted progression string (when user entered text). */
+  chordProgressionSubmittedRaw?: string;
+  /** Snapshot of parsed custom bars when custom harmony applied. */
+  parsedChordBarsSnapshot?: string[];
+  /** Pipeline truth gates (Guitar–Bass Duo 8-bar). */
+  pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
 }

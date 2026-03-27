@@ -1,9 +1,10 @@
 /**
  * Composer OS V2 — MusicXML exporter
  * Converts ScoreModel to MusicXML. Single source of truth is the score model.
+ * Durations: fixed divisions/quarter (480); <duration> and <type>/<dot/> from one tick value (musicXmlTickEncoding).
  */
 
-import type { MusicXmlExportResult } from './exportTypes';
+import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { parseChordForMusicXmlHarmony } from './chordSymbolMusicXml';
@@ -11,6 +12,13 @@ import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
   GUITAR_BASS_DUO_BASS_PART_NAME,
 } from '../instrument-profiles/guitarBassDuoExportNames';
+import {
+  beatSpanToTicks,
+  decomposeTicksToMinimalParts,
+  decomposeTicksToStandardParts,
+  typeAndDotsXml,
+  tickSpecForLength,
+} from './musicXmlTickEncoding';
 
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
@@ -35,21 +43,6 @@ function measuresInExportOrder(part: PartModel): MeasureModel[] {
   return [...part.measures].sort((a, b) => a.index - b.index);
 }
 
-function divisionsToType(divs: number): string {
-  if (divs <= 1) return '16th';
-  if (divs <= 2) return 'eighth';
-  if (divs <= 4) return 'quarter';
-  if (divs <= 8) return 'half';
-  return 'whole';
-}
-
-/** Map beat boundaries to integer divisions so each event's length matches rounded [start,end) span (export round-trip). */
-function beatSpanToDivisions(startBeat: number, endBeat: number): { start: number; end: number } {
-  const start = Math.min(MEASURE_DIVISIONS, Math.max(0, Math.round(startBeat * DIVISIONS)));
-  const end = Math.min(MEASURE_DIVISIONS, Math.max(0, Math.round(endBeat * DIVISIONS)));
-  return { start, end: Math.max(start, end) };
-}
-
 function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
   const semitones = ((midi % 12) + 12) % 12;
   const octave = Math.floor(midi / 12) - 1;
@@ -63,21 +56,102 @@ function midiToPitch(midi: number): { step: string; alter: number; octave: numbe
   return { step, alter, octave };
 }
 
-/** Convert measure events to MusicXML notes (integer [start,end) spans per event so each voice sums to MEASURE_DIVISIONS). */
-function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
-  const sorted = [...measure.events].sort((a, b) => a.startBeat - b.startBeat);
+function tieXmlForSplitIndex(i: number, n: number): string {
+  if (n <= 1) return '';
+  if (i === 0) return '<tie type="start"/>';
+  if (i === n - 1) return '<tie type="stop"/>';
+  return '<tie type="stop"/><tie type="start"/>';
+}
+
+function emitRestTicks(parts: number[], voice: number): string {
+  let xml = '';
+  for (const t of parts) {
+    const spec = tickSpecForLength(t);
+    xml += `        <note><rest/><duration>${t}</duration>${typeAndDotsXml(spec)}<voice>${voice}</voice></note>\n`;
+  }
+  return xml;
+}
+
+function emitPitchedTicks(
+  parts: number[],
+  voice: number,
+  pitchXml: string,
+  articulationXml: string,
+  dynAttr: string
+): string {
+  let xml = '';
+  const n = parts.length;
+  for (let i = 0; i < n; i++) {
+    const t = parts[i];
+    const spec = tickSpecForLength(t);
+    const tie = tieXmlForSplitIndex(i, n);
+    xml += `        <note${dynAttr}>${pitchXml}<duration>${t}</duration>${tie}${typeAndDotsXml(spec)}<voice>${voice}</voice>${i === 0 ? articulationXml : ''}</note>\n`;
+  }
+  return xml;
+}
+
+/**
+ * Same tick arithmetic as `eventsToXml` for one voice — parity with written XML.
+ */
+export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: number): number {
+  const sorted = [...measure.events]
+    .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .sort((a, b) => a.startBeat - b.startBeat);
+  const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
+  let cursor = 0;
+  let sum = 0;
+  for (const e of voiceEvents) {
+    const sb = e.startBeat;
+    const eb = sb + e.duration;
+    const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
+    const safeStart = Math.max(startDiv, cursor);
+    if (endDiv <= safeStart) continue;
+    if (safeStart > cursor) {
+      const restDiv = safeStart - cursor;
+      sum += restDiv;
+      cursor = safeStart;
+    }
+    const durDiv = endDiv - safeStart;
+    sum += durDiv;
+    cursor = endDiv;
+  }
+  if (cursor < MEASURE_DIVISIONS) {
+    sum += MEASURE_DIVISIONS - cursor;
+  }
+  return sum;
+}
+
+function eventsToXml(
+  measure: MeasureModel,
+  measureIndex: number,
+  part: PartModel,
+  decompose: (ticks: number) => number[],
+  opts: MusicXmlExportOptions
+): string {
+  const partId = part.id;
+  let sorted = [...measure.events]
+    .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .sort((a, b) => a.startBeat - b.startBeat);
+  if (opts.bassStaffVoice1Only && part.instrumentIdentity === 'acoustic_upright_bass') {
+    sorted = sorted.map((e) => ({ ...e, voice: 1 }));
+  }
+  const voices = [...new Set(sorted.map((e) => e.voice ?? 1))].sort((a, b) => a - b);
+  const debugTicks = typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_MUSICXML_TICKS === '1';
 
   let xml = '';
-  const voices = [...new Set(sorted.map((e) => e.voice ?? 1))].sort((a, b) => a - b);
-
-  for (const voice of voices) {
+  for (let vi = 0; vi < voices.length; vi++) {
+    const voice = voices[vi];
+    if (vi > 0) {
+      xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
+    }
     const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
     let cursor = 0;
+    let voiceTickSum = 0;
 
     for (const e of voiceEvents) {
       const sb = e.startBeat;
       const eb = sb + e.duration;
-      const { start: startDiv, end: endDiv } = beatSpanToDivisions(sb, eb);
+      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
       const safeStart = Math.max(startDiv, cursor);
       if (endDiv <= safeStart) {
         continue;
@@ -85,16 +159,20 @@ function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
 
       if (safeStart > cursor) {
         const restDiv = safeStart - cursor;
-        xml += `        <note><rest/><duration>${restDiv}</duration><type>${divisionsToType(restDiv)}</type><voice>${voice}</voice></note>\n`;
+        const parts = decompose(restDiv);
+        xml += emitRestTicks(parts, voice);
+        for (const p of parts) voiceTickSum += p;
         cursor = safeStart;
       }
 
       const durDiv = endDiv - safeStart;
+      const parts = decompose(durDiv);
       if (e.kind === 'rest') {
-        xml += `        <note><rest/><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice></note>\n`;
+        xml += emitRestTicks(parts, voice);
       } else {
         const { step, alter, octave } = midiToPitch(e.pitch);
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+        const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
         const art = (e as { articulation?: string }).articulation;
         const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
         const vel = (e as { velocity?: number }).velocity;
@@ -102,14 +180,28 @@ function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
           vel !== undefined
             ? ` dynamics="${Math.min(100, Math.max(0, (vel / 127) * 100)).toFixed(2)}"`
             : '';
-        xml += `        <note${dynAttr}><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${durDiv}</duration><type>${divisionsToType(durDiv)}</type><voice>${voice}</voice>${notationsEl}</note>\n`;
+        xml += emitPitchedTicks(parts, voice, pitchXml, notationsEl, dynAttr);
       }
+      for (const p of parts) voiceTickSum += p;
       cursor = endDiv;
     }
 
     if (cursor < MEASURE_DIVISIONS) {
       const restDiv = MEASURE_DIVISIONS - cursor;
-      xml += `        <note><rest/><duration>${restDiv}</duration><type>${divisionsToType(restDiv)}</type><voice>${voice}</voice></note>\n`;
+      const parts = decompose(restDiv);
+      xml += emitRestTicks(parts, voice);
+      for (const p of parts) voiceTickSum += p;
+    }
+
+    if (voiceTickSum !== MEASURE_DIVISIONS) {
+      throw new Error(
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (divisions×beats=${DIVISIONS}×4)`
+      );
+    }
+    if (debugTicks) {
+      console.log(
+        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${MEASURE_DIVISIONS}`
+      );
     }
   }
 
@@ -117,11 +209,12 @@ function eventsToXml(measure: MeasureModel, _measureIndex: number): string {
 }
 
 /** Export ScoreModel to MusicXML string. */
-export function exportScoreModelToMusicXml(score: ScoreModel): MusicXmlExportResult {
+export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXmlExportOptions): MusicXmlExportResult {
   try {
+    const opts: MusicXmlExportOptions = options ?? {};
+    const decompose = opts.minimizeNoteFragmentation ? decomposeTicksToMinimalParts : decomposeTicksToStandardParts;
     const dbg = score.keySignatureExportDebug;
     const ks0 = score.keySignature;
-    // TEMP V3.4c — set COMPOSER_OS_DEBUG_KEY_XML=1 to log; remove after Sibelius verification
     if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_KEY_XML === '1') {
       console.log('[V3.4c exportScoreModelToMusicXml]', {
         inferredKey: dbg?.inferredKey,
@@ -174,7 +267,7 @@ ${partList}
           const feelEl =
             partIndex === 0 && score.feelProfile
               ? `    <direction placement="below"><direction-type><words>${escapeXml(
-                  `Feel: ${score.feelProfile.tempoFeel} swing (~${score.feelProfile.swingRatio}:1 eighths); laid-back; duo`
+                  `Feel: ${score.feelProfile.tempoFeel}; straight notation (export); duo`
                 )}</words></direction-type></direction>\n`
               : '';
           const ks = score.keySignature;
@@ -198,7 +291,7 @@ ${keyCaption}${feelEl}`;
         if (m.rehearsalMark) {
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
-        if (m.chord) {
+        if (m.chord && !opts.omitChordSymbols) {
           const { rootStep, rootAlter, kindText, bassStep, bassAlter } = parseChordForMusicXmlHarmony(m.chord);
           const alterEl = rootAlter !== 0 ? `<root-alter>${rootAlter}</root-alter>` : '';
           const bassAlterEl =
@@ -212,7 +305,7 @@ ${keyCaption}${feelEl}`;
           xml += `    <harmony><root><root-step>${rootStep}</root-step>${alterEl}</root><kind text="${escapeXml(kindText)}"/>${bassEl}</harmony>\n`;
         }
 
-        xml += eventsToXml(m, i);
+        xml += eventsToXml(m, i, part, decompose, opts);
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;
@@ -230,9 +323,9 @@ ${keyCaption}${feelEl}`;
 }
 
 /** Legacy stub — delegates to exportScoreModelToMusicXml when input is ScoreModel. */
-export function exportToMusicXml(input: unknown): MusicXmlExportResult {
+export function exportToMusicXml(input: unknown, options?: MusicXmlExportOptions): MusicXmlExportResult {
   if (input && typeof input === 'object' && 'title' in input && 'parts' in input) {
-    return exportScoreModelToMusicXml(input as ScoreModel);
+    return exportScoreModelToMusicXml(input as ScoreModel, options);
   }
   return {
     success: false,

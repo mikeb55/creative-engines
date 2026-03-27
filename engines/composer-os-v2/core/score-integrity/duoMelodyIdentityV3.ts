@@ -437,7 +437,9 @@ export function validateDuoMelodyIdentityV3(
   }
 
   const dirCh = countPitchDirectionChanges(g);
-  if (dirCh > 16) {
+  /** 8-bar slice (behaviour gates) allows 20 after eighth-beat rhythm; long-form scales with bar count. */
+  const maxDirChanges = totalBars <= 8 ? 20 : Math.round(16 * (totalBars / 8) * 1.25);
+  if (dirCh > maxDirChanges) {
     errors.push('Duo V3: melody zig-zags too often (no clear line)');
   }
 

@@ -30,6 +30,8 @@ import {
   emitDuoBassAuthorityMomentBar,
   emitDuoBassIdentityBar7,
   emitMelodicBassBar,
+  emitDuoBassQuarterStrideBar,
+  echoGuitarToBass,
   scrubBassFirstAttackIfRoot,
   type BassSectionRole,
 } from './bassMelodicLines';
@@ -47,7 +49,13 @@ import {
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
-import { assertScoreBarMathExact } from '../score-integrity/duoBarMathFinalize';
+import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
+import {
+  normalizeMeasureToEighthBeatGrid,
+  snapAttackBeatToGrid,
+  validateScoreDuoAttackGrid,
+  debugPrintDuoAttackGridIfEnabled,
+} from '../score-integrity/duoEighthBeatGrid';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -248,7 +256,7 @@ function dropRestsSameStartAsNote(m: MeasureModel): void {
   });
 }
 
-/** Snap to quarter-beat grid (floating drift). Final bar fill / overlap fix runs in assertScoreBarMathExact. */
+/** Snap to quarter-beat grid (ECM / Bacharach). Duo golden path uses `normalizeMeasureToEighthBeatGrid` for Sibelius-safe attacks. */
 function normalizeMeasureQuarterGrid(m: MeasureModel): void {
   for (const e of m.events) {
     if (e.kind === 'note' || e.kind === 'rest') {
@@ -275,8 +283,8 @@ function buildBacharachAnchorMeasure(
   const pass = target - 1;
   const fifth = clampPitch(tones.fifth, low, high);
   addEvent(m, createRest(0, 0.5));
-  addEvent(m, createNote(pass, 0.5, 0.25));
-  addEvent(m, createNote(target, 0.75, 1.25));
+  addEvent(m, createNote(pass, 0.5, 0.5));
+  addEvent(m, createNote(target, 1, 1));
   addEvent(m, createRest(2, 0.5));
   addEvent(m, createNote(fifth, 2.5, 1.5));
   return m;
@@ -342,6 +350,9 @@ function buildGuitarPart(
             : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
     const swingBump = duoGuitarSwingStaggerBump(seed, b, isDuoGolden);
+    const staggerGuitar = isDuoGolden
+      ? snapAttackBeatToGrid(stagger.guitar + swingBump)
+      : qBeat(stagger.guitar + swingBump);
     const phraseShapeBar = isDuoGolden ? phase : context.presetId === 'ecm_chamber' ? phase : b;
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b, context);
     const lab = sectionLabelForBar(b, context);
@@ -369,7 +380,7 @@ function buildGuitarPart(
         effectiveLow,
         effectiveHigh
       );
-      normalizeMeasureQuarterGrid(bm);
+      normalizeMeasureToEighthBeatGrid(bm);
       measures.push(bm);
       continue;
     }
@@ -387,13 +398,22 @@ function buildGuitarPart(
           let pitch = Math.max(effectiveLow, Math.min(effectiveHigh, n.pitch));
           const dur = Math.min(n.duration, Math.max(0, 4 - n.startBeat));
           if (dur > 0 && n.startBeat < 4) {
-            raw.push({ pitch, start: n.startBeat + stagger.guitar + swingBump, dur });
+            const rawStart = n.startBeat + stagger.guitar + swingBump;
+            raw.push({
+              pitch,
+              start: isDuoGolden ? snapAttackBeatToGrid(rawStart) : qBeat(rawStart),
+              dur,
+            });
           }
         }
       }
       raw.sort((a, b2) => a.start - b2.start);
       for (const e of raw) {
-        const start = Math.max(qBeat(e.start), cursor);
+        let start = Math.max(qBeat(e.start), cursor);
+        if (isDuoGolden) {
+          cursor = snapAttackBeatToGrid(cursor);
+          start = snapAttackBeatToGrid(start);
+        }
         if (start > cursor) {
           addEvent(m, createRest(cursor, start - cursor));
         }
@@ -414,7 +434,15 @@ function buildGuitarPart(
         const chord = getChordForBar(b, context);
         const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
         const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
-        if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
+        if (isDuoGolden) {
+          const c0 = snapAttackBeatToGrid(cursor);
+          if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
+            addEvent(m, createRest(c0, 0.5));
+            addEvent(m, createNote(endTone, snapAttackBeatToGrid(c0 + 0.5), tail - 0.5));
+          } else {
+            addEvent(m, createNote(endTone, c0, tail));
+          }
+        } else if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
           addEvent(m, createRest(cursor, 0.5));
           addEvent(m, createNote(endTone, cursor + 0.5, tail - 0.5));
         } else {
@@ -470,7 +498,7 @@ function buildGuitarPart(
           chord: getChordForBar(b, context),
           effectiveLow,
           effectiveHigh,
-          staggerG: qBeat(stagger.guitar + swingBump),
+          staggerG: staggerGuitar,
           seed,
         });
       } else {
@@ -484,7 +512,7 @@ function buildGuitarPart(
           useOffbeat: useOffbeat || isDuoGolden,
           reduceAttack: !!reduceAttack,
           intent: phraseIntent,
-          staggerG: qBeat(stagger.guitar + swingBump),
+          staggerG: staggerGuitar,
           seed,
           methenyShortenLong: meth?.attackDensityReduced && tex?.guitarRole !== 'sustain_pad',
           anchorMidi,
@@ -493,12 +521,14 @@ function buildGuitarPart(
       }
     }
 
-    normalizeMeasureQuarterGrid(m);
     if (isDuoGolden) {
+      normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
-      normalizeMeasureQuarterGrid(m);
+      normalizeMeasureToEighthBeatGrid(m);
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
+    } else {
+      normalizeMeasureQuarterGrid(m);
     }
     measures.push(m);
   }
@@ -544,7 +574,12 @@ function tagMomentBarsOnParts(parts: PartModel[]): void {
  * Motif bar 6: interval expansion + rhythmic augmentation + register shift vs bar 1.
  * Bar 7: suspended line; bar 8: often unresolved (no bar-contained loop).
  */
-function applyEcmMethenyMotifDevelopment(guitar: PartModel, seed: number, totalBars: number): void {
+function applyEcmMethenyMotifDevelopment(
+  guitar: PartModel,
+  seed: number,
+  totalBars: number,
+  context: CompositionContext
+): void {
   for (let cycle = 0; cycle < totalBars / 8; cycle++) {
     const srcBar = cycle * 8 + 1;
     const bar2 = cycle * 8 + 2;
@@ -608,7 +643,7 @@ function applyEcmMethenyMotifDevelopment(guitar: PartModel, seed: number, totalB
 
     // Suspend: bar 7 long tone + pick-up over barline feel (late entry)
     if (m7) {
-      const chord = m7.chord ?? 'Gmaj7';
+      const chord = m7.chord ?? getChordForBar(bar7, context);
       const tones = chordTonesForChordSymbol(chord);
       const sus = clampPitch(tones.seventh + 12, 60, 79);
       m7.events = [];
@@ -695,7 +730,7 @@ function simplifyBassAtPeakBar(
   m.events = [];
   addEvent(m, createNote(firstHalf, 0, 2));
   addEvent(m, createNote(fifth, 2, 2));
-  normalizeMeasureQuarterGrid(m);
+  normalizeMeasureToEighthBeatGrid(m);
 }
 
 /** When both parts are in high activity on a non-climax bar, thin bass to two half notes (bar math preserved). */
@@ -742,7 +777,7 @@ function resolveOverlapInDuoScore(
       addEvent(m, createNote(firstHalf, 0, 2.5));
       addEvent(m, createNote(fifth, 2.5, 1.5));
     }
-    normalizeMeasureQuarterGrid(m);
+    normalizeMeasureToEighthBeatGrid(m);
   }
 }
 
@@ -865,6 +900,10 @@ function buildBassPart(
       }
     }
 
+    if (duoGoldenBass) {
+      firstStart = snapAttackBeatToGrid(firstStart);
+    }
+
     const gAct = activityScoreForBar(guitarPart, b);
     const guitarActivityHot = gAct >= HIGH_ACTIVITY;
 
@@ -905,7 +944,7 @@ function buildBassPart(
       scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
-      normalizeMeasureQuarterGrid(m);
+      normalizeMeasureToEighthBeatGrid(m);
       const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBass7) prevBassPitch = lastBass7.pitch;
       measures.push(m);
@@ -930,39 +969,88 @@ function buildBassPart(
       scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
-      normalizeMeasureQuarterGrid(m);
+      normalizeMeasureToEighthBeatGrid(m);
       const lastBassA = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBassA) prevBassPitch = lastBassA.pitch;
       measures.push(m);
       continue;
     }
-    const swingBassMode = (seed + b * 11) % 10 < 3;
-    const swingModes = ['hold', 'anticipate', 'offbeat'] as const;
+    const swingBassMode = (seed + b * 11) % 10 < 2;
+    const swingModes = ['offbeat', 'anticipate', 'hold'] as const;
 
     if (simplifyForDuo) {
       let t0 = firstStart;
       if (duoGoldenBass && (phase === 1 || phase === 2)) {
         t0 = qBeat(Math.max(t0, phase === 2 ? 0.35 : 0.2));
       }
+      if (duoGoldenBass) t0 = snapAttackBeatToGrid(t0);
       if (t0 > 0) {
         addEvent(m, createRest(0, t0));
       }
       const span = 4 - t0;
-      const frac = duoGoldenBass
-        ? 0.36 + (Math.abs((b * 7 + seed * 3) % 10) * 0.028)
-        : 0.5;
-      let half = Math.round(span * frac * 4) / 4;
-      half = qBeat(Math.min(Math.max(half, 0.5), span - 0.5));
-      const half2 = qBeat(span - half);
       const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
-      const secondPitch =
+      const secondPitchPick =
         duoGoldenBass && (b + seed) % 3 === 0
           ? fifth
           : duoGoldenBass && (b + seed) % 3 === 1
             ? third
             : guide;
-      addEvent(m, createNote(firstNote, t0, half));
-      addEvent(m, createNote(clampPitch(secondPitch, walkLow, effectiveHigh), t0 + half, half2));
+      if (duoGoldenBass && span > 0) {
+        const strideKey = seed + b * 17;
+        /** Phrase B: invert stride vs two-note mix so bass activity differs from A (interaction role-contrast gate). */
+        const useQuarterStride =
+          phase >= 5 ? strideKey % 3 === 0 : strideKey % 3 !== 0;
+        if (useQuarterStride) {
+          const gmEcho = guitarPart.measures.find((x) => x.index === b);
+          const gPitches =
+            gmEcho?.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch) ?? [];
+          const pool: number[] = [];
+          /** Slash must lead the pool: stride uses uniq[0] as first attack; echoes must not hide the slash PC. */
+          if (slashBassPitch !== undefined) {
+            pool.push(clampPitch(slashBassPitch, walkLow, effectiveHigh));
+          }
+          for (const gp of gPitches.slice(0, 2)) {
+            pool.push(echoGuitarToBass(gp, walkLow, effectiveHigh));
+          }
+          pool.push(
+            firstNote,
+            clampPitch(secondPitchPick, walkLow, effectiveHigh),
+            clampPitch(third, walkLow, effectiveHigh),
+            clampPitch(fifth, walkLow, effectiveHigh),
+            clampPitch(guide, walkLow, effectiveHigh)
+          );
+          const guitarPitchClassesInBar = new Set(
+            gPitches.map((gp) => (((gp % 12) + 12) % 12) as number)
+          );
+          emitDuoBassQuarterStrideBar({
+            m,
+            t0,
+            span,
+            seed,
+            bar: b,
+            walkLow,
+            effectiveHigh,
+            pitches: pool,
+            guitarPitchClassesInBar,
+          });
+        } else {
+          const frac = duoGoldenBass
+            ? 0.36 + (Math.abs((b * 7 + seed * 3) % 10) * 0.028)
+            : 0.5;
+          let half = Math.round(span * frac * 4) / 4;
+          half = qBeat(Math.min(Math.max(half, 0.5), span - 0.5));
+          const half2 = qBeat(span - half);
+          addEvent(m, createNote(firstNote, t0, half));
+          addEvent(m, createNote(clampPitch(secondPitchPick, walkLow, effectiveHigh), t0 + half, half2));
+        }
+      } else {
+        const frac = 0.5;
+        let half = Math.round(span * frac * 4) / 4;
+        half = qBeat(Math.min(Math.max(half, 0.5), span - 0.5));
+        const half2 = qBeat(span - half);
+        addEvent(m, createNote(firstNote, t0, half));
+        addEvent(m, createNote(clampPitch(secondPitchPick, walkLow, effectiveHigh), t0 + half, half2));
+      }
     } else if (duoGoldenBass && swingBassMode) {
       emitDuoSwingBassBar({
         m,
@@ -976,6 +1064,7 @@ function buildBassPart(
         firstStart,
         seed,
         bar: b,
+        slashBassPitch,
       });
     } else {
       emitMelodicBassBar({
@@ -996,10 +1085,17 @@ function buildBassPart(
         guitarActivityHot,
         guideToneBias: phraseBar <= 4 ? 1.06 : 1.12,
         slashBassPitch,
+        duoSteadyWalking: duoGoldenBass,
       });
       scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
+    }
+
+    if (duoGoldenBass) {
+      normalizeMeasureToEighthBeatGrid(m);
+    } else {
+      normalizeMeasureQuarterGrid(m);
     }
 
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
@@ -1100,7 +1196,7 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
   }
   if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
-    applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb);
+    applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
   }
   const bassPart = buildBassPart(
     context,
@@ -1131,14 +1227,26 @@ export function generateGoldenPathDuoScore(context: CompositionContext, plans: G
     tempo: bpm,
     feelProfile,
   });
+  if (context.presetId === 'guitar_bass_duo') {
+    rawScore.duoRhythmSnap = 'eighth_beats';
+  }
   const articulationOn = context.presetId !== 'ecm_chamber';
   let afterPerf = applyPerformancePass(rawScore, { applyArticulation: articulationOn });
   if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
     afterPerf = applyEcmSchneiderDensityEnvelope(afterPerf, tb);
   }
-  const expressive = applyExpressiveDuoFeel(afterPerf, {
+  // Last non-finalize transforms: articulation / velocity / feel metadata only (no rhythm after seal).
+  const afterExpressive = applyExpressiveDuoFeel(afterPerf, {
     ecmEvenEighths: context.presetId === 'ecm_chamber',
   });
-  assertScoreBarMathExact(expressive);
-  return expressive;
+  // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
+  finalizeAndSealDuoScoreBarMath(afterExpressive);
+  if (context.presetId === 'guitar_bass_duo') {
+    debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
+    const gridCheck = validateScoreDuoAttackGrid(afterExpressive);
+    if (!gridCheck.valid) {
+      throw new Error(`Duo attack grid validation failed: ${gridCheck.errors.join('; ')}`);
+    }
+  }
+  return afterExpressive;
 }

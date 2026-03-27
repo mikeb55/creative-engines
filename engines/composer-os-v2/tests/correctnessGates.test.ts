@@ -13,6 +13,7 @@ import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { validateExportedMusicXmlBarMath } from '../core/export/validateMusicXmlBarMath';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../core/export/validateBassIdentityInMusicXml';
+import { MEASURE_DIVISIONS } from '../core/score-model/scoreModelTypes';
 import { applyPerformancePass } from '../core/performance/performancePass';
 import { GUITAR_BASS_DUO_BASS_PART_NAME } from '../core/instrument-profiles/guitarBassDuoExportNames';
 
@@ -172,7 +173,7 @@ function testExportedHarmonyKindTextNoDuplicateRoot(): boolean {
   if (!r.xml.includes('kind text="m9"')) return false;
   const mx = validateExportedMusicXmlBarMath(r.xml);
   if (!mx.valid) return false;
-  return mx.sums?.['guitar']?.[2]?.[1] === 16;
+  return mx.sums?.['guitar']?.[2]?.[1] === MEASURE_DIVISIONS;
 }
 
 export function runCorrectnessGatesTests(): { name: string; ok: boolean }[] {

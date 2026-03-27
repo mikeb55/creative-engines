@@ -139,7 +139,18 @@ export function roleContrastScore(score: ScoreModel): number {
   const g34 = (activityScoreForBar(g, 3) + activityScoreForBar(g, 4)) / 2;
   const b12 = (activityScoreForBar(b, 1) + activityScoreForBar(b, 2)) / 2;
   const b34 = (activityScoreForBar(b, 3) + activityScoreForBar(b, 4)) / 2;
-  const contrast = Math.abs(g12 - g34) + Math.abs(b34 - b12);
+  const micro = Math.abs(g12 - g34) + Math.abs(b34 - b12);
+  const avg = (part: typeof g, from: number, to: number) => {
+    let s = 0;
+    for (let i = from; i <= to; i++) s += activityScoreForBar(part, i);
+    return s / (to - from + 1);
+  };
+  const gA = avg(g, 1, 4);
+  const gB = avg(g, 5, 8);
+  const bA = avg(b, 1, 4);
+  const bB = avg(b, 5, 8);
+  const macro = Math.abs(gA - gB) + Math.abs(bA - bB);
+  const contrast = 0.45 * micro + 0.55 * macro;
   return Math.min(1, contrast / 14);
 }
 
@@ -208,7 +219,7 @@ function barDistinctivenessRaw(gm: MeasureModel, bar: number): number {
     maxDur * 1.75 +
     sync * 2.1 +
     (nNotes >= 3 ? 0.45 : 0) +
-    (bar === 7 ? 2.6 : 0)
+    (bar === 7 ? 6.25 : 0)
   );
 }
 

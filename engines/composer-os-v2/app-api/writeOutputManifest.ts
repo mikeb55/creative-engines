@@ -53,6 +53,11 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName?: string;
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
+    chordProgressionSubmittedRaw?: string;
+    parsedChordBarsSnapshot?: string[];
+    pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
+    pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
+    pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
     validation: ValidationSummary;
   }
 ): void {
@@ -93,6 +98,11 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName: meta.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: meta.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: meta.userExplicitPrimaryStyle,
+    chordProgressionSubmittedRaw: meta.chordProgressionSubmittedRaw,
+    parsedChordBarsSnapshot: meta.parsedChordBarsSnapshot,
+    pipelineTruthInputStage: meta.pipelineTruthInputStage,
+    pipelineTruthScoreStage: meta.pipelineTruthScoreStage,
+    pipelineTruthExportStage: meta.pipelineTruthExportStage,
     validation: meta.validation,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

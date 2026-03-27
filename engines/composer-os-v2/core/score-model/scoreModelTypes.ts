@@ -3,14 +3,21 @@
  * Single source of truth for export. All generation flows into this model.
  */
 
-/** Divisions per quarter note (MusicXML standard). */
-export const DIVISIONS = 4;
+/**
+ * MusicXML divisions per quarter note (fixed; Sibelius-safe integer tick grid).
+ * All <duration> values and <type>/<dot/> come from the same tick integer in the exporter.
+ */
+export const DIVISIONS = 480;
 
 /** Beats per measure (4/4). */
 export const BEATS_PER_MEASURE = 4;
 
-/** Measure duration in divisions. */
+/** Measure duration in divisions (4/4 @ DIVISIONS=480 → 1920). */
 export const MEASURE_DIVISIONS = DIVISIONS * BEATS_PER_MEASURE;
+
+/** Alias for exporters that name ticks explicitly. */
+export const MUSIC_XML_DIVISIONS_PER_QUARTER = DIVISIONS;
+export const MEASURE_TICKS_4_4 = MEASURE_DIVISIONS;
 
 /** Articulation metadata (performance pass / expressive feel). */
 export type Articulation = 'staccato' | 'tenuto' | 'accent';
@@ -103,6 +110,9 @@ export interface KeySignatureLine {
   caption?: string;
 }
 
+/** Golden-path duo: how bar math seal snaps rhythm (ECM chamber keeps quarter-beat grid). */
+export type DuoRhythmSnapMode = 'quarter' | 'eighth_beats';
+
 /** Full score model. */
 export interface ScoreModel {
   title: string;
@@ -110,6 +120,8 @@ export interface ScoreModel {
   timeSignature?: { beats: number; beatType: number };
   /** Optional duo feel hint (export as direction text; no structural change). */
   feelProfile?: FeelProfile;
+  /** Set before finalize for guitar_bass_duo Sibelius-safe eighth-beat attacks; ECM omits (quarter grid). */
+  duoRhythmSnap?: DuoRhythmSnapMode;
   /** V3.4 — exporter reads this for `<key>`; when omitted, defaults to C / visible. */
   keySignature?: KeySignatureLine;
   /** TEMP V3.4c — mirror receipt for export debug log; remove when stable. */

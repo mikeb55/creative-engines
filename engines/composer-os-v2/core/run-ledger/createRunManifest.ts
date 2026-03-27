@@ -59,6 +59,11 @@ export interface CreateRunManifestInput {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  chordProgressionSubmittedRaw?: string;
+  parsedChordBarsSnapshot?: string[];
+  pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
 }
 
 /** Create run manifest. */
@@ -117,5 +122,10 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     styleStackPrimaryDisplayName: input.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: input.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: input.userExplicitPrimaryStyle,
+    chordProgressionSubmittedRaw: input.chordProgressionSubmittedRaw,
+    parsedChordBarsSnapshot: input.parsedChordBarsSnapshot,
+    pipelineTruthInputStage: input.pipelineTruthInputStage,
+    pipelineTruthScoreStage: input.pipelineTruthScoreStage,
+    pipelineTruthExportStage: input.pipelineTruthExportStage,
   };
 }

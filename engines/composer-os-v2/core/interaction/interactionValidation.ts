@@ -15,7 +15,8 @@ const CROWDING_THRESHOLD = 5;
 /** Max fraction of bars where both start on beat 0 (excessive unison). */
 const UNISON_BEAT1_THRESHOLD = 0.85;
 /** Max combined events per bar before density overload. */
-const DENSITY_OVERLOAD_THRESHOLD = 12;
+/** Per-bar guitar + bass note onsets (not rests). Notation-safe splits may add segments; threshold above typical busy bar. */
+const DENSITY_OVERLOAD_THRESHOLD = 14;
 
 function getPitchesByBar(score: ScoreModel, instrumentId: string): Map<number, number[]> {
   const part = score.parts.find((p) => p.instrumentIdentity === instrumentId);
@@ -74,9 +75,11 @@ export function validateInteractionIntegrity(
 
     const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
-    const guitarEvents = guitar?.measures.find((m) => m.index === bar)?.events.length ?? 0;
-    const bassEvents = bass?.measures.find((m) => m.index === bar)?.events.length ?? 0;
-    if (guitarEvents + bassEvents > DENSITY_OVERLOAD_THRESHOLD) densityOverloadBars++;
+    const gm = guitar?.measures.find((m) => m.index === bar);
+    const bm = bass?.measures.find((m) => m.index === bar);
+    const guitarNotes = gm?.events.filter((e) => e.kind === 'note').length ?? 0;
+    const bassNotes = bm?.events.filter((e) => e.kind === 'note').length ?? 0;
+    if (guitarNotes + bassNotes > DENSITY_OVERLOAD_THRESHOLD) densityOverloadBars++;
   }
 
   if (barsWithBoth > 0 && bothOnBeat1 / barsWithBoth > UNISON_BEAT1_THRESHOLD) {

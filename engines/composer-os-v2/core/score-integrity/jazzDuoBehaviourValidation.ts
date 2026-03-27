@@ -205,6 +205,50 @@ export function guideToneCoverage(part: PartModel): number {
 }
 
 /** Contour: max consecutive steps in same direction (adjacent note attacks in order). */
+/** Penalize in soft score: rest → long note (≥1.5 beats) → short note (≤0.75 beats). */
+export function bassBarHasRestLongShortPattern(m: MeasureModel): boolean {
+  const ev = [...m.events]
+    .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .sort((a, b) => a.startBeat - b.startBeat);
+  for (let i = 0; i + 2 < ev.length; i++) {
+    const a = ev[i];
+    const b = ev[i + 1];
+    const c = ev[i + 2];
+    if (a.kind !== 'rest' || b.kind !== 'note' || c.kind !== 'note') continue;
+    const rd = (a as { duration: number }).duration;
+    const d1 = (b as { duration: number }).duration;
+    const d2 = (c as { duration: number }).duration;
+    if (rd >= 0.5 - 1e-4 && d1 >= 1.5 - 1e-4 && d2 <= 0.75 + 1e-4) return true;
+  }
+  return false;
+}
+
+/** Long note sustaining through both beat 2 and beat 3 (not an on-the-grid pick-up only). */
+export function bassBarLongSustainAcrossBeatsTwoThree(m: MeasureModel): boolean {
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as { startBeat: number; duration: number };
+    const end = n.startBeat + n.duration;
+    if (n.duration < 1.5 - 1e-4) continue;
+    if (n.startBeat < 2 - 1e-4 && end > 3 + 1e-4) return true;
+  }
+  return false;
+}
+
+/** Count bars matching awkward phrasing heuristics (for QA / manifests; not used in lock soft score). */
+export function bassRhythmPhrasingPenaltyUnits(part: PartModel): {
+  restLongShortBars: number;
+  longSustainBeatsTwoThreeBars: number;
+} {
+  let restLongShortBars = 0;
+  let longSustainBeatsTwoThreeBars = 0;
+  for (const m of part.measures) {
+    if (bassBarHasRestLongShortPattern(m)) restLongShortBars++;
+    if (bassBarLongSustainAcrossBeatsTwoThree(m)) longSustainBeatsTwoThreeBars++;
+  }
+  return { restLongShortBars, longSustainBeatsTwoThreeBars };
+}
+
 export function maxSameDirectionSteps(part: PartModel): number {
   const pitches: number[] = [];
   for (const m of part.measures) {
@@ -247,6 +291,7 @@ export function scoreJazzDuoBehaviourSoft(score: ScoreModel): number {
     8;
   const sectionSpread = Math.abs(meanA - meanB);
   const contourPenalty = Math.max(0, maxSameDirectionSteps(b) - 4) * 2;
+  /** Heuristic: `bassBarHasRestLongShortPattern` / `bassBarLongSustainAcrossBeatsTwoThree` (exported) — not folded into soft score to keep lock ordering stable. */
   const feel = expressiveFeelSoftScore(score);
   return gc * 10 + (0.5 - rr) * 5 + sectionSpread * 3 - contourPenalty + feel;
 }

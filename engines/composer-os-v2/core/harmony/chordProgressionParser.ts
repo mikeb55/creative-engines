@@ -12,7 +12,8 @@ const BAR_COUNT = 8;
 const CHORD_TOKEN =
   /^([A-G](?:#|b)?)([^/]*?)(?:\/([A-G](?:#|b)?))?$/i;
 
-function normalizeChordToken(raw: string): string {
+/** Canonical comparison for user chords vs score/XML (trim + collapse whitespace). */
+export function normalizeChordToken(raw: string): string {
   return raw.trim().replace(/\s+/g, '');
 }
 

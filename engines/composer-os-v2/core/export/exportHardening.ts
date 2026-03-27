@@ -22,7 +22,8 @@ export function validateExportIntegrity(xml: string): ExportIntegrityResult {
   if (!divisionsMatch) errors.push('Missing divisions in first measure');
   else {
     const div = parseInt(divisionsMatch[1], 10);
-    if (div < 1 || div > 64) errors.push('Invalid divisions value');
+    // MusicXML allows any positive divisions/quarter; we use 480 (Sibelius-safe tick grid).
+    if (div < 1 || div > 65536) errors.push('Invalid divisions value');
   }
 
   const timeSigCount = (xml.match(/<time>/g) || []).length;

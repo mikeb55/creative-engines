@@ -8,6 +8,59 @@ import { approachFromBelow, clampPitch, seededUnit } from './guitarBassDuoHarmon
 
 export type DuoSwingBassMode = 'hold' | 'anticipate' | 'offbeat';
 
+const EPS = 1e-5;
+
+/**
+ * Steady quarter-beat motion from t0 (no leading rest here — caller adds rest first).
+ * Preferable to rest + half + short punch: readable Sibelius-style walking.
+ */
+export function emitDuoBassQuarterStrideBar(params: {
+  m: MeasureModel;
+  t0: number;
+  span: number;
+  seed: number;
+  bar: number;
+  walkLow: number;
+  effectiveHigh: number;
+  pitches: number[];
+  /** Prefer shared pitch classes with guitar when step size is tied (motif echo + smooth voice-leading). */
+  guitarPitchClassesInBar?: Set<number>;
+}): void {
+  const { m, t0, span, walkLow, effectiveHigh, guitarPitchClassesInBar } = params;
+  const pool = params.pitches.filter((p) => typeof p === 'number');
+  if (pool.length === 0 || span <= EPS) return;
+  const uniq = [...new Set(pool.map((p) => clampPitch(p, walkLow, effectiveHigh)))];
+  let cur = t0;
+  let rem = span;
+  let prev = uniq[0];
+  let first = true;
+  while (rem > EPS) {
+    const dur = rem >= 1 ? 1 : qBeat(rem);
+    if (dur <= EPS) break;
+    let chosen: number;
+    if (first) {
+      chosen = prev;
+      first = false;
+    } else {
+      chosen = uniq[0];
+      let bestScore = Infinity;
+      for (const p of uniq) {
+        const gap = Math.abs(p - prev);
+        const echoBonus = guitarPitchClassesInBar?.has(((p % 12) + 12) % 12) ? -0.25 : 0;
+        const score = gap + echoBonus;
+        if (score < bestScore - 1e-6 || (Math.abs(score - bestScore) < 1e-6 && p < chosen)) {
+          bestScore = score;
+          chosen = p;
+        }
+      }
+    }
+    addEvent(m, createNote(chosen, cur, dur));
+    prev = chosen;
+    cur = qBeat(cur + dur);
+    rem = qBeat(rem - dur);
+  }
+}
+
 /**
  * Non-walking bass: held tones, anticipations, off-beat entries (duo swing identity).
  */
@@ -23,28 +76,54 @@ export function emitDuoSwingBassBar(params: {
   firstStart: number;
   seed: number;
   bar: number;
+  slashBassPitch?: number;
 }): void {
-  const { m, mode, rootClamped, third, fifth, guide, firstStart, seed, bar, walkLow, effectiveHigh } = params;
+  const {
+    m,
+    mode,
+    rootClamped,
+    third,
+    fifth,
+    guide,
+    firstStart,
+    seed,
+    bar,
+    walkLow,
+    effectiveHigh,
+    slashBassPitch,
+  } = params;
   const span = 4 - firstStart;
   if (firstStart > 0) addEvent(m, createRest(0, firstStart));
   const t0 = firstStart;
   if (mode === 'hold') {
     const p1 = seededUnit(seed, bar, 901) < 0.55 ? clampPitch(guide, walkLow, effectiveHigh) : rootClamped;
-    const dur = qBeat(Math.min(3.5, span));
-    addEvent(m, createNote(p1, t0, dur));
-    if (span - dur > 0.2) addEvent(m, createRest(t0 + dur, qBeat(span - dur)));
+    const pool = [p1, clampPitch(third, walkLow, effectiveHigh), clampPitch(fifth, walkLow, effectiveHigh)];
+    if (slashBassPitch !== undefined) {
+      pool.unshift(clampPitch(slashBassPitch, walkLow, effectiveHigh));
+    }
+    emitDuoBassQuarterStrideBar({ m, t0, span, seed, bar, walkLow, effectiveHigh, pitches: pool });
     return;
   }
   if (mode === 'anticipate') {
-    const restLen = qBeat(Math.max(0.5, Math.min(3.25, span - 0.5)));
+    const restLen = qBeat(Math.max(0.5, Math.min(1, span - 0.5)));
     addEvent(m, createRest(t0, restLen));
     const hit = qBeat(t0 + restLen);
+    const rem = qBeat(4 - hit);
     const target = seededUnit(seed, bar, 902) < 0.5 ? fifth : third;
-    addEvent(m, createNote(clampPitch(target, walkLow, effectiveHigh), hit, qBeat(4 - hit)));
+    const pool = [
+      clampPitch(target, walkLow, effectiveHigh),
+      clampPitch(guide, walkLow, effectiveHigh),
+      clampPitch(rootClamped, walkLow, effectiveHigh),
+    ];
+    if (slashBassPitch !== undefined) {
+      pool.unshift(clampPitch(slashBassPitch, walkLow, effectiveHigh));
+    }
+    emitDuoBassQuarterStrideBar({ m, t0: hit, span: rem, seed, bar, walkLow, effectiveHigh, pitches: pool });
     return;
   }
   addEvent(m, createRest(t0, 0.5));
-  addEvent(m, createNote(third, t0 + 0.5, 1));
+  const n1 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : third;
+  addEvent(m, createNote(n1, t0 + 0.5, 1));
   addEvent(m, createNote(guide, t0 + 1.5, 1));
   addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, 4 - t0 - 2.5))));
 }
@@ -111,6 +190,17 @@ function perturbWeights(
     ...p,
     w: p.w * (1 + ((bar * 3 + i * 5 + seed) % 5) * 0.12) * (1 + seededUnit(seed, bar, 500 + i) * 0.14),
   }));
+}
+
+/** Duo golden path: balanced quarter-note subdivision (no wild weight spread). */
+function applyPhraseWeights(
+  base: Array<{ w: number; pitch: number }>,
+  bar: number,
+  seed: number,
+  duoSteadyWalking: boolean
+): Array<{ w: number; pitch: number }> {
+  if (duoSteadyWalking) return base.map((p) => ({ ...p, w: 1 }));
+  return perturbWeights(base, bar, seed);
 }
 
 function addWeightedPhrase(
@@ -225,6 +315,8 @@ export function emitMelodicBassBar(params: {
   guideToneBias?: number;
   /** Slash-bass target (strong anchor); line roots favour this over chord root when set. */
   slashBassPitch?: number;
+  /** Guitar–bass duo: prefer even phrase weights → steadier quarter / eighth subdivision. */
+  duoSteadyWalking?: boolean;
 }): void {
   const {
     m,
@@ -244,7 +336,9 @@ export function emitMelodicBassBar(params: {
     guitarActivityHot,
     guideToneBias,
     slashBassPitch,
+    duoSteadyWalking,
   } = params;
+  const steady = !!duoSteadyWalking;
   const gtBias = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
   const rootForLine =
     slashBassPitch !== undefined
@@ -285,7 +379,7 @@ export function emitMelodicBassBar(params: {
       { w: 5, pitch: guide },
       { w: 4, pitch: land },
     ]);
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
     return;
   }
 
@@ -332,7 +426,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: land },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, perturbWeights(biasPieces(base), bar, seed));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(biasPieces(base), bar, seed, steady));
     return;
   }
 
@@ -364,7 +458,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: lastLead },
       ]);
     }
-    addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
     return;
   }
 
@@ -414,7 +508,7 @@ export function emitMelodicBassBar(params: {
       { w: 3, pitch: land },
     ]);
   }
-  addWeightedPhrase(m, firstStart, span, perturbWeights(base, bar, seed));
+  addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
 }
 
 /**

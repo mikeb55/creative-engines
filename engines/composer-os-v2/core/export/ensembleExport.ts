@@ -8,6 +8,7 @@ import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { exportScoreModelToMusicXml } from './musicxmlExporter';
 import { validateMusicXmlSchema } from './musicxmlValidation';
 import { validateExportedMusicXmlBarMath } from './validateMusicXmlBarMath';
+import { validateWrittenMusicXmlComplete } from './validateMusicXmlWrittenStrict';
 
 export interface EnsembleExportPipelineResult {
   ok: boolean;
@@ -36,6 +37,9 @@ export function runEnsembleExportPipeline(score: ScoreModel): EnsembleExportPipe
 
   const rt = validateExportedMusicXmlBarMath(ex.xml);
   if (!rt.valid) errors.push(...rt.errors);
+
+  const written = validateWrittenMusicXmlComplete(score, ex.xml);
+  if (!written.valid) errors.push(...written.errors);
 
   return { ok: errors.length === 0, xml: ex.xml, errors };
 }

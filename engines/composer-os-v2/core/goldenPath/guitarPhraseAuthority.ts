@@ -4,6 +4,7 @@
 
 import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
+import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 
@@ -129,29 +130,30 @@ export function emitGuitarDuoIdentityBar7(params: {
   const endStrong = resolvePhraseEndForDuo(tones, undefined, effectiveLow, effectiveHigh, seed, DUO_IDENTITY_MOMENT_BAR);
   const u = seededUnit(seed, DUO_IDENTITY_MOMENT_BAR, 702);
   const lo = clampPitch(tones.third, effectiveLow, effectiveHigh);
-  const tOff = qBeat(0.75 + Math.min(0.5, staggerG) + 0.2);
+  const tOff = snapAttackBeatToGrid(qBeat(0.75 + Math.min(0.5, staggerG) + 0.2));
 
   if (u < 0.34) {
     const leap = clampPitch(lo + (seededUnit(seed, 7, 703) < 0.5 ? 8 : 9), effectiveLow, effectiveHigh);
     addEvent(m, createRest(0, tOff));
     addEvent(m, createNote(lo, tOff, 0.5));
-    addEvent(m, createNote(leap, qBeat(tOff + 0.5), 1));
-    addEvent(m, createNote(endStrong, qBeat(tOff + 1.5), qBeat(4 - tOff - 1.5)));
+    addEvent(m, createNote(leap, snapAttackBeatToGrid(tOff + 0.5), 1));
+    addEvent(m, createNote(endStrong, snapAttackBeatToGrid(tOff + 1.5), qBeat(4 - tOff - 1.5)));
     return;
   }
   if (u < 0.67) {
     const hi = clampPitch(tones.fifth + (seededUnit(seed, 7, 704) < 0.5 ? 0 : 1), effectiveLow, effectiveHigh);
-    addEvent(m, createRest(0, 0.75));
-    addEvent(m, createNote(hi, 0.75, 2.25));
-    addEvent(m, createRest(3, 0.25));
-    addEvent(m, createNote(lo, 3.25, 0.75));
+    const leapEnd = clampPitch(hi + (seededUnit(seed, 7, 705) < 0.5 ? 8 : 9), effectiveLow, effectiveHigh);
+    addEvent(m, createRest(0, 1));
+    addEvent(m, createNote(hi, 1, 2));
+    addEvent(m, createRest(3, 0.5));
+    addEvent(m, createNote(leapEnd, 3.5, 0.5));
     return;
   }
   const rep = clampPitch(tones.fifth, effectiveLow, effectiveHigh);
   addEvent(m, createRest(0, 1.5));
   addEvent(m, createNote(rep, 1.5, 1.0));
-  addEvent(m, createRest(2.5, 0.25));
-  addEvent(m, createNote(endStrong, 2.75, 1.25));
+  addEvent(m, createRest(2.5, 0.5));
+  addEvent(m, createNote(endStrong, 3, 1));
 }
 
 /**
@@ -192,6 +194,9 @@ export function emitGuitarPhraseBar(params: {
     swingDuo,
   } = params;
 
+  /** Duo: attacks only on eighth-beat grid; durations still use quarter-beat rounding where needed. */
+  const pos = swingDuo ? snapAttackBeatToGrid : qBeat;
+
   const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
   const endStrong = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, bar);
   const uPen = seededUnit(seed, bar, 401);
@@ -231,21 +236,15 @@ export function emitGuitarPhraseBar(params: {
 
   let headRest =
     intent === 'answer_guitar' || intent === 'cadence'
-      ? qBeat(0.75 + staggerG * 0.5 + seededUnit(seed, bar, 405) * 0.5)
+      ? pos(0.75 + staggerG * 0.5 + seededUnit(seed, bar, 405) * 0.5)
       : intent === 'answer_bass'
-        ? qBeat(0.2 + staggerG * 0.45 + seededUnit(seed, bar, 410) * 0.4)
+        ? pos(0.2 + staggerG * 0.45 + seededUnit(seed, bar, 410) * 0.4)
         : intent === 'bass_lead'
-          ? qBeat(1.1 + Math.min(staggerG, 0.75) + seededUnit(seed, bar, 407) * 0.35)
-          : qBeat(0.35 + staggerG * 0.6 + (useOffbeat ? 0.35 : 0));
+          ? pos(1.1 + Math.min(staggerG, 0.75) + seededUnit(seed, bar, 407) * 0.35)
+          : pos(0.35 + staggerG * 0.6 + (useOffbeat ? 0.35 : 0));
 
   if (density === 'sparse') {
-    headRest = Math.min(headRest, 1.75);
-  }
-
-  /** V3.3 — uneven phrase entries (3+5 / late peak) without adding note density. */
-  if (swingDuo && (bar === 2 || bar === 4 || bar === 6) && intent !== 'cadence') {
-    headRest = qBeat(headRest + 0.12 + seededUnit(seed, bar, 772) * 0.16);
-    headRest = Math.min(headRest, 2.4);
+    headRest = Math.min(headRest, swingDuo ? 2 : 1.75);
   }
 
   /** Bar 4: reach higher register; bar 7: slight lift for tension line. */
@@ -274,11 +273,11 @@ export function emitGuitarPhraseBar(params: {
       const tail = 4 - t0 - a - b0;
       if (tail > 0.2) {
         addEvent(m, createNote(lo, t0, a));
-        addEvent(m, createNote(mid, t0 + a, b0));
-        addEvent(m, createNote(hi, t0 + a + b0, tail));
+        addEvent(m, createNote(mid, pos(t0 + a), b0));
+        addEvent(m, createNote(hi, pos(t0 + a + b0), tail));
       } else {
         addEvent(m, createNote(lo, t0, 1.25));
-        addEvent(m, createNote(endStrong, t0 + 1.25, 4 - t0 - 1.25));
+        addEvent(m, createNote(endStrong, pos(t0 + 1.25), 4 - t0 - 1.25));
       }
       return;
     }
@@ -297,8 +296,8 @@ export function emitGuitarPhraseBar(params: {
     if (swingDuo && bar % 3 === 1 && intent !== 'answer_guitar') {
       addEvent(m, createRest(0, 0.5));
       addEvent(m, createNote(tones.third, 0.5, 0.5));
-      addEvent(m, createNote(tones.fifth, 1, 1.25));
-      addEvent(m, createRest(2.25, 0.25));
+      addEvent(m, createNote(tones.fifth, 1, 1));
+      addEvent(m, createRest(2, 0.5));
       addEvent(m, createNote(endStrong, 2.5, 1.5));
       return;
     }
@@ -353,18 +352,18 @@ export function emitGuitarPhraseBar(params: {
   if (bar === 7) {
     const pass = clampPitch(mid - 1, effectiveLow, effectiveHigh);
     const dPass = qBeat(Math.min(0.5, (rem - d1) * 0.28));
-    addEvent(m, createNote(pass, t0 + d1, dPass));
+    addEvent(m, createNote(pass, pos(t0 + d1), dPass));
     const d2b = qBeat(Math.min(1, (rem - d1 - dPass) * 0.45));
-    addEvent(m, createNote(mid, t0 + d1 + dPass, d2b));
+    addEvent(m, createNote(mid, pos(t0 + d1 + dPass), d2b));
     const r = qBeat(Math.min(0.5, rem - d1 - dPass - d2b));
-    addEvent(m, createRest(t0 + d1 + dPass + d2b, r));
-    const tLast = qBeat(t0 + d1 + dPass + d2b + r);
+    addEvent(m, createRest(pos(t0 + d1 + dPass + d2b), r));
+    const tLast = pos(t0 + d1 + dPass + d2b + r);
     addEvent(m, createNote(hi, tLast, qBeat(4 - tLast)));
     return;
   }
-  addEvent(m, createNote(mid, t0 + d1, d2));
+  addEvent(m, createNote(mid, pos(t0 + d1), d2));
   const r = qBeat(Math.min(0.5, rem - d1 - d2));
-  addEvent(m, createRest(t0 + d1 + d2, r));
-  const tLast = qBeat(t0 + d1 + d2 + r);
+  addEvent(m, createRest(pos(t0 + d1 + d2), r));
+  const tLast = pos(t0 + d1 + d2 + r);
   addEvent(m, createNote(hi, tLast, qBeat(4 - tLast)));
 }

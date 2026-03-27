@@ -6,6 +6,8 @@
  * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.
  */
 
+import { normalizeChordToken } from '../harmony/chordProgressionParser';
+
 export interface ChordRootAndKindText {
   rootStep: string;
   rootAlter: number;
@@ -115,4 +117,46 @@ export function parseChordForMusicXmlHarmony(chord: string): MusicXmlHarmonyPart
     bassStep: letter,
     bassAlter,
   };
+}
+
+function unescapeXmlAttr(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+/**
+ * Reconstruct a chord string from a single exported `<harmony>...</harmony>` block (same shape as musicxmlExporter).
+ * Used to verify written MusicXML matches the score without silent reconstruction.
+ */
+export function chordStringFromMusicXmlHarmonyBlock(block: string): string | null {
+  const rootStep = block.match(/<root-step>([A-G])<\/root-step>/)?.[1];
+  if (!rootStep) return null;
+  const rootAlter = parseInt(block.match(/<root-alter>(-?\d+)<\/root-alter>/)?.[1] ?? '0', 10);
+  const kindMatch = block.match(/<kind text="([^"]*)"/);
+  const kindRaw = kindMatch ? unescapeXmlAttr(kindMatch[1]) : '';
+  const bassStep = block.match(/<bass-step>([A-G])<\/bass-step>/)?.[1];
+  const bassAlter = parseInt(block.match(/<bass-alter>(-?\d+)<\/bass-alter>/)?.[1] ?? '0', 10);
+  let acc = '';
+  if (rootAlter === 1) acc = '#';
+  else if (rootAlter === -1) acc = 'b';
+  let s = `${rootStep}${acc}${kindRaw}`;
+  if (bassStep) {
+    let ba = '';
+    if (bassAlter === 1) ba = '#';
+    else if (bassAlter === -1) ba = 'b';
+    s += `/${bassStep}${ba}`;
+  }
+  return s;
+}
+
+/** Lead-sheet–canonical equality for pipeline truth (score vs XML vs user input). */
+export function chordSymbolsEqualForPipelineTruth(a: string, b: string): boolean {
+  return (
+    normalizeChordToken(formatChordSymbolForDisplay(a)) ===
+    normalizeChordToken(formatChordSymbolForDisplay(b))
+  );
 }

@@ -161,6 +161,12 @@ export interface OutputEntry {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  /** Pipeline truth gates (Guitar–Bass Duo 8-bar). */
+  chordProgressionSubmittedRaw?: string;
+  parsedChordBarsSnapshot?: string[];
+  pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
+  pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
   validation: ValidationSummary;
   /** When listing non-MusicXML artifacts from the library */
   artifactKind?: 'musicxml' | 'planning' | 'song_structure';

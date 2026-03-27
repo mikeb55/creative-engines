@@ -33,7 +33,14 @@ import { validateScoreModel } from '../score-model/scoreModelValidation';
 import { validateStrictBarMath, validateStrictBarMathSibeliusSafe } from '../score-integrity/strictBarMath';
 import { getStyleModuleDisplayName } from '../style-modules/styleModuleRegistry';
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
+import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
+import {
+  assertDuoEightBarInputTruthEarly,
+  runPipelineTruthGates,
+  pipelineTruthAllPassed,
+  type PipelineTruthReport,
+} from '../score-integrity/pipelineTruthGates';
 import { resolveScoreTitleForPreset } from '../../app-api/scoreTitleDefaults';
 import { scoreJazzDuoBehaviourSoft } from '../score-integrity/jazzDuoBehaviourValidation';
 import { scoreFormIdentitySoft } from './duoFormIdentity';
@@ -78,6 +85,8 @@ export interface GoldenPathResult {
   readiness: { shareable: boolean; release: number; mx: number };
   runManifest: RunManifest;
   errors: string[];
+  /** Guitar–Bass Duo 8-bar: input / score / written XML agreement (skip when not applicable). */
+  truthReport?: PipelineTruthReport;
 }
 
 const BUILTIN_HARMONY: import('../primitives/harmonyTypes').HarmonyPlan = {
@@ -125,6 +134,8 @@ interface BuildGoldenPathContextExtras {
   progressionMode?: 'builtin' | 'custom';
   /** When parse failed — no score produced with that harmony */
   chordProgressionParseFailed?: boolean;
+  /** Resolved from RunGoldenPathOptions.harmonyMode or inferred from non-empty chordProgressionText */
+  harmonyModeRequested?: 'builtin' | 'custom';
 }
 
 function buildGoldenPathContext(
@@ -187,7 +198,7 @@ function buildGoldenPathContext(
       harmonySource: parseFailed ? undefined : useCustom ? 'custom' : 'builtin',
       customChordProgressionSummary: useCustom ? parsedChordBars.join(' | ') : undefined,
       progressionMode,
-      chordProgressionInputRaw: parseFailed ? raw : useCustom ? raw : undefined,
+      chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
       parsedCustomProgressionBars: useCustom ? [...parsedChordBars] : undefined,
       chordProgressionParseFailed: parseFailed || undefined,
       builtInHarmonyFallbackOccurred: false,
@@ -214,9 +225,12 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       parsedChordBars8: options?.parsedChordBars?.length === 8 ? options.parsedChordBars : undefined,
     }).context;
   }
+  const harmonyModeRequested: 'builtin' | 'custom' =
+    options?.harmonyMode ?? (options?.chordProgressionText?.trim() ? 'custom' : 'builtin');
   return buildGoldenPathContext(seed, options?.parsedChordBars, {
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
     progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
+    harmonyModeRequested,
   });
 }
 
@@ -498,7 +512,8 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   return best ?? last!;
 }
 
-function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
+/** Single seed, no duo lock candidate sweep — use for deterministic inspection / tests. */
+export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
@@ -509,6 +524,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
+  errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   const score = generateGoldenPathDuoScore(appliedContext, plans);
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,
@@ -521,6 +537,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
   const modelValidation = validateScoreModel(score);
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
+  // Rhythm is finalized + validated once inside generateGoldenPathDuoScore; parts/measures/events are frozen — read-only gate.
   const strictBarMath = validateStrictBarMath(score);
   if (!strictBarMath.valid) {
     errors.push(...strictBarMath.errors);
@@ -588,8 +605,10 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
 
     const mxBar = validateExportedMusicXmlBarMath(xml);
-    exportRoundTripPassed = mxBar.valid;
+    const writtenComplete = validateWrittenMusicXmlComplete(score, xml);
+    exportRoundTripPassed = mxBar.valid && writtenComplete.valid;
     if (!mxBar.valid) errors.push(...mxBar.errors);
+    if (!writtenComplete.valid) errors.push(...writtenComplete.errors);
 
     const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
     instrumentMetadataPassed = bassMeta.valid;
@@ -598,13 +617,22 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     errors.push(...exportResult.errors);
   }
 
+  const truthReport = runPipelineTruthGates({
+    context: appliedContext,
+    options,
+    score,
+    xml,
+  });
+  errors.push(...truthReport.errors);
+
   const readinessResult = runReleaseReadinessGate({
     validationPassed:
       integrityResult.passed &&
       modelValidation.valid &&
       behaviourResult.allValid &&
       strictBarMath.valid &&
-      instrumentMetadataPassed,
+      instrumentMetadataPassed &&
+      pipelineTruthAllPassed(truthReport),
     exportValid: exportResult.success,
     mxValid: mxValidationPassed && exportRoundTripPassed,
     rhythmicCorrect: behaviourResult.rhythmValid,
@@ -643,7 +671,8 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
       behaviourResult.allValid &&
       strictBarMath.valid &&
       exportRoundTripPassed &&
-      instrumentMetadataPassed,
+      instrumentMetadataPassed &&
+      pipelineTruthAllPassed(truthReport),
     validationErrors: errors.length > 0 ? errors : undefined,
     exportTarget: xml ? 'musicxml' : undefined,
     timestamp: new Date().toISOString(),
@@ -665,6 +694,11 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     styleStackPrimaryDisplayName: appliedContext.generationMetadata.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: appliedContext.generationMetadata.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: appliedContext.generationMetadata.userExplicitPrimaryStyle,
+    chordProgressionSubmittedRaw: appliedContext.generationMetadata.chordProgressionInputRaw,
+    parsedChordBarsSnapshot: appliedContext.generationMetadata.parsedCustomProgressionBars,
+    pipelineTruthInputStage: truthReport.inputStage,
+    pipelineTruthScoreStage: truthReport.scoreStage,
+    pipelineTruthExportStage: truthReport.exportStage,
   });
 
   const success =
@@ -677,6 +711,7 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     exportIntegrityPassed &&
     exportRoundTripPassed &&
     instrumentMetadataPassed &&
+    pipelineTruthAllPassed(truthReport) &&
     errors.length === 0;
 
   return {
@@ -700,5 +735,6 @@ function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): Golden
     },
     runManifest,
     errors,
+    truthReport,
   };
 }

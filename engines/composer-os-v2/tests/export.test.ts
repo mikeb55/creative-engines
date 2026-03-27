@@ -159,10 +159,11 @@ function testExporterUsesEmptyKindForPlainMajor(): boolean {
 /** Regression: rounding each duration independently used to sum to 15 in some bars; span-based export must sum to 16. */
 /** Validator must count `<note dynamics="…">` (regex used to miss these → false 15≠16). */
 function testBarMathIncludesNotesWithAttributes(): boolean {
-  const inner = `<harmony/><note><rest/><duration>14</duration><voice>1</voice></note>
-        <note dynamics="30.00"><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice></note>`;
+  // divisions=480 → full bar = 1920; same proportion as old 14+2=16 (rest + note)
+  const inner = `<harmony/><note><rest/><duration>1680</duration><voice>1</voice></note>
+        <note dynamics="30.00"><pitch><step>C</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice></note>`;
   const v = validateExportedMusicXmlBarMath(
-    `<?xml?><score-partwise><part id="guitar"><measure number="1"><attributes><divisions>4</divisions><time><beats>4</beats></time></attributes>${inner}</measure></part></score-partwise>`
+    `<?xml?><score-partwise><part id="guitar"><measure number="1"><attributes><divisions>480</divisions><time><beats>4</beats></time></attributes>${inner}</measure></part></score-partwise>`
   );
   return v.valid;
 }
