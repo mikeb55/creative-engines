@@ -6,6 +6,8 @@ import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { PartModel } from '../core/score-model/scoreModelTypes';
 import {
   countPartNotes,
+  maxGlobalLeapBarryHarrisOrder,
+  maxGuitarContourRepeatRun,
   maxMelodicLeap,
 } from '../core/goldenPath/ecmShapingPass';
 
@@ -66,6 +68,35 @@ function testSameFormLength(): boolean {
   return gOff.measures.length === gOn.measures.length;
 }
 
+function testGuitarMaxLeapGlobalAtMost5(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...ECM_BASE, ecmShapingEnabled: true });
+  if (!r.success) return false;
+  const g = guitarPart(r.score);
+  if (!g) return false;
+  return maxGlobalLeapBarryHarrisOrder(g) <= 5;
+}
+
+function testNoTripleContourRepeat(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...ECM_BASE, ecmShapingEnabled: true });
+  if (!r.success) return false;
+  const g = guitarPart(r.score);
+  if (!g) return false;
+  return maxGuitarContourRepeatRun(g) <= 2;
+}
+
+/** Stress several seeds — shaping must stay within gates. */
+function testEcmShapingMultiSeedValidation(): boolean {
+  const seeds = [SEED, 12_345, 99_001, 404_404];
+  for (const s of seeds) {
+    const r = runGoldenPathOnce(s, { ...ECM_BASE, ecmShapingEnabled: true });
+    if (!r.success || !r.behaviourGatesPassed) return false;
+    const g = guitarPart(r.score);
+    if (!g) return false;
+    if (maxGlobalLeapBarryHarrisOrder(g) > 5 || maxGuitarContourRepeatRun(g) > 2) return false;
+  }
+  return true;
+}
+
 export function runEcmShapingPassTests(): { name: string; ok: boolean }[] {
   const results: { name: string; ok: boolean }[] = [];
   const t = (name: string, ok: boolean) => results.push({ name, ok });
@@ -73,5 +104,8 @@ export function runEcmShapingPassTests(): { name: string; ok: boolean }[] {
   t('ECM shaping ON: deterministic XML for same seed', testEcmShapingDeterministic());
   t('ECM shaping ON: passes integrity, behaviour, MX, bar math', testEcmShapingOnPassesPipeline());
   t('ECM shaping ON vs OFF: same guitar measure count (form preserved)', testSameFormLength());
+  t('ECM shaping ON: guitar global BH-order leaps ≤ 5 semitones', testGuitarMaxLeapGlobalAtMost5());
+  t('ECM shaping ON: no contour repeat >3 consecutive bars (anti-loop)', testNoTripleContourRepeat());
+  t('ECM shaping ON: multi-seed validation + leap/contour gates', testEcmShapingMultiSeedValidation());
   return results;
 }

@@ -1,10 +1,10 @@
 /**
  * ECM aesthetic shaping — post-expressive, post-variation, pre bar-math seal.
- * Density, space, interval smoothing, chord clarity, light bass restraint (deterministic from seed).
+ * Density, harmonic clarity, strict voice-leading (BH order), contour anti-loop (matches behaviourGates).
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { ScoreModel, PartModel, NoteEvent, RestEvent } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, NoteEvent, RestEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { chordTonesForChordSymbol, pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
@@ -14,6 +14,10 @@ const G_LOW = 55;
 const G_HIGH = 79;
 const BASS_LOW = 36;
 const BASS_HIGH = 52;
+/** Guitar: match strict ECM shaping + Barry Harris voice-leading check (global consecutive in BH order). */
+const GUITAR_MAX_LEAP = 5;
+/** Bass: Barry Harris allows up to 14; stay under cap. */
+const BASS_MAX_LEAP = 14;
 
 function chordForBar(context: CompositionContext, barIndex: number, mChord?: string): string {
   if (mChord && mChord.trim()) return mChord.trim();
@@ -35,21 +39,36 @@ function chordTonePitchesInRange(chord: string, low: number, high: number): numb
   });
 }
 
-function smoothLeapTowardPrev(p1: number, p2: number, chord: string, low: number, high: number): number {
-  if (Math.abs(p2 - p1) <= 5) return p2;
+/**
+ * Strict: |result - p1| <= maxLeap. Prefer nearest chord tone to p2 within ±3 semitones that satisfies leap;
+ * else step from p1 toward p2 by at most maxLeap.
+ */
+function resolvePitchTowardPrev(
+  p1: number,
+  p2: number,
+  chord: string,
+  low: number,
+  high: number,
+  maxLeap: number
+): number {
+  if (Math.abs(p2 - p1) <= maxLeap) return p2;
   const pool = chordTonePitchesInRange(chord, low, high);
-  let best = p2;
-  let bestDist = 999;
+  let best: number | undefined;
+  let bd = 999;
   for (const c of pool) {
     const cc = clampPitch(c, low, high);
-    if (Math.abs(cc - p1) <= 5 && Math.abs(cc - p2) < bestDist) {
-      bestDist = Math.abs(cc - p2);
-      best = cc;
+    if (Math.abs(cc - p1) <= maxLeap) {
+      const d = Math.abs(cc - p2);
+      if (d <= 3 && d < bd) {
+        bd = d;
+        best = cc;
+      }
     }
   }
-  if (bestDist < 999) return best;
-  const step = p2 > p1 ? -2 : 2;
-  return clampPitch(p2 + step, low, high);
+  if (best !== undefined) return best;
+  const delta = p2 - p1;
+  const step = Math.sign(delta) * Math.min(Math.abs(delta), maxLeap);
+  return clampPitch(p1 + step, low, high);
 }
 
 function snapTowardChordTone(pitch: number, chord: string, low: number, high: number): number {
@@ -69,7 +88,100 @@ function snapTowardChordTone(pitch: number, chord: string, low: number, high: nu
   return bd <= 3 ? best : pitch;
 }
 
-function reduceGuitarDensity(guitar: PartModel, context: CompositionContext, seed: number): void {
+/** Same iteration order as `moduleValidation` / Barry Harris guitar voice-leading. */
+function collectNoteRefsBarryHarrisOrder(part: PartModel): Array<{ bar: number; ei: number }> {
+  const out: Array<{ bar: number; ei: number }> = [];
+  for (const m of [...part.measures].sort((a, b) => a.index - b.index)) {
+    m.events.forEach((e, ei) => {
+      if (e.kind === 'note') out.push({ bar: m.index, ei });
+    });
+  }
+  return out;
+}
+
+function findMeasure(part: PartModel, barIndex: number): MeasureModel | undefined {
+  return part.measures.find((m) => m.index === barIndex);
+}
+
+/**
+ * Enforce maxLeap between consecutive notes in Barry Harris global order (measure order, then event order).
+ */
+function strictEnforceGlobalLeaps(
+  part: PartModel,
+  context: CompositionContext,
+  low: number,
+  high: number,
+  maxLeap: number
+): void {
+  for (let iter = 0; iter < 16; iter++) {
+    const refs = collectNoteRefsBarryHarrisOrder(part);
+    let changed = false;
+    for (let i = 1; i < refs.length; i++) {
+      const m1 = findMeasure(part, refs[i - 1].bar);
+      const m2 = findMeasure(part, refs[i].bar);
+      if (!m1 || !m2) continue;
+      const ev1 = m1.events[refs[i - 1].ei];
+      const ev2 = m2.events[refs[i].ei];
+      if (!ev1 || ev1.kind !== 'note' || !ev2 || ev2.kind !== 'note') continue;
+      const n1 = ev1 as NoteEvent;
+      const n2 = ev2 as NoteEvent;
+      const p1 = n1.pitch;
+      const p2 = n2.pitch;
+      if (Math.abs(p2 - p1) <= maxLeap) continue;
+      const chord = chordForBar(context, refs[i].bar, m2.chord);
+      const np = resolvePitchTowardPrev(p1, p2, chord, low, high, maxLeap);
+      if (np !== p2) {
+        m2.events[refs[i].ei] = { ...n2, pitch: np };
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+}
+
+/** Same contour signature as `validateEcmAntiLoop` in behaviourGates.ts */
+export function guitarBarContourSig(m: MeasureModel): string {
+  const notes = [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat) as NoteEvent[];
+  if (notes.length === 0) return 'rest';
+  if (notes.length === 1) return `P${notes[0].pitch % 12}`;
+  return notes
+    .slice(1)
+    .map((n, i) => n.pitch - notes[i].pitch)
+    .join(',');
+}
+
+/**
+ * If three consecutive bars share identical pitch contour, nudge one interior note in the third bar.
+ */
+function applyContourAntiLoopGuitar(guitar: PartModel, seed: number): void {
+  for (let round = 0; round < 16; round++) {
+    const sorted = [...guitar.measures].sort((a, b) => a.index - b.index);
+    const sigs = sorted.map((m) => guitarBarContourSig(m));
+    let broke = false;
+    for (let i = 2; i < sigs.length; i++) {
+      if (sigs[i] !== sigs[i - 1] || sigs[i] !== sigs[i - 2] || sigs[i] === 'rest') continue;
+      const m = sorted[i];
+      const entries = m.events
+        .map((e, idx) => ({ e, idx }))
+        .filter((x) => x.e.kind === 'note') as { e: NoteEvent; idx: number }[];
+      entries.sort((a, b) => a.e.startBeat - b.e.startBeat);
+      if (entries.length < 2) continue;
+      const interior = entries.slice(1, -1);
+      if (interior.length === 0) continue;
+      const pick = interior[Math.floor(seededUnit(seed, i * 1000 + round, 14100) * interior.length)];
+      const dir = seededUnit(seed, i + round * 17, 14101) < 0.5 ? -1 : 1;
+      const np = clampPitch(pick.e.pitch + dir, G_LOW, G_HIGH);
+      m.events[pick.idx] = { ...pick.e, pitch: np };
+      broke = true;
+      break;
+    }
+    if (!broke) break;
+  }
+}
+
+function reduceGuitarDensity(guitar: PartModel, seed: number): void {
   const removeFrac = 0.15 + seededUnit(seed, 1, 13001) * 0.15;
   for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
     const noteIdxs: number[] = [];
@@ -98,29 +210,6 @@ function reduceGuitarDensity(guitar: PartModel, context: CompositionContext, see
       const n = ev as NoteEvent;
       const rest: RestEvent = createRest(n.startBeat, n.duration, n.voice ?? 1);
       m.events[ei] = rest;
-    }
-  }
-}
-
-function smoothPartIntervals(part: PartModel, context: CompositionContext, low: number, high: number): void {
-  for (const m of [...part.measures].sort((a, b) => a.index - b.index)) {
-    const chord = chordForBar(context, m.index, m.chord);
-    const noteEntries: { idx: number }[] = [];
-    m.events.forEach((e, idx) => {
-      if (e.kind === 'note') noteEntries.push({ idx });
-    });
-    noteEntries.sort((a, b) => (m.events[a.idx] as NoteEvent).startBeat - (m.events[b.idx] as NoteEvent).startBeat);
-    for (let i = 1; i < noteEntries.length; i++) {
-      const prevEv = m.events[noteEntries[i - 1].idx];
-      const curEv = m.events[noteEntries[i].idx];
-      if (prevEv.kind !== 'note' || curEv.kind !== 'note') continue;
-      const n0 = prevEv as NoteEvent;
-      const n1 = curEv as NoteEvent;
-      const p1 = n0.pitch;
-      let p2 = n1.pitch;
-      if (Math.abs(p2 - p1) <= 5) continue;
-      p2 = smoothLeapTowardPrev(p1, p2, chord, low, high);
-      if (p2 !== n1.pitch) m.events[noteEntries[i].idx] = { ...n1, pitch: p2 };
     }
   }
 }
@@ -174,6 +263,7 @@ function reduceBassDensity(bass: PartModel, seed: number): void {
 
 /**
  * ECM-only: run after variation, before bar-math seal. Mutates score in place.
+ * Order: density → harmonic snap → strict voice-leading → contour anti-loop → strict VL again → bass density → bass VL.
  */
 export function applyECMShapingPass(score: ScoreModel, context: CompositionContext, seed: number): void {
   if (context.presetId !== 'ecm_chamber') return;
@@ -181,14 +271,15 @@ export function applyECMShapingPass(score: ScoreModel, context: CompositionConte
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar) return;
 
-  reduceGuitarDensity(guitar, context, seed);
-  smoothPartIntervals(guitar, context, G_LOW, G_HIGH);
+  reduceGuitarDensity(guitar, seed);
   applyHarmonicClarityGuitar(guitar, context, seed);
-  smoothPartIntervals(guitar, context, G_LOW, G_HIGH);
+  strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, GUITAR_MAX_LEAP);
+  applyContourAntiLoopGuitar(guitar, seed);
+  strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, GUITAR_MAX_LEAP);
 
   if (bass) {
     reduceBassDensity(bass, seed);
-    smoothPartIntervals(bass, context, BASS_LOW, BASS_HIGH);
+    strictEnforceGlobalLeaps(bass, context, BASS_LOW, BASS_HIGH, BASS_MAX_LEAP);
   }
 }
 
@@ -202,6 +293,7 @@ export function countPartNotes(part: PartModel): number {
   return n;
 }
 
+/** Per-bar consecutive notes only (legacy / local contour). */
 export function maxMelodicLeap(part: PartModel): number {
   let max = 0;
   for (const m of [...part.measures].sort((a, b) => a.index - b.index)) {
@@ -213,4 +305,37 @@ export function maxMelodicLeap(part: PartModel): number {
     }
   }
   return max;
+}
+
+/** Barry Harris global voice-leading order — matches style module validation. */
+export function maxGlobalLeapBarryHarrisOrder(part: PartModel): number {
+  const pitches: number[] = [];
+  for (const m of [...part.measures].sort((a, b) => a.index - b.index)) {
+    for (const e of m.events) {
+      if (e.kind === 'note') pitches.push((e as NoteEvent).pitch);
+    }
+  }
+  let max = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    max = Math.max(max, Math.abs(pitches[i] - pitches[i - 1]));
+  }
+  return max;
+}
+
+/** Max run length of identical `guitarBarContourSig` (ECM anti-loop gate: must be ≤ 2). */
+export function maxGuitarContourRepeatRun(guitar: PartModel): number {
+  const sorted = [...guitar.measures].sort((a, b) => a.index - b.index);
+  const sigs = sorted.map((m) => guitarBarContourSig(m));
+  let prev = '';
+  let run = 0;
+  let maxRun = 0;
+  for (const co of sigs) {
+    if (co === prev) run++;
+    else {
+      run = 1;
+      prev = co;
+    }
+    maxRun = Math.max(maxRun, run);
+  }
+  return maxRun;
 }
