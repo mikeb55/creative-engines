@@ -63,6 +63,7 @@ import { buildDuoLongFormCompositionContext } from '../form/buildLongFormFromDuo
 import { placeMotifsLongFormDuo32 } from '../motif/longFormMotifPlanner';
 import { planDuoLongFormInteraction } from '../interaction/duoLongFormInteractionMap';
 import { evaluateDuoLongFormQuality } from '../quality/duoLongFormQuality';
+import { duoGuitarBarSevenIntervalPeakVsBarSixOk } from '../score-integrity/duoLockQuality';
 
 export interface GoldenPathResult {
   success: boolean;
@@ -430,6 +431,8 @@ export interface RunGoldenPathOptions {
   variationEnabled?: boolean;
   /** ECM: aesthetic shaping pass after variation (default on). */
   ecmShapingEnabled?: boolean;
+  /** Duo / ECM: orchestration pass after ECM shaping (default on). */
+  orchestrationEnabled?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -491,6 +494,9 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     last = r;
     if (r.success) {
       const pid = resolved?.presetId ?? 'guitar_bass_duo';
+      if (pid === 'guitar_bass_duo' && !duoGuitarBarSevenIntervalPeakVsBarSixOk(r.score)) {
+        continue;
+      }
       const soft =
         pid === 'ecm_chamber'
           ? (() => {
@@ -532,6 +538,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const score = generateGoldenPathDuoScore(appliedContext, plans, {
     variationEnabled: options?.variationEnabled === true,
     ecmShapingEnabled: options?.ecmShapingEnabled,
+    orchestrationEnabled: options?.orchestrationEnabled,
   });
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,

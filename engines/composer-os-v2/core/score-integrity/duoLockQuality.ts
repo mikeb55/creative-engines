@@ -190,6 +190,16 @@ export function guitarBarMaxAdjacentInterval(m: MeasureModel): number {
   return max;
 }
 
+/** V3.2: bar 7 max adjacent leap must be ≥ bar 6 (used when picking among multi-seed golden-path variants). */
+export function duoGuitarBarSevenIntervalPeakVsBarSixOk(score: ScoreModel): boolean {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return true;
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  if (!m6 || !m7) return true;
+  return guitarBarMaxAdjacentInterval(m7) >= guitarBarMaxAdjacentInterval(m6);
+}
+
 function maxNoteDurationInBar(m: MeasureModel): number {
   let max = 0;
   for (const e of m.events) {

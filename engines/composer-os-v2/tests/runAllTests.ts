@@ -40,6 +40,7 @@ import { runNotationSafeRhythmTests } from './notationSafeRhythm.test';
 import { runMusicXmlWrittenBarRegressionTests } from './musicXmlWrittenBarRegression.test';
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runEcmShapingPassTests } from './ecmShapingPass.test';
+import { runDuoOrchestrationPassTests } from './duoOrchestrationPass.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
 import { runHandoffMapTests } from './handoffMap.test';
 import { runModuleInvocationTests } from './moduleInvocation.test';
@@ -149,6 +150,7 @@ const suites = [
   { name: 'MusicXML written bar regression', run: runMusicXmlWrittenBarRegressionTests },
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'ECM shaping pass', run: runEcmShapingPassTests },
+  { name: 'Duo orchestration pass', run: runDuoOrchestrationPassTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },
   { name: 'Handoff map', run: runHandoffMapTests },
   { name: 'Module invocation', run: runModuleInvocationTests },

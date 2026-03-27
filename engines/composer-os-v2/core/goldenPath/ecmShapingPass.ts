@@ -283,6 +283,32 @@ export function applyECMShapingPass(score: ScoreModel, context: CompositionConte
   }
 }
 
+/**
+ * Re-run strict guitar/bass voice-leading + contour anti-loop after post-ECM mutations (e.g. orchestration).
+ */
+export function enforceEcmPostEditGuards(score: ScoreModel, context: CompositionContext, seed: number): void {
+  if (context.presetId !== 'ecm_chamber') return;
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!guitar) return;
+  strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, GUITAR_MAX_LEAP);
+  applyContourAntiLoopGuitar(guitar, seed);
+  strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, GUITAR_MAX_LEAP);
+  if (bass) strictEnforceGlobalLeaps(bass, context, BASS_LOW, BASS_HIGH, BASS_MAX_LEAP);
+}
+
+const DUO_GUITAR_MAX_LEAP = 12;
+
+/** Barry Harris cap for golden-path duo after non-ECM orchestration edits. */
+export function enforceDuoVoiceLeadingPostOrchestration(score: ScoreModel, context: CompositionContext): void {
+  if (context.presetId !== 'guitar_bass_duo') return;
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!guitar) return;
+  strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, DUO_GUITAR_MAX_LEAP);
+  if (bass) strictEnforceGlobalLeaps(bass, context, BASS_LOW, BASS_HIGH, BASS_MAX_LEAP);
+}
+
 export function countPartNotes(part: PartModel): number {
   let n = 0;
   for (const m of part.measures) {

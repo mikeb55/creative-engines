@@ -52,6 +52,7 @@ import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine'
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
+import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
 import {
   normalizeMeasureToEighthBeatGrid,
   snapAttackBeatToGrid,
@@ -1179,6 +1180,8 @@ export interface GenerateGoldenPathDuoScoreOpts {
   variationEnabled?: boolean;
   /** ECM chamber: post-variation aesthetic pass (default on; set false for A/B tests). */
   ecmShapingEnabled?: boolean;
+  /** Duo / ECM: section contrast + register / phrase arc (default on). */
+  orchestrationEnabled?: boolean;
 }
 
 /**
@@ -1257,6 +1260,12 @@ export function generateGoldenPathDuoScore(
   }
   if (context.presetId === 'ecm_chamber' && opts?.ecmShapingEnabled !== false) {
     applyECMShapingPass(afterExpressive, context, context.seed);
+  }
+  if (
+    (context.presetId === 'guitar_bass_duo' || context.presetId === 'ecm_chamber') &&
+    opts?.orchestrationEnabled !== false
+  ) {
+    applyDuoOrchestrationPass(afterExpressive, context, context.seed);
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
