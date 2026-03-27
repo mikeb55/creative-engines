@@ -61,10 +61,37 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('getModeUx');
   });
 
+  it('merges API presets into Generate mode list (same source as Presets tab)', () => {
+    expect(src).toContain('mergePresetsWithRegistry');
+    expect(src).toContain('APP_PRESET_REGISTRY');
+    expect(src).toContain('../constants/composerOsPresetUi');
+  });
+
+  it('preflights custom duo harmony with shared engine parser', () => {
+    expect(src).toContain('parseChordProgressionInput');
+    expect(src).toContain('../utils/chordProgressionClient');
+  });
+
+  it('disables unsupported modes in the Mode dropdown like Presets (coming soon)', () => {
+    expect(src).toContain('disabled={!m.supported}');
+    expect(src).toMatch(/coming soon/);
+  });
+
   it('uses creative control terminology', () => {
     expect(src).toContain('Creative control');
     expect(src).toContain('name="creativeLevel"');
     expect(src).not.toMatch(/>\s*Stability\s*</);
+  });
+
+  it('renders visible Variation toggle (label + Off/On) after nudge copy and passes variationEnabled to generate', () => {
+    const nudge = 'How much the engine nudges the variation — not the form of the piece.';
+    expect(src.indexOf(nudge)).toBeGreaterThan(-1);
+    expect(src.indexOf("marginTop: '12px'")).toBeGreaterThan(src.indexOf(nudge));
+    expect(src).toMatch(/<label[^>]*>\s*Variation\s*<\/label>/);
+    expect(src).toContain("<option value=\"off\">Off</option>");
+    expect(src).toContain("<option value=\"on\">On</option>");
+    expect(src).toContain('variationEnabled: variationEnabled');
+    expect(src).toContain('setVariationEnabled');
   });
 
   it('labels number of bars and ensemble size for Big Band', () => {
@@ -76,11 +103,13 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('EXPERIMENTAL_HELP');
   });
 
-  it('renders mode-specific blocks for ECM, Song, Big Band, String Quartet', () => {
+  it('renders mode-specific blocks for ECM, Song, Big Band, String Quartet, Riff', () => {
     expect(src).toContain('ECM chamber mode');
     expect(src).toContain("presetId === 'song_mode'");
     expect(src).toContain("presetId === 'big_band'");
     expect(src).toContain("presetId === 'string_quartet'");
+    expect(src).toContain("presetId === 'riff_generator'");
+    expect(src).toContain('Riff options');
   });
 
   it('maps Big Band pairing with default songwriter constant', () => {

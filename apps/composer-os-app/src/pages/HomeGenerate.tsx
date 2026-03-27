@@ -7,14 +7,12 @@ import {
   getModeUx,
   labelCreativeLevel,
 } from '../utils/generateUiCopy';
-
-const MODE_OPTIONS: { id: string; label: string }[] = [
-  { id: 'guitar_bass_duo', label: 'Guitar–Bass Duo' },
-  { id: 'ecm_chamber', label: 'ECM Chamber' },
-  { id: 'song_mode', label: 'Song Mode' },
-  { id: 'big_band', label: 'Big Band' },
-  { id: 'string_quartet', label: 'String Quartet' },
-];
+import {
+  APP_PRESET_REGISTRY,
+  mergePresetsWithRegistry,
+  type AppPresetCard,
+} from '../constants/composerOsPresetUi';
+import { parseChordProgressionInput } from '../utils/chordProgressionClient';
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bacharach', label: 'Bacharach' },
@@ -62,10 +60,6 @@ const MINIMAL_STYLE_STACK = {
   primary: 'barry_harris' as const,
   styleBlend: { primary: 'strong' as const, secondary: 'off' as const, colour: 'off' as const },
 };
-
-function modeLabelForPreset(id: string): string {
-  return MODE_OPTIONS.find((m) => m.id === id)?.label ?? id;
-}
 
 function ensembleLabel(id: string): string {
   return ENSEMBLE_OPTIONS.find((o) => o.id === id)?.label ?? id;
@@ -159,23 +153,53 @@ export function HomeGenerate({
   const [creativeControlLevel, setCreativeControlLevel] = useState<
     'stable' | 'balanced' | 'surprise'
   >('stable');
+  const [variationEnabled, setVariationEnabled] = useState(false);
   const [songwriterStyle, setSongwriterStyle] = useState('beatles');
   const [arrangerStyle, setArrangerStyle] = useState('ellington');
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
-  /** Guitar–Bass Duo: optional `|`-separated chords (exactly 8 bars). When non-empty, engine uses custom harmony. */
+  /** Guitar–Bass Duo: optional chord line (exactly 8 bars after separator normalization). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
+  const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
+  const [riffGrid, setRiffGrid] = useState<'eighth' | 'sixteenth'>('eighth');
+  const [riffLineMode, setRiffLineMode] = useState<
+    'single_line' | 'guitar_bass' | 'octave_double'
+  >('single_line');
+  const [riffBass, setRiffBass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
+  /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
+  const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
 
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   }, []);
 
-  const isScorePreset = presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber';
+  useEffect(() => {
+    api
+      .getPresets()
+      .then((r) => setModePresets(mergePresetsWithRegistry(r.presets)))
+      .catch(() => setModePresets([...APP_PRESET_REGISTRY]));
+  }, []);
+
+  function modeLabelForPreset(id: string): string {
+    return modePresets.find((m) => m.id === id)?.name ?? id;
+  }
+
+  useEffect(() => {
+    if (presetId === 'riff_generator') {
+      setTotalBars((tb) => (tb >= 1 && tb <= 4 ? tb : 2));
+    } else {
+      setTotalBars((tb) => (tb >= 8 ? tb : 32));
+    }
+  }, [presetId]);
+
+  const isScorePreset =
+    presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber' || presetId === 'riff_generator';
 
   const generate = useCallback(
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
@@ -212,13 +236,37 @@ export function HomeGenerate({
         });
 
         const chordTrim = chordProgressionText.trim();
+        if (presetId === 'guitar_bass_duo' && chordTrim) {
+          const parsed = parseChordProgressionInput(chordTrim);
+          if (!parsed.ok) {
+            setError(parsed.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
         const r = (await api.generate({
           ...coreFields,
+          variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
           ...(presetId === 'guitar_bass_duo' && chordTrim
             ? { harmonyMode: 'custom' as const, chordProgressionText: chordTrim }
+            : {}),
+          ...(presetId === 'riff_generator'
+            ? {
+                riffStyle,
+                riffDensity,
+                riffGrid,
+                riffLineMode,
+                riffBass,
+                ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
+              }
             : {}),
         })) as GenResult;
         setResult(r);
@@ -258,6 +306,7 @@ export function HomeGenerate({
       bpm,
       totalBars,
       creativeControlLevel,
+      variationEnabled,
       songwriterStyle,
       arrangerStyle,
       era,
@@ -266,6 +315,11 @@ export function HomeGenerate({
       scoreTitle,
       chordProgressionText,
       ecmMode,
+      riffStyle,
+      riffDensity,
+      riffGrid,
+      riffLineMode,
+      riffBass,
       onResult,
     ]
   );
@@ -338,9 +392,10 @@ export function HomeGenerate({
           Mode
         </label>
         <select value={presetId} onChange={(e) => setPresetId(e.target.value)} disabled={loading}>
-          {MODE_OPTIONS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
+          {modePresets.map((m) => (
+            <option key={m.id} value={m.id} disabled={!m.supported}>
+              {m.name}
+              {!m.supported ? ' (coming soon)' : ''}
             </option>
           ))}
         </select>
@@ -427,27 +482,47 @@ export function HomeGenerate({
         />
       </div>
 
-      {presetId === 'guitar_bass_duo' && (
+      {(presetId === 'guitar_bass_duo' || presetId === 'riff_generator') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Chord progression (optional)
           </label>
-          <p
-            style={{
-              fontSize: '0.8rem',
-              color: 'var(--text-muted)',
-              margin: '0 0 0.5rem',
-              lineHeight: 1.45,
-            }}
-          >
-            Custom harmony: exactly <strong style={{ color: 'var(--text)' }}>8</strong> chords separated by{' '}
-            <code>|</code>. Leave empty to use the built-in study progression (e.g. Dm9 … A7alt).
-          </p>
+          {presetId === 'guitar_bass_duo' ? (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              Custom harmony: exactly <strong style={{ color: 'var(--text)' }}>8</strong> chords. Separate bars
+              with <code>|</code>, <code>,</code>, <code>;</code>, or (without pipe in the line) spaced{' '}
+              <code>/</code>. Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
+              study progression (e.g. Dm9 … A7alt).
+            </p>
+          ) : (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              One chord or a <strong style={{ color: 'var(--text)' }}>2–4</strong> chord loop — same separators
+              as duo when you use more than one chord. Leave empty for a default vamp.
+            </p>
+          )}
           <textarea
             value={chordProgressionText}
             onChange={(e) => setChordProgressionText(e.target.value)}
             disabled={loading}
-            placeholder="Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt"
+            placeholder={
+              presetId === 'guitar_bass_duo'
+                ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
+                : 'Am7 | D7 | Gmaj7 |'
+            }
             rows={3}
             style={{
               width: '100%',
@@ -488,12 +563,12 @@ export function HomeGenerate({
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            Number of bars
+            {presetId === 'riff_generator' ? 'Riff length (bars)' : 'Number of bars'}
           </label>
           <input
             type="number"
-            min={8}
-            max={512}
+            min={presetId === 'riff_generator' ? 1 : 8}
+            max={presetId === 'riff_generator' ? 4 : 512}
             value={totalBars}
             onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 0)}
             disabled={loading}
@@ -555,6 +630,16 @@ export function HomeGenerate({
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.4rem', maxWidth: 520 }}>
           How much the engine nudges the variation — not the form of the piece.
         </p>
+        <div style={{ marginTop: '12px' }}>
+          <label style={{ display: 'block', marginBottom: '4px' }}>Variation</label>
+          <select
+            value={variationEnabled ? 'on' : 'off'}
+            onChange={(e) => setVariationEnabled(e.target.value === 'on')}
+          >
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
             type="radio"
@@ -605,6 +690,81 @@ export function HomeGenerate({
           }}
         />
       </div>
+
+      {presetId === 'riff_generator' && (
+        <div style={{ marginBottom: '1rem', maxWidth: 560 }}>
+          <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            Riff options
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.25rem', marginBottom: '0.65rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Style
+              </label>
+              <select
+                value={riffStyle}
+                onChange={(e) => setRiffStyle(e.target.value as typeof riffStyle)}
+                disabled={loading}
+              >
+                <option value="metheny">Metheny</option>
+                <option value="scofield">Scofield</option>
+                <option value="funk">Funk</option>
+                <option value="neutral">Neutral</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Density
+              </label>
+              <select
+                value={riffDensity}
+                onChange={(e) => setRiffDensity(e.target.value as typeof riffDensity)}
+                disabled={loading}
+              >
+                <option value="sparse">Sparse</option>
+                <option value="medium">Medium</option>
+                <option value="dense">Dense</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Grid
+              </label>
+              <select
+                value={riffGrid}
+                onChange={(e) => setRiffGrid(e.target.value as typeof riffGrid)}
+                disabled={loading}
+              >
+                <option value="eighth">Eighth notes</option>
+                <option value="sixteenth">Sixteenth notes</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Line mode
+              </label>
+              <select
+                value={riffLineMode}
+                onChange={(e) => setRiffLineMode(e.target.value as typeof riffLineMode)}
+                disabled={loading}
+              >
+                <option value="single_line">Single line</option>
+                <option value="guitar_bass">Guitar + bass</option>
+                <option value="octave_double">Octave / double-stop</option>
+              </select>
+            </div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+            <input
+              type="checkbox"
+              checked={riffBass}
+              onChange={(e) => setRiffBass(e.target.checked)}
+              disabled={loading || riffLineMode === 'octave_double'}
+            />
+            Bass (acoustic bass voice, GM 33) — ignored in octave mode
+          </label>
+        </div>
+      )}
 
       {presetId === 'ecm_chamber' && (
         <div style={{ marginBottom: '1rem' }}>
