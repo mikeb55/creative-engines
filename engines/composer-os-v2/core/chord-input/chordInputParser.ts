@@ -2,6 +2,7 @@
  * Lightweight chord text parsing: | bars, line blocks, iReal-ish { } repeats ignored as content.
  */
 
+import { normalizeChordProgressionSeparators } from '../harmony/chordProgressionParser';
 import type { ChordInputSectionBlock, ParsedChordInputPlan } from './chordInputTypes';
 
 const CHORD_TOKEN =
@@ -25,7 +26,7 @@ function stripIrealRepeatBraces(line: string): string {
 }
 
 function splitBarLine(line: string): string[] {
-  const cleaned = stripIrealRepeatBraces(line);
+  const cleaned = normalizeChordProgressionSeparators(stripIrealRepeatBraces(line));
   if (cleaned.includes('|')) {
     return cleaned
       .split('|')
@@ -85,7 +86,7 @@ export function parseChordInputBlocks(text: string): ParsedChordInputPlan {
  * Pipe-separated single progression (common duo input). Variable length.
  */
 export function parsePipeChordLine(line: string): string[] {
-  const trimmed = line.trim();
+  const trimmed = normalizeChordProgressionSeparators(line.trim());
   if (!trimmed) return [];
   const bars = trimmed
     .split('|')

@@ -18,6 +18,7 @@ import {
   ensureOutputDirectoryForPreset,
   getComposerFilesRoot,
   PRESET_OUTPUT_SUBFOLDER,
+  resolveComposerLibraryRoot,
   resolveOpenFolderTarget,
 } from './composerOsOutputPaths';
 
@@ -44,7 +45,7 @@ export function apiGetStyleModules(): { modules: ReturnType<typeof getStyleModul
 
 export function apiGenerate(
   body: Partial<GenerateRequest>,
-  _composerRoot: string
+  composerLibraryRoot: string
 ): GenerateResult | { success: false; error: string; detail?: string } {
   try {
     const rawPreset = typeof body.presetId === 'string' ? body.presetId : undefined;
@@ -74,6 +75,8 @@ export function apiGenerate(
           ? body.ecmMode
           : undefined,
       variationId: typeof body.variationId === 'string' ? body.variationId : undefined,
+      variationEnabled:
+        typeof body.variationEnabled === 'boolean' ? body.variationEnabled : undefined,
       creativeControlLevel:
         body.creativeControlLevel === 'stable' ||
         body.creativeControlLevel === 'balanced' ||
@@ -108,8 +111,44 @@ export function apiGenerate(
                   : undefined,
             }
           : undefined,
+      riffStyle:
+        body.riffStyle === 'metheny' ||
+        body.riffStyle === 'scofield' ||
+        body.riffStyle === 'funk' ||
+        body.riffStyle === 'neutral'
+          ? body.riffStyle
+          : undefined,
+      riffDensity:
+        body.riffDensity === 'sparse' ||
+        body.riffDensity === 'medium' ||
+        body.riffDensity === 'dense'
+          ? body.riffDensity
+          : undefined,
+      riffGrid: body.riffGrid === 'sixteenth' || body.riffGrid === 'eighth' ? body.riffGrid : undefined,
+      riffLineMode:
+        body.riffLineMode === 'single_line' ||
+        body.riffLineMode === 'guitar_bass' ||
+        body.riffLineMode === 'octave_double'
+          ? body.riffLineMode
+          : undefined,
+      riffBass: body.riffBass === true ? true : undefined,
     };
-    const presetDir = ensureOutputDirectoryForPreset(req_.presetId);
+    /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
+    let presetDir: string;
+    if (req_.presetId === 'riff_generator') {
+      const root = composerLibraryRoot?.trim();
+      if (!root) {
+        return {
+          success: false,
+          error:
+            'Riff Generator: Composer OS library root was not provided. Restart the desktop app or regenerate from a supported client.',
+          composerOsVersion: COMPOSER_OS_VERSION,
+        };
+      }
+      presetDir = ensureOutputDirectoryForPreset('riff_generator', root);
+    } else {
+      presetDir = ensureOutputDirectoryForPreset(req_.presetId, composerLibraryRoot);
+    }
     return runAppGeneration(req_, presetDir);
   } catch (err) {
     return {
@@ -129,7 +168,7 @@ export function apiListOutputs(composerRoot: string) {
 }
 
 export function apiGetOutputDirectory(composerRoot: string) {
-  const root = getComposerFilesRoot();
+  const root = resolveComposerLibraryRoot(composerRoot);
   return {
     path: root,
     displayPath: displayPathForApi(root),

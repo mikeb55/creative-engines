@@ -129,6 +129,8 @@ export interface DiagnosticsResponse {
     capability: string;
     honestNote: string;
   }>;
+  /** Same as `/presets` — full app preset registry (includes Riff Generator). */
+  registeredPresets?: Array<{ id: string; name: string; description: string; supported: boolean }>;
   apiBasePath: string;
   activePort: number;
   desktopTransport?: 'ipc' | 'http';

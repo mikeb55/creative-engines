@@ -8,6 +8,7 @@ import * as path from 'path';
 import type { GenerateRequest } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
+import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode } from '../core/big-band/runBigBandMode';
 import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
@@ -18,6 +19,7 @@ import { experimentalLabelForLevel } from '../core/creative-controls/experimenta
 export const SUPPORTED_APP_PRESET_IDS = [
   'guitar_bass_duo',
   'ecm_chamber',
+  'riff_generator',
   'song_mode',
   'big_band',
   'string_quartet',
@@ -92,6 +94,8 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     case 'guitar_bass_duo':
     case 'ecm_chamber':
       return { ...generateComposition(req, outputDir), composerOsVersion: COMPOSER_OS_VERSION };
+    case 'riff_generator':
+      return { ...runRiffGeneratorApp(req, outputDir), composerOsVersion: COMPOSER_OS_VERSION };
     case 'song_mode':
       return runSongStructure(req, outputDir);
     case 'big_band':

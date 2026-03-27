@@ -78,6 +78,8 @@ export interface GenerateRequest {
   ecmMode?: EcmChamberMode;
   /** User-facing variation label — maps to deterministic engine seed when set. */
   variationId?: string;
+  /** UI: enable engine variation behaviour (passed through to generation). */
+  variationEnabled?: boolean;
   /** Default `stable` — identical to raw seed resolution; other tiers nudge seed only (form unchanged). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   /** Tonal centre / key hint (UI; echoed in artifacts). Used as override string when `keySignatureMode` is `override` if `tonalCenterOverride` omitted. */
@@ -102,6 +104,13 @@ export interface GenerateRequest {
   ensembleConfigId?: 'full_band' | 'medium_band' | 'small_band' | 'reeds_only' | 'brass_only' | 'custom';
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
+  /** Riff Generator (`riff_generator`): 1–4 bar riff length. */
+  riffStyle?: 'metheny' | 'scofield' | 'funk' | 'neutral';
+  riffDensity?: 'sparse' | 'medium' | 'dense';
+  riffGrid?: 'eighth' | 'sixteenth';
+  riffLineMode?: 'single_line' | 'guitar_bass' | 'octave_double';
+  /** Riff Generator: add bass part (guitar–bass interaction). */
+  riffBass?: boolean;
 }
 
 export interface ValidationSummary {

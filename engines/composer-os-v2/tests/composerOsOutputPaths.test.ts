@@ -11,7 +11,10 @@ import {
   PRESET_OUTPUT_SUBFOLDER,
   manifestPathForMusicXml,
   normalizeLibraryFolderOpenTarget,
+  resolveComposerLibraryRoot,
 } from '../app-api/composerOsOutputPaths';
+import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
+import type { GenerateRequest } from '../app-api/appApiTypes';
 
 type TestResult = { name: string; ok: boolean };
 
@@ -32,6 +35,18 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     const gbd = getOutputDirectoryForPreset('guitar_bass_duo');
     if (!gbd.endsWith(PRESET_OUTPUT_SUBFOLDER.guitar_bass_duo)) fail('guitar_bass_duo subfolder');
     else pass('guitar_bass_duo subfolder');
+
+    const riff = getOutputDirectoryForPreset('riff_generator');
+    if (!riff.endsWith(PRESET_OUTPUT_SUBFOLDER.riff_generator)) fail('riff_generator subfolder');
+    else pass('riff_generator subfolder');
+
+    const explicitRoot = path.join(tmp, 'ExplicitLibraryRoot');
+    const riffExplicit = getOutputDirectoryForPreset('riff_generator', explicitRoot);
+    if (path.resolve(riffExplicit) !== path.join(path.resolve(explicitRoot), PRESET_OUTPUT_SUBFOLDER.riff_generator)) {
+      fail('getOutputDirectoryForPreset respects explicit library root');
+    } else pass('getOutputDirectoryForPreset respects explicit library root');
+    if (resolveComposerLibraryRoot(explicitRoot) !== path.resolve(explicitRoot)) fail('resolveComposerLibraryRoot');
+    else pass('resolveComposerLibraryRoot');
 
     const bb = getOutputDirectoryForPreset('big_band');
     if (!bb.endsWith(PRESET_OUTPUT_SUBFOLDER.big_band)) fail('big_band subfolder');
@@ -61,6 +76,27 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     const opened = normalizeLibraryFolderOpenTarget(mf);
     if (path.resolve(opened) !== path.resolve(gbd)) fail('normalizeLibraryFolderOpenTarget strips _meta');
     else pass('normalizeLibraryFolderOpenTarget strips _meta');
+
+    const riffDirResolved = ensureOutputDirectoryForPreset('riff_generator');
+    const riffReq: GenerateRequest = {
+      presetId: 'riff_generator',
+      seed: 0,
+      styleStack: {
+        primary: 'barry_harris',
+        styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+      },
+      totalBars: 2,
+    };
+    const riffResult = runRiffGeneratorApp(riffReq, riffDirResolved);
+    if (!riffResult.success || !riffResult.filepath) {
+      fail('riff_generator wrote file');
+    } else if (path.resolve(path.dirname(riffResult.filepath)) !== path.resolve(riffDirResolved)) {
+      fail('riff MusicXML path under preset output dir');
+    } else if (!fs.existsSync(riffResult.filepath)) {
+      fail('riff MusicXML file on disk');
+    } else {
+      pass('riff_generator writes under ensureOutputDirectoryForPreset');
+    }
   } catch (e) {
     fail(`composerOsOutputPaths: ${e}`);
   }

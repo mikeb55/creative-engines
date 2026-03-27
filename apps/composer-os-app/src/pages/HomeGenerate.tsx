@@ -630,16 +630,6 @@ export function HomeGenerate({
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.4rem', maxWidth: 520 }}>
           How much the engine nudges the variation — not the form of the piece.
         </p>
-        <div style={{ marginTop: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px' }}>Variation</label>
-          <select
-            value={variationEnabled ? 'on' : 'off'}
-            onChange={(e) => setVariationEnabled(e.target.value === 'on')}
-          >
-            <option value="off">Off</option>
-            <option value="on">On</option>
-          </select>
-        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
             type="radio"
@@ -658,7 +648,7 @@ export function HomeGenerate({
           />
           Balanced
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
             type="radio"
             name="creativeLevel"
@@ -667,6 +657,18 @@ export function HomeGenerate({
           />
           Surprise
         </label>
+        <div style={{ marginTop: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>
+            Variation
+          </label>
+          <select
+            value={variationEnabled ? 'on' : 'off'}
+            onChange={(e) => setVariationEnabled(e.target.value === 'on')}
+          >
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>

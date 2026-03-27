@@ -86,7 +86,8 @@ describe('HomeGenerate mode-driven UI', () => {
   it('renders visible Variation toggle (label + Off/On) after nudge copy and passes variationEnabled to generate', () => {
     const nudge = 'How much the engine nudges the variation — not the form of the piece.';
     expect(src.indexOf(nudge)).toBeGreaterThan(-1);
-    expect(src.indexOf("marginTop: '12px'")).toBeGreaterThan(src.indexOf(nudge));
+    expect(src.indexOf("marginTop: '16px'")).toBeGreaterThan(src.indexOf(nudge));
+    expect(src.indexOf("marginTop: '16px'")).toBeGreaterThan(src.indexOf("Surprise"));
     expect(src).toMatch(/<label[^>]*>\s*Variation\s*<\/label>/);
     expect(src).toContain("<option value=\"off\">Off</option>");
     expect(src).toContain("<option value=\"on\">On</option>");

@@ -8,7 +8,14 @@ describe('Composer OS presets API', () => {
   it('returns only known v2 preset ids from engine presets', () => {
     const presets = getPresets();
     const ids = presets.map((p) => p.id).sort();
-    expect(ids).toEqual(['big_band', 'ecm_chamber', 'guitar_bass_duo', 'song_mode', 'string_quartet']);
+    expect(ids).toEqual([
+      'big_band',
+      'ecm_chamber',
+      'guitar_bass_duo',
+      'riff_generator',
+      'song_mode',
+      'string_quartet',
+    ]);
     expect(presets.every((p) => typeof p.supported === 'boolean')).toBe(true);
   });
 });

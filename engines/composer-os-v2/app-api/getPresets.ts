@@ -44,6 +44,13 @@ const PRESETS: AppPreset[] = [
       'String quartet planning: form/texture/density/orchestration via runStringQuartetMode (no quartet MusicXML yet).',
     supported: true,
   },
+  {
+    id: 'riff_generator',
+    name: 'Riff Generator',
+    description:
+      'Short loopable riffs (1–4 bars), high-identity rhythm & melody, LOCK grid, GCE ≥ 9, Sibelius-safe MusicXML to your library Riffs folder.',
+    supported: true,
+  },
 ];
 
 export function getPresets(): AppPreset[] {

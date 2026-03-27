@@ -7,6 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { generateComposition } from '../app-api/generateComposition';
 import {
+  normalizeChordProgressionSeparators,
   parseChordProgressionInput,
   buildChordSymbolPlanFromBars,
   validateChordSymbolPlanCoversBars,
@@ -22,6 +23,51 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
     ok: (() => {
       const r = parseChordProgressionInput('Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt');
       return r.ok && r.bars.length === 8 && r.bars[0] === 'Dm9';
+    })(),
+  });
+
+  tests.push({
+    name: 'Normalize: Cm7, F7 ; Bbmaj7 / G7 → pipe-separated',
+    ok:
+      normalizeChordProgressionSeparators('Cm7, F7 ; Bbmaj7 / G7') === 'Cm7 | F7 | Bbmaj7 | G7',
+  });
+
+  tests.push({
+    name: 'Parser: 8 bars mixed commas, semicolons, pipes matches pipe-only',
+    ok: (() => {
+      const mixed = 'Dm9, G13; Cmaj9| A7alt; Dm9 | G13 | Cmaj9 , A7alt';
+      const pipes = 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt';
+      const a = parseChordProgressionInput(mixed);
+      const b = parseChordProgressionInput(pipes);
+      return a.ok && b.ok && JSON.stringify(a.bars) === JSON.stringify(b.bars);
+    })(),
+  });
+
+  tests.push({
+    name: 'Parser: commas only with slash bass tokens',
+    ok: (() => {
+      const mixed =
+        'D/F#, G/B, Cmaj7/E, A7alt, D/F#, G/B, Cmaj7/E, A7alt';
+      const pipes = 'D/F# | G/B | Cmaj7/E | A7alt | D/F# | G/B | Cmaj7/E | A7alt';
+      const a = parseChordProgressionInput(mixed);
+      const b = parseChordProgressionInput(pipes);
+      return a.ok && b.ok && JSON.stringify(a.bars) === JSON.stringify(b.bars);
+    })(),
+  });
+
+  tests.push({
+    name: 'Parser: pipe cell with spaced slash uses first chord; no-pipe input splits spaced / in normalize',
+    ok: (() => {
+      const pipeCell = parseChordProgressionInput(
+        'Dm9 | G13 | Bbmaj7 / G7 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
+      );
+      const noPipeNorm = normalizeChordProgressionSeparators('Cm7, F7 ; Bbmaj7 / G7');
+      return (
+        pipeCell.ok &&
+        pipeCell.bars[2] === 'Bbmaj7' &&
+        pipeCell.bars[3] === 'A7alt' &&
+        noPipeNorm === 'Cm7 | F7 | Bbmaj7 | G7'
+      );
     })(),
   });
 

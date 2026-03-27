@@ -8,8 +8,8 @@ import {
 } from '../src/utils/generateUiCopy';
 
 describe('generateUiCopy', () => {
-  it('has human-facing descriptions for all five modes', () => {
-    expect(MODE_UX).toHaveLength(5);
+  it('has human-facing descriptions for all six modes', () => {
+    expect(MODE_UX).toHaveLength(6);
     const ids = MODE_UX.map((m) => m.id);
     expect(ids).toEqual([
       'guitar_bass_duo',
@@ -17,6 +17,7 @@ describe('generateUiCopy', () => {
       'ecm_chamber',
       'big_band',
       'string_quartet',
+      'riff_generator',
     ]);
     for (const m of MODE_UX) {
       expect(m.hint.length).toBeGreaterThan(10);
@@ -38,6 +39,10 @@ describe('generateUiCopy', () => {
     const bb = describeOutputKind('big_band');
     expect(bb.category).toBe('planning');
     expect(bb.headline).toMatch(/Planning/i);
+
+    const riff = describeOutputKind('riff_generator');
+    expect(riff.category).toBe('full_score_musicxml');
+    expect(riff.headline).toMatch(/MusicXML|score/i);
   });
 
   it('getModeUx returns metadata per mode', () => {

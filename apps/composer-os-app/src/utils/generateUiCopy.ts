@@ -61,6 +61,15 @@ export const MODE_UX: ModeUx[] = [
     bestFor: 'Contrasts, development arcs, and balance across four string voices.',
     output: 'Planning JSON only — not a finished quartet MusicXML export here.',
   },
+  {
+    id: 'riff_generator',
+    label: 'Riff Generator',
+    hint: '1–4 bar loopable riffs with chord symbols, rehearsal mark “Riff”, and Sibelius-safe MusicXML.',
+    whatItDoes:
+      'Builds a short, high-identity riff on a strict eighth or sixteenth grid: repeating rhythm, syncopation, hook, and loop closure. Candidates are ranked; only GCE ≥ 9.0 exports.',
+    bestFor: 'Practice cells, hooks, and grooves you can drop into Sibelius or extend into a full piece.',
+    output: 'Single MusicXML file under the Riffs project folder (projects/riffs).',
+  },
 ];
 
 export function getModeUx(id: string): ModeUx | undefined {
@@ -73,7 +82,7 @@ export function describeOutputKind(presetId: string): {
   headline: string;
   subtitle: string;
 } {
-  if (presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber') {
+  if (presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber' || presetId === 'riff_generator') {
     return {
       category: 'full_score_musicxml',
       headline: 'Full score · MusicXML export',

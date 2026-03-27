@@ -200,6 +200,12 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
               <p style={{ margin: '0.25rem 0' }}>
                 <strong style={{ color: 'var(--text)' }}>Version:</strong> {diag.version}
               </p>
+              {diag.registeredPresets && diag.registeredPresets.length > 0 && (
+                <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
+                  <strong style={{ color: 'var(--text)' }}>App preset registry:</strong>{' '}
+                  {diag.registeredPresets.map((p) => p.id).join(', ')}
+                </p>
+              )}
               <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
                 <strong style={{ color: 'var(--text)' }}>Style modules:</strong>{' '}
                 {diag.styleModules?.length

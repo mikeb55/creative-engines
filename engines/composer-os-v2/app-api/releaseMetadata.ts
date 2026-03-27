@@ -31,6 +31,12 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
     honestNote: 'Full chamber MusicXML generation (Metheny / Schneider modes).',
   },
   {
+    presetId: 'riff_generator',
+    displayName: 'Riff Generator',
+    capability: 'musicxml_generation',
+    honestNote: 'Short loopable riffs (1–4 bars) to the library Riffs folder; LOCK grid, GCE-gated MusicXML.',
+  },
+  {
     presetId: 'song_mode',
     displayName: 'Song Mode',
     capability: 'song_structure',

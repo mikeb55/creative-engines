@@ -24,7 +24,11 @@ export function runAppShellTests(): { ok: boolean; name: string }[] {
     'utf-8'
   );
   out.push({
-    ok: home.includes('string_quartet') && home.includes('big_band') && home.includes('song_mode'),
+    ok:
+      home.includes('string_quartet') &&
+      home.includes('big_band') &&
+      home.includes('song_mode') &&
+      home.includes('riff_generator'),
     name: 'HomeGenerate references all non-duo preset ids for honest labelling',
   });
 
@@ -32,7 +36,7 @@ export function runAppShellTests(): { ok: boolean; name: string }[] {
   try {
     const d = buildDiagnostics(tmp, 3001);
     out.push({
-      ok: d.supportedModes?.length === 5 && d.version.length > 0,
+      ok: d.supportedModes?.length === 6 && d.version.length > 0,
       name: 'diagnostics exposes version + supportedModes (V1 baseline)',
     });
   } finally {
