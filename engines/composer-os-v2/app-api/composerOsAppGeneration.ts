@@ -217,6 +217,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
+    songModeHookFirstIdentity: true,
     harmonyMode: harmonyModeForRun,
     chordProgressionText,
     ...(lockedHarmonyBarsAuthoritative

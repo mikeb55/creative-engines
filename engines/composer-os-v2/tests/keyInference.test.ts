@@ -55,6 +55,58 @@ function testOverrideBeatsInference(): boolean {
   return res.metadata.overrideUsed === true && res.export.fifths === -3 && res.export.mode === 'major';
 }
 
+/** Explicit tonal centre must win in `auto` mode (Song Mode default): inference may favour another tonic from chords. */
+function testExplicitTonalCentreAutoModeBeatsInference(): boolean {
+  const inf = inferKeyFromChords(['Gmaj7', 'Gmaj7', 'Cmaj7', 'D7', 'Gmaj7', 'Gmaj7', 'Cmaj7', 'D7']);
+  const res = resolveKeySignatureForExport(inf, { requestMode: 'auto', tonalCenterOverride: 'F' });
+  return (
+    res.metadata.overrideUsed === true &&
+    res.export.fifths === -1 &&
+    res.export.mode === 'major' &&
+    res.metadata.exportFifths === -1
+  );
+}
+
+/** No explicit centre: `auto` uses chord inference only. */
+function testBlankTonalCentreUsesInference(): boolean {
+  const inf = inferKeyFromChords(['Cmaj7', 'Fmaj7', 'G7', 'Cmaj7']);
+  const res = resolveKeySignatureForExport(inf, { requestMode: 'auto' });
+  return (
+    res.metadata.overrideUsed === false &&
+    inf.inferredTonicPc === 0 &&
+    res.export.fifths === 0 &&
+    res.export.mode === 'major'
+  );
+}
+
+/** Custom G-centric progression + user `F` still prints F major (desktop Song Mode scenario). */
+function testCustomProgressionTonalCentreFMajor(): boolean {
+  const inf = inferKeyFromChords(['Gmaj7', 'Em7', 'Am7', 'D7', 'Gmaj7', 'Em7', 'Am7', 'D7']);
+  const res = resolveKeySignatureForExport(inf, { requestMode: 'auto', tonalCenterOverride: 'F' });
+  return res.metadata.overrideUsed === true && res.export.fifths === -1 && res.export.mode === 'major';
+}
+
+/**
+ * Desktop / API parity: same `GenerateRequest` shape as `generateComposition` (duo + `harmonyMode: custom` + `tonalCenter`).
+ * Chords skew toward G; explicit `F` must still print F major (1 flat) in MusicXML.
+ */
+function testDesktopParityDuoApiGenerateShapeTonalCentreF(): boolean {
+  const bars = ['Gmaj7', 'Em7', 'Am7', 'D7', 'Gmaj7', 'Em7', 'Am7', 'D7'];
+  const r = runGoldenPath(42_003, {
+    presetId: 'guitar_bass_duo',
+    harmonyMode: 'custom',
+    chordProgressionText: bars.join(' | '),
+    tonalCenter: 'F',
+  });
+  if (!r.success || !r.xml) return false;
+  return (
+    r.xml.includes('<fifths>-1</fifths>') &&
+    r.xml.includes('<mode>major</mode>') &&
+    r.context.generationMetadata.keySignatureReceipt?.overrideUsed === true &&
+    r.context.generationMetadata.keySignatureReceipt?.exportFifths === -1
+  );
+}
+
 function testNoneMode(): boolean {
   const inf = inferKeyFromChords(['Cmaj7']);
   const res = resolveKeySignatureForExport(inf, { requestMode: 'none' });
@@ -186,6 +238,10 @@ export function runKeyInferenceTests(): { name: string; ok: boolean }[] {
     ['Key inference: slash bass', testSlashBassDoesNotDominate],
     ['Key inference: chromatic fallback', testChromaticFallback],
     ['Key signature: override', testOverrideBeatsInference],
+    ['Key signature: explicit tonal centre beats inference (auto mode)', testExplicitTonalCentreAutoModeBeatsInference],
+    ['Key signature: blank tonal centre uses inference', testBlankTonalCentreUsesInference],
+    ['Key signature: G-centric chords + tonal F → F major', testCustomProgressionTonalCentreFMajor],
+    ['Key signature: desktop/API duo custom + tonal F → XML -1 fifths', testDesktopParityDuoApiGenerateShapeTonalCentreF],
     ['Key signature: none mode', testNoneMode],
     ['MusicXML: fifths in export', testMusicXmlContainsFifths],
     ['MusicXML: hide key print-object', testMusicXmlHideKeyPrintObject],

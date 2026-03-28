@@ -20,8 +20,8 @@ function createMeasure(index, chord, rehearsalMark) {
     };
 }
 /** Create note event. */
-function createNote(pitch, startBeat, duration, voice = 1) {
-    return { kind: 'note', pitch, startBeat, duration, voice };
+function createNote(pitch, startBeat, duration, voice = 1, motifRef) {
+    return Object.assign({ kind: 'note', pitch, startBeat, duration, voice }, motifRef ? { motifRef } : {});
 }
 /** Create rest event. */
 function createRest(startBeat, duration, voice = 1) {

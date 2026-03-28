@@ -367,7 +367,10 @@ export function inferKeyFromChords(chords: string[]): KeyInferenceResult {
 
 export interface ResolveKeyOptions {
   requestMode: KeySignatureRequestMode;
-  /** Used when requestMode === 'override'. */
+  /**
+   * Explicit user key label (`tonalCenterOverride` and/or UI `tonalCenter`, merged by caller).
+   * When non-empty and parseable, **always** wins over chord inference for printed key (any mode except `none`).
+   */
   tonalCenterOverride?: string;
 }
 
@@ -439,34 +442,33 @@ export function resolveKeySignatureForExport(
     };
   }
 
-  if (opts.requestMode === 'override') {
-    if (overrideRaw) {
-      const parsed = parseTonalCenterString(overrideRaw);
-      if (parsed) {
-        const fb = flatBiasFromTonalCenterString(overrideRaw);
-        const fifths =
-          parsed.mode === 'major'
-            ? majorKeyFifthsForTonicPc(parsed.tonicPc, fb)
-            : minorKeyFifthsForTonicPc(parsed.tonicPc);
-        const label = `${displayTonicName(parsed.tonicPc)} ${parsed.mode}`;
-        const meta = buildReceiptMetadata(inference, {
-          requestMode: 'override',
-          exportFifths: fifths,
-          exportMode: parsed.mode,
-          hideKeySignature: false,
-          overrideUsed: true,
-          noneMode: false,
-          inferredKeyLabel: label,
-        });
-        return {
-          export: { fifths, mode: parsed.mode, hideKeySignature: false },
-          metadata: meta,
-        };
-      }
+  /** Explicit tonal centre / override string beats chord inference for MusicXML key (auto and override). */
+  if (overrideRaw) {
+    const parsed = parseTonalCenterString(overrideRaw);
+    if (parsed) {
+      const fb = flatBiasFromTonalCenterString(overrideRaw);
+      const fifths =
+        parsed.mode === 'major'
+          ? majorKeyFifthsForTonicPc(parsed.tonicPc, fb)
+          : minorKeyFifthsForTonicPc(parsed.tonicPc);
+      const label = `${displayTonicName(parsed.tonicPc)} ${parsed.mode}`;
+      const meta = buildReceiptMetadata(inference, {
+        requestMode: opts.requestMode,
+        exportFifths: fifths,
+        exportMode: parsed.mode,
+        hideKeySignature: false,
+        overrideUsed: true,
+        noneMode: false,
+        inferredKeyLabel: label,
+      });
+      return {
+        export: { fifths, mode: parsed.mode, hideKeySignature: false },
+        metadata: meta,
+      };
     }
   }
 
-  /** V3.4c — auto / override (incl. failed override parse): always write inferred fifths/mode; do not fall back to hidden C. */
+  /** V3.4c — auto / override with no usable explicit string: always write inferred fifths/mode; do not fall back to hidden C. */
   const meta = buildReceiptMetadata(inference, {
     requestMode: opts.requestMode,
     exportFifths: inference.recommendedFifths,
@@ -505,7 +507,7 @@ export function applyKeySignatureToScoreAndContext(
     (options?.tonalCenterOverride?.trim() || options?.tonalCenter?.trim()) ?? undefined;
   const resolved = resolveKeySignatureForExport(inference, {
     requestMode: reqMode,
-    tonalCenterOverride: reqMode === 'override' ? overrideStr : undefined,
+    tonalCenterOverride: overrideStr,
   });
   score.keySignature = resolved.export;
   score.keySignatureExportDebug = {

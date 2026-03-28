@@ -20,12 +20,15 @@ export function applyPerformancePass(
       ...m,
       events: m.events.map((e) => {
         if (e.kind !== 'note') return e;
+        const src = e as NoteEvent;
         const note: NoteEvent = {
           kind: 'note',
-          pitch: e.pitch,
-          startBeat: e.startBeat,
-          duration: e.duration,
-          voice: e.voice,
+          pitch: src.pitch,
+          startBeat: src.startBeat,
+          duration: src.duration,
+          voice: src.voice,
+          ...(src.motifRef ? { motifRef: src.motifRef } : {}),
+          ...(src.velocity !== undefined ? { velocity: src.velocity } : {}),
         };
         if (opts.applyArticulation) {
           if (note.duration <= 0.5) note.articulation = 'staccato';

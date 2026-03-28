@@ -3,6 +3,7 @@
  * Composer OS V2 — Performance pass
  * Post-generation refinement: articulation / phrasing metadata only.
  * Duration-safe: see performanceRules (no bar-structure or timing edits).
+ * Keep in sync with performancePass.ts (Node may resolve .js first).
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyPerformancePass = applyPerformancePass;
@@ -15,20 +16,23 @@ function applyPerformancePass(score, options = {}) {
         measures: p.measures.map((m) => ({
             ...m,
             events: m.events.map((e) => {
-                if (e.kind !== 'note')
+                if (e.kind !== "note")
                     return e;
+                const src = e;
                 const note = {
-                    kind: 'note',
-                    pitch: e.pitch,
-                    startBeat: e.startBeat,
-                    duration: e.duration,
-                    voice: e.voice,
+                    kind: "note",
+                    pitch: src.pitch,
+                    startBeat: src.startBeat,
+                    duration: src.duration,
+                    voice: src.voice,
+                    ...(src.motifRef ? { motifRef: src.motifRef } : {}),
+                    ...(src.velocity !== undefined ? { velocity: src.velocity } : {}),
                 };
                 if (opts.applyArticulation) {
                     if (note.duration <= 0.5)
-                        note.articulation = 'staccato';
+                        note.articulation = "staccato";
                     else if (note.duration >= 3)
-                        note.articulation = 'tenuto';
+                        note.articulation = "tenuto";
                 }
                 return note;
             }),

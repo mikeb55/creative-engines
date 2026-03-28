@@ -76,7 +76,7 @@ function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: R
     }
     if (e.kind === 'note') {
       const n = e as NoteEvent;
-      const nn = createNote(n.pitch, sb, dur, voice);
+      const nn = createNote(n.pitch, sb, dur, voice, n.motifRef);
       if (n.articulation) nn.articulation = n.articulation;
       if (n.velocity !== undefined) nn.velocity = n.velocity;
       out.push(nn);

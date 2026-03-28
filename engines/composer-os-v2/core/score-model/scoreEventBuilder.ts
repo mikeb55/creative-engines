@@ -24,8 +24,8 @@ export function createMeasure(index: number, chord?: string, rehearsalMark?: str
 }
 
 /** Create note event. */
-export function createNote(pitch: number, startBeat: number, duration: number, voice = 1): NoteEvent {
-  return { kind: 'note', pitch, startBeat, duration, voice };
+export function createNote(pitch: number, startBeat: number, duration: number, voice = 1, motifRef?: string): NoteEvent {
+  return { kind: 'note', pitch, startBeat, duration, voice, ...(motifRef ? { motifRef } : {}) };
 }
 
 /** Create rest event. */

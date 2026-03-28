@@ -112,6 +112,7 @@ export function applyExpressiveDuoFeel(
           articulation,
         };
         if (velocity !== undefined) out.velocity = velocity;
+        if (n.motifRef) out.motifRef = n.motifRef;
         return out;
       });
 

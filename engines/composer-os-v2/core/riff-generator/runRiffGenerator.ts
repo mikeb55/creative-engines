@@ -12,6 +12,7 @@ import { buildRiffScoreModel } from './buildRiffScoreModel';
 import { normalizeChordLoop } from './riffChordLoop';
 import { finalizeRiffScoreBarMath } from './riffFinalizeBarMath';
 import { scoreRiffGce } from './riffGce';
+import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffGeneratorParams, RiffGeneratorResult } from './riffTypes';
 import { validateRiffIdentity } from './riffIdentityValidation';
 import { validateBassHarmonicIntegrity } from './riffBassHarmonicGate';
@@ -30,7 +31,12 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
   };
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    let best: { gce: number; xml: string; score: import('../score-model/scoreModelTypes').ScoreModel } | null = null;
+    let best: {
+      gce: number;
+      xml: string;
+      score: import('../score-model/scoreModelTypes').ScoreModel;
+      coreMotif: CoreMotif;
+    } | null = null;
 
     for (let c = 0; c < CANDIDATES; c++) {
       const seed = baseSeed + round * 100_003 + c * 7919;
@@ -71,7 +77,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       if (!sanity.valid) continue;
 
       if (!best || gce > best.gce) {
-        best = { gce, xml: exp.xml, score };
+        best = { gce, xml: exp.xml, score, coreMotif: built.coreMotif };
       }
     }
 
@@ -82,6 +88,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         xml: best.xml,
         gce: best.gce,
         version: 1,
+        coreMotif: best.coreMotif,
       };
     }
   }

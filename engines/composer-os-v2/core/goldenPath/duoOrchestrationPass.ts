@@ -39,6 +39,11 @@ function isSectionA(label: string): boolean {
   return !isSectionB(label);
 }
 
+function isSongModeHookProtectedGuitarBar(barIndex: number, context: CompositionContext): boolean {
+  if (!context.generationMetadata?.songModeHookFirstIdentity) return false;
+  return barIndex === 1 || barIndex === 2 || barIndex === 9 || barIndex === 17 || barIndex === 25;
+}
+
 /** Bar 7 is the duo identity / signature moment — do not thin interior notes here (V3.2 interval peak vs bar 6). */
 function isDuoIdentityGuitarBar(barIndex: number): boolean {
   return barIndex === 7;
@@ -129,6 +134,7 @@ function liftGuitarRegisterInSectionB(
 
 function liftGuitarLowMidInA(guitar: PartModel, context: CompositionContext, seed: number): void {
   for (const m of guitar.measures) {
+    if (isSongModeHookProtectedGuitarBar(m.index, context)) continue;
     const label = sectionLabelForBar(m.index, context);
     if (!isSectionA(label)) continue;
     const chord = chordForBar(context, m.index, m.chord);
@@ -201,6 +207,7 @@ function phraseArcExtraThinning(guitar: PartModel, context: CompositionContext, 
     21006,
     (bar) => {
       if (isDuoIdentityGuitarBar(bar)) return false;
+      if (isSongModeHookProtectedGuitarBar(bar, context)) return false;
       const t = (bar - 1) / totalBars;
       return t < 0.26 || t > 0.74;
     },
@@ -225,7 +232,9 @@ export function applyDuoOrchestrationPass(score: ScoreModel, context: Compositio
     seed,
     21007,
     (bar) =>
-      isSectionA(sectionLabelForBar(bar, context)) && !isDuoIdentityGuitarBar(bar),
+      isSectionA(sectionLabelForBar(bar, context)) &&
+      !isDuoIdentityGuitarBar(bar) &&
+      !isSongModeHookProtectedGuitarBar(bar, context),
     0.08
   );
   liftGuitarLowMidInA(guitar, context, seed);

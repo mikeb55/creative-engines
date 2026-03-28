@@ -69,7 +69,12 @@ export function applyDuoPitchVariationToGuitar(score: ScoreModel, context: Compo
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!guitar) return;
 
-  const eligible = collectGuitarMiddleNoteRefs(guitar);
+  let eligible = collectGuitarMiddleNoteRefs(guitar);
+  if (context.generationMetadata?.songModeHookFirstIdentity) {
+    eligible = eligible.filter(
+      (r) => r.barIndex !== 1 && r.barIndex !== 2 && r.barIndex !== 9 && r.barIndex !== 17 && r.barIndex !== 25
+    );
+  }
   if (eligible.length === 0) return;
 
   const frac = 0.18 + seededUnit(seed, 0, 7001) * 0.07;

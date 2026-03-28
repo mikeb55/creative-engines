@@ -61,7 +61,7 @@ function expandVoiceEvents(events: ScoreEvent[]): ScoreEvent[] {
     if (e.kind === 'note') {
       const n = e as NoteEvent;
       pieces.forEach((piece, i) => {
-        const nn = createNote(n.pitch, t, piece, voice);
+        const nn = createNote(n.pitch, t, piece, voice, n.motifRef);
         if (i === 0) {
           if (n.articulation) nn.articulation = n.articulation;
           if (n.velocity !== undefined) nn.velocity = n.velocity;

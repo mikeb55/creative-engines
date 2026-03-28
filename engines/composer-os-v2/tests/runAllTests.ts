@@ -48,6 +48,7 @@ import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { runSongModeIntegrationTests } from './songModeIntegration.test';
 import { runSongModeMusicXmlTests } from './songModeMusicXml.test';
+import { runSongModeHookIdentityTests } from './songModeHookIdentity.test';
 import { runSongwritingResearchParsingTests } from './songwritingResearchParsing.test';
 import { runSongwriterRuleRegistryTests } from './songwriterRuleRegistry.test';
 import { runSongwriterStyleResolverTests } from './songwriterStyleResolver.test';
@@ -160,6 +161,7 @@ const suites = [
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Song Mode MusicXML app', run: runSongModeMusicXmlTests },
+  { name: 'Song Mode hook identity', run: runSongModeHookIdentityTests },
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
   { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },
   { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },

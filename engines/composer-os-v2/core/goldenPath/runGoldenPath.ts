@@ -77,6 +77,7 @@ import {
   assertScoreMatchesLockedHarmonyWire,
   logSongModeHarmonyDebug,
 } from './customLockedHarmonyRouting';
+import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -526,6 +527,8 @@ export interface RunGoldenPathOptions {
   orchestrationEnabled?: boolean;
   /** ECM chamber: identity cell A1→B→A2 (default on). */
   identityCellEnabled?: boolean;
+  /** Song Mode: hook-first guitar melody (bar 1 motif, bar 25 varied return). */
+  songModeHookFirstIdentity?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -699,6 +702,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const errors: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
+  if (options?.songModeHookFirstIdentity) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      songModeHookFirstIdentity: true,
+    };
+  }
 
   appendHarmonyPipelineTrace(context, 'composition_context', [
     `totalBars=${context.form.totalBars}`,
@@ -724,6 +733,20 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
+    const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (guitar) {
+      const md = appliedContext.generationMetadata;
+      errors.push(
+        ...validateSongModeMotifSystem(
+          guitar,
+          appliedContext,
+          md.songModeCoreMotifs,
+          md.songModeMotifCount ?? 1
+        )
+      );
+    }
+  }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
   try {
     assertScoreMatchesLockedHarmonyWire(score, options);
@@ -947,7 +970,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   return {
     success,
     score,
-    context,
+    /** Must be `appliedContext`: style modules shallow-clone context; score build mutates that object (e.g. songModeCoreMotifs). */
+    context: appliedContext,
     plans,
     xml,
     integrityPassed: integrityResult.passed,

@@ -3,6 +3,7 @@
  */
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { CoreMotif } from '../motif/motifEngineTypes';
 
 export type RiffGridMode = 'eighth' | 'sixteenth';
 export type RiffDensity = 'sparse' | 'medium' | 'dense';
@@ -36,6 +37,8 @@ export interface RiffGeneratorSuccess {
   xml: string;
   gce: number;
   version: number;
+  /** Abstract motif this riff realization derives from (identity linkage). */
+  coreMotif?: CoreMotif;
 }
 
 export interface RiffGeneratorFailure {

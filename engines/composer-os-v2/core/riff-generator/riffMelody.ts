@@ -4,6 +4,7 @@
 
 import type { ChordToneSet } from '../goldenPath/guitarBassDuoHarmony';
 import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
+import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffRhythmSegment, RiffStyleId } from './riffTypes';
 import { randInt } from './riffRandom';
 
@@ -61,6 +62,35 @@ function passingPitch(prev: number | undefined, tones: ChordToneSet, rng: () => 
   return p;
 }
 
+/** Snap toward motif interval step from previous pitch (chord-tone pool). */
+function pitchFromMotifInterval(
+  last: number,
+  stepIdx: number,
+  coreMotif: CoreMotif,
+  tones: ChordToneSet,
+  low: number,
+  high: number
+): number {
+  const ip = coreMotif.intervalPattern;
+  if (ip.length === 0) return last;
+  const step = ip[stepIdx % ip.length];
+  const raw = last + step;
+  const pool = [tones.root, tones.third, tones.fifth, tones.seventh].filter(
+    (p) => p >= low - 12 && p <= high + 12
+  );
+  let best = midiInRange(raw % 12, low, high);
+  let bd = 99;
+  for (const p of pool) {
+    const c = midiInRange(p % 12, low, high);
+    const d = Math.abs(c - raw);
+    if (d < bd) {
+      bd = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
 export interface MelodyLine {
   startBeat: number;
   duration: number;
@@ -69,6 +99,7 @@ export interface MelodyLine {
 
 /**
  * Build monophonic melody for one bar; `firstBarPitch` seeds loop when bIndex > 0.
+ * Optional `coreMotif` biases successive notes to the abstract interval pattern (motif → riff binding).
  */
 export function assignMelodyToBar(
   bar: RiffRhythmSegment[],
@@ -77,7 +108,8 @@ export function assignMelodyToBar(
   rng: () => number,
   bIndex: number,
   firstBarFirstPitch: number | undefined,
-  prevLastPitch: number | undefined
+  prevLastPitch: number | undefined,
+  coreMotif?: CoreMotif
 ): { notes: MelodyLine[]; lastPitch: number } {
   const tones = chordTonesFromSymbol(chord);
   const { low, high } = styleRegister(style);
@@ -95,6 +127,10 @@ export function assignMelodyToBar(
     /** Hook: bar 0 first note — favor wider interval on second note */
     if (bIndex === 0 && notes.length === 0) {
       pitch = strongPitch(tones, chord, rng, low, high);
+    }
+    if (coreMotif && last !== undefined && notes.length > 0) {
+      const motifPitch = pitchFromMotifInterval(last, notes.length - 1, coreMotif, tones, low, high);
+      pitch = Math.round(0.55 * motifPitch + 0.45 * pitch);
     }
     notes.push({ startBeat: s.startBeat, duration: s.duration, pitch });
     last = pitch;

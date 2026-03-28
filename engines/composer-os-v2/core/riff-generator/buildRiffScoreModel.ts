@@ -10,6 +10,7 @@ import { applyLoopClosure, assignMelodyToBar, enforceHook, type MelodyLine } fro
 import type { RiffGeneratorParams } from './riffTypes';
 import { buildMultiBarRhythm } from './riffRhythm';
 import { mulberry32 } from './riffRandom';
+import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
 
 function measuresFromChordLoop(chords: string[]): import('../score-model/scoreModelTypes').MeasureModel[] {
   return chords.map((chord, i) => createMeasure(i + 1, chord));
@@ -18,10 +19,12 @@ function measuresFromChordLoop(chords: string[]): import('../score-model/scoreMo
 export interface BuiltRiffScore {
   score: ScoreModel;
   perBarRhythm: RiffRhythmSegment[][];
+  coreMotif: import('../motif/motifEngineTypes').CoreMotif;
 }
 
 export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore {
   const rng = mulberry32(params.seed);
+  const coreMotif = generateRiffCoreMotif(params.seed);
   const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars);
   const chords = [...params.chordSymbols];
   while (chords.length < params.bars) {
@@ -48,7 +51,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
       rng,
       b,
       firstPitch,
-      prevLast
+      prevLast,
+      coreMotif
     );
     if (b === 0 && notes[0]) firstPitch = notes[0].pitch;
     perBarMelody.push(notes);
@@ -68,9 +72,9 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
     const lines = perBarMelody[b]!;
     const ev = [];
     for (const ln of lines) {
-      ev.push(createNote(ln.pitch, ln.startBeat, ln.duration, 1));
+      ev.push(createNote(ln.pitch, ln.startBeat, ln.duration, 1, 'riff_core'));
       if (doubleOct) {
-        ev.push(createNote(ln.pitch + 12, ln.startBeat, ln.duration, 2));
+        ev.push(createNote(ln.pitch + 12, ln.startBeat, ln.duration, 2, 'riff_core'));
       }
     }
     if (ev.length === 0) {
@@ -109,5 +113,5 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   const score = createScore(params.title?.trim() || 'Riff', parts, {
     tempo: params.bpm,
   });
-  return { score, perBarRhythm };
+  return { score, perBarRhythm, coreMotif };
 }
