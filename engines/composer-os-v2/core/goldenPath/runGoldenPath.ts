@@ -78,6 +78,7 @@ import {
   logSongModeHarmonyDebug,
 } from './customLockedHarmonyRouting';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
+import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -745,6 +746,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           md.songModeMotifCount ?? 1
         )
       );
+      errors.push(...validateSongModePhraseEngineV1(guitar, appliedContext));
     }
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');

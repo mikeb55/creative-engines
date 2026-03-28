@@ -77,6 +77,7 @@ import {
   SONG_MODE_MOTIF_BAR_9,
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
+import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -1588,6 +1589,13 @@ export function generateGoldenPathDuoScore(
     plans.interactionPlan,
     texturePlan
   );
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    applySongModePhraseEngineV1(guitarPart, context);
+  }
   if (context.presetId === 'guitar_bass_duo') {
     nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
   }
