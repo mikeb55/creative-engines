@@ -18,6 +18,10 @@ export interface MusicXmlExportOptions {
   bassStaffVoice1Only?: boolean;
   /** Variant B: omit all &lt;harmony&gt; chord symbols (measure-level). */
   omitChordSymbols?: boolean;
+  /** When true, write &lt;kind text&gt; from the user suffix without lead-sheet normalization (custom locked progressions). */
+  preserveChordKindLiterals?: boolean;
+  /** When set (custom_locked), verify each measure chord matches before emitting &lt;harmony&gt; (fail fast if score drifted). */
+  assertLockedHarmonyBars?: string[];
   /** Variant C: minimize number of tied fragments (DP) instead of greedy largest-first. */
   minimizeNoteFragmentation?: boolean;
 }

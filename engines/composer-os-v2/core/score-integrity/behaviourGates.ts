@@ -22,6 +22,7 @@ import type { RhythmicConstraints } from '../rhythm-engine/rhythmTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
+import type { CompositionContext } from '../compositionContext';
 import { validateMotifIntegrity } from '../motif/motifValidation';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../style-modules/metheny/moduleValidation';
@@ -194,6 +195,8 @@ export function runBehaviourGates(
     interactionPlan?: InteractionPlan;
     /** Duo gates use golden-path chord assumptions; ECM chamber bypasses those checks. */
     presetId?: string;
+    /** When set, duo melody/harmony checks use the same chord-tone policy as generation. */
+    compositionContext?: CompositionContext;
   }
 ): BehaviourGatesResult {
   const errors: string[] = [];
@@ -288,7 +291,10 @@ export function runBehaviourGates(
     if (!duoRh.valid) errors.push(...duoRh.errors);
     const duoGce = validateDuoGceHardGate(duoGateScore);
     if (!duoGce.valid) errors.push(...duoGce.errors);
-    const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, { presetId: opts?.presetId });
+    const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, {
+      presetId: opts?.presetId,
+      compositionContext: opts?.compositionContext,
+    });
     if (!duoV3.valid) errors.push(...duoV3.errors);
     const duoSwing = validateDuoSwingRhythm(duoGateScore);
     if (!duoSwing.valid) errors.push(...duoSwing.errors);

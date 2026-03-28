@@ -7,7 +7,9 @@ import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
-import { chordTonesForChordSymbol, pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
+import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
+import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { enforceDuoVoiceLeadingPostOrchestration, enforceEcmPostEditGuards } from './ecmShapingPass';
 
@@ -19,11 +21,7 @@ const BASS_HIGH = 52;
 const GUITAR_LIFT_BELOW = 62;
 
 function chordForBar(context: CompositionContext, barIndex: number, mChord?: string): string {
-  if (mChord && mChord.trim()) return mChord.trim();
-  for (const seg of context.chordSymbolPlan.segments) {
-    if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) return seg.chord;
-  }
-  throw new Error(`duoOrchestrationPass: no chord for bar ${barIndex}`);
+  return resolveChordForDuoPostPass(context, barIndex, mChord);
 }
 
 function sectionLabelForBar(barIndex: number, context: CompositionContext): string {
@@ -155,7 +153,7 @@ function bassPassingNudgeInB(
     const label = sectionLabelForBar(m.index, context);
     if (!isSectionB(label)) continue;
     const chord = chordForBar(context, m.index, m.chord);
-    const t = chordTonesForChordSymbol(chord);
+    const t = chordTonesForChordSymbolWithContext(chord, context);
     const noteIdxs: number[] = [];
     m.events.forEach((e, i) => {
       if (e.kind === 'note') noteIdxs.push(i);

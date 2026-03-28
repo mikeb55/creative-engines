@@ -15,6 +15,7 @@ import type { MxReadinessResult } from './readiness/mxReadinessScorer';
 import type { ValidationResults } from './conductor/conductorTypes';
 import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes';
 import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
+import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -33,6 +34,19 @@ export interface RehearsalMarkPlan {
   marks: Array<{ label: string; bar: number }>;
 }
 
+/** Runtime trace of which harmony layer produced data (enable with COMPOSER_OS_HARMONY_TRACE=1). */
+export type HarmonyPipelineStage =
+  | 'ui_input'
+  | 'parse'
+  | 'composition_context'
+  | 'score_builder'
+  | 'musicxml_export';
+
+export interface HarmonyPipelineStageRecord {
+  stage: HarmonyPipelineStage;
+  detail: string;
+}
+
 /** Generation metadata. */
 export interface GenerationMetadata {
   generatedAt: string;
@@ -40,6 +54,8 @@ export interface GenerationMetadata {
   steps?: string[];
   /** Guitar–Bass Duo: built-in cycle vs user progression text */
   harmonySource?: 'builtin' | 'custom';
+  /** User pasted progression: do not normalize or substitute harmony (Song Mode / locked long-form). */
+  customHarmonyLocked?: boolean;
   /** Short readable summary when `harmonySource` is custom */
   customChordProgressionSummary?: string;
   /** UI / request: built-in vs custom progression mode */
@@ -48,6 +64,8 @@ export interface GenerationMetadata {
   chordProgressionInputRaw?: string;
   /** Parsed one chord per bar when custom harmony was applied successfully */
   parsedCustomProgressionBars?: string[];
+  /** True after written MusicXML harmony blocks match `lockedHarmonyBarsRaw` bar-for-bar (release gate). */
+  customHarmonyMusicXmlTruthPassed?: boolean;
   /** V3.6b — Receipt echo of `harmonySource` for clarity (chord source vs style grammar). */
   harmonySourceUsed?: 'builtin' | 'custom';
   /** V3.6b — Honest label: internal duo engine uses Barry Harris–derived rules by default; not a claim the user picked BH. */
@@ -74,6 +92,8 @@ export interface GenerationMetadata {
   totalBars?: number;
   /** V3.4 — key signature inference / export metadata (additive). */
   keySignatureReceipt?: KeySignatureReceiptMetadata;
+  /** Optional bar-by-bar contract: display + semantics for locked long-form / Song Mode. */
+  harmonyPipelineTrace?: HarmonyPipelineStageRecord[];
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
@@ -93,6 +113,15 @@ export interface CompositionContext {
   instrumentProfiles: InstrumentProfile[];
   chordSymbolPlan: ChordSymbolPlan;
   rehearsalMarkPlan: RehearsalMarkPlan;
+  /**
+   * When set (custom / locked harmony), authoritative one chord symbol per bar (1-based index = array index + 1).
+   * Score chords, MusicXML harmony export, and post-write validation must use this — not a derived planner path.
+   */
+  lockedHarmonyBarsRaw?: string[];
+  /**
+   * Locked Song Mode: one contract per bar (display + structured semantics). Generation and export must agree.
+   */
+  lockedHarmonyBarContracts?: HarmonyBarContract[];
 
   generationMetadata: GenerationMetadata;
   validation: ValidationResults;

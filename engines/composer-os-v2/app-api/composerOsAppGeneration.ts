@@ -13,8 +13,30 @@ import { runBigBandMode } from '../core/big-band/runBigBandMode';
 import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
+import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
+import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
+import { manifestPathForMusicXml } from './composerOsOutputPaths';
+import {
+  assertLockedHarmonyScoreAndXmlMatchBars,
+  validateLockedHarmonyMusicXmlTruthFromFile,
+} from '../core/export/validateLockedHarmonyMusicXml';
+import { writeOutputManifest } from './writeOutputManifest';
+import { mapAppStyleStackToEngine } from './mapStyleStack';
+import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
+import {
+  normalizeChordToken,
+  parseChordProgressionInputWithBarCount,
+} from '../core/harmony/chordProgressionParser';
+import { getChordForBar } from '../core/harmony/harmonyResolution';
+import {
+  isDesktopTruthDumpEnabled,
+  logSongModeTruthDumpConsole,
+  writeSongModeDesktopTruthDump,
+} from './desktopTruthDump';
 
 export const SUPPORTED_APP_PRESET_IDS = [
   'guitar_bass_duo',
@@ -63,6 +85,8 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     stylePairing: req.stylePairing,
     ensembleConfigId: req.ensembleConfigId,
     primarySongwriterStyle: req.primarySongwriterStyle,
+    harmonyMode: req.harmonyMode,
+    longFormEnabled: req.longFormEnabled,
   };
 }
 
@@ -133,56 +157,291 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         }
       : undefined,
   });
-  const ok = sm.validation.valid;
-  const errors = sm.validation.errors;
-  const filename = `song_mode_run_${tsSafe}_${effectiveSeed}.json`;
-  const payload = {
-    composerOsArtifact: 'song_structure',
-    composerOsVersion: COMPOSER_OS_VERSION,
-    presetId: 'song_mode',
-    seed: effectiveSeed,
-    tonalCenter: req.tonalCenter,
-    bpm: req.bpm,
+  const rawCustomHarmony = typeof req.chordProgressionText === 'string' ? req.chordProgressionText.trim() : '';
+  const useLockedCustomHarmony = rawCustomHarmony.length > 0;
+  let lockedHarmonyBarsAuthoritative: string[] | undefined;
+  if (useLockedCustomHarmony) {
+    const parse32 = parseChordProgressionInputWithBarCount(rawCustomHarmony, 32);
+    if (!parse32.ok) {
+      return {
+        success: false,
+        error: parse32.error,
+        productKind: 'musicxml',
+        composerOsVersion: COMPOSER_OS_VERSION,
+        chordProgressionParseFailed: true,
+        validation: validationForStructural(false, [parse32.error]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'song_mode',
+          activeModules: ['song_mode_compile'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+        },
+        scoreTitle: title,
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+    lockedHarmonyBarsAuthoritative = [...parse32.bars];
+  }
+  /**
+   * Without user paste, do not feed the 8-bar song scaffold (verse: Cmaj7→Am7→Fmaj7→G7) into duo32 as
+   * `custom` — runGoldenPath would tile it ×4 and bar 2 becomes Am7 instead of any real progression.
+   * Use builtin long-form harmony instead until the user supplies 32 pasted bars.
+   */
+  const lf = resolveLongFormRoute('guitar_bass_duo', {
     totalBars: req.totalBars,
-    variationId: req.variationId,
-    creativeControlLevel: req.creativeControlLevel,
-    timestamp: ts,
-    title: sm.compiledSong.title,
-    validationPassed: ok,
-    validationErrors: errors,
-    manifestHints: sm.manifestHints,
-    leadSheetReady: sm.manifestHints.leadSheetReady,
-    compiledSongId: sm.compiledSong.id,
-    sectionSummary: sm.compiledSong.sectionSummary,
-    songwritingPrimaryStyle: sm.manifestHints.songwritingPrimaryStyle,
-    songwritingRuleCount: sm.manifestHints.songwritingRuleCount,
-    researchParseOk: sm.manifestHints.researchParseOk,
-    songwritingFingerprint: sm.manifestHints.songwritingFingerprint,
-    universalLeadSheetMode: sm.universalLeadSheet.mode,
-    universalLeadSheetSectionCount: sm.universalLeadSheet.formSections.length,
-    stylePairingRequest: req.stylePairing ?? null,
-  };
-  const { filepath } = writeArtifactJson(outputDir, filename, payload);
-  return {
-    success: ok,
-    productKind: 'song_structure',
-    planningNotice:
-      'Song Mode: structural run + lead-sheet contract (no MusicXML export in this build). Output is a JSON summary.',
-    composerOsVersion: COMPOSER_OS_VERSION,
-    filename,
-    filepath,
-    validation: validationForStructural(ok, errors),
-    runManifest: {
-      seed: effectiveSeed,
+    longFormEnabled: req.longFormEnabled ?? true,
+  });
+  const useBuiltinDuo32WithoutUserPaste = !useLockedCustomHarmony && lf.kind === 'duo32';
+  const chordProgressionText = useLockedCustomHarmony
+    ? rawCustomHarmony
+    : useBuiltinDuo32WithoutUserPaste
+      ? undefined
+      : buildChordProgressionTextForDuoFromCompiledSong(sm.compiledSong);
+  const harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked' = useLockedCustomHarmony
+    ? 'custom_locked'
+    : useBuiltinDuo32WithoutUserPaste
+      ? 'builtin'
+      : 'custom';
+  logSongModeHarmonyDebug({
+    layer: 'composerOsAppGeneration:runSongStructure',
+    uiChordProgressionChars: rawCustomHarmony.length,
+    useLockedCustomHarmony,
+    harmonyMode: harmonyModeForRun,
+    totalBars: req.totalBars ?? 32,
+    longFormEnabled: req.longFormEnabled ?? true,
+  });
+  const gp = runGoldenPath(effectiveSeed, {
+    styleStack: mapAppStyleStackToEngine(req.styleStack),
+    presetId: 'guitar_bass_duo',
+    scoreTitle: title,
+    harmonyMode: harmonyModeForRun,
+    chordProgressionText,
+    ...(lockedHarmonyBarsAuthoritative
+      ? {
+          lockedHarmonyBarsRaw: lockedHarmonyBarsAuthoritative,
+          parsedChordBars: lockedHarmonyBarsAuthoritative,
+        }
+      : {}),
+    totalBars: req.totalBars ?? 32,
+    longFormEnabled: req.longFormEnabled ?? true,
+    keySignatureMode: req.keySignatureMode,
+    tonalCenterOverride: req.tonalCenterOverride,
+    tonalCenter: req.tonalCenter,
+    variationEnabled: req.variationEnabled === true ? true : undefined,
+  });
+  const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
+  if (isDesktopTruthDumpEnabled()) {
+    logSongModeTruthDumpConsole({
+      runId: runIdForTruth,
+      songModeOutputDir: outputDir,
+      req,
+      harmonyModeForRun,
+      rawCustomHarmony: rawCustomHarmony,
+      lockedHarmonyBarsAuthoritative,
+      gp,
+    });
+    writeSongModeDesktopTruthDump({
+      runId: runIdForTruth,
+      songModeOutputDir: outputDir,
+      req,
+      harmonyModeForRun,
+      rawCustomHarmony: rawCustomHarmony,
+      lockedHarmonyBarsAuthoritative,
+      gp,
+    });
+  }
+  if (lockedHarmonyBarsAuthoritative?.length === 32) {
+    try {
+      if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
+        for (let b = 1; b <= 4; b++) {
+          const got = getChordForBar(b, gp.context);
+          const exp = lockedHarmonyBarsAuthoritative[b - 1]!;
+          if (normalizeChordToken(got) !== normalizeChordToken(exp)) {
+            throw new Error(
+              `DESKTOP SONG MODE HARMONY: bar ${b} resolved "${got}" !== pasted "${exp}" (authority check bars 1–4)`
+            );
+          }
+        }
+      }
+      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, lockedHarmonyBarsAuthoritative);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        success: false,
+        error: msg,
+        productKind: 'musicxml',
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'song_mode',
+          activeModules: ['song_mode_compile'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+        },
+        scoreTitle: title,
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+  }
+  const songLayerOk = sm.validation.valid;
+  let diskHarmonyTruthErrors: string[] = [];
+  let filename: string | undefined;
+  let filepath: string | undefined;
+  if (gp.xml) {
+    filename = `composer_os_song_mode_${tsSafe}_${effectiveSeed}.musicxml`;
+    fs.mkdirSync(outputDir, { recursive: true });
+    filepath = path.join(outputDir, filename);
+    fs.writeFileSync(filepath, gp.xml, 'utf-8');
+    const locked = gp.context.lockedHarmonyBarsRaw;
+    if (locked && locked.length === gp.context.form.totalBars) {
+      const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
+      if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
+    }
+    writeOutputManifest(filepath, {
       presetId: 'song_mode',
-      activeModules: ['song_mode_compile', 'songwriting_research_rules'],
-      timestamp: ts,
-      scoreTitle: title,
+      styleStack: gp.runManifest?.activeModules ?? [],
+      seed: effectiveSeed,
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
-      experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
-    },
-    scoreTitle: title,
+      timestamp: ts,
+      scoreTitle: gp.runManifest?.scoreTitle,
+      ecmMode: gp.runManifest?.ecmMode,
+      harmonySource: gp.context.generationMetadata.harmonySource,
+      customChordProgressionSummary: gp.context.generationMetadata.customChordProgressionSummary,
+      progressionMode: gp.context.generationMetadata.progressionMode,
+      chordProgressionInputRaw: gp.context.generationMetadata.chordProgressionInputRaw,
+      parsedCustomProgressionBars: gp.context.generationMetadata.parsedCustomProgressionBars,
+      chordProgressionParseFailed: gp.context.generationMetadata.chordProgressionParseFailed,
+      builtInHarmonyFallbackOccurred: gp.context.generationMetadata.builtInHarmonyFallbackOccurred,
+      harmonySourceUsed: gp.context.generationMetadata.harmonySourceUsed,
+      styleGrammarLabel: gp.context.generationMetadata.styleGrammarLabel,
+      styleStackPrimaryModuleId: gp.context.generationMetadata.styleStackPrimaryModuleId,
+      styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
+      userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
+      userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
+      chordProgressionSubmittedRaw: gp.runManifest.chordProgressionSubmittedRaw,
+      parsedChordBarsSnapshot: gp.runManifest.parsedChordBarsSnapshot,
+      pipelineTruthInputStage: gp.runManifest.pipelineTruthInputStage,
+      pipelineTruthScoreStage: gp.runManifest.pipelineTruthScoreStage,
+      pipelineTruthExportStage: gp.runManifest.pipelineTruthExportStage,
+      keySignatureInferredTonic: gp.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
+      keySignatureConfidence: gp.context.generationMetadata.keySignatureReceipt?.confidence,
+      keySignatureOverrideUsed: gp.context.generationMetadata.keySignatureReceipt?.overrideUsed,
+      keySignatureNoneMode: gp.context.generationMetadata.keySignatureReceipt?.noneMode,
+      keySignatureHide: gp.context.generationMetadata.keySignatureReceipt?.hideKeySignature,
+      keySignatureFifths: gp.context.generationMetadata.keySignatureReceipt?.exportFifths,
+      keySignatureExportMode: gp.context.generationMetadata.keySignatureReceipt?.exportMode,
+      keySignatureInferredKey: gp.context.generationMetadata.keySignatureReceipt?.inferredKey,
+      keySignatureInferredMode: gp.context.generationMetadata.keySignatureReceipt?.inferredMode,
+      keySignatureInferredFifths: gp.context.generationMetadata.keySignatureReceipt?.inferredFifths,
+      keySignatureModeApplied: gp.context.generationMetadata.keySignatureReceipt?.keySignatureModeApplied,
+      keySignatureExportKeyWritten: gp.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
+      validation: {
+        scoreIntegrity: gp.integrityPassed,
+        exportIntegrity: gp.exportIntegrityPassed,
+        behaviourGates: gp.behaviourGatesPassed,
+        mxValid: gp.mxValidationPassed,
+        strictBarMath: gp.strictBarMathPassed,
+        exportRoundTrip: gp.exportRoundTripPassed,
+        instrumentMetadata: gp.instrumentMetadataPassed,
+        sibeliusSafe: gp.sibeliusSafe,
+        readinessRelease: gp.readiness.release,
+        readinessMx: gp.readiness.mx,
+        shareable: gp.readiness.shareable,
+        errors: [...gp.errors, ...diskHarmonyTruthErrors],
+      },
+    });
+  }
+  const mergedErrors = [...gp.errors, ...diskHarmonyTruthErrors];
+  if (!songLayerOk) {
+    mergedErrors.push(...sm.validation.errors);
+  }
+  const validation = {
+    integrityPassed: songLayerOk && gp.integrityPassed,
+    behaviourGatesPassed: songLayerOk && gp.behaviourGatesPassed,
+    mxValidationPassed: songLayerOk && gp.mxValidationPassed,
+    strictBarMathPassed: songLayerOk && gp.strictBarMathPassed,
+    exportRoundTripPassed: songLayerOk && gp.exportRoundTripPassed,
+    exportIntegrityPassed: songLayerOk && gp.exportIntegrityPassed,
+    instrumentMetadataPassed: songLayerOk && gp.instrumentMetadataPassed,
+    sibeliusSafe: songLayerOk && gp.sibeliusSafe,
+    readiness: gp.readiness,
+    errors: mergedErrors,
+  };
+  const success = gp.success && songLayerOk && !!gp.xml && diskHarmonyTruthErrors.length === 0;
+  const scoreTitleResolved = gp.runManifest?.scoreTitle ?? title;
+  const universalLeadSheet =
+    success && gp.context
+      ? buildUniversalLeadSheetFromCompositionContext(gp.context, scoreTitleResolved)
+      : undefined;
+  return {
+    success,
+    error: success ? undefined : mergedErrors[0] ?? 'Generation failed',
+    productKind: 'musicxml',
+    xml: gp.xml,
+    filename,
+    filepath,
+    manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
+    harmonySource: gp.context.generationMetadata.harmonySource,
+    customChordProgressionSummary: gp.context.generationMetadata.customChordProgressionSummary,
+    progressionMode: gp.context.generationMetadata.progressionMode,
+    chordProgressionInputRaw: gp.context.generationMetadata.chordProgressionInputRaw,
+    parsedCustomProgressionBars: gp.context.generationMetadata.parsedCustomProgressionBars,
+    chordProgressionParseFailed: gp.context.generationMetadata.chordProgressionParseFailed,
+    builtInHarmonyFallbackOccurred: gp.context.generationMetadata.builtInHarmonyFallbackOccurred,
+    customHarmonyMusicXmlTruthPassed: gp.context.generationMetadata.customHarmonyMusicXmlTruthPassed,
+    harmonySourceUsed: gp.context.generationMetadata.harmonySourceUsed,
+    styleGrammarLabel: gp.context.generationMetadata.styleGrammarLabel,
+    styleStackPrimaryModuleId: gp.context.generationMetadata.styleStackPrimaryModuleId,
+    styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
+    userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
+    userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
+    validation,
+    runManifest: gp.runManifest
+      ? {
+          seed: gp.runManifest.seed,
+          presetId: 'song_mode',
+          activeModules: Array.from(
+            new Set([
+              'song_mode_compile',
+              'songwriting_research_rules',
+              ...(gp.runManifest.activeModules ?? []),
+            ])
+          ),
+          timestamp: gp.runManifest.timestamp,
+          scoreTitle: gp.runManifest.scoreTitle,
+          ecmMode: gp.runManifest.ecmMode,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+          experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+          harmonySourceUsed: gp.runManifest.harmonySourceUsed,
+          styleGrammarLabel: gp.runManifest.styleGrammarLabel,
+          styleStackPrimaryModuleId: gp.runManifest.styleStackPrimaryModuleId,
+          styleStackPrimaryDisplayName: gp.runManifest.styleStackPrimaryDisplayName,
+          userSelectedStyleDisplayNames: gp.runManifest.userSelectedStyleDisplayNames,
+          userExplicitPrimaryStyle: gp.runManifest.userExplicitPrimaryStyle,
+          keySignatureInferredTonic: gp.runManifest.keySignatureInferredTonic,
+          keySignatureConfidence: gp.runManifest.keySignatureConfidence,
+          keySignatureOverrideUsed: gp.runManifest.keySignatureOverrideUsed,
+          keySignatureNoneMode: gp.runManifest.keySignatureNoneMode,
+          keySignatureHide: gp.runManifest.keySignatureHide,
+          keySignatureFifths: gp.runManifest.keySignatureFifths,
+          keySignatureExportMode: gp.runManifest.keySignatureExportMode,
+          keySignatureInferredKey: gp.runManifest.keySignatureInferredKey,
+          keySignatureInferredMode: gp.runManifest.keySignatureInferredMode,
+          keySignatureInferredFifths: gp.runManifest.keySignatureInferredFifths,
+          keySignatureModeApplied: gp.runManifest.keySignatureModeApplied,
+          keySignatureExportKeyWritten: gp.runManifest.keySignatureExportKeyWritten,
+        }
+      : undefined,
+    scoreTitle: scoreTitleResolved,
+    universalLeadSheet,
     requestEcho: requestEchoFromReq(req),
   };
 }

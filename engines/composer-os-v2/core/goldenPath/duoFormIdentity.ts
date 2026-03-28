@@ -6,8 +6,10 @@
 import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModelTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
+import type { CompositionContext } from '../compositionContext';
 import { styleStackToModuleIds } from '../style-modules/styleModuleTypes';
 import { chordTonesForChordSymbol, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { analyzeGuitarSectionMeasures } from '../style-modules/bacharach/bacharachSignal';
 
 const EPS = 1e-3;
@@ -21,8 +23,12 @@ export function goldenPathChordForBar(barIndex: number): string {
   return 'A7alt';
 }
 
-function isChordTone(pitch: number, chord: string): boolean {
-  const t = chordTonesForChordSymbol(chord);
+function userChordToneOpts(ctx?: CompositionContext) {
+  return ctx && shouldUseUserChordSemanticsForTones(ctx) ? ({ lockedHarmony: true } as const) : undefined;
+}
+
+function isChordTone(pitch: number, chord: string, ctx?: CompositionContext): boolean {
+  const t = chordTonesForChordSymbol(chord, userChordToneOpts(ctx));
   const pcs = [t.root, t.third, t.fifth, t.seventh].map((p) => p % 12);
   const pc = pitch % 12;
   return pcs.some((x) => x % 12 === pc);
@@ -44,10 +50,10 @@ function lastGuitarNoteInBar(guitar: PartModel, bar: number): NoteEvent | undefi
   return best;
 }
 
-function bassStrongBeatRootOrThird(bass: PartModel, bar: number, chord: string): boolean {
+function bassStrongBeatRootOrThird(bass: PartModel, bar: number, chord: string, ctx?: CompositionContext): boolean {
   const m = bass.measures.find((x) => x.index === bar);
   if (!m) return false;
-  const t = chordTonesForChordSymbol(chord);
+  const t = chordTonesForChordSymbol(chord, userChordToneOpts(ctx));
   const rootPc = t.root % 12;
   const thirdPc = t.third % 12;
   const slashPc = parseChordSymbol(chord).slashBassPc;
@@ -64,7 +70,7 @@ function bassStrongBeatRootOrThird(bass: PartModel, bar: number, chord: string):
 }
 
 /** Cadence bars: 4 (weaker dominant area), 8 (strong turnaround). */
-function scoreCadenceClarity(score: ScoreModel): number {
+function scoreCadenceClarity(score: ScoreModel, compositionContext?: CompositionContext): number {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!g || !b) return 0;
@@ -74,8 +80,8 @@ function scoreCadenceClarity(score: ScoreModel): number {
     if (bar > lastBar) continue;
     const ch = g.measures.find((x) => x.index === bar)?.chord ?? goldenPathChordForBar(bar);
     const gn = lastGuitarNoteInBar(g, bar);
-    if (gn && isChordTone(gn.pitch, ch)) s += 1.2;
-    if (bassStrongBeatRootOrThird(b, bar, ch)) s += 0.8;
+    if (gn && isChordTone(gn.pitch, ch, compositionContext)) s += 1.2;
+    if (bassStrongBeatRootOrThird(b, bar, ch, compositionContext)) s += 0.8;
   }
   return s;
 }
@@ -178,6 +184,7 @@ function scoreBacharachPhraseBonus(score: ScoreModel, styleStack?: StyleStack): 
 export interface FormIdentitySoftOpts {
   motifState?: MotifTrackerState;
   styleStack?: StyleStack;
+  compositionContext?: CompositionContext;
 }
 
 /**
@@ -188,7 +195,7 @@ export function scoreFormIdentitySoft(score: ScoreModel, opts?: FormIdentitySoft
   if (!g) return 0;
   const totalBars = g.measures.length;
 
-  const cad = scoreCadenceClarity(score);
+  const cad = scoreCadenceClarity(score, opts?.compositionContext);
   const motif = opts?.motifState ? motifSimilarityScore(opts.motifState, g) : 0;
   const contrast = scoreABContrast(g, totalBars);
   const pacing = scoreHarmonicPacing(score);

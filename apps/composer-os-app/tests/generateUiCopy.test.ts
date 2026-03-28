@@ -33,8 +33,8 @@ describe('generateUiCopy', () => {
     expect(duo.headline).toMatch(/MusicXML|score/i);
 
     const song = describeOutputKind('song_mode');
-    expect(song.category).toBe('lead_sheet_ready');
-    expect(song.headline).toMatch(/Lead-sheet|structure/i);
+    expect(song.category).toBe('full_score_musicxml');
+    expect(song.headline).toMatch(/MusicXML|score/i);
 
     const bb = describeOutputKind('big_band');
     expect(bb.category).toBe('planning');

@@ -20,7 +20,11 @@ export function resolveLongFormRoute(
   }
   const tb = hints?.totalBars;
   const enabled = hints?.longFormEnabled === true;
-  if (tb === LONG_FORM_DUO_BARS || (enabled && tb === LONG_FORM_DUO_BARS)) {
+  if (tb === LONG_FORM_DUO_BARS) {
+    return { kind: 'duo32', totalBars: LONG_FORM_DUO_BARS };
+  }
+  /** Song Mode often omits `totalBars` but sets longFormEnabled — still resolve 32-bar duo */
+  if (enabled && (tb === undefined || tb === LONG_FORM_DUO_BARS)) {
     return { kind: 'duo32', totalBars: LONG_FORM_DUO_BARS };
   }
   if (typeof tb === 'number' && Number.isFinite(tb) && tb > 8 && tb === LONG_FORM_DUO_BARS) {

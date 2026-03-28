@@ -17,6 +17,7 @@ import type { ModulationPlan } from '../modulation/modulationPlanTypes';
 import { validateModulationPlan } from '../modulation/modulationValidation';
 import { buildDuoLongFormPlan } from './duoLongFormPlanner';
 import { LONG_FORM_DUO_BARS } from './longFormRouteResolver';
+import { assertLockedHarmonyContractsToneParity, buildLockedHarmonyBarContracts } from '../harmony/harmonyBarContract';
 
 const BUILTIN_EIGHT: readonly string[] = ['Dmin9', 'G13', 'Cmaj9', 'A7alt', 'Dmin9', 'G13', 'Cmaj9', 'A7alt'];
 
@@ -51,6 +52,96 @@ export interface BuildDuoLongFormContextOptions {
 /**
  * 32-bar Duo context — same preset DNA as 8-bar; extended form + optional tiled custom harmony.
  */
+/**
+ * 32-bar Duo with **exact** user chords (one symbol per bar) — no tiling, modulation, or builtin fill.
+ */
+export function buildDuoLongFormCompositionContextFromBars32(
+  seed: number,
+  bars32: string[],
+  opts?: { chordProgressionInputRaw?: string }
+): { context: CompositionContext; modulationPlan: ModulationPlan } {
+  const preset = guitarBassDuoPreset;
+  const feel = preset.defaultFeel;
+  const lf = buildDuoLongFormPlan();
+  const form = {
+    sections: lf.sections.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
+    totalBars: LONG_FORM_DUO_BARS,
+  };
+
+  const modulationPlan = generateModulationPlan(seed, LONG_FORM_DUO_BARS);
+  modulationPlan.active = false;
+
+  const harmony: HarmonyPlan = buildHarmonyPlanFromBars(bars32);
+  const chordSymbolPlan = buildChordSymbolPlanFromBars(bars32);
+  const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: LONG_FORM_DUO_BARS };
+
+  const sectionRoles = planSectionRoles(form.sections, LONG_FORM_ROLE_MAP);
+  const densityPlan = planDensityCurve(sectionRoles, LONG_FORM_DUO_BARS);
+  const densityCurve = { segments: densityPlan.segments, totalBars: LONG_FORM_DUO_BARS };
+
+  const guitarMap = planGuitarRegisterMap(sectionRoles);
+  const bassMap = planBassRegisterMap(sectionRoles);
+  const register = {
+    melody: [55, 79] as [number, number],
+    bass: [36, 55] as [number, number],
+    byInstrument: {
+      clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [36, 55],
+    },
+  };
+
+  const rehearsalMarkPlan = {
+    marks: [
+      { label: 'A', bar: 1 },
+      { label: "A'", bar: 9 },
+      { label: 'B', bar: 17 },
+      { label: "A''", bar: 25 },
+    ],
+  };
+
+  const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
+
+  const raw = opts?.chordProgressionInputRaw?.trim();
+
+  const lockedHarmonyBarContracts = buildLockedHarmonyBarContracts(bars32);
+  assertLockedHarmonyContractsToneParity(lockedHarmonyBarContracts);
+
+  const context: CompositionContext = {
+    systemVersion: '2.0.0',
+    presetId: 'guitar_bass_duo',
+    seed,
+    form,
+    feel,
+    harmony,
+    motif: { activeMotifs: [], variants: {} },
+    phrase,
+    register,
+    density: densityCurve,
+    instrumentProfiles: preset.instrumentProfiles,
+    chordSymbolPlan,
+    rehearsalMarkPlan,
+    lockedHarmonyBarsRaw: [...bars32],
+    lockedHarmonyBarContracts,
+    generationMetadata: {
+      generatedAt: new Date().toISOString(),
+      harmonySource: 'custom',
+      customHarmonyLocked: true,
+      progressionMode: 'custom',
+      customChordProgressionSummary: bars32.join(' | '),
+      parsedCustomProgressionBars: [...bars32],
+      chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
+      builtInHarmonyFallbackOccurred: false,
+      longFormDuo: true,
+      modulationPlanActive: false,
+      totalBars: LONG_FORM_DUO_BARS,
+    },
+    validation: { gates: [], passed: true },
+    readiness: { release: release.release, mx: release.mx },
+  };
+
+  return { context, modulationPlan };
+}
+
 export function buildDuoLongFormCompositionContext(
   seed: number,
   options?: BuildDuoLongFormContextOptions
@@ -121,6 +212,7 @@ export function buildDuoLongFormCompositionContext(
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
+    lockedHarmonyBarsRaw: [...bars32],
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: options?.parsedChordBars8 ? 'custom' : 'builtin',

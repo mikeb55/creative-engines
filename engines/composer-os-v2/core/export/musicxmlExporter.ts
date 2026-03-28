@@ -5,6 +5,7 @@
  */
 
 import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
+import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { parseChordForMusicXmlHarmony } from './chordSymbolMusicXml';
@@ -292,7 +293,18 @@ ${keyCaption}${feelEl}`;
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
         if (m.chord && !opts.omitChordSymbols) {
-          const { rootStep, rootAlter, kindText, bassStep, bassAlter } = parseChordForMusicXmlHarmony(m.chord);
+          const assertLocked = opts.assertLockedHarmonyBars;
+          if (assertLocked && assertLocked.length === orderedMeasures.length && i < assertLocked.length) {
+            const exp = assertLocked[i];
+            if (normalizeChordToken(m.chord) !== normalizeChordToken(exp ?? '')) {
+              throw new Error(
+                `CUSTOM HARMONY NOT REACHING GOLDEN PATH: MusicXML export bar ${measureNumber} chord "${m.chord}" !== locked "${exp}"`
+              );
+            }
+          }
+          const { rootStep, rootAlter, kindText, bassStep, bassAlter } = parseChordForMusicXmlHarmony(m.chord, {
+            literalKind: opts.preserveChordKindLiterals === true,
+          });
           const alterEl = rootAlter !== 0 ? `<root-alter>${rootAlter}</root-alter>` : '';
           const bassAlterEl =
             bassStep !== undefined && bassAlter !== undefined && bassAlter !== 0

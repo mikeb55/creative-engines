@@ -35,6 +35,7 @@ declare global {
         desktopMode: 'ipc';
       }>;
       invokeApi: (channel: string, payload?: unknown) => Promise<unknown>;
+      getRuntimeBuildInfo?: () => Promise<Record<string, unknown>>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };

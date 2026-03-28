@@ -32,7 +32,8 @@ export const MODE_UX: ModeUx[] = [
     whatItDoes:
       'Plans sections, hooks, and songwriting rules. Songwriter style shapes melody and form; arranger style nudges how sections relate (pairing is guidance, not a second engine).',
     bestFor: 'Verse/chorus arcs, title hooks, and a contract you can take to a lead sheet or band.',
-    output: 'A JSON summary (structure + lead-sheet-ready contract). No MusicXML file in this build.',
+    output:
+      'Exported MusicXML — song structure and hooks from Song Mode, realised as an eight-bar guitar–bass duo chart.',
   },
   {
     id: 'ecm_chamber',
@@ -82,18 +83,19 @@ export function describeOutputKind(presetId: string): {
   headline: string;
   subtitle: string;
 } {
-  if (presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber' || presetId === 'riff_generator') {
+  if (
+    presetId === 'guitar_bass_duo' ||
+    presetId === 'ecm_chamber' ||
+    presetId === 'riff_generator' ||
+    presetId === 'song_mode'
+  ) {
     return {
       category: 'full_score_musicxml',
       headline: 'Full score · MusicXML export',
-      subtitle: 'You get a complete exported score file for notation software.',
-    };
-  }
-  if (presetId === 'song_mode') {
-    return {
-      category: 'lead_sheet_ready',
-      headline: 'Lead-sheet-ready structure',
-      subtitle: 'JSON plan with sections and lead-sheet contract — not engraved MusicXML in this build.',
+      subtitle:
+        presetId === 'song_mode'
+          ? 'Song Mode plans hooks and sections, then exports a duo chart as MusicXML for Sibelius or MuseScore.'
+          : 'You get a complete exported score file for notation software.',
     };
   }
   return {

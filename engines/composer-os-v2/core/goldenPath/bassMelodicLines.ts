@@ -5,6 +5,252 @@
 import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { approachFromBelow, clampPitch, seededUnit } from './guitarBassDuoHarmony';
+import { contourFingerprint } from './bassLineFingerprints';
+
+/** 2-bar phrase expressive role — avoids default quarter/eighth “walking” sameness. */
+export type DuoPhraseBehaviourMode = 'stepwise' | 'leap' | 'rhythmic' | 'pedal';
+
+const DUO_MODE_ORDER: DuoPhraseBehaviourMode[] = ['stepwise', 'leap', 'rhythmic', 'pedal'];
+
+/**
+ * Deterministic mode per phrase pair; last three *completed* phrase modes avoided (no immediate repeats).
+ */
+export function duoPhraseModeForPairIndex(
+  seed: number,
+  pairIndex: number,
+  recentCompleted: DuoPhraseBehaviourMode[]
+): DuoPhraseBehaviourMode {
+  const h = (seed * 2654435761 + pairIndex * 97531) >>> 0;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const cand = DUO_MODE_ORDER[(h + attempt) % 4];
+    if (!recentCompleted.slice(-3).includes(cand)) return cand;
+  }
+  return DUO_MODE_ORDER[(pairIndex + (h % 4)) % 4];
+}
+
+/** Detects dense even-eighth streams (walking cliche) for max-2-bar caps. */
+export function measureIsDenseEvenEighthWalk(m: MeasureModel): boolean {
+  const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
+  if (notes.length < 5) return false;
+  for (const n of notes) {
+    if (Math.abs(n.duration - 0.5) > 0.09) return false;
+  }
+  const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat);
+  for (let i = 1; i < sorted.length; i++) {
+    if (Math.abs(sorted[i]!.startBeat - sorted[i - 1]!.startBeat - 0.5) > 0.09) return false;
+  }
+  return true;
+}
+
+/**
+ * Duo “simplified” bars: one explicit behaviour per 2-bar phrase (pedal / leap / syncope / step melody).
+ */
+export function emitDuoPhraseModeBar(params: {
+  m: MeasureModel;
+  mode: DuoPhraseBehaviourMode;
+  t0: number;
+  span: number;
+  seed: number;
+  bar: number;
+  walkLow: number;
+  effectiveHigh: number;
+  rootClamped: number;
+  third: number;
+  fifth: number;
+  seventh: number;
+  guide: number;
+  slashBassPitch?: number;
+  phraseRetryAttempt: number;
+}): void {
+  const {
+    m,
+    mode,
+    t0,
+    span,
+    seed,
+    bar,
+    walkLow,
+    effectiveHigh,
+    rootClamped,
+    third,
+    fifth,
+    seventh,
+    guide,
+    slashBassPitch,
+    phraseRetryAttempt,
+  } = params;
+  const r0 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : rootClamped;
+  const t = qBeat(t0);
+  if (t > 0) addEvent(m, createRest(0, t));
+  const sp = qBeat(4 - t);
+  if (sp <= EPS) return;
+  const rot = phraseRetryAttempt % 3;
+
+  if (mode === 'pedal') {
+    const pAnchor = seededUnit(seed, bar, 920) < 0.45 ? clampPitch(guide, walkLow, effectiveHigh) : r0;
+    const dur1 = qBeat(Math.min(2.75, sp * (0.62 + seededUnit(seed, bar, 921) * 0.12)));
+    addEvent(m, createNote(pAnchor, t, dur1));
+    const rem = qBeat(sp - dur1);
+    if (rem > 0.3) {
+      const p2 =
+        seededUnit(seed, bar, 922) < 0.5 ? clampPitch(fifth, walkLow, effectiveHigh) : clampPitch(third, walkLow, effectiveHigh);
+      addEvent(m, createNote(p2, t + dur1, rem));
+    }
+    return;
+  }
+
+  if (mode === 'leap') {
+    const p1 =
+      seededUnit(seed, bar, 930 + rot) < 0.55 ? clampPitch(third, walkLow, effectiveHigh) : r0;
+    const leapTarget =
+      seededUnit(seed, bar, 931) < 0.5 ? clampPitch(fifth, walkLow, effectiveHigh) : clampPitch(seventh, walkLow, effectiveHigh);
+    let p2 =
+      Math.abs(leapTarget - p1) >= 4 ? leapTarget : clampPitch(seventh, walkLow, effectiveHigh);
+    if (Math.abs(p2 - p1) < 4) p2 = clampPitch(fifth, walkLow, effectiveHigh);
+    const d1 = qBeat(Math.min(1.35, sp * 0.44));
+    addEvent(m, createNote(p1, t, d1));
+    const d2 = qBeat(sp - d1);
+    if (d2 > 0.25) addEvent(m, createNote(clampPitch(p2, walkLow, effectiveHigh), t + d1, d2));
+    return;
+  }
+
+  if (mode === 'rhythmic') {
+    const gap = qBeat(0.45 + seededUnit(seed, bar, 940) * 0.55 + rot * 0.1);
+    const hit1 =
+      seededUnit(seed, bar, 941) < 0.5 ? clampPitch(third, walkLow, effectiveHigh) : clampPitch(seventh, walkLow, effectiveHigh);
+    if (gap > 0.05) addEvent(m, createRest(t, gap));
+    const tHit = qBeat(t + gap);
+    const rem = qBeat(4 - tHit);
+    const dA = qBeat(Math.min(0.75, rem * 0.52));
+    addEvent(m, createNote(hit1, tHit, dA));
+    const t2 = qBeat(tHit + dA);
+    const rem2 = qBeat(4 - t2);
+    if (rem2 > 0.28) {
+      const rest2 = qBeat(0.2 + seededUnit(seed, bar, 943) * 0.45);
+      addEvent(m, createRest(t2, Math.min(rest2, rem2 - 0.25)));
+      const t3 = qBeat(t2 + Math.min(rest2, rem2 - 0.25));
+      const rem3 = qBeat(4 - t3);
+      const pB =
+        seededUnit(seed, bar, 944) < 0.5 ? clampPitch(fifth, walkLow, effectiveHigh) : clampPitch(guide, walkLow, effectiveHigh);
+      if (rem3 > 0.22) addEvent(m, createNote(clampPitch(pB, walkLow, effectiveHigh), t3, rem3));
+    }
+    return;
+  }
+
+  const ap = approachFromBelow(r0, walkLow, effectiveHigh);
+  const base = [
+    { w: 1.15, pitch: ap },
+    { w: 1.05, pitch: clampPitch(third, walkLow, effectiveHigh) },
+    { w: 1.1, pitch: clampPitch(fifth, walkLow, effectiveHigh) },
+    { w: 1, pitch: clampPitch(seventh, walkLow, effectiveHigh) },
+    { w: 1.05, pitch: clampPitch(guide, walkLow, effectiveHigh) },
+  ];
+  addWeightedPhrase(m, t, sp, applyPhraseWeights(perturbWeights(base, bar, seed), bar, seed, false));
+}
+
+/**
+ * Slash-bass symbols (e.g. Dmaj9/F#) require the bass line to spell that pitch class somewhere.
+ * Some phrase emitters (echo / contour breaks) can drop it — call this before scrub/finalize.
+ */
+export function ensureSlashBassPitchPresentInMeasure(
+  m: MeasureModel,
+  slashBassPitch: number | undefined,
+  walkLow: number,
+  high: number
+): void {
+  if (slashBassPitch === undefined) return;
+  const targetPc = ((slashBassPitch % 12) + 12) % 12;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
+    if (pc === targetPc) return;
+  }
+  const firstIdx = m.events.findIndex((ev) => ev.kind === 'note');
+  if (firstIdx >= 0) {
+    const n = m.events[firstIdx] as { pitch: number; kind: string; startBeat: number; duration: number };
+    m.events[firstIdx] = { ...n, pitch: clampPitch(slashBassPitch, walkLow, high) };
+  }
+}
+
+/** Every bar should articulate 3rd or 7th somewhere (guide-tone voice). */
+export function ensureBassBarHitsThirdOrSeventh(
+  m: MeasureModel,
+  third: number,
+  seventh: number,
+  walkLow: number,
+  high: number,
+  slashBassPc?: number
+): void {
+  if (slashBassPc !== undefined) {
+    const sb = ((slashBassPc % 12) + 12) % 12;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
+      if (pc === sb) return;
+    }
+  }
+  const thirdPc = ((third % 12) + 12) % 12;
+  const seventhPc = ((seventh % 12) + 12) % 12;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
+    if (pc === thirdPc || pc === seventhPc) return;
+  }
+  const idxs = m.events.map((e, i) => (e.kind === 'note' ? i : -1)).filter((i) => i >= 0);
+  if (idxs.length === 0) return;
+  const pick = idxs[Math.min(1, idxs.length - 1)]!;
+  const n = m.events[pick] as { pitch: number; kind: 'note'; startBeat: number; duration: number };
+  const target = clampPitch(third, walkLow, high);
+  m.events[pick] = { ...n, pitch: target, kind: 'note' };
+}
+
+/** Phrase ends (even bars): land resolve (root/fifth) or suspend (third/seventh), not weak chromatic tails. */
+export function nudgeDuoBassPhraseEndTone(
+  m: MeasureModel,
+  barIndex: number,
+  rootClamped: number,
+  third: number,
+  fifth: number,
+  seventh: number,
+  walkLow: number,
+  high: number,
+  seed: number
+): void {
+  if (barIndex % 2 !== 0) return;
+  let lastI = -1;
+  let bestEnd = -1;
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i];
+    if (e.kind !== 'note') continue;
+    const n = e as { startBeat: number; duration: number };
+    const end = n.startBeat + n.duration;
+    if (end >= bestEnd) {
+      bestEnd = end;
+      lastI = i;
+    }
+  }
+  if (lastI < 0) return;
+  const n = m.events[lastI] as { pitch: number; kind: 'note'; startBeat: number; duration: number };
+  const pc = ((n.pitch % 12) + 12) % 12;
+  const resolveSet = new Set([((rootClamped % 12) + 12) % 12, ((fifth % 12) + 12) % 12]);
+  const suspendSet = new Set([((third % 12) + 12) % 12, ((seventh % 12) + 12) % 12]);
+  const wantResolve = seededUnit(seed, barIndex, 951) < 0.5;
+  const pool = wantResolve
+    ? [clampPitch(rootClamped, walkLow, high), clampPitch(fifth, walkLow, high)]
+    : [clampPitch(third, walkLow, high), clampPitch(seventh, walkLow, high)];
+  const ok = wantResolve ? resolveSet.has(pc) : suspendSet.has(pc);
+  if (ok) return;
+  let best = pool[0]!;
+  let bestD = Math.abs(best - n.pitch);
+  for (const p of pool) {
+    const d = Math.abs(p - n.pitch);
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  }
+  m.events[lastI] = { ...n, pitch: best, kind: 'note' };
+}
 
 export type DuoSwingBassMode = 'hold' | 'anticipate' | 'offbeat';
 
@@ -132,7 +378,46 @@ export function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
 }
 
-export type BassSectionRole = 'A' | 'B' | 'cadence';
+export type BassSectionRole = 'A' | 'A_prime' | 'B' | 'cadence';
+
+/**
+ * Break a stuck contour (same inter-note steps as previous bar) by swapping adjacent chord-tone
+ * pitches or nudging toward pool tones. Deterministic from seed + bar.
+ */
+export function breakMeasureContourLocally(
+  m: MeasureModel,
+  seed: number,
+  bar: number,
+  opts: { walkLow: number; high: number; chordTonePool: number[] }
+): boolean {
+  const { walkLow, high, chordTonePool } = opts;
+  const pool = [...new Set(chordTonePool.map((p) => clampPitch(p, walkLow, high)))];
+  const indices = m.events.map((e, i) => (e.kind === 'note' ? i : -1)).filter((i) => i >= 0);
+  if (indices.length < 2) return false;
+  const before = contourFingerprint(m);
+  const j = 1 + ((seed + bar * 17) % (indices.length - 1));
+  const i0 = indices[j - 1]!;
+  const i1 = indices[j]!;
+  const e0 = m.events[i0] as { pitch: number; kind: string; startBeat: number; duration: number };
+  const e1 = m.events[i1] as { pitch: number; kind: string; startBeat: number; duration: number };
+  const tmp = e0.pitch;
+  e0.pitch = clampPitch(e1.pitch, walkLow, high);
+  e1.pitch = clampPitch(tmp, walkLow, high);
+  let after = contourFingerprint(m);
+  if (after === before || after === '') {
+    for (const alt of pool) {
+      e0.pitch = alt;
+      after = contourFingerprint(m);
+      if (after !== before && after !== '') return true;
+    }
+    for (const alt of pool) {
+      e1.pitch = alt;
+      after = contourFingerprint(m);
+      if (after !== before && after !== '') return true;
+    }
+  }
+  return after !== before && after !== '';
+}
 
 /** Map guitar pitch into bass register sharing pitch class (motif echo). */
 export function echoGuitarToBass(guitarPitch: number, walkLow: number, high: number): number {
@@ -199,7 +484,12 @@ function applyPhraseWeights(
   seed: number,
   duoSteadyWalking: boolean
 ): Array<{ w: number; pitch: number }> {
-  if (duoSteadyWalking) return base.map((p) => ({ ...p, w: 1 }));
+  if (duoSteadyWalking) {
+    return base.map((p, i) => ({
+      ...p,
+      w: 1 + (((seed + bar * 7 + i * 11) % 7) - 3) * 0.045,
+    }));
+  }
   return perturbWeights(base, bar, seed);
 }
 
@@ -317,6 +607,16 @@ export function emitMelodicBassBar(params: {
   slashBassPitch?: number;
   /** Guitar–bass duo: prefer even phrase weights → steadier quarter / eighth subdivision. */
   duoSteadyWalking?: boolean;
+  /** Phrase A: stepwise; A′: leap-leaning; mixed blends buckets. */
+  motionHint?: 'step' | 'leap' | 'mixed';
+  /** A: sparser targets; A′: denser rhythmic activity. */
+  densityHint?: 'sparse' | 'normal' | 'dense';
+  /** Phrase retry: rotate rhythm / bucket (0–2). */
+  phraseRhythmVariant?: number;
+  /** 2-bar expressive mode (duo): pedal / leap / syncopation / step melody. */
+  phraseBehaviourMode?: DuoPhraseBehaviourMode;
+  /** Anti-loop retry count — perturbs phrase-mode bars. */
+  bassPhraseRetryAttempt?: number;
 }): void {
   const {
     m,
@@ -337,9 +637,18 @@ export function emitMelodicBassBar(params: {
     guideToneBias,
     slashBassPitch,
     duoSteadyWalking,
+    motionHint,
+    densityHint,
+    phraseRhythmVariant,
+    phraseBehaviourMode,
+    bassPhraseRetryAttempt,
   } = params;
   const steady = !!duoSteadyWalking;
-  const gtBias = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
+  const modeRetry = bassPhraseRetryAttempt ?? phraseRhythmVariant ?? 0;
+  const density = densityHint ?? 'normal';
+  const gtBiasBase = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
+  const gtBias =
+    gtBiasBase * (density === 'sparse' ? 0.93 : density === 'dense' ? 1.12 : 1);
   const rootForLine =
     slashBassPitch !== undefined
       ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
@@ -351,13 +660,16 @@ export function emitMelodicBassBar(params: {
   }
 
   const ap = approachFromBelow(rootForLine, walkLow, effectiveHigh);
-  const land = seededUnit(seed, bar, 41) < 0.68 ? fifth : rootForLine;
-  const lastLead = seededUnit(seed, bar, 43) < 0.58 ? fifth : rootForLine;
+  const sForMelody = section === 'A_prime' ? seed + 133 + bar * 5 : seed;
+  const land = seededUnit(sForMelody, bar, 41) < 0.68 ? fifth : rootForLine;
+  const lastLead = seededUnit(sForMelody, bar, 43) < 0.58 ? fifth : rootForLine;
 
   const biasPieces = (base: Array<{ w: number; pitch: number }>) =>
     applyGuideToneWeightBias(base, rootForLine, third, seventh, guide, gtBias);
 
-  const useEcho = section === 'B' && guitarFirstPitchInBar !== undefined;
+  const useEcho =
+    guitarFirstPitchInBar !== undefined &&
+    (section === 'B' || (section === 'A_prime' && seededUnit(sForMelody, bar, 814) < 0.38));
   let echoPitch =
     guitarFirstPitchInBar !== undefined
       ? echoGuitarToBass(guitarFirstPitchInBar, walkLow, effectiveHigh)
@@ -369,8 +681,35 @@ export function emitMelodicBassBar(params: {
     echoPitch = pickEchoPitchForLine(prevBassPitch, echoPitch, third, fifth, guide, rootForLine, walkLow, effectiveHigh);
   }
 
-  const u = seededUnit(seed, bar, 61);
-  const rot = (bar + seed * 3) % 3;
+  if (phraseBehaviourMode && section !== 'cadence' && !useEcho && phraseBehaviourMode !== 'stepwise') {
+    emitDuoPhraseModeBar({
+      m,
+      mode: phraseBehaviourMode,
+      t0: firstStart,
+      span,
+      seed: sForMelody,
+      bar,
+      walkLow,
+      effectiveHigh,
+      rootClamped,
+      third,
+      fifth,
+      seventh,
+      guide,
+      slashBassPitch,
+      phraseRetryAttempt: modeRetry,
+    });
+    return;
+  }
+
+  const rhythmVar = phraseRhythmVariant ?? 0;
+  let u = seededUnit(sForMelody, bar, 61);
+  if (motionHint === 'step') u = u * 0.88;
+  else if (motionHint === 'leap') u = 0.26 + u * 0.72;
+  else if (motionHint === 'mixed') u = (u + seededUnit(sForMelody, bar, 62) * 0.28) % 1;
+  if (rhythmVar === 1) u = (u + 0.33) % 1;
+  if (rhythmVar === 2) u = (u + 0.62) % 1;
+  const rot = (bar + seed * 3 + rhythmVar * 5) % 3;
 
   if (section === 'cadence') {
     const base = biasPieces([
@@ -383,31 +722,34 @@ export function emitMelodicBassBar(params: {
     return;
   }
 
-  if (section === 'B' && useEcho) {
-    const echoShape = (bar * 5 + seed * 2) % 3;
+  if (useEcho && (section === 'B' || section === 'A_prime')) {
+    const echoSeed = section === 'A_prime' ? sForMelody : seed;
+    const landE = seededUnit(echoSeed, bar, 41) < 0.68 ? fifth : rootForLine;
+    const lastLeadE = seededUnit(echoSeed, bar, 43) < 0.58 ? fifth : rootForLine;
+    const echoShape = (bar * 5 + echoSeed * 2) % 3;
     const t0 = firstStart;
     if (echoShape === 0) {
       addEvent(m, createNote(echoPitch, t0, 1));
       addEvent(m, createNote(guide, t0 + 1, 0.75));
-      addEvent(m, createNote(land, t0 + 1.75, qBeat(4 - t0 - 1.75)));
+      addEvent(m, createNote(landE, t0 + 1.75, qBeat(4 - t0 - 1.75)));
       return;
     }
     if (echoShape === 1) {
       addEvent(m, createNote(third, t0, 0.5));
       addEvent(m, createNote(echoPitch, t0 + 0.5, 1.25));
       addEvent(m, createNote(seventh, t0 + 1.75, 0.75));
-      addEvent(m, createNote(land, t0 + 2.5, qBeat(4 - t0 - 2.5)));
+      addEvent(m, createNote(landE, t0 + 2.5, qBeat(4 - t0 - 2.5)));
       return;
     }
-    const pat = (bar + seed + rot) % 3;
+    const pat = (bar + echoSeed + rot) % 3;
     let base: Array<{ w: number; pitch: number }>;
     if (pat === 0) {
       base = [
         { w: 1, pitch: echoPitch },
         { w: 1, pitch: guide },
         { w: 2, pitch: fifth },
-        { w: 2, pitch: lastLead },
-        { w: 2, pitch: land },
+        { w: 2, pitch: lastLeadE },
+        { w: 2, pitch: landE },
       ];
     } else if (pat === 1) {
       base = [
@@ -415,7 +757,7 @@ export function emitMelodicBassBar(params: {
         { w: 1, pitch: echoPitch },
         { w: 3, pitch: seventh },
         { w: 1, pitch: guide },
-        { w: 3, pitch: land },
+        { w: 3, pitch: landE },
       ];
     } else {
       base = [
@@ -423,15 +765,16 @@ export function emitMelodicBassBar(params: {
         { w: 1, pitch: echoPitch },
         { w: 1, pitch: rootForLine },
         { w: 2, pitch: guide },
-        { w: 2, pitch: land },
+        { w: 2, pitch: landE },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(biasPieces(base), bar, seed, steady));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(biasPieces(base), bar, echoSeed, steady));
     return;
   }
 
-  if (section === 'A') {
-    const lf = leadPitch(seed, bar, third, guide, fifth, rootClamped);
+  if (section === 'A' || section === 'A_prime') {
+    const lineSeed = sForMelody;
+    const lf = leadPitch(lineSeed, bar, third, guide, fifth, rootClamped);
     let base: Array<{ w: number; pitch: number }>;
     if (u < 0.38) {
       base = biasPieces([
@@ -458,7 +801,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: lastLead },
       ]);
     }
-    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, lineSeed, steady));
     return;
   }
 

@@ -7,7 +7,9 @@ import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel, PartModel, NoteEvent, RestEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
-import { chordTonesForChordSymbol, pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
+import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 
 const G_LOW = 55;
@@ -20,19 +22,25 @@ const GUITAR_MAX_LEAP = 5;
 const BASS_MAX_LEAP = 14;
 
 function chordForBar(context: CompositionContext, barIndex: number, mChord?: string): string {
-  if (mChord && mChord.trim()) return mChord.trim();
-  for (const seg of context.chordSymbolPlan.segments) {
-    if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) return seg.chord;
-  }
-  throw new Error(`ecmShapingPass: no chord for bar ${barIndex}`);
+  return resolveChordForDuoPostPass(context, barIndex, mChord);
 }
 
-function chordTonePitchesInRange(chord: string, low: number, high: number): number[] {
+function chordTonePitchesInRange(
+  chord: string,
+  low: number,
+  high: number,
+  context: CompositionContext
+): number[] {
   if (low >= G_LOW) {
-    const t = guitarChordTonesInRange(chord, low, high);
+    const t = guitarChordTonesInRange(
+      chord,
+      low,
+      high,
+      shouldUseUserChordSemanticsForTones(context) ? { lockedHarmony: true } : undefined
+    );
     return [t.root, t.third, t.fifth, t.seventh].map((x) => Math.round(x));
   }
-  const t = chordTonesForChordSymbol(chord);
+  const t = chordTonesForChordSymbolWithContext(chord, context);
   return [t.root, t.third, t.fifth, t.seventh].map((midi) => {
     const pc = ((midi % 12) + 12) % 12;
     return clampPitch(pitchClassToBassMidi(pc, low, high), low, high);
@@ -49,10 +57,11 @@ function resolvePitchTowardPrev(
   chord: string,
   low: number,
   high: number,
-  maxLeap: number
+  maxLeap: number,
+  context: CompositionContext
 ): number {
   if (Math.abs(p2 - p1) <= maxLeap) return p2;
-  const pool = chordTonePitchesInRange(chord, low, high);
+  const pool = chordTonePitchesInRange(chord, low, high, context);
   let best: number | undefined;
   let bd = 999;
   for (const c of pool) {
@@ -71,8 +80,14 @@ function resolvePitchTowardPrev(
   return clampPitch(p1 + step, low, high);
 }
 
-function snapTowardChordTone(pitch: number, chord: string, low: number, high: number): number {
-  const pool = chordTonePitchesInRange(chord, low, high);
+function snapTowardChordTone(
+  pitch: number,
+  chord: string,
+  low: number,
+  high: number,
+  context: CompositionContext
+): number {
+  const pool = chordTonePitchesInRange(chord, low, high, context);
   const pcs = new Set(pool.map((p) => ((p % 12) + 12) % 12));
   const pc = ((pitch % 12) + 12) % 12;
   if (pcs.has(pc)) return pitch;
@@ -129,7 +144,7 @@ function strictEnforceGlobalLeaps(
       const p2 = n2.pitch;
       if (Math.abs(p2 - p1) <= maxLeap) continue;
       const chord = chordForBar(context, refs[i].bar, m2.chord);
-      const np = resolvePitchTowardPrev(p1, p2, chord, low, high, maxLeap);
+      const np = resolvePitchTowardPrev(p1, p2, chord, low, high, maxLeap, context);
       if (np !== p2) {
         m2.events[refs[i].ei] = { ...n2, pitch: np };
         changed = true;
@@ -221,7 +236,7 @@ function applyHarmonicClarityGuitar(guitar: PartModel, context: CompositionConte
       if (e.kind !== 'note') return;
       const n = e as NoteEvent;
       if (seededUnit(seed, m.index * 400 + idx, 13100) < 0.55) {
-        const np = snapTowardChordTone(n.pitch, chord, G_LOW, G_HIGH);
+        const np = snapTowardChordTone(n.pitch, chord, G_LOW, G_HIGH, context);
         if (np !== n.pitch) m.events[idx] = { ...n, pitch: np };
       }
     });

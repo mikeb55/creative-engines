@@ -57,6 +57,19 @@ export function resolveDesktopIpcBundlePath(): string | null {
   return null;
 }
 
+/** Build-time stamp next to bundles (SHA-256 of ipc + api); written by `npm run build:stamp`. */
+export function resolveBuildStampPath(): string | null {
+  const candidates = [
+    path.join(process.resourcesPath, 'composer-os-build-stamp.json'),
+    path.join(__dirname, '..', 'resources', 'composer-os-build-stamp.json'),
+    path.join(app.getAppPath(), 'resources', 'composer-os-build-stamp.json'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 /** Packaged-safe bundle for open-folder IPC (same logic as composerOsOutputPaths + ensureFolderForOpen). */
 export function resolveOpenFolderHelpersBundlePath(): string | null {
   const candidates = [

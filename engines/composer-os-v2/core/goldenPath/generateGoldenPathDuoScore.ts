@@ -4,7 +4,9 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import { chordTonesForChordSymbol, parseChordSymbol, pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import { getChordForBar } from '../harmony/harmonyResolution';
+import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
@@ -31,10 +33,19 @@ import {
   emitDuoBassIdentityBar7,
   emitMelodicBassBar,
   emitDuoBassQuarterStrideBar,
+  emitDuoPhraseModeBar,
   echoGuitarToBass,
   scrubBassFirstAttackIfRoot,
+  breakMeasureContourLocally,
+  duoPhraseModeForPairIndex,
+  measureIsDenseEvenEighthWalk,
+  ensureBassBarHitsThirdOrSeventh,
+  ensureSlashBassPitchPresentInMeasure,
+  nudgeDuoBassPhraseEndTone,
   type BassSectionRole,
+  type DuoPhraseBehaviourMode,
 } from './bassMelodicLines';
+import { contourFingerprint, phraseTwoBarFingerprint } from './bassLineFingerprints';
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
   computeEnsembleStagger,
@@ -70,17 +81,6 @@ function totalBarsFromContext(context: CompositionContext): number {
 function sectionLabelForBar(bar: number, context: CompositionContext): string {
   const s = context.form.sections.find((sec) => bar >= sec.startBar && bar < sec.startBar + sec.length);
   return s?.label ?? 'A';
-}
-
-function getChordForBar(barIndex: number, context: CompositionContext): string {
-  for (const seg of context.chordSymbolPlan.segments) {
-    if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) {
-      return seg.chord;
-    }
-  }
-  throw new Error(
-    `Chord symbol plan does not define bar ${barIndex} — plan must cover bars 1–${context.form.totalBars} contiguously.`
-  );
 }
 
 function rehearsalForBar(barIndex: number, context: CompositionContext): string | undefined {
@@ -129,9 +129,10 @@ function emitEcmGuitarSustainBar(params: {
   seed: number;
   bar: number;
   phase: number;
+  chordToneOpts?: ChordTonesOptions;
 }): void {
-  const { m, chord, low, high, seed, bar, phase } = params;
-  const tones = guitarChordTonesInRange(chord, low, high);
+  const { m, chord, low, high, seed, bar, phase, chordToneOpts } = params;
+  const tones = guitarChordTonesInRange(chord, low, high, chordToneOpts);
   const u = seededUnit(seed, bar, 901);
   const primary = u < 0.52 ? tones.seventh : tones.third;
   const secondary = u < 0.48 ? tones.fifth : tones.root;
@@ -156,9 +157,10 @@ function emitEcmGuitarInnerMotionBar(params: {
   high: number;
   seed: number;
   bar: number;
+  chordToneOpts?: ChordTonesOptions;
 }): void {
-  const { m, chord, low, high, seed, bar } = params;
-  const tones = guitarChordTonesInRange(chord, low, high);
+  const { m, chord, low, high, seed, bar, chordToneOpts } = params;
+  const tones = guitarChordTonesInRange(chord, low, high, chordToneOpts);
   const u = seededUnit(seed, bar, 902);
   const target = u < 0.5 ? tones.third : tones.seventh;
   const pass = clampPitch(target + (seededUnit(seed, bar, 903) < 0.5 ? -1 : 1), low, high);
@@ -279,10 +281,11 @@ function buildBacharachAnchorMeasure(
   chord: string,
   rehearsal: string | undefined,
   low: number,
-  high: number
+  high: number,
+  context: CompositionContext
 ): MeasureModel {
   const m = createMeasure(barIndex, chord, rehearsal);
-  const tones = chordTonesForChordSymbol(chord);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
   const target = clampPitch(tones.third, low, high);
   const pass = target - 1;
   const fifth = clampPitch(tones.fifth, low, high);
@@ -307,6 +310,10 @@ function buildGuitarPart(
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is GuitarProfile => p.instrumentIdentity === 'clean_electric_guitar'
   ) ?? CLEAN_ELECTRIC_GUITAR;
+
+  const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+    ? { lockedHarmony: true }
+    : undefined;
 
   const seed = context.seed;
   const hints = readStyleHints(context);
@@ -382,7 +389,8 @@ function buildGuitarPart(
         getChordForBar(b, context),
         rehearsalForBar(b, context),
         effectiveLow,
-        effectiveHigh
+        effectiveHigh,
+        context
       );
       normalizeMeasureToEighthBeatGrid(bm);
       measures.push(bm);
@@ -436,7 +444,7 @@ function buildGuitarPart(
       } else if (cursor < 4 - 1e-4) {
         const tail = 4 - cursor;
         const chord = getChordForBar(b, context);
-        const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+        const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
         const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
         if (isDuoGolden) {
           const c0 = snapAttackBeatToGrid(cursor);
@@ -486,6 +494,7 @@ function buildGuitarPart(
           seed,
           bar: b,
           phase,
+          chordToneOpts,
         });
       } else if ((isEcmM || isEcmS) && tex?.guitarRole === 'inner_motion') {
         emitEcmGuitarInnerMotionBar({
@@ -495,6 +504,7 @@ function buildGuitarPart(
           high: effectiveHigh,
           seed,
           bar: b,
+          chordToneOpts,
         });
       } else if (isDuoGolden && phase === 7) {
         emitGuitarDuoIdentityBar7({
@@ -504,6 +514,7 @@ function buildGuitarPart(
           effectiveHigh,
           staggerG: staggerGuitar,
           seed,
+          chordToneOpts,
         });
       } else {
         emitGuitarPhraseBar({
@@ -521,6 +532,7 @@ function buildGuitarPart(
           methenyShortenLong: meth?.attackDensityReduced && tex?.guitarRole !== 'sustain_pad',
           anchorMidi,
           swingDuo: isDuoGolden,
+          chordToneOpts,
         });
       }
     }
@@ -648,7 +660,7 @@ function applyEcmMethenyMotifDevelopment(
     // Suspend: bar 7 long tone + pick-up over barline feel (late entry)
     if (m7) {
       const chord = m7.chord ?? getChordForBar(bar7, context);
-      const tones = chordTonesForChordSymbol(chord);
+      const tones = chordTonesForChordSymbolWithContext(chord, context);
       const sus = clampPitch(tones.seventh + 12, 60, 79);
       m7.events = [];
       addEvent(m7, createRest(0, 1));
@@ -660,7 +672,7 @@ function applyEcmMethenyMotifDevelopment(
     // Fall / open: bar 8 — often unresolved colour (7th or 9th hold), not cadence loop
     if (m8 && seededUnit(seed, cycle, 920) < 0.58) {
       const chord = m8.chord ?? 'Gmaj7';
-      const tones = chordTonesForChordSymbol(chord);
+      const tones = chordTonesForChordSymbolWithContext(chord, context);
       const openTone = seededUnit(seed, cycle, 921) < 0.5 ? tones.seventh : tones.third;
       const hi = clampPitch(openTone + 12, 58, 79);
       m8.events = [];
@@ -718,7 +730,7 @@ function simplifyBassAtPeakBar(
   bassCeiling: number
 ): void {
   const chord = getChordForBar(bar, context);
-  const tones = chordTonesForChordSymbol(chord);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
   const parsed = parseChordSymbol(chord);
   const root = tones.root;
   const [low, high] = getBassRegisterForBar(bassMap, bar, context);
@@ -756,7 +768,7 @@ function resolveOverlapInDuoScore(
     if (climax.has(b)) continue;
     if (activityScoreForBar(guitarPart, b) < HIGH_ACTIVITY || activityScoreForBar(bassPart, b) < HIGH_ACTIVITY) continue;
     const chord = getChordForBar(b, context);
-    const tones = chordTonesForChordSymbol(chord);
+    const tones = chordTonesForChordSymbolWithContext(chord, context);
     const parsed = parseChordSymbol(chord);
     const root = tones.root;
     const [low, high] = getBassRegisterForBar(bassMap, b, context);
@@ -785,6 +797,41 @@ function resolveOverlapInDuoScore(
   }
 }
 
+function finalizeDuoBassExpressiveBar(params: {
+  m: MeasureModel;
+  bar: number;
+  duoGoldenBass: boolean;
+  rootClamped: number;
+  third: number;
+  fifth: number;
+  seventh: number;
+  walkLow: number;
+  effectiveHigh: number;
+  seed: number;
+  evenEighthStreak: { n: number };
+  slashBassPc?: number;
+}): void {
+  const {
+    m,
+    bar,
+    duoGoldenBass,
+    rootClamped,
+    third,
+    fifth,
+    seventh,
+    walkLow,
+    effectiveHigh,
+    seed,
+    evenEighthStreak,
+    slashBassPc,
+  } = params;
+  if (!duoGoldenBass) return;
+  ensureBassBarHitsThirdOrSeventh(m, third, seventh, walkLow, effectiveHigh, slashBassPc);
+  nudgeDuoBassPhraseEndTone(m, bar, rootClamped, third, fifth, seventh, walkLow, effectiveHigh, seed);
+  if (measureIsDenseEvenEighthWalk(m)) evenEighthStreak.n += 1;
+  else evenEighthStreak.n = 0;
+}
+
 function buildBassPart(
   context: CompositionContext,
   _bassPlan: BassBehaviourPlan,
@@ -803,17 +850,37 @@ function buildBassPart(
   const seed = context.seed;
   const measures: MeasureModel[] = [];
   let prevBassPitch: number | undefined = walkLow;
+  let prevBarContour = '';
+  let sameContourStreak = 0;
+  const phraseHistory: string[] = [];
+  let phraseRetryAttempt = 0;
+  let phraseRewindTotal = 0;
+  const completedPhraseModes: DuoPhraseBehaviourMode[] = [];
+  const evenEighthStreak = { n: 0 };
   const tb = totalBarsFromContext(context);
 
-  for (let b = 1; b <= tb; b++) {
+  for (let b = 1; b <= tb; ) {
     const chord = getChordForBar(b, context);
-    const tones = chordTonesForChordSymbol(chord);
+    const tones = chordTonesForChordSymbolWithContext(chord, context);
     const parsed = parseChordSymbol(chord);
     const root = tones.root;
     const m = createMeasure(b, chord, rehearsalForBar(b, context));
     const [low, high] = getBassRegisterForBar(bassMap, b, context);
-    const effectiveHigh = Math.min(high, bassCeiling);
-    const rootClamped = clampPitch(root, Math.max(walkLow, low), Math.min(effectiveHigh, high));
+    const phase = ((b - 1) % 8) + 1;
+    const isDuoPreset = context.presetId === 'guitar_bass_duo';
+    let duoRegLow = Math.max(walkLow, low);
+    let duoRegHigh = Math.min(high, bassCeiling);
+    if (isDuoPreset) {
+      if (phase <= 2) duoRegHigh = Math.min(duoRegHigh, walkLow + 12);
+      else if (phase <= 4) duoRegHigh = Math.min(duoRegHigh + 4, 58);
+      else if (phase <= 6) {
+        duoRegLow = duoRegLow + 1;
+        duoRegHigh = Math.min(duoRegHigh + 3, 57);
+      }
+    }
+    const effectiveHigh = isDuoPreset ? duoRegHigh : Math.min(high, bassCeiling);
+    const effectiveLow = isDuoPreset ? duoRegLow : Math.max(walkLow, low);
+    const rootClamped = clampPitch(root, effectiveLow, Math.min(effectiveHigh, high));
     const slashBassPitch =
       parsed.slashBassPc !== undefined
         ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
@@ -870,37 +937,41 @@ function buildBassPart(
       continue;
     }
 
-    const phase = ((b - 1) % 8) + 1;
     const phraseBar = context.presetId === 'ecm_chamber' ? phase : b;
     const duoGoldenBass = context.presetId === 'guitar_bass_duo';
+    const pairIdx = Math.floor((b - 1) / 2);
+    const duoPhraseMode: DuoPhraseBehaviourMode | undefined = duoGoldenBass
+      ? duoPhraseModeForPairIndex(seed, pairIdx, completedPhraseModes)
+      : undefined;
+    const s = duoGoldenBass ? seed + phraseRetryAttempt * 18457 + b * 31 : seed;
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
     const phraseIntent = duoGoldenBass ? getDuoPhraseIntentV31(phase) : getDuoPhraseIntent(phraseBar, seed);
-    const stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, seed, phraseIntent);
+    const stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, duoGoldenBass ? s : seed, phraseIntent);
     const placements = getPlacementsForBar(motifState.placements, b);
     let firstStart = stagger.bass;
     if (interaction?.coupling?.bassDeferToGuitar && !simplify && phraseIntent === 'guitar_lead') {
-      firstStart = Math.max(firstStart, qBeat(0.5 + seededUnit(seed, b, 188) * 0.35));
+      firstStart = Math.max(firstStart, qBeat(0.5 + seededUnit(s, b, 188) * 0.35));
     }
-    firstStart = qBeat(firstStart + (seededUnit(seed, b, 701) - 0.5) * 0.14);
+    firstStart = qBeat(firstStart + (seededUnit(s, b, 701) - 0.5) * 0.14);
 
     if (duoGoldenBass && phraseIntent === 'answer_bass') {
-      firstStart = qBeat(Math.max(firstStart, 1 + seededUnit(seed, b, 704) * 0.85));
+      firstStart = qBeat(Math.max(firstStart, 1 + seededUnit(s, b, 704) * 0.85));
     }
     if (duoGoldenBass && phraseIntent === 'answer_guitar') {
-      firstStart = qBeat(Math.min(firstStart, 0.75 + seededUnit(seed, b, 705) * 0.35));
+      firstStart = qBeat(Math.min(firstStart, 0.75 + seededUnit(s, b, 705) * 0.35));
     }
 
     /** V3.3 — guitar-answer bar: bass enters slightly later (less mechanical lockstep). */
     if (duoGoldenBass && phase === 6) {
-      firstStart = qBeat(firstStart + 0.12 + seededUnit(seed, b, 733) * 0.12);
+      firstStart = qBeat(firstStart + 0.12 + seededUnit(s, b, 733) * 0.12);
     }
 
     if (b > 1) {
       const gPrev = guitarPart.measures.find((x) => x.index === b - 1);
       const gEnd = lastGuitarNoteEndInBar(gPrev);
       if (gEnd !== undefined && gEnd >= 2.5) {
-        firstStart = Math.min(firstStart, qBeat(0.25 + seededUnit(seed, b, 702) * 0.75));
+        firstStart = Math.min(firstStart, qBeat(0.25 + seededUnit(s, b, 702) * 0.75));
       }
     }
 
@@ -919,7 +990,8 @@ function buildBassPart(
     let section: BassSectionRole = 'A';
     if (duoGoldenBass) {
       if (phase === 8) section = 'cadence';
-      else if (phase >= 3 && phase <= 6) section = 'B';
+      else if (phase >= 5 && phase <= 6) section = 'A_prime';
+      else if (phase >= 3 && phase <= 4) section = 'B';
     } else {
       if (phraseBar === 8) section = 'cadence';
       else if (phraseBar >= 5) section = 'B';
@@ -930,7 +1002,7 @@ function buildBassPart(
     const simplifyForDuo = simplify || thinForOverlap || forceBassSupportSparse;
 
     if (duoGoldenBass && phase === 7) {
-      const supportMode = seededUnit(seed, b, 807) < 0.52;
+      const supportMode = seededUnit(s, b, 807) < 0.52;
       emitDuoBassIdentityBar7({
         m,
         supportMode,
@@ -941,17 +1013,65 @@ function buildBassPart(
         walkLow,
         effectiveHigh,
         firstStart,
-        seed,
+        seed: s,
         bar: b,
         slashBassPitch,
       });
-      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
       normalizeMeasureToEighthBeatGrid(m);
+      finalizeDuoBassExpressiveBar({
+        m,
+        bar: b,
+        duoGoldenBass,
+        rootClamped,
+        third,
+        fifth,
+        seventh,
+        walkLow,
+        effectiveHigh,
+        seed: s,
+        evenEighthStreak,
+        slashBassPc: parsed.slashBassPc,
+      });
       const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBass7) prevBassPitch = lastBass7.pitch;
       measures.push(m);
+      if (b >= 2) {
+        const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
+        if (
+          phraseHistory.slice(-3).includes(key) &&
+          phraseRetryAttempt < 3 &&
+          phraseRewindTotal < 80
+        ) {
+          measures.splice(-2);
+          phraseRetryAttempt++;
+          phraseRewindTotal++;
+          b -= 1;
+          const last = measures[measures.length - 1];
+          if (last) {
+            const lastN = [...last.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
+            prevBassPitch = lastN?.pitch ?? walkLow;
+            prevBarContour = contourFingerprint(last);
+          } else {
+            prevBassPitch = walkLow;
+            prevBarContour = '';
+          }
+          sameContourStreak = 0;
+          if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+          continue;
+        }
+        phraseRetryAttempt = 0;
+        phraseHistory.push(key);
+        if (phraseHistory.length > 3) phraseHistory.shift();
+        if (duoGoldenBass && b % 2 === 0 && duoPhraseMode !== undefined) {
+          completedPhraseModes.push(duoPhraseMode);
+          if (completedPhraseModes.length > 3) completedPhraseModes.shift();
+        }
+      }
+      b++;
       continue;
     }
 
@@ -966,20 +1086,71 @@ function buildBassPart(
         walkLow,
         effectiveHigh,
         firstStart,
-        seed,
+        seed: s,
         bar: b,
         slashBassPitch,
       });
-      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
       normalizeMeasureToEighthBeatGrid(m);
+      finalizeDuoBassExpressiveBar({
+        m,
+        bar: b,
+        duoGoldenBass,
+        rootClamped,
+        third,
+        fifth,
+        seventh,
+        walkLow,
+        effectiveHigh,
+        seed: s,
+        evenEighthStreak,
+        slashBassPc: parsed.slashBassPc,
+      });
       const lastBassA = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBassA) prevBassPitch = lastBassA.pitch;
       measures.push(m);
+      if (b >= 2) {
+        const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
+        if (
+          phraseHistory.slice(-3).includes(key) &&
+          phraseRetryAttempt < 3 &&
+          phraseRewindTotal < 80
+        ) {
+          measures.splice(-2);
+          phraseRetryAttempt++;
+          phraseRewindTotal++;
+          b -= 1;
+          const last = measures[measures.length - 1];
+          if (last) {
+            const lastN = [...last.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
+            prevBassPitch = lastN?.pitch ?? walkLow;
+            prevBarContour = contourFingerprint(last);
+          } else {
+            prevBassPitch = walkLow;
+            prevBarContour = '';
+          }
+          sameContourStreak = 0;
+          if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+          continue;
+        }
+        phraseRetryAttempt = 0;
+        phraseHistory.push(key);
+        if (phraseHistory.length > 3) phraseHistory.shift();
+        if (duoGoldenBass && b % 2 === 0 && duoPhraseMode !== undefined) {
+          completedPhraseModes.push(duoPhraseMode);
+          if (completedPhraseModes.length > 3) completedPhraseModes.shift();
+        }
+      }
+      b++;
       continue;
     }
-    const swingBassMode = (seed + b * 11) % 10 < 2;
+    let swingBassMode = (s + b * 11) % 10 < 2;
+    if (duoGoldenBass && phraseRetryAttempt > 0) {
+      swingBassMode = phraseRetryAttempt % 2 === 1 ? true : (s + b * 11 + phraseRetryAttempt * 7) % 10 < 4;
+    }
     const swingModes = ['offbeat', 'anticipate', 'hold'] as const;
 
     if (simplifyForDuo) {
@@ -994,22 +1165,47 @@ function buildBassPart(
       const span = 4 - t0;
       const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
       const secondPitchPick =
-        duoGoldenBass && (b + seed) % 3 === 0
+        duoGoldenBass && (b + s) % 3 === 0
           ? fifth
-          : duoGoldenBass && (b + seed) % 3 === 1
+          : duoGoldenBass && (b + s) % 3 === 1
             ? third
             : guide;
-      if (duoGoldenBass && span > 0) {
-        const strideKey = seed + b * 17;
-        /** Phrase B: invert stride vs two-note mix so bass activity differs from A (interaction role-contrast gate). */
-        const useQuarterStride =
-          phase >= 5 ? strideKey % 3 === 0 : strideKey % 3 !== 0;
+      if (duoGoldenBass && span > 0 && duoPhraseMode !== undefined) {
+        let effectiveMode: DuoPhraseBehaviourMode = duoPhraseMode;
+        if (evenEighthStreak.n >= 2 && (duoPhraseMode === 'stepwise' || duoPhraseMode === 'pedal')) {
+          effectiveMode = 'rhythmic';
+        }
+        if (phraseRetryAttempt > 0 && phraseRetryAttempt % 2 === 0) {
+          effectiveMode = phraseRetryAttempt % 4 === 0 ? 'leap' : 'rhythmic';
+        }
+        emitDuoPhraseModeBar({
+          m,
+          mode: effectiveMode,
+          t0,
+          span,
+          seed: s,
+          bar: b,
+          walkLow,
+          effectiveHigh,
+          rootClamped,
+          third,
+          fifth,
+          seventh,
+          guide,
+          slashBassPitch,
+          phraseRetryAttempt,
+        });
+      } else if (span > 0) {
+        const strideKey = s + b * 17;
+        let useQuarterStride = phase >= 5 ? strideKey % 3 === 0 : strideKey % 3 !== 0;
+        if (phraseRetryAttempt > 0) {
+          useQuarterStride = !useQuarterStride;
+        }
         if (useQuarterStride) {
           const gmEcho = guitarPart.measures.find((x) => x.index === b);
           const gPitches =
             gmEcho?.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch) ?? [];
           const pool: number[] = [];
-          /** Slash must lead the pool: stride uses uniq[0] as first attack; echoes must not hide the slash PC. */
           if (slashBassPitch !== undefined) {
             pool.push(clampPitch(slashBassPitch, walkLow, effectiveHigh));
           }
@@ -1030,7 +1226,7 @@ function buildBassPart(
             m,
             t0,
             span,
-            seed,
+            seed: s,
             bar: b,
             walkLow,
             effectiveHigh,
@@ -1038,9 +1234,7 @@ function buildBassPart(
             guitarPitchClassesInBar,
           });
         } else {
-          const frac = duoGoldenBass
-            ? 0.36 + (Math.abs((b * 7 + seed * 3) % 10) * 0.028)
-            : 0.5;
+          const frac = 0.5;
           let half = Math.round(span * frac * 4) / 4;
           half = qBeat(Math.min(Math.max(half, 0.5), span - 0.5));
           const half2 = qBeat(span - half);
@@ -1058,7 +1252,7 @@ function buildBassPart(
     } else if (duoGoldenBass && swingBassMode) {
       emitDuoSwingBassBar({
         m,
-        mode: swingModes[(seed + b * 3) % 3],
+        mode: swingModes[(s + b * 3 + phraseRetryAttempt * 2) % 3],
         rootClamped,
         third,
         fifth,
@@ -1066,7 +1260,7 @@ function buildBassPart(
         walkLow,
         effectiveHigh,
         firstStart,
-        seed,
+        seed: s,
         bar: b,
         slashBassPitch,
       });
@@ -1074,7 +1268,7 @@ function buildBassPart(
       emitMelodicBassBar({
         m,
         bar: b,
-        seed,
+        seed: s,
         rootClamped,
         third,
         fifth,
@@ -1089,23 +1283,129 @@ function buildBassPart(
         guitarActivityHot,
         guideToneBias: phraseBar <= 4 ? 1.06 : 1.12,
         slashBassPitch,
-        duoSteadyWalking: duoGoldenBass,
-      });
-      scrubBassFirstAttackIfRoot(m, b, seed, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
-        slashBassPitch,
+        duoSteadyWalking: false,
+        motionHint:
+          duoGoldenBass && (phase === 1 || phase === 2)
+            ? 'step'
+            : duoGoldenBass && (phase === 5 || phase === 6)
+              ? 'leap'
+              : duoGoldenBass && duoPhraseMode === 'stepwise'
+                ? 'step'
+                : duoGoldenBass && duoPhraseMode === 'leap'
+                  ? 'leap'
+                  : duoGoldenBass && duoPhraseMode === 'rhythmic'
+                    ? 'mixed'
+                    : duoGoldenBass
+                      ? 'mixed'
+                      : undefined,
+        densityHint:
+          duoGoldenBass && (phase === 1 || phase === 2)
+            ? 'sparse'
+            : duoGoldenBass && (phase === 5 || phase === 6)
+              ? 'dense'
+              : duoGoldenBass && duoPhraseMode === 'pedal'
+                ? 'sparse'
+                : duoGoldenBass && duoPhraseMode === 'stepwise'
+                  ? 'sparse'
+                  : duoGoldenBass && duoPhraseMode === 'rhythmic'
+                    ? 'dense'
+                    : 'normal',
+        phraseRhythmVariant: phraseRetryAttempt % 3,
+        phraseBehaviourMode: duoGoldenBass ? duoPhraseMode : undefined,
+        bassPhraseRetryAttempt: phraseRetryAttempt,
       });
     }
 
     if (duoGoldenBass) {
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
+        slashBassPitch,
+      });
       normalizeMeasureToEighthBeatGrid(m);
     } else {
       normalizeMeasureQuarterGrid(m);
     }
 
+    if (duoGoldenBass) {
+      const fp = contourFingerprint(m);
+      if (fp.length > 0) {
+        if (fp === prevBarContour) {
+          sameContourStreak++;
+        } else {
+          sameContourStreak = 1;
+        }
+        let attempts = 0;
+        while (sameContourStreak >= 3 && attempts < 2) {
+          const pool = [rootClamped, third, fifth, seventh, guide].filter((p) => typeof p === 'number');
+          if (slashBassPitch !== undefined) pool.push(slashBassPitch);
+          breakMeasureContourLocally(m, s + attempts * 10007, b, {
+            walkLow,
+            high: effectiveHigh,
+            chordTonePool: pool,
+          });
+          const fp2 = contourFingerprint(m);
+          if (fp2 !== prevBarContour) {
+            sameContourStreak = 1;
+            break;
+          }
+          attempts++;
+        }
+        prevBarContour = contourFingerprint(m);
+      }
+    }
+
+    finalizeDuoBassExpressiveBar({
+      m,
+      bar: b,
+      duoGoldenBass,
+      rootClamped,
+      third,
+      fifth,
+      seventh,
+      walkLow,
+      effectiveHigh,
+      seed: s,
+      evenEighthStreak,
+      slashBassPc: parsed.slashBassPc,
+    });
+
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (lastBass) prevBassPitch = lastBass.pitch;
 
     measures.push(m);
+    if (duoGoldenBass && b >= 2) {
+      const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
+      if (
+        phraseHistory.slice(-3).includes(key) &&
+        phraseRetryAttempt < 3 &&
+        phraseRewindTotal < 80
+      ) {
+        measures.splice(-2);
+        phraseRetryAttempt++;
+        phraseRewindTotal++;
+        b -= 1;
+        const last = measures[measures.length - 1];
+        if (last) {
+          const lastN = [...last.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
+          prevBassPitch = lastN?.pitch ?? walkLow;
+          prevBarContour = contourFingerprint(last);
+        } else {
+          prevBassPitch = walkLow;
+          prevBarContour = '';
+        }
+        sameContourStreak = 0;
+        if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+        continue;
+      }
+      phraseRetryAttempt = 0;
+      phraseHistory.push(key);
+      if (phraseHistory.length > 3) phraseHistory.shift();
+      if (duoGoldenBass && b % 2 === 0 && duoPhraseMode !== undefined) {
+        completedPhraseModes.push(duoPhraseMode);
+        if (completedPhraseModes.length > 3) completedPhraseModes.shift();
+      }
+    }
+    b++;
   }
 
   return {
@@ -1135,7 +1435,7 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
   }
   if (new Set(lastPcs).size >= 3) return;
   const chord = getChordForBar(5, context);
-  const tones = chordTonesForChordSymbol(chord);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
   const low = 55;
   const high = 79;
   const candidates = [

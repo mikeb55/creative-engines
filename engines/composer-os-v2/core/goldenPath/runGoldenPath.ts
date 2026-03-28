@@ -3,7 +3,7 @@
  * preset → feel → section roles → density → register map → behaviours → score → integrity → export → validation → manifest
  */
 
-import type { CompositionContext } from '../compositionContext';
+import type { CompositionContext, HarmonyPipelineStage } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -23,6 +23,7 @@ import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTrac
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
+import { validateLockedHarmonyMusicXmlTruth } from '../export/validateLockedHarmonyMusicXml';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
@@ -47,6 +48,8 @@ import { scoreFormIdentitySoft } from './duoFormIdentity';
 import { scoreNarrativeMomentsSoft } from './duoNarrativeMoments';
 import {
   parseChordProgressionInput,
+  parseChordProgressionInputWithBarCount,
+  normalizeChordToken,
   buildHarmonyPlanFromBars,
   buildChordSymbolPlanFromBars,
 } from '../harmony/chordProgressionParser';
@@ -59,11 +62,28 @@ import {
   ecmCrossModeSimilarityPenalty,
 } from '../ecm/ecmChamberScoring';
 import { resolveLongFormRoute } from '../form/longFormRouteResolver';
-import { buildDuoLongFormCompositionContext } from '../form/buildLongFormFromDuoSections';
+import {
+  buildDuoLongFormCompositionContext,
+  buildDuoLongFormCompositionContextFromBars32,
+} from '../form/buildLongFormFromDuoSections';
 import { placeMotifsLongFormDuo32 } from '../motif/longFormMotifPlanner';
 import { planDuoLongFormInteraction } from '../interaction/duoLongFormInteractionMap';
 import { evaluateDuoLongFormQuality } from '../quality/duoLongFormQuality';
 import { duoGuitarBarSevenIntervalPeakVsBarSixOk } from '../score-integrity/duoLockQuality';
+import {
+  assertContextMatchesLocked32,
+  assertCustomLockedBeforeScoreGeneration,
+  assertCustomLockedRouting,
+  assertScoreMatchesLockedHarmonyWire,
+  logSongModeHarmonyDebug,
+} from './customLockedHarmonyRouting';
+
+function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
+  if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
+  const m = ctx.generationMetadata;
+  if (!m.harmonyPipelineTrace) m.harmonyPipelineTrace = [];
+  m.harmonyPipelineTrace.push({ stage, detail });
+}
 
 export interface GoldenPathResult {
   success: boolean;
@@ -136,7 +156,7 @@ interface BuildGoldenPathContextExtras {
   /** When parse failed — no score produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** Resolved from RunGoldenPathOptions.harmonyMode or inferred from non-empty chordProgressionText */
-  harmonyModeRequested?: 'builtin' | 'custom';
+  harmonyModeRequested?: 'builtin' | 'custom' | 'custom_locked';
 }
 
 function buildGoldenPathContext(
@@ -194,6 +214,7 @@ function buildGoldenPathContext(
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
+    lockedHarmonyBarsRaw: useCustom && parsedChordBars ? [...parsedChordBars] : undefined,
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: parseFailed ? undefined : useCustom ? 'custom' : 'builtin',
@@ -203,6 +224,7 @@ function buildGoldenPathContext(
       parsedCustomProgressionBars: useCustom ? [...parsedChordBars] : undefined,
       chordProgressionParseFailed: parseFailed || undefined,
       builtInHarmonyFallbackOccurred: false,
+      customHarmonyLocked: useCustom && extras?.harmonyModeRequested === 'custom_locked',
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
@@ -211,6 +233,52 @@ function buildGoldenPathContext(
 
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
   const presetId = options?.presetId ?? 'guitar_bass_duo';
+  if (presetId === 'guitar_bass_duo' && options?.harmonyMode === 'custom_locked') {
+    const pb = options.parsedChordBars;
+    if (pb && pb.length !== 32) {
+      throw new Error(
+        'CUSTOM HARMONY ROUTING FAILURE at buildContextForGoldenPath: custom_locked requires exactly 32 parsedChordBars.'
+      );
+    }
+    if (!options.lockedHarmonyBarsRaw || options.lockedHarmonyBarsRaw.length !== 32) {
+      throw new Error(
+        'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires lockedHarmonyBarsRaw with exactly 32 bars.'
+      );
+    }
+  }
+  /** Song Mode / API inject: custom_locked uses ONLY lockedHarmonyBarsRaw (no planner / no alternate source). */
+  if (
+    presetId === 'guitar_bass_duo' &&
+    options?.harmonyMode === 'custom_locked' &&
+    options.lockedHarmonyBarsRaw?.length === 32
+  ) {
+    const bars = [...options.lockedHarmonyBarsRaw];
+    const parsed = options.parsedChordBars;
+    if (parsed && parsed.length === 32) {
+      for (let i = 0; i < 32; i++) {
+        if ((bars[i] ?? '') !== (parsed[i] ?? '')) {
+          throw new Error(
+            'CUSTOM HARMONY NOT REACHING GOLDEN PATH: parsedChordBars must equal lockedHarmonyBarsRaw bar-for-bar.'
+          );
+        }
+      }
+    }
+    return buildDuoLongFormCompositionContextFromBars32(seed, bars, {
+      chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+    }).context;
+  }
+  /** 32 explicit bars → long-form (non–custom_locked only; locked must use branch above). */
+  if (presetId === 'guitar_bass_duo' && options?.parsedChordBars?.length === 32) {
+    if (options.harmonyMode === 'custom_locked') {
+      throw new Error(
+        'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked must resolve only via lockedHarmonyBarsRaw.'
+      );
+    }
+    assertCustomLockedRouting('buildContextForGoldenPath:32bar', options, options.parsedChordBars);
+    return buildDuoLongFormCompositionContextFromBars32(seed, options.parsedChordBars, {
+      chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+    }).context;
+  }
   if (presetId === 'ecm_chamber') {
     const mode: EcmChamberMode = options?.ecmMode ?? 'ECM_METHENY_QUARTET';
     const ecmOpts: BuildEcmChamberContextOpts | undefined =
@@ -222,17 +290,38 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     longFormEnabled: options?.longFormEnabled,
   });
   if (lf.kind === 'duo32') {
+    if (options?.harmonyMode === 'custom_locked') {
+      throw new Error(
+        'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked must resolve via lockedHarmonyBarsRaw — illegal tiled/builtin duo32 branch.'
+      );
+    }
+    if (options?.parsedChordBars?.length === 32) {
+      assertCustomLockedRouting('buildContextForGoldenPath:duo32', options, options.parsedChordBars);
+      return buildDuoLongFormCompositionContextFromBars32(seed, options.parsedChordBars, {
+        chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+      }).context;
+    }
     return buildDuoLongFormCompositionContext(seed, {
       parsedChordBars8: options?.parsedChordBars?.length === 8 ? options.parsedChordBars : undefined,
     }).context;
   }
-  const harmonyModeRequested: 'builtin' | 'custom' =
+  const harmonyModeRequested: 'builtin' | 'custom' | 'custom_locked' =
     options?.harmonyMode ?? (options?.chordProgressionText?.trim() ? 'custom' : 'builtin');
   return buildGoldenPathContext(seed, options?.parsedChordBars, {
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
     progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
     harmonyModeRequested,
   });
+}
+
+function resolveExpectedCustomChordBarCount(options?: RunGoldenPathOptions): number {
+  const lf = resolveLongFormRoute(options?.presetId ?? 'guitar_bass_duo', {
+    totalBars: options?.totalBars,
+    longFormEnabled: options?.longFormEnabled,
+  });
+  if (lf.kind !== 'duo32') return 8;
+  /** `custom_locked` always expects 32. For `custom`, runGoldenPath tries 32-then-8 when duo32 (see parse branch). */
+  return options?.harmonyMode === 'custom_locked' ? 32 : 8;
 }
 
 function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string; pitches: number[] }> {
@@ -409,11 +498,13 @@ export interface RunGoldenPathOptions {
   /** User-provided work title; default comes from resolveScoreTitleForPreset */
   scoreTitle?: string;
   /** Guitar–Bass Duo: explicit mode (custom requires non-empty `chordProgressionText`) */
-  harmonyMode?: 'builtin' | 'custom';
-  /** Guitar–Bass Duo: `|`-separated chords, 8 bars; parsed before generation */
+  harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
+  /** Guitar–Bass Duo: `|`-separated chords (8 bars default; 32 when long-form Song Mode / duo32) */
   chordProgressionText?: string;
   /** Filled by runGoldenPath after a successful parse (internal) */
   parsedChordBars?: string[];
+  /** Same strings as `parsedChordBars` after parse — authoritative for custom_locked routing checks */
+  lockedHarmonyBarsRaw?: string[];
   /** ECM Chamber: distinct Metheny vs Schneider modes */
   ecmMode?: EcmChamberMode;
   /** ECM Chamber: override default bar count (e.g. 32 for extended regression tests). */
@@ -457,35 +548,107 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   }
 
   const inferredCustom = !!(opts?.chordProgressionText?.trim());
-  const harmonyMode: 'builtin' | 'custom' =
+  const harmonyMode: 'builtin' | 'custom' | 'custom_locked' =
     opts?.harmonyMode ?? (inferredCustom ? 'custom' : 'builtin');
 
   if (harmonyMode === 'builtin') {
     opts = opts ? { ...opts, chordProgressionText: undefined, parsedChordBars: undefined } : undefined;
   }
 
-  if (presetIdEarly === 'guitar_bass_duo' && harmonyMode === 'custom' && !(opts?.chordProgressionText?.trim())) {
+  const expectedBars = resolveExpectedCustomChordBarCount(opts);
+
+  if (
+    presetIdEarly === 'guitar_bass_duo' &&
+    (harmonyMode === 'custom' || harmonyMode === 'custom_locked') &&
+    !(opts?.chordProgressionText?.trim())
+  ) {
     return harmonyParseFailureGoldenPathResult(
       seed,
       opts,
-      'Custom chord progression is empty. Enter exactly 8 bars separated by |.'
+      `Custom chord progression is empty. Enter exactly ${expectedBars} bars separated by |.`
     );
   }
 
   let resolved: RunGoldenPathOptions | undefined = opts;
-  if (opts?.chordProgressionText?.trim()) {
-    const parsed = parseChordProgressionInput(opts.chordProgressionText);
-    if (!parsed.ok) {
-      return harmonyParseFailureGoldenPathResult(
-        seed,
-        opts,
-        `Invalid chord progression — not applied. ${parsed.error}`
-      );
+  if (
+    presetIdEarly === 'guitar_bass_duo' &&
+    opts?.harmonyMode === 'custom_locked' &&
+    opts.lockedHarmonyBarsRaw?.length === 32
+  ) {
+    const finalBars = [...opts.lockedHarmonyBarsRaw];
+    const text = opts.chordProgressionText?.trim();
+    if (text) {
+      const p = parseChordProgressionInputWithBarCount(text, 32);
+      if (p.ok) {
+        for (let i = 0; i < 32; i++) {
+          if (normalizeChordToken(p.bars[i] ?? '') !== normalizeChordToken(finalBars[i] ?? '')) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              'CUSTOM HARMONY NOT REACHING GOLDEN PATH: chordProgressionText disagrees with lockedHarmonyBarsRaw.'
+            );
+          }
+        }
+      }
+    }
+    resolved = { ...opts, parsedChordBars: finalBars, lockedHarmonyBarsRaw: finalBars };
+    assertCustomLockedRouting('runGoldenPath:lockedInject', resolved, finalBars);
+    logSongModeHarmonyDebug({
+      layer: 'runGoldenPath',
+      harmonyMode: 'custom_locked',
+      parsedCustomProgressionBarsLength: finalBars.length,
+      expectedBars: 32,
+      firstBar: finalBars[0],
+      lockedHarmonyBarsRawLength: finalBars.length,
+      source: 'lockedHarmonyBarsRaw_authoritative',
+    });
+  } else if (opts?.chordProgressionText?.trim()) {
+    const text = opts.chordProgressionText.trim();
+    const lfParse = resolveLongFormRoute(presetIdEarly, {
+      totalBars: opts?.totalBars,
+      longFormEnabled: opts?.longFormEnabled,
+    });
+    let parsed: { ok: true; bars: string[] } | { ok: false; error: string };
+    if (presetIdEarly === 'guitar_bass_duo' && lfParse.kind === 'duo32' && opts?.harmonyMode !== 'custom_locked') {
+      const p32 = parseChordProgressionInputWithBarCount(text, 32);
+      if (p32.ok) {
+        parsed = p32;
+      } else {
+        const p8 = parseChordProgressionInputWithBarCount(text, 8);
+        if (!p8.ok) {
+          return harmonyParseFailureGoldenPathResult(
+            seed,
+            opts,
+            `Invalid chord progression — not applied. Long-form (32 bars): ${p32.error} — or 8-bar tile: ${p8.error}`
+          );
+        }
+        parsed = p8;
+      }
+    } else {
+      const single = parseChordProgressionInputWithBarCount(text, expectedBars);
+      if (!single.ok) {
+        return harmonyParseFailureGoldenPathResult(
+          seed,
+          opts,
+          `Invalid chord progression — not applied. ${single.error}`
+        );
+      }
+      parsed = single;
     }
     if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_CUSTOM_CHORDS === '1') {
       console.log('[V3.5] USING CUSTOM CHORDS:', parsed.bars);
     }
-    resolved = { ...opts, parsedChordBars: parsed.bars };
+    const lockedCopy = [...parsed.bars];
+    resolved = { ...opts, parsedChordBars: parsed.bars, lockedHarmonyBarsRaw: lockedCopy };
+    assertCustomLockedRouting('runGoldenPath:afterParse', resolved, parsed.bars);
+    logSongModeHarmonyDebug({
+      layer: 'runGoldenPath',
+      harmonyMode: resolved.harmonyMode ?? (opts.chordProgressionText?.trim() ? 'custom' : 'builtin'),
+      parsedCustomProgressionBarsLength: parsed.bars.length,
+      expectedBars: parsed.bars.length,
+      firstBar: parsed.bars[0],
+      lockedHarmonyBarsRawLength: lockedCopy.length,
+    });
   }
   const seeds = candidateSeedsForGoldenPath(seed);
   let best: GoldenPathResult | null = null;
@@ -510,7 +673,11 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
               return base - ecmCrossModeSimilarityPenalty(r.score, r.context, mode);
             })()
           : scoreJazzDuoBehaviourSoft(r.score) +
-            scoreFormIdentitySoft(r.score, { motifState: r.plans.motifState, styleStack: r.plans.styleStack }) +
+            scoreFormIdentitySoft(r.score, {
+              motifState: r.plans.motifState,
+              styleStack: r.plans.styleStack,
+              compositionContext: r.context,
+            }) +
             scoreNarrativeMomentsSoft(r.score) +
             (r.context.generationMetadata?.longFormDuo
               ? evaluateDuoLongFormQuality(r.score, r.context).total * 0.15
@@ -524,11 +691,25 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   return best ?? last!;
 }
 
-/** Single seed, no duo lock candidate sweep — use for deterministic inspection / tests. */
+/**
+ * Single seed, no duo lock candidate sweep — use for deterministic inspection / tests.
+ * For `custom_locked` / parsed text, pass `parsedChordBars` + `lockedHarmonyBarsRaw` as `runGoldenPath` does after its resolve step; text alone is not enough.
+ */
 export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
+
+  appendHarmonyPipelineTrace(context, 'composition_context', [
+    `totalBars=${context.form.totalBars}`,
+    `harmonySource=${context.generationMetadata.harmonySource ?? 'n/a'}`,
+    `lockedBars=${context.lockedHarmonyBarsRaw?.length ?? 0}`,
+    `contracts=${context.lockedHarmonyBarContracts?.length ?? 0}`,
+    `userChordSemantics=${context.generationMetadata.harmonySource === 'custom' && context.generationMetadata.builtInHarmonyFallbackOccurred !== true}`,
+  ].join(' '));
+
+  assertContextMatchesLocked32('runGoldenPathOnce:afterBuildContext', context, options);
+  assertCustomLockedBeforeScoreGeneration(context, options);
 
   const plans = buildGoldenPathPlans(seed, context, options);
   const { sections, densityPlan, guitarBehaviour, bassBehaviour, rhythmConstraints, motifState, styleStack, interactionPlan } =
@@ -543,6 +724,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
+  try {
+    assertScoreMatchesLockedHarmonyWire(score, options);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,
     tonalCenterOverride: options?.tonalCenterOverride,
@@ -602,11 +789,27 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     bassBehaviour,
     sections,
     densityPlan,
-    { motifState, styleStack, interactionPlan, presetId: context.presetId }
+    {
+      motifState,
+      styleStack,
+      interactionPlan,
+      presetId: context.presetId,
+      compositionContext: appliedContext,
+    }
   );
   if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
 
-  const exportResult = exportScoreModelToMusicXml(score);
+  const preserveLiterals =
+    appliedContext.generationMetadata.customHarmonyLocked === true ||
+    !!(appliedContext.lockedHarmonyBarsRaw && appliedContext.lockedHarmonyBarsRaw.length > 0);
+  const assertLockedExport =
+    options?.harmonyMode === 'custom_locked' && options.lockedHarmonyBarsRaw?.length === 32
+      ? [...options.lockedHarmonyBarsRaw]
+      : undefined;
+  const exportResult = exportScoreModelToMusicXml(score, {
+    preserveChordKindLiterals: preserveLiterals,
+    assertLockedHarmonyBars: assertLockedExport,
+  });
   let xml: string | undefined;
   let mxValidationPassed = false;
   let sibeliusSafe = false;
@@ -615,6 +818,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   let instrumentMetadataPassed = false;
   if (exportResult.success && exportResult.xml) {
     xml = exportResult.xml;
+    appendHarmonyPipelineTrace(appliedContext, 'musicxml_export', `bytes=${xml.length} customHarmonyTruth=${appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed ?? 'n/a'}`);
     mxValidationPassed = validateMusicXmlSchema(xml).valid;
     sibeliusSafe = checkSibeliusSafe(xml).safe;
     const exportIntegrity = validateExportIntegrity(xml);
@@ -630,6 +834,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
     instrumentMetadataPassed = bassMeta.valid;
     if (!bassMeta.valid) errors.push(...bassMeta.errors);
+
+    const lockedBars = appliedContext.lockedHarmonyBarsRaw;
+    if (lockedBars && lockedBars.length === appliedContext.form.totalBars) {
+      const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, lockedBars);
+      appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;
+      if (!lockedTruth.ok) errors.push(...lockedTruth.errors);
+    }
   } else {
     errors.push(...exportResult.errors);
   }
@@ -656,8 +867,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
     chordRehearsalComplete:
-      chordSymbols.length >= (context.presetId === 'ecm_chamber' ? context.form.totalBars : 8) &&
-      rehearsalMarks.length >= 2,
+      chordSymbols.length >=
+        (context.presetId === 'ecm_chamber' || context.presetId === 'guitar_bass_duo'
+          ? context.form.totalBars
+          : 8) && rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
   });

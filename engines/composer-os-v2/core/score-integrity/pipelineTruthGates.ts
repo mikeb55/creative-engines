@@ -6,10 +6,7 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
-import {
-  chordStringFromMusicXmlHarmonyBlock,
-  chordSymbolsEqualForPipelineTruth,
-} from '../export/chordSymbolMusicXml';
+import { chordSymbolsEqualForPipelineTruth, extractHarmoniesFromFirstPartXml } from '../export/chordSymbolMusicXml';
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
 import { validateStrictBarMath } from './strictBarMath';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
@@ -27,7 +24,7 @@ export const DUO_BUILTIN_EIGHT_BARS: readonly string[] = [
 ];
 
 export interface PipelineTruthGoldenPathOptions {
-  harmonyMode?: 'builtin' | 'custom';
+  harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
   chordProgressionText?: string;
   parsedChordBars?: string[];
 }
@@ -59,13 +56,129 @@ export function expandChordSymbolPlanToBars(plan: ChordSymbolPlan): string[] {
 export function resolveHarmonyModeForTruth(options?: PipelineTruthGoldenPathOptions): 'builtin' | 'custom' {
   if (!options) return 'builtin';
   const inferred = !!(options.chordProgressionText?.trim());
-  return options.harmonyMode ?? (inferred ? 'custom' : 'builtin');
+  const raw = options.harmonyMode ?? (inferred ? 'custom' : 'builtin');
+  /** Locked Song Mode uses the same input/score/XML checks as custom for 8-bar truth. */
+  return raw === 'custom_locked' ? 'custom' : raw;
 }
 
 export function shouldRunDuoEightBarPipelineTruth(context: CompositionContext): boolean {
   if (context.presetId !== 'guitar_bass_duo' || context.form.totalBars !== 8) return false;
   if (context.generationMetadata.chordProgressionParseFailed) return false;
   return true;
+}
+
+/** Song Mode / custom_locked 32-bar: full input → score → MusicXML chord agreement */
+export function shouldRunDuo32LockedPipelineTruth(
+  context: CompositionContext,
+  options?: PipelineTruthGoldenPathOptions
+): boolean {
+  if (context.presetId !== 'guitar_bass_duo' || context.form.totalBars !== 32) return false;
+  if (context.generationMetadata.chordProgressionParseFailed) return false;
+  if (context.generationMetadata.harmonySource !== 'custom' || context.generationMetadata.customHarmonyLocked !== true) {
+    return false;
+  }
+  return (options?.parsedChordBars?.length ?? 0) === 32;
+}
+
+function validateDuo32LockedInputStage(
+  context: CompositionContext,
+  options?: PipelineTruthGoldenPathOptions
+): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const meta = context.generationMetadata;
+  if (meta.builtInHarmonyFallbackOccurred) {
+    errors.push('Input truth (32 locked): builtInHarmonyFallbackOccurred is set — aborting (no silent builtin fallback).');
+  }
+  const bars = options?.parsedChordBars;
+  if (!bars || bars.length !== 32) {
+    errors.push('Input truth (32 locked): requires exactly 32 parsedChordBars on options.');
+  }
+  if (meta.harmonySource !== 'custom') {
+    errors.push('Input truth (32 locked): harmonySource must be "custom".');
+  }
+  if (bars && bars.length === 32) {
+    const fromPlan = expandChordSymbolPlanToBars(context.chordSymbolPlan);
+    if (fromPlan.length !== 32) {
+      errors.push(`Input truth (32 locked): chord symbol plan expands to ${fromPlan.length} bars, expected 32.`);
+    } else {
+      for (let i = 0; i < 32; i++) {
+        if (!chordSymbolsEqualForPipelineTruth(bars[i] ?? '', fromPlan[i] ?? '')) {
+          errors.push(
+            `Input truth (32 locked): bar ${i + 1} parsed "${bars[i]}" does not match chordSymbolPlan "${fromPlan[i]}".`
+          );
+        }
+      }
+    }
+    const receipt = meta.parsedCustomProgressionBars;
+    if (receipt && receipt.length === 32) {
+      for (let i = 0; i < 32; i++) {
+        if (normalizeChordToken(receipt[i] ?? '') !== normalizeChordToken(bars[i] ?? '')) {
+          errors.push(`Input truth (32 locked): receipt parsed bar ${i + 1} mismatch vs parsedChordBars.`);
+        }
+      }
+    } else if (meta.harmonySource === 'custom') {
+      errors.push('Input truth (32 locked): missing parsedCustomProgressionBars[32] on receipt.');
+    }
+    const locked = context.lockedHarmonyBarsRaw;
+    if (!locked || locked.length !== 32) {
+      errors.push('Input truth (32 locked): context.lockedHarmonyBarsRaw must have length 32.');
+    } else {
+      for (let i = 0; i < 32; i++) {
+        if (normalizeChordToken(locked[i] ?? '') !== normalizeChordToken(bars[i] ?? '')) {
+          errors.push(`Input truth (32 locked): lockedHarmonyBarsRaw bar ${i + 1} mismatch vs parsedChordBars.`);
+        }
+      }
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+function validateScoreStage32(score: ScoreModel, expected: string[]): { ok: boolean; errors: string[]; scoreBars: string[] } {
+  const errors: string[] = [];
+  const byBar = collectScoreChordsByBarIndex(score);
+  const scoreBars: string[] = [];
+  for (let b = 1; b <= 32; b++) {
+    const c = byBar.get(b);
+    if (!c) {
+      errors.push(`Score truth (32 locked): missing chord on bar ${b}.`);
+      scoreBars.push('');
+      continue;
+    }
+    scoreBars.push(c);
+    if (!chordSymbolsEqualForPipelineTruth(c, expected[b - 1] ?? '')) {
+      errors.push(`Score truth (32 locked): bar ${b} chord "${c}" does not match expected "${expected[b - 1]}".`);
+    }
+  }
+  const barMath = validateStrictBarMath(score);
+  if (!barMath.valid) {
+    errors.push(...barMath.errors.map((e) => `Score truth (32 locked) (bar math): ${e}`));
+  }
+  return { ok: errors.length === 0, errors, scoreBars };
+}
+
+function validateExportStage32(score: ScoreModel, xml: string, expected: string[]): { ok: boolean; errors: string[]; writtenXmlBars: string[] } {
+  const errors: string[] = [];
+  const writtenXmlBars: string[] = [];
+  const complete = validateWrittenMusicXmlComplete(score, xml);
+  if (!complete.valid) {
+    errors.push(...complete.errors.map((e) => `Export truth (32 locked) (written XML structure): ${e}`));
+  }
+  const harmMap = extractHarmoniesFromFirstPartXml(xml);
+  for (let b = 1; b <= 32; b++) {
+    const h = harmMap.get(b);
+    if (!h) {
+      errors.push(`Export truth (32 locked): missing <harmony> in first part measure ${b}.`);
+      writtenXmlBars.push('');
+      continue;
+    }
+    writtenXmlBars.push(h);
+    if (!chordSymbolsEqualForPipelineTruth(h, expected[b - 1] ?? '')) {
+      errors.push(
+        `Export truth (32 locked): measure ${b} written harmony "${h}" does not match expected "${expected[b - 1]}".`
+      );
+    }
+  }
+  return { ok: errors.length === 0, errors, writtenXmlBars };
 }
 
 function expectedBarsForTruth(
@@ -91,23 +204,6 @@ function collectScoreChordsByBarIndex(score: ScoreModel): Map<number, string> {
         map.set(m.index, m.chord);
       }
     }
-  }
-  return map;
-}
-
-function extractHarmoniesFromFirstPartXml(xml: string): Map<number, string> {
-  const parts = xml.match(/<part id="[^"]+"[\s\S]*?<\/part>/g) ?? [];
-  const firstPart = parts[0];
-  if (!firstPart) return new Map();
-  const measures = firstPart.match(/<measure[^>]*>[\s\S]*?<\/measure>/g) ?? [];
-  const map = new Map<number, string>();
-  for (const mb of measures) {
-    const numMatch = mb.match(/<measure[^>]*number="(\d+)"/);
-    const num = numMatch ? parseInt(numMatch[1], 10) : -1;
-    const harmonyMatch = mb.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/);
-    if (!harmonyMatch || num < 1) continue;
-    const chordStr = chordStringFromMusicXmlHarmonyBlock(harmonyMatch[0]);
-    if (chordStr) map.set(num, chordStr);
   }
   return map;
 }
@@ -301,7 +397,48 @@ export function runPipelineTruthGates(params: {
   const { context, options, score, xml } = params;
 
   const submitted = options?.chordProgressionText?.trim() ?? null;
-  const parsed = options?.parsedChordBars?.length === 8 ? [...options.parsedChordBars] : null;
+  const parsed8 = options?.parsedChordBars?.length === 8 ? [...options.parsedChordBars!] : null;
+  const parsed32 = options?.parsedChordBars?.length === 32 ? [...options.parsedChordBars!] : null;
+
+  if (shouldRunDuo32LockedPipelineTruth(context, options)) {
+    const parsedBars = parsed32 ?? [];
+    const inputResult = validateDuo32LockedInputStage(context, options);
+    const inputStage: PipelineTruthStageResult = inputResult.ok ? 'pass' : 'fail';
+    const expected = [...parsedBars];
+    const scoreResult = validateScoreStage32(score, expected);
+    const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
+    let exportStage: PipelineTruthStageResult = 'fail';
+    let writtenXmlBars: string[] | null = null;
+    const exportErrors: string[] = [];
+    if (!xml) {
+      exportErrors.push('Export truth (32 locked): no MusicXML string to verify.');
+    } else {
+      const ex = validateExportStage32(score, xml, expected);
+      writtenXmlBars = ex.writtenXmlBars;
+      exportErrors.push(...ex.errors);
+      exportStage = ex.ok ? 'pass' : 'fail';
+    }
+    const errors = [...inputResult.errors, ...scoreResult.errors, ...exportErrors];
+    const report: PipelineTruthReport = {
+      submittedChordString: submitted,
+      parsedBars: parsedBars,
+      scoreBars: scoreResult.scoreBars,
+      writtenXmlBars,
+      inputStage,
+      scoreStage,
+      exportStage,
+      errors,
+    };
+    const quiet =
+      typeof process !== 'undefined' &&
+      (process.env?.COMPOSER_OS_PIPELINE_TRUTH === '0' || process.env?.COMPOSER_OS_PIPELINE_TRUTH === 'quiet');
+    if (!quiet && report.inputStage !== 'skip') {
+      logPipelineTruthReport(report);
+    }
+    return report;
+  }
+
+  const parsed = parsed8;
 
   if (!shouldRunDuoEightBarPipelineTruth(context)) {
     return {

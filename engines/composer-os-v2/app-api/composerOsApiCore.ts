@@ -35,6 +35,26 @@ export function displayPathForApi(p: string): string {
   return n;
 }
 
+/** IPC / JSON may send numbers as strings — keep routing consistent with tests that pass real numbers. */
+function coerceFiniteNumber(n: unknown): number | undefined {
+  if (typeof n === 'number' && Number.isFinite(n)) return n;
+  if (typeof n === 'string' && n.trim() !== '') {
+    const v = Number(n);
+    if (Number.isFinite(v)) return v;
+  }
+  return undefined;
+}
+
+/**
+ * Trim chord line; empty / whitespace-only → undefined so Song Mode does not silently fall back to builtin duo32.
+ */
+function normalizeChordProgressionText(body: Partial<GenerateRequest>): string | undefined {
+  const raw = body.chordProgressionText;
+  if (typeof raw !== 'string') return undefined;
+  const t = raw.trim();
+  return t.length > 0 ? t : undefined;
+}
+
 export function apiGetPresets(): { presets: ReturnType<typeof getPresets> } {
   return { presets: getPresets() };
 }
@@ -43,17 +63,68 @@ export function apiGetStyleModules(): { modules: ReturnType<typeof getStyleModul
   return { modules: getStyleModules() };
 }
 
+export interface ComposerOsRuntimeBuildInfo {
+  composerOsVersion: string;
+  desktopAppVersion?: string;
+  ipcBundlePath?: string;
+  ipcBundleSha256?: string;
+  stampIpcSha256?: string;
+  apiBundleSha256FromStamp?: string;
+  stampMatchesLiveIpc?: string;
+  buildStampJson?: string;
+  truthDumpEnabled: boolean;
+}
+
+/**
+ * Electron main + IPC bundle: proves which engine code is loaded (env set in `main.ts` before `require(desktop-ipc.bundle.cjs)`).
+ */
+export function getComposerOsRuntimeBuildInfo(): ComposerOsRuntimeBuildInfo {
+  return {
+    composerOsVersion: COMPOSER_OS_VERSION,
+    desktopAppVersion: process.env.COMPOSER_OS_DESKTOP_APP_VERSION,
+    ipcBundlePath: process.env.COMPOSER_OS_IPC_BUNDLE_PATH,
+    ipcBundleSha256: process.env.COMPOSER_OS_IPC_BUNDLE_SHA256,
+    stampIpcSha256: process.env.COMPOSER_OS_STAMP_IPC_SHA256,
+    apiBundleSha256FromStamp: process.env.COMPOSER_OS_API_BUNDLE_SHA256,
+    stampMatchesLiveIpc: process.env.COMPOSER_OS_STAMP_IPC_MATCH,
+    buildStampJson: process.env.COMPOSER_OS_BUILD_STAMP_JSON,
+    truthDumpEnabled:
+      process.env.COMPOSER_OS_DESKTOP_IPC === '1' && process.env.COMPOSER_OS_TRUTH_DUMP === '1',
+  };
+}
+
+/**
+ * Desktop / HTTP entry: must mirror every `GenerateRequest` field the UI sends.
+ * Previously dropped `longFormEnabled` / key fields and passed raw `chordProgressionText` without trim —
+ * whitespace-only strings looked “set” here but became empty after engine trim → silent Song Mode fallback to builtin duo32.
+ */
 export function apiGenerate(
   body: Partial<GenerateRequest>,
   composerLibraryRoot: string
 ): GenerateResult | { success: false; error: string; detail?: string } {
   try {
-    const rawPreset = typeof body.presetId === 'string' ? body.presetId : undefined;
-    const presetIdResolved = rawPreset ?? 'guitar_bass_duo';
+    const rawPreset = typeof body.presetId === 'string' ? body.presetId.trim() : undefined;
+    /**
+     * Default preset is duo. If IPC/JSON omits `presetId` but sends Song Mode fields (desktop parity),
+     * route to `song_mode` — otherwise requests default to `guitar_bass_duo` and never hit `runSongStructure`
+     * (built-in duo32 harmony instead of pasted 32 bars).
+     */
+    let presetIdResolved = rawPreset ?? 'guitar_bass_duo';
+    if (!rawPreset && typeof body.primarySongwriterStyle === 'string' && body.primarySongwriterStyle.trim() !== '') {
+      presetIdResolved = 'song_mode';
+    }
     if (!SUPPORTED_APP_PRESET_IDS.includes(presetIdResolved as SupportedAppPresetId)) {
       return {
         success: false,
         error: `Unsupported preset: ${rawPreset ?? '(missing)'}`,
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
+    const chordProgressionText = normalizeChordProgressionText(body);
+    if (body.harmonyMode === 'custom_locked' && !chordProgressionText) {
+      return {
+        success: false,
+        error: 'harmonyMode custom_locked requires non-empty chordProgressionText (after trim).',
         composerOsVersion: COMPOSER_OS_VERSION,
       };
     }
@@ -67,9 +138,12 @@ export function apiGenerate(
       locks: body.locks,
       title: typeof body.title === 'string' ? body.title : undefined,
       harmonyMode:
-        body.harmonyMode === 'custom' || body.harmonyMode === 'builtin' ? body.harmonyMode : undefined,
-      chordProgressionText:
-        typeof body.chordProgressionText === 'string' ? body.chordProgressionText : undefined,
+        body.harmonyMode === 'custom' ||
+        body.harmonyMode === 'builtin' ||
+        body.harmonyMode === 'custom_locked'
+          ? body.harmonyMode
+          : undefined,
+      chordProgressionText,
       ecmMode:
         body.ecmMode === 'ECM_METHENY_QUARTET' || body.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
           ? body.ecmMode
@@ -84,8 +158,19 @@ export function apiGenerate(
           ? body.creativeControlLevel
           : undefined,
       tonalCenter: typeof body.tonalCenter === 'string' ? body.tonalCenter : undefined,
-      bpm: typeof body.bpm === 'number' && Number.isFinite(body.bpm) ? body.bpm : undefined,
-      totalBars: typeof body.totalBars === 'number' && Number.isFinite(body.totalBars) ? body.totalBars : undefined,
+      bpm: coerceFiniteNumber(body.bpm),
+      totalBars: coerceFiniteNumber(body.totalBars),
+      longFormEnabled: typeof body.longFormEnabled === 'boolean' ? body.longFormEnabled : undefined,
+      keySignatureMode:
+        body.keySignatureMode === 'auto' ||
+        body.keySignatureMode === 'override' ||
+        body.keySignatureMode === 'none'
+          ? body.keySignatureMode
+          : undefined,
+      tonalCenterOverride:
+        typeof body.tonalCenterOverride === 'string' && body.tonalCenterOverride.trim()
+          ? body.tonalCenterOverride.trim()
+          : undefined,
       primarySongwriterStyle:
         typeof body.primarySongwriterStyle === 'string' ? body.primarySongwriterStyle : undefined,
       ensembleConfigId:
@@ -148,6 +233,13 @@ export function apiGenerate(
       presetDir = ensureOutputDirectoryForPreset('riff_generator', root);
     } else {
       presetDir = ensureOutputDirectoryForPreset(req_.presetId, composerLibraryRoot);
+    }
+    if (
+      process.env.COMPOSER_OS_DESKTOP_IPC === '1' &&
+      process.env.COMPOSER_OS_TRUTH_DUMP === '1' &&
+      req_.presetId === 'song_mode'
+    ) {
+      console.log('[composer-os truth] apiGenerate normalized request', JSON.stringify(req_, null, 2));
     }
     return runAppGeneration(req_, presetDir);
   } catch (err) {

@@ -8,12 +8,24 @@ import * as path from 'path';
 import { generateComposition } from '../app-api/generateComposition';
 import {
   normalizeChordProgressionSeparators,
+  normalizeChordToken,
   parseChordProgressionInput,
+  parseChordProgressionInputWithBarCount,
   buildChordSymbolPlanFromBars,
   validateChordSymbolPlanCoversBars,
 } from '../core/harmony/chordProgressionParser';
 import { parseChordSymbol } from '../core/harmony/chordSymbolAnalysis';
+import { getChordForBar } from '../core/harmony/harmonyResolution';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
+import { validateLockedHarmonyMusicXmlTruth } from '../core/export/validateLockedHarmonyMusicXml';
+import { parseLockedChordSemantics } from '../core/harmony/lockedChordSemantics';
+
+const SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION =
+  'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | G13 | Dbmaj7(#11) | Cmaj9/E | A7alt | ' +
+  'Dm9 | G7(b13) | Em7 | A7(#11) | Dmaj9 | Bb13 | Ebmaj9/G | Ab7(#11) | ' +
+  'G13 | B7(#9) | Em9 | A13 | Dmaj9/F# | F7(#11) | Bbmaj9 | Eb13 | ' +
+  'Abmaj9 | Db13 | Gbmaj9 | B7alt | Em9 | A7 | Dmaj9 | G13';
 
 export function runChordProgressionTests(): { name: string; ok: boolean }[] {
   const tests: { name: string; ok: boolean }[] = [];
@@ -204,6 +216,26 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
   });
 
   tests.push({
+    name: 'Slash bass Dmaj9/F# (bar 21): bass spells F# pitch class',
+    ok: (() => {
+      const r = runGoldenPath(90210, {
+        harmonyMode: 'custom_locked',
+        chordProgressionText: SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION,
+        totalBars: 32,
+        longFormEnabled: true,
+      });
+      if (!r.success) return false;
+      const bass = r.score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+      const m = bass?.measures.find((x) => x.index === 21);
+      if (!m || m.chord !== 'Dmaj9/F#') return false;
+      const fsharpPc = 6;
+      return m.events.some(
+        (e) => e.kind === 'note' && (e as { pitch: number }).pitch % 12 === fsharpPc
+      );
+    })(),
+  });
+
+  tests.push({
     name: 'Export: slash chords appear in MusicXML',
     ok: (() => {
       const r = runGoldenPath(56, {
@@ -353,6 +385,147 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
           typeof r.error === 'string' &&
           r.error.includes('Invalid chord progression') &&
           r.chordProgressionParseFailed === true
+        );
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    })(),
+  });
+
+  tests.push({
+    name: 'Duo32: harmonyMode custom + 32 bars routes pasted bar 1 (not builtin Dmin9/G13)',
+    ok: (() => {
+      const text = Array.from({ length: 32 }, () => 'Cmaj7').join(' | ');
+      const r = runGoldenPath(44001, {
+        harmonyMode: 'custom',
+        chordProgressionText: text,
+        totalBars: 32,
+        longFormEnabled: true,
+      });
+      const g = r.score.parts.find((x) => x.instrumentIdentity === 'clean_electric_guitar');
+      const c1 = g?.measures.find((m) => m.index === 1)?.chord;
+      const c2 = g?.measures.find((m) => m.index === 2)?.chord;
+      return (
+        r.context.lockedHarmonyBarsRaw?.length === 32 &&
+        r.context.form.totalBars === 32 &&
+        c1 === 'Cmaj7' &&
+        c2 === 'Cmaj7' &&
+        r.context.generationMetadata.harmonySource === 'custom'
+      );
+    })(),
+  });
+
+  tests.push({
+    name: 'E2E harmony authority: 32-bar paste — getChordForBar bars 1–4, score + MusicXML 1–32',
+    ok: (() => {
+      try {
+        const parsed = parseChordProgressionInputWithBarCount(SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION, 32);
+        if (!parsed.ok) return false;
+        /** Same as app API: runGoldenPath resolves lockedHarmonyBarsRaw from text before runGoldenPathOnce. */
+        const r = runGoldenPath(95100, {
+          harmonyMode: 'custom_locked',
+          chordProgressionText: SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION,
+          totalBars: 32,
+          longFormEnabled: true,
+        });
+        for (let b = 1; b <= 4; b++) {
+          if (getChordForBar(b, r.context) !== parsed.bars[b - 1]) return false;
+        }
+        if (parsed.bars[0] !== 'Cmaj9' || parsed.bars[1] !== 'E7(#11)/G#') return false;
+        const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+        if (!g) return false;
+        for (let i = 1; i <= 32; i++) {
+          const m = g.measures.find((x) => x.index === i);
+          if (normalizeChordToken(m?.chord ?? '') !== normalizeChordToken(parsed.bars[i - 1] ?? '')) {
+            return false;
+          }
+        }
+        if (!r.xml) return false;
+        const harmFromXml = extractHarmoniesFromFirstPartXml(r.xml);
+        for (let b = 1; b <= 32; b++) {
+          const h = harmFromXml.get(b);
+          if (!h) return false;
+          if (normalizeChordToken(h) !== normalizeChordToken(parsed.bars[b - 1] ?? '')) return false;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    })(),
+  });
+
+  tests.push({
+    name: 'Song Mode custom_locked: 32 bars parse + score + MusicXML match pasted symbols',
+    ok: (() => {
+      const parsed = parseChordProgressionInputWithBarCount(SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION, 32);
+      if (!parsed.ok || parsed.bars.length !== 32) return false;
+      const r = runGoldenPath(93001, {
+        harmonyMode: 'custom_locked',
+        chordProgressionText: SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION,
+        totalBars: 32,
+        longFormEnabled: true,
+      });
+      if (!r.success || !r.xml) return false;
+      if (r.context.lockedHarmonyBarsRaw?.length !== 32) return false;
+      if (r.context.generationMetadata.customHarmonyLocked !== true) return false;
+      if (r.context.generationMetadata.customHarmonyMusicXmlTruthPassed !== true) return false;
+      if (r.context.generationMetadata.builtInHarmonyFallbackOccurred === true) return false;
+      if (r.context.generationMetadata.harmonySource !== 'custom') return false;
+      const truth = validateLockedHarmonyMusicXmlTruth(r.xml, parsed.bars);
+      if (!truth.ok) return false;
+      for (const sym of parsed.bars) {
+        const sem = parseLockedChordSemantics(sym);
+        if (normalizeChordToken(sem.originalText) !== normalizeChordToken(sym)) return false;
+      }
+      const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+      if (!g) return false;
+      if (parsed.bars[0] !== 'Cmaj9') return false;
+      for (let i = 1; i <= 32; i++) {
+        const m = g.measures.find((x) => x.index === i);
+        if (normalizeChordToken(m?.chord ?? '') !== normalizeChordToken(parsed.bars[i - 1] ?? '')) {
+          return false;
+        }
+      }
+      const harmFromXml = extractHarmoniesFromFirstPartXml(r.xml);
+      for (let b = 1; b <= 32; b++) {
+        const h = harmFromXml.get(b);
+        if (!h) return false;
+        if (normalizeChordToken(h) !== normalizeChordToken(parsed.bars[b - 1] ?? '')) return false;
+      }
+      return true;
+    })(),
+  });
+
+  tests.push({
+    name: 'generateComposition: custom_locked 32-bar disk + locked harmony truth',
+    ok: (() => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-lock-32-'));
+      try {
+        const parsed = parseChordProgressionInputWithBarCount(SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION, 32);
+        if (!parsed.ok) return false;
+        const r = generateComposition(
+          {
+            presetId: 'guitar_bass_duo',
+            styleStack: {
+              primary: 'barry_harris',
+              secondary: 'metheny',
+              colour: 'triad_pairs',
+              weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+            },
+            seed: 93001,
+            harmonyMode: 'custom_locked',
+            chordProgressionText: SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION,
+            totalBars: 32,
+            longFormEnabled: true,
+          },
+          dir
+        );
+        return (
+          r.success &&
+          !!r.filepath &&
+          fs.existsSync(r.filepath) &&
+          r.parsedCustomProgressionBars?.length === 32 &&
+          r.customHarmonyMusicXmlTruthPassed === true
         );
       } finally {
         fs.rmSync(dir, { recursive: true, force: true });

@@ -67,10 +67,11 @@ export interface GenerateRequest {
   /**
    * Guitar–Bass Duo: built-in cycle vs user progression.
    * When `custom`, `chordProgressionText` is required (may be empty string from client → error).
+   * `custom_locked` — Song Mode / long-form: exactly 32 pasted symbols, no substitution or scaffold fill.
    */
-  harmonyMode?: 'builtin' | 'custom';
+  harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
   /**
-   * Guitar–Bass Duo: optional `|`-separated chords (exactly 8 bars).
+   * Guitar–Bass Duo / Song Mode: optional `|`-separated chords (8 bars default; 32 when locked long-form).
    * Only used when `harmonyMode` is `custom` or inferred from non-empty text (legacy).
    */
   chordProgressionText?: string;

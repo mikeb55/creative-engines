@@ -7,6 +7,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import type { StartupState } from './startupState';
+import * as crypto from 'crypto';
 import {
   DESKTOP_APP_ID,
   DESKTOP_PRODUCT_NAME,
@@ -14,6 +15,7 @@ import {
   resolveUiPath,
   getWindowIconPath,
   resolveDesktopIpcBundlePath,
+  resolveBuildStampPath,
 } from './config';
 import {
   verifyUiBundleAtPath,
@@ -82,6 +84,38 @@ ipcMain.on(
   }
 );
 
+function injectComposerOsDesktopRuntime(bundlePath: string): void {
+  process.env.COMPOSER_OS_DESKTOP_IPC = '1';
+  const ipcBuf = fs.readFileSync(bundlePath);
+  const liveHash = crypto.createHash('sha256').update(ipcBuf).digest('hex');
+  process.env.COMPOSER_OS_IPC_BUNDLE_PATH = bundlePath;
+  process.env.COMPOSER_OS_IPC_BUNDLE_SHA256 = liveHash;
+
+  const stampPath = resolveBuildStampPath();
+  if (stampPath) {
+    try {
+      const raw = fs.readFileSync(stampPath, 'utf-8');
+      process.env.COMPOSER_OS_BUILD_STAMP_JSON = raw;
+      const stamp = JSON.parse(raw) as {
+        ipcBundle?: { sha256?: string };
+        apiBundle?: { sha256?: string };
+        generatedAt?: string;
+        desktopPackageVersion?: string;
+        gitCommit?: string | null;
+      };
+      const stampIpc = stamp.ipcBundle?.sha256;
+      process.env.COMPOSER_OS_STAMP_IPC_SHA256 = stampIpc ?? '';
+      process.env.COMPOSER_OS_API_BUNDLE_SHA256 = stamp.apiBundle?.sha256 ?? '';
+      process.env.COMPOSER_OS_STAMP_IPC_MATCH =
+        stampIpc && stampIpc === liveHash ? '1' : stampIpc ? '0' : 'unknown';
+    } catch {
+      process.env.COMPOSER_OS_STAMP_IPC_MATCH = 'unknown';
+    }
+  } else {
+    process.env.COMPOSER_OS_STAMP_IPC_MATCH = 'unknown';
+  }
+}
+
 function registerDesktopIpc(outputDir: string): void {
   const bundlePath = resolveDesktopIpcBundlePath();
   if (!bundlePath) {
@@ -93,11 +127,36 @@ function registerDesktopIpc(outputDir: string): void {
     process.env.COMPOSER_OS_REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
   }
   process.env.COMPOSER_OS_OUTPUT_DIR = outputDir;
+  process.env.COMPOSER_OS_DESKTOP_APP_VERSION = app.getVersion();
+  injectComposerOsDesktopRuntime(bundlePath);
   const { registerComposerOsIpc } = require(bundlePath) as {
     registerComposerOsIpc: (im: typeof ipcMain, dir: string) => void;
   };
   registerComposerOsIpc(ipcMain, outputDir);
   registerOpenOutputFolderIpc(ipcMain, outputDir);
+
+  const stampMatch = process.env.COMPOSER_OS_STAMP_IPC_MATCH;
+  console.log(
+    '[Composer OS Desktop] runtime',
+    JSON.stringify(
+      {
+        appVersion: app.getVersion(),
+        ipcBundlePath: bundlePath,
+        ipcBundleSha256: process.env.COMPOSER_OS_IPC_BUNDLE_SHA256,
+        apiBundleSha256FromStamp: process.env.COMPOSER_OS_API_BUNDLE_SHA256,
+        stampIpcSha256: process.env.COMPOSER_OS_STAMP_IPC_SHA256,
+        stampMatchesLiveIpc: stampMatch,
+        truthDump: process.env.COMPOSER_OS_TRUTH_DUMP === '1',
+      },
+      null,
+      2
+    )
+  );
+  if (stampMatch === '0') {
+    console.warn(
+      '[Composer OS Desktop] IPC bundle SHA-256 does not match composer-os-build-stamp.json — stale or unpackaged resources? Re-run npm run desktop:build.'
+    );
+  }
 }
 
 function createWindowShell(): BrowserWindow {
@@ -211,6 +270,20 @@ async function launchApp(): Promise<void> {
   }
   cachedUiStamp = vr.stamp;
   cachedUiPath = vr.resolvedPath;
+  console.log(
+    '[Composer OS Desktop] UI bundle',
+    JSON.stringify(
+      {
+        path: cachedUiPath,
+        uiBuildTimestamp: cachedUiStamp.buildTimestamp,
+        uiGitCommit: cachedUiStamp.gitCommit,
+        uiAppShellVersion: cachedUiStamp.appShellVersion,
+        uiProductId: cachedUiStamp.productId,
+      },
+      null,
+      2
+    )
+  );
 
   const outputDir = resolveDefaultOutputDir();
   try {

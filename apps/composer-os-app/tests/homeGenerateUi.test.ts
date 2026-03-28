@@ -39,10 +39,10 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toMatch(/title:\s*scoreTitle\.trim/);
   });
 
-  it('exposes chord progression field for Guitar–Bass Duo (custom harmony when non-empty)', () => {
+  it('exposes chord progression field for Guitar–Bass Duo (custom or custom_locked when non-empty)', () => {
     expect(src).toContain('Chord progression (optional)');
     expect(src).toContain('chordProgressionText');
-    expect(src).toContain("harmonyMode: 'custom'");
+    expect(src).toMatch(/harmonyMode:\s*'(custom_locked|custom)'/);
     expect(src).not.toMatch(/guitar_bass_duo[^\n]*harmonyMode:\s*'builtin'/);
   });
 

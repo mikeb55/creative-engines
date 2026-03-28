@@ -4,6 +4,7 @@
 
 import { parseChordForMusicXmlHarmony } from '../export/chordSymbolMusicXml';
 import type { CompositionContext, ChordSymbolPlan } from '../compositionContext';
+import { getChordForBar } from './harmonyResolution';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type {
   InferredMode,
@@ -210,6 +211,18 @@ export function chordsFromChordSymbolPlan(plan: ChordSymbolPlan): string[] {
     for (let i = 0; i < seg.bars; i++) {
       out.push(seg.chord);
     }
+  }
+  return out;
+}
+
+/**
+ * One chord per bar for key inference — same runtime authority as measure chords (`getChordForBar`), not `chordSymbolPlan` alone.
+ */
+export function chordsForKeyInferenceFromContext(context: CompositionContext): string[] {
+  const tb = context.form.totalBars;
+  const out: string[] = [];
+  for (let b = 1; b <= tb; b++) {
+    out.push(getChordForBar(b, context));
   }
   return out;
 }
@@ -485,7 +498,7 @@ export function applyKeySignatureToScoreAndContext(
     tonalCenter?: string;
   }
 ): void {
-  const chords = chordsFromChordSymbolPlan(context.chordSymbolPlan);
+  const chords = chordsForKeyInferenceFromContext(context);
   const inference = inferKeyFromChords(chords);
   const reqMode = options?.keySignatureMode ?? 'auto';
   const overrideStr =

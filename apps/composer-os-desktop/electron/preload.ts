@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
   }> => ipcRenderer.invoke('composer-os:get-ui-provenance'),
   invokeApi: (channel: string, payload?: unknown): Promise<unknown> =>
     ipcRenderer.invoke(channel, payload),
+  getRuntimeBuildInfo: (): Promise<Record<string, unknown>> =>
+    ipcRenderer.invoke('composer-os-api:get-runtime-build-info'),
   onStartupState: (cb: (s: StartupState) => void): void => {
     ipcRenderer.on('composer-os:startup-state', (_e, s: StartupState) => cb(s));
   },

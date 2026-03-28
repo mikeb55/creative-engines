@@ -31,8 +31,8 @@ export function runSongwritingResearchParsingTests(): { ok: boolean; name: strin
 
   const missing = loadSongwritingResearchFromPath(path.join(__dirname, 'nonexistent_songwriting_xyz.md'));
   out.push({
-    ok: !missing.ok && missing.errors.some((e) => e.toLowerCase().includes('failed to read')),
-    name: 'negative: missing file returns parse failure',
+    ok: missing.ok && missing.errors.length === 0 && missing.stats.songwriterRuleLines === 0,
+    name: 'missing file falls back to default songwriting rules (ok, no block)',
   });
 
   return out;

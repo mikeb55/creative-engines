@@ -39,8 +39,9 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
   {
     presetId: 'song_mode',
     displayName: 'Song Mode',
-    capability: 'song_structure',
-    honestNote: 'Structural song + lead-sheet contract as JSON; no MusicXML lead-sheet export in this build.',
+    capability: 'musicxml_generation',
+    honestNote:
+      'Song plan (hooks, sections, rules) then golden-path Guitar–Bass Duo realisation as exported MusicXML.',
   },
   {
     presetId: 'big_band',

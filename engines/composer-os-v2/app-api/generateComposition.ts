@@ -7,6 +7,7 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/validateLockedHarmonyMusicXml';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
@@ -39,6 +40,8 @@ export interface GenerateResult {
   parsedCustomProgressionBars?: string[];
   chordProgressionParseFailed?: boolean;
   builtInHarmonyFallbackOccurred?: boolean;
+  /** True when written MusicXML harmony matched locked pasted bars (duo custom). */
+  customHarmonyMusicXmlTruthPassed?: boolean;
   /** V3.6b — Receipt: echoes generationMetadata.harmonySourceUsed when duo. */
   harmonySourceUsed?: 'builtin' | 'custom';
   styleGrammarLabel?: string;
@@ -101,6 +104,9 @@ export interface GenerateResult {
     stylePairing?: { songwriterStyle: string; arrangerStyle: string; era?: string };
     ensembleConfigId?: string;
     primarySongwriterStyle?: string;
+    /** Echo for desktop parity — same fields `apiGenerate` forwards to `runAppGeneration`. */
+    harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
+    longFormEnabled?: boolean;
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -136,18 +142,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     tonalCenter: req.tonalCenter,
     variationEnabled: req.variationEnabled === true ? true : undefined,
   });
-  const validation = {
-    integrityPassed: result.integrityPassed,
-    behaviourGatesPassed: result.behaviourGatesPassed,
-    mxValidationPassed: result.mxValidationPassed,
-    strictBarMathPassed: result.strictBarMathPassed,
-    exportRoundTripPassed: result.exportRoundTripPassed,
-    exportIntegrityPassed: result.exportIntegrityPassed,
-    instrumentMetadataPassed: result.instrumentMetadataPassed,
-    sibeliusSafe: result.sibeliusSafe,
-    readiness: result.readiness,
-    errors: result.errors,
-  };
+  let diskHarmonyTruthErrors: string[] = [];
 
   let filename: string | undefined;
   let filepath: string | undefined;
@@ -160,6 +155,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');
+    const locked = result.context.lockedHarmonyBarsRaw;
+    if (locked && locked.length === result.context.form.totalBars) {
+      const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
+      if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
+    }
     writeOutputManifest(filepath, {
       presetId: req.presetId,
       styleStack: result.runManifest?.activeModules ?? [],
@@ -211,14 +211,30 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         readinessRelease: result.readiness.release,
         readinessMx: result.readiness.mx,
         shareable: result.readiness.shareable,
-        errors: result.errors,
+        errors: diskHarmonyTruthErrors.length > 0 ? [...result.errors, ...diskHarmonyTruthErrors] : result.errors,
       },
     });
   }
 
+  const allErrors =
+    diskHarmonyTruthErrors.length > 0 ? [...result.errors, ...diskHarmonyTruthErrors] : result.errors;
+  const validation = {
+    integrityPassed: result.integrityPassed,
+    behaviourGatesPassed: result.behaviourGatesPassed,
+    mxValidationPassed: result.mxValidationPassed,
+    strictBarMathPassed: result.strictBarMathPassed,
+    exportRoundTripPassed: result.exportRoundTripPassed,
+    exportIntegrityPassed: result.exportIntegrityPassed,
+    instrumentMetadataPassed: result.instrumentMetadataPassed,
+    sibeliusSafe: result.sibeliusSafe,
+    readiness: result.readiness,
+    errors: allErrors,
+  };
+
   const scoreTitleResolved = result.runManifest?.scoreTitle;
+  const successFinal = result.success && diskHarmonyTruthErrors.length === 0;
   const universalLeadSheet =
-    result.success && result.context
+    successFinal && result.context
       ? buildUniversalLeadSheetFromCompositionContext(
           result.context,
           scoreTitleResolved ?? `Composer OS ${req.presetId}`
@@ -226,8 +242,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       : undefined;
 
   return {
-    success: result.success,
-    error: result.success ? undefined : result.errors[0] ?? 'Generation failed',
+    success: successFinal,
+    error: successFinal ? undefined : allErrors[0] ?? 'Generation failed',
     productKind: 'musicxml',
     composerOsVersion: COMPOSER_OS_VERSION,
     xml: result.xml,
@@ -241,6 +257,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     parsedCustomProgressionBars: result.context.generationMetadata.parsedCustomProgressionBars,
     chordProgressionParseFailed: result.context.generationMetadata.chordProgressionParseFailed,
     builtInHarmonyFallbackOccurred: result.context.generationMetadata.builtInHarmonyFallbackOccurred,
+    customHarmonyMusicXmlTruthPassed: result.context.generationMetadata.customHarmonyMusicXmlTruthPassed,
     harmonySourceUsed: result.context.generationMetadata.harmonySourceUsed,
     styleGrammarLabel: result.context.generationMetadata.styleGrammarLabel,
     styleStackPrimaryModuleId: result.context.generationMetadata.styleStackPrimaryModuleId,
@@ -290,6 +307,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       stylePairing: req.stylePairing,
       ensembleConfigId: req.ensembleConfigId,
       primarySongwriterStyle: req.primarySongwriterStyle,
+      harmonyMode: req.harmonyMode,
+      longFormEnabled: req.longFormEnabled,
     },
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
@@ -12,7 +12,7 @@ import {
   mergePresetsWithRegistry,
   type AppPresetCard,
 } from '../constants/composerOsPresetUi';
-import { parseChordProgressionInput } from '../utils/chordProgressionClient';
+import { parseChordProgressionInput, parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bacharach', label: 'Bacharach' },
@@ -159,7 +159,7 @@ export function HomeGenerate({
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
-  /** Guitar–Bass Duo: optional chord line (exactly 8 bars after separator normalization). When non-empty, engine uses custom harmony. */
+  /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
@@ -174,6 +174,17 @@ export function HomeGenerate({
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
   /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
   const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
+  const desktopTruthDumpEnabled = useRef(false);
+
+  useEffect(() => {
+    const d = window.composerOsDesktop;
+    if (d?.mode === 'desktop' && typeof d.getRuntimeBuildInfo === 'function') {
+      void d.getRuntimeBuildInfo().then((r) => {
+        console.log('[Composer OS] runtime build info (renderer)', r);
+        desktopTruthDumpEnabled.current = !!(r as { truthDumpEnabled?: boolean }).truthDumpEnabled;
+      });
+    }
+  }, []);
 
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
@@ -222,10 +233,20 @@ export function HomeGenerate({
               }
             : undefined;
 
+        const tonalTrim = tonalCenter.trim();
+        const chordTrim = chordProgressionText.trim();
+        /**
+         * Song Mode: users often paste the 32-bar line into "Tonal centre" instead of "Chord progression".
+         * If we only read `chordProgressionText`, the API gets a long string in `tonalCenter` and no
+         * `chordProgressionText` → engine falls back to built-in duo32 (Dmin9/G13/…).
+         */
+        const songChordLine = presetId === 'song_mode' ? chordTrim || tonalTrim : chordTrim;
+
         const coreFields = mapCoreUiToGenerationFields({
           presetId,
           seed,
-          tonalCenter,
+          tonalCenter:
+            presetId === 'song_mode' && chordTrim === '' && tonalTrim !== '' ? '' : tonalCenter,
           bpm,
           totalBars,
           variationId: vid,
@@ -234,12 +255,41 @@ export function HomeGenerate({
           ensembleConfigId: presetId === 'big_band' ? ensembleConfigId : undefined,
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
         });
-
-        const chordTrim = chordProgressionText.trim();
+        /** Duo long-form: 32-bar paste must preflight as 32 (engine matches runGoldenPath try-32-then-8). */
+        let duoHarmonyFields: {
+          harmonyMode: 'custom' | 'custom_locked';
+          chordProgressionText: string;
+          totalBars?: number;
+          longFormEnabled?: boolean;
+        } | null = null;
         if (presetId === 'guitar_bass_duo' && chordTrim) {
-          const parsed = parseChordProgressionInput(chordTrim);
-          if (!parsed.ok) {
-            setError(parsed.error);
+          const p32 = parseChordProgressionInputWithBarCount(chordTrim, 32);
+          if (p32.ok) {
+            duoHarmonyFields = {
+              harmonyMode: 'custom_locked',
+              chordProgressionText: chordTrim,
+              totalBars: 32,
+              longFormEnabled: true,
+            };
+          } else {
+            const p8 = parseChordProgressionInput(chordTrim);
+            if (!p8.ok) {
+              setError(p8.error);
+              setLoading(false);
+              notifyGenPhase('failed');
+              onResult({
+                record: {},
+                summary: { status: 'failed', at: new Date().toISOString() },
+              });
+              return;
+            }
+            duoHarmonyFields = { harmonyMode: 'custom', chordProgressionText: chordTrim };
+          }
+        }
+        if (presetId === 'song_mode' && songChordLine) {
+          const parsed32 = parseChordProgressionInputWithBarCount(songChordLine, 32);
+          if (!parsed32.ok) {
+            setError(parsed32.error);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -249,14 +299,20 @@ export function HomeGenerate({
             return;
           }
         }
-        const r = (await api.generate({
+        const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
-          ...(presetId === 'guitar_bass_duo' && chordTrim
-            ? { harmonyMode: 'custom' as const, chordProgressionText: chordTrim }
+          ...(duoHarmonyFields ? duoHarmonyFields : {}),
+          ...(presetId === 'song_mode' && songChordLine
+            ? {
+                harmonyMode: 'custom_locked' as const,
+                chordProgressionText: songChordLine,
+                totalBars: 32,
+                longFormEnabled: true,
+              }
             : {}),
           ...(presetId === 'riff_generator'
             ? {
@@ -268,7 +324,39 @@ export function HomeGenerate({
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
               }
             : {}),
-        })) as GenResult;
+        };
+
+        if (presetId === 'song_mode' && songChordLine.length > 0) {
+          const gp = generatePayload as { chordProgressionText?: string };
+          const out = typeof gp.chordProgressionText === 'string' ? gp.chordProgressionText.trim() : '';
+          if (out !== songChordLine) {
+            throw new Error(
+              'Composer OS: chord progression did not reach the generate request (internal payload mismatch).'
+            );
+          }
+        }
+        if (presetId === 'song_mode') {
+          const userOfferedHarmony = chordTrim.length > 0 || tonalTrim.length > 0;
+          const gp = generatePayload as { chordProgressionText?: string };
+          const out = typeof gp.chordProgressionText === 'string' ? gp.chordProgressionText.trim() : '';
+          if (userOfferedHarmony && out.length === 0) {
+            throw new Error(
+              'Composer OS: you entered chord text but it was not sent to the engine. Use the Chord progression field for Song Mode, or rebuild the app if this persists.'
+            );
+          }
+        }
+
+        if (presetId === 'song_mode' && songChordLine.length > 0) {
+          console.log('[Composer OS] outgoing harmony text:', songChordLine.slice(0, 50));
+        }
+        if (desktopTruthDumpEnabled.current && presetId === 'song_mode') {
+          console.log('[composer-os truth] HomeGenerate UI harmony (trimmed)', songChordLine.slice(0, 2000));
+          console.log(
+            '[composer-os truth] HomeGenerate request payload',
+            JSON.stringify(generatePayload, null, 2)
+          );
+        }
+        const r = (await api.generate(generatePayload)) as GenResult;
         setResult(r);
         const ok = !!r.success;
         if (!ok) {
@@ -465,6 +553,20 @@ export function HomeGenerate({
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Tonal centre / key
         </label>
+        {presetId === 'song_mode' && (
+          <p
+            style={{
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              margin: '0 0 0.5rem',
+              lineHeight: 1.45,
+            }}
+          >
+            Short key label only (e.g. <code>C</code>). Paste your <strong style={{ color: 'var(--text)' }}>full
+            32-bar chord progression</strong> in <strong style={{ color: 'var(--text)' }}>Chord progression</strong>{' '}
+            below — not here.
+          </p>
+        )}
         <input
           type="text"
           value={tonalCenter}
@@ -482,10 +584,10 @@ export function HomeGenerate({
         />
       </div>
 
-      {(presetId === 'guitar_bass_duo' || presetId === 'riff_generator') && (
+      {(presetId === 'guitar_bass_duo' || presetId === 'riff_generator' || presetId === 'song_mode') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            Chord progression (optional)
+            {presetId === 'song_mode' ? 'Chord progression (32 bars)' : 'Chord progression (optional)'}
           </label>
           {presetId === 'guitar_bass_duo' ? (
             <p
@@ -501,7 +603,7 @@ export function HomeGenerate({
               <code>/</code>. Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study progression (e.g. Dm9 … A7alt).
             </p>
-          ) : (
+          ) : presetId === 'riff_generator' ? (
             <p
               style={{
                 fontSize: '0.8rem',
@@ -513,6 +615,19 @@ export function HomeGenerate({
               One chord or a <strong style={{ color: 'var(--text)' }}>2–4</strong> chord loop — same separators
               as duo when you use more than one chord. Leave empty for a default vamp.
             </p>
+          ) : (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              <strong style={{ color: 'var(--text)' }}>Exactly 32</strong> chords for locked harmony. Separate
+              bars with <code>|</code>, <code>,</code>, or <code>;</code>. Slash chords (e.g.{' '}
+              <code>E7(#11)/G#</code>) are one symbol per bar.
+            </p>
           )}
           <textarea
             value={chordProgressionText}
@@ -521,9 +636,11 @@ export function HomeGenerate({
             placeholder={
               presetId === 'guitar_bass_duo'
                 ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
-                : 'Am7 | D7 | Gmaj7 |'
+                : presetId === 'song_mode'
+                  ? 'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | … (32 chords total)'
+                  : 'Am7 | D7 | Gmaj7 |'
             }
-            rows={3}
+            rows={presetId === 'song_mode' ? 6 : 3}
             style={{
               width: '100%',
               maxWidth: 600,

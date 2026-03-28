@@ -234,3 +234,22 @@ export function buildLeadSheetContractFromCompiled(song: CompiledSong): LeadShee
 export function summaryStringForManifest(song: CompiledSong): string {
   return `hook=${song.hook.id};sections=${song.sectionSummary.join(',')}`;
 }
+
+/** Flatten scaffold chords to exactly 8 bars for Guitar–Bass Duo custom golden path (`|`-separated). */
+export function buildChordProgressionTextForDuoFromCompiledSong(song: CompiledSong): string {
+  const chords: string[] = [];
+  for (const block of song.chordPlan) {
+    for (const c of block.chordSymbols) {
+      chords.push(c);
+    }
+  }
+  const pad = 8;
+  if (chords.length === 0) {
+    return Array(pad).fill('Cmaj7').join('|');
+  }
+  const out = chords.slice(0, pad);
+  while (out.length < pad) {
+    out.push(out[out.length - 1]!);
+  }
+  return out.join('|');
+}

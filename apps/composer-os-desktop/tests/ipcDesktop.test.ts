@@ -24,8 +24,15 @@ describe('Desktop IPC clean-room (static)', () => {
   it('preload exposes IPC invoke bridge', () => {
     const pre = fs.readFileSync(path.join(desktopRoot, 'electron', 'preload.ts'), 'utf-8');
     expect(pre).toContain('invokeApi');
+    expect(pre).toContain('getRuntimeBuildInfo');
     expect(pre).toContain('integration');
     expect(pre).toContain("'ipc'");
+  });
+
+  it('ipc entry registers runtime build info handler', () => {
+    const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
+    expect(ipc).toContain('composer-os-api:get-runtime-build-info');
+    expect(ipc).toContain('getComposerOsRuntimeBuildInfo');
   });
 
   it('renderer api uses IPC when integration is ipc', () => {

@@ -1,12 +1,12 @@
 {
   "name": "composer-os-desktop",
-  "version": "1.0.10",
+  "version": "1.0.28",
   "description": "Composer OS Windows Desktop Application",
   "main": "dist/main.js",
   "author": "Creative Engines",
   "scripts": {
-    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
-    "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "desktop:dev": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
+    "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts",
     "refresh:desktop": "tsx install/refreshDesktopCli.ts",
@@ -20,14 +20,15 @@
     "desktop:deploy": "npm run desktop:clean-install",
     "desktop:install": "npm run desktop:clean-install",
     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
-    "build": "npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "build": "npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "build:api": "node scripts/build-api-bundle.js",
     "build:desktop-ipc": "node scripts/build-desktop-ipc-bundle.js",
+    "build:stamp": "node scripts/write-composer-os-build-stamp.js",
     "build:open-folder-helpers": "node scripts/build-open-folder-helpers.js",
     "build:icon": "node scripts/generate-icon.js",
     "build:ui": "cd ../composer-os-app && npm run build && cd ../composer-os-desktop && node scripts/copy-ui.js",
     "build:electron": "tsc -p tsconfig.json",
-    "test": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && vitest run",
+    "test": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && vitest run",
     "start": "electron ."
   },
   "dependencies": {
@@ -55,6 +56,7 @@
       "resources/icon.png",
       "resources/api.bundle.js",
       "resources/desktop-ipc.bundle.cjs",
+      "resources/composer-os-build-stamp.json",
       "resources/open-folder-helpers.cjs",
       "resources/ui/**/*"
     ],
@@ -66,6 +68,10 @@
       {
         "from": "resources/desktop-ipc.bundle.cjs",
         "to": "desktop-ipc.bundle.cjs"
+      },
+      {
+        "from": "resources/composer-os-build-stamp.json",
+        "to": "composer-os-build-stamp.json"
       },
       {
         "from": "resources/open-folder-helpers.cjs",

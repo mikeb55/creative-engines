@@ -8,7 +8,7 @@
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ChordSegment, HarmonyPlan } from '../primitives/harmonyTypes';
 
-const BAR_COUNT = 8;
+const DEFAULT_DUO_BAR_COUNT = 8;
 
 /**
  * Normalize user bar separators to `|` for parsing. Accepts `|`, `,`, and `;`.
@@ -49,7 +49,7 @@ function isValidChordShape(s: string): boolean {
   const m = s.match(CHORD_TOKEN);
   if (!m) return false;
   const qual = (m[2] ?? '').trim();
-  if (qual.length > 14) return false;
+  if (qual.length > 24) return false;
   return true;
 }
 
@@ -81,11 +81,12 @@ export function parseChordProgressionInputWithBarCount(
     if (tokens.length === 0) {
       return { ok: false, error: 'Empty bar between | separators.' };
     }
-    const primary = normalizeChordToken(tokens[0]);
+    const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
+    const primary = normalizeChordToken(rawCell);
     if (!isValidChordShape(primary)) {
       return { ok: false, error: `Unrecognized chord symbol: "${tokens[0]}".` };
     }
-    bars.push(primary);
+    bars.push(rawCell);
   }
   if (bars.length !== expectedBarCount) {
     return {
@@ -101,7 +102,7 @@ export function parseChordProgressionInputWithBarCount(
  * Requires exactly 8 bars for Guitar–Bass Duo.
  */
 export function parseChordProgressionInput(input: string): ParseChordProgressionResult {
-  return parseChordProgressionInputWithBarCount(input, BAR_COUNT);
+  return parseChordProgressionInputWithBarCount(input, DEFAULT_DUO_BAR_COUNT);
 }
 
 /** Merge consecutive identical chords into segments (exactly 8 bars). */

@@ -6,7 +6,7 @@ import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
-import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 
 export type PhraseIntent = 'guitar_lead' | 'bass_lead' | 'answer_guitar' | 'answer_bass' | 'cadence';
 
@@ -42,9 +42,10 @@ export function resolvePhraseEndForDuo(
 export function guitarChordTonesInRange(
   chord: string,
   low: number,
-  high: number
+  high: number,
+  chordToneOpts?: ChordTonesOptions
 ): { third: number; seventh: number; fifth: number; root: number } {
-  const t = chordTonesForChordSymbol(chord);
+  const t = chordTonesForChordSymbol(chord, chordToneOpts);
   return {
     root: liftToneToRange(t.root, low, high),
     third: liftToneToRange(t.third, low, high),
@@ -124,9 +125,10 @@ export function emitGuitarDuoIdentityBar7(params: {
   effectiveHigh: number;
   staggerG: number;
   seed: number;
+  chordToneOpts?: ChordTonesOptions;
 }): void {
-  const { m, chord, effectiveLow, effectiveHigh, staggerG, seed } = params;
-  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+  const { m, chord, effectiveLow, effectiveHigh, staggerG, seed, chordToneOpts } = params;
+  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
   const endStrong = resolvePhraseEndForDuo(tones, undefined, effectiveLow, effectiveHigh, seed, DUO_IDENTITY_MOMENT_BAR);
   const u = seededUnit(seed, DUO_IDENTITY_MOMENT_BAR, 702);
   const lo = clampPitch(tones.third, effectiveLow, effectiveHigh);
@@ -176,6 +178,7 @@ export function emitGuitarPhraseBar(params: {
   anchorMidi?: number;
   /** Duo swing: delayed downbeats, short–long cells, stronger syncopation. */
   swingDuo?: boolean;
+  chordToneOpts?: ChordTonesOptions;
 }): void {
   const {
     m,
@@ -192,12 +195,13 @@ export function emitGuitarPhraseBar(params: {
     methenyShortenLong,
     anchorMidi,
     swingDuo,
+    chordToneOpts,
   } = params;
 
   /** Duo: attacks only on eighth-beat grid; durations still use quarter-beat rounding where needed. */
   const pos = swingDuo ? snapAttackBeatToGrid : qBeat;
 
-  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
   const endStrong = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, bar);
   const uPen = seededUnit(seed, bar, 401);
   const pen = uPen < 0.4 ? tones.fifth : tones.root;

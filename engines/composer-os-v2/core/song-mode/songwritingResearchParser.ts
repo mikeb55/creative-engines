@@ -199,6 +199,16 @@ function parseMinimumViable(lines: string[]): string[] {
 }
 
 export function parseSongwritingResearchMarkdown(raw: string): ParsedSongwritingResearch {
+  try {
+    return parseSongwritingResearchMarkdownImpl(raw);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[songwritingResearch] parse threw: ${msg}; using default songwriting rules`);
+    return createDefaultSongwritingResearch();
+  }
+}
+
+function parseSongwritingResearchMarkdownImpl(raw: string): ParsedSongwritingResearch {
   const errors: string[] = [];
   if (!raw || raw.trim().length < 80) {
     return {
@@ -287,34 +297,57 @@ export function getDefaultSongwritingResearchPath(): string {
   return path.join(__dirname, 'data', 'Songwriting.md');
 }
 
+/**
+ * Minimal research payload when file missing, parse throws, or quality gate fails.
+ * `ok: true` so Song Mode does not block on researchParseOk / validation.
+ */
+export function createDefaultSongwritingResearch(): ParsedSongwritingResearch {
+  return {
+    ok: true,
+    errors: [],
+    songwriters: {},
+    authors: {},
+    classical: {},
+    hooksAndStructure: [],
+    melodySystems: [],
+    harmonySystems: [],
+    lyricProsody: [],
+    minimumViableEngine: [],
+    stats: {
+      songwriterRuleLines: 0,
+      authorRuleLines: 0,
+      classicalRuleLines: 0,
+      hooksAndStructureLines: 0,
+      melodySystemsLines: 0,
+      harmonySystemsLines: 0,
+      lyricProsodyLines: 0,
+      minimumViableLines: 0,
+    },
+  };
+}
+
 export function loadSongwritingResearchFromPath(filePath: string): ParsedSongwritingResearch {
+  let raw: string;
   try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    return parseSongwritingResearchMarkdown(raw);
+    raw = fs.readFileSync(filePath, 'utf-8');
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return {
-      ok: false,
-      errors: [`failed to read research file: ${msg}`],
-      songwriters: {},
-      authors: {},
-      classical: {},
-      hooksAndStructure: [],
-      melodySystems: [],
-      harmonySystems: [],
-      lyricProsody: [],
-      minimumViableEngine: [],
-      stats: {
-        songwriterRuleLines: 0,
-        authorRuleLines: 0,
-        classicalRuleLines: 0,
-        hooksAndStructureLines: 0,
-        melodySystemsLines: 0,
-        harmonySystemsLines: 0,
-        lyricProsodyLines: 0,
-        minimumViableLines: 0,
-      },
-    };
+    console.warn(`[songwritingResearch] failed to read ${filePath}: ${msg}; using default songwriting rules`);
+    return createDefaultSongwritingResearch();
+  }
+  try {
+    const parsed = parseSongwritingResearchMarkdown(raw);
+    if (!parsed.ok) {
+      console.warn(
+        `[songwritingResearch] parse quality check failed for ${filePath}; using default songwriting rules`
+      );
+      return createDefaultSongwritingResearch();
+    }
+    return parsed;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[songwritingResearch] parse threw (${filePath}): ${msg}; using default songwriting rules`);
+    return createDefaultSongwritingResearch();
   }
 }
 

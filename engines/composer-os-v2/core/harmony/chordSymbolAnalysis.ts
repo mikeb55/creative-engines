@@ -68,10 +68,17 @@ export function pitchClassToBassMidi(pc: number, walkLow: number, high: number):
   return Math.max(walkLow, Math.min(high, m));
 }
 
+export interface ChordTonesOptions {
+  /**
+   * When true, skip golden-path canonical substitution (G7→G13, C→Cmaj9, …) so generation matches user / locked symbols.
+   */
+  lockedHarmony?: boolean;
+}
+
 /** Full chord symbol (may include slash) → chord tones in bass register. */
-export function chordTonesForChordSymbol(fullChord: string): ChordToneSet {
+export function chordTonesForChordSymbol(fullChord: string, opts?: ChordTonesOptions): ChordToneSet {
   const p = parseChordSymbol(fullChord);
-  return chordTonesFromSymbol(p.harmonyPart);
+  return chordTonesFromSymbol(p.harmonyPart, opts);
 }
 
 function goldenCanonicalHarmony(h: string): string | null {
@@ -89,11 +96,13 @@ function goldenCanonicalHarmony(h: string): string | null {
  * Generic chord tones from symbol (harmonic part only — strip slash for upper structure).
  * Falls back to golden-path switch, then heuristic from quality string.
  */
-export function chordTonesFromSymbol(harmonyPart: string): ChordToneSet {
+export function chordTonesFromSymbol(harmonyPart: string, opts?: ChordTonesOptions): ChordToneSet {
   const h = harmonyPart.trim();
-  const canon = goldenCanonicalHarmony(h);
-  if (canon) {
-    return chordTonesForGoldenChord(canon);
+  if (!opts?.lockedHarmony) {
+    const canon = goldenCanonicalHarmony(h);
+    if (canon) {
+      return chordTonesForGoldenChord(canon);
+    }
   }
 
   const rm = h.match(ROOT_RE);

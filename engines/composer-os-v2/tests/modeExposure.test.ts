@@ -25,8 +25,8 @@ export function runModeExposureTests(): { ok: boolean; name: string }[] {
       COMPOSER_OS_V1_SUPPORTED_MODES.length === 6 &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'big_band' && m.capability === 'planning_only') &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'string_quartet' && m.capability === 'planning_only') &&
-      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'song_mode' && m.capability === 'song_structure'),
-    name: 'release metadata labels planning vs song_structure honestly',
+      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'song_mode' && m.capability === 'musicxml_generation'),
+    name: 'release metadata labels planning vs musicxml_generation honestly',
   });
 
   const bb = presets.find((p) => p.id === 'big_band');

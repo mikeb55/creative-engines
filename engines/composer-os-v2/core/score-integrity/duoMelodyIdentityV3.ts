@@ -4,7 +4,9 @@
 
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
+import type { CompositionContext } from '../compositionContext';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 
 /** Local copy — avoids circular import with duoLockQuality (GCE imports this module). */
 function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
@@ -83,9 +85,13 @@ function lastNotePitchInBar(m: MeasureModel | undefined): number | undefined {
   return best?.pitch;
 }
 
+function userChordToneOpts(ctx?: CompositionContext) {
+  return ctx && shouldUseUserChordSemanticsForTones(ctx) ? ({ lockedHarmony: true } as const) : undefined;
+}
+
 /** Allowed pitch classes for bar resolution: chord tones + tensions + semitone approaches (resolution colour). */
-function allowedEndingPitchClasses(chord: string): Set<number> {
-  const t = chordTonesForChordSymbol(chord);
+function allowedEndingPitchClasses(chord: string, ctx?: CompositionContext): Set<number> {
+  const t = chordTonesForChordSymbol(chord, userChordToneOpts(ctx));
   const pcs = new Set<number>();
   const core: number[] = [t.root, t.third, t.fifth, t.seventh];
   for (const p of core) {
@@ -109,12 +115,16 @@ function allowedEndingPitchClasses(chord: string): Set<number> {
   return expanded;
 }
 
-function barHasAcceptablePhraseEnd(m: MeasureModel | undefined, chord: string): boolean {
+function barHasAcceptablePhraseEnd(
+  m: MeasureModel | undefined,
+  chord: string,
+  ctx?: CompositionContext
+): boolean {
   if (!m?.chord && !chord) return true;
   const ch = m?.chord ?? chord;
   const last = lastNotePitchInBar(m);
   if (last === undefined) return true;
-  const allowed = allowedEndingPitchClasses(ch);
+  const allowed = allowedEndingPitchClasses(ch, ctx);
   return allowed.has(((last % 12) + 12) % 12);
 }
 
@@ -358,7 +368,7 @@ export function hasRepeatedRhythmCell(guitar: PartModel): boolean {
 export function validateDuoMelodyIdentityV3(
   score: ScoreModel,
   motifState?: MotifTrackerState,
-  opts?: { presetId?: string }
+  opts?: { presetId?: string; compositionContext?: CompositionContext }
 ): DuoMelodyIdentityV3Result {
   const errors: string[] = [];
   if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
@@ -415,7 +425,7 @@ export function validateDuoMelodyIdentityV3(
   for (let b = 1; b <= totalBars; b++) {
     const m = g.measures.find((x) => x.index === b);
     const ch = m?.chord ?? '';
-    if (!barHasAcceptablePhraseEnd(m, ch)) {
+    if (!barHasAcceptablePhraseEnd(m, ch, opts?.compositionContext)) {
       errors.push(`Duo V3: bar ${b} phrase end is not a chord tone or strong tension`);
       break;
     }

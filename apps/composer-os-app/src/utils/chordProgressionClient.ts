@@ -6,4 +6,5 @@
 export {
   normalizeChordProgressionSeparators,
   parseChordProgressionInput,
+  parseChordProgressionInputWithBarCount,
 } from '@composer-os/core/harmony/chordProgressionParser';

@@ -65,11 +65,18 @@ export function formatChordSymbolForDisplay(chord: string): string {
  * Parse a chord string into MusicXML root + display suffix.
  * Strips a duplicated leading root from the suffix when present (DDmin9 → min9).
  */
-export function parseChordRootAndMusicXmlKindText(chord: string): ChordRootAndKindText {
+export function parseChordRootAndMusicXmlKindText(
+  chord: string,
+  opts?: { literalKind?: boolean }
+): ChordRootAndKindText {
   const t = chord.trim();
   const m = t.match(/^([A-Ga-g])([#b]?)(.*)$/);
   if (!m) {
-    return { rootStep: 'C', rootAlter: 0, kindText: t.length > 0 ? formatChordKindSuffixForDisplay(t) : '' };
+    return {
+      rootStep: 'C',
+      rootAlter: 0,
+      kindText: t.length > 0 ? formatChordKindSuffixForDisplay(t) : '',
+    };
   }
   const letter = m[1].toUpperCase();
   let alter = 0;
@@ -86,19 +93,27 @@ export function parseChordRootAndMusicXmlKindText(chord: string): ChordRootAndKi
     }
   }
 
-  const kindText = suffix.length > 0 ? formatChordKindSuffixForDisplay(suffix) : '';
+  const kindText =
+    suffix.length > 0
+      ? opts?.literalKind
+        ? suffix
+        : formatChordKindSuffixForDisplay(suffix)
+      : '';
   return { rootStep: letter, rootAlter: alter, kindText };
 }
 
 /**
  * Chord symbol for `<harmony>`: harmonic root/kind on the upper structure; slash bass in `<bass>`.
  */
-export function parseChordForMusicXmlHarmony(chord: string): MusicXmlHarmonyParts {
+export function parseChordForMusicXmlHarmony(
+  chord: string,
+  opts?: { literalKind?: boolean }
+): MusicXmlHarmonyParts {
   const t = chord.trim();
   const slash = t.indexOf('/');
   const harmonyPart = slash >= 0 ? t.slice(0, slash).trim() : t;
   const bassPart = slash >= 0 ? t.slice(slash + 1).trim() : undefined;
-  const base = parseChordRootAndMusicXmlKindText(harmonyPart);
+  const base = parseChordRootAndMusicXmlKindText(harmonyPart, opts);
   if (!bassPart) {
     return base;
   }
@@ -151,6 +166,24 @@ export function chordStringFromMusicXmlHarmonyBlock(block: string): string | nul
     s += `/${bassStep}${ba}`;
   }
   return s;
+}
+
+/** First `<part>` in score-partwise XML — one `<harmony>` chord string per measure number (Sibelius / export truth). */
+export function extractHarmoniesFromFirstPartXml(xml: string): Map<number, string> {
+  const parts = xml.match(/<part id="[^"]+"[\s\S]*?<\/part>/g) ?? [];
+  const firstPart = parts[0];
+  if (!firstPart) return new Map();
+  const measures = firstPart.match(/<measure[^>]*>[\s\S]*?<\/measure>/g) ?? [];
+  const map = new Map<number, string>();
+  for (const mb of measures) {
+    const numMatch = mb.match(/<measure[^>]*number="(\d+)"/);
+    const num = numMatch ? parseInt(numMatch[1], 10) : -1;
+    const harmonyMatch = mb.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/);
+    if (!harmonyMatch || num < 1) continue;
+    const chordStr = chordStringFromMusicXmlHarmonyBlock(harmonyMatch[0]);
+    if (chordStr) map.set(num, chordStr);
+  }
+  return map;
 }
 
 /** Lead-sheet–canonical equality for pipeline truth (score vs XML vs user input). */

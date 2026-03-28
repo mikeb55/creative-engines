@@ -4,6 +4,7 @@
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
+import { contourFingerprint, rhythmFingerprint } from '../goldenPath/bassLineFingerprints';
 
 function chordForBar(barIndex: number): string {
   if (barIndex <= 2) return 'Dmin9';
@@ -15,29 +16,6 @@ function chordForBar(barIndex: number): string {
 export interface BassIdentityResult {
   valid: boolean;
   errors: string[];
-}
-
-function rhythmFingerprint(measure: { events: { kind: string; startBeat: number; duration: number }[] }): string {
-  const parts: string[] = [];
-  for (const e of measure.events) {
-    if (e.kind === 'note') {
-      parts.push(`${e.startBeat.toFixed(2)}:${e.duration.toFixed(2)}`);
-    }
-  }
-  return parts.join('|');
-}
-
-function contourFingerprint(measure: { events: { kind: string; pitch?: number }[] }): string {
-  const pitches: number[] = [];
-  for (const e of measure.events) {
-    if (e.kind === 'note' && 'pitch' in e) pitches.push((e as { pitch: number }).pitch);
-  }
-  if (pitches.length < 2) return '';
-  const steps: string[] = [];
-  for (let i = 1; i < pitches.length; i++) {
-    steps.push(String(pitches[i] - pitches[i - 1]));
-  }
-  return steps.join(',');
 }
 
 /**
