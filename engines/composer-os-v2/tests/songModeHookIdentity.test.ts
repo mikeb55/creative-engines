@@ -26,7 +26,8 @@ export function runSongModeHookIdentityTests(): void {
   assert.strictEqual(isGenericScaleRun([60, 60, 60]), false);
   assert.strictEqual(isGenericScaleRun([60, 62, 64]), true);
 
-  const r = runGoldenPath(4242, {
+  /** Seed chosen so behaviour + motif v2 gates pass (cadence / duo identity / motif coverage). */
+  const r = runGoldenPath(50021, {
     songModeHookFirstIdentity: true,
     presetId: 'guitar_bass_duo',
     totalBars: 32,
@@ -45,7 +46,7 @@ export function runSongModeHookIdentityTests(): void {
   const errs = validateSongModeHookIdentity(g!, r.context);
   assert.strictEqual(errs.length, 0, errs.join('; '));
 
-  const rNo = runGoldenPath(4242, {
+  const rNo = runGoldenPath(50021, {
     presetId: 'guitar_bass_duo',
     totalBars: 32,
     longFormEnabled: true,

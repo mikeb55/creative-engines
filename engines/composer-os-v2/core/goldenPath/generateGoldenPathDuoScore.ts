@@ -354,10 +354,18 @@ function buildGuitarPart(
   const bump17 = lab17 === 'B' ? 5 : 0;
   const bar17Low = Math.max(zL17, effectiveBase) + bump17;
   const bar17High = Math.min(79, zH17 + bump17);
+  const registerForBar = (bar: number): [number, number] => {
+    const [zL, zH] = getRegisterForBar(guitarMap, bar, context);
+    const lab = sectionLabelForBar(bar, context);
+    const bump = lab === 'B' ? 5 : 0;
+    return [Math.max(zL, effectiveBase) + bump, Math.min(79, zH + bump)];
+  };
+
   const hookRuntime = songModeHook
     ? buildSongModeHookRuntime({
         seed,
         context,
+        registerForBar,
         statementLow: stmtLow,
         statementHigh: stmtHigh,
         returnLow: retLow,
@@ -376,7 +384,8 @@ function buildGuitarPart(
       ...context.generationMetadata,
       songModeHookCellSummary: `dirs=${c.contourDirs.join(',')};var=${c.variationKind};notes=${c.noteCount}`,
       songModeCoreMotifs: hookRuntime.coreMotifs,
-      songModeMotifCount: hookRuntime.motifCount,
+      songModeMotifCount: 1,
+      songModePrimaryMotif: hookRuntime.primaryMotif,
     };
   }
 
@@ -439,45 +448,9 @@ function buildGuitarPart(
       : hints.metheny;
     const bach = hints.bacharach;
 
-    if (hookRuntime && b === 1) {
+    if (hookRuntime) {
       const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
-      hookRuntime.fillStatement(m);
-      normalizeMeasureToEighthBeatGrid(m);
-      duoBoostPhraseEndLanding(m, b, true);
-      normalizeMeasureToEighthBeatGrid(m);
-      if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
-      else consecutiveBusyGuitarBars = 0;
-      measures.push(m);
-      continue;
-    }
-
-    if (hookRuntime && hookRuntime.motifCount >= 2 && b === SONG_MODE_MOTIF_BAR_9 && hookRuntime.fillBar9) {
-      const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
-      hookRuntime.fillBar9(m);
-      normalizeMeasureToEighthBeatGrid(m);
-      duoBoostPhraseEndLanding(m, b, true);
-      normalizeMeasureToEighthBeatGrid(m);
-      if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
-      else consecutiveBusyGuitarBars = 0;
-      measures.push(m);
-      continue;
-    }
-
-    if (hookRuntime && hookRuntime.motifCount >= 3 && b === SONG_MODE_MOTIF_BAR_17 && hookRuntime.fillBar17) {
-      const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
-      hookRuntime.fillBar17(m);
-      normalizeMeasureToEighthBeatGrid(m);
-      duoBoostPhraseEndLanding(m, b, true);
-      normalizeMeasureToEighthBeatGrid(m);
-      if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
-      else consecutiveBusyGuitarBars = 0;
-      measures.push(m);
-      continue;
-    }
-
-    if (hookRuntime && b === SONG_MODE_HOOK_RETURN_BAR) {
-      const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
-      hookRuntime.fillReturn(m);
+      hookRuntime.emitScheduledBar(b, m);
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);

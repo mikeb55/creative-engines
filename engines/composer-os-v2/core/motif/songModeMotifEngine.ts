@@ -12,22 +12,28 @@ import { clampPitch, seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { contourFingerprint, rhythmFingerprint } from '../goldenPath/bassLineFingerprints';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
-import type { CoreMotif, MotifRegisterTag, MotifRoleTag } from './motifEngineTypes';
+import type {
+  CoreMotif,
+  Motif,
+  MotifRegisterTag,
+  MotifRoleTag,
+  HookContourDirs,
+  SongModeHookIdentityCell,
+} from './motifEngineTypes';
+import {
+  SONG_MODE_HOOK_RETURN_BAR,
+  SONG_MODE_MOTIF_BAR_9,
+  SONG_MODE_MOTIF_BAR_17,
+} from './motifEngineTypes';
+import { buildSongModeMotifV2Runtime, simMotifToRealization } from './songModeMotifEngineV2';
 
-export const SONG_MODE_HOOK_RETURN_BAR = 25;
-export const SONG_MODE_MOTIF_BAR_9 = 9;
-export const SONG_MODE_MOTIF_BAR_17 = 17;
-
-export type HookContourDirs = number[];
-
-export interface SongModeHookIdentityCell {
-  noteCount: number;
-  contourDirs: HookContourDirs;
-  statementRhythm: { start: number; dur: number }[];
-  returnRhythm: { start: number; dur: number }[];
-  variationKind: 'rhythm' | 'interval';
-  intervalReturnScale: 1 | 2;
-}
+export {
+  SONG_MODE_HOOK_RETURN_BAR,
+  SONG_MODE_MOTIF_BAR_9,
+  SONG_MODE_MOTIF_BAR_17,
+} from './motifEngineTypes';
+export type { HookContourDirs, SongModeHookIdentityCell } from './motifEngineTypes';
+export { songModeMotifCount } from './songModeMotifEngineV2';
 
 function uniquePoolMidi(tones: ReturnType<typeof guitarChordTonesInRange>): number[] {
   const raw = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) => Math.round(p));
@@ -225,14 +231,6 @@ function pitchesToCoreMotif(
   };
 }
 
-/** How many core motifs (1–3) drive this Song Mode generation. */
-export function songModeMotifCount(seed: number): 1 | 2 | 3 {
-  const u = seededUnit(seed, 92000, 0);
-  if (u < 0.38) return 1;
-  if (u < 0.72) return 2;
-  return 3;
-}
-
 function emitMeasureFromPitches(
   m: MeasureModel,
   pitches: number[],
@@ -258,173 +256,11 @@ function emitMeasureFromPitches(
   }
 }
 
-/**
- * Build hook runtime + 1–3 abstract CoreMotifs; optional featured bars 9/17 for motifs 2–3.
- */
-export function buildSongModeHookRuntime(params: {
-  seed: number;
-  context: CompositionContext;
-  statementLow: number;
-  statementHigh: number;
-  returnLow: number;
-  returnHigh: number;
-  bar9Low: number;
-  bar9High: number;
-  bar17Low: number;
-  bar17High: number;
-  chordToneOpts?: ChordTonesOptions;
-}): {
-  cell: SongModeHookIdentityCell;
-  coreMotifs: CoreMotif[];
-  motifCount: 1 | 2 | 3;
-  fillStatement: (m: MeasureModel) => void;
-  fillReturn: (m: MeasureModel) => void;
-  fillBar9: ((m: MeasureModel) => void) | undefined;
-  fillBar17: ((m: MeasureModel) => void) | undefined;
-} {
-  const {
-    seed,
-    context,
-    statementLow,
-    statementHigh,
-    returnLow,
-    returnHigh,
-    bar9Low,
-    bar9High,
-    bar17Low,
-    bar17High,
-    chordToneOpts,
-  } = params;
-  const chord1 = getChordForBar(1, context);
-  const motifCount = songModeMotifCount(seed);
-  const contourDirs = pickContourFamily(seed, 91001);
-  const variationKind = seededUnit(seed, 91004, 0) < 0.5 ? 'rhythm' : 'interval';
-  const intervalReturnScale: 1 | 2 = variationKind === 'interval' ? 2 : 1;
-
-  let statementRhythm = pickStatementRhythm(seed, 91002);
-  if (!rhythmDistinctive(statementRhythm)) {
-    statementRhythm = [
-      { start: 0.5, dur: 0.5 },
-      { start: 1, dur: 0.5 },
-      { start: 2, dur: 1 },
-      { start: 3, dur: 1 },
-    ];
-  }
-
-  let returnRhythm: { start: number; dur: number }[];
-  if (variationKind === 'rhythm') {
-    returnRhythm = pickReturnRhythmStatement(seed);
-    if (rhythmsEqual(returnRhythm, statementRhythm)) {
-      returnRhythm = returnRhythm.map((r, i) =>
-        i === 1 ? { start: r.start + 0.25, dur: r.dur } : r
-      );
-    }
-  } else {
-    returnRhythm = statementRhythm.map((r) => ({ ...r }));
-  }
-
-  const statementPitches =
-    pickPitchesForContour(chord1, statementLow, statementHigh, contourDirs, seed, 91010, 1, chordToneOpts) ??
-    pickPicksFallback(chord1, statementLow, statementHigh, contourDirs, chordToneOpts);
-
-  const cell: SongModeHookIdentityCell = {
-    noteCount: statementPitches.length,
-    contourDirs,
-    statementRhythm,
-    returnRhythm,
-    variationKind,
-    intervalReturnScale,
-  };
-
-  const m1Roles: MotifRoleTag[] =
-    seededUnit(seed, 92001, 0) < 0.55 ? ['guide-tone', 'chord-tone'] : ['chord-tone', 'guide-tone'];
-  const coreMotifs: CoreMotif[] = [
-    pitchesToCoreMotif('song_m1', statementPitches, statementRhythm, m1Roles, ['mid', 'narrow']),
-  ];
-
-  if (motifCount >= 2) {
-    const dirs2 = pickContourFamily(seed, 92010);
-    let rh2 = pickStatementRhythm(seed, 92011);
-    if (rhythmsEqual(rh2, statementRhythm)) {
-      rh2 = rh2.map((r, i) => (i === 0 ? { start: r.start + 0.5, dur: r.dur } : r));
-    }
-    const p2 =
-      pickPitchesForContour(chord1, statementLow, statementHigh, dirs2, seed, 92012, 1, chordToneOpts) ??
-      pickPicksFallback(chord1, statementLow, statementHigh, dirs2, chordToneOpts);
-    coreMotifs.push(
-      pitchesToCoreMotif('song_m2', p2, rh2, ['chord-tone', 'passing'], ['mid', 'wide'])
-    );
-  }
-  if (motifCount >= 3) {
-    const dirs3 = pickContourFamily(seed, 92020);
-    const rh3 = pickStatementRhythm(seed, 92021);
-    const p3 =
-      pickPitchesForContour(chord1, statementLow, statementHigh, dirs3, seed, 92022, 1, chordToneOpts) ??
-      pickPicksFallback(chord1, statementLow, statementHigh, dirs3, chordToneOpts);
-    coreMotifs.push(
-      pitchesToCoreMotif('song_m3', p3, rh3, ['chromatic', 'neighbor'], ['high', 'narrow'])
-    );
-  }
-
-  const fillStatement = (m: MeasureModel): void => {
-    emitMeasureFromPitches(m, statementPitches, statementRhythm, 'song_m1');
-  };
-
-  const fillReturn = (m: MeasureModel): void => {
-    const barChord = m.chord ? m.chord.trim() : getChordForBar(SONG_MODE_HOOK_RETURN_BAR, context);
-    const returnPitches =
-      variationKind === 'interval'
-        ? pickPitchesForContour(barChord, returnLow, returnHigh, contourDirs, seed, 91020, intervalReturnScale, chordToneOpts) ??
-          pickPitchesForContour(barChord, returnLow, returnHigh, contourDirs, seed, 91021, 1, chordToneOpts) ??
-          pickPicksFallback(barChord, returnLow, returnHigh, contourDirs, chordToneOpts)
-        : pickPitchesForContour(barChord, returnLow, returnHigh, contourDirs, seed, 91022, 1, chordToneOpts) ??
-          pickPicksFallback(barChord, returnLow, returnHigh, contourDirs, chordToneOpts);
-    emitMeasureFromPitches(m, returnPitches, returnRhythm, 'song_m1');
-  };
-
-  let fillBar9: ((m: MeasureModel) => void) | undefined;
-  let fillBar17: ((m: MeasureModel) => void) | undefined;
-
-  if (motifCount >= 2 && coreMotifs[1]) {
-    const m2 = coreMotifs[1];
-    const dirs = m2.contourPattern.map((c) => (c > 0 ? 1 : c < 0 ? -1 : 0)) as HookContourDirs;
-    const rh = m2.rhythmPattern.map((r) => ({ start: r.startBeat, dur: r.duration }));
-    /** Bar 9: transpose — same contour/rhythm, harmony at bar 9. */
-    fillBar9 = (m: MeasureModel): void => {
-      const ch = m.chord?.trim() ?? getChordForBar(SONG_MODE_MOTIF_BAR_9, context);
-      const pitches =
-        pickPitchesForContour(ch, bar9Low, bar9High, dirs, seed, 92030, 1, chordToneOpts) ??
-        pickPicksFallback(ch, bar9Low, bar9High, dirs, chordToneOpts);
-      emitMeasureFromPitches(m, pitches, rh, 'song_m2');
-    };
-  }
-
-  if (motifCount >= 3 && coreMotifs[2]) {
-    const m3 = coreMotifs[2];
-    const dirs = m3.contourPattern.map((c) => (c > 0 ? 1 : c < 0 ? -1 : 0)) as HookContourDirs;
-    /** Bar 17: rhythmic variation — stagger onsets vs template. */
-    const rhBase = m3.rhythmPattern.map((r) => ({ start: r.startBeat, dur: r.duration }));
-    const rhVar = rhBase.map((r, i) =>
-      i === 2 ? { start: Math.min(3, r.start + 0.25), dur: r.dur } : { ...r }
-    );
-    fillBar17 = (m: MeasureModel): void => {
-      const ch = m.chord?.trim() ?? getChordForBar(SONG_MODE_MOTIF_BAR_17, context);
-      const pitches =
-        pickPitchesForContour(ch, bar17Low, bar17High, dirs, seed, 92040, 1, chordToneOpts) ??
-        pickPicksFallback(ch, bar17Low, bar17High, dirs, chordToneOpts);
-      emitMeasureFromPitches(m, pitches, rhVar, 'song_m3');
-    };
-  }
-
-  return {
-    cell,
-    coreMotifs,
-    motifCount,
-    fillStatement,
-    fillReturn,
-    fillBar9,
-    fillBar17,
-  };
+/** Motif Engine v2 — candidate scoring, placement, development (see `songModeMotifEngineV2.ts`). */
+export function buildSongModeHookRuntime(
+  params: Parameters<typeof buildSongModeMotifV2Runtime>[0]
+): ReturnType<typeof buildSongModeMotifV2Runtime> {
+  return buildSongModeMotifV2Runtime(params);
 }
 
 export function validateSongModeHookIdentity(guitar: PartModel, _context: CompositionContext): string[] {
@@ -497,6 +333,116 @@ function validateMotifBarContour(
   return out;
 }
 
+function validateSongModeBar1Strength(guitar: PartModel): string[] {
+  const out: string[] = [];
+  const m1 = guitar.measures.find((x) => x.index === 1);
+  if (!m1) {
+    out.push('Song Mode motif v2: bar 1 missing.');
+    return out;
+  }
+  const notes = m1.events
+    .filter((e) => e.kind === 'note')
+    .map((e) => e as { pitch: number; startBeat: number })
+    .sort((a, b) => a.startBeat - b.startBeat);
+  if (notes.length < 3) {
+    out.push('Song Mode motif v2: bar 1 identity cell is weak (fewer than 3 notes).');
+  }
+  if (notes.length >= 2) {
+    let maxLeap = 0;
+    for (let i = 1; i < notes.length; i++) {
+      maxLeap = Math.max(maxLeap, Math.abs(notes[i].pitch - notes[i - 1].pitch));
+    }
+    if (maxLeap < 3 && notes.length < 4) {
+      out.push('Song Mode motif v2: bar 1 lacks a featured leap or enough notes for identity.');
+    }
+  }
+  return out;
+}
+
+/** Sliding 8-bar windows: ≥50% of melody notes must map to motif IDs. */
+function validateMotifCoverageSliding(guitar: PartModel): string[] {
+  const totalBars = guitar.measures.length;
+  if (totalBars < 8) return [];
+  const motifRe = /^song_motif/;
+  for (let start = 1; start <= totalBars - 7; start++) {
+    let motifNotes = 0;
+    let totalNotes = 0;
+    for (let b = start; b < start + 8; b++) {
+      const meas = guitar.measures.find((x) => x.index === b);
+      if (!meas) continue;
+      for (const e of meas.events) {
+        if (e.kind !== 'note') continue;
+        totalNotes++;
+        const ref = (e as { motifRef?: string }).motifRef;
+        if (ref && motifRe.test(ref)) motifNotes++;
+      }
+    }
+    if (totalNotes === 0) continue;
+    if (motifNotes / totalNotes < 0.5) {
+      return [
+        `Song Mode motif v2: motif-mapped notes <50% in sliding window bars ${start}–${start + 7}.`,
+      ];
+    }
+  }
+  return [];
+}
+
+/** At most two consecutive bars may lack any motif-mapped note. */
+function validateMaxConsecutiveNonMotifBars(guitar: PartModel): string[] {
+  let run = 0;
+  let maxRun = 0;
+  for (let b = 1; b <= guitar.measures.length; b++) {
+    const meas = guitar.measures.find((x) => x.index === b);
+    let anyMotif = false;
+    if (meas) {
+      for (const e of meas.events) {
+        if (e.kind === 'note' && (e as { motifRef?: string }).motifRef?.startsWith('song_motif')) {
+          anyMotif = true;
+          break;
+        }
+      }
+    }
+    if (!anyMotif) {
+      run++;
+      maxRun = Math.max(maxRun, run);
+    } else run = 0;
+  }
+  if (maxRun > 2) {
+    return [`Song Mode motif v2: ${maxRun} consecutive bars without motif-mapped notes (max 2).`];
+  }
+  return [];
+}
+
+function extractIntervalsAndRhythmFromBar(
+  guitar: PartModel,
+  bar: number
+): { intervals: number[]; rhythm: { onset: number; duration: number }[] } | null {
+  const meas = guitar.measures.find((x) => x.index === bar);
+  if (!meas) return null;
+  const notes = meas.events
+    .filter((e) => e.kind === 'note')
+    .map((e) => e as { pitch: number; startBeat: number; duration: number })
+    .sort((a, b) => a.startBeat - b.startBeat);
+  if (notes.length === 0) return { intervals: [], rhythm: [] };
+  const intervals: number[] = [];
+  for (let i = 1; i < notes.length; i++) intervals.push(notes[i].pitch - notes[i - 1].pitch);
+  const rhythm = notes.map((n) => ({ onset: n.startBeat, duration: n.duration }));
+  return { intervals, rhythm };
+}
+
+function validateMotifReturnSimilarity(guitar: PartModel, primary: Motif | undefined): string[] {
+  if (!primary) return [];
+  const ex = extractIntervalsAndRhythmFromBar(guitar, SONG_MODE_HOOK_RETURN_BAR);
+  if (!ex || ex.intervals.length < 1) {
+    return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
+  }
+  const sim = simMotifToRealization(primary, ex.intervals, ex.rhythm);
+  if (sim < 0.7) {
+    return [`Song Mode motif v2: return similarity ${sim.toFixed(2)} < 0.70 (unrecognisable).`];
+  }
+  return [];
+}
+
 /**
  * Validates featured motifs + anti-generic linkage; extend hook-only checks.
  */
@@ -508,6 +454,10 @@ export function validateSongModeMotifSystem(
 ): string[] {
   const errs: string[] = [];
   errs.push(...validateSongModeHookIdentity(guitar, context));
+  errs.push(...validateSongModeBar1Strength(guitar));
+  errs.push(...validateMotifCoverageSliding(guitar));
+  errs.push(...validateMaxConsecutiveNonMotifBars(guitar));
+  errs.push(...validateMotifReturnSimilarity(guitar, context.generationMetadata?.songModePrimaryMotif));
 
   if (coreMotifs && coreMotifs.length > 0) {
     const exp1 = coreMotifs[0].contourPattern.join(',');

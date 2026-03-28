@@ -16,7 +16,7 @@ import type { ValidationResults } from './conductor/conductorTypes';
 import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes';
 import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
 import type { HarmonyBarContract } from './harmony/harmonyBarContract';
-import type { CoreMotif } from './motif/motifEngineTypes';
+import type { CoreMotif, Motif } from './motif/motifEngineTypes';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -101,8 +101,10 @@ export interface GenerationMetadata {
   songModeHookCellSummary?: string;
   /** Song Mode: 1–3 abstract core motifs (interval/rhythm/contour/tags). */
   songModeCoreMotifs?: CoreMotif[];
-  /** Song Mode: how many motifs were generated (1–3). */
+  /** Song Mode: motif count (Motif Engine v2 uses 1). */
   songModeMotifCount?: 1 | 2 | 3;
+  /** Song Mode Motif v2: canonical primary motif for validation / receipts. */
+  songModePrimaryMotif?: Motif;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
