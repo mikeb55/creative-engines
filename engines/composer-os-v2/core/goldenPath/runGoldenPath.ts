@@ -990,6 +990,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           }))
         )
       : undefined,
+    songModeJamesBrownFunkReceiptTag: appliedContext.generationMetadata.songModeJamesBrownFunkReceiptTag,
   });
 
   const success =

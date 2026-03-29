@@ -98,4 +98,6 @@ export interface RunManifest {
   pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
   /** Song Mode Phase C2: compact JSON of per-phrase overlay profile + rhythmIntentSummary (debug/receipts). */
   songModeRhythmOverlayPhraseDiagnostics?: string;
+  /** Song Mode Phase C3: James Brown funk overlay receipt (when applied). */
+  songModeJamesBrownFunkReceiptTag?: string;
 }

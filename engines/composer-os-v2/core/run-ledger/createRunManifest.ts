@@ -66,6 +66,7 @@ export interface CreateRunManifestInput {
   pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
   pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
   songModeRhythmOverlayPhraseDiagnostics?: string;
+  songModeJamesBrownFunkReceiptTag?: string;
 }
 
 /** Create run manifest. */
@@ -131,5 +132,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     pipelineTruthScoreStage: input.pipelineTruthScoreStage,
     pipelineTruthExportStage: input.pipelineTruthExportStage,
     songModeRhythmOverlayPhraseDiagnostics: input.songModeRhythmOverlayPhraseDiagnostics,
+    songModeJamesBrownFunkReceiptTag: input.songModeJamesBrownFunkReceiptTag,
   };
 }

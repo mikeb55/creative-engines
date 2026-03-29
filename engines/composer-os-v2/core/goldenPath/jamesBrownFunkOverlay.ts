@@ -20,6 +20,13 @@ export const SONG_MODE_OVERLAY_BASE_WEIGHTS: Record<string, number> = {
   [JAMES_BROWN_FUNK_OVERLAY_ID]: 0,
 };
 
+/** Soft-profile shape aligned with C1 overlay profiles; not blended with C1 — reserved for future / receipts. */
+export const JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE = {
+  durTighten: 0.22,
+  velDelta: 6,
+  syncAccent: 0.52,
+} as const;
+
 export interface JamesBrownFunkWeights {
   baseWeight: number;
   funkStrength: number;
@@ -245,4 +252,6 @@ export function applyJamesBrownFunkOverlay(score: ScoreModel, context: Compositi
   if (bass) applyJamesBrownFunkToPart(bass, context.seed + 17, weights);
 
   meta.songModeJamesBrownFunkApplied = true;
+  meta.songModeJamesBrownFunkReceiptTag =
+    'JAMES_BROWN_FUNK: backbeat 2&4, anticipations, 16th-grid feel, groove holes, ghost notes (opt-in; deterministic)';
 }

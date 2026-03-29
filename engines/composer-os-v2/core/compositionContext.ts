@@ -116,6 +116,8 @@ export interface GenerationMetadata {
   songModeJamesBrownFunkOverlay?: boolean;
   /** True after Phase C3 James Brown pass ran on the score. */
   songModeJamesBrownFunkApplied?: boolean;
+  /** Phase C3 receipt line for manifests (set when funk overlay applied). */
+  songModeJamesBrownFunkReceiptTag?: string;
   /** Song Mode Phase C1/C2: engine/debug — per-phrase overlays + Phase C2 rhythm intent summaries. */
   songModeRhythmOverlayByPhrase?: Array<{
     phraseIndex: number;

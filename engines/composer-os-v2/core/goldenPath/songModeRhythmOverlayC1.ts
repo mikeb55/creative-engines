@@ -12,9 +12,13 @@ import { createRest } from '../score-model/scoreEventBuilder';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
-import { JAMES_BROWN_FUNK_OVERLAY_ID, SONG_MODE_OVERLAY_BASE_WEIGHTS } from './jamesBrownFunkOverlay';
+import {
+  JAMES_BROWN_FUNK_OVERLAY_ID,
+  JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE,
+  SONG_MODE_OVERLAY_BASE_WEIGHTS,
+} from './jamesBrownFunkOverlay';
 
-export { JAMES_BROWN_FUNK_OVERLAY_ID, SONG_MODE_OVERLAY_BASE_WEIGHTS };
+export { JAMES_BROWN_FUNK_OVERLAY_ID, JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE, SONG_MODE_OVERLAY_BASE_WEIGHTS };
 
 const GRID_8TH = 0.5;
 const GRID_16TH = 0.25;
