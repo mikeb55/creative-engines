@@ -2,7 +2,7 @@
  * Composer OS V2 — App API: generate composition
  */
 
-import type { GenerateRequest } from './appApiTypes';
+import type { GenerateRequest, StyleProfile } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
@@ -107,6 +107,7 @@ export interface GenerateResult {
     /** Echo for desktop parity — same fields `apiGenerate` forwards to `runAppGeneration`. */
     harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
     longFormEnabled?: boolean;
+    styleProfile?: StyleProfile;
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -309,6 +310,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       primarySongwriterStyle: req.primarySongwriterStyle,
       harmonyMode: req.harmonyMode,
       longFormEnabled: req.longFormEnabled,
+      styleProfile: req.styleProfile,
     },
   };
 }

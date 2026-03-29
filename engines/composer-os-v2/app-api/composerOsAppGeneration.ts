@@ -28,6 +28,7 @@ import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
 import {
+  normalizeChordProgressionSeparators,
   normalizeChordToken,
   parseChordProgressionInputWithBarCount,
 } from '../core/harmony/chordProgressionParser';
@@ -87,6 +88,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     primarySongwriterStyle: req.primarySongwriterStyle,
     harmonyMode: req.harmonyMode,
     longFormEnabled: req.longFormEnabled,
+    styleProfile: req.styleProfile,
   };
 }
 
@@ -161,6 +163,16 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const useLockedCustomHarmony = rawCustomHarmony.length > 0;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
   if (useLockedCustomHarmony) {
+    if (process.env.COMPOSER_OS_SONG_MODE_CHORD_DEBUG === '1') {
+      const norm = normalizeChordProgressionSeparators(rawCustomHarmony);
+      const rawBars = norm.split('|').map((s) => s.trim()).filter(Boolean);
+      console.log('[Song Mode chord debug]', {
+        rawLength: rawCustomHarmony.length,
+        rawHead: rawCustomHarmony.slice(0, 240),
+        normalizedHead: norm.slice(0, 240),
+        normalizedBarCount: rawBars.length,
+      });
+    }
     const parse32 = parseChordProgressionInputWithBarCount(rawCustomHarmony, 32);
     if (!parse32.ok) {
       return {
@@ -218,6 +230,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
     songModeHookFirstIdentity: true,
+    /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
+    styleProfile: req.styleProfile ?? 'STYLE_ECM',
     harmonyMode: harmonyModeForRun,
     chordProgressionText,
     ...(lockedHarmonyBarsAuthoritative
@@ -326,6 +340,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
       userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
       userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
+      styleProfile: req.styleProfile ?? 'STYLE_ECM',
       chordProgressionSubmittedRaw: gp.runManifest.chordProgressionSubmittedRaw,
       parsedChordBarsSnapshot: gp.runManifest.parsedChordBarsSnapshot,
       pipelineTruthInputStage: gp.runManifest.pipelineTruthInputStage,

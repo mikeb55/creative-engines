@@ -14,6 +14,7 @@ import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolde
 import { buildDiagnostics } from './buildDiagnostics';
 import { friendlyGenerateError, friendlyOutputDirError } from './apiErrorMessages';
 import type { GenerateRequest } from './appApiTypes';
+import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
   ensureOutputDirectoryForPreset,
   getComposerFilesRoot,
@@ -217,6 +218,7 @@ export function apiGenerate(
           ? body.riffLineMode
           : undefined,
       riffBass: body.riffBass === true ? true : undefined,
+      styleProfile: isStyleProfile(body.styleProfile) ? body.styleProfile : undefined,
     };
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;

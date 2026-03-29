@@ -17,6 +17,7 @@ import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes
 import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
 import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 import type { CoreMotif, Motif } from './motif/motifEngineTypes';
+import type { StyleProfile } from './song-mode/songModeStyleProfile';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -105,6 +106,8 @@ export interface GenerationMetadata {
   songModeMotifCount?: 1 | 2 | 3;
   /** Song Mode Motif v2: canonical primary motif for validation / receipts. */
   songModePrimaryMotif?: Motif;
+  /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
+  styleProfile?: StyleProfile;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

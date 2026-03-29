@@ -2,6 +2,10 @@
  * Composer OS V2 — App API types
  */
 
+import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
+
+export type { StyleProfile };
+
 export interface AppPreset {
   id: string;
   name: string;
@@ -111,6 +115,8 @@ export interface GenerateRequest {
   ensembleConfigId?: 'full_band' | 'medium_band' | 'small_band' | 'reeds_only' | 'brass_only' | 'custom';
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
+  /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
+  styleProfile?: StyleProfile;
   /** Riff Generator (`riff_generator`): 1–4 bar riff length. */
   riffStyle?: 'metheny' | 'scofield' | 'funk' | 'neutral';
   riffDensity?: 'sparse' | 'medium' | 'dense';
@@ -177,6 +183,8 @@ export interface OutputEntry {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  /** Song Mode — echoed Style Engine profile when set. */
+  styleProfile?: StyleProfile;
   /** Pipeline truth gates (Guitar–Bass Duo 8-bar). */
   chordProgressionSubmittedRaw?: string;
   parsedChordBarsSnapshot?: string[];

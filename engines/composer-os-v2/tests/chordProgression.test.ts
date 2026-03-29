@@ -39,6 +39,18 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
   });
 
   tests.push({
+    name: 'Parser: 32 bars spaced slash vs one chord per line (no pipes)',
+    ok: (() => {
+      const singleLine =
+        'Dm9 / Dm9/C / Bb13(#11) / A7(#5#9) / Dm9 / G13 / Cmaj9 / F#7alt / Bbmaj9 / A13 / Dm9/A / Gm9 / E7(#9) / A13(b9) / Dm9 / Dm9 / Dm9 / Dm9/C / Bb13(#11) / A7(#5#9) / Dm9 / G13 / Cmaj9 / F#7alt / Bbmaj9 / A13 / Dm9/A / Gm9 / E7(#9) / A13(b9) / Dm9 / Dm9';
+      const multiline = singleLine.split(' / ').join('\n');
+      const a = parseChordProgressionInputWithBarCount(singleLine, 32);
+      const b = parseChordProgressionInputWithBarCount(multiline, 32);
+      return a.ok && b.ok && a.bars.length === 32 && b.bars.length === 32 && JSON.stringify(a.bars) === JSON.stringify(b.bars);
+    })(),
+  });
+
+  tests.push({
     name: 'Normalize: Cm7, F7 ; Bbmaj7 / G7 → pipe-separated',
     ok:
       normalizeChordProgressionSeparators('Cm7, F7 ; Bbmaj7 / G7') === 'Cm7 | F7 | Bbmaj7 | G7',

@@ -2,7 +2,7 @@
  * Composer OS V2 — App API: write output manifest under `_meta` (MusicXML stays in preset folder).
  */
 
-import type { OutputEntry, ValidationSummary } from './appApiTypes';
+import type { OutputEntry, StyleProfile, ValidationSummary } from './appApiTypes';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -53,6 +53,7 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName?: string;
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
+    styleProfile?: StyleProfile;
     chordProgressionSubmittedRaw?: string;
     parsedChordBarsSnapshot?: string[];
     pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
@@ -98,6 +99,7 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName: meta.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: meta.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: meta.userExplicitPrimaryStyle,
+    styleProfile: meta.styleProfile,
     chordProgressionSubmittedRaw: meta.chordProgressionSubmittedRaw,
     parsedChordBarsSnapshot: meta.parsedChordBarsSnapshot,
     pipelineTruthInputStage: meta.pipelineTruthInputStage,

@@ -61,6 +61,17 @@ const MINIMAL_STYLE_STACK = {
   styleBlend: { primary: 'strong' as const, secondary: 'off' as const, colour: 'off' as const },
 };
 
+/** Must stay aligned with `StyleProfile` in `engines/composer-os-v2/core/song-mode/songModeStyleProfile.ts`. */
+const SONG_MODE_STYLE_OPTIONS = ['STYLE_ECM', 'STYLE_SHORTER_POST_BOP', 'STYLE_BEBOP_LITE'] as const;
+type SongModeStyleProfile = (typeof SONG_MODE_STYLE_OPTIONS)[number];
+
+function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {
+  for (const o of SONG_MODE_STYLE_OPTIONS) {
+    if (o === v) return o;
+  }
+  return null;
+}
+
 function ensembleLabel(id: string): string {
   return ENSEMBLE_OPTIONS.find((o) => o.id === id)?.label ?? id;
 }
@@ -118,6 +129,7 @@ type GenResult = {
     stylePairing?: { songwriterStyle: string; arrangerStyle: string; era?: string };
     ensembleConfigId?: string;
     primarySongwriterStyle?: string;
+    styleProfile?: SongModeStyleProfile;
   };
   stylePairingReceipt?: {
     summary: string;
@@ -156,6 +168,7 @@ export function HomeGenerate({
   const [variationEnabled, setVariationEnabled] = useState(false);
   const [songwriterStyle, setSongwriterStyle] = useState('beatles');
   const [arrangerStyle, setArrangerStyle] = useState('ellington');
+  const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
@@ -324,6 +337,7 @@ export function HomeGenerate({
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
               }
             : {}),
+          ...(presetId === 'song_mode' ? { styleProfile: songModeStyleProfile } : {}),
         };
 
         if (presetId === 'song_mode' && songChordLine.length > 0) {
@@ -408,6 +422,7 @@ export function HomeGenerate({
       riffGrid,
       riffLineMode,
       riffBass,
+      songModeStyleProfile,
       onResult,
     ]
   );
@@ -905,6 +920,25 @@ export function HomeGenerate({
 
       {presetId === 'song_mode' && (
         <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Style
+            </label>
+            <select
+              value={songModeStyleProfile}
+              onChange={(e) => {
+                const next = songModeStyleProfileFromSelectValue(e.target.value);
+                if (next) setSongModeStyleProfile(next);
+              }}
+              disabled={loading}
+            >
+              {SONG_MODE_STYLE_OPTIONS.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
+          </div>
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing
           </span>
@@ -1113,6 +1147,11 @@ export function HomeGenerate({
               {echo?.totalBars != null && echo.totalBars > 0 ? (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Bars:</span> {echo.totalBars}
+                </p>
+              ) : null}
+              {echo?.styleProfile ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Style profile:</span> {echo.styleProfile}
                 </p>
               ) : null}
               {(echo?.stylePairing || result.stylePairingReceipt) && (

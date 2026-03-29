@@ -79,6 +79,7 @@ import {
 } from './customLockedHarmonyRouting';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
+import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -530,6 +531,8 @@ export interface RunGoldenPathOptions {
   identityCellEnabled?: boolean;
   /** Song Mode: hook-first guitar melody (bar 1 motif, bar 25 varied return). */
   songModeHookFirstIdentity?: boolean;
+  /** Song Mode: Style Engine profile (default STYLE_ECM applied in handler if omitted). */
+  styleProfile?: StyleProfile;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -704,9 +707,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
 
   const context = buildContextForGoldenPath(seed, options);
   if (options?.songModeHookFirstIdentity) {
+    /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
+    const styleProfileResolved: StyleProfile = options.styleProfile ?? 'STYLE_ECM';
     context.generationMetadata = {
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
+      styleProfile: styleProfileResolved,
     };
   }
 

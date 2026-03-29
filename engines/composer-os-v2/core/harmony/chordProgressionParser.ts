@@ -12,19 +12,30 @@ const DEFAULT_DUO_BAR_COUNT = 8;
 
 /**
  * Normalize user bar separators to `|` for parsing. Accepts `|`, `,`, and `;`.
- * Spaced `/` (`\s+/\s+`) becomes a bar separator only when the **original** input had no `|`
- * (comma/semicolon style). If the user already used `|`, each pipe-delimited cell stays one bar
- * and spaced `/` is left as multiple tokens in that cell (first chord wins) — slash bass like
- * `D/F#` is never split because it has no spaces around `/`.
- * Collapses redundant spaces; does not alter chord spellings inside tokens.
+ *
+ * **Bar breaks without `|`:** When the trimmed input contains **no** `|` character, we treat
+ * (1) newlines and (2) spaced `/` (`\s+/\s+`) as bar separators. That fixes one-chord-per-line
+ * pastes (newlines are not matched by `\s+/\s+` alone). Slash bass like `D/F#` is unchanged
+ * (no spaces around `/`).
+ *
+ * **Input that already uses `|`:** If the original trimmed input contains **any** `|`, we do
+ * **not** rewrite spaced `/` or newlines — each pipe-delimited cell is one bar; spaced `/` in a
+ * cell means multiple chords in that bar (first wins). This matches legacy pipe-based editing.
+ *
+ * **Note:** `pipeCount` is taken from the raw trimmed input **before** `,` / `;` → `|` expansion.
  */
 export function normalizeChordProgressionSeparators(input: string): string {
-  const hadBarPipeChar = input.includes('|');
-  let s = input.trim();
-  if (!s) return '';
+  const trimmedIn = input.trim();
+  if (!trimmedIn) return '';
+  const pipeCountInRaw = (trimmedIn.match(/\|/g) || []).length;
+  /** Only for completely pipe-free lines do we treat newline / spaced-slash as bar breaks. */
+  const noPipeCharInUserInput = pipeCountInRaw === 0;
+
+  let s = trimmedIn;
   s = s.replace(/\s*,\s*/g, ' | ');
   s = s.replace(/\s*;\s*/g, ' | ');
-  if (!hadBarPipeChar) {
+  if (noPipeCharInUserInput) {
+    s = s.replace(/\r\n|\r|\n/g, ' | ');
     s = s.replace(/\s+\/\s+/g, ' | ');
   }
   s = s.replace(/\s*\|\s*/g, ' | ');

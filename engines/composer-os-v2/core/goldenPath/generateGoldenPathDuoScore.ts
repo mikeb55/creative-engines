@@ -78,6 +78,7 @@ import {
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
 import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
+import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -1657,6 +1658,14 @@ export function generateGoldenPathDuoScore(
     opts?.orchestrationEnabled !== false
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
+  }
+  /** Song Mode: velocity-only style layer must run before `finalizeAndSealDuoScoreBarMath` freezes events. */
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo'
+  ) {
+    const sp = context.generationMetadata.styleProfile ?? 'STYLE_ECM';
+    applySongModeStyleEngineToScore(afterExpressive, context.seed, sp);
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
