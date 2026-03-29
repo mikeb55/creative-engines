@@ -55,6 +55,8 @@ export interface RunManifest {
   };
   validationPassed: boolean;
   validationErrors?: string[];
+  /** Non-blocking diagnostics (e.g. Song Mode phrase musical-quality warnings). */
+  validationWarnings?: string[];
   exportTarget?: string;
   timestamp: string;
   /** Optional UX variation id (maps to seed). */

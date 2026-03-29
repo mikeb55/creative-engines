@@ -21,6 +21,8 @@ export interface ReleaseGateInput {
   exportIntegrity?: boolean;
   /** When false, output is not shareable (MusicXML bar-math / export round-trip). */
   exportRoundTrip?: boolean;
+  /** Song Mode: non-blocking phrase behaviour warnings — reduces readiness scores only. */
+  phraseBehaviourWarningCount?: number;
 }
 
 export interface ReleaseGateResult {
@@ -46,12 +48,19 @@ export function runReleaseReadinessGate(input: ReleaseGateInput): ReleaseGateRes
     exportIntegrity: input.exportIntegrity ?? true,
   });
 
+  const wc = input.phraseBehaviourWarningCount ?? 0;
+  const penalty = wc > 0 ? Math.min(0.2, 0.03 * wc) : 0;
+  const releaseOverall = Math.max(0, release.overall - penalty);
+  const mxOverall = Math.max(0, mx.overall - penalty);
+  const releaseOut = { ...release, overall: releaseOverall };
+  const mxOut = { ...mx, overall: mxOverall };
+
   const shareable =
-    release.passed &&
-    release.overall >= RRG_THRESHOLD &&
-    mx.passed &&
-    mx.overall >= MX_READINESS_THRESHOLD &&
+    releaseOut.passed &&
+    releaseOverall >= RRG_THRESHOLD &&
+    mxOut.passed &&
+    mxOverall >= MX_READINESS_THRESHOLD &&
     input.exportRoundTrip !== false;
 
-  return { shareable, release, mx };
+  return { shareable, release: releaseOut, mx: mxOut };
 }

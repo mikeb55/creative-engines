@@ -2,7 +2,7 @@
  * Song Mode — Phrase Engine v2 (phrase-state generation; guitar melody only).
  * Motif span protection: pitches/timing of motif occurrences are immutable except phrase-final cadence
  * (duration extend + chord snap ±2 semitones). Non-motif notes get full phrase shaping.
- * Runs after motif emission, before orchestration. Validation unchanged (v1 checks).
+ * Runs after motif emission, before orchestration. Validation emits structured issues; severity is applied in golden path.
  */
 
 import type { CompositionContext } from '../compositionContext';
@@ -15,6 +15,8 @@ import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
+export type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
 
 const TB = 32;
 const PHRASE_LEN = 4;
@@ -704,27 +706,39 @@ function validatePhraseDirectionality(
   startBar: number,
   endBar: number,
   phraseLabel: string
-): string[] {
-  const errs: string[] = [];
+): SongModePhraseIssue[] {
+  const issues: SongModePhraseIssue[] = [];
   const opts = chordToneOpts(context);
   const notes = collectPhraseNotes(guitar, startBar, endBar);
   if (notes.length < 4) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} needs ≥4 notes for directional integrity (has ${notes.length}).`);
-    return errs;
+    issues.push({
+      ruleId: 'phrase_min_notes',
+      message: `Song Mode phrase v1: ${phraseLabel} needs ≥4 notes for directional integrity (has ${notes.length}).`,
+    });
+    return issues;
   }
   const pitches = notes.map((n) => n.pitch);
 
   if (!hasDirectionalRunThree(pitches)) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} lacks a run of ≥3 steps in one direction.`);
+    issues.push({
+      ruleId: 'phrase_directional_run',
+      message: `Song Mode phrase v1: ${phraseLabel} lacks a run of ≥3 steps in one direction.`,
+    });
   }
 
   if (multiplePeaksAmbiguous(pitches)) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} has ambiguous multiple peaks at max pitch.`);
+    issues.push({
+      ruleId: 'phrase_ambiguous_peaks',
+      message: `Song Mode phrase v1: ${phraseLabel} has ambiguous multiple peaks at max pitch.`,
+    });
   }
 
   const pk = peakIndex(pitches);
   if (!peakPrecededByTwoUps(pitches)) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} peak is not preceded by ≥2 upward steps.`);
+    issues.push({
+      ruleId: 'phrase_peak_ascent',
+      message: `Song Mode phrase v1: ${phraseLabel} peak is not preceded by ≥2 upward steps.`,
+    });
   }
 
   const chord = getChordForBar(endBar, context);
@@ -735,11 +749,17 @@ function validatePhraseDirectionality(
     hasTwoDownStepsAfterPeak(pitches, pk) ||
     (descentFromPeakToEnd(pitches, pk) && downStepsCountAfterPeak(pitches, pk) >= 1);
   if (!fallOk) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} lacks proper fall after peak (DD or descent to landing).`);
+    issues.push({
+      ruleId: 'phrase_fall_after_peak',
+      message: `Song Mode phrase v1: ${phraseLabel} lacks proper fall after peak (DD or descent to landing).`,
+    });
   }
 
   if (maxBarDirectionChanges(guitar, startBar, endBar) > 3) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} has >3 contour direction changes in a bar (zigzag).`);
+    issues.push({
+      ruleId: 'phrase_bar_zigzag',
+      message: `Song Mode phrase v1: ${phraseLabel} has >3 contour direction changes in a bar (zigzag).`,
+    });
   }
 
   const mLast = guitar.measures.find((x) => x.index === endBar);
@@ -751,21 +771,33 @@ function validatePhraseDirectionality(
   const prevNote = ev && ev.length >= 2 ? ev[ev.length - 2] : undefined;
 
   if (!lastNote || !prevNote) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} missing cadence notes on final bar.`);
-    return errs;
+    issues.push({
+      ruleId: 'phrase_cadence_notes_missing',
+      message: `Song Mode phrase v1: ${phraseLabel} missing cadence notes on final bar.`,
+    });
+    return issues;
   }
 
   if (!isStrongChordTone(lastNote.pitch, poolMidiArr)) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} landing is not a strong chord tone.`);
+    issues.push({
+      ruleId: 'phrase_landing_strong_tone',
+      message: `Song Mode phrase v1: ${phraseLabel} landing is not a strong chord tone.`,
+    });
   }
 
   const lowAfter = minPitchAfterPeak(pitches, pk);
   if (lastNote.pitch > lowAfter + 1) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} landing is not among lowest points after peak.`);
+    issues.push({
+      ruleId: 'phrase_landing_lowest_after_peak',
+      message: `Song Mode phrase v1: ${phraseLabel} landing is not among lowest points after peak.`,
+    });
   }
 
   if (lastNote.duration < prevNote.duration * 1.5 - 1e-4) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} landing note not ≥1.5× preceding duration.`);
+    issues.push({
+      ruleId: 'phrase_cadence_duration_ratio',
+      message: `Song Mode phrase v1: ${phraseLabel} landing note not ≥1.5× preceding duration.`,
+    });
   }
 
   let hasSpace = false;
@@ -777,18 +809,21 @@ function validatePhraseDirectionality(
     if (m?.events.some((e) => e.kind === 'rest')) hasSpace = true;
   }
   if (!hasSpace) {
-    errs.push(`Song Mode phrase v1: ${phraseLabel} lacks rest or sustained note (anti-noodle).`);
+    issues.push({
+      ruleId: 'phrase_anti_noodle_space',
+      message: `Song Mode phrase v1: ${phraseLabel} lacks rest or sustained note (anti-noodle).`,
+    });
   }
 
-  return errs;
+  return issues;
 }
 
-/** Public validation — fail loud for Song Mode guitar. */
-export function validateSongModePhraseEngineV1(guitar: PartModel, context: CompositionContext): string[] {
-  const errs: string[] = [];
-  if (context.presetId !== 'guitar_bass_duo') return errs;
-  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return errs;
-  if (context.form.totalBars !== TB) return errs;
+/** Public validation — structured issues; severity is applied in golden-path aggregation (Song Mode). */
+export function validateSongModePhraseEngineV1(guitar: PartModel, context: CompositionContext): SongModePhraseIssue[] {
+  const issues: SongModePhraseIssue[] = [];
+  if (context.presetId !== 'guitar_bass_duo') return issues;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return issues;
+  if (context.form.totalBars !== TB) return issues;
 
   const segments = songModePhraseSegments();
   let prevSig = '';
@@ -796,12 +831,15 @@ export function validateSongModePhraseEngineV1(guitar: PartModel, context: Compo
   for (let pi = 0; pi < segments.length; pi++) {
     const { startBar, endBar } = segments[pi];
     const label = `phrase ${pi + 1} (bars ${startBar}–${endBar})`;
-    errs.push(...validatePhraseDirectionality(guitar, context, startBar, endBar, label));
+    issues.push(...validatePhraseDirectionality(guitar, context, startBar, endBar, label));
 
     const notes = collectPhraseNotes(guitar, startBar, endBar);
     const sig = rhythmDurSignature(guitar, startBar, endBar);
     if (pi > 0 && sig === prevSig) {
-      errs.push(`Song Mode phrase v1: ${label} rhythm matches previous phrase (contrast required).`);
+      issues.push({
+        ruleId: 'phrase_rhythm_contrast',
+        message: `Song Mode phrase v1: ${label} rhythm matches previous phrase (contrast required).`,
+      });
     }
     prevSig = sig;
 
@@ -814,9 +852,12 @@ export function validateSongModePhraseEngineV1(guitar: PartModel, context: Compo
       } else eighthRun = 0;
     }
     if (maxRun >= 6 && !notes.some((x) => x.duration >= 1)) {
-      errs.push(`Song Mode phrase v1: ${label} has continuous 8th motion without space.`);
+      issues.push({
+        ruleId: 'phrase_eighth_run_space',
+        message: `Song Mode phrase v1: ${label} has continuous 8th motion without space.`,
+      });
     }
   }
 
-  return errs;
+  return issues;
 }

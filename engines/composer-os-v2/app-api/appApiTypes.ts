@@ -139,6 +139,8 @@ export interface ValidationSummary {
   readinessMx: number;
   shareable: boolean;
   errors: string[];
+  /** Non-blocking phrase / musical-quality diagnostics (Song Mode). */
+  warnings?: string[];
 }
 
 export interface OutputEntry {

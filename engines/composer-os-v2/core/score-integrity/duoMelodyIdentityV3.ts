@@ -7,6 +7,11 @@ import type { MotifTrackerState } from '../motif/motifTypes';
 import type { CompositionContext } from '../compositionContext';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import {
+  isSongModeHookFirstIdentity,
+  partitionDuoIdentityIssues,
+  type SongModeDuoIdentityIssue,
+} from '../song-mode/songModeDuoIdentityBehaviourRules';
 
 /** Local copy — avoids circular import with duoLockQuality (GCE imports this module). */
 function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
@@ -66,6 +71,22 @@ function hasRepeatedIntervalCellLocal(guitar: PartModel): boolean {
 export interface DuoMelodyIdentityV3Result {
   valid: boolean;
   errors: string[];
+  warnings: string[];
+  issues: SongModeDuoIdentityIssue[];
+}
+
+function finalizeMelodyV3(
+  issues: SongModeDuoIdentityIssue[],
+  compositionContext: CompositionContext | undefined
+): DuoMelodyIdentityV3Result {
+  const songMode = isSongModeHookFirstIdentity(compositionContext);
+  const { blocking, warnings } = partitionDuoIdentityIssues(issues, songMode);
+  return {
+    valid: blocking.length === 0,
+    errors: blocking,
+    warnings,
+    issues,
+  };
 }
 
 function guitarPart(score: ScoreModel): PartModel | undefined {
@@ -370,47 +391,65 @@ export function validateDuoMelodyIdentityV3(
   motifState?: MotifTrackerState,
   opts?: { presetId?: string; compositionContext?: CompositionContext }
 ): DuoMelodyIdentityV3Result {
-  const errors: string[] = [];
-  if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
+  const empty = finalizeMelodyV3([], opts?.compositionContext);
+  if (opts?.presetId === 'ecm_chamber') return empty;
   const g = guitarPart(score);
-  if (!g) return { valid: true, errors: [] };
+  if (!g) return empty;
 
   const totalBars = g.measures.length;
-  if (totalBars < 8) return { valid: true, errors: [] };
+  if (totalBars < 8) return empty;
+
+  const issues: SongModeDuoIdentityIssue[] = [];
 
   if (motifState?.placements?.length) {
     const cov = phrasePrimaryMotifCoverage(motifState);
     if (cov < 0.75) {
-      errors.push(
-        `Duo V3: primary motif must appear in ≥75% of 2-bar phrases (${(cov * 100).toFixed(0)}%)`
-      );
+      issues.push({
+        ruleId: 'v3_motif_coverage_low',
+        message: `Duo V3: primary motif must appear in ≥75% of 2-bar phrases (${(cov * 100).toFixed(0)}%)`,
+      });
     }
   } else {
-    errors.push('Duo V3: motif placements missing');
+    issues.push({ ruleId: 'v3_motif_placements_missing', message: 'Duo V3: motif placements missing' });
   }
 
   const nOriginalPlacements =
     motifState?.placements.filter((p) => p.variant === 'original').length ?? 0;
   if (maxDuplicateBarFingerprints(g) < 2 && nOriginalPlacements < 2) {
-    errors.push('Duo V3: exact melodic repetition required at least twice');
+    issues.push({
+      ruleId: 'v3_exact_repetition_required',
+      message: 'Duo V3: exact melodic repetition required at least twice',
+    });
   }
 
   const maxByBar = maxGuitarPitchByBar(g, totalBars);
   if (!hasGlobalMelodicContour(maxByBar)) {
-    errors.push('Duo V3: melody lacks rise → peak → fall contour');
+    issues.push({
+      ruleId: 'v3_contour_rise_peak_fall',
+      message: 'Duo V3: melody lacks rise → peak → fall contour',
+    });
   }
 
   const { maxLeap, countOver12 } = largeLeapStats(g);
   if (maxLeap > 14) {
-    errors.push('Duo V3: interval leap exceeds expressive maximum (14 semitones)');
+    issues.push({
+      ruleId: 'v3_leap_exceeds_max',
+      message: 'Duo V3: interval leap exceeds expressive maximum (14 semitones)',
+    });
   }
   if (countOver12 > 1) {
-    errors.push('Duo V3: more than one large leap (>12 semitones) — line not singable');
+    issues.push({
+      ruleId: 'v3_multiple_large_leaps',
+      message: 'Duo V3: more than one large leap (>12 semitones) — line not singable',
+    });
   }
 
   const scalarRun = maxConsecutiveStepwiseLocal(g, 2);
   if (scalarRun > 4) {
-    errors.push('Duo V3: scale run exceeds 4 consecutive stepwise notes');
+    issues.push({
+      ruleId: 'v3_scale_run_too_long',
+      message: 'Duo V3: scale run exceeds 4 consecutive stepwise notes',
+    });
   }
 
   const spans = barPitchSpans(g, totalBars);
@@ -419,21 +458,30 @@ export function validateDuoMelodyIdentityV3(
     if (s > 14) wideBars++;
   }
   if (wideBars > 1) {
-    errors.push('Duo V3: melodic range exceeds a 9th in more than one bar');
+    issues.push({
+      ruleId: 'v3_range_exceeds_ninth_multi_bar',
+      message: 'Duo V3: melodic range exceeds a 9th in more than one bar',
+    });
   }
 
   for (let b = 1; b <= totalBars; b++) {
     const m = g.measures.find((x) => x.index === b);
     const ch = m?.chord ?? '';
     if (!barHasAcceptablePhraseEnd(m, ch, opts?.compositionContext)) {
-      errors.push(`Duo V3: bar ${b} phrase end is not a chord tone or strong tension`);
+      issues.push({
+        ruleId: 'v3_phrase_end_not_chord_tone',
+        message: `Duo V3: bar ${b} phrase end is not a chord tone or strong tension`,
+      });
       break;
     }
   }
 
   for (let k = 0; k < 4; k++) {
     if (!phraseHasSyncopation(g, k)) {
-      errors.push(`Duo V3: phrase ${k + 1} needs at least one syncopated entry`);
+      issues.push({
+        ruleId: 'v3_syncopation_required',
+        message: `Duo V3: phrase ${k + 1} needs at least one syncopated entry`,
+      });
       break;
     }
   }
@@ -443,17 +491,23 @@ export function validateDuoMelodyIdentityV3(
   const repRhythm = hasRepeatedRhythmCell(g);
   const repIntervals = hasRepeatedIntervalCellLocal(g);
   if (anchorHits < 3 && !repRhythm && !repIntervals) {
-    errors.push('Duo V3: memorability weak (anchor, rhythm cell, or interval cell)');
+    issues.push({
+      ruleId: 'v3_memorability_weak',
+      message: 'Duo V3: memorability weak (anchor, rhythm cell, or interval cell)',
+    });
   }
 
   const dirCh = countPitchDirectionChanges(g);
   /** 8-bar slice (behaviour gates) allows 20 after eighth-beat rhythm; long-form scales with bar count. */
   const maxDirChanges = totalBars <= 8 ? 20 : Math.round(16 * (totalBars / 8) * 1.25);
   if (dirCh > maxDirChanges) {
-    errors.push('Duo V3: melody zig-zags too often (no clear line)');
+    issues.push({
+      ruleId: 'v3_zigzag_too_often',
+      message: 'Duo V3: melody zig-zags too often (no clear line)',
+    });
   }
 
-  return { valid: errors.length === 0, errors };
+  return finalizeMelodyV3(issues, opts?.compositionContext);
 }
 
 /** 0–1.2 layer for GCE: motif clarity, phrase contour, memorability (score-only). */

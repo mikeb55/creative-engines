@@ -35,6 +35,7 @@ export interface CreateRunManifestInput {
   readinessScores: { release: number; mx: number };
   validationPassed: boolean;
   validationErrors?: string[];
+  validationWarnings?: string[];
   exportTarget?: string;
   timestamp: string;
   variationId?: string;
@@ -98,6 +99,7 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     readinessScores: input.readinessScores,
     validationPassed: input.validationPassed,
     validationErrors: input.validationErrors,
+    validationWarnings: input.validationWarnings,
     exportTarget: input.exportTarget,
     timestamp: input.timestamp,
     variationId: input.variationId,

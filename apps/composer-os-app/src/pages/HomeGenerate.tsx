@@ -108,6 +108,7 @@ type GenResult = {
     instrumentMetadataPassed?: boolean;
     readiness?: { release?: number; mx?: number; shareable?: boolean };
     errors?: string[];
+    warnings?: string[];
   };
   runManifest?: {
     seed?: number;
@@ -1301,6 +1302,22 @@ export function HomeGenerate({
                 <p style={{ fontSize: '0.9rem', color: 'var(--error)', marginTop: '0.5rem' }}>
                   {v.errors.join('; ')}
                 </p>
+              )}
+              {v?.warnings && v.warnings.length > 0 && (
+                <div
+                  style={{
+                    fontSize: '0.9rem',
+                    marginTop: '0.5rem',
+                    padding: '0.75rem',
+                    borderRadius: 8,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.45)',
+                    color: 'var(--text)',
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Phrase quality (warnings)</strong>
+                  <span style={{ lineHeight: 1.45 }}>{v.warnings.join('; ')}</span>
+                </div>
               )}
             </>
           )}

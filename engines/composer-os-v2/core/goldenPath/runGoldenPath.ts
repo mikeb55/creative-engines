@@ -79,6 +79,7 @@ import {
 } from './customLockedHarmonyRouting';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
+import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
@@ -109,6 +110,8 @@ export interface GoldenPathResult {
   readiness: { shareable: boolean; release: number; mx: number };
   runManifest: RunManifest;
   errors: string[];
+  /** Song Mode: non-blocking phrase behaviour warnings (musical quality; see `songModePhraseBehaviourRules`). */
+  songModePhraseWarnings?: string[];
   /** Guitar–Bass Duo 8-bar: input / score / written XML agreement (skip when not applicable). */
   truthReport?: PipelineTruthReport;
 }
@@ -479,6 +482,7 @@ function harmonyParseFailureGoldenPathResult(
       timestamp: new Date().toISOString(),
     }),
     errors: [message],
+    songModePhraseWarnings: [],
   };
 }
 
@@ -704,6 +708,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
  */
 export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
+  let songModePhraseWarnings: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
   if (options?.songModeHookFirstIdentity) {
@@ -752,7 +757,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           md.songModeMotifCount ?? 1
         )
       );
-      errors.push(...validateSongModePhraseEngineV1(guitar, appliedContext));
+      const phraseIssues = validateSongModePhraseEngineV1(guitar, appliedContext);
+      const { critical, warnings } = partitionSongModePhraseIssues(phraseIssues);
+      errors.push(...critical);
+      songModePhraseWarnings = warnings;
     }
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
@@ -828,7 +836,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       compositionContext: appliedContext,
     }
   );
-  if (!behaviourResult.allValid) errors.push(...behaviourResult.errors);
+  errors.push(...behaviourResult.errors);
+  if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
+    songModePhraseWarnings.push(...behaviourResult.duoIdentityWarnings);
+  }
 
   const preserveLiterals =
     appliedContext.generationMetadata.customHarmonyLocked === true ||
@@ -904,6 +915,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           : 8) && rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
+    phraseBehaviourWarningCount: songModePhraseWarnings.length,
   });
 
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
@@ -935,6 +947,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       instrumentMetadataPassed &&
       pipelineTruthAllPassed(truthReport),
     validationErrors: errors.length > 0 ? errors : undefined,
+    validationWarnings: songModePhraseWarnings.length > 0 ? songModePhraseWarnings : undefined,
     exportTarget: xml ? 'musicxml' : undefined,
     timestamp: new Date().toISOString(),
     keySignatureInferredTonic: ksRec?.inferredTonicName,
@@ -997,6 +1010,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     },
     runManifest,
     errors,
+    songModePhraseWarnings,
     truthReport,
   };
 }

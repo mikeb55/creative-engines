@@ -371,6 +371,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         readinessMx: gp.readiness.mx,
         shareable: gp.readiness.shareable,
         errors: [...gp.errors, ...diskHarmonyTruthErrors],
+        warnings: gp.songModePhraseWarnings?.length ? gp.songModePhraseWarnings : undefined,
       },
     });
   }
@@ -389,6 +390,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     sibeliusSafe: songLayerOk && gp.sibeliusSafe,
     readiness: gp.readiness,
     errors: mergedErrors,
+    warnings: gp.songModePhraseWarnings?.length ? gp.songModePhraseWarnings : undefined,
   };
   const success = gp.success && songLayerOk && !!gp.xml && diskHarmonyTruthErrors.length === 0;
   const scoreTitleResolved = gp.runManifest?.scoreTitle ?? title;

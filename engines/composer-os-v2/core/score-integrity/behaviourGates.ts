@@ -114,6 +114,8 @@ export interface BehaviourGatesResult {
   registerSeparationValid: boolean;
   allValid: boolean;
   errors: string[];
+  /** Song Mode: non-blocking Duo / Phrase Authority / LOCK / Identity messages. */
+  duoIdentityWarnings: string[];
 }
 
 /** ECM: reject mechanical loops — identical guitar rhythm or contour for >2 consecutive bars. */
@@ -200,6 +202,9 @@ export function runBehaviourGates(
   }
 ): BehaviourGatesResult {
   const errors: string[] = [];
+  const duoIdentityWarnings: string[] = [];
+  const songMode = opts?.compositionContext?.generationMetadata?.songModeHookFirstIdentity === true;
+  const duoCtx = { compositionContext: opts?.compositionContext };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   const duoGateScore =
@@ -273,8 +278,12 @@ export function runBehaviourGates(
   if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
   const bassIdentityValid = bassIdentity.valid;
 
-  const phraseAuthority = validateDuoPhraseAuthority(score, { presetId: opts?.presetId });
-  if (!phraseAuthority.valid) errors.push(...phraseAuthority.errors);
+  const phraseAuthority = validateDuoPhraseAuthority(score, {
+    presetId: opts?.presetId,
+    compositionContext: opts?.compositionContext,
+  });
+  errors.push(...phraseAuthority.errors);
+  if (songMode) duoIdentityWarnings.push(...phraseAuthority.warnings);
   const phraseAuthorityValid = phraseAuthority.valid;
 
   const jazzDuoBehaviour = validateJazzDuoBehaviourRules(score);
@@ -287,23 +296,30 @@ export function runBehaviourGates(
   }
 
   if (opts?.presetId === 'guitar_bass_duo') {
-    const duoRh = validateDuoRhythmAntiLoop(duoGateScore);
-    if (!duoRh.valid) errors.push(...duoRh.errors);
-    const duoGce = validateDuoGceHardGate(duoGateScore);
-    if (!duoGce.valid) errors.push(...duoGce.errors);
+    const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoCtx);
+    errors.push(...duoRh.errors);
+    if (songMode) duoIdentityWarnings.push(...duoRh.warnings);
+    const duoGce = validateDuoGceHardGate(duoGateScore, duoCtx);
+    errors.push(...duoGce.errors);
+    if (songMode) duoIdentityWarnings.push(...duoGce.warnings);
     const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, {
       presetId: opts?.presetId,
       compositionContext: opts?.compositionContext,
     });
-    if (!duoV3.valid) errors.push(...duoV3.errors);
-    const duoSwing = validateDuoSwingRhythm(duoGateScore);
-    if (!duoSwing.valid) errors.push(...duoSwing.errors);
-    const duoIx = validateDuoInteractionAuthorityGate(duoGateScore);
-    if (!duoIx.valid) errors.push(...duoIx.errors);
-    const duoId = validateDuoIdentityMomentGate(duoGateScore);
-    if (!duoId.valid) errors.push(...duoId.errors);
-    const duoP33 = validateDuoPolishV33Gate(duoGateScore);
-    if (!duoP33.valid) errors.push(...duoP33.errors);
+    errors.push(...duoV3.errors);
+    if (songMode) duoIdentityWarnings.push(...duoV3.warnings);
+    const duoSwing = validateDuoSwingRhythm(duoGateScore, duoCtx);
+    errors.push(...duoSwing.errors);
+    if (songMode) duoIdentityWarnings.push(...duoSwing.warnings);
+    const duoIx = validateDuoInteractionAuthorityGate(duoGateScore, duoCtx);
+    errors.push(...duoIx.errors);
+    if (songMode) duoIdentityWarnings.push(...duoIx.warnings);
+    const duoId = validateDuoIdentityMomentGate(duoGateScore, duoCtx);
+    errors.push(...duoId.errors);
+    if (songMode) duoIdentityWarnings.push(...duoId.warnings);
+    const duoP33 = validateDuoPolishV33Gate(duoGateScore, duoCtx);
+    errors.push(...duoP33.errors);
+    if (songMode) duoIdentityWarnings.push(...duoP33.warnings);
   }
 
   let interactionValid = true;
@@ -336,5 +352,6 @@ export function runBehaviourGates(
     registerSeparationValid,
     allValid: errors.length === 0,
     errors,
+    duoIdentityWarnings,
   };
 }

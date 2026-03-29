@@ -60,6 +60,7 @@ export interface GenerateResult {
     sibeliusSafe: boolean;
     readiness: { shareable: boolean; release: number; mx: number };
     errors: string[];
+    warnings?: string[];
   };
   runManifest?: {
     seed: number;
@@ -213,6 +214,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         readinessMx: result.readiness.mx,
         shareable: result.readiness.shareable,
         errors: diskHarmonyTruthErrors.length > 0 ? [...result.errors, ...diskHarmonyTruthErrors] : result.errors,
+        warnings: result.songModePhraseWarnings?.length ? result.songModePhraseWarnings : undefined,
       },
     });
   }
@@ -230,6 +232,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     sibeliusSafe: result.sibeliusSafe,
     readiness: result.readiness,
     errors: allErrors,
+    warnings: result.songModePhraseWarnings?.length ? result.songModePhraseWarnings : undefined,
   };
 
   const scoreTitleResolved = result.runManifest?.scoreTitle;
