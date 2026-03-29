@@ -291,6 +291,106 @@ function nearestChordToneMidi(pitch: number, poolMidiArr: number[]): { pitch: nu
   return { pitch: best, dist: bestD };
 }
 
+/** Min pitch on indices (peakIdx+1)..(n-2); if empty, returns HIGH (no cap). */
+function minPitchInteriorExcludingLanding(pitches: number[], peakIdx: number, n: number): number {
+  if (peakIdx + 1 > n - 2) return HIGH;
+  let mn = pitches[peakIdx + 1];
+  for (let i = peakIdx + 1; i <= n - 2; i++) mn = Math.min(mn, pitches[i]);
+  return mn;
+}
+
+/**
+ * Deterministic: root/3rd first, then 5th, then 7th; within each tier prefer lower midi.
+ * Picks first tier member in [lo, hi] (inclusive); else nearest pool to midpoint of range.
+ */
+function pickPriorityCadenceInRange(bar: number, context: CompositionContext, lo: number, hi: number): number {
+  const opts = chordToneOpts(context);
+  const chord = getChordForBar(bar, context);
+  const g = guitarChordTonesInRange(chord, LOW, HIGH, opts);
+  const tiers: number[][] = [
+    [Math.round(g.root), Math.round(g.third)],
+    [Math.round(g.fifth)],
+    [Math.round(g.seventh)],
+  ];
+  const loC = clampPitch(lo, LOW, HIGH);
+  const hiC = clampPitch(hi, LOW, HIGH);
+  if (loC > hiC) return clampPitch(nearestPool((loC + hiC) / 2, bar, context), LOW, HIGH);
+  for (const tier of tiers) {
+    const uniq = [...new Set(tier.map((x) => clampPitch(x, LOW, HIGH)))].sort((a, b) => a - b);
+    for (const p of uniq) {
+      if (p >= loC - 1e-4 && p <= hiC + 1e-4) return p;
+    }
+  }
+  return clampPitch(nearestPool((loC + hiC) / 2, bar, context), LOW, HIGH);
+}
+
+/**
+ * Post-pass: only indices in [max(peakIdx+1, n-3), n-1]. Strengthen landing tier + descent into it.
+ * Does not change peak index, ascent, or notes before the cadence window.
+ */
+function refinePhraseCadenceTail(
+  pitches: number[],
+  spans: [number, number][],
+  phraseNotes: ReturnType<typeof collectPhraseNotes>,
+  peakIdx: number,
+  context: CompositionContext
+): void {
+  const n = pitches.length;
+  const start = Math.max(peakIdx + 1, n - 3);
+  if (start > n - 1 || n < 2) return;
+
+  const endBar = phraseNotes[n - 1].bar;
+  const interiorCap = minPitchInteriorExcludingLanding(pitches, peakIdx, n);
+  const landLo = pitches[n - 1];
+  const landHi = Math.min(interiorCap, HIGH);
+  const capBeforeN2 = n >= 3 ? pitches[n - 3] : HIGH;
+
+  if (n - 1 >= start && !noteIsInMotifSpan(n - 1, spans)) {
+    const prevAbove = n >= 2 ? pitches[n - 2] : HIGH;
+    let L = pickPriorityCadenceInRange(endBar, context, landLo, landHi);
+    if (L >= prevAbove) {
+      const below = nearestPoolStrictlyBelow(prevAbove, endBar, context);
+      L = pickPriorityCadenceInRange(endBar, context, landLo, Math.min(landHi, below));
+      if (L >= prevAbove) L = clampPitch(below, LOW, HIGH);
+    }
+    pitches[n - 1] = L;
+  }
+
+  const land = pitches[n - 1];
+
+  if (n - 2 >= start && n - 2 > peakIdx && !noteIsInMotifSpan(n - 2, spans)) {
+    const bar2 = phraseNotes[n - 2].bar;
+    let p2 = nearestPoolStrictlyAbove(land, bar2, context);
+    if (p2 > capBeforeN2) {
+      const hi = Math.min(capBeforeN2, land + 4);
+      p2 = nearestPoolInWindow(Math.min(hi, capBeforeN2), bar2, context, land + 1, hi);
+    }
+    if (p2 <= land) p2 = nearestPoolStrictlyAbove(land, bar2, context);
+    if (p2 > capBeforeN2) p2 = clampPitch(Math.min(capBeforeN2, land + 4), LOW, HIGH);
+    pitches[n - 2] = clampPitch(p2, LOW, HIGH);
+  }
+
+  const capBeforeN3 = n >= 4 ? pitches[n - 4] : HIGH;
+  if (n - 3 >= start && n - 3 > peakIdx && !noteIsInMotifSpan(n - 3, spans)) {
+    const bar3 = phraseNotes[n - 3].bar;
+    const p2f = pitches[n - 2];
+    const lo = p2f;
+    const hi = capBeforeN3;
+    if (lo <= hi) {
+      pitches[n - 3] = pickPriorityCadenceInRange(bar3, context, lo, hi);
+    }
+    if (pitches[n - 3] < p2f) pitches[n - 3] = nearestPoolStrictlyAbove(p2f, bar3, context);
+    if (pitches[n - 3] > capBeforeN3) pitches[n - 3] = clampPitch(capBeforeN3, LOW, HIGH);
+  }
+
+  for (let i = start; i < n; i++) {
+    if (noteIsInMotifSpan(i, spans)) continue;
+    const prev = pitches[i - 1];
+    const bar = phraseNotes[i].bar;
+    if (pitches[i] > prev) pitches[i] = nearestPoolStrictlyBelow(prev, bar, context);
+  }
+}
+
 function extendLastNoteCadence(m: MeasureModel, minDur: number): void {
   let lastNoteI = -1;
   for (let i = m.events.length - 1; i >= 0; i--) {
@@ -332,6 +432,7 @@ function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionConte
   const chord = getChordForBar(bar, context);
   const gtones = guitarChordTonesInRange(chord, 40, 90, opts);
   const pool = [gtones.root, gtones.third, gtones.fifth, gtones.seventh].map((x) => Math.round(x));
+  const priority = [Math.round(gtones.root), Math.round(gtones.third), Math.round(gtones.fifth), Math.round(gtones.seventh)];
   let lastNoteI = -1;
   for (let i = m.events.length - 1; i >= 0; i--) {
     if (m.events[i].kind === 'note') {
@@ -341,6 +442,14 @@ function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionConte
   }
   if (lastNoteI < 0) return;
   const n = m.events[lastNoteI] as { pitch: number };
+  const orig = n.pitch;
+  for (const tgt of priority) {
+    const d = Math.abs(orig - tgt);
+    if (d <= LANDING_SNAP_MAX_SEMIS && d > 0) {
+      n.pitch = tgt;
+      return;
+    }
+  }
   const { pitch: tgt, dist } = nearestChordToneMidi(n.pitch, pool);
   if (dist <= LANDING_SNAP_MAX_SEMIS && dist > 0) n.pitch = tgt;
 }
@@ -430,9 +539,154 @@ interface PhrasePlan {
 function planPhraseShape(n: number, seed: number, phraseIdx: number): PhrasePlan {
   const u = seededUnit(seed, phraseIdx, 91000);
   // Bias peak later in the phrase: room for ≥2 upward steps before peak and a real tail descent.
-  const raw = Math.floor(n * (0.45 + u * 0.25));
+  // Adjacent phrases: slight peak shift + u-offset so contours do not clone phrase-to-phrase.
+  const contrast = ((phraseIdx % 3) - 1) * 0.035;
+  const u2 = seededUnit(seed, phraseIdx, 91001);
+  const raw = Math.floor(n * (0.45 + u * 0.25 + contrast + (u2 - 0.5) * 0.02));
   const peakIdx = Math.max(2, Math.min(n - 3, raw));
   return { peakIdx, cadenceMidi: 0 };
+}
+
+/** 0 = leap-and-resolve, 1 = contour-turn, 2 = accent-cell (gesture classes, not fixed licks). */
+type IdentityHookFamily = 0 | 1 | 2;
+
+interface IdentityHookPlan {
+  active: boolean;
+  family: IdentityHookFamily;
+  anchor: number;
+  zone: 'pre' | 'post';
+}
+
+function hookPairFree(anchor: number, min: number, max: number, spans: [number, number][]): boolean {
+  if (anchor < min || anchor > max) return false;
+  if (noteIsInMotifSpan(anchor, spans) || noteIsInMotifSpan(anchor + 1, spans)) return false;
+  return true;
+}
+
+/** Move anchor within [min,max] so hook + resolution avoid motif spans; -1 if impossible. */
+function relocateHookAnchor(candidate: number, min: number, max: number, spans: [number, number][]): number {
+  if (min > max) return -1;
+  for (let d = 0; d <= max - min + 2; d++) {
+    for (const sign of [0, 1, -1] as const) {
+      if (d === 0 && sign !== 0) continue;
+      const a = candidate + sign * d;
+      if (hookPairFree(a, min, max, spans)) return a;
+    }
+  }
+  return -1;
+}
+
+/**
+ * At most one interior identity hook per phrase (0–1); uses existing seededUnit only.
+ * Interior = after index 1, before cadence-tail window [max(peakIdx+1, n-3), n-1].
+ */
+function planIdentityHook(
+  n: number,
+  peakIdx: number,
+  seed: number,
+  phraseIdx: number,
+  spans: [number, number][]
+): IdentityHookPlan {
+  const cadTailStart = Math.max(peakIdx + 1, n - 3);
+  const preMin = 2;
+  const preMax = peakIdx - 2;
+  const postMin = peakIdx + 1;
+  const postMax = cadTailStart - 2;
+
+  // ~30% no hook — preserves variety and avoids sameness.
+  if (seededUnit(seed, phraseIdx, 92000) >= 0.7) {
+    return { active: false, family: 0, anchor: -1, zone: 'pre' };
+  }
+
+  let family = ((phraseIdx + Math.floor(3 * seededUnit(seed, phraseIdx, 92001))) % 3) as IdentityHookFamily;
+  if (phraseIdx > 0) {
+    const prevFam = ((phraseIdx - 1 + Math.floor(3 * seededUnit(seed, phraseIdx - 1, 92001))) % 3) as IdentityHookFamily;
+    if (family === prevFam) family = (((family + 1) % 3) as IdentityHookFamily);
+  }
+
+  const canPre = preMin <= preMax;
+  const canPost = postMin <= postMax;
+
+  if (!canPre && !canPost) {
+    return { active: false, family: 0, anchor: -1, zone: 'pre' };
+  }
+
+  let zone: 'pre' | 'post';
+  if (canPre && !canPost) zone = 'pre';
+  else if (!canPre && canPost) zone = 'post';
+  else {
+    const preferPre = phraseIdx % 2 === 0;
+    const u = seededUnit(seed, phraseIdx, 92002);
+    zone = preferPre ? (u < 0.58 ? 'pre' : 'post') : (u < 0.58 ? 'post' : 'pre');
+    if ((phraseIdx + family) % 3 === 0) zone = zone === 'pre' ? 'post' : 'pre';
+  }
+
+  const min = zone === 'pre' ? preMin : postMin;
+  const max = zone === 'pre' ? preMax : postMax;
+  if (min > max) return { active: false, family: 0, anchor: -1, zone: 'pre' };
+
+  const spread = (phraseIdx + family + 1) % 3;
+  const cand =
+    min +
+    Math.floor((max - min + 1) * seededUnit(seed, phraseIdx, 92003 + spread * 11 + phraseIdx * 19));
+  const anchor = relocateHookAnchor(cand, min, max, spans);
+  if (anchor < 0) return { active: false, family: 0, anchor: -1, zone: 'pre' };
+
+  return { active: true, family, anchor, zone };
+}
+
+/** Post-peak interior only: monotone descent-compatible gestures before cadence-tail refinement. */
+function applyPostPeakIdentityHook(
+  pitches: number[],
+  phraseNotes: ReturnType<typeof collectPhraseNotes>,
+  peakIdx: number,
+  n: number,
+  cadTailStart: number,
+  spans: [number, number][],
+  hook: IdentityHookPlan,
+  context: CompositionContext,
+  seed: number,
+  phraseIdx: number
+): void {
+  if (!hook.active || hook.zone !== 'post') return;
+  const h = hook.anchor;
+  if (h < peakIdx + 1 || h > cadTailStart - 2) return;
+  if (!hookPairFree(h, peakIdx + 1, cadTailStart - 2, spans)) return;
+  const prev = pitches[h - 1];
+  const bar = phraseNotes[h].bar;
+  const barN = phraseNotes[h + 1].bar;
+  const floor = pitches[h + 1];
+
+  if (hook.family === 0) {
+    const preferDeep = seededUnit(seed, phraseIdx, 92100) < 0.55;
+    const cand = preferDeep
+      ? nearestPoolInWindow(prev - 3, bar, context, floor + 1, prev - 1)
+      : nearestPoolStrictlyBelow(prev, bar, context);
+    if (cand > floor && cand < prev) {
+      pitches[h] = cand;
+      let p2 = nearestPoolStrictlyBelow(cand, barN, context);
+      if (p2 >= cand) p2 = nearestPoolStrictlyBelow(cand, barN, context);
+      if (p2 < floor) p2 = floor;
+      pitches[h + 1] = clampPitch(p2, LOW, HIGH);
+    }
+  } else if (hook.family === 1) {
+    const soft = nearestPoolInWindow(prev - 2, bar, context, floor + 1, prev - 1);
+    if (soft < prev && soft > floor) {
+      pitches[h] = soft;
+      let p2 = nearestPoolStrictlyBelow(soft, barN, context);
+      if (p2 >= soft) p2 = nearestPoolStrictlyBelow(soft, barN, context);
+      if (p2 < floor) p2 = floor;
+      pitches[h + 1] = clampPitch(p2, LOW, HIGH);
+    }
+  } else {
+    const step = 2 + Math.floor(2 * seededUnit(seed, phraseIdx, 92102));
+    const pH = nearestPoolInWindow(prev - step, bar, context, floor + 1, prev - 1);
+    if (pH > floor && pH < prev) {
+      pitches[h] = pH;
+      const p2 = nearestPoolInWindow(pH - step, barN, context, floor, pH - 1);
+      pitches[h + 1] = clampPitch(p2, LOW, HIGH);
+    }
+  }
 }
 
 /** Pick chord tone in [low, high] closest to `prefer`, else strict fallback. */
@@ -472,20 +726,104 @@ function generatePhraseStatePitches(
   cadenceMidi: number
 ): void {
   const n = pitches.length;
+  const cadTailStart = Math.max(peakIdx + 1, n - 3);
+  const hook = planIdentityHook(n, peakIdx, seed, phraseIdx, spans);
   let smallDownUsed = false;
+
+  // Coherent ascent runs (2–4 consecutive up-moves) reduce bar-level zig-zag before the peak.
+  const runTarget = 2 + Math.floor(3 * seededUnit(seed, phraseIdx, 91002));
+  let upRunLen = 0;
+  // Phrase-role bias: alternate step vs wider skips so neighbouring phrases differ in contour energy.
+  const wideBias = phraseIdx % 2 === 0 ? 0.42 : 0.28;
+
+  /** Pre-peak hook carry: phase 1 = resolve / first answer; phase 2 = sustained continuation toward peak (when room). */
+  let hookFollow: null | {
+    kind: 'leap-resolve' | 'contour' | 'accent';
+    delta: number;
+    phase: 1 | 2;
+    anchorRef: number;
+  } = null;
 
   for (let i = 1; i < peakIdx; i++) {
     if (noteIsInMotifSpan(i, spans)) continue;
     const bar = phraseNotes[i].bar;
     const prev = pitches[i - 1];
-    let want = prev + 1 + (seededUnit(seed, phraseIdx, i) < 0.35 ? 1 : 0);
-    if (seededUnit(seed, phraseIdx, i + 400) < 0.08 && !smallDownUsed && i > 1) {
+    let want: number;
+    const keepRun = upRunLen < runTarget;
+    let fromHookResolution = false;
+
+    if (hookFollow) {
+      const hf = hookFollow;
+      if (hf.kind === 'leap-resolve') {
+        if (hf.phase === 1) {
+          want = prev - 2 + (seededUnit(seed, phraseIdx, 92050 + i) < 0.4 ? 1 : 0);
+        } else {
+          want = prev + 2 + (seededUnit(seed, phraseIdx, 92051 + i) < 0.45 ? 1 : 0);
+        }
+      } else if (hf.kind === 'contour') {
+        if (hf.phase === 1) {
+          want = prev + 2 + Math.floor(2 * seededUnit(seed, phraseIdx, 92052 + i));
+        } else {
+          const wide = seededUnit(seed, phraseIdx, i) < wideBias;
+          want = prev + (wide ? 2 : 1);
+        }
+      } else {
+        if (hf.phase === 1) {
+          want = prev + hf.delta;
+        } else {
+          want = prev + Math.max(1, hf.delta - 1);
+        }
+      }
+      const canSecondCarry = hf.anchorRef + 2 < peakIdx;
+      if (hf.phase === 1 && canSecondCarry) hookFollow = { ...hf, phase: 2 };
+      else hookFollow = null;
+      fromHookResolution = true;
+    } else if (hook.active && hook.zone === 'pre' && i === hook.anchor) {
+      if (hook.family === 0) {
+        const leap = 4 + Math.floor(2 * seededUnit(seed, phraseIdx, 91004 + i));
+        want = prev + leap;
+      } else if (hook.family === 1) {
+        want = prev - 2 - Math.floor(2 * seededUnit(seed, phraseIdx, 91005 + i));
+      } else {
+        const step = 2 + Math.floor(2 * seededUnit(seed, phraseIdx, 91006 + i));
+        want = prev + step;
+      }
+    } else if (keepRun) {
+      const wide = seededUnit(seed, phraseIdx, i) < wideBias;
+      want = prev + (wide ? 2 : 1);
+    } else {
+      want = prev + 1 + (seededUnit(seed, phraseIdx, i) < 0.35 ? 1 : 0);
+    }
+
+    if (
+      !fromHookResolution &&
+      !(hook.active && hook.zone === 'pre' && i === hook.anchor) &&
+      i > 1 &&
+      !smallDownUsed &&
+      upRunLen >= runTarget &&
+      seededUnit(seed, phraseIdx, i + 400) < 0.1
+    ) {
       want = prev - 1;
       smallDownUsed = true;
     }
+
     let p = nearestPool(want, bar, context);
     if (p <= prev) p = nearestPoolStrictlyAbove(prev, bar, context);
+    const delta = p - prev;
+    if (delta > 0) upRunLen++;
+    else upRunLen = 0;
     pitches[i] = p;
+
+    if (hook.active && hook.zone === 'pre' && i === hook.anchor) {
+      const d = Math.max(1, Math.min(4, Math.abs(p - prev)));
+      if (hook.family === 0) {
+        hookFollow = { kind: 'leap-resolve', delta: 0, phase: 1, anchorRef: hook.anchor };
+      } else if (hook.family === 1) {
+        hookFollow = { kind: 'contour', delta: 0, phase: 1, anchorRef: hook.anchor };
+      } else {
+        hookFollow = { kind: 'accent', delta: d, phase: 1, anchorRef: hook.anchor };
+      }
+    }
   }
 
   if (!noteIsInMotifSpan(peakIdx, spans)) {
@@ -530,7 +868,14 @@ function generatePhraseStatePitches(
       pitches[i] = clampPitch(lowBound, LOW, HIGH);
       continue;
     }
-    const preferDown = seededUnit(seed, phraseIdx, i + 500) < 0.35 ? 2 : 1;
+    // Interior-only (before cadence tail): match prior descent step to reduce zig-zag in the middle of the phrase.
+    let preferDown = seededUnit(seed, phraseIdx, i + 500) < 0.35 ? 2 : 1;
+    if (i < n - 3 && i + 2 < n) {
+      const prevStep = Math.abs(pitches[i + 2] - pitches[i + 1]);
+      if (prevStep >= 1 && prevStep <= 4) {
+        preferDown = Math.min(3, Math.max(1, Math.round(prevStep)));
+      }
+    }
     let target = Math.max(lowBound, highBound - maxStep - preferDown);
     target = Math.min(highBound - 1, target);
     if (target < lowBound) target = lowBound;
@@ -542,6 +887,8 @@ function generatePhraseStatePitches(
     if (p < lowBound) p = lowBound;
     pitches[i] = p;
   }
+
+  applyPostPeakIdentityHook(pitches, phraseNotes, peakIdx, n, cadTailStart, spans, hook, context, seed, phraseIdx);
 
   // Forward repair: no upward moves after peak (validator descent path), and first two contour steps down when possible.
   for (let i = peakIdx + 1; i < n; i++) {
@@ -621,6 +968,7 @@ function generatePhraseStatePitches(
     }
   }
 
+  refinePhraseCadenceTail(pitches, spans, phraseNotes, peakIdx, context);
 }
 
 /**
@@ -666,7 +1014,7 @@ export function applySongModePhraseEngineV1(guitar: PartModel, context: Composit
         .map((e) => e as { duration: number; startBeat: number })
         .sort((a, b) => a.startBeat - b.startBeat);
       const prevCad = cadenceNotes.length >= 2 ? cadenceNotes[cadenceNotes.length - 2].duration : 0.5;
-      extendLastNoteCadence(mLast, Math.max(1, prevCad * 1.5));
+      extendLastNoteCadence(mLast, prevCad * 1.5);
       emphasizeCadenceDuration(mLast);
     }
 
