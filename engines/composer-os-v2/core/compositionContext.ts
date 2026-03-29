@@ -159,6 +159,13 @@ export interface GenerationMetadata {
   }>;
   /** Phase C5 one-line receipt for manifests. */
   songModeC5Receipt?: string;
+  /** Song Mode Phase C6: expression (accent + articulation) after C5 — guitar only; no structural edits. */
+  songModeC6ByPhrase?: Array<{
+    phraseIndex: number;
+    c6Active: boolean;
+    c6Summary?: string;
+  }>;
+  songModeC6Receipt?: string;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
