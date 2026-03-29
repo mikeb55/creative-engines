@@ -141,6 +141,24 @@ export interface GenerationMetadata {
     /** True when phrase or global C4 safety restore cleared edits for this row. */
     ostinatoSafetyReverted?: boolean;
   }>;
+  /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
+  songModeC5ByPhrase?: Array<{
+    phraseIndex: number;
+    primaryLayer: 'c2' | 'c3' | 'c4';
+    secondaryLayer: 'c2' | 'c3' | 'c4' | null;
+    primaryStrength: 1;
+    secondaryStrength: number;
+    layerScale: { c2: number; c3: number; c4: number };
+    maxDensityPerBeat: number;
+    maxSyncopationRatio: number;
+    maxRepetitionScore: number;
+    autoReductionStep: 0 | 1 | 2;
+    secondaryLayerDisabled: boolean;
+    c5Skipped?: boolean;
+    c5SkipReason?: string;
+  }>;
+  /** Phase C5 one-line receipt for manifests. */
+  songModeC5Receipt?: string;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
