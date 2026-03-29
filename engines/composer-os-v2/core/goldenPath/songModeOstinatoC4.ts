@@ -31,6 +31,8 @@ export interface SongModeOstinatoPhraseMeta {
   ostinatoLengthBars: 1;
   ostinatoStrength: SongModeOstinatoStrengthLabel;
   ostinatoSummary?: string;
+  /** Set when phrase-level or global safety restore invalidated C4 edits for this phrase row. */
+  ostinatoSafetyReverted?: boolean;
 }
 
 type RhythmStrength = 'stable' | 'balanced' | 'surprise';
@@ -51,9 +53,145 @@ function activationThreshold(strength: RhythmStrength | undefined): number {
 
 function baseBiasStrength(strength: RhythmStrength | undefined): number {
   const s = strength ?? 'balanced';
-  if (s === 'stable') return 0.14;
-  if (s === 'surprise') return 0.52;
-  return 0.32;
+  if (s === 'stable') return 0.12;
+  if (s === 'surprise') return 0.58;
+  return 0.4;
+}
+
+function medianNums(xs: number[]): number {
+  if (xs.length === 0) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
+}
+
+function weakSlotIndex(template: OstinatoTemplate): number {
+  const aw = template.accentWeight;
+  let min = Infinity;
+  let idx = 0;
+  for (let s = 0; s < aw.length; s++) {
+    const w = aw[s]!;
+    if (w < min) {
+      min = w;
+      idx = s;
+    }
+  }
+  return idx;
+}
+
+/** Contrast + accent caps per mode (timing untouched; symbolic articulation only). */
+function modeContrastScales(mode: RhythmStrength): {
+  cellMul: number;
+  nonCellDrop: number;
+  minStrong: number;
+  maxStrong: number;
+} {
+  switch (mode) {
+    case 'stable':
+      return { cellMul: 0.48, nonCellDrop: 3.4, minStrong: 0, maxStrong: 2 };
+    case 'surprise':
+      return { cellMul: 1.28, nonCellDrop: 12, minStrong: 2, maxStrong: 4 };
+    default:
+      return { cellMul: 1.02, nonCellDrop: 8.2, minStrong: 2, maxStrong: 3 };
+  }
+}
+
+function isStrongAccent(note: NoteEvent, origV: number): boolean {
+  return note.articulation === 'accent' || (note.velocity ?? 90) >= origV + 10;
+}
+
+function compressStrongAccents(
+  notes: NoteEvent[],
+  orig: number[],
+  maxStrong: number,
+  measure: MeasureModel
+): void {
+  while (true) {
+    const strong: number[] = [];
+    for (let i = 0; i < notes.length; i++) {
+      if (shouldSkipOstinatoNote(notes[i]!, measure)) continue;
+      if (isStrongAccent(notes[i]!, orig[i]!)) strong.push(i);
+    }
+    if (strong.length <= maxStrong) return;
+    let weakest = strong[0]!;
+    let weakestGain = (notes[weakest]!.velocity ?? 90) - orig[weakest]!;
+    for (const i of strong) {
+      const g = (notes[i]!.velocity ?? 90) - orig[i]!;
+      if (g < weakestGain) {
+        weakestGain = g;
+        weakest = i;
+      }
+    }
+    const n = notes[weakest]!;
+    if (n.articulation === 'accent') n.articulation = undefined;
+    n.velocity = Math.round(Math.max(orig[weakest]! + 5, (n.velocity ?? 90) - 12));
+  }
+}
+
+function ensureMinStrongAccents(
+  notes: NoteEvent[],
+  orig: number[],
+  template: OstinatoTemplate,
+  minStrong: number,
+  m: number,
+  measure: MeasureModel
+): void {
+  if (minStrong <= 0) return;
+  for (let guard = 0; guard < 16; guard++) {
+    let count = 0;
+    for (let i = 0; i < notes.length; i++) {
+      if (shouldSkipOstinatoNote(notes[i]!, measure)) continue;
+      if (isStrongAccent(notes[i]!, orig[i]!)) count++;
+    }
+    if (count >= minStrong) return;
+    let best = -1;
+    let bestW = -1;
+    for (let i = 0; i < notes.length; i++) {
+      const n = notes[i]!;
+      if (shouldSkipOstinatoNote(n, measure)) continue;
+      if (isStrongAccent(n, orig[i]!)) continue;
+      const slot = i % m;
+      const tw = template.accentWeight[slot]!;
+      if (tw > bestW) {
+        bestW = tw;
+        best = i;
+      }
+    }
+    if (best < 0) return;
+    const n = notes[best]!;
+    n.articulation = 'accent';
+    n.velocity = Math.min(127, Math.round((n.velocity ?? 90) + 14));
+  }
+}
+
+function applyArticulationMotif(
+  note: NoteEvent,
+  slot: number,
+  strengthMode: RhythmStrength,
+  seed: number,
+  phraseIdx: number,
+  barIndex: number,
+  noteIdx: number
+): void {
+  if (strengthMode === 'stable') {
+    const t = seededUnit(seed, phraseIdx, 97110 + barIndex + noteIdx);
+    if (t < 0.11 && (note.velocity ?? 90) > 96 && !note.articulation) note.articulation = 'accent';
+    return;
+  }
+  if (strengthMode === 'balanced') {
+    const t = seededUnit(seed, phraseIdx, 97120 + barIndex + noteIdx);
+    if (note.articulation === 'accent') return;
+    if (slot % 2 === 0) {
+      if (t < 0.36) note.articulation = 'staccato';
+    } else if (t < 0.26) {
+      note.articulation = 'tenuto';
+    }
+    return;
+  }
+  const r = slot % 3;
+  if (r === 0) note.articulation = 'accent';
+  else if (r === 1) note.articulation = 'staccato';
+  else note.articulation = 'tenuto';
 }
 
 function phraseBeat(bar: number, startBar: number, startBeat: number): number {
@@ -295,7 +433,7 @@ function snapshotPartTimingStats(part: PartModel): { noteCount: number; totalSpa
 }
 
 /**
- * Velocity + articulation only. No onset/duration mutation; no applyOverlayConstraints (no grid normalize).
+ * Velocity + articulation only. Contrast (cell vs non-cell), mode-scaled emphasis, accent floor/cap — no timing edits.
  */
 function applyOstinatoToMeasure(
   measure: MeasureModel,
@@ -304,17 +442,22 @@ function applyOstinatoToMeasure(
   strength: number,
   seed: number,
   phraseIdx: number,
-  isBass: boolean
+  isBass: boolean,
+  strengthMode: RhythmStrength
 ): void {
   const notes = measure.events.filter((e) => e.kind === 'note') as NoteEvent[];
   notes.sort((a, b) => a.startBeat - b.startBeat);
   if (notes.length === 0) return;
-  const varPick = Math.floor(seededUnit(seed, phraseIdx, 96800 + barIndex) * notes.length);
 
-  const sMul = isBass ? 0.44 : 1;
-  const eff = strength * sMul;
-
+  const origVel = notes.map((n) => n.velocity ?? 90);
   const M = template.onsets.length;
+  const med = medianNums([...template.accentWeight]);
+  const weakSlot = weakSlotIndex(template);
+  let weakSlotUsed = false;
+
+  const sMul = isBass ? 0.5 : 1;
+  const eff = strength * sMul;
+  const { cellMul, nonCellDrop, minStrong, maxStrong } = modeContrastScales(strengthMode);
 
   for (let i = 0; i < notes.length; i++) {
     const note = notes[i]!;
@@ -322,27 +465,45 @@ function applyOstinatoToMeasure(
 
     const slot = i % M;
     const tVel = template.accentWeight[slot]!;
-    const baseV = note.velocity ?? 90;
-    note.velocity = Math.round(baseV + (tVel - baseV) * eff * 0.42);
-    if (tVel > 102 && seededUnit(seed, phraseIdx, 96920 + barIndex + i) < 0.38 * eff) {
-      note.articulation = 'accent';
+    const baseV = origVel[i]!;
+    const cell = tVel >= med - 1e-4;
+    const blend = (tVel - baseV) * eff * 0.42;
+
+    let delta: number;
+    if (cell) {
+      let cm = cellMul;
+      if (slot === weakSlot && !weakSlotUsed) {
+        cm *= 0.64;
+        weakSlotUsed = true;
+      }
+      delta = blend * cm * 0.58;
+    } else {
+      delta = -nonCellDrop * eff * sMul * 0.42 - Math.min(8, Math.abs(blend) * 0.12);
     }
 
-    if (i === varPick) {
-      if (seededUnit(seed, phraseIdx, 96950 + barIndex) < 0.5) {
-        note.velocity = Math.min(
-          127,
-          Math.max(
-            1,
-            Math.round(
-              (note.velocity ?? 90) + (seededUnit(seed, phraseIdx, 96951 + barIndex) < 0.5 ? -6 : 6)
-            )
-          )
-        );
-      } else if (seededUnit(seed, phraseIdx, 96952 + barIndex) < 0.5) {
-        note.articulation = note.articulation === 'accent' ? undefined : 'accent';
-      }
+    let v = Math.round(baseV + delta);
+    v = Math.min(127, Math.max(48, v));
+    if (!cell) v = Math.max(48, Math.min(v, Math.round(baseV - 2)));
+    note.velocity = v;
+
+    if (strengthMode === 'surprise' && i === Math.floor(seededUnit(seed, phraseIdx, 96800 + barIndex) * notes.length)) {
+      const bump = seededUnit(seed, phraseIdx, 96951 + barIndex) < 0.5 ? -4 : 4;
+      note.velocity = Math.min(127, Math.max(48, Math.round((note.velocity ?? 90) + bump)));
     }
+  }
+
+  for (let i = 0; i < notes.length; i++) {
+    const note = notes[i]!;
+    if (shouldSkipOstinatoNote(note, measure)) continue;
+    const slot = i % M;
+    applyArticulationMotif(note, slot, strengthMode, seed, phraseIdx, barIndex, i);
+  }
+
+  if (strengthMode === 'balanced' || strengthMode === 'surprise') {
+    ensureMinStrongAccents(notes, origVel, template, minStrong, M, measure);
+    compressStrongAccents(notes, origVel, maxStrong, measure);
+  } else {
+    compressStrongAccents(notes, origVel, maxStrong, measure);
   }
 }
 
@@ -354,13 +515,14 @@ function applyOstinatoToPhrasePart(
   strength: number,
   seed: number,
   phraseIdx: number,
-  isBass: boolean
+  isBass: boolean,
+  strengthMode: RhythmStrength
 ): void {
   for (let bar = startBar; bar <= endBar; bar++) {
     if (bar === startBar) continue;
     const m = part.measures.find((x) => x.index === bar);
     if (!m) continue;
-    applyOstinatoToMeasure(m, bar, template, strength, seed, phraseIdx, isBass);
+    applyOstinatoToMeasure(m, bar, template, strength, seed, phraseIdx, isBass, strengthMode);
   }
 }
 
@@ -399,6 +561,7 @@ function runGlobalC4SafetyAfterApply(
     if (bass && fullBackupB) restorePartFromClone(bass, fullBackupB);
     for (const o of out) {
       o.ostinatoActive = false;
+      o.ostinatoSafetyReverted = true;
       o.ostinatoSummary = 'reverted: global safety';
     }
   }
@@ -464,19 +627,21 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
       if (isMechanicalLoop(iois)) bias *= 0.52;
     }
 
+    let phraseSafetyReverted = false;
     if (active && template) {
       const phraseBackupG = cloneMeasuresRange(guitar, startBar, endBar);
       const phraseBackupB = bass ? cloneMeasuresRange(bass, startBar, endBar) : null;
 
-      applyOstinatoToPhrasePart(guitar, startBar, endBar, template, bias, seed, pi, false);
+      applyOstinatoToPhrasePart(guitar, startBar, endBar, template, bias, seed, pi, false, strengthMode);
       let bassOk = false;
       if (bass) {
         const bCount = countPhraseNotes(bass, startBar, endBar);
         const gCount = countPhraseNotes(guitar, startBar, endBar);
-        bassOk = bCount <= gCount * 1.18 + 2;
+        const clutter = bCount > gCount + 5 || (bCount > 11 && bCount > gCount * 1.08);
+        bassOk = !clutter && bCount <= gCount * 1.18 + 2;
         if (bassOk) {
-          const bassBias = bias * 0.42;
-          applyOstinatoToPhrasePart(bass, startBar, endBar, template, bassBias, seed + 19, pi, true);
+          const bassBias = bias * 0.5;
+          applyOstinatoToPhrasePart(bass, startBar, endBar, template, bassBias, seed + 19, pi, true, strengthMode);
         }
       }
 
@@ -487,6 +652,7 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
         restorePhraseRange(guitar, phraseBackupG);
         if (bass && phraseBackupB) restorePhraseRange(bass, phraseBackupB);
         active = false;
+        phraseSafetyReverted = true;
         summary = 'reverted: phrase validation failed';
       } else {
         summary = `active: ${template.onsets.length}-slot cell; bias ${bias.toFixed(2)}${bass && bassOk ? '; bass' : bass ? '; bass skipped' : ''}`;
@@ -499,6 +665,7 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
       ostinatoLengthBars: 1,
       ostinatoStrength: strengthLabel(strengthMode),
       ostinatoSummary: summary,
+      ostinatoSafetyReverted: phraseSafetyReverted,
     });
   }
 

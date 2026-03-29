@@ -138,6 +138,8 @@ export interface GenerationMetadata {
     ostinatoLengthBars: 1;
     ostinatoStrength: 'Stable' | 'Balanced' | 'Surprise';
     ostinatoSummary?: string;
+    /** True when phrase or global C4 safety restore cleared edits for this row. */
+    ostinatoSafetyReverted?: boolean;
   }>;
 }
 
