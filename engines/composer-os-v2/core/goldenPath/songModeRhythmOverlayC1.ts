@@ -241,7 +241,7 @@ function formatIntentSummary(
   return `${profile} (${st}): ${parts.join(', ')}`;
 }
 
-function selectOverlaysForPhrase(phraseIdx: number, seed: number): { id: string; weight: number }[] {
+export function selectOverlaysForPhrase(phraseIdx: number, seed: number): { id: string; weight: number }[] {
   const u0 = seededUnit(seed, phraseIdx, 93100);
   const count = u0 < 0.28 ? 0 : u0 < 0.62 ? 1 : 2;
   if (count === 0) return [];

@@ -539,6 +539,8 @@ export interface RunGoldenPathOptions {
   styleProfile?: StyleProfile;
   /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
+  /** Song Mode Phase C3: James Brown funk overlay (opt-in; tests / manual). */
+  songModeJamesBrownFunkOverlay?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -726,6 +728,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
       styleProfile: styleProfileResolved,
+    };
+  }
+  if (options?.songModeJamesBrownFunkOverlay === true) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      songModeJamesBrownFunkOverlay: true,
     };
   }
 
