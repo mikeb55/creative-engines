@@ -9,6 +9,7 @@ import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-mo
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
+import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 
 export type SongModeC5LayerId = 'c2' | 'c3' | 'c4';
 
@@ -204,11 +205,11 @@ export function applySongModeControlC5(score: ScoreModel, context: CompositionCo
   if (!guitar) return;
 
   const seed = context.seed;
-  const strengthMode = meta.songModeRhythmStrength ?? 'balanced';
   const segments = songModePhraseSegments();
   const rows: SongModeC5PhraseRow[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
+    const strengthMode = getEffectiveRhythmStrength(meta, pi);
     const { startBar, endBar } = segments[pi];
     const backup = cloneGuitarPhraseNotes(guitar, startBar, endBar);
 

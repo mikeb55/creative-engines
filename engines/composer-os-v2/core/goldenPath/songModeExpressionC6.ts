@@ -7,6 +7,7 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
+import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 
 type RhythmMode = 'stable' | 'balanced' | 'surprise';
 
@@ -271,7 +272,6 @@ export function applySongModeExpressionC6(score: ScoreModel, context: Compositio
   if (!guitar) return;
 
   const seed = context.seed;
-  const strength = (meta.songModeRhythmStrength ?? 'balanced') as RhythmMode;
   const segments = songModePhraseSegments();
   const c5rows = meta.songModeC5ByPhrase;
   const ostRows = meta.songModeOstinatoByPhrase;
@@ -280,6 +280,7 @@ export function applySongModeExpressionC6(score: ScoreModel, context: Compositio
   const out: SongModeC6PhraseRow[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
+    const strength = getEffectiveRhythmStrength(meta, pi) as RhythmMode;
     const { startBar, endBar } = segments[pi];
     const backup = cloneGuitarPhraseNotes(guitar, startBar, endBar);
     const c5 = c5rows?.[pi];

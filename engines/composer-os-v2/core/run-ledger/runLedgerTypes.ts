@@ -100,4 +100,6 @@ export interface RunManifest {
   songModeRhythmOverlayPhraseDiagnostics?: string;
   /** Song Mode Phase C3: James Brown funk overlay receipt (when applied). */
   songModeJamesBrownFunkReceiptTag?: string;
+  /** D1: JSON receipt — raw intent echo, clamp, per-phrase resolved control (debug/replay). */
+  rhythmIntentD1Receipt?: string;
 }

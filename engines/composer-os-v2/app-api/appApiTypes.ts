@@ -4,6 +4,7 @@
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type { GenerationMetadata } from '../core/compositionContext';
+import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 
 export type { StyleProfile };
 
@@ -118,6 +119,8 @@ export interface GenerateRequest {
   primarySongwriterStyle?: string;
   /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
   styleProfile?: StyleProfile;
+  /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */
+  intent?: RhythmIntentControl;
   /** Riff Generator (`riff_generator`): 1–4 bar riff length. */
   riffStyle?: 'metheny' | 'scofield' | 'funk' | 'neutral';
   riffDensity?: 'sparse' | 'medium' | 'dense';
@@ -205,4 +208,6 @@ export interface OutputEntry {
   songModeRhythmOverlayPhraseDiagnostics?: string;
   /** Song Mode Phase C2: per-phrase rhythm overlay + intent (when present). */
   songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
+  /** D1: rhythm intent resolution receipt (JSON string; when Song Mode resolution ran). */
+  rhythmIntentD1Receipt?: string;
 }

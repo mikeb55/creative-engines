@@ -65,6 +65,7 @@ export function writeOutputManifest(
     songModeRhythmOverlayPhraseDiagnostics?: string;
     /** Song Mode Phase C2: per-phrase overlay + rhythm intent (optional disk echo). */
     songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
+    rhythmIntentD1Receipt?: string;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -113,6 +114,7 @@ export function writeOutputManifest(
     validation: meta.validation,
     songModeRhythmOverlayPhraseDiagnostics: meta.songModeRhythmOverlayPhraseDiagnostics,
     songModeRhythmOverlayByPhrase: meta.songModeRhythmOverlayByPhrase,
+    rhythmIntentD1Receipt: meta.rhythmIntentD1Receipt,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

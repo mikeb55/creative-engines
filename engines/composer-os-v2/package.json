@@ -8,7 +8,8 @@
     "test": "npx ts-node --project ../../tsconfig.json tests/runAllTests.ts",
     "test:retro": "npx ts-node --project ../../tsconfig.json scripts/runRetroSelfTests.ts",
     "sibelius:diagnostic-variants": "npx ts-node --project ../../tsconfig.json scripts/sibeliusDiagnosticVariants.ts",
-    "test:c3-james-brown": "npx ts-node --transpile-only --project ../../tsconfig.json tests/jamesBrownFunkOverlayRegression.test.ts"
+    "test:c3-james-brown": "npx ts-node --transpile-only --project ../../tsconfig.json tests/jamesBrownFunkOverlayRegression.test.ts",
+    "d1:selftest": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/d1Selftest.ts"
   },
   "types": "./core/conductor/conductorTypes.ts"
 }

@@ -3,7 +3,7 @@
  * Motif-driven melody, style-influenced, section-aware (Guitar–Bass Duo).
  */
 
-import type { CompositionContext } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
@@ -83,7 +83,9 @@ import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
 import { applySongModeOstinatoC4 } from './songModeOstinatoC4';
 import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
+import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
+import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -1672,11 +1674,19 @@ export function generateGoldenPathDuoScore(
     const sp = context.generationMetadata.styleProfile ?? 'STYLE_ECM';
     applySongModeStyleEngineToScore(afterExpressive, context.seed, sp);
   }
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    ensureRhythmIntentResolvedIntoMetadata(context.generationMetadata as GenerationMetadata, context.seed);
+  }
   applySongModeRhythmOverlayC1(afterExpressive, context);
   applyJamesBrownFunkOverlay(afterExpressive, context);
   applySongModeOstinatoC4(afterExpressive, context);
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
+  applySongModeSpaceC7(afterExpressive, context);
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (context.presetId === 'guitar_bass_duo') {

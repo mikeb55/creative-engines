@@ -18,6 +18,7 @@ import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
 import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 import type { CoreMotif, Motif } from './motif/motifEngineTypes';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
+import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -166,6 +167,26 @@ export interface GenerationMetadata {
     c6Summary?: string;
   }>;
   songModeC6Receipt?: string;
+  /** Song Mode Phase C7: space / density (rest + hold) after C6 — guitar only. */
+  songModeC7ByPhrase?: Array<{
+    phraseIndex: number;
+    c7Active: boolean;
+    c7Summary?: string;
+    c7OpsApplied?: number;
+  }>;
+  songModeC7Receipt?: string;
+  /**
+   * D1: optional raw intent from request (API → runGoldenPath). Only `ensureRhythmIntentResolvedIntoMetadata` / C5 resolve path reads this.
+   */
+  rhythmIntentRaw?: RhythmIntentControl;
+  /** D1: per-phrase resolved intent — C4/C6/C7/C5 apply use `getEffectiveRhythmStrength(meta, phraseIndex)` only. */
+  rhythmIntentResolvedByPhrase?: RhythmIntentResolvedPhrase[];
+  /** D1: receipt / debug (does not affect music). */
+  rhythmIntentResolutionLog?: {
+    rawEcho?: RhythmIntentControl;
+    clampApplied?: RhythmIntentControl;
+    phraseCount?: number;
+  };
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

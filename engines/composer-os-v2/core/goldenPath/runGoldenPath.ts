@@ -81,6 +81,7 @@ import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
+import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -541,6 +542,8 @@ export interface RunGoldenPathOptions {
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   /** Song Mode Phase C3: James Brown funk overlay (opt-in; tests / manual). */
   songModeJamesBrownFunkOverlay?: boolean;
+  /** D1: optional rhythm intent (engine-only; resolved in C5 path before Song Mode overlays). */
+  intent?: RhythmIntentControl;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -734,6 +737,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     context.generationMetadata = {
       ...context.generationMetadata,
       songModeJamesBrownFunkOverlay: true,
+    };
+  }
+  if (options?.intent !== undefined) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      rhythmIntentRaw: options.intent,
     };
   }
 
@@ -999,6 +1008,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         )
       : undefined,
     songModeJamesBrownFunkReceiptTag: appliedContext.generationMetadata.songModeJamesBrownFunkReceiptTag,
+    rhythmIntentD1Receipt: (() => {
+      const md = appliedContext.generationMetadata;
+      if (!md.rhythmIntentResolvedByPhrase?.length) return undefined;
+      return JSON.stringify({
+        raw: md.rhythmIntentResolutionLog?.rawEcho ?? null,
+        clamped: md.rhythmIntentResolutionLog?.clampApplied ?? null,
+        phraseCount: md.rhythmIntentResolutionLog?.phraseCount ?? md.rhythmIntentResolvedByPhrase.length,
+        resolvedByPhrase: md.rhythmIntentResolvedByPhrase,
+      });
+    })(),
   });
 
   const success =

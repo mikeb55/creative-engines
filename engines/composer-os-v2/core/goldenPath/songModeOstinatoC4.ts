@@ -19,6 +19,7 @@ import {
   snapshotMeasureNotes,
 } from './jamesBrownFunkOverlay';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
+import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 
 const GRID_16TH = 0.25;
 const EPS = 1e-4;
@@ -585,10 +586,10 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
 
   const segments = songModePhraseSegments();
   const seed = context.seed;
-  const strengthMode = (meta.songModeRhythmStrength ?? 'balanced') as RhythmStrength;
   const out: SongModeOstinatoPhraseMeta[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
+    const strengthMode = getEffectiveRhythmStrength(meta, pi) as RhythmStrength;
     const { startBar, endBar } = segments[pi];
     const u = seededUnit(seed, pi, 96400);
     let active = u < activationThreshold(strengthMode);

@@ -192,6 +192,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       pipelineTruthExportStage: result.runManifest.pipelineTruthExportStage,
       songModeRhythmOverlayPhraseDiagnostics: result.runManifest.songModeRhythmOverlayPhraseDiagnostics,
       songModeRhythmOverlayByPhrase: result.context.generationMetadata.songModeRhythmOverlayByPhrase,
+      rhythmIntentD1Receipt: result.runManifest.rhythmIntentD1Receipt,
       keySignatureInferredTonic: result.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
       keySignatureConfidence: result.context.generationMetadata.keySignatureReceipt?.confidence,
       keySignatureOverrideUsed: result.context.generationMetadata.keySignatureReceipt?.overrideUsed,
