@@ -108,6 +108,14 @@ export interface GenerationMetadata {
   songModePrimaryMotif?: Motif;
   /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
   styleProfile?: StyleProfile;
+  /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
+  songModeRhythmOverlayDisabled?: boolean;
+  /** Song Mode Phase C1: engine/debug only — per-phrase overlay selection (receipts in later phases). */
+  songModeRhythmOverlayByPhrase?: Array<{
+    phraseIndex: number;
+    appliedOverlays: { id: string; weight: number }[];
+    overlayRhythmProfile: string;
+  }>;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

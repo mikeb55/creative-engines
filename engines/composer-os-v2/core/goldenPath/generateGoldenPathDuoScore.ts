@@ -78,6 +78,7 @@ import {
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
 import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
+import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
@@ -1667,6 +1668,7 @@ export function generateGoldenPathDuoScore(
     const sp = context.generationMetadata.styleProfile ?? 'STYLE_ECM';
     applySongModeStyleEngineToScore(afterExpressive, context.seed, sp);
   }
+  applySongModeRhythmOverlayC1(afterExpressive, context);
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (context.presetId === 'guitar_bass_duo') {
