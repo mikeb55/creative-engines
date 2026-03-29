@@ -3,6 +3,7 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
+import type { GenerationMetadata } from '../core/compositionContext';
 
 export type { StyleProfile };
 
@@ -200,4 +201,8 @@ export interface OutputEntry {
   modeLabel?: string;
   outputTypeLabel?: string;
   presetDisplayName?: string;
+  /** Song Mode Phase C2: compact phrase overlay + intent diagnostics (run manifest echo). */
+  songModeRhythmOverlayPhraseDiagnostics?: string;
+  /** Song Mode Phase C2: per-phrase rhythm overlay + intent (when present). */
+  songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
 }

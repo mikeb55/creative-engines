@@ -3,6 +3,7 @@
  */
 
 import type { OutputEntry, StyleProfile, ValidationSummary } from './appApiTypes';
+import type { GenerationMetadata } from '../core/compositionContext';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -60,6 +61,10 @@ export function writeOutputManifest(
     pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
     pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
     validation: ValidationSummary;
+    /** Song Mode Phase C2: compact JSON (same as run manifest). */
+    songModeRhythmOverlayPhraseDiagnostics?: string;
+    /** Song Mode Phase C2: per-phrase overlay + rhythm intent (optional disk echo). */
+    songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -106,6 +111,8 @@ export function writeOutputManifest(
     pipelineTruthScoreStage: meta.pipelineTruthScoreStage,
     pipelineTruthExportStage: meta.pipelineTruthExportStage,
     validation: meta.validation,
+    songModeRhythmOverlayPhraseDiagnostics: meta.songModeRhythmOverlayPhraseDiagnostics,
+    songModeRhythmOverlayByPhrase: meta.songModeRhythmOverlayByPhrase,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

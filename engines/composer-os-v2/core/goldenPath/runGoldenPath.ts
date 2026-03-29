@@ -537,6 +537,8 @@ export interface RunGoldenPathOptions {
   songModeHookFirstIdentity?: boolean;
   /** Song Mode: Style Engine profile (default STYLE_ECM applied in handler if omitted). */
   styleProfile?: StyleProfile;
+  /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
+  creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -711,6 +713,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   let songModePhraseWarnings: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
+  if (options?.creativeControlLevel) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      songModeRhythmStrength: options.creativeControlLevel,
+    };
+  }
   if (options?.songModeHookFirstIdentity) {
     /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
     const styleProfileResolved: StyleProfile = options.styleProfile ?? 'STYLE_ECM';
@@ -973,6 +981,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     pipelineTruthInputStage: truthReport.inputStage,
     pipelineTruthScoreStage: truthReport.scoreStage,
     pipelineTruthExportStage: truthReport.exportStage,
+    songModeRhythmOverlayPhraseDiagnostics: appliedContext.generationMetadata.songModeRhythmOverlayByPhrase
+      ? JSON.stringify(
+          appliedContext.generationMetadata.songModeRhythmOverlayByPhrase.map((x) => ({
+            phraseIndex: x.phraseIndex,
+            overlayRhythmProfile: x.overlayRhythmProfile,
+            rhythmIntentSummary: x.rhythmIntentSummary,
+          }))
+        )
+      : undefined,
   });
 
   const success =

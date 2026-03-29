@@ -110,11 +110,24 @@ export interface GenerationMetadata {
   styleProfile?: StyleProfile;
   /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
   songModeRhythmOverlayDisabled?: boolean;
-  /** Song Mode Phase C1: engine/debug only — per-phrase overlay selection (receipts in later phases). */
+  /** Song Mode: Stable / Balanced / Surprise — scales Phase C2 phrase intent only (from request). */
+  songModeRhythmStrength?: 'stable' | 'balanced' | 'surprise';
+  /** Song Mode Phase C3: opt-in James Brown funk overlay (not in default C1 pool). */
+  songModeJamesBrownFunkOverlay?: boolean;
+  /** True after Phase C3 James Brown pass ran on the score. */
+  songModeJamesBrownFunkApplied?: boolean;
+  /** Song Mode Phase C1/C2: engine/debug — per-phrase overlays + Phase C2 rhythm intent summaries. */
   songModeRhythmOverlayByPhrase?: Array<{
     phraseIndex: number;
     appliedOverlays: { id: string; weight: number }[];
     overlayRhythmProfile: string;
+    rhythmIntent: {
+      entryBias: 'onbeat' | 'offbeat' | 'late';
+      groupingBias: 'even' | 'odd' | 'fragmented' | 'arc';
+      densityShape: 'flat' | 'burst_rest' | 'swell' | 'sparse';
+      barlineBehavior: 'contained' | 'crossing' | 'delayed';
+    };
+    rhythmIntentSummary: string;
   }>;
 }
 

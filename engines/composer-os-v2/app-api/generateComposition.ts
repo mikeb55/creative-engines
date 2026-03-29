@@ -143,6 +143,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     tonalCenterOverride: req.tonalCenterOverride,
     tonalCenter: req.tonalCenter,
     variationEnabled: req.variationEnabled === true ? true : undefined,
+    creativeControlLevel: req.creativeControlLevel,
   });
   let diskHarmonyTruthErrors: string[] = [];
 
@@ -189,6 +190,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       pipelineTruthInputStage: result.runManifest.pipelineTruthInputStage,
       pipelineTruthScoreStage: result.runManifest.pipelineTruthScoreStage,
       pipelineTruthExportStage: result.runManifest.pipelineTruthExportStage,
+      songModeRhythmOverlayPhraseDiagnostics: result.runManifest.songModeRhythmOverlayPhraseDiagnostics,
+      songModeRhythmOverlayByPhrase: result.context.generationMetadata.songModeRhythmOverlayByPhrase,
       keySignatureInferredTonic: result.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
       keySignatureConfidence: result.context.generationMetadata.keySignatureReceipt?.confidence,
       keySignatureOverrideUsed: result.context.generationMetadata.keySignatureReceipt?.overrideUsed,

@@ -96,4 +96,6 @@ export interface RunManifest {
   pipelineTruthInputStage?: 'pass' | 'fail' | 'skip';
   pipelineTruthScoreStage?: 'pass' | 'fail' | 'skip';
   pipelineTruthExportStage?: 'pass' | 'fail' | 'skip';
+  /** Song Mode Phase C2: compact JSON of per-phrase overlay profile + rhythmIntentSummary (debug/receipts). */
+  songModeRhythmOverlayPhraseDiagnostics?: string;
 }

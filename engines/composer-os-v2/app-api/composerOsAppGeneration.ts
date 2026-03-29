@@ -246,6 +246,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     tonalCenterOverride: req.tonalCenterOverride,
     tonalCenter: req.tonalCenter,
     variationEnabled: req.variationEnabled === true ? true : undefined,
+    creativeControlLevel: req.creativeControlLevel,
   });
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
   if (isDesktopTruthDumpEnabled()) {
