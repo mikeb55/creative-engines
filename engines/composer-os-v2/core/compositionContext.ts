@@ -131,6 +131,14 @@ export interface GenerationMetadata {
     };
     rhythmIntentSummary: string;
   }>;
+  /** Song Mode Phase C4: per-phrase ostinato / hook rhythm bias (1-bar template; after C1–C3). */
+  songModeOstinatoByPhrase?: Array<{
+    phraseIndex: number;
+    ostinatoActive: boolean;
+    ostinatoLengthBars: 1;
+    ostinatoStrength: 'Stable' | 'Balanced' | 'Surprise';
+    ostinatoSummary?: string;
+  }>;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
