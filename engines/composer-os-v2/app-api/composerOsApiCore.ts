@@ -14,6 +14,7 @@ import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolde
 import { buildDiagnostics } from './buildDiagnostics';
 import { friendlyGenerateError, friendlyOutputDirError } from './apiErrorMessages';
 import type { GenerateRequest } from './appApiTypes';
+import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
   ensureOutputDirectoryForPreset,
@@ -49,6 +50,35 @@ function coerceFiniteNumber(n: unknown): number | undefined {
 /**
  * Trim chord line; empty / whitespace-only → undefined so Song Mode does not silently fall back to builtin duo32.
  */
+/** IPC/JSON: optional `intent`; pattern omitted → 0.5 (D1 baseline). All numeric fields clamped to [0,1]. */
+function coerceIntentFromBody(body: Partial<GenerateRequest>): RhythmIntentControl | undefined {
+  const raw = body.intent as unknown;
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const c = (key: keyof RhythmIntentControl): number | undefined => {
+    const v = o[key];
+    const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+    if (!Number.isFinite(n)) return undefined;
+    return Math.max(0, Math.min(1, n));
+  };
+  const groove = c('groove');
+  const space = c('space');
+  const expression = c('expression');
+  const surprise = c('surprise');
+  const pattern = c('pattern');
+  if (groove === undefined || space === undefined || expression === undefined || surprise === undefined) {
+    return undefined;
+  }
+  return {
+    groove,
+    space,
+    expression,
+    surprise,
+    pattern: pattern ?? 0.5,
+  };
+}
+
 function normalizeChordProgressionText(body: Partial<GenerateRequest>): string | undefined {
   const raw = body.chordProgressionText;
   if (typeof raw !== 'string') return undefined;
@@ -219,6 +249,19 @@ export function apiGenerate(
           : undefined,
       riffBass: body.riffBass === true ? true : undefined,
       styleProfile: isStyleProfile(body.styleProfile) ? body.styleProfile : undefined,
+      intent: coerceIntentFromBody(body),
+      c4Strength:
+        body.c4Strength === 'light' ||
+        body.c4Strength === 'medium' ||
+        body.c4Strength === 'strong'
+          ? body.c4Strength
+          : undefined,
+      blendStrength:
+        body.blendStrength === 'light' ||
+        body.blendStrength === 'medium' ||
+        body.blendStrength === 'strong'
+          ? body.blendStrength
+          : undefined,
     };
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;

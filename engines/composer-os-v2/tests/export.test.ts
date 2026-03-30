@@ -153,7 +153,13 @@ function testExporterUsesEmptyKindForPlainMajor(): boolean {
   }]);
   const r = exportScoreModelToMusicXml(score);
   const xml = r.xml ?? '';
-  return r.success && xml.includes('<kind text=""/>') && !xml.includes('kind text="major"');
+  return (
+    r.success &&
+    xml.includes('<kind text="">major</kind>') &&
+    !xml.includes('kind text="major"') &&
+    !xml.includes('<kind text=""/>') &&
+    !xml.includes('<kind text="" />')
+  );
 }
 
 /** Regression: rounding each duration independently used to sum to 15 in some bars; span-based export must sum to 16. */

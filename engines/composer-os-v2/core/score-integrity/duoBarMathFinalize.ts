@@ -172,6 +172,8 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
     applyBassBeatNotationGrouping(score);
   }
   expandNotationSafeDurationsInScore(score);
+  restoreGuitarBar25HookPitchesFromBar1(score);
+  clampGuitarBar24LastNoteOctaveBeforeBar25(score);
   const v = validateStrictBarMath(score);
   if (!v.valid) {
     throw new Error(`Bar math enforcement failed after finalize: ${v.errors.join('; ')}`);
@@ -181,6 +183,51 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
     throw new Error(`Notation-safe rhythm failed before export: ${ns.errors.join('; ')}`);
   }
   freezeScoreRhythmAfterFinalize(score);
+}
+
+/** Duo 32-bar guitar: align bar 25 note pitches to bar 1 (time order); timing unchanged. Gated on eighth_beats + bar 32 present. */
+function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
+  if (score.duoRhythmSnap !== 'eighth_beats') return;
+  const guitar = score.parts.find((p) => p.id === 'guitar' && p.instrumentIdentity === 'clean_electric_guitar');
+  if (!guitar || !guitar.measures.some((m) => m.index === 32)) return;
+  const m1 = guitar.measures.find((x) => x.index === 1);
+  const m25 = guitar.measures.find((x) => x.index === 25);
+  if (!m1 || !m25) return;
+  const n1 = m1.events
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+  const n25 = m25.events
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+  const k = Math.min(n1.length, n25.length);
+  for (let i = 0; i < k; i++) {
+    n25[i].pitch = n1[i].pitch;
+  }
+}
+
+function clampGuitarBar24LastNoteOctaveBeforeBar25(score: ScoreModel): void {
+  if (score.duoRhythmSnap !== 'eighth_beats') return;
+  const guitar = score.parts.find((p) => p.id === 'guitar' && p.instrumentIdentity === 'clean_electric_guitar');
+  if (!guitar || !guitar.measures.some((m) => m.index === 32)) return;
+  const m24 = guitar.measures.find((x) => x.index === 24);
+  const m25 = guitar.measures.find((x) => x.index === 25);
+  if (!m24 || !m25) return;
+  const notes24 = m24.events
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+  const notes25 = m25.events
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+  if (notes24.length === 0 || notes25.length === 0) return;
+  const last24 = notes24[notes24.length - 1]!;
+  const first25 = notes25[0]!;
+  let p = last24.pitch;
+  const target = first25.pitch;
+  while (Math.abs(p - target) > 12) {
+    if (p > target) p -= 12;
+    else p += 12;
+  }
+  last24.pitch = p;
 }
 
 /** @deprecated Use finalizeAndSealDuoScoreBarMath — kept for call-site clarity. */

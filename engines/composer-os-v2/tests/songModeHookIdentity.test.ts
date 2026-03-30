@@ -54,3 +54,5 @@ export function runSongModeHookIdentityTests(): void {
   assert.strictEqual(rNo.success, true);
   assert(rNo.context.generationMetadata?.songModeHookFirstIdentity !== true);
 }
+
+runSongModeHookIdentityTests();

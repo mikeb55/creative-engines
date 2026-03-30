@@ -1000,6 +1000,7 @@ export function applySongModePhraseEngineV1(guitar: PartModel, context: Composit
 
     for (let i = 0; i < n; i++) {
       if (noteIsInMotifSpan(i, motifSpans)) continue;
+      if (phraseNotes[i].bar === 25) continue;
       const ev = phraseNotes[i].measure.events[phraseNotes[i].eventIndex] as { pitch: number };
       ev.pitch = pitches[i];
     }

@@ -109,6 +109,7 @@ export interface GenerateResult {
     harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
     longFormEnabled?: boolean;
     styleProfile?: StyleProfile;
+    c4Strength?: 'light' | 'medium' | 'strong';
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -144,6 +145,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     tonalCenter: req.tonalCenter,
     variationEnabled: req.variationEnabled === true ? true : undefined,
     creativeControlLevel: req.creativeControlLevel,
+    intent: req.intent,
+    c4Strength: req.c4Strength,
+    blendStrength: req.blendStrength ?? 'medium',
   });
   let diskHarmonyTruthErrors: string[] = [];
 
@@ -193,6 +197,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       songModeRhythmOverlayPhraseDiagnostics: result.runManifest.songModeRhythmOverlayPhraseDiagnostics,
       songModeRhythmOverlayByPhrase: result.context.generationMetadata.songModeRhythmOverlayByPhrase,
       rhythmIntentD1Receipt: result.runManifest.rhythmIntentD1Receipt,
+      c4_hook_rhythm_applied: result.context.generationMetadata.c4HookRhythmApplied,
+      c4_bars_used: result.context.generationMetadata.c4BarsUsed,
       keySignatureInferredTonic: result.context.generationMetadata.keySignatureReceipt?.inferredTonicName,
       keySignatureConfidence: result.context.generationMetadata.keySignatureReceipt?.confidence,
       keySignatureOverrideUsed: result.context.generationMetadata.keySignatureReceipt?.overrideUsed,
@@ -318,6 +324,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       harmonyMode: req.harmonyMode,
       longFormEnabled: req.longFormEnabled,
       styleProfile: req.styleProfile,
+      c4Strength: req.c4Strength,
     },
   };
 }

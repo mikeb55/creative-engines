@@ -2,6 +2,8 @@
  * Chord symbol handling for MusicXML harmony export.
  * Root lives in <root>; <kind text="…"> must be suffix-only so readers (e.g. Sibelius)
  * do not concatenate root + full symbol into duplicate letters (DDmin9, GG13).
+ * The <kind> element must also contain valid MusicXML enumerated body text (e.g. minor-ninth);
+ * the jazz label stays in the `text` attribute only.
  *
  * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.
  */
@@ -13,6 +15,65 @@ export interface ChordRootAndKindText {
   rootAlter: number;
   /** Suffix only, e.g. min9, 13, maj9, 7alt */
   kindText: string;
+}
+
+const DEFAULT_MUSICXML_KIND_CONTENT = 'major';
+
+/**
+ * Maps lead-sheet kind suffix (same string as `<kind text="…">`) to MusicXML 3.x &lt;kind&gt; element body.
+ * Keeps `text` for display; body must be a valid enumeration value (schema: non-empty &lt;kind&gt;).
+ */
+export function musicXmlKindContentFromKindText(kindText: string): string {
+  const raw = kindText.trim();
+  if (raw === '') return DEFAULT_MUSICXML_KIND_CONTENT;
+
+  const key = raw.toLowerCase().replace(/\s+/g, '');
+
+  const exact: Record<string, string> = {
+    m: 'minor',
+    min: 'minor',
+    minor: 'minor',
+    maj: 'major',
+    major: 'major',
+    dim: 'diminished',
+    aug: 'augmented',
+    '+': 'augmented',
+    o: 'diminished',
+    '7': 'dominant',
+    '9': 'dominant-ninth',
+    '11': 'dominant-11th',
+    '13': 'dominant-13th',
+    '7alt': 'dominant',
+    maj7: 'major-seventh',
+    maj9: 'major-ninth',
+    maj11: 'major-11th',
+    maj13: 'major-13th',
+    m7: 'minor-seventh',
+    min7: 'minor-seventh',
+    m9: 'minor-ninth',
+    min9: 'minor-ninth',
+    m11: 'minor-11th',
+    m13: 'minor-13th',
+    m7b5: 'half-diminished',
+    dim7: 'diminished-seventh',
+    sus: 'suspended-fourth',
+    sus2: 'suspended-second',
+    sus4: 'suspended-fourth',
+    '6': 'major-sixth',
+    m6: 'minor-sixth',
+  };
+
+  if (exact[key]) return exact[key];
+
+  if (key.startsWith('maj')) return 'major-seventh';
+  if (key.includes('alt')) return 'dominant';
+  if (/13/.test(key)) return 'dominant-13th';
+  if (/11/.test(key)) return 'dominant-11th';
+  if (/9/.test(key)) return key.startsWith('m') || key.includes('min') ? 'minor-ninth' : 'dominant-ninth';
+  if (/7/.test(key)) return 'dominant';
+  if (key.startsWith('m') && !key.startsWith('maj')) return 'minor';
+
+  return DEFAULT_MUSICXML_KIND_CONTENT;
 }
 
 /** MusicXML harmony: root + kind + optional slash bass (not folded into kind text). */

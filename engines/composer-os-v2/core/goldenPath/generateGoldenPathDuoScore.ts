@@ -77,10 +77,12 @@ import {
   SONG_MODE_MOTIF_BAR_9,
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
+import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
 import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
-import { applySongModeOstinatoC4 } from './songModeOstinatoC4';
+import { applySongModeHookRhythmLayerC4, applySongModeOstinatoC4 } from './songModeOstinatoC4';
+import { applySongModeOstinatoC5 } from './songModeOstinatoC5';
 import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
@@ -384,6 +386,14 @@ function buildGuitarPart(
         bar17Low,
         bar17High,
         chordToneOpts,
+        getHookGuitarPart: () => ({
+          id: 'guitar',
+          name: 'Clean Electric Guitar',
+          instrumentIdentity: profile.instrumentIdentity,
+          midiProgram: profile.midiProgram,
+          clef: 'treble',
+          measures: [...measures],
+        }),
       })
     : undefined;
 
@@ -395,6 +405,8 @@ function buildGuitarPart(
       songModeCoreMotifs: hookRuntime.coreMotifs,
       songModeMotifCount: 1,
       songModePrimaryMotif: hookRuntime.primaryMotif,
+      songModeStatementMotifShape: hookRuntime.statementMotifShape,
+      songModeReturnMotifShapeExpected: hookRuntime.returnExpectedMotifShape,
     };
   }
 
@@ -463,6 +475,15 @@ function buildGuitarPart(
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);
+      if (b === 25 && context.seed === 50021) {
+        const _b25AfterSecondNormalize = m.events
+          .filter((e) => e.kind === 'note')
+          .map((e) => e as { pitch: number; startBeat: number })
+          .sort((a, b) => a.startBeat - b.startBeat)
+          .map((n) => n.pitch);
+        // eslint-disable-next-line no-console -- one-shot seed 50021 bar-25 snapshot; remove after capture
+        console.error('[b25 after 2nd normalizeMeasureToEighthBeatGrid]', JSON.stringify(_b25AfterSecondNormalize));
+      }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
       measures.push(m);
@@ -1684,6 +1705,8 @@ export function generateGoldenPathDuoScore(
   applySongModeRhythmOverlayC1(afterExpressive, context);
   applyJamesBrownFunkOverlay(afterExpressive, context);
   applySongModeOstinatoC4(afterExpressive, context);
+  applySongModeHookRhythmLayerC4(afterExpressive, context);
+  applySongModeOstinatoC5(afterExpressive, context, { blendStart: 1, blendLength: 2, fromFeel: 'stable', toFeel: 'balanced', c5Strength: (context.generationMetadata?.blendStrength ?? 'medium') });
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);
@@ -1694,6 +1717,23 @@ export function generateGoldenPathDuoScore(
     const gridCheck = validateScoreDuoAttackGrid(afterExpressive);
     if (!gridCheck.valid) {
       throw new Error(`Duo attack grid validation failed: ${gridCheck.errors.join('; ')}`);
+    }
+  }
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    const guitar = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (guitar && context.generationMetadata) {
+      const rec = recomputeSongModeHookMotifShapesFromScore(guitar, context);
+      if (rec) {
+        context.generationMetadata = {
+          ...context.generationMetadata,
+          songModeStatementMotifShape: rec.statementMotifShape,
+          songModeReturnMotifShapeExpected: rec.returnExpectedMotifShape,
+        };
+      }
     }
   }
   return afterExpressive;

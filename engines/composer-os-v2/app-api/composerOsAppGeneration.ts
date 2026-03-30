@@ -89,6 +89,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     harmonyMode: req.harmonyMode,
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
+    c4Strength: req.c4Strength,
   };
 }
 
@@ -247,6 +248,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     tonalCenter: req.tonalCenter,
     variationEnabled: req.variationEnabled === true ? true : undefined,
     creativeControlLevel: req.creativeControlLevel,
+    intent: req.intent,
+    c4Strength: req.c4Strength,
+    blendStrength: req.blendStrength ?? 'medium',
   });
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
   if (isDesktopTruthDumpEnabled()) {
@@ -359,6 +363,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       keySignatureInferredFifths: gp.context.generationMetadata.keySignatureReceipt?.inferredFifths,
       keySignatureModeApplied: gp.context.generationMetadata.keySignatureReceipt?.keySignatureModeApplied,
       keySignatureExportKeyWritten: gp.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
+      c4_hook_rhythm_applied: gp.context.generationMetadata.c4HookRhythmApplied,
+      c4_bars_used: gp.context.generationMetadata.c4BarsUsed,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,

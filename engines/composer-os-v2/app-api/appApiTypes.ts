@@ -128,6 +128,10 @@ export interface GenerateRequest {
   riffLineMode?: 'single_line' | 'guitar_bass' | 'octave_double';
   /** Riff Generator: add bass part (guitar–bass interaction). */
   riffBass?: boolean;
+  /** Guitar–Bass Duo (Song Mode hook): C4 hook rhythm layer strength; default medium in engine when omitted. */
+  c4Strength?: 'light' | 'medium' | 'strong';
+  /** Song Mode C5 blend strength; default medium in engine when omitted. */
+  blendStrength?: 'light' | 'medium' | 'strong';
 }
 
 export interface ValidationSummary {
@@ -210,4 +214,7 @@ export interface OutputEntry {
   songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
   /** D1: rhythm intent resolution receipt (JSON string; when Song Mode resolution ran). */
   rhythmIntentD1Receipt?: string;
+  /** Song Mode C4 hook rhythm layer (manifest). */
+  c4_hook_rhythm_applied?: boolean;
+  c4_bars_used?: number[];
 }

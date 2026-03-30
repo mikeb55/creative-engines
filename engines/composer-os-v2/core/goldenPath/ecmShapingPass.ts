@@ -143,6 +143,15 @@ function strictEnforceGlobalLeaps(
       const p1 = n1.pitch;
       const p2 = n2.pitch;
       if (Math.abs(p2 - p1) <= maxLeap) continue;
+      if (
+        part.id === 'guitar' &&
+        context.generationMetadata?.songModeHookFirstIdentity === true &&
+        context.presetId === 'guitar_bass_duo' &&
+        context.form.totalBars === 32 &&
+        refs[i].bar === 25
+      ) {
+        continue;
+      }
       const chord = chordForBar(context, refs[i].bar, m2.chord);
       const np = resolvePitchTowardPrev(p1, p2, chord, low, high, maxLeap, context);
       if (np !== p2) {

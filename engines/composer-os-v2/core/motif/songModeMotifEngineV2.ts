@@ -4,13 +4,13 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { MeasureModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, PartModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { guitarChordTonesInRange } from '../goldenPath/guitarPhraseAuthority';
 import { clampPitch, seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
-import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type {
   CoreMotif,
   Motif,
@@ -22,8 +22,90 @@ import type {
   SongModeHookIdentityCell,
 } from './motifEngineTypes';
 import { SONG_MODE_HOOK_RETURN_BAR } from './motifEngineTypes';
+import {
+  type MotifShape,
+  extractMotifShapeFromGuitarBarContext,
+  extractMotifShapeFromStatement,
+  mergeTouchingSamePitchNotesForValidator,
+  motifShapeWithReturnAttacks,
+  realizeReturnMidiFromMotifShape,
+} from './motifShape';
 
 const MOTIF_REF = 'song_motif';
+
+/** Same PC delta as `realizeReturnMidiFromMotifShape` (not MIDI root lift per register). */
+function rootPcFromChordSymbol(chord: string, opts?: ChordTonesOptions): number {
+  const t = chordTonesForChordSymbol(chord, opts);
+  return ((Math.round(t.root) % 12) + 12) % 12;
+}
+
+function shortestRootPcDelta(pc1: number, pc2: number): number {
+  let d = pc2 - pc1;
+  if (d > 6) d -= 12;
+  if (d < -6) d += 12;
+  return d;
+}
+
+/** Time-ordered merged pitches for bar 1 — same atoms as `extractMotifShapeFromGuitarBar`. */
+function hookFirstBar1MergedPitches(guitar: PartModel, bar: number): number[] | null {
+  const m = guitar.measures.find((x) => x.index === bar);
+  if (!m) return null;
+  const raw = m.events
+    .filter((e) => e.kind === 'note')
+    .map((e) => e as { pitch: number; startBeat: number; duration: number })
+    .sort((a, b) => a.startBeat - b.startBeat);
+  const notes = mergeTouchingSamePitchNotesForValidator(raw);
+  if (notes.length < 2) return null;
+  return notes.map((n) => n.pitch);
+}
+
+/** Octave-shift phrase into [low, high] without changing semitone intervals. */
+function transposeOctavesToFitReturn(
+  pitches: number[],
+  low: number,
+  high: number,
+  hintForFirst: number
+): number[] | null {
+  if (pitches.length === 0) return pitches;
+  const minP = Math.min(...pitches);
+  const maxP = Math.max(...pitches);
+  if (maxP - minP > high - low + 1e-6) return null;
+  let best: number[] | null = null;
+  let bestD = Infinity;
+  for (let k = -8; k <= 8; k++) {
+    const shifted = pitches.map((p) => p + 12 * k);
+    if (!shifted.every((p) => p >= low && p <= high)) continue;
+    const d = Math.abs(shifted[0] - hintForFirst);
+    if (d < bestD - 1e-6) {
+      bestD = d;
+      best = shifted;
+    }
+  }
+  return best;
+}
+
+/**
+ * Hook-first return: transpose the actual bar-1 merged pitch sequence by harmonic root movement
+ * (shortest PC delta — same as `realizeReturnMidiFromMotifShape`, not per-bar MIDI root lift).
+ * Register: one global octave shift into [zLow,zHigh] if possible; else raw chain unchanged.
+ */
+function hookFirstReturnPitchesFromShape(
+  bar1Pitches: number[],
+  chord1: string,
+  chord25: string,
+  zLow: number,
+  zHigh: number,
+  chordToneOpts?: ChordTonesOptions
+): number[] {
+  if (bar1Pitches.length === 0) return [];
+  const r1pc = rootPcFromChordSymbol(chord1, chordToneOpts);
+  const r25pc = rootPcFromChordSymbol(chord25, chordToneOpts);
+  const delta = shortestRootPcDelta(r1pc, r25pc);
+  const p = bar1Pitches.map((pitch) => pitch + delta);
+  const hint = clampPitch(bar1Pitches[0] + delta, zLow, zHigh);
+  const fitted = transposeOctavesToFitReturn(p, zLow, zHigh, hint);
+  return fitted ?? p;
+}
 
 function uniquePoolMidi(tones: ReturnType<typeof guitarChordTonesInRange>): number[] {
   const raw = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) => Math.round(p));
@@ -301,16 +383,32 @@ function anchorMatch(a: Motif, bIv: number[], bRh: Motif['rhythm']): number {
   return hits.length ? hits.reduce((x, y) => x + y, 0) / hits.length : 0.5;
 }
 
+/** Primary: interval magnitudes + direction; contour UDS is secondary (correlated but kept for stability). */
+function intervalPatternSimilarity(a: number[], b: number[]): number {
+  if (a.length === 0 && b.length === 0) return 1;
+  if (a.length === 0 || b.length === 0) return 0;
+  const n = Math.min(a.length, b.length);
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    const mag = 1 - Math.min(1, Math.abs(a[i] - b[i]) / 8);
+    const dir = Math.sign(a[i]) === Math.sign(b[i]) ? 1 : 0;
+    s += 0.65 * mag + 0.35 * dir;
+  }
+  return s / Math.max(a.length, b.length);
+}
+
 /** Similarity between base motif and a variant (intervals + rhythm realized for that bar). */
 export function simMotifToRealization(base: Motif, intervalsB: number[], rhythmB: Motif['rhythm']): number {
-  const w1 = 0.4;
-  const w2 = 0.35;
-  const w3 = 0.25;
+  const wInt = 0.5;
+  const wCont = 0.15;
+  const wRhy = 0.25;
+  const wAnch = 0.1;
+  const intSim = intervalPatternSimilarity(base.intervals, intervalsB);
   const cB = intervalsToUDS(intervalsB);
   const cs = contourSimilarity(base.contour, cB);
   const rs = rhythmSimilarity(base.rhythm, rhythmB);
   const am = anchorMatch(base, intervalsB, rhythmB);
-  return w1 * cs + w2 * rs + w3 * am;
+  return wInt * intSim + wCont * cs + wRhy * rs + wAnch * am;
 }
 
 export type ScheduledBarRole = 'statement' | 'reinforce' | 'return' | 'develop';
@@ -515,20 +613,30 @@ function applyDevelopTransform(
   return { intervals: [...base.intervals], rhythm: base.rhythm.map((r) => ({ ...r })) };
 }
 
-function pickReturnRhythm(seed: number): { start: number; dur: number }[] {
-  return seededUnit(seed, 91003, 0) < 0.5
-    ? [
-        { start: 0, dur: 1 },
-        { start: 1, dur: 0.5 },
-        { start: 2, dur: 0.5 },
-        { start: 3, dur: 1 },
-      ]
-    : [
-        { start: 0, dur: 0.5 },
-        { start: 0.75, dur: 0.75 },
-        { start: 2, dur: 1 },
-        { start: 3, dur: 1 },
-      ];
+/**
+ * Preserve all statement attack times (four notes); vary one duration by one eighth so the bar still
+ * tiles and normalization cannot drop a note (shifting the next onset breaks the pattern).
+ */
+function buildReturnRhythmMicroVariation(
+  stmtRh: { start: number; dur: number }[],
+  seed: number
+): { start: number; dur: number }[] {
+  const out = stmtRh.map((r) => ({ start: r.start, dur: r.dur }));
+  const delta = 0.25;
+  const last = out.length - 1;
+  const u = seededUnit(seed, 91040, 0);
+  if (u < 0.5 && out[last].dur > delta + 0.11) {
+    out[last].dur = snapAttackBeatToGrid(Math.max(0.25, out[last].dur - delta));
+  } else if (out[0].dur > delta + 0.11) {
+    out[0].dur = snapAttackBeatToGrid(Math.max(0.25, out[0].dur - delta));
+  } else {
+    const j = Math.min(1, last);
+    if (out[j].dur > delta + 0.11) out[j].dur = snapAttackBeatToGrid(Math.max(0.25, out[j].dur - delta));
+  }
+  if (rhythmsEqual(out, stmtRh) && out[last].dur > delta + 0.11) {
+    out[last].dur = snapAttackBeatToGrid(Math.max(0.25, out[last].dur - delta));
+  }
+  return out;
 }
 
 function rhythmsEqual(
@@ -556,6 +664,11 @@ export function buildSongModeMotifV2Runtime(params: {
   bar17Low: number;
   bar17High: number;
   chordToneOpts?: ChordTonesOptions;
+  /**
+   * Hook-first only: supplier for the guitar part built so far (must include finalized bar 1)
+   * when emitting bar 25, so return pitches transpose merged bar-1 guitar notes.
+   */
+  getHookGuitarPart?: () => PartModel;
 }): {
   cell: SongModeHookIdentityCell;
   coreMotifs: CoreMotif[];
@@ -563,46 +676,51 @@ export function buildSongModeMotifV2Runtime(params: {
   primaryMotif: Motif;
   schedule: ScheduledBar[];
   emitScheduledBar: (bar: number, m: MeasureModel) => void;
+  statementMotifShape: MotifShape;
+  returnExpectedMotifShape: MotifShape;
 } {
-  const { seed, context, registerForBar, chordToneOpts } = params;
+  const { seed, context, registerForBar, chordToneOpts, getHookGuitarPart } = params;
   const tb = context.form.totalBars;
   const primary = pickBestMotif(seed);
   const chord1 = getChordForBar(1, context);
   const [stLo, stHi] = registerForBar(1);
   const dirs0 = contourUDSToDirs(primary.contour);
   const stmtRh = rhythmToLegacy(primary.rhythm);
-  const statementPitches =
+  const statementPitchesRaw =
     pickPitchesForContour(chord1, stLo, stHi, dirs0, seed, 91010, 1, chordToneOpts) ??
     pickPicksFallback(chord1, stLo, stHi, dirs0, chordToneOpts);
+  const nStmt = Math.min(statementPitchesRaw.length, stmtRh.length);
+  const statementPitches = statementPitchesRaw.slice(0, nStmt);
+  const stmtRhAligned = stmtRh.slice(0, nStmt);
 
   const variationKind = seededUnit(seed, 91004, 0) < 0.5 ? 'rhythm' : 'interval';
-  const intervalReturnScale: 1 | 2 = variationKind === 'interval' ? 2 : 1;
-  let returnRhythm =
-    variationKind === 'rhythm'
-      ? rhythmToLegacy(
-          primary.rhythm.map((e, i) =>
-            i === 1 ? { ...e, onset: Math.min(3, e.onset + 0.25) } : { ...e }
-          )
-        )
-      : stmtRh.map((r) => ({ ...r }));
-  if (rhythmsEqual(returnRhythm, stmtRh)) returnRhythm = pickReturnRhythm(seed);
-  if (rhythmsEqual(returnRhythm, stmtRh)) {
-    returnRhythm = returnRhythm.map((r, i) =>
-      i === 1 ? { start: Math.min(3, r.start + 0.25), dur: r.dur } : { ...r }
-    );
-  }
+  const hookFirst = context.generationMetadata?.songModeHookFirstIdentity === true;
+  /** Hook-first: same attacks as statement so return contour/pitch structure matches extraction; else micro-variation. */
+  const returnRhythm = hookFirst
+    ? stmtRhAligned.map((r) => ({ start: r.start, dur: r.dur }))
+    : buildReturnRhythmMicroVariation(stmtRhAligned, seed);
+
+  const statementMotifShape = extractMotifShapeFromStatement(
+    statementPitches,
+    stmtRhAligned,
+    chord1,
+    stLo,
+    stHi,
+    chordToneOpts
+  );
+  const returnExpectedMotifShape = motifShapeWithReturnAttacks(statementMotifShape, returnRhythm);
 
   const cell: SongModeHookIdentityCell = {
     noteCount: statementPitches.length,
     contourDirs: dirs0,
-    statementRhythm: stmtRh,
+    statementRhythm: stmtRhAligned,
     returnRhythm,
     variationKind,
-    intervalReturnScale,
+    intervalReturnScale: 1,
   };
 
   const coreMotifs: CoreMotif[] = [
-    pitchesToCoreMotif('song_m1', statementPitches, stmtRh, ['guide-tone', 'chord-tone'], ['mid', 'narrow']),
+    pitchesToCoreMotif('song_m1', statementPitches, stmtRhAligned, ['guide-tone', 'chord-tone'], ['mid', 'narrow']),
   ];
 
   const schedule = buildMotifSchedule32(seed, tb);
@@ -610,14 +728,14 @@ export function buildSongModeMotifV2Runtime(params: {
   const emitScheduledBar = (bar: number, m: MeasureModel): void => {
     const entry = schedule.find((s) => s.bar === bar);
     if (!entry) {
-      emitMeasureFromPitches(m, statementPitches, stmtRh, MOTIF_REF);
+      emitMeasureFromPitches(m, statementPitches, stmtRhAligned, MOTIF_REF);
       return;
     }
     const ch = getChordForBar(bar, context);
     const [zLow, zHigh] = registerForBar(bar);
 
     if (entry.role === 'statement') {
-      emitMeasureFromPitches(m, statementPitches, stmtRh, MOTIF_REF);
+      emitMeasureFromPitches(m, statementPitches, stmtRhAligned, MOTIF_REF);
       return;
     }
     if (entry.role === 'reinforce') {
@@ -631,29 +749,31 @@ export function buildSongModeMotifV2Runtime(params: {
       return;
     }
     if (entry.role === 'return') {
-      let rp =
-        variationKind === 'interval'
-          ? pickPitchesForContour(ch, zLow, zHigh, dirs0, seed, 91020, intervalReturnScale, chordToneOpts) ??
-            pickPitchesForContour(ch, zLow, zHigh, dirs0, seed, 91021, 1, chordToneOpts) ??
-            pickPicksFallback(ch, zLow, zHigh, dirs0, chordToneOpts)
-          : pickPitchesForContour(ch, zLow, zHigh, dirs0, seed, 91022, 1, chordToneOpts) ??
-            pickPicksFallback(ch, zLow, zHigh, dirs0, chordToneOpts);
-      const stepFp = (p: number[]) => {
-        if (p.length < 2) return '';
-        const o: string[] = [];
-        for (let i = 1; i < p.length; i++) o.push(String(p[i] - p[i - 1]));
-        return o.join(',');
-      };
-      if (stepFp(rp) === stepFp(statementPitches) && rp.length) {
-        const adj = [...rp];
-        adj[adj.length - 1] = clampPitch(
-          adj[adj.length - 1] + (seededUnit(seed, 91025, 0) < 0.5 ? 1 : -1),
-          zLow,
-          zHigh
-        );
-        rp = adj;
-      }
-      emitMeasureFromPitches(m, rp, returnRhythm, MOTIF_REF);
+      const rp = hookFirst
+        ? (() => {
+            const guitar = getHookGuitarPart?.();
+            if (!guitar) {
+              throw new Error('songModeHookFirstIdentity requires getHookGuitarPart() for bar 25');
+            }
+            const bar1 = hookFirstBar1MergedPitches(guitar, 1);
+            if (!bar1) {
+              throw new Error('hook-first return: could not extract MotifShape from guitar bar 1');
+            }
+            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, chordToneOpts);
+          })()
+        : realizeReturnMidiFromMotifShape(
+            statementMotifShape,
+            statementPitches,
+            chord1,
+            ch,
+            statementPitches[0],
+            zLow,
+            zHigh,
+            seed,
+            chordToneOpts
+          );
+      const rhReturn = hookFirst ? stmtRh.slice(0, rp.length) : returnRhythm;
+      emitMeasureFromPitches(m, rp, rhReturn, MOTIF_REF);
       return;
     }
     const dev = applyDevelopTransform(primary, bar, seed, entry.variant.transformType);
@@ -672,9 +792,31 @@ export function buildSongModeMotifV2Runtime(params: {
     primaryMotif: primary,
     schedule,
     emitScheduledBar,
+    statementMotifShape,
+    returnExpectedMotifShape,
   };
 }
 
 export function songModeMotifCount(_seed: number): 1 {
   return 1;
+}
+
+/**
+ * After phrase/overlay/seal passes, re-align hook MotifShape metadata with the final guitar score
+ * (statement bar + return rhythm template). Generator and validator both use this representation.
+ */
+export function recomputeSongModeHookMotifShapesFromScore(
+  guitar: PartModel,
+  context: CompositionContext
+): { statementMotifShape: MotifShape; returnExpectedMotifShape: MotifShape } | null {
+  const primary = context.generationMetadata?.songModePrimaryMotif;
+  if (!primary) return null;
+  const stmt = extractMotifShapeFromGuitarBarContext(guitar, 1, context);
+  if (!stmt) return null;
+  const stmtRh = rhythmToLegacy(primary.rhythm);
+  const returnRhythm = buildReturnRhythmMicroVariation(stmtRh, context.seed);
+  return {
+    statementMotifShape: stmt,
+    returnExpectedMotifShape: motifShapeWithReturnAttacks(stmt, returnRhythm),
+  };
 }

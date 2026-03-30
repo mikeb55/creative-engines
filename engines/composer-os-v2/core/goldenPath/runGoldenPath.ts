@@ -544,6 +544,10 @@ export interface RunGoldenPathOptions {
   songModeJamesBrownFunkOverlay?: boolean;
   /** D1: optional rhythm intent (engine-only; resolved in C5 path before Song Mode overlays). */
   intent?: RhythmIntentControl;
+  /** Guitar–Bass Duo: C4 hook rhythm layer strength (metadata → `generationMetadata.c4Strength`). */
+  c4Strength?: 'light' | 'medium' | 'strong';
+  /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
+  blendStrength?: 'light' | 'medium' | 'strong';
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -743,6 +747,26 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     context.generationMetadata = {
       ...context.generationMetadata,
       rhythmIntentRaw: options.intent,
+    };
+  }
+  if (
+    options?.c4Strength === 'light' ||
+    options?.c4Strength === 'medium' ||
+    options?.c4Strength === 'strong'
+  ) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      c4Strength: options.c4Strength,
+    };
+  }
+  if (
+    options?.blendStrength === 'light' ||
+    options?.blendStrength === 'medium' ||
+    options?.blendStrength === 'strong'
+  ) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      blendStrength: options.blendStrength,
     };
   }
 

@@ -17,6 +17,7 @@ import type { EcmChamberMode, EcmGenerationMetrics } from './ecm/ecmChamberTypes
 import type { KeySignatureReceiptMetadata } from './harmony/keyInferenceTypes';
 import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 import type { CoreMotif, Motif } from './motif/motifEngineTypes';
+import type { MotifShape } from './motif/motifShape';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 
@@ -107,6 +108,10 @@ export interface GenerationMetadata {
   songModeMotifCount?: 1 | 2 | 3;
   /** Song Mode Motif v2: canonical primary motif for validation / receipts. */
   songModePrimaryMotif?: Motif;
+  /** Song Mode hook: MotifShape from bar 1 statement (validator alignment). */
+  songModeStatementMotifShape?: MotifShape;
+  /** Song Mode hook: expected return MotifShape (same pitch identity as statement; return attack grid). */
+  songModeReturnMotifShapeExpected?: MotifShape;
   /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
   styleProfile?: StyleProfile;
   /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
@@ -142,6 +147,14 @@ export interface GenerationMetadata {
     /** True when phrase or global C4 safety restore cleared edits for this row. */
     ostinatoSafetyReverted?: boolean;
   }>;
+  /** Song Mode C4 hook rhythm layer: manifest receipt — whether timing was applied to any bar. */
+  c4HookRhythmApplied?: boolean;
+  /** Song Mode C4 hook rhythm layer: bar indices where guitar timing was applied (subset of hook schedule). */
+  c4BarsUsed?: number[];
+  /** Song Mode C4 hook rhythm layer intensity (default medium when unset). */
+  c4Strength?: 'light' | 'medium' | 'strong';
+  /** Song Mode C5 blend strength from request (default medium when unset). */
+  blendStrength?: 'light' | 'medium' | 'strong';
   /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
   songModeC5ByPhrase?: Array<{
     phraseIndex: number;

@@ -18,7 +18,7 @@ import {
   ensureTotalDurationUnchanged,
   snapshotMeasureNotes,
 } from './jamesBrownFunkOverlay';
-import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
+import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 
 const GRID_16TH = 0.25;
@@ -673,4 +673,97 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
   runGlobalC4SafetyAfterApply(guitar, bass, beforeG, beforeB, fullBackupG, fullBackupB, out);
 
   meta.songModeOstinatoByPhrase = out;
+}
+
+const HOOK_RHYTHM_BARS_LIGHT = [5, 9, 17, 25] as const;
+const HOOK_RHYTHM_BARS_FULL = [5, 7, 9, 13, 17, 21, 25] as const;
+
+/** C4 — hook rhythm layer: repeat bar 1 note timing on hook bars; guitar only; pitches unchanged. */
+export function applySongModeHookRhythmLayerC4(score: ScoreModel, context: CompositionContext): void {
+  const meta = context.generationMetadata as GenerationMetadata;
+  const receiptNoop = () => {
+    meta.c4HookRhythmApplied = false;
+    meta.c4BarsUsed = [];
+  };
+
+  if (context.presetId !== 'guitar_bass_duo') {
+    receiptNoop();
+    return;
+  }
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) {
+    receiptNoop();
+    return;
+  }
+  if (context.form.totalBars !== 32) {
+    receiptNoop();
+    return;
+  }
+
+  const guitar = score.parts.find((p) => p.id === 'guitar' && p.instrumentIdentity === 'clean_electric_guitar');
+  if (!guitar) {
+    receiptNoop();
+    return;
+  }
+
+  const m1 = guitar.measures.find((m) => m.index === 1);
+  if (!m1) {
+    receiptNoop();
+    return;
+  }
+
+  const bar1Notes = m1.events
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+
+  if (bar1Notes.length < 2) {
+    receiptNoop();
+    return;
+  }
+
+  const strength = meta.c4Strength ?? 'medium';
+  let patternLen: number;
+  let hookBars: readonly number[];
+  let velBoost: number;
+  if (strength === 'light') {
+    patternLen = Math.min(3, bar1Notes.length);
+    hookBars = HOOK_RHYTHM_BARS_LIGHT;
+    velBoost = 10;
+  } else if (strength === 'strong') {
+    patternLen = Math.min(6, bar1Notes.length);
+    hookBars = HOOK_RHYTHM_BARS_FULL;
+    velBoost = 15;
+  } else {
+    patternLen = Math.min(6, bar1Notes.length);
+    hookBars = HOOK_RHYTHM_BARS_FULL;
+    velBoost = 10;
+  }
+
+  const pattern = bar1Notes.slice(0, patternLen).map((n) => ({ startBeat: n.startBeat, duration: n.duration }));
+
+  const barsUsed: number[] = [];
+  for (const bar of hookBars) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+
+    const notes = m.events
+      .filter((e) => e.kind === 'note')
+      .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
+
+    if (notes.length === 0) continue;
+    if (notes.length > 8) continue;
+
+    const applyN = Math.min(notes.length, pattern.length);
+    if (applyN === 0) continue;
+    for (let i = 0; i < applyN; i++) {
+      const pr = pattern[i]!;
+      notes[i].startBeat = pr.startBeat;
+      notes[i].duration = pr.duration;
+    }
+    notes[0].velocity = Math.min(127, (notes[0].velocity ?? 100) + velBoost);
+    normalizeMeasureToEighthBeatGrid(m);
+    barsUsed.push(bar);
+  }
+
+  meta.c4HookRhythmApplied = barsUsed.length > 0;
+  meta.c4BarsUsed = barsUsed;
 }

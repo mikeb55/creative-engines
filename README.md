@@ -37,15 +37,24 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 ## Composer OS (V1 product path)
 
-**Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build). **Docs:** `docs/composer-os/` (CHANGELOG, DEV_NOTES, USER_GUIDE). Supported modes and limitations for V1 are summarized in `engines/composer-os-v2/app-api/releaseMetadata.ts` and the Composer OS README — no Python or `.bat` is required for normal app use.
+**Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
-**V3 app wiring:** The web/desktop app includes a **Run system check** action (Diagnostics) that runs Composer OS–scoped tests without using the terminal; the **Outputs** panel is mode- and type-aware; **Open library folder** / **Open this file’s folder** use normalized Windows paths; unknown presets are rejected by the API before generation. See `docs/composer-os/CHANGELOG.md`.
+**Composer OS documentation (canonical):**
 
-**V3 Generate UI:** The **Generate** screen is mode-driven (no user-facing style module/stack controls on the main form); duo/ECM use fixed internal defaults. The **Style Stack** sidebar tab was removed; see `docs/composer-os/CHANGELOG.md`.
+- [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) — V8.0 + pointer to archived pre-V8 history
+- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — friendly overview
+- [docs/TESTING.md](docs/TESTING.md) — D1 self-test harness
 
-**V4 (Composer OS track — Prompt 1/8):** Guitar–Bass Duo can request **32 bars** (`totalBars: 32`) for an opt-in **A / A′ / B / A″** long-form route with a **modulation planning** layer; the default **8-bar** golden path is unchanged. See `docs/composer-os/CHANGELOG.md`.
+Older integration notes and the long pre-V8 changelog live under [docs/archive/composer-os/](docs/archive/composer-os/). Supported modes and limitations are summarized in `engines/composer-os-v2/app-api/releaseMetadata.ts` and the Composer OS README — no Python or `.bat` is required for normal app use.
 
-**V3.4 / V3.4b (Composer OS):** MusicXML **key signatures** are **inferred from harmony** (optional **`keySignatureMode`** / tonal centre override); natural **minor** uses correct **fifths** (e.g. Bb minor → five flats). Ambiguous or chromatic progressions avoid a misleading **visible** signature. See `docs/composer-os/CHANGELOG.md`.
+**V3 app wiring:** The web/desktop app includes a **Run system check** action (Diagnostics) that runs Composer OS–scoped tests without using the terminal; the **Outputs** panel is mode- and type-aware; **Open library folder** / **Open this file’s folder** use normalized Windows paths; unknown presets are rejected by the API before generation. See [docs/CHANGELOG.md](docs/CHANGELOG.md) and the historical changelog in the archive.
+
+**V3 Generate UI:** The **Generate** screen is mode-driven (no user-facing style module/stack controls on the main form); duo/ECM use fixed internal defaults. The **Style Stack** sidebar tab was removed; see [docs/CHANGELOG.md](docs/CHANGELOG.md).
+
+**V4 (Composer OS track — Prompt 1/8):** Guitar–Bass Duo can request **32 bars** (`totalBars: 32`) for an opt-in **A / A′ / B / A″** long-form route with a **modulation planning** layer; the default **8-bar** golden path is unchanged. See [docs/archive/composer-os/CHANGELOG_HISTORICAL.md](docs/archive/composer-os/CHANGELOG_HISTORICAL.md).
+
+**V3.4 / V3.4b (Composer OS):** MusicXML **key signatures** are **inferred from harmony** (optional **`keySignatureMode`** / tonal centre override); natural **minor** uses correct **fifths** (e.g. Bb minor → five flats). Ambiguous or chromatic progressions avoid a misleading **visible** signature. See [docs/archive/composer-os/CHANGELOG_HISTORICAL.md](docs/archive/composer-os/CHANGELOG_HISTORICAL.md).
 
 ---
 

@@ -189,20 +189,53 @@ export function derivePhraseRhythmIntent(
   };
 }
 
+/** C2 — pull phrase intent toward calmer (Stable) or spikier (Surprise); Balanced leaves overlay blend as-is. */
+function strengthAdjustPhraseIntent(
+  intent: PhraseRhythmIntent,
+  strength: SongModeRhythmStrength | undefined,
+  seed: number,
+  phraseIdx: number
+): PhraseRhythmIntent {
+  const s = strength ?? 'balanced';
+  if (s === 'balanced') return intent;
+  const u = (slot: number) => seededUnit(seed, phraseIdx, 93900 + slot);
+  if (s === 'stable') {
+    return {
+      entryBias: u(1) < 0.56 ? 'onbeat' : intent.entryBias,
+      groupingBias: u(2) < 0.53 ? 'even' : intent.groupingBias,
+      densityShape: u(3) < 0.56 ? 'flat' : intent.densityShape,
+      barlineBehavior: u(4) < 0.56 ? 'contained' : intent.barlineBehavior,
+    };
+  }
+  return {
+    entryBias: u(1) < 0.44 ? 'offbeat' : intent.entryBias,
+    groupingBias: u(2) < 0.41 ? 'fragmented' : intent.groupingBias,
+    densityShape: u(3) < 0.39 ? 'burst_rest' : intent.densityShape,
+    barlineBehavior: u(4) < 0.39 ? 'crossing' : intent.barlineBehavior,
+  };
+}
+
 /** C2 — mode-scaled intent strength (Stable / Balanced / Surprise). */
 function intentStrengthFromMode(strength: SongModeRhythmStrength | undefined): number {
   const s = strength ?? 'balanced';
-  if (s === 'stable') return 0.6;
+  if (s === 'stable') return 0.48;
   if (s === 'balanced') return 1;
-  return 1.35;
+  return 1.48;
 }
 
 /** C2 final — grouping anchor vs interior contrast by mode (structural, not decorative). */
 function modeGroupingStructuralScale(strength: SongModeRhythmStrength | undefined): number {
   const s = strength ?? 'balanced';
-  if (s === 'stable') return 0.82;
+  if (s === 'stable') return 0.68;
   if (s === 'balanced') return 1;
-  return 1.34;
+  return 1.46;
+}
+
+function densityShapePatchStrengthScale(strength: SongModeRhythmStrength | undefined): number {
+  const s = strength ?? 'balanced';
+  if (s === 'stable') return 0.52;
+  if (s === 'balanced') return 1;
+  return 1.36;
 }
 
 /** Opening phrase bars 1–2: stronger mode read (deterministic). */
@@ -369,23 +402,45 @@ function applyPhraseEarlyIdentityLock(
   const s = strength ?? 'balanced';
   if (s === 'stable') return;
 
-  const applyPart = (part: PartModel) => {
-    const ordered = collectPhraseNotesInOnsetOrder(part, startBar, endBar);
-    if (ordered.length === 0) return;
-    const first = ordered[0]!;
-    const second = ordered.length > 1 ? ordered[1]! : null;
+  const ordered = collectPhraseNotesInOnsetOrder(guitar, startBar, endBar);
+  if (ordered.length === 0) return;
+  const first = ordered[0]!;
+  const second = ordered.length > 1 ? ordered[1]! : null;
 
-    if (s === 'balanced') {
-      if (second) applyShiftToPhraseNote(part, second.bar, second.n, shift);
-      return;
+  if (s === 'balanced') {
+    if (second) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
+    return;
+  }
+
+  if (second) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
+  applyShiftToPhraseNote(guitar, first.bar, first.n, shift);
+}
+
+/** C2 — Stable guitar: nudge eighth offbeats one step earlier when space allows (fewer syncopations, more on-grid). */
+function applyStableGuitarOnbeatSnapping(
+  guitar: PartModel,
+  startBar: number,
+  endBar: number,
+  strength: SongModeRhythmStrength | undefined
+): void {
+  if ((strength ?? 'balanced') !== 'stable') return;
+  for (let b = startBar; b <= endBar; b++) {
+    const m = guitar.measures.find((x) => x.index === b);
+    if (!m) continue;
+    const notes = m.events.filter((e) => e.kind === 'note') as NoteEvent[];
+    notes.sort((a, b) => a.startBeat - b.startBeat);
+    for (let i = 0; i < notes.length; i++) {
+      const n = notes[i]!;
+      if (!isOffbeatStart(n.startBeat)) continue;
+      const target = snapAttackBeatToGrid(n.startBeat - GRID_8TH);
+      const prevEnd =
+        i === 0 ? 0 : snapAttackBeatToGrid(notes[i - 1]!.startBeat + notes[i - 1]!.duration);
+      if (target + 1e-4 >= prevEnd && target + 1e-4 < n.startBeat - 1e-4) {
+        n.startBeat = target;
+      }
     }
-
-    if (second) applyShiftToPhraseNote(part, second.bar, second.n, shift);
-    applyShiftToPhraseNote(part, first.bar, first.n, shift);
-  };
-
-  applyPart(guitar);
-  if (bass) applyPart(bass);
+    normalizeMeasureToEighthBeatGrid(m);
+  }
 }
 
 function anchorIndicesForPattern(p: number[]): number[] {
@@ -495,10 +550,11 @@ function shapeEarlyPhraseDensityPatch(
   intent: PhraseRhythmIntent,
   intentStrength: number,
   seed: number,
-  phraseIdx: number
+  phraseIdx: number,
+  strength: SongModeRhythmStrength | undefined
 ): void {
   if (intent.densityShape !== 'sparse' && intent.densityShape !== 'burst_rest') return;
-  const prob = 0.22 * intentStrength;
+  const prob = 0.22 * intentStrength * densityShapePatchStrengthScale(strength);
   if (seededUnit(seed, phraseIdx, 93850) > prob) return;
   const m = guitar.measures.find((x) => x.index === startBar);
   if (!m) return;
@@ -626,7 +682,7 @@ function applyPhraseRhythmIntentToNotes(
   if (phraseNotes.length === 0) return;
 
   applyGroupingTemplateBias(phraseNotes, intent, intentStrength, strength, seed, phraseIdx, guitar);
-  shapeEarlyPhraseDensityPatch(guitar, startBar, intent, intentStrength, seed, phraseIdx);
+  shapeEarlyPhraseDensityPatch(guitar, startBar, intent, intentStrength, seed, phraseIdx, strength);
   biasCrossingBarlineVelocity(guitar, startBar, endBar, intent, intentStrength, seed, phraseIdx);
   softenDelayedBarlineFirstBar(guitar, startBar, intent, intentStrength);
   applyBassPhraseRhythmSupport(bass, startBar, strength);
@@ -717,13 +773,17 @@ function applySoftToGuitarMeasure(
   b: BlendedSoft,
   seed: number,
   phraseIdx: number,
-  barIndex: number
+  barIndex: number,
+  strength: SongModeRhythmStrength | undefined
 ): void {
   const events = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest') as Array<
     NoteEvent | { kind: 'rest'; startBeat: number; duration: number }
   >;
   events.sort((a, b) => a.startBeat - b.startBeat);
-  const tighten = Math.min(0.12, 0.035 + b.durTighten * 0.08);
+  const s = strength ?? 'balanced';
+  const tightenScale = s === 'stable' ? 0.58 : s === 'surprise' ? 1.22 : 1;
+  const syncScale = s === 'stable' ? 0.55 : s === 'surprise' ? 1.28 : 1;
+  const tighten = Math.min(0.12, (0.035 + b.durTighten * 0.08) * tightenScale);
 
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
@@ -751,9 +811,10 @@ function applySoftToGuitarMeasure(
       Math.abs(sb - 1.5) < 0.01 ||
       Math.abs(sb - 2.5) < 0.01 ||
       Math.abs(sb - 3.5) < 0.01;
-    if (offBeat && uAcc < b.syncAccent * 0.38) {
+    const syncEff = b.syncAccent * syncScale;
+    if (offBeat && uAcc < syncEff * 0.38) {
       n.articulation = 'accent';
-    } else if (!offBeat && (sb === 1 || sb === 2 || sb === 3) && uAcc < b.syncAccent * 0.22) {
+    } else if (!offBeat && (sb === 1 || sb === 2 || sb === 3) && uAcc < syncEff * 0.22) {
       n.articulation = 'accent';
     }
   }
@@ -782,7 +843,10 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   for (let pi = 0; pi < segments.length; pi++) {
     const { startBar, endBar } = segments[pi];
     const applied = selectOverlaysForPhrase(pi, seed);
-    const intent = derivePhraseRhythmIntent(applied, strength, seed, pi);
+    const intent =
+      applied.length > 0
+        ? strengthAdjustPhraseIntent(derivePhraseRhythmIntent(applied, strength, seed, pi), strength, seed, pi)
+        : derivePhraseRhythmIntent(applied, strength, seed, pi);
     const profile = profileString(applied);
     const summary = formatIntentSummary(intent, strength, profile === 'none' ? 'neutral' : profile);
 
@@ -795,6 +859,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
     });
 
     applyPhraseEarlyIdentityLock(guitar, bass, startBar, endBar, strength);
+    applyStableGuitarOnbeatSnapping(guitar, startBar, endBar, strength);
 
     if (applied.length > 0) {
       collectPhraseGuitarNotes(guitar, startBar, endBar, phraseBuf);
@@ -807,7 +872,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
     for (let b = startBar; b <= endBar; b++) {
       const measure = guitar.measures.find((x) => x.index === b);
       if (!measure) continue;
-      applySoftToGuitarMeasure(measure, blend, seed, pi, b);
+      applySoftToGuitarMeasure(measure, blend, seed, pi, b, strength);
     }
   }
 

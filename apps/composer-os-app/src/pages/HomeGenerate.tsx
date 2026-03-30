@@ -131,6 +131,8 @@ type GenResult = {
     ensembleConfigId?: string;
     primarySongwriterStyle?: string;
     styleProfile?: SongModeStyleProfile;
+    c4Strength?: 'light' | 'medium' | 'strong';
+    blendStrength?: 'light' | 'medium' | 'strong';
   };
   stylePairingReceipt?: {
     summary: string;
@@ -170,11 +172,17 @@ export function HomeGenerate({
   const [songwriterStyle, setSongwriterStyle] = useState('beatles');
   const [arrangerStyle, setArrangerStyle] = useState('ellington');
   const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
+  const [intentGroove, setIntentGroove] = useState(0.5);
+  const [intentSpace, setIntentSpace] = useState(0.5);
+  const [intentExpression, setIntentExpression] = useState(0.5);
+  const [intentSurprise, setIntentSurprise] = useState(0.5);
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
+  const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
   const [riffGrid, setRiffGrid] = useState<'eighth' | 'sixteenth'>('eighth');
@@ -319,6 +327,9 @@ export function HomeGenerate({
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
+          ...(presetId === 'guitar_bass_duo' || presetId === 'song_mode'
+            ? { c4Strength: c4Strength, blendStrength: blendStrength }
+            : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
@@ -338,7 +349,18 @@ export function HomeGenerate({
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
               }
             : {}),
-          ...(presetId === 'song_mode' ? { styleProfile: songModeStyleProfile } : {}),
+          ...(presetId === 'song_mode'
+            ? {
+                styleProfile: songModeStyleProfile,
+                intent: {
+                  groove: intentGroove,
+                  space: intentSpace,
+                  expression: intentExpression,
+                  surprise: intentSurprise,
+                  pattern: 0.5,
+                },
+              }
+            : {}),
         };
 
         if (presetId === 'song_mode' && songChordLine.length > 0) {
@@ -424,6 +446,12 @@ export function HomeGenerate({
       riffLineMode,
       riffBass,
       songModeStyleProfile,
+      intentGroove,
+      intentSpace,
+      intentExpression,
+      intentSurprise,
+      c4Strength,
+      blendStrength,
       onResult,
     ]
   );
@@ -756,9 +784,88 @@ export function HomeGenerate({
         </div>
       </div>
 
+      {(presetId === 'guitar_bass_duo' || presetId === 'song_mode') && (
+        <>
+          <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
+            <label
+              htmlFor="composer-os-hook-rhythm-strength"
+              style={{
+                display: 'block',
+                marginBottom: '0.35rem',
+                color: 'var(--text)',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              Hook Rhythm Strength
+            </label>
+            <select
+              id="composer-os-hook-rhythm-strength"
+              value={c4Strength}
+              onChange={(e) => setC4Strength(e.target.value as 'light' | 'medium' | 'strong')}
+              disabled={loading}
+              style={{
+                width: '100%',
+                maxWidth: 260,
+                padding: '0.45rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+              }}
+            >
+              <option value="light">Light</option>
+              <option value="medium">Medium</option>
+              <option value="strong">Strong</option>
+            </select>
+          </div>
+          <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
+            <label
+              htmlFor="composer-os-blend-strength"
+              style={{
+                display: 'block',
+                marginBottom: '0.35rem',
+                color: 'var(--text)',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              Blend Strength
+            </label>
+            <select
+              id="composer-os-blend-strength"
+              value={blendStrength}
+              onChange={(e) => setBlendStrength(e.target.value as 'light' | 'medium' | 'strong')}
+              disabled={loading}
+              style={{
+                width: '100%',
+                maxWidth: 260,
+                padding: '0.45rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+              }}
+            >
+              <option value="light">Light</option>
+              <option value="medium">Medium</option>
+              <option value="strong">Strong</option>
+            </select>
+          </div>
+        </>
+      )}
+
       <div style={{ marginBottom: '1rem' }}>
-        <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Creative control
+        <span
+          style={{
+            display: 'block',
+            marginBottom: '0.35rem',
+            color: 'var(--text)',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+          }}
+        >
+          Feel
         </span>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.4rem', maxWidth: 520 }}>
           How much the engine nudges the variation — not the form of the piece.
@@ -939,6 +1046,62 @@ export function HomeGenerate({
                 </option>
               ))}
             </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
+            <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Groove</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={intentGroove}
+              onChange={(e) => setIntentGroove(Number(e.target.value))}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 360 }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentGroove * 100)}%</span>
+          </div>
+          <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
+            <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Space</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={intentSpace}
+              onChange={(e) => setIntentSpace(Number(e.target.value))}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 360 }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentSpace * 100)}%</span>
+          </div>
+          <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
+            <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Expression</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={intentExpression}
+              onChange={(e) => setIntentExpression(Number(e.target.value))}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 360 }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentExpression * 100)}%</span>
+          </div>
+          <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
+            <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Surprise</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={intentSurprise}
+              onChange={(e) => setIntentSurprise(Number(e.target.value))}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 360 }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentSurprise * 100)}%</span>
           </div>
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing
@@ -1182,6 +1345,26 @@ export function HomeGenerate({
                       | 'balanced'
                       | 'surprise'
                   )}
+                </p>
+              )}
+              {echo?.c4Strength != null && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Hook rhythm strength:</span>{' '}
+                  {echo.c4Strength === 'light'
+                    ? 'Light'
+                    : echo.c4Strength === 'strong'
+                      ? 'Strong'
+                      : 'Medium'}
+                </p>
+              )}
+              {echo?.blendStrength != null && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Blend strength:</span>{' '}
+                  {echo.blendStrength === 'light'
+                    ? 'Light'
+                    : echo.blendStrength === 'strong'
+                      ? 'Strong'
+                      : 'Medium'}
                 </p>
               )}
               {result.stylePairingReceipt?.confidenceScore != null && (
