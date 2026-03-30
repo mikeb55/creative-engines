@@ -37,6 +37,11 @@ Order for the duo **32-bar** Song Mode golden path (after core duo build, before
 | **D2** | **In progress** — Song Mode UI sliders (Groove, Space, Expression, Surprise) feeding `GenerateRequest.intent`; pattern fixed at 0.5 in the wire contract unless extended later. |
 | **D3** | **Upcoming** — not defined in code; reserved for future control work. |
 
+## C-module status
+
+- C4: done — UI control wired end-to-end; c4Strength reaches generationMetadata via Song Mode request path
+- C5: done — blendStrength wired end-to-end; affects dynamics scaling via applySongModeOstinatoC5; rhythm density tuning parked for later
+
 ## Text pipeline (high level)
 
 ```
