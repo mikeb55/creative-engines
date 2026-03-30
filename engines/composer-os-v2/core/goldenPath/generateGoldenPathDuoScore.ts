@@ -1706,7 +1706,7 @@ export function generateGoldenPathDuoScore(
   applyJamesBrownFunkOverlay(afterExpressive, context);
   applySongModeOstinatoC4(afterExpressive, context);
   applySongModeHookRhythmLayerC4(afterExpressive, context);
-  applySongModeOstinatoC5(afterExpressive, context, { blendStart: 1, blendLength: 2, fromFeel: 'stable', toFeel: 'balanced', c5Strength: (context.generationMetadata?.blendStrength ?? 'medium') });
+  applySongModeOstinatoC5(afterExpressive, context, { blendStart: 1, blendLength: 8, fromFeel: 'stable', toFeel: 'balanced', c5Strength: (context.generationMetadata?.blendStrength ?? 'medium') });
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);

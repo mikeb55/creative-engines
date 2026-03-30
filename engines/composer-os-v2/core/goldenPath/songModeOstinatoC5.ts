@@ -256,6 +256,60 @@ function applyBlendToMeasure(
   }
 }
 
+function applyC5DensityLayer(
+  measure: MeasureModel,
+  c5Strength: 'light' | 'medium' | 'strong',
+  seed: number,
+  phraseIdx: number,
+  barIndex: number
+): void {
+  if (c5Strength === 'medium') return;
+  const notes = measure.events.filter((e) => e.kind === 'note') as NoteEvent[];
+  notes.sort((a, b) => a.startBeat - b.startBeat);
+  if (notes.length < 2) return;
+
+  if (c5Strength === 'light') {
+    // Remove at most 1 weak offbeat note
+    const candidates = notes.filter(
+      (n) => isOffbeatEighth(n.startBeat) && !n.motifRef
+    );
+    if (candidates.length === 0) return;
+    const idx = Math.floor(seededUnit(seed, phraseIdx, 97100 + barIndex) * candidates.length);
+    const target = candidates[idx];
+    if (!target) return;
+    const rest: RestEvent = {
+      kind: 'rest',
+      startBeat: target.startBeat,
+      duration: target.duration,
+    };
+    const pos = measure.events.indexOf(target);
+    if (pos >= 0) measure.events.splice(pos, 1, rest);
+    return;
+  }
+
+  if (c5Strength === 'strong') {
+    // Split one longer offbeat-friendly note into two shorter notes
+    const candidates = notes.filter(
+      (n) => n.duration >= 0.5 && isOffbeatEighth(n.startBeat) && !n.motifRef
+    );
+    if (candidates.length === 0) return;
+    const idx = Math.floor(seededUnit(seed, phraseIdx, 97200 + barIndex) * candidates.length);
+    const target = candidates[idx];
+    if (!target) return;
+    const half = target.duration / 2;
+    const second: NoteEvent = {
+      kind: 'note',
+      pitch: target.pitch,
+      startBeat: target.startBeat + half,
+      duration: half,
+      velocity: target.velocity,
+      voice: target.voice,
+    };
+    target.duration = half;
+    measure.events.push(second);
+  }
+}
+
 function runGlobalC5SafetyAfterApply(
   guitar: PartModel,
   bass: PartModel | undefined,
@@ -357,6 +411,7 @@ export function applySongModeOstinatoC5(score: ScoreModel, context: CompositionC
         const mG = guitar.measures.find((x) => x.index === bar);
         if (mG) {
           applyBlendToMeasure(mG, bar, metrics, scale * (strengthMode === 'surprise' ? 1.06 : 1), seed, pi);
+          applyC5DensityLayer(mG, c5Strength, seed, pi, bar);
           normalizeMeasureToEighthBeatGrid(mG);
         }
         if (bass) {
