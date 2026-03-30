@@ -87,6 +87,7 @@ import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
+import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
@@ -1701,6 +1702,12 @@ export function generateGoldenPathDuoScore(
     tb === 32
   ) {
     ensureRhythmIntentResolvedIntoMetadata(context.generationMetadata as GenerationMetadata, context.seed);
+  }
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo'
+  ) {
+    applyBarryHarris(context, afterExpressive);
   }
   applySongModeRhythmOverlayC1(afterExpressive, context);
   applyJamesBrownFunkOverlay(afterExpressive, context);

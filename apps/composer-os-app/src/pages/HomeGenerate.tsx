@@ -156,7 +156,7 @@ export function HomeGenerate({
     summary: { status: 'success' | 'failed'; shareable?: boolean; at?: string };
   }) => void;
 }) {
-  const [presetId, setPresetId] = useState('guitar_bass_duo');
+  const [presetId, setPresetId] = useState('song_mode');
   const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
     'ECM_METHENY_QUARTET'
   );
