@@ -1499,7 +1499,7 @@ export function HomeGenerate({
                   }}
                 >
                   <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Phrase quality (warnings)</strong>
-                  <span style={{ lineHeight: 1.45 }}>{v.warnings.join('; ')}</span>
+                  <span style={{ lineHeight: 1.45 }}>{v.warnings.slice(0, 3).join('; ')}{v.warnings.length > 3 ? ` … (+${v.warnings.length - 3} more)` : ''}</span>
                 </div>
               )}
             </>
