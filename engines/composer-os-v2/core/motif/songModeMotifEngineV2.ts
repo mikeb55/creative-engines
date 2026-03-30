@@ -107,10 +107,32 @@ function hookFirstReturnPitchesFromShape(
   const fitted = transposeOctavesToFitReturn(p, zLow, zHigh, hint);
   const base = fitted ?? p;
   if (base.length < 2) return base;
-  const varIdx = 1 + (seed % Math.max(1, base.length - 2));
-  const nudge = (seed % 3 === 0) ? 1 : -1;
-  const varied = base.map((pitch, i) => i === varIdx ? pitch + nudge : pitch);
-  return varied;
+
+  const getContour = (pitches: number[]): string => {
+    const parts: string[] = [];
+    for (let i = 1; i < pitches.length; i++) {
+      const d = pitches[i] - pitches[i - 1];
+      parts.push(d > 0 ? '1' : d < 0 ? '-1' : '0');
+    }
+    return parts.join(',');
+  };
+
+  const targetContour = getContour(base);
+  const nudges = [1, -1, 2, -2];
+  const nonAnchorIndices = base
+    .map((_, i) => i)
+    .filter((i) => i !== 0 && i !== base.length - 1);
+
+  for (const nudge of nudges) {
+    for (const idx of nonAnchorIndices) {
+      const candidate = base.map((pitch, i) => i === idx ? pitch + nudge : pitch);
+      if (getContour(candidate) === targetContour) {
+        return candidate;
+      }
+    }
+  }
+
+  return base;
 }
 
 function uniquePoolMidi(tones: ReturnType<typeof guitarChordTonesInRange>): number[] {
