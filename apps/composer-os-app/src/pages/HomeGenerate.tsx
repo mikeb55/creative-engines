@@ -48,7 +48,7 @@ const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
 ];
 
 /** Internal default for Big Band style pairing when only arranger/era are exposed in UI. */
-const BIG_BAND_DEFAULT_SONGWRITER_STYLE = 'beatles';
+const BIG_BAND_DEFAULT_SONGWRITER_STYLE = 'donald_fagen';
 
 /** Fixed style stack for MusicXML modes (duo / ECM) — not user-configurable in this UI. */
 const DEFAULT_SCORE_STYLE_STACK = {
@@ -169,8 +169,8 @@ export function HomeGenerate({
     'stable' | 'balanced' | 'surprise'
   >('stable');
   const [variationEnabled, setVariationEnabled] = useState(false);
-  const [songwriterStyle, setSongwriterStyle] = useState('beatles');
-  const [arrangerStyle, setArrangerStyle] = useState('ellington');
+  const [songwriterStyle, setSongwriterStyle] = useState('donald_fagen');
+  const [arrangerStyle, setArrangerStyle] = useState('thad');
   const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
   const [intentGroove, setIntentGroove] = useState(0.5);
   const [intentSpace, setIntentSpace] = useState(0.5);
