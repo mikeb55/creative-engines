@@ -130,6 +130,8 @@ export interface GenerateRequest {
   riffBass?: boolean;
   /** Guitar–Bass Duo (Song Mode hook): C4 hook rhythm layer strength; default medium in engine when omitted. */
   c4Strength?: 'light' | 'medium' | 'strong';
+  /** Song Mode C3: James Brown funk overlay (opt-in; default false). */
+  songModeJamesBrownFunkOverlay?: boolean;
   /** Song Mode C5 blend strength; default medium in engine when omitted. */
   blendStrength?: 'light' | 'medium' | 'strong';
 }

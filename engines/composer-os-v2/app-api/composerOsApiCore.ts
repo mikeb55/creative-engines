@@ -256,6 +256,7 @@ export function apiGenerate(
         body.c4Strength === 'strong'
           ? body.c4Strength
           : undefined,
+      songModeJamesBrownFunkOverlay: body.songModeJamesBrownFunkOverlay === true ? true : undefined,
       blendStrength:
         body.blendStrength === 'light' ||
         body.blendStrength === 'medium' ||

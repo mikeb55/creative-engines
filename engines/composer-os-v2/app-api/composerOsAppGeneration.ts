@@ -250,6 +250,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     creativeControlLevel: req.creativeControlLevel,
     intent: req.intent,
     c4Strength: req.c4Strength,
+    songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
   });
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;

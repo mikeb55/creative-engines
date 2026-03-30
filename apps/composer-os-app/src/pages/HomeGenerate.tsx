@@ -183,6 +183,7 @@ export function HomeGenerate({
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
+  const [funkGroove, setFunkGroove] = useState(false);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
   const [riffGrid, setRiffGrid] = useState<'eighth' | 'sixteenth'>('eighth');
@@ -328,7 +329,7 @@ export function HomeGenerate({
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
           ...(presetId === 'guitar_bass_duo' || presetId === 'song_mode'
-            ? { c4Strength: c4Strength, blendStrength: blendStrength }
+            ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
@@ -452,6 +453,7 @@ export function HomeGenerate({
       intentSurprise,
       c4Strength,
       blendStrength,
+      funkGroove,
       onResult,
     ]
   );
@@ -851,6 +853,15 @@ export function HomeGenerate({
               <option value="medium">Medium</option>
               <option value="strong">Strong</option>
             </select>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Funk Groove</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={funkGroove}
+                onChange={(e) => setFunkGroove(e.target.checked)}
+              />
+              Enable James Brown funk overlay
+            </label>
           </div>
         </>
       )}

@@ -147,6 +147,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     creativeControlLevel: req.creativeControlLevel,
     intent: req.intent,
     c4Strength: req.c4Strength,
+    songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
   });
   let diskHarmonyTruthErrors: string[] = [];
