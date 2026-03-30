@@ -95,6 +95,7 @@ function hookFirstReturnPitchesFromShape(
   chord25: string,
   zLow: number,
   zHigh: number,
+  seed: number,
   chordToneOpts?: ChordTonesOptions
 ): number[] {
   if (bar1Pitches.length === 0) return [];
@@ -104,7 +105,12 @@ function hookFirstReturnPitchesFromShape(
   const p = bar1Pitches.map((pitch) => pitch + delta);
   const hint = clampPitch(bar1Pitches[0] + delta, zLow, zHigh);
   const fitted = transposeOctavesToFitReturn(p, zLow, zHigh, hint);
-  return fitted ?? p;
+  const base = fitted ?? p;
+  if (base.length < 2) return base;
+  const varIdx = 1 + (seed % Math.max(1, base.length - 2));
+  const nudge = (seed % 3 === 0) ? 1 : -1;
+  const varied = base.map((pitch, i) => i === varIdx ? pitch + nudge : pitch);
+  return varied;
 }
 
 function uniquePoolMidi(tones: ReturnType<typeof guitarChordTonesInRange>): number[] {
@@ -759,7 +765,7 @@ export function buildSongModeMotifV2Runtime(params: {
             if (!bar1) {
               throw new Error('hook-first return: could not extract MotifShape from guitar bar 1');
             }
-            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, chordToneOpts);
+            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, seed, chordToneOpts);
           })()
         : realizeReturnMidiFromMotifShape(
             statementMotifShape,
