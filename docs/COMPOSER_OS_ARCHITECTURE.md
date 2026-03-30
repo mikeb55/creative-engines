@@ -41,6 +41,8 @@ Order for the duo **32-bar** Song Mode golden path (after core duo build, before
 
 - C4: done — UI control wired end-to-end; c4Strength reaches generationMetadata via Song Mode request path
 - C5: done — blendStrength wired end-to-end; affects dynamics scaling via applySongModeOstinatoC5; rhythm density tuning parked for later
+- C6: done — expression pass fully built and firing; velocity shaping, articulation, phrase emphasis, fail-safe restore
+- C7: done — space pass fully built and firing; note-to-rest and merge ops, density caps, anti-oversparsity guard, fail-safe restore
 
 ## Text pipeline (high level)
 
