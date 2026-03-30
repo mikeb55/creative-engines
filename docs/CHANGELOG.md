@@ -18,7 +18,8 @@
 
 ### Notes
 
-- feat: wired c4Strength (Hook Rhythm Strength) and blendStrength (Blend Strength) end-to-end through Song Mode into runGoldenPath and generationMetadata. Both controls now affect generation.
+- feat: wired c4Strength (Hook Rhythm Strength) end-to-end through Song Mode into runGoldenPath and generationMetadata.
+- C5 v0: blendStrength wired end-to-end; currently affects dynamics scaling only. Future C5 work: rhythm density, phrase behaviour, structure weight.
 - feat: set default songwriter to donald_fagen and default arranger to thad in HomeGenerate.tsx.
 - known: bar 25 hook identity error (literal repetition / contour mismatch) is a pre-existing upstream issue — parked for dedicated fix session.
 - known: phrase quality warnings in songModePhraseEngineV1.ts are excessive for chromatic jazz progressions — parked for tuning session.

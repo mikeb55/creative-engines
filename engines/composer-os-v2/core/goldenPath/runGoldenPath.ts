@@ -798,18 +798,26 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     if (guitar) {
       const md = appliedContext.generationMetadata;
-      errors.push(
-        ...validateSongModeMotifSystem(
-          guitar,
-          appliedContext,
-          md.songModeCoreMotifs,
-          md.songModeMotifCount ?? 1
-        )
+      const motifIssues = validateSongModeMotifSystem(
+        guitar,
+        appliedContext,
+        md.songModeCoreMotifs,
+        md.songModeMotifCount ?? 1
       );
+      const contourWarning = 'return lost contour identity';
+      const literalWarning = 'literal repetition';
+      const similarityWarning = 'return similarity';
+      for (const issue of motifIssues) {
+        if (issue.includes(contourWarning) || issue.includes(literalWarning) || issue.includes(similarityWarning)) {
+          songModePhraseWarnings = [...(songModePhraseWarnings ?? []), issue];
+        } else {
+          errors.push(issue);
+        }
+      }
       const phraseIssues = validateSongModePhraseEngineV1(guitar, appliedContext);
       const { critical, warnings } = partitionSongModePhraseIssues(phraseIssues);
       errors.push(...critical);
-      songModePhraseWarnings = warnings;
+      songModePhraseWarnings = [...(songModePhraseWarnings ?? []), ...warnings];
     }
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');

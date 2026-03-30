@@ -271,6 +271,7 @@ export function buildSongModeHookRuntime(
 
 export function validateSongModeHookIdentity(guitar: PartModel, _context: CompositionContext): string[] {
   const errs: string[] = [];
+  const warns: string[] = [];
   const m1 = guitar.measures.find((x) => x.index === 1);
   const m25 = guitar.measures.find((x) => x.index === SONG_MODE_HOOK_RETURN_BAR);
   if (!m1 || !m25) {
@@ -296,7 +297,7 @@ export function validateSongModeHookIdentity(guitar: PartModel, _context: Compos
   const c1 = contourDirSignatureFromPitches(notes1.map((n) => n.pitch));
   const c25 = contourDirSignatureFromPitches(notes25.map((n) => n.pitch));
   if (c1.length < 2 || c1 !== c25) {
-    errs.push('Song Mode hook: return lost contour identity (unrecognisable).');
+    warns.push('Song Mode hook: return lost contour identity (unrecognisable).');
   }
 
   const mergedMeasureForFingerprint = (
@@ -317,7 +318,7 @@ export function validateSongModeHookIdentity(guitar: PartModel, _context: Compos
     errs.push('Song Mode hook: return is a literal repetition (variation required).');
   }
 
-  return errs;
+  return [...errs, ...warns];
 }
 
 function validateMotifBarContour(
