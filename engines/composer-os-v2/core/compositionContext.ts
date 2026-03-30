@@ -155,6 +155,8 @@ export interface GenerationMetadata {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength from request (default medium when unset). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Identity-locked bar indices — mutation modules must not alter these bars. */
+  identityLockedBars?: number[];
   /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
   songModeC5ByPhrase?: Array<{
     phraseIndex: number;
