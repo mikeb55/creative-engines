@@ -257,7 +257,9 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
     const ostinatoActive = ostRows?.[pi]?.ostinatoActive === true;
     const c5 = c5rows?.[pi];
 
-    let cap = capForMode(strength) * c7CapScale(c5);
+    const densityBias = (context.generationMetadata as any)?.songwriterDensityBias ?? 0.5;
+    const densityScale = 1.0 + (0.5 - densityBias) * 0.6;
+    let cap = capForMode(strength) * c7CapScale(c5) * densityScale;
     const noteTotal = countPhraseNotes(guitar, startBar, endBar);
     let maxOps = Math.max(0, Math.floor(noteTotal * cap));
     if (maxOps === 0) {

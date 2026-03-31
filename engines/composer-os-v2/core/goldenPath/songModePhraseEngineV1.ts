@@ -536,13 +536,16 @@ interface PhrasePlan {
   cadenceMidi: number;
 }
 
-function planPhraseShape(n: number, seed: number, phraseIdx: number): PhrasePlan {
+function planPhraseShape(n: number, seed: number, phraseIdx: number, phraseRegularity: number = 0.5): PhrasePlan {
   const u = seededUnit(seed, phraseIdx, 91000);
-  // Bias peak later in the phrase: room for ≥2 upward steps before peak and a real tail descent.
-  // Adjacent phrases: slight peak shift + u-offset so contours do not clone phrase-to-phrase.
-  const contrast = ((phraseIdx % 3) - 1) * 0.035;
+  const contrast = phraseRegularity > 0.7
+    ? ((phraseIdx % 3) - 1) * 0.01
+    : phraseRegularity < 0.4
+    ? ((phraseIdx % 3) - 1) * 0.08
+    : ((phraseIdx % 3) - 1) * 0.035;
   const u2 = seededUnit(seed, phraseIdx, 91001);
-  const raw = Math.floor(n * (0.45 + u * 0.25 + contrast + (u2 - 0.5) * 0.02));
+  const spreadRange = phraseRegularity > 0.7 ? 0.1 : phraseRegularity < 0.4 ? 0.4 : 0.25;
+  const raw = Math.floor(n * (0.45 + u * spreadRange + contrast + (u2 - 0.5) * 0.02));
   const peakIdx = Math.max(2, Math.min(n - 3, raw));
   return { peakIdx, cadenceMidi: 0 };
 }
@@ -993,7 +996,8 @@ export function applySongModePhraseEngineV1(guitar: PartModel, context: Composit
     const n = phraseNotes.length;
     const motifSpans = buildMotifSpans(phraseNotes, mlen);
     const pitches = phraseNotes.map((x) => x.pitch);
-    const plan = planPhraseShape(n, seed, pi);
+    const phraseReg = (context.generationMetadata as any)?.songwriterPhraseRegularity ?? 0.5;
+    const plan = planPhraseShape(n, seed, pi, phraseReg);
     const cadenceMidi = cadenceTargetLowMidi(endBar, context);
 
     generatePhraseStatePitches(pitches, motifSpans, phraseNotes, plan.peakIdx, context, seed, pi, cadenceMidi);
