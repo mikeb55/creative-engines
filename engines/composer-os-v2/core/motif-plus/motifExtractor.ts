@@ -3,6 +3,7 @@
  */
 
 import type { BaseMotif, MotifNote } from '../motif/motifTypes';
+import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { MotifAsset, MotifRhythmPattern } from './motifAssetTypes';
 
 function contourFromNotes(notes: MotifNote[]): number[] {
@@ -35,4 +36,20 @@ export function motifAssetFromBaseMotif(m: BaseMotif, source: MotifAsset['source
 
 export function extractMotifAssetsFromBaseMotifs(motifs: BaseMotif[], source: MotifAsset['source'] = 'generated'): MotifAsset[] {
   return motifs.map((m) => motifAssetFromBaseMotif(m, source));
+}
+
+export function motifAssetFromCoreMotif(m: CoreMotif): MotifAsset {
+  return {
+    id: m.id,
+    source: 'generated',
+    intervalContour: m.intervalPattern,
+    rhythmPattern: { durations: m.rhythmPattern.map((r) => r.duration) },
+    repetitionProfile: m.intervalPattern.length >= 3 ? 'medium' : 'low',
+    sectionPlacement: [],
+    barCount: 1,
+  };
+}
+
+export function extractMotifAssetsFromCoreMotifs(motifs: CoreMotif[]): MotifAsset[] {
+  return motifs.map(motifAssetFromCoreMotif);
 }

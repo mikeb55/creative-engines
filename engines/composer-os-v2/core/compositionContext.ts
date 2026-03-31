@@ -157,6 +157,8 @@ export interface GenerationMetadata {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Identity-locked bar indices — mutation modules must not alter these bars. */
   identityLockedBars?: number[];
+  /** motifReusePlanner suggestions for downstream use. */
+  motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
   songModeC5ByPhrase?: Array<{
     phraseIndex: number;

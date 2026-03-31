@@ -78,6 +78,8 @@ import {
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
 import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
+import { extractMotifAssetsFromCoreMotifs } from '../motif-plus/motifExtractor';
+import { planMotifReuse } from '../motif-plus/motifReusePlanner';
 import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
@@ -1717,6 +1719,17 @@ export function generateGoldenPathDuoScore(
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo'
+  ) {
+    const coreMotifs = context.generationMetadata.songModeCoreMotifs;
+    if (coreMotifs && coreMotifs.length > 0) {
+      const assets = extractMotifAssetsFromCoreMotifs(coreMotifs);
+      const suggestions = assets.flatMap((a) => planMotifReuse(a, 'song_mode'));
+      context.generationMetadata.motifReuseSuggestions = suggestions;
+    }
+  }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (context.presetId === 'guitar_bass_duo') {
