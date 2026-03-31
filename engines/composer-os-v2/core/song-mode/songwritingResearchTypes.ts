@@ -49,7 +49,12 @@ export type SongwriterRuleId =
   | 'oliver_nelson'
   | 'gerald_wilson'
   | 'neal_hefti'
-  | 'don_sebesky';
+  | 'don_sebesky'
+  | 'arcade_fire'
+  | 'blur'
+  | 'pavement'
+  | 'radiohead'
+  | 'sonic_youth';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

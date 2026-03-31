@@ -306,6 +306,31 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('seb.dramatic_mod', 'Dramatic mod lifts', 'songwriter', 'harmony', 8, 'bridge'),
     R('seb.groove_orchestra', 'Groove + orchestral weight', 'songwriter', 'rhythm', 8, 'global'),
   ],
+  radiohead: [
+    R('radiohead.modal_colour', 'Modal harmony + colour shifts', 'songwriter', 'harmony', 7, 'verse'),
+    R('radiohead.irregular_form', 'Irregular phrase / form motion', 'songwriter', 'form', 7, 'form'),
+    R('radiohead.sync_anchor', 'Syncopated melodic anchors', 'songwriter', 'rhythm', 7, 'global'),
+  ],
+  blur: [
+    R('blur.brit_hook', 'Brit-pop hook emphasis', 'songwriter', 'hook', 8, 'chorus'),
+    R('blur.section_punch', 'Sectional punches', 'songwriter', 'form', 7, 'form'),
+    R('blur.diatonic_bite', 'Diatonic harmony with bite', 'songwriter', 'harmony', 7, 'verse'),
+  ],
+  pavement: [
+    R('pavement.loose_cells', 'Loose melodic cells', 'songwriter', 'melody', 7, 'verse'),
+    R('pavement.indie_form', 'Non-linear indie form', 'songwriter', 'form', 6, 'global'),
+    R('pavement.dry_phrase', 'Dry vocal phrasing', 'songwriter', 'lyric', 7, 'verse'),
+  ],
+  sonic_youth: [
+    R('sy.noise_space', 'Noise vs space contrast', 'songwriter', 'form', 8, 'form'),
+    R('sy.angular_riff', 'Angular guitar riff logic', 'songwriter', 'melody', 7, 'verse'),
+    R('sy.alt_tuning', 'Alternate tuning colour', 'songwriter', 'harmony', 7, 'global'),
+  ],
+  arcade_fire: [
+    R('af.anthem_hook', 'Anthemic chorus lift', 'songwriter', 'hook', 8, 'chorus'),
+    R('af.dynamics_arc', 'Dynamic section arcs', 'songwriter', 'form', 8, 'form'),
+    R('af.repetition_build', 'Repetition builds tension', 'songwriter', 'hook', 7, 'chorus'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {
