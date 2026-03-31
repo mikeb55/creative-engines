@@ -336,6 +336,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('shorter.irregular_phrase', 'Irregular phrase architecture', 'songwriter', 'form', 8, 'form'),
     R('shorter.melodic_angle', 'Angular melodic cells', 'songwriter', 'melody', 8, 'global'),
   ],
+  andrew_hill: [
+    R('hill.interval_cells', 'Interval-cell development and transposition', 'songwriter', 'melody', 8, 'global'),
+    R('hill.asymmetric_phrase', 'Asymmetric phrase lengths vs grid', 'songwriter', 'form', 8, 'form'),
+    R('hill.ambiguous_field', 'Ambiguous tonal fields; delayed resolution', 'songwriter', 'harmony', 8, 'verse'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

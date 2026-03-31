@@ -15,6 +15,7 @@ import {
 import { parseChordProgressionInput, parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
+  { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
   { id: 'beatles', label: 'Beatles' },

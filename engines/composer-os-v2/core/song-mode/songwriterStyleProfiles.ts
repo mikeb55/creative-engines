@@ -871,6 +871,22 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 5,
     intervalPreference: 'chromatic',
   },
+  andrew_hill: {
+    id: 'andrew_hill',
+    lineVsCellEmphasis: 0.85,
+    harmonyColourBias: 0.88,
+    formRegularity: 0.15,
+    prosodyInfluence: 0.1,
+    hookRepetitionBias: 0.22,
+    phraseRegularity: 0.12,
+    hookReturnVariation: 0.92,
+    harmonicSpeed: 0.35,
+    sectionContrast: 0.78,
+    syncopationBias: 0.72,
+    densityBias: 0.42,
+    motifCellSize: 4,
+    intervalPreference: 'angular',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -960,6 +976,9 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   wayne_shorter: 'wayne_shorter',
   shorter: 'wayne_shorter',
   wayne: 'wayne_shorter',
+  andrew_hill: 'andrew_hill',
+  hill: 'andrew_hill',
+  andrew: 'andrew_hill',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
 };

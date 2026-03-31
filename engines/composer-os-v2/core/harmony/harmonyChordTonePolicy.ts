@@ -22,6 +22,8 @@ export function chordTonesForChordSymbolWithContext(chord: string, context: Comp
   const locked = shouldUseUserChordSemanticsForTones(context);
   const primaryStyle = (context.generationMetadata as any)?.songwriterStyleId ?? '';
   const styleProfile = (context.generationMetadata as any)?.styleProfile ?? '';
-  const shorterMode = primaryStyle === 'wayne_shorter' || styleProfile === 'STYLE_MODERN_JAZZ';
+  const shorterMode = primaryStyle === 'wayne_shorter' 
+    || primaryStyle === 'andrew_hill'
+    || styleProfile === 'STYLE_MODERN_JAZZ';
   return chordTonesForChordSymbol(chord, { lockedHarmony: locked, shorterMode });
 }
