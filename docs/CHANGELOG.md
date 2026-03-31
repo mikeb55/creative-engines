@@ -2,6 +2,9 @@
 
 ## V8.0 (retrospective)
 
+- feat: phraseRegularity wired into songModePhraseEngineV1.ts — high regularity produces consistent phrase peak placement, low regularity produces varied irregular peaks
+- feat: densityBias wired into songModeSpaceC7.ts — high density bias reduces C7 space operations, low density bias increases them; verified 60-line XML diff between James Brown (dense) and Debussy (sparse)
+- feat: Songwriter Profiles now COMPLETE — all 4 weights wired: syncopationBias, hookRepetitionBias, phraseRegularity, densityBias
 - feat: hookRepetitionBias wired end-to-end through Song Mode — songwriter profile now controls bar 25 hook return variation; high bias (Max Martin 0.95) returns literal bar 1 pitches; low bias (Joni Mitchell 0.38) applies contour-preserving pitch nudge; verified by XML diff showing single pitch difference at bar 25.
 - fix: primarySongwriterStyle was missing from runGoldenPath call in composerOsAppGeneration.ts — now passed through so songwriter metadata reaches generationMetadata before score generation.
 - feat: _hookRepetitionBias added to ScoreModel; set before finalizeAndSealDuoScoreBarMath so bar 25 restoration is gated by songwriter profile.

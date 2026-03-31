@@ -61,6 +61,7 @@ import {
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
@@ -84,7 +85,7 @@ import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
 import { applySongModeHookRhythmLayerC4, applySongModeOstinatoC4 } from './songModeOstinatoC4';
-import { applySongModeOstinatoC5 } from './songModeOstinatoC5';
+import { applySongModeOstinatoC5, applyC5DensityLayer } from './songModeOstinatoC5';
 import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
@@ -1733,6 +1734,16 @@ export function generateGoldenPathDuoScore(
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   afterExpressive._hookRepetitionBias = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
   finalizeAndSealDuoScoreBarMath(afterExpressive);
+  const c5StrengthFinal = (context.generationMetadata as any)?.blendStrength ?? 'medium';
+  if (c5StrengthFinal !== 'medium') {
+    const guitarFinal = afterExpressive.parts.find((p) => p.id === 'guitar');
+    if (guitarFinal) {
+      for (const m of guitarFinal.measures) {
+        if (isProtectedBar(m.index, context)) continue;
+        applyC5DensityLayer(m, c5StrengthFinal, context.seed, 0, m.index);
+      }
+    }
+  }
   if (context.presetId === 'guitar_bass_duo') {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
     const gridCheck = validateScoreDuoAttackGrid(afterExpressive);

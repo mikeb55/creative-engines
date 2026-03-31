@@ -20,6 +20,7 @@ import {
 } from './jamesBrownFunkOverlay';
 import { normalizeMeasureToEighthBeatGrid } from '../score-integrity/duoEighthBeatGrid';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 const GRID_16TH = 0.25;
 const EPS = 1e-4;
@@ -256,7 +257,7 @@ function applyBlendToMeasure(
   }
 }
 
-function applyC5DensityLayer(
+export function applyC5DensityLayer(
   measure: MeasureModel,
   c5Strength: 'light' | 'medium' | 'strong',
   seed: number,
@@ -456,6 +457,14 @@ export function applySongModeOstinatoC5(score: ScoreModel, context: CompositionC
   }
 
   runGlobalC5SafetyAfterApply(guitar, bass, beforeG, beforeB, fullBackupG, fullBackupB, out);
+
+  if (c5Strength !== 'medium') {
+    for (let bar = blendStart; bar < blendStart + blendLength; bar++) {
+      if (isProtectedBar(bar, context)) continue;
+      const mG = guitar.measures.find((x) => x.index === bar);
+      if (mG) applyC5DensityLayer(mG, c5Strength, seed, 0, bar);
+    }
+  }
 }
 
 /**
