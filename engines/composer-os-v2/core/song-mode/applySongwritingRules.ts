@@ -27,17 +27,13 @@ function buildLyricProsodyMeta(
   };
 }
 
-function sectionContrastDims(primaryId: ResolvedSongwritingStyle['primaryId']): SongwritingPlanningBundle['sectionContrastDimensions'] {
-  switch (primaryId) {
-    case 'paul_simon':
-      return { melody: 0.45, harmony: 0.35, rhythm: 0.55 };
-    case 'max_martin':
-      return { melody: 0.55, harmony: 0.4, rhythm: 0.65 };
-    case 'bob_dylan':
-      return { melody: 0.2, harmony: 0.15, rhythm: 0.25 };
-    default:
-      return { melody: 0.4, harmony: 0.4, rhythm: 0.35 };
-  }
+function sectionContrastDims(resolution: ResolvedSongwritingStyle): SongwritingPlanningBundle['sectionContrastDimensions'] {
+  const p = resolution.blendedProfile;
+  return {
+    melody: p.sectionContrast * 0.6 + 0.1,
+    harmony: p.harmonyColourBias * 0.5 + 0.1,
+    rhythm: p.syncopationBias * 0.6 + 0.1,
+  };
 }
 
 function mergeHook(base: SongHook, hookPlan: HookPlan): SongHook {
@@ -73,7 +69,7 @@ export function applySongwritingRules(params: {
     stylePairingResolution,
   } = params;
   const lyricProsody = buildLyricProsodyMeta(resolution.primaryId, authorOverlay);
-  const baseContrast = sectionContrastDims(resolution.primaryId);
+  const baseContrast = sectionContrastDims(resolution);
   const conf = stylePairingResolution?.confidenceScore ?? 0;
   const sectionContrastDimensions = stylePairingResolution
     ? {
