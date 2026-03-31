@@ -73,6 +73,11 @@ export interface ChordTonesOptions {
    * When true, skip golden-path canonical substitution (G7→G13, C→Cmaj9, …) so generation matches user / locked symbols.
    */
   lockedHarmony?: boolean;
+  /**
+   * When true, bias tone selection toward upper extensions (9, 11, 13) and chromatic approach tones.
+   * Reduces root/fifth emphasis. Wayne Shorter harmonic language.
+   */
+  shorterMode?: boolean;
 }
 
 /** Full chord symbol (may include slash) → chord tones in bass register. */
@@ -127,6 +132,18 @@ export function chordTonesFromSymbol(harmonyPart: string, opts?: ChordTonesOptio
   else seventhPc = (rootPc + 10) % 12;
 
   const oct = (pc: number) => 36 + pc;
+  if (opts?.shorterMode) {
+    const ninthPc = (rootPc + (minorThird ? 2 : 2)) % 12;
+    const eleventhPc = (rootPc + (minorThird ? 5 : 5)) % 12;
+    const thirteenthPc = (rootPc + (minorThird ? 8 : 9)) % 12;
+    const chromApproachPc = (seventhPc + 1) % 12;
+    return {
+      root: oct(seventhPc),
+      third: oct(ninthPc),
+      fifth: oct(eleventhPc),
+      seventh: oct(thirteenthPc),
+    };
+  }
   return {
     root: oct(rootPc),
     third: oct(thirdPc),

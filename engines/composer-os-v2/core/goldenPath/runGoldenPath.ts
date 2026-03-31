@@ -751,6 +751,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       songwriterPhraseRegularity: p.phraseRegularity,
       songwriterSyncopationBias: p.syncopationBias,
       songwriterDensityBias: p.densityBias,
+      songwriterStyleId: resolution.primaryId,
     };
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {

@@ -159,6 +159,8 @@ export interface GenerationMetadata {
   identityLockedBars?: number[];
   /** motifReusePlanner suggestions for downstream use. */
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
+  /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
+  songwriterStyleId?: string;
   /** Songwriter profile: hook repetition bias (0–1). */
   songwriterHookRepetitionBias?: number;
   /** Songwriter profile: phrase regularity (0–1). */
