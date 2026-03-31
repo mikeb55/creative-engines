@@ -3,7 +3,8 @@
 **Composer OS** is a unified generative composition system — not a collection of isolated engines. It provides a single, disciplined pipeline through which all musical output flows, with validation gates and readiness scoring before any export is marked shareable.
 
 **Docs:** [Architecture](../../docs/COMPOSER_OS_ARCHITECTURE.md) | [Changelog](../../docs/CHANGELOG.md) | [User guide](../../docs/USER_GUIDE.md) | [Testing](../../docs/TESTING.md) | [DEV_NOTES (archived)](../../docs/archive/composer-os/DEV_NOTES.md)  
-**Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md) | [Bacharach](core/style-modules/bacharach/README.md)
+**Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md) | [Bacharach](core/style-modules/bacharach/README.md)  
+**Songwriter → harmony:** Primary `songwriterStyleId` on `generationMetadata`; **Wayne Shorter** enables `ChordTonesOptions.shorterMode` in `harmonyChordTonePolicy.ts` / `chordSymbolAnalysis.ts` (see architecture doc).
 
 ---
 

@@ -23,11 +23,15 @@ Order for the duo **32-bar** Song Mode golden path (after core duo build, before
 2. **C2** — Phrase rhythm intent is *derived inside C1/C2 layer* (phrase intent summaries, mode-scaled strength). Documented with C1 in code as the phrase-intent layer.
 3. **C3** — `jamesBrownFunkOverlay` (optional James Brown funk overlay when enabled).
 4. **C4** — `songModeOstinatoC4`: ostinato / hook bias (phrase-level, safety-first).
-5. **C5** — `songModeControlC5`: **control layer** — primary/secondary stack roles, caps, gentle velocity contrast; ties layers using resolved strength.
+5. **C5 (two passes)** — **`songModeOstinatoC5`**: blend / feel interpolation + optional structural density (`applyC5DensityLayer`, `blendStrength`); then **`songModeControlC5`**: control layer — primary/secondary stack roles, caps, gentle velocity contrast; ties layers using resolved strength. A post–bar-math density pass may apply in `generateGoldenPathDuoScore` after `finalizeAndSealDuoScoreBarMath` (see CHANGELOG).
 6. **C6** — `songModeExpressionC6`: expression (guitar velocity + articulation), yields to C5.
 7. **C7** — `songModeSpaceC7`: space / rest operations within caps, yields to C5/C6.
 
 **Central rule (D1):** Raw **rhythm intent** from the request is resolved **once** into per-phrase records (`rhythmIntentResolve` + metadata). Downstream passes read **effective strength** via `getEffectiveRhythmStrength` (from **resolved** weights + surprise), not raw UI fields. **UI → `GenerateRequest.intent` → `runGoldenPath` → resolution before overlays → C4–C7.**
+
+## Songwriter id → chord tones (Wayne Shorter mode)
+
+When Song Mode supplies a **primary songwriter** style, `runGoldenPath` resolves profiles via `resolveSongwritingStyles` and writes **`songwriterStyleId`** (and weight fields) onto **`generationMetadata`**. **`chordTonesForChordSymbolWithContext`** (`harmony/harmonyChordTonePolicy.ts`) forwards **`shorterMode: true`** into **`chordTonesForChordSymbol`** when the id is **`wayne_shorter`**. In **`chordSymbolAnalysis.ts`**, `shorterMode` rewires the heuristic `ChordToneSet` returned from symbol parsing to emphasise upper-extension pitch classes (post-bop, non-functional line flavour) instead of the default root–third–fifth–seventh mapping. Other profiles leave `shorterMode` off.
 
 ## D-phase status
 
@@ -40,7 +44,7 @@ Order for the duo **32-bar** Song Mode golden path (after core duo build, before
 ## C-module status
 
 - C4: done — UI control wired end-to-end; c4Strength reaches generationMetadata via Song Mode request path
-- C5: done — blendStrength wired end-to-end; affects dynamics scaling via applySongModeOstinatoC5; rhythm density tuning parked for later
+- C5: done — `applySongModeOstinatoC5` + `applySongModeControlC5`; blendStrength + structural density layer (see CHANGELOG); control caps/velocity contrast
 - C6: done — expression pass fully built and firing; velocity shaping, articulation, phrase emphasis, fail-safe restore
 - C7: done — space pass fully built and firing; note-to-rest and merge ops, density caps, anti-oversparsity guard, fail-safe restore
 

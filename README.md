@@ -41,10 +41,12 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 **Composer OS documentation (canonical):**
 
-- [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2
+- [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — V8.0 + pointer to archived pre-V8 history
 - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — friendly overview
 - [docs/TESTING.md](docs/TESTING.md) — D1 self-test harness
+
+**Songwriter → harmony (GitHub summary):** Primary **songwriter profile** id is stored on `generationMetadata.songwriterStyleId`. The **Wayne Shorter** profile turns on **`shorterMode`** in chord-tone resolution so generation favours upper extensions over root/fifth-heavy spellings (see `harmonyChordTonePolicy.ts`, `chordSymbolAnalysis.ts`).
 
 Older integration notes and the long pre-V8 changelog live under [docs/archive/composer-os/](docs/archive/composer-os/). Supported modes and limitations are summarized in `engines/composer-os-v2/app-api/releaseMetadata.ts` and the Composer OS README — no Python or `.bat` is required for normal app use.
 
