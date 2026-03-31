@@ -1731,6 +1731,7 @@ export function generateGoldenPathDuoScore(
     }
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
+  afterExpressive._hookRepetitionBias = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (context.presetId === 'guitar_bass_duo') {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');

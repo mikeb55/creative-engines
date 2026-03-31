@@ -2,6 +2,15 @@
 
 ## V8.0 (retrospective)
 
+- feat: songwriter profile library expanded to 42 profiles total
+- feat: deep Perplexity research applied to 13 profiles — classical (Messiaen, Stravinsky, Mahler, Debussy, Prokofiev), jazz arrangers (Gil Evans, Maria Schneider, Bob Brookmeyer, Clare Fischer), black songwriters (Duke Ellington, Billy Strayhorn, Kendrick Lamar, Prince)
+- feat: new profiles added — Radiohead, Blur, Pavement, Sonic Youth, Arcade Fire, XTC (deep research)
+- feat: Richard Thompson guitar language dimensions added (guitarLeadIntervals, guitarModalPreference)
+- feat: guitarLeadIntervals and guitarModalPreference optional fields added to SongwriterStyleProfile interface
+- feat: syncopationBias wired into C1 rhythm overlay selectOverlaysForPhrase — songwriter profile now affects rhythm generation
+- feat: songwriter profile weights written to generationMetadata (hookRepetitionBias, phraseRegularity, syncopationBias, densityBias)
+- feat: ARRANGER_OPTIONS expanded to 14 in HomeGenerate.tsx
+- feat: songwriting-engine archived to core/archive/
 - feat: motifReusePlanner wired into Song Mode golden path — extractMotifAssetsFromCoreMotifs converter added to motifExtractor.ts; planMotifReuse suggestions stored in generationMetadata.motifReuseSuggestions after applySongModeSpaceC7. Type-safe CoreMotif → MotifAsset conversion, no runtime errors.
 - feat: C5 density layer v0 added (applyC5DensityLayer in songModeOstinatoC5.ts); blendStrength light/strong logic implemented but structural note changes reverted by safety check — dynamics difference confirmed working; structural density upgrade parked for C5 v1.
 - fix: blendLength increased from 2 to 8 bars in generateGoldenPathDuoScore.ts for wider C5 coverage.

@@ -172,7 +172,8 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
     applyBassBeatNotationGrouping(score);
   }
   expandNotationSafeDurationsInScore(score);
-  restoreGuitarBar25HookPitchesFromBar1(score);
+  const hookBias = (score as any)._hookRepetitionBias ?? 0.5;
+  if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score);
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);
   const v = validateStrictBarMath(score);
   if (!v.valid) {

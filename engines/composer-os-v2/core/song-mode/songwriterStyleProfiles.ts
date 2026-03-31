@@ -855,6 +855,22 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 4,
     intervalPreference: 'triadic',
   },
+  wayne_shorter: {
+    id: 'wayne_shorter',
+    lineVsCellEmphasis: 0.82,
+    harmonyColourBias: 0.92,
+    formRegularity: 0.22,
+    prosodyInfluence: 0.1,
+    hookRepetitionBias: 0.38,
+    phraseRegularity: 0.18,
+    hookReturnVariation: 0.88,
+    harmonicSpeed: 0.62,
+    sectionContrast: 0.72,
+    syncopationBias: 0.42,
+    densityBias: 0.48,
+    motifCellSize: 5,
+    intervalPreference: 'chromatic',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -941,6 +957,9 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   sonic_youth: 'sonic_youth',
   thom_yorke: 'radiohead',
   win_butler: 'arcade_fire',
+  wayne_shorter: 'wayne_shorter',
+  shorter: 'wayne_shorter',
+  wayne: 'wayne_shorter',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
 };

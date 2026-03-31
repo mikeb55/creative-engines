@@ -54,7 +54,8 @@ export type SongwriterRuleId =
   | 'blur'
   | 'pavement'
   | 'radiohead'
-  | 'sonic_youth';
+  | 'sonic_youth'
+  | 'wayne_shorter';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

@@ -331,6 +331,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('af.dynamics_arc', 'Dynamic section arcs', 'songwriter', 'form', 8, 'form'),
     R('af.repetition_build', 'Repetition builds tension', 'songwriter', 'hook', 7, 'chorus'),
   ],
+  wayne_shorter: [
+    R('shorter.chromatic_side', 'Chromatic side-slips and colour', 'songwriter', 'harmony', 8, 'verse'),
+    R('shorter.irregular_phrase', 'Irregular phrase architecture', 'songwriter', 'form', 8, 'form'),
+    R('shorter.melodic_angle', 'Angular melodic cells', 'songwriter', 'melody', 8, 'global'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

@@ -96,6 +96,7 @@ function hookFirstReturnPitchesFromShape(
   zLow: number,
   zHigh: number,
   seed: number,
+  hookRepetitionBias: number = 0.5,
   chordToneOpts?: ChordTonesOptions
 ): number[] {
   if (bar1Pitches.length === 0) return [];
@@ -118,7 +119,10 @@ function hookFirstReturnPitchesFromShape(
   };
 
   const targetContour = getContour(base);
-  const nudges = [1, -1, 2, -2];
+  if (hookRepetitionBias > 0.75) return base;
+  const nudges = hookRepetitionBias < 0.4
+    ? [1, -1, 2, -2, 3, -3]
+    : [1, -1, 2, -2];
   const nonAnchorIndices = base
     .map((_, i) => i)
     .filter((i) => i !== 0 && i !== base.length - 1);
@@ -787,7 +791,8 @@ export function buildSongModeMotifV2Runtime(params: {
             if (!bar1) {
               throw new Error('hook-first return: could not extract MotifShape from guitar bar 1');
             }
-            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, seed, chordToneOpts);
+            const hookRepBias = (params.context?.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
+            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, seed, hookRepBias, chordToneOpts);
           })()
         : realizeReturnMidiFromMotifShape(
             statementMotifShape,

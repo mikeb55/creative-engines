@@ -252,6 +252,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    primarySongwriterStyle: req.primarySongwriterStyle,
   });
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
   if (isDesktopTruthDumpEnabled()) {

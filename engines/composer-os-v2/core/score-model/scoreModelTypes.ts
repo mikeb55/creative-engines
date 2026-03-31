@@ -128,5 +128,7 @@ export interface ScoreModel {
   keySignature?: KeySignatureLine;
   /** TEMP V3.4c — mirror receipt for export debug log; remove when stable. */
   keySignatureExportDebug?: { inferredKey: string; inferredFifths: number; exportKeyWritten: boolean };
+  /** Hook repetition bias from songwriter profile — used by duoBarMathFinalize to gate bar 25 restoration. */
+  _hookRepetitionBias?: number;
   parts: PartModel[];
 }
