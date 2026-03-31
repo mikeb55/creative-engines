@@ -101,7 +101,18 @@ const MINIMAL_STYLE_STACK = {
 };
 
 /** Must stay aligned with `StyleProfile` in `engines/composer-os-v2/core/song-mode/songModeStyleProfile.ts`. */
-const SONG_MODE_STYLE_OPTIONS = ['STYLE_ECM', 'STYLE_SHORTER_POST_BOP', 'STYLE_BEBOP_LITE'] as const;
+const SONG_MODE_STYLE_OPTIONS = [
+  'STYLE_ECM',
+  'STYLE_SHORTER_POST_BOP',
+  'STYLE_BEBOP_LITE',
+  'STYLE_MODERN_JAZZ',
+  'STYLE_BEBOP_POST_BOP',
+  'STYLE_SOPHISTICATED_POP',
+  'STYLE_GROOVE_SOUL',
+  'STYLE_INDIE_ART_POP',
+  'STYLE_FOLK_GUITAR_NARRATIVE',
+  'STYLE_CLASSICAL_INFLUENCE',
+] as const;
 type SongModeStyleProfile = (typeof SONG_MODE_STYLE_OPTIONS)[number];
 
 function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {

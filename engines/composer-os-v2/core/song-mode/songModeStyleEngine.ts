@@ -68,6 +68,67 @@ function velocityDeltaForNote(
     return d;
   }
 
+  if (profile === 'STYLE_MODERN_JAZZ') {
+    let d = -2;
+    if (posInPhrase === 0) d += 6;
+    if (posInPhrase === PHRASE_BARS - 1) d += 4;
+    if (strong) d += 3;
+    else if (off) d += 4;
+    if (pitch >= 72) d += 3;
+    d += Math.round(micro * 0.85);
+    return d;
+  }
+  if (profile === 'STYLE_BEBOP_POST_BOP') {
+    let d = 3;
+    if (strong) d += 8;
+    else if (off) d += 5;
+    if (posInPhrase === 0) d += 4;
+    d += micro;
+    return d;
+  }
+  if (profile === 'STYLE_SOPHISTICATED_POP') {
+    const gentleSwell = Math.round(sinContour * 8);
+    let d = gentleSwell;
+    if (strong) d += 4;
+    else if (off) d += 2;
+    if (posInPhrase === PHRASE_BARS - 1) d += 5;
+    d += Math.round(micro * 0.6);
+    return d;
+  }
+  if (profile === 'STYLE_GROOVE_SOUL') {
+    let d = 4;
+    if (off) d += 10;
+    if (strong) d += 2;
+    if (pitch < 55) d += 3;
+    d += Math.round(micro * 0.9);
+    return d;
+  }
+  if (profile === 'STYLE_INDIE_ART_POP') {
+    const gentleSwell = Math.round(sinContour * 6);
+    let d = -4 + gentleSwell;
+    if (off) d += 6;
+    if (posInPhrase === PHRASE_BARS - 1) d += 3;
+    d += Math.round(micro * 0.75);
+    return d;
+  }
+  if (profile === 'STYLE_FOLK_GUITAR_NARRATIVE') {
+    let d = -8;
+    if (posInPhrase === 0) d += 5;
+    if (posInPhrase === PHRASE_BARS - 1) d += 8;
+    if (strong) d += 3;
+    d += Math.round(micro * 0.4);
+    return d;
+  }
+  if (profile === 'STYLE_CLASSICAL_INFLUENCE') {
+    const dramaticSwell = Math.round(sinContour * 14);
+    let d = -5 + dramaticSwell;
+    if (posInPhrase === PHRASE_BARS - 1) d += 10;
+    if (strong) d += 5;
+    else if (off) d -= 3;
+    d += micro;
+    return d;
+  }
+
   if (profile === 'STYLE_SHORTER_POST_BOP') {
     /** Phrase-edge push + stronger downbeats; wider contrast via full micro range. */
     let d = -3;
@@ -90,7 +151,15 @@ function velocityDeltaForNote(
 
 export function applySongModeStyleEngineToScore(score: ScoreModel, seed: number, profile: StyleProfile): void {
   const profileBand =
-    profile === 'STYLE_ECM' ? 0 : profile === 'STYLE_SHORTER_POST_BOP' ? 1 : 2;
+    profile === 'STYLE_ECM' ? 0 :
+    profile === 'STYLE_SHORTER_POST_BOP' ? 1 :
+    profile === 'STYLE_BEBOP_LITE' ? 2 :
+    profile === 'STYLE_MODERN_JAZZ' ? 3 :
+    profile === 'STYLE_BEBOP_POST_BOP' ? 4 :
+    profile === 'STYLE_SOPHISTICATED_POP' ? 5 :
+    profile === 'STYLE_GROOVE_SOUL' ? 6 :
+    profile === 'STYLE_INDIE_ART_POP' ? 7 :
+    profile === 'STYLE_FOLK_GUITAR_NARRATIVE' ? 8 : 9;
 
   for (const part of score.parts) {
     for (const m of part.measures) {
