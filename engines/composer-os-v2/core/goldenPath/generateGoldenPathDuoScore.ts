@@ -1607,9 +1607,12 @@ export function generateGoldenPathDuoScore(
   opts?: GenerateGoldenPathDuoScoreOpts
 ): ScoreModel {
   const tb = totalBarsFromContext(context);
+  const isEcmStyle = context.generationMetadata?.styleProfile === 'STYLE_ECM';
   const texturePlan =
-    context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode
+    (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode)
       ? planEcmTextureBars(tb, context.generationMetadata.ecmMode, context.seed)
+      : (context.presetId === 'guitar_bass_duo' && isEcmStyle)
+      ? planEcmTextureBars(tb, 'ECM_METHENY_QUARTET', context.seed)
       : undefined;
 
   const guitarPart = buildGuitarPart(
