@@ -274,9 +274,15 @@ function formatIntentSummary(
   return `${profile} (${st}): ${parts.join(', ')}`;
 }
 
-export function selectOverlaysForPhrase(phraseIdx: number, seed: number): { id: string; weight: number }[] {
+export function selectOverlaysForPhrase(
+  phraseIdx: number,
+  seed: number,
+  syncopationBias: number = 0.5
+): { id: string; weight: number }[] {
   const u0 = seededUnit(seed, phraseIdx, 93100);
-  const count = u0 < 0.28 ? 0 : u0 < 0.62 ? 1 : 2;
+  const low = 0.28 - (syncopationBias - 0.5) * 0.2;
+  const mid = 0.62 - (syncopationBias - 0.5) * 0.15;
+  const count = u0 < low ? 0 : u0 < mid ? 1 : 2;
   if (count === 0) return [];
   const pool = [...SONG_MODE_RHYTHM_OVERLAY_IDS];
   const out: { id: string; weight: number }[] = [];
@@ -284,7 +290,7 @@ export function selectOverlaysForPhrase(phraseIdx: number, seed: number): { id: 
     const j = Math.floor(seededUnit(seed, phraseIdx, 93110 + k + phraseIdx * 5) * pool.length);
     const id = pool[j];
     pool.splice(j, 1);
-    out.push({ id, weight: 0.25 + seededUnit(seed, phraseIdx, 93120 + k * 13) * 0.5 });
+    out.push({ id, weight: 0.25 + seededUnit(seed, phraseIdx, 93120 + k * 13) * 0.5 + syncopationBias * 0.15 });
   }
   return out;
 }
@@ -838,11 +844,12 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   const debug: SongModeRhythmOverlayPhraseDebug[] = [];
   const seed = context.seed;
   const strength = (context.generationMetadata as GenerationMetadata).songModeRhythmStrength;
+  const syncopationBias = (context.generationMetadata as GenerationMetadata).songwriterSyncopationBias ?? 0.5;
   const phraseBuf: PhraseNoteRef[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
     const { startBar, endBar } = segments[pi];
-    const applied = selectOverlaysForPhrase(pi, seed);
+    const applied = selectOverlaysForPhrase(pi, seed, syncopationBias);
     const intent =
       applied.length > 0
         ? strengthAdjustPhraseIntent(derivePhraseRhythmIntent(applied, strength, seed, pi), strength, seed, pi)

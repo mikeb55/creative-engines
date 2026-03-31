@@ -159,6 +159,14 @@ export interface GenerationMetadata {
   identityLockedBars?: number[];
   /** motifReusePlanner suggestions for downstream use. */
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
+  /** Songwriter profile: hook repetition bias (0–1). */
+  songwriterHookRepetitionBias?: number;
+  /** Songwriter profile: phrase regularity (0–1). */
+  songwriterPhraseRegularity?: number;
+  /** Songwriter profile: syncopation bias (0–1). */
+  songwriterSyncopationBias?: number;
+  /** Songwriter profile: density bias (0–1). */
+  songwriterDensityBias?: number;
   /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
   songModeC5ByPhrase?: Array<{
     phraseIndex: number;

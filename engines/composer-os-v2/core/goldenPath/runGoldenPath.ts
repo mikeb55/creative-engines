@@ -81,6 +81,7 @@ import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
+import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
@@ -538,6 +539,8 @@ export interface RunGoldenPathOptions {
   songModeHookFirstIdentity?: boolean;
   /** Song Mode: Style Engine profile (default STYLE_ECM applied in handler if omitted). */
   styleProfile?: StyleProfile;
+  /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
+  primarySongwriterStyle?: string;
   /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   /** Song Mode Phase C3: James Brown funk overlay (opt-in; tests / manual). */
@@ -735,6 +738,19 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
       styleProfile: styleProfileResolved,
+    };
+  }
+  if (options?.songModeHookFirstIdentity && options?.primarySongwriterStyle) {
+    const resolution = resolveSongwritingStyles({
+      primary: options.primarySongwriterStyle,
+    });
+    const p = resolution.blendedProfile;
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      songwriterHookRepetitionBias: p.hookRepetitionBias,
+      songwriterPhraseRegularity: p.phraseRegularity,
+      songwriterSyncopationBias: p.syncopationBias,
+      songwriterDensityBias: p.densityBias,
     };
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {
