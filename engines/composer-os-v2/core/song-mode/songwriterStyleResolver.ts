@@ -47,6 +47,12 @@ function blendProfiles(a: SongwriterStyleProfile, b: SongwriterStyleProfile, wei
     formRegularity: blend('formRegularity'),
     prosodyInfluence: blend('prosodyInfluence'),
     hookRepetitionBias: blend('hookRepetitionBias'),
+    phraseRegularity: blend('phraseRegularity'),
+    hookReturnVariation: blend('hookReturnVariation'),
+    harmonicSpeed: blend('harmonicSpeed'),
+    sectionContrast: blend('sectionContrast'),
+    syncopationBias: blend('syncopationBias'),
+    densityBias: blend('densityBias'),
   };
 }
 

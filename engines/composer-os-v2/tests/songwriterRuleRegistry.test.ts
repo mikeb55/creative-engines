@@ -22,6 +22,16 @@ export function runSongwriterRuleRegistryTests(): { ok: boolean; name: string }[
     'randy_newman',
     'richard_thompson',
     'max_martin',
+    'brian_wilson',
+    'paul_mccartney',
+    'jeff_lynne',
+    'xtc',
+    'kurt_weill',
+    'holland_dozier_holland',
+    'norman_whitfield',
+    'bach',
+    'beethoven',
+    'debussy',
   ];
   out.push({
     ok: ids.every((id) => SONGWRITER_RULE_REGISTRY.songwriterRules[id].length >= 3),

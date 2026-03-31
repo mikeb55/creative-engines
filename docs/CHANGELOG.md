@@ -2,6 +2,7 @@
 
 ## V8.0 (retrospective)
 
+- feat: motifReusePlanner wired into Song Mode golden path — extractMotifAssetsFromCoreMotifs converter added to motifExtractor.ts; planMotifReuse suggestions stored in generationMetadata.motifReuseSuggestions after applySongModeSpaceC7. Type-safe CoreMotif → MotifAsset conversion, no runtime errors.
 - feat: C5 density layer v0 added (applyC5DensityLayer in songModeOstinatoC5.ts); blendStrength light/strong logic implemented but structural note changes reverted by safety check — dynamics difference confirmed working; structural density upgrade parked for C5 v1.
 - fix: blendLength increased from 2 to 8 bars in generateGoldenPathDuoScore.ts for wider C5 coverage.
 - feat: C3 Funk Groove — added UI checkbox in HomeGenerate.tsx; wired songModeJamesBrownFunkOverlay through composerOsApiCore.ts, appApiTypes.ts, generateComposition.ts, composerOsAppGeneration.ts into runGoldenPath and generationMetadata. Verified end-to-end — structural rhythm differences confirmed in MusicXML output.
