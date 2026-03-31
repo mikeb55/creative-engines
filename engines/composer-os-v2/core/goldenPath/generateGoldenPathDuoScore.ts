@@ -20,7 +20,7 @@ import type { GuitarBehaviourPlan, BassBehaviourPlan } from '../instrument-behav
 import type { RhythmicConstraints } from '../rhythm-engine/rhythmTypes';
 import type { MotifTrackerState, PlacedMotif } from '../motif/motifTypes';
 import { getDensityForBar } from '../density/densityCurvePlanner';
-import type { StyleStack } from '../style-modules/styleModuleTypes';
+import { styleStackToModuleIds, type StyleStack } from '../style-modules/styleModuleTypes';
 import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
@@ -92,6 +92,13 @@ import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
+
+const DUO_DEFAULT_STYLE_STACK: StyleStack = {
+  primary: 'barry_harris',
+  secondary: 'metheny',
+  colour: 'triad_pairs',
+  weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+};
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
@@ -326,8 +333,10 @@ function buildGuitarPart(
   rhythm: RhythmicConstraints,
   motifState: MotifTrackerState,
   interactionPlan: InteractionPlan | undefined,
-  texturePlan: EcmBarTexture[] | undefined
+  texturePlan: EcmBarTexture[] | undefined,
+  styleStack?: StyleStack
 ): PartModel {
+  const stackIds = styleStackToModuleIds(styleStack ?? DUO_DEFAULT_STYLE_STACK);
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is GuitarProfile => p.instrumentIdentity === 'clean_electric_guitar'
   ) ?? CLEAN_ELECTRIC_GUITAR;
@@ -644,6 +653,7 @@ function buildGuitarPart(
           anchorMidi,
           swingDuo: isDuoGolden,
           chordToneOpts,
+          triadPairs: stackIds.includes('triad_pairs'),
         });
       }
     }
@@ -1623,7 +1633,8 @@ export function generateGoldenPathDuoScore(
     plans.rhythmConstraints,
     plans.motifState,
     plans.interactionPlan,
-    texturePlan
+    texturePlan,
+    plans.styleStack
   );
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&

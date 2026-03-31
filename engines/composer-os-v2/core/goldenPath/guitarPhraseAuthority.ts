@@ -179,6 +179,8 @@ export function emitGuitarPhraseBar(params: {
   /** Duo swing: delayed downbeats, short–long cells, stronger syncopation. */
   swingDuo?: boolean;
   chordToneOpts?: ChordTonesOptions;
+  /** Lippincott triad pairs: favour third/fifth over scalar runs. */
+  triadPairs?: boolean;
 }): void {
   const {
     m,
@@ -196,6 +198,7 @@ export function emitGuitarPhraseBar(params: {
     anchorMidi,
     swingDuo,
     chordToneOpts,
+    triadPairs,
   } = params;
 
   /** Duo: attacks only on eighth-beat grid; durations still use quarter-beat rounding where needed. */
@@ -322,7 +325,8 @@ export function emitGuitarPhraseBar(params: {
       return;
     }
     const d1 = qBeat(Math.min(1.5, rem * 0.48));
-    addEvent(m, createNote(lo, t0, d1));
+    const lippincottPitch = triadPairs ? tones.third : lo;
+    addEvent(m, createNote(lippincottPitch, t0, d1));
     if (bar === 7 && intent !== 'answer_guitar') {
       const chrom = clampPitch(mid - 1, effectiveLow, effectiveHigh);
       const dCh = qBeat(Math.min(0.75, (rem - d1) * 0.35));
@@ -352,7 +356,9 @@ export function emitGuitarPhraseBar(params: {
   }
   const d1 = qBeat(Math.min(1, rem * 0.34));
   const d2 = qBeat(Math.min(1, (rem - d1) * 0.4));
-  addEvent(m, createNote(lo, t0, d1));
+  const lippincottLo = triadPairs ? tones.third : lo;
+  const lippincottMid = triadPairs ? tones.fifth : mid;
+  addEvent(m, createNote(lippincottLo, t0, d1));
   if (bar === 7) {
     const pass = clampPitch(mid - 1, effectiveLow, effectiveHigh);
     const dPass = qBeat(Math.min(0.5, (rem - d1) * 0.28));
