@@ -2,6 +2,11 @@
 
 ## V8.0 (retrospective)
 
+- feat: hookRepetitionBias wired end-to-end through Song Mode — songwriter profile now controls bar 25 hook return variation; high bias (Max Martin 0.95) returns literal bar 1 pitches; low bias (Joni Mitchell 0.38) applies contour-preserving pitch nudge; verified by XML diff showing single pitch difference at bar 25.
+- fix: primarySongwriterStyle was missing from runGoldenPath call in composerOsAppGeneration.ts — now passed through so songwriter metadata reaches generationMetadata before score generation.
+- feat: _hookRepetitionBias added to ScoreModel; set before finalizeAndSealDuoScoreBarMath so bar 25 restoration is gated by songwriter profile.
+- feat: Wayne Shorter added to songwriter profiles and UI dropdown.
+- feat: SONGWRITER_OPTIONS alphabetised in HomeGenerate.tsx (36 profiles).
 - feat: songwriter profile library expanded to 42 profiles total
 - feat: deep Perplexity research applied to 13 profiles — classical (Messiaen, Stravinsky, Mahler, Debussy, Prokofiev), jazz arrangers (Gil Evans, Maria Schneider, Bob Brookmeyer, Clare Fischer), black songwriters (Duke Ellington, Billy Strayhorn, Kendrick Lamar, Prince)
 - feat: new profiles added — Radiohead, Blur, Pavement, Sonic Youth, Arcade Fire, XTC (deep research)
