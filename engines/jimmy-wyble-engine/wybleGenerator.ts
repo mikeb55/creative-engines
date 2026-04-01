@@ -22,6 +22,8 @@ const VOICE_DISTANCE_MAX = 17;
 const VOICE_DISTANCE_REJECT = 18;
 const PREFERRED_DYAD_INTERVALS = [3, 4, 8, 9, 10, 15, 16, 17];
 const MAX_LEAP = 7;
+/** Mixed mode: on upper-solo beats 0 and 2, sometimes add a lower note (keeps upper more active overall). */
+const MIXED_EVEN_BEAT_LOWER_PROB = 0.35;
 
 const SCALE_DEGREES: Record<string, number[]> = {
   maj: [0, 2, 4, 5, 7, 9, 11],
@@ -300,6 +302,14 @@ function deriveDyadsFromVoices(
       const upperSolo = voiceRatioMode === 'mixed' ? beat % 2 === 0 : shouldUpperPlaySolo(beat, voiceRatioMode);
       if (upperSolo) {
         upperEvents.push({ pitch: upperPitch, duration: 1, beat, isDyad: false });
+        if (
+          voiceRatioMode === 'mixed' &&
+          (beat === 0 || beat === 2) &&
+          Math.random() < MIXED_EVEN_BEAT_LOWER_PROB
+        ) {
+          lowerEvents.push({ pitch: lowerPitch, duration: 1, beat, isDyad: false });
+          lastLower = lowerPitch;
+        }
       } else {
         lowerEvents.push({ pitch: lowerPitch, duration: 1, beat, isDyad: false });
         lastLower = lowerPitch;

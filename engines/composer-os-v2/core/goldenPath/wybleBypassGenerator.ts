@@ -1,6 +1,7 @@
 import { generateWybleEtude } from '../../../jimmy-wyble-engine/wybleGenerator';
-import { exportScoreToMusicXML } from '../../../jimmy-wyble-engine/wybleMusicXMLExporter';
+import { scoreToMusicXML } from '../../../core/scoreToMusicXML';
 import { createMeasure, pushNote } from '../../../jimmy-wyble-engine/../core/measureBuilder';
+import { validateScore } from '../../../../scripts/validateScore';
 import type { WybleParameters } from '../../../jimmy-wyble-engine/wybleTypes';
 import type { Score } from '../../../jimmy-wyble-engine/../core/timing';
 
@@ -43,14 +44,30 @@ function wybleOutputToScore(
 ): Score {
   const measures: Score['measures'] = [];
   const beatsPerBar = 4;
+  let uIdx = 0;
+  let lIdx = 0;
+
   for (let i = 0; i < bars; i++) {
     const measure = createMeasure(i, [1, 2]);
     const v1 = { pos: 0 };
     const v2 = { pos: 0 };
-    const uSlice = upperEvents.slice(i * beatsPerBar, (i + 1) * beatsPerBar);
-    const lSlice = lowerEvents.slice(i * beatsPerBar, (i + 1) * beatsPerBar);
-    uSlice.forEach(e => pushNote(measure, 1, e.pitch, Math.round(e.duration * 4), v1));
-    lSlice.forEach(e => pushNote(measure, 2, e.pitch, Math.round(e.duration * 4), v2));
+
+    let uTotal = 0;
+    while (uIdx < upperEvents.length && uTotal < beatsPerBar) {
+      const e = upperEvents[uIdx++];
+      const dur = Math.min(e.duration, beatsPerBar - uTotal);
+      if (dur > 0) { pushNote(measure, 1, e.pitch, Math.round(dur * 4), v1); uTotal += dur; }
+    }
+    if (uTotal < beatsPerBar) pushNote(measure, 1, 60, Math.round((beatsPerBar - uTotal) * 4), v1);
+
+    let lTotal = 0;
+    while (lIdx < lowerEvents.length && lTotal < beatsPerBar) {
+      const e = lowerEvents[lIdx++];
+      const dur = Math.min(e.duration, beatsPerBar - lTotal);
+      if (dur > 0) { pushNote(measure, 2, e.pitch, Math.round(dur * 4), v2); lTotal += dur; }
+    }
+    if (lTotal < beatsPerBar) pushNote(measure, 2, 48, Math.round((beatsPerBar - lTotal) * 4), v2);
+
     measures.push(measure);
   }
   return { measures };
@@ -78,7 +95,19 @@ export function generateWybleEtudeXml(
     output.lower_line.events,
     chords.length
   );
-  const xml = exportScoreToMusicXML(score, { title: title ?? 'Wyble Etude' });
+  const lowerDiag = {
+    rawLowerCount: output.lower_line.events.length,
+    convertedLowerCount: score.measures.reduce((n, m) => n + (m.voices[2]?.length ?? 0), 0),
+    perBar: score.measures.map((m, i) => ({ bar: i + 1, lowerNotes: m.voices[2]?.length ?? 0 })),
+    barsWithZeroLower: score.measures.filter(m => (m.voices[2]?.length ?? 0) === 0).length,
+  };
+  console.log('[wyble-lower-diag]', JSON.stringify(lowerDiag));
+  validateScore(score);
+  const xml = scoreToMusicXML(score, {
+    title: title ?? 'Wyble Etude',
+    partName: 'Guitar',
+    staves: 1,
+  });
   const receipt: WybleBypassReceipt = {
     barsRequested: chords.length,
     upperEventsCount: output.upper_line.events.length,
