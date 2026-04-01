@@ -119,6 +119,12 @@ function finalizeMeasurePerVoiceLines(m: MeasureModel, mode: RhythmSnapMode): vo
     out.push(...rebuildMonophonicVoiceLine(byVoice.get(v)!, v, mode));
   }
   m.events = out;
+  for (const [v, evs] of byVoice) {
+    const sum = evs.reduce((s, e) => s + e.duration, 0);
+    if (sum > 4.01) throw new Error(`[wyble-debug] PRE-rebuild voice ${v} overflow m.index=${m.index} sum=${sum} events=${evs.length}`);
+  }
+  const postSum = out.filter((e) => (e.voice ?? 1) === 2).reduce((s, e) => s + e.duration, 0);
+  if (postSum > 4.01) throw new Error(`[wyble-debug] POST-rebuild voice2 overflow m.index=${m.index} sum=${postSum}`);
 }
 
 /** Mutates measure events to exact bar length per voice (4/4). Bass is forced to a single monophonic voice. */
@@ -172,6 +178,13 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
     applyBassBeatNotationGrouping(score);
   }
   expandNotationSafeDurationsInScore(score);
+  for (const p of score.parts) {
+    for (const m of p.measures) {
+      const v2 = m.events.filter((e) => (e.voice ?? 1) === 2);
+      const v2sum = v2.reduce((s, e) => s + e.duration, 0);
+      if (v2sum > 4.01) throw new Error(`[v2-overflow] part=${p.id} measure=${m.index} sum=${v2sum} events=${v2.map(e=>e.kind+':'+e.startBeat+'+'+e.duration).join(',')}`);
+    }
+  }
   const hookBias = (score as any)._hookRepetitionBias ?? 0.5;
   if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score);
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);

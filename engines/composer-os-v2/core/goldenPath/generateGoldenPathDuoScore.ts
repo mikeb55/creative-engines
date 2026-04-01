@@ -170,10 +170,12 @@ function emitEcmGuitarSustainBar(params: {
     addEvent(m, createRest(3.5, 0.5));
   } else if (pat === 1) {
     addEvent(m, createNote(primary, 0, 2));
-    addEvent(m, createNote(secondary, 2, 2));
+    addEvent(m, createRest(0, 2, 2));
+    addEvent(m, createNote(secondary, 2, 2, 2));
   } else {
     addEvent(m, createNote(primary, 0, 1.25));
-    addEvent(m, createNote(secondary, 1.25, 2.75));
+    addEvent(m, createRest(0, 1.25, 2));
+    addEvent(m, createNote(secondary, 1.25, 2.75, 2));
   }
 }
 
@@ -194,8 +196,8 @@ function emitEcmGuitarInnerMotionBar(params: {
   const pass = clampPitch(target + (seededUnit(seed, bar, 903) < 0.5 ? -1 : 1), low, high);
   const neigh = clampPitch(target + (seededUnit(seed, bar, 904) < 0.5 ? 1 : -1), low, high);
   addEvent(m, createRest(0, 0.5));
-  addEvent(m, createNote(neigh, 0.5, 0.5));
-  addEvent(m, createNote(pass, 1, 1));
+  addEvent(m, createNote(neigh, 0.5, 0.5, 2));
+  addEvent(m, createNote(pass, 1, 1, 2));
   addEvent(m, createNote(target, 2, 1.5));
   addEvent(m, createRest(3.5, 0.5));
 }
@@ -261,16 +263,22 @@ function duoBoostPhraseEndLanding(m: MeasureModel, bar: number, isDuo: boolean):
   }
 }
 
-/** Remove rests fully covered by a note span (motif tail rounding can leave orphan rests). */
+/** Remove rests fully covered by a note span (motif tail rounding can leave orphan rests). Per-voice only so Wyble v2 notes do not strip v1 rests. */
 function collapseRestsInsideNotes(m: MeasureModel): void {
-  const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
+  const notes = m.events.filter((e) => e.kind === 'note') as {
+    startBeat: number;
+    duration: number;
+    voice?: number;
+  }[];
   if (notes.length === 0) return;
   m.events = m.events.filter((e) => {
     if (e.kind !== 'rest') return true;
-    const r = e as { startBeat: number; duration: number };
+    const r = e as { startBeat: number; duration: number; voice?: number };
+    const rv = r.voice ?? 1;
     const rs = r.startBeat;
     const re = r.startBeat + r.duration;
     for (const n of notes) {
+      if ((n.voice ?? 1) !== rv) continue;
       const ns = n.startBeat;
       const ne = n.startBeat + n.duration;
       if (rs >= ns - 1e-4 && re <= ne + 1e-4) return false;
@@ -279,14 +287,17 @@ function collapseRestsInsideNotes(m: MeasureModel): void {
   });
 }
 
-/** Drop rests that share a start time with a note (motif rounding can create duplicate onsets). */
+/** Drop rests that share a start time with a note on the same voice (motif rounding can create duplicate onsets). */
 function dropRestsSameStartAsNote(m: MeasureModel): void {
   m.events = m.events.filter((e) => {
     if (e.kind !== 'rest') return true;
-    const r = e as { startBeat: number };
-    return !m.events.some(
-      (o) => o !== e && o.kind === 'note' && Math.abs((o as { startBeat: number }).startBeat - r.startBeat) < 1e-4
-    );
+    const r = e as { startBeat: number; voice?: number };
+    const rv = r.voice ?? 1;
+    return !m.events.some((o) => {
+      if (o === e || o.kind !== 'note') return false;
+      const n = o as { startBeat: number; voice?: number };
+      return (n.voice ?? 1) === rv && Math.abs(n.startBeat - r.startBeat) < 1e-4;
+    });
   });
 }
 
@@ -318,7 +329,7 @@ function buildBacharachAnchorMeasure(
   const pass = target - 1;
   const fifth = clampPitch(tones.fifth, low, high);
   addEvent(m, createRest(0, 0.5));
-  addEvent(m, createNote(pass, 0.5, 0.5));
+  addEvent(m, createNote(pass, 0.5, 0.5, 2));
   addEvent(m, createNote(target, 1, 1));
   addEvent(m, createRest(2, 0.5));
   addEvent(m, createNote(fifth, 2.5, 1.5));
@@ -429,7 +440,7 @@ function buildGuitarPart(
     const ecmMode = context.generationMetadata?.ecmMode;
     const isEcmM = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET';
     const isEcmS = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER';
-    const isDuoGolden = context.presetId === 'guitar_bass_duo' && !isEcmM && !isEcmS;
+    const isDuoGolden = context.presetId === 'guitar_bass_duo' || context.presetId === 'ecm_chamber';
     const phase = ((b - 1) % 8) + 1;
     const tex = texturePlan?.find((t) => t.bar === b);
 
@@ -559,6 +570,7 @@ function buildGuitarPart(
         cursor = start + dur;
         if (cursor >= 4 - 1e-6) break;
       }
+
       if (reduceAttack && cursor < 3) {
         addEvent(m, createRest(cursor, 4 - cursor));
       } else if (cursor < 4 - 1e-4) {
@@ -566,19 +578,16 @@ function buildGuitarPart(
         const chord = getChordForBar(b, context);
         const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
         const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
-        if (isDuoGolden) {
-          const c0 = snapAttackBeatToGrid(cursor);
+        /** Voice 1: rest through bar end; phrase-resolution tail on voice 2 (Wyble counter-line). */
+        addEvent(m, createRest(cursor, tail, 1));
+        const v2done = m.events.filter((e) => (e.voice ?? 1) === 2).reduce((s, e) => s + e.duration, 0);
+        if (Math.abs(v2done - 4) > 1e-4) {
           if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
-            addEvent(m, createRest(c0, 0.5));
-            addEvent(m, createNote(endTone, snapAttackBeatToGrid(c0 + 0.5), tail - 0.5));
+            addEvent(m, createRest(cursor, 0.5, 2));
+            addEvent(m, createNote(endTone, cursor + 0.5, tail - 0.5, 2));
           } else {
-            addEvent(m, createNote(endTone, c0, tail));
+            addEvent(m, createNote(endTone, cursor, tail, 2));
           }
-        } else if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
-          addEvent(m, createRest(cursor, 0.5));
-          addEvent(m, createNote(endTone, cursor + 0.5, tail - 0.5));
-        } else {
-          addEvent(m, createNote(endTone, cursor, tail));
         }
       }
       collapseRestsInsideNotes(m);
@@ -659,6 +668,7 @@ function buildGuitarPart(
     }
 
     if (isDuoGolden) {
+      console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);

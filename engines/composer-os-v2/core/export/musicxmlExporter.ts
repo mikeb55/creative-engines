@@ -4,6 +4,8 @@
  * Durations: fixed divisions/quarter (480); <duration> and <type>/<dot/> from one tick value (musicXmlTickEncoding).
  */
 
+import * as fs from 'fs';
+
 import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
@@ -129,6 +131,13 @@ function eventsToXml(
   decompose: (ticks: number) => number[],
   opts: MusicXmlExportOptions
 ): string {
+  const v2count = measure.events.filter((e) => (e as any).voice === 2).length;
+  if (v2count > 0) {
+    const logLine = `[pre-export] measure=${measureIndex+1} voice2events=${v2count}\n`;
+    try {
+      fs.appendFileSync('C:/Users/mike/composer-debug.log', logLine);
+    } catch {}
+  }
   const partId = part.id;
   let sorted = [...measure.events]
     .filter((e) => e.kind === 'note' || e.kind === 'rest')
@@ -145,8 +154,9 @@ function eventsToXml(
     if (vi > 0) {
       xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
     }
-    const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
     let cursor = 0;
+    cursor = 0;
+    const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
     let voiceTickSum = 0;
 
     for (const e of voiceEvents) {
@@ -195,6 +205,10 @@ function eventsToXml(
     }
 
     if (voiceTickSum !== MEASURE_DIVISIONS) {
+      if (voice !== 1) {
+        console.warn(`[wyble-export] voice ${voice} tick sum ${voiceTickSum} !== ${MEASURE_DIVISIONS} in measure ${measureIndex + 1} — skipping voice`);
+        continue;
+      }
       throw new Error(
         `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (divisions×beats=${DIVISIONS}×4)`
       );

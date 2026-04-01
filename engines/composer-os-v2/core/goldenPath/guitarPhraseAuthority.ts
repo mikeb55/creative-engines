@@ -295,6 +295,8 @@ export function emitGuitarPhraseBar(params: {
     const lastStart = qBeat(t0 + n1 + gapAfter);
     const tailDur = qBeat(4 - lastStart);
     addEvent(m, createNote(endStrong, lastStart, tailDur));
+    const v2Sparse = tones.third !== endStrong ? tones.third : tones.fifth;
+    addEvent(m, createNote(v2Sparse, pos(headRest), qBeat(4 - headRest), 2));
     return;
   }
 
@@ -342,6 +344,8 @@ export function emitGuitarPhraseBar(params: {
     addEvent(m, createRest(t0 + d1, r1));
     const tEnd = qBeat(t0 + d1 + r1);
     addEvent(m, createNote(endStrong, tEnd, qBeat(4 - tEnd)));
+    const v2Med = tones.seventh !== endStrong ? tones.seventh : tones.third;
+    addEvent(m, createNote(v2Med, pos(tEnd - 1 < 0 ? 0 : tEnd - 1), 1, 2));
     return;
   }
 
@@ -376,4 +380,8 @@ export function emitGuitarPhraseBar(params: {
   addEvent(m, createRest(pos(t0 + d1 + d2), r));
   const tLast = pos(t0 + d1 + d2 + r);
   addEvent(m, createNote(hi, tLast, qBeat(4 - tLast)));
+  const v2Dense = tones.third !== hi ? tones.third : tones.root;
+  addEvent(m, createNote(v2Dense, pos(tLast), qBeat(4 - tLast), 2));
+  const v2Check = m.events.filter((e) => (e as any).voice === 2);
+  if (v2Check.length === 0) console.warn('[wyble] bar has no voice-2 events after emitGuitarPhraseBar');
 }

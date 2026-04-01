@@ -46,7 +46,8 @@ function validateOneVoice(
   let durSum = 0;
   for (const e of sorted) durSum += e.duration;
   if (Math.abs(durSum - BEATS_PER_MEASURE) > EPS) {
-    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${BEATS_PER_MEASURE}`;
+    const eventDetail = events.map(e => `${e.kind}(start=${e.startBeat},dur=${e.duration},voice=${e.voice??1})`).join(' | ');
+    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${BEATS_PER_MEASURE} -- events: ${eventDetail}`;
     errors.push(msg);
     if (details) {
       details.push({
