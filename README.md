@@ -35,6 +35,15 @@ Universal composition engine framework for all Cursor music projects. Works acro
 
 ---
 
+## Wyble Etude Mode (Experimental → Stable Export)
+
+* Two-voice contrapuntal guitar etude generator
+* MusicXML export working and validated
+* Currently renders as piano-style grand staff (temporary)
+* Ongoing work: guitar polyphonic rendering and bass integration
+
+---
+
 ## Composer OS (V1 product path)
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
