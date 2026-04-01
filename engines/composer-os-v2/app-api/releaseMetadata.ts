@@ -44,6 +44,12 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
       'Song plan (hooks, sections, rules) then golden-path Guitar–Bass Duo realisation as exported MusicXML.',
   },
   {
+    presetId: 'wyble_etude',
+    displayName: 'Wyble Etude',
+    capability: 'musicxml_generation',
+    honestNote: 'Two-voice contrapuntal guitar etude as exported MusicXML (Jimmy Wyble engine).',
+  },
+  {
     presetId: 'big_band',
     displayName: 'Big Band',
     capability: 'planning_only',

@@ -22,10 +22,11 @@ export function runModeExposureTests(): { ok: boolean; name: string }[] {
 
   out.push({
     ok:
-      COMPOSER_OS_V1_SUPPORTED_MODES.length === 6 &&
+      COMPOSER_OS_V1_SUPPORTED_MODES.length === 7 &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'big_band' && m.capability === 'planning_only') &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'string_quartet' && m.capability === 'planning_only') &&
-      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'song_mode' && m.capability === 'musicxml_generation'),
+      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'song_mode' && m.capability === 'musicxml_generation') &&
+      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'wyble_etude' && m.capability === 'musicxml_generation'),
     name: 'release metadata labels planning vs musicxml_generation honestly',
   });
 

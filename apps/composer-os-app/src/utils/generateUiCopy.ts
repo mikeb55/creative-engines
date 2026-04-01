@@ -96,15 +96,19 @@ export function describeOutputKind(presetId: string): {
     presetId === 'guitar_bass_duo' ||
     presetId === 'ecm_chamber' ||
     presetId === 'riff_generator' ||
-    presetId === 'song_mode'
+    presetId === 'song_mode' ||
+    presetId === 'wyble_etude'
   ) {
     return {
       category: 'full_score_musicxml',
-      headline: 'Full score · MusicXML export',
+      headline:
+        presetId === 'wyble_etude' ? 'Score (MusicXML)' : 'Full score · MusicXML export',
       subtitle:
         presetId === 'song_mode'
           ? 'Song Mode plans hooks and sections, then exports a duo chart as MusicXML for Sibelius or MuseScore.'
-          : 'You get a complete exported score file for notation software.',
+          : presetId === 'wyble_etude'
+            ? 'Wyble Etude: two-voice guitar MusicXML for Sibelius or MuseScore.'
+            : 'You get a complete exported score file for notation software.',
     };
   }
   return {
