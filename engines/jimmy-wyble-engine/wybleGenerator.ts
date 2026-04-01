@@ -307,7 +307,8 @@ function deriveDyadsFromVoices(
           (beat === 0 || beat === 2) &&
           Math.random() < MIXED_EVEN_BEAT_LOWER_PROB
         ) {
-          lowerEvents.push({ pitch: lowerPitch, duration: 1, beat, isDyad: false });
+          lowerEvents.push({ pitch: 0, duration: 0.5, beat, isDyad: false });
+          lowerEvents.push({ pitch: lowerPitch, duration: 0.5, beat: beat + 0.5, isDyad: false });
           lastLower = lowerPitch;
         }
       } else {
