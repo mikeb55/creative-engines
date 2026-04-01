@@ -51,6 +51,8 @@ export interface SerializeOptions {
   partId?: string;
   partName?: string;
   staves?: number;
+  /** General MIDI program (1–128), e.g. 24 nylon guitar — avoids host defaulting to piano. */
+  midiProgram?: number;
 }
 
 /** Serialize single-part score (Wyble, Counterpoint) to MusicXML. */
@@ -59,6 +61,11 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
   const partId = options?.partId ?? 'P1';
   const partName = options?.partName ?? 'Part 1';
   const staves = options?.staves ?? 1;
+  const midiProgram = options?.midiProgram;
+  const midiInstrumentEl =
+    midiProgram !== undefined
+      ? `\n      <midi-instrument id="${partId}-I1">\n        <midi-program>${midiProgram}</midi-program>\n      </midi-instrument>`
+      : '';
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
@@ -67,7 +74,7 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
   <part-list>
     <score-part id="${partId}">
       <part-name>${escapeXml(partName)}</part-name>
-      <score-instrument id="${partId}-I1"><instrument-name>${escapeXml(partName)}</instrument-name></score-instrument>
+      <score-instrument id="${partId}-I1"><instrument-name>${escapeXml(partName)}</instrument-name></score-instrument>${midiInstrumentEl}
     </score-part>
   </part-list>
   <part id="${partId}">
@@ -91,10 +98,19 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
     </attributes>
 `;
     }
-    for (const v of voices) {
-      const events = m.voices[v] ?? [];
-      const staff = staves > 1 ? v : undefined;
-      xml += voiceEventsToXml(events, v, measureStart, staff);
+    if (staves === 1 && voices.length > 1) {
+      const backupEl = `        <backup>\n          <duration>${MEASURE_DIVISIONS}</duration>\n        </backup>\n`;
+      xml += voiceEventsToXml(m.voices[voices[0]] ?? [], voices[0], measureStart, 1);
+      for (let vi = 1; vi < voices.length; vi++) {
+        xml += backupEl;
+        xml += voiceEventsToXml(m.voices[voices[vi]] ?? [], voices[vi], measureStart, 1);
+      }
+    } else {
+      for (const v of voices) {
+        const events = m.voices[v] ?? [];
+        const staff = staves > 1 ? v : undefined;
+        xml += voiceEventsToXml(events, v, measureStart, staff);
+      }
     }
     xml += `  </measure>\n`;
   }

@@ -107,6 +107,7 @@ export function generateWybleEtudeXml(
     title: title ?? 'Wyble Etude',
     partName: 'Guitar',
     staves: 1,
+    midiProgram: 24,
   });
   const receipt: WybleBypassReceipt = {
     barsRequested: chords.length,
