@@ -25,6 +25,12 @@ const MAX_LEAP = 7;
 /** Mixed mode: on upper-solo beats 0 and 2, sometimes add a lower note (keeps upper more active overall). */
 const MIXED_EVEN_BEAT_LOWER_PROB = 0.35;
 
+/** Deterministic [0, 1) from integer seed (lower presence variation). */
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 const SCALE_DEGREES: Record<string, number[]> = {
   maj: [0, 2, 4, 5, 7, 9, 11],
   min: [0, 2, 3, 5, 7, 8, 10],
@@ -265,7 +271,8 @@ function deriveDyadsFromVoices(
   chords: HarmonicContext['chords'],
   beatsPerBar: number,
   dyadDensity: number,
-  voiceRatioMode: string = 'mixed'
+  voiceRatioMode: string = 'mixed',
+  seed = 0
 ): { upperEvents: NoteEvent[]; lowerEvents: NoteEvent[]; impliedHarmony: ImpliedHarmony[] } {
   const upperEvents: NoteEvent[] = [];
   const lowerEvents: NoteEvent[] = [];
@@ -307,9 +314,11 @@ function deriveDyadsFromVoices(
           (beat === 0 || beat === 2) &&
           Math.random() < MIXED_EVEN_BEAT_LOWER_PROB
         ) {
-          lowerEvents.push({ pitch: 0, duration: 0.5, beat, isDyad: false });
-          lowerEvents.push({ pitch: lowerPitch, duration: 0.5, beat: beat + 0.5, isDyad: false });
-          lastLower = lowerPitch;
+          const playLower = seededRandom(seed + b) < 0.65;
+          if (playLower) {
+            lowerEvents.push({ pitch: lowerPitch, duration: 1, beat: beat + 0.5, isDyad: false });
+            lastLower = lowerPitch;
+          }
         }
       } else {
         lowerEvents.push({ pitch: lowerPitch, duration: 1, beat, isDyad: false });
@@ -358,6 +367,9 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
     voiceRatioMode = 'mixed',
   } = params;
 
+  const seedBase =
+    (params as WybleParameters & { seed?: number }).seed ?? params.motifSeed?.[0] ?? 0;
+
   const beatsPerBar = 4;
   const totalBeats = phraseLength * beatsPerBar;
   const chords = harmonicContext.chords;
@@ -368,7 +380,7 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
   const { upper: u, lower: l } = enforceCounterpoint(upperPitches, lowerPitches);
 
   const { upperEvents, lowerEvents, impliedHarmony } = deriveDyadsFromVoices(
-    u, l, chords, beatsPerBar, dyadDensity, voiceRatioMode
+    u, l, chords, beatsPerBar, dyadDensity, voiceRatioMode, seedBase
   );
 
   const rawOutput: WybleOutput = {
