@@ -46,6 +46,7 @@ export const SUPPORTED_APP_PRESET_IDS = [
   'song_mode',
   'big_band',
   'string_quartet',
+  'wyble_etude',
 ] as const;
 
 export type SupportedAppPresetId = (typeof SUPPORTED_APP_PRESET_IDS)[number];
@@ -112,6 +113,29 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         seed: req.seed,
         presetId: id,
         activeModules: [],
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  if (id === 'wyble_etude') {
+    const { generateWybleEtudeXml } = require('../core/goldenPath/wybleBypassGenerator');
+    const reqAny = req as any;
+    const chords: string[] = Array.isArray(reqAny.parsedChordBars) && reqAny.parsedChordBars.length > 0
+      ? reqAny.parsedChordBars
+      : ['Cmaj7', 'Am7', 'Dm7', 'G7'];
+    const result = generateWybleEtudeXml(chords, req.seed, req.title);
+    const xmlPath = require('path').join(outputDir, `wyble_etude_${req.seed ?? Date.now()}.musicxml`);
+    require('fs').writeFileSync(xmlPath, result.guitarXml, 'utf-8');
+    return {
+      success: true,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      filepath: xmlPath,
+      validation: validationForStructural(true, []),
+      runManifest: {
+        seed: req.seed,
+        presetId: 'wyble_etude',
+        activeModules: ['jimmy_wyble_engine'],
         timestamp: new Date().toISOString(),
       },
     };

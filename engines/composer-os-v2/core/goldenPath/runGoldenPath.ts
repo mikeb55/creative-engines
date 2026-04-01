@@ -178,18 +178,27 @@ function buildGoldenPathContext(
     { label: 'A', startBar: 1, length: 4 },
     { label: 'B', startBar: 5, length: 4 },
   ];
-  const form = { sections, totalBars: 8 };
+  const form = { sections, totalBars: 32 };
   const parseFailed = !!extras?.chordProgressionParseFailed;
-  const useCustom = !parseFailed && parsedChordBars && parsedChordBars.length === 8;
-  const harmony = useCustom ? buildHarmonyPlanFromBars(parsedChordBars) : BUILTIN_HARMONY;
-  const phrase = { segments: sections.map((s) => ({ ...s, density: undefined })), totalBars: 8 };
-  const chordSymbolPlan = useCustom ? buildChordSymbolPlanFromBars(parsedChordBars) : BUILTIN_CHORD_SYMBOL_PLAN;
+  const expandedChordBars = parsedChordBars && parsedChordBars.length === 8
+    ? [...parsedChordBars, ...parsedChordBars, ...parsedChordBars, ...parsedChordBars]
+    : parsedChordBars;
+  const useCustom = !parseFailed && expandedChordBars && expandedChordBars.length === 32;
+  const harmony = useCustom ? buildHarmonyPlanFromBars(expandedChordBars) : BUILTIN_HARMONY;
+  const sections32 = [
+    { label: 'A', startBar: 1, length: 8 },
+    { label: 'B', startBar: 9, length: 8 },
+    { label: 'A', startBar: 17, length: 8 },
+    { label: 'B', startBar: 25, length: 8 },
+  ];
+  const phrase = { segments: sections32.map((s) => ({ ...s, density: undefined })), totalBars: 32 };
+  const chordSymbolPlan = useCustom ? buildChordSymbolPlanFromBars(expandedChordBars) : BUILTIN_CHORD_SYMBOL_PLAN;
   const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
 
   const sectionRoles = planSectionRoles(sections, { A: 'statement', B: 'contrast' });
-  const densityPlan = planDensityCurve(sectionRoles, 8);
-  const densityCurve = { segments: densityPlan.segments, totalBars: 8 };
+  const densityPlan = planDensityCurve(sectionRoles, 32);
+  const densityCurve = { segments: densityPlan.segments, totalBars: 32 };
 
   const guitarMap = planGuitarRegisterMap(sectionRoles);
   const bassMap = planBassRegisterMap(sectionRoles);
@@ -222,14 +231,14 @@ function buildGoldenPathContext(
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
-    lockedHarmonyBarsRaw: useCustom && parsedChordBars ? [...parsedChordBars] : undefined,
+    lockedHarmonyBarsRaw: useCustom && expandedChordBars ? [...expandedChordBars] : undefined,
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: parseFailed ? undefined : useCustom ? 'custom' : 'builtin',
-      customChordProgressionSummary: useCustom ? parsedChordBars.join(' | ') : undefined,
+      customChordProgressionSummary: useCustom ? expandedChordBars.join(' | ') : undefined,
       progressionMode,
       chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
-      parsedCustomProgressionBars: useCustom ? [...parsedChordBars] : undefined,
+      parsedCustomProgressionBars: useCustom ? [...expandedChordBars] : undefined,
       chordProgressionParseFailed: parseFailed || undefined,
       builtInHarmonyFallbackOccurred: false,
       customHarmonyLocked: useCustom && extras?.harmonyModeRequested === 'custom_locked',

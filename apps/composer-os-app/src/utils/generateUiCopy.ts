@@ -26,6 +26,15 @@ export const MODE_UX: ModeUx[] = [
     output: 'Exported MusicXML — a full, bar-complete score file.',
   },
   {
+    id: 'wyble_etude',
+    label: 'Wyble Etude',
+    hint: 'Contrapuntal two-voice guitar study',
+    whatItDoes:
+      'Generates interlocking upper and lower guitar voices in a Jimmy Wyble–style contrapuntal etude.',
+    bestFor: 'Two-voice guitar reading, independence, and contrapuntal practice.',
+    output: 'Exported MusicXML — two-staff guitar score.',
+  },
+  {
     id: 'song_mode',
     label: 'Song Mode',
     hint: 'Best for hook-led song structures and lead-sheet-ready ideas.',

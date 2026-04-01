@@ -22,6 +22,12 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
     supported: true,
   },
   {
+    id: 'wyble_etude',
+    name: 'Wyble Etude',
+    description: 'Two-voice contrapuntal guitar etude (Jimmy Wyble style)',
+    supported: true,
+  },
+  {
     id: 'ecm_chamber',
     name: 'ECM Chamber',
     description:
@@ -59,7 +65,7 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
 ];
 
 /** Expected count from app API `getPresets()` — used to detect stale desktop bundles. */
-export const EXPECTED_APP_PRESET_COUNT = 6;
+export const EXPECTED_APP_PRESET_COUNT = 7;
 
 /** Merge live API presets over the static registry so every id always appears (API may be partial/stale). */
 export function mergePresetsWithRegistry(
