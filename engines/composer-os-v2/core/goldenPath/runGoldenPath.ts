@@ -927,9 +927,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const preserveLiterals =
     appliedContext.generationMetadata.customHarmonyLocked === true ||
     !!(appliedContext.lockedHarmonyBarsRaw && appliedContext.lockedHarmonyBarsRaw.length > 0);
+  const guitarMeasureCount = score.parts[0]?.measures.length ?? 0;
+  const lockedForExport = appliedContext.lockedHarmonyBarsRaw;
   const assertLockedExport =
-    options?.harmonyMode === 'custom_locked' && options.lockedHarmonyBarsRaw?.length === 32
-      ? [...options.lockedHarmonyBarsRaw]
+    lockedForExport &&
+    lockedForExport.length === guitarMeasureCount &&
+    guitarMeasureCount > 0 &&
+    appliedContext.generationMetadata?.harmonySource === 'custom' &&
+    appliedContext.generationMetadata?.builtInHarmonyFallbackOccurred !== true
+      ? [...lockedForExport]
       : undefined;
   const exportResult = exportScoreModelToMusicXml(score, {
     preserveChordKindLiterals: preserveLiterals,

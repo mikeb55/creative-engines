@@ -45,9 +45,15 @@ function extractExtensionsAlterations(suffix: string): { extensions: string[]; a
   const extensions: string[] = [];
   const alterations: string[] = [];
   if (/\balt\b|7alt/i.test(suffix)) alterations.push('alt');
+  const extSet = new Set<string>();
   for (const m of suffix.matchAll(/\b(6|9|11|13)\b/gi)) {
-    extensions.push(m[1]!.toLowerCase());
+    extSet.add(m[1]!.toLowerCase());
   }
+  /** m9 / min9 / maj9 / maj13 — digit is not on a word boundary inside "m9", so \b(9) alone misses it. */
+  for (const m of suffix.matchAll(/\b(?:m|min|maj)(9|11|13)\b/gi)) {
+    extSet.add(m[1]!.toLowerCase());
+  }
+  extensions.push(...[...extSet].sort());
   for (const m of suffix.matchAll(/([#b])(9|11|13)/gi)) {
     alterations.push(`${m[1]}${m[2]}`);
   }

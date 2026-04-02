@@ -1,5 +1,14 @@
 # Composer OS — Changelog
 
+## Unified Chord Semantics — Full Bar Chord Export Achieved
+
+- Unified chord pipeline across parser, validator/repair, and MusicXML export
+- Full per-bar chord coverage restored (one chord symbol per measure)
+- Exact bar-to-chord mapping preserved from user input
+- Slash chords preserved in display text and export
+- Extensions and altered chord text preserved
+- Removed collapsed/fallback harmony behaviour in Wyble export path
+
 ## Wyble Engine v1.0 — COMPLETE
 
 - Full 16-bar generation confirmed (no truncation)

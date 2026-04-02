@@ -306,18 +306,27 @@ ${keyCaption}${feelEl}`;
         if (m.rehearsalMark) {
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
-        if (m.chord && !opts.omitChordSymbols) {
-          const assertLocked = opts.assertLockedHarmonyBars;
+        const assertLocked = opts.assertLockedHarmonyBars;
+        const lockedChord =
+          assertLocked &&
+          assertLocked.length === orderedMeasures.length &&
+          i < assertLocked.length
+            ? assertLocked[i]
+            : undefined;
+        const chordForHarmony = lockedChord ?? m.chord;
+        if (chordForHarmony && !opts.omitChordSymbols) {
           if (assertLocked && assertLocked.length === orderedMeasures.length && i < assertLocked.length) {
-            const exp = assertLocked[i];
-            if (normalizeChordToken(m.chord) !== normalizeChordToken(exp ?? '')) {
+            const exp = assertLocked[i]!;
+            const got = m.chord ?? '';
+            if (got && normalizeChordToken(got) !== normalizeChordToken(exp)) {
               throw new Error(
-                `CUSTOM HARMONY NOT REACHING GOLDEN PATH: MusicXML export bar ${measureNumber} chord "${m.chord}" !== locked "${exp}"`
+                `CUSTOM HARMONY NOT REACHING GOLDEN PATH: MusicXML export bar ${measureNumber} score chord "${got}" !== locked "${exp}"`
               );
             }
           }
-          xml += buildHarmonyXmlLine(m.chord, {
-            exactChordTextElement: opts.preserveChordKindLiterals === true,
+          xml += buildHarmonyXmlLine(chordForHarmony, {
+            exactChordTextElement:
+              opts.preserveChordKindLiterals === true || lockedChord !== undefined,
           });
         }
 

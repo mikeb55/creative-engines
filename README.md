@@ -74,6 +74,10 @@ Key features:
 
 Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, interaction)
 
+**Unified Chord Semantics (Priority 19):**  
+Composer OS now uses a consistent chord pipeline from input parsing through validation/repair to MusicXML export.  
+Chord symbols are exported per bar with exact mapping to the user’s progression, including slash chords and extended/altered chord text.
+
 **Composer OS documentation (canonical):**
 
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)
