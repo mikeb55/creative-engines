@@ -16,6 +16,8 @@ const UPPER_MAX = 76;
 const LOWER_MIN = 48;
 const LOWER_MAX = 60;
 const VOICE_DISTANCE_MIN = 10;
+/** Prefer at least this gap when choosing lower notes (reduces vertical clustering). */
+const VOICE_DISTANCE_PREFERRED = 12;
 const VOICE_DISTANCE_MAX = 17;
 const VOICE_DISTANCE_REJECT = 18;
 const PREFERRED_DYAD_INTERVALS = [3, 4, 8, 9, 10, 15, 16, 17];
@@ -1064,7 +1066,7 @@ function generateLowerVoice(
     if (
       Math.abs(uDelta) >= 2 &&
       chordTones.length > 0 &&
-      seededRandom(seed + b * 31 + 9200) < 0.32
+      seededRandom(seed + b * 31 + 9200) < (upperBusy ? 0.38 : 0.26)
     ) {
       lower.push(clamp(last, LOWER_MIN, LOWER_MAX));
       continue;
@@ -1075,7 +1077,7 @@ function generateLowerVoice(
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
       !upperBusy &&
-      seededRandom(seed + phraseIdx * 91 + 2200) < 0.2
+      seededRandom(seed + phraseIdx * 91 + 2200) < 0.16
     ) {
       const contrarySign = -Math.sign(pSign || net || 1);
       const step = contrarySign * (1 + Math.floor(seededRandom(seed + b * 19 + 2300) * 2));
@@ -1096,7 +1098,7 @@ function generateLowerVoice(
       phraseTargets.length >= phraseIdx &&
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.24
+      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.18
     ) {
       const prevT = phraseTargets[phraseIdx - 1] ?? upperNow;
       const idealLow = clamp(prevT - 12 - (phraseIdx % 3), LOWER_MIN, LOWER_MAX);
@@ -1117,7 +1119,7 @@ function generateLowerVoice(
       meta.posInPhrase === meta.phraseLen - 2 &&
       chordTones.length > 0 &&
       seededRandom(seed + phraseIdx * 521 + b + 3400) <
-        (phraseDirections[phraseIdx] === 'arch' ? 0.22 : 0.16)
+        (phraseDirections[phraseIdx] === 'arch' ? 0.18 : 0.13)
     ) {
       const targ = phraseTargets[phraseIdx] ?? upperNow;
       const idealLow = clamp(targ - 14, LOWER_MIN, LOWER_MAX);
@@ -1136,7 +1138,7 @@ function generateLowerVoice(
       meta.phraseLen >= 6 &&
       meta.posInPhrase === Math.floor(meta.phraseLen / 2) &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 311 + b * 7 + 3000) < 0.15
+      seededRandom(seed + phraseIdx * 311 + b * 7 + 3000) < 0.12
     ) {
       const contrarySign = -Math.sign(net || pSign || 1);
       const step = contrarySign * (1 + Math.floor(seededRandom(seed + b * 19 + 3150) * 2));
@@ -1157,7 +1159,7 @@ function generateLowerVoice(
       meta.posInPhrase === meta.phraseLen - 1 &&
       chordTones.length > 0 &&
       seededRandom(seed + phraseIdx * 419 + b + 3300) <
-        (phraseDirections[phraseIdx] === 'ascending' ? 0.2 : 0.12)
+        (phraseDirections[phraseIdx] === 'ascending' ? 0.16 : 0.1)
     ) {
       const idealLow = clamp(upperNow - 14, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
@@ -1175,12 +1177,12 @@ function generateLowerVoice(
       meta.posInPhrase > 0 &&
       Math.abs(uDelta) <= 4 &&
       upperSparseWindow &&
-      seededRandom(seed + b * 17 + 1200) < 0.12;
+      seededRandom(seed + b * 17 + 1200) < 0.09;
     const answerPhrase =
       !echoPhrase &&
       meta.posInPhrase > 0 &&
       upperSparseWindow &&
-      seededRandom(seed + b * 17 + 1300) < 0.16;
+      seededRandom(seed + b * 17 + 1300) < 0.13;
 
     if (echoPhrase && chordTones.length > 0 && uDelta !== 0) {
       const step = -Math.sign(uDelta) * Math.min(2, Math.max(1, Math.abs(uDelta)));
@@ -1233,7 +1235,7 @@ function generateLowerVoice(
     const dir = selfContrary ? -Math.sign(prevDir || 1) : Math.sign(prevDir || 1);
     const uStep = Math.sign(uDelta || 0);
     const preferContrary =
-      uStep !== 0 && seededRandom(seed + b * 29 + 8800) < (upperBusy ? 0.28 : 0.42);
+      uStep !== 0 && seededRandom(seed + b * 29 + 8800) < (upperBusy ? 0.22 : 0.36);
     const byMotion = [...candidates].sort((a, b) => {
       const stepA = a - last;
       const stepB = b - last;
@@ -1246,6 +1248,21 @@ function generateLowerVoice(
       return scoreB - scoreA;
     });
     let next = clamp(byMotion[0] ?? candidates[0], LOWER_MIN, LOWER_MAX);
+
+    const wideEnough = candidates.filter((c) => upperNow - c >= VOICE_DISTANCE_MIN);
+    if (wideEnough.length > 0 && upperNow - next < VOICE_DISTANCE_PREFERRED) {
+      wideEnough.sort((a, b) => (upperNow - b) - (upperNow - a));
+      next = clamp(wideEnough[0]!, LOWER_MIN, LOWER_MAX);
+    } else if (wideEnough.length > 0 && seededRandom(seed + b * 29 + 6600) < 0.5) {
+      wideEnough.sort((a, b) => (upperNow - b) - (upperNow - a));
+      next = clamp(wideEnough[0]!, LOWER_MIN, LOWER_MAX);
+    }
+
+    const smallSteps = candidates.filter((c) => Math.abs(c - last) <= 3);
+    if (smallSteps.length > 0 && Math.abs(next - last) > 4 && seededRandom(seed + b * 29 + 7700) < 0.38) {
+      smallSteps.sort((a, b) => Math.abs(a - last) - Math.abs(b - last));
+      next = clamp(smallSteps[0]!, LOWER_MIN, LOWER_MAX);
+    }
 
     if (isStrongBeat && guideTones.length > 0) {
       const isGuideTone = guideTones.some(gt => (gt % 12) === (next % 12));
@@ -1279,6 +1296,29 @@ function enforceCounterpoint(upper: number[], lower: number[], seed: number): { 
       l[i] = clamp(alt, LOWER_MIN, LOWER_MAX);
     }
   }
+
+  for (let i = 1; i < u.length; i++) {
+    const leap = Math.abs(l[i]! - l[i - 1]!);
+    if (leap > 5 && seededRandom(seed + i * 61 + 10010) < 0.4) {
+      const mid = Math.round((l[i]! + l[i - 1]!) / 2);
+      l[i] = clamp(mid, LOWER_MIN, LOWER_MAX);
+    }
+  }
+
+  for (let i = 0; i < u.length; i++) {
+    const gap = u[i]! - l[i]!;
+    if (gap >= 0 && gap < VOICE_DISTANCE_MIN) {
+      const drop = Math.min(2, VOICE_DISTANCE_MIN - gap);
+      l[i] = clamp(l[i]! - drop, LOWER_MIN, LOWER_MAX);
+    } else if (gap > VOICE_DISTANCE_REJECT) {
+      const preferred =
+        PREFERRED_DYAD_INTERVALS.find(
+          (iv) => u[i]! - iv >= LOWER_MIN && u[i]! - iv <= LOWER_MAX
+        ) ?? 12;
+      l[i] = clamp(u[i]! - preferred, LOWER_MIN, LOWER_MAX);
+    }
+  }
+
   return { upper: u, lower: l };
 }
 
@@ -1286,8 +1326,8 @@ function enforceCounterpoint(upper: number[], lower: number[], seed: number): { 
 type PhraseEndResponseKind = 'stepwise' | 'sustain' | 'contrary';
 
 /**
- * After each phrase (except the last), 40–60% chance the lower voice must respond on the next beat
- * (timing offset applied in deriveMelodySupportLayout).
+ * After each phrase (except the last), ~25–40% chance of a timed lower response (reduced vs earlier
+ * builds so not every phrase answers — clearer texture).
  */
 function planPhraseEndResponses(
   phraseLengths: number[],
@@ -1302,7 +1342,7 @@ function planPhraseEndResponses(
     const nextB = endB + 1;
     beat += len;
     if (nextB >= totalBeats) continue;
-    const pResp = 0.4 + seededRandom(seed + pi * 9100 + 17) * 0.2;
+    const pResp = (0.3 + seededRandom(seed + pi * 9100 + 17) * 0.14) * 0.88;
     if (seededRandom(seed + pi * 9101 + 17) >= pResp) continue;
     const rk = seededRandom(seed + pi * 9102 + 17);
     const kind: PhraseEndResponseKind =
@@ -1334,7 +1374,7 @@ function pushLowerPhraseEndTriggered(
   if (beatInBar > 0) {
     lowerEvents.push({ pitch: 0, duration: beatInBar, beat: 0, isDyad: false });
   }
-  const micro = seededRandom(seed + nextGlobalBeat * 5 + 88) < 0.55 ? 0.25 : 0.5;
+  const micro = seededRandom(seed + nextGlobalBeat * 5 + 88) < 0.35 ? 0.25 : 0.5;
   lowerEvents.push({ pitch: 0, duration: micro, beat: beatInBar, isDyad: false });
   const entryBeat = beatInBar + micro;
   const rem = beatsPerBar - entryBeat;

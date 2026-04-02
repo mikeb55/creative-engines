@@ -1,5 +1,13 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Interaction Refinement Achieved
+
+- Lower voice interaction refined for more natural balance
+- Reduced over-response and rhythmic crowding
+- Improved spacing and timing separation between voices
+- Preserved phrase system, target-first resolution, and bar-math integrity
+- Output now feels musically conversational and structurally stable
+
 ## Wyble Engine — Lower Voice Interaction Achieved
 
 - Lower voice upgraded from passive support to interactive counterpoint
