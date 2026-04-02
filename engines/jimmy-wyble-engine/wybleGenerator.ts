@@ -995,8 +995,17 @@ function phraseDirSign(d: PhraseDirection): number {
   return 0;
 }
 
+/** Rough upper-voice motion density in ±2 beats (for space trading). */
+function upperLocalMotionWindow(upperPitches: number[], b: number): number {
+  let sum = 0;
+  for (let k = Math.max(0, b - 2); k <= Math.min(upperPitches.length - 1, b + 1); k++) {
+    if (k > 0) sum += Math.abs(upperPitches[k]! - upperPitches[k - 1]!);
+  }
+  return sum;
+}
+
 /**
- * Lower line: simple support — occasional contrary / answering gestures; does not mirror full phrase engine.
+ * Lower line: conversational counterpoint — phrase-aware response, contrary bias, space trading vs upper motion.
  */
 function generateLowerVoice(
   totalBeats: number,
@@ -1041,19 +1050,34 @@ function generateLowerVoice(
         : 0;
 
     const belowUpper = chordTones.filter((t) => t < upperNow - VOICE_DISTANCE_MIN && t >= LOWER_MIN);
-    const supportBlend = seededRandom(seed + b * 29 + 503) < 0.72;
+    const upperMotionWin = upperLocalMotionWindow(upperPitches, b);
+    const upperBusy = upperMotionWin >= 8;
+    const upperSparseWindow = upperMotionWin <= 3;
+    const supportBlend =
+      upperBusy ? seededRandom(seed + b * 29 + 503) < 0.38 : seededRandom(seed + b * 29 + 503) < 0.72;
 
     const strongBeatPool = guideTones.length > 0 ? guideTones : chordTones;
     const pool = isStrongBeat ? strongBeatPool : chordTones;
     let effectiveCandidates = (pool.length > 0 ? pool : chordTones).filter(t => t >= LOWER_MIN && t <= LOWER_MAX);
 
-    /** Occasional contrary at phrase start (light; does not compete with upper). */
+    /** Contrast boost: strong upper motion → hold lower (sustain) instead of shadowing motion. */
+    if (
+      Math.abs(uDelta) >= 2 &&
+      chordTones.length > 0 &&
+      seededRandom(seed + b * 31 + 9200) < 0.32
+    ) {
+      lower.push(clamp(last, LOWER_MIN, LOWER_MAX));
+      continue;
+    }
+
+    /** Phrase start: light contrary gesture keyed to this phrase’s contour (not generic). */
     if (
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 91 + 2200) < 0.16
+      !upperBusy &&
+      seededRandom(seed + phraseIdx * 91 + 2200) < 0.2
     ) {
-      const contrarySign = -Math.sign(net || pSign || 1);
+      const contrarySign = -Math.sign(pSign || net || 1);
       const step = contrarySign * (1 + Math.floor(seededRandom(seed + b * 19 + 2300) * 2));
       const ansTarget = clamp(last + step, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
@@ -1066,13 +1090,13 @@ function generateLowerVoice(
       }
     }
 
-    /** First beat after prior phrase: sparse answer under previous phrase resolution (no extra attacks). */
+    /** Response after previous phrase ended: answer under prior resolution (call–response). */
     if (
       phraseIdx > 0 &&
       phraseTargets.length >= phraseIdx &&
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.14
+      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.24
     ) {
       const prevT = phraseTargets[phraseIdx - 1] ?? upperNow;
       const idealLow = clamp(prevT - 12 - (phraseIdx % 3), LOWER_MIN, LOWER_MAX);
@@ -1086,13 +1110,14 @@ function generateLowerVoice(
       }
     }
 
-    /** Penultimate beat: light anticipation of upper phrase target (same density). */
+    /** Penultimate beat: light anticipation before upper resolution (arch phrases slightly more). */
     if (
       phraseTargets.length > phraseIdx &&
       meta.phraseLen > 2 &&
       meta.posInPhrase === meta.phraseLen - 2 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 521 + b + 3400) < 0.18
+      seededRandom(seed + phraseIdx * 521 + b + 3400) <
+        (phraseDirections[phraseIdx] === 'arch' ? 0.22 : 0.16)
     ) {
       const targ = phraseTargets[phraseIdx] ?? upperNow;
       const idealLow = clamp(targ - 14, LOWER_MIN, LOWER_MAX);
@@ -1126,12 +1151,13 @@ function generateLowerVoice(
       }
     }
 
-    /** Phrase ending: subtle anticipation or resolution under upper arrival (sparse). */
+    /** Phrase ending: settle under upper arrival; prefer when upper phrase ascends (release in lower). */
     if (
       meta.phraseLen > 1 &&
       meta.posInPhrase === meta.phraseLen - 1 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 419 + b + 3300) < 0.12
+      seededRandom(seed + phraseIdx * 419 + b + 3300) <
+        (phraseDirections[phraseIdx] === 'ascending' ? 0.2 : 0.12)
     ) {
       const idealLow = clamp(upperNow - 14, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
@@ -1144,17 +1170,20 @@ function generateLowerVoice(
       }
     }
 
+    /** Short echo — contrary to upper step (avoid parallel motion with upper). */
     const echoPhrase =
       meta.posInPhrase > 0 &&
       Math.abs(uDelta) <= 4 &&
-      seededRandom(seed + b * 17 + 1200) < 0.14;
+      upperSparseWindow &&
+      seededRandom(seed + b * 17 + 1200) < 0.12;
     const answerPhrase =
       !echoPhrase &&
       meta.posInPhrase > 0 &&
-      seededRandom(seed + b * 17 + 1300) < 0.14;
+      upperSparseWindow &&
+      seededRandom(seed + b * 17 + 1300) < 0.16;
 
-    if (echoPhrase && chordTones.length > 0) {
-      const step = Math.sign(uDelta) * Math.min(2, Math.max(1, Math.abs(uDelta)));
+    if (echoPhrase && chordTones.length > 0 && uDelta !== 0) {
+      const step = -Math.sign(uDelta) * Math.min(2, Math.max(1, Math.abs(uDelta)));
       const echoTarget = clamp(last + step, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
         Math.abs(c - echoTarget) < Math.abs(a - echoTarget) ? c : a
@@ -1200,12 +1229,21 @@ function generateLowerVoice(
     }
 
     const prevDir = lower.length >= 2 ? lower[lower.length - 1]! - lower[lower.length - 2]! : 0;
-    const selfContrary = seededRandom(seed + b * 29 + 611) < 0.22;
+    const selfContrary = seededRandom(seed + b * 29 + 611) < 0.18;
     const dir = selfContrary ? -Math.sign(prevDir || 1) : Math.sign(prevDir || 1);
+    const uStep = Math.sign(uDelta || 0);
+    const preferContrary =
+      uStep !== 0 && seededRandom(seed + b * 29 + 8800) < (upperBusy ? 0.28 : 0.42);
     const byMotion = [...candidates].sort((a, b) => {
-      const da = (a - last) * dir;
-      const db = (b - last) * dir;
-      return db - da;
+      const stepA = a - last;
+      const stepB = b - last;
+      let scoreA = stepA * dir;
+      let scoreB = stepB * dir;
+      if (preferContrary) {
+        scoreA -= uStep * Math.sign(stepA) * 1.15;
+        scoreB -= uStep * Math.sign(stepB) * 1.15;
+      }
+      return scoreB - scoreA;
     });
     let next = clamp(byMotion[0] ?? candidates[0], LOWER_MIN, LOWER_MAX);
 
@@ -1244,6 +1282,115 @@ function enforceCounterpoint(upper: number[], lower: number[], seed: number): { 
   return { upper: u, lower: l };
 }
 
+/** Explicit lower-voice reaction to a phrase ending (max one per phrase, timing layer). */
+type PhraseEndResponseKind = 'stepwise' | 'sustain' | 'contrary';
+
+/**
+ * After each phrase (except the last), 40–60% chance the lower voice must respond on the next beat
+ * (timing offset applied in deriveMelodySupportLayout).
+ */
+function planPhraseEndResponses(
+  phraseLengths: number[],
+  seed: number,
+  totalBeats: number
+): Map<number, PhraseEndResponseKind> {
+  const map = new Map<number, PhraseEndResponseKind>();
+  let beat = 0;
+  for (let pi = 0; pi < phraseLengths.length; pi++) {
+    const len = phraseLengths[pi];
+    const endB = beat + len - 1;
+    const nextB = endB + 1;
+    beat += len;
+    if (nextB >= totalBeats) continue;
+    const pResp = 0.4 + seededRandom(seed + pi * 9100 + 17) * 0.2;
+    if (seededRandom(seed + pi * 9101 + 17) >= pResp) continue;
+    const rk = seededRandom(seed + pi * 9102 + 17);
+    const kind: PhraseEndResponseKind =
+      rk < 0.34 ? 'stepwise' : rk < 0.67 ? 'sustain' : 'contrary';
+    map.set(nextB, kind);
+  }
+  return map;
+}
+
+/**
+ * Lower events for one bar: response starts +0.25 after phrase boundary beat (avoids upper downbeat attack).
+ */
+function pushLowerPhraseEndTriggered(
+  lowerEvents: NoteEvent[],
+  lowerPitches: number[],
+  upperPitches: number[],
+  base: number,
+  beatsPerBar: number,
+  nextGlobalBeat: number,
+  kind: PhraseEndResponseKind,
+  seed: number
+): void {
+  const beatInBar = nextGlobalBeat - base;
+  if (beatInBar < 0 || beatInBar >= beatsPerBar) return;
+
+  const gLower = (gb: number) => lowerPitches[Math.min(Math.max(0, gb), lowerPitches.length - 1)];
+  const gUpper = (gb: number) => upperPitches[Math.min(Math.max(0, gb), upperPitches.length - 1)];
+
+  if (beatInBar > 0) {
+    lowerEvents.push({ pitch: 0, duration: beatInBar, beat: 0, isDyad: false });
+  }
+  const micro = seededRandom(seed + nextGlobalBeat * 5 + 88) < 0.55 ? 0.25 : 0.5;
+  lowerEvents.push({ pitch: 0, duration: micro, beat: beatInBar, isDyad: false });
+  const entryBeat = beatInBar + micro;
+  const rem = beatsPerBar - entryBeat;
+  if (rem <= 0.01) return;
+
+  if (kind === 'sustain') {
+    lowerEvents.push({
+      pitch: gLower(nextGlobalBeat),
+      duration: rem,
+      beat: entryBeat,
+      isDyad: false,
+    });
+    return;
+  }
+
+  if (kind === 'stepwise') {
+    const p0 = gLower(nextGlobalBeat);
+    const p1 = gLower(nextGlobalBeat + 1);
+    const p2 = gLower(nextGlobalBeat + 2);
+    let t = entryBeat;
+    let left = rem;
+    const d0 = Math.min(0.5, left * 0.42);
+    lowerEvents.push({ pitch: p0, duration: d0, beat: t, isDyad: false });
+    left -= d0;
+    t += d0;
+    if (left > 0.32) {
+      const d1 = Math.min(0.5, left * 0.55);
+      lowerEvents.push({ pitch: p1, duration: d1, beat: t, isDyad: false });
+      left -= d1;
+      t += d1;
+    }
+    if (left > 0.12) {
+      lowerEvents.push({ pitch: p2, duration: left, beat: t, isDyad: false });
+    }
+    return;
+  }
+
+  const uStep =
+    nextGlobalBeat > 0 ? gUpper(nextGlobalBeat) - gUpper(nextGlobalBeat - 1) : 0;
+  const target = gLower(nextGlobalBeat);
+  let pContrary = target;
+  if (uStep > 0) pContrary = clamp(target - (1 + Math.floor(seededRandom(seed + 4411) * 2)), LOWER_MIN, LOWER_MAX);
+  else if (uStep < 0) pContrary = clamp(target + (1 + Math.floor(seededRandom(seed + 4412) * 2)), LOWER_MIN, LOWER_MAX);
+
+  const d1 = Math.min(1, rem * 0.55);
+  lowerEvents.push({ pitch: pContrary, duration: d1, beat: entryBeat, isDyad: false });
+  if (rem > d1 + 0.1) {
+    lowerEvents.push({
+      pitch: target,
+      duration: rem - d1,
+      beat: entryBeat + d1,
+      isDyad: false,
+    });
+  }
+}
+
 /**
  * Upper rhythm variants (4 beats): phrase breath or sustained arcs — not only four quarters.
  * Lower counter-line: 2–3 pitch attacks per bar with varied rhythm.
@@ -1274,15 +1421,18 @@ function pushUpperPhraseRhythm(
 }
 
 /**
- * Lower counter-line: 2–3 pitch attacks per bar with varied rhythm (off-beat, syncopation, short+sustain).
+ * Lower counter-line: 2–4 attacks per bar — when upper is quarter-heavy, prefer sustain / delayed entry (not mirrored grid).
  */
 function pushLowerCounterLine(
   lowerEvents: NoteEvent[],
   l: (i: number) => number,
   bar: number,
-  seed: number
+  seed: number,
+  upperQuarterHeavy: boolean
 ): void {
-  const t = (seed + bar * 97) % 3;
+  const t = upperQuarterHeavy
+    ? 2 + ((seed + bar * 41) % 2)
+    : (seed + bar * 97) % 3;
   if (t === 0) {
     lowerEvents.push({ pitch: 0, duration: 0.5, beat: 0, isDyad: false });
     lowerEvents.push({ pitch: l(0), duration: 0.5, beat: 0.5, isDyad: false });
@@ -1293,10 +1443,14 @@ function pushLowerCounterLine(
     lowerEvents.push({ pitch: 0, duration: 0.5, beat: 0.5, isDyad: false });
     lowerEvents.push({ pitch: l(1), duration: 1.5, beat: 1, isDyad: false });
     lowerEvents.push({ pitch: l(2), duration: 1.5, beat: 2.5, isDyad: false });
-  } else {
+  } else if (t === 2) {
     lowerEvents.push({ pitch: l(0), duration: 2, beat: 0, isDyad: false });
     lowerEvents.push({ pitch: l(2), duration: 0.5, beat: 2, isDyad: false });
     lowerEvents.push({ pitch: l(3), duration: 1.5, beat: 2.5, isDyad: false });
+  } else {
+    lowerEvents.push({ pitch: 0, duration: 1, beat: 0, isDyad: false });
+    lowerEvents.push({ pitch: l(1), duration: 1, beat: 1, isDyad: false });
+    lowerEvents.push({ pitch: l(2), duration: 2, beat: 2, isDyad: false });
   }
 }
 
@@ -1305,7 +1459,9 @@ function deriveMelodySupportLayout(
   lower: number[],
   chords: HarmonicContext['chords'],
   beatsPerBar: number,
-  seed: number
+  seed: number,
+  phraseEndResponses: Map<number, PhraseEndResponseKind>,
+  totalBeats: number
 ): { upperEvents: NoteEvent[]; lowerEvents: NoteEvent[]; impliedHarmony: ImpliedHarmony[] } {
   const upperEvents: NoteEvent[] = [];
   const lowerEvents: NoteEvent[] = [];
@@ -1321,6 +1477,15 @@ function deriveMelodySupportLayout(
     impliedHarmony.push({ chord: chordLabel, bar, beat: 0, confidence: 0.85 });
 
     const useCallResponse = (seed + bar * 17) % 5 === 0;
+
+    let responseBeat: number | undefined;
+    for (let d = 0; d < beatsPerBar; d++) {
+      const gb = base + d;
+      if (gb < totalBeats && phraseEndResponses.has(gb)) {
+        responseBeat = gb;
+        break;
+      }
+    }
 
     if (useCallResponse) {
       const upperLeadsFirst = (seed + bar * 131) % 2 === 0;
@@ -1345,7 +1510,22 @@ function deriveMelodySupportLayout(
       }
     } else {
       pushUpperPhraseRhythm(upperEvents, u, bar, seed);
-      pushLowerCounterLine(lowerEvents, l, bar, seed);
+      if (responseBeat !== undefined) {
+        pushLowerPhraseEndTriggered(
+          lowerEvents,
+          lower,
+          upper,
+          base,
+          beatsPerBar,
+          responseBeat,
+          phraseEndResponses.get(responseBeat)!,
+          seed
+        );
+      } else {
+        const upperRhy = (seed + bar * 59) % 6;
+        const upperQuarterHeavy = upperRhy >= 3;
+        pushLowerCounterLine(lowerEvents, l, bar, seed, upperQuarterHeavy);
+      }
     }
   }
 
@@ -1408,12 +1588,15 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
 
   const { upper: u, lower: l } = enforceCounterpoint(upperPitches, lowerPitches, seedBase);
 
+  const phraseEndResponses = planPhraseEndResponses(upperResult.phraseLengths, seedBase, totalBeats);
   const { upperEvents, lowerEvents, impliedHarmony } = deriveMelodySupportLayout(
     u,
     l,
     chords,
     beatsPerBar,
-    seedBase
+    seedBase,
+    phraseEndResponses,
+    totalBeats
   );
 
   const rawOutput: WybleOutput = {

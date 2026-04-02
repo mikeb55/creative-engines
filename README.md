@@ -51,9 +51,9 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
 **Jimmy Wyble Engine (milestone):**  
-Phrase-driven melodic system with continuity and reliable resolution.  
-Upper voice now produces musically convincing lines.  
-Next phase: lower voice conversation + final polish.
+Now features two-voice interaction with conversational behaviour between voices.  
+Upper voice provides phrase-driven melody; lower voice responds with independent motion.  
+Next phase: interaction refinement and balance.
 
 **Composer OS documentation (canonical):**
 

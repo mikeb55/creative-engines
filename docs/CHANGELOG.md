@@ -1,5 +1,14 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Lower Voice Interaction Achieved
+
+- Lower voice upgraded from passive support to interactive counterpoint
+- Phrase-aware responses added (post-phrase and anticipatory)
+- Increased rhythmic independence (off-beat entries, delayed responses)
+- Introduced contrary motion bias between voices
+- Maintained density control and bar-math integrity
+- Upper voice behaviour unchanged and stable
+
 ## Wyble Engine — Phrase Resolution Achieved
 
 - Target-first phrase generation implemented
