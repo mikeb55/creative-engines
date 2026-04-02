@@ -10,6 +10,7 @@ import type {
   NoteEvent,
   ImpliedHarmony,
 } from './wybleTypes';
+import { validateJazzPhrasePitches } from './jazzBehaviourGate';
 
 const UPPER_MIN = 64;
 const UPPER_MAX = 76;
@@ -603,6 +604,9 @@ function tryRealizePhraseHard(
     let repeatRun = repeatRunIn;
     if (targetMidi === chainPrev) repeatRun++;
     else repeatRun = 1;
+    if (!validateJazzPhrasePitches([targetMidi], startBeat, harmonicContext, beatsPerBar)) {
+      return null;
+    }
     return { pitches: [targetMidi], repeatRun, targetMidi };
   }
 
@@ -697,6 +701,10 @@ function tryRealizePhraseHard(
   if (!interiorOnCorrectSideOfTarget(pitches, targetMidi, sk.direction)) return null;
 
   const repeatRun = computeRepeatRunAfterPhrase(chainPrev, pitches, repeatRunIn);
+
+  if (!validateJazzPhrasePitches(pitches, startBeat, harmonicContext, beatsPerBar)) {
+    return null;
+  }
 
   return { pitches, repeatRun, targetMidi };
 }

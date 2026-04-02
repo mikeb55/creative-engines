@@ -58,6 +58,10 @@ Now ready for chord-notation export.
 Wyble now exports complete per-bar chord symbols with exact progression mapping, including slash chords and altered/extended chord text such as D7(#11), A7(b9), and A7alt.  
 Earlier Wyble versions may have shown truncated or simplified chord output due to export-layer issues.
 
+**Wyble Engine (milestone):**  
+Wyble now exports full per-bar chord symbols with exact altered/slash chord text preserved in notation apps, while keeping jazz-aware melodic behaviour intact.  
+Next phase: musical-intelligence refinement (stronger phrase direction, rhetorical shaping, and more conversational lower-voice response).
+
 **Composer OS documentation (canonical):**
 
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)

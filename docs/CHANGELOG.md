@@ -1,5 +1,17 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Export + Jazz Behaviour Milestone
+
+- Fixed full 16-bar chord export for Wyble MusicXML
+- Preserved exact chord text in notation apps, including:
+  - D7(#11)
+  - A7(b9)
+  - A7alt
+- Preserved slash chords and per-bar mapping
+- Confirmed no bar truncation in Sibelius / Guitar Pro 8
+- Added jazz-aware behaviour validation that preserves chromaticism while preventing static clashes
+- Maintained bar-math integrity and stable MusicXML export
+
 ## Wyble Engine — Chord Export + Chord Semantics Fixed
 
 - Fixed full per-bar chord export for Wyble MusicXML

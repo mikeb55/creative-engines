@@ -101,6 +101,48 @@ export function parseLeadSheetChordToCanonical(raw: string): CanonicalChord {
   return { root, quality, extensions, alterations, bass, text, kind, degreeSet };
 }
 
+/** Maps `#11`, `b9`, etc. (from {@link extractExtensionsAlterations}) to pitch class relative to root (0–11). */
+function alterationStringToPitchClassRelativeToRoot(alt: string): number | null {
+  const t = alt.trim().toLowerCase();
+  if (t === 'alt') return null;
+  const m = t.match(/^([#b]?)(9|11|13|5)$/);
+  if (!m) return null;
+  const acc = m[1];
+  const deg = m[2]!;
+  if (acc === '') return null;
+  if (acc === '#') {
+    if (deg === '5') return 8;
+    if (deg === '9') return 3;
+    if (deg === '11') return 6;
+    if (deg === '13') return 10;
+  }
+  if (acc === 'b') {
+    if (deg === '5') return 6;
+    if (deg === '9') return 1;
+    if (deg === '11') return 4;
+    if (deg === '13') return 8;
+  }
+  return null;
+}
+
+/**
+ * Pitch classes (relative to chord root) allowed for Wyble upper-line melody against this chord:
+ * engine {@link CanonicalChord.degreeSet} plus explicit altered extensions from {@link CanonicalChord.alterations}.
+ */
+export function melodyAllowedPitchClassesForCanonical(c: CanonicalChord): number[] {
+  const s = new Set<number>(c.degreeSet);
+  for (const a of c.alterations) {
+    const pc = alterationStringToPitchClassRelativeToRoot(a);
+    if (pc !== null) s.add(pc);
+  }
+  if (s.size === 0) {
+    if (c.quality === 'maj') [0, 4, 7, 11].forEach((x) => s.add(x));
+    else if (c.quality === 'min') [0, 3, 7, 10].forEach((x) => s.add(x));
+    else [0, 4, 7, 10].forEach((x) => s.add(x));
+  }
+  return [...s].sort((a, b) => a - b);
+}
+
 /** MusicXML `<harmony>` line: always uses canonical `text` (identical to user input). */
 export function buildHarmonyXmlLineFromCanonical(
   c: CanonicalChord,
