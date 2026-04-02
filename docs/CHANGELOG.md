@@ -1,5 +1,14 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Phrase Resolution Achieved
+
+- Target-first phrase generation implemented
+- Reliable phrase resolution (final note = target)
+- Stepwise approach into phrase endings
+- Clear melodic direction and continuity across bars
+- Reduced repetition and improved musical phrasing
+- Bar math and MusicXML stability preserved
+
 ## Wyble Engine — Phrase Architecture (Final Phase)
 
 - Introduced phrase-first generation (interval-driven melodic construction)

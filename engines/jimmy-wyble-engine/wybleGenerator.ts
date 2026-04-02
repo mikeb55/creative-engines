@@ -85,12 +85,16 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
-/** Interval plan before any pitch exists — drives pitch, not the reverse. */
-export type PhraseDirection = 'up' | 'down' | 'arch';
+/** Phrase arc: ascending, descending, or arch (up then down). Stored on each phrase skeleton. */
+export type PhraseArcType = 'ascending' | 'descending' | 'arch';
+
+/** @deprecated Use PhraseArcType — alias kept for callers */
+export type PhraseDirection = PhraseArcType;
 
 export interface PhraseSkeleton {
   length: number;
-  direction: PhraseDirection;
+  /** Explicit arc: ascending / descending / arch — drives contour + max one direction change (arch only). */
+  direction: PhraseArcType;
   /** Signed semitone steps; intervals.length === length - 1. */
   intervals: number[];
 }
@@ -100,9 +104,9 @@ export type PhraseMemory = PhraseSkeleton;
 
 const MAX_PHRASE_BEATS = 12;
 
-function invertPhraseDirection(d: PhraseDirection): PhraseDirection {
-  if (d === 'up') return 'down';
-  if (d === 'down') return 'up';
+function invertPhraseDirection(d: PhraseArcType): PhraseArcType {
+  if (d === 'ascending') return 'descending';
+  if (d === 'descending') return 'ascending';
   return 'arch';
 }
 
@@ -129,7 +133,7 @@ function deriveSkeletonFromPrevious(
 ): PhraseSkeleton {
   if (prev.intervals.length === 0) {
     return trimSkeletonToBeats(
-      { length: 2, direction: 'up', intervals: [1] },
+      { length: 2, direction: 'ascending', intervals: [1] },
       remaining
     );
   }
@@ -171,7 +175,7 @@ function deriveSkeletonFromPrevious(
   if (intervals.length === 0) {
     const sign = seededRandom(seed + phraseIdx * 4010 + attempt) < 0.5 ? 1 : -1;
     intervals = [sign * (1 + Math.floor(seededRandom(seed + phraseIdx * 4011 + attempt) * 2))];
-    direction = sign > 0 ? 'up' : 'down';
+    direction = sign > 0 ? 'ascending' : 'descending';
   }
 
   const length = intervals.length + 1;
@@ -241,12 +245,31 @@ function isLandingPitch(
 
 const MAX_PHRASE_REGEN = 28;
 
-function sameSign(a: number, b: number): boolean {
-  return (a === 0 && b === 0) || (a > 0 && b > 0) || (a < 0 && b < 0);
+/** Higher score = stronger preference for phrase resolution (3rd/7th > root/5th > tensions). */
+function landingPriority(
+  pitch: number,
+  root: string,
+  quality: string,
+  octave: number,
+  alteredBias: number
+): number {
+  const rootMidi = ROOT_MIDI[root] ?? 60;
+  const baseRoot = rootMidi + (octave - 4) * 12;
+  const pc = ((pitch - baseRoot) % 12 + 12) % 12;
+  const q = normalizeQuality(quality);
+  const third = q === 'min' ? 3 : 4;
+  let s = 0;
+  if (pc === third) s += 50;
+  if ((q === 'maj' && pc === 11) || ((q === 'min' || q === 'dom') && pc === 10)) s += 45;
+  if (pc === 0) s += 28;
+  if (pc === 7) s += 22;
+  if ([2, 5, 9].includes(pc)) s += 10;
+  if (q === 'dom' && alteredBias > 0 && [1, 3, 6, 8].includes(pc)) s += 8;
+  return s;
 }
 
 /**
- * Mandatory resolution pitch for the phrase (chord tone preferred, else strong tension).
+ * Mandatory resolution pitch: weighted toward chord tones (3rd/7th/root/5th), else strong tensions.
  */
 function pickPhraseTargetMidi(
   endBeat: number,
@@ -257,43 +280,79 @@ function pickPhraseTargetMidi(
   phraseIdx: number
 ): number | null {
   const { root, quality } = getChordForBeat(chords, endBeat, beatsPerBar);
-  const chordTones = getChordTonesWithAltered(root, quality, 5, alteredBias).filter(
-    (t) => t >= UPPER_MIN && t <= UPPER_MAX
-  );
   const landing = getHarmonyPitchesForBeat(root, quality, 5, alteredBias).filter(
     (t) =>
       t >= UPPER_MIN &&
       t <= UPPER_MAX &&
       isLandingPitch(t, root, quality, 5, alteredBias)
   );
-  const chordPreferred = chordTones.filter((p) => landing.includes(p));
-  const use = chordPreferred.length > 0 ? chordPreferred : landing;
-  if (use.length === 0) return null;
-  const k = Math.floor(seededRandom(seed + phraseIdx * 9001 + endBeat * 17) * use.length);
-  return use[k] ?? use[0];
+  if (landing.length === 0) return null;
+  const scored = landing.map((p) => ({
+    p,
+    w: landingPriority(p, root, quality, 5, alteredBias) + seededRandom(seed + phraseIdx * 9001 + p * 3) * 0.01,
+  }));
+  scored.sort((a, b) => b.w - a.w);
+  const top = scored[0]!.w;
+  const tier = scored.filter((x) => x.w >= top - 0.05);
+  const k = Math.floor(seededRandom(seed + phraseIdx * 9001 + endBeat * 17) * tier.length);
+  return tier[k]?.p ?? scored[0]!.p;
 }
 
-/** Intervals pull toward target while keeping skeleton contour when possible. */
-function effectiveIntervalTowardTarget(
-  skInt: number,
-  prev: number,
+/** Steps before the arch turns downward (matches buildPhraseSkeleton arch split). */
+function archUpStepCount(length: number): number {
+  if (length < 2) return 0;
+  return Math.max(1, Math.floor((length - 1) / 2));
+}
+
+/**
+ * Required melodic direction for interior step `stepIdx` (0 = first interval).
+ * Arch: first leg ascending, second leg descending toward target.
+ */
+function requiredStepSign(arc: PhraseArcType, stepIdx: number, phraseLen: number): 1 | -1 {
+  if (arc === 'ascending') return 1;
+  if (arc === 'descending') return -1;
+  return stepIdx < archUpStepCount(phraseLen) ? 1 : -1;
+}
+
+/** Counts sign flips between consecutive non-zero melodic steps. */
+function directionChangeCount(pitches: number[]): number {
+  let lastSign = 0;
+  let changes = 0;
+  for (let i = 0; i < pitches.length - 1; i++) {
+    const d = pitches[i + 1]! - pitches[i]!;
+    if (d === 0) continue;
+    const s = d > 0 ? 1 : -1;
+    if (lastSign !== 0 && s !== lastSign) changes++;
+    lastSign = s;
+  }
+  return changes;
+}
+
+function contourValidForArc(pitches: number[], arc: PhraseArcType): boolean {
+  if (pitches.length <= 1) return true;
+  const changes = directionChangeCount(pitches);
+  if (arc === 'arch') return changes <= 1;
+  return changes === 0;
+}
+
+/** Non-final notes stay on the correct side of the resolution so the line aims at the target. */
+function interiorOnCorrectSideOfTarget(
+  pitches: number[],
   target: number,
-  stepsLeft: number
-): number {
-  if (stepsLeft <= 0) return skInt;
-  const gap = target - prev;
-  const skSign = Math.sign(skInt);
-  if (gap === 0) return skInt;
-  const toward = gap / stepsLeft;
-  if (skSign === 0) {
-    const w = clamp(Math.round(toward), -MAX_LEAP, MAX_LEAP);
-    return w !== 0 ? w : gap > 0 ? 1 : -1;
+  arc: PhraseArcType
+): boolean {
+  const n = pitches.length;
+  if (n <= 1) return true;
+  if (arc === 'ascending') {
+    for (let i = 0; i < n - 1; i++) {
+      if (pitches[i]! >= target) return false;
+    }
+  } else if (arc === 'descending') {
+    for (let i = 0; i < n - 1; i++) {
+      if (pitches[i]! <= target) return false;
+    }
   }
-  if (Math.sign(gap) === skSign) {
-    const mag = Math.min(MAX_LEAP, Math.max(1, Math.round(Math.abs(toward))));
-    return skSign * mag;
-  }
-  return skInt;
+  return true;
 }
 
 function pickAnchorTowardTarget(
@@ -302,7 +361,8 @@ function pickAnchorTowardTarget(
   target: number,
   phraseLen: number,
   repeatRun: number,
-  avoidPitch: number | null
+  avoidPitch: number | null,
+  arc: PhraseArcType
 ): number | null {
   let pool = [...harmony];
   if (repeatRun >= 2) {
@@ -314,8 +374,22 @@ function pickAnchorTowardTarget(
     if (noA.length > 0) pool = noA;
   }
   if (pool.length === 0) return null;
+
+  let filtered = pool;
+  if (arc === 'ascending') {
+    const below = pool.filter((p) => p < target);
+    if (below.length > 0) filtered = below;
+  } else if (arc === 'descending') {
+    const above = pool.filter((p) => p > target);
+    if (above.length > 0) filtered = above;
+  } else {
+    const below = pool.filter((p) => p < target);
+    if (below.length > 0) filtered = below;
+  }
+  if (filtered.length === 0) filtered = pool;
+
   const w = Math.max(1, phraseLen - 1);
-  const sorted = pool.sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const da = Math.abs(a - chainPrev) + Math.abs(target - a) / w;
     const db = Math.abs(b - chainPrev) + Math.abs(target - b) / w;
     return da - db;
@@ -323,26 +397,81 @@ function pickAnchorTowardTarget(
   return sorted[0] ?? null;
 }
 
-function tryPickExactTarget(
-  prev: number,
-  targetMidi: number,
+/**
+ * Backward step: choose p[i] given p[i+1] so the forward step i→i+1 matches arc (target-first path).
+ * Prefer stepwise motion for the last 1–2 intervals before the target.
+ */
+function pickPitchBackwardTowardTarget(
+  pNext: number,
+  stepIdx: number,
+  phraseLen: number,
+  arc: PhraseArcType,
   harmony: number[],
-  root: string,
-  quality: string,
-  octave: number,
-  alteredBias: number,
-  repeatRun: number,
-  avoidPitch: number | null
+  preferApproach: boolean,
+  seed: number,
+  phraseIdx: number,
+  beatTag: number
 ): number | null {
-  if (!harmony.includes(targetMidi)) return null;
-  if (!isLandingPitch(targetMidi, root, quality, octave, alteredBias)) return null;
-  const gap = targetMidi - prev;
-  if (gap > 0 && targetMidi <= prev) return null;
-  if (gap < 0 && targetMidi >= prev) return null;
-  if (repeatRun >= 2 && targetMidi === prev) return null;
-  if (avoidPitch !== null && targetMidi === avoidPitch && harmony.some((p) => p !== avoidPitch && p !== prev))
-    return null;
-  return targetMidi;
+  const sign = requiredStepSign(arc, stepIdx, phraseLen);
+  let cands = harmony.filter((h) => (sign === 1 ? h < pNext : h > pNext));
+  cands = cands.filter((h) => {
+    const d = Math.abs(h - pNext);
+    return d >= 1 && d <= MAX_LEAP;
+  });
+  if (cands.length === 0) return null;
+  if (preferApproach) {
+    const tight = cands.filter((h) => {
+      const d = Math.abs(h - pNext);
+      return d >= 1 && d <= 3;
+    });
+    if (tight.length > 0) cands = tight;
+  }
+  cands.sort((a, b) => {
+    const da = Math.abs(pNext - a);
+    const db = Math.abs(pNext - b);
+    if (da !== db) return da - db;
+    return seededRandom(seed + phraseIdx * 701 + beatTag * 19 + a * 2) -
+      seededRandom(seed + phraseIdx * 701 + beatTag * 19 + b * 2);
+  });
+  const top = Math.min(4, cands.length);
+  const k = Math.floor(seededRandom(seed + phraseIdx * 702 + beatTag * 31) * top);
+  return cands[k] ?? cands[0] ?? null;
+}
+
+/** First pitch: arc-compatible with p[1], reachable from chainPrev, aimed at target (target-first). */
+function pickFirstPitchTargetFirst(
+  chainPrev: number,
+  p1: number,
+  harmony: number[],
+  targetMidi: number,
+  phraseLen: number,
+  repeatRunIn: number,
+  avoidPitch: number | null,
+  arc: PhraseArcType
+): number | null {
+  const sign = requiredStepSign(arc, 0, phraseLen);
+  const pool = harmony.filter((h) => (sign === 1 ? h < p1 : h > p1));
+  if (pool.length === 0) return null;
+  return pickAnchorTowardTarget(
+    chainPrev,
+    pool,
+    targetMidi,
+    phraseLen,
+    repeatRunIn,
+    avoidPitch,
+    arc
+  );
+}
+
+function computeRepeatRunAfterPhrase(chainPrev: number, pitches: number[], repeatRunIn: number): number {
+  let repeatRun = repeatRunIn;
+  let prev = chainPrev;
+  for (const p of pitches) {
+    if (p === prev) repeatRun++;
+    else repeatRun = 1;
+    prev = p;
+  }
+  return repeatRun;
 }
 
 /**
@@ -406,6 +535,8 @@ function pickAnchorToHarmony(
 interface RealizeResult {
   pitches: number[];
   repeatRun: number;
+  /** Phrase resolution target (last pitch equals this when realization succeeds). */
+  targetMidi: number;
 }
 
 function globalPitchAtBeat(
@@ -420,7 +551,8 @@ function globalPitchAtBeat(
 }
 
 /**
- * Phrase arc + mandatory target: steps move toward target; last pitch equals pickPhraseTargetMidi.
+ * Target-first: pick resolution pitch before any interior note; build backward from target, then first pitch.
+ * Last note is always target (strict); approach favors stepwise motion in the last 1–2 intervals.
  */
 function tryRealizePhraseHard(
   sk: PhraseSkeleton,
@@ -469,120 +601,102 @@ function tryRealizePhraseHard(
     let repeatRun = repeatRunIn;
     if (targetMidi === chainPrev) repeatRun++;
     else repeatRun = 1;
-    return { pitches: [targetMidi], repeatRun };
+    return { pitches: [targetMidi], repeatRun, targetMidi };
   }
 
-  const pitches: number[] = [];
-  let prev = chainPrev;
-  let repeatRun = repeatRunIn;
+  const n = sk.length;
+  const { root: lr, quality: lq } = getChordForBeat(chords, endBeat, beatsPerBar);
+  const harmonyLast = getHarmonyPitchesForBeat(lr, lq, 5, alteredDominantBias).filter(
+    (t) => t >= UPPER_MIN && t <= UPPER_MAX
+  );
+  if (
+    !harmonyLast.includes(targetMidi) ||
+    !isLandingPitch(targetMidi, lr, lq, 5, alteredDominantBias)
+  ) {
+    return null;
+  }
 
-  for (let i = 0; i < sk.length; i++) {
+  const pitches: number[] = new Array(n);
+  pitches[n - 1] = targetMidi;
+
+  for (let i = n - 2; i >= 1; i--) {
     const b = startBeat + i;
     const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
     const harmony = getHarmonyPitchesForBeat(root, quality, 5, alteredDominantBias).filter(
       (t) => t >= UPPER_MIN && t <= UPPER_MAX
     );
     if (harmony.length === 0) return null;
+    const preferApproach = i >= n - 3;
+    const p = pickPitchBackwardTowardTarget(
+      pitches[i + 1]!,
+      i,
+      n,
+      sk.direction,
+      harmony,
+      preferApproach,
+      seed,
+      phraseIdx,
+      i
+    );
+    if (p === null) return null;
+    pitches[i] = p;
+  }
 
+  const b0 = startBeat;
+  const { root: r0, quality: q0 } = getChordForBeat(chords, b0, beatsPerBar);
+  const harmony0 = getHarmonyPitchesForBeat(r0, q0, 5, alteredDominantBias).filter(
+    (t) => t >= UPPER_MIN && t <= UPPER_MAX
+  );
+  if (harmony0.length === 0) return null;
+  let avoidPitch0: number | null = null;
+  if (b0 >= 2) {
+    const pA = upperPrefix[b0 - 2];
+    const pM = upperPrefix[b0 - 1];
+    if (pA !== undefined && pM !== undefined && pA !== pM) avoidPitch0 = pA;
+  }
+  const p0 = pickFirstPitchTargetFirst(
+    chainPrev,
+    pitches[1]!,
+    harmony0,
+    targetMidi,
+    n,
+    repeatRunIn,
+    avoidPitch0,
+    sk.direction
+  );
+  if (p0 === null) return null;
+  pitches[0] = p0;
+
+  for (let i = 0; i < n; i++) {
+    const b = startBeat + i;
+    const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+    const harmony = getHarmonyPitchesForBeat(root, quality, 5, alteredDominantBias).filter(
+      (t) => t >= UPPER_MIN && t <= UPPER_MAX
+    );
+    if (!harmony.includes(pitches[i]!)) return null;
+    const prevP = i === 0 ? chainPrev : pitches[i - 1]!;
     let avoidPitch: number | null = null;
     if (b >= 2) {
       const pA = globalPitchAtBeat(b - 2, startBeat, upperPrefix, pitches);
       const pM = globalPitchAtBeat(b - 1, startBeat, upperPrefix, pitches);
       if (pA !== undefined && pM !== undefined && pA !== pM) avoidPitch = pA;
     }
-
-    const isLast = i === sk.length - 1;
-
-    if (i === 0) {
-      const anchor = pickAnchorTowardTarget(
-        prev,
-        harmony,
-        targetMidi,
-        sk.length,
-        repeatRun,
-        avoidPitch
-      );
-      if (anchor === null) return null;
-      pitches.push(anchor);
-      if (anchor === prev) repeatRun++;
-      else repeatRun = 1;
-      prev = anchor;
-      continue;
+    if (
+      avoidPitch !== null &&
+      pitches[i] === avoidPitch &&
+      harmony.some((p) => p !== avoidPitch && p !== prevP)
+    ) {
+      return null;
     }
-
-    if (isLast) {
-      const exact = tryPickExactTarget(
-        prev,
-        targetMidi,
-        harmony,
-        root,
-        quality,
-        5,
-        alteredDominantBias,
-        repeatRun,
-        avoidPitch
-      );
-      if (exact !== null) {
-        pitches.push(exact);
-        if (exact === prev) repeatRun++;
-        else repeatRun = 1;
-        prev = exact;
-        continue;
-      }
-      const gap = targetMidi - prev;
-      for (const delta of [0, 1, -1, 2, -2, 3, -3]) {
-        const intv = clamp(gap + delta, -MAX_LEAP, MAX_LEAP);
-        if (intv !== 0 && !sameSign(intv, gap)) continue;
-        const nextTry = pickHarmonicStep(
-          prev,
-          intv,
-          harmony,
-          clamp(prev + intv, UPPER_MIN, UPPER_MAX),
-          true,
-          root,
-          quality,
-          5,
-          alteredDominantBias,
-          repeatRun,
-          avoidPitch
-        );
-        if (nextTry === targetMidi) {
-          pitches.push(nextTry);
-          if (nextTry === prev) repeatRun++;
-          else repeatRun = 1;
-          prev = nextTry;
-          break;
-        }
-      }
-      if (pitches.length !== sk.length) return null;
-      continue;
-    }
-
-    const skInt = sk.intervals[i - 1];
-    const stepsLeft = sk.length - i;
-    const effInt = effectiveIntervalTowardTarget(skInt, prev, targetMidi, stepsLeft);
-    const ideal = clamp(prev + effInt, UPPER_MIN, UPPER_MAX);
-    const next = pickHarmonicStep(
-      prev,
-      effInt,
-      harmony,
-      ideal,
-      false,
-      root,
-      quality,
-      5,
-      alteredDominantBias,
-      repeatRun,
-      avoidPitch
-    );
-    if (next === null) return null;
-    if (next === prev) repeatRun++;
-    else repeatRun = 1;
-    pitches.push(next);
-    prev = next;
   }
 
-  return { pitches, repeatRun };
+  if (pitches[n - 1] !== targetMidi) return null;
+  if (!contourValidForArc(pitches, sk.direction)) return null;
+  if (!interiorOnCorrectSideOfTarget(pitches, targetMidi, sk.direction)) return null;
+
+  const repeatRun = computeRepeatRunAfterPhrase(chainPrev, pitches, repeatRunIn);
+
+  return { pitches, repeatRun, targetMidi };
 }
 
 /**
@@ -596,40 +710,40 @@ function buildPhraseSkeleton(
 ): PhraseSkeleton {
   const length = phraseLengthFromSeed(seed, phraseIdx, attempt);
   const r = seededRandom(seed + phraseIdx * 11 + 700 + attempt * 13);
-  let direction: PhraseDirection =
-    r < 0.34 ? 'arch' : r < 0.67 ? 'up' : 'down';
+  let direction: PhraseArcType =
+    r < 0.34 ? 'arch' : r < 0.67 ? 'ascending' : 'descending';
   const intervals: number[] = [];
-  let leapUsed = false;
+  let leapUsed: boolean = false;
 
   if (direction === 'arch' && length >= 3) {
     const half = Math.max(1, Math.floor((length - 1) / 2));
     const sign1 = seededRandom(seed + phraseIdx * 11 + 702 + attempt) < 0.5 ? 1 : -1;
     for (let i = 0; i < length - 1; i++) {
       const leg = i < half ? sign1 : -sign1;
-      const wantLeap =
-        !leapUsed && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.28;
-      const mag = wantLeap
+      const lu: boolean = leapUsed;
+      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.28;
+      const mag = takeLeap
         ? 3 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2)
         : 1 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2);
-      leapUsed = leapUsed || wantLeap;
+      leapUsed = lu || takeLeap;
       intervals.push(leg * Math.min(mag, MAX_LEAP));
     }
   } else {
     const sign =
-      direction === 'up'
+      direction === 'ascending'
         ? 1
-        : direction === 'down'
+        : direction === 'descending'
           ? -1
           : seededRandom(seed + phraseIdx * 11 + 888 + attempt) < 0.5
             ? 1
             : -1;
     for (let i = 0; i < length - 1; i++) {
-      const wantLeap =
-        !leapUsed && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.32;
-      const mag = wantLeap
+      const lu: boolean = leapUsed;
+      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.32;
+      const mag = takeLeap
         ? 3 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2)
         : 1 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2);
-      leapUsed = leapUsed || wantLeap;
+      leapUsed = lu || takeLeap;
       intervals.push(sign * Math.min(mag, MAX_LEAP));
     }
   }
@@ -638,7 +752,7 @@ function buildPhraseSkeleton(
   let fp = phraseFingerprint(sk);
   if (prevFingerprint && fp === prevFingerprint && intervals.length > 0) {
     const last = intervals.length - 1;
-    const bump = sk.direction === 'down' ? -1 : 1;
+    const bump = sk.direction === 'descending' ? -1 : 1;
     intervals[last] = clamp(intervals[last] + bump, -MAX_LEAP, MAX_LEAP);
     sk = { length, direction, intervals: [...intervals] };
   }
@@ -648,13 +762,13 @@ function buildPhraseSkeleton(
 /** Guaranteed small phrase — still interval-driven; used only after many failed regenerations. */
 function buildFallbackPhraseSkeleton(remaining: number, seed: number, phraseIdx: number): PhraseSkeleton {
   if (remaining <= 1) {
-    return { length: 1, direction: 'up', intervals: [] };
+    return { length: 1, direction: 'ascending', intervals: [] };
   }
   const length = Math.min(2, remaining);
   const sign = seededRandom(seed + phraseIdx * 999 + 777) < 0.5 ? 1 : -1;
   return {
     length,
-    direction: sign > 0 ? 'up' : 'down',
+    direction: sign > 0 ? 'ascending' : 'descending',
     intervals: [sign * (1 + Math.floor(seededRandom(seed + phraseIdx * 1001) * 2))],
   };
 }
@@ -709,8 +823,10 @@ export interface UpperVoiceResult {
   phraseLengths: number[];
   /** Net semitone motion first→last pitch per phrase (realized line). */
   phraseNetDeltas: number[];
-  /** Planned phrase contour per segment (interval plan). */
+  /** Planned phrase arc per segment (ascending / descending / arch). */
   phraseDirections: PhraseDirection[];
+  /** Mandatory resolution pitch per phrase (last note equals this). */
+  phraseTargets: number[];
 }
 
 /**
@@ -728,6 +844,7 @@ function generateUpperVoice(
   const phraseLengths: number[] = [];
   const phraseNetDeltas: number[] = [];
   const phraseDirections: PhraseDirection[] = [];
+  const phraseTargets: number[] = [];
   let last = motifSeed?.[0] ?? 67;
   let repeatRun = 0;
   let b = 0;
@@ -745,9 +862,12 @@ function generateUpperVoice(
       const useMemory =
         lastPhraseMemory !== null &&
         seededRandom(seed + phraseIdx * 5000 + att * 41) < memoryBias;
-      let sk = useMemory
-        ? deriveSkeletonFromPrevious(lastPhraseMemory, seed, phraseIdx, remaining, att)
-        : buildPhraseSkeleton(seed, phraseIdx, prevFp, att);
+      let sk: PhraseSkeleton;
+      if (useMemory) {
+        sk = deriveSkeletonFromPrevious(lastPhraseMemory!, seed, phraseIdx, remaining, att);
+      } else {
+        sk = buildPhraseSkeleton(seed, phraseIdx, prevFp, att);
+      }
       sk = trimSkeletonToBeats(sk, remaining);
       const r = tryRealizePhraseHard(
         sk,
@@ -803,7 +923,7 @@ function generateUpperVoice(
         );
       }
       if (r === null) {
-        sk = { length: 1, direction: 'up', intervals: [] };
+        sk = { length: 1, direction: 'ascending', intervals: [] };
         r = tryRealizePhraseHard(
           sk,
           last,
@@ -826,8 +946,9 @@ function generateUpperVoice(
         realized = {
           pitches: [emergency],
           repeatRun: emergency === last ? repeatRun + 1 : 1,
+          targetMidi: emergency,
         };
-        skUsed = { length: 1, direction: 'up', intervals: [] };
+        skUsed = { length: 1, direction: 'ascending', intervals: [] };
         prevFp = phraseFingerprint(skUsed);
       } else {
         realized = r;
@@ -840,6 +961,7 @@ function generateUpperVoice(
     repeatRun = realized.repeatRun;
     last = upper[upper.length - 1]!;
     phraseDirections.push(skUsed!.direction);
+    phraseTargets.push(realized.targetMidi);
     phraseLengths.push(realized.pitches.length);
     const start = upper.length - realized.pitches.length;
     const first = upper[start]!;
@@ -847,7 +969,7 @@ function generateUpperVoice(
     phraseNetDeltas.push(end - first);
     b += realized.pitches.length;
     phraseIdx++;
-    const mem = skUsed!;
+    const mem: PhraseSkeleton = skUsed!;
     lastPhraseMemory = {
       length: mem.length,
       direction: mem.direction,
@@ -855,7 +977,7 @@ function generateUpperVoice(
     };
   }
 
-  return { pitches: upper, phraseLengths, phraseNetDeltas, phraseDirections };
+  return { pitches: upper, phraseLengths, phraseNetDeltas, phraseDirections, phraseTargets };
 }
 
 function getGuideTones(root: string, quality: string, octave: number): number[] {
@@ -868,8 +990,8 @@ function getGuideTones(root: string, quality: string, octave: number): number[] 
 }
 
 function phraseDirSign(d: PhraseDirection): number {
-  if (d === 'up') return 1;
-  if (d === 'down') return -1;
+  if (d === 'ascending') return 1;
+  if (d === 'descending') return -1;
   return 0;
 }
 
@@ -884,7 +1006,8 @@ function generateLowerVoice(
   seed: number,
   phraseLengths: number[],
   phraseNetDeltas: number[],
-  phraseDirections: PhraseDirection[]
+  phraseDirections: PhraseDirection[],
+  phraseTargets: number[]
 ): number[] {
   const { motifSeed, pedalToneEnabled = false } = params;
   const beatsPerBar = 4;
@@ -935,6 +1058,46 @@ function generateLowerVoice(
       const ansTarget = clamp(last + step, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
         Math.abs(c - ansTarget) < Math.abs(a - ansTarget) ? c : a
+      , chordTones[0]!);
+      if (Math.abs(near - last) <= 4) {
+        lower.push(near);
+        last = near;
+        continue;
+      }
+    }
+
+    /** First beat after prior phrase: sparse answer under previous phrase resolution (no extra attacks). */
+    if (
+      phraseIdx > 0 &&
+      phraseTargets.length >= phraseIdx &&
+      meta.posInPhrase === 0 &&
+      chordTones.length > 0 &&
+      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.14
+    ) {
+      const prevT = phraseTargets[phraseIdx - 1] ?? upperNow;
+      const idealLow = clamp(prevT - 12 - (phraseIdx % 3), LOWER_MIN, LOWER_MAX);
+      const near = chordTones.reduce((a, c) =>
+        Math.abs(c - idealLow) < Math.abs(a - idealLow) ? c : a
+      , chordTones[0]!);
+      if (Math.abs(near - last) <= 4) {
+        lower.push(near);
+        last = near;
+        continue;
+      }
+    }
+
+    /** Penultimate beat: light anticipation of upper phrase target (same density). */
+    if (
+      phraseTargets.length > phraseIdx &&
+      meta.phraseLen > 2 &&
+      meta.posInPhrase === meta.phraseLen - 2 &&
+      chordTones.length > 0 &&
+      seededRandom(seed + phraseIdx * 521 + b + 3400) < 0.18
+    ) {
+      const targ = phraseTargets[phraseIdx] ?? upperNow;
+      const idealLow = clamp(targ - 14, LOWER_MIN, LOWER_MAX);
+      const near = chordTones.reduce((a, c) =>
+        Math.abs(c - idealLow) < Math.abs(a - idealLow) ? c : a
       , chordTones[0]!);
       if (Math.abs(near - last) <= 4) {
         lower.push(near);
@@ -1239,7 +1402,8 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
     seedBase,
     upperResult.phraseLengths,
     upperResult.phraseNetDeltas,
-    upperResult.phraseDirections
+    upperResult.phraseDirections,
+    upperResult.phraseTargets
   );
 
   const { upper: u, lower: l } = enforceCounterpoint(upperPitches, lowerPitches, seedBase);
