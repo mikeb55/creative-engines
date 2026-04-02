@@ -1,5 +1,13 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Chord Export Fixed
+
+- Fixed critical bug where chord symbols were truncated (e.g. 4 bars instead of full progression)
+- Implemented full per-bar chord export (1:1 mapping with input)
+- Ensured Wyble uses user chord progression instead of fallback harmony
+- Preserved slash chords and chord text in MusicXML
+- Verified correct display in Sibelius across full form
+
 ## Wyble Engine — Complete
 
 - Phrase-first generation implemented

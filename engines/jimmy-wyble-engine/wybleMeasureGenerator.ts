@@ -47,6 +47,15 @@ function getChordForBar(progression: ChordProgression, barIndex: number): { root
   return parseChord(progression[progression.length - 1]?.chord ?? 'C');
 }
 
+function getChordDisplayForBar(progression: ChordProgression, barIndex: number): string {
+  let acc = 0;
+  for (const seg of progression) {
+    if (barIndex < acc + seg.bars) return seg.chord;
+    acc += seg.bars;
+  }
+  return progression[progression.length - 1]?.chord ?? 'C';
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -93,6 +102,8 @@ export function generateWybleScore(
 
     pushNote(measure, 1, melodyPitch, 16, v1);
     pushNote(measure, 2, bassPitch, 16, v2);
+
+    measure.chordSymbol = getChordDisplayForBar(progression, i);
 
     measures.push(measure);
   }

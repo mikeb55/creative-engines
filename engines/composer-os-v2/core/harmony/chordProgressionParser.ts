@@ -116,6 +116,39 @@ export function parseChordProgressionInput(input: string): ParseChordProgression
   return parseChordProgressionInputWithBarCount(input, DEFAULT_DUO_BAR_COUNT);
 }
 
+/**
+ * Wyble etude / variable length: one primary chord per bar, any count ≥ 1.
+ * Same separator and slash-chord rules as `parseChordProgressionInputWithBarCount`; no fixed bar target.
+ */
+export function parseChordProgressionInputFlexible(input: string): ParseChordProgressionResult {
+  const trimmed = normalizeChordProgressionSeparators(input);
+  if (!trimmed) {
+    return { ok: false, error: 'Chord progression is empty.' };
+  }
+  const rawBars = trimmed.split('|').map((s) => s.trim());
+  const bars: string[] = [];
+  for (const cell of rawBars) {
+    if (cell === '') continue;
+    const tokens = cell.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) {
+      return { ok: false, error: 'Empty bar between | separators.' };
+    }
+    const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
+    const primary = normalizeChordToken(rawCell);
+    if (!isValidChordShape(primary)) {
+      return { ok: false, error: `Unrecognized chord symbol: "${tokens[0]}".` };
+    }
+    bars.push(rawCell);
+  }
+  if (bars.length === 0) {
+    return {
+      ok: false,
+      error: 'No chords found. Separate bars with | , ; or (without | in the line) newlines or spaced /.',
+    };
+  }
+  return { ok: true, bars };
+}
+
 /** Merge consecutive identical chords into segments (exactly 8 bars). */
 export function buildHarmonyPlanFromBars(bars: string[]): HarmonyPlan {
   const segments: ChordSegment[] = [];

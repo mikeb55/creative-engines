@@ -4,6 +4,7 @@
 
 import type { Score, NoteEvent } from './timing';
 import { DIVISIONS, MEASURE_DIVISIONS } from './timing';
+import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -97,6 +98,9 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
       <time><beats>4</beats><beat-type>4</beat-type></time>${stavesEl}${clefsEl}
     </attributes>
 `;
+    }
+    if (m.chordSymbol) {
+      xml += buildHarmonyXmlLine(m.chordSymbol, { staffNumber: staves > 1 ? 1 : undefined });
     }
     if (staves === 1 && voices.length > 1) {
       const backupEl = `        <backup>\n          <duration>${MEASURE_DIVISIONS}</duration>\n        </backup>\n`;

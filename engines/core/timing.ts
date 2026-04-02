@@ -11,6 +11,8 @@ export type NoteEvent = {
 export type Measure = {
   index: number;
   voices: Record<number, NoteEvent[]>;
+  /** Lead-sheet chord for MusicXML <harmony> at beat 1 (e.g. Wyble progression). */
+  chordSymbol?: string;
 };
 
 export type Score = {

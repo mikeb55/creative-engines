@@ -17,6 +17,30 @@ export const TEMPLATE_LIBRARY: Record<string, PracticeTemplate> = {
       { chord: 'Cmaj7', bars: 4 },
     ],
   },
+  /** One chord per bar; extensions, slash bass, and altered dominants. */
+  extended_modern_ii_v_i_16: {
+    id: 'extended_modern_ii_v_i_16',
+    name: 'Extended ii–V–I cycle (16 bars)',
+    description: 'Dm9 → G13 → Cmaj7 → Cmaj7/E → Am9 → D7 → G13 → G7/B → Em7 → A7 → Dm9 → Dm9/C → Bbmaj7 → Gm9 → A7alt → Dm9',
+    progression: [
+      { chord: 'Dm9', bars: 1 },
+      { chord: 'G13', bars: 1 },
+      { chord: 'Cmaj7', bars: 1 },
+      { chord: 'Cmaj7/E', bars: 1 },
+      { chord: 'Am9', bars: 1 },
+      { chord: 'D7', bars: 1 },
+      { chord: 'G13', bars: 1 },
+      { chord: 'G7/B', bars: 1 },
+      { chord: 'Em7', bars: 1 },
+      { chord: 'A7', bars: 1 },
+      { chord: 'Dm9', bars: 1 },
+      { chord: 'Dm9/C', bars: 1 },
+      { chord: 'Bbmaj7', bars: 1 },
+      { chord: 'Gm9', bars: 1 },
+      { chord: 'A7alt', bars: 1 },
+      { chord: 'Dm9', bars: 1 },
+    ],
+  },
   minor_ii_V: {
     id: 'minor_ii_V',
     name: 'Minor ii–V',
@@ -129,6 +153,7 @@ export const TEMPLATE_LIBRARY: Record<string, PracticeTemplate> = {
 /** Template IDs in display order for the desktop UI */
 export const TEMPLATE_ORDER: string[] = [
   'ii_V_I_major',
+  'extended_modern_ii_v_i_16',
   'minor_ii_V',
   'jazz_blues',
   'minor_blues',

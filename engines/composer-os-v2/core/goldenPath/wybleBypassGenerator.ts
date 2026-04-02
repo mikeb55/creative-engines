@@ -42,8 +42,12 @@ function parseMeasureVoiceDurations(xml: string, measureNum: number, voice: stri
 function wybleOutputToScore(
   upperEvents: Array<{ pitch: number; duration: number; beat: number }>,
   lowerEvents: Array<{ pitch: number; duration: number; beat: number }>,
-  bars: number
+  bars: number,
+  chordLabels: string[]
 ): Score {
+  if (chordLabels.length !== bars) {
+    throw new Error(`Wyble export: chordLabels length ${chordLabels.length} must equal bars ${bars}.`);
+  }
   const measures: Score['measures'] = [];
   const beatsPerBar = 4;
   let uIdx = 0;
@@ -51,6 +55,7 @@ function wybleOutputToScore(
 
   for (let i = 0; i < bars; i++) {
     const measure = createMeasure(i, [1, 2]);
+    measure.chordSymbol = chordLabels[i]!;
     const v1 = { pos: 0 };
     const v2 = { pos: 0 };
 
@@ -82,8 +87,18 @@ function sealWybleBarMath(score: Score): void {
 export function generateWybleEtudeXml(
   chords: string[],
   seed?: number,
-  title?: string
+  title?: string,
+  harmonyOpts?: { chordSource?: 'parsedChordBars' | 'chordProgressionText' }
 ): WybleBypassResult {
+  console.log(
+    '[wyble-harmony]',
+    JSON.stringify({
+      stage: 'wybleBypassGenerator',
+      chordSource: harmonyOpts?.chordSource ?? 'unknown',
+      parsedChordBarsLength: chords.length,
+      chordPerMeasure: chords.map((c, i) => ({ measure: i + 1, chord: c })),
+    })
+  );
   const params: WybleParameters = {
     harmonicContext: {
       chords: chords.map(c => ({ root: c.replace(/maj.*|m.*|7.*|9.*/, ''), quality: 'maj7', bars: 1 })),
@@ -99,7 +114,8 @@ export function generateWybleEtudeXml(
   const score = wybleOutputToScore(
     output.upper_line.events,
     output.lower_line.events,
-    chords.length
+    chords.length,
+    chords
   );
   sealWybleBarMath(score);
   applyWybleVoiceIndependence(score, seed ?? 0);

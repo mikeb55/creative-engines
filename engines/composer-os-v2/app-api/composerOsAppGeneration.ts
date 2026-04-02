@@ -32,6 +32,7 @@ import {
   normalizeChordToken,
   parseChordProgressionInputWithBarCount,
 } from '../core/harmony/chordProgressionParser';
+import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
 import {
   isDesktopTruthDumpEnabled,
@@ -120,13 +121,36 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
 
   if (id === 'wyble_etude') {
     const { generateWybleEtudeXml } = require('../core/goldenPath/wybleBypassGenerator');
-    const reqAny = req as any;
-    const chords: string[] = Array.isArray(reqAny.parsedChordBars) && reqAny.parsedChordBars.length > 0
-      ? reqAny.parsedChordBars
-      : ['Cmaj7', 'Am7', 'Dm7', 'G7'];
+    const reqAny = req as GenerateRequest & { parsedChordBars?: string[]; chordProgressionText?: string };
+    const resolved = resolveWybleChordBarsFromRequest(reqAny.parsedChordBars, reqAny.chordProgressionText);
+    if (!resolved.ok) {
+      return {
+        success: false,
+        error: resolved.error,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [resolved.error]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'wyble_etude',
+          activeModules: ['jimmy_wyble_engine'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+    const chords = resolved.bars;
+    console.log(
+      '[wyble-harmony]',
+      JSON.stringify({
+        stage: 'composerOsAppGeneration',
+        source: resolved.source,
+        parsedChordBarsLength: chords.length,
+        chordPerMeasure: chords.map((c, i) => ({ measure: i + 1, chord: c })),
+      })
+    );
     let result: { guitarXml: string; mode: 'etude' | 'duo'; receipt: unknown };
     try {
-      result = generateWybleEtudeXml(chords, req.seed, req.title);
+      result = generateWybleEtudeXml(chords, req.seed, req.title, { chordSource: resolved.source });
     } catch (e) {
       console.warn('VALIDATION BYPASSED:', (e as Error)?.message);
       return {
@@ -156,6 +180,9 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         presetId: 'wyble_etude',
         activeModules: ['jimmy_wyble_engine'],
         timestamp: new Date().toISOString(),
+        wybleChordSource: resolved.source,
+        wybleChordBarCount: chords.length,
+        wybleChordsPerBar: chords,
       },
     };
   }

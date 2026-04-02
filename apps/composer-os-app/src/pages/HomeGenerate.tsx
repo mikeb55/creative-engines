@@ -12,7 +12,11 @@ import {
   mergePresetsWithRegistry,
   type AppPresetCard,
 } from '../constants/composerOsPresetUi';
-import { parseChordProgressionInput, parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
+import {
+  parseChordProgressionInput,
+  parseChordProgressionInputFlexible,
+  parseChordProgressionInputWithBarCount,
+} from '../utils/chordProgressionClient';
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'andrew_hill', label: 'Andrew Hill' },
@@ -309,6 +313,18 @@ export function HomeGenerate({
 
         const tonalTrim = tonalCenter.trim();
         const chordTrim = chordProgressionText.trim();
+        if (presetId === 'wyble_etude' && !chordTrim) {
+          setError(
+            'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
+          );
+          setLoading(false);
+          notifyGenPhase('failed');
+          onResult({
+            record: {},
+            summary: { status: 'failed', at: new Date().toISOString() },
+          });
+          return;
+        }
         /**
          * Song Mode: users often paste the 32-bar line into "Tonal centre" instead of "Chord progression".
          * If we only read `chordProgressionText`, the API gets a long string in `tonalCenter` and no
@@ -373,6 +389,19 @@ export function HomeGenerate({
             return;
           }
         }
+        if (presetId === 'wyble_etude' && chordTrim) {
+          const wybleParsed = parseChordProgressionInputFlexible(chordTrim);
+          if (!wybleParsed.ok) {
+            setError(wybleParsed.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
         const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
@@ -391,6 +420,7 @@ export function HomeGenerate({
                 longFormEnabled: true,
               }
             : {}),
+          ...(presetId === 'wyble_etude' && chordTrim ? { chordProgressionText: chordTrim } : {}),
           ...(presetId === 'riff_generator'
             ? {
                 riffStyle,
@@ -681,12 +711,32 @@ export function HomeGenerate({
         />
       </div>
 
-      {(presetId === 'guitar_bass_duo' || presetId === 'riff_generator' || presetId === 'song_mode') && (
+      {(presetId === 'guitar_bass_duo' ||
+        presetId === 'riff_generator' ||
+        presetId === 'song_mode' ||
+        presetId === 'wyble_etude') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            {presetId === 'song_mode' ? 'Chord progression (32 bars)' : 'Chord progression (optional)'}
+            {presetId === 'song_mode'
+              ? 'Chord progression (32 bars)'
+              : presetId === 'wyble_etude'
+                ? 'Chord progression (required)'
+                : 'Chord progression (optional)'}
           </label>
-          {presetId === 'guitar_bass_duo' ? (
+          {presetId === 'wyble_etude' ? (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              One chord per bar (any length). Same parsing as Song Mode / duo: <code>|</code>, <code>,</code>,{' '}
+              <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
+              <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
+            </p>
+          ) : presetId === 'guitar_bass_duo' ? (
             <p
               style={{
                 fontSize: '0.8rem',
@@ -731,13 +781,15 @@ export function HomeGenerate({
             onChange={(e) => setChordProgressionText(e.target.value)}
             disabled={loading}
             placeholder={
-              presetId === 'guitar_bass_duo'
-                ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
-                : presetId === 'song_mode'
-                  ? 'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | … (32 chords total)'
-                  : 'Am7 | D7 | Gmaj7 |'
+              presetId === 'wyble_etude'
+                ? 'Dm9 | G13 | Cmaj7 | Cmaj7/E | Am9 | D7 | … (one chord per bar)'
+                : presetId === 'guitar_bass_duo'
+                  ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
+                  : presetId === 'song_mode'
+                    ? 'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | … (32 chords total)'
+                    : 'Am7 | D7 | Gmaj7 |'
             }
-            rows={presetId === 'song_mode' ? 6 : 3}
+            rows={presetId === 'song_mode' ? 6 : presetId === 'wyble_etude' ? 4 : 3}
             style={{
               width: '100%',
               maxWidth: 600,

@@ -54,6 +54,10 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
 Now ready for chord-notation export.
 
+**Chord Export (verified):**  
+Wyble now exports complete per-bar chord symbols with correct progression mapping.  
+Previous versions may have shown truncated or fallback harmony due to export-layer issues.
+
 **Composer OS documentation (canonical):**
 
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)
