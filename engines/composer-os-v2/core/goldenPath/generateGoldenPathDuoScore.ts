@@ -62,6 +62,13 @@ import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import {
+  assertHookBarIdentityUnchanged,
+  assertHookBarsUnchangedSinceSnapshot,
+  snapshotGuitarHookBarIdentity,
+  snapshotGuitarHookBars,
+  type HookBarNoteIdentity,
+} from '../score-integrity/protectedHookBarInvariant';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
@@ -171,11 +178,19 @@ function emitEcmGuitarSustainBar(params: {
   } else if (pat === 1) {
     addEvent(m, createNote(primary, 0, 2));
     addEvent(m, createRest(0, 2, 2));
-    addEvent(m, createNote(secondary, 2, 2, 2));
+    {
+      const e = createNote(secondary, 2, 2, 2);
+      (e as any).debugSource = (e as any).debugSource ?? 'ecm';
+      addEvent(m, e);
+    }
   } else {
     addEvent(m, createNote(primary, 0, 1.25));
     addEvent(m, createRest(0, 1.25, 2));
-    addEvent(m, createNote(secondary, 1.25, 2.75, 2));
+    {
+      const e = createNote(secondary, 1.25, 2.75, 2);
+      (e as any).debugSource = (e as any).debugSource ?? 'ecm';
+      addEvent(m, e);
+    }
   }
 }
 
@@ -196,8 +211,16 @@ function emitEcmGuitarInnerMotionBar(params: {
   const pass = clampPitch(target + (seededUnit(seed, bar, 903) < 0.5 ? -1 : 1), low, high);
   const neigh = clampPitch(target + (seededUnit(seed, bar, 904) < 0.5 ? 1 : -1), low, high);
   addEvent(m, createRest(0, 0.5));
-  addEvent(m, createNote(neigh, 0.5, 0.5, 2));
-  addEvent(m, createNote(pass, 1, 1, 2));
+  {
+    const e = createNote(neigh, 0.5, 0.5, 2);
+    (e as any).debugSource = (e as any).debugSource ?? 'ecm';
+    addEvent(m, e);
+  }
+  {
+    const e = createNote(pass, 1, 1, 2);
+    (e as any).debugSource = (e as any).debugSource ?? 'ecm';
+    addEvent(m, e);
+  }
   addEvent(m, createNote(target, 2, 1.5));
   addEvent(m, createRest(3.5, 0.5));
 }
@@ -329,7 +352,11 @@ function buildBacharachAnchorMeasure(
   const pass = target - 1;
   const fifth = clampPitch(tones.fifth, low, high);
   addEvent(m, createRest(0, 0.5));
-  addEvent(m, createNote(pass, 0.5, 0.5, 2));
+  {
+    const e = createNote(pass, 0.5, 0.5, 2);
+    (e as any).debugSource = (e as any).debugSource ?? 'anchor';
+    addEvent(m, e);
+  }
   addEvent(m, createNote(target, 1, 1));
   addEvent(m, createRest(2, 0.5));
   addEvent(m, createNote(fifth, 2.5, 1.5));
@@ -584,9 +611,17 @@ function buildGuitarPart(
         if (Math.abs(v2done - 4) > 1e-4) {
           if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
             addEvent(m, createRest(cursor, 0.5, 2));
-            addEvent(m, createNote(endTone, cursor + 0.5, tail - 0.5, 2));
+            {
+              const e = createNote(endTone, cursor + 0.5, tail - 0.5, 2);
+              (e as any).debugSource = (e as any).debugSource ?? 'phrasetail';
+              addEvent(m, e);
+            }
           } else {
-            addEvent(m, createNote(endTone, cursor, tail, 2));
+            {
+              const e = createNote(endTone, cursor, tail, 2);
+              (e as any).debugSource = (e as any).debugSource ?? 'phrasetail';
+              addEvent(m, e);
+            }
           }
         }
       }
@@ -1736,6 +1771,18 @@ export function generateGoldenPathDuoScore(
   ) {
     applyBarryHarris(context, afterExpressive);
   }
+  let songModeHookBar1PreOverlays: HookBarNoteIdentity[] | undefined;
+  let songModeHookBarsPostFinalize: Map<number, HookBarNoteIdentity[]> | undefined;
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    const gSnap = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gSnap) {
+      songModeHookBar1PreOverlays = snapshotGuitarHookBarIdentity(gSnap, 1);
+    }
+  }
   applySongModeRhythmOverlayC1(afterExpressive, context);
   applyJamesBrownFunkOverlay(afterExpressive, context);
   applySongModeOstinatoC4(afterExpressive, context);
@@ -1744,6 +1791,17 @@ export function generateGoldenPathDuoScore(
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);
+  if (
+    songModeHookBar1PreOverlays &&
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    const gPreFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gPreFin) {
+      assertHookBarIdentityUnchanged(songModeHookBar1PreOverlays, gPreFin, 1);
+    }
+  }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     context.presetId === 'guitar_bass_duo'
@@ -1756,8 +1814,26 @@ export function generateGoldenPathDuoScore(
     }
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
-  afterExpressive._hookRepetitionBias = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
+  {
+    const rawHook = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
+    afterExpressive._hookRepetitionBias =
+      context.generationMetadata?.songModeHookFirstIdentity === true &&
+      context.presetId === 'guitar_bass_duo' &&
+      tb === 32
+        ? Math.max(0.62, rawHook)
+        : rawHook;
+  }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    const gPost = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gPost) {
+      songModeHookBarsPostFinalize = snapshotGuitarHookBars(gPost, [1, 25]);
+    }
+  }
   const c5StrengthFinal = (context.generationMetadata as any)?.blendStrength ?? 'medium';
   if (c5StrengthFinal !== 'medium') {
     const guitarFinal = afterExpressive.parts.find((p) => p.id === 'guitar');
@@ -1790,6 +1866,12 @@ export function generateGoldenPathDuoScore(
           songModeReturnMotifShapeExpected: rec.returnExpectedMotifShape,
         };
       }
+    }
+  }
+  if (songModeHookBarsPostFinalize) {
+    const gEnd = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gEnd) {
+      assertHookBarsUnchangedSinceSnapshot(songModeHookBarsPostFinalize, gEnd);
     }
   }
   return afterExpressive;

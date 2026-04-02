@@ -161,7 +161,7 @@ const suites = [
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Song Mode MusicXML app', run: runSongModeMusicXmlTests },
-  { name: 'Song Mode hook identity', run: runSongModeHookIdentityTests },
+  { name: 'Song Mode regression baseline (50021)', run: runSongModeHookIdentityTests },
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
   { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },
   { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },
