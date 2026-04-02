@@ -88,7 +88,9 @@ import {
 import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
 import { extractMotifAssetsFromCoreMotifs } from '../motif-plus/motifExtractor';
 import { planMotifReuse } from '../motif-plus/motifReusePlanner';
-import { applySongModePhraseEngineV1 } from './songModePhraseEngineV1';
+import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from './songModePhraseEngineV1';
+import { applySongModeMelodicContinuityPass } from './songModeMelodicContinuity';
+import { applySongModeGuitarDensityFloor } from './songModeGuitarDensityFloor';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
 import { applySongModeHookRhythmLayerC4, applySongModeOstinatoC4 } from './songModeOstinatoC4';
@@ -1791,6 +1793,19 @@ export function generateGoldenPathDuoScore(
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    tb === 32
+  ) {
+    const gSong = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gSong) {
+      applySongModeMelodicContinuityPass(gSong, context);
+      applySongModePhraseEndLandingRepair(gSong, context);
+      applySongModeGuitarDensityFloor(gSong, context);
+      applySongModePhraseEndLandingRepair(gSong, context);
+    }
+  }
   if (
     songModeHookBar1PreOverlays &&
     context.generationMetadata?.songModeHookFirstIdentity === true &&
