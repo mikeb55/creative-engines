@@ -11,7 +11,9 @@ import type { MeasureModel, PartModel, ScoreEvent } from '../score-model/scoreMo
 import { createRest } from '../score-model/scoreEventBuilder';
 import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { getChordForBar } from '../harmony/harmonyResolution';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
@@ -25,8 +27,10 @@ const PHRASE_COUNT = TB / PHRASE_LEN;
 const LOW = 55;
 const HIGH = 79;
 
-/** Max semitones to snap phrase-final landing toward chord tone (cadence, filler only). */
+/** Legacy cap (priority tier); full pool uses nearest strong tone with optional move cap. */
 const LANDING_SNAP_MAX_SEMIS = 2;
+/** Max semitone move to a chord tone / strong tension when snapping phrase end (minimal movement). */
+const LANDING_PHRASE_END_MAX_MOVE_SEMIS = 6;
 
 export interface SongModePhraseSegment {
   startBar: number;
@@ -279,7 +283,8 @@ function maxBarDirectionChanges(guitar: PartModel, startBar: number, endBar: num
 }
 
 function nearestChordToneMidi(pitch: number, poolMidiArr: number[]): { pitch: number; dist: number } {
-  let best = poolMidiArr[0];
+  if (poolMidiArr.length === 0) return { pitch, dist: 0 };
+  let best = poolMidiArr[0]!;
   let bestD = Math.abs(pitch - best);
   for (const p of poolMidiArr) {
     const d = Math.abs(pitch - p);
@@ -289,6 +294,69 @@ function nearestChordToneMidi(pitch: number, poolMidiArr: number[]): { pitch: nu
     }
   }
   return { pitch: best, dist: bestD };
+}
+
+/** All MIDI in [low, high] with the given pitch class. */
+function midisPcInRange(pc: number, low: number, high: number): number[] {
+  const p = ((pc % 12) + 12) % 12;
+  const out: number[] = [];
+  for (let m = low; m <= high; m++) {
+    if (((m % 12) + 12) % 12 === p) out.push(m);
+  }
+  return out;
+}
+
+/**
+ * Pitch classes for phrase-end resolution: chord tones + strong tensions implied by the symbol
+ * (9 / 11 / 13 / alt colour). Matches duo behaviour expectations for “strong” landings.
+ */
+function phraseEndStrongPitchClasses(chord: string, context: CompositionContext): Set<number> {
+  const opts = chordToneOpts(context);
+  const t = chordTonesForChordSymbol(chord, opts);
+  const c = chord.replace(/\s/g, '');
+  const rp = ((t.root % 12) + 12) % 12;
+  const pcs = new Set<number>();
+  for (const p of [t.root, t.third, t.fifth, t.seventh]) {
+    pcs.add(((p % 12) + 12) % 12);
+  }
+  if (/9|13|11|maj9|m9|-9|min9|maj7|M7|Δ|6\/9/i.test(c)) {
+    pcs.add((rp + 2) % 12);
+  }
+  if (/13|maj9|m13|6\/9/i.test(c)) {
+    pcs.add((rp + 9) % 12);
+  }
+  if (/11|m11|maj9/i.test(c)) {
+    pcs.add((rp + 5) % 12);
+  }
+  if (/alt|7b9|7#9|b9|#9/i.test(c)) {
+    pcs.add((rp + 1) % 12);
+    pcs.add((rp + 3) % 12);
+  }
+  return pcs;
+}
+
+function collectPhraseEndLandingMidis(chord: string, context: CompositionContext): number[] {
+  const pcs = phraseEndStrongPitchClasses(chord, context);
+  const out: number[] = [];
+  for (const pc of pcs) {
+    out.push(...midisPcInRange(pc, LOW, HIGH));
+  }
+  return [...new Set(out)];
+}
+
+function lastNoteEventIndexByEndTime(m: MeasureModel): number {
+  let bestEnd = -1;
+  let bestI = -1;
+  for (let i = 0; i < m.events.length; i++) {
+    if (m.events[i].kind !== 'note') continue;
+    const n = m.events[i] as { startBeat: number; duration: number };
+    const end = n.startBeat + n.duration;
+    if (end >= bestEnd - 1e-4) {
+      bestEnd = end;
+      bestI = i;
+    }
+  }
+  return bestI;
 }
 
 /** Min pitch on indices (peakIdx+1)..(n-2); if empty, returns HIGH (no cap). */
@@ -428,21 +496,32 @@ function extendLastNoteCadence(m: MeasureModel, minDur: number): void {
 }
 
 function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionContext, bar: number): void {
+  if (isProtectedBar(bar, context)) return;
   const opts = chordToneOpts(context);
   const chord = getChordForBar(bar, context);
   const gtones = guitarChordTonesInRange(chord, 40, 90, opts);
-  const pool = [gtones.root, gtones.third, gtones.fifth, gtones.seventh].map((x) => Math.round(x));
+  const poolCore = [gtones.root, gtones.third, gtones.fifth, gtones.seventh].map((x) => Math.round(x));
   const priority = [Math.round(gtones.root), Math.round(gtones.third), Math.round(gtones.fifth), Math.round(gtones.seventh)];
-  let lastNoteI = -1;
-  for (let i = m.events.length - 1; i >= 0; i--) {
-    if (m.events[i].kind === 'note') {
-      lastNoteI = i;
-      break;
-    }
-  }
+  const poolFull = collectPhraseEndLandingMidis(chord, context);
+
+  const lastNoteI = lastNoteEventIndexByEndTime(m);
   if (lastNoteI < 0) return;
   const n = m.events[lastNoteI] as { pitch: number };
   const orig = n.pitch;
+  const strongPcs = phraseEndStrongPitchClasses(chord, context);
+  const origPc = ((orig % 12) + 12) % 12;
+  if (strongPcs.has(origPc)) {
+    const samePc = poolFull.filter((p) => ((p % 12) + 12) % 12 === origPc);
+    if (samePc.length > 0) {
+      const { pitch: tgt, dist } = nearestChordToneMidi(orig, samePc);
+      if (dist <= 1) return;
+      if (dist <= LANDING_PHRASE_END_MAX_MOVE_SEMIS) {
+        n.pitch = tgt;
+        return;
+      }
+    }
+  }
+
   for (const tgt of priority) {
     const d = Math.abs(orig - tgt);
     if (d <= LANDING_SNAP_MAX_SEMIS && d > 0) {
@@ -450,8 +529,30 @@ function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionConte
       return;
     }
   }
-  const { pitch: tgt, dist } = nearestChordToneMidi(n.pitch, pool);
-  if (dist <= LANDING_SNAP_MAX_SEMIS && dist > 0) n.pitch = tgt;
+  const { pitch: tgtCore, dist: dCore } = nearestChordToneMidi(orig, poolCore);
+  if (dCore <= LANDING_SNAP_MAX_SEMIS && dCore > 0) {
+    n.pitch = tgtCore;
+    return;
+  }
+
+  const { pitch: tgtFull, dist: dFull } = nearestChordToneMidi(orig, poolFull);
+  if (dFull > 0 && dFull <= LANDING_PHRASE_END_MAX_MOVE_SEMIS) {
+    n.pitch = tgtFull;
+  }
+}
+
+/**
+ * Re-apply phrase-end pitch targeting after Song Mode overlays (C1–C7): last note per phrase bar only,
+ * identity-protected bars unchanged, rhythm untouched.
+ */
+export function applySongModePhraseEndLandingRepair(guitar: PartModel, context: CompositionContext): void {
+  if (context.presetId !== 'guitar_bass_duo') return;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
+  if (context.form.totalBars !== TB) return;
+  for (const seg of songModePhraseSegments()) {
+    const m = guitar.measures.find((x) => x.index === seg.endBar);
+    if (m) snapPhraseLandingToChordTone(m, context, seg.endBar);
+  }
 }
 
 function emphasizeCadenceDuration(m: MeasureModel): void {
@@ -1095,8 +1196,7 @@ function validatePhraseDirectionality(
   }
 
   const chord = getChordForBar(endBar, context);
-  const gtones = guitarChordTonesInRange(chord, 40, 90, opts);
-  const poolMidiArr = [gtones.root, gtones.third, gtones.fifth, gtones.seventh].map((x) => Math.round(x));
+  const landingMidis = collectPhraseEndLandingMidis(chord, context);
 
   const fallOk =
     hasTwoDownStepsAfterPeak(pitches, pk) ||
@@ -1116,12 +1216,15 @@ function validatePhraseDirectionality(
   }
 
   const mLast = guitar.measures.find((x) => x.index === endBar);
-  const ev = mLast?.events
-    .filter((e) => e.kind === 'note')
-    .map((e) => e as { pitch: number; duration: number; startBeat: number })
-    .sort((a, b) => a.startBeat - b.startBeat);
-  const lastNote = ev?.length ? ev[ev.length - 1] : undefined;
-  const prevNote = ev && ev.length >= 2 ? ev[ev.length - 2] : undefined;
+  const rawNotes =
+    mLast?.events
+      .filter((e) => e.kind === 'note')
+      .map((e) => e as { pitch: number; duration: number; startBeat: number }) ?? [];
+  const byEnd = [...rawNotes].sort(
+    (a, b) => b.startBeat + b.duration - (a.startBeat + a.duration)
+  );
+  const lastNote = byEnd[0];
+  const prevNote = byEnd[1];
 
   if (!lastNote || !prevNote) {
     issues.push({
@@ -1131,7 +1234,7 @@ function validatePhraseDirectionality(
     return issues;
   }
 
-  if (!isStrongChordTone(lastNote.pitch, poolMidiArr)) {
+  if (landingMidis.length > 0 && !isStrongChordTone(lastNote.pitch, landingMidis)) {
     issues.push({
       ruleId: 'phrase_landing_strong_tone',
       message: `Song Mode phrase v1: ${phraseLabel} landing is not a strong chord tone.`,

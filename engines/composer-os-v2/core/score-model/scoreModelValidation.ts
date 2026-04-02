@@ -17,9 +17,14 @@ export interface ValidateScoreModelOptions {
   requireAtLeastOneNote?: boolean;
 }
 
-/** Validate measure duration sums to BEATS_PER_MEASURE. */
-function measureDuration(measure: MeasureModel): number {
-  return measure.events.reduce((sum, e) => sum + e.duration, 0);
+/** Per-voice duration sums (multi-voice parts: each voice is its own 4/4 layer; summing all events would double-count). */
+function measureDurationByVoice(measure: MeasureModel): Map<number, number> {
+  const byVoice = new Map<number, number>();
+  for (const e of measure.events) {
+    const v = e.voice ?? 1;
+    byVoice.set(v, (byVoice.get(v) ?? 0) + e.duration);
+  }
+  return byVoice;
 }
 
 /** Validate score model structure. */
@@ -41,9 +46,17 @@ export function validateScoreModel(score: ScoreModel, options?: ValidateScoreMod
       if (m.events.length > maxEv) {
         errors.push(`Part ${part.id} measure ${m.index}: too many events (${m.events.length} > ${maxEv})`);
       }
-      const dur = measureDuration(m);
-      if (Math.abs(dur - BEATS_PER_MEASURE) > 0.01) {
-        errors.push(`Part ${part.id} measure ${m.index}: duration ${dur} != ${BEATS_PER_MEASURE}`);
+      const byVoice = measureDurationByVoice(m);
+      if (byVoice.size === 0) {
+        errors.push(`Part ${part.id} measure ${m.index}: duration 0 != ${BEATS_PER_MEASURE}`);
+        continue;
+      }
+      for (const [voice, dur] of [...byVoice.entries()].sort((a, b) => a[0] - b[0])) {
+        if (Math.abs(dur - BEATS_PER_MEASURE) > 0.01) {
+          errors.push(
+            `Part ${part.id} measure ${m.index} voice ${voice}: duration ${dur} != ${BEATS_PER_MEASURE}`
+          );
+        }
       }
       for (const e of m.events) {
         if (e.kind === 'note') noteCount++;

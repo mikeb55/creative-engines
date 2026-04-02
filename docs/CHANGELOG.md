@@ -1,5 +1,24 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Phrase Architecture (Final Phase)
+
+- Introduced phrase-first generation (interval-driven melodic construction)
+- Enforced phrase interval constraints during pitch generation
+- Added phrase continuity across bars (phrase memory + variation)
+- Reduced repeated-note loops via interval enforcement
+- Improved upper-voice melodic direction
+- Introduced initial lower-voice movement (counter-line foundation)
+- Maintained full bar-math integrity and MusicXML stability
+
+## Song Mode baseline stabilisation
+
+- **Guitar–Bass Duo / Song Mode (32-bar):** Usable generation on a stable baseline; recent testing reached high readiness on current outputs (not a guarantee for every run or release).
+- **Hook return / bar 25:** Return line uses harmonic realization from the motif shape (not a naive copy of bar 1 MIDI); repetition bias and motif checks aligned so bar 25 identity matches the intended hook behaviour.
+- **C7 space:** Hook-related bars (including bar 25) are excluded from C7 thinning; post-pass can roll back when whole-guitar rest share would exceed the swing ceiling.
+- **Score model validation:** Per-voice duration sums for multi-voice measures (no longer treating all voices as one stream).
+- **Duo lock quality:** Guitar rest ratio uses rest / (rest + note) across the guitar part (multi-voice-safe).
+- **Behaviour gates:** Pass on the current working baseline.
+
 ## V8.0 (retrospective)
 
 - feat: Lippincott triad pairs wired into emitGuitarPhraseBar — medium and dense density branches now favour third/fifth chord tones when triadPairs active via style stack; active by default in all Song Mode generations via DEFAULT_STYLE_STACK colour layer.

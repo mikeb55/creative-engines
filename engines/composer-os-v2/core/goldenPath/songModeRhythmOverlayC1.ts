@@ -11,6 +11,7 @@ import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
 import {
   JAMES_BROWN_FUNK_OVERLAY_ID,
@@ -399,7 +400,8 @@ function applyPhraseEarlyIdentityLock(
   bass: PartModel | undefined,
   startBar: number,
   endBar: number,
-  strength: SongModeRhythmStrength | undefined
+  strength: SongModeRhythmStrength | undefined,
+  context: CompositionContext
 ): void {
   normalizePhraseBars(guitar, startBar, endBar);
   if (bass) normalizePhraseBars(bass, startBar, endBar);
@@ -414,12 +416,12 @@ function applyPhraseEarlyIdentityLock(
   const second = ordered.length > 1 ? ordered[1]! : null;
 
   if (s === 'balanced') {
-    if (second) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
+    if (second && !isProtectedBar(second.bar, context)) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
     return;
   }
 
-  if (second) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
-  applyShiftToPhraseNote(guitar, first.bar, first.n, shift);
+  if (second && !isProtectedBar(second.bar, context)) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
+  if (first && !isProtectedBar(first.bar, context)) applyShiftToPhraseNote(guitar, first.bar, first.n, shift);
 }
 
 /** C2 — Stable guitar: nudge eighth offbeats one step earlier when space allows (fewer syncopations, more on-grid). */
@@ -427,10 +429,12 @@ function applyStableGuitarOnbeatSnapping(
   guitar: PartModel,
   startBar: number,
   endBar: number,
-  strength: SongModeRhythmStrength | undefined
+  strength: SongModeRhythmStrength | undefined,
+  context: CompositionContext
 ): void {
   if ((strength ?? 'balanced') !== 'stable') return;
   for (let b = startBar; b <= endBar; b++) {
+    if (isProtectedBar(b, context)) continue;
     const m = guitar.measures.find((x) => x.index === b);
     if (!m) continue;
     const notes = m.events.filter((e) => e.kind === 'note') as NoteEvent[];
@@ -485,7 +489,8 @@ function applyGroupingTemplateBias(
   strength: SongModeRhythmStrength | undefined,
   seed: number,
   phraseIdx: number,
-  guitar: PartModel
+  guitar: PartModel,
+  context: CompositionContext
 ): void {
   if (phraseNotes.length === 0) return;
   const nc = phraseNotes.length;
@@ -518,6 +523,7 @@ function applyGroupingTemplateBias(
   const accentBoost = 0.34 * intentStrength * struct;
   const durationSkew = 0.2 * intentStrength * struct;
   for (const ref of phraseNotes) {
+    if (isProtectedBar(ref.bar, context)) continue;
     const ni = ref.phraseNoteIndex;
     const pos = ni % cycleLen;
     const isAnchor = anchors.has(pos);
@@ -557,9 +563,11 @@ function shapeEarlyPhraseDensityPatch(
   intentStrength: number,
   seed: number,
   phraseIdx: number,
-  strength: SongModeRhythmStrength | undefined
+  strength: SongModeRhythmStrength | undefined,
+  context: CompositionContext
 ): void {
   if (intent.densityShape !== 'sparse' && intent.densityShape !== 'burst_rest') return;
+  if (isProtectedBar(startBar, context)) return;
   const prob = 0.22 * intentStrength * densityShapePatchStrengthScale(strength);
   if (seededUnit(seed, phraseIdx, 93850) > prob) return;
   const m = guitar.measures.find((x) => x.index === startBar);
@@ -588,11 +596,13 @@ function biasCrossingBarlineVelocity(
   intent: PhraseRhythmIntent,
   intentStrength: number,
   seed: number,
-  phraseIdx: number
+  phraseIdx: number,
+  context: CompositionContext
 ): void {
   if (intent.barlineBehavior !== 'crossing') return;
   if (seededUnit(seed, phraseIdx, 93800) > 0.28 * intentStrength) return;
   for (let b = startBar; b < endBar; b++) {
+    if (isProtectedBar(b, context)) continue;
     const m = guitar.measures.find((x) => x.index === b);
     if (!m) continue;
     const notes = m.events.filter((e) => e.kind === 'note') as NoteEvent[];
@@ -682,14 +692,33 @@ function applyPhraseRhythmIntentToNotes(
   seed: number,
   phraseIdx: number,
   startBar: number,
-  endBar: number
+  endBar: number,
+  context: CompositionContext
 ): void {
   const intentStrength = intentStrengthFromMode(strength);
   if (phraseNotes.length === 0) return;
 
-  applyGroupingTemplateBias(phraseNotes, intent, intentStrength, strength, seed, phraseIdx, guitar);
-  shapeEarlyPhraseDensityPatch(guitar, startBar, intent, intentStrength, seed, phraseIdx, strength);
-  biasCrossingBarlineVelocity(guitar, startBar, endBar, intent, intentStrength, seed, phraseIdx);
+  applyGroupingTemplateBias(
+    phraseNotes,
+    intent,
+    intentStrength,
+    strength,
+    seed,
+    phraseIdx,
+    guitar,
+    context
+  );
+  shapeEarlyPhraseDensityPatch(
+    guitar,
+    startBar,
+    intent,
+    intentStrength,
+    seed,
+    phraseIdx,
+    strength,
+    context
+  );
+  biasCrossingBarlineVelocity(guitar, startBar, endBar, intent, intentStrength, seed, phraseIdx, context);
   softenDelayedBarlineFirstBar(guitar, startBar, intent, intentStrength);
   applyBassPhraseRhythmSupport(bass, startBar, strength);
 
@@ -780,8 +809,10 @@ function applySoftToGuitarMeasure(
   seed: number,
   phraseIdx: number,
   barIndex: number,
-  strength: SongModeRhythmStrength | undefined
+  strength: SongModeRhythmStrength | undefined,
+  context: CompositionContext
 ): void {
+  if (isProtectedBar(barIndex, context)) return;
   const events = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest') as Array<
     NoteEvent | { kind: 'rest'; startBeat: number; duration: number }
   >;
@@ -865,12 +896,23 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
       rhythmIntentSummary: summary,
     });
 
-    applyPhraseEarlyIdentityLock(guitar, bass, startBar, endBar, strength);
-    applyStableGuitarOnbeatSnapping(guitar, startBar, endBar, strength);
+    applyPhraseEarlyIdentityLock(guitar, bass, startBar, endBar, strength, context);
+    applyStableGuitarOnbeatSnapping(guitar, startBar, endBar, strength, context);
 
     if (applied.length > 0) {
       collectPhraseGuitarNotes(guitar, startBar, endBar, phraseBuf);
-      applyPhraseRhythmIntentToNotes(guitar, bass, phraseBuf, intent, strength, seed, pi, startBar, endBar);
+      applyPhraseRhythmIntentToNotes(
+        guitar,
+        bass,
+        phraseBuf,
+        intent,
+        strength,
+        seed,
+        pi,
+        startBar,
+        endBar,
+        context
+      );
     }
 
     if (applied.length === 0) continue;
@@ -879,7 +921,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
     for (let b = startBar; b <= endBar; b++) {
       const measure = guitar.measures.find((x) => x.index === b);
       if (!measure) continue;
-      applySoftToGuitarMeasure(measure, blend, seed, pi, b, strength);
+      applySoftToGuitarMeasure(measure, blend, seed, pi, b, strength, context);
     }
   }
 

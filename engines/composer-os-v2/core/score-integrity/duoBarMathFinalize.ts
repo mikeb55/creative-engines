@@ -11,8 +11,12 @@ import { validateStrictBarMath } from './strictBarMath';
 import { expandNotationSafeDurationsInScore, validateNotationSafeRhythm } from './notationSafeRhythm';
 import { snapEighthBeat, snapEventToEighthBeatGrid } from './duoEighthBeatGrid';
 import { applyBassBeatNotationGrouping } from './bassBeatNotationGrouping';
+import { extractMotifShapeFromGuitarBar, realizeReturnMidiFromMotifShape } from '../motif/motifShape';
+import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 
 const EPS = 1e-4;
+const HOOK_REGISTER_LOW = 55;
+const HOOK_REGISTER_HIGH = 79;
 
 export type RhythmSnapMode = 'quarter' | 'eighth';
 
@@ -199,7 +203,11 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
   freezeScoreRhythmAfterFinalize(score);
 }
 
-/** Duo 32-bar guitar: align bar 25 note pitches to bar 1 (time order); timing unchanged. Gated on eighth_beats + bar 32 present. */
+/**
+ * Duo 32-bar guitar: align bar 25 note pitches to bar 1 (time order) with **harmonic transposition** (same as motif
+ * `realizeReturnMidiFromMotifShape`). Literal bar-1 MIDI copy breaks MotifShape similarity when chord₁ ≠ chord₂₅
+ * (relative-PCs no longer match). Timing unchanged.
+ */
 function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
   if (score.duoRhythmSnap !== 'eighth_beats') return;
   const guitar = score.parts.find((p) => p.id === 'guitar' && p.instrumentIdentity === 'clean_electric_guitar');
@@ -207,15 +215,45 @@ function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
   const m1 = guitar.measures.find((x) => x.index === 1);
   const m25 = guitar.measures.find((x) => x.index === 25);
   if (!m1 || !m25) return;
+  const chord1 = m1.chord ?? 'Cmaj7';
+  const chord25 = m25.chord ?? chord1;
   const n1 = m1.events
     .filter((e) => e.kind === 'note')
     .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
   const n25 = m25.events
     .filter((e) => e.kind === 'note')
     .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
-  const k = Math.min(n1.length, n25.length);
+  if (n1.length === 0 || n25.length === 0) return;
+  const stmtShape = extractMotifShapeFromGuitarBar(guitar, 1, chord1, HOOK_REGISTER_LOW, HOOK_REGISTER_HIGH);
+  if (!stmtShape) return;
+  const pitches1 = n1.map((n) => n.pitch);
+  const p0 = pitches1[0]!;
+  let target = realizeReturnMidiFromMotifShape(
+    stmtShape,
+    pitches1,
+    chord1,
+    chord25,
+    p0,
+    HOOK_REGISTER_LOW,
+    HOOK_REGISTER_HIGH,
+    0
+  );
+  const sameChord =
+    chord1.trim().toLowerCase() === chord25.trim().toLowerCase();
+  if (
+    sameChord &&
+    target.length >= 2 &&
+    target.length === pitches1.length &&
+    target.every((t, i) => t === pitches1[i])
+  ) {
+    const idx = 1;
+    target = target.map((p, i) =>
+      i === idx ? clampPitch(p + 1, HOOK_REGISTER_LOW, HOOK_REGISTER_HIGH) : p
+    );
+  }
+  const k = Math.min(n25.length, target.length);
   for (let i = 0; i < k; i++) {
-    n25[i].pitch = n1[i].pitch;
+    n25[i].pitch = target[i]!;
   }
 }
 

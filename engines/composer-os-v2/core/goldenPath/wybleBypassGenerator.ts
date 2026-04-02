@@ -1,6 +1,8 @@
 import { generateWybleEtude } from '../../../jimmy-wyble-engine/wybleGenerator';
 import { scoreToMusicXML } from '../../../core/scoreToMusicXML';
 import { createMeasure, pushNote } from '../../../jimmy-wyble-engine/../core/measureBuilder';
+import { finalizeWybleMeasureBarMathPerVoice } from '../../../core/wybleBarMathFinalize';
+import { applyWybleVoiceIndependence } from '../../../core/wybleVoiceIndependencePass';
 import { validateScore } from '../../../../scripts/validateScore';
 import type { WybleParameters } from '../../../jimmy-wyble-engine/wybleTypes';
 import type { Score } from '../../../jimmy-wyble-engine/../core/timing';
@@ -58,7 +60,7 @@ function wybleOutputToScore(
       const dur = Math.min(e.duration, beatsPerBar - uTotal);
       if (dur > 0) { pushNote(measure, 1, e.pitch, Math.round(dur * 4), v1); uTotal += dur; }
     }
-    if (uTotal < beatsPerBar) pushNote(measure, 1, 60, Math.round((beatsPerBar - uTotal) * 4), v1);
+    if (uTotal < beatsPerBar) pushNote(measure, 1, 0, Math.round((beatsPerBar - uTotal) * 4), v1);
 
     let lTotal = 0;
     while (lIdx < lowerEvents.length && lTotal < beatsPerBar) {
@@ -66,11 +68,15 @@ function wybleOutputToScore(
       const dur = Math.min(e.duration, beatsPerBar - lTotal);
       if (dur > 0) { pushNote(measure, 2, e.pitch, Math.round(dur * 4), v2); lTotal += dur; }
     }
-    if (lTotal < beatsPerBar) pushNote(measure, 2, 48, Math.round((beatsPerBar - lTotal) * 4), v2);
+    if (lTotal < beatsPerBar) pushNote(measure, 2, 0, Math.round((beatsPerBar - lTotal) * 4), v2);
 
     measures.push(measure);
   }
   return { measures };
+}
+
+function sealWybleBarMath(score: Score): void {
+  for (const m of score.measures) finalizeWybleMeasureBarMathPerVoice(m);
 }
 
 export function generateWybleEtudeXml(
@@ -95,6 +101,9 @@ export function generateWybleEtudeXml(
     output.lower_line.events,
     chords.length
   );
+  sealWybleBarMath(score);
+  applyWybleVoiceIndependence(score, seed ?? 0);
+  sealWybleBarMath(score);
   const lowerDiag = {
     rawLowerCount: output.lower_line.events.length,
     convertedLowerCount: score.measures.reduce((n, m) => n + (m.voices[2]?.length ?? 0), 0),

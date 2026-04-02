@@ -42,18 +42,27 @@ Universal composition engine framework for all Cursor music projects. Works acro
 * Currently renders as piano-style grand staff (temporary)
 * Ongoing work: guitar polyphonic rendering and bass integration
 
+Wyble Etude engine now supports stable two-voice polyphony with rhythmic independence and presence variation. Next phase focuses on interval behaviour and contrapuntal identity.
+
 ---
 
 ## Composer OS (V1 product path)
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
+**Jimmy Wyble Engine (in progress):**  
+Now uses phrase-driven melodic generation instead of note-by-note construction.  
+Includes phrase continuity and early counterpoint behaviour.  
+Currently in final refinement phase (phrase arc + resolution, lower voice interaction).
+
 **Composer OS documentation (canonical):**
 
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)
-- [docs/CHANGELOG.md](docs/CHANGELOG.md) — V8.0 + pointer to archived pre-V8 history
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) — V8.0 retrospective, **Song Mode baseline stabilisation**, pointer to archived pre-V8 history
 - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — friendly overview
 - [docs/TESTING.md](docs/TESTING.md) — D1 self-test harness
+
+**Song Mode baseline stabilisation (Guitar–Bass Duo):** 32-bar Song Mode is on a stable baseline for usable generation: hook return / bar 25 identity, C7 thinning guards on hook bars, corrected multi-voice score validation, behaviour gates passing on the current baseline, and high readiness in recent testing. See the changelog section of the same name.
 
 **Songwriter → harmony (GitHub summary):** Primary **songwriter profile** id is stored on `generationMetadata.songwriterStyleId`. The **Wayne Shorter** profile turns on **`shorterMode`** in chord-tone resolution so generation favours upper extensions over root/fifth-heavy spellings (see `harmonyChordTonePolicy.ts`, `chordSymbolAnalysis.ts`).
 

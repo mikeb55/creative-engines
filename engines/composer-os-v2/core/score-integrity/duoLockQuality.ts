@@ -49,16 +49,21 @@ function rhythmSig(m: MeasureModel): string {
     .join('|');
 }
 
-/** Guitar rest duration / total bar beats (8 bars × 4). */
+/**
+ * Guitar rest fraction: sum(rest durations) / sum(note + rest durations) across all voices.
+ * Per measure each voice fills 4 beats; with two voices the old `rests / (measures×4)` numerator
+ * summed both voices’ rests but the denominator only counted one layer — inflating ratio (~2×) and false “too sparse”.
+ */
 export function guitarRestRatio(guitar: PartModel): number {
   let restBeats = 0;
-  let total = 0;
+  let noteBeats = 0;
   for (const m of guitar.measures) {
     for (const e of m.events) {
       if (e.kind === 'rest') restBeats += (e as { duration: number }).duration;
+      else if (e.kind === 'note') noteBeats += (e as { duration: number }).duration;
     }
-    total += 4;
   }
+  const total = restBeats + noteBeats;
   return total > 0 ? restBeats / total : 0;
 }
 

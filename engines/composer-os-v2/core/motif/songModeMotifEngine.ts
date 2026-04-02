@@ -314,7 +314,11 @@ export function validateSongModeHookIdentity(guitar: PartModel, _context: Compos
   const r25 = rhythmFingerprint(mergedMeasureForFingerprint(notes25));
   const fp1 = contourFingerprint(mergedMeasureForFingerprint(notes1));
   const fp25 = contourFingerprint(mergedMeasureForFingerprint(notes25));
-  if (r1 === r25 && fp1 === fp25) {
+  /** Same rhythm + interval contour as bar 1 is expected for a transposed return; literal only if same MIDI. */
+  const sameAbsoluteMidi =
+    notes1.length === notes25.length &&
+    notes1.every((n, i) => notes25[i] !== undefined && n.pitch === notes25[i]!.pitch);
+  if (r1 === r25 && fp1 === fp25 && sameAbsoluteMidi) {
     errs.push('Song Mode hook: return is a literal repetition (variation required).');
   }
 

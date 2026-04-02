@@ -11,8 +11,13 @@ import { seededUnit } from './guitarBassDuoHarmony';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 import { snapshotMeasureNotes } from './jamesBrownFunkOverlay';
+import { guitarRestRatio } from '../score-integrity/duoLockQuality';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 type RhythmMode = 'stable' | 'balanced' | 'surprise';
+
+/** Match `validateDuoSwingRhythm` / duo identity: guitar rest fraction must stay ≤ this (whole-part). */
+const SWING_GUITAR_REST_CEILING = 0.45;
 
 export interface SongModeC7PhraseRow {
   phraseIndex: number;
@@ -249,11 +254,14 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
   const jb = meta.songModeJamesBrownFunkApplied === true;
 
   const out: SongModeC7PhraseRow[] = [];
+  /** Pre-phrase snapshots for post-pass rollback if swing rest ceiling is exceeded. */
+  const phraseBackups: Array<Map<number, ScoreEvent[]> | undefined> = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
     const strength = getEffectiveRhythmStrength(meta, pi) as RhythmMode;
     const { startBar, endBar } = segments[pi];
     const phraseBackup = clonePhraseMeasures(guitar, startBar, endBar);
+    phraseBackups[pi] = phraseBackup;
     const ostinatoActive = ostRows?.[pi]?.ostinatoActive === true;
     const c5 = c5rows?.[pi];
 
@@ -269,6 +277,7 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
 
     const cands: Cand[] = [];
     for (let bar = startBar; bar <= endBar; bar++) {
+      if (isProtectedBar(bar, context)) continue;
       const m = guitar.measures.find((x) => x.index === bar);
       if (!m) continue;
       const notes = m.events.filter((e) => e.kind === 'note') as NoteEvent[];
@@ -334,6 +343,22 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
       c7Summary: `active: ops=${ops}; removed~${(removedFrac * 100).toFixed(0)}%`,
       c7OpsApplied: ops,
     });
+  }
+
+  if (guitarRestRatio(guitar) > SWING_GUITAR_REST_CEILING) {
+    for (let pi = segments.length - 1; pi >= 0; pi--) {
+      const row = out[pi];
+      const backup = phraseBackups[pi];
+      if (!row?.c7Active || !backup) continue;
+      restorePhraseMeasures(guitar, backup);
+      out[pi] = {
+        phraseIndex: pi,
+        c7Active: false,
+        c7Summary: 'reverted: swing rest ceiling (≤45%)',
+        c7OpsApplied: 0,
+      };
+      if (guitarRestRatio(guitar) <= SWING_GUITAR_REST_CEILING) break;
+    }
   }
 
   meta.songModeC7ByPhrase = out;

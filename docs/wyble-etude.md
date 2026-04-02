@@ -4,6 +4,31 @@
 
 Stable generation and MusicXML export working.
 
+## Wyble Etude — Current Status
+
+### Achieved
+
+* Two-voice guitar polyphony (single staff)
+* Correct MusicXML export (voices render properly in Sibelius/Guitar Pro)
+* Rhythmic independence via beat-offset lower voice
+* Presence variation (lower voice enters/exits musically)
+
+### Current Behaviour
+
+* Upper voice = primary melodic line
+* Lower voice = intermittent contrapuntal line
+* Voices are rhythmically independent and no longer collapse into chord stacks
+
+### Known Limitations
+
+* Interval behaviour is still basic
+* Motion between voices can feel too symmetrical
+* Lower voice lacks strong melodic identity
+
+### Next Step
+
+* Introduce contrary motion and interval personality rules
+
 ## What Works
 
 * Two-voice counterpoint generation (Jimmy Wyble engine)

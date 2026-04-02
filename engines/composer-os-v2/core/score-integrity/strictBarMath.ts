@@ -45,6 +45,17 @@ function validateOneVoice(
   const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
   let durSum = 0;
   for (const e of sorted) durSum += e.duration;
+  if (part.id === 'guitar' && m.index === 1 && voice === 2 && durSum > 4.01) {
+    const forPrint = [...events].sort((a, b) => a.startBeat - b.startBeat);
+    console.log(`[wyble-debug] m=1 part=guitar voice=2 total=${durSum} count=${forPrint.length}`);
+    forPrint.forEach((e, idx) => {
+      const src = (e as { debugSource?: string }).debugSource ?? '-';
+      const pitch = e.kind === 'note' ? String((e as { pitch: number }).pitch) : '-';
+      console.log(
+        `${idx} src=${src} kind=${e.kind} pitch=${pitch} start=${e.startBeat} dur=${e.duration} v=${e.voice ?? 1}`
+      );
+    });
+  }
   if (false && Math.abs(durSum - BEATS_PER_MEASURE) > EPS) {
     const eventDetail = [...events].sort((a,b) => a.startBeat - b.startBeat).map(e => `${e.kind}(s=${e.startBeat},d=${e.duration},v=${e.voice??1})`).join(' | ');
     const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${BEATS_PER_MEASURE} -- ${eventDetail}`;
