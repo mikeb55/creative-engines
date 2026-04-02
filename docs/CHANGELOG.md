@@ -1,5 +1,14 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Chord Export + Chord Semantics Fixed
+
+- Fixed full per-bar chord export for Wyble MusicXML
+- Ensured 16 input bars export as 16 visible chord symbols
+- Preserved slash chords correctly in notation apps
+- Preserved altered / extended chord text in Sibelius and Guitar Pro 8
+- Fixed longstanding issue where some Wyble exports showed truncated or simplified chord symbols
+- Confirmed chord progression now matches user input through export
+
 ## Wyble Engine — Chord Export Fixed
 
 - Fixed critical bug where chord symbols were truncated (e.g. 4 bars instead of full progression)

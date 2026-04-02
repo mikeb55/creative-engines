@@ -1,11 +1,17 @@
 import { generateWybleEtude } from '../../../jimmy-wyble-engine/wybleGenerator';
 import { scoreToMusicXML } from '../../../core/scoreToMusicXML';
 import { createMeasure, pushNote } from '../../../jimmy-wyble-engine/../core/measureBuilder';
-import { finalizeWybleMeasureBarMathPerVoice } from '../../../core/wybleBarMathFinalize';
+import {
+  allocateBeatDurationsToDivisions,
+  finalizeWybleMeasureBarMathPerVoice,
+} from '../../../core/wybleBarMathFinalize';
 import { applyWybleVoiceIndependence } from '../../../core/wybleVoiceIndependencePass';
 import { validateScore } from '../../../../scripts/validateScore';
 import type { WybleParameters } from '../../../jimmy-wyble-engine/wybleTypes';
 import type { Score } from '../../../jimmy-wyble-engine/../core/timing';
+import { MEASURE_DIVISIONS } from '../../../core/timing';
+import type { CanonicalChord } from '../../../core/canonicalChord';
+import { validateWybleCanonicalChordList } from '../../../core/canonicalChord';
 
 export interface WybleBypassReceipt {
   barsRequested: number;
@@ -39,44 +45,109 @@ function parseMeasureVoiceDurations(xml: string, measureNum: number, voice: stri
   return out;
 }
 
+const EPS = 1e-9;
+const BEATS_PER_BAR = 4;
+
+type WybleEv = { pitch: number; duration: number; beat: number };
+
+type VoiceScan = { idx: number; pendingDur: number; pendingPitch: number };
+
+/**
+ * Slice one 4/4 bar from a beat-length timeline, carrying remainder across measures (fixes lost tail when duration > beats left).
+ */
+function consumeVoiceForOneBar(events: WybleEv[], st: VoiceScan, beatsPerBar: number): { beatSegs: number[]; pitches: number[] } {
+  const beatSegs: number[] = [];
+  const pitches: number[] = [];
+  let b = 0;
+  while (b < beatsPerBar - EPS) {
+    let durAvail: number;
+    let pitch: number;
+    if (st.pendingDur > EPS) {
+      durAvail = st.pendingDur;
+      pitch = st.pendingPitch;
+    } else {
+      if (st.idx >= events.length) {
+        beatSegs.push(beatsPerBar - b);
+        pitches.push(0);
+        break;
+      }
+      const e = events[st.idx]!;
+      durAvail = e.duration;
+      pitch = e.pitch;
+    }
+    const take = Math.min(durAvail, beatsPerBar - b);
+    beatSegs.push(take);
+    pitches.push(pitch);
+    const rem = durAvail - take;
+    if (rem > EPS) {
+      st.pendingDur = rem;
+      st.pendingPitch = pitch;
+    } else {
+      st.pendingDur = 0;
+      st.idx++;
+    }
+    b += take;
+  }
+  return { beatSegs, pitches };
+}
+
+function pushVoiceMeasureFromBeats(
+  measure: ReturnType<typeof createMeasure>,
+  voice: number,
+  beatSegs: number[],
+  pitches: number[],
+  cursor: { pos: number }
+): void {
+  if (beatSegs.length === 0) {
+    pushNote(measure, voice, 0, MEASURE_DIVISIONS, cursor);
+    return;
+  }
+  const divs = allocateBeatDurationsToDivisions(beatSegs);
+  for (let k = 0; k < divs.length; k++) {
+    pushNote(measure, voice, pitches[k] ?? 0, divs[k]!, cursor);
+  }
+}
+
+function assertVoiceTimelineConsumed(st: VoiceScan, events: WybleEv[], label: string): void {
+  if (st.pendingDur > EPS) {
+    throw new Error(`Wyble export: ${label} has ${st.pendingDur} beats pending after last bar`);
+  }
+  if (st.idx !== events.length) {
+    throw new Error(`Wyble export: ${label} not fully consumed (index ${st.idx}, ${events.length} events)`);
+  }
+}
+
 function wybleOutputToScore(
-  upperEvents: Array<{ pitch: number; duration: number; beat: number }>,
-  lowerEvents: Array<{ pitch: number; duration: number; beat: number }>,
+  upperEvents: WybleEv[],
+  lowerEvents: WybleEv[],
   bars: number,
-  chordLabels: string[]
+  canonicalChords: CanonicalChord[]
 ): Score {
-  if (chordLabels.length !== bars) {
-    throw new Error(`Wyble export: chordLabels length ${chordLabels.length} must equal bars ${bars}.`);
+  if (canonicalChords.length !== bars) {
+    throw new Error(`Wyble export: canonicalChords length ${canonicalChords.length} must equal bars ${bars}.`);
   }
   const measures: Score['measures'] = [];
-  const beatsPerBar = 4;
-  let uIdx = 0;
-  let lIdx = 0;
+  const upperSt: VoiceScan = { idx: 0, pendingDur: 0, pendingPitch: 0 };
+  const lowerSt: VoiceScan = { idx: 0, pendingDur: 0, pendingPitch: 0 };
 
   for (let i = 0; i < bars; i++) {
     const measure = createMeasure(i, [1, 2]);
-    measure.chordSymbol = chordLabels[i]!;
+    const cc = canonicalChords[i]!;
+    measure.chordSymbol = cc.text;
+    measure.canonicalChord = cc;
     const v1 = { pos: 0 };
     const v2 = { pos: 0 };
 
-    let uTotal = 0;
-    while (uIdx < upperEvents.length && uTotal < beatsPerBar) {
-      const e = upperEvents[uIdx++];
-      const dur = Math.min(e.duration, beatsPerBar - uTotal);
-      if (dur > 0) { pushNote(measure, 1, e.pitch, Math.round(dur * 4), v1); uTotal += dur; }
-    }
-    if (uTotal < beatsPerBar) pushNote(measure, 1, 0, Math.round((beatsPerBar - uTotal) * 4), v1);
+    const u = consumeVoiceForOneBar(upperEvents, upperSt, BEATS_PER_BAR);
+    pushVoiceMeasureFromBeats(measure, 1, u.beatSegs, u.pitches, v1);
 
-    let lTotal = 0;
-    while (lIdx < lowerEvents.length && lTotal < beatsPerBar) {
-      const e = lowerEvents[lIdx++];
-      const dur = Math.min(e.duration, beatsPerBar - lTotal);
-      if (dur > 0) { pushNote(measure, 2, e.pitch, Math.round(dur * 4), v2); lTotal += dur; }
-    }
-    if (lTotal < beatsPerBar) pushNote(measure, 2, 0, Math.round((beatsPerBar - lTotal) * 4), v2);
+    const l = consumeVoiceForOneBar(lowerEvents, lowerSt, BEATS_PER_BAR);
+    pushVoiceMeasureFromBeats(measure, 2, l.beatSegs, l.pitches, v2);
 
     measures.push(measure);
   }
+  assertVoiceTimelineConsumed(upperSt, upperEvents, 'upper');
+  assertVoiceTimelineConsumed(lowerSt, lowerEvents, 'lower');
   return { measures };
 }
 
@@ -86,10 +157,12 @@ function sealWybleBarMath(score: Score): void {
 
 export function generateWybleEtudeXml(
   chords: string[],
+  canonicalChords: CanonicalChord[],
   seed?: number,
   title?: string,
   harmonyOpts?: { chordSource?: 'parsedChordBars' | 'chordProgressionText' }
 ): WybleBypassResult {
+  validateWybleCanonicalChordList(canonicalChords, chords.length);
   console.log(
     '[wyble-harmony]',
     JSON.stringify({
@@ -101,8 +174,9 @@ export function generateWybleEtudeXml(
   );
   const params: WybleParameters = {
     harmonicContext: {
-      chords: chords.map(c => ({ root: c.replace(/maj.*|m.*|7.*|9.*/, ''), quality: 'maj7', bars: 1 })),
-      key: chords[0]?.replace(/maj.*|m.*|7.*|9.*/, '') ?? 'C',
+      chords: canonicalChords.map((c) => ({ root: c.root, quality: c.quality, bars: 1 })),
+      canonicalChords,
+      key: canonicalChords[0]?.root ?? 'C',
     },
     phraseLength: chords.length,
     contraryMotionBias: 0.7,
@@ -115,7 +189,7 @@ export function generateWybleEtudeXml(
     output.upper_line.events,
     output.lower_line.events,
     chords.length,
-    chords
+    canonicalChords
   );
   sealWybleBarMath(score);
   applyWybleVoiceIndependence(score, seed ?? 0);

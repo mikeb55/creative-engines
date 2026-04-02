@@ -10,7 +10,7 @@ import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes'
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
-import { musicXmlKindContentFromKindText, parseChordForMusicXmlHarmony } from './chordSymbolMusicXml';
+import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
   GUITAR_BASS_DUO_BASS_PART_NAME,
@@ -316,20 +316,9 @@ ${keyCaption}${feelEl}`;
               );
             }
           }
-          const { rootStep, rootAlter, kindText, bassStep, bassAlter } = parseChordForMusicXmlHarmony(m.chord, {
-            literalKind: opts.preserveChordKindLiterals === true,
+          xml += buildHarmonyXmlLine(m.chord, {
+            exactChordTextElement: opts.preserveChordKindLiterals === true,
           });
-          const kindContent = musicXmlKindContentFromKindText(kindText);
-          const alterEl = rootAlter !== 0 ? `<root-alter>${rootAlter}</root-alter>` : '';
-          const bassAlterEl =
-            bassStep !== undefined && bassAlter !== undefined && bassAlter !== 0
-              ? `<bass-alter>${bassAlter}</bass-alter>`
-              : '';
-          const bassEl =
-            bassStep !== undefined
-              ? `<bass><bass-step>${bassStep}</bass-step>${bassAlterEl}</bass>`
-              : '';
-          xml += `    <harmony><root><root-step>${rootStep}</root-step>${alterEl}</root><kind text="${escapeXml(kindText)}">${escapeXml(kindContent)}</kind>${bassEl}</harmony>\n`;
         }
 
         xml += eventsToXml(m, i, part, decompose, opts);

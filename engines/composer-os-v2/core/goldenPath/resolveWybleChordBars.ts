@@ -6,11 +6,16 @@
  */
 
 import { parseChordProgressionInputFlexible } from '../harmony/chordProgressionParser';
+import {
+  parseLeadSheetChordToCanonical,
+  validateWybleCanonicalChordList,
+  type CanonicalChord,
+} from '../../../core/canonicalChord';
 
 export type WybleChordSource = 'parsedChordBars' | 'chordProgressionText';
 
 export type ResolveWybleChordBarsResult =
-  | { ok: true; bars: string[]; source: WybleChordSource }
+  | { ok: true; bars: string[]; canonicalChords: CanonicalChord[]; source: WybleChordSource }
   | { ok: false; error: string };
 
 /**
@@ -40,7 +45,9 @@ export function resolveWybleChordBarsFromRequest(
         error: `Wyble: parsedChordBars count (${arr.length}) does not match parse result (${p.bars.length}).`,
       };
     }
-    return { ok: true, bars: p.bars, source: 'parsedChordBars' };
+    const canonicalChords = p.bars.map(parseLeadSheetChordToCanonical);
+    validateWybleCanonicalChordList(canonicalChords, p.bars.length);
+    return { ok: true, bars: p.bars, canonicalChords, source: 'parsedChordBars' };
   }
 
   if (text) {
@@ -48,7 +55,9 @@ export function resolveWybleChordBarsFromRequest(
     if (!p.ok) {
       return { ok: false, error: p.error };
     }
-    return { ok: true, bars: p.bars, source: 'chordProgressionText' };
+    const canonicalChords = p.bars.map(parseLeadSheetChordToCanonical);
+    validateWybleCanonicalChordList(canonicalChords, p.bars.length);
+    return { ok: true, bars: p.bars, canonicalChords, source: 'chordProgressionText' };
   }
 
   return {

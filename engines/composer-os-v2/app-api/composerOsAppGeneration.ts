@@ -150,7 +150,13 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     );
     let result: { guitarXml: string; mode: 'etude' | 'duo'; receipt: unknown };
     try {
-      result = generateWybleEtudeXml(chords, req.seed, req.title, { chordSource: resolved.source });
+      result = generateWybleEtudeXml(
+        chords,
+        resolved.canonicalChords,
+        req.seed,
+        req.title,
+        { chordSource: resolved.source }
+      );
     } catch (e) {
       console.warn('VALIDATION BYPASSED:', (e as Error)?.message);
       return {

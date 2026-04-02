@@ -5,17 +5,24 @@
 import type { Score, NoteEvent } from './timing';
 import { DIVISIONS, MEASURE_DIVISIONS } from './timing';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
+import { buildHarmonyXmlLineFromCanonical } from './canonicalChord';
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-function divisionsToType(divs: number): string {
-  if (divs <= 1) return '16th';
-  if (divs <= 2) return 'eighth';
-  if (divs <= 4) return 'quarter';
-  if (divs <= 8) return 'half';
-  return 'whole';
+/** Notation types that match `divisions` (4 = quarter) so hosts do not flag duration/type mismatch. */
+function typeElementsForDivisions(divs: number): string {
+  if (divs <= 0) return '';
+  if (divs === 16) return '<type>whole</type>';
+  if (divs === 12) return '<type>half</type><dot/>';
+  if (divs === 8) return '<type>half</type>';
+  if (divs === 6) return '<type>quarter</type><dot/>';
+  if (divs === 4) return '<type>quarter</type>';
+  if (divs === 3) return '<type>eighth</type><dot/>';
+  if (divs === 2) return '<type>eighth</type>';
+  if (divs === 1) return '<type>16th</type>';
+  return '';
 }
 
 function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
@@ -36,12 +43,13 @@ function voiceEventsToXml(events: NoteEvent[], voice: number, measureStart: numb
   let xml = '';
   for (const e of events) {
     const staffEl = staff ? `\n      <staff>${staff}</staff>` : '';
+    const typeEl = typeElementsForDivisions(e.duration);
     if (e.pitch === 0) {
-      xml += `        <note><rest/><duration>${e.duration}</duration><type>${divisionsToType(e.duration)}</type><voice>${voice}</voice>${staffEl}</note>\n`;
+      xml += `        <note><rest/><duration>${e.duration}</duration>${typeEl}<voice>${voice}</voice>${staffEl}</note>\n`;
     } else {
       const { step, alter, octave } = midiToPitch(e.pitch);
       const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
-      xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${e.duration}</duration><type>${divisionsToType(e.duration)}</type><voice>${voice}</voice>${staffEl}</note>\n`;
+      xml += `        <note><pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch><duration>${e.duration}</duration>${typeEl}<voice>${voice}</voice>${staffEl}</note>\n`;
     }
   }
   return xml;
@@ -99,7 +107,11 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
     </attributes>
 `;
     }
-    if (m.chordSymbol) {
+    if (m.canonicalChord) {
+      xml += buildHarmonyXmlLineFromCanonical(m.canonicalChord, {
+        staffNumber: staves > 1 ? 1 : undefined,
+      });
+    } else if (m.chordSymbol) {
       xml += buildHarmonyXmlLine(m.chordSymbol, { staffNumber: staves > 1 ? 1 : undefined });
     }
     if (staves === 1 && voices.length > 1) {

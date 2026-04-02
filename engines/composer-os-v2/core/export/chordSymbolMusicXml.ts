@@ -1,9 +1,9 @@
 /**
  * Chord symbol handling for MusicXML harmony export.
- * Root lives in <root>; <kind text="…"> must be suffix-only so readers (e.g. Sibelius)
+ * Root lives in <root>; <kind text="…"> is suffix-only so readers (e.g. Sibelius)
  * do not concatenate root + full symbol into duplicate letters (DDmin9, GG13).
- * The <kind> element must also contain valid MusicXML enumerated body text (e.g. minor-ninth);
- * the jazz label stays in the `text` attribute only.
+ * When present, <text>…</text> holds the exact user chord string (canonical / locked harmony).
+ * The <kind> body must contain valid MusicXML enumerated text (e.g. dominant).
  *
  * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.
  */
@@ -17,6 +17,7 @@ export {
   parseChordForMusicXmlHarmony,
   formatChordSymbolForDisplay,
   buildHarmonyXmlLine,
+  harmonyDegreeXmlFromKindText,
 } from '../../../core/chordSymbolMusicXml';
 
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
@@ -36,6 +37,11 @@ function unescapeXmlAttr(s: string): string {
  * Used to verify written MusicXML matches the score without silent reconstruction.
  */
 export function chordStringFromMusicXmlHarmonyBlock(block: string): string | null {
+  const textEl = block.match(/<text>([\s\S]*?)<\/text>/);
+  if (textEl) {
+    const raw = textEl[1].trim();
+    if (raw.length > 0) return unescapeXmlAttr(raw);
+  }
   const rootStep = block.match(/<root-step>([A-G])<\/root-step>/)?.[1];
   if (!rootStep) return null;
   const rootAlter = parseInt(block.match(/<root-alter>(-?\d+)<\/root-alter>/)?.[1] ?? '0', 10);

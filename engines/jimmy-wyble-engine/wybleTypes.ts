@@ -3,6 +3,8 @@
  * Implements design spec from gml-composer-engines
  */
 
+import type { CanonicalChord } from '../core/canonicalChord';
+
 export interface NoteEvent {
   pitch: number;      // MIDI note number
   duration: number;  // in beats
@@ -23,6 +25,8 @@ export interface ChordSpec {
 
 export interface HarmonicContext {
   chords: Array<ChordSpec | string>;
+  /** Wyble: authoritative parsed chords (same order as bars); drives harmony + export when set. */
+  canonicalChords?: CanonicalChord[];
   key?: string;
 }
 

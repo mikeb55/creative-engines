@@ -275,13 +275,13 @@ function landingPriority(
  */
 function pickPhraseTargetMidi(
   endBeat: number,
-  chords: HarmonicContext['chords'],
+  harmonicContext: HarmonicContext,
   beatsPerBar: number,
   alteredBias: number,
   seed: number,
   phraseIdx: number
 ): number | null {
-  const { root, quality } = getChordForBeat(chords, endBeat, beatsPerBar);
+  const { root, quality } = getChordForBeat(harmonicContext, endBeat, beatsPerBar);
   const landing = getHarmonyPitchesForBeat(root, quality, 5, alteredBias).filter(
     (t) =>
       t >= UPPER_MIN &&
@@ -561,7 +561,7 @@ function tryRealizePhraseHard(
   chainPrev: number,
   startBeat: number,
   upperPrefix: number[],
-  chords: HarmonicContext['chords'],
+  harmonicContext: HarmonicContext,
   beatsPerBar: number,
   alteredDominantBias: number,
   repeatRunIn: number,
@@ -571,7 +571,7 @@ function tryRealizePhraseHard(
   const endBeat = startBeat + sk.length - 1;
   const targetMidi = pickPhraseTargetMidi(
     endBeat,
-    chords,
+    harmonicContext,
     beatsPerBar,
     alteredDominantBias,
     seed,
@@ -581,7 +581,7 @@ function tryRealizePhraseHard(
 
   if (sk.length === 1) {
     const b = startBeat;
-    const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+    const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
     let harmony = getHarmonyPitchesForBeat(root, quality, 5, alteredDominantBias).filter(
       (t) => t >= UPPER_MIN && t <= UPPER_MAX
     );
@@ -607,7 +607,7 @@ function tryRealizePhraseHard(
   }
 
   const n = sk.length;
-  const { root: lr, quality: lq } = getChordForBeat(chords, endBeat, beatsPerBar);
+  const { root: lr, quality: lq } = getChordForBeat(harmonicContext, endBeat, beatsPerBar);
   const harmonyLast = getHarmonyPitchesForBeat(lr, lq, 5, alteredDominantBias).filter(
     (t) => t >= UPPER_MIN && t <= UPPER_MAX
   );
@@ -623,7 +623,7 @@ function tryRealizePhraseHard(
 
   for (let i = n - 2; i >= 1; i--) {
     const b = startBeat + i;
-    const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+    const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
     const harmony = getHarmonyPitchesForBeat(root, quality, 5, alteredDominantBias).filter(
       (t) => t >= UPPER_MIN && t <= UPPER_MAX
     );
@@ -645,7 +645,7 @@ function tryRealizePhraseHard(
   }
 
   const b0 = startBeat;
-  const { root: r0, quality: q0 } = getChordForBeat(chords, b0, beatsPerBar);
+  const { root: r0, quality: q0 } = getChordForBeat(harmonicContext, b0, beatsPerBar);
   const harmony0 = getHarmonyPitchesForBeat(r0, q0, 5, alteredDominantBias).filter(
     (t) => t >= UPPER_MIN && t <= UPPER_MAX
   );
@@ -671,7 +671,7 @@ function tryRealizePhraseHard(
 
   for (let i = 0; i < n; i++) {
     const b = startBeat + i;
-    const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+    const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
     const harmony = getHarmonyPitchesForBeat(root, quality, 5, alteredDominantBias).filter(
       (t) => t >= UPPER_MIN && t <= UPPER_MAX
     );
@@ -796,11 +796,17 @@ function phraseMetaAtBeat(
 }
 
 function getChordForBeat(
-  chords: HarmonicContext['chords'],
+  ctx: HarmonicContext,
   beatIndex: number,
   beatsPerBar: number
 ): { root: string; quality: string } {
   const bar = Math.floor(beatIndex / beatsPerBar);
+  const canon = ctx.canonicalChords;
+  if (canon && canon.length > 0) {
+    const c = canon[Math.min(bar, canon.length - 1)];
+    if (c) return { root: c.root, quality: c.quality };
+  }
+  const chords = ctx.chords;
   let chordIndex = 0;
   let acc = 0;
   for (let i = 0; i < chords.length; i++) {
@@ -836,7 +842,7 @@ export interface UpperVoiceResult {
  */
 function generateUpperVoice(
   totalBeats: number,
-  chords: HarmonicContext['chords'],
+  harmonicContext: HarmonicContext,
   params: WybleParameters,
   seed: number
 ): UpperVoiceResult {
@@ -876,7 +882,7 @@ function generateUpperVoice(
         last,
         b,
         upper,
-        chords,
+        harmonicContext,
         beatsPerBar,
         alteredDominantBias,
         repeatRun,
@@ -899,7 +905,7 @@ function generateUpperVoice(
         last,
         b,
         upper,
-        chords,
+        harmonicContext,
         beatsPerBar,
         alteredDominantBias,
         repeatRun,
@@ -916,7 +922,7 @@ function generateUpperVoice(
           last,
           b,
           upper,
-          chords,
+          harmonicContext,
           beatsPerBar,
           alteredDominantBias,
           repeatRun,
@@ -931,7 +937,7 @@ function generateUpperVoice(
           last,
           b,
           upper,
-          chords,
+          harmonicContext,
           beatsPerBar,
           alteredDominantBias,
           repeatRun,
@@ -940,7 +946,7 @@ function generateUpperVoice(
         );
       }
       if (r === null) {
-        const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+        const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
         const tones = getChordTonesWithAltered(root, quality, 5, alteredDominantBias).filter(
           (t) => t >= UPPER_MIN && t <= UPPER_MAX
         );
@@ -1011,7 +1017,7 @@ function upperLocalMotionWindow(upperPitches: number[], b: number): number {
  */
 function generateLowerVoice(
   totalBeats: number,
-  chords: HarmonicContext['chords'],
+  harmonicContext: HarmonicContext,
   upperPitches: number[],
   params: WybleParameters,
   seed: number,
@@ -1024,10 +1030,16 @@ function generateLowerVoice(
   const beatsPerBar = 4;
   const lower: number[] = [];
   let last = motifSeed?.[1] ?? 55;
+  const chords = harmonicContext.chords;
 
   if (pedalToneEnabled && chords.length > 0) {
+    const firstCanon = harmonicContext.canonicalChords?.[0];
     const first = chords[0];
-    const parsed = typeof first === 'string' ? parseChord(first) : { root: (first as { root: string }).root, quality: 'maj' };
+    const parsed = firstCanon
+      ? { root: firstCanon.root, quality: firstCanon.quality }
+      : typeof first === 'string'
+        ? parseChord(first)
+        : { root: (first as { root: string }).root, quality: 'maj' };
     const rootMidi = ROOT_MIDI[parsed.root] ?? 60;
     const pedal = clamp(rootMidi - 12, LOWER_MIN, LOWER_MAX);
     for (let b = 0; b < totalBeats; b++) lower.push(pedal);
@@ -1037,7 +1049,7 @@ function generateLowerVoice(
   for (let b = 0; b < totalBeats; b++) {
     const beatInBar = b % beatsPerBar;
     const isStrongBeat = beatInBar === 1 || beatInBar === 3;
-    const { root, quality } = getChordForBeat(chords, b, beatsPerBar);
+    const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
     const chordTones = getChordTones(root, quality, 3).filter(t => t >= LOWER_MIN && t <= LOWER_MAX);
     const guideTones = getGuideTones(root, quality, 3).filter(t => t >= LOWER_MIN && t <= LOWER_MAX);
     const upperNow = upperPitches[b] ?? 67;
@@ -1532,7 +1544,7 @@ function polishLastBarEnds(
 function deriveMelodySupportLayout(
   upper: number[],
   lower: number[],
-  chords: HarmonicContext['chords'],
+  harmonicContext: HarmonicContext,
   beatsPerBar: number,
   seed: number,
   phraseEndResponses: Map<number, PhraseEndResponseKind>,
@@ -1553,8 +1565,9 @@ function deriveMelodySupportLayout(
     const base = bar * beatsPerBar;
     const u = (i: number) => upper[Math.min(base + i, upper.length - 1)];
     const l = (i: number) => lower[Math.min(base + i, lower.length - 1)];
-    const { root, quality } = getChordForBeat(chords, base, beatsPerBar);
-    const chordLabel = `${root}${quality === 'maj' ? 'maj7' : quality === 'min' ? 'm7' : '7'}`;
+    const { root, quality } = getChordForBeat(harmonicContext, base, beatsPerBar);
+    const canon = harmonicContext.canonicalChords?.[bar];
+    const chordLabel = canon ? canon.text : `${root}${quality === 'maj' ? 'maj7' : quality === 'min' ? 'm7' : '7'}`;
     impliedHarmony.push({ chord: chordLabel, bar, beat: 0, confidence: 0.85 });
 
     const useCallResponse = (seed + bar * 17) % 5 === 0;
@@ -1653,13 +1666,12 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
 
   const beatsPerBar = 4;
   const totalBeats = phraseLength * beatsPerBar;
-  const chords = harmonicContext.chords;
 
-  const upperResult = generateUpperVoice(totalBeats, chords, params, seedBase);
+  const upperResult = generateUpperVoice(totalBeats, harmonicContext, params, seedBase);
   const upperPitches = upperResult.pitches;
   const lowerPitches = generateLowerVoice(
     totalBeats,
-    chords,
+    harmonicContext,
     upperPitches,
     params,
     seedBase,
@@ -1675,7 +1687,7 @@ export function generateWybleEtude(params: WybleParameters): WybleOutput {
   const { upperEvents, lowerEvents, impliedHarmony } = deriveMelodySupportLayout(
     u,
     l,
-    chords,
+    harmonicContext,
     beatsPerBar,
     seedBase,
     phraseEndResponses,

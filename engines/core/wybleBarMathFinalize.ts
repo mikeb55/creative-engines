@@ -9,6 +9,30 @@ import { MEASURE_DIVISIONS } from './timing';
 
 const EPS = 1e-6;
 
+/**
+ * Map beat-length segments (sum = one 4/4 bar in beats) to integer divisions summing to `totalDiv`.
+ * Largest-remainder so rounding error does not under/over fill the measure.
+ */
+export function allocateBeatDurationsToDivisions(
+  durationsBeats: number[],
+  totalDiv: number = MEASURE_DIVISIONS
+): number[] {
+  if (durationsBeats.length === 0) return [totalDiv];
+  const totalBeats = durationsBeats.reduce((a, b) => a + b, 0);
+  if (totalBeats <= EPS) return [totalDiv];
+  const raw = durationsBeats.map((d) => (d / totalBeats) * totalDiv);
+  const floored = raw.map((x) => Math.floor(x));
+  let rem = totalDiv - floored.reduce((a, b) => a + b, 0);
+  const order = raw
+    .map((x, i) => ({ i, f: x - floored[i] }))
+    .sort((a, b) => b.f - a.f);
+  const out = [...floored];
+  for (let k = 0; k < rem; k++) {
+    out[order[k % order.length]!.i]++;
+  }
+  return out;
+}
+
 /** Same grouping idea as `scoreModelValidation.measureDurationByVoice` — per-voice duration sums. */
 export function measureDivisionsByVoice(measure: Measure): Map<number, number> {
   const byVoice = new Map<number, number>();

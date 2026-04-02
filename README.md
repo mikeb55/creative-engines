@@ -54,9 +54,9 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
 Now ready for chord-notation export.
 
-**Chord Export (verified):**  
-Wyble now exports complete per-bar chord symbols with correct progression mapping.  
-Previous versions may have shown truncated or fallback harmony due to export-layer issues.
+**Wyble chord export (fixed):**  
+Wyble now exports complete per-bar chord symbols with exact progression mapping, including slash chords and altered/extended chord text such as D7(#11), A7(b9), and A7alt.  
+Earlier Wyble versions may have shown truncated or simplified chord output due to export-layer issues.
 
 **Composer OS documentation (canonical):**
 
