@@ -1,5 +1,22 @@
 # Composer OS — Changelog
 
+## Wyble Engine v1.0 — COMPLETE
+
+- Full 16-bar generation confirmed (no truncation)
+- Stable per-voice bar math (no overflow or underfill)
+- Exact chord export preserved across notation apps:
+  - altered chords (D7(#11), A7(b9), A7alt)
+  - slash chords
+  - per-bar mapping
+- Jazz Behaviour Gate implemented:
+  - preserves chromaticism, enclosures, and passing tones
+  - removes only static / unresolved clashes
+- Phrase direction and musical intent significantly improved
+- Lower-voice interaction stable and musically valid
+- MusicXML export validated in Sibelius and Guitar Pro 8
+
+Status: Wyble is now a **production-ready generative jazz line engine**
+
 ## Wyble Engine — Export + Jazz Behaviour Milestone
 
 - Fixed full 16-bar chord export for Wyble MusicXML

@@ -62,6 +62,18 @@ Earlier Wyble versions may have shown truncated or simplified chord output due t
 Wyble now exports full per-bar chord symbols with exact altered/slash chord text preserved in notation apps, while keeping jazz-aware melodic behaviour intact.  
 Next phase: musical-intelligence refinement (stronger phrase direction, rhetorical shaping, and more conversational lower-voice response).
 
+### Wyble Engine (v1.0)
+
+Wyble is a completed generative jazz line engine producing idiomatic, chromatic, and harmonically grounded lines with correct MusicXML export.
+
+Key features:
+- Phrase-first melodic generation
+- Jazz-aware behaviour validation (not rule-based sanitisation)
+- Accurate chord export including altered harmony and slash chords
+- Stable bar math and notation compatibility
+
+Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, interaction)
+
 **Composer OS documentation (canonical):**
 
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)

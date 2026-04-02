@@ -228,6 +228,27 @@ function pitchClassFromRoot(pitch: number, root: string): number {
   return ((pitch - rootMidi) % 12 + 12) % 12;
 }
 
+/** Triad + 7th pitch classes relative to root — “chosen” strong-beat preference (tensions stay available on weak beats). */
+function chordToneStackPc(quality: string): Set<number> {
+  const q = normalizeQuality(quality);
+  if (q === 'maj') return new Set([0, 4, 7, 11]);
+  if (q === 'min') return new Set([0, 3, 7, 10]);
+  return new Set([0, 4, 7, 10]);
+}
+
+function strongBeatPitchPreference(pitch: number, root: string, quality: string): number {
+  const pc = pitchClassFromRoot(pitch, root);
+  return chordToneStackPc(quality).has(pc) ? 1 : 0;
+}
+
+/** Beats 1 and 3 in 4/4 (0- and 2-indexed within bar). */
+function beatIsStrongInBar(beatIndex: number, beatsPerBar: number): boolean {
+  const b = ((beatIndex % beatsPerBar) + beatsPerBar) % beatsPerBar;
+  if (beatsPerBar === 4) return b === 0 || b === 2;
+  if (beatsPerBar === 2) return b === 0;
+  return b === 0;
+}
+
 /** Final phrase note must be chord tone or strong tension (9, 11, 13). */
 function isLandingPitch(
   pitch: number,
@@ -262,8 +283,8 @@ function landingPriority(
   const q = normalizeQuality(quality);
   const third = q === 'min' ? 3 : 4;
   let s = 0;
-  if (pc === third) s += 50;
-  if ((q === 'maj' && pc === 11) || ((q === 'min' || q === 'dom') && pc === 10)) s += 45;
+  if (pc === third) s += 55;
+  if ((q === 'maj' && pc === 11) || ((q === 'min' || q === 'dom') && pc === 10)) s += 50;
   if (pc === 0) s += 28;
   if (pc === 7) s += 22;
   if ([2, 5, 9].includes(pc)) s += 10;
@@ -365,7 +386,8 @@ function pickAnchorTowardTarget(
   phraseLen: number,
   repeatRun: number,
   avoidPitch: number | null,
-  arc: PhraseArcType
+  arc: PhraseArcType,
+  opts?: { strongBeat?: boolean; root?: string; quality?: string }
 ): number | null {
   let pool = [...harmony];
   if (repeatRun >= 2) {
@@ -392,10 +414,17 @@ function pickAnchorTowardTarget(
   if (filtered.length === 0) filtered = pool;
 
   const w = Math.max(1, phraseLen - 1);
+  const strong = opts?.strongBeat && opts.root && opts.quality;
   const sorted = [...filtered].sort((a, b) => {
     const da = Math.abs(a - chainPrev) + Math.abs(target - a) / w;
     const db = Math.abs(b - chainPrev) + Math.abs(target - b) / w;
-    return da - db;
+    if (da !== db) return da - db;
+    if (strong) {
+      const sa = strongBeatPitchPreference(a, opts!.root!, opts!.quality!);
+      const sb = strongBeatPitchPreference(b, opts!.root!, opts!.quality!);
+      if (sb !== sa) return sb - sa;
+    }
+    return Math.abs(b - chainPrev) - Math.abs(a - chainPrev);
   });
   return sorted[0] ?? null;
 }
@@ -413,7 +442,11 @@ function pickPitchBackwardTowardTarget(
   preferApproach: boolean,
   seed: number,
   phraseIdx: number,
-  beatTag: number
+  beatTag: number,
+  targetMidi: number,
+  strongBeat: boolean,
+  root: string,
+  quality: string
 ): number | null {
   const sign = requiredStepSign(arc, stepIdx, phraseLen);
   let cands = harmony.filter((h) => (sign === 1 ? h < pNext : h > pNext));
@@ -429,10 +462,22 @@ function pickPitchBackwardTowardTarget(
     });
     if (tight.length > 0) cands = tight;
   }
+  const archPeakStep =
+    arc === 'arch' && phraseLen >= 3 && stepIdx === archUpStepCount(phraseLen) - 1;
   cands.sort((a, b) => {
     const da = Math.abs(pNext - a);
     const db = Math.abs(pNext - b);
     if (da !== db) return da - db;
+    if (archPeakStep) {
+      const ta = Math.abs(a - targetMidi);
+      const tb = Math.abs(b - targetMidi);
+      if (tb !== ta) return tb - ta;
+    }
+    if (strongBeat) {
+      const sa = strongBeatPitchPreference(a, root, quality);
+      const sb = strongBeatPitchPreference(b, root, quality);
+      if (sb !== sa) return sb - sa;
+    }
     return seededRandom(seed + phraseIdx * 701 + beatTag * 19 + a * 2) -
       seededRandom(seed + phraseIdx * 701 + beatTag * 19 + b * 2);
   });
@@ -450,7 +495,10 @@ function pickFirstPitchTargetFirst(
   phraseLen: number,
   repeatRunIn: number,
   avoidPitch: number | null,
-  arc: PhraseArcType
+  arc: PhraseArcType,
+  strongBeat: boolean,
+  root: string,
+  quality: string
 ): number | null {
   const sign = requiredStepSign(arc, 0, phraseLen);
   const pool = harmony.filter((h) => (sign === 1 ? h < p1 : h > p1));
@@ -462,7 +510,8 @@ function pickFirstPitchTargetFirst(
     phraseLen,
     repeatRunIn,
     avoidPitch,
-    arc
+    arc,
+    strongBeat ? { strongBeat: true, root, quality } : undefined
   );
 }
 
@@ -633,6 +682,7 @@ function tryRealizePhraseHard(
     );
     if (harmony.length === 0) return null;
     const preferApproach = i >= n - 3;
+    const strongB = beatIsStrongInBar(b, beatsPerBar);
     const p = pickPitchBackwardTowardTarget(
       pitches[i + 1]!,
       i,
@@ -642,7 +692,11 @@ function tryRealizePhraseHard(
       preferApproach,
       seed,
       phraseIdx,
-      i
+      i,
+      targetMidi,
+      strongB,
+      root,
+      quality
     );
     if (p === null) return null;
     pitches[i] = p;
@@ -668,7 +722,10 @@ function tryRealizePhraseHard(
     n,
     repeatRunIn,
     avoidPitch0,
-    sk.direction
+    sk.direction,
+    beatIsStrongInBar(b0, beatsPerBar),
+    r0,
+    q0
   );
   if (p0 === null) return null;
   pitches[0] = p0;
@@ -721,7 +778,7 @@ function buildPhraseSkeleton(
   const length = phraseLengthFromSeed(seed, phraseIdx, attempt);
   const r = seededRandom(seed + phraseIdx * 11 + 700 + attempt * 13);
   let direction: PhraseArcType =
-    r < 0.34 ? 'arch' : r < 0.67 ? 'ascending' : 'descending';
+    r < 0.42 ? 'arch' : r < 0.71 ? 'ascending' : 'descending';
   const intervals: number[] = [];
   let leapUsed: boolean = false;
 
@@ -731,7 +788,7 @@ function buildPhraseSkeleton(
     for (let i = 0; i < length - 1; i++) {
       const leg = i < half ? sign1 : -sign1;
       const lu: boolean = leapUsed;
-      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.28;
+      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.34;
       const mag = takeLeap
         ? 3 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2)
         : 1 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2);
@@ -749,7 +806,7 @@ function buildPhraseSkeleton(
             : -1;
     for (let i = 0; i < length - 1; i++) {
       const lu: boolean = leapUsed;
-      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.32;
+      const takeLeap: boolean = !lu && seededRandom(seed + phraseIdx * 13 + i * 19 + 801 + attempt) < 0.36;
       const mag = takeLeap
         ? 3 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2)
         : 1 + Math.floor(seededRandom(seed + phraseIdx * 17 + i * 33 + 802) * 2);
@@ -1055,8 +1112,7 @@ function generateLowerVoice(
   }
 
   for (let b = 0; b < totalBeats; b++) {
-    const beatInBar = b % beatsPerBar;
-    const isStrongBeat = beatInBar === 1 || beatInBar === 3;
+    const isStrongBeat = beatIsStrongInBar(b, beatsPerBar);
     const { root, quality } = getChordForBeat(harmonicContext, b, beatsPerBar);
     const chordTones = getChordTones(root, quality, 3).filter(t => t >= LOWER_MIN && t <= LOWER_MAX);
     const guideTones = getGuideTones(root, quality, 3).filter(t => t >= LOWER_MIN && t <= LOWER_MAX);
@@ -1076,7 +1132,7 @@ function generateLowerVoice(
     const upperBusy = upperMotionWin >= 8;
     const upperSparseWindow = upperMotionWin <= 3;
     const supportBlend =
-      upperBusy ? seededRandom(seed + b * 29 + 503) < 0.38 : seededRandom(seed + b * 29 + 503) < 0.72;
+      upperBusy ? seededRandom(seed + b * 29 + 503) < 0.32 : seededRandom(seed + b * 29 + 503) < 0.72;
 
     const strongBeatPool = guideTones.length > 0 ? guideTones : chordTones;
     const pool = isStrongBeat ? strongBeatPool : chordTones;
@@ -1086,7 +1142,7 @@ function generateLowerVoice(
     if (
       Math.abs(uDelta) >= 2 &&
       chordTones.length > 0 &&
-      seededRandom(seed + b * 31 + 9200) < (upperBusy ? 0.38 : 0.26)
+      seededRandom(seed + b * 31 + 9200) < (upperBusy ? 0.32 : 0.2)
     ) {
       lower.push(clamp(last, LOWER_MIN, LOWER_MAX));
       continue;
@@ -1097,7 +1153,7 @@ function generateLowerVoice(
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
       !upperBusy &&
-      seededRandom(seed + phraseIdx * 91 + 2200) < 0.16
+      seededRandom(seed + phraseIdx * 91 + 2200) < 0.24
     ) {
       const contrarySign = -Math.sign(pSign || net || 1);
       const step = contrarySign * (1 + Math.floor(seededRandom(seed + b * 19 + 2300) * 2));
@@ -1118,7 +1174,7 @@ function generateLowerVoice(
       phraseTargets.length >= phraseIdx &&
       meta.posInPhrase === 0 &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.18
+      seededRandom(seed + phraseIdx * 617 + b + 3500) < 0.26
     ) {
       const prevT = phraseTargets[phraseIdx - 1] ?? upperNow;
       const idealLow = clamp(prevT - 12 - (phraseIdx % 3), LOWER_MIN, LOWER_MAX);
@@ -1139,7 +1195,7 @@ function generateLowerVoice(
       meta.posInPhrase === meta.phraseLen - 2 &&
       chordTones.length > 0 &&
       seededRandom(seed + phraseIdx * 521 + b + 3400) <
-        (phraseDirections[phraseIdx] === 'arch' ? 0.18 : 0.13)
+        (phraseDirections[phraseIdx] === 'arch' ? 0.26 : 0.2)
     ) {
       const targ = phraseTargets[phraseIdx] ?? upperNow;
       const idealLow = clamp(targ - 14, LOWER_MIN, LOWER_MAX);
@@ -1158,7 +1214,7 @@ function generateLowerVoice(
       meta.phraseLen >= 6 &&
       meta.posInPhrase === Math.floor(meta.phraseLen / 2) &&
       chordTones.length > 0 &&
-      seededRandom(seed + phraseIdx * 311 + b * 7 + 3000) < 0.12
+      seededRandom(seed + phraseIdx * 311 + b * 7 + 3000) < 0.18
     ) {
       const contrarySign = -Math.sign(net || pSign || 1);
       const step = contrarySign * (1 + Math.floor(seededRandom(seed + b * 19 + 3150) * 2));
@@ -1179,7 +1235,7 @@ function generateLowerVoice(
       meta.posInPhrase === meta.phraseLen - 1 &&
       chordTones.length > 0 &&
       seededRandom(seed + phraseIdx * 419 + b + 3300) <
-        (phraseDirections[phraseIdx] === 'ascending' ? 0.16 : 0.1)
+        (phraseDirections[phraseIdx] === 'ascending' ? 0.22 : 0.14)
     ) {
       const idealLow = clamp(upperNow - 14, LOWER_MIN, LOWER_MAX);
       const near = chordTones.reduce((a, c) =>
@@ -1197,12 +1253,12 @@ function generateLowerVoice(
       meta.posInPhrase > 0 &&
       Math.abs(uDelta) <= 4 &&
       upperSparseWindow &&
-      seededRandom(seed + b * 17 + 1200) < 0.09;
+      seededRandom(seed + b * 17 + 1200) < 0.14;
     const answerPhrase =
       !echoPhrase &&
       meta.posInPhrase > 0 &&
       upperSparseWindow &&
-      seededRandom(seed + b * 17 + 1300) < 0.13;
+      seededRandom(seed + b * 17 + 1300) < 0.19;
 
     if (echoPhrase && chordTones.length > 0 && uDelta !== 0) {
       const step = -Math.sign(uDelta) * Math.min(2, Math.max(1, Math.abs(uDelta)));
@@ -1251,11 +1307,11 @@ function generateLowerVoice(
     }
 
     const prevDir = lower.length >= 2 ? lower[lower.length - 1]! - lower[lower.length - 2]! : 0;
-    const selfContrary = seededRandom(seed + b * 29 + 611) < 0.18;
+    const selfContrary = seededRandom(seed + b * 29 + 611) < 0.26;
     const dir = selfContrary ? -Math.sign(prevDir || 1) : Math.sign(prevDir || 1);
     const uStep = Math.sign(uDelta || 0);
     const preferContrary =
-      uStep !== 0 && seededRandom(seed + b * 29 + 8800) < (upperBusy ? 0.22 : 0.36);
+      uStep !== 0 && seededRandom(seed + b * 29 + 8800) < (upperBusy ? 0.32 : 0.45);
     const byMotion = [...candidates].sort((a, b) => {
       const stepA = a - last;
       const stepB = b - last;
