@@ -1259,7 +1259,7 @@ function generateLowerVoice(
     }
 
     const smallSteps = candidates.filter((c) => Math.abs(c - last) <= 3);
-    if (smallSteps.length > 0 && Math.abs(next - last) > 4 && seededRandom(seed + b * 29 + 7700) < 0.38) {
+    if (smallSteps.length > 0 && Math.abs(next - last) > 4 && seededRandom(seed + b * 29 + 7700) < 0.44) {
       smallSteps.sort((a, b) => Math.abs(a - last) - Math.abs(b - last));
       next = clamp(smallSteps[0]!, LOWER_MIN, LOWER_MAX);
     }
@@ -1299,7 +1299,7 @@ function enforceCounterpoint(upper: number[], lower: number[], seed: number): { 
 
   for (let i = 1; i < u.length; i++) {
     const leap = Math.abs(l[i]! - l[i - 1]!);
-    if (leap > 5 && seededRandom(seed + i * 61 + 10010) < 0.4) {
+    if (leap > 4 && seededRandom(seed + i * 61 + 10010) < 0.5) {
       const mid = Math.round((l[i]! + l[i - 1]!) / 2);
       l[i] = clamp(mid, LOWER_MIN, LOWER_MAX);
     }
@@ -1441,7 +1441,7 @@ function pushUpperPhraseRhythm(
   bar: number,
   seed: number
 ): void {
-  const rhy = (seed + bar * 59) % 6;
+  const rhy = (seed + bar * 59 + bar * 13) % 6;
   if (rhy === 0) {
     upperEvents.push({ pitch: u(0), duration: 2, beat: 0, isDyad: false });
     upperEvents.push({ pitch: u(2), duration: 2, beat: 2, isDyad: false });
@@ -1454,8 +1454,16 @@ function pushUpperPhraseRhythm(
     upperEvents.push({ pitch: 0, duration: 0.5, beat: 1.5, isDyad: false });
     upperEvents.push({ pitch: u(2), duration: 2, beat: 2, isDyad: false });
   } else {
-    for (let i = 0; i < 4; i++) {
-      upperEvents.push({ pitch: u(i), duration: 1, beat: i, isDyad: false });
+    if (seededRandom(seed + bar * 71 + 3) < 0.26) {
+      upperEvents.push({ pitch: u(0), duration: 1, beat: 0, isDyad: false });
+      upperEvents.push({ pitch: u(1), duration: 0.875, beat: 1, isDyad: false });
+      upperEvents.push({ pitch: 0, duration: 0.125, beat: 1.875, isDyad: false });
+      upperEvents.push({ pitch: u(2), duration: 1, beat: 2, isDyad: false });
+      upperEvents.push({ pitch: u(3), duration: 1, beat: 3, isDyad: false });
+    } else {
+      for (let i = 0; i < 4; i++) {
+        upperEvents.push({ pitch: u(i), duration: 1, beat: i, isDyad: false });
+      }
     }
   }
 }
@@ -1471,8 +1479,8 @@ function pushLowerCounterLine(
   upperQuarterHeavy: boolean
 ): void {
   const t = upperQuarterHeavy
-    ? 2 + ((seed + bar * 41) % 2)
-    : (seed + bar * 97) % 3;
+    ? 2 + ((seed + bar * 41 + bar * 3) % 2)
+    : (seed + bar * 97 + bar) % 3;
   if (t === 0) {
     lowerEvents.push({ pitch: 0, duration: 0.5, beat: 0, isDyad: false });
     lowerEvents.push({ pitch: l(0), duration: 0.5, beat: 0.5, isDyad: false });
@@ -1494,6 +1502,33 @@ function pushLowerCounterLine(
   }
 }
 
+/** Last note in each voice of the final bar sustains to the barline (no clipped endings). */
+function polishLastBarEnds(
+  upperEvents: NoteEvent[],
+  lowerEvents: NoteEvent[],
+  uStart: number,
+  lStart: number,
+  beatsPerBar: number
+): void {
+  const extend = (arr: NoteEvent[], start: number) => {
+    let lastIdx = -1;
+    for (let i = arr.length - 1; i >= start; i--) {
+      if (arr[i]!.pitch > 0) {
+        lastIdx = i;
+        break;
+      }
+    }
+    if (lastIdx < 0) return;
+    const e = arr[lastIdx]!;
+    const tail = e.beat + e.duration;
+    if (tail < beatsPerBar - 0.02) {
+      arr[lastIdx] = { ...e, duration: beatsPerBar - e.beat };
+    }
+  };
+  extend(upperEvents, uStart);
+  extend(lowerEvents, lStart);
+}
+
 function deriveMelodySupportLayout(
   upper: number[],
   lower: number[],
@@ -1507,8 +1542,14 @@ function deriveMelodySupportLayout(
   const lowerEvents: NoteEvent[] = [];
   const impliedHarmony: ImpliedHarmony[] = [];
   const numBars = Math.max(1, Math.ceil(upper.length / beatsPerBar));
+  let upperLastBarStart = 0;
+  let lowerLastBarStart = 0;
 
   for (let bar = 0; bar < numBars; bar++) {
+    if (bar === numBars - 1) {
+      upperLastBarStart = upperEvents.length;
+      lowerLastBarStart = lowerEvents.length;
+    }
     const base = bar * beatsPerBar;
     const u = (i: number) => upper[Math.min(base + i, upper.length - 1)];
     const l = (i: number) => lower[Math.min(base + i, lower.length - 1)];
@@ -1562,12 +1603,14 @@ function deriveMelodySupportLayout(
           seed
         );
       } else {
-        const upperRhy = (seed + bar * 59) % 6;
+        const upperRhy = (seed + bar * 59 + bar * 13) % 6;
         const upperQuarterHeavy = upperRhy >= 3;
         pushLowerCounterLine(lowerEvents, l, bar, seed, upperQuarterHeavy);
       }
     }
   }
+
+  polishLastBarEnds(upperEvents, lowerEvents, upperLastBarStart, lowerLastBarStart, beatsPerBar);
 
   return { upperEvents, lowerEvents, impliedHarmony };
 }

@@ -1,5 +1,15 @@
 # Composer OS — Changelog
 
+## Wyble Engine — Complete
+
+- Phrase-first generation implemented
+- Phrase continuity across bars
+- Target-first phrase resolution
+- Lower-voice conversational interaction
+- Interaction refinement and balance
+- Final musical polish completed
+- Bar math and MusicXML stability preserved throughout
+
 ## Wyble Engine — Interaction Refinement Achieved
 
 - Lower voice interaction refined for more natural balance
