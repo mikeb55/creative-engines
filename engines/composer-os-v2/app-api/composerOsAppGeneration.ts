@@ -33,6 +33,7 @@ import {
   parseChordProgressionInputWithBarCount,
 } from '../core/harmony/chordProgressionParser';
 import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
+import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
 import {
   isDesktopTruthDumpEnabled,
@@ -175,12 +176,14 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     }
     const xmlPath = require('path').join(outputDir, `wyble_etude_${req.seed ?? Date.now()}.musicxml`);
     require('fs').writeFileSync(xmlPath, result.guitarXml, 'utf-8');
+    const chordExportDiagnostics = buildChordExportDiagnosticsReceipt(chords, resolved.canonicalChords);
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,
       productKind: 'musicxml',
       filepath: xmlPath,
       validation: validationForStructural(true, []),
+      chordExportDiagnostics,
       runManifest: {
         seed: req.seed,
         presetId: 'wyble_etude',

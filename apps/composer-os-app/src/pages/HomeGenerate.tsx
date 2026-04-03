@@ -18,6 +18,18 @@ import {
   parseChordProgressionInputWithBarCount,
 } from '../utils/chordProgressionClient';
 
+/** Receipt echo from engine (#17 chord export diagnostics). */
+type ChordDxReceiptUi = {
+  summary: {
+    totalChordsParsed: number;
+    totalFallbacksUsed: number;
+    totalApproximations: number;
+    slashChordsPreserved: number;
+  };
+  exportTargetNotes: { primaryValidationTarget: string; sibeliusFallback: string };
+  aggregateTargetWarning: string;
+};
+
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'bach', label: 'Bach' },
@@ -1616,6 +1628,41 @@ export function HomeGenerate({
                   <span style={{ lineHeight: 1.45 }}>{v.warnings.slice(0, 3).join('; ')}{v.warnings.length > 3 ? ` … (+${v.warnings.length - 3} more)` : ''}</span>
                 </div>
               )}
+              {(() => {
+                const dx = (result as { chordExportDiagnostics?: ChordDxReceiptUi })?.chordExportDiagnostics;
+                if (!dx) return null;
+                return (
+                  <div
+                    style={{
+                      fontSize: '0.88rem',
+                      marginTop: '0.75rem',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: 'rgba(59,130,246,0.08)',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Chord export diagnostics</strong>
+                    <p style={{ margin: '0 0 0.35rem', color: 'var(--text-muted)' }}>
+                      Chords parsed: <strong style={{ color: 'var(--text)' }}>{dx.summary.totalChordsParsed}</strong>
+                      {' · '}
+                      Fallbacks used: <strong style={{ color: 'var(--text)' }}>{dx.summary.totalFallbacksUsed}</strong>
+                      {' · '}
+                      Sibelius simplification flags:{' '}
+                      <strong style={{ color: 'var(--text)' }}>{dx.summary.totalApproximations}</strong>
+                      {' · '}
+                      Slash-bass bars: <strong style={{ color: 'var(--text)' }}>{dx.summary.slashChordsPreserved}</strong>
+                    </p>
+                    <p style={{ margin: '0 0 0.35rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                      {dx.exportTargetNotes.primaryValidationTarget}
+                      <br />
+                      {dx.exportTargetNotes.sibeliusFallback}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{dx.aggregateTargetWarning}</p>
+                  </div>
+                );
+              })()}
             </>
           )}
 

@@ -216,6 +216,8 @@ export interface OutputEntry {
   songModeRhythmOverlayByPhrase?: GenerationMetadata['songModeRhythmOverlayByPhrase'];
   /** D1: rhythm intent resolution receipt (JSON string; when Song Mode resolution ran). */
   rhythmIntentD1Receipt?: string;
+  /** #17 — Chord export transparency (manifest echo; same shape as API receipt when present). */
+  chordExportDiagnostics?: import('../../core/chordExportDiagnostics').ChordExportDiagnosticsReceipt;
   /** Song Mode C4 hook rhythm layer (manifest). */
   c4_hook_rhythm_applied?: boolean;
   c4_bars_used?: number[];

@@ -2,6 +2,7 @@
  * Composer OS V2 — App API: write output manifest under `_meta` (MusicXML stays in preset folder).
  */
 
+import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import type { OutputEntry, StyleProfile, ValidationSummary } from './appApiTypes';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
@@ -21,6 +22,7 @@ function tryHideMetaFolderOnWindows(metaDir: string): void {
 export function writeOutputManifest(
   xmlFilepath: string,
   meta: {
+    chordExportDiagnostics?: ChordExportDiagnosticsReceipt;
     presetId: string;
     styleStack: string[];
     seed: number;
@@ -74,6 +76,7 @@ export function writeOutputManifest(
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
   tryHideMetaFolderOnWindows(path.dirname(manifestPath));
   const entry: Partial<OutputEntry> = {
+    chordExportDiagnostics: meta.chordExportDiagnostics,
     presetId: meta.presetId,
     styleStack: meta.styleStack,
     seed: meta.seed,

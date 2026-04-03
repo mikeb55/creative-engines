@@ -33,6 +33,7 @@
 |------|--------|
 | **#19 Unified Chord Semantics** | **DONE** |
 | **#16 Chord Handling Robustness** | **DONE** — MusicXML export stabilised; GP8 is primary detailed chord-validation target; Sibelius accepted as simplification-prone fallback. |
+| **#17 Diagnostics / Receipt Clarity** | **DONE** — Generation receipt now surfaces chord export diagnostics including parsed chord count, fallback count, Sibelius simplification flags, and slash-bass preservation. See [generation-receipts-and-diagnostics.md](./generation-receipts-and-diagnostics.md). |
 
 ---
 

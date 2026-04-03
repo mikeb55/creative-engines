@@ -15,6 +15,9 @@ import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTy
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import * as fs from 'fs';
 import * as path from 'path';
+import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
+import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
+import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
 
 export interface GenerateResult {
   success: boolean;
@@ -120,6 +123,8 @@ export interface GenerateResult {
     arrangerStyle: string;
     era: string | null;
   };
+  /** #17 — Per-bar chord export transparency (custom / Wyble harmony paths). */
+  chordExportDiagnostics?: ChordExportDiagnosticsReceipt;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -150,6 +155,20 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
   });
+
+  let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;
+  const parsedBarsForDx = result.context?.generationMetadata.parsedCustomProgressionBars;
+  if (parsedBarsForDx && parsedBarsForDx.length > 0 && req.presetId === 'guitar_bass_duo') {
+    try {
+      chordExportDiagnostics = buildChordExportDiagnosticsReceipt(
+        parsedBarsForDx,
+        parseBarStringsToCanonicalChords(parsedBarsForDx)
+      );
+    } catch {
+      chordExportDiagnostics = undefined;
+    }
+  }
+
   let diskHarmonyTruthErrors: string[] = [];
 
   let filename: string | undefined;
@@ -169,6 +188,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
     }
     writeOutputManifest(filepath, {
+      chordExportDiagnostics,
       presetId: req.presetId,
       styleStack: result.runManifest?.activeModules ?? [],
       seed: effectiveSeed,
@@ -313,6 +333,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       : undefined,
     scoreTitle: scoreTitleResolved,
     universalLeadSheet,
+    chordExportDiagnostics,
     requestEcho: {
       tonalCenter: req.tonalCenter,
       bpm: req.bpm,

@@ -12,6 +12,8 @@
 
 **Roadmap:** **#16 Chord Handling Robustness** is **DONE** — MusicXML export stabilised; GP8 is primary detailed chord-validation target; Sibelius accepted as simplification-prone fallback. Further UX around chord input may continue incrementally.
 
+**#17 Diagnostics / Receipt Clarity** is **DONE** — Generation receipt now surfaces chord export diagnostics including parsed chord count, fallback count, Sibelius simplification flags, and slash-bass preservation. See [docs/generation-receipts-and-diagnostics.md](./generation-receipts-and-diagnostics.md).
+
 ## Phase labels (A / B / C / D)
 
 These labels are used in product and handoff docs; boundaries are conceptual, not separate runtimes.
