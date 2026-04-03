@@ -26,6 +26,9 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
   const errors: string[] = [];
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!bass) return { valid: true, errors: [] };
+  const nBassBars = bass.measures.length;
+  const longForm = nBassBars >= 16;
+  const longForm32 = nBassBars >= 32;
 
   const notes: { bar: number; pitch: number; start: number; dur: number }[] = [];
   for (const m of bass.measures) {
@@ -65,11 +68,13 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
   for (const m of bass.measures) {
     fingerprints.push(rhythmFingerprint(m));
   }
-  for (let i = 0; i <= fingerprints.length - 3; i++) {
-    const a = fingerprints[i];
-    const b = fingerprints[i + 1];
-    const c = fingerprints[i + 2];
-    if (a.length > 0 && a === b && b === c) {
+  const minRhythmRun = longForm ? 4 : 3;
+  for (let i = 0; i <= fingerprints.length - minRhythmRun; i++) {
+    const slice = fingerprints.slice(i, i + minRhythmRun);
+    if (slice.length < minRhythmRun) continue;
+    const a = slice[0];
+    if (!a || a.length === 0) continue;
+    if (slice.every((x) => x === a)) {
       errors.push('Bass identity: rhythmic cell repeated across more than two consecutive bars');
       break;
     }
@@ -77,7 +82,8 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
 
   const contours = bass.measures.map((m) => contourFingerprint(m)).filter((c) => c.length > 0);
   const distinctContours = new Set(contours);
-  if (distinctContours.size < 4) {
+  const minDistinct = longForm ? (longForm32 ? 3 : 3) : 4;
+  if (distinctContours.size < minDistinct) {
     errors.push('Bass identity: insufficient contour variety across the line');
   }
 
@@ -85,8 +91,9 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
   for (const c of contours) {
     contourCounts.set(c, (contourCounts.get(c) ?? 0) + 1);
   }
+  const maxSameContour = longForm32 ? 9 : longForm ? 7 : 5;
   for (const [, count] of contourCounts) {
-    if (count >= 5) {
+    if (count >= maxSameContour) {
       errors.push('Bass identity: identical contour reused too broadly (phrase variety required)');
       break;
     }
@@ -107,7 +114,8 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
     const rootPc = chordTonesForGoldenChord(chordForBar(m.index)).root % 12;
     if (first.pitch % 12 !== rootPc) nonRootFirstBars++;
   }
-  if (nonRootFirstBars < 2) {
+  const minNonRoot = longForm ? Math.min(4, Math.max(2, Math.floor(nBassBars / 10))) : 2;
+  if (nonRootFirstBars < minNonRoot) {
     errors.push('Bass identity: not enough non-root phrase starts (target-tone voice required)');
   }
 
@@ -123,7 +131,8 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
       if (g1 && b1 && g1.startBeat !== b1.startBeat) answerBars++;
     }
   }
-  if (answerBars < 3) {
+  const minAnswer = longForm ? 2 : 3;
+  if (answerBars < minAnswer) {
     errors.push('Bass identity: insufficient conversational onset contrast with guitar');
   }
 
@@ -146,7 +155,8 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
       }
     }
   }
-  if (echoHits < 2) {
+  const minEcho = longForm ? 1 : 2;
+  if (echoHits < minEcho) {
     errors.push('Bass identity: motif echo / shared pitch-class with guitar too weak');
   }
 

@@ -206,6 +206,9 @@ export function runBehaviourGates(
   const duoIdentityWarnings: string[] = [];
   const songMode = opts?.compositionContext?.generationMetadata?.songModeHookFirstIdentity === true;
   const duoCtx = { compositionContext: opts?.compositionContext };
+  const effectiveFormBars =
+    opts?.compositionContext?.form?.totalBars ?? guitarBarCount;
+  const duoLockCtx = { compositionContext: opts?.compositionContext, effectiveFormBars };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   const duoGateScore =
@@ -299,19 +302,20 @@ export function runBehaviourGates(
   }
 
   if (opts?.presetId && isGuitarBassDuoFamily(opts.presetId)) {
-    const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoCtx);
+    const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoLockCtx);
     errors.push(...duoRh.errors);
     if (songMode) duoIdentityWarnings.push(...duoRh.warnings);
-    const duoGce = validateDuoGceHardGate(duoGateScore, duoCtx);
+    const duoGce = validateDuoGceHardGate(duoGateScore, duoLockCtx);
     errors.push(...duoGce.errors);
     if (songMode) duoIdentityWarnings.push(...duoGce.warnings);
     const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, {
       presetId: opts?.presetId,
       compositionContext: opts?.compositionContext,
+      effectiveFormBars,
     });
     errors.push(...duoV3.errors);
     if (songMode) duoIdentityWarnings.push(...duoV3.warnings);
-    const duoSwing = validateDuoSwingRhythm(duoGateScore, duoCtx);
+    const duoSwing = validateDuoSwingRhythm(duoGateScore, duoLockCtx);
     errors.push(...duoSwing.errors);
     if (songMode) duoIdentityWarnings.push(...duoSwing.warnings);
     const duoIx = validateDuoInteractionAuthorityGate(duoGateScore, duoCtx);
@@ -320,7 +324,7 @@ export function runBehaviourGates(
     const duoId = validateDuoIdentityMomentGate(duoGateScore, duoCtx);
     errors.push(...duoId.errors);
     if (songMode) duoIdentityWarnings.push(...duoId.warnings);
-    const duoP33 = validateDuoPolishV33Gate(duoGateScore, duoCtx);
+    const duoP33 = validateDuoPolishV33Gate(duoGateScore, duoLockCtx);
     errors.push(...duoP33.errors);
     if (songMode) duoIdentityWarnings.push(...duoP33.warnings);
   }

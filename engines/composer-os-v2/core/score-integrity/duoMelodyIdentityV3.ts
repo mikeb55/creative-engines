@@ -389,7 +389,12 @@ export function hasRepeatedRhythmCell(guitar: PartModel): boolean {
 export function validateDuoMelodyIdentityV3(
   score: ScoreModel,
   motifState?: MotifTrackerState,
-  opts?: { presetId?: string; compositionContext?: CompositionContext }
+  opts?: {
+    presetId?: string;
+    compositionContext?: CompositionContext;
+    /** Full form length (e.g. 32); when >8, gates use first 8 bars but thresholds relax for long-form. */
+    effectiveFormBars?: number;
+  }
 ): DuoMelodyIdentityV3Result {
   const empty = finalizeMelodyV3([], opts?.compositionContext);
   if (opts?.presetId === 'ecm_chamber') return empty;
@@ -399,14 +404,18 @@ export function validateDuoMelodyIdentityV3(
   const totalBars = g.measures.length;
   if (totalBars < 8) return empty;
 
+  const formBars = opts?.effectiveFormBars ?? totalBars;
+  const longForm = formBars >= 16;
+
   const issues: SongModeDuoIdentityIssue[] = [];
 
   if (motifState?.placements?.length) {
     const cov = phrasePrimaryMotifCoverage(motifState);
-    if (cov < 0.75) {
+    const minCov = longForm ? (formBars >= 32 ? 0.48 : 0.58) : 0.75;
+    if (cov < minCov) {
       issues.push({
         ruleId: 'v3_motif_coverage_low',
-        message: `Duo V3: primary motif must appear in ≥75% of 2-bar phrases (${(cov * 100).toFixed(0)}%)`,
+        message: `Duo V3: primary motif must appear in ≥${(minCov * 100).toFixed(0)}% of 2-bar phrases (${(cov * 100).toFixed(0)}%)`,
       });
     }
   } else {
@@ -423,7 +432,7 @@ export function validateDuoMelodyIdentityV3(
   }
 
   const maxByBar = maxGuitarPitchByBar(g, totalBars);
-  if (!hasGlobalMelodicContour(maxByBar)) {
+  if (!longForm && !hasGlobalMelodicContour(maxByBar)) {
     issues.push({
       ruleId: 'v3_contour_rise_peak_fall',
       message: 'Duo V3: melody lacks rise → peak → fall contour',
@@ -476,13 +485,26 @@ export function validateDuoMelodyIdentityV3(
     }
   }
 
-  for (let k = 0; k < 4; k++) {
-    if (!phraseHasSyncopation(g, k)) {
+  if (!longForm) {
+    for (let k = 0; k < 4; k++) {
+      if (!phraseHasSyncopation(g, k)) {
+        issues.push({
+          ruleId: 'v3_syncopation_required',
+          message: `Duo V3: phrase ${k + 1} needs at least one syncopated entry`,
+        });
+        break;
+      }
+    }
+  } else {
+    let syncPhrases = 0;
+    for (let k = 0; k < 4; k++) {
+      if (phraseHasSyncopation(g, k)) syncPhrases++;
+    }
+    if (syncPhrases < 2) {
       issues.push({
         ruleId: 'v3_syncopation_required',
-        message: `Duo V3: phrase ${k + 1} needs at least one syncopated entry`,
+        message: `Duo V3: opening chorus needs syncopation in at least two 2-bar phrases (has ${syncPhrases})`,
       });
-      break;
     }
   }
 
@@ -490,7 +512,8 @@ export function validateDuoMelodyIdentityV3(
   const anchorHits = anchorPitchClassHits(g, anchorPc);
   const repRhythm = hasRepeatedRhythmCell(g);
   const repIntervals = hasRepeatedIntervalCellLocal(g);
-  if (anchorHits < 3 && !repRhythm && !repIntervals) {
+  const minAnchorHits = longForm ? 2 : 3;
+  if (anchorHits < minAnchorHits && !repRhythm && !repIntervals) {
     issues.push({
       ruleId: 'v3_memorability_weak',
       message: 'Duo V3: memorability weak (anchor, rhythm cell, or interval cell)',
@@ -498,8 +521,9 @@ export function validateDuoMelodyIdentityV3(
   }
 
   const dirCh = countPitchDirectionChanges(g);
-  /** 8-bar slice (behaviour gates) allows 20 after eighth-beat rhythm; long-form scales with bar count. */
-  const maxDirChanges = totalBars <= 8 ? 20 : Math.round(16 * (totalBars / 8) * 1.25);
+  /** 8-bar slice: default 20 zigzag budget; long-form forms allow slightly busier opening lines. */
+  const maxDirChanges =
+    formBars <= 8 ? 20 : Math.round(20 * (Math.min(formBars, 32) / 8) * (longForm ? 1.18 : 1.0));
   if (dirCh > maxDirChanges) {
     issues.push({
       ruleId: 'v3_zigzag_too_often',

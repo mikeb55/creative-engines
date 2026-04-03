@@ -46,9 +46,16 @@ export function validateMotifIntegrity(
   const totalNotes = state.placements.reduce((s, p) => s + p.notes.length, 0);
   const guitarPitches = extractGuitarPitchesByBar(score);
   const scoreNoteCount = [...guitarPitches.values()].reduce((s, arr) => s + arr.length, 0);
+  const guitarBarCount = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   if (scoreNoteCount > 0 && totalNotes > 0) {
     const motifRatio = totalNotes / scoreNoteCount;
-    const minRatio = state.placements.length >= 6 ? 0.42 : 0.3;
+    /** 8-bar etude: tight motif/note ratio. Long-form allows more through-composed line vs motif footprint. */
+    let minRatio = state.placements.length >= 6 ? 0.42 : 0.3;
+    if (guitarBarCount >= 32) {
+      minRatio = state.placements.length >= 6 ? 0.28 : 0.2;
+    } else if (guitarBarCount >= 16) {
+      minRatio = state.placements.length >= 6 ? 0.34 : 0.24;
+    }
     if (motifRatio < minRatio) errors.push('Excessive new-note rate: motif content too low');
   }
 

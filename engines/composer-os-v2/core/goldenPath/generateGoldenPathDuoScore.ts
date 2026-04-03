@@ -103,6 +103,10 @@ import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
+import {
+  consecutiveChordStreakEndingAtBar,
+  isLateClosingSlice,
+} from './lateClosingSectionDuo';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -293,6 +297,51 @@ function duoAntiAdjacentDuplicateGuitarRhythm(m: MeasureModel, prev: MeasureMode
   const last = v1[v1.length - 1] as { startBeat: number; duration: number } | undefined;
   if (last && last.startBeat + last.duration > 4 + 1e-4) {
     last.duration = qBeat(Math.max(0, 4 - last.startBeat));
+  }
+}
+
+/** Late closing: if rhythm still matches previous bar (e.g. static harmony), shift attacks like guitar anti-duplicate. */
+function duoBassAntiDuplicateRhythmVsAdjacent(m: MeasureModel, prev: MeasureModel): void {
+  if (rhythmFingerprint(m) !== rhythmFingerprint(prev) || rhythmFingerprint(m).length === 0) return;
+  const shift = 0.25;
+  const next: MeasureModel['events'] = [];
+  next.push(createRest(0, shift, 1));
+  for (const e of m.events) {
+    if (e.kind === 'note' || e.kind === 'rest') {
+      const e2 = { ...e } as (typeof m.events)[number];
+      (e2 as { startBeat: number }).startBeat = qBeat((e as { startBeat: number }).startBeat + shift);
+      next.push(e2);
+    } else {
+      next.push(e);
+    }
+  }
+  next.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+  m.events = next;
+  const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
+  const lastN = notes[notes.length - 1];
+  if (lastN && lastN.startBeat + lastN.duration > 4 + 1e-4) {
+    lastN.duration = qBeat(Math.max(0, 4 - lastN.startBeat));
+  }
+}
+
+function lateClosingBassRhythmBreakVsPrevBar(
+  m: MeasureModel,
+  measures: MeasureModel[],
+  b: number,
+  tb: number,
+  context: CompositionContext
+): void {
+  if (
+    !isLateClosingSlice(b, tb) ||
+    measures.length < 1 ||
+    consecutiveChordStreakEndingAtBar(context, b) < 2
+  ) {
+    return;
+  }
+  const mPrev = measures[measures.length - 1];
+  if (mPrev && rhythmFingerprint(m).length > 0 && rhythmFingerprint(m) === rhythmFingerprint(mPrev)) {
+    duoBassAntiDuplicateRhythmVsAdjacent(m, mPrev);
+    normalizeMeasureToEighthBeatGrid(m);
   }
 }
 
@@ -789,6 +838,16 @@ function buildGuitarPart(
     if (isDuoGolden) {
       if (measures.length > 0) {
         duoAntiAdjacentDuplicateGuitarRhythm(m, measures[measures.length - 1], isDuoGolden);
+        if (tb >= 32 && b >= 24 && measures.length >= 2) {
+          const p2 = measures[measures.length - 2];
+          if (
+            p2 &&
+            rhythmFingerprint(m).length > 0 &&
+            rhythmFingerprint(m) === rhythmFingerprint(p2)
+          ) {
+            duoAntiAdjacentDuplicateGuitarRhythm(m, p2, isDuoGolden);
+          }
+        }
       }
       console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
       normalizeMeasureToEighthBeatGrid(m);
@@ -1237,6 +1296,27 @@ function buildBassPart(
       const m2 = measures[measures.length - 2];
       if (m1 && m2 && rhythmFingerprint(m1) === rhythmFingerprint(m2)) {
         firstStart = snapAttackBeatToGrid(firstStart + 0.25 + seededUnit(s, b, 776) * 0.25);
+        if (
+          isLateClosingSlice(b, tb) &&
+          consecutiveChordStreakEndingAtBar(context, b) >= 2
+        ) {
+          firstStart = snapAttackBeatToGrid(firstStart + 0.2 + seededUnit(s, b, 777) * 0.35);
+        }
+      }
+    }
+    if (duoGoldenBass && b >= 4 && isLateClosingSlice(b, tb)) {
+      const m1 = measures[measures.length - 1];
+      const m2 = measures[measures.length - 2];
+      const m3 = measures[measures.length - 3];
+      if (
+        m1 &&
+        m2 &&
+        m3 &&
+        rhythmFingerprint(m1) === rhythmFingerprint(m2) &&
+        rhythmFingerprint(m2) === rhythmFingerprint(m3) &&
+        rhythmFingerprint(m1).length > 0
+      ) {
+        firstStart = snapAttackBeatToGrid(firstStart + 0.35 + seededUnit(s, b, 778) * 0.35);
       }
     }
 
@@ -1267,6 +1347,14 @@ function buildBassPart(
     let simplifyForDuo = simplify || thinForOverlap || forceBassSupportSparse;
     if (duoGoldenBass && guitarActivityHot) {
       simplifyForDuo = true;
+    }
+    if (
+      duoGoldenBass &&
+      isLateClosingSlice(b, tb) &&
+      consecutiveChordStreakEndingAtBar(context, b) >= 3 &&
+      !guitarActivityHot
+    ) {
+      simplifyForDuo = false;
     }
 
     if (duoGoldenBass && !simplifyForDuo) {
@@ -1316,6 +1404,7 @@ function buildBassPart(
         evenEighthStreak,
         slashBassPc: parsed.slashBassPc,
       });
+      lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
       const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBass7) prevBassPitch = lastBass7.pitch;
       measures.push(m);
@@ -1389,6 +1478,7 @@ function buildBassPart(
         evenEighthStreak,
         slashBassPc: parsed.slashBassPc,
       });
+      lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
       const lastBassA = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBassA) prevBassPitch = lastBassA.pitch;
       measures.push(m);
@@ -1577,38 +1667,49 @@ function buildBassPart(
         guitarFirstPitchInBar: guitarEchoSource,
         prevBassPitch,
         guitarActivityHot,
-        guideToneBias: phraseBar <= 4 ? 1.06 : 1.12,
         slashBassPitch,
         duoSteadyWalking: false,
         motionHint:
-          duoGoldenBass && (phase === 1 || phase === 2)
-            ? 'step'
-            : duoGoldenBass && (phase === 5 || phase === 6)
-              ? 'leap'
-              : duoGoldenBass && duoPhraseMode === 'stepwise'
-                ? 'step'
-                : duoGoldenBass && duoPhraseMode === 'leap'
-                  ? 'leap'
-                  : duoGoldenBass && duoPhraseMode === 'rhythmic'
-                    ? 'mixed'
-                    : duoGoldenBass
-                      ? 'mixed'
-                      : undefined,
-        densityHint:
-          duoGoldenBass && (phase === 1 || phase === 2)
-            ? 'sparse'
-            : duoGoldenBass && (phase === 5 || phase === 6)
-              ? 'dense'
-              : duoGoldenBass && duoPhraseMode === 'pedal'
-                ? 'sparse'
+          duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 2
+            ? 'leap'
+            : duoGoldenBass && (phase === 1 || phase === 2)
+              ? 'step'
+              : duoGoldenBass && (phase === 5 || phase === 6)
+                ? 'leap'
                 : duoGoldenBass && duoPhraseMode === 'stepwise'
+                  ? 'step'
+                  : duoGoldenBass && duoPhraseMode === 'leap'
+                    ? 'leap'
+                    : duoGoldenBass && duoPhraseMode === 'rhythmic'
+                      ? 'mixed'
+                      : duoGoldenBass
+                        ? 'mixed'
+                        : undefined,
+        densityHint:
+          duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 2
+            ? 'dense'
+            : duoGoldenBass && (phase === 1 || phase === 2)
+              ? 'sparse'
+              : duoGoldenBass && (phase === 5 || phase === 6)
+                ? 'dense'
+                : duoGoldenBass && duoPhraseMode === 'pedal'
                   ? 'sparse'
-                  : duoGoldenBass && duoPhraseMode === 'rhythmic'
-                    ? 'dense'
-                    : 'normal',
+                  : duoGoldenBass && duoPhraseMode === 'stepwise'
+                    ? 'sparse'
+                    : duoGoldenBass && duoPhraseMode === 'rhythmic'
+                      ? 'dense'
+                      : 'normal',
         phraseRhythmVariant: phraseRetryAttempt % 3,
         phraseBehaviourMode: duoGoldenBass ? duoPhraseMode : undefined,
         bassPhraseRetryAttempt: phraseRetryAttempt,
+        guideToneBias:
+          duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 3
+            ? 1.28
+            : duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 2
+              ? 1.2
+              : phraseBar <= 4
+                ? 1.06
+                : 1.12,
       });
     }
 
@@ -1630,8 +1731,9 @@ function buildBassPart(
         } else {
           sameContourStreak = 1;
         }
+        const contourBreakThreshold = isLateClosingSlice(b, tb) ? 2 : 3;
         let attempts = 0;
-        while (sameContourStreak >= 3 && attempts < 2) {
+        while (sameContourStreak >= contourBreakThreshold && attempts < 2) {
           const pool = [rootClamped, third, fifth, seventh, guide].filter((p) => typeof p === 'number');
           if (slashBassPitch !== undefined) pool.push(slashBassPitch);
           breakMeasureContourLocally(m, s + attempts * 10007, b, {
@@ -1664,6 +1766,8 @@ function buildBassPart(
       evenEighthStreak,
       slashBassPc: parsed.slashBassPc,
     });
+
+    lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
 
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (lastBass) prevBassPitch = lastBass.pitch;
@@ -1712,6 +1816,58 @@ function buildBassPart(
     clef: 'bass',
     measures,
   };
+}
+
+/**
+ * A″ / closing bars: under repeated harmony, lift phrase endings toward a rise → peak → resolution arc.
+ * Pitch-only; chord symbols unchanged (locked harmony stays authoritative).
+ */
+function applyLateClosingGuitarContourNudge(guitar: PartModel, context: CompositionContext): void {
+  const tb = totalBarsFromContext(context);
+  if (!isLateClosingSlice(24, tb)) return;
+  const seed = context.seed;
+  const low = 55;
+  const high = 79;
+  for (let bar = 24; bar <= tb; bar++) {
+    if (consecutiveChordStreakEndingAtBar(context, bar) < 2) continue;
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const chord = getChordForBar(bar, context);
+    const tones = guitarChordTonesInRange(chord, low, high);
+    const pool = [tones.root, tones.third, tones.fifth, tones.seventh];
+    let bestI = -1;
+    let bestEnd = -1;
+    for (let i = 0; i < m.events.length; i++) {
+      const e = m.events[i];
+      if (e.kind !== 'note') continue;
+      const n = e as { pitch: number; startBeat: number; duration: number };
+      const end = n.startBeat + n.duration;
+      if (end >= bestEnd) {
+        bestEnd = end;
+        bestI = i;
+      }
+    }
+    if (bestI < 0) continue;
+    const cur = (m.events[bestI] as { pitch: number }).pitch;
+    const pcEq = (a: number, b: number) => ((a % 12) + 12) % 12 === ((b % 12) + 12) % 12;
+    const inPool = (p: number) => pool.some((t) => pcEq(t, p));
+    const up1 = cur + 1;
+    const up2 = cur + 2;
+    if (bar <= 28) {
+      const pick = seededUnit(seed, bar, 924) < 0.52 ? up1 : up2;
+      if (inPool(pick)) (m.events[bestI] as { pitch: number }).pitch = pick;
+      else if (inPool(up1)) (m.events[bestI] as { pitch: number }).pitch = up1;
+    } else if (bar <= 30) {
+      const pick = seededUnit(seed, bar, 926) < 0.48 ? up2 : up1;
+      if (inPool(pick)) (m.events[bestI] as { pitch: number }).pitch = pick;
+      else if (inPool(up1)) (m.events[bestI] as { pitch: number }).pitch = up1;
+    } else {
+      const third = tones.third;
+      if (cur > third + 5 && seededUnit(seed, bar, 925) < 0.62) {
+        (m.events[bestI] as { pitch: number }).pitch = liftToneToRange(third, low, high);
+      }
+    }
+  }
 }
 
 /** If phrase-ending pitch classes are too uniform, retarget bar 5 last note (phrase authority gate). */
@@ -1829,6 +1985,7 @@ export function generateGoldenPathDuoScore(
     }
     if (context.presetId === 'guitar_bass_duo') {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
+      applyLateClosingGuitarContourNudge(guitarPart, context);
     }
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
       applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);

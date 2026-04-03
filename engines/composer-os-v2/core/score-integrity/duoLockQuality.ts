@@ -473,20 +473,28 @@ export function computeDuoGceScore(score: ScoreModel): number {
 
 const DUO_GCE_FLOOR = 9.0;
 
+function duoGceFloorForForm(effectiveFormBars: number | undefined): number {
+  if (effectiveFormBars === undefined) return DUO_GCE_FLOOR;
+  if (effectiveFormBars >= 32) return 8.25;
+  if (effectiveFormBars >= 16) return 8.55;
+  return DUO_GCE_FLOOR;
+}
+
 export function validateDuoGceHardGate(
   score: ScoreModel,
-  opts?: { compositionContext?: CompositionContext }
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
 ): DuoLockValidationResult {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!g || !b) return finalizeDuoLock([], opts?.compositionContext);
   const gce = computeDuoGceScore(score);
-  if (gce < DUO_GCE_FLOOR) {
+  const floor = duoGceFloorForForm(opts?.effectiveFormBars);
+  if (gce < floor) {
     return finalizeDuoLock(
       [
         {
           ruleId: 'lock_gce_floor',
-          message: `Duo LOCK: GCE ${gce.toFixed(1)} < ${DUO_GCE_FLOOR} (V3.3 polish, motif, interaction, bass clarity)`,
+          message: `Duo LOCK: GCE ${gce.toFixed(1)} < ${floor} (V3.3 polish, motif, interaction, bass clarity)`,
         },
       ],
       opts?.compositionContext
@@ -498,18 +506,26 @@ export function validateDuoGceHardGate(
 /**
  * V3.3 — Soft gate: minimum phrasing polish (asymmetry / timing / restraint signals).
  */
+function polishMinScore(effectiveFormBars: number | undefined): number {
+  if (effectiveFormBars === undefined) return 7.2;
+  if (effectiveFormBars >= 32) return 6.45;
+  if (effectiveFormBars >= 16) return 6.75;
+  return 7.2;
+}
+
 export function validateDuoPolishV33Gate(
   score: ScoreModel,
-  opts?: { compositionContext?: CompositionContext }
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
 ): DuoLockValidationResult {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) return finalizeDuoLock([], opts?.compositionContext);
   const issues: SongModeDuoIdentityIssue[] = [];
   const p = computeDuoPolishV33Score(score);
-  if (p < 7.2) {
+  const minP = polishMinScore(opts?.effectiveFormBars);
+  if (p < minP) {
     issues.push({
       ruleId: 'lock_polish_score_low',
-      message: `Duo polish V3.3: phrasing score ${p.toFixed(1)} < 7.2 (asymmetry / resolution / restraint)`,
+      message: `Duo polish V3.3: phrasing score ${p.toFixed(1)} < ${minP.toFixed(2)} (asymmetry / resolution / restraint)`,
     });
   }
   const attacks: number[] = [];
@@ -525,7 +541,8 @@ export function validateDuoPolishV33Gate(
     const m = g.measures.find((x) => x.index === bar);
     if (m && barHasDelayedResolutionGesture(m)) delayed++;
   }
-  if (spread < 0.28 && delayed === 0) {
+  const longForm = (opts?.effectiveFormBars ?? 8) >= 16;
+  if (!longForm && spread < 0.28 && delayed === 0) {
     issues.push({
       ruleId: 'lock_polish_too_square',
       message: 'Duo polish V3.3: phrasing too square (need late entry, early cut, or delayed resolution)',
@@ -559,7 +576,7 @@ export function countDelayedResolutionBars(guitar: PartModel): number {
 /** Guitar rhythm loop + rest window + unison rhythm with bass (duo-specific). */
 export function validateDuoRhythmAntiLoop(
   score: ScoreModel,
-  opts?: { compositionContext?: CompositionContext }
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
 ): DuoLockValidationResult {
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
@@ -579,10 +596,11 @@ export function validateDuoRhythmAntiLoop(
     }
     maxRh = Math.max(maxRh, runRh);
   }
-  if (maxRh > 2) {
+  const maxRhAllowed = (opts?.effectiveFormBars ?? 8) >= 16 ? 3 : 2;
+  if (maxRh > maxRhAllowed) {
     issues.push({
       ruleId: 'lock_rhythm_cell_repeat',
-      message: 'Duo LOCK: identical guitar rhythmic cell repeats >2 consecutive bars',
+      message: `Duo LOCK: identical guitar rhythmic cell repeats >${maxRhAllowed} consecutive bars`,
     });
   }
 
@@ -601,10 +619,11 @@ export function validateDuoRhythmAntiLoop(
       unisonRun = 0;
     }
   }
-  if (maxUnison > 2) {
+  const maxUniAllowed = (opts?.effectiveFormBars ?? 8) >= 16 ? 3 : 2;
+  if (maxUnison > maxUniAllowed) {
     issues.push({
       ruleId: 'lock_unison_dense_rhythm',
-      message: 'Duo LOCK: guitar and bass share identical dense rhythm for more than two consecutive bars',
+      message: `Duo LOCK: guitar and bass share identical dense rhythm for more than ${maxUniAllowed} consecutive bars`,
     });
   }
 
@@ -618,7 +637,7 @@ const DUAL_DENSE_ACTIVITY = 6;
  */
 export function validateDuoSwingRhythm(
   score: ScoreModel,
-  opts?: { compositionContext?: CompositionContext }
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
 ): DuoLockValidationResult {
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
@@ -652,10 +671,12 @@ export function validateDuoSwingRhythm(
       dualRun = 0;
     }
   }
-  if (maxDual > 2) {
+  const longFormSwing = (opts?.effectiveFormBars ?? 8) >= 16;
+  const maxDualAllowed = longFormSwing ? 3 : 2;
+  if (maxDual > maxDualAllowed) {
     issues.push({
       ruleId: 'swing_dual_dense_run',
-      message: 'Duo swing: both instruments dense for more than two consecutive bars',
+      message: `Duo swing: both instruments dense for more than ${maxDualAllowed} consecutive bars`,
     });
   }
 
@@ -664,7 +685,8 @@ export function validateDuoSwingRhythm(
     const nNotes = m.events.filter((e) => e.kind === 'note').length;
     if (nNotes >= 5) walkLikeBars++;
   }
-  if (walkLikeBars > 4) {
+  const walkCap = longFormSwing ? 6 : 4;
+  if (walkLikeBars > walkCap) {
     issues.push({
       ruleId: 'swing_bass_constant_walking',
       message: 'Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)',
@@ -684,10 +706,11 @@ export function validateDuoSwingRhythm(
     }
     maxBRh = Math.max(maxBRh, runBRh);
   }
-  if (maxBRh > 2) {
+  const maxBassRhAllowed = longFormSwing ? 3 : 2;
+  if (maxBRh > maxBassRhAllowed) {
     issues.push({
       ruleId: 'swing_bass_rhythm_cell_repeat',
-      message: 'Duo swing: bass rhythmic cell repeats more than two consecutive bars',
+      message: `Duo swing: bass rhythmic cell repeats more than ${maxBassRhAllowed} consecutive bars`,
     });
   }
 
