@@ -35,6 +35,7 @@ import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
+import { runChordSemanticsTests } from './chordSemantics.test';
 import { runDuoV36bTests } from './duoV36b.test';
 import { runPipelineTruthTests } from './pipelineTruth.test';
 import { runNotationSafeRhythmTests } from './notationSafeRhythm.test';
@@ -149,6 +150,7 @@ const suites = [
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
+  { name: 'Chord semantics (unified)', run: runChordSemanticsTests },
   { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
   { name: 'Pipeline truth (input/score/XML)', run: runPipelineTruthTests },
   { name: 'Notation-safe rhythm atoms', run: runNotationSafeRhythmTests },
@@ -237,7 +239,10 @@ function main(): void {
   for (const suite of suites) {
     const results = suite.run();
     console.log(`\n=== ${suite.name} ===`);
-    for (const r of results) {
+    const rows = Array.isArray(results)
+      ? results
+      : [{ name: suite.name, ok: (results as { success: boolean }).success }];
+    for (const r of rows) {
       if (r.ok) {
         console.log(`  PASS: ${r.name}`);
         totalPassed++;
