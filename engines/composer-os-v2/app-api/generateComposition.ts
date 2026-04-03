@@ -18,6 +18,7 @@ import * as path from 'path';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
+import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 
 export interface GenerateResult {
   success: boolean;
@@ -52,6 +53,8 @@ export interface GenerateResult {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  /** Guitar–Bass Duo family: receipt mode line when distinct from default duo. */
+  duoModeReceiptLabel?: string;
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -93,6 +96,7 @@ export interface GenerateResult {
     styleStackPrimaryDisplayName?: string;
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
+    duoModeReceiptLabel?: string;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -133,7 +137,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
-  const duo = req.presetId === 'guitar_bass_duo';
+  const duo = isGuitarBassDuoFamily(req.presetId);
   const chordText =
     duo && typeof req.chordProgressionText === 'string' ? req.chordProgressionText : undefined;
   const result = runGoldenPath(effectiveSeed, {
@@ -158,7 +162,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;
   const parsedBarsForDx = result.context?.generationMetadata.parsedCustomProgressionBars;
-  if (parsedBarsForDx && parsedBarsForDx.length > 0 && req.presetId === 'guitar_bass_duo') {
+  if (parsedBarsForDx && parsedBarsForDx.length > 0 && isGuitarBassDuoFamily(req.presetId)) {
     try {
       chordExportDiagnostics = buildChordExportDiagnosticsReceipt(
         parsedBarsForDx,
@@ -210,6 +214,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       styleStackPrimaryDisplayName: result.context.generationMetadata.styleStackPrimaryDisplayName,
       userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
       userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
+      duoModeReceiptLabel: result.context.generationMetadata.duoModeReceiptLabel,
       chordProgressionSubmittedRaw: result.runManifest.chordProgressionSubmittedRaw,
       parsedChordBarsSnapshot: result.runManifest.parsedChordBarsSnapshot,
       pipelineTruthInputStage: result.runManifest.pipelineTruthInputStage,
@@ -299,6 +304,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     styleStackPrimaryDisplayName: result.context.generationMetadata.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
+    duoModeReceiptLabel: result.context.generationMetadata.duoModeReceiptLabel,
     validation,
     runManifest: result.runManifest
       ? {
@@ -317,6 +323,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           styleStackPrimaryDisplayName: result.runManifest.styleStackPrimaryDisplayName,
           userSelectedStyleDisplayNames: result.runManifest.userSelectedStyleDisplayNames,
           userExplicitPrimaryStyle: result.runManifest.userExplicitPrimaryStyle,
+          duoModeReceiptLabel: result.runManifest.duoModeReceiptLabel,
           keySignatureInferredTonic: result.runManifest.keySignatureInferredTonic,
           keySignatureConfidence: result.runManifest.keySignatureConfidence,
           keySignatureOverrideUsed: result.runManifest.keySignatureOverrideUsed,

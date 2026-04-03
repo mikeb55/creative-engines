@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
@@ -65,7 +66,7 @@ function alternatePitchChordSafe(pitch: number, chord: string, seed: number, sal
  * In-place: mutate a deterministic subset of guitar melody pitches (middle notes per bar).
  */
 export function applyDuoPitchVariationToGuitar(score: ScoreModel, context: CompositionContext, seed: number): void {
-  if (context.presetId !== 'guitar_bass_duo' && context.presetId !== 'ecm_chamber') return;
+  if (!isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') return;
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!guitar) return;
 

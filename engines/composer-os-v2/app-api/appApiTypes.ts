@@ -195,6 +195,7 @@ export interface OutputEntry {
   styleStackPrimaryDisplayName?: string;
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
+  duoModeReceiptLabel?: string;
   /** Song Mode — echoed Style Engine profile when set. */
   styleProfile?: StyleProfile;
   /** Pipeline truth gates (Guitar–Bass Duo 8-bar). */

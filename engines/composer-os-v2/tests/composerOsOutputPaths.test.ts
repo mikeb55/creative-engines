@@ -36,6 +36,10 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     if (!gbd.endsWith(PRESET_OUTPUT_SUBFOLDER.guitar_bass_duo)) fail('guitar_bass_duo subfolder');
     else pass('guitar_bass_duo subfolder');
 
+    const gbdSl = getOutputDirectoryForPreset('guitar_bass_duo_single_line');
+    if (!gbdSl.endsWith(PRESET_OUTPUT_SUBFOLDER.guitar_bass_duo_single_line)) fail('guitar_bass_duo_single_line subfolder');
+    else pass('guitar_bass_duo_single_line subfolder');
+
     const riff = getOutputDirectoryForPreset('riff_generator');
     if (!riff.endsWith(PRESET_OUTPUT_SUBFOLDER.riff_generator)) fail('riff_generator subfolder');
     else pass('riff_generator subfolder');

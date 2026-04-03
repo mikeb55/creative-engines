@@ -12,6 +12,7 @@ import { runKeyInferenceTests } from './keyInference.test';
 import { runScoreModelTests } from './scoreModel.test';
 import { runGoldenPathTests } from './goldenPath.test';
 import { runDuoPitchVariationTests } from './duoPitchVariation.test';
+import { runGuitarBassDuoSingleLineTests } from './guitarBassDuoSingleLine.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
 import { runStyleModuleTests } from './styleModule.test';
@@ -129,6 +130,7 @@ const suites = [
   { name: 'Score Model', run: runScoreModelTests },
   { name: 'Golden Path', run: runGoldenPathTests },
   { name: 'Duo pitch variation (variationEnabled)', run: runDuoPitchVariationTests },
+  { name: 'Guitar–Bass Duo (Single-Line)', run: runGuitarBassDuoSingleLineTests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
   { name: 'Motif', run: runMotifTests },
   { name: 'Style Module', run: runStyleModuleTests },

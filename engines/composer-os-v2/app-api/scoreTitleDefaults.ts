@@ -23,6 +23,7 @@ export function resolveScoreTitleForPreset(
   const t = userTitle?.trim();
   if (t) return t.slice(0, MAX_TITLE_LEN);
   if (presetId === 'guitar_bass_duo') return DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE;
+  if (presetId === 'guitar_bass_duo_single_line') return 'Guitar–Bass Duo (Single-Line) Study';
   if (presetId === 'ecm_chamber') {
     return ecmMode === 'ECM_SCHNEIDER_CHAMBER' ? DEFAULT_ECM_SCHNEIDER_TITLE : DEFAULT_ECM_METHEENY_TITLE;
   }

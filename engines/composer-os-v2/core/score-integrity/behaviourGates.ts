@@ -23,6 +23,7 @@ import { getDensityForBar } from '../density/densityCurvePlanner';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
 import type { CompositionContext } from '../compositionContext';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { validateMotifIntegrity } from '../motif/motifValidation';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../style-modules/metheny/moduleValidation';
@@ -208,7 +209,9 @@ export function runBehaviourGates(
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   const duoGateScore =
-    opts?.presetId === 'guitar_bass_duo' && guitarBarCount > 8 ? sliceScoreToFirstEightBars(score) : score;
+    opts?.presetId && isGuitarBassDuoFamily(opts.presetId) && guitarBarCount > 8
+      ? sliceScoreToFirstEightBars(score)
+      : score;
   const styleStack = opts?.styleStack;
   const styleModules = styleStack
     ? [styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[]
@@ -295,7 +298,7 @@ export function runBehaviourGates(
     if (!ecmLoop.valid) errors.push(...ecmLoop.errors);
   }
 
-  if (opts?.presetId === 'guitar_bass_duo') {
+  if (opts?.presetId && isGuitarBassDuoFamily(opts.presetId)) {
     const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoCtx);
     errors.push(...duoRh.errors);
     if (songMode) duoIdentityWarnings.push(...duoRh.warnings);

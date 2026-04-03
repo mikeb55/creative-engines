@@ -8,11 +8,13 @@ import {
 } from '../src/utils/generateUiCopy';
 
 describe('generateUiCopy', () => {
-  it('has human-facing descriptions for all six modes', () => {
-    expect(MODE_UX).toHaveLength(6);
+  it('has human-facing descriptions for all documented modes', () => {
+    expect(MODE_UX).toHaveLength(8);
     const ids = MODE_UX.map((m) => m.id);
     expect(ids).toEqual([
       'guitar_bass_duo',
+      'guitar_bass_duo_single_line',
+      'wyble_etude',
       'song_mode',
       'ecm_chamber',
       'big_band',
@@ -31,6 +33,9 @@ describe('generateUiCopy', () => {
     const duo = describeOutputKind('guitar_bass_duo');
     expect(duo.category).toBe('full_score_musicxml');
     expect(duo.headline).toMatch(/MusicXML|score/i);
+
+    const duoSl = describeOutputKind('guitar_bass_duo_single_line');
+    expect(duoSl.category).toBe('full_score_musicxml');
 
     const song = describeOutputKind('song_mode');
     expect(song.category).toBe('full_score_musicxml');

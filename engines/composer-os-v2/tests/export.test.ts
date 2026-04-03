@@ -287,6 +287,29 @@ function testV34eExportSortsMeasuresThenNumbersSequentially(): boolean {
   return nums.length === 3 && nums[0] === 1 && nums[1] === 2 && nums[2] === 3;
 }
 
+/** DTD/Sibelius: full-note group requires <voice> before <type> inside <note>. */
+function testVoiceBeforeTypeInExportedNotes(): boolean {
+  const m = createMeasure(1, 'Cmaj7');
+  addEvent(m, createNote(60, 0, 1));
+  const score = createScore('Voice order', [
+    {
+      id: 'guitar',
+      name: 'Guitar',
+      instrumentIdentity: 'clean_electric_guitar',
+      midiProgram: 27,
+      clef: 'treble',
+      measures: [m],
+    },
+  ]);
+  const r = exportScoreModelToMusicXml(score);
+  if (!r.success || !r.xml) return false;
+  const firstNote = r.xml.match(/<note[^>]*>[\s\S]*?<\/note>/)?.[0] ?? '';
+  const vi = firstNote.indexOf('<voice>');
+  const ti = firstNote.indexOf('<type>');
+  if (vi < 0 || ti < 0) return false;
+  return vi < ti;
+}
+
 function testExporterRoundTripDivisionsPerVoice(): boolean {
   const m = createMeasure(1, 'Dmin9');
   addEvent(m, createNote(60, 0, 0.5));
@@ -327,6 +350,7 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Exporter: plain major uses empty kind text (no "major")', testExporterUsesEmptyKindForPlainMajor],
     ['Bar math: notes with dynamics attribute counted', testBarMathIncludesNotesWithAttributes],
     ['Exporter round-trip divisions per voice (Bacharach-shaped bar)', testExporterRoundTripDivisionsPerVoice],
+    ['MusicXML note: <voice> before <type> (DTD/Sibelius)', testVoiceBeforeTypeInExportedNotes],
     ['V3.4e: 8-bar duo sequential measure numbers + integrity', testV34eEightBarDuoMeasureNumbers],
     ['V3.4e: 32-bar duo sequential measure numbers', testV34eThirtyTwoBarDuoMeasureNumbers],
     ['V3.4e: out-of-order measure indices export 1..n', testV34eExportSortsMeasuresThenNumbersSequentially],

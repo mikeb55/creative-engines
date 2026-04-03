@@ -22,6 +22,13 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
     supported: true,
   },
   {
+    id: 'guitar_bass_duo_single_line',
+    name: 'Guitar–Bass Duo (Single-Line)',
+    description:
+      'Same duo harmony path with one single-note guitar line and one single-note bass line (conversational interplay).',
+    supported: true,
+  },
+  {
     id: 'wyble_etude',
     name: 'Wyble Etude',
     description: 'Two-voice contrapuntal guitar etude (Jimmy Wyble style)',
@@ -65,7 +72,7 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
 ];
 
 /** Expected count from app API `getPresets()` — used to detect stale desktop bundles. */
-export const EXPECTED_APP_PRESET_COUNT = 7;
+export const EXPECTED_APP_PRESET_COUNT = 8;
 
 /** Merge live API presets over the static registry so every id always appears (API may be partial/stale). */
 export function mergePresetsWithRegistry(

@@ -9,6 +9,8 @@ import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
+import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -110,6 +112,14 @@ const DUO_DEFAULT_STYLE_STACK: StyleStack = {
 };
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
+
+function isDuoGoldenPathPreset(presetId: string): boolean {
+  return (
+    presetId === 'guitar_bass_duo' ||
+    presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID ||
+    presetId === 'ecm_chamber'
+  );
+}
 
 function totalBarsFromContext(context: CompositionContext): number {
   return context.form.totalBars;
@@ -494,7 +504,7 @@ function buildGuitarPart(
     const ecmMode = context.generationMetadata?.ecmMode;
     const isEcmM = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET';
     const isEcmS = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER';
-    const isDuoGolden = context.presetId === 'guitar_bass_duo' || context.presetId === 'ecm_chamber';
+    const isDuoGolden = isDuoGoldenPathPreset(context.presetId);
     const phase = ((b - 1) % 8) + 1;
     const tex = texturePlan?.find((t) => t.bar === b);
 
@@ -1110,7 +1120,7 @@ function buildBassPart(
     const m = createMeasure(b, chord, rehearsalForBar(b, context));
     const [low, high] = getBassRegisterForBar(bassMap, b, context);
     const phase = ((b - 1) % 8) + 1;
-    const isDuoPreset = context.presetId === 'guitar_bass_duo';
+    const isDuoPreset = isGuitarBassDuoFamily(context.presetId);
     let duoRegLow = Math.max(walkLow, low);
     let duoRegHigh = Math.min(high, bassCeiling);
     if (isDuoPreset) {
@@ -1181,7 +1191,7 @@ function buildBassPart(
     }
 
     const phraseBar = context.presetId === 'ecm_chamber' ? phase : b;
-    const duoGoldenBass = context.presetId === 'guitar_bass_duo';
+    const duoGoldenBass = isGuitarBassDuoFamily(context.presetId);
     const pairIdx = Math.floor((b - 1) / 2);
     const duoPhraseMode: DuoPhraseBehaviourMode | undefined = duoGoldenBass
       ? duoPhraseModeForPairIndex(seed, pairIdx, completedPhraseModes)
@@ -1783,46 +1793,56 @@ export function generateGoldenPathDuoScore(
       ? planEcmTextureBars(tb, 'ECM_METHENY_QUARTET', context.seed)
       : undefined;
 
-  const guitarPart = buildGuitarPart(
-    context,
-    plans.guitarBehaviour,
-    plans.guitarMap,
-    plans.densityPlan,
-    plans.rhythmConstraints,
-    plans.motifState,
-    plans.interactionPlan,
-    texturePlan,
-    plans.styleStack
-  );
-  if (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    tb === 32
-  ) {
-    applySongModePhraseEngineV1(guitarPart, context);
+  let guitarPart: PartModel;
+  let bassPart: PartModel;
+
+  if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
+    const built = buildPhraseFirstDuoScore(context);
+    guitarPart = built.guitarPart;
+    bassPart = built.bassPart;
+    plans.motifState = built.motifState;
+  } else {
+    guitarPart = buildGuitarPart(
+      context,
+      plans.guitarBehaviour,
+      plans.guitarMap,
+      plans.densityPlan,
+      plans.rhythmConstraints,
+      plans.motifState,
+      plans.interactionPlan,
+      texturePlan,
+      plans.styleStack
+    );
+    if (
+      context.generationMetadata?.songModeHookFirstIdentity === true &&
+      context.presetId === 'guitar_bass_duo' &&
+      tb === 32
+    ) {
+      applySongModePhraseEngineV1(guitarPart, context);
+    }
+    if (context.presetId === 'guitar_bass_duo') {
+      nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
+    }
+    if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
+      applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
+    }
+    bassPart = buildBassPart(
+      context,
+      plans.bassBehaviour,
+      plans.bassMap,
+      plans.motifState,
+      guitarPart,
+      plans.interactionPlan,
+      texturePlan
+    );
   }
-  if (context.presetId === 'guitar_bass_duo') {
-    nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
-  }
-  if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
-    applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
-  }
-  const bassPart = buildBassPart(
-    context,
-    plans.bassBehaviour,
-    plans.bassMap,
-    plans.motifState,
-    guitarPart,
-    plans.interactionPlan,
-    texturePlan
-  );
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
   ) ?? ACOUSTIC_UPRIGHT_BASS;
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   tagMomentBarsOnParts([guitarPart, bassPart]);
-  if (context.presetId !== 'ecm_chamber') {
+  if (context.presetId !== 'ecm_chamber' && context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
   }
@@ -1836,7 +1856,7 @@ export function generateGoldenPathDuoScore(
     tempo: bpm,
     feelProfile,
   });
-  if (context.presetId === 'guitar_bass_duo') {
+  if (context.presetId === 'guitar_bass_duo' || context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     rawScore.duoRhythmSnap = 'eighth_beats';
   }
   const articulationOn = context.presetId !== 'ecm_chamber';
@@ -1858,8 +1878,9 @@ export function generateGoldenPathDuoScore(
     applyEcmIdentityCellPass(afterExpressive, context, context.seed);
   }
   if (
-    (context.presetId === 'guitar_bass_duo' || context.presetId === 'ecm_chamber') &&
-    opts?.orchestrationEnabled !== false
+    (isGuitarBassDuoFamily(context.presetId) || context.presetId === 'ecm_chamber') &&
+    opts?.orchestrationEnabled !== false &&
+    context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
   }
@@ -1949,6 +1970,9 @@ export function generateGoldenPathDuoScore(
         ? Math.max(0.62, rawHook)
         : rawHook;
   }
+  if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
+    applyPhraseFirstSingleLineMonophony(afterExpressive);
+  }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
@@ -1970,7 +1994,7 @@ export function generateGoldenPathDuoScore(
       }
     }
   }
-  if (context.presetId === 'guitar_bass_duo') {
+  if (isGuitarBassDuoFamily(context.presetId)) {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
     const gridCheck = validateScoreDuoAttackGrid(afterExpressive);
     if (!gridCheck.valid) {

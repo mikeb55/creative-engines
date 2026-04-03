@@ -26,6 +26,15 @@ export const MODE_UX: ModeUx[] = [
     output: 'Exported MusicXML — a full, bar-complete score file.',
   },
   {
+    id: 'guitar_bass_duo_single_line',
+    label: 'Guitar–Bass Duo (Single-Line)',
+    hint: 'Same duo harmony path with independent single-note guitar and bass lines.',
+    whatItDoes:
+      'Builds an interactive guitar and bass duo using the same chord progression handling as the standard duo preset, but with monophonic lines only (no chordal guitar layer).',
+    bestFor: 'Single-line reading, contrapuntal duo practice, and charts that stay in melodic register.',
+    output: 'Exported MusicXML — full score, same export path as other duo presets.',
+  },
+  {
     id: 'wyble_etude',
     label: 'Wyble Etude',
     hint: 'Contrapuntal two-voice guitar study',
@@ -94,6 +103,7 @@ export function describeOutputKind(presetId: string): {
 } {
   if (
     presetId === 'guitar_bass_duo' ||
+    presetId === 'guitar_bass_duo_single_line' ||
     presetId === 'ecm_chamber' ||
     presetId === 'riff_generator' ||
     presetId === 'song_mode' ||

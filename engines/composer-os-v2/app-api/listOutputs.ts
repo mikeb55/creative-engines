@@ -71,7 +71,7 @@ function outputTypeLabel(presetId: string, artifactKind: OutputEntry['artifactKi
   if (artifactKind === 'planning') {
     return presetId === 'song_mode' ? 'Lead-sheet-ready (structure)' : 'Planning';
   }
-  if (presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber') {
+  if (presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' || presetId === 'ecm_chamber') {
     return 'Score-ready (MusicXML)';
   }
   if (presetId === 'song_mode') {

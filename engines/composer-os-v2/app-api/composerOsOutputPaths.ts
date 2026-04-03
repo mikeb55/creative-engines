@@ -12,6 +12,7 @@ export const MIKE_COMPOSER_FILES_ROOT = 'Mike Composer Files';
 /** Preset id → subfolder under the composer files root (exact names requested). */
 export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   guitar_bass_duo: 'Guitar-Bass Duos',
+  guitar_bass_duo_single_line: 'Guitar-Bass Duo Single-Line',
   big_band: 'Big-Band Compositions',
   ecm_chamber: 'ECM Chamber Compositions',
   string_quartet: 'String Quartet Compositions',

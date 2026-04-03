@@ -17,6 +17,13 @@ const PRESETS: AppPreset[] = [
     supported: true,
   },
   {
+    id: 'guitar_bass_duo_single_line',
+    name: 'Guitar–Bass Duo (Single-Line)',
+    description:
+      'Same duo harmony as Guitar/Bass Duo, with one single-note guitar line and one single-note bass line (no chordal guitar layer).',
+    supported: true,
+  },
+  {
     id: ecmChamberPreset.id,
     name: ecmChamberPreset.name,
     description:

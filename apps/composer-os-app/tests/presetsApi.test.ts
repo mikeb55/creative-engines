@@ -12,6 +12,7 @@ describe('Composer OS presets API', () => {
       'big_band',
       'ecm_chamber',
       'guitar_bass_duo',
+      'guitar_bass_duo_single_line',
       'riff_generator',
       'song_mode',
       'string_quartet',

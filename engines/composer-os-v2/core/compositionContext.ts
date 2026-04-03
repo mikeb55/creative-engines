@@ -82,6 +82,8 @@ export interface GenerationMetadata {
   userSelectedStyleDisplayNames?: string[];
   /** V3.6b — True when primary module is not the duo default primary (`barry_harris`). */
   userExplicitPrimaryStyle?: boolean;
+  /** Guitar–Bass Duo family: receipt line for distinct playback modes (e.g. single-line duo). */
+  duoModeReceiptLabel?: string;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */

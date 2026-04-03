@@ -43,6 +43,7 @@ import {
 
 export const SUPPORTED_APP_PRESET_IDS = [
   'guitar_bass_duo',
+  'guitar_bass_duo_single_line',
   'ecm_chamber',
   'riff_generator',
   'song_mode',
@@ -198,6 +199,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
 
   switch (id) {
     case 'guitar_bass_duo':
+    case 'guitar_bass_duo_single_line':
     case 'ecm_chamber':
       return { ...generateComposition(req, outputDir), composerOsVersion: COMPOSER_OS_VERSION };
     case 'riff_generator':

@@ -102,4 +102,6 @@ export interface RunManifest {
   songModeJamesBrownFunkReceiptTag?: string;
   /** D1: JSON receipt — raw intent echo, clamp, per-phrase resolved control (debug/replay). */
   rhythmIntentD1Receipt?: string;
+  /** Guitar–Bass Duo family: human-readable mode line for receipts (e.g. single-line). */
+  duoModeReceiptLabel?: string;
 }

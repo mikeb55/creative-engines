@@ -12,12 +12,13 @@ export function runModeExposureTests(): { ok: boolean; name: string }[] {
   out.push({
     ok:
       presets.some((p) => p.id === 'guitar_bass_duo' && p.supported) &&
+      presets.some((p) => p.id === 'guitar_bass_duo_single_line' && p.supported) &&
       presets.some((p) => p.id === 'ecm_chamber' && p.supported) &&
       presets.some((p) => p.id === 'riff_generator' && p.supported) &&
       presets.some((p) => p.id === 'song_mode' && p.supported) &&
       presets.some((p) => p.id === 'big_band' && p.supported) &&
       presets.some((p) => p.id === 'string_quartet' && p.supported),
-    name: 'getPresets exposes six supported top-level modes',
+    name: 'getPresets exposes supported top-level modes including guitar_bass_duo_single_line',
   });
 
   out.push({

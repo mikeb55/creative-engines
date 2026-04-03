@@ -56,6 +56,7 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName?: string;
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
+    duoModeReceiptLabel?: string;
     styleProfile?: StyleProfile;
     chordProgressionSubmittedRaw?: string;
     parsedChordBarsSnapshot?: string[];
@@ -110,6 +111,7 @@ export function writeOutputManifest(
     styleStackPrimaryDisplayName: meta.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: meta.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: meta.userExplicitPrimaryStyle,
+    duoModeReceiptLabel: meta.duoModeReceiptLabel,
     styleProfile: meta.styleProfile,
     chordProgressionSubmittedRaw: meta.chordProgressionSubmittedRaw,
     parsedChordBarsSnapshot: meta.parsedChordBarsSnapshot,

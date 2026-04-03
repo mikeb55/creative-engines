@@ -68,6 +68,7 @@ export interface CreateRunManifestInput {
   songModeRhythmOverlayPhraseDiagnostics?: string;
   songModeJamesBrownFunkReceiptTag?: string;
   rhythmIntentD1Receipt?: string;
+  duoModeReceiptLabel?: string;
 }
 
 /** Create run manifest. */
@@ -135,5 +136,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songModeRhythmOverlayPhraseDiagnostics: input.songModeRhythmOverlayPhraseDiagnostics,
     songModeJamesBrownFunkReceiptTag: input.songModeJamesBrownFunkReceiptTag,
     rhythmIntentD1Receipt: input.rhythmIntentD1Receipt,
+    duoModeReceiptLabel: input.duoModeReceiptLabel,
   };
 }

@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
@@ -219,7 +220,7 @@ function phraseArcExtraThinning(guitar: PartModel, context: CompositionContext, 
  * Structural / register orchestration — after variation + ECM shaping, before bar-math seal.
  */
 export function applyDuoOrchestrationPass(score: ScoreModel, context: CompositionContext, seed: number): void {
-  if (context.presetId !== 'guitar_bass_duo' && context.presetId !== 'ecm_chamber') return;
+  if (!isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') return;
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar) return;

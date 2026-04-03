@@ -300,7 +300,10 @@ export function HomeGenerate({
   }, [presetId]);
 
   const isScorePreset =
-    presetId === 'guitar_bass_duo' || presetId === 'ecm_chamber' || presetId === 'riff_generator';
+    presetId === 'guitar_bass_duo' ||
+    presetId === 'guitar_bass_duo_single_line' ||
+    presetId === 'ecm_chamber' ||
+    presetId === 'riff_generator';
 
   const generate = useCallback(
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
@@ -387,6 +390,19 @@ export function HomeGenerate({
             }
             duoHarmonyFields = { harmonyMode: 'custom', chordProgressionText: chordTrim };
           }
+        } else if (presetId === 'guitar_bass_duo_single_line' && chordTrim) {
+          const p8 = parseChordProgressionInput(chordTrim);
+          if (!p8.ok) {
+            setError(p8.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+          duoHarmonyFields = { harmonyMode: 'custom', chordProgressionText: chordTrim };
         }
         if (presetId === 'song_mode' && songChordLine) {
           const parsed32 = parseChordProgressionInputWithBarCount(songChordLine, 32);
@@ -724,6 +740,7 @@ export function HomeGenerate({
       </div>
 
       {(presetId === 'guitar_bass_duo' ||
+        presetId === 'guitar_bass_duo_single_line' ||
         presetId === 'riff_generator' ||
         presetId === 'song_mode' ||
         presetId === 'wyble_etude') && (
@@ -748,7 +765,7 @@ export function HomeGenerate({
               <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
               <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
             </p>
-          ) : presetId === 'guitar_bass_duo' ? (
+          ) : presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' ? (
             <p
               style={{
                 fontSize: '0.8rem',
@@ -795,7 +812,7 @@ export function HomeGenerate({
             placeholder={
               presetId === 'wyble_etude'
                 ? 'Dm9 | G13 | Cmaj7 | Cmaj7/E | Am9 | D7 | … (one chord per bar)'
-                : presetId === 'guitar_bass_duo'
+                : presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line'
                   ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
                   : presetId === 'song_mode'
                     ? 'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | … (32 chords total)'

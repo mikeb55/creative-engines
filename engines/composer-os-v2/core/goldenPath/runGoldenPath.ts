@@ -70,6 +70,7 @@ import { placeMotifsLongFormDuo32 } from '../motif/longFormMotifPlanner';
 import { planDuoLongFormInteraction } from '../interaction/duoLongFormInteractionMap';
 import { evaluateDuoLongFormQuality } from '../quality/duoLongFormQuality';
 import { duoGuitarBarSevenIntervalPeakVsBarSixOk } from '../score-integrity/duoLockQuality';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import {
   assertContextMatchesLocked32,
   assertCustomLockedBeforeScoreGeneration,
@@ -140,7 +141,7 @@ const BUILTIN_CHORD_SYMBOL_PLAN: CompositionContext['chordSymbolPlan'] = {
 
 /** V3.6b — Receipt fields: separate harmony source from internal duo grammar / style stack. */
 function augmentGuitarBassDuoReceiptMetadata(ctx: CompositionContext, styleStack: StyleStack | undefined): void {
-  if (ctx.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(ctx.presetId)) return;
   const primary = styleStack?.primary ?? 'barry_harris';
   const ids = styleStack
     ? ([styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[])
@@ -154,6 +155,9 @@ function augmentGuitarBassDuoReceiptMetadata(ctx: CompositionContext, styleStack
   ctx.generationMetadata.userSelectedStyleDisplayNames =
     userSelectedStyleDisplayNames.length > 0 ? userSelectedStyleDisplayNames : undefined;
   ctx.generationMetadata.userExplicitPrimaryStyle = primary !== 'barry_harris';
+  if (ctx.presetId === 'guitar_bass_duo_single_line') {
+    ctx.generationMetadata.duoModeReceiptLabel = 'Guitar–Bass Duo (Single-Line)';
+  }
 }
 
 interface BuildGoldenPathContextExtras {
@@ -165,6 +169,8 @@ interface BuildGoldenPathContextExtras {
   chordProgressionParseFailed?: boolean;
   /** Resolved from RunGoldenPathOptions.harmonyMode or inferred from non-empty chordProgressionText */
   harmonyModeRequested?: 'builtin' | 'custom' | 'custom_locked';
+  /** Caller preset (standard duo vs single-line) */
+  resolvedPresetId?: string;
 }
 
 function buildGoldenPathContext(
@@ -178,7 +184,6 @@ function buildGoldenPathContext(
     { label: 'A', startBar: 1, length: 4 },
     { label: 'B', startBar: 5, length: 4 },
   ];
-  const form = { sections, totalBars: 32 };
   const parseFailed = !!extras?.chordProgressionParseFailed;
   const expandedChordBars = parsedChordBars && parsedChordBars.length === 8
     ? [...parsedChordBars, ...parsedChordBars, ...parsedChordBars, ...parsedChordBars]
@@ -191,14 +196,29 @@ function buildGoldenPathContext(
     { label: 'A', startBar: 17, length: 8 },
     { label: 'B', startBar: 25, length: 8 },
   ];
-  const phrase = { segments: sections32.map((s) => ({ ...s, density: undefined })), totalBars: 32 };
+  const tb = useCustom ? 32 : 8;
+  const form = useCustom
+    ? {
+        sections: sections32.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
+        totalBars: 32,
+      }
+    : { sections, totalBars: 8 };
+  const phrase = useCustom
+    ? { segments: sections32.map((s) => ({ ...s, density: undefined })), totalBars: 32 }
+    : {
+        segments: [
+          { label: 'A', startBar: 1, length: 4, density: undefined },
+          { label: 'B', startBar: 5, length: 4, density: undefined },
+        ],
+        totalBars: 8,
+      };
   const chordSymbolPlan = useCustom ? buildChordSymbolPlanFromBars(expandedChordBars) : BUILTIN_CHORD_SYMBOL_PLAN;
   const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
 
   const sectionRoles = planSectionRoles(sections, { A: 'statement', B: 'contrast' });
-  const densityPlan = planDensityCurve(sectionRoles, 32);
-  const densityCurve = { segments: densityPlan.segments, totalBars: 32 };
+  const densityPlan = planDensityCurve(sectionRoles, tb);
+  const densityCurve = { segments: densityPlan.segments, totalBars: tb };
 
   const guitarMap = planGuitarRegisterMap(sectionRoles);
   const bassMap = planBassRegisterMap(sectionRoles);
@@ -219,7 +239,7 @@ function buildGoldenPathContext(
 
   return {
     systemVersion: '2.0.0',
-    presetId: 'guitar_bass_duo',
+    presetId: extras?.resolvedPresetId ?? 'guitar_bass_duo',
     seed,
     form,
     feel,
@@ -250,7 +270,7 @@ function buildGoldenPathContext(
 
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
   const presetId = options?.presetId ?? 'guitar_bass_duo';
-  if (presetId === 'guitar_bass_duo' && options?.harmonyMode === 'custom_locked') {
+  if (isGuitarBassDuoFamily(presetId) && options?.harmonyMode === 'custom_locked') {
     const pb = options.parsedChordBars;
     if (pb && pb.length !== 32) {
       throw new Error(
@@ -265,7 +285,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
   }
   /** Song Mode / API inject: custom_locked uses ONLY lockedHarmonyBarsRaw (no planner / no alternate source). */
   if (
-    presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(presetId) &&
     options?.harmonyMode === 'custom_locked' &&
     options.lockedHarmonyBarsRaw?.length === 32
   ) {
@@ -282,10 +302,11 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     }
     return buildDuoLongFormCompositionContextFromBars32(seed, bars, {
       chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+      presetId,
     }).context;
   }
   /** 32 explicit bars → long-form (non–custom_locked only; locked must use branch above). */
-  if (presetId === 'guitar_bass_duo' && options?.parsedChordBars?.length === 32) {
+  if (isGuitarBassDuoFamily(presetId) && options?.parsedChordBars?.length === 32) {
     if (options.harmonyMode === 'custom_locked') {
       throw new Error(
         'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked must resolve only via lockedHarmonyBarsRaw.'
@@ -294,6 +315,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     assertCustomLockedRouting('buildContextForGoldenPath:32bar', options, options.parsedChordBars);
     return buildDuoLongFormCompositionContextFromBars32(seed, options.parsedChordBars, {
       chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+      presetId,
     }).context;
   }
   if (presetId === 'ecm_chamber') {
@@ -316,10 +338,12 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       assertCustomLockedRouting('buildContextForGoldenPath:duo32', options, options.parsedChordBars);
       return buildDuoLongFormCompositionContextFromBars32(seed, options.parsedChordBars, {
         chordProgressionInputRaw: options?.chordProgressionText?.trim(),
+        presetId,
       }).context;
     }
     return buildDuoLongFormCompositionContext(seed, {
       parsedChordBars8: options?.parsedChordBars?.length === 8 ? options.parsedChordBars : undefined,
+      presetId,
     }).context;
   }
   const harmonyModeRequested: 'builtin' | 'custom' | 'custom_locked' =
@@ -328,6 +352,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
     progressionMode: options?.parsedChordBars?.length === 8 ? 'custom' : 'builtin',
     harmonyModeRequested,
+    resolvedPresetId: presetId,
   });
 }
 
@@ -417,7 +442,7 @@ function buildGoldenPathPlans(
     triadPairs: stackIds.includes('triad_pairs'),
     metheny: stackIds.includes('metheny'),
     bacharach: stackIds.includes('bacharach'),
-    duoLock: context.presetId === 'guitar_bass_duo',
+    duoLock: isGuitarBassDuoFamily(context.presetId),
   };
   const baseMotifs = generateMotif(seed, guitarReg, guitarReg + 20, motifHints);
   const placements =
@@ -425,7 +450,7 @@ function buildGoldenPathPlans(
       ? placeMotifsForEcmForm(baseMotifs, seed, context.form.totalBars)
       : isDuoLong
         ? placeMotifsLongFormDuo32(baseMotifs, seed)
-        : placeMotifsAcrossBars(baseMotifs, seed, context.presetId === 'guitar_bass_duo');
+        : placeMotifsAcrossBars(baseMotifs, seed, isGuitarBassDuoFamily(context.presetId));
   const motifState = { baseMotifs, placements };
 
   const interactionPlan = isDuoLong
@@ -456,6 +481,7 @@ function harmonyParseFailureGoldenPathResult(
     chordProgressionParseFailed: true,
     chordProgressionInputRaw: options?.chordProgressionText?.trim(),
     progressionMode: 'custom',
+    resolvedPresetId: options?.presetId ?? 'guitar_bass_duo',
   });
   const plans = buildGoldenPathPlans(seed, context, options);
   const emptyScore: ScoreModel = {
@@ -572,7 +598,7 @@ export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
   let opts = options ? { ...options } : undefined;
   const presetIdEarly = opts?.presetId ?? 'guitar_bass_duo';
-  if (presetIdEarly !== 'guitar_bass_duo') {
+  if (!isGuitarBassDuoFamily(presetIdEarly)) {
     opts = {
       ...(opts ?? {}),
       harmonyMode: 'builtin',
@@ -592,7 +618,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   const expectedBars = resolveExpectedCustomChordBarCount(opts);
 
   if (
-    presetIdEarly === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(presetIdEarly) &&
     (harmonyMode === 'custom' || harmonyMode === 'custom_locked') &&
     !(opts?.chordProgressionText?.trim())
   ) {
@@ -605,7 +631,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 
   let resolved: RunGoldenPathOptions | undefined = opts;
   if (
-    presetIdEarly === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(presetIdEarly) &&
     opts?.harmonyMode === 'custom_locked' &&
     opts.lockedHarmonyBarsRaw?.length === 32
   ) {
@@ -999,7 +1025,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     sibeliusSafe,
     chordRehearsalComplete:
       chordSymbols.length >=
-        (context.presetId === 'ecm_chamber' || context.presetId === 'guitar_bass_duo'
+        (context.presetId === 'ecm_chamber' || isGuitarBassDuoFamily(context.presetId)
           ? context.form.totalBars
           : 8) && rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
@@ -1082,6 +1108,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         resolvedByPhrase: md.rhythmIntentResolvedByPhrase,
       });
     })(),
+    duoModeReceiptLabel: appliedContext.generationMetadata.duoModeReceiptLabel,
   });
 
   const success =

@@ -58,7 +58,7 @@ export interface BuildDuoLongFormContextOptions {
 export function buildDuoLongFormCompositionContextFromBars32(
   seed: number,
   bars32: string[],
-  opts?: { chordProgressionInputRaw?: string }
+  opts?: { chordProgressionInputRaw?: string; presetId?: string }
 ): { context: CompositionContext; modulationPlan: ModulationPlan } {
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
@@ -108,7 +108,7 @@ export function buildDuoLongFormCompositionContextFromBars32(
 
   const context: CompositionContext = {
     systemVersion: '2.0.0',
-    presetId: 'guitar_bass_duo',
+    presetId: opts?.presetId ?? 'guitar_bass_duo',
     seed,
     form,
     feel,
@@ -144,7 +144,7 @@ export function buildDuoLongFormCompositionContextFromBars32(
 
 export function buildDuoLongFormCompositionContext(
   seed: number,
-  options?: BuildDuoLongFormContextOptions
+  options?: BuildDuoLongFormContextOptions & { presetId?: string }
 ): { context: CompositionContext; modulationPlan: ModulationPlan } {
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
@@ -200,7 +200,7 @@ export function buildDuoLongFormCompositionContext(
 
   const context: CompositionContext = {
     systemVersion: '2.0.0',
-    presetId: 'guitar_bass_duo',
+    presetId: options?.presetId ?? 'guitar_bass_duo',
     seed,
     form,
     feel,
