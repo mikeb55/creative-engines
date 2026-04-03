@@ -10,7 +10,7 @@
 
 **MusicXML export stability** — Sibelius-safe rhythm encoding; undotted decomposition (no reliance on dotted-beat fractional tokens such as `1.5` / `0.75` in the export path); multi-voice export kept clean. Details: [CHANGELOG.md](./CHANGELOG.md) — *MusicXML Export (Stability)* and the Composer OS section in the [repo README](../README.md).
 
-**Roadmap:** **#16 Chord Handling Robustness** is the **next phase** (ongoing hardening and UX around chord input).
+**Roadmap:** **#16 Chord Handling Robustness** is **DONE** — MusicXML export stabilised; GP8 is primary detailed chord-validation target; Sibelius accepted as simplification-prone fallback. Further UX around chord input may continue incrementally.
 
 ## Phase labels (A / B / C / D)
 

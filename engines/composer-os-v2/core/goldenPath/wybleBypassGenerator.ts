@@ -48,6 +48,38 @@ function parseMeasureVoiceDurations(xml: string, measureNum: number, voice: stri
 const EPS = 1e-9;
 const BEATS_PER_BAR = 4;
 
+/** Default Wyble Etude (Composer OS) guitar notation: one octave lower than generator output. */
+export const WYBLE_ETUDE_GUITAR_PITCH_OFFSET_SEMITONES = -12;
+/** Practical written low E on guitar (MIDI); lift octaves only when -12 would land below this. */
+export const WYBLE_ETUDE_GUITAR_MIN_WRITTEN_MIDI = 40;
+
+/**
+ * Map generator MIDI to written guitar pitch for Wyble Etude export only.
+ * Rests (0) unchanged; sub-E2 pitches are raised by whole octaves until in range.
+ */
+export function applyWybleEtudeGuitarWrittenPitch(midi: number): number {
+  if (midi <= 0) return midi;
+  let p = midi + WYBLE_ETUDE_GUITAR_PITCH_OFFSET_SEMITONES;
+  if (p < WYBLE_ETUDE_GUITAR_MIN_WRITTEN_MIDI) {
+    const octavesUp = Math.ceil((WYBLE_ETUDE_GUITAR_MIN_WRITTEN_MIDI - p) / 12);
+    p += 12 * octavesUp;
+  }
+  return p;
+}
+
+/** Apply {@link applyWybleEtudeGuitarWrittenPitch} to voices 1–2 (Wyble guitar polyphony). Chord symbols untouched. */
+export function applyWybleEtudeGuitarPitchRegisterToScore(score: Score): void {
+  for (const m of score.measures) {
+    for (const vid of [1, 2] as const) {
+      for (const e of m.voices[vid] ?? []) {
+        if (e.pitch !== 0) {
+          e.pitch = applyWybleEtudeGuitarWrittenPitch(e.pitch);
+        }
+      }
+    }
+  }
+}
+
 type WybleEv = { pitch: number; duration: number; beat: number };
 
 type VoiceScan = { idx: number; pendingDur: number; pendingPitch: number };
@@ -194,6 +226,7 @@ export function generateWybleEtudeXml(
   sealWybleBarMath(score);
   applyWybleVoiceIndependence(score, seed ?? 0);
   sealWybleBarMath(score);
+  applyWybleEtudeGuitarPitchRegisterToScore(score);
   const lowerDiag = {
     rawLowerCount: output.lower_line.events.length,
     convertedLowerCount: score.measures.reduce((n, m) => n + (m.voices[2]?.length ?? 0), 0),

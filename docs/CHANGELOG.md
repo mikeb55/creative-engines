@@ -32,7 +32,7 @@
 | Item | Status |
 |------|--------|
 | **#19 Unified Chord Semantics** | **DONE** |
-| **#16 Chord Handling Robustness** | **Next phase** (current focus) |
+| **#16 Chord Handling Robustness** | **DONE** — MusicXML export stabilised; GP8 is primary detailed chord-validation target; Sibelius accepted as simplification-prone fallback. |
 
 ---
 
