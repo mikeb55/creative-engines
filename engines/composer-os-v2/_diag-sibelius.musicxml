@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>Phase 18.2A Polyphony Diagnostic (export proof)</work-title></work>
+  <part-list>
+    <score-part id="phase182a-guitar-polyphony-diagnostic">
+      <part-name>Guitar (diagnostic)</part-name>
+      <score-instrument id="phase182a-guitar-polyphony-diagnostic-I1"><instrument-name>Guitar (diagnostic)</instrument-name></score-instrument>
+      <midi-instrument id="phase182a-guitar-polyphony-diagnostic-I1">
+        <midi-program>28</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="phase182a-guitar-polyphony-diagnostic">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+    <sound tempo="100"/>
+        <note><pitch><step>C</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><pitch><step>F</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><pitch><step>G</step><octave>3</octave></pitch><duration>960</duration><voice>2</voice><type>half</type><stem>down</stem><staff>1</staff></note>
+        <note><pitch><step>G</step><octave>3</octave></pitch><duration>960</duration><voice>2</voice><type>half</type><stem>down</stem><staff>1</staff></note>
+  </measure>
+  </part>
+</score-partwise>

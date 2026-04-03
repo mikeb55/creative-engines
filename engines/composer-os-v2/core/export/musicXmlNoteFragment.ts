@@ -2,23 +2,26 @@
  * Canonical MusicXML 3.1 partwise <note> serialization for Composer OS ScoreModel export.
  *
  * Child order matches the MusicXML "full-note" group: pitch|rest, duration, tie*,
- * then voice before type/dot, then notations (Sibelius DTD rejects voice after type).
+ * then voice before type/dot, then stem (multi-voice), then notations.
+ * Sibelius DTD: voice before type; stem after type/dot (before notations).
  *
- * Do not emit <staff> on notes unless the part declares multiple staves — callers pass
- * staff only when multi-staff; single-line duo omits it.
+ * For multi-voice single-staff guitar, callers may pass staffXml (<staff>1</staff>) so Sibelius/GP8
+ * bind each voice layer to the staff (omit when monophonic).
  */
 
-/** Rest note: rest → duration → voice → type (+ dots). */
+/** Rest note: rest → duration → voice → staff? → type (+ dots). */
 export function noteXmlRestFragment(opts: {
   durationTicks: number;
   voice: number;
   typeAndDotsXml: string;
+  /** Multi-voice single staff: e.g. <staff>1</staff> (after voice, before type). */
+  staffXml?: string;
 }): string {
-  const { durationTicks, voice, typeAndDotsXml } = opts;
-  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${typeAndDotsXml}</note>\n`;
+  const { durationTicks, voice, typeAndDotsXml, staffXml = '' } = opts;
+  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${staffXml}${typeAndDotsXml}</note>\n`;
 }
 
-/** Pitched note: pitch → duration → tie → voice → type (+ dots) → notations. */
+/** Pitched note: pitch → duration → tie → voice → type (+ dots) → stem? → staff? → notations. */
 export function noteXmlPitchedFragment(opts: {
   dynamicsAttr: string;
   pitchXml: string;
@@ -26,8 +29,22 @@ export function noteXmlPitchedFragment(opts: {
   tieXml: string;
   voice: number;
   typeAndDotsXml: string;
+  /** Multi-voice: stem element so Sibelius / Guitar Pro render separate voices on one staff. */
+  stemXml?: string;
+  /** After stem: explicit staff for single-staff polyphony (Sibelius / GP8). */
+  staffXml?: string;
   notationsXml: string;
 }): string {
-  const { dynamicsAttr, pitchXml, durationTicks, tieXml, voice, typeAndDotsXml, notationsXml } = opts;
-  return `        <note${dynamicsAttr}>${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${notationsXml}</note>\n`;
+  const {
+    dynamicsAttr,
+    pitchXml,
+    durationTicks,
+    tieXml,
+    voice,
+    typeAndDotsXml,
+    stemXml = '',
+    staffXml = '',
+    notationsXml,
+  } = opts;
+  return `        <note${dynamicsAttr}>${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
 }

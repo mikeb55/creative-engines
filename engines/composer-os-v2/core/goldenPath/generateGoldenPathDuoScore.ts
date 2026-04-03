@@ -107,6 +107,11 @@ import {
   consecutiveChordStreakEndingAtBar,
   isLateClosingSlice,
 } from './lateClosingSectionDuo';
+import {
+  assertPhaseACheckpointA,
+  injectPhaseAGuitarVoice2Probe,
+  logGuitarVoice2Checkpoint,
+} from './phaseAGuitarPolyphonyProbe';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -1986,6 +1991,9 @@ export function generateGoldenPathDuoScore(
     if (context.presetId === 'guitar_bass_duo') {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
       applyLateClosingGuitarContourNudge(guitarPart, context);
+      const phaseABars = injectPhaseAGuitarVoice2Probe(guitarPart, context);
+      logGuitarVoice2Checkpoint('A', guitarPart);
+      assertPhaseACheckpointA(guitarPart, phaseABars);
     }
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
       applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
@@ -2138,6 +2146,10 @@ export function generateGoldenPathDuoScore(
     applyPhraseFirstSingleLineMonophony(afterExpressive);
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
+  {
+    const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gPostFin) logGuitarVoice2Checkpoint('post-finalize', gPostFin);
+  }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     context.presetId === 'guitar_bass_duo' &&

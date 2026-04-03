@@ -3,6 +3,7 @@
  */
 
 import { exportScoreModelToMusicXml, exportToMusicXml } from '../core/export/musicxmlExporter';
+import { exportPhase182AGuitarPolyphonyDiagnosticMusicXml } from '../core/export/polyphonyDiagnosticExport';
 import { validateMusicXmlSchema, reParseMusicXml } from '../core/export/musicxmlValidation';
 import { checkSibeliusSafe } from '../core/export/sibeliusSafeProfile';
 import {
@@ -310,6 +311,31 @@ function testVoiceBeforeTypeInExportedNotes(): boolean {
   return vi < ti;
 }
 
+/**
+ * Phase 18.2A: single-staff backup polyphony + harmony before first note; structural assertions in exporter.
+ */
+function testPhase182ADiagnosticPolyphonyStructure(): boolean {
+  const r = exportPhase182AGuitarPolyphonyDiagnosticMusicXml();
+  if (!r.success || !r.xml) return false;
+  const xml = r.xml;
+  if (!xml.includes(`<backup><duration>${MEASURE_DIVISIONS}</duration></backup>`)) return false;
+  const part = xml.match(/<part id="phase182a-guitar-polyphony-diagnostic"[\s\S]*?<\/part>/)?.[0];
+  if (!part) return false;
+  const m1 = part.match(/<measure number="1">[\s\S]*?<\/measure>/)?.[0] ?? '';
+  const hi = m1.indexOf('<harmony');
+  const ni = m1.indexOf('<note');
+  if (hi < 0 || ni < 0 || hi > ni) return false;
+  const bi = m1.indexOf('<backup>');
+  if (bi < 0 || bi < ni) return false;
+  const voice1Before = (m1.slice(0, bi).match(/<voice>1<\/voice>/g) ?? []).length;
+  const afterBackup = m1.slice(bi);
+  const voice2After = (afterBackup.match(/<voice>2<\/voice>/g) ?? []).length;
+  if (voice1Before !== 4 || voice2After < 1) return false;
+  if (!afterBackup.includes('<type>whole</type>')) return false;
+  if (!validateExportedMusicXmlBarMath(xml).valid) return false;
+  return checkSibeliusSafe(xml).safe;
+}
+
 function testExporterRoundTripDivisionsPerVoice(): boolean {
   const m = createMeasure(1, 'Dmin9');
   addEvent(m, createNote(60, 0, 0.5));
@@ -351,6 +377,10 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Bar math: notes with dynamics attribute counted', testBarMathIncludesNotesWithAttributes],
     ['Exporter round-trip divisions per voice (Bacharach-shaped bar)', testExporterRoundTripDivisionsPerVoice],
     ['MusicXML note: <voice> before <type> (DTD/Sibelius)', testVoiceBeforeTypeInExportedNotes],
+    [
+      'Phase 18.2A: polyphony diagnostic — harmony before notes, backup, bar math (XML only)',
+      testPhase182ADiagnosticPolyphonyStructure,
+    ],
     ['V3.4e: 8-bar duo sequential measure numbers + integrity', testV34eEightBarDuoMeasureNumbers],
     ['V3.4e: 32-bar duo sequential measure numbers', testV34eThirtyTwoBarDuoMeasureNumbers],
     ['V3.4e: out-of-order measure indices export 1..n', testV34eExportSortsMeasuresThenNumbersSequentially],

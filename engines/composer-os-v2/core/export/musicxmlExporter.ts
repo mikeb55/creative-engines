@@ -6,7 +6,7 @@
 
 import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
-import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, MeasureModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 import {
@@ -21,6 +21,8 @@ import {
   tickSpecForLength,
 } from './musicXmlTickEncoding';
 import { noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
+import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
+import { assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
@@ -65,11 +67,19 @@ function tieXmlForSplitIndex(i: number, n: number): string {
   return '<tie type="stop"/><tie type="start"/>';
 }
 
-function emitRestTicks(parts: number[], voice: number): string {
+/** Explicit staff 1 on each event — required by some importers for single-staff multi-voice (Sibelius, GP8). */
+const STAFF_1_XML = '<staff>1</staff>';
+
+function emitRestTicks(parts: number[], voice: number, staffXml?: string): string {
   let xml = '';
   for (const t of parts) {
     const spec = tickSpecForLength(t);
-    xml += noteXmlRestFragment({ durationTicks: t, voice, typeAndDotsXml: typeAndDotsXml(spec) });
+    xml += noteXmlRestFragment({
+      durationTicks: t,
+      voice,
+      typeAndDotsXml: typeAndDotsXml(spec),
+      ...(staffXml ? { staffXml } : {}),
+    });
   }
   return xml;
 }
@@ -79,7 +89,9 @@ function emitPitchedTicks(
   voice: number,
   pitchXml: string,
   articulationXml: string,
-  dynAttr: string
+  dynAttr: string,
+  stemXml?: string,
+  staffXml?: string
 ): string {
   let xml = '';
   const n = parts.length;
@@ -94,20 +106,28 @@ function emitPitchedTicks(
       tieXml: tie,
       voice,
       typeAndDotsXml: typeAndDotsXml(spec),
+      stemXml,
+      ...(staffXml ? { staffXml } : {}),
       notationsXml: i === 0 ? articulationXml : '',
     });
   }
   return xml;
 }
 
+/** Odd voices stem up, even stem down — matches common two-layer staff convention for import software. */
+function stemXmlForMultiVoiceLayer(voice: number, multiVoice: boolean): string | undefined {
+  if (!multiVoice) return undefined;
+  return voice % 2 === 1 ? '<stem>up</stem>' : '<stem>down</stem>';
+}
+
 /**
  * Same tick arithmetic as `eventsToXml` for one voice — parity with written XML.
  */
 export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: number): number {
-  const sorted = [...measure.events]
+  const voiceEvents = [...measure.events]
     .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .filter((e) => (e.voice ?? 1) === voice)
     .sort((a, b) => a.startBeat - b.startBeat);
-  const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
   let cursor = 0;
   let sum = 0;
   for (const e of voiceEvents) {
@@ -139,24 +159,33 @@ function eventsToXml(
   opts: MusicXmlExportOptions
 ): string {
   const partId = part.id;
-  let sorted = [...measure.events]
-    .filter((e) => e.kind === 'note' || e.kind === 'rest')
-    .sort((a, b) => a.startBeat - b.startBeat);
+  let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
   if (opts.bassStaffVoice1Only && part.instrumentIdentity === 'acoustic_upright_bass') {
-    sorted = sorted.map((e) => ({ ...e, voice: 1 }));
+    raw = raw.map((e) => ({ ...e, voice: 1 }));
   }
-  const voices = [...new Set(sorted.map((e) => e.voice ?? 1))].sort((a, b) => a - b);
+  /** Per-voice buckets — never interleave voices; each layer sorted by time only within that voice. */
+  const byVoice = new Map<number, ScoreEvent[]>();
+  for (const e of raw) {
+    const v = e.voice ?? 1;
+    if (!byVoice.has(v)) byVoice.set(v, []);
+    byVoice.get(v)!.push(e);
+  }
+  const voices = [...byVoice.keys()].sort((a, b) => a - b);
+  const multiVoice = voices.length > 1;
+  const staffPolyphonyXml =
+    multiVoice && part.instrumentIdentity === 'clean_electric_guitar' ? STAFF_1_XML : undefined;
   const debugTicks = typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_MUSICXML_TICKS === '1';
 
   let xml = '';
   for (let vi = 0; vi < voices.length; vi++) {
     const voice = voices[vi];
     if (vi > 0) {
+      /** Full-measure rewind so voice 2+ starts at beat 0 in the notation stream (MusicXML multi-voice contract). */
       xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
     }
     let cursor = 0;
-    cursor = 0;
-    const voiceEvents = sorted.filter((e) => (e.voice ?? 1) === voice);
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => a.startBeat - b.startBeat);
+    const stemXml = stemXmlForMultiVoiceLayer(voice, multiVoice);
     let voiceTickSum = 0;
 
     for (const e of voiceEvents) {
@@ -171,7 +200,7 @@ function eventsToXml(
       if (safeStart > cursor) {
         const restDiv = safeStart - cursor;
         const parts = decompose(restDiv);
-        xml += emitRestTicks(parts, voice);
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
         for (const p of parts) voiceTickSum += p;
         cursor = safeStart;
       }
@@ -179,7 +208,7 @@ function eventsToXml(
       const durDiv = endDiv - safeStart;
       const parts = decompose(durDiv);
       if (e.kind === 'rest') {
-        xml += emitRestTicks(parts, voice);
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       } else {
         const { step, alter, octave } = midiToPitch(e.pitch);
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
@@ -191,7 +220,7 @@ function eventsToXml(
           vel !== undefined
             ? ` dynamics="${Math.min(100, Math.max(0, (vel / 127) * 100)).toFixed(2)}"`
             : '';
-        xml += emitPitchedTicks(parts, voice, pitchXml, notationsEl, dynAttr);
+        xml += emitPitchedTicks(parts, voice, pitchXml, notationsEl, dynAttr, stemXml, staffPolyphonyXml);
       }
       for (const p of parts) voiceTickSum += p;
       cursor = endDiv;
@@ -200,15 +229,11 @@ function eventsToXml(
     if (cursor < MEASURE_DIVISIONS) {
       const restDiv = MEASURE_DIVISIONS - cursor;
       const parts = decompose(restDiv);
-      xml += emitRestTicks(parts, voice);
+      xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       for (const p of parts) voiceTickSum += p;
     }
 
     if (voiceTickSum !== MEASURE_DIVISIONS) {
-      if (voice !== 1) {
-        console.warn(`[wyble-export] voice ${voice} tick sum ${voiceTickSum} !== ${MEASURE_DIVISIONS} in measure ${measureIndex + 1} — skipping voice`);
-        continue;
-      }
       throw new Error(
         `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (divisions×beats=${DIVISIONS}×4)`
       );
@@ -226,6 +251,7 @@ function eventsToXml(
 /** Export ScoreModel to MusicXML string. */
 export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXmlExportOptions): MusicXmlExportResult {
   try {
+    logGuitarVoice2CheckpointFromScore('B-pre-export', score);
     const opts: MusicXmlExportOptions = options ?? {};
     const decompose = opts.minimizeNoteFragmentation ? decomposeTicksToMinimalParts : decomposeTicksToStandardParts;
     const dbg = score.keySignatureExportDebug;
@@ -278,38 +304,24 @@ ${partList}
         xml += `  <measure number="${measureNumber}">\n`;
 
         if (i === 0) {
-          const tempoEl = score.tempo ? `\n    <sound tempo="${score.tempo}"/>` : '';
-          const feelEl =
-            partIndex === 0 && score.feelProfile
-              ? `    <direction placement="below"><direction-type><words>${escapeXml(
-                  `Feel: ${score.feelProfile.tempoFeel}; straight notation (export); duo`
-                )}</words></direction-type></direction>\n`
-              : '';
           const ks = score.keySignature;
           const fifths = ks?.fifths ?? 0;
           const keyMode = ks?.mode ?? 'major';
           const hideKey = ks?.hideKeySignature ?? false;
           const printAttr = hideKey ? ' print-object="no"' : '';
-          const keyCaption =
-            partIndex === 0 && ks?.caption
-              ? `    <direction placement="above"><direction-type><words>${escapeXml(ks.caption)}</words></direction-type></direction>\n`
-              : '';
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
       <clef><sign>${clefSign}</sign><line>${clefLine}</line></clef>
-    </attributes>${tempoEl}
-${keyCaption}${feelEl}`;
+    </attributes>
+`;
         }
 
-        if (m.rehearsalMark) {
-          xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
-        }
         /**
+         * Sibelius-strict sibling order: beat-1 &lt;harmony&gt; BEFORE first &lt;note&gt; (not after &lt;sound&gt;/&lt;direction&gt;).
          * Single chord writer: lead-sheet harmony only on the guitar part (not bass, not by index).
-         * No `<staff>` inside `<harmony>` here: this part is single-staff; DTD/Sibelius reject `<staff>`
-         * in harmony when the part has one staff (Wyble multi-staff scores use staff in harmony separately).
          */
         const assertLocked = opts.assertLockedHarmonyBars;
         const lockedChord =
@@ -333,6 +345,27 @@ ${keyCaption}${feelEl}`;
           xml += buildHarmonyXmlLine(chordForHarmony);
         }
 
+        if (i === 0) {
+          const tempoEl = score.tempo && partIndex === 0 ? `\n    <sound tempo="${score.tempo}"/>` : '';
+          const feelEl =
+            partIndex === 0 && score.feelProfile
+              ? `    <direction placement="below"><direction-type><words>${escapeXml(
+                  `Feel: ${score.feelProfile.tempoFeel}; straight notation (export); duo`
+                )}</words></direction-type></direction>\n`
+              : '';
+          const ks = score.keySignature;
+          const keyCaption =
+            partIndex === 0 && ks?.caption
+              ? `    <direction placement="above"><direction-type><words>${escapeXml(ks.caption)}</words></direction-type></direction>\n`
+              : '';
+          xml += `${tempoEl}
+${keyCaption}${feelEl}`;
+        }
+
+        if (m.rehearsalMark) {
+          xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
+        }
+
         xml += eventsToXml(m, i, part, decompose, opts);
         xml += `  </measure>\n`;
       }
@@ -341,6 +374,7 @@ ${keyCaption}${feelEl}`;
 
     xml += `</score-partwise>
 `;
+    assertSibeliusExportMeasureStructure(xml);
     return { success: true, xml, errors: [] };
   } catch (e) {
     return {
