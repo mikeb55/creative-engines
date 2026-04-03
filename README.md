@@ -182,3 +182,26 @@ Or double-click `launchers/composer_studio_launcher.bat`.
 ## Project-Independent
 
 This framework works in any Cursor project, any repository, any musical style. Reference from your project; do not duplicate.
+
+---
+
+## Stage 17 — Phrase-First Pipeline (Complete)
+
+The Guitar–Bass Duo (Single-Line) engine now uses a phrase-first architecture.
+
+Key changes:
+- Generation is based on PhrasePlan (not motifs)
+- Two phrases (statement / response) are generated and scored
+- Best candidate is selected per phrase
+- Guitar register corrected via -12 transpose
+
+Current limitations:
+- Behaviour gates failing (square phrasing, weak interaction)
+- No swing / syncopation layer yet
+
+Next step:
+- Stage 18 — Phrase Realisation Layer
+  - onset staggering
+  - rest injection
+  - call/response enforcement
+  - syncopation rules
