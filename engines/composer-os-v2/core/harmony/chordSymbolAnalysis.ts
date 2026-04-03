@@ -4,6 +4,7 @@
 
 import type { ChordToneSet } from '../goldenPath/guitarBassDuoHarmony';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
+import { normalizeLeadSheetChordSpelling } from '../../../core/leadSheetChordNormalize';
 
 const ROOT_RE = /^([A-G](?:#|b)?)/i;
 
@@ -49,7 +50,7 @@ export interface ParsedChordSymbol {
 
 /** Split "D/F#" → harmony D, slash F#. */
 export function parseChordSymbol(symbol: string): ParsedChordSymbol {
-  const s = symbol.trim();
+  const s = normalizeLeadSheetChordSpelling(symbol.trim());
   const slash = s.indexOf('/');
   if (slash < 0) {
     return { display: s, harmonyPart: s };

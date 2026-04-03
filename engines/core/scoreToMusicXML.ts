@@ -4,8 +4,11 @@
 
 import type { Score, NoteEvent } from './timing';
 import { DIVISIONS, MEASURE_DIVISIONS } from './timing';
-import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
-import { buildHarmonyXmlLineFromCanonical } from './canonicalChord';
+import {
+  assertWybleHarmonyExportInvariant,
+  buildWybleMeasureHarmonyXml,
+  expectedWybleHarmonyCount,
+} from './wybleHarmonyExport';
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -62,6 +65,11 @@ export interface SerializeOptions {
   staves?: number;
   /** General MIDI program (1–128), e.g. 24 nylon guitar — avoids host defaulting to piano. */
   midiProgram?: number;
+  /**
+   * When set, throws if the written XML does not contain exactly this many `<harmony>` blocks
+   * (guards duplicate writers and silent drops).
+   */
+  assertHarmonyCount?: number;
 }
 
 /** Serialize single-part score (Wyble, Counterpoint) to MusicXML. */
@@ -107,13 +115,7 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
     </attributes>
 `;
     }
-    if (m.canonicalChord) {
-      xml += buildHarmonyXmlLineFromCanonical(m.canonicalChord, {
-        staffNumber: staves > 1 ? 1 : undefined,
-      });
-    } else if (m.chordSymbol) {
-      xml += buildHarmonyXmlLine(m.chordSymbol, { staffNumber: staves > 1 ? 1 : undefined });
-    }
+    xml += buildWybleMeasureHarmonyXml(m);
     if (staves === 1 && voices.length > 1) {
       const backupEl = `        <backup>\n          <duration>${MEASURE_DIVISIONS}</duration>\n        </backup>\n`;
       xml += voiceEventsToXml(m.voices[voices[0]] ?? [], voices[0], measureStart, 1);
@@ -134,6 +136,11 @@ export function scoreToMusicXML(score: Score, options?: SerializeOptions): strin
   xml += `  </part>
 </score-partwise>
 `;
+  const expected =
+    options?.assertHarmonyCount !== undefined
+      ? options.assertHarmonyCount
+      : expectedWybleHarmonyCount(score);
+  assertWybleHarmonyExportInvariant(xml, expected);
   return xml;
 }
 

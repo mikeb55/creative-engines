@@ -17,6 +17,7 @@ The app checks the score for technical correctness before treating the run as su
 
 ## What works today
 
+- **Chord symbols (V9.0)** — Standard jazz chord input (including slash chords and common extensions) is normalized and validated consistently; see [CHANGELOG.md](./CHANGELOG.md) (*V9.0 milestone* → *Chord System*) for examples and the product guarantee.
 - **Guitar–Bass Duo** and **ECM Chamber** — full score generation.
 - **Song Mode** — songwriting-oriented flow with pairing and harmony; generation goes through the same Composer OS engine with Song Mode routing. Choosing **Wayne Shorter** as the primary songwriter turns on a dedicated **chord-tone bias** (more upper extensions, less root/fifth default spellings) so the score reflects that harmonic language.
 - **Rhythm intent (D1/D2)** — When you use **Song Mode**, you may see **Groove**, **Space**, **Expression**, and **Surprise** sliders. They send values to the engine so rhythm behaviour can follow your intent. If you leave them at the middle (**50%**), behaviour matches the **balanced** intent baseline. Other modes may not show these controls.

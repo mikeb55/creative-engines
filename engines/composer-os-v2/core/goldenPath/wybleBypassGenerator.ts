@@ -207,6 +207,8 @@ export function generateWybleEtudeXml(
     partName: 'Guitar',
     staves: 1,
     midiProgram: 24,
+    /** Parsed user bar count — must match `<harmony>` blocks exactly (single writer guard). */
+    assertHarmonyCount: chords.length,
   });
   const receipt: WybleBypassReceipt = {
     barsRequested: chords.length,

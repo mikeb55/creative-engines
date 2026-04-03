@@ -48,6 +48,8 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 ## Composer OS (V1 product path)
 
+**Composer OS V9.0** — Core pipeline, harmony/parsing, and export are on a stable baseline. The system is ready for the next robustness expansion (see **Roadmap (V9.0)** below).
+
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
 **Jimmy Wyble Engine (complete):**  
@@ -74,9 +76,35 @@ Key features:
 
 Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, interaction)
 
-**Unified Chord Semantics (Priority 19):**  
-Composer OS now uses a consistent chord pipeline from input parsing through validation/repair to MusicXML export.  
-Chord symbols are exported per bar with exact mapping to the user’s progression, including slash chords and extended/altered chord text.
+### Chord System (V9.0)
+
+- **Chord normalization layer** — Lead-sheet variants are normalized before parsing (for example stacked extensions written with a slash are distinguished from true slash-bass chords).
+- **Parser and validator unified** — Shared chord-shape rules apply to progression input, chord-input helpers, and harmony parsing used by generation and export.
+- **Supported chord examples (non-exhaustive):**
+  - `C6/9` (normalized to `C69`)
+  - `Cmaj9`, `Cmaj7(#11)`
+  - `G13`, `G13sus`
+  - `A7alt`
+  - Slash chords such as `Cmaj7/E`
+- **System guarantee:** All standard jazz chord symbols are accepted without failure (unknown symbols map to a safe fallback with a diagnostic warning rather than aborting the pipeline).
+
+### MusicXML Export (Stability)
+
+- **Sibelius-safe rhythm encoding** — Durations are emitted in a form that major notation importers tolerate reliably.
+- **No dotted-beat duration tokens** — Values such as `1.5` or `0.75` as raw beat multipliers are avoided in the export path; rhythm is expressed via an **undotted decomposition** so measure math stays clear for hosts.
+- **Clean multi-voice export** — Guitar/bass (and related) multi-voice layouts remain structurally consistent through export.
+
+### Roadmap (V9.0)
+
+- **#19 Unified Chord Semantics** — **DONE** (normalization, unified validation, stable progression-to-export behaviour).
+- **#16 Chord Handling Robustness** — **Next phase** (deeper edge cases, UX messaging, and continued hardening on top of the V9.0 baseline).
+
+### V9.0 Summary
+
+- Core pipeline stable  
+- Harmony and parsing stable  
+- Export stable  
+- System ready for robustness expansion (**#16**)
 
 **Composer OS documentation (canonical):**
 

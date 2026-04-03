@@ -2,20 +2,20 @@
  * Lightweight chord text parsing: | bars, line blocks, iReal-ish { } repeats ignored as content.
  */
 
-import { normalizeChordProgressionSeparators } from '../harmony/chordProgressionParser';
+import { normalizeChordProgressionSeparators, normalizeChordToken } from '../harmony/chordProgressionParser';
+import { CHORD_TOKEN_SHAPE, isChordSymbolRecognizedNormalized } from '../../../core/leadSheetChordNormalize';
+import { CHORD_SUFFIX_MAX_LEN } from '../../../core/chordSymbolRegistry';
 import type { ChordInputSectionBlock, ParsedChordInputPlan } from './chordInputTypes';
-
-const CHORD_TOKEN =
-  /^([A-G](?:#|b)?)([^/]*?)(?:\/([A-G](?:#|b)?))?$/i;
-
-function normalizeChordToken(raw: string): string {
-  return raw.trim().replace(/\s+/g, '');
-}
 
 export function isRecognizedChordToken(raw: string): boolean {
   const s = normalizeChordToken(raw);
   if (!s) return false;
-  return CHORD_TOKEN.test(s) && (s.match(CHORD_TOKEN)?.[2]?.length ?? 0) <= 14;
+  const qualLen = s.match(CHORD_TOKEN_SHAPE)?.[2]?.length ?? 0;
+  return (
+    CHORD_TOKEN_SHAPE.test(s) &&
+    qualLen <= CHORD_SUFFIX_MAX_LEN &&
+    isChordSymbolRecognizedNormalized(s)
+  );
 }
 
 const SECTION_HEADER = /^\s*\[([^\]]+)\]\s*$/i;

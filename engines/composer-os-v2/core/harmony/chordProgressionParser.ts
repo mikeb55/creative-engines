@@ -7,6 +7,12 @@
 
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ChordSegment, HarmonyPlan } from '../primitives/harmonyTypes';
+import {
+  chordWithFallback,
+  isValidChordShapeNormalized,
+  normalizeChordSymbol,
+  normalizeLeadSheetChordSpelling,
+} from '../../../core/leadSheetChordNormalize';
 
 const DEFAULT_DUO_BAR_COUNT = 8;
 
@@ -46,22 +52,13 @@ export function normalizeChordProgressionSeparators(input: string): string {
   return s.trim();
 }
 
-/** Root (incl. Bb, F#) + quality + optional slash bass (e.g. Cmaj7/E, D/F#). */
-const CHORD_TOKEN =
-  /^([A-G](?:#|b)?)([^/]*?)(?:\/([A-G](?:#|b)?))?$/i;
-
-/** Canonical comparison for user chords vs score/XML (trim + collapse whitespace). */
+/** Canonical comparison for user chords vs score/XML (normalizeChordSymbol + collapse whitespace). */
 export function normalizeChordToken(raw: string): string {
-  return raw.trim().replace(/\s+/g, '');
+  return normalizeChordSymbol(raw).trim().replace(/\s+/g, '');
 }
 
 function isValidChordShape(s: string): boolean {
-  if (!s) return false;
-  const m = s.match(CHORD_TOKEN);
-  if (!m) return false;
-  const qual = (m[2] ?? '').trim();
-  if (qual.length > 24) return false;
-  return true;
+  return isValidChordShapeNormalized(s);
 }
 
 export type ParseChordProgressionResult =
@@ -95,9 +92,11 @@ export function parseChordProgressionInputWithBarCount(
     const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
     const primary = normalizeChordToken(rawCell);
     if (!isValidChordShape(primary)) {
-      return { ok: false, error: `Unrecognized chord symbol: "${tokens[0]}".` };
+      const fb = chordWithFallback(rawCell);
+      bars.push(fb.chord);
+      continue;
     }
-    bars.push(rawCell);
+    bars.push(normalizeLeadSheetChordSpelling(rawCell).replace(/\s+/g, ' ').trim());
   }
   if (bars.length !== expectedBarCount) {
     return {
@@ -136,9 +135,11 @@ export function parseChordProgressionInputFlexible(input: string): ParseChordPro
     const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
     const primary = normalizeChordToken(rawCell);
     if (!isValidChordShape(primary)) {
-      return { ok: false, error: `Unrecognized chord symbol: "${tokens[0]}".` };
+      const fb = chordWithFallback(rawCell);
+      bars.push(fb.chord);
+      continue;
     }
-    bars.push(rawCell);
+    bars.push(normalizeLeadSheetChordSpelling(rawCell).replace(/\s+/g, ' ').trim());
   }
   if (bars.length === 0) {
     return {

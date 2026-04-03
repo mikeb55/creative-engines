@@ -38,7 +38,11 @@ export function validateExportIntegrity(xml: string): ExportIntegrityResult {
 
   const chordCount = (xml.match(/<harmony>/g) || []).length;
   const partCountForChords = partCountForTime;
-  if (partCountForChords > 0 && measureCount >= 8 && chordCount < 8) errors.push('Chord symbols missing for measures');
+  /** One harmony per measure on lead part only — expect chordCount ≈ measureCount / partCount (duo: half the raw measure tags). */
+  const measuresPerPart = partCountForChords > 0 ? measureCount / partCountForChords : 0;
+  if (partCountForChords > 0 && measuresPerPart >= 8 && chordCount < measuresPerPart) {
+    errors.push('Chord symbols missing for measures (expected at least one harmony per measure on lead part)');
+  }
 
   /** V3.4e — Sibelius: each part must have <measure number="1">..<measure number="N"> with no gaps or duplicates. */
   const partBlocks = xml.match(/<part id="([^"]+)"[\s\S]*?<\/part>/g) ?? [];

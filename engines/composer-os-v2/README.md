@@ -2,6 +2,8 @@
 
 **Composer OS** is a unified generative composition system — not a collection of isolated engines. It provides a single, disciplined pipeline through which all musical output flows, with validation gates and readiness scoring before any export is marked shareable.
 
+**V9.0 (milestone):** Unified chord semantics (**#19** — done), stable Sibelius-safe MusicXML export (including undotted rhythm decomposition; no dotted-beat duration tokens such as `1.5` / `0.75`), and documented next focus **#16 Chord Handling Robustness**. See **[CHANGELOG — V9.0 milestone](../../docs/CHANGELOG.md)** and the **Composer OS** section in the [repo README](../../README.md).
+
 **Docs:** [Architecture](../../docs/COMPOSER_OS_ARCHITECTURE.md) | [Changelog](../../docs/CHANGELOG.md) | [User guide](../../docs/USER_GUIDE.md) | [Testing](../../docs/TESTING.md) | [DEV_NOTES (archived)](../../docs/archive/composer-os/DEV_NOTES.md)  
 **Style modules:** [Barry Harris](core/style-modules/barry-harris/README.md) | [Metheny](core/style-modules/metheny/README.md) | [Triad Pairs](core/style-modules/triad-pairs/README.md) | [Bacharach](core/style-modules/bacharach/README.md)  
 **Songwriter → harmony:** Primary `songwriterStyleId` on `generationMetadata`; **Wayne Shorter** enables `ChordTonesOptions.shorterMode` in `harmonyChordTonePolicy.ts` / `chordSymbolAnalysis.ts` (see architecture doc).

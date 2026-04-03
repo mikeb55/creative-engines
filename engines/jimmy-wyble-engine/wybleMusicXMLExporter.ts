@@ -25,9 +25,10 @@ export function exportScoreToMusicXML(
     );
   }
 
+  /** Single staff + two voices matches wybleBypassGenerator; avoids per-staff duplicate chord display. */
   return scoreToMusicXML(score, {
     title,
     partName: 'Guitar',
-    staves: 2,
+    staves: 1,
   });
 }

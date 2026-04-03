@@ -306,6 +306,10 @@ ${keyCaption}${feelEl}`;
         if (m.rehearsalMark) {
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
+        /**
+         * Single chord writer: lead-sheet harmony only on the guitar part (not bass, not by index).
+         * `<staff>1</staff>` pins harmony to the top staff so hosts do not repeat it on lower staves.
+         */
         const assertLocked = opts.assertLockedHarmonyBars;
         const lockedChord =
           assertLocked &&
@@ -314,7 +318,8 @@ ${keyCaption}${feelEl}`;
             ? assertLocked[i]
             : undefined;
         const chordForHarmony = lockedChord ?? m.chord;
-        if (chordForHarmony && !opts.omitChordSymbols) {
+        const isLeadSheetGuitarPart = part.instrumentIdentity === 'clean_electric_guitar';
+        if (isLeadSheetGuitarPart && chordForHarmony && !opts.omitChordSymbols) {
           if (assertLocked && assertLocked.length === orderedMeasures.length && i < assertLocked.length) {
             const exp = assertLocked[i]!;
             const got = m.chord ?? '';
@@ -325,8 +330,7 @@ ${keyCaption}${feelEl}`;
             }
           }
           xml += buildHarmonyXmlLine(chordForHarmony, {
-            exactChordTextElement:
-              opts.preserveChordKindLiterals === true || lockedChord !== undefined,
+            staffNumber: 1,
           });
         }
 

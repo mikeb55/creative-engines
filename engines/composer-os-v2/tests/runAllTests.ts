@@ -34,6 +34,7 @@ import { runDuoIdentityV32Tests } from './duoIdentityV32.test';
 import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
+import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
 import { runDuoV36bTests } from './duoV36b.test';
 import { runPipelineTruthTests } from './pipelineTruth.test';
 import { runNotationSafeRhythmTests } from './notationSafeRhythm.test';
@@ -147,6 +148,7 @@ const suites = [
   { name: 'Duo polish V3.3', run: runDuoPolishV33Tests },
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
+  { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
   { name: 'Pipeline truth (input/score/XML)', run: runPipelineTruthTests },
   { name: 'Notation-safe rhythm atoms', run: runNotationSafeRhythmTests },

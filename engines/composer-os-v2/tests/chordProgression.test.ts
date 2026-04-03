@@ -20,6 +20,8 @@ import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
 import { validateLockedHarmonyMusicXmlTruth } from '../core/export/validateLockedHarmonyMusicXml';
 import { parseLockedChordSemantics } from '../core/harmony/lockedChordSemantics';
+import { normalizeChordSymbol } from '../../core/leadSheetChordNormalize';
+import { validateChordInputText } from '../core/chord-input/chordInputValidation';
 
 const SONG_MODE_32_BAR_CUSTOM_LOCKED_PROGRESSION =
   'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | G13 | Dbmaj7(#11) | Cmaj9/E | A7alt | ' +
@@ -166,10 +168,22 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
   });
 
   tests.push({
-    name: 'Parser: invalid token fails',
-    ok: !parseChordProgressionInput(
-      'ZZZ | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
-    ).ok,
+    name: 'Parser: invalid token maps to fallback (root+maj7) without failing parse',
+    ok: (() => {
+      const r = parseChordProgressionInput(
+        'ZZZ | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
+      );
+      return r.ok && r.bars[0] === 'Cmaj7';
+    })(),
+  });
+
+  tests.push({
+    name: 'Parser: C6/9 normalizes like C69',
+    ok: (() => {
+      const a = parseChordProgressionInput('C6/9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt');
+      const b = parseChordProgressionInput('C69 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt');
+      return a.ok && b.ok && JSON.stringify(a.bars) === JSON.stringify(b.bars) && a.bars[0] === 'C69';
+    })(),
   });
 
   tests.push({
@@ -506,6 +520,30 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
       }
       return true;
     })(),
+  });
+
+  tests.push({
+    name: 'normalizeChordSymbol: Δ, minus, 13sus preserved, slash bass',
+    ok:
+      normalizeChordSymbol('CΔ9') === 'Cmaj9' &&
+      normalizeChordSymbol('Bb-9') === 'Bbm9' &&
+      normalizeChordSymbol('G13sus') === 'G13sus' &&
+      normalizeChordSymbol('Fmaj7#11') === 'Fmaj7#11' &&
+      normalizeChordSymbol('A7alt') === 'A7alt' &&
+      normalizeChordSymbol('Cmaj7/E') === 'Cmaj7/E',
+  });
+
+  tests.push({
+    name: 'Chord input validation: jazz spellings recognized (same rules as parser)',
+    ok: (() => {
+      const v = validateChordInputText('CΔ9 | Bb-9 | Fmaj7#11 | G13sus | A7alt');
+      return v.ok;
+    })(),
+  });
+
+  tests.push({
+    name: 'normalizeChordSymbol: minor m7/m9 not turned into maj (M regex case)',
+    ok: normalizeChordSymbol('Dm9') === 'Dm9' && normalizeChordSymbol('Cm7') === 'Cm7',
   });
 
   tests.push({

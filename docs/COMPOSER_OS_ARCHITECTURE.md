@@ -4,6 +4,14 @@
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset → planning → score build → integrity → MusicXML export → validation → readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 
+## V9.0 baseline (chords & export)
+
+**Unified chord semantics (#19)** — Done: normalization before parsing, shared parser/validator behaviour, standard jazz symbols accepted without hard failure (see guarantee in [CHANGELOG.md](./CHANGELOG.md) V9.0 section).
+
+**MusicXML export stability** — Sibelius-safe rhythm encoding; undotted decomposition (no reliance on dotted-beat fractional tokens such as `1.5` / `0.75` in the export path); multi-voice export kept clean. Details: [CHANGELOG.md](./CHANGELOG.md) — *MusicXML Export (Stability)* and the Composer OS section in the [repo README](../README.md).
+
+**Roadmap:** **#16 Chord Handling Robustness** is the **next phase** (ongoing hardening and UX around chord input).
+
 ## Phase labels (A / B / C / D)
 
 These labels are used in product and handoff docs; boundaries are conceptual, not separate runtimes.

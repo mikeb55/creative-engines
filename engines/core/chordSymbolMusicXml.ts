@@ -1,7 +1,10 @@
 /**
  * Chord symbol → MusicXML <harmony> (shared with Composer OS export rules).
- * `<kind text="…">` is suffix-only (e.g. m7, maj7) so readers do not duplicate the root letter.
+ * Display: &lt;kind text="DISPLAY_SUFFIX"&gt;SPECIFIC_KIND&lt;/kind&gt; (suffix only, no doubled root).
+ * Semantics: hidden &lt;degree print-object="no"&gt; for Sibelius / Guitar Pro round-trip.
  */
+
+import { normalizeLeadSheetChordSpelling } from './leadSheetChordNormalize';
 
 export interface ChordRootAndKindText {
   rootStep: string;
@@ -12,8 +15,26 @@ export interface ChordRootAndKindText {
 
 const DEFAULT_MUSICXML_KIND_CONTENT = 'major';
 
+const VALID_SLASH_BASS = /^[A-G][#b]?$/i;
+
 /**
- * Maps lead-sheet kind suffix (same string as `<kind text="…">`) to MusicXML &lt;kind&gt; element body.
+ * Split slash bass using the same rule as lead-sheet normalization (last `/` only if bass is a note).
+ * Does not rewrite 6/9 → 69 — preserves display spelling for kind/@text.
+ */
+export function splitHarmonyChordForDisplay(chord: string): { harmonyPart: string; bassPart?: string } {
+  const t = chord.trim();
+  const slashIdx = t.lastIndexOf('/');
+  if (slashIdx >= 0) {
+    const possibleBass = t.slice(slashIdx + 1).trim();
+    if (VALID_SLASH_BASS.test(possibleBass)) {
+      return { harmonyPart: t.slice(0, slashIdx).trim(), bassPart: possibleBass };
+    }
+  }
+  return { harmonyPart: t };
+}
+
+/**
+ * Maps semantic (normalized) lead-sheet suffix to MusicXML &lt;kind&gt; element body — prefer most specific built-in.
  */
 export function musicXmlKindContentFromKindText(kindText: string): string {
   const raw = kindText.trim();
@@ -21,7 +42,9 @@ export function musicXmlKindContentFromKindText(kindText: string): string {
 
   const key = raw.toLowerCase().replace(/\s+/g, '');
 
-  // Parentheses / explicit alterations — do not map to dominant-9th/11th/13th (hosts simplify display).
+  /** m7b5 must win over generic "b5" alteration branch below. */
+  if (/m7b5/i.test(raw) || /^ø$/i.test(raw.trim())) return 'half-diminished';
+
   if (/\(/.test(raw) || /#(9|11|5|13)/.test(raw) || /b(9|11|5|13)/.test(raw)) {
     if (/^maj|maj7|Δ|major/i.test(raw)) return 'major-seventh';
     if (/^m[^a]|^min|ø|dim|m7b5/i.test(raw) && !/^maj/i.test(raw)) return 'minor-seventh';
@@ -67,6 +90,8 @@ export function musicXmlKindContentFromKindText(kindText: string): string {
 
   if (key.startsWith('maj')) return 'major-seventh';
   if (key.includes('alt')) return 'dominant';
+  if (key === '69') return 'major-sixth';
+  if (/13sus|13sus4/i.test(key)) return 'dominant-13th';
   if (/13/.test(key) && !/#13|b13/.test(key)) return 'dominant-13th';
   if (/11/.test(key) && !/#11/.test(key)) return 'dominant-11th';
   if (/9/.test(key) && !/#9/.test(key) && !/b9/.test(key)) {
@@ -137,11 +162,42 @@ export function parseChordForMusicXmlHarmony(
   chord: string,
   opts?: { literalKind?: boolean }
 ): MusicXmlHarmonyParts {
-  const t = chord.trim();
-  const slash = t.indexOf('/');
-  const harmonyPart = slash >= 0 ? t.slice(0, slash).trim() : t;
-  const bassPart = slash >= 0 ? t.slice(slash + 1).trim() : undefined;
+  const t = normalizeLeadSheetChordSpelling(chord.trim());
+  const slashIdx = t.lastIndexOf('/');
+  let harmonyPart = t;
+  let bassPart: string | undefined;
+  if (slashIdx >= 0) {
+    const possibleBass = t.slice(slashIdx + 1).trim();
+    if (VALID_SLASH_BASS.test(possibleBass)) {
+      harmonyPart = t.slice(0, slashIdx).trim();
+      bassPart = possibleBass;
+    }
+  }
   const base = parseChordRootAndMusicXmlKindText(harmonyPart, opts);
+  if (!bassPart) {
+    return base;
+  }
+  const bm = bassPart.match(/^([A-Ga-g])([#b]?)$/);
+  if (!bm) {
+    return { ...base, kindText: `${base.kindText}/${bassPart}` };
+  }
+  const letter = bm[1].toUpperCase();
+  let bassAlter = 0;
+  if (bm[2] === '#') bassAlter = 1;
+  else if (bm[2] === 'b') bassAlter = -1;
+  return {
+    rootStep: base.rootStep,
+    rootAlter: base.rootAlter,
+    kindText: base.kindText,
+    bassStep: letter,
+    bassAlter,
+  };
+}
+
+/** Display suffix for kind/@text (unnormalized harmony spelling, e.g. 6/9 not 69). */
+export function parseChordForMusicXmlHarmonyDisplay(chord: string): MusicXmlHarmonyParts {
+  const { harmonyPart, bassPart } = splitHarmonyChordForDisplay(chord);
+  const base = parseChordRootAndMusicXmlKindText(harmonyPart, { literalKind: true });
   if (!bassPart) {
     return base;
   }
@@ -172,21 +228,34 @@ function alterToAccidental(alter: number): string {
   return '';
 }
 
+export type HarmonyDegreeType = 'add' | 'alter' | 'subtract';
+
+function degreeXmlFragment(
+  value: number,
+  alter: number,
+  degType: HarmonyDegreeType,
+  printObjectNo: boolean
+): string {
+  const po = printObjectNo ? ' print-object="no"' : '';
+  return `<degree${po}><degree-value>${value}</degree-value><degree-alter>${alter}</degree-alter><degree-type>${degType}</degree-type></degree>`;
+}
+
 /**
- * MusicXML &lt;degree&gt; fragments for altered / extended symbols (Sibelius, Guitar Pro).
- * Uses literal suffix: parentheses (#11)/(b9), inline #11/b9, and 7alt → standard altered-degree set.
+ * Semantic degrees from normalized suffix; kind/@text carries display — degrees are non-printing when requested.
  */
-export function harmonyDegreeXmlFromKindText(kindText: string): string {
+export function harmonyDegreeXmlFromKindText(kindText: string, opts?: { printObjectNo?: boolean }): string {
+  const printNo = opts?.printObjectNo !== false;
   const raw = kindText.trim();
   if (!raw) return '';
 
-  const entries: { value: number; alter: number }[] = [];
+  type E = { v: number; a: number; t: HarmonyDegreeType };
+  const entries: E[] = [];
   const seen = new Set<string>();
-  const push = (value: number, alter: number) => {
-    const k = `${value}:${alter}`;
+  const push = (value: number, alter: number, degType: HarmonyDegreeType = 'add') => {
+    const k = `${value}:${alter}:${degType}`;
     if (seen.has(k)) return;
     seen.add(k);
-    entries.push({ value, alter });
+    entries.push({ v: value, a: alter, t: degType });
   };
 
   const isAltDominant =
@@ -196,38 +265,72 @@ export function harmonyDegreeXmlFromKindText(kindText: string): string {
     /\(alt\)/i.test(raw);
 
   if (isAltDominant) {
-    const altDeg: [number, number][] = [
-      [9, -1],
-      [9, 1],
-      [5, -1],
-      [5, 1],
-    ];
-    for (const [v, a] of altDeg) {
-      push(v, a);
-    }
-  } else {
-    for (const m of raw.matchAll(/\(([#b]?)(\d+)\)/g)) {
-      const acc = m[1];
-      const value = parseInt(m[2]!, 10);
-      let alter = 0;
-      if (acc === '#') alter = 1;
-      else if (acc === 'b') alter = -1;
-      push(value, alter);
-    }
-    const rest = raw.replace(/\([^)]*\)/g, ' ');
-    for (const m of rest.matchAll(/([#b])(\d+)/g)) {
-      const value = parseInt(m[2]!, 10);
-      const alter = m[1] === '#' ? 1 : -1;
-      push(value, alter);
+    push(9, -1, 'alter');
+    push(9, 1, 'alter');
+    push(5, -1, 'alter');
+    push(5, 1, 'alter');
+    return entries.map((e) => degreeXmlFragment(e.v, e.a, e.t, printNo)).join('');
+  }
+
+  const hasSus = /sus/i.test(raw);
+  if (hasSus) {
+    if (/\bsus2\b/i.test(raw) && !/\bsus4\b/i.test(raw)) {
+      push(3, 0, 'subtract');
+      push(2, 0, 'add');
+    } else {
+      push(3, 0, 'subtract');
+      push(4, 0, 'add');
     }
   }
 
-  return entries
-    .map(
-      ({ value, alter }) =>
-        `<degree><degree-value>${value}</degree-value><degree-alter>${alter}</degree-alter><degree-type>add</degree-type></degree>`
-    )
-    .join('');
+  if (raw === '69') {
+    push(9, 0, 'add');
+  }
+
+  for (const m of raw.matchAll(/\(([#b]?)(\d+)\)/g)) {
+    const acc = m[1];
+    const value = parseInt(m[2]!, 10);
+    if (acc === '#') push(value, 1, 'alter');
+    else if (acc === 'b') push(value, -1, 'alter');
+    else push(value, 0, 'add');
+  }
+
+  const rest = raw.replace(/\([^)]*\)/g, ' ');
+  for (const m of rest.matchAll(/([#b])(\d+)/g)) {
+    const value = parseInt(m[2]!, 10);
+    const alter = m[1] === '#' ? 1 : -1;
+    push(value, alter, 'alter');
+  }
+
+  if (/maj9\b/i.test(raw)) push(9, 0, 'add');
+  if (/maj11\b/i.test(raw)) push(11, 0, 'add');
+  if (/maj13\b/i.test(raw)) push(13, 0, 'add');
+
+  if (/m(9|11|13)\b/i.test(raw) && !/maj/i.test(raw)) {
+    const mm = raw.match(/m(9|11|13)\b/i);
+    if (mm) push(parseInt(mm[1]!, 10), 0, 'add');
+  }
+  if (/\bmin(9|11|13)\b/i.test(raw)) {
+    const mm = raw.match(/\bmin(9|11|13)\b/i);
+    if (mm) push(parseInt(mm[1]!, 10), 0, 'add');
+  }
+
+  if (/\badd(9|11|13|6)\b/i.test(raw)) {
+    const mm = raw.match(/\badd(9|11|13|6)\b/i);
+    if (mm) push(parseInt(mm[1]!, 10), 0, 'add');
+  }
+
+  if (!hasSus && /13/.test(raw) && !entries.some((e) => e.v === 13)) {
+    push(13, 0, 'add');
+  }
+  if (!hasSus && /11/.test(raw) && !/#11|b11/.test(raw) && !entries.some((e) => e.v === 11)) {
+    push(11, 0, 'add');
+  }
+  if (!hasSus && /\b9\b/.test(raw) && !/#9|b9/.test(raw) && !entries.some((e) => e.v === 9)) {
+    push(9, 0, 'add');
+  }
+
+  return entries.map((e) => degreeXmlFragment(e.v, e.a, e.t, printNo)).join('');
 }
 
 /** Lead-sheet display string (root + suffix + optional slash bass). */
@@ -244,36 +347,32 @@ export function formatChordSymbolForDisplay(chord: string): string {
 
 /**
  * One line of MusicXML: `<harmony>…</harmony>` at beat 1. Optional `<staff>` for multi-staff parts.
+ * Display suffix in kind/@text; semantic kind body + hidden degrees (no standalone &lt;text&gt;).
  */
 export function buildHarmonyXmlLine(
   chordSymbol: string,
   opts?: {
     staffNumber?: number;
-    /**
-     * After &lt;kind&gt;, emit &lt;text&gt;…&lt;/text&gt; with the full lead-sheet string (exact user input).
-     * &lt;kind text="…"&gt; stays suffix-only so hosts do not print a doubled root.
-     */
+    /** @deprecated No longer used; display is always kind/@text. */
     exactChordTextElement?: boolean;
   }
 ): string {
-  const { rootStep, rootAlter, kindText, bassStep, bassAlter } = parseChordForMusicXmlHarmony(chordSymbol, {
-    literalKind: true,
-  });
-  const kindContent = musicXmlKindContentFromKindText(kindText);
-  const kindAttrText = kindText;
-  const degreeXml = harmonyDegreeXmlFromKindText(kindText);
-  const exactTextEl =
-    opts?.exactChordTextElement === true
-      ? `<text>${escapeXml(chordSymbol.trim())}</text>`
-      : '';
-  const alterEl = rootAlter !== 0 ? `<root-alter>${rootAlter}</root-alter>` : '';
+  const semantic = parseChordForMusicXmlHarmony(chordSymbol, { literalKind: true });
+  const display = parseChordForMusicXmlHarmonyDisplay(chordSymbol);
+  const kindContent = musicXmlKindContentFromKindText(semantic.kindText);
+  const kindAttrText = display.kindText;
+  const degreeXml = harmonyDegreeXmlFromKindText(semantic.kindText, { printObjectNo: true });
+  const alterEl = semantic.rootAlter !== 0 ? `<root-alter>${semantic.rootAlter}</root-alter>` : '';
   const bassAlterEl =
-    bassStep !== undefined && bassAlter !== undefined && bassAlter !== 0 ? `<bass-alter>${bassAlter}</bass-alter>` : '';
+    semantic.bassStep !== undefined && semantic.bassAlter !== undefined && semantic.bassAlter !== 0
+      ? `<bass-alter>${semantic.bassAlter}</bass-alter>`
+      : '';
   const bassEl =
-    bassStep !== undefined ? `<bass><bass-step>${bassStep}</bass-step>${bassAlterEl}</bass>` : '';
-  const staffEl =
-    opts?.staffNumber !== undefined ? `<staff>${opts.staffNumber}</staff>` : '';
-  return `    <harmony>${staffEl}<root><root-step>${rootStep}</root-step>${alterEl}</root><kind text="${escapeXml(
+    semantic.bassStep !== undefined
+      ? `<bass><bass-step>${semantic.bassStep}</bass-step>${bassAlterEl}</bass>`
+      : '';
+  const staffEl = opts?.staffNumber !== undefined ? `<staff>${opts.staffNumber}</staff>` : '';
+  return `    <harmony>${staffEl}<root><root-step>${semantic.rootStep}</root-step>${alterEl}</root><kind text="${escapeXml(
     kindAttrText
-  )}">${escapeXml(kindContent)}</kind>${bassEl}${degreeXml}${exactTextEl}</harmony>\n`;
+  )}">${escapeXml(kindContent)}</kind>${bassEl}${degreeXml}</harmony>\n`;
 }

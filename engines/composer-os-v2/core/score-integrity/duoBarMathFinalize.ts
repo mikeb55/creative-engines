@@ -7,8 +7,8 @@
 import type { MeasureModel, NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
-import { validateStrictBarMath } from './strictBarMath';
-import { expandNotationSafeDurationsInScore, validateNotationSafeRhythm } from './notationSafeRhythm';
+import { validateStrictBarMath, validateSibeliusUndottedBeatAtoms } from './strictBarMath';
+import { validateNotationSafeRhythm } from './notationSafeRhythm';
 import { snapEighthBeat, snapEventToEighthBeatGrid } from './duoEighthBeatGrid';
 import { applyBassBeatNotationGrouping } from './bassBeatNotationGrouping';
 import { extractMotifShapeFromGuitarBar, realizeReturnMidiFromMotifShape } from '../motif/motifShape';
@@ -17,6 +17,138 @@ import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 const EPS = 1e-4;
 const HOOK_REGISTER_LOW = 55;
 const HOOK_REGISTER_HIGH = 79;
+
+/** Beat atoms for 4/4 — undotted only (no 1.5 / 0.75); greedy desc keeps wholes/halves/quarters before eighths. */
+const UNDOTTED_BEAT_ATOMS_DESC: readonly number[] = [4, 2, 1, 0.5, 0.25, 0.125];
+
+function snapSixteenthBeat(x: number): number {
+  return Math.round(x * 4) / 4;
+}
+
+/** Decompose a span (beats) into undotted standard lengths only; every piece is in NOTATION_SAFE set except dots. */
+function decomposeIntoUndottedPieces(total: number): number[] {
+  let r = snapSixteenthBeat(total);
+  if (r <= EPS) return [];
+  const out: number[] = [];
+  for (const u of UNDOTTED_BEAT_ATOMS_DESC) {
+    while (r >= u - EPS) {
+      out.push(u);
+      r = snapSixteenthBeat(r - u);
+    }
+  }
+  if (r > EPS) {
+    throw new Error(`[duoBarMathFinalize] cannot decompose ${total} beats into undotted atoms (remainder ${r})`);
+  }
+  return out;
+}
+
+function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
+  const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
+  const out: ScoreEvent[] = [];
+  for (const e of sorted) {
+    const voice = e.voice ?? 1;
+    const pieces = decomposeIntoUndottedPieces(e.duration);
+    let t = snapSixteenthBeat(e.startBeat);
+    if (pieces.length === 0) continue;
+    if (e.kind === 'note') {
+      const n = e as NoteEvent;
+      pieces.forEach((piece, i) => {
+        const nn = createNote(n.pitch, t, piece, voice, n.motifRef);
+        if (i === 0) {
+          if (n.articulation) nn.articulation = n.articulation;
+          if (n.velocity !== undefined) nn.velocity = n.velocity;
+        }
+        out.push(nn);
+        t = snapSixteenthBeat(t + piece);
+      });
+    } else {
+      for (const piece of pieces) {
+        out.push(createRest(t, piece, voice));
+        t = snapSixteenthBeat(t + piece);
+      }
+    }
+  }
+  return out;
+}
+
+function expandUndottedPreferredInMeasure(m: MeasureModel): void {
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  if (raw.length === 0) {
+    m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
+    return;
+  }
+  const byVoice = new Map<number, ScoreEvent[]>();
+  for (const e of raw) {
+    const v = e.voice ?? 1;
+    if (!byVoice.has(v)) byVoice.set(v, []);
+    byVoice.get(v)!.push(e);
+  }
+  const rebuilt: ScoreEvent[] = [];
+  for (const v of [...byVoice.keys()].sort((a, b) => a - b)) {
+    rebuilt.push(...expandVoiceEventsUndotted(byVoice.get(v)!));
+  }
+  m.events = rebuilt;
+}
+
+/** Merge consecutive rests in one voice; if merged duration is dotted (1.5 / 0.75), split back to undotted atoms. */
+function mergeAdjacentRestsUndotted(events: ScoreEvent[]): ScoreEvent[] {
+  const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
+  const out: ScoreEvent[] = [];
+  for (const e of sorted) {
+    if (e.kind !== 'rest') {
+      out.push(e);
+      continue;
+    }
+    const voice = e.voice ?? 1;
+    const prev = out[out.length - 1];
+    if (
+      prev &&
+      prev.kind === 'rest' &&
+      (prev.voice ?? 1) === voice &&
+      Math.abs(prev.startBeat + prev.duration - e.startBeat) < EPS
+    ) {
+      const total = snapSixteenthBeat(prev.duration + e.duration);
+      out.pop();
+      const pieces = decomposeIntoUndottedPieces(total);
+      let t = prev.startBeat;
+      for (const p of pieces) {
+        out.push(createRest(t, p, voice));
+        t = snapSixteenthBeat(t + p);
+      }
+    } else {
+      out.push(e);
+    }
+  }
+  return out;
+}
+
+function mergeRestsInMeasure(m: MeasureModel): void {
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  if (raw.length === 0) return;
+  const byVoice = new Map<number, ScoreEvent[]>();
+  for (const e of raw) {
+    const v = e.voice ?? 1;
+    if (!byVoice.has(v)) byVoice.set(v, []);
+    byVoice.get(v)!.push(e);
+  }
+  const rebuilt: ScoreEvent[] = [];
+  for (const v of [...byVoice.keys()].sort((a, b) => a - b)) {
+    rebuilt.push(...mergeAdjacentRestsUndotted(byVoice.get(v)!));
+  }
+  m.events = rebuilt;
+}
+
+/** Sibelius-friendly: expand to undotted atoms only, then coalesce adjacent rests without reintroducing dotted lengths. */
+function expandUndottedPreferredNotationAtomsInScore(score: ScoreModel): void {
+  for (const p of score.parts) {
+    for (const m of p.measures) {
+      expandUndottedPreferredInMeasure(m);
+      for (let pass = 0; pass < 6; pass++) {
+        mergeRestsInMeasure(m);
+      }
+    }
+  }
+}
 
 export type RhythmSnapMode = 'quarter' | 'eighth';
 
@@ -181,7 +313,11 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
   if (score.duoRhythmSnap === 'eighth_beats') {
     applyBassBeatNotationGrouping(score);
   }
-  expandNotationSafeDurationsInScore(score);
+  expandUndottedPreferredNotationAtomsInScore(score);
+  const undot = validateSibeliusUndottedBeatAtoms(score);
+  if (!undot.valid) {
+    throw new Error(`Undotted beat atoms failed after expand: ${undot.errors.join('; ')}`);
+  }
   for (const p of score.parts) {
     for (const m of p.measures) {
       const v2 = m.events.filter((e) => (e.voice ?? 1) === 2);

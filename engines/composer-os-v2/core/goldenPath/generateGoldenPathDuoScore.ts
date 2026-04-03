@@ -45,7 +45,7 @@ import {
   type BassSectionRole,
   type DuoPhraseBehaviourMode,
 } from './bassMelodicLines';
-import { contourFingerprint, phraseTwoBarFingerprint } from './bassLineFingerprints';
+import { contourFingerprint, phraseTwoBarFingerprint, rhythmFingerprint } from './bassLineFingerprints';
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
   computeEnsembleStagger,
@@ -259,6 +259,31 @@ function readStyleHints(context: CompositionContext): StyleHints {
 /** Quarter-beat grid — keeps MusicXML division sums stable. */
 function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
+}
+
+/** If this bar's note rhythm fingerprint matches the previous bar, nudge voice-1 attacks so adjacent bars never match. */
+function duoAntiAdjacentDuplicateGuitarRhythm(m: MeasureModel, prev: MeasureModel | undefined, isDuo: boolean): void {
+  if (!isDuo || !prev) return;
+  if (rhythmFingerprint(m) !== rhythmFingerprint(prev) || rhythmFingerprint(m).length === 0) return;
+  const shift = 0.25;
+  const next: MeasureModel['events'] = [];
+  next.push(createRest(0, shift, 1));
+  for (const e of m.events) {
+    if ((e.voice ?? 1) === 1 && (e.kind === 'note' || e.kind === 'rest')) {
+      const e2 = { ...e } as (typeof m.events)[number];
+      (e2 as { startBeat: number }).startBeat = qBeat((e as { startBeat: number }).startBeat + shift);
+      next.push(e2);
+    } else {
+      next.push(e);
+    }
+  }
+  next.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+  m.events = next;
+  const v1 = m.events.filter((e) => (e.voice ?? 1) === 1 && (e.kind === 'note' || e.kind === 'rest'));
+  const last = v1[v1.length - 1] as { startBeat: number; duration: number } | undefined;
+  if (last && last.startBeat + last.duration > 4 + 1e-4) {
+    last.duration = qBeat(Math.max(0, 4 - last.startBeat));
+  }
 }
 
 /** Stronger landing on phrase-ending bars (2,4,6): extend last note toward ≥0.5 beats when possible. */
@@ -500,8 +525,17 @@ function buildGuitarPart(
             : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
     const swingBump = duoGuitarSwingStaggerBump(seed, b, isDuoGolden);
+    /** 8-bar arc: slight stagger bias so attacks are not evenly spaced on the grid every bar. */
+    const phraseShapeBump =
+      isDuoGolden && (phase === 1 || phase === 2)
+        ? seededUnit(seed, b, 610) * 0.12
+        : isDuoGolden && (phase === 5 || phase === 6)
+          ? -0.08 + seededUnit(seed, b, 611) * 0.1
+          : isDuoGolden && (phase === 4 || phase === 8)
+            ? seededUnit(seed, b, 612) * 0.06 - 0.03
+            : 0;
     const staggerGuitar = isDuoGolden
-      ? snapAttackBeatToGrid(stagger.guitar + swingBump)
+      ? snapAttackBeatToGrid(stagger.guitar + swingBump + phraseShapeBump)
       : qBeat(stagger.guitar + swingBump);
     const phraseShapeBar = isDuoGolden ? phase : context.presetId === 'ecm_chamber' ? phase : b;
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b, context);
@@ -517,6 +551,8 @@ function buildGuitarPart(
     let useOffbeat =
       (rhythm.offbeatWeight > 0.2 && (phase === 2 || phase === 4 || phase === 6 || phase === 8)) || !!reduceAttack;
     if (isEcmM || isEcmS) useOffbeat = false;
+    /** 2-bar unit: bar 2 = resolution — less grid-like offbeat chatter. */
+    if (isDuoGolden && b % 2 === 0) useOffbeat = false;
     const meth = isEcmM
       ? { attackDensityReduced: true, lyricalMotif: true, ...hints.metheny }
       : hints.metheny;
@@ -559,10 +595,31 @@ function buildGuitarPart(
 
     const skipMotifForIdentity = isDuoGolden && phase === 7;
     if (placements.length > 0 && !skipMotifForIdentity) {
+      let staggerForMotif = staggerGuitar;
       let cursor = 0;
       if (isDuoGolden && consecutiveBusyGuitarBars >= 2) {
         addEvent(m, createRest(0, 1));
         cursor = 1;
+      } else if (isDuoGolden) {
+        const mPrev = measures[measures.length - 1];
+        const mPrev2 = measures[measures.length - 2];
+        if (mPrev && mPrev2 && rhythmFingerprint(mPrev) === rhythmFingerprint(mPrev2)) {
+          staggerForMotif = snapAttackBeatToGrid(staggerGuitar + 0.25 + seededUnit(seed, b, 613) * 0.25);
+        }
+        const firstBarOfPair = b % 2 === 1;
+        const secondBarOfPair = b % 2 === 0;
+        const uLead = seededUnit(seed, b, 615);
+        let lead = 0;
+        if (secondBarOfPair) {
+          if (uLead < 0.55) lead = qBeat(0.5);
+          else if (uLead < 0.82) lead = qBeat(0.25);
+        } else if (firstBarOfPair) {
+          if (uLead < 0.06) lead = qBeat(0.25);
+        }
+        if (lead > 0) {
+          addEvent(m, createRest(0, lead));
+          cursor = lead;
+        }
       }
       const raw: { pitch: number; start: number; dur: number }[] = [];
       for (const pl of placements) {
@@ -570,7 +627,7 @@ function buildGuitarPart(
           let pitch = Math.max(effectiveLow, Math.min(effectiveHigh, n.pitch));
           const dur = Math.min(n.duration, Math.max(0, 4 - n.startBeat));
           if (dur > 0 && n.startBeat < 4) {
-            const rawStart = n.startBeat + stagger.guitar + swingBump;
+            const rawStart = n.startBeat + staggerForMotif;
             raw.push({
               pitch,
               start: isDuoGolden ? snapAttackBeatToGrid(rawStart) : qBeat(rawStart),
@@ -587,7 +644,14 @@ function buildGuitarPart(
           start = snapAttackBeatToGrid(start);
         }
         if (start > cursor) {
-          addEvent(m, createRest(cursor, start - cursor));
+          const gap = start - cursor;
+          const firstBarOfPair = b % 2 === 1;
+          const minGap = firstBarOfPair && raw.length >= 2 ? 0.5 : 0.25;
+          if (isDuoGolden && gap > 0 && gap < minGap - 1e-4) {
+            start = snapAttackBeatToGrid(cursor);
+          } else if (start > cursor) {
+            addEvent(m, createRest(cursor, gap));
+          }
         }
         let dur = qBeat(Math.min(e.dur, 4 - start));
         if (meth?.attackDensityReduced && dur > 0.5 && tex?.guitarRole !== 'sustain_pad') {
@@ -634,6 +698,14 @@ function buildGuitarPart(
         density === 'very_dense' ? 'dense' : (density as 'sparse' | 'medium' | 'dense');
       if (isEcmS && tex?.densityBlend !== undefined && tex.densityBlend < 0.44) {
         densityLevel = 'sparse';
+      }
+      /** 2-bar phrase: bar 1 = idea (slightly fuller), bar 2 = space / resolution. */
+      if (isDuoGolden && b % 2 === 0) {
+        if (densityLevel === 'dense') densityLevel = 'medium';
+        else if (densityLevel === 'medium') densityLevel = 'sparse';
+      }
+      if (isDuoGolden && b % 2 === 1 && densityLevel === 'sparse') {
+        densityLevel = 'medium';
       }
       if (isDuoGolden && consecutiveBusyGuitarBars >= 2) {
         densityLevel = 'sparse';
@@ -705,6 +777,9 @@ function buildGuitarPart(
     }
 
     if (isDuoGolden) {
+      if (measures.length > 0) {
+        duoAntiAdjacentDuplicateGuitarRhythm(m, measures[measures.length - 1], isDuoGolden);
+      }
       console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
@@ -1147,6 +1222,14 @@ function buildBassPart(
       firstStart = snapAttackBeatToGrid(firstStart);
     }
 
+    if (duoGoldenBass && b >= 3) {
+      const m1 = measures[measures.length - 1];
+      const m2 = measures[measures.length - 2];
+      if (m1 && m2 && rhythmFingerprint(m1) === rhythmFingerprint(m2)) {
+        firstStart = snapAttackBeatToGrid(firstStart + 0.25 + seededUnit(s, b, 776) * 0.25);
+      }
+    }
+
     const gAct = activityScoreForBar(guitarPart, b);
     const guitarActivityHot = gAct >= HIGH_ACTIVITY;
 
@@ -1165,9 +1248,28 @@ function buildBassPart(
       else if (phraseBar >= 5) section = 'B';
     }
 
-    const forceBassSupportSparse = duoGoldenBass && (phase === 1 || phase === 2);
+    let forceBassSupportSparse = duoGoldenBass && (phase === 1 || phase === 2);
+    const guitarSparse = duoGoldenBass && gAct < HIGH_ACTIVITY * 0.55;
+    if (duoGoldenBass && guitarSparse && !simplify) {
+      forceBassSupportSparse = false;
+    }
     const thinForOverlap = duoGoldenBass && guitarActivityHot && (phase < 5 || phase > 6);
-    const simplifyForDuo = simplify || thinForOverlap || forceBassSupportSparse;
+    let simplifyForDuo = simplify || thinForOverlap || forceBassSupportSparse;
+    if (duoGoldenBass && guitarActivityHot) {
+      simplifyForDuo = true;
+    }
+
+    if (duoGoldenBass && !simplifyForDuo) {
+      const gm = guitarPart.measures.find((x) => x.index === b);
+      const gNotes = gm?.events.filter((e) => e.kind === 'note') as { startBeat: number }[] | undefined;
+      let gMin = 99;
+      if (gNotes && gNotes.length > 0) {
+        for (const n of gNotes) gMin = Math.min(gMin, n.startBeat);
+      }
+      if (gMin < 0.25 && firstStart < 0.25) {
+        firstStart = snapAttackBeatToGrid(firstStart + 0.25 + seededUnit(s, b, 788) * 0.25);
+      }
+    }
 
     if (duoGoldenBass && phase === 7) {
       const supportMode = seededUnit(s, b, 807) < 0.52;
@@ -1332,12 +1434,21 @@ function buildBassPart(
       }
       const span = 4 - t0;
       const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+      const pickMod = (b + s) % 5;
       const secondPitchPick =
-        duoGoldenBass && (b + s) % 3 === 0
-          ? fifth
-          : duoGoldenBass && (b + s) % 3 === 1
-            ? third
-            : guide;
+        duoGoldenBass && (pickMod === 0 || pickMod === 2)
+          ? third
+          : duoGoldenBass && pickMod === 1
+            ? guide
+            : duoGoldenBass && pickMod === 3
+              ? fifth
+              : duoGoldenBass
+                ? seventh
+                : (b + s) % 3 === 0
+                  ? fifth
+                  : (b + s) % 3 === 1
+                    ? third
+                    : guide;
       if (duoGoldenBass && span > 0 && duoPhraseMode !== undefined) {
         let effectiveMode: DuoPhraseBehaviourMode = duoPhraseMode;
         if (evenEighthStreak.n >= 2 && (duoPhraseMode === 'stepwise' || duoPhraseMode === 'pedal')) {

@@ -1,5 +1,41 @@
 # Composer OS — Changelog
 
+## V9.0 milestone
+
+### V9.0 Summary
+
+- Core pipeline stable  
+- Harmony and parsing stable  
+- MusicXML export stable (Sibelius-safe)  
+- System ready for robustness expansion  
+
+### Chord System (V9.0)
+
+- **Chord normalization layer implemented** — Stacked extensions written with a slash (e.g. `6/9`) are normalized before parsing so they are not mistaken for slash-bass notation; true slash-bass chords (bass letter after `/`) are preserved.
+- **Parser and validator unified** — One shared chord-shape contract across progression parsing, chord-input helpers, and harmony parsing used downstream.
+- **Supported chord examples (illustrative):**
+  - `C6/9` (normalized to `C69`)
+  - `Cmaj9`, `Cmaj7(#11)`
+  - `G13`, `G13sus`
+  - `A7alt`
+  - Slash chords (e.g. `Cmaj7/E`)
+- **System guarantee:** All standard jazz chord symbols are accepted without failure (non-parsable input uses a safe fallback with a diagnostic warning rather than failing the run).
+
+### MusicXML Export (Stability)
+
+- **Sibelius-safe rhythm encoding** — Export avoids fragile duration encodings that break or mis-read in Sibelius and similar hosts.
+- **No dotted-beat duration tokens** — Raw fractional beat multipliers such as `1.5` or `0.75` are not relied on; an **undotted decomposition** system expresses durations so bar math stays importer-friendly.
+- **Clean multi-voice export maintained** — Multi-voice guitar/bass (and related) layouts remain coherent through export.
+
+### Roadmap / status
+
+| Item | Status |
+|------|--------|
+| **#19 Unified Chord Semantics** | **DONE** |
+| **#16 Chord Handling Robustness** | **Next phase** (current focus) |
+
+---
+
 ## Unified Chord Semantics — Full Bar Chord Export Achieved
 
 - Unified chord pipeline across parser, validator/repair, and MusicXML export

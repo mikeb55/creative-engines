@@ -2,7 +2,7 @@
  * Chord symbol handling for MusicXML harmony export.
  * Root lives in <root>; <kind text="…"> is suffix-only so readers (e.g. Sibelius)
  * do not concatenate root + full symbol into duplicate letters (DDmin9, GG13).
- * When present, <text>…</text> holds the exact user chord string (canonical / locked harmony).
+ * Display is carried in &lt;kind text="…"&gt;; hidden &lt;degree print-object="no"&gt; carries semantics.
  * The <kind> body must contain valid MusicXML enumerated text (e.g. dominant).
  *
  * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.

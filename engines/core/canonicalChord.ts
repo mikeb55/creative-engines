@@ -8,6 +8,7 @@ import {
   musicXmlKindContentFromKindText,
   parseChordForMusicXmlHarmony,
 } from './chordSymbolMusicXml';
+import { normalizeLeadSheetChordSpelling } from './leadSheetChordNormalize';
 
 export interface CanonicalChord {
   /** Root letter + optional #/b (e.g. Bb, F#) — for chord-tone engine. */
@@ -91,7 +92,7 @@ function degreeSetForEngineQuality(
  * MusicXML kind body from same suffix rules as `chordSymbolMusicXml`.
  */
 export function parseLeadSheetChordToCanonical(raw: string): CanonicalChord {
-  const text = raw.trim();
+  const text = normalizeLeadSheetChordSpelling(raw.trim()).replace(/\s+/g, ' ').trim();
   const parts = parseChordForMusicXmlHarmony(text, { literalKind: true });
   const kindText = parts.kindText ?? '';
   const kind = musicXmlKindContentFromKindText(kindText);
@@ -149,14 +150,13 @@ export function melodyAllowedPitchClassesForCanonical(c: CanonicalChord): number
   return [...s].sort((a, b) => a - b);
 }
 
-/** MusicXML `<harmony>` line: always uses canonical `text` (identical to user input). */
+/** MusicXML `<harmony>` line: kind/@text + hidden degrees from canonical bar token. */
 export function buildHarmonyXmlLineFromCanonical(
   c: CanonicalChord,
   opts?: { staffNumber?: number }
 ): string {
   return buildHarmonyXmlLine(c.text, {
     staffNumber: opts?.staffNumber,
-    exactChordTextElement: true,
   });
 }
 

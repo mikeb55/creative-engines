@@ -113,6 +113,25 @@ function validateOneVoice(
   }
 }
 
+/** Post–undotted expand: no dotted-quarter / dotted-eighth beat atoms (Sibelius-friendly score model). */
+export function validateSibeliusUndottedBeatAtoms(score: ScoreModel): StrictBarMathResult {
+  const errors: string[] = [];
+  for (const part of score.parts) {
+    for (const m of part.measures) {
+      for (const e of m.events) {
+        if (e.kind !== 'note' && e.kind !== 'rest') continue;
+        const d = e.duration;
+        if (Math.abs(d - 1.5) < EPS || Math.abs(d - 0.75) < EPS) {
+          errors.push(
+            `Sibelius undotted: part ${part.id} measure ${m.index} v${e.voice ?? 1} duration ${d} (dotted quarter/eighth in beat space)`
+          );
+        }
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateStrictBarMath(score: ScoreModel): StrictBarMathResult {
   const errors: string[] = [];
 
