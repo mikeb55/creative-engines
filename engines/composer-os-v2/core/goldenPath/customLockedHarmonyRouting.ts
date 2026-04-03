@@ -29,21 +29,44 @@ export function assertCustomLockedRouting(
   opts?: { requireFirstBar?: string }
 ): void {
   const hm = options?.harmonyMode ?? (options?.chordProgressionText?.trim() ? 'custom' : 'builtin');
-  const treatAsLocked32 =
-    hm === 'custom_locked' || (parsedBars?.length === 32 && options?.lockedHarmonyBarsRaw?.length === 32);
-  if (!treatAsLocked32) return;
-  if (!parsedBars || parsedBars.length !== 32) {
-    throw new Error(
-      `CUSTOM HARMONY ROUTING FAILURE at ${layer}: expected 32 parsed bars for locked long-form (got ${parsedBars?.length ?? 0}).`
-    );
-  }
+  const lockedLen = options?.lockedHarmonyBarsRaw?.length;
   const locked = options?.lockedHarmonyBarsRaw;
-  if (locked && locked.length === 32) {
-    for (let i = 0; i < 32; i++) {
-      if ((locked[i] ?? '') !== (parsedBars[i] ?? '')) {
-        throw new Error(`CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw[${i}] !== parsedChordBars[${i}].`);
+
+  if (hm === 'custom_locked') {
+    if (!lockedLen || ![8, 16, 32].includes(lockedLen)) {
+      throw new Error(
+        `CUSTOM HARMONY ROUTING FAILURE at ${layer}: custom_locked requires lockedHarmonyBarsRaw length 8, 16, or 32.`
+      );
+    }
+    if (!parsedBars || parsedBars.length !== lockedLen) {
+      throw new Error(
+        `CUSTOM HARMONY ROUTING FAILURE at ${layer}: expected ${lockedLen} parsed bars for custom_locked (got ${parsedBars?.length ?? 0}).`
+      );
+    }
+    if (locked && locked.length === lockedLen) {
+      for (let i = 0; i < lockedLen; i++) {
+        if ((locked[i] ?? '') !== (parsedBars[i] ?? '')) {
+          throw new Error(
+            `CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw[${i}] !== parsedChordBars[${i}].`
+          );
+        }
       }
     }
+  } else if (
+    typeof lockedLen === 'number' &&
+    [8, 16, 32].includes(lockedLen) &&
+    parsedBars?.length === lockedLen
+  ) {
+    if (!parsedBars) return;
+    if (locked && locked.length === parsedBars.length) {
+      for (let i = 0; i < locked.length; i++) {
+        if ((locked[i] ?? '') !== (parsedBars[i] ?? '')) {
+          throw new Error(`CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw[${i}] !== parsedChordBars[${i}].`);
+        }
+      }
+    }
+  } else {
+    return;
   }
   if (opts?.requireFirstBar != null && parsedBars[0] !== opts.requireFirstBar) {
     throw new Error(
@@ -59,14 +82,15 @@ export function assertScoreMatchesLockedHarmonyWire(
   options: CustomLockedRoutingWire | undefined
 ): void {
   const wire = options?.lockedHarmonyBarsRaw ?? options?.parsedChordBars;
-  if (!wire || wire.length !== 32) return;
-  /** Full 32-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
+  if (!wire || ![8, 16, 32].includes(wire.length)) return;
+  /** Full-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');
   }
-  for (let i = 1; i <= 32; i++) {
+  const n = wire.length;
+  for (let i = 1; i <= n; i++) {
     const m = g.measures.find((x) => x.index === i);
     const exp = wire[i - 1];
     const got = m?.chord ?? '';
@@ -85,12 +109,13 @@ export function assertCustomLockedBeforeScoreGeneration(
   if (options?.harmonyMode !== 'custom_locked') return;
   const locked = context.lockedHarmonyBarsRaw;
   const wire = options.lockedHarmonyBarsRaw ?? options.parsedChordBars;
-  if (!locked || locked.length !== 32 || !wire || wire.length !== 32) {
+  const n = wire?.length ?? 0;
+  if (!locked || ![8, 16, 32].includes(locked.length) || !wire || wire.length !== n || locked.length !== n) {
     throw new Error(
-      'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires 32 bars in both context.lockedHarmonyBarsRaw and options.'
+      'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires matching 8/16/32 bars in both context.lockedHarmonyBarsRaw and options.'
     );
   }
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < n; i++) {
     if ((locked[i] ?? '') !== (wire[i] ?? '')) {
       throw new Error(`CUSTOM HARMONY NOT REACHING GOLDEN PATH: options vs context locked mismatch at bar ${i + 1}.`);
     }
@@ -98,8 +123,10 @@ export function assertCustomLockedBeforeScoreGeneration(
   if (context.generationMetadata.customHarmonyLocked !== true) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: generationMetadata.customHarmonyLocked must be true.');
   }
-  if (context.form.totalBars !== 32) {
-    throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: form.totalBars must be 32 for custom_locked.');
+  if (context.form.totalBars !== n) {
+    throw new Error(
+      `CUSTOM HARMONY NOT REACHING GOLDEN PATH: form.totalBars must be ${n} for custom_locked (got ${context.form.totalBars}).`
+    );
   }
   if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_LOCKED_REGRESSION_FIRST === '1') {
     if (locked[0] !== 'Cmaj9') {
@@ -113,15 +140,16 @@ export function assertContextMatchesLocked32(
   context: CompositionContext,
   options: CustomLockedRoutingWire | undefined
 ): void {
-  if (context.presetId !== 'guitar_bass_duo' || context.form.totalBars !== 32) return;
+  const tb = context.form.totalBars;
+  if (context.presetId !== 'guitar_bass_duo' || ![8, 16, 32].includes(tb)) return;
   const locked = context.lockedHarmonyBarsRaw;
-  if (!locked || locked.length !== 32) return;
-  /** 32-bar long-form can also use built-in tiled harmony — only assert pasted/custom locked paths */
+  if (!locked || locked.length !== tb) return;
+  /** Long-form can also use built-in tiled harmony — only assert pasted/custom locked paths */
   if (context.generationMetadata.harmonySource !== 'custom') return;
   if (context.generationMetadata.customHarmonyLocked !== true) return;
   const parsed = options?.parsedChordBars ?? options?.lockedHarmonyBarsRaw;
-  if (parsed && parsed.length === 32) {
-    for (let i = 0; i < 32; i++) {
+  if (parsed && parsed.length === tb) {
+    for (let i = 0; i < tb; i++) {
       if ((locked[i] ?? '') !== (parsed[i] ?? '')) {
         throw new Error(
           `CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw diverges from parsedChordBars at bar ${i + 1}.`

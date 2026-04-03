@@ -32,6 +32,7 @@ import {
   normalizeChordToken,
   parseChordProgressionInputWithBarCount,
 } from '../core/harmony/chordProgressionParser';
+import { clampSongFormBarCount } from '../core/harmony/songFormBarCounts';
 import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
@@ -255,15 +256,16 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         normalizedBarCount: rawBars.length,
       });
     }
-    const parse32 = parseChordProgressionInputWithBarCount(rawCustomHarmony, 32);
-    if (!parse32.ok) {
+    const barTarget = clampSongFormBarCount(req.totalBars, 32);
+    const parsedHarmony = parseChordProgressionInputWithBarCount(rawCustomHarmony, barTarget);
+    if (!parsedHarmony.ok) {
       return {
         success: false,
-        error: parse32.error,
+        error: parsedHarmony.error,
         productKind: 'musicxml',
         composerOsVersion: COMPOSER_OS_VERSION,
         chordProgressionParseFailed: true,
-        validation: validationForStructural(false, [parse32.error]),
+        validation: validationForStructural(false, [parsedHarmony.error]),
         runManifest: {
           seed: effectiveSeed,
           presetId: 'song_mode',
@@ -277,7 +279,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         requestEcho: requestEchoFromReq(req),
       };
     }
-    lockedHarmonyBarsAuthoritative = [...parse32.bars];
+    lockedHarmonyBarsAuthoritative = [...parsedHarmony.bars];
   }
   /**
    * Without user paste, do not feed the 8-bar song scaffold (verse: Cmaj7→Am7→Fmaj7→G7) into duo32 as
@@ -285,18 +287,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
    * Use builtin long-form harmony instead until the user supplies 32 pasted bars.
    */
   const lf = resolveLongFormRoute('guitar_bass_duo', {
-    totalBars: req.totalBars,
+    totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
   });
-  const useBuiltinDuo32WithoutUserPaste = !useLockedCustomHarmony && lf.kind === 'duo32';
+  const useBuiltinLongFormWithoutUserPaste =
+    !useLockedCustomHarmony && (lf.kind === 'duo32' || lf.kind === 'duo16');
   const chordProgressionText = useLockedCustomHarmony
     ? rawCustomHarmony
-    : useBuiltinDuo32WithoutUserPaste
+    : useBuiltinLongFormWithoutUserPaste
       ? undefined
       : buildChordProgressionTextForDuoFromCompiledSong(sm.compiledSong);
   const harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked' = useLockedCustomHarmony
     ? 'custom_locked'
-    : useBuiltinDuo32WithoutUserPaste
+    : useBuiltinLongFormWithoutUserPaste
       ? 'builtin'
       : 'custom';
   logSongModeHarmonyDebug({
@@ -304,7 +307,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     uiChordProgressionChars: rawCustomHarmony.length,
     useLockedCustomHarmony,
     harmonyMode: harmonyModeForRun,
-    totalBars: req.totalBars ?? 32,
+    totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
   });
   const gp = runGoldenPath(effectiveSeed, {
@@ -322,7 +325,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           parsedChordBars: lockedHarmonyBarsAuthoritative,
         }
       : {}),
-    totalBars: req.totalBars ?? 32,
+    totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
     keySignatureMode: req.keySignatureMode,
     tonalCenterOverride: req.tonalCenterOverride,
@@ -356,7 +359,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       gp,
     });
   }
-  if (lockedHarmonyBarsAuthoritative?.length === 32) {
+  if (lockedHarmonyBarsAuthoritative && lockedHarmonyBarsAuthoritative.length >= 8) {
     try {
       if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
         for (let b = 1; b <= 4; b++) {

@@ -287,6 +287,22 @@ export function apiGenerate(
     ) {
       console.log('[composer-os truth] apiGenerate normalized request', JSON.stringify(req_, null, 2));
     }
+    const tb = req_.totalBars;
+    if (
+      (req_.presetId === 'song_mode' ||
+        req_.presetId === 'guitar_bass_duo' ||
+        req_.presetId === 'guitar_bass_duo_single_line') &&
+      tb !== undefined &&
+      tb !== 8 &&
+      tb !== 16 &&
+      tb !== 32
+    ) {
+      return {
+        success: false,
+        error: 'totalBars must be 8, 16, or 32 for Song Mode and Guitar–Bass Duo presets.',
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
     return runAppGeneration(req_, presetDir);
   } catch (err) {
     return {

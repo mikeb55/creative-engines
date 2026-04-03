@@ -6,7 +6,10 @@
 import type { CanonicalChord } from './canonicalChord';
 import { chordDiagnosticForInput } from './leadSheetChordNormalize';
 import { buildChordSemantics } from './chordSemantics';
-import { musicXmlKindContentFromKindText, parseChordForMusicXmlHarmony } from './chordSymbolMusicXmlCore';
+import {
+  musicXmlKindBodyForHarmonyExport,
+  parseChordForMusicXmlHarmony,
+} from './chordSymbolMusicXmlCore';
 
 export const CHORD_EXPORT_TARGET_PRIMARY_NOTE =
   'GP8 is primary detailed chord-validation target';
@@ -121,7 +124,7 @@ export function buildChordExportDiagnosticsReceipt(
 
     const parts = parseChordForMusicXmlHarmony(cc.text, { literalKind: true });
     const kindText = parts.kindText ?? '';
-    const exportKind = musicXmlKindContentFromKindText(kindText);
+    const exportKind = musicXmlKindBodyForHarmonyExport(kindText);
     /** Stacked extensions + altered degrees (same semantic layer as export); compact for receipts. */
     const exportDegrees = degreeSummaryFromSemantics(cc.text);
 

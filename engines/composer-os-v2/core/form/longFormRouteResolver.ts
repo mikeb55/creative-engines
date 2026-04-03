@@ -1,25 +1,30 @@
 /**
- * Resolves whether to use the safe 8-bar golden path or the opt-in 32-bar Duo long-form route.
+ * Resolves whether to use the safe 8-bar golden path or the opt-in 16/32-bar Duo long-form route.
  */
 
 import type { LongFormRouteResolution, LongFormRequestHints } from './longFormRouteTypes';
 
 const LONG_FORM_DUO_BARS = 32;
+const MID_FORM_DUO_BARS = 16;
 
 /**
  * Long-form Duo is **opt-in only**:
  * - `presetId === 'guitar_bass_duo'` AND
- * - (`totalBars` ≥ 9, typically 32) OR `longFormEnabled === true` with `totalBars === 32`
+ * - `totalBars === 16` → duo16, or
+ * - `totalBars === 32` OR (`longFormEnabled === true` and `totalBars` omitted / 32) → duo32
  */
 export function resolveLongFormRoute(
   presetId: string | undefined,
   hints?: LongFormRequestHints
 ): LongFormRouteResolution {
-  if (presetId !== 'guitar_bass_duo') {
+  if (presetId !== 'guitar_bass_duo' && presetId !== 'guitar_bass_duo_single_line') {
     return { kind: 'standard8' };
   }
   const tb = hints?.totalBars;
   const enabled = hints?.longFormEnabled === true;
+  if (tb === MID_FORM_DUO_BARS) {
+    return { kind: 'duo16', totalBars: MID_FORM_DUO_BARS };
+  }
   if (tb === LONG_FORM_DUO_BARS) {
     return { kind: 'duo32', totalBars: LONG_FORM_DUO_BARS };
   }
@@ -33,4 +38,4 @@ export function resolveLongFormRoute(
   return { kind: 'standard8' };
 }
 
-export { LONG_FORM_DUO_BARS };
+export { LONG_FORM_DUO_BARS, MID_FORM_DUO_BARS };

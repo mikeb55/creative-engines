@@ -89,7 +89,7 @@ export function musicXmlKindContentFromKindText(kindText: string): string {
 
   if (key.startsWith('maj')) return 'major-seventh';
   if (key.includes('alt')) return 'dominant';
-  if (key === '69') return 'major-sixth';
+  if (key === '69' || key === '6/9') return 'major-sixth';
   if (/13sus|13sus4/i.test(key)) return 'dominant-13th';
   if (/13/.test(key) && !/#13|b13/.test(key)) return 'dominant-13th';
   if (/11/.test(key) && !/#11/.test(key)) return 'dominant-11th';
@@ -100,6 +100,38 @@ export function musicXmlKindContentFromKindText(kindText: string): string {
   if (key.startsWith('m') && !key.startsWith('maj')) return 'minor';
 
   return DEFAULT_MUSICXML_KIND_CONTENT;
+}
+
+/**
+ * When true, enumerated &lt;kind&gt; bodies (major-seventh, dominant-13th, …) are not enough for
+ * downstream notation apps: many importers render from the enum and ignore or flatten
+ * {@link kind} text="…" / hidden degrees. In those cases the export uses &lt;kind&gt;other&lt;/kind&gt;
+ * so {@link kind} text carries the full jazz suffix faithfully.
+ */
+export function needsHarmonyKindOther(kindText: string): boolean {
+  const raw = kindText.trim();
+  if (!raw) return false;
+  const key = raw.toLowerCase().replace(/\s+/g, '');
+
+  if (key === 'm7b5' || raw === 'ø' || /^ø7$/i.test(raw.trim())) return false;
+
+  if (/\balt\b|7alt/i.test(raw)) return true;
+  if (key === '69' || key === '6/9') return true;
+  if (/\([^)]*[#b]/.test(raw)) return true;
+  if (/#(5|9|11|13)|b(9|11|13|5)(?!\d)/i.test(raw)) return true;
+  if (/13sus|13sus4|11sus/i.test(raw)) return true;
+  if (/sus/i.test(raw) && /1[13]/.test(raw)) return true;
+
+  return false;
+}
+
+/**
+ * MusicXML &lt;kind&gt; element body for export: either a standard enum string or {@code other}
+ * when {@link needsHarmonyKindOther} so {@link kind} text="…" is the authoritative display.
+ */
+export function musicXmlKindBodyForHarmonyExport(kindText: string): string {
+  if (needsHarmonyKindOther(kindText)) return 'other';
+  return musicXmlKindContentFromKindText(kindText);
 }
 
 /** MusicXML harmony: harmonic root/kind on the upper structure; slash bass in `<bass>`. */
@@ -282,7 +314,8 @@ export function harmonyDegreeXmlFromKindText(kindText: string, opts?: { printObj
     }
   }
 
-  if (raw === '69') {
+  const keyNorm = raw.toLowerCase().replace(/\s+/g, '');
+  if (keyNorm === '69' || keyNorm === '6/9') {
     push(9, 0, 'add');
   }
 
@@ -319,7 +352,7 @@ export function harmonyDegreeXmlFromKindText(kindText: string, opts?: { printObj
     if (mm) push(parseInt(mm[1]!, 10), 0, 'add');
   }
 
-  if (!hasSus && /13/.test(raw) && !entries.some((e) => e.v === 13)) {
+  if (/13/.test(raw) && !entries.some((e) => e.v === 13)) {
     push(13, 0, 'add');
   }
   if (!hasSus && /11/.test(raw) && !/#11|b11/.test(raw) && !entries.some((e) => e.v === 11)) {

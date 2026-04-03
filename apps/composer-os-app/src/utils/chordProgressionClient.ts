@@ -9,3 +9,9 @@ export {
   parseChordProgressionInputFlexible,
   parseChordProgressionInputWithBarCount,
 } from '@composer-os/core/harmony/chordProgressionParser';
+export {
+  SONG_FORM_BAR_OPTIONS,
+  clampSongFormBarCount,
+  isAllowedSongFormBarCount,
+  type SongFormBarCount,
+} from '@composer-os/core/harmony/songFormBarCounts';

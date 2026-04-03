@@ -20,7 +20,13 @@ const PRESETS: AppPreset[] = [
     id: 'guitar_bass_duo_single_line',
     name: 'Guitar–Bass Duo (Single-Line)',
     description:
-      'Same duo harmony as Guitar/Bass Duo, with one single-note guitar line and one single-note bass line (no chordal guitar layer).',
+      'Same duo harmony path with one single-note guitar line and one single-note bass line (conversational interplay).',
+    supported: true,
+  },
+  {
+    id: 'wyble_etude',
+    name: 'Wyble Etude',
+    description: 'Two-voice contrapuntal guitar etude (Jimmy Wyble style)',
     supported: true,
   },
   {

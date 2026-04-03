@@ -9,6 +9,7 @@
 import {
   escapeXmlForHarmony,
   harmonyDegreeXmlFromKindText,
+  musicXmlKindBodyForHarmonyExport,
   musicXmlKindContentFromKindText,
   parseChordForMusicXmlHarmony,
   parseChordForMusicXmlHarmonyDisplay,
@@ -289,7 +290,7 @@ export function buildHarmonyXmlLine(
   const sem = buildChordSemantics(chordSymbol);
   const semantic = parseChordForMusicXmlHarmony(chordSymbol, { literalKind: true });
   const display = parseChordForMusicXmlHarmonyDisplay(chordSymbol);
-  const kindContent = musicXmlKindContentFromKindText(semantic.kindText);
+  const kindContent = musicXmlKindBodyForHarmonyExport(semantic.kindText);
   const kindAttrText = display.kindText;
   const degreeXml = harmonyDegreeXmlFromKindText(semantic.kindText, { printObjectNo: true });
   const r = parseRootNotation(sem.root);

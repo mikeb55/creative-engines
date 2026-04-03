@@ -12,7 +12,7 @@ export interface DuoLongFormSectionSpec {
 }
 
 export interface DuoLongFormPlan {
-  totalBars: 32;
+  totalBars: 16 | 32;
   sections: DuoLongFormSectionSpec[];
 }
 
@@ -27,6 +27,17 @@ export function buildDuoLongFormPlan(): DuoLongFormPlan {
       { label: "A'", startBar: 9, length: 8, role: 'development' },
       { label: 'B', startBar: 17, length: 8, role: 'contrast' },
       { label: "A''", startBar: 25, length: 8, role: 'return' },
+    ],
+  };
+}
+
+/** Two 8-bar sections — used when `totalBars === 16`. */
+export function buildDuoLongFormPlan16(): DuoLongFormPlan {
+  return {
+    totalBars: 16,
+    sections: [
+      { label: 'A', startBar: 1, length: 8, role: 'statement' },
+      { label: 'B', startBar: 9, length: 8, role: 'contrast' },
     ],
   };
 }

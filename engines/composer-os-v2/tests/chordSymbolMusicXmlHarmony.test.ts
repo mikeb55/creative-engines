@@ -24,11 +24,11 @@ export function runChordSymbolMusicXmlHarmonyTests(): { name: string; ok: boolea
   });
 
   tests.push({
-    name: 'Fmaj7#11: kind@text maj7#11, major-seventh, hidden #11 degree',
+    name: 'Fmaj7#11: kind@text maj7#11, other, hidden #11 degree',
     ok: (() => {
       const x = buildHarmonyXmlLine('Fmaj7#11');
       assert(x.includes('kind text="maj7#11"'), 'kind text');
-      assert(x.includes('>major-seventh') && x.includes('</kind>'), 'kind body');
+      assert(x.includes('>other<') && x.includes('</kind>'), 'kind body');
       assert(x.includes('print-object="no"'), 'print-object');
       assert(x.includes('<degree-value>11</degree-value>'), 'degree 11');
       assert(x.includes('<degree-alter>1</degree-alter>'), 'alter 11');
@@ -37,24 +37,25 @@ export function runChordSymbolMusicXmlHarmonyTests(): { name: string; ok: boolea
   });
 
   tests.push({
-    name: 'G13sus: dominant-13th, 13sus text, subtract/add 4, no <text>',
+    name: 'G13sus: other, 13sus text, subtract/add 4, degree 13, no <text>',
     ok: (() => {
       const x = buildHarmonyXmlLine('G13sus');
       assert(x.includes('kind text="13sus"'), 'kind text');
-      assert(x.includes('>dominant-13th<'), 'kind');
+      assert(x.includes('>other<'), 'kind');
       assert(x.includes('<degree-type>subtract</degree-type>'), 'subtract');
       assert(x.includes('<degree-value>4</degree-value>'), 'add 4');
+      assert(x.includes('<degree-value>13</degree-value>'), 'degree 13');
       assert(!x.includes('<text>'), 'no text');
       return true;
     })(),
   });
 
   tests.push({
-    name: 'C6/9: kind text 6/9, major-sixth, hidden add 9',
+    name: 'C6/9: kind text 6/9, other, hidden add 9',
     ok: (() => {
       const x = buildHarmonyXmlLine('C6/9');
       assert(x.includes('kind text="6/9"'), 'kind text');
-      assert(x.includes('>major-sixth<'), 'kind');
+      assert(x.includes('>other<'), 'kind');
       assert(x.includes('<degree-value>9</degree-value>'), 'degree 9');
       assert(x.includes('print-object="no"'), 'hidden');
       return true;
@@ -62,11 +63,11 @@ export function runChordSymbolMusicXmlHarmonyTests(): { name: string; ok: boolea
   });
 
   tests.push({
-    name: 'A7alt: dominant, 7alt text, b5/#5/b9/#9 degrees',
+    name: 'A7alt: other, 7alt text, b5/#5/b9/#9 degrees',
     ok: (() => {
       const x = buildHarmonyXmlLine('A7alt');
       assert(x.includes('kind text="7alt"'), 'kind text');
-      assert(x.includes('>dominant<'), 'kind');
+      assert(x.includes('>other<'), 'kind');
       assert(x.includes('<degree-value>9</degree-value>'), '9');
       assert(x.includes('<degree-value>5</degree-value>'), '5');
       const deg = harmonyDegreeXmlFromKindText('7alt');

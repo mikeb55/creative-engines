@@ -16,10 +16,16 @@ import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
 import type { MotifTrackerState } from '../motif/motifTypes';
 
-const MAX_CANDIDATES_PER_PHRASE = 6;
+const MAX_CANDIDATES_PER_PHRASE = 24;
 const BEATS = 4;
 const STAGE18_SHIFT = 0.5;
 const EPS = 1e-6;
+
+/** Behaviour #18.1 — candidate ranking weights (cadence / contour / independence / phrase contrast). */
+const W_SCORE_CADENCE = 10;
+const W_SCORE_CONTOUR = 8;
+const W_SCORE_INDEP = 2;
+const W_SCORE_IDENTITY = 3;
 
 /** Meta for Stage 18: 1-based total bars in the built segment (whole score pass). */
 export interface PhraseStage18Meta {
@@ -125,8 +131,8 @@ function buildTwoPhrasePlans(
     contour: u(1) < 0.45 ? 'up' : u(2) < 0.5 ? 'arch' : 'down',
     cadenceBar: 4,
     densityCurve: ['sparse', 'medium', 'dense', 'resolve'],
-    guitarRange: [Math.max(52, gz[0]), Math.min(79, gz[1])],
-    bassRange: [Math.max(28, bz[0]), Math.min(55, bz[1])],
+    guitarRange: [Math.max(58, gz[0]), Math.min(79, gz[1])],
+    bassRange: [Math.max(28, bz[0]), Math.min(52, bz[1])],
     roleMatrix: { guitar: 'statement', bass: 'support' },
   };
   const p1: PhrasePlan = {
@@ -134,8 +140,8 @@ function buildTwoPhrasePlans(
     contour: p0.contour === 'up' ? 'arch' : p0.contour === 'down' ? 'up' : 'down',
     cadenceBar: 4,
     densityCurve: ['sparse', 'dense', 'medium', 'resolve'],
-    guitarRange: [Math.max(52, gz[0] - 1), Math.min(79, gz[1] - 1)],
-    bassRange: [Math.max(28, bz[0]), Math.min(55, Math.min(54, bz[1] + 2))],
+    guitarRange: [Math.max(57, gz[0] - 1), Math.min(79, gz[1] - 1)],
+    bassRange: [Math.max(28, bz[0]), Math.min(52, Math.min(54, bz[1] + 2))],
     roleMatrix: { guitar: 'answer', bass: 'statement' },
   };
   return [p0, p1];
@@ -327,7 +333,12 @@ function scoreCandidate(
   const cInd = independenceScore(pair);
   const cId =
     plan.role === 'response' ? identityVsPhrase1(phrase1Guitar, pair.guitar) : 0.5;
-  return cCad + cContour + cInd + cId;
+  return (
+    cCad * W_SCORE_CADENCE +
+    cContour * W_SCORE_CONTOUR +
+    cInd * W_SCORE_INDEP +
+    cId * W_SCORE_IDENTITY
+  );
 }
 
 function transposeGuitarPart(part: PartModel, semitones: number): void {
@@ -680,7 +691,7 @@ export function buildPhraseFirstDuoScore(context: CompositionContext): PhraseFir
 
     if (remaining >= 8) {
       let best0: PhrasePair | undefined;
-      let bestS0 = -1;
+      let bestS0 = -Infinity;
       for (let c = 0; c < MAX_CANDIDATES_PER_PHRASE; c++) {
         const pair = emitPhrasePair(p0, context, barPtr, 4, c);
         const sc = scoreCandidate(pair, p0, context, barPtr, 4, undefined);
@@ -694,7 +705,7 @@ export function buildPhraseFirstDuoScore(context: CompositionContext): PhraseFir
       bassMeasures.push(...best0.bass);
 
       let best1: PhrasePair | undefined;
-      let bestS1 = -1;
+      let bestS1 = -Infinity;
       const g1ref = best0.guitar;
       for (let c = 0; c < MAX_CANDIDATES_PER_PHRASE; c++) {
         const pair = emitPhrasePair(p1, context, barPtr + 4, 4, c);
@@ -711,7 +722,7 @@ export function buildPhraseFirstDuoScore(context: CompositionContext): PhraseFir
     } else if (remaining >= 4) {
       const plan = p0;
       let best: PhrasePair | undefined;
-      let bestS = -1;
+      let bestS = -Infinity;
       for (let c = 0; c < MAX_CANDIDATES_PER_PHRASE; c++) {
         const pair = emitPhrasePair(plan, context, barPtr, 4, c);
         const sc = scoreCandidate(pair, plan, context, barPtr, 4, undefined);
@@ -728,7 +739,7 @@ export function buildPhraseFirstDuoScore(context: CompositionContext): PhraseFir
       const plan = p0;
       const n = remaining;
       let best: PhrasePair | undefined;
-      let bestS = -1;
+      let bestS = -Infinity;
       for (let c = 0; c < MAX_CANDIDATES_PER_PHRASE; c++) {
         const pair = emitPhrasePair(plan, context, barPtr, n, c);
         const sc = scoreCandidate(pair, plan, context, barPtr, n, undefined);

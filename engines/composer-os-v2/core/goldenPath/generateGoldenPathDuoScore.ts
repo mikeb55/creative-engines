@@ -27,7 +27,7 @@ import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
 import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
-import { pickGuideTone, clampPitch, seededUnit } from './guitarBassDuoHarmony';
+import { pickGuideTone, clampPitch, seededUnit, approachFromBelow } from './guitarBassDuoHarmony';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1297,7 +1297,7 @@ function buildBassPart(
         bar: b,
         slashBassPitch,
       });
-      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh, { seed: s, bar: b });
       scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
@@ -1370,7 +1370,7 @@ function buildBassPart(
         bar: b,
         slashBassPitch,
       });
-      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh, { seed: s, bar: b });
       scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });
@@ -1443,7 +1443,14 @@ function buildBassPart(
         addEvent(m, createRest(0, t0));
       }
       const span = 4 - t0;
-      const firstNote = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+      const firstNote =
+        slashBassPitch === undefined
+          ? rootClamped
+          : seededUnit(s, b, 8810) < 0.5
+            ? slashBassPitch
+            : seededUnit(s, b, 8811) < 0.52
+              ? rootClamped
+              : approachFromBelow(clampPitch(slashBassPitch, walkLow, effectiveHigh), walkLow, effectiveHigh);
       const pickMod = (b + s) % 5;
       const secondPitchPick =
         duoGoldenBass && (pickMod === 0 || pickMod === 2)
@@ -1606,7 +1613,7 @@ function buildBassPart(
     }
 
     if (duoGoldenBass) {
-      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh);
+      ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh, { seed: s, bar: b });
       scrubBassFirstAttackIfRoot(m, b, s, rootClamped, third, guide, fifth, walkLow, effectiveHigh, {
         slashBassPitch,
       });

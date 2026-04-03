@@ -20,7 +20,7 @@ describe('APP_PRESET_REGISTRY', () => {
   it('mergePresetsWithRegistry fills missing API entries from static registry', () => {
     const partial = [{ id: 'guitar_bass_duo', name: 'X', description: 'Y', supported: true }];
     const merged = mergePresetsWithRegistry(partial);
-    expect(merged.length).toBe(6);
+    expect(merged.length).toBe(8);
     expect(merged.some((p) => p.id === 'riff_generator')).toBe(true);
     expect(merged.find((p) => p.id === 'riff_generator')?.name).toBe('Riff Generator');
   });

@@ -13,10 +13,13 @@ import {
   type AppPresetCard,
 } from '../constants/composerOsPresetUi';
 import {
+  clampSongFormBarCount,
   parseChordProgressionInput,
   parseChordProgressionInputFlexible,
   parseChordProgressionInputWithBarCount,
+  SONG_FORM_BAR_OPTIONS,
 } from '../utils/chordProgressionClient';
+import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 
 /** Receipt echo from engine (#17 chord export diagnostics). */
 type ChordDxReceiptUi = {
@@ -291,13 +294,32 @@ export function HomeGenerate({
     return modePresets.find((m) => m.id === id)?.name ?? id;
   }
 
+  const songFormBarPreset =
+    presetId === 'song_mode' ||
+    presetId === 'guitar_bass_duo' ||
+    presetId === 'guitar_bass_duo_single_line';
+
   useEffect(() => {
     if (presetId === 'riff_generator') {
       setTotalBars((tb) => (tb >= 1 && tb <= 4 ? tb : 2));
+    } else if (songFormBarPreset) {
+      setTotalBars((tb) => clampSongFormBarCount(tb, 32));
     } else {
       setTotalBars((tb) => (tb >= 8 ? tb : 32));
     }
-  }, [presetId]);
+  }, [presetId, songFormBarPreset]);
+
+  const songFormBars = clampSongFormBarCount(totalBars, 32);
+
+  useEffect(() => {
+    if (!songFormBarPreset) return;
+    setChordProgressionText((prev) => alignChordProgressionToSongFormBars(prev, songFormBars));
+  }, [songFormBars, songFormBarPreset]);
+
+  function onSongFormChordProgressionBlur() {
+    if (!songFormBarPreset) return;
+    setChordProgressionText((prev) => alignChordProgressionToSongFormBars(prev, songFormBars));
+  }
 
   const isScorePreset =
     presetId === 'guitar_bass_duo' ||
@@ -347,20 +369,21 @@ export function HomeGenerate({
          */
         const songChordLine = presetId === 'song_mode' ? chordTrim || tonalTrim : chordTrim;
 
+        const tbForm = clampSongFormBarCount(totalBars, 32);
         const coreFields = mapCoreUiToGenerationFields({
           presetId,
           seed,
           tonalCenter:
             presetId === 'song_mode' && chordTrim === '' && tonalTrim !== '' ? '' : tonalCenter,
           bpm,
-          totalBars,
+          totalBars: songFormBarPreset ? tbForm : totalBars,
           variationId: vid,
           creativeControlLevel,
           stylePairing: stylePairingSong ?? stylePairingBigBand,
           ensembleConfigId: presetId === 'big_band' ? ensembleConfigId : undefined,
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
         });
-        /** Duo long-form: 32-bar paste must preflight as 32 (engine matches runGoldenPath try-32-then-8). */
+        /** Duo / Song Form: chord count must match selected total bars (8 / 16 / 32). */
         let duoHarmonyFields: {
           harmonyMode: 'custom' | 'custom_locked';
           chordProgressionText: string;
@@ -368,12 +391,50 @@ export function HomeGenerate({
           longFormEnabled?: boolean;
         } | null = null;
         if (presetId === 'guitar_bass_duo' && chordTrim) {
-          const p32 = parseChordProgressionInputWithBarCount(chordTrim, 32);
-          if (p32.ok) {
+          if (tbForm === 32) {
+            const p32 = parseChordProgressionInputWithBarCount(chordTrim, 32);
+            if (p32.ok) {
+              duoHarmonyFields = {
+                harmonyMode: 'custom_locked',
+                chordProgressionText: chordTrim,
+                totalBars: 32,
+                longFormEnabled: true,
+              };
+            } else {
+              const p8 = parseChordProgressionInput(chordTrim);
+              if (!p8.ok) {
+                setError(p8.error);
+                setLoading(false);
+                notifyGenPhase('failed');
+                onResult({
+                  record: {},
+                  summary: { status: 'failed', at: new Date().toISOString() },
+                });
+                return;
+              }
+              duoHarmonyFields = {
+              harmonyMode: 'custom',
+              chordProgressionText: chordTrim,
+              totalBars: 32,
+              longFormEnabled: true,
+            };
+            }
+          } else if (tbForm === 16) {
+            const p16 = parseChordProgressionInputWithBarCount(chordTrim, 16);
+            if (!p16.ok) {
+              setError(p16.error);
+              setLoading(false);
+              notifyGenPhase('failed');
+              onResult({
+                record: {},
+                summary: { status: 'failed', at: new Date().toISOString() },
+              });
+              return;
+            }
             duoHarmonyFields = {
               harmonyMode: 'custom_locked',
               chordProgressionText: chordTrim,
-              totalBars: 32,
+              totalBars: 16,
               longFormEnabled: true,
             };
           } else {
@@ -388,12 +449,17 @@ export function HomeGenerate({
               });
               return;
             }
-            duoHarmonyFields = { harmonyMode: 'custom', chordProgressionText: chordTrim };
+            duoHarmonyFields = {
+              harmonyMode: 'custom_locked',
+              chordProgressionText: chordTrim,
+              totalBars: 8,
+              longFormEnabled: false,
+            };
           }
         } else if (presetId === 'guitar_bass_duo_single_line' && chordTrim) {
-          const p8 = parseChordProgressionInput(chordTrim);
-          if (!p8.ok) {
-            setError(p8.error);
+          const pLine = parseChordProgressionInputWithBarCount(chordTrim, tbForm);
+          if (!pLine.ok) {
+            setError(pLine.error);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -402,12 +468,17 @@ export function HomeGenerate({
             });
             return;
           }
-          duoHarmonyFields = { harmonyMode: 'custom', chordProgressionText: chordTrim };
+          duoHarmonyFields = {
+            harmonyMode: tbForm === 8 ? 'custom_locked' : 'custom_locked',
+            chordProgressionText: chordTrim,
+            totalBars: tbForm,
+            longFormEnabled: tbForm >= 16,
+          };
         }
         if (presetId === 'song_mode' && songChordLine) {
-          const parsed32 = parseChordProgressionInputWithBarCount(songChordLine, 32);
-          if (!parsed32.ok) {
-            setError(parsed32.error);
+          const parsedSong = parseChordProgressionInputWithBarCount(songChordLine, tbForm);
+          if (!parsedSong.ok) {
+            setError(parsedSong.error);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -444,8 +515,8 @@ export function HomeGenerate({
             ? {
                 harmonyMode: 'custom_locked' as const,
                 chordProgressionText: songChordLine,
-                totalBars: 32,
-                longFormEnabled: true,
+                totalBars: tbForm,
+                longFormEnabled: tbForm >= 16,
               }
             : {}),
           ...(presetId === 'wyble_etude' && chordTrim ? { chordProgressionText: chordTrim } : {}),
@@ -717,9 +788,9 @@ export function HomeGenerate({
               lineHeight: 1.45,
             }}
           >
-            Short key label only (e.g. <code>C</code>). Paste your <strong style={{ color: 'var(--text)' }}>full
-            32-bar chord progression</strong> in <strong style={{ color: 'var(--text)' }}>Chord progression</strong>{' '}
-            below — not here.
+            Short key label only (e.g. <code>C</code>). Enter your <strong style={{ color: 'var(--text)' }}>full
+            chord progression</strong> (same length as <strong style={{ color: 'var(--text)' }}>Number of bars</strong>
+            : 8, 16, or 32) in <strong style={{ color: 'var(--text)' }}>Chord progression</strong> below — not here.
           </p>
         )}
         <input
@@ -746,10 +817,10 @@ export function HomeGenerate({
         presetId === 'wyble_etude') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            {presetId === 'song_mode'
-              ? 'Chord progression (32 bars)'
-              : presetId === 'wyble_etude'
-                ? 'Chord progression (required)'
+            {presetId === 'wyble_etude'
+              ? 'Chord progression (required)'
+              : songFormBarPreset
+                ? `Chord progression (${songFormBars} bars)`
                 : 'Chord progression (optional)'}
           </label>
           {presetId === 'wyble_etude' ? (
@@ -774,9 +845,8 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              Custom harmony: exactly <strong style={{ color: 'var(--text)' }}>8</strong> chords. Separate bars
-              with <code>|</code>, <code>,</code>, <code>;</code>, or (without pipe in the line) spaced{' '}
-              <code>/</code>. Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
+              Custom harmony: one chord per bar for the length you set under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              (8, 16, or 32). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study progression (e.g. Dm9 … A7alt).
             </p>
           ) : presetId === 'riff_generator' ? (
@@ -800,25 +870,32 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              <strong style={{ color: 'var(--text)' }}>Exactly 32</strong> chords for locked harmony. Separate
-              bars with <code>|</code>, <code>,</code>, or <code>;</code>. Slash chords (e.g.{' '}
+              <strong style={{ color: 'var(--text)' }}>Exactly {songFormBars}</strong> chords for locked harmony (match{' '}
+              <strong style={{ color: 'var(--text)' }}>Number of bars</strong>). Slash chords (e.g.{' '}
               <code>E7(#11)/G#</code>) are one symbol per bar.
             </p>
           )}
           <textarea
             value={chordProgressionText}
             onChange={(e) => setChordProgressionText(e.target.value)}
+            onBlur={songFormBarPreset ? onSongFormChordProgressionBlur : undefined}
             disabled={loading}
             placeholder={
               presetId === 'wyble_etude'
                 ? 'Dm9 | G13 | Cmaj7 | Cmaj7/E | Am9 | D7 | … (one chord per bar)'
-                : presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line'
-                  ? 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt'
-                  : presetId === 'song_mode'
-                    ? 'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | … (32 chords total)'
+                : presetId === 'riff_generator'
+                  ? 'Am7 | D7 | Gmaj7 |'
+                  : songFormBarPreset
+                    ? `Pipe-separated chords — aligned to ${songFormBars} bars on blur`
                     : 'Am7 | D7 | Gmaj7 |'
             }
-            rows={presetId === 'song_mode' ? 6 : presetId === 'wyble_etude' ? 4 : 3}
+            rows={
+              songFormBarPreset
+                ? Math.min(12, Math.max(4, Math.ceil(songFormBars / 6)))
+                : presetId === 'wyble_etude'
+                  ? 4
+                  : 3
+            }
             style={{
               width: '100%',
               maxWidth: 600,
@@ -860,22 +937,44 @@ export function HomeGenerate({
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             {presetId === 'riff_generator' ? 'Riff length (bars)' : 'Number of bars'}
           </label>
-          <input
-            type="number"
-            min={presetId === 'riff_generator' ? 1 : 8}
-            max={presetId === 'riff_generator' ? 4 : 512}
-            value={totalBars}
-            onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 0)}
-            disabled={loading}
-            style={{
-              width: 120,
-              padding: '0.45rem 0.6rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-input, var(--bg))',
-              color: 'var(--text)',
-            }}
-          />
+          {songFormBarPreset ? (
+            <select
+              value={songFormBars}
+              onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 32)}
+              disabled={loading}
+              style={{
+                width: 140,
+                padding: '0.45rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+              }}
+            >
+              {SONG_FORM_BAR_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n} bars
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="number"
+              min={presetId === 'riff_generator' ? 1 : 8}
+              max={presetId === 'riff_generator' ? 4 : 512}
+              value={totalBars}
+              onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 0)}
+              disabled={loading}
+              style={{
+                width: 120,
+                padding: '0.45rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+              }}
+            />
+          )}
         </div>
       </div>
 

@@ -79,7 +79,11 @@ export function emitDuoPhraseModeBar(params: {
     slashBassPitch,
     phraseRetryAttempt,
   } = params;
-  const r0 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : rootClamped;
+  const slashClamped =
+    slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : undefined;
+  /** Prefer slash on ~strong~ anchors, not every phrase — keeps lines directional vs. pedal on Y. */
+  const r0 =
+    slashClamped !== undefined && seededUnit(seed, bar, 918) < 0.58 ? slashClamped : rootClamped;
   const t = qBeat(t0);
   if (t > 0) addEvent(m, createRest(0, t));
   const sp = qBeat(4 - t);
@@ -149,14 +153,15 @@ export function emitDuoPhraseModeBar(params: {
 }
 
 /**
- * Slash-bass symbols (e.g. Dmaj9/F#) require the bass line to spell that pitch class somewhere.
- * Some phrase emitters (echo / contour breaks) can drop it — call this before scrub/finalize.
+ * Slash-bass symbols (e.g. Dmaj9/F#): ensure pitch class Y appears somewhere in the bar.
+ * Placement varies by bar (first / last / middle / approach→Y) so bars do not collapse to one repeated shape.
  */
 export function ensureSlashBassPitchPresentInMeasure(
   m: MeasureModel,
   slashBassPitch: number | undefined,
   walkLow: number,
-  high: number
+  high: number,
+  opts?: { seed?: number; bar?: number }
 ): void {
   if (slashBassPitch === undefined) return;
   const targetPc = ((slashBassPitch % 12) + 12) % 12;
@@ -165,11 +170,27 @@ export function ensureSlashBassPitchPresentInMeasure(
     const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
     if (pc === targetPc) return;
   }
-  const firstIdx = m.events.findIndex((ev) => ev.kind === 'note');
-  if (firstIdx >= 0) {
-    const n = m.events[firstIdx] as { pitch: number; kind: string; startBeat: number; duration: number };
-    m.events[firstIdx] = { ...n, pitch: clampPitch(slashBassPitch, walkLow, high) };
+  const seed = opts?.seed ?? 0;
+  const bar = opts?.bar ?? 1;
+  const y = clampPitch(slashBassPitch, walkLow, high);
+  const noteIdxs = m.events.map((e, i) => (e.kind === 'note' ? i : -1)).filter((i) => i >= 0);
+  if (noteIdxs.length === 0) return;
+  const u = seededUnit(seed, bar, 9911);
+  let replaceIdx: number;
+  if (u < 0.26) {
+    replaceIdx = noteIdxs[0]!;
+  } else if (u < 0.52) {
+    replaceIdx = noteIdxs[noteIdxs.length - 1]!;
+  } else if (u < 0.74 && noteIdxs.length >= 2) {
+    replaceIdx = noteIdxs[Math.floor(noteIdxs.length * 0.5)]!;
+  } else if (u < 0.86 && noteIdxs.length >= 2) {
+    replaceIdx = noteIdxs[1]!;
+  } else {
+    const j = Math.floor(seededUnit(seed, bar, 9912) * noteIdxs.length);
+    replaceIdx = noteIdxs[j]!;
   }
+  const n = m.events[replaceIdx] as { pitch: number; kind: 'note'; startBeat: number; duration: number };
+  m.events[replaceIdx] = { ...n, pitch: y };
 }
 
 /** Every bar should articulate 3rd or 7th somewhere (guide-tone voice). */
@@ -345,7 +366,9 @@ export function emitDuoSwingBassBar(params: {
     const p1 = seededUnit(seed, bar, 901) < 0.55 ? clampPitch(guide, walkLow, effectiveHigh) : rootClamped;
     const pool = [p1, clampPitch(third, walkLow, effectiveHigh), clampPitch(fifth, walkLow, effectiveHigh)];
     if (slashBassPitch !== undefined) {
-      pool.unshift(clampPitch(slashBassPitch, walkLow, effectiveHigh));
+      const sb = clampPitch(slashBassPitch, walkLow, effectiveHigh);
+      if (seededUnit(seed, bar, 903) < 0.62) pool.unshift(sb);
+      else pool.push(sb);
     }
     emitDuoBassQuarterStrideBar({ m, t0, span, seed, bar, walkLow, effectiveHigh, pitches: pool });
     return;
@@ -362,14 +385,19 @@ export function emitDuoSwingBassBar(params: {
       clampPitch(rootClamped, walkLow, effectiveHigh),
     ];
     if (slashBassPitch !== undefined) {
-      pool.unshift(clampPitch(slashBassPitch, walkLow, effectiveHigh));
+      const sb = clampPitch(slashBassPitch, walkLow, effectiveHigh);
+      if (seededUnit(seed, bar, 904) < 0.62) pool.unshift(sb);
+      else pool.push(sb);
     }
     emitDuoBassQuarterStrideBar({ m, t0: hit, span: rem, seed, bar, walkLow, effectiveHigh, pitches: pool });
     return;
   }
   addEvent(m, createRest(t0, 0.5));
-  const n1 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : third;
-  addEvent(m, createNote(n1, t0 + 0.5, 1));
+  const n1 =
+    slashBassPitch !== undefined && seededUnit(seed, bar, 905) < 0.58
+      ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
+      : third;
+  addEvent(m, createNote(clampPitch(n1, walkLow, effectiveHigh), t0 + 0.5, 1));
   addEvent(m, createNote(guide, t0 + 1.5, 1));
   addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, 4 - t0 - 2.5))));
 }
@@ -649,10 +677,14 @@ export function emitMelodicBassBar(params: {
   const gtBiasBase = (guideToneBias ?? 1) * (guitarActivityHot ? 1.12 : 1);
   const gtBias =
     gtBiasBase * (density === 'sparse' ? 0.93 : density === 'dense' ? 1.12 : 1);
-  const rootForLine =
-    slashBassPitch !== undefined
-      ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
-      : rootClamped;
+  /** Harmonic root for line shape; slash bass is a weighted target, not a hard substitute for root. */
+  const rootForLine = rootClamped;
+  const slashBassTarget =
+    slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : undefined;
+  const withSlashPrefer = (base: Array<{ w: number; pitch: number }>) =>
+    slashBassTarget === undefined
+      ? base
+      : [...base, { w: 1.34 + 0.42 * seededUnit(seed, bar, 8842), pitch: slashBassTarget }];
 
   const span = 4 - firstStart;
   if (firstStart > 0) {
@@ -712,12 +744,14 @@ export function emitMelodicBassBar(params: {
   const rot = (bar + seed * 3 + rhythmVar * 5) % 3;
 
   if (section === 'cadence') {
-    const base = biasPieces([
-      { w: bar % 2 === 0 ? 1.25 : 1, pitch: ap },
-      { w: 3, pitch: rootForLine },
-      { w: 5, pitch: guide },
-      { w: 4, pitch: land },
-    ]);
+    const base = biasPieces(
+      withSlashPrefer([
+        { w: bar % 2 === 0 ? 1.25 : 1, pitch: ap },
+        { w: 3, pitch: rootForLine },
+        { w: 5, pitch: guide },
+        { w: 4, pitch: land },
+      ])
+    );
     addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
     return;
   }
@@ -768,7 +802,7 @@ export function emitMelodicBassBar(params: {
         { w: 2, pitch: landE },
       ];
     }
-    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(biasPieces(base), bar, echoSeed, steady));
+    addWeightedPhrase(m, firstStart, span, applyPhraseWeights(biasPieces(withSlashPrefer(base)), bar, echoSeed, steady));
     return;
   }
 
@@ -777,29 +811,35 @@ export function emitMelodicBassBar(params: {
     const lf = leadPitch(lineSeed, bar, third, guide, fifth, rootClamped);
     let base: Array<{ w: number; pitch: number }>;
     if (u < 0.38) {
-      base = biasPieces([
-        { w: 1, pitch: lf },
-        { w: 1, pitch: fifth },
-        { w: 2, pitch: guide },
-        { w: 2, pitch: rootForLine },
-        { w: 2, pitch: land },
-      ]);
+      base = biasPieces(
+        withSlashPrefer([
+          { w: 1, pitch: lf },
+          { w: 1, pitch: fifth },
+          { w: 2, pitch: guide },
+          { w: 2, pitch: rootForLine },
+          { w: 2, pitch: land },
+        ])
+      );
     } else if (u < 0.72) {
-      base = biasPieces([
-        { w: bar % 2 === 0 ? 1.2 : 1, pitch: ap },
-        { w: 3, pitch: rootForLine },
-        { w: 2.5, pitch: seventh },
-        { w: 1, pitch: third },
-        { w: 2.5, pitch: land },
-      ]);
+      base = biasPieces(
+        withSlashPrefer([
+          { w: bar % 2 === 0 ? 1.2 : 1, pitch: ap },
+          { w: 3, pitch: rootForLine },
+          { w: 2.5, pitch: seventh },
+          { w: 1, pitch: third },
+          { w: 2.5, pitch: land },
+        ])
+      );
     } else {
-      base = biasPieces([
-        { w: 2.5, pitch: fifth },
-        { w: 0.5, pitch: lf },
-        { w: 1, pitch: guide },
-        { w: 2, pitch: seventh },
-        { w: 2, pitch: lastLead },
-      ]);
+      base = biasPieces(
+        withSlashPrefer([
+          { w: 2.5, pitch: fifth },
+          { w: 0.5, pitch: lf },
+          { w: 1, pitch: guide },
+          { w: 2, pitch: seventh },
+          { w: 2, pitch: lastLead },
+        ])
+      );
     }
     addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, lineSeed, steady));
     return;
@@ -811,45 +851,55 @@ export function emitMelodicBassBar(params: {
 
   let base: Array<{ w: number; pitch: number }>;
   if (bRhythm === 0) {
-    base = biasPieces([
-      { w: bar % 2 === 0 ? 1.25 : 1.2, pitch: ap },
-      { w: 1, pitch: lf },
-      { w: 2.8, pitch: fifth },
-      { w: 1.1, pitch: guide },
-      { w: 2.9, pitch: land },
-    ]);
+    base = biasPieces(
+      withSlashPrefer([
+        { w: bar % 2 === 0 ? 1.25 : 1.2, pitch: ap },
+        { w: 1, pitch: lf },
+        { w: 2.8, pitch: fifth },
+        { w: 1.1, pitch: guide },
+        { w: 2.9, pitch: land },
+      ])
+    );
   } else if (bRhythm === 1) {
-    base = biasPieces([
-      { w: 1.4, pitch: fifth },
-      { w: 1.2, pitch: pivot },
-      { w: 1.8, pitch: seventh },
-      { w: 1.3, pitch: guide },
-      { w: 3.3, pitch: lastLead },
-    ]);
+    base = biasPieces(
+      withSlashPrefer([
+        { w: 1.4, pitch: fifth },
+        { w: 1.2, pitch: pivot },
+        { w: 1.8, pitch: seventh },
+        { w: 1.3, pitch: guide },
+        { w: 3.3, pitch: lastLead },
+      ])
+    );
   } else if (u < 0.35) {
-    base = biasPieces([
-      { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
-      { w: 1, pitch: lf },
-      { w: 3, pitch: fifth },
-      { w: 1, pitch: guide },
-      { w: 3, pitch: land },
-    ]);
+    base = biasPieces(
+      withSlashPrefer([
+        { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
+        { w: 1, pitch: lf },
+        { w: 3, pitch: fifth },
+        { w: 1, pitch: guide },
+        { w: 3, pitch: land },
+      ])
+    );
   } else if (u < 0.7) {
-    base = biasPieces([
-      { w: 1, pitch: fifth },
-      { w: 1, pitch: pivot },
-      { w: 2, pitch: seventh },
-      { w: 1, pitch: guide },
-      { w: 3, pitch: lastLead },
-    ]);
+    base = biasPieces(
+      withSlashPrefer([
+        { w: 1, pitch: fifth },
+        { w: 1, pitch: pivot },
+        { w: 2, pitch: seventh },
+        { w: 1, pitch: guide },
+        { w: 3, pitch: lastLead },
+      ])
+    );
   } else {
-    base = biasPieces([
-      { w: 2, pitch: guide },
-      { w: 1, pitch: rootForLine },
-      { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
-      { w: 1, pitch: lf },
-      { w: 3, pitch: land },
-    ]);
+    base = biasPieces(
+      withSlashPrefer([
+        { w: 2, pitch: guide },
+        { w: 1, pitch: rootForLine },
+        { w: bar % 2 === 0 ? 1.15 : 1, pitch: ap },
+        { w: 1, pitch: lf },
+        { w: 3, pitch: land },
+      ])
+    );
   }
   addWeightedPhrase(m, firstStart, span, applyPhraseWeights(base, bar, seed, steady));
 }
@@ -876,7 +926,12 @@ export function emitDuoBassAuthorityMomentBar(params: {
   const t0 = qBeat(firstStart);
   if (t0 > 0) addEvent(m, createRest(0, t0));
   const span = qBeat(4 - t0);
-  const p1 = slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : clampPitch(third, walkLow, effectiveHigh);
+  const slashCl =
+    slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : undefined;
+  const p1 =
+    slashCl !== undefined && seededUnit(seed, bar, 876) < 0.56
+      ? slashCl
+      : clampPitch(third, walkLow, effectiveHigh);
   const pLeap = clampPitch(seventh, walkLow, effectiveHigh);
   const pAlt = clampPitch(fifth, walkLow, effectiveHigh);
   const pat = (seed + bar * 7) % 2;
@@ -890,8 +945,8 @@ export function emitDuoBassAuthorityMomentBar(params: {
     }
   } else {
     const pLow =
-      slashBassPitch !== undefined
-        ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
+      slashCl !== undefined && seededUnit(seed, bar, 877) < 0.54
+        ? slashCl
         : clampPitch(rootClamped, walkLow, effectiveHigh);
     const d1 = qBeat(Math.min(1.75, span * 0.48));
     addEvent(m, createNote(pLow, t0, d1));
@@ -932,7 +987,10 @@ export function emitDuoBassIdentityBar7(params: {
     bar,
     slashBassPitch,
   } = params;
-  const anchor = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
+  const anchor =
+    slashBassPitch !== undefined && seededUnit(seed, bar, 809) < 0.58
+      ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
+      : rootClamped;
   const t0 = qBeat(firstStart);
   if (t0 > 0) addEvent(m, createRest(0, t0));
   const span = qBeat(4 - t0);
