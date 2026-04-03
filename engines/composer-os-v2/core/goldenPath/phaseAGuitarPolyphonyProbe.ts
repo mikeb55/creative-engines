@@ -1,11 +1,11 @@
 /**
- * Roadmap 18.2 Phase A — pipeline integrity: minimal guitar voice-2 probe (Wyble-aligned polyphony path).
- * Sparse, deterministic; not full Wyble logic.
+ * Roadmap 18.2 Phase A — pipeline integrity: guitar voice-2 injection for polyphony preset.
+ * Phase 18.2B delegates to Wyble-style inner voice (see guitarVoice2WybleLayer).
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { addEvent, createNote, createRest } from '../score-model/scoreEventBuilder';
+import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import { injectGuitarVoice2WybleLayer } from './guitarVoice2WybleLayer';
 
 const LOG_ENV = 'COMPOSER_OS_PHASEA_POLYPHONY_LOG';
 
@@ -49,34 +49,9 @@ export function logGuitarVoice2CheckpointFromScore(label: string, score: ScoreMo
   logGuitarVoice2Checkpoint(label, guitar);
 }
 
-/**
- * Inject a minimal inner line: voice 2, every 4th bar, one quarter at beat 2; rests fill voice 2 to 4 beats.
- * Pitch: 3 semitones below highest voice-1 note in the measure (deterministic).
- */
 /** @returns how many measures received a voice-2 layer */
 export function injectPhaseAGuitarVoice2Probe(guitar: PartModel, context: CompositionContext): number {
-  if (context.presetId !== 'guitar_bass_duo') {
-    return 0;
-  }
-  let injected = 0;
-  const tb = context.form.totalBars;
-  for (let b = 4; b <= tb; b += 4) {
-    const m = guitar.measures.find((x) => x.index === b);
-    if (!m) continue;
-    const v1notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
-    if (v1notes.length === 0) continue;
-    let top = v1notes[0]!;
-    for (const n of v1notes) {
-      if (n.pitch > top.pitch) top = n;
-    }
-    const pitch2 = Math.max(40, top.pitch - 3);
-    addEvent(m, createRest(0, 2, 2));
-    addEvent(m, createNote(pitch2, 2, 1, 2));
-    addEvent(m, createRest(3, 1, 2));
-    m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-    injected += 1;
-  }
-  return injected;
+  return injectGuitarVoice2WybleLayer(guitar, context);
 }
 
 /** Fail fast when injection ran but no voice-2 events are present (set COMPOSER_OS_PHASEA_POLYPHONY_STRICT=0 to disable). */

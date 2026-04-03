@@ -13,6 +13,7 @@ import { runScoreModelTests } from './scoreModel.test';
 import { runGoldenPathTests } from './goldenPath.test';
 import { runDuoPitchVariationTests } from './duoPitchVariation.test';
 import { runGuitarBassDuoSingleLineTests } from './guitarBassDuoSingleLine.test';
+import { runGuitarBassDuoWybleVoice2Tests } from './guitarBassDuoWybleVoice2.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
 import { runStyleModuleTests } from './styleModule.test';
@@ -131,6 +132,7 @@ const suites = [
   { name: 'Golden Path', run: runGoldenPathTests },
   { name: 'Duo pitch variation (variationEnabled)', run: runDuoPitchVariationTests },
   { name: 'Guitar–Bass Duo (Single-Line)', run: runGuitarBassDuoSingleLineTests },
+  { name: 'Guitar–Bass Duo Wyble voice 2 (polyphony)', run: runGuitarBassDuoWybleVoice2Tests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
   { name: 'Motif', run: runMotifTests },
   { name: 'Style Module', run: runStyleModuleTests },

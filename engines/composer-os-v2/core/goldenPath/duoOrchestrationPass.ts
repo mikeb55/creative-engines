@@ -125,6 +125,8 @@ function liftGuitarRegisterInSectionB(
     m.events.forEach((e, idx) => {
       if (e.kind !== 'note') return;
       const n = e as NoteEvent;
+      // Polyphony inner voice: do not lift/snap voice 2 (Phase 18.2B register contract).
+      if ((n.voice ?? 1) === 2) return;
       if (seededUnit(seed, m.index * 600 + idx, 21001) >= 0.35) return;
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
       const snapped = snapGuitarToChord(np, chord);
@@ -142,6 +144,8 @@ function liftGuitarLowMidInA(guitar: PartModel, context: CompositionContext, see
     m.events.forEach((e, idx) => {
       if (e.kind !== 'note') return;
       const n = e as NoteEvent;
+      // Polyphony inner voice: do not lift/snap voice 2 (Phase 18.2B register contract).
+      if ((n.voice ?? 1) === 2) return;
       if (n.pitch >= GUITAR_LIFT_BELOW) return;
       if (seededUnit(seed, m.index * 700 + idx, 21002) >= 0.6) return;
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
