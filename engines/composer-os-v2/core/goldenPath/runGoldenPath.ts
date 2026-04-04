@@ -465,7 +465,9 @@ function validateSlashBassHonoured(score: ScoreModel): string[] {
     let hit = false;
     for (const e of m.events) {
       if (e.kind !== 'note') continue;
-      if ((e as { pitch: number }).pitch % 12 === slashBassPc % 12) {
+      const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
+      const sb = ((slashBassPc % 12) + 12) % 12;
+      if (pc === sb) {
         hit = true;
         break;
       }

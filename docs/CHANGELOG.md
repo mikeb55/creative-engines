@@ -1,5 +1,23 @@
 # Composer OS — Changelog
 
+## V9.x - Phase 18.2B Polyphony Behaviour Progress
+
+Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CHANGELOG.md); phrase-level refinement still open.
+
+### Added
+
+- Voice-2 continuity layer; multi-bar Voice-2 persistence; internal motion within sustained spans
+
+### Improved / fixed
+
+- dual-voice clarity, melody/inner overlap, phrase-to-phrase presence; reduced fragmentation and static inner-voice behaviour
+
+### Notes
+
+- Export layer unchanged; next focus is phrase intention and directional shaping
+
+---
+
 ## V9.0 milestone
 
 ### V9.0 Summary

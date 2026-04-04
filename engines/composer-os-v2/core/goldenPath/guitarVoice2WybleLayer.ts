@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B / 18.2B.3 (continuity) / 18.2B.4 (internal motion) / 18.2B.5 (phrase intention: entry→target path) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
+ * Phase 18.2B / 18.2B.3 (continuity) / 18.2B.4–18.2B.7 (internal micro-motion + phrase intention: anchor→anchor) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -553,19 +553,17 @@ function pickVoice2PitchForBehaviour(
     return primary;
   }
   if (behaviour === 'resolve') {
-    const a = pickVoice2PitchFromAnchor(anchorMidi, primary, secondary, seed, bar);
-    const cands = [primary, secondary, a];
-    let best = a;
-    let bd = Math.abs(a - runDestinationPlaced);
-    for (const c of cands) {
-      if (anchorMidi !== null && Math.abs(c - anchorMidi) > V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) continue;
-      const d = Math.abs(c - runDestinationPlaced);
-      if (d < bd) {
-        bd = d;
-        best = c;
-      }
-    }
-    return best;
+    return pickStrongPhraseEndArrivalPitch(
+      anchorMidi,
+      runDestinationPlaced,
+      primary,
+      secondary,
+      chord,
+      strictCeiling,
+      context,
+      seed,
+      bar
+    );
   }
   if (behaviour === 'sustain') {
     return sustainPitchFromAnchor(anchorMidi, primary, strictCeiling, chord, context);
@@ -656,7 +654,8 @@ function buildVoice2ContinuationSchedule(
 }
 
 /**
- * Phase 18.2B.5 + 18.2B.3 — Rhythm: ENTER elongated; CONTINUE sustained; RESOLVE shorter release.
+ * Phase 18.2B.5 + 18.2B.3 + 18.2B.6 — Rhythm: ENTER elongated; CONTINUE sustained;
+ * RESOLVE with committed arrival (whole / delayed3); ~25% phrase micro-contrast (delayed entry / independence).
  */
 function planVoice2BarRhythms(
   guitar: PartModel,
@@ -681,12 +680,25 @@ function planVoice2BarRhythms(
     const beat0 = melodyAttacksBeatZero(v1);
 
     if (schedulePhase === 'resolve') {
-      out.set(bar, seededUnit(seed, bar, 1825) < 0.55 ? 'halfBack' : 'delayed3');
+      const strongPhraseBar = bar % 4 === 0;
+      const u = seededUnit(seed, bar, 1825);
+      /** 18.2B.6 — Prefer longer arrival (whole) or delayed resolve onto a strong beat (delayed3). */
+      if (strongPhraseBar) {
+        out.set(bar, u < 0.65 ? 'whole' : 'delayed3');
+      } else {
+        out.set(bar, u < 0.5 ? 'whole' : u < 0.82 ? 'delayed3' : 'halfBack');
+      }
       continue;
     }
 
     if (schedulePhase === 'enter') {
+      const phraseIdx = Math.floor((bar - 1) / 4);
+      const microContrast = seededUnit(seed, phraseIdx, 7600) < 0.26;
       const u2 = seededUnit(seed, bar, 1824);
+      if (microContrast && u2 < 0.72) {
+        out.set(bar, 'delayed3');
+        continue;
+      }
       if (u2 < 0.9) {
         out.set(bar, beat0 ? 'delayed3' : 'whole');
       } else if (u2 < 0.97) {
@@ -699,10 +711,30 @@ function planVoice2BarRhythms(
 
     /** CONTINUE */
     const u = seededUnit(seed, bar, 1823);
+    const phraseIdxC = Math.floor((bar - 1) / 4);
+    const microContrastC = seededUnit(seed, phraseIdxC, 7601) < 0.24;
+    const runInf = phaseByBar.get(bar);
+    const runLenR = runInf ? runInf.runEndBar - runInf.runStartBar + 1 : 1;
+    const offsetInRun = runInf ? bar - runInf.runStartBar : 0;
+    const midRunContinue =
+      schedulePhase === 'continue' && runLenR >= 3 && offsetInRun > 0 && offsetInRun < runLenR - 1;
     if (phraseEnd && !nextInLine) {
       out.set(bar, u < 0.82 ? 'whole' : 'halfBack');
     } else if (prevInLine) {
-      if (u < 0.92) {
+      if (midRunContinue) {
+        /** Harmonic commitment: interior of a run favours motion (halfBack / delayed3) over static wholes. */
+        if (microContrastC && u < 0.32) {
+          out.set(bar, 'delayed3');
+        } else if (u < 0.4) {
+          out.set(bar, 'whole');
+        } else if (u < 0.74) {
+          out.set(bar, 'halfBack');
+        } else {
+          out.set(bar, 'delayed3');
+        }
+      } else if (microContrastC && u < 0.32) {
+        out.set(bar, 'delayed3');
+      } else if (u < 0.92) {
         out.set(bar, 'whole');
       } else {
         out.set(bar, 'halfBack');
@@ -737,10 +769,11 @@ function lastVoice2PitchInMeasure(m: MeasureModel): number | undefined {
 }
 
 const INTERNAL_MOTION_MAX_STEP_SEMITONES = 4;
+/** Phase 18.2B.7 — More bars get internal motion (same bar duration; no global density increase). */
 const INTERNAL_MOTION_SEED_GATE = 7400;
 
 /**
- * Phase 18.2B.4 — Slow internal line: split long single-pitch sustains into 2–3 connected chord-tone steps toward harmonic destination.
+ * Phase 18.2B.4 + 18.2B.7 — One step inside a sustain: chord tones (3rd/7th first), neighbours, chromatic approach, enclosure tones toward next anchor.
  */
 function pickChordToneStepToward(
   prevPitch: number,
@@ -750,22 +783,56 @@ function pickChordToneStepToward(
   context: CompositionContext,
   seed: number,
   bar: number,
-  salt: number
+  salt: number,
+  isLastStep: boolean
 ): number {
   const floorMidi = INNER_LOW;
   const innerHigh = Math.min(63, strictCeiling - 1);
   if (innerHigh < floorMidi) return prevPitch;
   const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
-  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  const thirdPc = ((tones.third % 12) + 12) % 12;
+  const seventhPc = ((tones.seventh % 12) + 12) % 12;
+
+  const candidates: number[] = [];
+  const tryAdd = (raw: number) => {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (p >= strictCeiling || p < floorMidi) return;
+    const step = Math.abs(p - prevPitch);
+    if (step > INTERNAL_MOTION_MAX_STEP_SEMITONES || step < 1) return;
+    candidates.push(p);
+  };
+
+  tryAdd(tones.third);
+  tryAdd(tones.seventh);
+  tryAdd(tones.fifth);
+  tryAdd(tones.root);
+  for (let d = -2; d <= 2; d++) {
+    if (d === 0) continue;
+    tryAdd(prevPitch + d);
+  }
+  tryAdd(destPitch - 1);
+  tryAdd(destPitch + 1);
+  tryAdd(destPitch - 2);
+  tryAdd(destPitch + 2);
+  if (isLastStep) {
+    tryAdd(destPitch);
+  }
+
+  const uniq = [...new Set(candidates)];
   let best: number | undefined;
   let bd = 999;
-  for (const raw of pool) {
-    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
-    if (p >= strictCeiling || p < floorMidi) continue;
+  for (const p of uniq) {
     const step = Math.abs(p - prevPitch);
-    if (step > INTERNAL_MOTION_MAX_STEP_SEMITONES) continue;
-    if (step < 1) continue;
-    const score = Math.abs(p - destPitch) * 0.62 + step * 0.28 + seededUnit(seed, bar, salt) * 0.08;
+    const pc = ((p % 12) + 12) % 12;
+    let guideBonus = 0;
+    if (pc === thirdPc || pc === seventhPc) {
+      guideBonus = -1.05;
+    }
+    const score =
+      Math.abs(p - destPitch) * (isLastStep ? 0.68 : 0.58) +
+      step * 0.26 +
+      guideBonus +
+      seededUnit(seed, bar, salt) * (isLastStep ? 0.04 : 0.07);
     if (score < bd) {
       bd = score;
       best = p;
@@ -793,8 +860,20 @@ function buildSlowInternalLinePitches(
   for (let i = 1; i < segmentCount; i++) {
     const ceil = segmentCeilings[i] ?? segmentCeilings[segmentCeilings.length - 1]!;
     const t = segmentCount <= 1 ? 1 : i / (segmentCount - 1);
+    /** Target-to-target: interpolate toward harmonic anchor; final step aims at run destination. */
     const waypoint = Math.round(startPitch + (destPitch - startPitch) * t);
-    const next = pickChordToneStepToward(prev, waypoint, chord, ceil, context, seed, bar, 7405 + i * 17);
+    const isLast = i === segmentCount - 1;
+    const next = pickChordToneStepToward(
+      prev,
+      isLast ? destPitch : waypoint,
+      chord,
+      ceil,
+      context,
+      seed,
+      bar,
+      7405 + i * 17,
+      isLast
+    );
     out.push(next);
     prev = next;
   }
@@ -802,7 +881,8 @@ function buildSlowInternalLinePitches(
 }
 
 /**
- * Replace one long V2 note with 2–3 sequential notes (same total duration) when eligible; validates duo rules before commit.
+ * Phase 18.2B.7 — Replace one long V2 sustain with 2–3 notes (same total duration): micro-motion, not extra bars.
+ * Validates duo rules before commit.
  */
 function applyVoice2InternalMotionShaping(
   m: MeasureModel,
@@ -811,9 +891,12 @@ function applyVoice2InternalMotionShaping(
   context: CompositionContext,
   seed: number,
   bar: number,
-  harmonicDest: number
+  harmonicDest: number,
+  /** Phase 18.2B.6 — Do not split sustained phrase arrivals. */
+  phraseCommitBar: boolean
 ): void {
-  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > 0.74) return;
+  if (phraseCommitBar) return;
+  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > 0.52) return;
 
   const v2only = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
   if (v2only.length !== 1) return;
@@ -912,11 +995,11 @@ function applyVoice2InternalMotionShaping(
   }
 }
 
-/** Phase 18.2B.5 — Ease-in progress so motion concentrates toward phrase end (entry → development → arrival). */
+/** Phase 18.2B.5 — Progress along committed anchor chain: linear + quadratic blend so mid-run has clearer intent. */
 function phraseIntentionProgress01(barOffset: number, runLen: number): number {
   if (runLen <= 1) return 1;
   const t = barOffset / (runLen - 1);
-  return t * t;
+  return 0.55 * t + 0.45 * t * t;
 }
 
 /**
@@ -1577,7 +1660,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       continue;
     }
 
-    applyVoice2InternalMotionShaping(m, v1notes, chord, context, seed, bar, runDestinationPlaced);
+    const rhythmKind = barRhythms.get(bar) ?? 'whole';
+    const phraseCommitBar =
+      runInfo.schedulePhase === 'resolve' || (bar % 4 === 0 && rhythmKind === 'whole');
+    applyVoice2InternalMotionShaping(m, v1notes, chord, context, seed, bar, runDestinationPlaced, phraseCommitBar);
 
     const lastP = lastVoice2PitchInMeasure(m);
     if (lastP !== undefined) {
@@ -1705,6 +1791,59 @@ function strongPhraseEndTargetPitch(
     if (p < strictCeiling && p >= floorMidi) return p;
   }
   return null;
+}
+
+/**
+ * Phase 18.2B.6 — Resolve behaviour: commit to run destination when anchor law allows; else 3rd/7th/tension from strong pool.
+ */
+function pickStrongPhraseEndArrivalPitch(
+  anchorMidi: number | null,
+  committedTarget: number,
+  primary: number,
+  secondary: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return committedTarget;
+
+  if (anchorMidi !== null && Math.abs(committedTarget - anchorMidi) <= V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) {
+    return committedTarget;
+  }
+
+  const strong = strongPhraseEndTargetPitch(
+    chord,
+    strictCeiling,
+    floorMidi,
+    innerHigh,
+    anchorMidi ?? committedTarget,
+    context,
+    bar
+  );
+  if (strong !== null) {
+    const p = placeStrictlyBelowCeiling(strictCeiling, strong, floorMidi);
+    if (anchorMidi === null || Math.abs(p - anchorMidi) <= V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) {
+      return p;
+    }
+  }
+
+  const a = pickVoice2PitchFromAnchor(anchorMidi, primary, secondary, seed, bar);
+  const cands = [primary, secondary, a];
+  let best = a;
+  let bd = Math.abs(a - committedTarget);
+  for (const c of cands) {
+    if (anchorMidi !== null && Math.abs(c - anchorMidi) > V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) continue;
+    const d = Math.abs(c - committedTarget);
+    if (d < bd) {
+      bd = d;
+      best = c;
+    }
+  }
+  return best;
 }
 
 /**

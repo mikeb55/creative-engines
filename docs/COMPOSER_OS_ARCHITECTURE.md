@@ -14,6 +14,15 @@
 
 **#17 Diagnostics / Receipt Clarity** is **DONE** — Generation receipt now surfaces chord export diagnostics including parsed chord count, fallback count, Sibelius simplification flags, and slash-bass preservation. See [docs/generation-receipts-and-diagnostics.md](./generation-receipts-and-diagnostics.md).
 
+## Guitar polyphony (Phase 18.2)
+
+| Milestone | Status |
+|-----------|--------|
+| **18.2A** — Polyphony export / Sibelius-safe proof | **COMPLETE** |
+| **18.2B** — Voice-2 behaviour (Wyble layer) | **IN PROGRESS** |
+
+**Achieved so far:** dual voices stable in Sibelius and Guitar Pro 8; continuity layer working; internal motion partially working. **Open work** is phrase-level musical refinement (intention / direction), not export or score structure.
+
 ## Phase labels (A / B / C / D)
 
 These labels are used in product and handoff docs; boundaries are conceptual, not separate runtimes.

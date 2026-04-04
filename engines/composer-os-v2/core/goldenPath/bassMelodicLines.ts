@@ -235,7 +235,9 @@ export function nudgeDuoBassPhraseEndTone(
   seventh: number,
   walkLow: number,
   high: number,
-  seed: number
+  seed: number,
+  /** When set, do not replace the last note if it realises the slash bass pitch class. */
+  slashBassPc?: number
 ): void {
   if (barIndex % 2 !== 0) return;
   let lastI = -1;
@@ -253,6 +255,9 @@ export function nudgeDuoBassPhraseEndTone(
   if (lastI < 0) return;
   const n = m.events[lastI] as { pitch: number; kind: 'note'; startBeat: number; duration: number };
   const pc = ((n.pitch % 12) + 12) % 12;
+  if (slashBassPc !== undefined && pc === ((slashBassPc % 12) + 12) % 12) {
+    return;
+  }
   const resolveSet = new Set([((rootClamped % 12) + 12) % 12, ((fifth % 12) + 12) % 12]);
   const suspendSet = new Set([((third % 12) + 12) % 12, ((seventh % 12) + 12) % 12]);
   const wantResolve = seededUnit(seed, barIndex, 951) < 0.5;

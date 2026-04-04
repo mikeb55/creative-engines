@@ -1145,9 +1145,49 @@ function finalizeDuoBassExpressiveBar(params: {
   } = params;
   if (!duoGoldenBass) return;
   ensureBassBarHitsThirdOrSeventh(m, third, seventh, walkLow, effectiveHigh, slashBassPc);
-  nudgeDuoBassPhraseEndTone(m, bar, rootClamped, third, fifth, seventh, walkLow, effectiveHigh, seed);
+  nudgeDuoBassPhraseEndTone(m, bar, rootClamped, third, fifth, seventh, walkLow, effectiveHigh, seed, slashBassPc);
+  /** Harmonic commitment: phrase-end nudge must not erase slash bass; re-assert after nudge. */
+  if (slashBassPc !== undefined) {
+    const slashBassPitch = pitchClassToBassMidi(slashBassPc, walkLow, effectiveHigh);
+    ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh, { seed, bar });
+  }
   if (measureIsDenseEvenEighthWalk(m)) evenEighthStreak.n += 1;
   else evenEighthStreak.n = 0;
+}
+
+/**
+ * After orchestration / leap enforcement, re-assert slash bass pitch class in each bar (same register math as build).
+ * Behavioural fix for slash warnings when later passes alter bass notes.
+ */
+function repairSlashBassHonourInDuoScore(
+  context: CompositionContext,
+  bassPart: PartModel,
+  bassMap: InstrumentRegisterMap,
+  walkLow: number,
+  bassCeiling: number
+): void {
+  const seed = context.seed;
+  const isDuoPreset = isGuitarBassDuoFamily(context.presetId);
+  for (const m of bassPart.measures) {
+    const chord = m.chord ?? getChordForBar(m.index, context);
+    const parsed = parseChordSymbol(chord);
+    if (parsed.slashBassPc === undefined) continue;
+    const [low, high] = getBassRegisterForBar(bassMap, m.index, context);
+    const phase = ((m.index - 1) % 8) + 1;
+    let duoRegLow = Math.max(walkLow, low);
+    let duoRegHigh = Math.min(high, bassCeiling);
+    if (isDuoPreset) {
+      if (phase <= 2) duoRegHigh = Math.min(duoRegHigh, walkLow + 12);
+      else if (phase <= 4) duoRegHigh = Math.min(duoRegHigh + 4, 58);
+      else if (phase <= 6) {
+        duoRegLow = duoRegLow + 1;
+        duoRegHigh = Math.min(duoRegHigh + 3, 57);
+      }
+    }
+    const effectiveHigh = isDuoPreset ? duoRegHigh : Math.min(high, bassCeiling);
+    const slashBassPitch = pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh);
+    ensureSlashBassPitchPresentInMeasure(m, slashBassPitch, walkLow, effectiveHigh, { seed, bar: m.index });
+  }
 }
 
 function buildBassPart(
@@ -2148,6 +2188,12 @@ export function generateGoldenPathDuoScore(
   }
   if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     applyPhraseFirstSingleLineMonophony(afterExpressive);
+  }
+  if (isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') {
+    const bassForSlash = afterExpressive.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+    if (bassForSlash) {
+      repairSlashBassHonourInDuoScore(context, bassForSlash, plans.bassMap, walkLow, bassCeiling);
+    }
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {

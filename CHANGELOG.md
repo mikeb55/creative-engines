@@ -1,3 +1,29 @@
+## V9.x - Phase 18.2B Polyphony Behaviour Progress
+
+### Added
+
+- Voice-2 continuity layer
+- multi-bar Voice-2 persistence
+- internal motion within sustained spans
+
+### Improved
+
+- perceptual clarity of dual-voice guitar polyphony
+- overlap between melody and inner voice
+- phrase-to-phrase Voice-2 presence
+
+### Fixed
+
+- earlier fragmentation / over-sparsity of Voice 2
+- static single-event inner voice behaviour
+
+### Notes
+
+- export remains locked and unchanged
+- next work is phrase intention / directional refinement
+
+---
+
 ## V9.x – Phase 18.2B Polyphony Stabilization
 
 ### Added

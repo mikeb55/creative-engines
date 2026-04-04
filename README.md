@@ -52,25 +52,23 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
-## Current Status (V9.x)
+## Guitar Polyphony Status
 
-Composer OS now supports:
+Composer OS currently supports:
 
-- Deterministic dual-voice guitar polyphony
-- Sibelius-safe MusicXML export
-- Phrase-level Voice-2 continuity
-- Internal motion within sustained lines
-- Sparse, non-chordal contrapuntal texture
+- deterministic dual-voice guitar polyphony
+- Sibelius-safe and GP8-safe export
+- Voice-2 continuity across multiple bars
+- initial internal motion within sustained spans
+- sparse, non-chordal contrapuntal texture
 
-### Known Limitations
+### Current limitation
 
-- Voice 2 lacks full phrase-level intention
-- Directional phrasing (target-to-target motion) is still in progress
-- Some passages still feel reactive rather than planned
+Voice 2 still needs stronger phrase-level intention and more convincing directional shaping.
 
-### Next Step
+### Next step
 
-**Phase 18.2B.5 – Phrase Intention Layer:** Introduce target-based phrase planning for Voice 2
+Refine Voice 2 so it moves toward clear harmonic destinations instead of relying too heavily on static sustained notes.
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -121,9 +119,9 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 **Guitar Polyphony (Phase 18.2)**
 
-- **18.2A** — Export / Sibelius-safe polyphony proof — **COMPLETE**
-- **18.2B** — Voice-2 continuity, targeting, internal motion — **STABILIZED** (phrase intention → 18.2B.5)
-- **Current status:** Dual-voice structure reliable in Sibelius and Guitar Pro 8; continuity and guide-tone targeting in place; internal motion reduces static sustains; next focus is phrase-level intention (see **Current Status (V9.x)** above).
+- **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
+- **18.2B** — Voice-2 behaviour — **IN PROGRESS**
+- **Current achieved state:** dual voices stable in Sibelius and GP8; continuity layer working; internal motion partially working; remaining issue is phrase-level musical refinement, not export or structure (see **Guitar Polyphony Status** above).
 
 ### V9.0 Summary
 
@@ -140,13 +138,6 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 - [docs/TESTING.md](docs/TESTING.md) — D1 self-test harness
 
 **Song Mode baseline stabilisation (Guitar–Bass Duo):** 32-bar Song Mode is on a stable baseline for usable generation: hook return / bar 25 identity, C7 thinning guards on hook bars, corrected multi-voice score validation, behaviour gates passing on the current baseline, and high readiness in recent testing. See the changelog section of the same name.
-
-### Guitar Polyphony / Guitar–Bass Duo (Phase 18.2)
-
-- Dual-voice polyphony is stable in Sibelius and Guitar Pro 8 (both voices visible and usable).
-- Voice 2 supports multi-bar continuity (phrase-level inner line).
-- Export is locked for this track; stability is not the open question.
-- **Next:** target-driven continuity refinement (expressive direction), not export work.
 
 **Songwriter → harmony (GitHub summary):** Primary **songwriter profile** id is stored on `generationMetadata.songwriterStyleId`. The **Wayne Shorter** profile turns on **`shorterMode`** in chord-tone resolution so generation favours upper extensions over root/fifth-heavy spellings (see `harmonyChordTonePolicy.ts`, `chordSymbolAnalysis.ts`).
 
