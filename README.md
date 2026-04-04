@@ -52,6 +52,26 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
+## Current Status (V9.x)
+
+Composer OS now supports:
+
+- Deterministic dual-voice guitar polyphony
+- Sibelius-safe MusicXML export
+- Phrase-level Voice-2 continuity
+- Internal motion within sustained lines
+- Sparse, non-chordal contrapuntal texture
+
+### Known Limitations
+
+- Voice 2 lacks full phrase-level intention
+- Directional phrasing (target-to-target motion) is still in progress
+- Some passages still feel reactive rather than planned
+
+### Next Step
+
+**Phase 18.2B.5 – Phrase Intention Layer:** Introduce target-based phrase planning for Voice 2
+
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
 Now ready for chord-notation export.
@@ -102,8 +122,8 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 **Guitar Polyphony (Phase 18.2)**
 
 - **18.2A** — Export / Sibelius-safe polyphony proof — **COMPLETE**
-- **18.2B** — Voice-2 behavioural tuning — **IN PROGRESS**
-- **Current status:** Export stable; dual voices visible in Sibelius and Guitar Pro 8; continuity layer working; remaining work is target-driven phrase continuity and expressive direction (musical refinement, not export stability).
+- **18.2B** — Voice-2 continuity, targeting, internal motion — **STABILIZED** (phrase intention → 18.2B.5)
+- **Current status:** Dual-voice structure reliable in Sibelius and Guitar Pro 8; continuity and guide-tone targeting in place; internal motion reduces static sustains; next focus is phrase-level intention (see **Current Status (V9.x)** above).
 
 ### V9.0 Summary
 
