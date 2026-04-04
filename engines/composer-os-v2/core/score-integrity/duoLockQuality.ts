@@ -19,6 +19,10 @@ import {
   partitionDuoIdentityIssues,
   type SongModeDuoIdentityIssue,
 } from '../song-mode/songModeDuoIdentityBehaviourRules';
+import {
+  collectMelodyMidiBarRangeInclusive,
+  isGuitarMelodyVoiceNote,
+} from './guitarVoiceMelody';
 
 export interface DuoLockValidationResult {
   valid: boolean;
@@ -49,6 +53,15 @@ function rhythmSig(m: MeasureModel): string {
     .join('|');
 }
 
+/** Melody-only rhythm (voice 1) — aligns identity gates with polyphonic guitar. */
+export function rhythmSigMelody(m: MeasureModel): string {
+  return [...m.events]
+    .filter((e) => isGuitarMelodyVoiceNote(e))
+    .sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat)
+    .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
+    .join('|');
+}
+
 /**
  * Guitar rest fraction: sum(rest durations) / sum(note + rest durations) across all voices.
  * Per measure each voice fills 4 beats; with two voices the old `rests / (measures×4)` numerator
@@ -72,7 +85,7 @@ export function maxConsecutiveChromaticSteps(guitar: PartModel): number {
   const pitches: number[] = [];
   for (const m of guitar.measures) {
     for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
     }
   }
   if (pitches.length < 2) return 0;
@@ -99,7 +112,7 @@ export function maxConsecutiveStepwiseMotion(guitar: PartModel, maxStep: number)
   const pitches: number[] = [];
   for (const m of guitar.measures) {
     for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
     }
   }
   if (pitches.length < 2) return 0;
@@ -133,7 +146,7 @@ export function hasRepeatedIntervalCell(guitar: PartModel): boolean {
   const pitches: number[] = [];
   for (const m of guitar.measures) {
     for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
     }
   }
   if (pitches.length < 4) return true;
@@ -202,10 +215,10 @@ export function interactionAuthorityGceLayer(score: ScoreModel): number {
   return Math.min(1.2, 0.28 * crN + 0.24 * rc + 0.26 * flow + 0.22 * space + 0.1);
 }
 
-/** Largest |Δpitch| between consecutive note attacks in a bar (time-ordered). */
+/** Largest |Δpitch| between consecutive **melody (voice 1)** attacks in a bar (time-ordered). */
 export function guitarBarMaxAdjacentInterval(m: MeasureModel): number {
   const notes = [...m.events]
-    .filter((e) => e.kind === 'note')
+    .filter((e) => isGuitarMelodyVoiceNote(e))
     .sort(
       (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
     ) as { pitch: number }[];
@@ -246,18 +259,12 @@ function syncopationStrengthBar(m: MeasureModel): number {
   return Math.min(1, s);
 }
 
-function barDistinctivenessRaw(gm: MeasureModel, bar: number): number {
+function barDistinctivenessRaw(gm: MeasureModel, _bar: number): number {
   const maxIv = guitarBarMaxAdjacentInterval(gm);
   const maxDur = maxNoteDurationInBar(gm);
   const sync = syncopationStrengthBar(gm);
-  const nNotes = gm.events.filter((e) => e.kind === 'note').length;
-  return (
-    maxIv * 0.11 +
-    maxDur * 1.75 +
-    sync * 2.1 +
-    (nNotes >= 3 ? 0.45 : 0) +
-    (bar === 7 ? 6.25 : 0)
-  );
+  const nNotes = gm.events.filter((e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)).length;
+  return maxIv * 0.11 + maxDur * 1.75 + sync * 2.1 + (nNotes >= 3 ? 0.45 : 0);
 }
 
 /** Heuristic: which 1–8 bar has the strongest “signature” profile (bar 7 structurally favoured). */
@@ -277,7 +284,8 @@ export function distinctiveGuitarBarIndex(guitar: PartModel): number {
 }
 
 /**
- * V3.2 — 0–10 identity moment: bar 7 peak, contrast vs 6/8, bass non-mirror.
+ * V3.2 / 18.2C — Phrase-level identity: cadence area + distributed distinctiveness + contour /
+ * recurrence, not a single-bar peak.
  */
 export function computeDuoIdentityMomentScore(score: ScoreModel): number {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -292,10 +300,34 @@ export function computeDuoIdentityMomentScore(score: ScoreModel): number {
   s += Math.min(2.8, guitarBarMaxAdjacentInterval(m7) / 3.2);
   s += Math.min(2.2, maxNoteDurationInBar(m7) * 1.05);
   s += syncopationStrengthBar(m7) * 1.1;
-  if (m6) s += rhythmSig(m7) !== rhythmSig(m6) ? 1.5 : 0;
-  s += rhythmSig(m7) !== rhythmSig(m8) ? 1.5 : 0;
+
+  const distBars: number[] = [];
+  for (let bar = 5; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m) distBars.push(barDistinctivenessRaw(m, bar));
+  }
+  distBars.sort((a, b) => b - a);
+  const distributed = (distBars[0] ?? 0) * 0.5 + (distBars[1] ?? 0) * 0.35;
+  s += Math.min(2.6, distributed * 0.4);
+
+  const melodyB = collectMelodyMidiBarRangeInclusive(g, 5, 8);
+  if (melodyB.length >= 2) {
+    const sp = Math.max(...melodyB) - Math.min(...melodyB);
+    s += Math.min(1.5, sp / 11);
+  }
+
+  const rs = new Set<string>();
+  for (let bar = 5; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m) rs.add(rhythmSigMelody(m));
+  }
+  if (rs.size >= 3) s += 1.15;
+  else if (rs.size >= 2) s += 0.55;
+
+  if (m6) s += rhythmSigMelody(m7) !== rhythmSigMelody(m6) ? 1.5 : 0;
+  s += rhythmSigMelody(m7) !== rhythmSigMelody(m8) ? 1.5 : 0;
   if (b7) {
-    const gRh = rhythmSig(m7);
+    const gRh = rhythmSigMelody(m7);
     const bRh = rhythmSig(b7);
     if (gRh !== bRh || gRh.split('|').length < 3) s += 1.3;
     else s += 0.25;
@@ -321,7 +353,7 @@ function guitarBarRestBeats(m: MeasureModel): number {
 
 export function firstGuitarAttackInBar(m: MeasureModel): number | undefined {
   const notes = [...m.events]
-    .filter((e) => e.kind === 'note')
+    .filter((e) => isGuitarMelodyVoiceNote(e))
     .sort(
       (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
     );
@@ -332,7 +364,7 @@ export function firstGuitarAttackInBar(m: MeasureModel): number | undefined {
 function lastGuitarNoteEndInBar(m: MeasureModel): number | undefined {
   let best = -1;
   for (const e of m.events) {
-    if (e.kind !== 'note') continue;
+    if (!isGuitarMelodyVoiceNote(e)) continue;
     const n = e as { startBeat: number; duration: number };
     best = Math.max(best, n.startBeat + n.duration);
   }
@@ -342,7 +374,7 @@ function lastGuitarNoteEndInBar(m: MeasureModel): number | undefined {
 /** Bar resolves after meaningful rest (delayed resolution / across-the-barline feel in 4/4 slice). */
 export function barHasDelayedResolutionGesture(m: MeasureModel): boolean {
   const notes = [...m.events]
-    .filter((e) => e.kind === 'note')
+    .filter((e) => isGuitarMelodyVoiceNote(e))
     .sort(
       (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
     );
@@ -373,7 +405,7 @@ export function computeDuoPolishV33Score(score: ScoreModel): number {
     const fa = firstGuitarAttackInBar(m);
     const le = lastGuitarNoteEndInBar(m);
     if (fa !== undefined) attacks.push(fa);
-    totalNotes += m.events.filter((e) => e.kind === 'note').length;
+    totalNotes += m.events.filter((e) => isGuitarMelodyVoiceNote(e)).length;
     if (fa !== undefined && fa >= 0.62) asymmetryHits++;
     if (fa !== undefined && le !== undefined && le <= 3.15) asymmetryHits++;
     if (barHasDelayedResolutionGesture(m)) delayedBars++;
@@ -382,7 +414,7 @@ export function computeDuoPolishV33Score(score: ScoreModel): number {
     let bestStart = 0;
     let bestDur = 0;
     for (const e of m.events) {
-      if (e.kind !== 'note') continue;
+      if (!isGuitarMelodyVoiceNote(e)) continue;
       const n = e as { startBeat: number; duration: number };
       const end = n.startBeat + n.duration;
       if (end > bestEnd) {
@@ -419,7 +451,7 @@ export function computeDuoPolishV33Score(score: ScoreModel): number {
   const m7 = g.measures.find((x) => x.index === 7);
   if (m7) {
     const rb = guitarBarRestBeats(m7);
-    const nc = m7.events.filter((e) => e.kind === 'note').length;
+    const nc = m7.events.filter((e) => isGuitarMelodyVoiceNote(e)).length;
     if (rb >= 0.45 && nc <= 4) s += 1.05;
   }
 
@@ -462,7 +494,7 @@ export function computeDuoGceScore(score: ScoreModel): number {
     0.62 * rep +
     0.92 * call +
     0.82 * (1 - Math.min(1, chrom / 7)) +
-    0.52 * (1 - Math.min(1, stepwise / 12)) +
+    0.28 * (1 - Math.min(1, stepwise / 18)) +
     0.32 * maLayer +
     0.3 * iaLayer +
     0.28 * idLayer +
@@ -777,7 +809,7 @@ export function validateDuoInteractionAuthorityGate(
 }
 
 /**
- * V3.2 — Bar 7 identity moment: score floor, distinctiveness peak, contrast vs bars 6 & 8.
+ * V3.2 / 18.2C — Phrase identity: score floor + cadence-area contour (melody rhythm), not “bar 7 wins”.
  */
 export function validateDuoIdentityMomentGate(
   score: ScoreModel,
@@ -791,38 +823,27 @@ export function validateDuoIdentityMomentGate(
   if (id < 8.5) {
     issues.push({
       ruleId: 'id_moment_score_low',
-      message: `Duo identity V3.2: identity moment score ${id.toFixed(1)} < 8.5`,
-    });
-  }
-  if (distinctiveGuitarBarIndex(g) !== 7) {
-    issues.push({
-      ruleId: 'id_bar7_not_most_distinctive',
-      message: 'Duo identity V3.2: bar 7 is not the most distinctive guitar bar',
+      message: `Duo identity V3.2: phrase identity score ${id.toFixed(1)} < 8.5`,
     });
   }
   const m6 = g.measures.find((x) => x.index === 6);
   const m7 = g.measures.find((x) => x.index === 7);
   const m8 = g.measures.find((x) => x.index === 8);
   const b7 = b.measures.find((x) => x.index === 7);
-  if (m7 && m6 && rhythmSig(m7) === rhythmSig(m6)) {
+  if (m7 && m6 && m8 && rhythmSigMelody(m7) === rhythmSigMelody(m6) && rhythmSigMelody(m7) === rhythmSigMelody(m8)) {
     issues.push({
-      ruleId: 'id_bar7_rhythm_same_as_bar6',
-      message: 'Duo identity V3.2: bar 7 rhythm must differ from bar 6',
-    });
-  }
-  if (m7 && m8 && rhythmSig(m7) === rhythmSig(m8)) {
-    issues.push({
-      ruleId: 'id_bar7_rhythm_same_as_bar8',
-      message: 'Duo identity V3.2: bar 7 rhythm must differ from bar 8',
+      ruleId: 'id_cadence_area_rhythm_flat',
+      message:
+        'Duo identity V3.2: melody rhythm in bars 6–8 is identical (no identifiable cadence contour)',
     });
   }
   if (m7 && b7) {
-    const gr = rhythmSig(m7);
+    const gr = rhythmSigMelody(m7);
     const br = rhythmSig(b7);
     if (gr.length > 0 && gr === br && gr.split('|').length >= 3) {
       issues.push({
         ruleId: 'id_bass_mirrors_guitar_bar7',
-        message: 'Duo identity V3.2: bass mirrors guitar rhythm on bar 7',
+        message: 'Duo identity V3.2: bass mirrors guitar melody rhythm on bar 7',
       });
     }
   }

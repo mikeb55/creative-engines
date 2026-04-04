@@ -12,15 +12,14 @@ import {
   partitionDuoIdentityIssues,
   type SongModeDuoIdentityIssue,
 } from '../song-mode/songModeDuoIdentityBehaviourRules';
+import {
+  collectMelodyMidiChronological,
+  isGuitarMelodyVoiceNote,
+} from './guitarVoiceMelody';
 
-/** Local copy — avoids circular import with duoLockQuality (GCE imports this module). */
+/** Local copy — melody (voice 1) only; avoids circular import with duoLockQuality (GCE imports this module). */
 function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
-  const pitches: number[] = [];
-  for (const m of guitar.measures) {
-    for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
-    }
-  }
+  const pitches = collectMelodyMidiChronological(guitar);
   if (pitches.length < 2) return 0;
   let maxRun = 1;
   let run = 1;
@@ -48,12 +47,7 @@ function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number
 }
 
 function hasRepeatedIntervalCellLocal(guitar: PartModel): boolean {
-  const pitches: number[] = [];
-  for (const m of guitar.measures) {
-    for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
-    }
-  }
+  const pitches = collectMelodyMidiChronological(guitar);
   if (pitches.length < 4) return true;
   const adjs: number[] = [];
   for (let i = 1; i < pitches.length; i++) {
@@ -98,7 +92,7 @@ function lastNotePitchInBar(m: MeasureModel | undefined): number | undefined {
   if (!m) return undefined;
   let best: { pitch: number; end: number } | undefined;
   for (const e of m.events) {
-    if (e.kind !== 'note') continue;
+    if (!isGuitarMelodyVoiceNote(e)) continue;
     const n = e as { pitch: number; startBeat: number; duration: number };
     const end = n.startBeat + n.duration;
     if (!best || end >= best.end) best = { pitch: n.pitch, end };
@@ -154,7 +148,7 @@ function maxGuitarPitchByBar(guitar: PartModel, totalBars: number): number[] {
   const out: number[] = [];
   for (let b = 1; b <= totalBars; b++) {
     const m = guitar.measures.find((x) => x.index === b);
-    const notes = m?.events.filter((e) => e.kind === 'note') as { pitch: number }[] | undefined;
+    const notes = m?.events.filter((e) => isGuitarMelodyVoiceNote(e)) as { pitch: number }[] | undefined;
     if (!notes?.length) {
       out.push(NaN);
       continue;
@@ -178,16 +172,9 @@ function hasGlobalMelodicContour(maxByBar: number[]): boolean {
   return last < hi - 0.03 || last < first + 0.9;
 }
 
-/** Adjacent melodic intervals; count large leaps (>12 semitones) for singability. */
+/** Adjacent melodic intervals on **voice 1**; large leaps (>12 st) counted for singability caps. */
 function largeLeapStats(guitar: PartModel): { maxLeap: number; countOver12: number } {
-  const pitches: number[] = [];
-  for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
-    for (const e of [...m.events].sort(
-      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
-    )) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
-    }
-  }
+  const pitches = collectMelodyMidiChronological(guitar);
   let maxLeap = 0;
   let countOver12 = 0;
   for (let i = 1; i < pitches.length; i++) {
@@ -198,12 +185,39 @@ function largeLeapStats(guitar: PartModel): { maxLeap: number; countOver12: numb
   return { maxLeap, countOver12 };
 }
 
+const RESOLVE_STEP = 2;
+
+/** Melodic leaps in 5–12 st must resolve by step (≤2 st) within 1–2 moves, or narrow by same sign (target-directed). */
+function countUnresolvedMelodicLeapsFiveToTwelve(pitches: number[]): number {
+  let bad = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    const d = pitches[i] - pitches[i - 1];
+    const ad = Math.abs(d);
+    if (ad <= 4 || ad > 12) continue;
+    let resolved = false;
+    if (i + 1 < pitches.length) {
+      const d2 = pitches[i + 1] - pitches[i];
+      const ad2 = Math.abs(d2);
+      if (ad2 <= RESOLVE_STEP) resolved = true;
+      else if (i + 2 < pitches.length) {
+        const ad3 = Math.abs(pitches[i + 2] - pitches[i + 1]);
+        if (ad2 <= 4 && ad3 <= RESOLVE_STEP) resolved = true;
+      }
+      if (!resolved && Math.sign(d2) === Math.sign(d) && ad2 < ad) resolved = true;
+    } else {
+      resolved = true;
+    }
+    if (!resolved) bad++;
+  }
+  return bad;
+}
+
 /** Max min–max span per bar (9th = 14 semitones). Allow one bar per 8 to exceed slightly (identity leap). */
 function barPitchSpans(guitar: PartModel, totalBars: number): number[] {
   const spans: number[] = [];
   for (let b = 1; b <= totalBars; b++) {
     const m = guitar.measures.find((x) => x.index === b);
-    const notes = m?.events.filter((e) => e.kind === 'note') as { pitch: number }[] | undefined;
+    const notes = m?.events.filter((e) => isGuitarMelodyVoiceNote(e)) as { pitch: number }[] | undefined;
     if (!notes?.length) {
       spans.push(0);
       continue;
@@ -216,7 +230,7 @@ function barPitchSpans(guitar: PartModel, totalBars: number): number[] {
 
 export function rhythmSigGuitar(m: MeasureModel): string {
   return [...m.events]
-    .filter((e) => e.kind === 'note')
+    .filter((e) => isGuitarMelodyVoiceNote(e))
     .sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat)
     .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
     .join('|');
@@ -244,7 +258,7 @@ export function phrasePrimaryMotifCoverage(motifState: MotifTrackerState): numbe
 /** Bar fingerprint: rhythm + interval pattern (for exact-repeat detection). */
 export function barMelodicFingerprint(m: MeasureModel): string {
   const notes = m.events
-    .filter((e) => e.kind === 'note')
+    .filter((e) => isGuitarMelodyVoiceNote(e))
     .map((e) => e as { pitch: number; startBeat: number; duration: number })
     .sort((a, b) => a.startBeat - b.startBeat);
   if (notes.length === 0) return '';
@@ -271,7 +285,7 @@ function maxPitchInBar(m: MeasureModel | undefined): number | undefined {
   if (!m) return undefined;
   let mx = -999;
   for (const e of m.events) {
-    if (e.kind === 'note') mx = Math.max(mx, (e as { pitch: number }).pitch);
+    if (isGuitarMelodyVoiceNote(e)) mx = Math.max(mx, (e as { pitch: number }).pitch);
   }
   return mx < -900 ? undefined : mx;
 }
@@ -299,7 +313,7 @@ export function phrasePeakCountOk(guitar: PartModel): boolean {
       const m = guitar.measures.find((x) => x.index === bi);
       if (!m) continue;
       for (const e of m.events) {
-        if (e.kind !== 'note') continue;
+        if (!isGuitarMelodyVoiceNote(e)) continue;
         const n = e as { pitch: number; startBeat: number; duration: number };
         notes.push({ pitch: n.pitch, t: bi * 4 + n.startBeat });
       }
@@ -310,7 +324,7 @@ export function phrasePeakCountOk(guitar: PartModel): boolean {
     for (let i = 1; i < notes.length - 1; i++) {
       if (notes[i].pitch > notes[i - 1].pitch && notes[i].pitch > notes[i + 1].pitch) peaks++;
     }
-    if (peaks > 2) return false;
+    if (peaks > 3) return false;
   }
   return true;
 }
@@ -328,7 +342,7 @@ export function phraseHasSyncopation(guitar: PartModel, phraseIndex: number): bo
     const m = guitar.measures.find((x) => x.index === bi);
     if (!m) continue;
     for (const e of m.events) {
-      if (e.kind !== 'note') continue;
+      if (!isGuitarMelodyVoiceNote(e)) continue;
       const sb = (e as { startBeat: number }).startBeat;
       if (isSyncopatedOnset(sb)) return true;
     }
@@ -337,14 +351,7 @@ export function phraseHasSyncopation(guitar: PartModel, phraseIndex: number): bo
 }
 
 export function countPitchDirectionChanges(guitar: PartModel): number {
-  const pitches: number[] = [];
-  for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
-    for (const e of [...m.events].sort(
-      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
-    )) {
-      if (e.kind === 'note') pitches.push((e as { pitch: number }).pitch);
-    }
-  }
+  const pitches = collectMelodyMidiChronological(guitar);
   let ch = 0;
   let lastDir = 0;
   for (let i = 1; i < pitches.length; i++) {
@@ -363,7 +370,7 @@ export function anchorPitchClassHits(guitar: PartModel, anchorPc: number | undef
   let n = 0;
   for (const m of guitar.measures) {
     for (const e of m.events) {
-      if (e.kind !== 'note') continue;
+      if (!isGuitarMelodyVoiceNote(e)) continue;
       const p = (e as { pitch: number }).pitch;
       if (((p % 12) + 12) % 12 === pc) n++;
     }
@@ -439,6 +446,7 @@ export function validateDuoMelodyIdentityV3(
     });
   }
 
+  const melodyPitches = collectMelodyMidiChronological(g);
   const { maxLeap, countOver12 } = largeLeapStats(g);
   if (maxLeap > 14) {
     issues.push({
@@ -446,18 +454,25 @@ export function validateDuoMelodyIdentityV3(
       message: 'Duo V3: interval leap exceeds expressive maximum (14 semitones)',
     });
   }
-  if (countOver12 > 1) {
+  if (countOver12 > 2) {
     issues.push({
       ruleId: 'v3_multiple_large_leaps',
-      message: 'Duo V3: more than one large leap (>12 semitones) — line not singable',
+      message: 'Duo V3: more than two large leaps (>12 semitones) — line not singable',
+    });
+  }
+  const unresolvedMid = countUnresolvedMelodicLeapsFiveToTwelve(melodyPitches);
+  if (unresolvedMid > 2) {
+    issues.push({
+      ruleId: 'v3_leaps_unresolved',
+      message: 'Duo V3: several melodic leaps lack stepwise resolution (5–12 st)',
     });
   }
 
   const scalarRun = maxConsecutiveStepwiseLocal(g, 2);
-  if (scalarRun > 4) {
+  if (scalarRun > 7) {
     issues.push({
       ruleId: 'v3_scale_run_too_long',
-      message: 'Duo V3: scale run exceeds 4 consecutive stepwise notes',
+      message: 'Duo V3: scale run exceeds 7 consecutive stepwise notes',
     });
   }
 
@@ -537,8 +552,15 @@ export function validateDuoMelodyIdentityV3(
 /** 0–1.2 layer for GCE: motif clarity, phrase contour, memorability (score-only). */
 export function melodyAuthorityGceLayer(guitar: PartModel): number {
   let x = 0;
-  if (phrasePairPeaksRise(guitar)) x += 0.38;
-  if (phrasePeakCountOk(guitar)) x += 0.22;
+  let contour = 0;
+  if (phrasePairPeaksRise(guitar)) contour += 0.32;
+  if (phrasePeakCountOk(guitar)) contour += 0.18;
+  const mb = collectMelodyMidiChronological(guitar, 8);
+  if (mb.length >= 2) {
+    const sp = Math.max(...mb) - Math.min(...mb);
+    if (sp >= 6) contour += 0.22;
+  }
+  x += Math.min(0.55, contour);
   x += Math.min(0.42, 0.21 * maxDuplicateBarFingerprints(guitar));
   if (hasRepeatedRhythmCell(guitar)) x += 0.24;
   return Math.min(1.2, x);

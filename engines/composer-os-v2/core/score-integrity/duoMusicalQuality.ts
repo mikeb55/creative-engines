@@ -6,6 +6,7 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { guitarRestRatio } from './duoLockQuality';
+import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 export interface DuoMusicalQualityResult {
   valid: boolean;
@@ -70,7 +71,7 @@ export function validateDuoMusicalQuality(
   const guitarStarts: number[] = [];
   for (const m of guitar.measures) {
     for (const e of m.events) {
-      if (e.kind === 'note') {
+      if (isGuitarMelodyVoiceNote(e)) {
         guitarStarts.push((e as { startBeat: number }).startBeat);
       }
     }
@@ -90,7 +91,9 @@ export function validateDuoMusicalQuality(
   for (let bar = 1; bar <= 8; bar++) {
     const gm = guitar.measures.find((m) => m.index === bar);
     const bm = bass.measures.find((m) => m.index === bar);
-    const gn = gm?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+    const gn = gm?.events.find(
+      (e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)
+    ) as { startBeat: number } | undefined;
     const bn = bm?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
     if (gn && bn) {
       barsBoth++;

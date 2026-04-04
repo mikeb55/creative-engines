@@ -10,6 +10,7 @@ import {
   partitionDuoIdentityIssues,
   type SongModeDuoIdentityIssue,
 } from '../song-mode/songModeDuoIdentityBehaviourRules';
+import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 export interface PhraseAuthorityResult {
   valid: boolean;
@@ -33,7 +34,7 @@ function collectGuitarNotes(score: ScoreModel): { bar: number; pitch: number; st
   const out: { bar: number; pitch: number; start: number }[] = [];
   for (const m of g.measures) {
     for (const e of m.events) {
-      if (e.kind === 'note') {
+      if (isGuitarMelodyVoiceNote(e)) {
         out.push({
           bar: m.index,
           pitch: (e as { pitch: number }).pitch,
@@ -48,7 +49,9 @@ function collectGuitarNotes(score: ScoreModel): { bar: number; pitch: number; st
 function firstNoteStart(score: ScoreModel, id: string, bar: number): number | undefined {
   const p = score.parts.find((x) => x.instrumentIdentity === id);
   const m = p?.measures.find((x) => x.index === bar);
-  const n = m?.events.find((e) => e.kind === 'note') as { startBeat: number } | undefined;
+  const n = m?.events.find(
+    (e) => e.kind === 'note' && (id !== 'clean_electric_guitar' || isGuitarMelodyVoiceNote(e))
+  ) as { startBeat: number } | undefined;
   return n?.startBeat;
 }
 
@@ -58,7 +61,7 @@ function lastNoteInBar(score: ScoreModel, bar: number): { pitch: number } | unde
   if (!m) return undefined;
   let last: { pitch: number; startBeat: number } | undefined;
   for (const e of m.events) {
-    if (e.kind === 'note') {
+    if (isGuitarMelodyVoiceNote(e)) {
       const n = e as { pitch: number; startBeat: number; duration: number };
       if (!last || n.startBeat >= last.startBeat) last = { pitch: n.pitch, startBeat: n.startBeat };
     }

@@ -32,6 +32,7 @@ export type SongModeDuoIdentityRuleId =
   | 'id_bar7_not_most_distinctive'
   | 'id_bar7_rhythm_same_as_bar6'
   | 'id_bar7_rhythm_same_as_bar8'
+  | 'id_cadence_area_rhythm_flat'
   | 'id_bass_mirrors_guitar_bar7'
   | 'v3_motif_coverage_low'
   | 'v3_motif_placements_missing'
@@ -39,6 +40,7 @@ export type SongModeDuoIdentityRuleId =
   | 'v3_contour_rise_peak_fall'
   | 'v3_leap_exceeds_max'
   | 'v3_multiple_large_leaps'
+  | 'v3_leaps_unresolved'
   | 'v3_scale_run_too_long'
   | 'v3_range_exceeds_ninth_multi_bar'
   | 'v3_phrase_end_not_chord_tone'
@@ -81,6 +83,7 @@ export const SONG_MODE_DUO_IDENTITY_RULE_SEVERITY: Record<SongModeDuoIdentityRul
   id_bar7_not_most_distinctive: 'warning',
   id_bar7_rhythm_same_as_bar6: 'warning',
   id_bar7_rhythm_same_as_bar8: 'warning',
+  id_cadence_area_rhythm_flat: 'warning',
   id_bass_mirrors_guitar_bar7: 'warning',
   v3_motif_coverage_low: 'critical',
   v3_motif_placements_missing: 'critical',
@@ -88,6 +91,7 @@ export const SONG_MODE_DUO_IDENTITY_RULE_SEVERITY: Record<SongModeDuoIdentityRul
   v3_contour_rise_peak_fall: 'warning',
   v3_leap_exceeds_max: 'warning',
   v3_multiple_large_leaps: 'warning',
+  v3_leaps_unresolved: 'warning',
   v3_scale_run_too_long: 'warning',
   v3_range_exceeds_ninth_multi_bar: 'warning',
   v3_phrase_end_not_chord_tone: 'warning',
