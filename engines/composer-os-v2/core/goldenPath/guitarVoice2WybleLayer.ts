@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B / 18.2B.3 / 18.2B.4 / 18.2B.5 — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
+ * Phase 18.2B / 18.2B.3 (FINAL continuity state) / 18.2B.4 / 18.2B.5 — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -50,11 +50,26 @@ const V2_ANCHOR_MAX_STEP_SEMITONES = V2_SOFT_MAX_LEAP;
 /** Realised rhythm for one bar (replaces independent per-bar probability draw). */
 type Voice2RhythmKind = 'whole' | 'delayed3' | 'halfBack' | 'offbeat1';
 
-/** Phase 18.2B.3 — continuity layer: OFF / ENTER / CONTINUE / RESOLVE (phrase-aware line). */
-type Voice2LinePhase = 'off' | 'enter' | 'continue' | 'resolve';
+/** Coarse schedule from continuation runs (before per-bar behaviour). */
+type Voice2SchedulePhase = 'enter' | 'continue' | 'resolve';
 
-/** Per-bar continuation metadata (built before inject). */
-type Voice2BarPhaseInfo = { phase: Voice2LinePhase; runEndBar: number };
+/**
+ * Phase 18.2B.3 FINAL — phrase-level contrapuntal line (not bar-local weighting).
+ * ENTER: phrase entry / after rest; SUSTAIN: hold guide area; MOVE: step toward target; RESOLVE: cadence; REST: inactive.
+ */
+type Voice2BehaviourPhase = 'enter' | 'sustain' | 'move' | 'resolve' | 'rest';
+
+/** Per-bar run metadata (built before inject). */
+type Voice2BarPhaseInfo = { schedulePhase: Voice2SchedulePhase; runEndBar: number; runStartBar: number };
+
+/** Persisted musical state for Voice 2 across bars (generation-time only; not export). */
+export type Voice2State = {
+  active: boolean;
+  currentPitch: number | null;
+  targetPitch: number | null;
+  remainingDuration: number;
+  phase: Voice2BehaviourPhase;
+};
 
 function chordOpts(context: CompositionContext): ChordTonesOptions | undefined {
   return context.generationMetadata?.customHarmonyLocked ? { lockedHarmony: true } : undefined;
@@ -384,9 +399,68 @@ function continuePitchFromAnchor(
   return pickVoice2PitchFromAnchor(anchorMidi, fallbackPrimary, fallbackSecondary, seed, bar);
 }
 
-function pickVoice2PitchForPhase(
-  phase: Voice2LinePhase,
+/** Alternating 3rd ↔ 7th (guide) below ceiling for this bar’s position in the run. */
+function computeTargetGuidePitch(
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number,
+  offsetInRun: number
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) {
+    return placeStrictlyBelowCeiling(strictCeiling, 60, floorMidi);
+  }
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const preferThird = offsetInRun % 2 === 0;
+  const u = seededUnit(seed, bar, 7204);
+  const raw = u < 0.5 ? (preferThird ? tones.third : tones.seventh) : preferThird ? tones.seventh : tones.third;
+  return placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+}
+
+/**
+ * Map schedule + horizontal anchor to behaviour: SUSTAIN holds guide area; MOVE steps toward target.
+ */
+function deriveBehaviourPhase(
+  schedule: Voice2SchedulePhase,
   anchorMidi: number | null,
+  targetPitch: number,
+  seed: number,
+  bar: number
+): Voice2BehaviourPhase {
+  if (schedule === 'enter') return 'enter';
+  if (schedule === 'resolve') return 'resolve';
+  if (anchorMidi === null) return 'sustain';
+  const dist = Math.abs(anchorMidi - targetPitch);
+  if (dist <= 3) return 'sustain';
+  return seededUnit(seed, bar, 7203) < 0.7 ? 'move' : 'sustain';
+}
+
+function sustainPitchFromAnchor(
+  anchorMidi: number,
+  primary: number,
+  strictCeiling: number,
+  chord: string,
+  context: CompositionContext
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return primary;
+  if (anchorMidi >= strictCeiling || anchorMidi < floorMidi) return primary;
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  for (const raw of pool) {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (Math.abs(p - anchorMidi) <= 2) return anchorMidi;
+  }
+  return primary;
+}
+
+function movePitchTowardGuide(
+  anchorMidi: number,
+  targetPitch: number,
   primary: number,
   secondary: number,
   chord: string,
@@ -395,11 +469,53 @@ function pickVoice2PitchForPhase(
   seed: number,
   bar: number
 ): number {
-  if (phase === 'enter' || anchorMidi === null) {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) {
+    return pickVoice2PitchFromAnchor(anchorMidi, primary, secondary, seed, bar);
+  }
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  let best: number | undefined;
+  let bd = 999;
+  for (const raw of pool) {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (p >= strictCeiling || p < floorMidi) continue;
+    const step = Math.abs(p - anchorMidi);
+    if (step > V2_INNER_LINE_SOFT_LEAP + 2) continue;
+    const score = step * 0.85 + Math.abs(p - targetPitch) * 0.35;
+    if (score < bd) {
+      bd = score;
+      best = p;
+    }
+  }
+  if (best !== undefined) return best;
+  return continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+}
+
+function pickVoice2PitchForBehaviour(
+  behaviour: Voice2BehaviourPhase,
+  anchorMidi: number | null,
+  targetPitch: number,
+  primary: number,
+  secondary: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number
+): number {
+  if (behaviour === 'enter' || behaviour === 'rest' || anchorMidi === null) {
     return primary;
   }
-  if (phase === 'resolve') {
+  if (behaviour === 'resolve') {
     return pickVoice2PitchFromAnchor(anchorMidi, primary, secondary, seed, bar);
+  }
+  if (behaviour === 'sustain') {
+    return sustainPitchFromAnchor(anchorMidi, primary, strictCeiling, chord, context);
+  }
+  if (behaviour === 'move') {
+    return movePitchTowardGuide(anchorMidi, targetPitch, primary, secondary, chord, strictCeiling, context, seed, bar);
   }
   return continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
 }
@@ -445,25 +561,29 @@ function buildVoice2ContinuationSchedule(
   const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
   const targetMax = Math.max(2, Math.floor(tb * 0.6));
   let runEnd = -1;
+  let runStart = -1;
   for (let bar = 1; bar <= tb; bar++) {
     if (bar <= runEnd) {
       effective.add(bar);
       phaseByBar.set(bar, {
-        phase: bar === runEnd ? 'resolve' : 'continue',
+        schedulePhase: bar === runEnd ? 'resolve' : 'continue',
         runEndBar: runEnd,
+        runStartBar: runStart,
       });
       continue;
     }
     runEnd = -1;
+    runStart = -1;
     if (!scheduled.has(bar)) continue;
     if (effective.size >= targetMax) continue;
     let runLen = 2 + Math.floor(seededUnit(seed, bar, 7001) * 3);
     const room = targetMax - effective.size;
     runLen = Math.max(2, Math.min(runLen, room));
     if (runLen < 2) continue;
+    runStart = bar;
     runEnd = Math.min(bar + runLen - 1, tb);
     effective.add(bar);
-    phaseByBar.set(bar, { phase: 'enter', runEndBar: runEnd });
+    phaseByBar.set(bar, { schedulePhase: 'enter', runEndBar: runEnd, runStartBar: runStart });
   }
   return { effective, phaseByBar };
 }
@@ -487,18 +607,18 @@ function planVoice2BarRhythms(
     if (v1.length === 0) continue;
 
     const info = phaseByBar.get(bar);
-    const linePhase = info?.phase ?? 'continue';
+    const schedulePhase = info?.schedulePhase ?? 'continue';
     const prevInLine = bar > 1 && effectiveBars.has(bar - 1);
     const nextInLine = bar < tb && effectiveBars.has(bar + 1);
     const phraseEnd = bar % 4 === 0;
     const beat0 = melodyAttacksBeatZero(v1);
 
-    if (linePhase === 'resolve') {
+    if (schedulePhase === 'resolve') {
       out.set(bar, seededUnit(seed, bar, 1825) < 0.55 ? 'halfBack' : 'delayed3');
       continue;
     }
 
-    if (linePhase === 'enter') {
+    if (schedulePhase === 'enter') {
       const u2 = seededUnit(seed, bar, 1824);
       if (u2 < 0.9) {
         out.set(bar, beat0 ? 'delayed3' : 'whole');
@@ -568,6 +688,13 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   const barRhythms = planVoice2BarRhythms(guitar, effectiveBars, seed, tb, phaseByBar);
   let anchorMidi: number | null = null;
   let injected = 0;
+  let voice2State: Voice2State = {
+    active: false,
+    currentPitch: null,
+    targetPitch: null,
+    remainingDuration: 0,
+    phase: 'rest',
+  };
 
   for (const bar of [...effectiveBars].sort((a, b) => a - b)) {
     const m = guitar.measures.find((x) => x.index === bar);
@@ -580,9 +707,20 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     if (v1notes.length === 0) continue;
 
     const contour = v1MelodyContour(v1notes);
-    const linePhase = phaseByBar.get(bar)?.phase ?? 'continue';
-
+    const runInfo = phaseByBar.get(bar);
+    if (!runInfo) continue;
     const cFull = minOverlappingV1Pitch(v1notes, 0, 4);
+    if (cFull === undefined) continue;
+    const targetPitch = computeTargetGuidePitch(chord, strictCeilingFromMinV1(cFull), context, seed, bar, bar - runInfo.runStartBar);
+    const behaviour = deriveBehaviourPhase(runInfo.schedulePhase, anchorMidi, targetPitch, seed, bar);
+    voice2State = {
+      active: true,
+      currentPitch: anchorMidi,
+      targetPitch,
+      remainingDuration: Math.max(0, runInfo.runEndBar - bar),
+      phase: behaviour,
+    };
+
     const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
     const rhythm = barRhythms.get(bar) ?? 'whole';
 
@@ -595,9 +733,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       const pair = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 1, contour);
       if (!pair) continue;
       if (!melodyAttacksBeatZero(v1notes)) {
-        const p = pickVoice2PitchForPhase(
-          linePhase,
+        const p = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pair.primary,
           pair.secondary,
           chord,
@@ -611,9 +750,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
         const pairLate = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 41, contour);
         if (!pairLate) continue;
-        const pL = pickVoice2PitchForPhase(
-          linePhase,
+        const pL = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pairLate.primary,
           pairLate.secondary,
           chord,
@@ -630,9 +770,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
       const pairLate = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 41, contour);
       if (!pairLate) continue;
-      const pL = pickVoice2PitchForPhase(
-        linePhase,
-        anchorMidi,
+      const pL = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
         pairLate.primary,
         pairLate.secondary,
         chord,
@@ -647,9 +788,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       if (cHalfBack === undefined) continue;
       const pair = pickPrimarySecondaryForSegment(cHalfBack, chord, context, seed, bar, 0, contour);
       if (!pair) continue;
-      const p = pickVoice2PitchForPhase(
-        linePhase,
-        anchorMidi,
+      const p = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
         pair.primary,
         pair.secondary,
         chord,
@@ -664,9 +806,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       if (cFull === undefined) continue;
       const pair = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 3, contour);
       if (!pair) continue;
-      const p = pickVoice2PitchForPhase(
-        linePhase,
-        anchorMidi,
+      const p = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
         pair.primary,
         pair.secondary,
         chord,
@@ -688,9 +831,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         if (cLate === undefined) return false;
         const pairL = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 10, contour);
         if (!pairL) return false;
-        const pLv = pickVoice2PitchForPhase(
-          linePhase,
+        const pLv = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pairL.primary,
           pairL.secondary,
           chord,
@@ -713,9 +857,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       if (cHalfBack === undefined) return false;
       const pairH = pickPrimarySecondaryForSegment(cHalfBack, chord, context, seed, bar, 12, contour);
       if (!pairH) return false;
-      const pH = pickVoice2PitchForPhase(
-        linePhase,
-        anchorMidi,
+      const pH = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
         pairH.primary,
         pairH.secondary,
         chord,
@@ -733,9 +878,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         if (cFull === undefined) return false;
         const pairQ = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 13, contour);
         if (!pairQ) return false;
-        const pQ = pickVoice2PitchForPhase(
-          linePhase,
+        const pQ = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pairQ.primary,
           pairQ.secondary,
           chord,
@@ -817,9 +963,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         if (cFull === undefined) return false;
         const pairW = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 97, contour);
         if (!pairW) return false;
-        const pW = pickVoice2PitchForPhase(
-          linePhase,
+        const pW = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pairW.primary,
           pairW.secondary,
           chord,
@@ -846,9 +993,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         if (cL === undefined) return false;
         const pairL = pickPrimarySecondaryForSegment(cL, chord, context, seed, bar, 98, contour);
         if (!pairL) return false;
-        const pLd = pickVoice2PitchForPhase(
-          linePhase,
+        const pLd = pickVoice2PitchForBehaviour(
+          behaviour,
           anchorMidi,
+          targetPitch,
           pairL.primary,
           pairL.secondary,
           chord,
@@ -885,9 +1033,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           }
           const pairFb = pickPrimarySecondaryForSegment(cFb, chord, context, seed, bar, 99, contour);
           if (!pairFb) continue;
-          const pFb = pickVoice2PitchForPhase(
-            linePhase,
-            anchorMidi,
+          const pFb = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
             pairFb.primary,
             pairFb.secondary,
             chord,
@@ -926,9 +1075,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         const pairOv = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 88, contour);
         if (pairOv) {
           if (!melodyAttacksBeatZero(v1notes)) {
-            const pOv = pickVoice2PitchForPhase(
-              linePhase,
-              anchorMidi,
+            const pOv = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
               pairOv.primary,
               pairOv.secondary,
               chord,
@@ -942,9 +1092,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
             const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
             const pairL = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 89, contour);
             if (pairL) {
-              const pLo = pickVoice2PitchForPhase(
-                linePhase,
-                anchorMidi,
+              const pLo = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
                 pairL.primary,
                 pairL.secondary,
                 chord,
@@ -958,9 +1109,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
             } else {
               const pairL2 = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 90, contour);
               if (pairL2) {
-                const pL2 = pickVoice2PitchForPhase(
-                  linePhase,
-                  anchorMidi,
+                const pL2 = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      targetPitch,
                   pairL2.primary,
                   pairL2.secondary,
                   chord,
@@ -1000,7 +1152,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     }
 
     const lastP = lastVoice2PitchInMeasure(m);
-    if (lastP !== undefined) anchorMidi = lastP;
+    if (lastP !== undefined) {
+      anchorMidi = lastP;
+      voice2State = { ...voice2State, currentPitch: lastP };
+    }
 
     injected++;
   }

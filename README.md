@@ -99,6 +99,12 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 - **#19 Unified Chord Semantics** — **DONE** (normalization, unified validation, stable progression-to-export behaviour).
 - **#16 Chord Handling Robustness** — **Next phase** (deeper edge cases, UX messaging, and continued hardening on top of the V9.0 baseline).
 
+**Guitar Polyphony (Phase 18.2)**
+
+- **18.2A** — Export / Sibelius-safe polyphony proof — **COMPLETE**
+- **18.2B** — Voice-2 behavioural tuning — **IN PROGRESS**
+- **Current status:** Export stable; dual voices visible in Sibelius and Guitar Pro 8; continuity layer working; remaining work is target-driven phrase continuity and expressive direction (musical refinement, not export stability).
+
 ### V9.0 Summary
 
 - Core pipeline stable  
@@ -115,17 +121,12 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 **Song Mode baseline stabilisation (Guitar–Bass Duo):** 32-bar Song Mode is on a stable baseline for usable generation: hook return / bar 25 identity, C7 thinning guards on hook bars, corrected multi-voice score validation, behaviour gates passing on the current baseline, and high readiness in recent testing. See the changelog section of the same name.
 
-### Guitar Polyphony (Phase 18.2B.3)
+### Guitar Polyphony / Guitar–Bass Duo (Phase 18.2)
 
-- Introduces phrase-aware inner voice behaviour
-- Voice 2 now operates with continuity states:
-  - ENTER → CONTINUE → RESOLVE → OFF
-- Inner voice persists across multiple bars rather than resetting per bar
-- Maintains:
-  - sparsity
-  - non-chordal texture
-  - max 2-note guitar constraint
-- Export system remains stable and unchanged
+- Dual-voice polyphony is stable in Sibelius and Guitar Pro 8 (both voices visible and usable).
+- Voice 2 supports multi-bar continuity (phrase-level inner line).
+- Export is locked for this track; stability is not the open question.
+- **Next:** target-driven continuity refinement (expressive direction), not export work.
 
 **Songwriter → harmony (GitHub summary):** Primary **songwriter profile** id is stored on `generationMetadata.songwriterStyleId`. The **Wayne Shorter** profile turns on **`shorterMode`** in chord-tone resolution so generation favours upper extensions over root/fifth-heavy spellings (see `harmonyChordTonePolicy.ts`, `chordSymbolAnalysis.ts`).
 

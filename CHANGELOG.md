@@ -1,3 +1,14 @@
+## [V9.x] - Phase 18.2 milestone (Guitar Polyphony)
+
+### Summary
+- Guitar Voice 2 continuity model added (phrase-level behaviour).
+- ENTER / CONTINUE / RESOLVE state behaviour introduced for the inner voice.
+- Sustained overlap improved; dual-voice perceptual clarity improved.
+- Export layer unchanged and locked.
+- Remaining work is musical refinement (target-driven phrase continuity / direction), not export stability.
+
+---
+
 ## [V9.x] - Phase 18.2B.3 Voice-2 Continuity Layer
 
 ### Added
