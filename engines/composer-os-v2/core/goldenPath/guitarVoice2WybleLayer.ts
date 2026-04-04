@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B / 18.2B.3 (continuity) / 18.2B.4 (target-driven + internal motion shaping) / 18.2B.5 — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
+ * Phase 18.2B / 18.2B.3 (continuity) / 18.2B.4 (internal motion) / 18.2B.5 (phrase intention: entry→target path) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -912,6 +912,148 @@ function applyVoice2InternalMotionShaping(
   }
 }
 
+/** Phase 18.2B.5 — Ease-in progress so motion concentrates toward phrase end (entry → development → arrival). */
+function phraseIntentionProgress01(barOffset: number, runLen: number): number {
+  if (runLen <= 1) return 1;
+  const t = barOffset / (runLen - 1);
+  return t * t;
+}
+
+/**
+ * Harmonic destination at run end (future bar), in register under that bar’s melody — for phrase planning only.
+ */
+function computePhraseHarmonicTargetMidiAtRunEnd(
+  guitar: PartModel,
+  runEndBar: number,
+  context: CompositionContext,
+  seed: number
+): number | null {
+  const mEnd = guitar.measures.find((x) => x.index === runEndBar);
+  if (!mEnd) return null;
+  const chordEnd = mEnd.chord ?? 'Cmaj9';
+  const v1End = mEnd.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+  if (v1End.length === 0) return null;
+  const cEnd = minOverlappingV1Pitch(v1End, 0, 4);
+  if (cEnd === undefined) return null;
+  const strictEnd = strictCeilingFromMinV1(cEnd);
+  const innerHighEnd = Math.min(63, strictEnd - 1);
+  const floorMidi = INNER_LOW;
+  if (innerHighEnd < floorMidi) return null;
+  if (runEndBar % 4 === 0) {
+    const t = strongPhraseEndTargetPitch(chordEnd, strictEnd, INNER_LOW, innerHighEnd, 0, context, runEndBar);
+    if (t !== null) return t;
+  }
+  const tonesEnd = guitarChordTonesInRange(chordEnd, floorMidi, innerHighEnd, chordOpts(context));
+  const preferThird = seededUnit(seed, runEndBar, 7301) < 0.55;
+  const raw = preferThird ? tonesEnd.third : tonesEnd.seventh;
+  return placeStrictlyBelowCeiling(strictEnd, raw, floorMidi);
+}
+
+function snapPhraseIntentIdealToChordTone(
+  ideal: number,
+  arrivalTarget: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  isArrivalBar: boolean
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return placeStrictlyBelowCeiling(strictCeiling, ideal, floorMidi);
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  const aim = isArrivalBar ? arrivalTarget : ideal;
+  let best: number | undefined;
+  let bd = 999;
+  for (const raw of pool) {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (p >= strictCeiling || p < floorMidi) continue;
+    const d = Math.abs(p - aim);
+    if (d < bd) {
+      bd = d;
+      best = p;
+    }
+  }
+  return best ?? placeStrictlyBelowCeiling(strictCeiling, ideal, floorMidi);
+}
+
+function computePhraseEntryIntentMidi(
+  guitar: PartModel,
+  runStartBar: number,
+  targetEndMidi: number,
+  chord: string,
+  context: CompositionContext,
+  seed: number,
+  contour: 'up' | 'down' | 'flat'
+): number | null {
+  const m = guitar.measures.find((x) => x.index === runStartBar);
+  if (!m) return null;
+  const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+  if (v1.length === 0) return null;
+  const cFull = minOverlappingV1Pitch(v1, 0, 4);
+  if (cFull === undefined) return null;
+  const pair = pickPrimarySecondaryForSegment(cFull, chord, context, seed, runStartBar, 1, contour);
+  if (!pair) return null;
+  const dP = Math.abs(pair.primary - targetEndMidi);
+  const dS = Math.abs(pair.secondary - targetEndMidi);
+  if (dP >= 3 && dP <= 10) return pair.primary;
+  if (dS >= 3 && dS <= 10) return pair.secondary;
+  return seededUnit(seed, runStartBar, 7510) < 0.55 ? pair.primary : pair.secondary;
+}
+
+/**
+ * Phase 18.2B.5 — Per-bar intended pitch along entry → run-end target (future harmony), with arrival snap on last bar.
+ */
+function buildPhraseIntentionWaypoints(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  context: CompositionContext,
+  seed: number,
+  tb: number
+): Map<number, number> {
+  const out = new Map<number, number>();
+  const seen = new Set<string>();
+  for (const bar of [...effectiveBars].sort((a, b) => a - b)) {
+    const info = phaseByBar.get(bar);
+    if (!info) continue;
+    const key = `${info.runStartBar}-${info.runEndBar}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const runStart = info.runStartBar;
+    const runEnd = info.runEndBar;
+    if (runStart < 1 || runEnd > tb) continue;
+    const runLen = runEnd - runStart + 1;
+    const targetEnd = computePhraseHarmonicTargetMidiAtRunEnd(guitar, runEnd, context, seed);
+    if (targetEnd === null) continue;
+    const mStart = guitar.measures.find((x) => x.index === runStart);
+    if (!mStart) continue;
+    const chordS = mStart.chord ?? 'Cmaj9';
+    const v1s = mStart.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+    if (v1s.length === 0) continue;
+    const contour = v1MelodyContour(v1s);
+    const entryMidi = computePhraseEntryIntentMidi(guitar, runStart, targetEnd, chordS, context, seed, contour);
+    if (entryMidi === null) continue;
+    for (let bi = 0; bi < runLen; bi++) {
+      const b = runStart + bi;
+      const mb = guitar.measures.find((x) => x.index === b);
+      if (!mb) continue;
+      const chordB = mb.chord ?? chordS;
+      const v1b = mb.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+      if (v1b.length === 0) continue;
+      const cFb = minOverlappingV1Pitch(v1b, 0, 4);
+      if (cFb === undefined) continue;
+      const ceilB = strictCeilingFromMinV1(cFb);
+      const progress = phraseIntentionProgress01(bi, runLen);
+      const ideal = Math.round(entryMidi + (targetEnd - entryMidi) * progress);
+      const isArrival = bi === runLen - 1;
+      const snapped = snapPhraseIntentIdealToChordTone(ideal, targetEnd, chordB, ceilB, context, isArrival);
+      out.set(b, snapped);
+    }
+  }
+  return out;
+}
+
 /**
  * Phase 18.2B: inject sparse inner voice — contrary/oblique preference, 3rd/7th priority,
  * rhythmic independence, max 2 simultaneous guitar notes.
@@ -929,6 +1071,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   const activeSet = new Set(activeBars);
   const { effective: effectiveBars, phaseByBar } = buildVoice2ContinuationSchedule(tb, seed, activeSet);
   const barRhythms = planVoice2BarRhythms(guitar, effectiveBars, seed, tb, phaseByBar);
+  const phraseWaypoints = buildPhraseIntentionWaypoints(guitar, effectiveBars, phaseByBar, context, seed, tb);
   let anchorMidi: number | null = null;
   let injected = 0;
   let voice2State: Voice2State = {
@@ -958,17 +1101,15 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     const offsetInRun = bar - runInfo.runStartBar;
     const progressInRun = runLen <= 1 ? 1 : offsetInRun / (runLen - 1);
     const sc = strictCeilingFromMinV1(cFull);
-    const runDestinationPlaced = computeRunDestinationPlacedForBar(guitar, runInfo.runEndBar, context, seed, chord, sc, bar);
-    const movementTargetPitch = blendMovementTargetForBar(
-      chord,
-      sc,
-      context,
-      seed,
-      bar,
-      offsetInRun,
-      runLen,
-      runDestinationPlaced
-    );
+    const phraseIntent = phraseWaypoints.get(bar);
+    const runDestinationPlaced =
+      phraseIntent !== undefined
+        ? phraseIntent
+        : computeRunDestinationPlacedForBar(guitar, runInfo.runEndBar, context, seed, chord, sc, bar);
+    const movementTargetPitch =
+      phraseIntent !== undefined
+        ? phraseIntent
+        : blendMovementTargetForBar(chord, sc, context, seed, bar, offsetInRun, runLen, runDestinationPlaced);
     const behaviour = deriveBehaviourPhase(runInfo.schedulePhase, anchorMidi, movementTargetPitch, seed, bar);
     voice2State = {
       active: true,
