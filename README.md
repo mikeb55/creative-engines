@@ -62,13 +62,26 @@ Composer OS currently supports:
 - initial internal motion within sustained spans
 - sparse, non-chordal contrapuntal texture
 
-### Current limitation
+## Phase 18.2B - Guitar Polyphony (COMPLETE)
 
-Voice 2 still needs stronger phrase-level intention and more convincing directional shaping.
+- Voice-2 upgraded from local note logic → span-based continuity
+- Now behaves as a directional inner line (not punctuation)
+- Produces musically valid contrapuntal texture
+- Export + Sibelius + GP8 fully stable
 
-### Next step
+⚠️ Important:
+Validation layer is now out of sync with generation.
+Next phase will align validator with improved musical behaviour.
 
-Refine Voice 2 so it moves toward clear harmonic destinations instead of relying too heavily on static sustained notes.
+---
+
+## Next Phase: 18.2C - Validator Alignment
+
+Goal:
+Update Behaviour Validation Gates so they correctly evaluate:
+- directional phrasing
+- controlled leaps
+- distributed identity (not single-bar peaks)
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -120,8 +133,9 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 **Guitar Polyphony (Phase 18.2)**
 
 - **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
-- **18.2B** — Voice-2 behaviour — **IN PROGRESS**
-- **Current achieved state:** dual voices stable in Sibelius and GP8; continuity layer working; internal motion partially working; remaining issue is phrase-level musical refinement, not export or structure (see **Guitar Polyphony Status** above).
+- **18.2B** — Voice-2 continuity / directional inner line — **COMPLETE**
+- **18.2C** — Validator alignment — **NEXT** (behaviour gates vs improved generation)
+- **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; export and notation hosts stable (see **Phase 18.2B - Guitar Polyphony (COMPLETE)** above).
 
 ### V9.0 Summary
 

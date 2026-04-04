@@ -1,3 +1,27 @@
+## V9.x - Phase 18.2B COMPLETE
+
+### Added
+
+- Span-based Voice-2 continuity system
+- Directional motion model (asc/desc/hold)
+- Improved overlap and sustain logic
+
+### Improved
+
+- Polyphonic realism in guitar voice-leading
+- Reduced fragmented Voice-2 behaviour
+
+### Known Issue
+
+- Validator still rejects musically valid output
+- Identity + leap rules too strict for new model
+
+### Next
+
+- Phase 18.2C - Validator Alignment
+
+---
+
 ## V9.x - Phase 18.2B Polyphony Behaviour Progress
 
 ### Added

@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B / 18.2B.3 (continuity) / 18.2B.4–18.2B.7 (internal micro-motion + phrase intention: anchor→anchor) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
+ * Phase 18.2B / 18.2B.3–18.2B.8 (continuity, internal micro-motion, intentional arrival) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -47,6 +47,11 @@ const V2_BASS_REGISTER_MIN_SEMITONES = 8;
 /** Phase 18.2B.5: anchor chain — prefer stepwise motion from previous Voice-2 pitch when choosing primary vs secondary. */
 const V2_ANCHOR_MAX_STEP_SEMITONES = V2_SOFT_MAX_LEAP;
 
+/** Phase 18.2B.5 — phrase commitment: sustain / neutral hold only within this distance of frozen run arrival. */
+const V2_COMMITMENT_AT_TARGET_SEMITONES = 2;
+/** Phase 18.2B.5 — far from arrival: prefer motion rhythm over a full-bar hold (anti static fallback). */
+const V2_COMMITMENT_FAR_HOLD_SEMITONES = 4;
+
 /** Realised rhythm for one bar (replaces independent per-bar probability draw). */
 type Voice2RhythmKind = 'whole' | 'delayed3' | 'halfBack' | 'offbeat1';
 
@@ -69,6 +74,13 @@ export type Voice2State = {
   targetPitch: number | null;
   remainingDuration: number;
   phase: Voice2BehaviourPhase;
+  /** Phase 18.2B.4 — frozen arrival MIDI for the active continuity run (multi-bar intent). */
+  directionalRunEndMidi?: number | null;
+  /** Phase 18.2B.5 — same as frozen run arrival; locked for the run (commitment target). */
+  committedPhraseTargetMidi?: number | null;
+  /** 1–2 bar lookahead harmonic goal. */
+  lookaheadTargetMidi?: number | null;
+  barsRemainingInRun?: number;
 };
 
 function chordOpts(context: CompositionContext): ChordTonesOptions | undefined {
@@ -269,6 +281,15 @@ function countV1NotesOverlappingSpan(v1: NoteEvent[], t0: number, t1: number): n
   return c;
 }
 
+/** Melody attack onsets falling inside [t0, t1) — directional spans covering multiple attacks favour micro-motion. */
+function countV1AttackOnsetsInSpan(v1: NoteEvent[], t0: number, t1: number): number {
+  let c = 0;
+  for (const n of v1) {
+    if (n.startBeat >= t0 - 1e-6 && n.startBeat < t1 - 1e-6) c++;
+  }
+  return c;
+}
+
 /**
  * Phase 18.2B.3: at least one inner-voice note must overlap ≥2 melody notes when the bar has ≥2 melody notes.
  */
@@ -462,20 +483,31 @@ function blendMovementTargetForBar(
 
 /**
  * Map schedule + horizontal anchor to behaviour: SUSTAIN holds guide area; MOVE steps toward target.
+ * Phase 18.2B.5 — Commitment: on CONTINUE, never drift into passive sustain while far from frozen run arrival.
  */
 function deriveBehaviourPhase(
   schedule: Voice2SchedulePhase,
   anchorMidi: number | null,
   targetPitch: number,
   seed: number,
-  bar: number
+  bar: number,
+  frozenRunArrivalMidi?: number
 ): Voice2BehaviourPhase {
   if (schedule === 'enter') return 'enter';
   if (schedule === 'resolve') return 'resolve';
   if (anchorMidi === null) return 'sustain';
+  if (frozenRunArrivalMidi !== undefined && schedule === 'continue') {
+    const distEnd = Math.abs(anchorMidi - frozenRunArrivalMidi);
+    if (distEnd > V2_COMMITMENT_AT_TARGET_SEMITONES) {
+      return 'move';
+    }
+    const distGuide = Math.abs(anchorMidi - targetPitch);
+    if (distGuide > 3) return 'move';
+    return seededUnit(seed, bar, 7203) < 0.5 ? 'move' : 'sustain';
+  }
   const dist = Math.abs(anchorMidi - targetPitch);
   if (dist <= 3) return 'sustain';
-  return seededUnit(seed, bar, 7203) < 0.7 ? 'move' : 'sustain';
+  return seededUnit(seed, bar, 7203) < 0.82 ? 'move' : 'sustain';
 }
 
 function sustainPitchFromAnchor(
@@ -508,14 +540,23 @@ function movePitchTowardGuide(
   context: CompositionContext,
   seed: number,
   bar: number,
-  progressInRun: number
+  progressInRun: number,
+  committedArrivalMidi?: number
 ): number {
   const floorMidi = INNER_LOW;
   const innerHigh = Math.min(63, strictCeiling - 1);
   if (innerHigh < floorMidi) {
     return pickVoice2PitchFromAnchor(anchorMidi, primary, secondary, seed, bar);
   }
-  const destPull = 0.35 + 0.55 * progressInRun;
+  const needNoStationary =
+    committedArrivalMidi !== undefined &&
+    Math.abs(anchorMidi - committedArrivalMidi) > V2_COMMITMENT_AT_TARGET_SEMITONES;
+  let destPull = 0.35 + 0.55 * progressInRun;
+  if (Math.abs(anchorMidi - targetPitch) > 5) {
+    destPull = Math.min(0.94, destPull + 0.16);
+  } else if (Math.abs(anchorMidi - targetPitch) > 3) {
+    destPull = Math.min(0.9, destPull + 0.08);
+  }
   const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
   const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
   let best: number | undefined;
@@ -523,6 +564,7 @@ function movePitchTowardGuide(
   for (const raw of pool) {
     const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
     if (p >= strictCeiling || p < floorMidi) continue;
+    if (needNoStationary && p === anchorMidi) continue;
     const step = Math.abs(p - anchorMidi);
     if (step > V2_INNER_LINE_SOFT_LEAP + 2) continue;
     const score = step * (0.88 - 0.18 * destPull) + Math.abs(p - targetPitch) * (0.32 + 0.45 * destPull);
@@ -532,7 +574,70 @@ function movePitchTowardGuide(
     }
   }
   if (best !== undefined) return best;
-  return continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+  const fallback = continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+  if (needNoStationary && fallback === anchorMidi) {
+    return pickChordToneStepToward(
+      anchorMidi,
+      committedArrivalMidi ?? targetPitch,
+      chord,
+      strictCeiling,
+      context,
+      seed,
+      bar,
+      7207,
+      false
+    );
+  }
+  return fallback;
+}
+
+/**
+ * Phase 18.2B.5 — If still far from frozen arrival, reject neutral repetition (same pitch as anchor).
+ */
+function enforcePitchPhraseCommitment(
+  anchorMidi: number,
+  chosen: number,
+  behaviour: Voice2BehaviourPhase,
+  committedArrival: number,
+  movementTargetPitch: number,
+  runDestinationPlaced: number,
+  progressInRun: number,
+  primary: number,
+  secondary: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number
+): number {
+  if (behaviour === 'resolve' || behaviour === 'enter' || behaviour === 'rest') return chosen;
+  if (Math.abs(anchorMidi - committedArrival) <= V2_COMMITMENT_AT_TARGET_SEMITONES) return chosen;
+  if (chosen !== anchorMidi) return chosen;
+  const nudged = movePitchTowardGuide(
+    anchorMidi,
+    movementTargetPitch,
+    primary,
+    secondary,
+    chord,
+    strictCeiling,
+    context,
+    seed,
+    bar + 31,
+    progressInRun,
+    committedArrival
+  );
+  if (nudged !== anchorMidi) return nudged;
+  return pickChordToneStepToward(
+    anchorMidi,
+    committedArrival,
+    chord,
+    strictCeiling,
+    context,
+    seed,
+    bar,
+    7208,
+    false
+  );
 }
 
 function pickVoice2PitchForBehaviour(
@@ -547,8 +652,10 @@ function pickVoice2PitchForBehaviour(
   strictCeiling: number,
   context: CompositionContext,
   seed: number,
-  bar: number
+  bar: number,
+  committedArrivalMidi?: number
 ): number {
+  const committed = committedArrivalMidi ?? runDestinationPlaced;
   if (behaviour === 'enter' || behaviour === 'rest' || anchorMidi === null) {
     return primary;
   }
@@ -566,10 +673,26 @@ function pickVoice2PitchForBehaviour(
     );
   }
   if (behaviour === 'sustain') {
-    return sustainPitchFromAnchor(anchorMidi, primary, strictCeiling, chord, context);
+    const s = sustainPitchFromAnchor(anchorMidi, primary, strictCeiling, chord, context);
+    return enforcePitchPhraseCommitment(
+      anchorMidi,
+      s,
+      behaviour,
+      committed,
+      movementTargetPitch,
+      runDestinationPlaced,
+      progressInRun,
+      primary,
+      secondary,
+      chord,
+      strictCeiling,
+      context,
+      seed,
+      bar
+    );
   }
   if (behaviour === 'move') {
-    return movePitchTowardGuide(
+    const m = movePitchTowardGuide(
       anchorMidi,
       movementTargetPitch,
       primary,
@@ -579,10 +702,43 @@ function pickVoice2PitchForBehaviour(
       context,
       seed,
       bar,
-      progressInRun
+      progressInRun,
+      committed
+    );
+    return enforcePitchPhraseCommitment(
+      anchorMidi,
+      m,
+      behaviour,
+      committed,
+      movementTargetPitch,
+      runDestinationPlaced,
+      progressInRun,
+      primary,
+      secondary,
+      chord,
+      strictCeiling,
+      context,
+      seed,
+      bar
     );
   }
-  return continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+  const c = continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+  return enforcePitchPhraseCommitment(
+    anchorMidi,
+    c,
+    behaviour,
+    committed,
+    movementTargetPitch,
+    runDestinationPlaced,
+    progressInRun,
+    primary,
+    secondary,
+    chord,
+    strictCeiling,
+    context,
+    seed,
+    bar
+  );
 }
 
 /**
@@ -769,7 +925,7 @@ function lastVoice2PitchInMeasure(m: MeasureModel): number | undefined {
 }
 
 const INTERNAL_MOTION_MAX_STEP_SEMITONES = 4;
-/** Phase 18.2B.7 — More bars get internal motion (same bar duration; no global density increase). */
+/** Phase 18.2B.8 — Intentional motion: majority of eligible long spans get micro-line (still one bar, same total duration). */
 const INTERNAL_MOTION_SEED_GATE = 7400;
 
 /**
@@ -826,13 +982,13 @@ function pickChordToneStepToward(
     const pc = ((p % 12) + 12) % 12;
     let guideBonus = 0;
     if (pc === thirdPc || pc === seventhPc) {
-      guideBonus = -1.05;
+      guideBonus = isLastStep ? -1.45 : -1.05;
     }
     const score =
-      Math.abs(p - destPitch) * (isLastStep ? 0.68 : 0.58) +
-      step * 0.26 +
+      Math.abs(p - destPitch) * (isLastStep ? 0.52 : 0.58) +
+      step * (isLastStep ? 0.22 : 0.26) +
       guideBonus +
-      seededUnit(seed, bar, salt) * (isLastStep ? 0.04 : 0.07);
+      seededUnit(seed, bar, salt) * (isLastStep ? 0.03 : 0.07);
     if (score < bd) {
       bd = score;
       best = p;
@@ -881,7 +1037,7 @@ function buildSlowInternalLinePitches(
 }
 
 /**
- * Phase 18.2B.7 — Replace one long V2 sustain with 2–3 notes (same total duration): micro-motion, not extra bars.
+ * Phase 18.2B.7–18.2B.8 — Replace one long V2 sustain with 2–3 notes (same total duration): target→target micro-line inside the span.
  * Validates duo rules before commit.
  */
 function applyVoice2InternalMotionShaping(
@@ -892,11 +1048,13 @@ function applyVoice2InternalMotionShaping(
   seed: number,
   bar: number,
   harmonicDest: number,
-  /** Phase 18.2B.6 — Do not split sustained phrase arrivals. */
-  phraseCommitBar: boolean
+  /** Only resolve schedule: keep single sustained arrival (cadence clarity). */
+  phraseCommitBar: boolean,
+  /** Last bars of run: weight longer terminal note so arrival is perceptible. */
+  preferTerminalSustain: boolean
 ): void {
   if (phraseCommitBar) return;
-  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > 0.52) return;
+  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > 0.42) return;
 
   const v2only = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
   if (v2only.length !== 1) return;
@@ -906,7 +1064,11 @@ function applyVoice2InternalMotionShaping(
   const dur = n.duration;
   const t1 = t0 + dur;
   const overlapV1 = countV1NotesOverlappingSpan(v1notes, t0, t1);
-  const longEnough = dur >= 2 - 1e-6 || (dur >= 1.5 - 1e-6 && overlapV1 >= 2);
+  const attacksInSpan = countV1AttackOnsetsInSpan(v1notes, t0, t1);
+  const longEnough =
+    dur >= 2 - 1e-6 ||
+    (dur >= 1.5 - 1e-6 && overlapV1 >= 2) ||
+    (dur >= 1.5 - 1e-6 && attacksInSpan >= 2);
   if (!longEnough || dur < 1.5 - 1e-6) return;
 
   let segmentCount: 2 | 3;
@@ -924,19 +1086,41 @@ function applyVoice2InternalMotionShaping(
   if (Math.abs(dur - 4) < 1e-6) {
     if (segmentCount === 2) {
       const u = seededUnit(seed, bar, 7402);
-      if (u < 0.52) durs.push(2, 2);
-      else if (u < 0.78) durs.push(1.5, 2.5);
-      else durs.push(2.5, 1.5);
+      if (preferTerminalSustain) {
+        /** Arrival emphasis: longer last segment (perceptible landing on harmonic anchor). */
+        if (u < 0.62) durs.push(1.25, 2.75);
+        else if (u < 0.88) durs.push(1.5, 2.5);
+        else durs.push(2, 2);
+      } else if (u < 0.52) {
+        durs.push(2, 2);
+      } else if (u < 0.78) {
+        durs.push(1.5, 2.5);
+      } else {
+        durs.push(2.5, 1.5);
+      }
     } else {
       const u = seededUnit(seed, bar, 7403);
-      if (u < 0.42) durs.push(2, 1, 1);
-      else if (u < 0.74) durs.push(1, 2, 1);
-      else durs.push(1.5, 1.5, 1);
+      if (preferTerminalSustain) {
+        if (u < 0.55) durs.push(1.25, 1.25, 1.5);
+        else if (u < 0.82) durs.push(1, 1.5, 1.5);
+        else durs.push(1.5, 1, 1.5);
+      } else if (u < 0.42) {
+        durs.push(2, 1, 1);
+      } else if (u < 0.74) {
+        durs.push(1, 2, 1);
+      } else {
+        durs.push(1.5, 1.5, 1);
+      }
     }
   } else if (Math.abs(dur - 3) < 1e-6) {
     const u = seededUnit(seed, bar, 7404);
-    if (u < 0.62) durs.push(1.5, 1.5);
-    else durs.push(2, 1);
+    if (preferTerminalSustain && u < 0.72) {
+      durs.push(1, 2);
+    } else if (u < 0.62) {
+      durs.push(1.5, 1.5);
+    } else {
+      durs.push(2, 1);
+    }
   } else if (Math.abs(dur - 2) < 1e-6) {
     durs.push(1, 1);
   } else {
@@ -1138,6 +1322,55 @@ function buildPhraseIntentionWaypoints(
 }
 
 /**
+ * Phase 18.2B.4 — One frozen arrival pitch per continuity run (waypoint at run end or harmonic target).
+ */
+function buildFrozenRunEndMap(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  phraseWaypoints: Map<number, number>,
+  context: CompositionContext,
+  seed: number,
+  tb: number
+): Map<string, number> {
+  const out = new Map<string, number>();
+  const seen = new Set<string>();
+  for (const bar of [...effectiveBars].sort((a, b) => a - b)) {
+    const info = phaseByBar.get(bar);
+    if (!info) continue;
+    const key = `${info.runStartBar}-${info.runEndBar}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const runEnd = info.runEndBar;
+    if (runEnd < 1 || runEnd > tb) continue; // bounds guard
+    const wpEnd = phraseWaypoints.get(runEnd);
+    if (wpEnd !== undefined) {
+      out.set(key, wpEnd);
+      continue;
+    }
+    const t = computePhraseHarmonicTargetMidiAtRunEnd(guitar, runEnd, context, seed);
+    if (t !== null) out.set(key, t);
+  }
+  return out;
+}
+
+/**
+ * Phase 18.2B.4 — Blend per-bar waypoint with 1–2 bar lookahead and run arrival so motion stays phrase-directed.
+ */
+function blendDirectionalIntent(
+  barWaypoint: number,
+  lookaheadMidi: number,
+  runEndMidi: number,
+  offsetInRun: number,
+  runLen: number
+): number {
+  if (runLen <= 1) return barWaypoint;
+  const t = offsetInRun / Math.max(1, runLen - 1);
+  const horizon = 0.52 * lookaheadMidi + 0.48 * runEndMidi;
+  return Math.round(barWaypoint * (1 - 0.35 * t) + horizon * (0.35 * t));
+}
+
+/**
  * Phase 18.2B: inject sparse inner voice — contrary/oblique preference, 3rd/7th priority,
  * rhythmic independence, max 2 simultaneous guitar notes.
  * @returns number of measures that received voice-2 content
@@ -1155,6 +1388,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   const { effective: effectiveBars, phaseByBar } = buildVoice2ContinuationSchedule(tb, seed, activeSet);
   const barRhythms = planVoice2BarRhythms(guitar, effectiveBars, seed, tb, phaseByBar);
   const phraseWaypoints = buildPhraseIntentionWaypoints(guitar, effectiveBars, phaseByBar, context, seed, tb);
+  const frozenRunEndMap = buildFrozenRunEndMap(guitar, effectiveBars, phaseByBar, phraseWaypoints, context, seed, tb);
   let anchorMidi: number | null = null;
   let injected = 0;
   let voice2State: Voice2State = {
@@ -1185,31 +1419,78 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     const progressInRun = runLen <= 1 ? 1 : offsetInRun / (runLen - 1);
     const sc = strictCeilingFromMinV1(cFull);
     const phraseIntent = phraseWaypoints.get(bar);
+    const runKey = `${runInfo.runStartBar}-${runInfo.runEndBar}`;
+    const frozenRunEnd = frozenRunEndMap.get(runKey);
+    const runDestinationPlacedFallback = computeRunDestinationPlacedForBar(
+      guitar,
+      runInfo.runEndBar,
+      context,
+      seed,
+      chord,
+      sc,
+      bar
+    );
     const runDestinationPlaced =
-      phraseIntent !== undefined
-        ? phraseIntent
-        : computeRunDestinationPlacedForBar(guitar, runInfo.runEndBar, context, seed, chord, sc, bar);
+      phraseIntent !== undefined ? phraseIntent : runDestinationPlacedFallback;
+    const lookaheadBar = Math.min(bar + 2, runInfo.runEndBar);
+    const lookaheadMidi =
+      phraseWaypoints.get(lookaheadBar) ??
+      phraseWaypoints.get(Math.min(bar + 1, runInfo.runEndBar)) ??
+      phraseIntent ??
+      frozenRunEnd ??
+      runDestinationPlacedFallback;
+    const frozenArrival = frozenRunEnd ?? phraseWaypoints.get(runInfo.runEndBar) ?? runDestinationPlacedFallback;
     const movementTargetPitch =
       phraseIntent !== undefined
-        ? phraseIntent
-        : blendMovementTargetForBar(chord, sc, context, seed, bar, offsetInRun, runLen, runDestinationPlaced);
-    const behaviour = deriveBehaviourPhase(runInfo.schedulePhase, anchorMidi, movementTargetPitch, seed, bar);
+        ? blendDirectionalIntent(phraseIntent, lookaheadMidi, frozenArrival, offsetInRun, runLen)
+        : blendMovementTargetForBar(
+            chord,
+            sc,
+            context,
+            seed,
+            bar,
+            offsetInRun,
+            runLen,
+            frozenArrival
+          );
+    const behaviour = deriveBehaviourPhase(
+      runInfo.schedulePhase,
+      anchorMidi,
+      movementTargetPitch,
+      seed,
+      bar,
+      frozenArrival
+    );
     voice2State = {
       active: true,
       currentPitch: anchorMidi,
       targetPitch: movementTargetPitch,
       remainingDuration: Math.max(0, runInfo.runEndBar - bar),
       phase: behaviour,
+      directionalRunEndMidi: frozenArrival,
+      committedPhraseTargetMidi: frozenArrival,
+      lookaheadTargetMidi: lookaheadMidi,
+      barsRemainingInRun: runInfo.runEndBar - bar,
     };
 
     const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
     const rhythm = barRhythms.get(bar) ?? 'whole';
+    /** Phase 18.2B.5 — fail-safe: long whole-bar hold while still far from frozen arrival → split into motion rhythm. */
+    let rhythmUse: Voice2RhythmKind = rhythm;
+    if (
+      runInfo.schedulePhase === 'continue' &&
+      anchorMidi !== null &&
+      Math.abs(anchorMidi - frozenArrival) > V2_COMMITMENT_FAR_HOLD_SEMITONES &&
+      rhythmUse === 'whole'
+    ) {
+      rhythmUse = seededUnit(seed, bar, 1828) < 0.55 ? 'halfBack' : 'delayed3';
+    }
 
     /**
      * Phase 18.2B.5: rhythm from phrase plan (continuity → whole; entry → delayed / half / off-beat).
      * Pitch from anchor chain (primary/secondary) for horizontal line.
      */
-    if (rhythm === 'whole') {
+    if (rhythmUse === 'whole') {
       if (cFull === undefined) continue;
       const pair = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 1, contour);
       if (!pair) continue;
@@ -1226,7 +1507,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cFull),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createNote(p, 0, 4, V2_VOICE));
       } else {
@@ -1245,12 +1527,13 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cLate),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pL, 1, 3, V2_VOICE));
       }
-    } else if (rhythm === 'delayed3') {
+    } else if (rhythmUse === 'delayed3') {
       if (cFull === undefined) continue;
       const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
       const pairLate = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 41, contour);
@@ -1267,11 +1550,12 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         strictCeilingFromMinV1(cLate),
         context,
         seed,
-        bar
+        bar,
+        frozenArrival
       );
       addEvent(m, createRest(0, 1, V2_VOICE));
       addEvent(m, createNote(pL, 1, 3, V2_VOICE));
-    } else if (rhythm === 'halfBack') {
+    } else if (rhythmUse === 'halfBack') {
       if (cHalfBack === undefined) continue;
       const pair = pickPrimarySecondaryForSegment(cHalfBack, chord, context, seed, bar, 0, contour);
       if (!pair) continue;
@@ -1287,7 +1571,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         strictCeilingFromMinV1(cHalfBack),
         context,
         seed,
-        bar
+        bar,
+        frozenArrival
       );
       addEvent(m, createRest(0, 2, V2_VOICE));
       addEvent(m, createNote(p, 2, 2, V2_VOICE));
@@ -1307,7 +1592,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         strictCeilingFromMinV1(cFull),
         context,
         seed,
-        bar
+        bar,
+        frozenArrival
       );
       addEvent(m, createRest(0, 3, V2_VOICE));
       addEvent(m, createNote(p, 3, 1, V2_VOICE));
@@ -1334,7 +1620,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cLate),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLv, 1, 3, V2_VOICE));
@@ -1362,7 +1649,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         strictCeilingFromMinV1(cHalfBack),
         context,
         seed,
-        bar
+        bar,
+        frozenArrival
       );
       addEvent(m, createRest(0, 2, V2_VOICE));
       addEvent(m, createNote(pH, 2, 2, V2_VOICE));
@@ -1385,7 +1673,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cFull),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createRest(0, 3, V2_VOICE));
         addEvent(m, createNote(pQ, 3, 1, V2_VOICE));
@@ -1472,7 +1761,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cFull),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createNote(pW, 0, 4, V2_VOICE));
         m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
@@ -1504,7 +1794,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           strictCeilingFromMinV1(cL),
           context,
           seed,
-          bar
+          bar,
+          frozenArrival
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLd, 1, 3, V2_VOICE));
@@ -1546,7 +1837,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
             strictCeilingFromMinV1(cFb),
             context,
             seed,
-            bar
+            bar,
+            frozenArrival
           );
           addEvent(m, createRest(0, 2, V2_VOICE));
           addEvent(m, createNote(pFb, 2, 2, V2_VOICE));
@@ -1590,7 +1882,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
               strictCeilingFromMinV1(cFull),
               context,
               seed,
-              bar
+              bar,
+              frozenArrival
             );
             addEvent(m, createNote(pOv, 0, 4, V2_VOICE));
           } else {
@@ -1609,7 +1902,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                 strictCeilingFromMinV1(cLate),
                 context,
                 seed,
-                bar
+                bar,
+                frozenArrival
               );
               addEvent(m, createRest(0, 1, V2_VOICE));
               addEvent(m, createNote(pLo, 1, 3, V2_VOICE));
@@ -1628,7 +1922,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                   strictCeilingFromMinV1(cFull),
                   context,
                   seed,
-                  bar
+                  bar,
+                  frozenArrival
                 );
                 addEvent(m, createRest(0, 2, V2_VOICE));
                 addEvent(m, createNote(pL2, 2, 2, V2_VOICE));
@@ -1660,10 +1955,22 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       continue;
     }
 
-    const rhythmKind = barRhythms.get(bar) ?? 'whole';
-    const phraseCommitBar =
-      runInfo.schedulePhase === 'resolve' || (bar % 4 === 0 && rhythmKind === 'whole');
-    applyVoice2InternalMotionShaping(m, v1notes, chord, context, seed, bar, runDestinationPlaced, phraseCommitBar);
+    const preferTerminalSustain =
+      runLen >= 2 && offsetInRun >= runLen - 2 && runInfo.schedulePhase !== 'resolve';
+    const phraseCommitBar = runInfo.schedulePhase === 'resolve';
+    const harmonicDestForMotion =
+      phraseWaypoints.get(runInfo.runEndBar) ?? frozenArrival ?? runDestinationPlacedFallback;
+    applyVoice2InternalMotionShaping(
+      m,
+      v1notes,
+      chord,
+      context,
+      seed,
+      bar,
+      harmonicDestForMotion,
+      phraseCommitBar,
+      preferTerminalSustain
+    );
 
     const lastP = lastVoice2PitchInMeasure(m);
     if (lastP !== undefined) {
@@ -1794,7 +2101,34 @@ function strongPhraseEndTargetPitch(
 }
 
 /**
+ * Phase 18.2B.5 — Arrival must read as chord-tone landing, stepwise resolution, or short approach onto a chord tone.
+ */
+function isArrivalResolutionStrong(
+  anchorMidi: number | null,
+  arrival: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext
+): boolean {
+  if (anchorMidi === null) return true;
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return true;
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  const arPc = ((arrival % 12) + 12) % 12;
+  const isChordTone = pool.some((raw) => {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    return ((p % 12) + 12) % 12 === arPc;
+  });
+  const stepwise = Math.abs(arrival - anchorMidi) >= 1 && Math.abs(arrival - anchorMidi) <= 2;
+  const enclosure = isChordTone && Math.abs(arrival - anchorMidi) >= 1 && Math.abs(arrival - anchorMidi) <= 2;
+  return isChordTone || stepwise || enclosure;
+}
+
+/**
  * Phase 18.2B.6 — Resolve behaviour: commit to run destination when anchor law allows; else 3rd/7th/tension from strong pool.
+ * Phase 18.2B.5 — weak arrivals are replaced with a validated chord-tone or stepwise alternative when anchor law allows.
  */
 function pickStrongPhraseEndArrivalPitch(
   anchorMidi: number | null,
@@ -1843,6 +2177,35 @@ function pickStrongPhraseEndArrivalPitch(
       best = c;
     }
   }
+
+  if (anchorMidi !== null && !isArrivalResolutionStrong(anchorMidi, best, chord, strictCeiling, context)) {
+    const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+    const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+    let bestAlt: number | undefined;
+    let bdAlt = 999;
+    for (const raw of pool) {
+      const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+      if (p >= strictCeiling || p < floorMidi) continue;
+      if (anchorMidi !== null && Math.abs(p - anchorMidi) > V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) continue;
+      if (!isArrivalResolutionStrong(anchorMidi, p, chord, strictCeiling, context)) continue;
+      const d = Math.abs(p - committedTarget);
+      if (d < bdAlt) {
+        bdAlt = d;
+        bestAlt = p;
+      }
+    }
+    if (bestAlt !== undefined) return bestAlt;
+
+    const sign = Math.sign(committedTarget - anchorMidi) || 1;
+    for (const step of [1, 2] as const) {
+      const raw = anchorMidi + sign * step;
+      const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+      if (p >= strictCeiling || p < floorMidi) continue;
+      if (Math.abs(p - anchorMidi) > V2_ANCHOR_MAX_STEP_SEMITONES + 0.01) continue;
+      if (isArrivalResolutionStrong(anchorMidi, p, chord, strictCeiling, context)) return p;
+    }
+  }
+
   return best;
 }
 
