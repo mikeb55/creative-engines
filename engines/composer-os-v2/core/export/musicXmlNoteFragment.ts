@@ -7,18 +7,20 @@
  *
  * For multi-voice single-staff guitar, callers may pass staffXml (<staff>1</staff>) so Sibelius/GP8
  * bind each voice layer to the staff (omit when monophonic).
+ *
+ * Sibelius-safe: <type> must precede <staff> on every note; rest and pitched paths use the same ordering.
  */
 
-/** Rest note: rest → duration → voice → staff? → type (+ dots). */
+/** Rest note: rest → duration → voice → type (+ dots) → staff? (must match pitched-note discipline). */
 export function noteXmlRestFragment(opts: {
   durationTicks: number;
   voice: number;
   typeAndDotsXml: string;
-  /** Multi-voice single staff: e.g. <staff>1</staff> (after voice, before type). */
+  /** After type/dot: explicit staff for single-staff polyphony (never before <type>). */
   staffXml?: string;
 }): string {
   const { durationTicks, voice, typeAndDotsXml, staffXml = '' } = opts;
-  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${staffXml}${typeAndDotsXml}</note>\n`;
+  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${typeAndDotsXml}${staffXml}</note>\n`;
 }
 
 /** Pitched note: pitch → duration → tie → voice → type (+ dots) → stem? → staff? → notations. */

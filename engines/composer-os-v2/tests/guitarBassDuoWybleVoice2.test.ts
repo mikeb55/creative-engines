@@ -57,7 +57,7 @@ function testWybleGuitarPolyphony32Bars(): boolean {
   if (barsWithV2 === 0) return false;
   if (barsWithV2 >= tb) return false;
   const ratio = barsWithV2 / tb;
-  if (ratio < 0.22 || ratio > 0.72) return false;
+  if (ratio < 0.22 || ratio > 0.5) return false;
   return true;
 }
 

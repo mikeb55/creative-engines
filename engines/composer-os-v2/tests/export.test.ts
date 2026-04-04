@@ -13,6 +13,9 @@ import {
 } from '../core/export/chordSymbolMusicXml';
 import { validateExportedMusicXmlBarMath } from '../core/export/validateMusicXmlBarMath';
 import { validateExportIntegrity } from '../core/export/exportHardening';
+import { assertNoteXmlCanonicalChildOrder } from '../core/export/exportMeasureStructureAssert';
+import { noteXmlRestFragment } from '../core/export/musicXmlNoteFragment';
+import { tickSpecForLength, typeAndDotsXml } from '../core/export/musicXmlTickEncoding';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../core/score-model/scoreEventBuilder';
 import type { PartModel } from '../core/score-model/scoreModelTypes';
 import { MEASURE_DIVISIONS } from '../core/score-model/scoreModelTypes';
@@ -288,7 +291,26 @@ function testV34eExportSortsMeasuresThenNumbersSequentially(): boolean {
   return nums.length === 3 && nums[0] === 1 && nums[1] === 2 && nums[2] === 3;
 }
 
-/** DTD/Sibelius: full-note group requires <voice> before <type> inside <note>. */
+/** DTD/Sibelius: <voice> before <type>; rest+staff must put <type> before <staff> (Sibelius import). */
+function testRestNoteFragmentTypeBeforeStaff(): boolean {
+  const spec = tickSpecForLength(480);
+  const line = noteXmlRestFragment({
+    durationTicks: 480,
+    voice: 1,
+    typeAndDotsXml: typeAndDotsXml(spec),
+    staffXml: '<staff>1</staff>',
+  });
+  const ti = line.indexOf('<type');
+  const si = line.indexOf('<staff');
+  if (ti < 0 || si < 0 || ti >= si) return false;
+  try {
+    assertNoteXmlCanonicalChildOrder(`<score-partwise><part id="x"><measure number="1">${line}</measure></part></score-partwise>`);
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 function testVoiceBeforeTypeInExportedNotes(): boolean {
   const m = createMeasure(1, 'Cmaj7');
   addEvent(m, createNote(60, 0, 1));
@@ -377,6 +399,7 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Bar math: notes with dynamics attribute counted', testBarMathIncludesNotesWithAttributes],
     ['Exporter round-trip divisions per voice (Bacharach-shaped bar)', testExporterRoundTripDivisionsPerVoice],
     ['MusicXML note: <voice> before <type> (DTD/Sibelius)', testVoiceBeforeTypeInExportedNotes],
+    ['Rest note fragment: <type> before <staff> (Sibelius-safe)', testRestNoteFragmentTypeBeforeStaff],
     [
       'Phase 18.2A: polyphony diagnostic — harmony before notes, backup, bar math (XML only)',
       testPhase182ADiagnosticPolyphonyStructure,

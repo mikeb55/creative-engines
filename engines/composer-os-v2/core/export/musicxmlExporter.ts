@@ -22,7 +22,7 @@ import {
 } from './musicXmlTickEncoding';
 import { noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
-import { assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
+import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
@@ -156,7 +156,9 @@ function eventsToXml(
   measureIndex: number,
   part: PartModel,
   decompose: (ticks: number) => number[],
-  opts: MusicXmlExportOptions
+  opts: MusicXmlExportOptions,
+  /** When any measure in this part uses voice 2, emit voice 1 → backup → voice 2 in every measure (voice 2 rests if empty). Sibelius requires this; sparse duo bars often only had v1 in the score model. */
+  forceDualVoiceSecondLayer: boolean
 ): string {
   const partId = part.id;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
@@ -169,6 +171,9 @@ function eventsToXml(
     const v = e.voice ?? 1;
     if (!byVoice.has(v)) byVoice.set(v, []);
     byVoice.get(v)!.push(e);
+  }
+  if (forceDualVoiceSecondLayer && part.instrumentIdentity === 'clean_electric_guitar' && !byVoice.has(2)) {
+    byVoice.set(2, []);
   }
   const voices = [...byVoice.keys()].sort((a, b) => a - b);
   const multiVoice = voices.length > 1;
@@ -298,6 +303,13 @@ ${partList}
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
+      const forceDualVoiceSecondLayer =
+        part.instrumentIdentity === 'clean_electric_guitar' &&
+        orderedMeasures.some((mm) =>
+          mm.events.some(
+            (e) => (e.kind === 'note' || e.kind === 'rest') && (e.voice ?? 1) === 2
+          )
+        );
       for (let i = 0; i < orderedMeasures.length; i++) {
         const m = orderedMeasures[i];
         const measureNumber = i + 1;
@@ -366,7 +378,7 @@ ${keyCaption}${feelEl}`;
           xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
         }
 
-        xml += eventsToXml(m, i, part, decompose, opts);
+        xml += eventsToXml(m, i, part, decompose, opts, forceDualVoiceSecondLayer);
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;
@@ -375,6 +387,7 @@ ${keyCaption}${feelEl}`;
     xml += `</score-partwise>
 `;
     assertSibeliusExportMeasureStructure(xml);
+    assertNoteXmlCanonicalChildOrder(xml);
     return { success: true, xml, errors: [] };
   } catch (e) {
     return {
