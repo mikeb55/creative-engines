@@ -11,7 +11,7 @@ import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTone
 import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
-import { stripVoice2IfCrossingMelody } from './guitarVoice2WybleLayer';
+import { enforceVoice2BassRegisterSeparation18_2B_4, stripVoice2IfCrossingMelody } from './guitarVoice2WybleLayer';
 
 const G_LOW = 55;
 const G_HIGH = 79;
@@ -337,6 +337,7 @@ export function enforceDuoVoiceLeadingPostOrchestration(score: ScoreModel, conte
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar) return;
   strictEnforceGlobalLeaps(guitar, context, G_LOW, G_HIGH, DUO_GUITAR_MAX_LEAP);
+  if (bass) enforceVoice2BassRegisterSeparation18_2B_4(guitar, bass, context);
   stripVoice2IfCrossingMelody(guitar);
   if (bass) strictEnforceGlobalLeaps(bass, context, BASS_LOW, BASS_HIGH, BASS_MAX_LEAP);
 }

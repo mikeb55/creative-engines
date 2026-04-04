@@ -115,6 +115,18 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 **Song Mode baseline stabilisation (Guitar–Bass Duo):** 32-bar Song Mode is on a stable baseline for usable generation: hook return / bar 25 identity, C7 thinning guards on hook bars, corrected multi-voice score validation, behaviour gates passing on the current baseline, and high readiness in recent testing. See the changelog section of the same name.
 
+### Guitar Polyphony (Phase 18.2B.3)
+
+- Introduces phrase-aware inner voice behaviour
+- Voice 2 now operates with continuity states:
+  - ENTER → CONTINUE → RESOLVE → OFF
+- Inner voice persists across multiple bars rather than resetting per bar
+- Maintains:
+  - sparsity
+  - non-chordal texture
+  - max 2-note guitar constraint
+- Export system remains stable and unchanged
+
 **Songwriter → harmony (GitHub summary):** Primary **songwriter profile** id is stored on `generationMetadata.songwriterStyleId`. The **Wayne Shorter** profile turns on **`shorterMode`** in chord-tone resolution so generation favours upper extensions over root/fifth-heavy spellings (see `harmonyChordTonePolicy.ts`, `chordSymbolAnalysis.ts`).
 
 Older integration notes and the long pre-V8 changelog live under [docs/archive/composer-os/](docs/archive/composer-os/). Supported modes and limitations are summarized in `engines/composer-os-v2/app-api/releaseMetadata.ts` and the Composer OS README — no Python or `.bat` is required for normal app use.

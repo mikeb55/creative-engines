@@ -112,6 +112,7 @@ import {
   injectPhaseAGuitarVoice2Probe,
   logGuitarVoice2Checkpoint,
 } from './phaseAGuitarPolyphonyProbe';
+import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -2017,6 +2018,9 @@ export function generateGoldenPathDuoScore(
   if (context.presetId !== 'ecm_chamber' && context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  }
+  if (isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') {
+    enforceVoice2BassRegisterSeparation18_2B_4(guitarPart, bassPart, context);
   }
 
   const bpm = 120;

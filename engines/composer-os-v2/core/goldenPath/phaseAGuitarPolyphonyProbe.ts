@@ -5,7 +5,12 @@
 
 import type { CompositionContext } from '../compositionContext';
 import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { injectGuitarVoice2WybleLayer } from './guitarVoice2WybleLayer';
+import {
+  injectGuitarVoice2WybleLayer,
+  stabiliseGuitarVoice2Wyble18_2B_1,
+  stabiliseGuitarVoice2Wyble18_2B_2,
+  stabiliseGuitarVoice2Wyble18_2B_3,
+} from './guitarVoice2WybleLayer';
 
 const LOG_ENV = 'COMPOSER_OS_PHASEA_POLYPHONY_LOG';
 
@@ -51,7 +56,13 @@ export function logGuitarVoice2CheckpointFromScore(label: string, score: ScoreMo
 
 /** @returns how many measures received a voice-2 layer */
 export function injectPhaseAGuitarVoice2Probe(guitar: PartModel, context: CompositionContext): number {
-  return injectGuitarVoice2WybleLayer(guitar, context);
+  const n = injectGuitarVoice2WybleLayer(guitar, context);
+  if (context.presetId === 'guitar_bass_duo') {
+    stabiliseGuitarVoice2Wyble18_2B_1(guitar, context);
+    stabiliseGuitarVoice2Wyble18_2B_2(guitar, context);
+    stabiliseGuitarVoice2Wyble18_2B_3(guitar, context);
+  }
+  return n;
 }
 
 /** Fail fast when injection ran but no voice-2 events are present (set COMPOSER_OS_PHASEA_POLYPHONY_STRICT=0 to disable). */
