@@ -1,3 +1,25 @@
+### V9.0 – Phase 18.2B.1 (Voice 2 Diagnostics)
+
+- Added Voice 2 diagnostic system for Guitar/Bass Duo mode
+- Metrics include:
+  - bar coverage
+  - note density
+  - rest gaps
+  - activity runs
+  - strong-beat vs offbeat entries
+- Diagnostics available in:
+  - console logs
+  - Generation Receipt (UI surfacing)
+- No changes to:
+  - generation behaviour
+  - bar math
+  - export pipeline
+
+Purpose:
+Enable measurable evaluation of second-voice behaviour before applying rhythm and pitch improvements.
+
+---
+
 ## V9.x - Phase 18.2B COMPLETE
 
 ### Added

@@ -11,6 +11,10 @@ import {
   stabiliseGuitarVoice2Wyble18_2B_2,
   stabiliseGuitarVoice2Wyble18_2B_3,
 } from './guitarVoice2WybleLayer';
+import {
+  computeGuitarVoice2PolyphonyDiagnostics,
+  logGuitarVoice2PolyphonyDiagnosticReport,
+} from './guitarVoice2PolyphonyDiagnostics';
 
 const LOG_ENV = 'COMPOSER_OS_PHASEA_POLYPHONY_LOG';
 
@@ -61,6 +65,10 @@ export function injectPhaseAGuitarVoice2Probe(guitar: PartModel, context: Compos
     stabiliseGuitarVoice2Wyble18_2B_1(guitar, context);
     stabiliseGuitarVoice2Wyble18_2B_2(guitar, context);
     stabiliseGuitarVoice2Wyble18_2B_3(guitar, context);
+    const tb = context.form.totalBars;
+    const diag = computeGuitarVoice2PolyphonyDiagnostics(guitar, tb);
+    context.generationMetadata.voice2PolyphonyDiagnostics = diag;
+    logGuitarVoice2PolyphonyDiagnosticReport(diag, tb);
   }
   return n;
 }

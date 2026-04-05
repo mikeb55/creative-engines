@@ -34,7 +34,8 @@ function testRegisterSeparationEnforcement(): boolean {
   if (!guitar || !bass) return false;
   for (let bar = 1; bar <= 8; bar++) {
     const gPitches = guitar.measures.find((m) => m.index === bar)?.events
-      .filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch) ?? [];
+      .filter((e) => e.kind === 'note' && ((e as { voice?: number }).voice ?? 1) === 1)
+      .map((e) => (e as { pitch: number }).pitch) ?? [];
     const bPitches = bass.measures.find((m) => m.index === bar)?.events
       .filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch) ?? [];
     if (gPitches.length > 0 && bPitches.length > 0) {

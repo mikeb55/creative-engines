@@ -20,6 +20,7 @@ import {
   SONG_FORM_BAR_OPTIONS,
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
+import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 
 /** Receipt echo from engine (#17 chord export diagnostics). */
 type ChordDxReceiptUi = {
@@ -212,6 +213,7 @@ type GenResult = {
     arrangerStyle: string;
     era: string | null;
   };
+  voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
 };
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
@@ -1779,6 +1781,29 @@ export function HomeGenerate({
                   </div>
                 );
               })()}
+              {summaryPresetId === 'guitar_bass_duo' &&
+                (() => {
+                  const v2 = result.voice2PolyphonyDiagnostics;
+                  if (!v2) return null;
+                  const nBars = v2.v2NoteCountPerBar.length;
+                  return (
+                    <div
+                      style={{
+                        fontSize: '0.85rem',
+                        marginTop: '0.75rem',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'rgba(0,0,0,0.14)',
+                        lineHeight: 1.45,
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {`VOICE 2 DIAGNOSTIC\nBars active: ${v2.v2ActiveBars} / ${nBars}\nBar coverage: ${v2.v2BarCoverage.toFixed(2)}\nTotal notes: ${v2.v2TotalNotes}\nNotes per active bar: ${v2.v2AvgNotesPerActiveBar.toFixed(2)}\nLongest rest gap: ${v2.v2LongestRestGap}\nLongest active run: ${v2.v2LongestActiveRun}\nStrong-beat entries: ${v2.v2StrongBeatEntries}\nOffbeat entries: ${v2.v2OffbeatEntries}`}
+                    </div>
+                  );
+                })()}
             </>
           )}
 

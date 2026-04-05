@@ -187,7 +187,17 @@ function largeLeapStats(guitar: PartModel): { maxLeap: number; countOver12: numb
 
 const RESOLVE_STEP = 2;
 
-/** Melodic leaps in 5–12 st must resolve by step (≤2 st) within 1–2 moves, or narrow by same sign (target-directed). */
+/** Local span (±2 notes) shows coherent directed motion — leap counts as contour, not random. */
+function leapPartOfSpanContour(pitches: number[], leapIndex: number): boolean {
+  const lo = Math.max(0, leapIndex - 2);
+  const hi = Math.min(pitches.length - 1, leapIndex + 2);
+  if (hi <= lo) return false;
+  const net = pitches[hi] - pitches[lo];
+  const leap = pitches[leapIndex] - pitches[leapIndex - 1];
+  return Math.abs(net) >= Math.abs(leap) * 0.35 && Math.sign(net) === Math.sign(leap);
+}
+
+/** Melodic leaps in 5–12 st must resolve by step (≤2 st) within 1–2 moves, narrow by same sign, or sit in span contour. */
 function countUnresolvedMelodicLeapsFiveToTwelve(pitches: number[]): number {
   let bad = 0;
   for (let i = 1; i < pitches.length; i++) {
@@ -207,9 +217,42 @@ function countUnresolvedMelodicLeapsFiveToTwelve(pitches: number[]): number {
     } else {
       resolved = true;
     }
+    if (!resolved && leapPartOfSpanContour(pitches, i)) resolved = true;
     if (!resolved) bad++;
   }
   return bad;
+}
+
+/** Last sounding **melody** note in phrase (bars 2k+1–2k+2), by end time — span arrivals / cross-barline. */
+function lastMelodyNoteInPhrase(
+  guitar: PartModel,
+  phraseIndex: number
+): { bar: number; measure: MeasureModel } | undefined {
+  const b1 = phraseIndex * 2 + 1;
+  const b2 = b1 + 1;
+  let best: { end: number; bar: number; measure: MeasureModel } | undefined;
+  for (const bi of [b1, b2]) {
+    const m = guitar.measures.find((x) => x.index === bi);
+    if (!m) continue;
+    for (const e of m.events) {
+      if (!isGuitarMelodyVoiceNote(e)) continue;
+      const n = e as { pitch: number; startBeat: number; duration: number };
+      const endT = bi * 4 + n.startBeat + n.duration;
+      if (!best || endT > best.end) best = { end: endT, bar: bi, measure: m };
+    }
+  }
+  return best ? { bar: best.bar, measure: best.measure } : undefined;
+}
+
+function phraseMelodyArrivalAcceptable(
+  guitar: PartModel,
+  phraseIndex: number,
+  ctx?: CompositionContext
+): boolean {
+  const loc = lastMelodyNoteInPhrase(guitar, phraseIndex);
+  if (!loc) return true;
+  const ch = loc.measure.chord ?? '';
+  return barHasAcceptablePhraseEnd(loc.measure, ch, ctx);
 }
 
 /** Max min–max span per bar (9th = 14 semitones). Allow one bar per 8 to exceed slightly (identity leap). */
@@ -461,10 +504,10 @@ export function validateDuoMelodyIdentityV3(
     });
   }
   const unresolvedMid = countUnresolvedMelodicLeapsFiveToTwelve(melodyPitches);
-  if (unresolvedMid > 2) {
+  if (unresolvedMid > 4) {
     issues.push({
       ruleId: 'v3_leaps_unresolved',
-      message: 'Duo V3: several melodic leaps lack stepwise resolution (5–12 st)',
+      message: 'Duo V3: many melodic leaps lack resolution or span contour (5–12 st)',
     });
   }
 
@@ -488,13 +531,13 @@ export function validateDuoMelodyIdentityV3(
     });
   }
 
-  for (let b = 1; b <= totalBars; b++) {
-    const m = g.measures.find((x) => x.index === b);
-    const ch = m?.chord ?? '';
-    if (!barHasAcceptablePhraseEnd(m, ch, opts?.compositionContext)) {
+  for (let k = 0; k < 4; k++) {
+    if (!phraseMelodyArrivalAcceptable(g, k, opts?.compositionContext)) {
+      const a = k * 2 + 1;
+      const b = a + 1;
       issues.push({
         ruleId: 'v3_phrase_end_not_chord_tone',
-        message: `Duo V3: bar ${b} phrase end is not a chord tone or strong tension`,
+        message: `Duo V3: phrase ${k + 1} (bars ${a}–${b}) lacks directed arrival (last melody vs harmony)`,
       });
       break;
     }

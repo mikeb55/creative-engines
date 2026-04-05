@@ -73,6 +73,22 @@ Composer OS currently supports:
 Validation layer is now out of sync with generation.
 Next phase will align validator with improved musical behaviour.
 
+### Voice 2 Diagnostics (V9.0)
+
+Composer OS now includes internal diagnostics for second-voice behaviour in Guitar/Bass Duo mode.
+
+This system measures:
+- how often Voice 2 appears
+- how dense it is
+- how continuous it is
+- how it enters rhythmically
+
+These diagnostics are used to guide controlled improvements to:
+- rhythm footprint (Phase 18.2B.2)
+- melodic behaviour and imitation (Phase 18.2B.3)
+
+This is a read-only system and does not affect generation output.
+
 ---
 
 ## Next Phase: 18.2C - Validator Alignment

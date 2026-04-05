@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B / 18.2B.3–18.2B.8 (continuity, internal micro-motion, intentional arrival) — Guitar polyphony inner voice (Wyble-style): contrapuntal line below melody.
+ * Phase 18.2B+ — Guitar polyphony inner voice (Wyble-style). Voice 2 inject uses the reactive inline path (Phase 18.3B planner/generator bypassed for stability).
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -53,7 +53,16 @@ const V2_COMMITMENT_AT_TARGET_SEMITONES = 2;
 const V2_COMMITMENT_FAR_HOLD_SEMITONES = 4;
 
 /** Realised rhythm for one bar (replaces independent per-bar probability draw). */
-type Voice2RhythmKind = 'whole' | 'delayed3' | 'halfBack' | 'offbeat1';
+type Voice2RhythmKind =
+  | 'whole'
+  | 'delayed3'
+  | 'halfBack'
+  | 'offbeat1'
+  /** Phase 18.2D — call/response: rest then single note; rest length in [0.5, 1.5] beats (bar = 4 beats). */
+  | 'resp05'
+  | 'resp075'
+  | 'resp125'
+  | 'resp15';
 
 /** Coarse schedule from continuation runs (before per-bar behaviour). */
 type Voice2SchedulePhase = 'enter' | 'continue' | 'resolve';
@@ -66,6 +75,37 @@ type Voice2BehaviourPhase = 'enter' | 'sustain' | 'move' | 'resolve' | 'rest';
 
 /** Per-bar run metadata (built before inject). */
 type Voice2BarPhaseInfo = { schedulePhase: Voice2SchedulePhase; runEndBar: number; runStartBar: number };
+
+/** Phase 18.2F — phrase skeleton anchor roles (time ownership at phrase level). */
+type PhraseAnchorRole = 'v1_only' | 'v2_only' | 'both';
+
+/**
+ * Phase 18.2F — per-bar hints from phrase co-skeleton (planned with V1 timing, applied at Voice 2 inject).
+ */
+/** Phase 18.3A — one phrase-level role for Voice 2 (not mixed per bar). */
+type Voice2PhraseRole = 'support' | 'counter' | 'response';
+
+/** Phase 18.3A — phrase plan: role + mandatory activity bars (structural presence). */
+type PhraseVoice2Plan = {
+  phraseIndex: number;
+  role: Voice2PhraseRole;
+  /** 2–4 bars per phrase where Voice 2 must appear in effective schedule. */
+  activityBars: Set<number>;
+};
+
+type BarVoice2CoPlan = {
+  phraseIndex: number;
+  /** First effective V2 bar in phrase: motion-first, not default whole sustain. */
+  motionFirst: boolean;
+  /** At least two bars per phrase marked; anchor-weighted toward V2-owned time. */
+  independentEntry: boolean;
+  interaction: 'v1_active_delay' | 'v1_idle_v2';
+  /**
+   * Phase 18.3A — Phrase co-plan: this bar owns the Voice-2 anchor (initiates motion, not incidental gap-fill).
+   * Exactly one effective bar per phrase; chosen by highest overlap with v2_only / both skeleton anchors.
+   */
+  v2OwnsPhraseAnchor: boolean;
+};
 
 /** Persisted musical state for Voice 2 across bars (generation-time only; not export). */
 export type Voice2State = {
@@ -344,6 +384,359 @@ function v2SharesAttackWithV1(v1: NoteEvent[], v2: NoteEvent[]): boolean {
 
 function melodyAttacksBeatZero(v1: NoteEvent[]): boolean {
   return v1.some((n) => Math.abs(n.startBeat) < 0.02);
+}
+
+/** Phase 18.2D — rest duration before the single sustained answer (rest + note = 4 beats). */
+function callResponseRestBeats(rhythm: Voice2RhythmKind): number | undefined {
+  switch (rhythm) {
+    case 'resp05':
+      return 0.5;
+    case 'resp075':
+      return 0.75;
+    case 'delayed3':
+      return 1;
+    case 'resp125':
+      return 1.25;
+    case 'resp15':
+      return 1.5;
+    default:
+      return undefined;
+  }
+}
+
+function v1TotalNoteBeats(v1: NoteEvent[]): number {
+  return v1.reduce((s, n) => s + n.duration, 0);
+}
+
+function v1LastMelodyEndBeat(v1: NoteEvent[]): number {
+  let e = 0;
+  for (const n of v1) e = Math.max(e, n.startBeat + n.duration);
+  return e;
+}
+
+/** Short phrase clears early in the bar — room for a delayed inner answer. */
+function v1IsShortPhraseEarlyCleared(v1: NoteEvent[]): boolean {
+  return v1LastMelodyEndBeat(v1) <= 2.25 && v1.length <= 3;
+}
+
+/** Phase 18.2D — coarse activity of melody in the bar (rhythmic contrast vs Voice 2). */
+function v1DensityClass(v1: NoteEvent[]): 'sparse' | 'medium' | 'dense' {
+  const beats = v1TotalNoteBeats(v1);
+  const attacks = v1.length;
+  if (beats < 2) return 'sparse';
+  if (beats > 3.2 || attacks >= 5) return 'dense';
+  return 'medium';
+}
+
+/**
+ * One inner note [startBeat, startBeat+duration) must overlap ≥2 melody notes when the bar has ≥2 melody notes
+ * (same rule as {@link v2PassesMelodyOverlapRule} for a single note).
+ */
+function v2OneNoteSpanPassesMelodyOverlapRule(v1: NoteEvent[], startBeat: number, duration: number): boolean {
+  if (v1.length < 2) return true;
+  const t0 = startBeat;
+  const t1 = startBeat + duration;
+  return countV1NotesOverlappingSpan(v1, t0, t1) >= 2;
+}
+
+/** Phase 18.2D/E — rhythm candidate passes melody overlap rule for that bar (shared by planners). */
+function validateVoice2RhythmForBar(guitar: PartModel, bar: number, kind: Voice2RhythmKind): boolean {
+  const m = guitar.measures.find((x) => x.index === bar);
+  if (!m) return false;
+  const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+  if (v1.length === 0) return false;
+  const r = callResponseRestBeats(kind);
+  if (r !== undefined) {
+    return v2OneNoteSpanPassesMelodyOverlapRule(v1, r, 4 - r);
+  }
+  if (kind === 'halfBack') {
+    return v2OneNoteSpanPassesMelodyOverlapRule(v1, 2, 2);
+  }
+  if (kind === 'offbeat1') {
+    return v2OneNoteSpanPassesMelodyOverlapRule(v1, 3, 1);
+  }
+  return true;
+}
+
+/** Minimum Voice-2 effective bars implied by ≥50% presence per phrase (4–8 bar windows use 4-bar phrases). */
+function minEffectiveBarsByPhrasePresenceFloor(tb: number): number {
+  const phraseCount = Math.ceil(tb / 4);
+  let sum = 0;
+  for (let p = 0; p < phraseCount; p++) {
+    const base = p * 4 + 1;
+    const end = Math.min(base + 3, tb);
+    const len = end - base + 1;
+    sum += Math.max(1, Math.ceil(len * 0.5));
+  }
+  return sum;
+}
+
+/** Spread order so added bars are not clustered at one end of the phrase. */
+function spreadOrderCandidates(candidates: number[], seed: number, phraseIdx: number): number[] {
+  const sorted = [...candidates].sort((a, b) => a - b);
+  if (sorted.length <= 1) return sorted;
+  const offset = (Math.abs(seed) + phraseIdx * 7) % sorted.length;
+  return [...sorted.slice(offset), ...sorted.slice(0, offset)];
+}
+
+/**
+ * Phase 18.2F — Phrase skeleton: 2–4 anchor beats per phrase with roles (V1-only / V2-only / both).
+ * Maps to per-bar co-plan for rhythm (motion-first, independent entries, interaction mode vs V1 density).
+ */
+function buildPhraseCoSkeleton(
+  guitar: PartModel,
+  tb: number,
+  seed: number,
+  effectiveBars: Set<number>
+): Map<number, BarVoice2CoPlan> {
+  const out = new Map<number, BarVoice2CoPlan>();
+  const phraseCount = Math.ceil(tb / 4);
+  for (let p = 0; p < phraseCount; p++) {
+    const base = p * 4 + 1;
+    const end = Math.min(base + 3, tb);
+    const lenBars = end - base + 1;
+    const phraseBeats = lenBars * 4;
+
+    const nAnchors = 2 + (Math.abs(seed) + p * 17) % 3;
+    const anchors: Array<{ beat: number; role: PhraseAnchorRole }> = [];
+    for (let i = 0; i < nAnchors; i++) {
+      const t = (i + 1) / (nAnchors + 1);
+      const jitter = (seededUnit(seed, p * 31 + i, 18210) - 0.5) * 1.4;
+      const beat = Math.max(0.25, Math.min(phraseBeats - 0.25, t * phraseBeats + jitter));
+      const r = seededUnit(seed, p * 31 + i, 18211);
+      const role: PhraseAnchorRole = r < 0.2 ? 'both' : r < 0.5 ? 'v1_only' : 'v2_only';
+      anchors.push({ beat, role });
+    }
+    anchors.sort((a, b) => a.beat - b.beat);
+
+    const effInPhrase = [...effectiveBars].filter((b) => b >= base && b <= end).sort((a, b) => a - b);
+    if (effInPhrase.length === 0) continue;
+
+    const firstEff = effInPhrase[0]!;
+
+    const scores = new Map<number, number>();
+    for (const b of effInPhrase) {
+      const barOffset = b - base;
+      const localStart = barOffset * 4;
+      const localEnd = localStart + 4;
+      let s = 0;
+      for (const a of anchors) {
+        if (a.beat < localStart || a.beat >= localEnd) continue;
+        if (a.role === 'v2_only') s += 3;
+        else if (a.role === 'both') s += 2;
+      }
+      scores.set(b, s);
+    }
+    const sortedByScore = [...effInPhrase].sort((a, b) => (scores.get(b) ?? 0) - (scores.get(a) ?? 0));
+    const independent = new Set<number>();
+    independent.add(sortedByScore[0]!);
+    if (sortedByScore.length >= 2) independent.add(sortedByScore[1]!);
+    else independent.add(sortedByScore[0]!);
+
+    /** Phase 18.3A — One bar per phrase explicitly co-planned for Voice-2-led material (highest v2 anchor weight). */
+    const v2AnchorBar = sortedByScore[0]!;
+
+    for (const b of effInPhrase) {
+      const m = guitar.measures.find((x) => x.index === b);
+      const v1 = m ? (m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[]) : [];
+      const v1Sounding = v1TotalNoteBeats(v1) >= 1.5;
+      const interaction: BarVoice2CoPlan['interaction'] = v1Sounding ? 'v1_active_delay' : 'v1_idle_v2';
+
+      out.set(b, {
+        phraseIndex: p,
+        motionFirst: b === firstEff,
+        independentEntry: independent.has(b),
+        interaction,
+        v2OwnsPhraseAnchor: b === v2AnchorBar,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Phase 18.3A — Spread `count` distinct bar offsets across a phrase (deterministic, guitar-realistic spacing).
+ */
+function pickSpreadPhraseBarOffsets(len: number, count: number, seed: number, p: number): number[] {
+  if (count >= len) return Array.from({ length: len }, (_, i) => i);
+  if (len <= 1) return [0];
+  if (len === 2 && count === 2) return [0, 1];
+  if (len === 3 && count === 2) {
+    const opts = [
+      [0, 1],
+      [0, 2],
+      [1, 2],
+    ];
+    return opts[(Math.abs(seed) + p * 17) % opts.length]!;
+  }
+  if (len === 3) return [0, 1, 2];
+  if (len === 4 && count === 2) {
+    const opts = [
+      [0, 2],
+      [0, 3],
+      [1, 3],
+      [0, 1],
+    ];
+    return opts[(Math.abs(seed) + p * 19) % opts.length]!;
+  }
+  if (len === 4 && count === 3) {
+    const opts = [
+      [0, 1, 3],
+      [0, 2, 3],
+      [1, 2, 3],
+    ];
+    return opts[(Math.abs(seed) + p * 23) % opts.length]!;
+  }
+  if (len === 4 && count === 4) return [0, 1, 2, 3];
+  const step = (len - 1) / Math.max(1, count - 1);
+  const raw: number[] = [];
+  for (let i = 0; i < count; i++) {
+    raw.push(Math.min(len - 1, Math.round(i * step)));
+  }
+  return [...new Set(raw)].sort((a, b) => a - b);
+}
+
+/**
+ * Phase 18.3A — Phrase-level Voice 2 plan: one role per phrase + 2–4 mandatory activity bars.
+ */
+function buildPhraseVoice2Plans(tb: number, seed: number): Map<number, PhraseVoice2Plan> {
+  const out = new Map<number, PhraseVoice2Plan>();
+  const phraseCount = Math.ceil(tb / 4);
+  const roles: Voice2PhraseRole[] = ['support', 'counter', 'response'];
+  for (let p = 0; p < phraseCount; p++) {
+    const base = p * 4 + 1;
+    const end = Math.min(base + 3, tb);
+    const len = end - base + 1;
+    const role = roles[p % 3]!;
+    const count =
+      len <= 1 ? 1 : len === 2 ? 2 : Math.min(4, Math.max(2, 2 + (Math.abs(seed) + p * 11) % 3));
+    const offsets = pickSpreadPhraseBarOffsets(len, Math.min(count, len), seed, p);
+    const activityBars = new Set<number>();
+    for (const off of offsets) {
+      const b = base + off;
+      if (b >= 1 && b <= tb) activityBars.add(b);
+    }
+    out.set(p, { phraseIndex: p, role, activityBars });
+  }
+  return out;
+}
+
+/**
+ * Phase 18.3A — Every planned activity bar is in the effective set (with phase metadata if missing).
+ */
+function ensurePhraseActivityInEffective(
+  tb: number,
+  phraseV2Plans: Map<number, PhraseVoice2Plan>,
+  effective: Set<number>,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>
+): void {
+  for (const plan of phraseV2Plans.values()) {
+    for (const b of plan.activityBars) {
+      if (b < 1 || b > tb) continue;
+      effective.add(b);
+      if (!phaseByBar.has(b)) {
+        const base = plan.phraseIndex * 4 + 1;
+        const end = Math.min(base + 3, tb);
+        phaseByBar.set(b, {
+          schedulePhase: b % 4 === 0 ? 'resolve' : 'continue',
+          runEndBar: end,
+          runStartBar: base,
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Phase 18.3A — On activity-window bars (non-resolve), replace default wholes with role-specific independent rhythms.
+ */
+function applyPhraseRoleVoice2Rhythms(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  phraseV2Plans: Map<number, PhraseVoice2Plan>,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  tb: number,
+  out: Map<number, Voice2RhythmKind>
+): void {
+  for (let bar = 1; bar <= tb; bar++) {
+    if (!effectiveBars.has(bar)) continue;
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+    if (v1.length === 0) continue;
+
+    const p = Math.floor((bar - 1) / 4);
+    const plan = phraseV2Plans.get(p);
+    if (!plan || !plan.activityBars.has(bar)) continue;
+    const info = phaseByBar.get(bar);
+    if (info?.schedulePhase === 'resolve') continue;
+
+    const validate = (k: Voice2RhythmKind) => validateVoice2RhythmForBar(guitar, bar, k);
+    const cur = out.get(bar) ?? 'whole';
+    if (cur !== 'whole') continue;
+
+    const cands: Voice2RhythmKind[] =
+      plan.role === 'support'
+        ? ['delayed3', 'halfBack', 'resp125', 'whole']
+        : plan.role === 'counter'
+          ? ['halfBack', 'delayed3', 'offbeat1', 'resp075']
+          : ['resp125', 'resp15', 'delayed3', 'resp05'];
+
+    for (const k of cands) {
+      if (validate(k)) {
+        out.set(bar, k);
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Phase 18.2F — Apply skeleton: motion-first (no default whole on first bar), independent slots, interaction bias.
+ */
+function applyPhraseCoSkeletonRhythms(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  seed: number,
+  tb: number,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  coPlan: Map<number, BarVoice2CoPlan>,
+  out: Map<number, Voice2RhythmKind>
+): void {
+  for (let bar = 1; bar <= tb; bar++) {
+    if (!effectiveBars.has(bar)) continue;
+    const plan = coPlan.get(bar);
+    if (!plan) continue;
+    const info = phaseByBar.get(bar);
+    const schedulePhase = info?.schedulePhase ?? 'continue';
+    if (schedulePhase === 'resolve') continue;
+
+    const validate = (k: Voice2RhythmKind) => validateVoice2RhythmForBar(guitar, bar, k);
+
+    const tryReplaceWhole = (cands: Voice2RhythmKind[]) => {
+      const cur = out.get(bar) ?? 'whole';
+      if (cur !== 'whole') return;
+      for (const k of cands) {
+        if (validate(k)) {
+          out.set(bar, k);
+          return;
+        }
+      }
+    };
+
+    /** Interaction mode is used by inject (density); avoid wholesale rhythm swaps here (stability vs mirrors / overlap). */
+
+    /** Phase 18.3A — V2-owned phrase anchor: prefer delayed / off-beat entry so V2 initiates, not imitates V1. */
+    if (plan.v2OwnsPhraseAnchor) {
+      tryReplaceWhole(['delayed3', 'halfBack', 'resp125', 'resp075', 'resp05', 'offbeat1']);
+    }
+    if (plan.motionFirst) {
+      tryReplaceWhole(['halfBack', 'delayed3', 'resp125', 'resp05']);
+    }
+    if (plan.independentEntry) {
+      tryReplaceWhole(['halfBack', 'delayed3', 'resp125', 'resp075']);
+    }
+  }
 }
 
 /** Harsh parallel: same melodic interval in two-note inner line (downrank only, not near-miss). */
@@ -771,7 +1164,7 @@ function pickVoice2PitchFromAnchor(
 }
 
 /**
- * Phase 18.2B.3 — Expand scheduled bars into 2–4 bar continuation runs; cap total presence ~60% for sparsity.
+ * Phase 18.2B.3 + 18.2E — Expand scheduled bars into 2–4 bar continuation runs; global cap allows phrase 50% floor.
  */
 function buildVoice2ContinuationSchedule(
   tb: number,
@@ -780,7 +1173,8 @@ function buildVoice2ContinuationSchedule(
 ): { effective: Set<number>; phaseByBar: Map<number, Voice2BarPhaseInfo> } {
   const effective = new Set<number>();
   const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
-  const targetMax = Math.max(2, Math.floor(tb * 0.6));
+  const minByPhrase = minEffectiveBarsByPhrasePresenceFloor(tb);
+  const targetMax = Math.max(2, Math.floor(tb * 0.62), minByPhrase);
   let runEnd = -1;
   let runStart = -1;
   for (let bar = 1; bar <= tb; bar++) {
@@ -806,7 +1200,245 @@ function buildVoice2ContinuationSchedule(
     effective.add(bar);
     phaseByBar.set(bar, { schedulePhase: 'enter', runEndBar: runEnd, runStartBar: runStart });
   }
+  ensurePhraseVoice2PresenceFloor(tb, seed, scheduled, effective, phaseByBar);
   return { effective, phaseByBar };
+}
+
+/**
+ * Phase 18.2E — Hard floor: each phrase has Voice 2 in ≥50% of its bars (distributed when adding from scheduled).
+ */
+function ensurePhraseVoice2PresenceFloor(
+  tb: number,
+  seed: number,
+  scheduled: Set<number>,
+  effective: Set<number>,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>
+): void {
+  const phraseCount = Math.ceil(tb / 4);
+  for (let p = 0; p < phraseCount; p++) {
+    const base = p * 4 + 1;
+    const end = Math.min(base + 3, tb);
+    const len = end - base + 1;
+    const minNeed = Math.max(1, Math.ceil(len * 0.5));
+    let count = 0;
+    for (let b = base; b <= end; b++) {
+      if (effective.has(b)) count++;
+    }
+    if (count >= minNeed) continue;
+
+    const need = minNeed - count;
+    const candidates: number[] = [];
+    for (let b = base; b <= end; b++) {
+      if (scheduled.has(b) && !effective.has(b)) candidates.push(b);
+    }
+    const order = spreadOrderCandidates(candidates, seed, p);
+    let added = 0;
+    for (const bar of order) {
+      if (added >= need) break;
+      if (effective.has(bar)) continue;
+      if (wouldAddCompleteTriple(effective, bar)) continue;
+      effective.add(bar);
+      phaseByBar.set(bar, {
+        schedulePhase: bar % 4 === 0 ? 'resolve' : 'enter',
+        runEndBar: bar,
+        runStartBar: bar,
+      });
+      added++;
+    }
+  }
+}
+
+/**
+ * Phase 18.2D — Second pass: call/response delays, overlap vs gap variety, handoff when melody enters late,
+ * dense melody → longer Voice 2; sparse/short phrase → delayed answers. Respects overlap rule when possible.
+ */
+function applyConversationalVoice2Rhythms(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  seed: number,
+  tb: number,
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  out: Map<number, Voice2RhythmKind>
+): void {
+  for (let bar = 1; bar <= tb; bar++) {
+    if (!effectiveBars.has(bar)) continue;
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+    if (v1.length === 0) continue;
+
+    const info = phaseByBar.get(bar);
+    const schedulePhase = info?.schedulePhase ?? 'continue';
+    const phraseIdx = Math.floor((bar - 1) / 4);
+    const density = v1DensityClass(v1);
+    const shortClear = v1IsShortPhraseEarlyCleared(v1);
+    const rot = (bar * 17 + phraseIdx * 23 + (Math.abs(seed) % 100)) % 6;
+    const gate = seededUnit(seed, bar, 9201);
+    if (gate > 0.78) continue;
+
+    const firstAttack = Math.min(...v1.map((n) => n.startBeat));
+
+    const validate = (kind: Voice2RhythmKind): boolean => validateVoice2RhythmForBar(guitar, bar, kind);
+
+    const pickFirstValid = (candidates: Voice2RhythmKind[]): Voice2RhythmKind | undefined => {
+      for (const c of candidates) {
+        if (validate(c)) return c;
+      }
+      return undefined;
+    };
+
+    /** Phase 18.2E — melody mostly resting: Voice 2 may carry motion (prefer ≥2 beat spans for overlap clarity). */
+    if (v1TotalNoteBeats(v1) < 1.35 && density !== 'dense' && gate < 0.66) {
+      const pick = pickFirstValid(['delayed3', 'halfBack', 'resp05', 'resp075']);
+      if (pick !== undefined) {
+        out.set(bar, pick);
+        continue;
+      }
+    }
+
+    if (schedulePhase !== 'resolve' && density !== 'dense' && firstAttack >= 1.1 && gate < 0.52) {
+      const pick = pickFirstValid(['resp05', 'resp075', 'delayed3']);
+      if (pick !== undefined) {
+        out.set(bar, pick);
+        continue;
+      }
+    }
+
+    if (schedulePhase === 'resolve') {
+      if (gate > 0.52) continue;
+      const pick = pickFirstValid(['resp15', 'resp125', 'whole', 'delayed3', 'halfBack']);
+      if (pick !== undefined) out.set(bar, pick);
+      continue;
+    }
+
+    if (density === 'dense') {
+      if (rot % 3 !== 0) {
+        out.set(bar, 'whole');
+      } else {
+        const pick = pickFirstValid(['delayed3', 'resp05', 'halfBack']);
+        out.set(bar, pick ?? 'whole');
+      }
+      continue;
+    }
+
+    if (density === 'sparse' || shortClear) {
+      const base = (rot + phraseIdx + bar) % 5;
+      const order: Voice2RhythmKind[] = ['resp05', 'resp075', 'delayed3', 'resp125', 'resp15'];
+      const rotated = [...order.slice(base), ...order.slice(0, base)];
+      const pick = pickFirstValid(rotated);
+      if (pick !== undefined) {
+        out.set(bar, pick);
+        continue;
+      }
+    }
+
+    const mediumMix: Voice2RhythmKind[] = ['whole', 'delayed3', 'resp125', 'halfBack', 'resp05', 'offbeat1'];
+    const idx = (rot + phraseIdx * 2 + bar) % mediumMix.length;
+    const pick = pickFirstValid([mediumMix[idx]!, ...mediumMix]);
+    if (pick !== undefined) out.set(bar, pick);
+  }
+}
+
+/** Phase 18.2E — Avoid back-to-back whole-bar sustains; bias toward motion or delayed entry. */
+function applySustainStreakBreaker(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  tb: number,
+  out: Map<number, Voice2RhythmKind>
+): void {
+  const sorted = [...effectiveBars].filter((b) => b >= 1 && b <= tb).sort((a, b) => a - b);
+  let prevKind: Voice2RhythmKind | undefined;
+  for (const bar of sorted) {
+    const k = out.get(bar) ?? 'whole';
+    if (prevKind === 'whole' && k === 'whole') {
+      const tryKinds: Voice2RhythmKind[] = ['halfBack', 'delayed3', 'resp125', 'resp05', 'resp075'];
+      for (const t of tryKinds) {
+        if (validateVoice2RhythmForBar(guitar, bar, t)) {
+          out.set(bar, t);
+          break;
+        }
+      }
+    }
+    prevKind = out.get(bar) ?? k;
+  }
+}
+
+/**
+ * Phase 18.2E — Per phrase: at least one sustain-like bar, one delayed/off-beat entry, one motion-friendly bar.
+ */
+function applyPhraseRhythmMinimums(
+  guitar: PartModel,
+  effectiveBars: Set<number>,
+  seed: number,
+  tb: number,
+  out: Map<number, Voice2RhythmKind>
+): void {
+  const phraseCount = Math.ceil(tb / 4);
+  for (let p = 0; p < phraseCount; p++) {
+    const base = p * 4 + 1;
+    const end = Math.min(base + 3, tb);
+    const barsInPhrase: number[] = [];
+    for (let b = base; b <= end; b++) {
+      if (effectiveBars.has(b)) barsInPhrase.push(b);
+    }
+    if (barsInPhrase.length === 0) continue;
+
+    const classify = (k: Voice2RhythmKind) => {
+      let sustain = false;
+      let delayed = false;
+      let motionRhythm = false;
+      if (k === 'whole') sustain = true;
+      if (k === 'delayed3' || callResponseRestBeats(k) !== undefined) {
+        sustain = true;
+        delayed = true;
+      }
+      if (k === 'offbeat1' || k === 'halfBack') {
+        delayed = true;
+        motionRhythm = true;
+      }
+      return { sustain, delayed, motionRhythm };
+    };
+
+    let hasSustain = false;
+    let hasDelayed = false;
+    let hasMotionRhythm = false;
+    const recompute = (): void => {
+      hasSustain = false;
+      hasDelayed = false;
+      hasMotionRhythm = false;
+      for (const b of barsInPhrase) {
+        const k = out.get(b) ?? 'whole';
+        const c = classify(k);
+        if (c.sustain) hasSustain = true;
+        if (c.delayed) hasDelayed = true;
+        if (c.motionRhythm) hasMotionRhythm = true;
+      }
+    };
+    recompute();
+
+    const pickBar = (salt: number) => barsInPhrase[(salt + p + Math.abs(seed)) % barsInPhrase.length]!;
+
+    const trySet = (b: number, kinds: Voice2RhythmKind[]): boolean => {
+      for (const k of kinds) {
+        if (validateVoice2RhythmForBar(guitar, b, k)) {
+          out.set(b, k);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (!hasSustain && !hasDelayed) {
+      trySet(pickBar(11), ['delayed3', 'whole', 'resp15']);
+    } else {
+      if (!hasSustain) trySet(pickBar(11), ['whole', 'delayed3', 'resp15']);
+      if (!hasDelayed) trySet(pickBar(17), ['delayed3', 'resp125', 'halfBack', 'offbeat1']);
+    }
+    recompute();
+    if (!hasMotionRhythm) {
+      trySet(pickBar(23), ['halfBack', 'delayed3', 'resp125', 'offbeat1']);
+    }
+  }
 }
 
 /**
@@ -818,8 +1450,10 @@ function planVoice2BarRhythms(
   effectiveBars: Set<number>,
   seed: number,
   tb: number,
-  phaseByBar: Map<number, Voice2BarPhaseInfo>
+  phaseByBar: Map<number, Voice2BarPhaseInfo>,
+  phraseV2Plans: Map<number, PhraseVoice2Plan>
 ): Map<number, Voice2RhythmKind> {
+  const coPlan = buildPhraseCoSkeleton(guitar, tb, seed, effectiveBars);
   const out = new Map<number, Voice2RhythmKind>();
   for (let bar = 1; bar <= tb; bar++) {
     if (!effectiveBars.has(bar)) continue;
@@ -905,6 +1539,11 @@ function planVoice2BarRhythms(
       out.set(bar, 'whole');
     }
   }
+  applyConversationalVoice2Rhythms(guitar, effectiveBars, seed, tb, phaseByBar, out);
+  applySustainStreakBreaker(guitar, effectiveBars, tb, out);
+  applyPhraseRhythmMinimums(guitar, effectiveBars, seed, tb, out);
+  applyPhraseCoSkeletonRhythms(guitar, effectiveBars, seed, tb, phaseByBar, coPlan, out);
+  applyPhraseRoleVoice2Rhythms(guitar, effectiveBars, phraseV2Plans, phaseByBar, tb, out);
   return out;
 }
 
@@ -925,8 +1564,21 @@ function lastVoice2PitchInMeasure(m: MeasureModel): number | undefined {
 }
 
 const INTERNAL_MOTION_MAX_STEP_SEMITONES = 4;
+/** Phase 18.2E — lyrical mini-line: max leap between consecutive inner notes (perfect 5th). */
+const SINGING_LINE_MAX_STEP_SEMITONES = 7;
 /** Phase 18.2B.8 — Intentional motion: majority of eligible long spans get micro-line (still one bar, same total duration). */
 const INTERNAL_MOTION_SEED_GATE = 7400;
+
+/** Phase 18.2E — pattern flavour for 3-note mini-lines (inner string voice). */
+type SingingLinePattern = 'stepwise' | 'neighbour' | 'approach' | 'guide_tone';
+
+function selectSingingLinePattern(seed: number, bar: number): SingingLinePattern {
+  const u = seededUnit(seed, bar, 7430);
+  if (u < 0.28) return 'stepwise';
+  if (u < 0.52) return 'neighbour';
+  if (u < 0.76) return 'approach';
+  return 'guide_tone';
+}
 
 /**
  * Phase 18.2B.4 + 18.2B.7 — One step inside a sustain: chord tones (3rd/7th first), neighbours, chromatic approach, enclosure tones toward next anchor.
@@ -940,7 +1592,8 @@ function pickChordToneStepToward(
   seed: number,
   bar: number,
   salt: number,
-  isLastStep: boolean
+  isLastStep: boolean,
+  maxStepSemitones: number = INTERNAL_MOTION_MAX_STEP_SEMITONES
 ): number {
   const floorMidi = INNER_LOW;
   const innerHigh = Math.min(63, strictCeiling - 1);
@@ -954,7 +1607,7 @@ function pickChordToneStepToward(
     const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
     if (p >= strictCeiling || p < floorMidi) return;
     const step = Math.abs(p - prevPitch);
-    if (step > INTERNAL_MOTION_MAX_STEP_SEMITONES || step < 1) return;
+    if (step > maxStepSemitones || step < 1) return;
     candidates.push(p);
   };
 
@@ -997,9 +1650,90 @@ function pickChordToneStepToward(
   if (best !== undefined) return best;
   const sign = destPitch >= prevPitch ? 1 : -1;
   const delta = Math.min(2, Math.abs(destPitch - prevPitch));
-  const np = prevPitch + sign * Math.max(1, Math.min(delta, INTERNAL_MOTION_MAX_STEP_SEMITONES));
+  const np = prevPitch + sign * Math.max(1, Math.min(delta, maxStepSemitones));
   return clampPitch(np, floorMidi, innerHigh);
 }
+
+/**
+ * Phase 18.2E — middle pitch of a 3-note mini-line (motion-first); keeps leaps within maxStep.
+ */
+function pickSingingMiddlePitch(
+  prevPitch: number,
+  destPitch: number,
+  waypoint: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number,
+  pattern: SingingLinePattern,
+  maxStep: number
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) {
+    return pickChordToneStepToward(prevPitch, waypoint, chord, strictCeiling, context, seed, bar, 7505, false, maxStep);
+  }
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const tryPitch = (raw: number): number | undefined => {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (p >= strictCeiling || p < floorMidi) return undefined;
+    const step = Math.abs(p - prevPitch);
+    if (step > maxStep || step < 1) return undefined;
+    return p;
+  };
+
+  switch (pattern) {
+    case 'neighbour': {
+      const towardDest = destPitch >= prevPitch ? 1 : -1;
+      const n1 = tryPitch(prevPitch + towardDest);
+      const n2 = tryPitch(prevPitch - towardDest);
+      const pick =
+        n1 !== undefined && n2 !== undefined
+          ? Math.abs(n1 - destPitch) <= Math.abs(n2 - destPitch)
+            ? n1
+            : n2
+          : n1 ?? n2;
+      if (pick !== undefined) return pick;
+      break;
+    }
+    case 'approach': {
+      const sign = destPitch >= prevPitch ? -1 : 1;
+      const a1 = tryPitch(destPitch + sign);
+      const a2 = tryPitch(destPitch + sign * 2);
+      if (a1 !== undefined) return a1;
+      if (a2 !== undefined) return a2;
+      break;
+    }
+    case 'guide_tone': {
+      const g3 = tryPitch(tones.third);
+      const g7 = tryPitch(tones.seventh);
+      const mid = (prevPitch + destPitch) / 2;
+      const opts = [g3, g7].filter((x): x is number => x !== undefined);
+      let best: number | undefined;
+      let bd = 999;
+      for (const p of opts) {
+        const d = Math.abs(p - mid);
+        if (d < bd) {
+          bd = d;
+          best = p;
+        }
+      }
+      if (best !== undefined) return best;
+      break;
+    }
+    case 'stepwise':
+    default:
+      break;
+  }
+  return pickChordToneStepToward(prevPitch, waypoint, chord, strictCeiling, context, seed, bar, 7505, false, maxStep);
+}
+
+type BuildInternalLineOpts = {
+  /** When set with segmentCount 3, shapes the middle pitch (18.2E singing line). */
+  singingPattern?: SingingLinePattern | null;
+  maxStepSemitones?: number;
+};
 
 function buildSlowInternalLinePitches(
   startPitch: number,
@@ -1009,8 +1743,11 @@ function buildSlowInternalLinePitches(
   chord: string,
   context: CompositionContext,
   seed: number,
-  bar: number
+  bar: number,
+  opts?: BuildInternalLineOpts
 ): number[] {
+  const maxStep = opts?.maxStepSemitones ?? INTERNAL_MOTION_MAX_STEP_SEMITONES;
+  const pat = opts?.singingPattern ?? null;
   const out: number[] = [startPitch];
   let prev = startPitch;
   for (let i = 1; i < segmentCount; i++) {
@@ -1019,17 +1756,23 @@ function buildSlowInternalLinePitches(
     /** Target-to-target: interpolate toward harmonic anchor; final step aims at run destination. */
     const waypoint = Math.round(startPitch + (destPitch - startPitch) * t);
     const isLast = i === segmentCount - 1;
-    const next = pickChordToneStepToward(
-      prev,
-      isLast ? destPitch : waypoint,
-      chord,
-      ceil,
-      context,
-      seed,
-      bar,
-      7405 + i * 17,
-      isLast
-    );
+    let next: number;
+    if (segmentCount === 3 && i === 1 && pat !== null && pat !== undefined) {
+      next = pickSingingMiddlePitch(prev, destPitch, waypoint, chord, ceil, context, seed, bar, pat, maxStep);
+    } else {
+      next = pickChordToneStepToward(
+        prev,
+        isLast ? destPitch : waypoint,
+        chord,
+        ceil,
+        context,
+        seed,
+        bar,
+        7405 + i * 17,
+        isLast,
+        maxStep
+      );
+    }
     out.push(next);
     prev = next;
   }
@@ -1037,7 +1780,7 @@ function buildSlowInternalLinePitches(
 }
 
 /**
- * Phase 18.2B.7–18.2B.8 — Replace one long V2 sustain with 2–3 notes (same total duration): target→target micro-line inside the span.
+ * Phase 18.2B.7–18.2B.8 + 18.3A — Replace one long V2 sustain with 2–4 notes (same total duration): connected micro-line inside the span.
  * Validates duo rules before commit.
  */
 function applyVoice2InternalMotionShaping(
@@ -1051,10 +1794,27 @@ function applyVoice2InternalMotionShaping(
   /** Only resolve schedule: keep single sustained arrival (cadence clarity). */
   phraseCommitBar: boolean,
   /** Last bars of run: weight longer terminal note so arrival is perceptible. */
-  preferTerminalSustain: boolean
+  preferTerminalSustain: boolean,
+  /** Phase 18.2E — phrase still lacks a motion segment: always attempt micro-line when eligible. */
+  forcePhraseMotion = false,
+  /** Phase 18.2E — motion-first lyrical mini-line (lower gate, 3-note bias, pattern-shaped middle). */
+  preferSingingMiniLine = false,
+  /** Phase 18.3A — phrase co-plan: V2 anchor bar → always attempt mini-line when eligible (not passive sustain). */
+  forceV2PhraseAnchor = false,
+  /** Phase 18.3A — bar in phrase activity window: structural Voice-2 presence + line ownership. */
+  inPhraseActivityBar = false,
+  phraseRoleForBar: Voice2PhraseRole | null = null
 ): void {
   if (phraseCommitBar) return;
-  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > 0.42) return;
+  const lyricalBoost = preferSingingMiniLine || forceV2PhraseAnchor || inPhraseActivityBar;
+  /** ~62% gate by default; singing / forced phrase / V2 anchor / activity window passes more often (motion-first). */
+  const motionGate =
+    forcePhraseMotion || forceV2PhraseAnchor || inPhraseActivityBar
+      ? 1
+      : preferSingingMiniLine
+        ? 0.28
+        : 0.62;
+  if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > motionGate) return;
 
   const v2only = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
   if (v2only.length !== 1) return;
@@ -1071,9 +1831,21 @@ function applyVoice2InternalMotionShaping(
     (dur >= 1.5 - 1e-6 && attacksInSpan >= 2);
   if (!longEnough || dur < 1.5 - 1e-6) return;
 
-  let segmentCount: 2 | 3;
+  let segmentCount: 2 | 3 | 4;
   if (dur >= 4 - 1e-6) {
-    segmentCount = seededUnit(seed, bar, 7401) < 0.58 ? 2 : 3;
+    if (lyricalBoost && !preferTerminalSustain) {
+      if (
+        inPhraseActivityBar &&
+        phraseRoleForBar === 'counter' &&
+        seededUnit(seed, bar, 7401) < 0.38
+      ) {
+        segmentCount = 4;
+      } else {
+        segmentCount = seededUnit(seed, bar, 7401) < 0.82 ? 3 : 2;
+      }
+    } else {
+      segmentCount = seededUnit(seed, bar, 7401) < 0.58 ? 2 : 3;
+    }
   } else if (dur >= 3 - 1e-6) {
     segmentCount = 2;
   } else if (dur >= 2 - 1e-6) {
@@ -1084,7 +1856,12 @@ function applyVoice2InternalMotionShaping(
 
   const durs: number[] = [];
   if (Math.abs(dur - 4) < 1e-6) {
-    if (segmentCount === 2) {
+    if (segmentCount === 4) {
+      const u = seededUnit(seed, bar, 7440);
+      if (u < 0.33) durs.push(0.5, 0.5, 1.5, 1.5);
+      else if (u < 0.66) durs.push(0.5, 1, 1, 1.5);
+      else durs.push(0.5, 1.25, 1.25, 1);
+    } else if (segmentCount === 2) {
       const u = seededUnit(seed, bar, 7402);
       if (preferTerminalSustain) {
         /** Arrival emphasis: longer last segment (perceptible landing on harmonic anchor). */
@@ -1104,6 +1881,11 @@ function applyVoice2InternalMotionShaping(
         if (u < 0.55) durs.push(1.25, 1.25, 1.5);
         else if (u < 0.82) durs.push(1, 1.5, 1.5);
         else durs.push(1.5, 1, 1.5);
+      } else if (lyricalBoost) {
+        const u2 = seededUnit(seed, bar, 7435);
+        if (u2 < 0.34) durs.push(0.5, 1.25, 2.25);
+        else if (u2 < 0.67) durs.push(0.5, 1.5, 2);
+        else durs.push(0.75, 1.25, 2);
       } else if (u < 0.42) {
         durs.push(2, 1, 1);
       } else if (u < 0.74) {
@@ -1116,6 +1898,8 @@ function applyVoice2InternalMotionShaping(
     const u = seededUnit(seed, bar, 7404);
     if (preferTerminalSustain && u < 0.72) {
       durs.push(1, 2);
+    } else if (lyricalBoost && !preferTerminalSustain && seededUnit(seed, bar, 7436) < 0.55) {
+      durs.push(0.5, 2.5);
     } else if (u < 0.62) {
       durs.push(1.5, 1.5);
     } else {
@@ -1127,7 +1911,7 @@ function applyVoice2InternalMotionShaping(
     durs.push(dur / 2, dur / 2);
   }
 
-  if (durs.length < 2 || durs.length > 3) return;
+  if (durs.length < 2 || durs.length > 4) return;
   const sum = durs.reduce((a, b) => a + b, 0);
   if (Math.abs(sum - dur) > 0.02) return;
 
@@ -1142,6 +1926,12 @@ function applyVoice2InternalMotionShaping(
     bt = segT1;
   }
 
+  const buildOpts: BuildInternalLineOpts | undefined = lyricalBoost
+    ? {
+        singingPattern: durs.length === 3 ? selectSingingLinePattern(seed, bar) : null,
+        maxStepSemitones: SINGING_LINE_MAX_STEP_SEMITONES,
+      }
+    : undefined;
   const pitches = buildSlowInternalLinePitches(
     n.pitch,
     harmonicDest,
@@ -1150,7 +1940,8 @@ function applyVoice2InternalMotionShaping(
     chord,
     context,
     seed,
-    bar
+    bar,
+    buildOpts
   );
   if (pitches.length !== durs.length) return;
 
@@ -1371,8 +2162,7 @@ function blendDirectionalIntent(
 }
 
 /**
- * Phase 18.2B: inject sparse inner voice — contrary/oblique preference, 3rd/7th priority,
- * rhythmic independence, max 2 simultaneous guitar notes.
+ * Phase 18.2B — Wyble inner voice injection (reactive path; Phase 18.3B planner bypassed for pipeline stability).
  * @returns number of measures that received voice-2 content
  */
 export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: CompositionContext): number {
@@ -1385,8 +2175,9 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
   const activeBars = collectPhraseAwareActiveBarIndices(tb, seed);
   const activeSet = new Set(activeBars);
+  const phraseV2Plans = buildPhraseVoice2Plans(tb, seed);
   const { effective: effectiveBars, phaseByBar } = buildVoice2ContinuationSchedule(tb, seed, activeSet);
-  const barRhythms = planVoice2BarRhythms(guitar, effectiveBars, seed, tb, phaseByBar);
+  const barRhythms = planVoice2BarRhythms(guitar, effectiveBars, seed, tb, phaseByBar, phraseV2Plans);
   const phraseWaypoints = buildPhraseIntentionWaypoints(guitar, effectiveBars, phaseByBar, context, seed, tb);
   const frozenRunEndMap = buildFrozenRunEndMap(guitar, effectiveBars, phaseByBar, phraseWaypoints, context, seed, tb);
   let anchorMidi: number | null = null;
@@ -1984,6 +2775,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   return injected;
 }
 
+/**
+ * Phase 18.2B.1 — Stabilise Voice 2 for duo validators (phrase ends, Barry Harris max jump) without thinning the layer.
+ * Runs after {@link injectGuitarVoice2WybleLayer}; export unchanged.
+ */
 /**
  * Phase 18.2B.1 — Stabilise Voice 2 for duo validators (phrase ends, Barry Harris max jump) without thinning the layer.
  * Runs after {@link injectGuitarVoice2WybleLayer}; export unchanged.

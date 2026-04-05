@@ -4,6 +4,7 @@
  */
 
 import type { RunManifest } from './runLedgerTypes';
+import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
 
 export interface CreateRunManifestInput {
   version: string;
@@ -69,6 +70,7 @@ export interface CreateRunManifestInput {
   songModeJamesBrownFunkReceiptTag?: string;
   rhythmIntentD1Receipt?: string;
   duoModeReceiptLabel?: string;
+  voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
 }
 
 /** Create run manifest. */
@@ -137,5 +139,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songModeJamesBrownFunkReceiptTag: input.songModeJamesBrownFunkReceiptTag,
     rhythmIntentD1Receipt: input.rhythmIntentD1Receipt,
     duoModeReceiptLabel: input.duoModeReceiptLabel,
+    voice2PolyphonyDiagnostics: input.voice2PolyphonyDiagnostics,
   };
 }

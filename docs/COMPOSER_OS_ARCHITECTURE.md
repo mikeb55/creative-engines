@@ -23,6 +23,8 @@
 
 **Achieved so far:** dual voices stable in Sibelius and Guitar Pro 8; continuity layer working; internal motion partially working. **Open work** is phrase-level musical refinement (intention / direction), not export or score structure.
 
+**Phase 18.2B.1 — Voice 2 diagnostics:** read-only metrics for Guitar/Bass Duo (bar coverage, density, rest gaps, activity runs, strong-beat vs offbeat entries) are emitted to console and the Generation Receipt UI; they do not change generation output.
+
 ## Phase labels (A / B / C / D)
 
 These labels are used in product and handoff docs; boundaries are conceptual, not separate runtimes.

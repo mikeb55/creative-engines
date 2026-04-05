@@ -20,6 +20,7 @@ import type { CoreMotif, Motif } from './motif/motifEngineTypes';
 import type { MotifShape } from './motif/motifShape';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
+import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -84,6 +85,8 @@ export interface GenerationMetadata {
   userExplicitPrimaryStyle?: boolean;
   /** Guitar–Bass Duo family: receipt line for distinct playback modes (e.g. single-line duo). */
   duoModeReceiptLabel?: string;
+  /** Phase 18.2B.1 — Voice-2 polyphony snapshot after inject + stabilise (guitar_bass_duo polyphony path). */
+  voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */

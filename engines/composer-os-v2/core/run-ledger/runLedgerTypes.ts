@@ -2,6 +2,8 @@
  * Composer OS V2 — Run ledger types
  */
 
+import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
+
 /** Run manifest for replay/debug. */
 export interface RunManifest {
   composerOsVersion: string;
@@ -104,4 +106,6 @@ export interface RunManifest {
   rhythmIntentD1Receipt?: string;
   /** Guitar–Bass Duo family: human-readable mode line for receipts (e.g. single-line). */
   duoModeReceiptLabel?: string;
+  /** Phase 18.2B.1 — Voice-2 polyphony diagnostic (guitar_bass_duo; after Wyble inject + stabilise). */
+  voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
 }

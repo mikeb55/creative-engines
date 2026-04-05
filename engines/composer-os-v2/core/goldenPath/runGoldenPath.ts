@@ -1207,6 +1207,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       });
     })(),
     duoModeReceiptLabel: appliedContext.generationMetadata.duoModeReceiptLabel,
+    voice2PolyphonyDiagnostics: appliedContext.generationMetadata.voice2PolyphonyDiagnostics,
   });
 
   const success =

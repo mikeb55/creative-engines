@@ -91,15 +91,31 @@ export function validateDuoPhraseAuthority(
     });
   }
 
-  const lastPcs: number[] = [];
-  for (let bar = 1; bar <= 8; bar++) {
-    const ln = lastNoteInBar(score, bar);
-    if (ln) lastPcs.push(ln.pitch % 12);
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const phraseEndPcs: number[] = [];
+  if (g) {
+    for (let k = 0; k < 4; k++) {
+      const b1 = k * 2 + 1;
+      const b2 = b1 + 1;
+      let best: { end: number; pc: number } | undefined;
+      for (const bi of [b1, b2]) {
+        const m = g.measures.find((x) => x.index === bi);
+        if (!m) continue;
+        for (const e of m.events) {
+          if (!isGuitarMelodyVoiceNote(e)) continue;
+          const n = e as { pitch: number; startBeat: number; duration: number };
+          const endT = bi * 4 + n.startBeat + n.duration;
+          const pc = ((n.pitch % 12) + 12) % 12;
+          if (!best || endT > best.end) best = { end: endT, pc };
+        }
+      }
+      if (best) phraseEndPcs.push(best.pc);
+    }
   }
-  if (new Set(lastPcs).size < 3) {
+  if (new Set(phraseEndPcs).size < 2) {
     issues.push({
       ruleId: 'pa_endings_lack_variety',
-      message: 'Phrase authority: guitar phrase endings lack variety',
+      message: 'Phrase authority: 2-bar phrase endings lack distinct pitch variety (span-level)',
     });
   }
 
@@ -182,12 +198,38 @@ export function validateDuoPhraseAuthority(
   }
 
   let moment = false;
+  for (let k = 0; k < 4; k++) {
+    const b1 = k * 2 + 1;
+    const b2 = b1 + 1;
+    let best: { end: number; pitch: number } | undefined;
+    for (const bi of [b1, b2]) {
+      const m = g?.measures.find((x) => x.index === bi);
+      if (!m) continue;
+      for (const e of m.events) {
+        if (!isGuitarMelodyVoiceNote(e)) continue;
+        const n = e as { pitch: number; startBeat: number; duration: number };
+        const endT = bi * 4 + n.startBeat + n.duration;
+        if (!best || endT > best.end) best = { end: endT, pitch: n.pitch };
+      }
+    }
+    if (!best) continue;
+    const endBar = k * 2 + 2;
+    const t = chordTonesForGoldenChord(chordForBar(endBar));
+    const pc = ((best.pitch % 12) + 12) % 12;
+    if (pc === t.third % 12 || pc === t.seventh % 12 || pc === t.root % 12) moment = true;
+  }
   for (const bar of [4, 7]) {
     const ln = lastNoteInBar(score, bar);
     if (!ln) continue;
     const t = chordTonesForGoldenChord(chordForBar(bar));
     const pc = ln.pitch % 12;
     if (pc === t.third % 12 || pc === t.seventh % 12) moment = true;
+  }
+  const ln8 = lastNoteInBar(score, 8);
+  if (ln8) {
+    const t8 = chordTonesForGoldenChord(chordForBar(8));
+    const pc = ln8.pitch % 12;
+    if (pc === t8.third % 12 || pc === t8.seventh % 12 || pc === t8.root % 12) moment = true;
   }
   const gs4 = firstNoteStart(score, 'clean_electric_guitar', 4);
   const bs4 = firstNoteStart(score, 'acoustic_upright_bass', 4);
@@ -196,7 +238,7 @@ export function validateDuoPhraseAuthority(
   if (!moment) {
     issues.push({
       ruleId: 'pa_no_memorable_cadence',
-      message: 'Phrase authority: no memorable cadence moment (landing or handoff)',
+      message: 'Phrase authority: no memorable cadence (phrase arrival, bar landing, or handoff)',
     });
   }
 

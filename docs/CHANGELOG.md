@@ -1,5 +1,7 @@
 # Composer OS — Changelog
 
+**Update:** Phase 18.2B.1 (Voice 2 diagnostics for Guitar/Bass Duo — engine + receipt UI) is documented in the repo root [CHANGELOG.md](../CHANGELOG.md).
+
 ## V9.x - Phase 18.2B Polyphony Behaviour Progress
 
 Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CHANGELOG.md); phrase-level refinement still open.

@@ -4,6 +4,8 @@
 
 Composer OS now shows chord export diagnostics directly in the Generation receipt UI.
 
+For **Guitar/Bass Duo** polyphony, **Voice 2 diagnostics** (Phase 18.2B.1) also appear in the receipt when available: bar coverage, note density, rest gaps, activity runs, and strong-beat vs offbeat entries — read-only; see root [CHANGELOG.md](../CHANGELOG.md) (V9.0 – Phase 18.2B.1).
+
 ## What is shown
 
 - Chords parsed

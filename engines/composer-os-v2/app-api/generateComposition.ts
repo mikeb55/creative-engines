@@ -17,6 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
+import type { GuitarVoice2PolyphonyDiagnostics } from '../core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 
@@ -129,6 +130,8 @@ export interface GenerateResult {
   };
   /** #17 — Per-bar chord export transparency (custom / Wyble harmony paths). */
   chordExportDiagnostics?: ChordExportDiagnosticsReceipt;
+  /** Phase 18.2B.1 — Voice-2 polyphony diagnostic (guitar_bass_duo; engine snapshot, read-only). */
+  voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -355,5 +358,6 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       styleProfile: req.styleProfile,
       c4Strength: req.c4Strength,
     },
+    voice2PolyphonyDiagnostics: result.context.generationMetadata.voice2PolyphonyDiagnostics,
   };
 }
