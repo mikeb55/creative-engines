@@ -3,6 +3,7 @@
  */
 
 import type { ScoreModel } from '../../score-model/scoreModelTypes';
+import { isGuitarMelodyVoiceNote } from '../../score-integrity/guitarVoiceMelody';
 
 export interface BarryHarrisValidationResult {
   valid: boolean;
@@ -22,10 +23,16 @@ export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisVa
 
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (guitar) {
+    /** Melody (voice 1) only — same intent as `strictEnforceGlobalLeaps` skipping V2 edges in `ecmShapingPass.ts`. */
     const allPitches: number[] = [];
-    for (const m of guitar.measures) {
-      for (const e of m.events) {
-        if (e.kind === 'note') allPitches.push(e.pitch);
+    for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
+      const melodyNotes = [...m.events]
+        .filter((e) => isGuitarMelodyVoiceNote(e))
+        .sort(
+          (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+        );
+      for (const e of melodyNotes) {
+        allPitches.push((e as { pitch: number }).pitch);
       }
     }
     const maxJump = maxVoiceLeadJump(allPitches);

@@ -48,15 +48,23 @@ function measuresInExportOrder(part: PartModel): MeasureModel[] {
 }
 
 function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
-  const semitones = ((midi % 12) + 12) % 12;
-  const octave = Math.floor(midi / 12) - 1;
   const stepMap: Record<number, { step: string; alter: number }> = {
     0: { step: 'C', alter: 0 }, 1: { step: 'C', alter: 1 }, 2: { step: 'D', alter: 0 },
     3: { step: 'D', alter: 1 }, 4: { step: 'E', alter: 0 }, 5: { step: 'F', alter: 0 },
     6: { step: 'F', alter: 1 }, 7: { step: 'G', alter: 0 }, 8: { step: 'G', alter: 1 },
     9: { step: 'A', alter: 0 }, 10: { step: 'A', alter: 1 }, 11: { step: 'B', alter: 0 },
   };
-  const { step, alter } = stepMap[semitones];
+  if (!Number.isFinite(midi)) {
+    return { step: 'C', alter: 0, octave: 4 };
+  }
+  const rounded = Math.round(midi);
+  const semitones = ((rounded % 12) + 12) % 12;
+  const octave = Math.floor(rounded / 12) - 1;
+  const entry = stepMap[semitones];
+  if (!entry) {
+    return { step: 'C', alter: 0, octave };
+  }
+  const { step, alter } = entry;
   return { step, alter, octave };
 }
 

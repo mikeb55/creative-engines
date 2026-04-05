@@ -7,14 +7,14 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
-import type { ScoreModel, PartModel, MeasureModel } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
-import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
+import { ACOUSTIC_UPRIGHT_BASS, BASS_HARD_RANGE_HIGH, BASS_HARD_RANGE_LOW } from '../instrument-profiles/uprightBassProfile';
 import { GUITAR_BASS_DUO_BASS_PART_NAME } from '../instrument-profiles/guitarBassDuoExportNames';
 import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
@@ -256,7 +256,24 @@ function getRegisterForBar(guitarMap: InstrumentRegisterMap, bar: number, contex
 function getBassRegisterForBar(bassMap: InstrumentRegisterMap, bar: number, context: CompositionContext): [number, number] {
   const label = sectionLabelForBar(bar, context);
   const plan = bassMap.sections.find((s) => s.sectionLabel === label);
-  return plan?.preferredZone ?? [36, 55];
+  return plan?.preferredZone ?? [40, 55];
+}
+
+/** Last-chance clamp: all passes must honour upright bass hard range (same as register validation). */
+function clampAllBassNotesToValidatorHardRange(score: ScoreModel): void {
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!bass) return;
+  for (const m of bass.measures) {
+    for (let i = 0; i < m.events.length; i++) {
+      const e = m.events[i]!;
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      const np = clampPitch(n.pitch, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
+      if (np !== n.pitch) {
+        m.events[i] = { ...n, pitch: np };
+      }
+    }
+  }
 }
 
 function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMotif[] {
@@ -2195,6 +2212,7 @@ export function generateGoldenPathDuoScore(
       repairSlashBassHonourInDuoScore(context, bassForSlash, plans.bassMap, walkLow, bassCeiling);
     }
   }
+  clampAllBassNotesToValidatorHardRange(afterExpressive);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

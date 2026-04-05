@@ -1,3 +1,44 @@
+# Voice 2 System — External Reviewer Snapshot
+
+_Generated for repository: creative-engines. Section 2 embeds full file contents as requested._
+
+## SECTION 1: FILE INVENTORY
+
+### Core Voice 2 / Wyble implementation
+- `engines/composer-os-v2/core/goldenPath/guitarVoice2WybleLayer.ts` — main Voice 2 inject + stabilisation + Phase 18.2B.5 normalization
+- `engines/composer-os-v2/core/goldenPath/guitarVoice2PolyphonyDiagnostics.ts` — V2 metrics + VOICE 2 DIAGNOSTIC console block
+- `engines/composer-os-v2/core/goldenPath/phaseAGuitarPolyphonyProbe.ts` — calls inject + stabilise 18.2B.1–3 + diagnostics
+- `engines/composer-os-v2/core/goldenPath/Voice2LineGenerator.ts` — exists (planner/generator path)
+- `engines/composer-os-v2/core/goldenPath/Voice2PhrasePlanner.ts` — exists
+- `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts` — imports Wyble exports
+- `engines/composer-os-v2/core/goldenPath/ecmShapingPass.ts` — imports Wyble register / strip helpers
+- `engines/composer-os-v2/core/compositionContext.ts` — voice2PolyphonyDiagnostics on metadata
+- `engines/composer-os-v2/tests/guitarBassDuoWybleVoice2.test.ts` — tests
+
+### Validation / interaction (keywords)
+- `engines/composer-os-v2/core/score-integrity/duoLockQuality.ts` — validateDuoInteractionAuthorityGate, wall-to-wall, maxConsecutiveNoteHeavyBars
+- `engines/composer-os-v2/core/style-modules/barry-harris/moduleValidation.ts` — validateBarryHarrisConformance, voice-leading jump message
+
+### Docs
+- `CHANGELOG.md` (repo root)
+- `docs/CHANGELOG.md` (secondary)
+- `README.md` (repo root)
+- `engines/composer-os-v2/README.md` (module-level)
+
+### Direct imports of guitarVoice2WybleLayer.ts (dependency files)
+- `engines/composer-os-v2/core/compositionContext.ts` (type only)
+- `engines/composer-os-v2/core/presets/guitarBassDuoPresetIds.ts`
+- `engines/composer-os-v2/core/score-model/scoreModelTypes.ts`
+- `engines/composer-os-v2/core/score-model/scoreEventBuilder.ts`
+- `engines/composer-os-v2/core/harmony/chordSymbolAnalysis.ts`
+- `engines/composer-os-v2/core/goldenPath/guitarBassDuoHarmony.ts`
+- `engines/composer-os-v2/core/goldenPath/guitarPhraseAuthority.ts`
+
+## SECTION 2: FULL FILE CONTENTS
+
+### 1. engines/composer-os-v2/core/goldenPath/guitarVoice2WybleLayer.ts
+
+```typescript
 /**
  * Phase 18.2B+ — Guitar polyphony inner voice (Wyble-style). Voice 2 inject uses the reactive inline path (Phase 18.3B planner/generator bypassed for stability).
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
@@ -88,10 +129,6 @@ type Voice2RhythmWeightState182B2 = 'ENTERING' | 'CONTINUING' | 'RESOLVING' | 'R
 const V2_COV_TARGET_MIN = 0.35;
 /** Nominal upper band for repair / continuation caps (target coverage ~0.35–0.50). */
 const V2_COV_TARGET_MAX = 0.45;
-/** Realized normalization: coverage at or above this ratio is acceptable after aggressive trim (edge-case floor). */
-const V2_COVERAGE_FLOOR = 0.3;
-/** Warn when realized active-bar ratio falls below this (still above {@link V2_COVERAGE_FLOOR}). */
-const V2_COVERAGE_WARN_BELOW_REALIZED = 0.35;
 /** Hard ceiling: trim active bars until at or below this ratio (Phase 18.2B.3 breathing fix). */
 const V2_COV_HARD_MAX = 0.55;
 const V2_COV_FORCE_SUSTAINED = 0.3;
@@ -3683,158 +3720,108 @@ function enforceRealizedCoverageCap182B3(guitar: PartModel, tb: number, seed: nu
   return changed;
 }
 
-/** After ceiling trim: warn if realized coverage is in the 0.30–0.34 band (no pitch inject here — see planning layer). */
-function warnRealizedCoverageIfBelowTarget182B6(guitar: PartModel, tb: number): void {
-  if (tb <= 0) return;
-  const active = buildActualV2ActiveBarSet182B3(guitar, tb);
-  const cov = active.size / tb;
-  if (cov < V2_COVERAGE_WARN_BELOW_REALIZED) {
-    console.warn(
-      '[V2 normalize 18.2B.6] realized Voice-2 coverage',
-      cov.toFixed(3),
-      'is below',
-      V2_COVERAGE_WARN_BELOW_REALIZED,
-      '(acceptable floor',
-      V2_COVERAGE_FLOOR,
-      ')',
-    );
-  }
-}
-
 /** Realized Voice-2 note with bar index for global beat math (post-injection normalization). */
 type V2NoteEntry182B5 = { note: NoteEvent; measureIndex: number };
 
-/**
- * Aligns with {@link maxConsecutiveNoteHeavyBars} in duoLockQuality.ts: summed **all** guitar note durations per bar,
- * threshold {@link V2_VALIDATOR_NOTE_HEAVY_BEATS} (3.95 beats).
- */
-const V2_VALIDATOR_NOTE_HEAVY_BEATS = 3.95;
-
-/** Matches validator note-heavy bar: V1 + V2 sounding time in beats. */
-function barIsNoteHeavy182B6(m: MeasureModel, thresholdBeats: number): boolean {
-  let noteBeats = 0;
-  for (const e of m.events) {
-    if (e.kind === 'note') noteBeats += (e as NoteEvent).duration;
-  }
-  return noteBeats >= thresholdBeats;
+/** Whole or near-whole Voice-2 hold (validator wall-to-wall uses summed note beats per measure). */
+function isFullBarSustained(note: NoteEvent, barDuration: number): boolean {
+  return note.duration >= barDuration * 0.875 - REAL_V2_BEAT_EPS;
 }
 
-/** Total guitar (V1 + V2) note beats in a bar — for diagnostics only. */
-function guitarNoteBeatsSum182B6(m: MeasureModel): number {
-  let s = 0;
+function barHasFullBarV2Sustain(m: MeasureModel, barDuration: number): boolean {
   for (const e of m.events) {
-    if (e.kind === 'note') s += (e as NoteEvent).duration;
-  }
-  return s;
-}
-
-/**
- * Second bar of two consecutive note-heavy bars: reduce V2 only so total bar sounding can drop below 3.95 beats.
- * If some V2 note is ≥ 2 beats, halve the longest such note; else remove the longest V2 note.
- */
-function convertMeasureBreakNoteHeavySecondBar182B6(guitar: PartModel, bar: number, barDuration: number): void {
-  const m = measureAtBarIndex182B3(guitar, bar);
-  if (!m) return;
-  const v2Indices: number[] = [];
-  for (let i = 0; i < m.events.length; i++) {
-    const e = m.events[i]!;
-    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) v2Indices.push(i);
-  }
-  if (v2Indices.length === 0) {
-    console.log('[V2-convert] bar', bar, 'longest V2 note duration', 'n/a', 'action', 'none (no V2 notes)');
-    return;
-  }
-  let longestAllV2 = 0;
-  for (const i of v2Indices) {
-    const n = m.events[i] as NoteEvent;
-    if (n.duration > longestAllV2) longestAllV2 = n.duration;
-  }
-  const minDur = 2 - REAL_V2_BEAT_EPS;
-  let bestIdx = -1;
-  let bestDur = -1;
-  for (const i of v2Indices) {
-    const n = m.events[i] as NoteEvent;
-    if (n.duration >= minDur && n.duration > bestDur) {
-      bestDur = n.duration;
-      bestIdx = i;
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      if (isFullBarSustained(e as NoteEvent, barDuration)) return true;
     }
   }
-  if (bestIdx >= 0) {
-    const n = m.events[bestIdx] as NoteEvent;
-    const newDur = n.duration / 2;
-    const restStart = n.startBeat + newDur;
-    const restDur = barDuration - restStart;
+  return false;
+}
+
+/**
+ * No two adjacent bars may both be full-bar sustained Voice 2 (independent wholes in consecutive measures).
+ * Converts the second bar of each flagged pair: same pitch as the original note, duration halved, rest fills the remainder (no new pitched content).
+ */
+function convertMeasureBreakV2FullSustain(guitar: PartModel, bar: number, barDuration: number): void {
+  const m = measureAtBarIndex182B3(guitar, bar);
+  if (!m) return;
+  const half = barDuration / 2;
+  let targetIdx = -1;
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i]!;
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      if (n.startBeat <= REAL_V2_BEAT_EPS && isFullBarSustained(n, barDuration)) {
+        targetIdx = i;
+        break;
+      }
+    }
+  }
+  if (targetIdx >= 0) {
+    const n = m.events[targetIdx] as NoteEvent;
     const newEvents: ScoreEvent[] = [];
-    for (let j = 0; j < m.events.length; j++) {
-      if (j === bestIdx) {
-        newEvents.push({ ...n, duration: newDur });
-        if (restDur > REAL_V2_BEAT_EPS) {
-          newEvents.push(createRest(restStart, restDur, V2_VOICE));
-        }
+    for (let i = 0; i < m.events.length; i++) {
+      if (i === targetIdx) {
+        newEvents.push({ ...n, startBeat: 0, duration: half });
+        newEvents.push(createRest(half, half, V2_VOICE));
         continue;
       }
-      const ev = m.events[j]!;
-      if (ev.kind === 'note') newEvents.push({ ...(ev as NoteEvent) });
-      else if (ev.kind === 'rest') newEvents.push({ ...(ev as RestEvent) });
-      else newEvents.push(ev);
+      const e = m.events[i]!;
+      if (e.kind === 'note') newEvents.push({ ...(e as NoteEvent) });
+      else if (e.kind === 'rest') newEvents.push({ ...(e as RestEvent) });
+      else newEvents.push(e);
     }
     m.events = newEvents;
     m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-    console.log(
-      '[V2-convert] bar',
-      bar,
-      'longest V2 note duration',
-      longestAllV2,
-      'action',
-      'halve longest V2 note >= 2 beats',
-    );
     return;
   }
-  let longestIdx = -1;
-  let longestDur = -1;
-  for (const i of v2Indices) {
-    const n = m.events[i] as NoteEvent;
-    if (n.duration > longestDur) {
-      longestDur = n.duration;
-      longestIdx = i;
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i]!;
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      if (isFullBarSustained(n, barDuration)) {
+        const head = { ...n, duration: half };
+        const restStart = head.startBeat + head.duration;
+        const restDur = barDuration - restStart;
+        const newEvents: ScoreEvent[] = [];
+        for (let j = 0; j < m.events.length; j++) {
+          if (j === i) {
+            newEvents.push(head);
+            if (restDur > REAL_V2_BEAT_EPS) {
+              newEvents.push(createRest(restStart, restDur, V2_VOICE));
+            }
+            continue;
+          }
+          const ev = m.events[j]!;
+          if (ev.kind === 'note') newEvents.push({ ...(ev as NoteEvent) });
+          else if (ev.kind === 'rest') newEvents.push({ ...(ev as RestEvent) });
+          else newEvents.push(ev);
+        }
+        m.events = newEvents;
+        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+        return;
+      }
     }
-  }
-  if (longestIdx >= 0) {
-    m.events = m.events.filter((_, j) => j !== longestIdx);
-    console.log(
-      '[V2-convert] bar',
-      bar,
-      'longest V2 note duration',
-      longestAllV2,
-      'action',
-      'remove longest V2 note',
-    );
   }
 }
 
 function breakConsecutiveV2Sustains(guitar: PartModel, barDuration: number, totalBars: number): void {
-  let changed = true;
-  let iterations = 0;
-  while (changed && iterations < 5) {
-    changed = false;
-    iterations++;
-    const flags: boolean[] = [];
-    for (let i = 0; i <= totalBars; i++) flags[i] = false;
-    for (let b = 1; b <= totalBars; b++) {
-      const m = measureAtBarIndex182B3(guitar, b);
-      flags[b] = m ? barIsNoteHeavy182B6(m, V2_VALIDATOR_NOTE_HEAVY_BEATS) : false;
-    }
-    const toConvert = new Set<number>();
-    for (let b = 1; b < totalBars; b++) {
-      if (flags[b] && flags[b + 1]) toConvert.add(b + 1);
-    }
-    if (toConvert.size > 0) changed = true;
-    for (const bar of [...toConvert].sort((a, c) => a - c)) {
-      console.log('[V2-break] scheduling bar', bar, 'for conversion');
-      convertMeasureBreakNoteHeavySecondBar182B6(guitar, bar, barDuration);
-    }
+  const flags: boolean[] = [];
+  for (let i = 0; i <= totalBars; i++) flags[i] = false;
+  for (let b = 1; b <= totalBars; b++) {
+    const m = measureAtBarIndex182B3(guitar, b);
+    flags[b] = m ? barHasFullBarV2Sustain(m, barDuration) : false;
+  }
+  const toConvert = new Set<number>();
+  for (let b = 1; b < totalBars; b++) {
+    if (flags[b] && flags[b + 1]) toConvert.add(b + 1);
+  }
+  for (const bar of [...toConvert].sort((a, c) => a - c)) {
+    convertMeasureBreakV2FullSustain(guitar, bar, barDuration);
   }
 }
+
+/** MusicXML tick threshold for "full bar" sustained diagnostics (0.875 × 1920 @ divisions 480). */
+const V2_FULL_BAR_SUSTAIN_TICKS_DEBUG = 1680;
 
 function v2NoteDurationSum182B5(m: MeasureModel): number {
   let s = 0;
@@ -3846,7 +3833,19 @@ function v2NoteDurationSum182B5(m: MeasureModel): number {
   return s;
 }
 
-/** Diagnostic: adjacent bars that are both realized-active for V2; sums and validator-aligned note-heavy flags. */
+/** True if any Voice-2 note has exported duration ≥ tickThreshold (divisions-per-quarter × beats). */
+function barHasV2NoteDurationTicksGte182B5(m: MeasureModel, tickThreshold: number): boolean {
+  for (const e of m.events) {
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      const ticks = Math.round(n.duration * DIVISIONS);
+      if (ticks >= tickThreshold) return true;
+    }
+  }
+  return false;
+}
+
+/** Diagnostic: adjacent bars that are both realized-active for V2; sums and full-bar flags for sustained debugging. */
 function logAdjacentActiveBarPairsDebug182B5(
   guitar: PartModel,
   barDuration: number,
@@ -3863,13 +3862,11 @@ function logAdjacentActiveBarPairsDebug182B5(
     const ticksA = Math.round(sumA * DIVISIONS);
     const ticksB = Math.round(sumB * DIVISIONS);
     const combinedTicks = ticksA + ticksB;
-    console.log('[V2 normalize 18.2B.5] adjacent active pair sustained diag', {
+    console.debug('[V2 normalize 18.2B.5] adjacent active pair sustained diag', {
       barA: b,
       barB: b + 1,
-      noteHeavyA: barIsNoteHeavy182B6(m0, V2_VALIDATOR_NOTE_HEAVY_BEATS),
-      noteHeavyB: barIsNoteHeavy182B6(m1, V2_VALIDATOR_NOTE_HEAVY_BEATS),
-      sumGuitarBeatsA: guitarNoteBeatsSum182B6(m0),
-      sumGuitarBeatsB: guitarNoteBeatsSum182B6(m1),
+      fullBarSustainedA: barHasV2NoteDurationTicksGte182B5(m0, V2_FULL_BAR_SUSTAIN_TICKS_DEBUG),
+      fullBarSustainedB: barHasV2NoteDurationTicksGte182B5(m1, V2_FULL_BAR_SUSTAIN_TICKS_DEBUG),
       sumV2BeatsA: sumA,
       sumV2BeatsB: sumB,
       sumV2TicksA: ticksA,
@@ -3885,7 +3882,7 @@ function computeLongestConsecutiveSustainedRun182B5(guitar: PartModel, barDurati
   let maxRun = 0;
   for (let b = 1; b <= totalBars; b++) {
     const m = measureAtBarIndex182B3(guitar, b);
-    if (m && barIsNoteHeavy182B6(m, V2_VALIDATOR_NOTE_HEAVY_BEATS)) {
+    if (m && barHasFullBarV2Sustain(m, barDuration)) {
       run++;
       maxRun = Math.max(maxRun, run);
     } else {
@@ -3981,118 +3978,6 @@ function applyV2NoteEntryClones182B5(guitar: PartModel, entries: V2NoteEntry182B
   }
 }
 
-/** Barry Harris duo validator uses max jump 12 st; keep re-entry fixes at 10 st with headroom. */
-const V2_REENTRY_MAX_INTERVAL_SEMITONES = 10;
-/** Re-entry octave shift + clamp: matches validator guitar pitch range in `moduleValidation.ts` (not STAB 55–79). */
-const V2_REENTRY_SHIFT_GUITAR_LOW = 40;
-const V2_REENTRY_SHIFT_GUITAR_HIGH = 88;
-
-/**
- * After break/conversion, a Voice-2 re-entry (first V2 note after silence in V2) may follow a Voice-1 note
- * with >12 st gap in the flattened guitar note stream. Shift by octaves (same pitch class) into register.
- */
-function shiftV2PitchPreservePcWithinInterval(
-  pitch: number,
-  targetPitch: number,
-  maxSemitones: number,
-  low: number,
-  high: number,
-): number {
-  for (let octaves = -3; octaves <= 3; octaves++) {
-    const candidate = pitch + octaves * 12;
-    if (candidate < low || candidate > high) continue;
-    if (Math.abs(candidate - targetPitch) <= maxSemitones) {
-      return clampPitch(candidate, low, high);
-    }
-  }
-  let best = pitch;
-  let bestDist = Math.abs(pitch - targetPitch);
-  for (let octaves = -3; octaves <= 3; octaves++) {
-    const candidate = pitch + octaves * 12;
-    if (candidate < low || candidate > high) continue;
-    const dist = Math.abs(candidate - targetPitch);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = candidate;
-    }
-  }
-  return clampPitch(best, low, high);
-}
-
-/** Deep-clone measures/events so re-entry fixes never mutate the previous `guitar.measures` graph in place. */
-function cloneGuitarMeasuresDeepForV2Reentry(measures: MeasureModel[]): MeasureModel[] {
-  return measures.map((m) => ({
-    ...m,
-    events: m.events.map((e) => {
-      if (e.kind === 'note') return { ...(e as NoteEvent) } as ScoreEvent;
-      if (e.kind === 'rest') return { ...(e as RestEvent) } as ScoreEvent;
-      return { ...e };
-    }),
-  }));
-}
-
-/**
- * Flattened guitar notes: same order as {@link validateBarryHarrisConformance} in `moduleValidation.ts`:
- * `for (const m of guitar.measures) { for (const e of m.events) { if (e.kind === 'note') … } }` — **part.measures
- * array order**, not sorted by `m.index`. Re-entry: Voice-2 after a gap in V2 (global start > last V2 end + ε).
- */
-function safeV2ReentryOctave(
-  guitar: PartModel,
-  barDuration: number,
-  _totalBars: number,
-  maxSemitones: number = V2_REENTRY_MAX_INTERVAL_SEMITONES,
-): void {
-  const measures = cloneGuitarMeasuresDeepForV2Reentry(guitar.measures);
-  const flat: { m: MeasureModel; ei: number; n: NoteEvent }[] = [];
-  for (const m of measures) {
-    for (let ei = 0; ei < m.events.length; ei++) {
-      const e = m.events[ei]!;
-      if (e.kind === 'note') flat.push({ m, ei, n: e as NoteEvent });
-    }
-  }
-  let lastV2EndGlobal = -Infinity;
-  for (let k = 0; k < flat.length; k++) {
-    const row = flat[k]!;
-    const v = row.n.voice ?? 1;
-    if (v !== V2_VOICE) continue;
-    const g0 = (row.m.index - 1) * barDuration + row.n.startBeat;
-    const g1 = g0 + row.n.duration;
-    const prev = k > 0 ? flat[k - 1]! : null;
-    const reentry =
-      Number.isFinite(lastV2EndGlobal) && g0 > lastV2EndGlobal + REAL_V2_BEAT_EPS;
-    if (reentry && prev) {
-      console.log('[V2-reentry] detect', {
-        g0,
-        prevPitch: prev.n.pitch,
-        rowPitch: row.n.pitch,
-        interval: Math.abs(row.n.pitch - prev.n.pitch),
-      });
-    }
-    if (reentry && prev && Math.abs(row.n.pitch - prev.n.pitch) > maxSemitones) {
-      const interval = Math.abs(row.n.pitch - prev.n.pitch);
-      const np = clampPitch(
-        shiftV2PitchPreservePcWithinInterval(
-          row.n.pitch,
-          prev.n.pitch,
-          maxSemitones,
-          V2_REENTRY_SHIFT_GUITAR_LOW,
-          V2_REENTRY_SHIFT_GUITAR_HIGH,
-        ),
-        V2_REENTRY_SHIFT_GUITAR_LOW,
-        V2_REENTRY_SHIFT_GUITAR_HIGH,
-      );
-      if (np !== row.n.pitch) {
-        console.log('[V2-reentry] applied', { from: row.n.pitch, to: np, interval });
-        row.m.events[row.ei] = { ...row.n, pitch: np };
-      } else {
-        console.log('[V2-reentry] shift unchanged', { pitch: row.n.pitch, np, interval });
-      }
-    }
-    lastV2EndGlobal = Math.max(lastV2EndGlobal, g1);
-  }
-  guitar.measures = measures;
-}
-
 function computeLongestV2SustainAcrossActiveBars182B5(
   v2Notes: V2NoteEntry182B5[],
   activeBarSet: Set<number>,
@@ -4117,7 +4002,6 @@ function computeLongestV2SustainAcrossActiveBars182B5(
  * match the written score (runs after {@link stabiliseGuitarVoice2Wyble18_2B_2}; diagnostics read this result).
  */
 function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: CompositionContext): void {
-  console.log('[V2-NORM-182B6] normalization running');
   const tb = context.form.totalBars;
   const seed = context.seed;
   for (let pass = 0; pass < 10; pass++) {
@@ -4128,14 +4012,12 @@ function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: C
     if (enforceRealizedCoverageCap182B3(guitar, tb, seed)) changed = true;
     if (!changed) break;
   }
-  warnRealizedCoverageIfBelowTarget182B6(guitar, tb);
   const barDur = V2_BAR_DURATION_BEATS;
   breakConsecutiveV2Sustains(guitar, barDur, tb);
   let v2Entries = collectV2NoteEntries182B5(guitar);
   let realizedActive = buildRealizedActiveBarSet(v2Entries, barDur, tb);
   const clampedEntries = clampV2NotesToBarBoundaries(v2Entries, realizedActive, barDur, tb);
   applyV2NoteEntryClones182B5(guitar, clampedEntries);
-  safeV2ReentryOctave(guitar, barDur, tb);
   v2Entries = collectV2NoteEntries182B5(guitar);
   realizedActive = buildRealizedActiveBarSet(v2Entries, barDur, tb);
   const longestV2SustainAcrossActiveBars = computeLongestV2SustainAcrossActiveBars182B5(
@@ -4226,3 +4108,1228 @@ export function stripVoice2IfCrossingMelody(guitar: PartModel): number {
   }
   return strippedBars;
 }
+
+```
+
+### 2. Direct-import files whose types/builders define Voice 2 note events
+
+#### engines/composer-os-v2/core/score-model/scoreModelTypes.ts
+
+```typescript
+/**
+ * Composer OS V2 — Score model types
+ * Single source of truth for export. All generation flows into this model.
+ */
+
+/**
+ * MusicXML divisions per quarter note (fixed; Sibelius-safe integer tick grid).
+ * All <duration> values and <type>/<dot/> come from the same tick integer in the exporter.
+ */
+export const DIVISIONS = 480;
+
+/** Beats per measure (4/4). */
+export const BEATS_PER_MEASURE = 4;
+
+/** Measure duration in divisions (4/4 @ DIVISIONS=480 → 1920). */
+export const MEASURE_DIVISIONS = DIVISIONS * BEATS_PER_MEASURE;
+
+/** Alias for exporters that name ticks explicitly. */
+export const MUSIC_XML_DIVISIONS_PER_QUARTER = DIVISIONS;
+export const MEASURE_TICKS_4_4 = MEASURE_DIVISIONS;
+
+/** Articulation metadata (performance pass / expressive feel). */
+export type Articulation = 'staccato' | 'tenuto' | 'accent';
+
+/** Playback / feel metadata (does not change bar structure). */
+export interface FeelProfile {
+  /** Long:short eighth ratio for swing interpretation (e.g. 2.0 ≈ triplet swing). */
+  swingRatio: number;
+  tempoFeel: 'slow' | 'medium' | 'fast';
+  /** Smooth drift budget across the form (beats), for display / playback hints only. */
+  driftTotalBeats: number;
+}
+
+/** Note event: pitch in MIDI, startBeat 0–4, duration in beats. */
+export interface NoteEvent {
+  kind: 'note';
+  pitch: number;
+  startBeat: number;
+  duration: number;
+  voice?: number;
+  articulation?: Articulation;
+  /** MIDI velocity 1–127; optional expressive shaping (ghost notes, comp). */
+  velocity?: number;
+  /** Optional motif/riff identity tag (symbolic layer; not exported to MusicXML). */
+  motifRef?: string;
+}
+
+/** Rest event. */
+export interface RestEvent {
+  kind: 'rest';
+  startBeat: number;
+  duration: number;
+  voice?: number;
+}
+
+/** Union of note/rest. */
+export type ScoreEvent = NoteEvent | RestEvent;
+
+/** Chord symbol event (measure-level). */
+export interface ChordSymbolEvent {
+  kind: 'chord';
+  chord: string;
+}
+
+/** Rehearsal mark event (measure-level). */
+export interface RehearsalMarkEvent {
+  kind: 'rehearsal';
+  label: string;
+}
+
+/** Tempo event (score-level, typically measure 1). */
+export interface TempoEvent {
+  kind: 'tempo';
+  bpm: number;
+}
+
+/** Time signature event. */
+export interface TimeSignatureEvent {
+  kind: 'time';
+  beats: number;
+  beatType: number;
+}
+
+/** Narrative / moment hint for duo shaping (metadata only; not read by exporter). */
+export type MomentTag = 'peak' | 'cadence' | 'handoff';
+
+/** One measure: events + optional chord + optional rehearsal mark. */
+export interface MeasureModel {
+  index: number; // 1-based
+  events: ScoreEvent[];
+  chord?: string;
+  rehearsalMark?: string;
+  /** Optional duo narrative tag (peak bar, handoff, final cadence). */
+  momentTag?: MomentTag;
+}
+
+/** One part (e.g. guitar, bass). */
+export interface PartModel {
+  id: string;
+  name: string;
+  instrumentIdentity: string;
+  midiProgram: number;
+  clef: 'treble' | 'bass';
+  measures: MeasureModel[];
+}
+
+/** MusicXML key signature line (additive; does not change harmony generation). */
+export interface KeySignatureLine {
+  fifths: number;
+  mode: 'major' | 'minor';
+  hideKeySignature: boolean;
+  caption?: string;
+}
+
+/** Golden-path duo: how bar math seal snaps rhythm (ECM chamber keeps quarter-beat grid). */
+export type DuoRhythmSnapMode = 'quarter' | 'eighth_beats';
+
+/** Full score model. */
+export interface ScoreModel {
+  title: string;
+  tempo?: number;
+  timeSignature?: { beats: number; beatType: number };
+  /** Optional duo feel hint (export as direction text; no structural change). */
+  feelProfile?: FeelProfile;
+  /** Set before finalize for guitar_bass_duo Sibelius-safe eighth-beat attacks; ECM omits (quarter grid). */
+  duoRhythmSnap?: DuoRhythmSnapMode;
+  /** V3.4 — exporter reads this for `<key>`; when omitted, defaults to C / visible. */
+  keySignature?: KeySignatureLine;
+  /** TEMP V3.4c — mirror receipt for export debug log; remove when stable. */
+  keySignatureExportDebug?: { inferredKey: string; inferredFifths: number; exportKeyWritten: boolean };
+  /** Hook repetition bias from songwriter profile — used by duoBarMathFinalize to gate bar 25 restoration. */
+  _hookRepetitionBias?: number;
+  parts: PartModel[];
+}
+
+```
+
+#### engines/composer-os-v2/core/score-model/scoreEventBuilder.ts
+
+```typescript
+/**
+ * Composer OS V2 — Score event builder
+ * Builds score model from structured plans.
+ */
+
+import type {
+  ScoreModel,
+  PartModel,
+  MeasureModel,
+  NoteEvent,
+  RestEvent,
+  ScoreEvent,
+  FeelProfile,
+} from './scoreModelTypes';
+
+/** Create empty measure. */
+export function createMeasure(index: number, chord?: string, rehearsalMark?: string): MeasureModel {
+  return {
+    index,
+    events: [],
+    chord,
+    rehearsalMark,
+  };
+}
+
+/** Create note event. */
+export function createNote(pitch: number, startBeat: number, duration: number, voice = 1, motifRef?: string): NoteEvent {
+  return { kind: 'note', pitch, startBeat, duration, voice, ...(motifRef ? { motifRef } : {}) };
+}
+
+/** Create rest event. */
+export function createRest(startBeat: number, duration: number, voice = 1): RestEvent {
+  return { kind: 'rest', startBeat, duration, voice };
+}
+
+/** Add event to measure. */
+export function addEvent(measure: MeasureModel, event: ScoreEvent): void {
+  measure.events.push(event);
+}
+
+/** Create part with empty measures. */
+export function createPart(
+  id: string,
+  name: string,
+  instrumentIdentity: string,
+  midiProgram: number,
+  clef: 'treble' | 'bass',
+  measureCount: number,
+  chordPerBar: (barIndex: number) => string | undefined,
+  rehearsalPerBar: (barIndex: number) => string | undefined
+): PartModel {
+  const measures: MeasureModel[] = [];
+  for (let i = 1; i <= measureCount; i++) {
+    measures.push(
+      createMeasure(i, chordPerBar(i), rehearsalPerBar(i))
+    );
+  }
+  return { id, name, instrumentIdentity, midiProgram, clef, measures };
+}
+
+/** Create score model. */
+export function createScore(
+  title: string,
+  parts: PartModel[],
+  options?: { tempo?: number; feelProfile?: FeelProfile }
+): ScoreModel {
+  return {
+    title,
+    tempo: options?.tempo,
+    timeSignature: { beats: 4, beatType: 4 },
+    feelProfile: options?.feelProfile,
+    parts,
+  };
+}
+
+```
+
+### 3. Validation: Duo Interaction V3.1 (wall-to-wall) — full file
+
+#### engines/composer-os-v2/core/score-integrity/duoLockQuality.ts
+
+```typescript
+/**
+ * Guitar–Bass Duo LOCK quality: GCE composite, rhythm anti-loop, melodic heuristics.
+ * Additive — used by behaviour gates for `guitar_bass_duo` only.
+ */
+
+import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { CompositionContext } from '../compositionContext';
+import { activityScoreForBar } from '../goldenPath/activityScore';
+import { melodyAuthorityGceLayer } from './duoMelodyIdentityV3';
+import {
+  countCallResponseEvents,
+  guideToneCoverage,
+  hasCallResponseInWindow,
+  rootRatioStrongBeats,
+  scoreJazzDuoBehaviourSoft,
+} from './jazzDuoBehaviourValidation';
+import {
+  isSongModeHookFirstIdentity,
+  partitionDuoIdentityIssues,
+  type SongModeDuoIdentityIssue,
+} from '../song-mode/songModeDuoIdentityBehaviourRules';
+import {
+  collectMelodyMidiBarRangeInclusive,
+  isGuitarMelodyVoiceNote,
+} from './guitarVoiceMelody';
+
+export interface DuoLockValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  issues: SongModeDuoIdentityIssue[];
+}
+
+function finalizeDuoLock(
+  issues: SongModeDuoIdentityIssue[],
+  compositionContext: CompositionContext | undefined
+): DuoLockValidationResult {
+  const songMode = isSongModeHookFirstIdentity(compositionContext);
+  const { blocking, warnings } = partitionDuoIdentityIssues(issues, songMode);
+  return {
+    valid: blocking.length === 0,
+    errors: blocking,
+    warnings,
+    issues,
+  };
+}
+
+function rhythmSig(m: MeasureModel): string {
+  return [...m.events]
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat)
+    .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
+    .join('|');
+}
+
+/** Melody-only rhythm (voice 1) — aligns identity gates with polyphonic guitar. */
+export function rhythmSigMelody(m: MeasureModel): string {
+  return [...m.events]
+    .filter((e) => isGuitarMelodyVoiceNote(e))
+    .sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat)
+    .map((e) => `${(e as { startBeat: number }).startBeat}:${(e as { duration: number }).duration}`)
+    .join('|');
+}
+
+/**
+ * Guitar rest fraction: sum(rest durations) / sum(note + rest durations) across all voices.
+ * Per measure each voice fills 4 beats; with two voices the old `rests / (measures×4)` numerator
+ * summed both voices’ rests but the denominator only counted one layer — inflating ratio (~2×) and false “too sparse”.
+ */
+export function guitarRestRatio(guitar: PartModel): number {
+  let restBeats = 0;
+  let noteBeats = 0;
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (e.kind === 'rest') restBeats += (e as { duration: number }).duration;
+      else if (e.kind === 'note') noteBeats += (e as { duration: number }).duration;
+    }
+  }
+  const total = restBeats + noteBeats;
+  return total > 0 ? restBeats / total : 0;
+}
+
+/** Max run of consecutive semitone steps in same direction (chromatic run). */
+export function maxConsecutiveChromaticSteps(guitar: PartModel): number {
+  const pitches: number[] = [];
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (pitches.length < 2) return 0;
+  let maxRun = 1;
+  let run = 1;
+  for (let i = 1; i < pitches.length; i++) {
+    const d = pitches[i] - pitches[i - 1];
+    if (Math.abs(d) === 1) {
+      if (i >= 2) {
+        const prev = pitches[i - 1] - pitches[i - 2];
+        if (Math.sign(d) === Math.sign(prev) && prev !== 0) run++;
+        else run = 2;
+      }
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 1;
+    }
+  }
+  return maxRun;
+}
+
+/** Stepwise motion with |step| ≤ maxStep (in semitones), same direction. */
+export function maxConsecutiveStepwiseMotion(guitar: PartModel, maxStep: number): number {
+  const pitches: number[] = [];
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (pitches.length < 2) return 0;
+  let maxRun = 1;
+  let run = 1;
+  let dir = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    const d = pitches[i] - pitches[i - 1];
+    if (d === 0) continue;
+    const ad = Math.abs(d);
+    if (ad > maxStep) {
+      run = 1;
+      dir = Math.sign(d);
+      continue;
+    }
+    const s = Math.sign(d);
+    if (dir === 0 || s === dir) {
+      run++;
+      dir = s;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 2;
+      dir = s;
+    }
+  }
+  return maxRun;
+}
+
+/** Adjacent melodic intervals include a repeated interval size (motivic identity). */
+export function hasRepeatedIntervalCell(guitar: PartModel): boolean {
+  const pitches: number[] = [];
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (isGuitarMelodyVoiceNote(e)) pitches.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (pitches.length < 4) return true;
+  const adjs: number[] = [];
+  for (let i = 1; i < pitches.length; i++) {
+    adjs.push(Math.abs(pitches[i] - pitches[i - 1]) % 12);
+  }
+  const seen = new Set<number>();
+  for (const iv of adjs) {
+    if (iv === 0) continue;
+    if (seen.has(iv)) return true;
+    seen.add(iv);
+  }
+  return false;
+}
+
+/** V3.1 — Guitar rests in 15–45% window (conversational space; upper slack for motif variance). */
+export function spaceUsageScore(restRatio: number): number {
+  if (restRatio < 0.15 || restRatio > 0.45) return Math.max(0, 0.45 - Math.min(restRatio, 1 - restRatio) * 0.5);
+  const mid = 0.3;
+  return Math.min(1, 1 - Math.abs(restRatio - mid) / 0.15);
+}
+
+/** V3.1 — Phrase A vs B: guitar vs bass activity swap (lead vs support). */
+export function roleContrastScore(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return 0;
+  const g12 = (activityScoreForBar(g, 1) + activityScoreForBar(g, 2)) / 2;
+  const g34 = (activityScoreForBar(g, 3) + activityScoreForBar(g, 4)) / 2;
+  const b12 = (activityScoreForBar(b, 1) + activityScoreForBar(b, 2)) / 2;
+  const b34 = (activityScoreForBar(b, 3) + activityScoreForBar(b, 4)) / 2;
+  const micro = Math.abs(g12 - g34) + Math.abs(b34 - b12);
+  const avg = (part: typeof g, from: number, to: number) => {
+    let s = 0;
+    for (let i = from; i <= to; i++) s += activityScoreForBar(part, i);
+    return s / (to - from + 1);
+  };
+  const gA = avg(g, 1, 4);
+  const gB = avg(g, 5, 8);
+  const bA = avg(b, 1, 4);
+  const bB = avg(b, 5, 8);
+  const macro = Math.abs(gA - gB) + Math.abs(bA - bB);
+  const contrast = 0.45 * micro + 0.55 * macro;
+  return Math.min(1, contrast / 14);
+}
+
+/** V3.1 — Call/response density + phrase boundaries (soft). */
+export function conversationalFlowScore(score: ScoreModel): number {
+  const cr = countCallResponseEvents(score);
+  return Math.min(1, cr / 5);
+}
+
+/**
+ * V3.1 — Composite 0–1.2 layer: call/response clarity, role contrast, flow, space.
+ */
+export function interactionAuthorityGceLayer(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  const restR = guitarRestRatio(g);
+  const cr = countCallResponseEvents(score);
+  const crN = Math.min(1, cr / 4);
+  const rc = roleContrastScore(score);
+  const flow = conversationalFlowScore(score);
+  const space = spaceUsageScore(restR);
+  return Math.min(1.2, 0.28 * crN + 0.24 * rc + 0.26 * flow + 0.22 * space + 0.1);
+}
+
+/** Largest |Δpitch| between consecutive **melody (voice 1)** attacks in a bar (time-ordered). */
+export function guitarBarMaxAdjacentInterval(m: MeasureModel): number {
+  const notes = [...m.events]
+    .filter((e) => isGuitarMelodyVoiceNote(e))
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    ) as { pitch: number }[];
+  if (notes.length < 2) return 0;
+  let max = 0;
+  for (let i = 1; i < notes.length; i++) {
+    max = Math.max(max, Math.abs(notes[i].pitch - notes[i - 1].pitch));
+  }
+  return max;
+}
+
+/** V3.2: bar 7 max adjacent leap must be ≥ bar 6 (used when picking among multi-seed golden-path variants). */
+export function duoGuitarBarSevenIntervalPeakVsBarSixOk(score: ScoreModel): boolean {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return true;
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  if (!m6 || !m7) return true;
+  return guitarBarMaxAdjacentInterval(m7) >= guitarBarMaxAdjacentInterval(m6);
+}
+
+function maxNoteDurationInBar(m: MeasureModel): number {
+  let max = 0;
+  for (const e of m.events) {
+    if (e.kind === 'note') max = Math.max(max, (e as { duration: number }).duration);
+  }
+  return max;
+}
+
+function syncopationStrengthBar(m: MeasureModel): number {
+  let s = 0;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const sb = (e as { startBeat: number }).startBeat;
+    const frac = sb % 1;
+    if (sb > 0.15 && frac > 0.15 && frac < 0.85) s += 0.35;
+  }
+  return Math.min(1, s);
+}
+
+function barDistinctivenessRaw(gm: MeasureModel, _bar: number): number {
+  const maxIv = guitarBarMaxAdjacentInterval(gm);
+  const maxDur = maxNoteDurationInBar(gm);
+  const sync = syncopationStrengthBar(gm);
+  const nNotes = gm.events.filter((e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)).length;
+  return maxIv * 0.11 + maxDur * 1.75 + sync * 2.1 + (nNotes >= 3 ? 0.45 : 0);
+}
+
+/** Heuristic: which 1–8 bar has the strongest “signature” profile (bar 7 structurally favoured). */
+export function distinctiveGuitarBarIndex(guitar: PartModel): number {
+  let best = 1;
+  let bestS = -1;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const s = barDistinctivenessRaw(m, bar);
+    if (s > bestS) {
+      bestS = s;
+      best = bar;
+    }
+  }
+  return best;
+}
+
+/**
+ * V3.2 / 18.2C — Phrase-level identity: cadence area + distributed distinctiveness + contour /
+ * recurrence, not a single-bar peak.
+ */
+export function computeDuoIdentityMomentScore(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return 0;
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  const m8 = g.measures.find((x) => x.index === 8);
+  const b7 = b.measures.find((x) => x.index === 7);
+  if (!m7 || !m8) return 0;
+  let s = 0;
+  s += Math.min(2.8, guitarBarMaxAdjacentInterval(m7) / 3.2);
+  s += Math.min(2.2, maxNoteDurationInBar(m7) * 1.05);
+  s += syncopationStrengthBar(m7) * 1.1;
+
+  const distBars: number[] = [];
+  for (let bar = 5; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m) distBars.push(barDistinctivenessRaw(m, bar));
+  }
+  distBars.sort((a, b) => b - a);
+  const distributed = (distBars[0] ?? 0) * 0.5 + (distBars[1] ?? 0) * 0.35;
+  s += Math.min(2.6, distributed * 0.4);
+
+  const melodyB = collectMelodyMidiBarRangeInclusive(g, 5, 8);
+  if (melodyB.length >= 2) {
+    const sp = Math.max(...melodyB) - Math.min(...melodyB);
+    s += Math.min(1.5, sp / 11);
+  }
+
+  const rs = new Set<string>();
+  for (let bar = 5; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m) rs.add(rhythmSigMelody(m));
+  }
+  if (rs.size >= 3) s += 1.15;
+  else if (rs.size >= 2) s += 0.55;
+
+  if (m6) s += rhythmSigMelody(m7) !== rhythmSigMelody(m6) ? 1.5 : 0;
+  s += rhythmSigMelody(m7) !== rhythmSigMelody(m8) ? 1.5 : 0;
+  if (b7) {
+    const gRh = rhythmSigMelody(m7);
+    const bRh = rhythmSig(b7);
+    if (gRh !== bRh || gRh.split('|').length < 3) s += 1.3;
+    else s += 0.25;
+  }
+  const a7 = activityScoreForBar(g, 7);
+  const a8 = activityScoreForBar(g, 8);
+  if (a7 > a8 + 0.05) s += 0.9;
+  return Math.min(10, s * 1.08 + 0.95);
+}
+
+/** V3.2 — 0–1.2 layer for composite GCE. */
+export function identityMomentGceLayer(score: ScoreModel): number {
+  return Math.min(1.2, (computeDuoIdentityMomentScore(score) / 10) * 1.18);
+}
+
+function guitarBarRestBeats(m: MeasureModel): number {
+  let r = 0;
+  for (const e of m.events) {
+    if (e.kind === 'rest') r += (e as { duration: number }).duration;
+  }
+  return r;
+}
+
+export function firstGuitarAttackInBar(m: MeasureModel): number | undefined {
+  const notes = [...m.events]
+    .filter((e) => isGuitarMelodyVoiceNote(e))
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    );
+  if (!notes.length) return undefined;
+  return (notes[0] as { startBeat: number }).startBeat;
+}
+
+function lastGuitarNoteEndInBar(m: MeasureModel): number | undefined {
+  let best = -1;
+  for (const e of m.events) {
+    if (!isGuitarMelodyVoiceNote(e)) continue;
+    const n = e as { startBeat: number; duration: number };
+    best = Math.max(best, n.startBeat + n.duration);
+  }
+  return best < 0 ? undefined : best;
+}
+
+/** Bar resolves after meaningful rest (delayed resolution / across-the-barline feel in 4/4 slice). */
+export function barHasDelayedResolutionGesture(m: MeasureModel): boolean {
+  const notes = [...m.events]
+    .filter((e) => isGuitarMelodyVoiceNote(e))
+    .sort(
+      (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+    );
+  if (notes.length === 0) return false;
+  const first = (notes[0] as { startBeat: number }).startBeat;
+  const last = notes[notes.length - 1] as { startBeat: number; duration: number };
+  const lastEnd = last.startBeat + last.duration;
+  if (first >= 1.0 && lastEnd >= 3.35) return true;
+  if (first >= 1.5) return true;
+  return false;
+}
+
+/**
+ * V3.3 — Phrasing polish: asymmetry, delayed resolution, attack variety, restraint; penalise mirror phrases.
+ */
+export function computeDuoPolishV33Score(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return 0;
+  const attacks: number[] = [];
+  let asymmetryHits = 0;
+  let delayedBars = 0;
+  let totalNotes = 0;
+  let overResolvedBars = 0;
+
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    const le = lastGuitarNoteEndInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+    totalNotes += m.events.filter((e) => isGuitarMelodyVoiceNote(e)).length;
+    if (fa !== undefined && fa >= 0.62) asymmetryHits++;
+    if (fa !== undefined && le !== undefined && le <= 3.15) asymmetryHits++;
+    if (barHasDelayedResolutionGesture(m)) delayedBars++;
+
+    let bestEnd = -1;
+    let bestStart = 0;
+    let bestDur = 0;
+    for (const e of m.events) {
+      if (!isGuitarMelodyVoiceNote(e)) continue;
+      const n = e as { startBeat: number; duration: number };
+      const end = n.startBeat + n.duration;
+      if (end > bestEnd) {
+        bestEnd = end;
+        bestStart = n.startBeat;
+        bestDur = n.duration;
+      }
+    }
+    if (bestEnd >= 0 && bestStart <= 0.85 && bestDur >= 2.25) overResolvedBars++;
+  }
+
+  let s = 0;
+  const spread = attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+  s += Math.min(2.9, spread * 3.1);
+  s += Math.min(2.4, asymmetryHits * 0.48);
+  s += Math.min(2.4, delayedBars * 1.0);
+
+  const uniq = new Set(attacks.map((a) => Math.round(a * 4) / 4));
+  s += Math.min(1.5, Math.max(0, uniq.size - 2) * 0.32);
+
+  if (totalNotes <= 32) s += 1.15;
+  else if (totalNotes <= 36) s += 0.7;
+  else if (totalNotes <= 40) s += 0.35;
+  else s -= 0.75;
+
+  const a4 = attacks.slice(0, 4);
+  const b4 = attacks.slice(4);
+  const meanA = a4.length ? a4.reduce((x, y) => x + y, 0) / a4.length : 0;
+  const meanB = b4.length ? b4.reduce((x, y) => x + y, 0) / b4.length : 0;
+  if (attacks.length >= 6 && Math.abs(meanA - meanB) < 0.14 && spread < 0.42) s -= 1.65;
+
+  if (overResolvedBars >= 5) s -= 1.1;
+
+  const m7 = g.measures.find((x) => x.index === 7);
+  if (m7) {
+    const rb = guitarBarRestBeats(m7);
+    const nc = m7.events.filter((e) => isGuitarMelodyVoiceNote(e)).length;
+    if (rb >= 0.45 && nc <= 4) s += 1.05;
+  }
+
+  return Math.min(10, Math.max(0, s * 1.04 + 0.45));
+}
+
+/** V3.3 — 0–1.2 layer: inevitability / restraint (score-only). */
+export function polishV33GceLayer(score: ScoreModel): number {
+  return Math.min(1.2, (computeDuoPolishV33Score(score) / 10) * 1.15);
+}
+
+/**
+ * Composite 0–10 “GCE-style” score: melody memorability, motif-like intervals, bass clarity, interaction.
+ * V3.3 adds polish layer (asymmetry, delayed resolution, restraint).
+ */
+export function computeDuoGceScore(score: ScoreModel): number {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return 0;
+  const gc = guideToneCoverage(b);
+  const rr = rootRatioStrongBeats(b);
+  const soft = scoreJazzDuoBehaviourSoft(score);
+  const restR = guitarRestRatio(g);
+  const chrom = maxConsecutiveChromaticSteps(g);
+  const stepwise = maxConsecutiveStepwiseMotion(g, 2);
+  const rep = hasRepeatedIntervalCell(g) ? 1 : 0.35;
+  const callA = hasCallResponseInWindow(score, 4, 1);
+  const callB = hasCallResponseInWindow(score, 4, 5);
+  const call = callA && callB ? 1 : callA || callB ? 0.72 : 0.4;
+  const softN = Math.min(1, Math.max(0, (soft - 4) / 20));
+  const maLayer = melodyAuthorityGceLayer(g);
+  const iaLayer = interactionAuthorityGceLayer(score);
+  const idLayer = identityMomentGceLayer(score);
+  const p33Layer = polishV33GceLayer(score);
+  let s =
+    2.45 * gc +
+    1.52 * (1 - rr) +
+    1.72 * softN +
+    1.12 * Math.min(1.35, restR / 0.14) +
+    0.62 * rep +
+    0.92 * call +
+    0.82 * (1 - Math.min(1, chrom / 7)) +
+    0.28 * (1 - Math.min(1, stepwise / 18)) +
+    0.32 * maLayer +
+    0.3 * iaLayer +
+    0.28 * idLayer +
+    0.3 * p33Layer;
+  s = Math.min(10, s * 1.38 + 0.62);
+  return Math.round(Math.max(0, s) * 10) / 10;
+}
+
+const DUO_GCE_FLOOR = 9.0;
+
+function duoGceFloorForForm(effectiveFormBars: number | undefined): number {
+  if (effectiveFormBars === undefined) return DUO_GCE_FLOOR;
+  if (effectiveFormBars >= 32) return 8.25;
+  if (effectiveFormBars >= 16) return 8.55;
+  return DUO_GCE_FLOOR;
+}
+
+export function validateDuoGceHardGate(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
+): DuoLockValidationResult {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return finalizeDuoLock([], opts?.compositionContext);
+  const gce = computeDuoGceScore(score);
+  const floor = duoGceFloorForForm(opts?.effectiveFormBars);
+  if (gce < floor) {
+    return finalizeDuoLock(
+      [
+        {
+          ruleId: 'lock_gce_floor',
+          message: `Duo LOCK: GCE ${gce.toFixed(1)} < ${floor} (V3.3 polish, motif, interaction, bass clarity)`,
+        },
+      ],
+      opts?.compositionContext
+    );
+  }
+  return finalizeDuoLock([], opts?.compositionContext);
+}
+
+/**
+ * V3.3 — Soft gate: minimum phrasing polish (asymmetry / timing / restraint signals).
+ */
+function polishMinScore(effectiveFormBars: number | undefined): number {
+  if (effectiveFormBars === undefined) return 7.2;
+  if (effectiveFormBars >= 32) return 6.45;
+  if (effectiveFormBars >= 16) return 6.75;
+  return 7.2;
+}
+
+export function validateDuoPolishV33Gate(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
+): DuoLockValidationResult {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return finalizeDuoLock([], opts?.compositionContext);
+  const issues: SongModeDuoIdentityIssue[] = [];
+  const p = computeDuoPolishV33Score(score);
+  const minP = polishMinScore(opts?.effectiveFormBars);
+  if (p < minP) {
+    issues.push({
+      ruleId: 'lock_polish_score_low',
+      message: `Duo polish V3.3: phrasing score ${p.toFixed(1)} < ${minP.toFixed(2)} (asymmetry / resolution / restraint)`,
+    });
+  }
+  const attacks: number[] = [];
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+  }
+  const spread = attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+  let delayed = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = g.measures.find((x) => x.index === bar);
+    if (m && barHasDelayedResolutionGesture(m)) delayed++;
+  }
+  const longForm = (opts?.effectiveFormBars ?? 8) >= 16;
+  if (!longForm && spread < 0.28 && delayed === 0) {
+    issues.push({
+      ruleId: 'lock_polish_too_square',
+      message: 'Duo polish V3.3: phrasing too square (need late entry, early cut, or delayed resolution)',
+    });
+  }
+  return finalizeDuoLock(issues, opts?.compositionContext);
+}
+
+/** V3.3 — max − min first-attack onset across bars (asymmetry proxy). */
+export function guitarPhraseOnsetSpread(guitar: PartModel): number {
+  const attacks: number[] = [];
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const fa = firstGuitarAttackInBar(m);
+    if (fa !== undefined) attacks.push(fa);
+  }
+  return attacks.length >= 2 ? Math.max(...attacks) - Math.min(...attacks) : 0;
+}
+
+/** V3.3 — bars with delayed-resolution gesture. */
+export function countDelayedResolutionBars(guitar: PartModel): number {
+  let n = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (m && barHasDelayedResolutionGesture(m)) n++;
+  }
+  return n;
+}
+
+/** Guitar rhythm loop + rest window + unison rhythm with bass (duo-specific). */
+export function validateDuoRhythmAntiLoop(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
+): DuoLockValidationResult {
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const issues: SongModeDuoIdentityIssue[] = [];
+  if (!guitar || !bass) return finalizeDuoLock([], opts?.compositionContext);
+
+  const sorted = [...guitar.measures].sort((a, b) => a.index - b.index);
+  let prevRh = '';
+  let runRh = 0;
+  let maxRh = 0;
+  for (const m of sorted) {
+    const rh = rhythmSig(m);
+    if (rh === prevRh) runRh++;
+    else {
+      runRh = 1;
+      prevRh = rh;
+    }
+    maxRh = Math.max(maxRh, runRh);
+  }
+  const maxRhAllowed = (opts?.effectiveFormBars ?? 8) >= 16 ? 3 : 2;
+  if (maxRh > maxRhAllowed) {
+    issues.push({
+      ruleId: 'lock_rhythm_cell_repeat',
+      message: `Duo LOCK: identical guitar rhythmic cell repeats >${maxRhAllowed} consecutive bars`,
+    });
+  }
+
+  let unisonRun = 0;
+  let maxUnison = 0;
+  for (let bar = 1; bar <= 8; bar++) {
+    const gm = guitar.measures.find((x) => x.index === bar);
+    const bm = bass.measures.find((x) => x.index === bar);
+    if (!gm || !bm) continue;
+    const gRh = rhythmSig(gm);
+    const bRh = rhythmSig(bm);
+    if (gRh.length > 0 && gRh === bRh && gRh.split('|').length >= 3) {
+      unisonRun++;
+      maxUnison = Math.max(maxUnison, unisonRun);
+    } else {
+      unisonRun = 0;
+    }
+  }
+  const maxUniAllowed = (opts?.effectiveFormBars ?? 8) >= 16 ? 3 : 2;
+  if (maxUnison > maxUniAllowed) {
+    issues.push({
+      ruleId: 'lock_unison_dense_rhythm',
+      message: `Duo LOCK: guitar and bass share identical dense rhythm for more than ${maxUniAllowed} consecutive bars`,
+    });
+  }
+
+  return finalizeDuoLock(issues, opts?.compositionContext);
+}
+
+const DUAL_DENSE_ACTIVITY = 6;
+
+/**
+ * V3.0 swing: ≥20% guitar rests, no long dual-density runs, bass not constant walking, bass rhythm variety.
+ */
+export function validateDuoSwingRhythm(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext; effectiveFormBars?: number }
+): DuoLockValidationResult {
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const issues: SongModeDuoIdentityIssue[] = [];
+  if (!guitar || !bass) return finalizeDuoLock([], opts?.compositionContext);
+
+  const rr = guitarRestRatio(guitar);
+  if (rr < 0.15) {
+    issues.push({
+      ruleId: 'swing_guitar_rests_too_low',
+      message: 'Duo swing: guitar needs at least 15% rests (conversational space)',
+    });
+  }
+  if (rr > 0.45) {
+    issues.push({
+      ruleId: 'swing_guitar_rests_too_high',
+      message: 'Duo swing: guitar rests exceed 45% (needs more melodic presence)',
+    });
+  }
+
+  const tb = guitar.measures.length;
+  let dualRun = 0;
+  let maxDual = 0;
+  for (let b = 1; b <= tb; b++) {
+    const ga = activityScoreForBar(guitar, b);
+    const ba = activityScoreForBar(bass, b);
+    if (ga >= DUAL_DENSE_ACTIVITY && ba >= DUAL_DENSE_ACTIVITY) {
+      dualRun++;
+      maxDual = Math.max(maxDual, dualRun);
+    } else {
+      dualRun = 0;
+    }
+  }
+  const longFormSwing = (opts?.effectiveFormBars ?? 8) >= 16;
+  const maxDualAllowed = longFormSwing ? 3 : 2;
+  if (maxDual > maxDualAllowed) {
+    issues.push({
+      ruleId: 'swing_dual_dense_run',
+      message: `Duo swing: both instruments dense for more than ${maxDualAllowed} consecutive bars`,
+    });
+  }
+
+  let walkLikeBars = 0;
+  for (const m of bass.measures) {
+    const nNotes = m.events.filter((e) => e.kind === 'note').length;
+    if (nNotes >= 5) walkLikeBars++;
+  }
+  const walkCap = longFormSwing ? 6 : 4;
+  if (walkLikeBars > walkCap) {
+    issues.push({
+      ruleId: 'swing_bass_constant_walking',
+      message: 'Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)',
+    });
+  }
+
+  const sortedBass = [...bass.measures].sort((a, b) => a.index - b.index);
+  let prevBRh = '';
+  let runBRh = 0;
+  let maxBRh = 0;
+  for (const m of sortedBass) {
+    const rh = rhythmSig(m);
+    if (rh.length > 0 && rh === prevBRh) runBRh++;
+    else {
+      runBRh = 1;
+      prevBRh = rh;
+    }
+    maxBRh = Math.max(maxBRh, runBRh);
+  }
+  const maxBassRhAllowed = longFormSwing ? 3 : 2;
+  if (maxBRh > maxBassRhAllowed) {
+    issues.push({
+      ruleId: 'swing_bass_rhythm_cell_repeat',
+      message: `Duo swing: bass rhythmic cell repeats more than ${maxBassRhAllowed} consecutive bars`,
+    });
+  }
+
+  return finalizeDuoLock(issues, opts?.compositionContext);
+}
+
+/** Bars where summed note durations ≥ threshold (full activity). */
+export function maxConsecutiveNoteHeavyBars(part: PartModel, thresholdBeats = 3.5): number {
+  const sorted = [...part.measures].sort((a, b) => a.index - b.index);
+  let run = 0;
+  let maxRun = 0;
+  for (const m of sorted) {
+    let noteBeats = 0;
+    for (const e of m.events) {
+      if (e.kind === 'note') noteBeats += (e as { duration: number }).duration;
+    }
+    if (noteBeats >= thresholdBeats) {
+      run++;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 0;
+    }
+  }
+  return maxRun;
+}
+
+/**
+ * V3.1 — Explicit interaction floor: call/response count, anti-streaming, role contrast.
+ */
+export function validateDuoInteractionAuthorityGate(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext }
+): DuoLockValidationResult {
+  const issues: SongModeDuoIdentityIssue[] = [];
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return finalizeDuoLock([], opts?.compositionContext);
+  if (countCallResponseEvents(score) < 2) {
+    issues.push({
+      ruleId: 'ix_call_response_events',
+      message: 'Duo interaction V3.1: need at least 2 call/response events per 8 bars',
+    });
+  }
+  /** Wall-to-wall sustained activity: ≥3.95 beats of notes, no meaningful breath (anti-streaming). */
+  if (maxConsecutiveNoteHeavyBars(g, 3.95) > 2) {
+    issues.push({
+      ruleId: 'ix_guitar_wall_to_wall',
+      message: 'Duo interaction V3.1: guitar sustained wall-to-wall activity exceeds two bars',
+    });
+  }
+  if (maxConsecutiveNoteHeavyBars(b, 3.95) > 2) {
+    issues.push({
+      ruleId: 'ix_bass_wall_to_wall',
+      message: 'Duo interaction V3.1: bass sustained wall-to-wall activity exceeds two bars',
+    });
+  }
+  if (roleContrastScore(score) < 0.06) {
+    issues.push({
+      ruleId: 'ix_role_contrast_weak',
+      message: 'Duo interaction V3.1: role contrast between phrase A and B is too weak',
+    });
+  }
+  return finalizeDuoLock(issues, opts?.compositionContext);
+}
+
+/**
+ * V3.2 / 18.2C — Phrase identity: score floor + cadence-area contour (melody rhythm), not “bar 7 wins”.
+ */
+export function validateDuoIdentityMomentGate(
+  score: ScoreModel,
+  opts?: { compositionContext?: CompositionContext }
+): DuoLockValidationResult {
+  const issues: SongModeDuoIdentityIssue[] = [];
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!g || !b) return finalizeDuoLock([], opts?.compositionContext);
+  const id = computeDuoIdentityMomentScore(score);
+  if (id < 8.5) {
+    issues.push({
+      ruleId: 'id_moment_score_low',
+      message: `Duo identity V3.2: phrase identity score ${id.toFixed(1)} < 8.5`,
+    });
+  }
+  const m6 = g.measures.find((x) => x.index === 6);
+  const m7 = g.measures.find((x) => x.index === 7);
+  const m8 = g.measures.find((x) => x.index === 8);
+  const b7 = b.measures.find((x) => x.index === 7);
+  if (m7 && m6 && m8 && rhythmSigMelody(m7) === rhythmSigMelody(m6) && rhythmSigMelody(m7) === rhythmSigMelody(m8)) {
+    issues.push({
+      ruleId: 'id_cadence_area_rhythm_flat',
+      message:
+        'Duo identity V3.2: melody rhythm in bars 6–8 is identical (no identifiable cadence contour)',
+    });
+  }
+  if (m7 && b7) {
+    const gr = rhythmSigMelody(m7);
+    const br = rhythmSig(b7);
+    if (gr.length > 0 && gr === br && gr.split('|').length >= 3) {
+      issues.push({
+        ruleId: 'id_bass_mirrors_guitar_bar7',
+        message: 'Duo identity V3.2: bass mirrors guitar melody rhythm on bar 7',
+      });
+    }
+  }
+  return finalizeDuoLock(issues, opts?.compositionContext);
+}
+
+```
+
+### 4. Validation: voice-leading jumps — full file
+
+#### engines/composer-os-v2/core/style-modules/barry-harris/moduleValidation.ts
+
+```typescript
+/**
+ * Composer OS V2 — Barry Harris style validation
+ */
+
+import type { ScoreModel } from '../../score-model/scoreModelTypes';
+
+export interface BarryHarrisValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+function maxVoiceLeadJump(pitches: number[]): number {
+  let max = 0;
+  for (let i = 1; i < pitches.length; i++) {
+    max = Math.max(max, Math.abs(pitches[i] - pitches[i - 1]));
+  }
+  return max;
+}
+
+export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisValidationResult {
+  const errors: string[] = [];
+
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (guitar) {
+    const allPitches: number[] = [];
+    for (const m of guitar.measures) {
+      for (const e of m.events) {
+        if (e.kind === 'note') allPitches.push(e.pitch);
+      }
+    }
+    const maxJump = maxVoiceLeadJump(allPitches);
+    if (maxJump > 12) errors.push('Voice-leading jumps excessive for current duo grammar');
+  }
+
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (bass) {
+    const allPitches: number[] = [];
+    for (const m of bass.measures) {
+      for (const e of m.events) {
+        if (e.kind === 'note') allPitches.push(e.pitch);
+      }
+    }
+    const maxJump = maxVoiceLeadJump(allPitches);
+    /** Walking bass + register shifts: allow up to 14 st (echo / cadence moves). */
+    if (maxJump > 14) errors.push('Bass voice-leading jumps excessive');
+  }
+
+  const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
+  if (chordCount < 3) errors.push('Harmony too static for current duo grammar');
+
+  return { valid: errors.length === 0, errors };
+}
+
+```
+
+## SECTION 3: ARCHITECTURE SUMMARY (guitarVoice2WybleLayer.ts)
+
+### a) Voice 2 note event type
+Uses NoteEvent from scoreModelTypes: kind note; pitch number (MIDI); startBeat number; duration number; optional voice, articulation, velocity, motifRef.
+
+### b) Start / end / units
+- **Start:** `startBeat` (beats within the measure, 0–4 in 4/4).
+- **End:** not stored; **duration** in **beats** (measure-local). Global span in beats = `(measureIndex - 1) * barDuration + startBeat` through `+ duration`.
+- **Not** ticks/seconds in the **score model**; exporter converts beats to MusicXML ticks via `DIVISIONS`.
+
+### c) Bar duration
+- Constant `V2_BAR_DURATION_BEATS = 4` (beats per measure in this path).
+
+### d) Post-injection normalization
+- **Function:** `normalizeRealizedVoice2PostInjection182B3`
+- **Called from:** `stabiliseGuitarVoice2Wyble18_2B_3` (same file).
+- **Pipeline:** `injectPhaseAGuitarVoice2Probe` in `phaseAGuitarPolyphonyProbe.ts` calls `stabiliseGuitarVoice2Wyble18_2B_3` after 18.2B.1 and 18.2B.2.
+- **Line numbers (current tree):** `normalizeRealizedVoice2PostInjection182B3` at line **3963**; `stabiliseGuitarVoice2Wyble18_2B_3` at line **4004** in `guitarVoice2WybleLayer.ts` (also in Section 2).
+
+### e) Call order (inject → validation) — high level
+1. `injectGuitarVoice2WybleLayer` (guitar part)
+2. `stabiliseGuitarVoice2Wyble18_2B_1`
+3. `stabiliseGuitarVoice2Wyble18_2B_2`
+4. `stabiliseGuitarVoice2Wyble18_2B_3` → `normalizeRealizedVoice2PostInjection182B3` (run-length, breathing, sustained wall, coverage loop; then `breakConsecutiveV2Sustains`, `clampV2NotesToBarBoundaries`, texture density)
+5. `computeGuitarVoice2PolyphonyDiagnostics` + `logGuitarVoice2PolyphonyDiagnosticReport`
+6. Later: score export + `validateBarryHarrisConformance` / `validateDuoInteractionAuthorityGate` on final `ScoreModel` (outside Wyble module).
+
+### f) Pre-commit seam
+- Voice 2 events are written directly to `guitar.measures[].events` during injection and stabilisation. There is **no** separate intermediate store in this module; the shared representation is `PartModel.measures`.
+
+### g) Phase 18.2B.5 functions
+- `isFullBarSustained` — ≥7/8 bar duration threshold for “full bar” sustained.
+- `barHasFullBarV2Sustain` — any V2 note in measure passes `isFullBarSustained`.
+- `convertMeasureBreakV2FullSustain` — replace one full-bar V2 note with shortened note + rest (pitch preserved via spread).
+- `breakConsecutiveV2Sustains` — adjacent full-bar pairs; convert second bar of each pair.
+- `computeLongestConsecutiveSustainedRun182B5` — diagnostic max run of full-bar sustained bars.
+- `buildRealizedActiveBarSet` — bars where V2 sounds (incl. spill), min eighth.
+- `clampV2NotesToBarBoundaries` — shorten duration if note crosses into next active bar.
+- `applyV2NoteEntryClones182B5` — write clamped note clones back to measures.
+- `computeLongestV2SustainAcrossActiveBars182B5` — diagnostic span metric.
+- `logAdjacentActiveBarPairsDebug182B5` — console.debug adjacent active pairs.
+- `normalizeRealizedVoice2PostInjection182B3` — orchestrates normalization + clamp + texture pass.
+
+## SECTION 4: CURRENT DIAGNOSTIC OUTPUT
+
+_Not captured: desktop app / Guitar–Bass Duo generation was not executed here (no build/run). Verbatim shape from `logGuitarVoice2PolyphonyDiagnosticReport` (`guitarVoice2PolyphonyDiagnostics.ts`):_
+
+```text
+VOICE 2 DIAGNOSTIC
+Bars active: <v2ActiveBars> / <totalBars>
+Bar coverage: <v2BarCoverage.toFixed(2)>
+Total notes: <v2TotalNotes>
+Notes per active bar: <v2AvgNotesPerActiveBar.toFixed(2)>
+Longest rest gap: <v2LongestRestGap>
+Longest active run: <v2LongestActiveRun>
+Strong-beat entries: <v2StrongBeatEntries>
+Offbeat entries: <v2OffbeatEntries>
+```
+
+## SECTION 5: VALIDATION RULES
+
+### A: guitar sustained wall-to-wall activity exceeds two bars
+- **File:** `engines/composer-os-v2/core/score-integrity/duoLockQuality.ts`
+- **Function:** `validateDuoInteractionAuthorityGate`
+- **Condition:** if (maxConsecutiveNoteHeavyBars(g, 3.95) > 2)
+- **Reads:** score.parts → guitar PartModel → measures sorted by index → each m.events: sums duration of every kind === note event (all voices in the part).
+- **Planned shapes:** No — realized note durations in the score model.
+
+### B: Voice-leading jumps excessive for current duo grammar
+- **File:** `engines/composer-os-v2/core/style-modules/barry-harris/moduleValidation.ts`
+- **Function:** `validateBarryHarrisConformance`
+- **Condition:** if (maxJump > 12) errors.push(Voice-leading jumps excessive for current duo grammar)
+- **Reads:** Guitar part: all `note` events in measure order flattened to `pitch` array; max consecutive semitone jump in that order (**includes V1 + V2**).
+- **Planned shapes:** No — realized pitches.
+
+## SECTION 6: CHANGELOG AND README PATHS
+
+- `CHANGELOG.md` (repo root)
+- `docs/CHANGELOG.md`
+- `README.md` (repo root)
+- `engines/composer-os-v2/README.md` (module-level)

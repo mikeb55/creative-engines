@@ -15,8 +15,8 @@ import { enforceVoice2BassRegisterSeparation18_2B_4, stripVoice2IfCrossingMelody
 
 const G_LOW = 55;
 const G_HIGH = 79;
-const BASS_LOW = 36;
-const BASS_HIGH = 52;
+const BASS_LOW = 40;
+const BASS_HIGH = 88;
 /** Guitar: match strict ECM shaping + Barry Harris voice-leading check (global consecutive in BH order). */
 const GUITAR_MAX_LEAP = 5;
 /** Bass: Barry Harris allows up to 14; stay under cap. */

@@ -13,6 +13,7 @@ import { snapEighthBeat, snapEventToEighthBeatGrid } from './duoEighthBeatGrid';
 import { applyBassBeatNotationGrouping } from './bassBeatNotationGrouping';
 import { extractMotifShapeFromGuitarBar, realizeReturnMidiFromMotifShape } from '../motif/motifShape';
 import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
+import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 
 const EPS = 1e-4;
 const HOOK_REGISTER_LOW = 55;
@@ -304,6 +305,28 @@ export function freezeScoreRhythmAfterFinalize(score: ScoreModel): void {
 }
 
 /**
+ * Clamp every clean-electric guitar note to the profile hard range (E2–E6). Catches stray sentinels / bad octaves
+ * from any upstream pass without altering notes already in range.
+ */
+function clampCleanElectricGuitarNotesToHardRange(score: ScoreModel): void {
+  const [low, high] = CLEAN_ELECTRIC_GUITAR.hardRange;
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!guitar) return;
+  for (const m of guitar.measures) {
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      if (!Number.isFinite(n.pitch)) {
+        n.pitch = clampPitch(64, low, high);
+        continue;
+      }
+      const c = clampPitch(n.pitch, low, high);
+      if (c !== n.pitch) n.pitch = c;
+    }
+  }
+}
+
+/**
  * Authoritative end of rhythm pipeline: finalize → validate once → freeze parts.
  * Call only after all passes that may alter startBeat/duration (performance, expressive, ECM envelopes).
  */
@@ -328,6 +351,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
   const hookBias = (score as any)._hookRepetitionBias ?? 0.5;
   if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score);
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);
+  clampCleanElectricGuitarNotesToHardRange(score);
   const v = validateStrictBarMath(score);
   if (!v.valid) {
     throw new Error(`Bar math enforcement failed after finalize: ${v.errors.join('; ')}`);

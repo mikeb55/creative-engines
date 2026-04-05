@@ -60,17 +60,15 @@ function validateOneVoice(
     const eventDetail = [...events].sort((a,b) => a.startBeat - b.startBeat).map(e => `${e.kind}(s=${e.startBeat},d=${e.duration},v=${e.voice??1})`).join(' | ');
     const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${BEATS_PER_MEASURE} -- ${eventDetail}`;
     errors.push(msg);
-    if (details) {
-      details.push({
-        partId: part.id,
-        instrumentIdentity: part.instrumentIdentity,
-        measureIndex: m.index,
-        voice,
-        summedDuration: durSum,
-        timelineCursorEnd: -1,
-        eventsJson: describeEventsForDebug(sorted),
-      });
-    }
+    details?.push({
+      partId: part.id,
+      instrumentIdentity: part.instrumentIdentity,
+      measureIndex: m.index,
+      voice,
+      summedDuration: durSum,
+      timelineCursorEnd: -1,
+      eventsJson: describeEventsForDebug(sorted),
+    });
   }
 
   let cursor = 0;

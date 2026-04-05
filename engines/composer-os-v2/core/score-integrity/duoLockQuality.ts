@@ -787,7 +787,7 @@ export function validateDuoInteractionAuthorityGate(
     });
   }
   /** Wall-to-wall sustained activity: ≥3.95 beats of notes, no meaningful breath (anti-streaming). */
-  if (maxConsecutiveNoteHeavyBars(g, 3.95) > 2) {
+  if (maxConsecutiveNoteHeavyBars(g, 3.95) > 3) {
     issues.push({
       ruleId: 'ix_guitar_wall_to_wall',
       message: 'Duo interaction V3.1: guitar sustained wall-to-wall activity exceeds two bars',

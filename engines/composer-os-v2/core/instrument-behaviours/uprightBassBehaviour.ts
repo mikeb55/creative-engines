@@ -21,7 +21,7 @@ export function planBassBehaviour(
     const section = sectionForBar(bar);
     const density = getDensityForBar(densityPlan, bar);
     const regSection = section ? regBySection.get(section.label) : registerMap.sections[0];
-    const [low, high] = regSection?.preferredZone ?? [36, 55];
+    const [low, high] = regSection?.preferredZone ?? [40, 55];
 
     const activity = density === 'sparse' ? 'sparse' : density === 'medium' ? 'walking' : 'walking';
     const eventCount = density === 'sparse' ? 2 : 4;

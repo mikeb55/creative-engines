@@ -5,6 +5,7 @@
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { contourFingerprint, rhythmFingerprint } from '../goldenPath/bassLineFingerprints';
+import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 function chordForBar(barIndex: number): string {
   if (barIndex <= 2) return 'Dmin9';
@@ -142,7 +143,9 @@ export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: stri
       const gm = guitar.measures.find((x) => x.index === bar);
       const bm = bass.measures.find((x) => x.index === bar);
       if (!gm || !bm) continue;
-      const gPitches = gm.events.filter((e) => e.kind === 'note').map((e) => (e as { pitch: number }).pitch);
+      const gPitches = gm.events
+        .filter((e) => isGuitarMelodyVoiceNote(e))
+        .map((e) => (e as { pitch: number }).pitch);
       if (gPitches.length === 0) continue;
       const gPc = new Set(gPitches.map((p) => p % 12));
       for (const e of bm.events) {

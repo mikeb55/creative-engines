@@ -16,8 +16,8 @@ import { enforceDuoVoiceLeadingPostOrchestration, enforceEcmPostEditGuards } fro
 
 const G_LOW = 55;
 const G_HIGH = 79;
-const BASS_LOW = 36;
-const BASS_HIGH = 52;
+const BASS_LOW = 40;
+const BASS_HIGH = 88;
 /** Avoid low-mid guitar clutter (approx. middle C area). */
 const GUITAR_LIFT_BELOW = 62;
 

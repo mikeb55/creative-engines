@@ -113,7 +113,7 @@ function registerZones(context: CompositionContext): { guitar: [number, number];
   const b =
     context.register.byInstrument?.['acoustic_upright_bass'] ??
     context.register.bass ??
-    ([36, 55] as [number, number]);
+    ([40, 55] as [number, number]);
   return { guitar: g, bass: b };
 }
 

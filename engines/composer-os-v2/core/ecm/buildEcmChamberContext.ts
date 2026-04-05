@@ -270,10 +270,10 @@ export function buildEcmChamberContext(
     phrase,
     register: {
       melody: [55, 79] as [number, number],
-      bass: [36, 55] as [number, number],
+      bass: [40, 55] as [number, number],
       byInstrument: {
         clean_electric_guitar: [55, 79],
-        acoustic_upright_bass: [36, 55],
+        acoustic_upright_bass: [40, 55],
       },
     },
     density: densityCurve,

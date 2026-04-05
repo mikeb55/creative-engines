@@ -1,18 +1,26 @@
 /**
  * Per-bar activity score for duo interaction (notes + offbeat weighting).
+ * Guitar: Voice 1 (melody) only — Voice 2 inner layer must not inflate activity.
  */
 
 import type { PartModel } from '../score-model/scoreModelTypes';
+import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
 
 const HIGH_ACTIVITY = 6;
 const EPS = 1e-4;
+
+function noteCountedForActivity(part: PartModel, e: { kind: string }): boolean {
+  if (e.kind !== 'note') return false;
+  if (part.instrumentIdentity === 'clean_electric_guitar') return isGuitarMelodyVoiceNote(e);
+  return true;
+}
 
 /** activityScore = distinctAttacks + offbeatAttacks * 0.5 */
 export function activityScoreForBar(part: PartModel, barIndex: number): number {
   const m = part.measures.find((x) => x.index === barIndex);
   if (!m) return 0;
   const noteList = m.events
-    .filter((e) => e.kind === 'note')
+    .filter((e) => noteCountedForActivity(part, e))
     .map((e) => e as { startBeat: number; duration: number; pitch: number })
     .sort((a, b) => a.startBeat - b.startBeat);
   const attackStarts: number[] = [];

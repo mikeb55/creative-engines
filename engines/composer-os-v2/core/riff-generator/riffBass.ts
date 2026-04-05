@@ -7,8 +7,8 @@ import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
 import type { RiffRhythmSegment } from './riffTypes';
 import { randInt } from './riffRandom';
 
-const BASS_LOW = 36;
-const BASS_HIGH = 55;
+const BASS_LOW = 40;
+const BASS_HIGH = 88;
 
 function clampBass(m: number): number {
   return Math.max(BASS_LOW, Math.min(BASS_HIGH, m));
