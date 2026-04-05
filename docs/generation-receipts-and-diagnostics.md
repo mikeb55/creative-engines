@@ -6,6 +6,8 @@ Composer OS now shows chord export diagnostics directly in the Generation receip
 
 For **Guitar/Bass Duo** polyphony, **Voice 2 diagnostics** (Phase 18.2B.1) also appear in the receipt when available: bar coverage, note density, rest gaps, activity runs, and strong-beat vs offbeat entries — read-only; see root [CHANGELOG.md](../CHANGELOG.md) (V9.0 – Phase 18.2B.1).
 
+Generation itself uses **bar-level rhythm planning** for Voice 2 (Phase 18.2B.2): explicit per-bar shapes and safe fallback, not the old event-level conversational rhythm passes — see root [CHANGELOG.md](../CHANGELOG.md) (V9.0 – Phase 18.2B.2).
+
 ## What is shown
 
 - Chords parsed

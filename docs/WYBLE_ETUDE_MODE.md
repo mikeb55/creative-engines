@@ -3,6 +3,8 @@
 ## Status
 Working — two-voice contrapuntal guitar, quarter-note motion, passes validation.
 
+**Composer OS Guitar–Bass Duo (separate preset):** Voice 2 uses **bar-level rhythm planning** in the Wyble-style layer (V9.0 Phase 18.2B.2); this document describes the **standalone Wyble Etude** bypass path only.
+
 ## What it generates
 Two independent guitar voices based on Jimmy Wyble's contrapuntal concepts:
 - Upper voice: stepwise melodic motion, chord tones, register-aware

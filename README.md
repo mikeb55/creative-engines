@@ -54,6 +54,8 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 ## Guitar Polyphony Status
 
+**Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes.
+
 Composer OS currently supports:
 
 - deterministic dual-voice guitar polyphony
@@ -83,11 +85,24 @@ This system measures:
 - how continuous it is
 - how it enters rhythmically
 
-These diagnostics are used to guide controlled improvements to:
-- rhythm footprint (Phase 18.2B.2)
+These diagnostics were used to guide controlled improvements; **rhythm footprint (Phase 18.2B.2)** is now implemented (bar-level planning). Next:
 - melodic behaviour and imitation (Phase 18.2B.3)
 
 This is a read-only system and does not affect generation output.
+
+### Voice 2 Rhythm System (V9.0)
+
+Voice 2 in Guitar-Bass Duo now operates with a bar-level rhythm model rather than event-level injection.
+
+This enables:
+- consistent presence across the form
+- reduced fragmentation
+- clearer rhythmic phrasing
+- controlled density and gap behaviour
+
+This phase establishes the foundation for:
+- melodic continuity
+- imitation and counterpoint (next phase)
 
 ---
 

@@ -4,6 +4,8 @@
 
 Stable generation and MusicXML export working.
 
+**Composer OS (Guitar–Bass Duo):** Voice 2 inner-line rhythm is planned **per bar** (bar-level shapes, coverage, and gap control; V9.0 Phase 18.2B.2) in the Wyble-style inject layer — separate from this standalone Wyble Etude generator.
+
 ## Wyble Etude — Current Status
 
 ### Achieved

@@ -25,6 +25,8 @@
 
 **Phase 18.2B.1 — Voice 2 diagnostics:** read-only metrics for Guitar/Bass Duo (bar coverage, density, rest gaps, activity runs, strong-beat vs offbeat entries) are emitted to console and the Generation Receipt UI; they do not change generation output.
 
+**Phase 18.2B.2 — Voice 2 rhythm footprint:** the Wyble inner-voice inject path plans **one bar-level rhythm shape per active bar** (sustained bar, two slabs, offbeat hold, or rest fallback), with coverage targeting and gap limits — see root [CHANGELOG.md](../CHANGELOG.md).
+
 ## Phase labels (A / B / C / D)
 
 These labels are used in product and handoff docs; boundaries are conceptual, not separate runtimes.

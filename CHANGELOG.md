@@ -1,3 +1,19 @@
+### V9.0 – Phase 18.2B.2 (Voice 2 Rhythm Footprint)
+
+- Replaced event-level Voice 2 rhythm behaviour with bar-level planning
+- Introduced explicit bar shapes:
+  - sustained bar
+  - two slabs
+  - offbeat hold
+- Added coverage targeting (~35–50%) and enforced gap limits (≤ 3 bars)
+- Implemented fallback chain for safe rhythm injection
+- Removed fragment-heavy conversational rhythm passes for Voice 2
+
+Outcome:
+Voice 2 now has clear time presence and sustained visibility across the form.
+
+---
+
 ### V9.0 – Phase 18.2B.1 (Voice 2 Diagnostics)
 
 - Added Voice 2 diagnostic system for Guitar/Bass Duo mode
