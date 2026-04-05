@@ -5,7 +5,8 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
-import type { MeasureModel, NoteEvent, PartModel } from '../score-model/scoreModelTypes';
+import { DIVISIONS } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, PartModel, RestEvent, ScoreEvent } from '../score-model/scoreModelTypes';
 import { addEvent, createNote, createRest } from '../score-model/scoreEventBuilder';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
@@ -13,6 +14,13 @@ import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { liftToneToRange, guitarChordTonesInRange } from './guitarPhraseAuthority';
 
 const V2_VOICE = 2;
+/** Score beats spanned by one measure in this path (4/4; startBeat + duration use this span). */
+const V2_BAR_DURATION_BEATS = 4;
+/** Matches polyphony diagnostics active-bar threshold (≥ eighth). */
+const MIN_REAL_V2_ACTIVE_BEATS = 0.5;
+/** Realized sustained-wall detection: dominant long note (beats in 4/4). */
+const MIN_REAL_V2_SUSTAINED_BEATS = 3;
+const REAL_V2_BEAT_EPS = 1e-4;
 /** Inner voice register floor (MIDI); kept low for clear gap under melody. */
 const INNER_LOW = 48;
 /** Never stack more than two simultaneous guitar notes (melody + inner). */
@@ -50,6 +58,15 @@ const V2_ANCHOR_MAX_STEP_SEMITONES = V2_SOFT_MAX_LEAP;
 /** Phase 18.2B.5 — phrase commitment: sustain / neutral hold only within this distance of frozen run arrival. */
 const V2_COMMITMENT_AT_TARGET_SEMITONES = 2;
 
+/** Phase 18.2B.3 — prefer motion within a perfect 4th when continuity applies. */
+const V2_CONTINUITY_MAX_LEAP_SEMITONES = 5;
+/** Phase 18.2B.4 — after a gap (non-consecutive V2 bars), bridge from last pitch within a perfect 4th. */
+const V2_GAP_BRIDGE_MAX_LEAP_SEMITONES = 5;
+/** Phase 18.2B.4 — final guard: reject intervals wider than a perfect 5th vs previous V2 pitch. */
+const V2_LEAP_SAFETY_MAX_SEMITONES = 7;
+/** Phase 18.2B.5 — salt for texture-density pass (post-injection, realized V2 only). */
+const V2_TEX_SALT_182B5 = 19250;
+
 /** Realised rhythm for one bar (replaces independent per-bar probability draw). */
 type Voice2RhythmKind =
   | 'whole'
@@ -69,9 +86,14 @@ type BarV2RhythmShape = 'SUSTAINED_BAR' | 'TWO_SLABS' | 'OFFBEAT_HOLD' | 'REST';
 type Voice2RhythmWeightState182B2 = 'ENTERING' | 'CONTINUING' | 'RESOLVING' | 'RESTING';
 
 const V2_COV_TARGET_MIN = 0.35;
-const V2_COV_TARGET_MAX = 0.5;
+/** Nominal upper band for repair / continuation caps (target coverage ~0.35–0.50). */
+const V2_COV_TARGET_MAX = 0.45;
+/** Hard ceiling: trim active bars until at or below this ratio (Phase 18.2B.3 breathing fix). */
+const V2_COV_HARD_MAX = 0.55;
 const V2_COV_FORCE_SUSTAINED = 0.3;
 const V2_MAX_GAP_INACTIVE_BARS = 3;
+/** Max consecutive active Voice-2 bars (runs longer than this are trimmed before inject). */
+const V2_MAX_CONSECUTIVE_ACTIVE_BARS = 3;
 
 function deriveVoice2WeightState182B2(
   schedulePhase: Voice2SchedulePhase | undefined
@@ -101,8 +123,97 @@ function uniqBarShapeFallbackChain(preferred: BarV2RhythmShape): BarV2RhythmShap
   return out;
 }
 
+/** Contiguous active runs (sorted bar indices). */
+function splitEffectiveIntoRuns(effective: Set<number>): number[][] {
+  const sorted = [...effective].sort((a, b) => a - b);
+  const runs: number[][] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j]! + 1 === sorted[j + 1]!) j++;
+    runs.push(sorted.slice(i, j + 1) as number[]);
+    i = j + 1;
+  }
+  return runs;
+}
+
 /**
- * Phase 18.2B.2 — if coverage exceeds 50%, drop lowest-priority active bars until at cap.
+ * Phase 18.2B.3 — Rebuild schedule metadata after bars are removed from `effective`.
+ */
+function rebuildPhaseByBarFromEffectiveRuns(effective: Set<number>, tb: number): Map<number, Voice2BarPhaseInfo> {
+  const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
+  const runs = splitEffectiveIntoRuns(effective);
+  for (const run of runs) {
+    const start = run[0]!;
+    const end = run[run.length - 1]!;
+    for (let k = 0; k < run.length; k++) {
+      const bar = run[k]!;
+      if (bar < 1 || bar > tb) continue;
+      const schedulePhase: Voice2SchedulePhase =
+        k === 0 ? 'enter' : k === run.length - 1 ? 'resolve' : 'continue';
+      phaseByBar.set(bar, { schedulePhase, runStartBar: start, runEndBar: end });
+    }
+  }
+  return phaseByBar;
+}
+
+/**
+ * Phase 18.2B.3 — Keep at most `maxConsecutive` consecutive active bars (preserve earlier bars in each run).
+ */
+function capEffectiveConsecutiveActiveRuns182B3(effective: Set<number>, maxConsecutive: number): void {
+  const runs = splitEffectiveIntoRuns(effective);
+  for (const run of runs) {
+    if (run.length <= maxConsecutive) continue;
+    for (let k = maxConsecutive; k < run.length; k++) {
+      effective.delete(run[k]!);
+    }
+  }
+}
+
+/**
+ * Phase 18.2B.3 — After a run of ≥2 active bars, leave a gap before the next active bar (phrasing).
+ */
+function enforceBreathingGapAfterRuns182B3(effective: Set<number>, tb: number, seed: number): void {
+  const runs = splitEffectiveIntoRuns(effective);
+  for (const run of runs) {
+    const L = run.length;
+    if (L < 2) continue;
+    const last = run[run.length - 1]!;
+    const next = last + 1;
+    if (next > tb || !effective.has(next)) continue;
+    if (L >= 3) {
+      effective.delete(next);
+      continue;
+    }
+    if (seededUnit(seed, last, 18801) < 0.7) {
+      effective.delete(next);
+    }
+  }
+}
+
+/**
+ * Prefer removing the **end** bar of the **longest** active run; tie-break lowest {@link seededUnit} (bar, 18600).
+ * Phase 18.2B.3 — hard max coverage {@link V2_COV_HARD_MAX}.
+ */
+function pickBarToRemoveForCoverageTrim182B3(effective: Set<number>, seed: number): number {
+  const runs = splitEffectiveIntoRuns(effective);
+  if (runs.length === 0) return -1;
+  const maxLen = Math.max(...runs.map((r) => r.length));
+  const ends = runs.filter((r) => r.length === maxLen).map((r) => r[r.length - 1]!);
+  let worst = ends[0]!;
+  let worstScore = seededUnit(seed, worst, 18600);
+  for (const e of ends.slice(1)) {
+    const s = seededUnit(seed, e, 18600);
+    if (s < worstScore) {
+      worstScore = s;
+      worst = e;
+    }
+  }
+  return worst;
+}
+
+/**
+ * Phase 18.2B.2 / 18.2B.3 — Drop active bars until coverage ≤ hard max; prefer trimming long runs first.
  */
 function trimBarLevelVoice2CoverageIfOverCap(
   tb: number,
@@ -110,17 +221,9 @@ function trimBarLevelVoice2CoverageIfOverCap(
   effective: Set<number>,
   _scheduled: Set<number>
 ): void {
-  const targetMax = Math.max(1, Math.floor(tb * V2_COV_TARGET_MAX));
-  while (effective.size > targetMax) {
-    let worstBar = -1;
-    let worstScore = Infinity;
-    for (const bar of effective) {
-      const keepScore = seededUnit(seed, bar, 18600);
-      if (keepScore < worstScore) {
-        worstScore = keepScore;
-        worstBar = bar;
-      }
-    }
+  const hardCap = Math.max(1, Math.floor(tb * V2_COV_HARD_MAX));
+  while (effective.size > hardCap) {
+    const worstBar = pickBarToRemoveForCoverageTrim182B3(effective, seed);
     if (worstBar < 0) break;
     effective.delete(worstBar);
   }
@@ -152,7 +255,7 @@ function buildBarLevelVoice2ShapeMap(
     const wState = deriveVoice2WeightState182B2(schedulePhase);
 
     if (gapSincePrev > V2_MAX_GAP_INACTIVE_BARS) {
-      out.set(bar, seededUnit(seed, bar, 18710) < 0.58 ? 'SUSTAINED_BAR' : 'TWO_SLABS');
+      out.set(bar, seededUnit(seed, bar, 18710) < 0.32 ? 'TWO_SLABS' : 'OFFBEAT_HOLD');
       continue;
     }
 
@@ -162,12 +265,12 @@ function buildBarLevelVoice2ShapeMap(
         break;
       case 'ENTERING': {
         const u = seededUnit(seed, bar, 18711);
-        out.set(bar, u < 0.55 ? 'SUSTAINED_BAR' : 'TWO_SLABS');
+        out.set(bar, u < 0.38 ? 'SUSTAINED_BAR' : 'TWO_SLABS');
         break;
       }
       case 'CONTINUING': {
         const u = seededUnit(seed, bar, 18712);
-        out.set(bar, u < 0.52 ? 'TWO_SLABS' : 'OFFBEAT_HOLD');
+        out.set(bar, u < 0.28 ? 'TWO_SLABS' : 'OFFBEAT_HOLD');
         break;
       }
       case 'RESTING':
@@ -178,6 +281,36 @@ function buildBarLevelVoice2ShapeMap(
     }
   }
   return out;
+}
+
+/**
+ * Phase 18.2B.3 — If the previous two score bars were active sustained wholes, avoid a third sustained wall.
+ */
+function applySustainedWallSafety182B3(
+  tb: number,
+  seed: number,
+  effectiveBars: Set<number>,
+  shapeByBar: Map<number, BarV2RhythmShape>
+): void {
+  const sorted = [...effectiveBars].filter((b) => b >= 1 && b <= tb).sort((a, b) => a - b);
+  for (const bar of sorted) {
+    if (bar < 3) continue;
+    if (shapeByBar.get(bar) !== 'SUSTAINED_BAR') continue;
+    if (
+      effectiveBars.has(bar - 1) &&
+      effectiveBars.has(bar - 2) &&
+      shapeByBar.get(bar - 1) === 'SUSTAINED_BAR' &&
+      shapeByBar.get(bar - 2) === 'SUSTAINED_BAR'
+    ) {
+      const u = seededUnit(seed, bar, 18750);
+      if (u < 0.55) {
+        shapeByBar.set(bar, 'OFFBEAT_HOLD');
+      } else {
+        shapeByBar.set(bar, 'REST');
+        effectiveBars.delete(bar);
+      }
+    }
+  }
 }
 
 /**
@@ -589,7 +722,7 @@ function v2OneNoteSpanPassesMelodyOverlapRule(v1: NoteEvent[], startBeat: number
   return countV1NotesOverlappingSpan(v1, t0, t1) >= 2;
 }
 
-/** Minimum Voice-2 effective bars implied by ≥50% presence per phrase (4–8 bar windows use 4-bar phrases). */
+/** Minimum Voice-2 effective bars implied by ~35% phrase floor (keeps global coverage in target band). */
 function minEffectiveBarsByPhrasePresenceFloor(tb: number): number {
   const phraseCount = Math.ceil(tb / 4);
   let sum = 0;
@@ -597,7 +730,7 @@ function minEffectiveBarsByPhrasePresenceFloor(tb: number): number {
     const base = p * 4 + 1;
     const end = Math.min(base + 3, tb);
     const len = end - base + 1;
-    sum += Math.max(1, Math.ceil(len * 0.5));
+    sum += Math.max(1, Math.floor(len * 0.35 + 1e-9));
   }
   return sum;
 }
@@ -858,6 +991,275 @@ function movePitchTowardGuide(
 /**
  * Phase 18.2B.5 — If still far from frozen arrival, reject neutral repetition (same pitch as anchor).
  */
+/**
+ * Phase 18.2B.3 — optional pitch context: guide-tone bias, continuity, register, light imitation.
+ */
+type Voice2PitchPickContext182B3 = {
+  lastV2Pitch: number | null;
+  /** Previous Voice-2 pitch in the same bar (two-slab second note). */
+  intraBarPrevPitch: number | null;
+  registerAnchor: number | null;
+  weightState: Voice2RhythmWeightState182B2;
+  schedulePhase: Voice2SchedulePhase;
+  imitationAllowed: boolean;
+  v1Contour: -1 | 0 | 1;
+  segmentSalt: number;
+  /** Phase 18.2B.4 — infer beat-1/3 vs offbeat entry for directed arrival. */
+  preferredShapeHint: BarV2RhythmShape | undefined;
+  /** True when previous V2 was not the bar immediately before (rest / normalization gap). */
+  gapAfterRest: boolean;
+  /** Last bar of 4-bar window or schedule resolve — stable landing. */
+  phraseEndResolution: boolean;
+  /** Phrase start, phrase end, schedule enter/resolve, or strong-beat entry (not offbeat hold). */
+  directedArrivalStrong: boolean;
+  /** Previous bar had Voice 2 (no gap). */
+  consecutiveV2: boolean;
+};
+
+function v1FragmentContour182B3(v1: NoteEvent[]): -1 | 0 | 1 {
+  const s = [...v1].sort((a, b) => a.startBeat - b.startBeat);
+  if (s.length < 2) return 0;
+  const d = s[s.length - 1]!.pitch - s[0]!.pitch;
+  if (d > 2) return 1;
+  if (d < -2) return -1;
+  return 0;
+}
+
+function buildVoice2PitchPickContext182B3(
+  bar: number,
+  seed: number,
+  lastPitchV2: number | null,
+  lastV2BarIndex: number,
+  registerAnchor: number | null,
+  schedulePhase: Voice2SchedulePhase,
+  v1notes: NoteEvent[],
+  imitationRunBars: number,
+  preferredShapeHint: BarV2RhythmShape | undefined
+): Voice2PitchPickContext182B3 {
+  const consecutiveV2 = lastPitchV2 !== null && lastV2BarIndex === bar - 1;
+  const gapAfterRest = lastPitchV2 !== null && lastV2BarIndex < bar - 1;
+  const phraseStartBar = bar % 4 === 1;
+  const phraseEndBarFour = bar % 4 === 0;
+  const strongBeatEntry =
+    preferredShapeHint === undefined ||
+    preferredShapeHint === 'SUSTAINED_BAR' ||
+    preferredShapeHint === 'TWO_SLABS';
+  const directedArrivalStrong =
+    phraseStartBar ||
+    phraseEndBarFour ||
+    schedulePhase === 'enter' ||
+    schedulePhase === 'resolve' ||
+    strongBeatEntry;
+  const phraseEndResolution = schedulePhase === 'resolve' || phraseEndBarFour;
+  const weightState = deriveVoice2WeightState182B2(schedulePhase);
+  const v1Contour = v1FragmentContour182B3(v1notes);
+  const imitationAllowed =
+    consecutiveV2 &&
+    v1notes.length >= 1 &&
+    imitationRunBars < 2 &&
+    seededUnit(seed, bar, 18301) < 0.67;
+  return {
+    lastV2Pitch: lastPitchV2,
+    intraBarPrevPitch: null,
+    registerAnchor,
+    weightState,
+    schedulePhase,
+    imitationAllowed,
+    v1Contour,
+    segmentSalt: 0,
+    preferredShapeHint,
+    gapAfterRest,
+    phraseEndResolution,
+    directedArrivalStrong,
+    consecutiveV2,
+  };
+}
+
+/**
+ * Phase 18.2B.4 — pick chord tone closest to `wantPitch` while staying within `maxLeap` of `refPitch`.
+ */
+function pickNearestChordToneWithinLeap182B4(
+  refPitch: number,
+  wantPitch: number,
+  maxLeap: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  floorMidi: number,
+  innerHigh: number
+): number {
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const pool = [tones.third, tones.seventh, tones.fifth, tones.root];
+  let best: number | undefined;
+  let bd = Infinity;
+  for (const raw of pool) {
+    const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+    if (p >= strictCeiling || p < floorMidi) continue;
+    const step = Math.abs(p - refPitch);
+    if (step > maxLeap) continue;
+    const tie = Math.abs(p - wantPitch);
+    if (tie < bd) {
+      bd = tie;
+      best = p;
+    }
+  }
+  if (best !== undefined) return best;
+  const sign = wantPitch >= refPitch ? 1 : -1;
+  const step = Math.min(maxLeap, Math.abs(wantPitch - refPitch));
+  const stepped = refPitch + sign * step;
+  return placeStrictlyBelowCeiling(strictCeiling, stepped, floorMidi);
+}
+
+/**
+ * Phase 18.2B.3 — reweight chosen pitch toward guide tones, stepwise continuity, register, optional imitation.
+ * Phase 18.2B.4 — directed arrival, phrase-end landing, gap-bridge, leap safety (pitch only).
+ */
+function refineVoice2Pitch182B3(
+  raw: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number,
+  ctx: Voice2PitchPickContext182B3
+): number {
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) {
+    return clampPitch(raw, STAB_GUITAR_LOW, STAB_GUITAR_HIGH);
+  }
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const tRaw = chordTonesForChordSymbol(chord, chordOpts(context));
+  const rootLifted = liftToneToRange(tRaw.root, floorMidi, innerHigh);
+  const sixth = placeStrictlyBelowCeiling(strictCeiling, rootLifted + 9, floorMidi);
+  const ninth = placeStrictlyBelowCeiling(strictCeiling, rootLifted + 14, floorMidi);
+  const rawPlaced = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+  const continuityRef = ctx.intraBarPrevPitch ?? ctx.lastV2Pitch;
+  const firstAttackInBar = ctx.intraBarPrevPitch === null;
+  const candSet = new Set<number>();
+  const addCand = (x: number) => {
+    const p = placeStrictlyBelowCeiling(strictCeiling, x, floorMidi);
+    if (p < strictCeiling && p >= floorMidi) candSet.add(p);
+  };
+  addCand(rawPlaced);
+  for (let d = -6; d <= 6; d++) addCand(rawPlaced + d);
+  [tones.third, tones.seventh, tones.fifth, tones.root, sixth, ninth].forEach((x) => addCand(x));
+  const candidates = [...candSet];
+  const thirdPc = ((tones.third % 12) + 12) % 12;
+  const seventhPc = ((tones.seventh % 12) + 12) % 12;
+  const rootPc = ((tones.root % 12) + 12) % 12;
+  const sixthPc = ((sixth % 12) + 12) % 12;
+  const ninthPc = ((ninth % 12) + 12) % 12;
+  const occas69 = seededUnit(seed, bar + ctx.segmentSalt, 18321) < 0.28;
+  let best = rawPlaced;
+  let bd = Infinity;
+  for (const c of candidates) {
+    const pc = ((c % 12) + 12) % 12;
+    let s = Math.abs(c - rawPlaced) * 0.3;
+    if (continuityRef !== null) {
+      const dist = Math.abs(c - continuityRef);
+      if (dist <= 2) s += dist * 0.42;
+      else if (dist <= V2_CONTINUITY_MAX_LEAP_SEMITONES) s += 1.1 + dist * 0.5;
+      else s += 6.5 + (dist - V2_CONTINUITY_MAX_LEAP_SEMITONES) * 2.8;
+    }
+    let guideBonus = 0;
+    if (pc === thirdPc || pc === seventhPc) guideBonus -= 1.05;
+    else if ((pc === sixthPc || pc === ninthPc) && occas69) guideBonus -= 0.55;
+    if (ctx.directedArrivalStrong) {
+      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.55;
+      else if (pc === rootPc) guideBonus -= 0.22;
+      else s += 0.62;
+    }
+    if (ctx.phraseEndResolution) {
+      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.48;
+      else if (pc === rootPc) guideBonus -= 0.12;
+      else s += 0.72;
+      if (pc === sixthPc || pc === ninthPc) s += 0.52;
+      s += 0.14 * Math.abs(c - rawPlaced);
+    }
+    if (ctx.consecutiveV2 && continuityRef !== null) {
+      const dist = Math.abs(c - continuityRef);
+      if (dist <= 2) s -= 0.38;
+      else if (dist > 2 && (pc === thirdPc || pc === seventhPc)) s -= 0.14;
+    }
+    if (
+      continuityRef !== null &&
+      ctx.gapAfterRest &&
+      firstAttackInBar &&
+      Math.abs(c - continuityRef) > V2_GAP_BRIDGE_MAX_LEAP_SEMITONES
+    ) {
+      s += 9.0 + Math.abs(c - continuityRef) * 0.22;
+    }
+    if (ctx.registerAnchor !== null) {
+      s += Math.abs(c - ctx.registerAnchor) * 0.36;
+    }
+    if (ctx.imitationAllowed && continuityRef !== null && ctx.v1Contour !== 0) {
+      const span = 1 + Math.floor(seededUnit(seed, bar, 18322 + ctx.segmentSalt) * 2);
+      const target = continuityRef + ctx.v1Contour * span;
+      const t = placeStrictlyBelowCeiling(strictCeiling, target, floorMidi);
+      if (t < strictCeiling && t >= floorMidi) s += Math.abs(c - t) * 0.38;
+    }
+    if (ctx.weightState === 'ENTERING') {
+      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.22 : 0;
+      s += 0.18 * Math.abs(c - rawPlaced);
+    } else if (ctx.weightState === 'CONTINUING') {
+      if (continuityRef !== null && Math.abs(c - continuityRef) <= 2) s -= 0.4;
+    } else if (ctx.weightState === 'RESOLVING') {
+      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.35 : 0;
+      s += 0.28 * Math.abs(c - rawPlaced);
+    }
+    s -= guideBonus;
+    s += seededUnit(seed, bar, 18340 + ctx.segmentSalt) * 0.018;
+    if (s < bd) {
+      bd = s;
+      best = c;
+    }
+  }
+  if (continuityRef !== null && firstAttackInBar && ctx.gapAfterRest) {
+    const d = Math.abs(best - continuityRef);
+    if (d > V2_GAP_BRIDGE_MAX_LEAP_SEMITONES) {
+      best = pickNearestChordToneWithinLeap182B4(
+        continuityRef,
+        best,
+        V2_GAP_BRIDGE_MAX_LEAP_SEMITONES,
+        chord,
+        strictCeiling,
+        context,
+        floorMidi,
+        innerHigh
+      );
+    }
+  }
+  if (continuityRef !== null) {
+    const d = Math.abs(best - continuityRef);
+    if (d > V2_LEAP_SAFETY_MAX_SEMITONES) {
+      best = pickNearestChordToneWithinLeap182B4(
+        continuityRef,
+        best,
+        V2_LEAP_SAFETY_MAX_SEMITONES,
+        chord,
+        strictCeiling,
+        context,
+        floorMidi,
+        innerHigh
+      );
+    }
+  }
+  return best;
+}
+
+function applyPitch182B3IfPresent(
+  p: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number,
+  pitchCtx: Voice2PitchPickContext182B3 | undefined
+): number {
+  return pitchCtx !== undefined ? refineVoice2Pitch182B3(p, chord, strictCeiling, context, seed, bar, pitchCtx) : p;
+}
+
 function enforcePitchPhraseCommitment(
   anchorMidi: number,
   chosen: number,
@@ -917,42 +1319,48 @@ function pickVoice2PitchForBehaviour(
   context: CompositionContext,
   seed: number,
   bar: number,
-  committedArrivalMidi?: number
+  committedArrivalMidi?: number,
+  pitchCtx?: Voice2PitchPickContext182B3
 ): number {
   const committed = committedArrivalMidi ?? runDestinationPlaced;
+  const wrap = (p: number) => applyPitch182B3IfPresent(p, chord, strictCeiling, context, seed, bar, pitchCtx);
   if (behaviour === 'enter' || behaviour === 'rest' || anchorMidi === null) {
-    return primary;
+    return wrap(primary);
   }
   if (behaviour === 'resolve') {
-    return pickStrongPhraseEndArrivalPitch(
-      anchorMidi,
-      runDestinationPlaced,
-      primary,
-      secondary,
-      chord,
-      strictCeiling,
-      context,
-      seed,
-      bar
+    return wrap(
+      pickStrongPhraseEndArrivalPitch(
+        anchorMidi,
+        runDestinationPlaced,
+        primary,
+        secondary,
+        chord,
+        strictCeiling,
+        context,
+        seed,
+        bar
+      )
     );
   }
   if (behaviour === 'sustain') {
     const s = sustainPitchFromAnchor(anchorMidi, primary, strictCeiling, chord, context);
-    return enforcePitchPhraseCommitment(
-      anchorMidi,
-      s,
-      behaviour,
-      committed,
-      movementTargetPitch,
-      runDestinationPlaced,
-      progressInRun,
-      primary,
-      secondary,
-      chord,
-      strictCeiling,
-      context,
-      seed,
-      bar
+    return wrap(
+      enforcePitchPhraseCommitment(
+        anchorMidi,
+        s,
+        behaviour,
+        committed,
+        movementTargetPitch,
+        runDestinationPlaced,
+        progressInRun,
+        primary,
+        secondary,
+        chord,
+        strictCeiling,
+        context,
+        seed,
+        bar
+      )
     );
   }
   if (behaviour === 'move') {
@@ -969,9 +1377,30 @@ function pickVoice2PitchForBehaviour(
       progressInRun,
       committed
     );
-    return enforcePitchPhraseCommitment(
+    return wrap(
+      enforcePitchPhraseCommitment(
+        anchorMidi,
+        m,
+        behaviour,
+        committed,
+        movementTargetPitch,
+        runDestinationPlaced,
+        progressInRun,
+        primary,
+        secondary,
+        chord,
+        strictCeiling,
+        context,
+        seed,
+        bar
+      )
+    );
+  }
+  const c = continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
+  return wrap(
+    enforcePitchPhraseCommitment(
       anchorMidi,
-      m,
+      c,
       behaviour,
       committed,
       movementTargetPitch,
@@ -984,24 +1413,7 @@ function pickVoice2PitchForBehaviour(
       context,
       seed,
       bar
-    );
-  }
-  const c = continuePitchFromAnchor(anchorMidi, chord, strictCeiling, context, seed, bar, primary, secondary);
-  return enforcePitchPhraseCommitment(
-    anchorMidi,
-    c,
-    behaviour,
-    committed,
-    movementTargetPitch,
-    runDestinationPlaced,
-    progressInRun,
-    primary,
-    secondary,
-    chord,
-    strictCeiling,
-    context,
-    seed,
-    bar
+    )
   );
 }
 
@@ -1035,7 +1447,7 @@ function pickVoice2PitchFromAnchor(
 }
 
 /**
- * Phase 18.2B.3 + 18.2E — Expand scheduled bars into 2–4 bar continuation runs; global cap allows phrase 50% floor.
+ * Phase 18.2B.3 + 18.2E — Expand scheduled bars into 2–3 bar continuation runs; global cap respects hard coverage ceiling.
  */
 function buildVoice2ContinuationSchedule(
   tb: number,
@@ -1045,8 +1457,12 @@ function buildVoice2ContinuationSchedule(
   const effective = new Set<number>();
   const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
   const minByPhrase = minEffectiveBarsByPhrasePresenceFloor(tb);
-  /** Phase 18.2B.2 — cap ~50% bars so Voice 2 stays sparse but present. */
-  const targetMax = Math.max(2, Math.floor(tb * V2_COV_TARGET_MAX), minByPhrase);
+  /** Phase 18.2B.3 — never exceed hard coverage cap when seeding continuation runs. */
+  const hardCapBars = Math.max(1, Math.floor(tb * V2_COV_HARD_MAX));
+  const targetMax = Math.min(
+    hardCapBars,
+    Math.max(2, Math.floor(tb * V2_COV_TARGET_MAX), minByPhrase)
+  );
   let runEnd = -1;
   let runStart = -1;
   for (let bar = 1; bar <= tb; bar++) {
@@ -1063,7 +1479,9 @@ function buildVoice2ContinuationSchedule(
     runStart = -1;
     if (!scheduled.has(bar)) continue;
     if (effective.size >= targetMax) continue;
-    let runLen = 2 + Math.floor(seededUnit(seed, bar, 7001) * 3);
+    /** 2–3 bars per run (max 3 consecutive; absolute max 4 only if repair adds — capped later). */
+    let runLen = 2 + Math.floor(seededUnit(seed, bar, 7001) * 2);
+    runLen = Math.min(runLen, V2_MAX_CONSECUTIVE_ACTIVE_BARS);
     const room = targetMax - effective.size;
     runLen = Math.max(2, Math.min(runLen, room));
     if (runLen < 2) continue;
@@ -1077,7 +1495,7 @@ function buildVoice2ContinuationSchedule(
 }
 
 /**
- * Phase 18.2E — Hard floor: each phrase has Voice 2 in ≥50% of its bars (distributed when adding from scheduled).
+ * Phase 18.2E — Phrase floor: each phrase has Voice 2 in at least ~35% of its bars (distributed when adding from scheduled).
  */
 function ensurePhraseVoice2PresenceFloor(
   tb: number,
@@ -1091,7 +1509,7 @@ function ensurePhraseVoice2PresenceFloor(
     const base = p * 4 + 1;
     const end = Math.min(base + 3, tb);
     const len = end - base + 1;
-    const minNeed = Math.max(1, Math.ceil(len * 0.5));
+    const minNeed = Math.max(1, Math.floor(len * 0.35 + 1e-9));
     let count = 0;
     for (let b = base; b <= end; b++) {
       if (effective.has(b)) count++;
@@ -1735,7 +2153,8 @@ function blendDirectionalIntent(
 }
 
 /**
- * Phase 18.2B.2 — Emit Voice-2 events for one bar-level shape (pitch selection path unchanged).
+ * Phase 18.2B.2 — Emit Voice-2 events for one bar-level shape.
+ * Phase 18.2B.3 — optional {@link Voice2PitchPickContext182B3} refines pitch only (rhythm unchanged).
  */
 function applyBarLevelShapeV2Events(
   m: MeasureModel,
@@ -1753,7 +2172,8 @@ function applyBarLevelShapeV2Events(
   context: CompositionContext,
   seed: number,
   bar: number,
-  frozenArrival: number
+  frozenArrival: number,
+  pitchCtx?: Voice2PitchPickContext182B3
 ): boolean {
   if (shape === 'REST') return true;
   if (shape === 'SUSTAINED_BAR') {
@@ -1773,7 +2193,8 @@ function applyBarLevelShapeV2Events(
         context,
         seed,
         bar,
-        frozenArrival
+        frozenArrival,
+        pitchCtx
       );
       addEvent(m, createNote(p, 0, 4, V2_VOICE));
     } else {
@@ -1793,7 +2214,8 @@ function applyBarLevelShapeV2Events(
         context,
         seed,
         bar,
-        frozenArrival
+        frozenArrival,
+        pitchCtx
       );
       addEvent(m, createRest(0, 1, V2_VOICE));
       addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -1817,7 +2239,8 @@ function applyBarLevelShapeV2Events(
       context,
       seed,
       bar,
-      frozenArrival
+      frozenArrival,
+      pitchCtx
     );
     addEvent(m, createRest(0, 1, V2_VOICE));
     addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -1847,8 +2270,13 @@ function applyBarLevelShapeV2Events(
     context,
     seed,
     bar,
-    frozenArrival
+    frozenArrival,
+    pitchCtx
   );
+  const ctx1: Voice2PitchPickContext182B3 | undefined =
+    pitchCtx === undefined
+      ? undefined
+      : { ...pitchCtx, intraBarPrevPitch: p0, segmentSalt: 1 };
   const p1 = pickVoice2PitchForBehaviour(
     behaviour,
     anchorMidi,
@@ -1862,7 +2290,8 @@ function applyBarLevelShapeV2Events(
     context,
     seed,
     bar,
-    frozenArrival
+    frozenArrival,
+    ctx1
   );
   addEvent(m, createNote(p0, 0, 2, V2_VOICE));
   addEvent(m, createNote(p1, 2, 2, V2_VOICE));
@@ -1883,10 +2312,27 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
   const activeBars = collectPhraseAwareActiveBarIndices(tb, seed);
   const activeSet = new Set(activeBars);
-  const { effective: effectiveBars, phaseByBar } = buildVoice2ContinuationSchedule(tb, seed, activeSet);
+  const schedule = buildVoice2ContinuationSchedule(tb, seed, activeSet);
+  let effectiveBars = schedule.effective;
+  let phaseByBar = schedule.phaseByBar;
   const forceSustainedOneBars = phase182B2RepairCoverageAndGaps(tb, seed, activeSet, effectiveBars, phaseByBar);
+  capEffectiveConsecutiveActiveRuns182B3(effectiveBars, V2_MAX_CONSECUTIVE_ACTIVE_BARS);
+  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
   trimBarLevelVoice2CoverageIfOverCap(tb, seed, effectiveBars, activeSet);
+  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
+  enforceBreathingGapAfterRuns182B3(effectiveBars, tb, seed);
+  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
+  trimBarLevelVoice2CoverageIfOverCap(tb, seed, effectiveBars, activeSet);
+  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
+  for (const b of [...forceSustainedOneBars]) {
+    if (!effectiveBars.has(b)) forceSustainedOneBars.delete(b);
+  }
   const barShapeByBar = buildBarLevelVoice2ShapeMap(tb, seed, effectiveBars, phaseByBar, forceSustainedOneBars);
+  applySustainedWallSafety182B3(tb, seed, effectiveBars, barShapeByBar);
+  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
+  for (const b of [...forceSustainedOneBars]) {
+    if (!effectiveBars.has(b)) forceSustainedOneBars.delete(b);
+  }
   const phraseWaypoints = buildPhraseIntentionWaypoints(guitar, effectiveBars, phaseByBar, context, seed, tb);
   const frozenRunEndMap = buildFrozenRunEndMap(guitar, effectiveBars, phaseByBar, phraseWaypoints, context, seed, tb);
   let anchorMidi: number | null = null;
@@ -1898,6 +2344,11 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     remainingDuration: 0,
     phase: 'rest',
   };
+  /** Phase 18.2B.3 — continuity / register / imitation (pitch only). */
+  let lastPitchV2: number | null = null;
+  let lastV2BarIndex = -999;
+  let registerAnchorV2: number | null = null;
+  let imitationRunBars = 0;
 
   forBar: for (const bar of [...effectiveBars].sort((a, b) => a - b)) {
     const m = guitar.measures.find((x) => x.index === bar);
@@ -1973,8 +2424,20 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       barsRemainingInRun: runInfo.runEndBar - bar,
     };
 
-    const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
     const preferredShape = barShapeByBar.get(bar) ?? 'SUSTAINED_BAR';
+    const pitchCtx = buildVoice2PitchPickContext182B3(
+      bar,
+      seed,
+      lastPitchV2,
+      lastV2BarIndex,
+      registerAnchorV2,
+      runInfo.schedulePhase,
+      v1notes,
+      imitationRunBars,
+      preferredShape
+    );
+
+    const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
     const chain = uniqBarShapeFallbackChain(preferredShape);
     let shapeOk = false;
     shapeLoop: for (const shapeTry of chain) {
@@ -1999,7 +2462,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           context,
           seed,
           bar,
-          frozenArrival
+          frozenArrival,
+          pitchCtx
         )
       ) {
         continue shapeLoop;
@@ -2026,7 +2490,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           context,
           seed,
           bar,
-          frozenArrival
+          frozenArrival,
+          pitchCtx
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLv, 1, 3, V2_VOICE));
@@ -2055,7 +2520,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         context,
         seed,
         bar,
-        frozenArrival
+        frozenArrival,
+        pitchCtx
       );
       addEvent(m, createRest(0, 2, V2_VOICE));
       addEvent(m, createNote(pH, 2, 2, V2_VOICE));
@@ -2079,7 +2545,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           context,
           seed,
           bar,
-          frozenArrival
+          frozenArrival,
+          pitchCtx
         );
         addEvent(m, createRest(0, 3, V2_VOICE));
         addEvent(m, createNote(pQ, 3, 1, V2_VOICE));
@@ -2167,7 +2634,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           context,
           seed,
           bar,
-          frozenArrival
+          frozenArrival,
+          pitchCtx
         );
         addEvent(m, createNote(pW, 0, 4, V2_VOICE));
         m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
@@ -2200,7 +2668,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           context,
           seed,
           bar,
-          frozenArrival
+          frozenArrival,
+          pitchCtx
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLd, 1, 3, V2_VOICE));
@@ -2243,7 +2712,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
             context,
             seed,
             bar,
-            frozenArrival
+            frozenArrival,
+            pitchCtx
           );
           addEvent(m, createRest(0, 2, V2_VOICE));
           addEvent(m, createNote(pFb, 2, 2, V2_VOICE));
@@ -2288,7 +2758,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
               context,
               seed,
               bar,
-              frozenArrival
+              frozenArrival,
+              pitchCtx
             );
             addEvent(m, createNote(pOv, 0, 4, V2_VOICE));
           } else {
@@ -2308,7 +2779,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                 context,
                 seed,
                 bar,
-                frozenArrival
+                frozenArrival,
+                pitchCtx
               );
               addEvent(m, createRest(0, 1, V2_VOICE));
               addEvent(m, createNote(pLo, 1, 3, V2_VOICE));
@@ -2328,7 +2800,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                   context,
                   seed,
                   bar,
-                  frozenArrival
+                  frozenArrival,
+                  pitchCtx
                 );
                 addEvent(m, createRest(0, 2, V2_VOICE));
                 addEvent(m, createNote(pL2, 2, 2, V2_VOICE));
@@ -2387,6 +2860,18 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     if (lastP !== undefined) {
       anchorMidi = lastP;
       voice2State = { ...voice2State, currentPitch: lastP };
+      const consecAfterPrev = lastPitchV2 !== null && lastV2BarIndex === bar - 1;
+      const v1ContourEnd = v1FragmentContour182B3(v1notes);
+      const imitationGate = seededUnit(seed, bar, 18301) < 0.67;
+      if (consecAfterPrev && v1notes.length >= 1 && imitationRunBars < 2 && imitationGate && v1ContourEnd !== 0) {
+        imitationRunBars = Math.min(2, imitationRunBars + 1);
+      } else if (!consecAfterPrev) {
+        imitationRunBars = 0;
+      }
+      lastPitchV2 = lastP;
+      lastV2BarIndex = bar;
+      registerAnchorV2 =
+        registerAnchorV2 === null ? lastP : Math.round(registerAnchorV2 * 0.62 + lastP * 0.38);
     }
 
     injected++;
@@ -2850,12 +3335,675 @@ function enforceVoice2ConsecutiveInnerLineIntervals(
   }
 }
 
+function measureAtBarIndex182B3(guitar: PartModel, bar: number): MeasureModel | undefined {
+  return guitar.measures.find((x) => x.index === bar);
+}
+
+/** Strip all Voice-2 events from one measure (realized REST). */
+function stripAllVoice2EventsFromMeasure182B3(m: MeasureModel): void {
+  m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
+}
+
 /**
- * Phase 18.2B.3 — Phrase presence (4-bar windows), breathing (max 2 consecutive active bars), and overlap/sustain bias
- * are enforced in {@link collectPhraseAwareActiveBarIndices} and {@link injectGuitarVoice2WybleLayer}. Reserved hook for future post-pass checks.
+ * Phase 18.2B.3 — Actual written Voice-2 activity (matches polyphony diagnostics semantics).
  */
-export function stabiliseGuitarVoice2Wyble18_2B_3(_guitar: PartModel, _context: CompositionContext): void {
-  // Intentionally empty: behaviour lives in phrase scheduling + inject.
+function buildActualV2ActiveBarSet182B3(guitar: PartModel, tb: number): Set<number> {
+  const s = new Set<number>();
+  for (let bar = 1; bar <= tb; bar++) {
+    const m = measureAtBarIndex182B3(guitar, bar);
+    if (!m) continue;
+    const longEnough = m.events.some(
+      (e) =>
+        e.kind === 'note' &&
+        (e.voice ?? 1) === V2_VOICE &&
+        (e as NoteEvent).duration >= MIN_REAL_V2_ACTIVE_BEATS - REAL_V2_BEAT_EPS
+    );
+    if (longEnough) s.add(bar);
+  }
+  return s;
+}
+
+function isV2RealSustainedBar182B3(m: MeasureModel): boolean {
+  const notes = m.events.filter(
+    (e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE
+  );
+  if (notes.length === 0) return false;
+  return notes.some((n) => n.duration >= MIN_REAL_V2_SUSTAINED_BEATS - REAL_V2_BEAT_EPS);
+}
+
+/**
+ * Lower = remove first when trimming runs (OFFBEAT → TWO_SLABS → SUSTAINED).
+ */
+function realizedV2RemovalPriorityForBar182B3(m: MeasureModel): number {
+  const notes = m.events.filter(
+    (e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE
+  );
+  if (notes.length === 0) return 99;
+  const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat);
+  if (sorted.length === 1) {
+    const n = sorted[0]!;
+    if (n.duration >= MIN_REAL_V2_SUSTAINED_BEATS - REAL_V2_BEAT_EPS) return 2;
+    return 1;
+  }
+  if (sorted.length >= 2) {
+    if (sorted[0]!.startBeat <= REAL_V2_BEAT_EPS && sorted[1]!.startBeat >= 1.9) return 1;
+    if (sorted[0]!.startBeat >= 0.9) return 0;
+  }
+  return 1;
+}
+
+function enforceRealizedRunLengthCap182B3(guitar: PartModel, tb: number): boolean {
+  const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+  const runs = splitEffectiveIntoRuns(active);
+  let changed = false;
+  for (const run of runs) {
+    if (run.length <= V2_MAX_CONSECUTIVE_ACTIVE_BARS) continue;
+    const removeCount = run.length - V2_MAX_CONSECUTIVE_ACTIVE_BARS;
+    const removable = run.slice(V2_MAX_CONSECUTIVE_ACTIVE_BARS);
+    const scored = removable.map((bar) => {
+      const m = measureAtBarIndex182B3(guitar, bar);
+      return { bar, pr: m ? realizedV2RemovalPriorityForBar182B3(m) : 99 };
+    });
+    scored.sort((a, b) => (a.pr !== b.pr ? a.pr - b.pr : a.bar - b.bar));
+    for (let i = 0; i < removeCount && i < scored.length; i++) {
+      const m = measureAtBarIndex182B3(guitar, scored[i]!.bar);
+      if (m) {
+        stripAllVoice2EventsFromMeasure182B3(m);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+function enforceRealizedBreathingAfterRuns182B3(guitar: PartModel, tb: number, seed: number): boolean {
+  const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+  const runs = splitEffectiveIntoRuns(active);
+  let changed = false;
+  for (const run of runs) {
+    const L = run.length;
+    if (L < 2) continue;
+    const last = run[run.length - 1]!;
+    const next = last + 1;
+    if (next > tb || !active.has(next)) continue;
+    if (L >= 3) {
+      const m = measureAtBarIndex182B3(guitar, next);
+      if (m) {
+        stripAllVoice2EventsFromMeasure182B3(m);
+        changed = true;
+      }
+      continue;
+    }
+    if (L === 2 && seededUnit(seed, last, 18801) < 0.7) {
+      const m = measureAtBarIndex182B3(guitar, next);
+      if (m) {
+        stripAllVoice2EventsFromMeasure182B3(m);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+/**
+ * Try rest+note offbeat footprint without re-running full inject (guide tones via pickPrimarySecondary).
+ */
+function tryApplyOffbeatHoldMinimalFromRealized182B3(
+  m: MeasureModel,
+  context: CompositionContext,
+  seed: number
+): boolean {
+  const chord = m.chord ?? 'Cmaj9';
+  const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+  if (v1.length === 0) return false;
+  const contour = v1MelodyContour(v1);
+  const cLate = minOverlappingV1Pitch(v1, 1, 4) ?? minOverlappingV1Pitch(v1, 0, 4);
+  if (cLate === undefined) return false;
+  const pair = pickPrimarySecondaryForSegment(cLate, chord, context, seed, m.index, 19001, contour);
+  if (!pair) return false;
+  const sc = strictCeilingFromMinV1(cLate);
+  const p = pickVoice2PitchForBehaviour(
+    'enter',
+    null,
+    pair.primary,
+    pair.primary,
+    0,
+    pair.primary,
+    pair.secondary,
+    chord,
+    sc,
+    context,
+    seed,
+    m.index,
+    undefined,
+    undefined
+  );
+  stripAllVoice2EventsFromMeasure182B3(m);
+  addEvent(m, createRest(0, 1, V2_VOICE));
+  addEvent(m, createNote(p, 1, 3, V2_VOICE));
+  m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+  const v2 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
+  if (!voice2StrictlyBelowOverlappingV1(v1, v2) || maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) {
+    stripAllVoice2EventsFromMeasure182B3(m);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Phase 18.2B.5 — Realized V2 “sustained wall” texture (streaming inner layer), not TWO_SLABS split rhythm.
+ * Aligns with duo interaction anti-streaming: long holds / near–full-bar V2 note mass.
+ */
+function isV2SustainedTextureBar182B5(m: MeasureModel): boolean {
+  const notes = m.events.filter(
+    (e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE
+  );
+  if (notes.length === 0) return false;
+  const sum = notes.reduce((s, n) => s + n.duration, 0);
+  const maxSeg = Math.max(...notes.map((n) => n.duration));
+  const first = Math.min(...notes.map((n) => n.startBeat));
+  /** TWO_SLABS (2+2): rhythmic contrast — not sustained texture wall. */
+  if (sum >= 3.95 && maxSeg < 2.75 && notes.length >= 2) return false;
+  /** Meaningful breath before first V2 attack — not wall unless note mass still streams. */
+  if (first >= 0.5 && sum < 3.95) return false;
+  if (sum >= 3.95) return true;
+  if (first <= REAL_V2_BEAT_EPS && maxSeg >= 3.0) return true;
+  if (maxSeg >= 3.75) return true;
+  return false;
+}
+
+function tryApplyTwoSlabsMinimalFromRealized182B5(
+  m: MeasureModel,
+  context: CompositionContext,
+  seed: number
+): boolean {
+  const chord = m.chord ?? 'Cmaj9';
+  const v1 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+  if (v1.length === 0) return false;
+  const contour = v1MelodyContour(v1);
+  const c02 = minOverlappingV1Pitch(v1, 0, 2);
+  const c24 = minOverlappingV1Pitch(v1, 2, 4);
+  if (c02 === undefined || c24 === undefined) return false;
+  if (v1.length >= 2) {
+    if (!v2OneNoteSpanPassesMelodyOverlapRule(v1, 0, 2)) return false;
+    if (!v2OneNoteSpanPassesMelodyOverlapRule(v1, 2, 2)) return false;
+  }
+  const pair0 = pickPrimarySecondaryForSegment(c02, chord, context, seed, m.index, 19021, contour);
+  const pair1 = pickPrimarySecondaryForSegment(c24, chord, context, seed, m.index, 19022, contour);
+  if (!pair0 || !pair1) return false;
+  const p0 = pickVoice2PitchForBehaviour(
+    'enter',
+    null,
+    pair0.primary,
+    pair0.primary,
+    0,
+    pair0.primary,
+    pair0.secondary,
+    chord,
+    strictCeilingFromMinV1(c02),
+    context,
+    seed,
+    m.index,
+    undefined,
+    undefined
+  );
+  const p1 = pickVoice2PitchForBehaviour(
+    'enter',
+    null,
+    pair1.primary,
+    pair1.primary,
+    0,
+    pair1.primary,
+    pair1.secondary,
+    chord,
+    strictCeilingFromMinV1(c24),
+    context,
+    seed,
+    m.index,
+    undefined,
+    undefined
+  );
+  stripAllVoice2EventsFromMeasure182B3(m);
+  addEvent(m, createNote(p0, 0, 2, V2_VOICE));
+  addEvent(m, createNote(p1, 2, 2, V2_VOICE));
+  m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+  const v2 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
+  if (!voice2StrictlyBelowOverlappingV1(v1, v2) || maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) {
+    stripAllVoice2EventsFromMeasure182B3(m);
+    return false;
+  }
+  return true;
+}
+
+function lightenV2BarTexture182B5(
+  m: MeasureModel,
+  context: CompositionContext,
+  seed: number,
+  bar: number
+): boolean {
+  if (tryApplyTwoSlabsMinimalFromRealized182B5(m, context, seed + bar * 31 + V2_TEX_SALT_182B5)) return true;
+  if (tryApplyOffbeatHoldMinimalFromRealized182B3(m, context, seed + bar * 37 + V2_TEX_SALT_182B5)) return true;
+  stripAllVoice2EventsFromMeasure182B3(m);
+  return true;
+}
+
+function computeLongestSustainedTextureRun182B5(guitar: PartModel, context: CompositionContext, tb: number): void {
+  const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+  let cur = 0;
+  let maxRun = 0;
+  for (let bar = 1; bar <= tb; bar++) {
+    const m = measureAtBarIndex182B3(guitar, bar);
+    if (!m || !active.has(bar) || !isV2SustainedTextureBar182B5(m)) {
+      cur = 0;
+    } else {
+      cur++;
+      maxRun = Math.max(maxRun, cur);
+    }
+  }
+  const meta = context.generationMetadata as { voice2LongestSustainedTextureRun182B5?: number };
+  meta.voice2LongestSustainedTextureRun182B5 = maxRun;
+}
+
+/**
+ * Phase 18.2B.5 — Max 2 consecutive realized sustained-texture bars; lighten 3rd; optional alternation in pairs.
+ */
+function enforceV2TextureDensity182B5(guitar: PartModel, context: CompositionContext, tb: number, seed: number): void {
+  for (let iter = 0; iter < 14; iter++) {
+    const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+    let changed = false;
+    for (let bar = 3; bar <= tb; bar++) {
+      if (!active.has(bar - 2) || !active.has(bar - 1) || !active.has(bar)) continue;
+      const m0 = measureAtBarIndex182B3(guitar, bar - 2);
+      const m1 = measureAtBarIndex182B3(guitar, bar - 1);
+      const m2 = measureAtBarIndex182B3(guitar, bar);
+      if (!m0 || !m1 || !m2) continue;
+      if (
+        !isV2SustainedTextureBar182B5(m0) ||
+        !isV2SustainedTextureBar182B5(m1) ||
+        !isV2SustainedTextureBar182B5(m2)
+      ) {
+        continue;
+      }
+      lightenV2BarTexture182B5(m2, context, seed, bar);
+      changed = true;
+      break;
+    }
+    if (!changed) break;
+  }
+  for (let bar = 2; bar <= tb; bar++) {
+    const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+    if (!active.has(bar - 1) || !active.has(bar)) continue;
+    const mPrev = measureAtBarIndex182B3(guitar, bar - 1);
+    const mCur = measureAtBarIndex182B3(guitar, bar);
+    if (!mPrev || !mCur) continue;
+    if (!isV2SustainedTextureBar182B5(mPrev) || !isV2SustainedTextureBar182B5(mCur)) continue;
+    if (seededUnit(seed, bar, V2_TEX_SALT_182B5 + 3) >= 0.48) continue;
+    lightenV2BarTexture182B5(mCur, context, seed, bar);
+  }
+}
+
+function enforceRealizedSustainedWall182B3(guitar: PartModel, context: CompositionContext, seed: number, tb: number): boolean {
+  const active = buildActualV2ActiveBarSet182B3(guitar, tb);
+  let changed = false;
+  for (let bar = 3; bar <= tb; bar++) {
+    if (!active.has(bar - 2) || !active.has(bar - 1) || !active.has(bar)) continue;
+    const m0 = measureAtBarIndex182B3(guitar, bar - 2);
+    const m1 = measureAtBarIndex182B3(guitar, bar - 1);
+    const m2 = measureAtBarIndex182B3(guitar, bar);
+    if (!m0 || !m1 || !m2) continue;
+    if (!isV2RealSustainedBar182B3(m0) || !isV2RealSustainedBar182B3(m1) || !isV2RealSustainedBar182B3(m2)) continue;
+    if (tryApplyOffbeatHoldMinimalFromRealized182B3(m2, context, seed + bar * 17)) {
+      changed = true;
+      continue;
+    }
+    stripAllVoice2EventsFromMeasure182B3(m2);
+    changed = true;
+  }
+  return changed;
+}
+
+function enforceRealizedCoverageCap182B3(guitar: PartModel, tb: number, seed: number): boolean {
+  let active = buildActualV2ActiveBarSet182B3(guitar, tb);
+  const hardCap = Math.max(1, Math.floor(tb * V2_COV_HARD_MAX));
+  let changed = false;
+  while (active.size > hardCap) {
+    const bar = pickBarToRemoveForCoverageTrim182B3(active, seed);
+    if (bar < 0) break;
+    const m = measureAtBarIndex182B3(guitar, bar);
+    if (m) {
+      stripAllVoice2EventsFromMeasure182B3(m);
+      changed = true;
+    }
+    active.delete(bar);
+  }
+  return changed;
+}
+
+/** Realized Voice-2 note with bar index for global beat math (post-injection normalization). */
+type V2NoteEntry182B5 = { note: NoteEvent; measureIndex: number };
+
+/** Whole or near-whole Voice-2 hold (validator wall-to-wall uses summed note beats per measure). */
+function isFullBarSustained(note: NoteEvent, barDuration: number): boolean {
+  return note.duration >= barDuration * 0.875 - REAL_V2_BEAT_EPS;
+}
+
+function barHasFullBarV2Sustain(m: MeasureModel, barDuration: number): boolean {
+  for (const e of m.events) {
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      if (isFullBarSustained(e as NoteEvent, barDuration)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * No two adjacent bars may both be full-bar sustained Voice 2 (independent wholes in consecutive measures).
+ * Converts the second bar of each flagged pair: same pitch as the original note, duration halved, rest fills the remainder (no new pitched content).
+ */
+function convertMeasureBreakV2FullSustain(guitar: PartModel, bar: number, barDuration: number): void {
+  const m = measureAtBarIndex182B3(guitar, bar);
+  if (!m) return;
+  const half = barDuration / 2;
+  let targetIdx = -1;
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i]!;
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      if (n.startBeat <= REAL_V2_BEAT_EPS && isFullBarSustained(n, barDuration)) {
+        targetIdx = i;
+        break;
+      }
+    }
+  }
+  if (targetIdx >= 0) {
+    const n = m.events[targetIdx] as NoteEvent;
+    const newEvents: ScoreEvent[] = [];
+    for (let i = 0; i < m.events.length; i++) {
+      if (i === targetIdx) {
+        newEvents.push({ ...n, startBeat: 0, duration: half });
+        newEvents.push(createRest(half, half, V2_VOICE));
+        continue;
+      }
+      const e = m.events[i]!;
+      if (e.kind === 'note') newEvents.push({ ...(e as NoteEvent) });
+      else if (e.kind === 'rest') newEvents.push({ ...(e as RestEvent) });
+      else newEvents.push(e);
+    }
+    m.events = newEvents;
+    m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+    return;
+  }
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i]!;
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      if (isFullBarSustained(n, barDuration)) {
+        const head = { ...n, duration: half };
+        const restStart = head.startBeat + head.duration;
+        const restDur = barDuration - restStart;
+        const newEvents: ScoreEvent[] = [];
+        for (let j = 0; j < m.events.length; j++) {
+          if (j === i) {
+            newEvents.push(head);
+            if (restDur > REAL_V2_BEAT_EPS) {
+              newEvents.push(createRest(restStart, restDur, V2_VOICE));
+            }
+            continue;
+          }
+          const ev = m.events[j]!;
+          if (ev.kind === 'note') newEvents.push({ ...(ev as NoteEvent) });
+          else if (ev.kind === 'rest') newEvents.push({ ...(ev as RestEvent) });
+          else newEvents.push(ev);
+        }
+        m.events = newEvents;
+        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+        return;
+      }
+    }
+  }
+}
+
+function breakConsecutiveV2Sustains(guitar: PartModel, barDuration: number, totalBars: number): void {
+  const flags: boolean[] = [];
+  for (let i = 0; i <= totalBars; i++) flags[i] = false;
+  for (let b = 1; b <= totalBars; b++) {
+    const m = measureAtBarIndex182B3(guitar, b);
+    flags[b] = m ? barHasFullBarV2Sustain(m, barDuration) : false;
+  }
+  const toConvert = new Set<number>();
+  for (let b = 1; b < totalBars; b++) {
+    if (flags[b] && flags[b + 1]) toConvert.add(b + 1);
+  }
+  for (const bar of [...toConvert].sort((a, c) => a - c)) {
+    convertMeasureBreakV2FullSustain(guitar, bar, barDuration);
+  }
+}
+
+/** MusicXML tick threshold for "full bar" sustained diagnostics (0.875 × 1920 @ divisions 480). */
+const V2_FULL_BAR_SUSTAIN_TICKS_DEBUG = 1680;
+
+function v2NoteDurationSum182B5(m: MeasureModel): number {
+  let s = 0;
+  for (const e of m.events) {
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      s += (e as NoteEvent).duration;
+    }
+  }
+  return s;
+}
+
+/** True if any Voice-2 note has exported duration ≥ tickThreshold (divisions-per-quarter × beats). */
+function barHasV2NoteDurationTicksGte182B5(m: MeasureModel, tickThreshold: number): boolean {
+  for (const e of m.events) {
+    if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+      const n = e as NoteEvent;
+      const ticks = Math.round(n.duration * DIVISIONS);
+      if (ticks >= tickThreshold) return true;
+    }
+  }
+  return false;
+}
+
+/** Diagnostic: adjacent bars that are both realized-active for V2; sums and full-bar flags for sustained debugging. */
+function logAdjacentActiveBarPairsDebug182B5(
+  guitar: PartModel,
+  barDuration: number,
+  totalBars: number,
+  activeBarSet: Set<number>,
+): void {
+  for (let b = 1; b < totalBars; b++) {
+    if (!activeBarSet.has(b) || !activeBarSet.has(b + 1)) continue;
+    const m0 = measureAtBarIndex182B3(guitar, b);
+    const m1 = measureAtBarIndex182B3(guitar, b + 1);
+    if (!m0 || !m1) continue;
+    const sumA = v2NoteDurationSum182B5(m0);
+    const sumB = v2NoteDurationSum182B5(m1);
+    const ticksA = Math.round(sumA * DIVISIONS);
+    const ticksB = Math.round(sumB * DIVISIONS);
+    const combinedTicks = ticksA + ticksB;
+    console.debug('[V2 normalize 18.2B.5] adjacent active pair sustained diag', {
+      barA: b,
+      barB: b + 1,
+      fullBarSustainedA: barHasV2NoteDurationTicksGte182B5(m0, V2_FULL_BAR_SUSTAIN_TICKS_DEBUG),
+      fullBarSustainedB: barHasV2NoteDurationTicksGte182B5(m1, V2_FULL_BAR_SUSTAIN_TICKS_DEBUG),
+      sumV2BeatsA: sumA,
+      sumV2BeatsB: sumB,
+      sumV2TicksA: ticksA,
+      sumV2TicksB: ticksB,
+      combinedV2Beats: sumA + sumB,
+      combinedV2Ticks: combinedTicks,
+    });
+  }
+}
+
+function computeLongestConsecutiveSustainedRun182B5(guitar: PartModel, barDuration: number, totalBars: number): number {
+  let run = 0;
+  let maxRun = 0;
+  for (let b = 1; b <= totalBars; b++) {
+    const m = measureAtBarIndex182B3(guitar, b);
+    if (m && barHasFullBarV2Sustain(m, barDuration)) {
+      run++;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 0;
+    }
+  }
+  return maxRun;
+}
+
+function collectV2NoteEntries182B5(guitar: PartModel): V2NoteEntry182B5[] {
+  const out: V2NoteEntry182B5[] = [];
+  const measures = [...guitar.measures].sort((a, b) => a.index - b.index);
+  for (const m of measures) {
+    for (const e of m.events) {
+      if (e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) {
+        out.push({ note: e as NoteEvent, measureIndex: m.index });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Bar index N (1..totalBars) is active if any Voice-2 note sounds in that bar, including sustain from prior bars.
+ * Minimum sounding length: one eighth-note span derived from barDuration.
+ */
+function buildRealizedActiveBarSet(
+  v2Notes: V2NoteEntry182B5[],
+  barDuration: number,
+  totalBars: number,
+): Set<number> {
+  const minDur = barDuration / 8;
+  const active = new Set<number>();
+  for (let b = 1; b <= totalBars; b++) {
+    const g0 = (b - 1) * barDuration;
+    const g1 = b * barDuration;
+    for (const { note, measureIndex } of v2Notes) {
+      if (note.duration < minDur - REAL_V2_BEAT_EPS) continue;
+      const startG = (measureIndex - 1) * barDuration + note.startBeat;
+      const endG = startG + note.duration;
+      if (startG < g1 - REAL_V2_BEAT_EPS && endG > g0 + REAL_V2_BEAT_EPS) {
+        active.add(b);
+        break;
+      }
+    }
+  }
+  return active;
+}
+
+/**
+ * Shorten Voice-2 notes that would sound past a bar boundary into a following bar that is also active (validator time basis).
+ * Uses global beat span (startBeat + duration per measure); MusicXML ticks are derived at export from the same durations.
+ */
+function clampV2NotesToBarBoundaries(
+  v2Notes: V2NoteEntry182B5[],
+  activeBarSet: Set<number>,
+  barDuration: number,
+  totalBars: number,
+): V2NoteEntry182B5[] {
+  const out: V2NoteEntry182B5[] = [];
+  for (const { note, measureIndex } of v2Notes) {
+    const startG = (measureIndex - 1) * barDuration + note.startBeat;
+    const endG = startG + note.duration;
+    const noteBarIndex = Math.floor(startG / barDuration + REAL_V2_BEAT_EPS);
+    const barEndExclusive = (noteBarIndex + 1) * barDuration;
+    const nextBar1Based = measureIndex + 1;
+    let nextDur = note.duration;
+    if (
+      nextBar1Based <= totalBars &&
+      activeBarSet.has(nextBar1Based) &&
+      endG > barEndExclusive + REAL_V2_BEAT_EPS
+    ) {
+      const clamped = barDuration - note.startBeat;
+      if (clamped > REAL_V2_BEAT_EPS && clamped + REAL_V2_BEAT_EPS < note.duration) {
+        nextDur = clamped;
+      }
+    }
+    out.push({ measureIndex, note: { ...note, duration: nextDur } });
+  }
+  return out;
+}
+
+function applyV2NoteEntryClones182B5(guitar: PartModel, entries: V2NoteEntry182B5[]): void {
+  const measures = [...guitar.measures].sort((a, b) => a.index - b.index);
+  let i = 0;
+  for (const m of measures) {
+    m.events = m.events.map((e) => {
+      if (e.kind !== 'note' || (e.voice ?? 1) !== V2_VOICE) return e;
+      const entry = entries[i]!;
+      i++;
+      return entry.note;
+    });
+  }
+}
+
+function computeLongestV2SustainAcrossActiveBars182B5(
+  v2Notes: V2NoteEntry182B5[],
+  activeBarSet: Set<number>,
+  barDuration: number,
+  totalBars: number,
+): number {
+  let max = 0;
+  for (const { note, measureIndex } of v2Notes) {
+    const nextBar = measureIndex + 1;
+    if (nextBar > totalBars || !activeBarSet.has(nextBar)) continue;
+    if (note.duration < barDuration / 8 - REAL_V2_BEAT_EPS) continue;
+    const startG = (measureIndex - 1) * barDuration + note.startBeat;
+    const endG = startG + note.duration;
+    const spanBars = (endG - startG) / barDuration;
+    max = Math.max(max, spanBars);
+  }
+  return max;
+}
+
+/**
+ * Phase 18.2B.3 — Normalize **realized** Voice-2 activity after inject + pitch stabilisers so metrics/validators
+ * match the written score (runs after {@link stabiliseGuitarVoice2Wyble18_2B_2}; diagnostics read this result).
+ */
+function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: CompositionContext): void {
+  const tb = context.form.totalBars;
+  const seed = context.seed;
+  for (let pass = 0; pass < 10; pass++) {
+    let changed = false;
+    if (enforceRealizedRunLengthCap182B3(guitar, tb)) changed = true;
+    if (enforceRealizedBreathingAfterRuns182B3(guitar, tb, seed)) changed = true;
+    if (enforceRealizedSustainedWall182B3(guitar, context, seed, tb)) changed = true;
+    if (enforceRealizedCoverageCap182B3(guitar, tb, seed)) changed = true;
+    if (!changed) break;
+  }
+  const barDur = V2_BAR_DURATION_BEATS;
+  breakConsecutiveV2Sustains(guitar, barDur, tb);
+  let v2Entries = collectV2NoteEntries182B5(guitar);
+  let realizedActive = buildRealizedActiveBarSet(v2Entries, barDur, tb);
+  const clampedEntries = clampV2NotesToBarBoundaries(v2Entries, realizedActive, barDur, tb);
+  applyV2NoteEntryClones182B5(guitar, clampedEntries);
+  v2Entries = collectV2NoteEntries182B5(guitar);
+  realizedActive = buildRealizedActiveBarSet(v2Entries, barDur, tb);
+  const longestV2SustainAcrossActiveBars = computeLongestV2SustainAcrossActiveBars182B5(
+    v2Entries,
+    realizedActive,
+    barDur,
+    tb,
+  );
+  const longestConsecutiveSustainedRun = computeLongestConsecutiveSustainedRun182B5(guitar, barDur, tb);
+  logAdjacentActiveBarPairsDebug182B5(guitar, barDur, tb, realizedActive);
+  console.debug(
+    '[V2 normalize 18.2B.5] realized active bars (post-clamp)',
+    [...realizedActive].sort((a, b) => a - b).join(','),
+  );
+  console.debug('[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars', longestV2SustainAcrossActiveBars);
+  console.debug('[V2 normalize 18.2B.5] longestConsecutiveSustainedRun', longestConsecutiveSustainedRun);
+  /** Phase 18.2B.5 — realized sustained-texture density (after run/coverage breathing; polyphony diag follows). */
+  enforceV2TextureDensity182B5(guitar, context, tb, seed);
+  computeLongestSustainedTextureRun182B5(guitar, context, tb);
+}
+
+/**
+ * Phase 18.2B.3 — Realized-score breathing / run caps / coverage (after 18.2B.1–2 pitch stabilisers, before polyphony diagnostics).
+ */
+export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: CompositionContext): void {
+  if (context.presetId !== 'guitar_bass_duo') return;
+  normalizeRealizedVoice2PostInjection182B3(guitar, context);
 }
 
 /**

@@ -274,3 +274,35 @@ Next step:
   - rest injection
   - call/response enforcement
   - syncopation rules
+
+---
+
+## Phase 18.2B.5 — Guitar Voice 2 Sustained Normalization ✅
+
+**Status:** Complete — all validators passing  
+**Date:** 2026-04-05  
+**Module:** `engines/composer-os-v2/core/goldenPath/guitarVoice2WybleLayer.ts`
+
+### What was built
+A post-injection normalization step that prevents consecutive full-bar
+sustained Voice 2 notes. When two adjacent bars would both contain a
+whole-note sustained Voice 2 note, the second is converted to a half
+note + rest at the same pitch. This satisfies the Duo Interaction V3.1
+sustained-texture validator without affecting pitch continuity or
+voice-leading.
+
+### Passing output profile
+| Metric | Range |
+|---|---|
+| Bar coverage | 0.44 – 0.53 |
+| Longest active run | ≤ 3 |
+| Release score | 0.9 |
+| MX readiness | 1 |
+| Status | Shareable |
+
+### Constraints respected
+- No export changes
+- No bar math redesign  
+- No new pipeline
+- No new files
+- Deterministic output

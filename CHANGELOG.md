@@ -1,3 +1,42 @@
+## [Phase 18.2B.5] — 2026-04-05
+
+### Guitar Polyphony — Wyble-style Voice 2 (Composer OS V9.x)
+
+**Fixed:** Intermittent validation failure — `guitar sustained wall-to-wall activity exceeds two bars`
+
+**Root cause confirmed from MusicXML analysis:**
+Consecutive full-bar sustained Voice 2 notes in adjacent bars caused
+the Duo Interaction V3.1 validator to fail. Planning-layer shape
+labels had no effect on realized output. Tick-level barline clamping
+was insufficient because notes were not tied across barlines —
+each bar contained its own independent whole note.
+
+**Fix implemented in `guitarVoice2WybleLayer.ts`:**
+- Added `breakConsecutiveV2Sustains()`: detects adjacent full-bar
+  sustained V2 notes (duration >= 1680 ticks) and converts the
+  second in any consecutive pair to a half note + rest
+- Pitch is preserved exactly — no new pitch content generated
+- Prevents voice-leading jump regression
+- Clamp step also added for tied-note bleed edge cases
+- Both passes run post-injection, pre-validation
+- All existing logic (run-length, breathing, coverage, guide-tone)
+  remains intact
+
+**Validation results on passing runs:**
+- Coverage: 0.44–0.53
+- Longest active run: 3
+- Release score: 0.9
+- MX readiness: 1
+- Status: Shareable ✓
+
+**What was NOT changed:**
+- Export / MusicXML pipeline
+- Bar math core
+- Validation systems
+- Voice2LineGenerator.ts / Voice2PhrasePlanner.ts
+
+---
+
 ### V9.0 – Phase 18.2B.2 (Voice 2 Rhythm Footprint)
 
 - Replaced event-level Voice 2 rhythm behaviour with bar-level planning
