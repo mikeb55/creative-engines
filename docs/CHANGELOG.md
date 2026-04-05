@@ -1,10 +1,12 @@
 # Composer OS — Changelog
 
-**Update:** Phase 18.2B.2 (Voice 2 bar-level rhythm footprint for Guitar/Bass Duo) and Phase 18.2B.1 (Voice 2 diagnostics — engine + receipt UI) are documented in the repo root [CHANGELOG.md](../CHANGELOG.md).
+**Update:** Phase **18.2B close** (2026-04-05) — Voice 1–aware validators, sweep harness, bass/guitar hard-range alignment, export guards — is documented in the repo root **[CHANGELOG.md](../CHANGELOG.md)** (section **Phase 18.2B close**).
+
+**Earlier:** Phase 18.2B.2 (Voice 2 bar-level rhythm footprint) and Phase 18.2B.1 (Voice 2 diagnostics — engine + receipt UI) are in the same root changelog.
 
 ## V9.x - Phase 18.2B Polyphony Behaviour Progress
 
-Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CHANGELOG.md); phrase-level refinement still open.
+Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CHANGELOG.md); **remaining behaviour gates** for Guitar–Bass Duo are **Phase 18.2C** (bass walking + bass identity echo) — see root changelog.
 
 ### Added
 

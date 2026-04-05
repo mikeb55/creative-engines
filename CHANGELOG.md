@@ -37,6 +37,36 @@ each bar contained its own independent whole note.
 
 ---
 
+## [Phase 18.2B close] — 2026-04-05
+
+**Release:** Phase 18.2B complete — Voice 2 polyphony, bass range, validator alignment (e.g. commit `d58d8cf`).
+
+### Closed in this phase
+
+- Voice 2 sustained normalization (`breakConsecutiveV2Sustains`)
+- Guitar pitch re-entry clamped to validator hard range [40, 88]
+- Bass pitch floor raised to [40, 88] across profile and call sites
+- `midiToPitch` MusicXML export guard (non-finite / fractional MIDI) — no `stepMap` crash
+- `clampCleanElectricGuitarNotesToHardRange` after duo bar-math finalize
+- Validators updated to count guitar **Voice 1 only**: `activityScore`, `bassIdentityValidation` (echo PCs), `violatesOverlap` (via activity)
+- Barry Harris guitar voice-leading jump check: **Voice 1 melody only** (chronological)
+- CLI sweep harness: `engines/composer-os-v2/scripts/sweep.ts`, `engines/composer-os-v2/scripts/run-sweep.bat`
+
+### Sweep results at close (9-run harness)
+
+| Gate | At close | Previously (typical) |
+|------|----------|----------------------|
+| Voice-leading jumps (duo grammar) | 0 / 9 failing | 7 / 9 failing |
+| Jazz duo: excessive simultaneous high activity | 0 / 9 failing | 9 / 9 failing |
+| Remaining | Bass walking + bass identity echo | — |
+
+### Open — Phase 18.2C
+
+- Duo swing: bass is too constant-walking
+- Bass identity: motif echo / shared pitch-class with guitar too weak
+
+---
+
 ### V9.0 – Phase 18.2B.2 (Voice 2 Rhythm Footprint)
 
 - Replaced event-level Voice 2 rhythm behaviour with bar-level planning
@@ -77,6 +107,8 @@ Enable measurable evaluation of second-voice behaviour before applying rhythm an
 
 ## V9.x - Phase 18.2B COMPLETE
 
+> **Authoritative close notes:** **[Phase 18.2B close] — 2026-04-05** (above). Melody-only validator alignment shipped; remaining gates are **Phase 18.2C** (bass walking + bass identity echo).
+
 ### Added
 
 - Span-based Voice-2 continuity system
@@ -88,14 +120,9 @@ Enable measurable evaluation of second-voice behaviour before applying rhythm an
 - Polyphonic realism in guitar voice-leading
 - Reduced fragmented Voice-2 behaviour
 
-### Known Issue
-
-- Validator still rejects musically valid output
-- Identity + leap rules too strict for new model
-
 ### Next
 
-- Phase 18.2C - Validator Alignment
+- Phase 18.2C — duo swing bass walking + bass identity echo (see **Phase 18.2B close**)
 
 ---
 

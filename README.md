@@ -71,9 +71,9 @@ Composer OS currently supports:
 - Produces musically valid contrapuntal texture
 - Export + Sibelius + GP8 fully stable
 
-⚠️ Important:
-Validation layer is now out of sync with generation.
-Next phase will align validator with improved musical behaviour.
+**Validator alignment (18.2B close):** Behaviour gates that depend on guitar **melody** now evaluate **Voice 1 only** (activity, echo pitch-classes, overlap, Barry Harris melody jump chain). Inner voice (Voice 2) no longer inflates those checks. Sweep harness: `engines/composer-os-v2/scripts/run-sweep.bat`.
+
+**Remaining (Phase 18.2C):** Duo swing bass walking + bass identity (motif echo / shared pitch-class) — see root [CHANGELOG.md](CHANGELOG.md) section **Phase 18.2B close**.
 
 ### Voice 2 Diagnostics (V9.0)
 
@@ -106,13 +106,11 @@ This phase establishes the foundation for:
 
 ---
 
-## Next Phase: 18.2C - Validator Alignment
+## Next Phase: 18.2C — Bass walking + bass identity
 
-Goal:
-Update Behaviour Validation Gates so they correctly evaluate:
-- directional phrasing
-- controlled leaps
-- distributed identity (not single-bar peaks)
+Goal: reduce false or persistent failures on **duo swing** (bass constant-walking) and **bass identity** (motif echo / shared pitch-class with guitar), building on the Voice 1–aware guitar checks from 18.2B close.
+
+Earlier 18.2C planning also covered directional phrasing and distributed identity; melody-only alignment for guitar shipped in **18.2B close** — see [CHANGELOG.md](CHANGELOG.md).
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -165,7 +163,7 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 - **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
 - **18.2B** — Voice-2 continuity / directional inner line — **COMPLETE**
-- **18.2C** — Validator alignment — **NEXT** (behaviour gates vs improved generation)
+- **18.2C** — Bass walking + bass identity gates — **NEXT** (see CHANGELOG **Phase 18.2B close**)
 - **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; export and notation hosts stable (see **Phase 18.2B - Guitar Polyphony (COMPLETE)** above).
 
 ### V9.0 Summary
