@@ -93,8 +93,23 @@ variety needed. A real jazz bassist responds to what the
 guitar just played over the last 2 bars — not to per-bar
 probability weights. Phase 18.2D will build that layer.
 
-### Next phase
-Phase 18.2D — Bass Phrase Intelligence
+### Next phase (historical)
+Phrase-level bass work moved to **Phase 18.2D** (now complete — see below).
+
+## Phase 18.2D — Bass Phrase Intelligence ✅ COMPLETE
+
+**Status:** Complete  
+**Date:** 2026-04-06  
+
+### What was built
+- Multi-bar **guitar contour** per 8-bar phrase (asc / desc / static) feeding bass melodic weighting
+- **Phrase boundary intent** across phrases 1–4 (`development` / `contrast` / `return` on early phrase phases)
+- **`bassPlan.style`** routing: `melodic` vs `sparse` (simplify / two-note vs quarter-stride bias)
+- Bass line avoids **single pitch-class anchoring** via contour-aware chord-tone bias
+
+### Next
+- **18.2D verification sweep** (validators / harness)
+- **24-bar support** for duo golden path where forms and UI already allow 24 bars
 
 ## Phase 19 — Form Layer ✅
 
@@ -128,7 +143,7 @@ Phase 18.2D — Bass Phrase Intelligence
 | abacab | A B A' C A'' B' | 48 |
 
 ### Next
-Phase 18.2D — Bass Phrase Intelligence
+18.2D verification sweep; **24-bar duo support** (see **Phase 18.2D** above).
 
 ### Voice 2 Diagnostics (V9.0)
 
@@ -161,9 +176,9 @@ This phase establishes the foundation for:
 
 ---
 
-## Next Phase: Phase 18.2D — Bass Phrase Intelligence
+## Next: 18.2D verification + 24-bar duo support
 
-**Phase 19 — Form Layer** is complete (see above and [CHANGELOG.md](CHANGELOG.md)). Open bass behaviour items are deferred to **Phase 18.2D** (phrase-level intelligence); see [CHANGELOG.md](CHANGELOG.md) **Phase 18.2C — Partial**.
+**Phase 18.2D — Bass Phrase Intelligence** is **complete** (see above and [CHANGELOG.md](CHANGELOG.md)). Next focus: **verification sweep** for the new bass phrase layer and **24-bar** golden-path coverage where the form layer already supports 24 bars. Historical **Phase 18.2C — Partial** context remains in [CHANGELOG.md](CHANGELOG.md).
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -216,9 +231,11 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 - **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
 - **18.2B** — Voice-2 continuity / directional inner line — **COMPLETE**
-- **18.2C** — Bass behaviour (validators, sweep, pitch floor) — **PARTIAL** (see CHANGELOG **Phase 18.2C — Partial**); remaining bass gates → **18.2D**
+- **18.2C** — Bass behaviour (validators, sweep, pitch floor) — **PARTIAL** (see CHANGELOG **Phase 18.2C — Partial**); phrase-level bass follow-up → **18.2D**
+- **18.2D** — Bass phrase intelligence (contour, phrase intents, `bassPlan.style`) — **COMPLETE**
 - **Phase 19** — Form Layer — **COMPLETE**
-- **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; export and notation hosts stable (see **Phase 18.2B - Guitar Polyphony (COMPLETE)** above).
+- **Next:** 18.2D verification sweep; **24-bar** duo support
+- **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; bass phrase layer per CHANGELOG **Phase 18.2D**; export and notation hosts stable (see **Phase 18.2B** and **Phase 18.2D** above).
 
 ### V9.0 Summary
 

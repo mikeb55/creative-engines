@@ -1,3 +1,14 @@
+## Phase 18.2D — Bass Phrase Intelligence (2026-04-06) — COMPLETE
+
+- Multi-bar guitar contour computed per 8-bar phrase (asc/desc/static)
+- Bass melodic bias responds to guitar phrase direction
+- Phrase boundary intent differentiated across phrases 1-4 (development/contrast/return)
+- bassPlan.style activated (melodic/sparse routing)
+- Bass no longer anchors to single pitch class
+- Next: 18.2D verification sweep + 24-bar support
+
+---
+
 ## Phase 19 — Form Layer (2026-04-06) — COMPLETE
 
 - 15 song forms available in UI (≤32 bars only)
@@ -5,7 +16,7 @@
 - MusicXML rehearsal marks (A, B, C...) per section
 - Number of bars dropdown capped at 32
 - Forms >32 bars hidden from UI pending Phase 19.1
-- Next: Phase 18.2D — Bass Phrase Intelligence
+- Next: 18.2D verification sweep + 24-bar duo support (see **Phase 18.2D** above)
 
 ---
 
