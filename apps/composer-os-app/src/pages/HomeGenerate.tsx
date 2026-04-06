@@ -12,12 +12,12 @@ import {
   mergePresetsWithRegistry,
   type AppPresetCard,
 } from '../constants/composerOsPresetUi';
+import { FORM_OPTIONS } from '../constants/formOptions';
 import {
   clampSongFormBarCount,
   parseChordProgressionInput,
   parseChordProgressionInputFlexible,
   parseChordProgressionInputWithBarCount,
-  SONG_FORM_BAR_OPTIONS,
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
@@ -253,6 +253,7 @@ export function HomeGenerate({
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  const [formId, setFormId] = useState<string>('');
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [funkGroove, setFunkGroove] = useState(false);
@@ -384,6 +385,7 @@ export function HomeGenerate({
           stylePairing: stylePairingSong ?? stylePairingBigBand,
           ensembleConfigId: presetId === 'big_band' ? ensembleConfigId : undefined,
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
+          formId,
         });
         /** Duo / Song Form: chord count must match selected total bars (8 / 16 / 32). */
         let duoHarmonyFields: {
@@ -636,6 +638,7 @@ export function HomeGenerate({
       c4Strength,
       blendStrength,
       funkGroove,
+      formId,
       onResult,
     ]
   );
@@ -942,7 +945,10 @@ export function HomeGenerate({
           {songFormBarPreset ? (
             <select
               value={songFormBars}
-              onChange={(e) => setTotalBars(parseInt(e.target.value, 10) || 32)}
+              onChange={(e) => {
+                setTotalBars(Number(e.target.value));
+                setFormId('');
+              }}
               disabled={loading}
               style={{
                 width: 140,
@@ -953,11 +959,13 @@ export function HomeGenerate({
                 color: 'var(--text)',
               }}
             >
-              {SONG_FORM_BAR_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n} bars
-                </option>
-              ))}
+              <option value={8}>8 bars</option>
+              <option value={16}>16 bars</option>
+              <option value={32}>32 bars</option>
+              <option value={40}>40 bars</option>
+              <option value={48}>48 bars</option>
+              <option value={56}>56 bars</option>
+              <option value={64}>64 bars</option>
             </select>
           ) : (
             <input
@@ -979,6 +987,36 @@ export function HomeGenerate({
           )}
         </div>
       </div>
+
+      {(presetId === 'guitar_bass_duo' ||
+        presetId === 'guitar_bass_duo_single_line') && (
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '0.3rem',
+            color: 'var(--text-muted)',
+            fontSize: '0.9rem'
+          }}>
+            Song Form
+          </label>
+          <select
+            value={formId}
+            onChange={(e) => {
+              const selected = FORM_OPTIONS.find(f => f.id === e.target.value);
+              setFormId(e.target.value);
+              if (selected) setTotalBars(selected.bars);
+            }}
+            disabled={loading}
+          >
+            <option value="">System default</option>
+            {FORM_OPTIONS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label} — {f.bars} bars ({f.structure})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>

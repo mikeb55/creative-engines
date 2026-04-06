@@ -40,6 +40,12 @@ export function resolveLongFormRoute(
   if (tb === 48) {
     return { kind: 'duo32', totalBars: 48 };
   }
+  if (tb === 56) {
+    return { kind: 'duo32', totalBars: 56 };
+  }
+  if (tb === 64) {
+    return { kind: 'duo32', totalBars: 64 };
+  }
   /** Song Mode often omits `totalBars` but sets longFormEnabled — still resolve 32-bar duo */
   if (enabled && (tb === undefined || tb === LONG_FORM_DUO_BARS)) {
     return { kind: 'duo32', totalBars: LONG_FORM_DUO_BARS };

@@ -1,0 +1,2409 @@
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 49, interval: 30 }
+[V2-reentry] applied { from: 49, to: 73, interval: 30 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 52, interval: 24 }
+[V2-reentry] applied { from: 52, to: 76, interval: 24 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=312853305 mode=stable
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.5 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.5 action remove longest V2 note
+[V2-reentry] detect { g0: 5.5, prevPitch: 60, rowPitch: 58, interval: 2 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 64, interval: 1 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 69, interval: 4 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.75,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1.25,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 600,
+  combinedV2Beats: 5.25,
+  combinedV2Ticks: 2520
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31, prevPitch: 65, rowPitch: 64, interval: 1 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 52, interval: 27 }
+[V2-reentry] applied { from: 52, to: 76, interval: 27 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 4
+Notes per active bar: 1.33
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,7
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 49, interval: 27 }
+[V2-reentry] applied { from: 49, to: 73, interval: 27 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.625
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 5
+Notes per active bar: 1.25
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 4
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=312856655 mode=balanced
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 49, interval: 30 }
+[V2-reentry] applied { from: 49, to: 73, interval: 30 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 52, interval: 24 }
+[V2-reentry] applied { from: 52, to: 76, interval: 24 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=283331063 mode=surprise
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 63, interval: 2 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 54, interval: 11 }
+[V2-reentry] applied { from: 54, to: 66, interval: 11 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 61, interval: 4 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 54, interval: 11 }
+[V2-reentry] applied { from: 54, to: 66, interval: 11 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 53, interval: 12 }
+[V2-reentry] applied { from: 53, to: 65, interval: 12 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 54, interval: 25 }
+[V2-reentry] applied { from: 54, to: 78, interval: 25 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 57, interval: 8 }
+[V2-reentry] detect { g0: 28, prevPitch: 67, rowPitch: 62, interval: 5 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+FAIL seed=312853305 mode=stable
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.5 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.5 action remove longest V2 note
+[V2-reentry] detect { g0: 5.5, prevPitch: 60, rowPitch: 58, interval: 2 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 63, interval: 2 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 66, interval: 1 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.75,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1.25,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 600,
+  combinedV2Beats: 5.25,
+  combinedV2Ticks: 2520
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 57, interval: 8 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 54, interval: 11 }
+[V2-reentry] applied { from: 54, to: 66, interval: 11 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 63, interval: 2 }
+[V2-reentry] detect { g0: 31, prevPitch: 65, rowPitch: 66, interval: 1 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 53, interval: 12 }
+[V2-reentry] applied { from: 53, to: 65, interval: 12 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 58, interval: 21 }
+[V2-reentry] applied { from: 58, to: 70, interval: 21 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 4
+Notes per active bar: 1.33
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 59, interval: 6 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 63, interval: 2 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,7
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 57, interval: 8 }
+[V2-reentry] detect { g0: 28, prevPitch: 67, rowPitch: 54, interval: 13 }
+[V2-reentry] applied { from: 54, to: 66, interval: 13 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.625
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 5
+Notes per active bar: 1.25
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 4
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+FAIL seed=312856655 mode=balanced
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 63, interval: 2 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 54, interval: 11 }
+[V2-reentry] applied { from: 54, to: 66, interval: 11 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 61, interval: 4 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 54, interval: 11 }
+[V2-reentry] applied { from: 54, to: 66, interval: 11 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 53, interval: 12 }
+[V2-reentry] applied { from: 53, to: 65, interval: 12 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 54, interval: 25 }
+[V2-reentry] applied { from: 54, to: 78, interval: 25 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 57, interval: 8 }
+[V2-reentry] detect { g0: 28, prevPitch: 67, rowPitch: 62, interval: 5 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 parsed=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 score=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7 xml=Cmaj7/B|Bbmaj9|E7sus4|Am9|Dbsus|Gbmaj7#11|Abmaj9|Ebmaj7
+FAIL seed=283331063 mode=surprise
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 49, interval: 30 }
+[V2-reentry] applied { from: 49, to: 73, interval: 30 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 52, interval: 24 }
+[V2-reentry] applied { from: 52, to: 76, interval: 24 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=312853305 mode=stable
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.5 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.5 action remove longest V2 note
+[V2-reentry] detect { g0: 5.5, prevPitch: 60, rowPitch: 58, interval: 2 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 64, interval: 1 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 69, interval: 4 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.75,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1.25,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 600,
+  combinedV2Beats: 5.25,
+  combinedV2Ticks: 2520
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31, prevPitch: 65, rowPitch: 64, interval: 1 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 52, interval: 27 }
+[V2-reentry] applied { from: 52, to: 76, interval: 27 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 4
+Notes per active bar: 1.33
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=4
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,7
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 49, interval: 27 }
+[V2-reentry] applied { from: 49, to: 73, interval: 27 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.625
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 5
+Notes per active bar: 1.25
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 4
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=312856655 mode=balanced
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=7
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 24, prevPitch: 65, rowPitch: 60, interval: 5 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 7,
+  barB: 8,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 0.5,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 240,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,7,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 4
+Notes per active bar: 1.00
+Longest rest gap: 4
+Longest active run: 2
+Strong-beat entries: 3
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=4
+[wyble-trace] bar=3 isDuoGolden=true events=4
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=3
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2.75 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.375 action remove longest V2 note
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1.25 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 31.5, prevPitch: 65, rowPitch: 49, interval: 16 }
+[V2-reentry] applied { from: 49, to: 61, interval: 16 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 1
+Offbeat entries: 2
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=7
+[wyble-trace] bar=4 isDuoGolden=true events=7
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 6.5,
+  sumV2BeatsA: 1,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 480,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 0
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=6
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 1 action remove longest V2 note
+[V2-reentry] detect { g0: 19.5, prevPitch: 65, rowPitch: 62, interval: 3 }
+[V2-reentry] detect { g0: 28, prevPitch: 79, rowPitch: 49, interval: 30 }
+[V2-reentry] applied { from: 49, to: 73, interval: 30 }
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,5,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 3
+Longest active run: 1
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=5
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=5
+[wyble-trace] bar=5 isDuoGolden=true events=5
+[wyble-trace] bar=6 isDuoGolden=true events=5
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=5
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 3 for conversion
+[V2-convert] bar 3 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: false,
+  noteHeavyB: true,
+  sumGuitarBeatsA: 3.5,
+  sumGuitarBeatsB: 7,
+  sumV2BeatsA: 0.5,
+  sumV2BeatsB: 4,
+  sumV2TicksA: 240,
+  sumV2TicksB: 1920,
+  combinedV2Beats: 4.5,
+  combinedV2Ticks: 2160
+}
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 2,
+  barB: 3,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 7,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,3
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 1
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 3 / 8
+Bar coverage: 0.38
+Total notes: 3
+Notes per active bar: 1.00
+Longest rest gap: 5
+Longest active run: 3
+Strong-beat entries: 2
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+[wyble-trace] bar=1 isDuoGolden=true events=6
+[wyble-trace] bar=2 isDuoGolden=true events=7
+[wyble-trace] bar=3 isDuoGolden=true events=5
+[wyble-trace] bar=4 isDuoGolden=true events=3
+[wyble-trace] bar=5 isDuoGolden=true events=4
+[wyble-trace] bar=6 isDuoGolden=true events=4
+[wyble-trace] bar=7 isDuoGolden=true events=4
+[wyble-trace] bar=8 isDuoGolden=true events=6
+[V2-NORM-182B6] normalization running
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 4 action halve longest V2 note >= 2 beats
+[V2-break] scheduling bar 2 for conversion
+[V2-convert] bar 2 longest V2 note duration 2 action halve longest V2 note >= 2 beats
+[V2-reentry] detect { g0: 20, prevPitch: 65, rowPitch: 58, interval: 7 }
+[V2-reentry] detect { g0: 28, prevPitch: 76, rowPitch: 52, interval: 24 }
+[V2-reentry] applied { from: 52, to: 76, interval: 24 }
+[V2 normalize 18.2B.5] adjacent active pair sustained diag {
+  barA: 1,
+  barB: 2,
+  noteHeavyA: true,
+  noteHeavyB: false,
+  sumGuitarBeatsA: 6.5,
+  sumGuitarBeatsB: 3.5,
+  sumV2BeatsA: 4,
+  sumV2BeatsB: 1,
+  sumV2TicksA: 1920,
+  sumV2TicksB: 480,
+  combinedV2Beats: 5,
+  combinedV2Ticks: 2400
+}
+[V2 normalize 18.2B.5] realized active bars (post-clamp) 1,2,6,8
+[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars 0.5
+[V2 normalize 18.2B.5] longestConsecutiveSustainedRun 1
+VOICE 2 DIAGNOSTIC
+Bars active: 4 / 8
+Bar coverage: 0.50
+Total notes: 6
+Notes per active bar: 1.50
+Longest rest gap: 3
+Longest active run: 2
+Strong-beat entries: 5
+Offbeat entries: 1
+[pipeline-truth] input=pass score=pass export=pass submitted=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt parsed=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt score=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt xml=Dm9|Bbmaj7#11|Fmaj7/A|Ebmaj9|Gm11|C13sus|Fmaj9|A7alt
+FAIL seed=283331063 mode=surprise
+  - Bass identity: motif echo / shared pitch-class with guitar too weak
+  - Duo swing: bass is too constant-walking (need held notes / anticipations / off-beats)
+0 / 1 passed
+
+0 / 9 passed

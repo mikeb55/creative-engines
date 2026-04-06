@@ -42,6 +42,16 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
+/** Song form sections on score (attached in runGoldenPath when `formId` is set); not on `ScoreModel` type. */
+type FormSectionExport = { startBar: number; label: string };
+
+function rehearsalLabelFromScoreForm(score: ScoreModel, measureNumber: number): string | undefined {
+  const sections = (score as unknown as { formSections?: FormSectionExport[] }).formSections;
+  if (!sections || sections.length <= 1) return undefined;
+  const sec = sections.find((s) => s.startBar === measureNumber);
+  return sec?.label;
+}
+
 /** V3.4e — stable bar order for export; MusicXML `number` is assigned 1..n separately (Sibelius-safe). */
 function measuresInExportOrder(part: PartModel): MeasureModel[] {
   return [...part.measures].sort((a, b) => a.index - b.index);
@@ -380,6 +390,13 @@ ${partList}
               : '';
           xml += `${tempoEl}
 ${keyCaption}${feelEl}`;
+        }
+
+        const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
+        if (formRehearsalLabel) {
+          xml += `    <direction placement="above"><direction-type><rehearsal enclosure="box">${escapeXml(
+            formRehearsalLabel
+          )}</rehearsal></direction-type></direction>\n`;
         }
 
         if (m.rehearsalMark) {

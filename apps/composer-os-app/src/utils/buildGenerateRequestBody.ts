@@ -17,6 +17,7 @@ export interface CoreGenerationUiState {
   ensembleConfigId?: string;
   /** Song Mode primary songwriter lane */
   primarySongwriterStyle?: string;
+  formId?: string;
 }
 
 /** Maps UI labels to GenerateRequest fields (tonalCenter, bpm, totalBars, variationId, stylePairing, ensemble, creativeControl). */
@@ -37,5 +38,6 @@ export function mapCoreUiToGenerationFields(
   if (u.stylePairing) out.stylePairing = u.stylePairing;
   if (u.ensembleConfigId) out.ensembleConfigId = u.ensembleConfigId;
   if (u.primarySongwriterStyle?.trim()) out.primarySongwriterStyle = u.primarySongwriterStyle.trim();
+  if (u.formId?.trim()) out.formId = u.formId.trim();
   return out;
 }

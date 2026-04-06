@@ -13,6 +13,9 @@ export type FormId =
   | 'through3'
   | 'through4'
   | 'through5'
+  | 'through6'
+  | 'through7'
+  | 'through8'
   | 'aab'
   | 'abcb'
   | 'abacab';
@@ -79,6 +82,36 @@ export function resolveFormSections(formId: FormId): FormSection[] {
         { label: 'C', startBar: 17, length: 8 },
         { label: 'D', startBar: 25, length: 8 },
         { label: 'E', startBar: 33, length: 8 },
+      ];
+    case 'through6':
+      return [
+        { label: 'A', startBar: 1, length: 8 },
+        { label: 'B', startBar: 9, length: 8 },
+        { label: 'C', startBar: 17, length: 8 },
+        { label: 'D', startBar: 25, length: 8 },
+        { label: 'E', startBar: 33, length: 8 },
+        { label: 'F', startBar: 41, length: 8 },
+      ];
+    case 'through7':
+      return [
+        { label: 'A', startBar: 1, length: 8 },
+        { label: 'B', startBar: 9, length: 8 },
+        { label: 'C', startBar: 17, length: 8 },
+        { label: 'D', startBar: 25, length: 8 },
+        { label: 'E', startBar: 33, length: 8 },
+        { label: 'F', startBar: 41, length: 8 },
+        { label: 'G', startBar: 49, length: 8 },
+      ];
+    case 'through8':
+      return [
+        { label: 'A', startBar: 1, length: 8 },
+        { label: 'B', startBar: 9, length: 8 },
+        { label: 'C', startBar: 17, length: 8 },
+        { label: 'D', startBar: 25, length: 8 },
+        { label: 'E', startBar: 33, length: 8 },
+        { label: 'F', startBar: 41, length: 8 },
+        { label: 'G', startBar: 49, length: 8 },
+        { label: 'H', startBar: 57, length: 8 },
       ];
     case 'aab':
       return [

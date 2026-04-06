@@ -318,7 +318,7 @@ export function emitDuoBassQuarterStrideBar(params: {
       let bestScore = Infinity;
       for (const p of uniq) {
         const gap = Math.abs(p - prev);
-        const echoBonus = guitarPitchClassesInBar?.has(((p % 12) + 12) % 12) ? -0.25 : 0;
+        const echoBonus = guitarPitchClassesInBar?.has(((p % 12) + 12) % 12) ? -5 : 0;
         const score = gap + echoBonus;
         if (score < bestScore - 1e-6 || (Math.abs(score - bestScore) < 1e-6 && p < chosen)) {
           bestScore = score;
@@ -349,6 +349,10 @@ export function emitDuoSwingBassBar(params: {
   seed: number;
   bar: number;
   slashBassPitch?: number;
+  /** Guitar Voice 1 pitch classes in this bar — stride scoring prefers matching PCs (validator-aligned). */
+  guitarPitchClassesInBar?: Set<number>;
+  /** Bass-register echoes of guitar melody pitches (same PC as Voice 1; from `echoGuitarToBass`). */
+  melodyEchoPitches?: number[];
 }): void {
   const {
     m,
@@ -363,19 +367,40 @@ export function emitDuoSwingBassBar(params: {
     walkLow,
     effectiveHigh,
     slashBassPitch,
+    guitarPitchClassesInBar,
+    melodyEchoPitches,
   } = params;
   const span = 4 - firstStart;
   if (firstStart > 0) addEvent(m, createRest(0, firstStart));
   const t0 = firstStart;
   if (mode === 'hold') {
     const p1 = seededUnit(seed, bar, 901) < 0.55 ? clampPitch(guide, walkLow, effectiveHigh) : rootClamped;
-    const pool = [p1, clampPitch(third, walkLow, effectiveHigh), clampPitch(fifth, walkLow, effectiveHigh)];
+    const pool: number[] = [];
+    if (melodyEchoPitches && melodyEchoPitches.length > 0) {
+      pool.push(clampPitch(melodyEchoPitches[0]!, walkLow, effectiveHigh));
+    }
+    pool.push(p1, clampPitch(third, walkLow, effectiveHigh), clampPitch(fifth, walkLow, effectiveHigh));
     if (slashBassPitch !== undefined) {
       const sb = clampPitch(slashBassPitch, walkLow, effectiveHigh);
-      if (seededUnit(seed, bar, 903) < 0.62) pool.unshift(sb);
+      if (melodyEchoPitches && melodyEchoPitches.length > 0) {
+        pool.push(sb);
+      } else if (seededUnit(seed, bar, 903) < 0.62) pool.unshift(sb);
       else pool.push(sb);
     }
-    emitDuoBassQuarterStrideBar({ m, t0, span, seed, bar, walkLow, effectiveHigh, pitches: pool });
+    if (melodyEchoPitches && melodyEchoPitches.length > 1) {
+      pool.push(clampPitch(melodyEchoPitches[1]!, walkLow, effectiveHigh));
+    }
+    emitDuoBassQuarterStrideBar({
+      m,
+      t0,
+      span,
+      seed,
+      bar,
+      walkLow,
+      effectiveHigh,
+      pitches: pool,
+      guitarPitchClassesInBar,
+    });
     return;
   }
   if (mode === 'anticipate') {
@@ -384,24 +409,50 @@ export function emitDuoSwingBassBar(params: {
     const hit = qBeat(t0 + restLen);
     const rem = qBeat(4 - hit);
     const target = seededUnit(seed, bar, 902) < 0.5 ? fifth : third;
-    const pool = [
+    const pool: number[] = [];
+    if (melodyEchoPitches && melodyEchoPitches.length > 0) {
+      pool.push(clampPitch(melodyEchoPitches[0]!, walkLow, effectiveHigh));
+    }
+    pool.push(
       clampPitch(target, walkLow, effectiveHigh),
       clampPitch(guide, walkLow, effectiveHigh),
-      clampPitch(rootClamped, walkLow, effectiveHigh),
-    ];
+      clampPitch(rootClamped, walkLow, effectiveHigh)
+    );
     if (slashBassPitch !== undefined) {
       const sb = clampPitch(slashBassPitch, walkLow, effectiveHigh);
-      if (seededUnit(seed, bar, 904) < 0.62) pool.unshift(sb);
+      if (melodyEchoPitches && melodyEchoPitches.length > 0) {
+        pool.push(sb);
+      } else if (seededUnit(seed, bar, 904) < 0.62) pool.unshift(sb);
       else pool.push(sb);
     }
-    emitDuoBassQuarterStrideBar({ m, t0: hit, span: rem, seed, bar, walkLow, effectiveHigh, pitches: pool });
+    if (melodyEchoPitches && melodyEchoPitches.length > 1) {
+      pool.push(clampPitch(melodyEchoPitches[1]!, walkLow, effectiveHigh));
+    }
+    emitDuoBassQuarterStrideBar({
+      m,
+      t0: hit,
+      span: rem,
+      seed,
+      bar,
+      walkLow,
+      effectiveHigh,
+      pitches: pool,
+      guitarPitchClassesInBar,
+    });
     return;
   }
   addEvent(m, createRest(t0, 0.5));
-  const n1 =
+  let n1 =
     slashBassPitch !== undefined && seededUnit(seed, bar, 905) < 0.58
       ? clampPitch(slashBassPitch, walkLow, effectiveHigh)
       : third;
+  if (
+    melodyEchoPitches &&
+    melodyEchoPitches.length > 0 &&
+    seededUnit(seed, bar, 919) < 0.88
+  ) {
+    n1 = clampPitch(melodyEchoPitches[0]!, walkLow, effectiveHigh);
+  }
   addEvent(m, createNote(clampPitch(n1, walkLow, effectiveHigh), t0 + 0.5, 1));
   addEvent(m, createNote(guide, t0 + 1.5, 1));
   addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, 4 - t0 - 2.5))));

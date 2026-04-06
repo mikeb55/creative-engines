@@ -954,6 +954,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  if (options?.formId && context.form?.sections) {
+    (score as unknown as {
+      formSections?: { startBar: number; label: string }[];
+    }).formSections = context.form.sections.map((s) => ({
+      startBar: s.startBar,
+      label: s.label,
+    }));
+  }
   if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
     const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     if (guitar) {
