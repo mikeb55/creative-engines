@@ -5,6 +5,8 @@
 - Phrase boundary intent differentiated across phrases 1-4 (development/contrast/return)
 - bassPlan.style activated (melodic/sparse routing)
 - Bass no longer anchors to single pitch class
+- Fixed double bass clef: added `clef-octave-change` -1 to MusicXML export for `acoustic_upright_bass` parts
+- Bass now displays at correct register in Sibelius and MuseScore
 - Next: 18.2D verification sweep + 24-bar support
 
 ---

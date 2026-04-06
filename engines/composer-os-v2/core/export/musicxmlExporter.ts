@@ -318,6 +318,10 @@ ${partList}
       const part = score.parts[partIndex];
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
+      const clefOctaveChangeXml =
+        part.clef === 'bass' && part.instrumentIdentity === 'acoustic_upright_bass'
+          ? '<clef-octave-change>-1</clef-octave-change>'
+          : '';
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
@@ -344,7 +348,7 @@ ${partList}
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
       <staves>1</staves>
-      <clef><sign>${clefSign}</sign><line>${clefLine}</line></clef>
+      <clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>
     </attributes>
 `;
         }

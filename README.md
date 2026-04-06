@@ -106,6 +106,7 @@ Phrase-level bass work moved to **Phase 18.2D** (now complete — see below).
 - **Phrase boundary intent** across phrases 1–4 (`development` / `contrast` / `return` on early phrase phases)
 - **`bassPlan.style`** routing: `melodic` vs `sparse` (simplify / two-note vs quarter-stride bias)
 - Bass line avoids **single pitch-class anchoring** via contour-aware chord-tone bias
+- **MusicXML:** double bass clef includes `clef-octave-change` -1 so the part shows at the correct written register in Sibelius and MuseScore
 
 ### Next
 - **18.2D verification sweep** (validators / harness)
