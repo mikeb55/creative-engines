@@ -249,9 +249,9 @@ sweep harness.
 Open (18.2D): bass walking density, bass echo alignment.
 Cause: bar-level decisions insufficient — need phrase intelligence.
 
-## Next Phase: 19 — Form Layer
-Through-composed, AABA, sonata, symphonic movement forms.
-Foundation for string quartet movement generation.
+## Phase 19 — Form Layer ✅ (engine complete)
+formPlanner.ts + RunGoldenPathOptions.formId + route resolver.
+12 forms supported. UI wiring next.
 
 ---
 

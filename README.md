@@ -98,6 +98,37 @@ Phase 19 — Form Layer
 Through-composed, AABA, sonata form, symphonic movement forms.
 Groundwork for string quartet development.
 
+## Phase 19 — Form Layer ✅ (engine)
+
+**Status:** Engine complete — UI wiring next
+**Date:** 2026-04-06
+
+### What was built
+A form planning layer that runs before note generation.
+Pass formId on the generation request to select any of
+12 supported musical forms. The existing section-role
+system (statement/contrast/development/return) handles
+the rest automatically.
+
+### Supported forms
+| formId | Structure | Bars |
+|--------|-----------|------|
+| aaba | A A' B A'' | 32 |
+| abac | A B A' C | 32 |
+| aba | A B A' | 24 |
+| ab | A B | 16 |
+| blues12 | A | 12 |
+| blues24 | A A' | 24 |
+| through3 | A B C | 24 |
+| through4 | A B C D | 32 |
+| through5 | A B C D E | 40 |
+| aab | A A' B | 24 |
+| abcb | A B C B' | 32 |
+| abacab | A B A' C A'' B' | 48 |
+
+### Next
+Phase 19 UI — dropdown in Generate screen
+
 ### Voice 2 Diagnostics (V9.0)
 
 Composer OS now includes internal diagnostics for second-voice behaviour in Guitar/Bass Duo mode.

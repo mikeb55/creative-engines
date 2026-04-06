@@ -1,5 +1,9 @@
 # Composer OS — Changelog
 
+## Phase 19 — Form Layer Engine — 2026-04-06
+Engine complete. See root CHANGELOG.md for detail.
+Next: Phase 19 UI — form selector dropdown.
+
 ## Phase 18.2C — 2026-04-06
 Partial close. See root CHANGELOG.md for full detail.
 Open failures deferred to Phase 18.2D (bass phrase intelligence).

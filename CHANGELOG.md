@@ -1,3 +1,27 @@
+## [Phase 19 — Form Layer Engine] — 2026-04-06
+
+### Added
+- formPlanner.ts: FormId type + resolveFormSections()
+  Supporting 12 forms: aaba, abac, aba, ab, blues12,
+  blues24, through3, through4, through5, aab, abcb, abacab
+- RunGoldenPathOptions.formId: optional form selection
+- Form injection in runGoldenPath.ts after context build
+- longFormRouteResolver.ts: extended to handle 12/24/40/48 bars
+
+### Design
+- Zero changes to note generation, rhythm, pitch, or validation
+- Fully deterministic
+- Backward compatible — formId omitted = existing behaviour
+
+### Sweep result
+- 0 new failures introduced
+- 2 known open failures (18.2C scope, not regressed)
+
+### Next
+Phase 19 UI — form selector dropdown in Generate screen
+
+---
+
 ## [Phase 18.2C — Partial] — 2026-04-06
 
 ### Closed

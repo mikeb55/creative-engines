@@ -22,11 +22,23 @@ export function resolveLongFormRoute(
   }
   const tb = hints?.totalBars;
   const enabled = hints?.longFormEnabled === true;
+  if (tb === 12) {
+    return { kind: 'standard8', totalBars: 12 };
+  }
   if (tb === MID_FORM_DUO_BARS) {
     return { kind: 'duo16', totalBars: MID_FORM_DUO_BARS };
   }
+  if (tb === 24) {
+    return { kind: 'duo32', totalBars: 24 };
+  }
   if (tb === LONG_FORM_DUO_BARS) {
     return { kind: 'duo32', totalBars: LONG_FORM_DUO_BARS };
+  }
+  if (tb === 40) {
+    return { kind: 'duo32', totalBars: 40 };
+  }
+  if (tb === 48) {
+    return { kind: 'duo32', totalBars: 48 };
   }
   /** Song Mode often omits `totalBars` but sets longFormEnabled — still resolve 32-bar duo */
   if (enabled && (tb === undefined || tb === LONG_FORM_DUO_BARS)) {

@@ -62,6 +62,7 @@ import {
   ecmCrossModeSimilarityPenalty,
 } from '../ecm/ecmChamberScoring';
 import { resolveLongFormRoute } from '../form/longFormRouteResolver';
+import { FormId, resolveFormSections } from '../form/formPlanner';
 import {
   buildDuoLongFormCompositionContext,
   buildDuoLongFormCompositionContextFromBars,
@@ -633,6 +634,10 @@ export interface RunGoldenPathOptions {
   ecmTotalBars?: number;
   /** Guitar–Bass Duo: opt-in 32-bar long-form (with `totalBars: 32`). */
   totalBars?: number;
+  /** Phase 19: explicit musical form selection.
+   *  If omitted, form is inferred from totalBars
+   *  and longFormEnabled as before. */
+  formId?: FormId;
   longFormEnabled?: boolean;
   /** V3.4 — key signature: infer (default), user override, or hide. */
   keySignatureMode?: 'auto' | 'override' | 'none';
@@ -855,6 +860,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   let songModePhraseWarnings: string[] = [];
 
   const context = buildContextForGoldenPath(seed, options);
+  if (options?.formId) {
+    const formSections = resolveFormSections(options.formId);
+    context.form = {
+      ...context.form,
+      sections: formSections,
+      totalBars: formSections.reduce((sum, s) => sum + s.length, 0),
+    };
+  }
   if (options?.creativeControlLevel) {
     context.generationMetadata = {
       ...context.generationMetadata,
