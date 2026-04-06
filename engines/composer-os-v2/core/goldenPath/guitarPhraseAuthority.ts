@@ -8,7 +8,15 @@ import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 
-export type PhraseIntent = 'guitar_lead' | 'bass_lead' | 'answer_guitar' | 'answer_bass' | 'cadence';
+export type PhraseIntent =
+  | 'guitar_lead'
+  | 'bass_lead'
+  | 'answer_guitar'
+  | 'answer_bass'
+  | 'cadence'
+  | 'development'
+  | 'contrast'
+  | 'return';
 
 export function liftToneToRange(pitch: number, low: number, high: number): number {
   let p = pitch;
@@ -78,9 +86,13 @@ export function getDuoPhraseIntent(bar: number, seed: number): PhraseIntent {
  * V3.1 — Duo interaction authority: fixed 8-bar roles (cycle phase 1–8).
  * Phrase A (1–2): guitar lead / bass support; B (3–4): bass lead / guitar reduced;
  * (5–6): shared interlock; (7–8): guitar lead + cadence.
+ * phraseNumber 1–4 (32-bar): phrase 2–4 use development / contrast / return on phase 1–2 only.
  */
-export function getDuoPhraseIntentV31(phase: number): PhraseIntent {
+export function getDuoPhraseIntentV31(phase: number, phraseNumber: number = 1): PhraseIntent {
   const p = ((phase - 1) % 8) + 1;
+  if (phraseNumber === 2 && (p === 1 || p === 2)) return 'development';
+  if (phraseNumber === 3 && (p === 1 || p === 2)) return 'contrast';
+  if (phraseNumber === 4 && (p === 1 || p === 2)) return 'return';
   if (p === 8) return 'cadence';
   if (p === 7) return 'guitar_lead';
   if (p === 5) return 'answer_bass';
@@ -103,6 +115,12 @@ export function computeEnsembleStagger(bar: number, seed: number, intent: Phrase
       return { guitar: qBeat(1.27 + j * 0.35), bass: qBeat(0.05 + j * 0.2) };
     case 'answer_bass':
       return { guitar: qBeat(0.28 + j * 0.25), bass: qBeat(1 + j * 0.5) };
+    case 'development':
+      return { guitar: qBeat(0.18 + j * 0.2), bass: qBeat(0.52 + j * 0.33) };
+    case 'contrast':
+      return { guitar: qBeat(1.27 + j * 0.35), bass: qBeat(0.05 + j * 0.2) };
+    case 'return':
+      return { guitar: qBeat(0.12 + j * 0.18), bass: qBeat(0.42 + j * 0.3) };
     default:
       return { guitar: 0, bass: 0.5 };
   }

@@ -667,6 +667,33 @@ function applyGuideToneWeightBias(
   });
 }
 
+/** Phase 18.2D — bias chord-tone weights from 8-bar guitar contour (first vs last half of phrase). */
+function applyGuitarPhraseContourBias(
+  pieces: Array<{ w: number; pitch: number }>,
+  contour: 'asc' | 'desc' | 'static' | undefined,
+  rootForLine: number,
+  third: number,
+  fifth: number,
+  seventh: number
+): Array<{ w: number; pitch: number }> {
+  if (!contour || contour === 'static') return pieces;
+  const rp = ((rootForLine % 12) + 12) % 12;
+  const tp = ((third % 12) + 12) % 12;
+  const fp = ((fifth % 12) + 12) % 12;
+  const sp = ((seventh % 12) + 12) % 12;
+  const isHigh = (pc: number) => pc === fp || pc === sp;
+  const isLow = (pc: number) => pc === rp || pc === tp;
+  const hiMult = contour === 'asc' ? 1.22 : 0.88;
+  const loMult = contour === 'asc' ? 0.88 : 1.22;
+  return pieces.map((p) => {
+    const pc = ((p.pitch % 12) + 12) % 12;
+    let w = p.w;
+    if (isHigh(pc)) w *= hiMult;
+    else if (isLow(pc)) w *= loMult;
+    return { ...p, w };
+  });
+}
+
 export function emitMelodicBassBar(params: {
   m: MeasureModel;
   bar: number;
@@ -701,6 +728,8 @@ export function emitMelodicBassBar(params: {
   phraseBehaviourMode?: DuoPhraseBehaviourMode;
   /** Anti-loop retry count — perturbs phrase-mode bars. */
   bassPhraseRetryAttempt?: number;
+  /** 8-bar phrase: guitar contour (first vs last half) — biases chord-tone weights. */
+  guitarPhraseContour?: 'asc' | 'desc' | 'static';
 }): void {
   const {
     m,
@@ -726,6 +755,7 @@ export function emitMelodicBassBar(params: {
     phraseRhythmVariant,
     phraseBehaviourMode,
     bassPhraseRetryAttempt,
+    guitarPhraseContour,
   } = params;
   const steady = !!duoSteadyWalking;
   const modeRetry = bassPhraseRetryAttempt ?? phraseRhythmVariant ?? 0;
@@ -753,7 +783,14 @@ export function emitMelodicBassBar(params: {
   const lastLead = seededUnit(sForMelody, bar, 43) < 0.58 ? fifth : rootForLine;
 
   const biasPieces = (base: Array<{ w: number; pitch: number }>) =>
-    applyGuideToneWeightBias(base, rootForLine, third, seventh, guide, gtBias);
+    applyGuitarPhraseContourBias(
+      applyGuideToneWeightBias(base, rootForLine, third, seventh, guide, gtBias),
+      guitarPhraseContour,
+      rootForLine,
+      third,
+      fifth,
+      seventh
+    );
 
   const useEcho =
     guitarFirstPitchInBar !== undefined &&

@@ -1207,14 +1207,76 @@ function repairSlashBassHonourInDuoScore(
   }
 }
 
+type GuitarPhraseContour = 'asc' | 'desc' | 'static';
+
+type BassBehaviourPlanWithStyle = BassBehaviourPlan & { style?: string };
+
+function readBassPlanStyle(plan: BassBehaviourPlan): 'melodic' | 'sparse' | undefined {
+  const st = (plan as BassBehaviourPlanWithStyle).style;
+  if (st === 'melodic') return 'melodic';
+  if (st === 'sparse') return 'sparse';
+  return undefined;
+}
+
+function collectBarMidiNotes(guitarPart: PartModel, bar: number): number[] {
+  const m = guitarPart.measures.find((x) => x.index === bar);
+  if (!m) return [];
+  const out: number[] = [];
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    out.push((e as NoteEvent).pitch);
+  }
+  return out;
+}
+
+function avgPitchBars(guitarPart: PartModel, from: number, to: number): number | undefined {
+  let sum = 0;
+  let n = 0;
+  for (let b = from; b <= to; b++) {
+    for (const p of collectBarMidiNotes(guitarPart, b)) {
+      sum += p;
+      n++;
+    }
+  }
+  return n === 0 ? undefined : sum / n;
+}
+
+/** Per 8-bar unit: compare mean MIDI of bars 1–4 vs 5–8 of that phrase. */
+function computePhraseGuitarContours(guitarPart: PartModel, totalBars: number): GuitarPhraseContour[] {
+  const nPhrases = Math.max(1, Math.ceil(totalBars / 8));
+  const out: GuitarPhraseContour[] = [];
+  for (let ph = 0; ph < nPhrases; ph++) {
+    const phraseStart = ph * 8 + 1;
+    const phraseEnd = Math.min((ph + 1) * 8, totalBars);
+    const firstEnd = Math.min(phraseStart + 3, phraseEnd);
+    const secondStart = phraseStart + 4;
+    if (secondStart > phraseEnd) {
+      out.push('static');
+      continue;
+    }
+    const a1 = avgPitchBars(guitarPart, phraseStart, firstEnd);
+    const a2 = avgPitchBars(guitarPart, secondStart, phraseEnd);
+    if (a1 === undefined || a2 === undefined) {
+      out.push('static');
+      continue;
+    }
+    const d = a2 - a1;
+    if (d > 1.5) out.push('asc');
+    else if (d < -1.5) out.push('desc');
+    else out.push('static');
+  }
+  return out;
+}
+
 function buildBassPart(
   context: CompositionContext,
-  _bassPlan: BassBehaviourPlan,
+  bassPlan: BassBehaviourPlan,
   bassMap: InstrumentRegisterMap,
   motifState: MotifTrackerState,
   guitarPart: PartModel,
   interactionPlan: InteractionPlan | undefined,
-  texturePlan: EcmBarTexture[] | undefined
+  texturePlan: EcmBarTexture[] | undefined,
+  phraseGuitarContours: GuitarPhraseContour[]
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
@@ -1233,6 +1295,7 @@ function buildBassPart(
   const completedPhraseModes: DuoPhraseBehaviourMode[] = [];
   const evenEighthStreak = { n: 0 };
   const tb = totalBarsFromContext(context);
+  const bassPlanStyle = readBassPlanStyle(bassPlan);
 
   for (let b = 1; b <= tb; ) {
     const chord = getChordForBar(b, context);
@@ -1242,6 +1305,12 @@ function buildBassPart(
     const m = createMeasure(b, chord, rehearsalForBar(b, context));
     const [low, high] = getBassRegisterForBar(bassMap, b, context);
     const phase = ((b - 1) % 8) + 1;
+    const phraseNumber = Math.floor((b - 1) / 8) + 1;
+    const phraseContourIdx = Math.min(
+      Math.max(phraseNumber - 1, 0),
+      Math.max(phraseGuitarContours.length - 1, 0)
+    );
+    const guitarPhraseContour = phraseGuitarContours[phraseContourIdx] ?? 'static';
     const isDuoPreset = isGuitarBassDuoFamily(context.presetId);
     let duoRegLow = Math.max(walkLow, low);
     let duoRegHigh = Math.min(high, bassCeiling);
@@ -1321,11 +1390,19 @@ function buildBassPart(
     const s = duoGoldenBass ? seed + phraseRetryAttempt * 18457 + b * 31 : seed;
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
-    const phraseIntent = duoGoldenBass ? getDuoPhraseIntentV31(phase) : getDuoPhraseIntent(phraseBar, seed);
+    const phraseIntent = duoGoldenBass
+      ? getDuoPhraseIntentV31(phase, phraseNumber)
+      : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, duoGoldenBass ? s : seed, phraseIntent);
     const placements = getPlacementsForBar(motifState.placements, b);
     let firstStart = stagger.bass;
-    if (interaction?.coupling?.bassDeferToGuitar && !simplify && phraseIntent === 'guitar_lead') {
+    if (
+      interaction?.coupling?.bassDeferToGuitar &&
+      !simplify &&
+      (phraseIntent === 'guitar_lead' ||
+        phraseIntent === 'development' ||
+        phraseIntent === 'return')
+    ) {
       firstStart = Math.max(firstStart, qBeat(0.5 + seededUnit(s, b, 188) * 0.35));
     }
     firstStart = qBeat(firstStart + (seededUnit(s, b, 701) - 0.5) * 0.14);
@@ -1333,7 +1410,7 @@ function buildBassPart(
     if (duoGoldenBass && phraseIntent === 'answer_bass') {
       firstStart = qBeat(Math.max(firstStart, 1 + seededUnit(s, b, 704) * 0.85));
     }
-    if (duoGoldenBass && phraseIntent === 'answer_guitar') {
+    if (duoGoldenBass && (phraseIntent === 'answer_guitar' || phraseIntent === 'contrast')) {
       firstStart = qBeat(Math.min(firstStart, 0.75 + seededUnit(s, b, 705) * 0.35));
     }
 
@@ -1418,6 +1495,13 @@ function buildBassPart(
       !guitarActivityHot
     ) {
       simplifyForDuo = false;
+    }
+
+    if (duoGoldenBass && bassPlanStyle === 'melodic' && !simplify) {
+      simplifyForDuo = false;
+    }
+    if (duoGoldenBass && bassPlanStyle === 'sparse') {
+      simplifyForDuo = true;
     }
 
     if (duoGoldenBass && !simplifyForDuo) {
@@ -1650,6 +1734,9 @@ function buildBassPart(
         if (phraseRetryAttempt > 0) {
           useQuarterStride = !useQuarterStride;
         }
+        if (bassPlanStyle === 'sparse') {
+          useQuarterStride = false;
+        }
         if (useQuarterStride) {
           const gmEcho = guitarPart.measures.find((x) => x.index === b);
           const gPitches =
@@ -1773,6 +1860,7 @@ function buildBassPart(
               : phraseBar <= 4
                 ? 1.06
                 : 1.12,
+        guitarPhraseContour,
       });
     }
 
@@ -2056,6 +2144,7 @@ export function generateGoldenPathDuoScore(
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
       applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
     }
+    const phraseGuitarContours = computePhraseGuitarContours(guitarPart, tb);
     bassPart = buildBassPart(
       context,
       plans.bassBehaviour,
@@ -2063,7 +2152,8 @@ export function generateGoldenPathDuoScore(
       plans.motifState,
       guitarPart,
       plans.interactionPlan,
-      texturePlan
+      texturePlan,
+      phraseGuitarContours
     );
   }
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
