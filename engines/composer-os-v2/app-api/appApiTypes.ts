@@ -134,6 +134,8 @@ export interface GenerateRequest {
   songModeJamesBrownFunkOverlay?: boolean;
   /** Song Mode C5 blend strength; default medium in engine when omitted. */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Phase 19: explicit musical form selection. */
+  formId?: string;
 }
 
 export interface ValidationSummary {

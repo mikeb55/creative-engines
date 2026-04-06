@@ -859,7 +859,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const errors: string[] = [];
   let songModePhraseWarnings: string[] = [];
 
-  const context = buildContextForGoldenPath(seed, options);
+  let effectiveOptions = options;
+  if (effectiveOptions?.formId) {
+    const formSections = resolveFormSections(effectiveOptions.formId);
+    const formTotalBars = formSections.reduce((sum, s) => sum + s.length, 0);
+    effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
+  }
+  const context = buildContextForGoldenPath(seed, effectiveOptions);
   if (options?.formId) {
     const formSections = resolveFormSections(options.formId);
     context.form = {

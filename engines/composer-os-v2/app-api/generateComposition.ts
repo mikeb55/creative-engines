@@ -20,6 +20,7 @@ import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagno
 import type { GuitarVoice2PolyphonyDiagnostics } from '../core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
+import type { FormId } from '../core/form/formPlanner';
 
 export interface GenerateResult {
   success: boolean;
@@ -161,6 +162,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    ...(req.formId ? { formId: req.formId as FormId } : {}),
   });
 
   let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;

@@ -22,6 +22,16 @@ import {
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 
+const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
+  'through5',
+  'through6',
+  'through7',
+  'through8',
+  'abacab',
+]);
+
+const FORM_OPTIONS_UI = FORM_OPTIONS.filter((f) => !FORM_OPTION_IDS_EXCLUDED_FROM_UI.has(f.id));
+
 /** Receipt echo from engine (#17 chord export diagnostics). */
 type ChordDxReceiptUi = {
   summary: {
@@ -254,6 +264,8 @@ export function HomeGenerate({
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [formId, setFormId] = useState<string>('');
+  const [songFormMenuOpen, setSongFormMenuOpen] = useState(false);
+  const songFormDropdownRef = useRef<HTMLDivElement>(null);
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [funkGroove, setFunkGroove] = useState(false);
@@ -311,6 +323,16 @@ export function HomeGenerate({
       setTotalBars((tb) => (tb >= 8 ? tb : 32));
     }
   }, [presetId, songFormBarPreset]);
+
+  useEffect(() => {
+    if (!songFormMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const el = songFormDropdownRef.current;
+      if (el && !el.contains(e.target as Node)) setSongFormMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [songFormMenuOpen]);
 
   const songFormBars = clampSongFormBarCount(totalBars, 32);
 
@@ -961,11 +983,8 @@ export function HomeGenerate({
             >
               <option value={8}>8 bars</option>
               <option value={16}>16 bars</option>
+              <option value={24}>24 bars</option>
               <option value={32}>32 bars</option>
-              <option value={40}>40 bars</option>
-              <option value={48}>48 bars</option>
-              <option value={56}>56 bars</option>
-              <option value={64}>64 bars</option>
             </select>
           ) : (
             <input
@@ -989,7 +1008,8 @@ export function HomeGenerate({
       </div>
 
       {(presetId === 'guitar_bass_duo' ||
-        presetId === 'guitar_bass_duo_single_line') && (
+        presetId === 'guitar_bass_duo_single_line' ||
+        presetId === 'song_mode') && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{
             display: 'block',
@@ -999,22 +1019,112 @@ export function HomeGenerate({
           }}>
             Song Form
           </label>
-          <select
-            value={formId}
-            onChange={(e) => {
-              const selected = FORM_OPTIONS.find(f => f.id === e.target.value);
-              setFormId(e.target.value);
-              if (selected) setTotalBars(selected.bars);
-            }}
-            disabled={loading}
-          >
-            <option value="">System default</option>
-            {FORM_OPTIONS.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.label} — {f.bars} bars ({f.structure})
-              </option>
-            ))}
-          </select>
+          <div ref={songFormDropdownRef} style={{ position: 'relative', width: '100%', maxWidth: 560 }}>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                if (!loading) setSongFormMenuOpen((o) => !o);
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                padding: '0.45rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+                font: 'inherit',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                {formId
+                  ? (() => {
+                      const f = FORM_OPTIONS_UI.find((x) => x.id === formId);
+                      return f
+                        ? `${f.label} — ${f.bars} bars (${f.structure})`
+                        : 'System default';
+                    })()
+                  : 'System default'}
+              </span>
+              <span style={{ flexShrink: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }} aria-hidden>
+                ▾
+              </span>
+            </button>
+            {songFormMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: '100%',
+                  marginTop: 4,
+                  zIndex: 1000,
+                  maxHeight: 280,
+                  overflowY: 'auto',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-input, var(--bg))',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setFormId('');
+                    setSongFormMenuOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setFormId('');
+                      setSongFormMenuOpen(false);
+                    }
+                  }}
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    cursor: 'pointer',
+                    color: 'var(--text)',
+                  }}
+                >
+                  System default
+                </div>
+                {FORM_OPTIONS_UI.map((f) => (
+                  <div
+                    key={f.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setFormId(f.id);
+                      setTotalBars(f.bars);
+                      setSongFormMenuOpen(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setFormId(f.id);
+                        setTotalBars(f.bars);
+                        setSongFormMenuOpen(false);
+                      }
+                    }}
+                    style={{
+                      padding: '0.45rem 0.6rem',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {`${f.label} — ${f.bars} bars (${f.structure})`}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

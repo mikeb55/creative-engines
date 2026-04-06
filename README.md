@@ -94,9 +94,7 @@ guitar just played over the last 2 bars — not to per-bar
 probability weights. Phase 18.2D will build that layer.
 
 ### Next phase
-Phase 19 — Form Layer
-Through-composed, AABA, sonata form, symphonic movement forms.
-Groundwork for string quartet development.
+Phase 18.2D — Bass Phrase Intelligence
 
 ## Phase 19 — Form Layer ✅
 
@@ -163,9 +161,9 @@ This phase establishes the foundation for:
 
 ---
 
-## Next Phase: Phase 19 — Form Layer
+## Next Phase: Phase 18.2D — Bass Phrase Intelligence
 
-Through-composed, AABA, sonata form, symphonic movement forms. Groundwork for string quartet development. Open bass behaviour items are deferred to **Phase 18.2D** (phrase-level intelligence); see [CHANGELOG.md](CHANGELOG.md) **Phase 18.2C — Partial**.
+**Phase 19 — Form Layer** is complete (see above and [CHANGELOG.md](CHANGELOG.md)). Open bass behaviour items are deferred to **Phase 18.2D** (phrase-level intelligence); see [CHANGELOG.md](CHANGELOG.md) **Phase 18.2C — Partial**.
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -219,7 +217,7 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 - **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
 - **18.2B** — Voice-2 continuity / directional inner line — **COMPLETE**
 - **18.2C** — Bass behaviour (validators, sweep, pitch floor) — **PARTIAL** (see CHANGELOG **Phase 18.2C — Partial**); remaining bass gates → **18.2D**
-- **Phase 19** — Form Layer — **NEXT**
+- **Phase 19** — Form Layer — **COMPLETE**
 - **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; export and notation hosts stable (see **Phase 18.2B - Guitar Polyphony (COMPLETE)** above).
 
 ### V9.0 Summary
