@@ -73,7 +73,30 @@ Composer OS currently supports:
 
 **Validator alignment (18.2B close):** Behaviour gates that depend on guitar **melody** now evaluate **Voice 1 only** (activity, echo pitch-classes, overlap, Barry Harris melody jump chain). Inner voice (Voice 2) no longer inflates those checks. Sweep harness: `engines/composer-os-v2/scripts/run-sweep.bat`.
 
-**Remaining (Phase 18.2C):** Duo swing bass walking + bass identity (motif echo / shared pitch-class) — see root [CHANGELOG.md](CHANGELOG.md) section **Phase 18.2B close**.
+## Phase 18.2C — Bass Musical Behaviour (Partial) ⚠️
+
+**Status:** Partial — two validators open, deferred to 18.2D
+**Date:** 2026-04-06
+
+### What was completed
+- All guitar behaviour validators now measure Voice 1 only
+- Bass pitch floor [40, 88] enforced across all call sites
+- CLI sweep harness: 9 automated test runs in one command
+
+### What remains open (Phase 18.2D)
+- Bass walking too constant: requires phrase-level intelligence
+- Bass echo too weak: requires guitar phrase context awareness
+
+### Why these weren't fixed here
+The bar-level branching approach cannot produce the musical
+variety needed. A real jazz bassist responds to what the
+guitar just played over the last 2 bars — not to per-bar
+probability weights. Phase 18.2D will build that layer.
+
+### Next phase
+Phase 19 — Form Layer
+Through-composed, AABA, sonata form, symphonic movement forms.
+Groundwork for string quartet development.
 
 ### Voice 2 Diagnostics (V9.0)
 
@@ -106,11 +129,9 @@ This phase establishes the foundation for:
 
 ---
 
-## Next Phase: 18.2C — Bass walking + bass identity
+## Next Phase: Phase 19 — Form Layer
 
-Goal: reduce false or persistent failures on **duo swing** (bass constant-walking) and **bass identity** (motif echo / shared pitch-class with guitar), building on the Voice 1–aware guitar checks from 18.2B close.
-
-Earlier 18.2C planning also covered directional phrasing and distributed identity; melody-only alignment for guitar shipped in **18.2B close** — see [CHANGELOG.md](CHANGELOG.md).
+Through-composed, AABA, sonata form, symphonic movement forms. Groundwork for string quartet development. Open bass behaviour items are deferred to **Phase 18.2D** (phrase-level intelligence); see [CHANGELOG.md](CHANGELOG.md) **Phase 18.2C — Partial**.
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -163,7 +184,8 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 - **18.2A** — Polyphony export / Sibelius-safe proof — **COMPLETE**
 - **18.2B** — Voice-2 continuity / directional inner line — **COMPLETE**
-- **18.2C** — Bass walking + bass identity gates — **NEXT** (see CHANGELOG **Phase 18.2B close**)
+- **18.2C** — Bass behaviour (validators, sweep, pitch floor) — **PARTIAL** (see CHANGELOG **Phase 18.2C — Partial**); remaining bass gates → **18.2D**
+- **Phase 19** — Form Layer — **NEXT**
 - **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; export and notation hosts stable (see **Phase 18.2B - Guitar Polyphony (COMPLETE)** above).
 
 ### V9.0 Summary

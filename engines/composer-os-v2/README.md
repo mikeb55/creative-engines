@@ -242,6 +242,19 @@ npx ts-node --project tsconfig.json engines/composer-os-v2/tests/runAllTests.ts
 
 ---
 
+## Phase 18.2C — Bass Behaviour (Partial) ⚠️
+Status: Partial close — two validators open.
+Completed: Voice 1 validator alignment, bass pitch floor,
+sweep harness.
+Open (18.2D): bass walking density, bass echo alignment.
+Cause: bar-level decisions insufficient — need phrase intelligence.
+
+## Next Phase: 19 — Form Layer
+Through-composed, AABA, sonata, symphonic movement forms.
+Foundation for string quartet movement generation.
+
+---
+
 ## Directory Structure
 
 ```

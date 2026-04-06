@@ -1,3 +1,30 @@
+## [Phase 18.2C — Partial] — 2026-04-06
+
+### Closed
+- Guitar pitch validators aligned to Voice 1 only
+- Bass pitch floor enforced [40, 88] across all call sites
+- CLI sweep harness operational (run-sweep.bat, 9 automated runs)
+- Voice-leading jump validator filtered to Voice 1 only
+- Jazz duo excessive activity gate now Voice 1 aware
+
+### Known open — deferred to Phase 18.2D
+- Duo swing: bass is too constant-walking
+  (requires phrase-level bass intelligence, not branching fix)
+- Bass identity: motif echo / shared pitch-class with guitar too weak
+  (requires bass to read guitar phrase context, not just pitch classes)
+
+### Root cause of remaining failures
+The bass generator makes bar-level decisions in isolation.
+A real jazz bassist makes phrase-level decisions in response
+to what the guitar just played. Fixing this requires a new
+phrase-intelligence layer (Phase 18.2D), not more branching.
+
+### Next
+Phase 19 — Form Layer (through-composed, AABA, sonata,
+symphonic movement forms — groundwork for string quartet)
+
+---
+
 ## [Phase 18.2B.5] — 2026-04-05
 
 ### Guitar Polyphony — Wyble-style Voice 2 (Composer OS V9.x)

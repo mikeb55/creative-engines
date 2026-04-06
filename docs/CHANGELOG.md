@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Phase 18.2C — 2026-04-06
+Partial close. See root CHANGELOG.md for full detail.
+Open failures deferred to Phase 18.2D (bass phrase intelligence).
+Next: Phase 19 — Form Layer.
+
 **Update:** Phase **18.2B close** (2026-04-05) — Voice 1–aware validators, sweep harness, bass/guitar hard-range alignment, export guards — is documented in the repo root **[CHANGELOG.md](../CHANGELOG.md)** (section **Phase 18.2B close**).
 
 **Earlier:** Phase 18.2B.2 (Voice 2 bar-level rhythm footprint) and Phase 18.2B.1 (Voice 2 diagnostics — engine + receipt UI) are in the same root changelog.
