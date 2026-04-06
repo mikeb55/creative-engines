@@ -15,7 +15,6 @@ import {
 import { FORM_OPTIONS } from '../constants/formOptions';
 import {
   clampSongFormBarCount,
-  parseChordProgressionInput,
   parseChordProgressionInputFlexible,
   parseChordProgressionInputWithBarCount,
 } from '../utils/chordProgressionClient';
@@ -409,7 +408,7 @@ export function HomeGenerate({
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
           formId,
         });
-        /** Duo / Song Form: chord count must match selected total bars (8 / 16 / 32). */
+        /** Duo / Song Form: chord count matches selected total bars, or 8 bars (tiled) when length > 8. */
         let duoHarmonyFields: {
           harmonyMode: 'custom' | 'custom_locked';
           chordProgressionText: string;
@@ -417,73 +416,43 @@ export function HomeGenerate({
           longFormEnabled?: boolean;
         } | null = null;
         if (presetId === 'guitar_bass_duo' && chordTrim) {
-          if (tbForm === 32) {
-            const p32 = parseChordProgressionInputWithBarCount(chordTrim, 32);
-            if (p32.ok) {
-              duoHarmonyFields = {
-                harmonyMode: 'custom_locked',
-                chordProgressionText: chordTrim,
-                totalBars: 32,
-                longFormEnabled: true,
-              };
-            } else {
-              const p8 = parseChordProgressionInput(chordTrim);
-              if (!p8.ok) {
-                setError(p8.error);
-                setLoading(false);
-                notifyGenPhase('failed');
-                onResult({
-                  record: {},
-                  summary: { status: 'failed', at: new Date().toISOString() },
-                });
-                return;
-              }
-              duoHarmonyFields = {
-              harmonyMode: 'custom',
-              chordProgressionText: chordTrim,
-              totalBars: 32,
-              longFormEnabled: true,
-            };
-            }
-          } else if (tbForm === 16) {
-            const p16 = parseChordProgressionInputWithBarCount(chordTrim, 16);
-            if (!p16.ok) {
-              setError(p16.error);
-              setLoading(false);
-              notifyGenPhase('failed');
-              onResult({
-                record: {},
-                summary: { status: 'failed', at: new Date().toISOString() },
-              });
-              return;
-            }
+          const parsedDuo = parseChordProgressionInputWithBarCount(
+            chordTrim,
+            tbForm,
+            tbForm !== 8 ? [8] : undefined
+          );
+          if (!parsedDuo.ok) {
+            setError(parsedDuo.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+          const duoBarCount = parsedDuo.bars.length;
+          if (duoBarCount === tbForm) {
             duoHarmonyFields = {
               harmonyMode: 'custom_locked',
               chordProgressionText: chordTrim,
-              totalBars: 16,
-              longFormEnabled: true,
+              totalBars: tbForm,
+              longFormEnabled: tbForm >= 16,
             };
           } else {
-            const p8 = parseChordProgressionInput(chordTrim);
-            if (!p8.ok) {
-              setError(p8.error);
-              setLoading(false);
-              notifyGenPhase('failed');
-              onResult({
-                record: {},
-                summary: { status: 'failed', at: new Date().toISOString() },
-              });
-              return;
-            }
             duoHarmonyFields = {
-              harmonyMode: 'custom_locked',
+              harmonyMode: 'custom',
               chordProgressionText: chordTrim,
-              totalBars: 8,
-              longFormEnabled: false,
+              totalBars: tbForm,
+              longFormEnabled: true,
             };
           }
         } else if (presetId === 'guitar_bass_duo_single_line' && chordTrim) {
-          const pLine = parseChordProgressionInputWithBarCount(chordTrim, tbForm);
+          const pLine = parseChordProgressionInputWithBarCount(
+            chordTrim,
+            tbForm,
+            tbForm !== 8 ? [8] : undefined
+          );
           if (!pLine.ok) {
             setError(pLine.error);
             setLoading(false);
@@ -494,11 +463,12 @@ export function HomeGenerate({
             });
             return;
           }
+          const lineBarCount = pLine.bars.length;
           duoHarmonyFields = {
-            harmonyMode: tbForm === 8 ? 'custom_locked' : 'custom_locked',
+            harmonyMode: lineBarCount === tbForm ? 'custom_locked' : 'custom',
             chordProgressionText: chordTrim,
             totalBars: tbForm,
-            longFormEnabled: tbForm >= 16,
+            longFormEnabled: lineBarCount === tbForm ? tbForm >= 16 : true,
           };
         }
         if (presetId === 'song_mode' && songChordLine) {

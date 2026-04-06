@@ -62,7 +62,7 @@ import {
   ecmCrossModeSimilarityPenalty,
 } from '../ecm/ecmChamberScoring';
 import { resolveLongFormRoute } from '../form/longFormRouteResolver';
-import { FormId, resolveFormSections } from '../form/formPlanner';
+import { FormId, resolveFormSections, type FormSection } from '../form/formPlanner';
 import {
   buildDuoLongFormCompositionContext,
   buildDuoLongFormCompositionContextFromBars,
@@ -298,12 +298,115 @@ function buildGoldenPathContext(
   };
 }
 
+/** Builtin 8-bar duo cycle (×3 → 24 bars) — matches `buildLongFormFromDuoSections` tiling source. */
+const DUO_BUILTIN_EIGHT_BAR_CYCLE: readonly string[] = [
+  'Dmin9',
+  'G13',
+  'Cmaj9',
+  'A7alt',
+  'Dmin9',
+  'G13',
+  'Cmaj9',
+  'A7alt',
+];
+
+function sectionRoleMapForDuoForm(sections: Array<{ label: string }>): Record<string, SectionRole> {
+  const n = sections.length;
+  if (n <= 1) {
+    return Object.fromEntries(sections.map((s) => [s.label, 'statement' as SectionRole]));
+  }
+  const m: Record<string, SectionRole> = {};
+  for (let i = 0; i < n; i++) {
+    const lab = sections[i]!.label;
+    if (i === 0) m[lab] = 'statement';
+    else if (i === n - 1) m[lab] = 'return';
+    else m[lab] = i === 1 ? 'contrast' : 'development';
+  }
+  return m;
+}
+
+/** 24-bar duo context: avoids `duo32` → `buildDuoLongFormCompositionContext` defaulting to 32 measures. */
+function buildDuoTwentyFourBarCompositionContext(
+  seed: number,
+  formSections: FormSection[],
+  bars24: string[],
+  opts: {
+    presetId: string;
+    harmonySource: 'builtin' | 'custom';
+    chordProgressionInputRaw?: string;
+  }
+): CompositionContext {
+  const preset = guitarBassDuoPreset;
+  const feel = preset.defaultFeel;
+  const form = {
+    sections: formSections.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
+    totalBars: 24,
+  };
+  const harmony = buildHarmonyPlanFromBars(bars24);
+  const chordSymbolPlan = buildChordSymbolPlanFromBars(bars24);
+  const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: 24 };
+  const sectionRoles = planSectionRoles(form.sections, sectionRoleMapForDuoForm(form.sections));
+  const densityPlan = planDensityCurve(sectionRoles, 24);
+  const densityCurve = { segments: densityPlan.segments, totalBars: 24 };
+  const guitarMap = planGuitarRegisterMap(sectionRoles);
+  const bassMap = planBassRegisterMap(sectionRoles);
+  const register = {
+    melody: [55, 79] as [number, number],
+    bass: [40, 55] as [number, number],
+    byInstrument: {
+      clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [40, 55],
+    },
+  };
+  const rehearsalMarkPlan = {
+    marks: formSections.map((s) => ({ label: s.label, bar: s.startBar })),
+  };
+  const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
+  const raw = opts.chordProgressionInputRaw;
+  const context: CompositionContext = {
+    systemVersion: '2.0.0',
+    presetId: opts.presetId,
+    seed,
+    form,
+    feel,
+    harmony,
+    motif: { activeMotifs: [], variants: {} },
+    phrase,
+    register,
+    density: densityCurve,
+    instrumentProfiles: preset.instrumentProfiles,
+    chordSymbolPlan,
+    rehearsalMarkPlan,
+    lockedHarmonyBarsRaw: [...bars24],
+    generationMetadata: {
+      generatedAt: new Date().toISOString(),
+      harmonySource: opts.harmonySource,
+      longFormDuo: true,
+      modulationPlanActive: false,
+      totalBars: 24,
+      ...(opts.harmonySource === 'custom'
+        ? {
+            customHarmonyLocked: true,
+            progressionMode: 'custom' as const,
+            customChordProgressionSummary: bars24.join(' | '),
+            parsedCustomProgressionBars: [...bars24],
+            chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
+            builtInHarmonyFallbackOccurred: false,
+          }
+        : { builtInHarmonyFallbackOccurred: false }),
+    },
+    validation: { gates: [], passed: true },
+    readiness: { release: release.release, mx: release.mx },
+  };
+  return context;
+}
+
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
   const presetId = options?.presetId ?? 'guitar_bass_duo';
   /** Song Mode / API inject: custom_locked uses ONLY lockedHarmonyBarsRaw (no planner / no alternate source). */
   if (isGuitarBassDuoFamily(presetId) && options?.harmonyMode === 'custom_locked' && options.lockedHarmonyBarsRaw) {
     const n = options.lockedHarmonyBarsRaw.length;
-    if (![8, 16, 32].includes(n)) {
+    if (![8, 16, 24, 32].includes(n)) {
       throw new Error(
         `CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires lockedHarmonyBarsRaw length 8, 16, or 32 (got ${n}).`
       );
@@ -371,6 +474,37 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       options?.ecmTotalBars !== undefined ? { totalBars: options.ecmTotalBars } : undefined;
     return buildEcmChamberContext(seed, mode, ecmOpts);
   }
+  /** 24-bar forms (through3, aba, blues24, aab): do not use duo32 builder (always 32 measures). */
+  if (isGuitarBassDuoFamily(presetId) && options?.formId) {
+    const formSections24 = resolveFormSections(options.formId);
+    const sum24 = formSections24.reduce((sum, s) => sum + s.length, 0);
+    if (sum24 === 24 && options.harmonyMode !== 'custom_locked') {
+      const p = options.parsedChordBars;
+      const pid = options.presetId ?? 'guitar_bass_duo';
+      if (p?.length === 24) {
+        return buildDuoTwentyFourBarCompositionContext(seed, formSections24, p, {
+          presetId: pid,
+          harmonySource: 'custom',
+          chordProgressionInputRaw: options.chordProgressionText?.trim(),
+        });
+      }
+      if (p?.length === 8) {
+        const b24 = [...p, ...p, ...p];
+        return buildDuoTwentyFourBarCompositionContext(seed, formSections24, b24, {
+          presetId: pid,
+          harmonySource: 'custom',
+          chordProgressionInputRaw: options.chordProgressionText?.trim(),
+        });
+      }
+      if (!p?.length) {
+        const builtin24 = Array.from({ length: 24 }, (_, i) => DUO_BUILTIN_EIGHT_BAR_CYCLE[i % 8]!);
+        return buildDuoTwentyFourBarCompositionContext(seed, formSections24, builtin24, {
+          presetId: pid,
+          harmonySource: 'builtin',
+        });
+      }
+    }
+  }
   const lf = resolveLongFormRoute(presetId, {
     totalBars: options?.totalBars,
     longFormEnabled: options?.longFormEnabled,
@@ -436,6 +570,10 @@ function resolveExpectedCustomChordBarCount(options?: RunGoldenPathOptions): num
   if (lf.kind === 'standard8') return 8;
   if (lf.kind === 'duo16') return 16;
   if (lf.kind === 'duo32') {
+    if (options?.formId) {
+      const sumForm = resolveFormSections(options.formId).reduce((sum, s) => sum + s.length, 0);
+      if (sumForm === 24) return 24;
+    }
     return options?.harmonyMode === 'custom_locked' ? 32 : 8;
   }
   return 8;
@@ -703,7 +841,7 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   const hasLockedBars =
     opts?.harmonyMode === 'custom_locked' &&
     opts.lockedHarmonyBarsRaw &&
-    [8, 16, 32].includes(opts.lockedHarmonyBarsRaw.length);
+    [8, 16, 24, 32].includes(opts.lockedHarmonyBarsRaw.length);
   if (
     isGuitarBassDuoFamily(presetIdEarly) &&
     (harmonyMode === 'custom' || harmonyMode === 'custom_locked') &&
@@ -755,19 +893,38 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     });
     let parsed: { ok: true; bars: string[] } | { ok: false; error: string };
     if (isGuitarBassDuoFamily(presetIdEarly) && lfParse.kind === 'duo32' && opts?.harmonyMode !== 'custom_locked') {
-      const p32 = parseChordProgressionInputWithBarCount(text, 32);
-      if (p32.ok) {
-        parsed = p32;
-      } else {
-        const p8 = parseChordProgressionInputWithBarCount(text, 8);
-        if (!p8.ok) {
+      const formBarSum =
+        opts?.formId != null
+          ? resolveFormSections(opts.formId).reduce((sum, s) => sum + s.length, 0)
+          : undefined;
+      if (formBarSum === 24 || opts?.totalBars === 24) {
+        const p24 = parseChordProgressionInputWithBarCount(text, 24, [8]);
+        if (!p24.ok) {
           return harmonyParseFailureGoldenPathResult(
             seed,
             opts,
-            `Invalid chord progression — not applied. Long-form (32 bars): ${p32.error} — or 8-bar tile: ${p8.error}`
+            `Invalid chord progression — not applied. ${p24.error}`
           );
         }
-        parsed = p8;
+        parsed =
+          p24.bars.length === 24
+            ? p24
+            : { ok: true, bars: [...p24.bars, ...p24.bars, ...p24.bars] };
+      } else {
+        const p32 = parseChordProgressionInputWithBarCount(text, 32);
+        if (p32.ok) {
+          parsed = p32;
+        } else {
+          const p8 = parseChordProgressionInputWithBarCount(text, 8);
+          if (!p8.ok) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              `Invalid chord progression — not applied. Long-form (32 bars): ${p32.error} — or 8-bar tile: ${p8.error}`
+            );
+          }
+          parsed = p8;
+        }
       }
     } else if (isGuitarBassDuoFamily(presetIdEarly) && lfParse.kind === 'duo16' && opts?.harmonyMode !== 'custom_locked') {
       const p16 = parseChordProgressionInputWithBarCount(text, 16);

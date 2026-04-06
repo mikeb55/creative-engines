@@ -72,13 +72,16 @@ export type ParseChordProgressionResult =
  */
 export function parseChordProgressionInputWithBarCount(
   input: string,
-  expectedBarCount: number
+  expectedBarCount: number,
+  alternateAcceptedBarCounts?: readonly number[]
 ): ParseChordProgressionResult {
+  const acceptedCounts = new Set<number>([expectedBarCount, ...(alternateAcceptedBarCounts ?? [])]);
+  const acceptedLabel = [...acceptedCounts].sort((a, b) => a - b).join(' or ');
   const trimmed = normalizeChordProgressionSeparators(input);
   if (!trimmed) {
     return {
       ok: false,
-      error: `Chord progression is empty. Enter exactly ${expectedBarCount} bars (use | , ; or spaced / between chords).`,
+      error: `Chord progression is empty. Enter exactly ${acceptedLabel} bars (use | , ; or spaced / between chords).`,
     };
   }
   const rawBars = trimmed.split('|').map((s) => s.trim());
@@ -98,10 +101,10 @@ export function parseChordProgressionInputWithBarCount(
     }
     bars.push(normalizeLeadSheetChordSpelling(rawCell).replace(/\s+/g, ' ').trim());
   }
-  if (bars.length !== expectedBarCount) {
+  if (!acceptedCounts.has(bars.length)) {
     return {
       ok: false,
-      error: `Expected exactly ${expectedBarCount} bars (use | , ; or spaced / between chords) (found ${bars.length}).`,
+      error: `Expected exactly ${acceptedLabel} bars (use | , ; or spaced / between chords) (found ${bars.length}).`,
     };
   }
   return { ok: true, bars };

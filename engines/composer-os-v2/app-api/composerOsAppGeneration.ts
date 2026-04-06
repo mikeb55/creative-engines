@@ -27,6 +27,7 @@ import {
 import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
+import { resolveFormSections, type FormId } from '../core/form/formPlanner';
 import {
   normalizeChordProgressionSeparators,
   normalizeChordToken,
@@ -257,7 +258,20 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       });
     }
     const barTarget = clampSongFormBarCount(req.totalBars, 32);
-    const parsedHarmony = parseChordProgressionInputWithBarCount(rawCustomHarmony, barTarget);
+    let expectedBarCount = barTarget;
+    if (req.formId != null) {
+      const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
+      if (formBarSum > 0) {
+        expectedBarCount = formBarSum;
+      }
+    }
+    const altCounts =
+      req.totalBars && req.totalBars !== barTarget ? [req.totalBars] : undefined;
+    const parsedHarmony = parseChordProgressionInputWithBarCount(
+      rawCustomHarmony,
+      expectedBarCount,
+      altCounts
+    );
     if (!parsedHarmony.ok) {
       return {
         success: false,

@@ -263,6 +263,7 @@ export function apiGenerate(
         body.blendStrength === 'strong'
           ? body.blendStrength
           : undefined,
+      formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
     };
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;
@@ -295,11 +296,12 @@ export function apiGenerate(
       tb !== undefined &&
       tb !== 8 &&
       tb !== 16 &&
+      tb !== 24 &&
       tb !== 32
     ) {
       return {
         success: false,
-        error: 'totalBars must be 8, 16, or 32 for Song Mode and Guitar–Bass Duo presets.',
+        error: 'totalBars must be 8, 16, 24, or 32 for Song Mode and Guitar–Bass Duo presets.',
         composerOsVersion: COMPOSER_OS_VERSION,
       };
     }
