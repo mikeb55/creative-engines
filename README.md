@@ -98,17 +98,17 @@ Phase 19 — Form Layer
 Through-composed, AABA, sonata form, symphonic movement forms.
 Groundwork for string quartet development.
 
-## Phase 19 — Form Layer ✅ (engine)
+## Phase 19 — Form Layer ✅
 
-**Status:** Engine complete — UI wiring next
+**Status:** Complete
 **Date:** 2026-04-06
 
 ### What was built
-A form planning layer that runs before note generation.
-Pass formId on the generation request to select any of
-12 supported musical forms. The existing section-role
-system (statement/contrast/development/return) handles
-the rest automatically.
+- 15 musical forms selectable at generation time
+- Song Form dropdown in Generate screen
+- Bar count auto-updates when form selected
+- Rehearsal marks exported to MusicXML
+- Automated form sweep harness
 
 ### Supported forms
 | formId | Structure | Bars |
@@ -122,12 +122,15 @@ the rest automatically.
 | through3 | A B C | 24 |
 | through4 | A B C D | 32 |
 | through5 | A B C D E | 40 |
+| through6 | A B C D E F | 48 |
+| through7 | A B C D E F G | 56 |
+| through8 | A B C D E F G H | 64 |
 | aab | A A' B | 24 |
 | abcb | A B C B' | 32 |
 | abacab | A B A' C A'' B' | 48 |
 
 ### Next
-Phase 19 UI — dropdown in Generate screen
+Phase 18.2D — Bass Phrase Intelligence
 
 ### Voice 2 Diagnostics (V9.0)
 

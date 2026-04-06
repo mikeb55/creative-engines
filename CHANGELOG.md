@@ -1,24 +1,32 @@
-## [Phase 19 — Form Layer Engine] — 2026-04-06
+## [Phase 19 — Form Layer Complete] — 2026-04-06
 
-### Added
-- formPlanner.ts: FormId type + resolveFormSections()
-  Supporting 12 forms: aaba, abac, aba, ab, blues12,
-  blues24, through3, through4, through5, aab, abcb, abacab
-- RunGoldenPathOptions.formId: optional form selection
-- Form injection in runGoldenPath.ts after context build
-- longFormRouteResolver.ts: extended to handle 12/24/40/48 bars
+### Engine
+- formPlanner.ts: 15 forms (aaba, abac, aba, ab,
+  blues12, blues24, through3-8, aab, abcb, abacab)
+- RunGoldenPathOptions.formId optional field
+- Form injection after buildContextForGoldenPath
+- longFormRouteResolver: 12/24/40/48/56/64 bar support
+- formSections attached to score model for export
 
-### Design
-- Zero changes to note generation, rhythm, pitch, or validation
-- Fully deterministic
-- Backward compatible — formId omitted = existing behaviour
+### UI
+- Song Form dropdown (guitar_bass_duo only)
+- Auto-updates bar count on form selection
+- Bars dropdown extended: 8/16/32/40/48/56/64
+- Song Form label visible above dropdown
 
-### Sweep result
-- 0 new failures introduced
-- 2 known open failures (18.2C scope, not regressed)
+### Export
+- Rehearsal marks (boxed) at section boundaries
+- Verified in Sibelius: A, A', B, A'' on AABA
+
+### Automation
+- form-sweep.ts: automated test across all 15 forms
+- run-form-sweep.bat: one-command form test runner
+- Note: form sweep shows 0/15 due to pre-existing
+  18.2C behaviour failures — not Form Layer failures.
+  Re-run after Phase 18.2D.
 
 ### Next
-Phase 19 UI — form selector dropdown in Generate screen
+Phase 18.2D — Bass Phrase Intelligence
 
 ---
 

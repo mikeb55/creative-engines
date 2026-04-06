@@ -1,13 +1,14 @@
 # Composer OS — Changelog
 
-## Phase 19 — Form Layer Engine — 2026-04-06
-Engine complete. See root CHANGELOG.md for detail.
-Next: Phase 19 UI — form selector dropdown.
+## Phase 19 — Form Layer Complete — 2026-04-06
+Engine, UI, export, and automation complete.
+See root CHANGELOG.md for full detail.
+Next: Phase 18.2D — Bass Phrase Intelligence.
 
 ## Phase 18.2C — 2026-04-06
 Partial close. See root CHANGELOG.md for full detail.
 Open failures deferred to Phase 18.2D (bass phrase intelligence).
-Next: Phase 19 — Form Layer.
+Next: Phase 18.2D — Bass Phrase Intelligence.
 
 **Update:** Phase **18.2B close** (2026-04-05) — Voice 1–aware validators, sweep harness, bass/guitar hard-range alignment, export guards — is documented in the repo root **[CHANGELOG.md](../CHANGELOG.md)** (section **Phase 18.2B close**).
 

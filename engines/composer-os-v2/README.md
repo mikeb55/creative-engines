@@ -249,9 +249,9 @@ sweep harness.
 Open (18.2D): bass walking density, bass echo alignment.
 Cause: bar-level decisions insufficient — need phrase intelligence.
 
-## Phase 19 — Form Layer ✅ (engine complete)
-formPlanner.ts + RunGoldenPathOptions.formId + route resolver.
-12 forms supported. UI wiring next.
+## Phase 19 — Form Layer ✅
+15 forms, UI dropdown, rehearsal marks, form sweep.
+Next: Phase 18.2D — Bass Phrase Intelligence.
 
 ---
 
