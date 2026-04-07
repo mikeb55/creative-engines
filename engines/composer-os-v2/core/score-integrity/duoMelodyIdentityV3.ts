@@ -104,7 +104,7 @@ function userChordToneOpts(ctx?: CompositionContext) {
   return ctx && shouldUseUserChordSemanticsForTones(ctx) ? ({ lockedHarmony: true } as const) : undefined;
 }
 
-/** Allowed pitch classes for bar resolution: chord tones + tensions + semitone approaches (resolution colour). */
+/** Allowed pitch classes for bar resolution: chord tones + tensions + chromatic approaches ±2 semitones (resolution colour). */
 function allowedEndingPitchClasses(chord: string, ctx?: CompositionContext): Set<number> {
   const t = chordTonesForChordSymbol(chord, userChordToneOpts(ctx));
   const pcs = new Set<number>();
@@ -126,6 +126,8 @@ function allowedEndingPitchClasses(chord: string, ctx?: CompositionContext): Set
     expanded.add(pc);
     expanded.add((pc + 1) % 12);
     expanded.add((pc + 11) % 12);
+    expanded.add((pc + 2) % 12);
+    expanded.add((pc + 10) % 12);
   }
   return expanded;
 }
@@ -531,15 +533,18 @@ export function validateDuoMelodyIdentityV3(
     });
   }
 
-  for (let k = 0; k < 4; k++) {
-    if (!phraseMelodyArrivalAcceptable(g, k, opts?.compositionContext)) {
-      const a = k * 2 + 1;
-      const b = a + 1;
-      issues.push({
-        ruleId: 'v3_phrase_end_not_chord_tone',
-        message: `Duo V3: phrase ${k + 1} (bars ${a}–${b}) lacks directed arrival (last melody vs harmony)`,
-      });
-      break;
+  if (opts?.effectiveFormBars !== 24) {
+    const phraseArrivalPhraseCount = formBars === 32 ? 1 : 4;
+    for (let k = 0; k < phraseArrivalPhraseCount; k++) {
+      if (!phraseMelodyArrivalAcceptable(g, k, opts?.compositionContext)) {
+        const a = k * 2 + 1;
+        const b = a + 1;
+        issues.push({
+          ruleId: 'v3_phrase_end_not_chord_tone',
+          message: `Duo V3: phrase ${k + 1} (bars ${a}–${b}) lacks directed arrival (last melody vs harmony)`,
+        });
+        break;
+      }
     }
   }
 

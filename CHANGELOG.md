@@ -1,3 +1,13 @@
+## Phase 18.2E — Validator gate tuning (2026-04-07) — COMPLETE
+
+- Loosened phrase arrival gate: expanded neighbour window from ±1 to ±2 semitones
+- 24-bar through-composed forms skip phrase arrival check entirely
+- Bass octave transposition fixed in MusicXML export (-24 semitones for acoustic_upright_bass)
+- Bass now displays at correct register in Sibelius
+- Next: Wayne Shorter engine integration
+
+---
+
 ## MusicXML export fixes (2026-04-07) — COMPLETE
 
 - Fixed Sibelius enclosure schema error (invalid attribute value)
@@ -6,7 +16,7 @@
 - Fixed chord count validation to accept 24 chords for 24-bar forms
 - Fixed bar count validators to accept 24 across runGoldenPath.ts
 - 24-bar through-composed forms now generating correctly end to end
-- Next: Phase 18.2E validator gate tuning
+- Gate tuning and bass export follow-ups: **Phase 18.2E** (see above)
 
 ---
 

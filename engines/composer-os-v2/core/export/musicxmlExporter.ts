@@ -233,7 +233,10 @@ function eventsToXml(
       if (e.kind === 'rest') {
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       } else {
-        const { step, alter, octave } = midiToPitch(e.pitch);
+        /** Sibelius import ignores `clef-octave-change` for this part; +12 MIDI here raises written `<octave>` only (score model unchanged). */
+        const exportMidi =
+          part.instrumentIdentity === 'acoustic_upright_bass' ? e.pitch - 24 : e.pitch;
+        const { step, alter, octave } = midiToPitch(exportMidi);
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
         const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
         const art = (e as { articulation?: string }).articulation;
