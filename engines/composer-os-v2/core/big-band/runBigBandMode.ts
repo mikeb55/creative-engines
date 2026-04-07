@@ -53,6 +53,8 @@ export interface BigBandRunInput {
   ensembleConfigId?: BigBandEnsembleConfigId;
   /** Required when `ensembleConfigId` is `custom`. */
   customEnsembleMask?: Omit<BigBandEnsembleSectionMask, 'rhythm_section'> | null;
+  /** Optional `|`-separated chords — used by realisation / score only; ignored by planning. */
+  chordProgressionText?: string;
 }
 
 export interface BigBandRunManifestHints {

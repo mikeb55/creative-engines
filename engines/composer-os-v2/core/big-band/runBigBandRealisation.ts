@@ -3,6 +3,7 @@
  */
 
 import { buildBigBandScoreModel } from './bigBandScoreBuilder';
+import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planBigBandVoicing } from './bigBandVoicingPlanner';
 import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from './runBigBandMode';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
@@ -33,11 +34,21 @@ export function runBigBandRealisation(input: BigBandRunInput): BigBandRealisatio
     };
   }
 
+  const tb = planning.formPlan.totalBars;
+  const raw =
+    typeof input.chordProgressionText === 'string' ? input.chordProgressionText.trim() : '';
+  let chordBars: string[] | undefined;
+  if (raw) {
+    const p = parseChordProgressionInputWithBarCount(raw, tb);
+    chordBars = p.ok ? p.bars : undefined;
+  }
+
   const score = buildBigBandScoreModel({
     title: planning.title,
     seed: input.seed,
     formPlan: planning.formPlan,
     sectionPlan: planning.sectionPlan,
+    chordBars,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score);

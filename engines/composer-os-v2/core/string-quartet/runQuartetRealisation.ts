@@ -3,6 +3,7 @@
  */
 
 import { buildQuartetScoreModel } from './quartetScoreBuilder';
+import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
 import { runStringQuartetMode, type StringQuartetRunInput, type StringQuartetRunResult } from './runStringQuartetMode';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
@@ -33,11 +34,21 @@ export function runQuartetRealisation(input: StringQuartetRunInput): QuartetReal
     };
   }
 
+  const tb = planning.formPlan.totalBars;
+  const raw =
+    typeof input.chordProgressionText === 'string' ? input.chordProgressionText.trim() : '';
+  let chordBars: string[] | undefined;
+  if (raw) {
+    const p = parseChordProgressionInputWithBarCount(raw, tb);
+    chordBars = p.ok ? p.bars : undefined;
+  }
+
   const score = buildQuartetScoreModel({
     title: planning.title,
     seed: input.seed,
     formPlan: planning.formPlan,
     texturePlan: planning.texturePlan,
+    chordBars,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score);

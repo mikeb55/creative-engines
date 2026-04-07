@@ -1,3 +1,16 @@
+## String Quartet + Big Band enhancements (2026-04-07)
+
+- String Quartet MusicXML complete: Violin I, II, Viola, Cello
+- Section markers: statement, development, contrast, return, coda
+- Chord symbols added to piano/viola staff
+- Big Band chord symbols on piano staff working
+- Big Band drum set on percussion clef confirmed
+- Piano naming fix in progress
+- Chord input UI for Big Band and String Quartet wired
+- Next: Piano part added to String Quartet, piano label fix
+
+---
+
 ## Big Band realisation wiring (2026-04-07) — COMPLETE
 
 - runBigBandRealisation wired from app API after planning

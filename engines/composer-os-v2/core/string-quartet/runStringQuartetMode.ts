@@ -25,6 +25,8 @@ export interface StringQuartetRunInput {
   seed: number;
   title?: string;
   totalBars?: number;
+  /** Optional `|`-separated chords — used by realisation / score only; ignored by planning. */
+  chordProgressionText?: string;
 }
 
 export interface StringQuartetRunManifestHints {

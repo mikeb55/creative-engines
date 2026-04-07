@@ -42,13 +42,20 @@ export interface BuildQuartetScoreModelInput {
   seed: number;
   formPlan: QuartetFormPlan;
   texturePlan: QuartetTexturePlan;
+  /** When length matches `formPlan.totalBars`, overrides the internal chord cycle per bar. */
+  chordBars?: string[];
 }
 
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, texturePlan } = input;
+  const { title, seed, formPlan, texturePlan, chordBars } = input;
   const totalBars = formPlan.totalBars;
 
-  const chordForBar = (b: number) => barChord(b, seed);
+  const chordForBar = (b: number) => {
+    if (chordBars && chordBars.length === totalBars) {
+      return chordBars[b - 1]!;
+    }
+    return barChord(b, seed);
+  };
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
     return sl ? String(sl.phase) : undefined;

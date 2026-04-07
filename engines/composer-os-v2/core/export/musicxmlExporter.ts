@@ -38,6 +38,9 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return `<instrument-sound>${GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
   }
+  if (p.instrumentIdentity === 'big_band_piano') {
+    return '<instrument-sound>keyboard.piano</instrument-sound>';
+  }
   return '';
 }
 
@@ -301,13 +304,17 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
+        const partAbbrevXml =
+          p.instrumentIdentity === 'big_band_piano'
+            ? '\n      <part-abbreviation>Pno.</part-abbreviation>'
+            : '';
         const midiInstrumentBody =
           p.instrumentIdentity === 'big_band_jazz_drums'
             ? `        <midi-channel>10</midi-channel>
         <midi-program>${mxProg}</midi-program>`
             : `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
-      <part-name>${escapeXml(display)}</part-name>
+      <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
       <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
       <midi-instrument id="${p.id}-I1">
 ${midiInstrumentBody}
@@ -381,8 +388,19 @@ ${partList}
             : undefined;
         const chordForHarmony = lockedChord ?? m.chord;
         const isLeadSheetGuitarPart = part.instrumentIdentity === 'clean_electric_guitar';
-        if (isLeadSheetGuitarPart && chordForHarmony && !opts.omitChordSymbols) {
-          if (assertLocked && assertLocked.length === orderedMeasures.length && i < assertLocked.length) {
+        const isEnsembleHarmonyGuidePart =
+          part.instrumentIdentity === 'big_band_piano' || part.id === 'sq_cello';
+        if (
+          (isLeadSheetGuitarPart || isEnsembleHarmonyGuidePart) &&
+          chordForHarmony &&
+          !opts.omitChordSymbols
+        ) {
+          if (
+            isLeadSheetGuitarPart &&
+            assertLocked &&
+            assertLocked.length === orderedMeasures.length &&
+            i < assertLocked.length
+          ) {
             const exp = assertLocked[i]!;
             const got = m.chord ?? '';
             if (got && normalizeChordToken(got) !== normalizeChordToken(exp)) {

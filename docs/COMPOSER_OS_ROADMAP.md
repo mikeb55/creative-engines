@@ -10,7 +10,7 @@
 
 - **Core:** `engines/composer-os-v2/` — single pipeline: preset → planning → score → MusicXML → gates → readiness.
 - **Apps:** `apps/composer-os-app`, `apps/composer-os-desktop` — call **app API** (`app-api/`), not raw core only.
-- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure) — **complete** for both ensembles.
+- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure). **String Quartet** is **COMPLETE** (4 string parts + section markers + chords/harmony wiring). **In progress:** piano **naming** fix (Sibelius import labels for ensemble piano) and a **dedicated String Quartet piano part** (not yet a fifth staff).
 
 ---
 
@@ -46,17 +46,21 @@
 - **Riff Generator:** short-loop MusicXML to library path.
 - **Wyble Etude:** Jimmy Wyble engine → MusicXML (chord resolution required).
 
-### Big Band (2026-04-07) — **complete**
+### Big Band (2026-04-07) — **COMPLETE**
 
 - **App wiring:** `runBigBandRealisation` after planning → **full 7-part ensemble MusicXML** when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
-- **Parts:** Alto Sax, Tenor Sax, Trumpet, Trombone, Piano, Double Bass, Jazz Drums (percussion clef, MIDI channel 10).
+- **Parts:** Alto Sax, Tenor Sax, Trumpet, Trombone, Piano, Double Bass, Jazz Drums (percussion clef, MIDI channel 10 — confirmed).
+- **Chords / UI:** chord symbols on piano staff; **Generate** chord input wired.
+- **In progress:** Sibelius **piano part naming** polish (`Piano` / `Pno.` / `keyboard.piano` — see CHANGELOG).
 - **Verification:** `engines/composer-os-v2/scripts/bigband-verify.ts` — **11/11** checks.
 - **Scope:** behavioural scoring — not full professional arranging.
 
-### String Quartet (2026-04-07) — **complete**
+### String Quartet (2026-04-07) — **COMPLETE**
 
 - **App wiring:** `runQuartetRealisation` after planning → **full 4-part ensemble MusicXML** when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
-- **Parts:** Violin I, Violin II, Viola, Violoncello.
+- **Parts:** Violin I, Violin II, Viola, Violoncello (complete). **In progress:** optional fifth **piano** comping part (not in score model yet).
+- **Section markers:** statement, development, contrast, return, coda (rehearsal / form slices in export).
+- **Chords / UI:** chord symbols on harmony-guide staves; **Generate** chord input wired for String Quartet (and Big Band).
 - **Scope:** behavioural scoring — not full professional arranging.
 
 ---
@@ -69,7 +73,7 @@
 | **Phase 18.2E** | **Complete** (gates + bass export) |
 | **Phase 19** | **Complete** (UI ≤32 bars); longer forms not fully in UI |
 | **Song Mode D-phase** | **D1** intent resolution + C1–C7: **done** per architecture doc; **D2** UI sliders → `intent`: **in progress** (wire contract notes: pattern 0.5); **D3** reserved |
-| **Big Band + String Quartet — next** | **Piano part + chord input** for both ensembles (Generate / UX); see [CHANGELOG.md](CHANGELOG.md) |
+| **Big Band + String Quartet — follow-ups** | **Chord input:** wired (Generate). **In progress:** **piano naming** fix (import labels); **String Quartet piano part** (fifth staff) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **Roadmap doc (#16)** | README still lists chord robustness as ongoing UX/edge-case work (see architecture for partial completion notes) |
 
@@ -80,7 +84,7 @@
 ### Near term (high leverage)
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
-2. **Piano part + chord input (Big Band + String Quartet):** user-driven harmony / comping surface on top of ensemble MusicXML baselines.
+2. **Piano part (String Quartet) + piano naming polish (Big Band):** fifth staff / comping part and Sibelius-friendly piano labels — chord input for both ensembles is wired (see CHANGELOG).
 3. **Song Mode diversity:** expose **`styleStack`** (or presets) in UI; complete **D2** intent wiring per architecture.
 4. **18.2D verification sweep** — automated harness on new bass/phrase layer (parallel track).
 

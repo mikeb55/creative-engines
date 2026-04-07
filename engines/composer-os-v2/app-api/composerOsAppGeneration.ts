@@ -582,6 +582,10 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `Big Band Plan ${req.seed}`;
   const eraFromPairing = parseBigBandEraFromPairing(req.stylePairing?.era);
+  const chordProgressionText =
+    typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
+      ? req.chordProgressionText.trim()
+      : undefined;
   const bb = runBigBandMode({
     seed: req.seed,
     title,
@@ -618,6 +622,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
         }
       : undefined,
     era: eraFromPairing,
+    ...(chordProgressionText ? { chordProgressionText } : {}),
   });
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     const xmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
@@ -729,6 +734,10 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `String Quartet Plan ${req.seed}`;
+  const chordProgressionText =
+    typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
+      ? req.chordProgressionText.trim()
+      : undefined;
   const effectiveSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
     variationId: req.variationId,
@@ -739,6 +748,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     seed: effectiveSeed,
     title,
     totalBars: req.totalBars,
+    ...(chordProgressionText ? { chordProgressionText } : {}),
   });
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;

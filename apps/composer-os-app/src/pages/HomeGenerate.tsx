@@ -335,6 +335,13 @@ export function HomeGenerate({
 
   const songFormBars = clampSongFormBarCount(totalBars, 32);
 
+  const ensembleChordBarCountForLabel =
+    presetId === 'big_band'
+      ? Math.max(16, Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 32)
+      : presetId === 'string_quartet'
+        ? Math.max(16, Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 24)
+        : null;
+
   useEffect(() => {
     if (!songFormBarPreset) return;
     setChordProgressionText((prev) => alignChordProgressionToSongFormBars(prev, songFormBars));
@@ -394,6 +401,14 @@ export function HomeGenerate({
         const songChordLine = presetId === 'song_mode' ? chordTrim || tonalTrim : chordTrim;
 
         const tbForm = clampSongFormBarCount(totalBars, 32);
+        const ensembleEffBarsBigBand = Math.max(
+          16,
+          Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 32
+        );
+        const ensembleEffBarsQuartet = Math.max(
+          16,
+          Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 24
+        );
         const coreFields = mapCoreUiToGenerationFields({
           presetId,
           seed,
@@ -497,6 +512,32 @@ export function HomeGenerate({
             return;
           }
         }
+        if (presetId === 'big_band' && chordTrim) {
+          const parsedBb = parseChordProgressionInputWithBarCount(chordTrim, ensembleEffBarsBigBand);
+          if (!parsedBb.ok) {
+            setError(parsedBb.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
+        if (presetId === 'string_quartet' && chordTrim) {
+          const parsedSq = parseChordProgressionInputWithBarCount(chordTrim, ensembleEffBarsQuartet);
+          if (!parsedSq.ok) {
+            setError(parsedSq.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
         const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
@@ -525,6 +566,9 @@ export function HomeGenerate({
                 riffBass,
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
               }
+            : {}),
+          ...((presetId === 'big_band' || presetId === 'string_quartet') && chordTrim
+            ? { chordProgressionText: chordTrim }
             : {}),
           ...(presetId === 'song_mode'
             ? {
@@ -811,11 +855,15 @@ export function HomeGenerate({
         presetId === 'guitar_bass_duo_single_line' ||
         presetId === 'riff_generator' ||
         presetId === 'song_mode' ||
-        presetId === 'wyble_etude') && (
+        presetId === 'wyble_etude' ||
+        presetId === 'big_band' ||
+        presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             {presetId === 'wyble_etude'
               ? 'Chord progression (required)'
+              : presetId === 'big_band' || presetId === 'string_quartet'
+                ? `Chord progression (${ensembleChordBarCountForLabel ?? 16} bars)`
               : songFormBarPreset
                 ? `Chord progression (${songFormBars} bars)`
                 : 'Chord progression (optional)'}
@@ -845,6 +893,19 @@ export function HomeGenerate({
               Custom harmony: one chord per bar for the length you set under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
               (8, 16, or 32). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study progression (e.g. Dm9 … A7alt).
+            </p>
+          ) : presetId === 'big_band' || presetId === 'string_quartet' ? (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              Custom harmony: one chord per bar for the length you set under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              (planning uses at least 16 bars). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
+              study cycle.
             </p>
           ) : presetId === 'riff_generator' ? (
             <p
@@ -882,6 +943,8 @@ export function HomeGenerate({
                 ? 'Dm9 | G13 | Cmaj7 | Cmaj7/E | Am9 | D7 | … (one chord per bar)'
                 : presetId === 'riff_generator'
                   ? 'Am7 | D7 | Gmaj7 |'
+                : presetId === 'big_band' || presetId === 'string_quartet'
+                  ? 'Cmaj7 | Am7 | Dm7 | G7 | … (one chord per bar)'
                   : songFormBarPreset
                     ? `Pipe-separated chords — aligned to ${songFormBars} bars on blur`
                     : 'Am7 | D7 | Gmaj7 |'
