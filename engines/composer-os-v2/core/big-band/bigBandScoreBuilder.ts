@@ -158,7 +158,12 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       const sym = chordForBar(bar);
       const rpc = chordSymbolRootPc(sym) ?? 0;
       const stack = pitchesForBigBandBar(rpc);
-      addEvent(m, createNote(stack[idx], 0, 4));
+      let pitch = stack[idx];
+      /** Double bass (`bb_rhythm_section`): written one octave higher for legibility. */
+      if (partId === BB_PART_RHYTHM) {
+        pitch += 12;
+      }
+      addEvent(m, createNote(pitch, 0, 4));
     }
     return p;
   });

@@ -513,6 +513,17 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         xmlMode: ks0?.mode ?? 'major',
         xmlHideKey: ks0?.hideKeySignature ?? false,
       });
+      const bbPianoDbg = score.parts.find(
+        (pp) => isBigBandPianoPart(pp) && !isStringQuartetPianoPart(pp)
+      );
+      if (bbPianoDbg) {
+        console.log(
+          '[musicxml-export] Big Band piano part id:',
+          JSON.stringify(bbPianoDbg.id),
+          'instrumentIdentity:',
+          bbPianoDbg.instrumentIdentity
+        );
+      }
     }
 
     const partList = score.parts
@@ -521,6 +532,19 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
           return `    <score-part id="${p.id}">
       <part-name>Drum Set</part-name>
       <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
+    </score-part>`;
+        }
+        /** Match Big Band piano by identity (builder sets `big_band_piano`); `id` is normally `bb_piano` but identity is the reliable signal. */
+        if (isBigBandPianoPart(p) && !isStringQuartetPianoPart(p)) {
+          return `    <score-part id="${p.id}">
+      <part-name>Piano</part-name>
+      <part-abbreviation>Pno.</part-abbreviation>
+      <score-instrument id="${p.id}-I1"><instrument-name>Piano</instrument-name>
+        <instrument-sound>keyboard.piano</instrument-sound></score-instrument>
+      <midi-instrument id="${p.id}-I1">
+        <midi-channel>1</midi-channel>
+        <midi-program>1</midi-program>
+      </midi-instrument>
     </score-part>`;
         }
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));

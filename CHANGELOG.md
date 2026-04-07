@@ -1,3 +1,12 @@
+## Big Band fixes (2026-04-07)
+
+- Double Bass octave corrected (+12 MIDI shift)
+- Piano part-list condition fixed (isBigBandPianoPart)
+- Piano label still not rendering in Sibelius — known issue, deferred
+- Drum percussion notation working, MusicXML generating cleanly
+
+---
+
 ## Big Band drum fix + MusicXML restored (2026-04-07)
 
 - Drum part rewritten as unpitched percussion (two voices, backup, percussion clef)
