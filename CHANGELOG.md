@@ -1,3 +1,12 @@
+## String Quartet era wiring (2026-04-07)
+
+- Era dropdown added to String Quartet preset in UI
+- Era chord pools wired in quartetScoreBuilder.ts
+- Automated era chord pool test passing
+- Bug found: era not passing through app layer to engine - fix in progress
+
+---
+
 ## Era chord vocabulary wiring (2026-04-07)
 
 - Era selector now drives per-era chord pools in Big Band output

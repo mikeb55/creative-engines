@@ -378,6 +378,14 @@ export function HomeGenerate({
                 era,
               }
             : undefined;
+        const stylePairingStringQuartet =
+          presetId === 'string_quartet'
+            ? {
+                songwriterStyle: BIG_BAND_DEFAULT_SONGWRITER_STYLE,
+                arrangerStyle: arrangerStyle,
+                era,
+              }
+            : undefined;
 
         const tonalTrim = tonalCenter.trim();
         const chordTrim = chordProgressionText.trim();
@@ -418,7 +426,7 @@ export function HomeGenerate({
           totalBars: songFormBarPreset ? tbForm : totalBars,
           variationId: vid,
           creativeControlLevel,
-          stylePairing: stylePairingSong ?? stylePairingBigBand,
+          stylePairing: stylePairingSong ?? stylePairingBigBand ?? stylePairingStringQuartet,
           ensembleConfigId: presetId === 'big_band' ? ensembleConfigId : undefined,
           primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
           formId,
@@ -822,8 +830,9 @@ export function HomeGenerate({
           )}
           {presetId === 'string_quartet' && (
             <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Quartet planning focuses on texture, form, and four-voice roles (no user style stack on this
-              screen).
+              Quartet planning focuses on texture, form, and four-voice roles. <strong style={{ color: 'var(--text)' }}>Era</strong>{' '}
+              selects the default lead-sheet chord cycle when you leave <strong style={{ color: 'var(--text)' }}>Chord progression</strong> empty (same
+              vocabulary as Big Band).
             </p>
           )}
         </div>
@@ -1639,6 +1648,29 @@ export function HomeGenerate({
               disabled={loading}
             >
               {ENSEMBLE_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {presetId === 'string_quartet' && (
+        <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+          <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
+            String quartet harmony
+          </span>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>
+            Era selects the built-in chord cycle when chord progression is empty (same options as Big Band).
+          </p>
+          <div>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Era
+            </label>
+            <select value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
+              {ERA_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}
                 </option>

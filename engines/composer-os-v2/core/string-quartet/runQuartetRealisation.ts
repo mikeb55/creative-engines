@@ -2,6 +2,7 @@
  * String Quartet — planning + voicing + score model + MusicXML (Prompt C/3).
  */
 
+import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import { buildQuartetScoreModel } from './quartetScoreBuilder';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
@@ -19,7 +20,9 @@ export interface QuartetRealisationResult {
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
 }
 
-export function runQuartetRealisation(input: StringQuartetRunInput): QuartetRealisationResult {
+export function runQuartetRealisation(
+  input: StringQuartetRunInput & { era?: BigBandEraId }
+): QuartetRealisationResult {
   const planning = runStringQuartetMode(input);
   const voicingPlan = planQuartetVoicing(planning.orchestrationPlan);
   const voicingValidation = validateEnsembleVoicing(voicingPlan);
@@ -48,6 +51,7 @@ export function runQuartetRealisation(input: StringQuartetRunInput): QuartetReal
     seed: input.seed,
     formPlan: planning.formPlan,
     texturePlan: planning.texturePlan,
+    era: input.era,
     chordBars,
   });
 
