@@ -3,7 +3,11 @@
  */
 
 import type { QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
-import { QUARTET_INSTRUMENTS, SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC, partIdForQuartetInstrument } from './stringQuartetTypes';
+import {
+  QUARTET_INSTRUMENTS,
+  SQ_PART_PIANO,
+  partIdForQuartetInstrument,
+} from './stringQuartetTypes';
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { QUARTET_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
@@ -92,5 +96,20 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     return p;
   });
 
-  return createScore(title, parts, { tempo: 96 });
+  const pianoPart = createPart(
+    SQ_PART_PIANO,
+    'Piano',
+    'string_quartet_piano',
+    0,
+    'treble',
+    totalBars,
+    chordForBar,
+    rehearsalForBar
+  );
+  for (let bar = 1; bar <= totalBars; bar++) {
+    const m = pianoPart.measures[bar - 1];
+    addEvent(m, createRest(0, 4));
+  }
+
+  return createScore(title, [...parts, pianoPart], { tempo: 96 });
 }

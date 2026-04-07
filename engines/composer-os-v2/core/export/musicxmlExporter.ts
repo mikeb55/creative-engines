@@ -24,11 +24,19 @@ import { noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragm
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 
+function isBigBandPianoPart(p: PartModel): boolean {
+  return p.instrumentIdentity === 'big_band_piano' || p.id === 'bb_piano';
+}
+
+function isStringQuartetPianoPart(p: PartModel): boolean {
+  return p.instrumentIdentity === 'string_quartet_piano' || p.id === 'sq_piano';
+}
+
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
-  if (p.instrumentIdentity === 'big_band_piano') {
+  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
     return 'Piano';
   }
   return p.name;
@@ -38,7 +46,7 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return `<instrument-sound>${GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
   }
-  if (p.instrumentIdentity === 'big_band_piano') {
+  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
     return '<instrument-sound>keyboard.piano</instrument-sound>';
   }
   return '';
@@ -305,7 +313,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
         const partAbbrevXml =
-          p.instrumentIdentity === 'big_band_piano'
+          isBigBandPianoPart(p) || isStringQuartetPianoPart(p)
             ? '\n      <part-abbreviation>Pno.</part-abbreviation>'
             : '';
         const midiInstrumentBody =
@@ -389,7 +397,7 @@ ${partList}
         const chordForHarmony = lockedChord ?? m.chord;
         const isLeadSheetGuitarPart = part.instrumentIdentity === 'clean_electric_guitar';
         const isEnsembleHarmonyGuidePart =
-          part.instrumentIdentity === 'big_band_piano' || part.id === 'sq_cello';
+          isBigBandPianoPart(part) || isStringQuartetPianoPart(part);
         if (
           (isLeadSheetGuitarPart || isEnsembleHarmonyGuidePart) &&
           chordForHarmony &&

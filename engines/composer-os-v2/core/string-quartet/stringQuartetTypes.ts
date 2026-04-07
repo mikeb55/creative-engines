@@ -12,6 +12,9 @@ export const SQ_PART_V2 = 'sq_violin_2';
 export const SQ_PART_VA = 'sq_viola';
 export const SQ_PART_VC = 'sq_cello';
 
+/** Optional reduction / harmony staff — not a bowed string; rests + chord symbols in export. */
+export const SQ_PART_PIANO = 'sq_piano';
+
 export function partIdForQuartetInstrument(i: QuartetInstrument): string {
   switch (i) {
     case 'violin_1':
