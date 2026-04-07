@@ -398,7 +398,7 @@ ${keyCaption}${feelEl}`;
 
         const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
         if (formRehearsalLabel) {
-          xml += `    <direction placement="above"><direction-type><rehearsal enclosure="box">${escapeXml(
+          xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
             formRehearsalLabel
           )}</rehearsal></direction-type></direction>\n`;
         }

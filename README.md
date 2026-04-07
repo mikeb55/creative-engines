@@ -108,9 +108,14 @@ Phrase-level bass work moved to **Phase 18.2D** (now complete — see below).
 - Bass line avoids **single pitch-class anchoring** via contour-aware chord-tone bias
 - **MusicXML:** double bass clef includes `clef-octave-change` -1 so the part shows at the correct written register in Sibelius and MuseScore
 
+### 24-bar duo + MusicXML export (2026-04-07) — COMPLETE
+- **24-bar** golden path and through-composed forms (e.g. `through3`) generate end to end with correct bar counts and rehearsal marks
+- **formId** wired through app API (`composerOsApiCore.ts` → engine); chord-count validation accepts 24 chords for 24-bar forms; bar validators accept 24 in `runGoldenPath.ts`
+- **Sibelius:** rehearsal `enclosure` uses a valid MusicXML enumeration value (schema-safe import)
+
 ### Next
-- **18.2D verification sweep** (validators / harness)
-- **24-bar support** for duo golden path where forms and UI already allow 24 bars
+- **Phase 18.2E** — validator gate tuning
+- **18.2D verification sweep** (validators / harness), as needed alongside 18.2E
 
 ## Phase 19 — Form Layer ✅
 
@@ -144,7 +149,7 @@ Phrase-level bass work moved to **Phase 18.2D** (now complete — see below).
 | abacab | A B A' C A'' B' | 48 |
 
 ### Next
-18.2D verification sweep; **24-bar duo support** (see **Phase 18.2D** above).
+**24-bar duo support** — **COMPLETE** (2026-04-07); see **Phase 18.2D** above. **Next:** Phase 18.2E validator gate tuning.
 
 ### Voice 2 Diagnostics (V9.0)
 
@@ -177,9 +182,9 @@ This phase establishes the foundation for:
 
 ---
 
-## Next: 18.2D verification + 24-bar duo support
+## Next: Phase 18.2E — validator gate tuning
 
-**Phase 18.2D — Bass Phrase Intelligence** is **complete** (see above and [CHANGELOG.md](CHANGELOG.md)). Next focus: **verification sweep** for the new bass phrase layer and **24-bar** golden-path coverage where the form layer already supports 24 bars. Historical **Phase 18.2C — Partial** context remains in [CHANGELOG.md](CHANGELOG.md).
+**Phase 18.2D — Bass Phrase Intelligence** is **complete**, and **24-bar** duo / through-composed forms plus **MusicXML export fixes** (Sibelius enclosure schema, `formId` wiring, chord/bar validation) are **complete** (2026-04-07 — see [CHANGELOG.md](CHANGELOG.md)). Next focus: **Phase 18.2E** — validator gate tuning. **18.2D verification sweep** may continue in parallel as needed. Historical **Phase 18.2C — Partial** context remains in [CHANGELOG.md](CHANGELOG.md).
 
 **Jimmy Wyble Engine (complete):**  
 Phrase-driven melodic generation with continuity, reliable resolution, conversational lower-voice interaction, and final musical polish.  
@@ -217,11 +222,13 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
   - Slash chords such as `Cmaj7/E`
 - **System guarantee:** All standard jazz chord symbols are accepted without failure (unknown symbols map to a safe fallback with a diagnostic warning rather than aborting the pipeline).
 
-### MusicXML Export (Stability)
+### MusicXML Export (Stability) — COMPLETE (2026-04-07)
 
 - **Sibelius-safe rhythm encoding** — Durations are emitted in a form that major notation importers tolerate reliably.
 - **No dotted-beat duration tokens** — Values such as `1.5` or `0.75` as raw beat multipliers are avoided in the export path; rhythm is expressed via an **undotted decomposition** so measure math stays clear for hosts.
 - **Clean multi-voice export** — Guitar/bass (and related) multi-voice layouts remain structurally consistent through export.
+- **Sibelius schema:** rehearsal marks use a valid `enclosure` enumeration (e.g. `rectangle`, not invalid `box`).
+- **Double bass:** `acoustic_upright_bass` parts emit `clef-octave-change` -1 for correct written register.
 
 ### Roadmap (V9.0)
 
@@ -235,8 +242,9 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 - **18.2C** — Bass behaviour (validators, sweep, pitch floor) — **PARTIAL** (see CHANGELOG **Phase 18.2C — Partial**); phrase-level bass follow-up → **18.2D**
 - **18.2D** — Bass phrase intelligence (contour, phrase intents, `bassPlan.style`) — **COMPLETE**
 - **Phase 19** — Form Layer — **COMPLETE**
-- **Next:** 18.2D verification sweep; **24-bar** duo support
-- **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; bass phrase layer per CHANGELOG **Phase 18.2D**; export and notation hosts stable (see **Phase 18.2B** and **Phase 18.2D** above).
+- **24-bar** duo / through-composed forms + **MusicXML export fixes** — **COMPLETE** (2026-04-07)
+- **Next:** **Phase 18.2E** — validator gate tuning (plus 18.2D verification sweep as needed)
+- **Current achieved state:** dual voices stable in Sibelius and GP8; span-based Voice-2 continuity; directional phrasing; bass phrase layer per CHANGELOG **Phase 18.2D**; **24-bar** forms end to end; export and notation hosts stable (see **Phase 18.2B**, **Phase 18.2D**, and [CHANGELOG.md](CHANGELOG.md) **MusicXML export fixes**).
 
 ### V9.0 Summary
 

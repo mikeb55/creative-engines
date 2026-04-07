@@ -1,16 +1,16 @@
 {
   "schema": "composer-os-build-stamp/v1",
   "desktopPackageVersion": "1.0.37",
-  "generatedAt": "2026-04-06T22:06:25.236Z",
-  "gitCommit": "e2dfc0c6410b952e8cf79d4f04691d87f16e36f2",
+  "generatedAt": "2026-04-07T05:17:27.811Z",
+  "gitCommit": "55f9968269b7215f9125c0c7e5e22a030ba704bb",
   "ipcBundle": {
     "filename": "desktop-ipc.bundle.cjs",
-    "sha256": "bd96c91c5a42602c4e783d38a59669eddd5bc37270ce1e0378ef08f488e65106",
-    "bytes": 1245450
+    "sha256": "8cd1df24c834627ab2edcde617385bf37bf63bb45823370ca1e3b6e5c754e722",
+    "bytes": 1245456
   },
   "apiBundle": {
     "filename": "api.bundle.js",
-    "sha256": "61c3c22267515a3c0931442b6ed5a69d9187ffeb817b3683a064dfd7458c1433",
-    "bytes": 2417399
+    "sha256": "9d13f8a2dfd93146eaa31c905d65c83f4b193b9cdc6d1d1657bfced237dc8171",
+    "bytes": 2417405
   }
 }

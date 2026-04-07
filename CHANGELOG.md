@@ -1,3 +1,15 @@
+## MusicXML export fixes (2026-04-07) — COMPLETE
+
+- Fixed Sibelius enclosure schema error (invalid attribute value)
+- Added clef-octave-change -1 for acoustic_upright_bass parts
+- Fixed formId not reaching engine (missing from req_ in composerOsApiCore.ts)
+- Fixed chord count validation to accept 24 chords for 24-bar forms
+- Fixed bar count validators to accept 24 across runGoldenPath.ts
+- 24-bar through-composed forms now generating correctly end to end
+- Next: Phase 18.2E validator gate tuning
+
+---
+
 ## Phase 18.2D — Bass Phrase Intelligence (2026-04-06) — COMPLETE
 
 - Multi-bar guitar contour computed per 8-bar phrase (asc/desc/static)
