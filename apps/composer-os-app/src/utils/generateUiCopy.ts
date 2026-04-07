@@ -65,20 +65,22 @@ export const MODE_UX: ModeUx[] = [
   {
     id: 'big_band',
     label: 'Big Band',
-    hint: 'Use for ensemble planning, density, and section architecture.',
+    hint: 'Full big-band MusicXML (reeds, brass, piano, bass, drums) when export succeeds — planning JSON if not.',
     whatItDoes:
-      'Maps form, brass and reed roles, density, and orchestration intent for a big band — the bones of a chart before detailed notation.',
-    bestFor: 'Shout choruses, section trades, and knowing who plays when before you engrave.',
-    output: 'Planning JSON only — not a full big-band score or MusicXML export here.',
+      'Plans form, section roles, and density, then realises a full ensemble score: saxes, brass, piano (with chord symbols), bass, and jazz drums — exported as MusicXML you can open in Sibelius or MuseScore.',
+    bestFor:
+      'Sketch charts, rehearsal materials, section balance, and custom harmony experiments before you refine voicings and dynamics by hand.',
+    output: 'Full ensemble MusicXML score when export succeeds; planning JSON if export fails.',
   },
   {
     id: 'string_quartet',
     label: 'String Quartet',
-    hint: 'Use for chamber form, texture, and role distribution.',
+    hint: 'Full quartet MusicXML (strings + piano harmony staff) when export succeeds — planning JSON if not.',
     whatItDoes:
-      'Plans quartet sections, textures, and who carries melody or anchor roles across the piece.',
-    bestFor: 'Contrasts, development arcs, and balance across four string voices.',
-    output: 'Planning JSON only — not a finished quartet MusicXML export here.',
+      'Plans texture and narrative form, then realises a full score: two violins, viola, violoncello, plus a piano staff for harmony and chord symbols — exported as MusicXML for notation software.',
+    bestFor:
+      'Chamber layouts, contrast between voices, harmonic clarity on the piano staff, and quick playable drafts to refine in the DAW or score editor.',
+    output: 'Full ensemble MusicXML score when export succeeds; planning JSON if export fails.',
   },
   {
     id: 'riff_generator',
@@ -101,6 +103,16 @@ export function describeOutputKind(presetId: string): {
   headline: string;
   subtitle: string;
 } {
+  if (presetId === 'big_band' || presetId === 'string_quartet') {
+    return {
+      category: 'full_score_musicxml',
+      headline: 'Full ensemble MusicXML',
+      subtitle:
+        presetId === 'big_band'
+          ? 'Big band: full score when realisation and export succeed; planning JSON if realisation or export fails.'
+          : 'String quartet: full score when realisation and export succeed; planning JSON if realisation or export fails.',
+    };
+  }
   if (
     presetId === 'guitar_bass_duo' ||
     presetId === 'guitar_bass_duo_single_line' ||

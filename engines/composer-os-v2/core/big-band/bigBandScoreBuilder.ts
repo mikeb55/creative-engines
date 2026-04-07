@@ -5,6 +5,7 @@
 
 import type { BigBandFormPlan, BigBandSectionPlan } from './bigBandPlanTypes';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
+import type { BigBandEraId } from './bigBandResearchTypes';
 import {
   BB_PART_RHYTHM,
   BB_PART_SAXES,
@@ -37,8 +38,108 @@ const BB_PART_IDS = [
 
 const CHORD_CYCLE = ['Cmaj7', 'Am7', 'Dm7', 'G7'];
 
-function barChord(bar: number, seed: number): string {
-  return CHORD_CYCLE[(bar + seed) % CHORD_CYCLE.length];
+/**
+ * Per-era lead-sheet vocabulary tokens (research-aligned). Concrete progressions below
+ * are hand-ordered ii–V–I / turnaround loops that use these harmonic types.
+ */
+export const ERA_CHORD_POOLS: Record<BigBandEraId, readonly string[]> = {
+  swing: ['maj6', '6/9', 'm7', 'm6', 'dim7', '7', '9', '7b9', 'maj7', '7sus4'],
+  bebop: ['maj7', '6/9', 'm7', 'm7b5', '7b9', '7#9', '7#11', '7b13', 'dim7'],
+  post_bop: ['maj7#11', 'm7', 'm7b5', 'mMaj7', '7alt', '7sus', 'quartal'],
+  contemporary: ['maj7', 'maj7#11', 'm9', 'm11', '7sus', 'add9', '6/9', 'mMaj7'],
+};
+
+/** Deterministic cyclic progressions per era (coherent function, not uniform random). */
+const ERA_PROGRESSION_CYCLES: Record<BigBandEraId, readonly string[]> = {
+  swing: [
+    'Dm7',
+    'G7',
+    'Cmaj6',
+    'C6/9',
+    'Am7',
+    'D7b9',
+    'G9',
+    'G7sus4',
+    'Cmaj7',
+    'Fm6',
+    'Bbdim7',
+    'Eb9',
+    'Am6',
+    'Bb7',
+    'Ebmaj6',
+    'A7',
+  ],
+  bebop: [
+    'Cm7',
+    'F7b9',
+    'Bbmaj7',
+    'Bb6/9',
+    'Em7b5',
+    'A7b9',
+    'Dm7',
+    'G7#9',
+    'Cmaj7',
+    'Ab7#11',
+    'Dm7b5',
+    'G7b13',
+    'Bdim7',
+    'E7#9',
+    'Am7',
+    'D7b9',
+  ],
+  post_bop: [
+    'Fmaj7#11',
+    'Bm7b5',
+    'E7alt',
+    'Am7',
+    'D7sus',
+    'Gmaj7#11',
+    'Gm7',
+    'C7alt',
+    'FmMaj7',
+    'Bbm7b5',
+    'Eb7alt',
+    'Ab7sus',
+    'Dbmaj7#11',
+    'Dm7b5',
+    'G7alt',
+    'Cm7b5',
+  ],
+  contemporary: [
+    'Cmaj7#11',
+    'Dm9',
+    'G7sus',
+    'C6/9',
+    'Am11',
+    'D7sus',
+    'Gmaj7add9',
+    'Em9',
+    'AmMaj7',
+    'Bm7b5',
+    'E7sus',
+    'Amaj7#11',
+    'Fmaj7',
+    'Gm11',
+    'C7sus',
+    'Fm9',
+  ],
+};
+
+function indexMod(n: number, len: number): number {
+  return ((n % len) + len) % len;
+}
+
+function barChordFromCycle(bar: number, seed: number, cycle: readonly string[]): string {
+  const L = cycle.length;
+  return cycle[indexMod(bar - 1 + seed, L)]!;
+}
+
+function barChord(bar: number, seed: number, era?: BigBandEraId): string {
+  if (era == null) {
+    /** Legacy index: same as pre–era-pool `CHORD_CYCLE[(bar + seed) % length]`. */
+    return CHORD_CYCLE[indexMod(bar + seed, CHORD_CYCLE.length)]!;
+  }
+  return barChordFromCycle(bar, seed, ERA_PROGRESSION_CYCLES[era]);
 }
 
 /** GM drum kit MIDI key map (channel 10); exporter maps to unpitched staff positions. */
@@ -90,19 +191,21 @@ export interface BuildBigBandScoreModelInput {
   seed: number;
   formPlan: BigBandFormPlan;
   sectionPlan: BigBandSectionPlan;
-  /** When length matches `formPlan.totalBars`, overrides the internal chord cycle per bar. */
+  /** When set, selects default progression from `ERA_PROGRESSION_CYCLES`; omitted → legacy `CHORD_CYCLE`. */
+  era?: BigBandEraId;
+  /** When length matches `formPlan.totalBars`, overrides era pool / `CHORD_CYCLE` entirely. */
   chordBars?: string[];
 }
 
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, sectionPlan, chordBars } = input;
+  const { title, seed, formPlan, sectionPlan, chordBars, era } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
     if (chordBars && chordBars.length === totalBars) {
       return chordBars[b - 1]!;
     }
-    return barChord(b, seed);
+    return barChord(b, seed, era);
   };
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);

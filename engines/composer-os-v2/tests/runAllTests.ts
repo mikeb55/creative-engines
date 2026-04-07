@@ -104,6 +104,7 @@ import { runStylePairingResolverTests } from './stylePairingResolver.test';
 import { runSongwriterResearchParsingTests } from './songwriterResearchParsing.test';
 import { runVoicingPlannerTests } from './voicingPlanner.test';
 import { runBigBandRealisationTests } from './bigBandRealisation.test';
+import { runBigBandEraChordPoolsScoreTests } from './bigBandEraChordPoolsScore.test';
 import { runQuartetRealisationTests } from './quartetRealisation.test';
 import { runEnsembleExportTests } from './ensembleExport.test';
 import { runStringQuartetTypesTests } from './stringQuartetTypes.test';
@@ -223,6 +224,7 @@ const suites = [
   { name: 'Songwriter research parsing (alias)', run: runSongwriterResearchParsingTests },
   { name: 'Voicing planner', run: runVoicingPlannerTests },
   { name: 'Big Band realisation', run: runBigBandRealisationTests },
+  { name: 'Big Band era chord pools (score)', run: runBigBandEraChordPoolsScoreTests },
   { name: 'String Quartet realisation', run: runQuartetRealisationTests },
   { name: 'Ensemble export', run: runEnsembleExportTests },
   { name: 'String Quartet types', run: runStringQuartetTypesTests },

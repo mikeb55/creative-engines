@@ -48,6 +48,7 @@ export function runBigBandRealisation(input: BigBandRunInput): BigBandRealisatio
     seed: input.seed,
     formPlan: planning.formPlan,
     sectionPlan: planning.sectionPlan,
+    era: planning.era,
     chordBars,
   });
 

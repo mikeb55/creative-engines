@@ -1,3 +1,15 @@
+## Era chord vocabulary wiring (2026-04-07)
+
+- Era selector now drives per-era chord pools in Big Band output
+- Swing: maj6, 6/9, dim7, m6 vocabulary
+- Bebop: 7b9, 7#9, 7#11, m7b5 vocabulary  
+- Post-bop: maj7#11, 7alt, 7sus vocabulary
+- Contemporary: m9, m11, add9, maj7#11 vocabulary
+- Automated test added: bigBandEraChordPoolsScore.test.ts
+- Custom harmony still overrides era pool when provided
+
+---
+
 ## Custom harmony verified (2026-04-07)
 
 - Custom harmony input confirmed working for Big Band
