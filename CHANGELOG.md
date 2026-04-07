@@ -1,3 +1,10 @@
+## Custom harmony verified (2026-04-07)
+
+- Custom harmony input confirmed working for Big Band
+- Chord symbols correctly reflected in MusicXML output
+
+---
+
 ## UI fixes (2026-04-07)
 
 - Big Band receipt label fixed: now shows "MusicXML score" when MusicXML is generated instead of "Planning only"
