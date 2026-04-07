@@ -6,6 +6,10 @@ import type { QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
 import {
   QUARTET_INSTRUMENTS,
   SQ_PART_PIANO,
+  SQ_PART_V1,
+  SQ_PART_V2,
+  SQ_PART_VA,
+  SQ_PART_VC,
   partIdForQuartetInstrument,
 } from './stringQuartetTypes';
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';

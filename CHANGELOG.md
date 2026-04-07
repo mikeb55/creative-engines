@@ -1,3 +1,15 @@
+## String Quartet + Big Band piano and chord symbols (2026-04-07)
+
+- String Quartet imports fixed (SQ_PART_V1/V2/VA/VC restored)
+- String Quartet generating MusicXML with chord symbols on piano staff
+- Section markers: statement, development, contrast, return, coda
+- Big Band chord symbols confirmed on piano staff
+- Big Band drum set on percussion clef confirmed
+- Piano label fix still in progress
+- Next: Piano naming fix, Song Form dropdown for Big Band + String Quartet
+
+---
+
 ## String Quartet + Big Band enhancements (2026-04-07)
 
 - String Quartet MusicXML complete: Violin I, II, Viola, Cello

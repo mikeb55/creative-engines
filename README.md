@@ -54,7 +54,7 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Big Band:** **COMPLETE** — **full ensemble MusicXML** (7 parts; planning JSON fallback if realisation or export fails). See `engines/composer-os-v2/app-api/releaseMetadata.ts` and [CHANGELOG.md](CHANGELOG.md).
 
-**String Quartet:** **COMPLETE** — **full ensemble MusicXML** (4 parts: Violin I, II, Viola, Violoncello; planning JSON fallback if realisation or export fails). Section-style rehearsal markers (statement, development, contrast, return, coda) and chord-driven harmony are in the shipping path; chord input in Generate is wired for Big Band and String Quartet. **In progress:** Sibelius **piano part naming** polish (Big Band piano label / `keyboard.piano` sound — see [CHANGELOG.md](CHANGELOG.md)); **String Quartet piano part** (dedicated comping staff) not yet in the score model.
+**String Quartet:** **COMPLETE** — **full ensemble MusicXML** (Violin I, II, Viola, Violoncello, plus **piano** reduction staff for harmony/chord symbols; planning JSON fallback if realisation or export fails). Section-style rehearsal markers (statement, development, contrast, return, coda); chord symbols on the piano staff; `SQ_PART_*` import fix in the score builder ([CHANGELOG.md](CHANGELOG.md)). **Next:** Sibelius **piano naming** polish across ensemble exports; **Song Form** dropdown in Generate for **Big Band** and **String Quartet** (parity with Song Mode / duo).
 
 ## Guitar Polyphony Status
 
