@@ -718,7 +718,20 @@ export function HomeGenerate({
 
   const modeUx = getModeUx(presetId);
   const summaryPresetId = result?.runManifest?.presetId ?? presetId;
-  const outputKindDesc = result ? describeOutputKind(summaryPresetId) : null;
+  const outputKindDesc = result
+    ? (() => {
+        const base = describeOutputKind(summaryPresetId);
+        const pathEcho = `${result.filepath ?? ''} ${result.filename ?? ''}`;
+        if (pathEcho.toLowerCase().includes('.musicxml') && base.headline === 'Planning only') {
+          return {
+            category: 'full_score_musicxml' as const,
+            headline: 'MusicXML score',
+            subtitle: 'Full ensemble score exported for Sibelius or MuseScore.',
+          };
+        }
+        return base;
+      })()
+    : null;
   const echo = result?.requestEcho;
 
   return (

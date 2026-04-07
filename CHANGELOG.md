@@ -1,3 +1,9 @@
+## UI fixes (2026-04-07)
+
+- Big Band receipt label fixed: now shows "MusicXML score" when MusicXML is generated instead of "Planning only"
+
+---
+
 ## Song Form dropdown (2026-04-07)
 
 - Song Form dropdown wired to Big Band and String Quartet presets
