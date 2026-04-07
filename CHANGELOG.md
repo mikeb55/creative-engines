@@ -1,3 +1,13 @@
+## Big Band drum fix + MusicXML restored (2026-04-07)
+
+- Drum part rewritten as unpitched percussion (two voices, backup, percussion clef)
+- Divisions reverted to 480 per quarter (1920 per bar)
+- Drum voice 2 beat count fixed (4 quarters exactly)
+- MusicXML generation restored for Big Band
+- Export errors now surfaced in planning receipt for diagnostics
+
+---
+
 ## String Quartet + Big Band piano and chord symbols (2026-04-07)
 
 - String Quartet imports fixed (SQ_PART_V1/V2/VA/VC restored)

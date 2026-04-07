@@ -1,0 +1,97 @@
+{
+  "composerOsArtifact": "big_band_planning",
+  "composerOsVersion": "1.0.0",
+  "presetId": "big_band",
+  "seed": 1089638227,
+  "totalBars": 8,
+  "variationId": 0,
+  "creativeControlLevel": 1,
+  "timestamp": "2026-04-07T11:43:10.493Z",
+  "title": "Test",
+  "validationPassed": true,
+  "validationErrors": [],
+  "validationWarnings": [],
+  "manifestHints": {
+    "presetType": "big_band",
+    "bigBandFormSequence": [
+      "intro",
+      "melody_head",
+      "solo_section",
+      "shout_chorus",
+      "ending"
+    ],
+    "bigBandOrchestrationReady": true,
+    "bigBandModuleIds": [
+      "big_band_plan"
+    ],
+    "bigBandTotalBars": 16,
+    "ensembleFamily": "big_band",
+    "bigBandEra": "post_bop",
+    "bigBandComposerStyle": null,
+    "bigBandResearchRulesParsed": true,
+    "bigBandEnsembleConfigId": "default"
+  },
+  "formSequence": [
+    "intro",
+    "melody_head",
+    "solo_section",
+    "shout_chorus",
+    "ending"
+  ],
+  "orchestrationReady": true,
+  "era": "post_bop",
+  "composerStyle": null,
+  "researchParseOk": true,
+  "resolvedRuleCount": 17,
+  "bebopLineMetadata": null,
+  "enhancedPlanning": {
+    "behaviourSlices": [
+      {
+        "formSliceIndex": 0,
+        "phase": "intro",
+        "spaceEmphasis": false,
+        "linePrimary": false,
+        "riffPrimary": false,
+        "smoothTransitionToNext": false,
+        "shoutMotivicDevelopment": false
+      },
+      {
+        "formSliceIndex": 1,
+        "phase": "melody_head",
+        "spaceEmphasis": false,
+        "linePrimary": true,
+        "riffPrimary": false,
+        "smoothTransitionToNext": false,
+        "shoutMotivicDevelopment": false
+      },
+      {
+        "formSliceIndex": 2,
+        "phase": "solo_section",
+        "spaceEmphasis": false,
+        "linePrimary": true,
+        "riffPrimary": false,
+        "smoothTransitionToNext": false,
+        "shoutMotivicDevelopment": false
+      },
+      {
+        "formSliceIndex": 3,
+        "phase": "shout_chorus",
+        "spaceEmphasis": false,
+        "linePrimary": false,
+        "riffPrimary": false,
+        "smoothTransitionToNext": false,
+        "shoutMotivicDevelopment": true
+      },
+      {
+        "formSliceIndex": 4,
+        "phase": "ending",
+        "spaceEmphasis": false,
+        "linePrimary": false,
+        "riffPrimary": false,
+        "smoothTransitionToNext": false,
+        "shoutMotivicDevelopment": false
+      }
+    ]
+  },
+  "stylePairingResolution": null
+}

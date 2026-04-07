@@ -14,7 +14,7 @@ import {
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -41,7 +41,25 @@ function barChord(bar: number, seed: number): string {
   return CHORD_CYCLE[(bar + seed) % CHORD_CYCLE.length];
 }
 
-/** Horns + piano / bass — alto/tenor share the same sectional sax pitch. Drums are rests-only in export. */
+/** GM drum kit MIDI key map (channel 10); exporter maps to unpitched staff positions. */
+const DRUM_BD = 36;
+const DRUM_HH = 42;
+
+/**
+ * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = four quarter layers (BD only or BD+SN chord).
+ * Voice 2 must sum to exactly 4 beats — chord snare is encoded via motifRef on the bass-drum note (not a second event).
+ */
+function addBigBandDrumPattern(measure: MeasureModel): void {
+  for (let b = 0; b < 4; b++) {
+    addEvent(measure, createNote(DRUM_HH, b, 1, 1));
+  }
+  addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
+  addEvent(measure, createNote(DRUM_BD, 1, 1, 2, 'bb_drum_bs'));
+  addEvent(measure, createNote(DRUM_BD, 2, 1, 2));
+  addEvent(measure, createNote(DRUM_BD, 3, 1, 2, 'bb_drum_bs'));
+}
+
+/** Horns + piano / bass — alto/tenor share the same sectional sax pitch. */
 function pitchesForBigBandBar(rootPc: number): [number, number, number, number, number, number] {
   const r = rootPc;
   const sax = snapMidiToRange(55 + r + 4, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
@@ -88,7 +106,13 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   };
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
-    return sl ? String(sl.phase).replace(/_/g, ' ') : undefined;
+    if (!sl) return undefined;
+    const raw = String(sl.phase).replace(/_/g, ' ').trim();
+    if (!raw) return undefined;
+    return raw
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
   };
 
   const parts = BB_PART_IDS.map((partId, idx) => {
@@ -107,6 +131,19 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     for (let bar = 1; bar <= totalBars; bar++) {
       const m = p.measures[bar - 1];
       if (partId === 'bb_drums') {
+        const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
+        const secSlice = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+        const role = secSlice?.rolesBySection['rhythm_section'];
+        if (role === 'silence') {
+          addEvent(m, createRest(0, 4, 1));
+          addEvent(m, createRest(0, 4, 2));
+        } else {
+          addBigBandDrumPattern(m);
+        }
+        continue;
+      }
+      /** Piano reduction staff: chord symbols only (full-bar rest); no comping pitches. */
+      if (partId === 'bb_piano') {
         addEvent(m, createRest(0, 4));
         continue;
       }

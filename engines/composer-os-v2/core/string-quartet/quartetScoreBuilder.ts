@@ -66,7 +66,13 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   };
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
-    return sl ? String(sl.phase) : undefined;
+    if (!sl) return undefined;
+    const raw = String(sl.phase).replace(/_/g, ' ').trim();
+    if (!raw) return undefined;
+    return raw
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
   };
 
   const parts = QUARTET_INSTRUMENTS.map((inst, idx) => {

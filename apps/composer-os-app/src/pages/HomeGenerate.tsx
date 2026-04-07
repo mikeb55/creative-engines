@@ -1042,7 +1042,9 @@ export function HomeGenerate({
 
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
-        presetId === 'song_mode') && (
+        presetId === 'song_mode' ||
+        presetId === 'big_band' ||
+        presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{
             display: 'block',

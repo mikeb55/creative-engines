@@ -46,6 +46,9 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return `<instrument-sound>${GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
   }
+  if (p.instrumentIdentity === 'big_band_jazz_drums') {
+    return '';
+  }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
     return '<instrument-sound>keyboard.piano</instrument-sound>';
   }
@@ -64,6 +67,16 @@ function rehearsalLabelFromScoreForm(score: ScoreModel, measureNumber: number): 
   if (!sections || sections.length <= 1) return undefined;
   const sec = sections.find((s) => s.startBar === measureNumber);
   return sec?.label;
+}
+
+/** Human-readable section label for &lt;rehearsal&gt; (underscores → spaces, title-case words). */
+function formatSectionRehearsalLabel(raw: string): string {
+  const t = raw.trim().replace(/_/g, ' ');
+  if (!t) return '';
+  return t
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /** V3.4e — stable bar order for export; MusicXML `number` is assigned 1..n separately (Sibelius-safe). */
@@ -181,6 +194,201 @@ export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: numb
     sum += MEASURE_DIVISIONS - cursor;
   }
   return sum;
+}
+
+const DRUM_GM_HH = 42;
+const DRUM_GM_BD = 36;
+const DRUM_GM_SN = 38;
+
+function drumUnpitchedDisplay(step: string, octave: number): string {
+  return `<unpitched><display-step>${step}</display-step><display-octave>${octave}</display-octave></unpitched>`;
+}
+
+function drumKitNoteXml(opts: {
+  chord: boolean;
+  step: string;
+  octave: number;
+  ticks480: number;
+  voice: number;
+  stem: 'up' | 'down';
+  notehead?: 'x' | 'normal';
+  instrumentId: string;
+}): string {
+  const spec = tickSpecForLength(opts.ticks480);
+  const typeDots = typeAndDotsXml(spec);
+  const durXml = opts.ticks480;
+  const nh = opts.notehead === 'x' ? '<notehead>x</notehead>' : '';
+  const chordEl = opts.chord ? '<chord/>' : '';
+  return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
+}
+
+/** Big Band drums: Sibelius-style unpitched kit, two voices, backup between layers. */
+function bigBandDrumsEventsToXml(
+  measure: MeasureModel,
+  measureIndex: number,
+  part: PartModel,
+  decompose: (ticks: number) => number[],
+  _opts: MusicXmlExportOptions
+): string {
+  const partId = part.id;
+  const instId = `${part.id}-I1`;
+  let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const byVoice = new Map<number, ScoreEvent[]>();
+  for (const e of raw) {
+    const v = e.voice ?? 1;
+    if (!byVoice.has(v)) byVoice.set(v, []);
+    byVoice.get(v)!.push(e);
+  }
+  const voices = [...byVoice.keys()].sort((a, b) => a - b);
+  const staffPolyphonyXml = STAFF_1_XML;
+  const debugTicks = typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_MUSICXML_TICKS === '1';
+
+  let xml = '';
+  for (let vi = 0; vi < voices.length; vi++) {
+    const voice = voices[vi]!;
+    if (vi > 0) {
+      xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
+    }
+    let cursor = 0;
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
+      if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
+      if (a.kind === 'note' && b.kind === 'note') return a.pitch - b.pitch;
+      return 0;
+    });
+    let voiceTickSum = 0;
+    let i = 0;
+    while (i < voiceEvents.length) {
+      const e = voiceEvents[i]!;
+      const sb = e.startBeat;
+      const eb = sb + e.duration;
+      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
+      const safeStart = Math.max(startDiv, cursor);
+      if (endDiv <= safeStart) {
+        i++;
+        continue;
+      }
+
+      if (safeStart > cursor) {
+        const restDiv = safeStart - cursor;
+        const parts = decompose(restDiv);
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+        for (const p of parts) voiceTickSum += p;
+        cursor = safeStart;
+      }
+
+      const durDiv = endDiv - safeStart;
+      const parts = decompose(durDiv);
+
+      if (e.kind === 'rest') {
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+        for (const p of parts) voiceTickSum += p;
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      if (voice === 1) {
+        if (e.kind !== 'note' || e.pitch !== DRUM_GM_HH) {
+          throw new Error(
+            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), got ${
+              e.kind === 'note' ? `pitch ${e.pitch}` : e.kind
+            }`
+          );
+        }
+        for (const t of parts) {
+          xml += drumKitNoteXml({
+            chord: false,
+            step: 'F',
+            octave: 5,
+            ticks480: t,
+            voice: 1,
+            stem: 'up',
+            notehead: 'x',
+            instrumentId: instId,
+          });
+          voiceTickSum += t;
+        }
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      /** Voice 2: bass drum quarters; motifRef bb_drum_bs = kick+snare chord (same duration as one quarter). */
+      if (voice === 2 && e.kind === 'note' && e.pitch === DRUM_GM_BD) {
+        const motif = (e as { motifRef?: string }).motifRef;
+        if (motif === 'bb_drum_bs') {
+          for (const t of parts) {
+            xml += drumKitNoteXml({
+              chord: false,
+              step: 'F',
+              octave: 4,
+              ticks480: t,
+              voice: 2,
+              stem: 'down',
+              notehead: 'normal',
+              instrumentId: instId,
+            });
+            xml += drumKitNoteXml({
+              chord: true,
+              step: 'D',
+              octave: 4,
+              ticks480: t,
+              voice: 2,
+              stem: 'down',
+              notehead: 'x',
+              instrumentId: instId,
+            });
+            voiceTickSum += t;
+          }
+          cursor = endDiv;
+          i++;
+          continue;
+        }
+        for (const t of parts) {
+          xml += drumKitNoteXml({
+            chord: false,
+            step: 'F',
+            octave: 4,
+            ticks480: t,
+            voice: 2,
+            stem: 'down',
+            notehead: 'normal',
+            instrumentId: instId,
+          });
+          voiceTickSum += t;
+        }
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      throw new Error(
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: unsupported drum event (${
+          e.kind === 'note' ? `pitch ${e.pitch}` : e.kind
+        })`
+      );
+    }
+
+    if (cursor < MEASURE_DIVISIONS) {
+      const restDiv = MEASURE_DIVISIONS - cursor;
+      const parts = decompose(restDiv);
+      xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+      for (const p of parts) voiceTickSum += p;
+    }
+
+    if (voiceTickSum !== MEASURE_DIVISIONS) {
+      throw new Error(
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (bb drums)`
+      );
+    }
+    if (debugTicks) {
+      console.log(
+        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${MEASURE_DIVISIONS}`
+      );
+    }
+  }
+
+  return xml;
 }
 
 function eventsToXml(
@@ -309,6 +517,12 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
 
     const partList = score.parts
       .map((p) => {
+        if (p.instrumentIdentity === 'big_band_jazz_drums') {
+          return `    <score-part id="${p.id}">
+      <part-name>Drum Set</part-name>
+      <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
+    </score-part>`;
+        }
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
@@ -316,10 +530,11 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
           isBigBandPianoPart(p) || isStringQuartetPianoPart(p)
             ? '\n      <part-abbreviation>Pno.</part-abbreviation>'
             : '';
+        /** Big Band + String Quartet piano: Sibelius-friendly GM Acoustic Grand (ch. 1, program 1). */
         const midiInstrumentBody =
-          p.instrumentIdentity === 'big_band_jazz_drums'
-            ? `        <midi-channel>10</midi-channel>
-        <midi-program>${mxProg}</midi-program>`
+          isBigBandPianoPart(p) || isStringQuartetPianoPart(p)
+            ? `        <midi-channel>1</midi-channel>
+        <midi-program>1</midi-program>`
             : `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
       <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
@@ -350,7 +565,7 @@ ${partList}
           ? '<clef-octave-change>-1</clef-octave-change>'
           : '';
       const clefXml = isBigBandDrums
-        ? '<clef><sign>percussion</sign></clef>'
+        ? '<clef number="1"><sign>percussion</sign><line>2</line></clef>'
         : `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;
       xml += `  <part id="${part.id}">\n`;
 
@@ -437,18 +652,25 @@ ${partList}
 ${keyCaption}${feelEl}`;
         }
 
-        const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
-        if (formRehearsalLabel) {
-          xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
-            formRehearsalLabel
-          )}</rehearsal></direction-type></direction>\n`;
+        /** Section rehearsal marks once on top staff (part 0); after harmony/sound so beat-1 chord stays first. */
+        if (partIndex === 0) {
+          const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
+          if (formRehearsalLabel) {
+            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
+              formRehearsalLabel
+            )}</rehearsal></direction-type></direction>\n`;
+          }
+          if (m.rehearsalMark) {
+            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
+              formatSectionRehearsalLabel(m.rehearsalMark)
+            )}</rehearsal></direction-type></direction>\n`;
+          }
         }
 
-        if (m.rehearsalMark) {
-          xml += `    <direction placement="above"><direction-type><rehearsal>${escapeXml(m.rehearsalMark)}</rehearsal></direction-type></direction>\n`;
-        }
-
-        xml += eventsToXml(m, i, part, decompose, opts, forceDualVoiceSecondLayer);
+        xml +=
+          part.instrumentIdentity === 'big_band_jazz_drums'
+            ? bigBandDrumsEventsToXml(m, i, part, decompose, opts)
+            : eventsToXml(m, i, part, decompose, opts, forceDualVoiceSecondLayer);
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;

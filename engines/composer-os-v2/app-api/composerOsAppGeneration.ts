@@ -9,10 +9,10 @@ import type { GenerateRequest } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
-import { runBigBandMode } from '../core/big-band/runBigBandMode';
+import { runBigBandMode, type BigBandRunInput } from '../core/big-band/runBigBandMode';
 import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
 import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
-import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
+import { runStringQuartetMode, type StringQuartetRunInput } from '../core/string-quartet/runStringQuartetMode';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
@@ -607,7 +607,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
-  const realised = runBigBandRealisation({
+  const bigBandRealisationInput: BigBandRunInput & { formId?: string } = {
     seed: req.seed,
     title,
     totalBars: req.totalBars,
@@ -623,7 +623,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       : undefined,
     era: eraFromPairing,
     ...(chordProgressionText ? { chordProgressionText } : {}),
-  });
+    ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
+  };
+  const realised = runBigBandRealisation(bigBandRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     const xmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
@@ -709,7 +711,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   return {
     success: ok,
     productKind: 'planning',
-    planningNotice: 'Big Band: planning only — no full ensemble MusicXML in this build.',
+    planningNotice:
+      realised.exportPipeline.errors?.join(' | ') ??
+      'Big Band: planning only — no full ensemble MusicXML in this build.',
     composerOsVersion: COMPOSER_OS_VERSION,
     filename,
     filepath,
@@ -744,12 +748,14 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     creativeControlLevel: req.creativeControlLevel,
   });
   const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
-  const realised = runQuartetRealisation({
+  const quartetRealisationInput: StringQuartetRunInput & { formId?: string } = {
     seed: effectiveSeed,
     title,
     totalBars: req.totalBars,
     ...(chordProgressionText ? { chordProgressionText } : {}),
-  });
+    ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
+  };
+  const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
