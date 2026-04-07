@@ -39,7 +39,7 @@ Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CH
 - Core pipeline stable  
 - Harmony and parsing stable  
 - MusicXML export stable (Sibelius-safe)  
-- System ready for robustness expansion  
+- Chord robustness baseline complete (**#16** / **#19** / **#17**); optional polish listed under **Medium term** in [COMPOSER_OS_ROADMAP.md](./COMPOSER_OS_ROADMAP.md)  
 
 ### Chord System (V9.0)
 
@@ -64,8 +64,10 @@ Checkpoint: continuity + internal motion documented in repo [CHANGELOG.md](../CH
 | Item | Status |
 |------|--------|
 | **#19 Unified Chord Semantics** | **DONE** |
-| **#16 Chord Handling Robustness** | **DONE** — MusicXML export stabilised; GP8 is primary detailed chord-validation target; Sibelius accepted as simplification-prone fallback. |
+| **#16 Chord Handling Robustness** | **DONE (V9.0 baseline)** — Same scope as README **Roadmap (V9.0)**: stable progression → export; non-fatal fallbacks + warnings; **#17** diagnostics; GP8 primary for detailed chord validation; Sibelius simplification-prone. **Not a reopened gate:** optional follow-ups (rarer symbols, UX copy, more tests) are product polish, not incomplete #16. |
 | **#17 Diagnostics / Receipt Clarity** | **DONE** — Generation receipt now surfaces chord export diagnostics including parsed chord count, fallback count, Sibelius simplification flags, and slash-bass preservation. See [generation-receipts-and-diagnostics.md](./generation-receipts-and-diagnostics.md). |
+
+**Doc alignment (2026-04-07):** `#16` / `#19` / `#17` are described consistently in [README.md](../README.md) and [COMPOSER_OS_ROADMAP.md](./COMPOSER_OS_ROADMAP.md). Codebase spot-check: no `TODO` / `FIXME` located under `engines/composer-os-v2/core/harmony/` or `core/chord-input/`; chord-focused tests under `engines/composer-os-v2/tests/` (`chordProgression`, `chordSemantics`, `chordInputParser`, etc.) show no `it.skip` / `describe.skip` patterns for chord cases.
 
 ---
 

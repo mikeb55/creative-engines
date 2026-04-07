@@ -77,7 +77,7 @@
 | **Song Mode D-phase** | **D1** intent resolution + C1–C7: **done** per architecture doc; **D2** UI sliders → `intent`: **in progress** (wire contract notes: pattern 0.5); **D3** reserved |
 | **Big Band + String Quartet — follow-ups** | **Chord input:** wired (Generate). **Next:** **piano naming** (Sibelius labels/sound); **Song Form** dropdown for both presets — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
-| **Roadmap doc (#16)** | README still lists chord robustness as ongoing UX/edge-case work (see architecture for partial completion notes) |
+| **#19 / #16 / #17 (chord track)** | **Baseline complete** — unified semantics (#19), robustness baseline + export/receipt behaviour (#16), diagnostics in UI (#17). Aligned across [README.md](../README.md) and [docs/CHANGELOG.md](./CHANGELOG.md). |
 
 ---
 
@@ -95,7 +95,7 @@
 - **Voice 2:** Phase **18.2B.3**-style melodic imitation / counterpoint refinement.
 - **Phase 19.1** — forms **>32 bars** in UI where engine supports.
 - **Wyble** — expressive/rhetorical refinement (rhythm, phrasing, lower voice).
-- **Chord #16** — continued edge cases + UX messaging.
+- **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
 
 ### Longer term / explicit non-goals until designed
 

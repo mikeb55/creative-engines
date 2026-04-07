@@ -248,7 +248,7 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 ### Roadmap (V9.0)
 
 - **#19 Unified Chord Semantics** — **DONE** (normalization, unified validation, stable progression-to-export behaviour).
-- **#16 Chord Handling Robustness** — **Next phase** (deeper edge cases, UX messaging, and continued hardening on top of the V9.0 baseline).
+- **#16 Chord Handling Robustness** — **DONE (V9.0 baseline)** — Parsing, normalization, shared validator, and MusicXML chord export are stable; unknown symbols use safe fallback with warnings; **#17** receipt diagnostics cover fallbacks and host behaviour. **GP8** is the primary detailed chord-validation target; **Sibelius** is accepted as simplification-prone. **Optional later (non-blocking):** rarer lead-sheet edge cases, richer in-app help / error copy, and expanded automated coverage across presets — see [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
 
 **Guitar Polyphony (Phase 18.2)**
 
@@ -267,7 +267,7 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 - Core pipeline stable  
 - Harmony and parsing stable  
 - Export stable  
-- System ready for robustness expansion (**#16**)
+- Chord robustness baseline complete (**#16** / **#19** / **#17**); optional hardening tracked in [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md)
 
 **Composer OS documentation (canonical):**
 
