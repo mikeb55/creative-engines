@@ -1,3 +1,11 @@
+## Song Form dropdown (2026-04-07)
+
+- Song Form dropdown wired to Big Band and String Quartet presets
+- Same options and coming-soon disabled items as Guitar Bass Duo
+- formId and totalBars passed through to both realisers
+
+---
+
 ## Big Band fixes (2026-04-07)
 
 - Double Bass octave corrected (+12 MIDI shift)
