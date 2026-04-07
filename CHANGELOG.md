@@ -1,10 +1,11 @@
 ## Big Band realisation wiring (2026-04-07) — COMPLETE
 
-- runBigBandRealisation now called from app API after planning
-- Big Band preset produces MusicXML when export pipeline passes
+- runBigBandRealisation wired from app API after planning
+- Big Band preset produces full ensemble MusicXML
+- 7 parts: Alto Sax, Tenor Sax, Trumpet, Trombone, Piano, Double Bass, Jazz Drums
+- Jazz Drums on percussion clef, channel 10
 - Falls back to planning JSON if realisation fails
-- Instruments: Alto Sax, Tenor Sax, Trumpet, Trombone, Double Bass
-- Piano and Jazz Drums added to rhythm section (fix in progress)
+- 11/11 automated checks passing (bigband-verify.ts)
 - Next: String Quartet realisation wiring
 
 ---

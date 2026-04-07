@@ -54,7 +54,7 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
     displayName: 'Big Band',
     capability: 'musicxml_generation',
     honestNote:
-      'Ensemble MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
+      'Full 7-part ensemble MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
   },
   {
     presetId: 'string_quartet',

@@ -52,7 +52,7 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
-**Big Band:** **MusicXML generation — realisation wired** (ensemble MusicXML when realisation and export pass; planning JSON if either fails). See `engines/composer-os-v2/app-api/releaseMetadata.ts` and [CHANGELOG.md](CHANGELOG.md).
+**Big Band:** **COMPLETE** — **full ensemble MusicXML** (7 parts; planning JSON fallback if realisation or export fails). See `engines/composer-os-v2/app-api/releaseMetadata.ts` and [CHANGELOG.md](CHANGELOG.md).
 
 ## Guitar Polyphony Status
 

@@ -10,7 +10,7 @@
 
 - **Core:** `engines/composer-os-v2/` — single pipeline: preset → planning → score → MusicXML → gates → readiness.
 - **Apps:** `apps/composer-os-app`, `apps/composer-os-desktop` — call **app API** (`app-api/`), not raw core only.
-- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** = **MusicXML generation** when realisation and export pass (**planning JSON** fallback otherwise); **String Quartet** = **planning JSON only** in the shipping app until quartet realisation is wired to Generate.
+- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** = **full ensemble MusicXML** (**planning JSON** fallback on failure) — **complete**; **String Quartet** = **planning JSON only** until quartet realisation is wired (**present focus**).
 
 ---
 
@@ -46,14 +46,12 @@
 - **Riff Generator:** short-loop MusicXML to library path.
 - **Wyble Etude:** Jimmy Wyble engine → MusicXML (chord resolution required).
 
-### Big Band (2026-04-07)
+### Big Band (2026-04-07) — **complete**
 
-- **App wiring:** `runBigBandRealisation` after planning → **MusicXML** when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
-- **Status:** delivered for Generate (behavioural scoring — not full professional arranging).
-
-### String Quartet (app)
-
-- **Planning JSON** from Generate; **`runQuartetRealisation`** exists in core — **not** yet wired as the default app output (next wiring target).
+- **App wiring:** `runBigBandRealisation` after planning → **full 7-part ensemble MusicXML** when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
+- **Parts:** Alto Sax, Tenor Sax, Trumpet, Trombone, Piano, Double Bass, Jazz Drums (percussion clef, MIDI channel 10).
+- **Verification:** `engines/composer-os-v2/scripts/bigband-verify.ts` — **11/11** checks.
+- **Scope:** behavioural scoring — not full professional arranging.
 
 ---
 
@@ -65,8 +63,7 @@
 | **Phase 18.2E** | **Complete** (gates + bass export) |
 | **Phase 19** | **Complete** (UI ≤32 bars); longer forms not fully in UI |
 | **Song Mode D-phase** | **D1** intent resolution + C1–C7: **done** per architecture doc; **D2** UI sliders → `intent`: **in progress** (wire contract notes: pattern 0.5); **D3** reserved |
-| **Big Band** | **MusicXML** when realisation + export pass; **planning JSON** fallback — **realisation wired** |
-| **String Quartet** | **Planning JSON** in app; **next:** wire **`runQuartetRealisation`** → ensemble MusicXML |
+| **String Quartet** (**present focus**) | **Planning JSON** in app; **next:** wire **`runQuartetRealisation`** → ensemble MusicXML (same pattern as Big Band) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **Roadmap doc (#16)** | README still lists chord robustness as ongoing UX/edge-case work (see architecture for partial completion notes) |
 
