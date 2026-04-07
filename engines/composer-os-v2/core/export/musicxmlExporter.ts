@@ -289,9 +289,10 @@ function bigBandDrumsEventsToXml(
 
       if (voice === 1) {
         if (e.kind !== 'note' || e.pitch !== DRUM_GM_HH) {
+          const eMsg = e as ScoreEvent;
           throw new Error(
             `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), got ${
-              e.kind === 'note' ? `pitch ${e.pitch}` : e.kind
+              eMsg.kind === 'note' ? `pitch ${eMsg.pitch}` : eMsg.kind
             }`
           );
         }
@@ -362,9 +363,10 @@ function bigBandDrumsEventsToXml(
         continue;
       }
 
+      const eThrow = e as ScoreEvent;
       throw new Error(
         `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: unsupported drum event (${
-          e.kind === 'note' ? `pitch ${e.pitch}` : e.kind
+          eThrow.kind === 'note' ? `pitch ${eThrow.pitch}` : eThrow.kind
         })`
       );
     }

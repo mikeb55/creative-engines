@@ -1,3 +1,9 @@
+## Fix: TypeScript errors in musicxmlExporter.ts resolved (2026-04-07)
+
+- Fix: TypeScript errors in musicxmlExporter.ts resolved (drum-layer error strings: `as ScoreEvent` for `kind` / `pitch` ternaries; no runtime change).
+
+---
+
 ## String Quartet era passthrough fix (2026-04-07)
 
 - Fixed: era selector was not passing through app layer to engine
