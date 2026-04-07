@@ -28,6 +28,9 @@ function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
+  if (p.instrumentIdentity === 'big_band_piano') {
+    return 'Piano';
+  }
   return p.name;
 }
 
@@ -298,11 +301,16 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
+        const midiInstrumentBody =
+          p.instrumentIdentity === 'big_band_jazz_drums'
+            ? `        <midi-channel>10</midi-channel>
+        <midi-program>${mxProg}</midi-program>`
+            : `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
       <part-name>${escapeXml(display)}</part-name>
       <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
       <midi-instrument id="${p.id}-I1">
-        <midi-program>${mxProg}</midi-program>
+${midiInstrumentBody}
       </midi-instrument>
     </score-part>`;
       })
@@ -319,12 +327,16 @@ ${partList}
 
     for (let partIndex = 0; partIndex < score.parts.length; partIndex++) {
       const part = score.parts[partIndex];
+      const isBigBandDrums = part.instrumentIdentity === 'big_band_jazz_drums';
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
       const clefOctaveChangeXml =
         part.clef === 'bass' && part.instrumentIdentity === 'acoustic_upright_bass'
           ? '<clef-octave-change>-1</clef-octave-change>'
           : '';
+      const clefXml = isBigBandDrums
+        ? '<clef><sign>percussion</sign></clef>'
+        : `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
@@ -351,7 +363,7 @@ ${partList}
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>4</beats><beat-type>4</beat-type></time>
       <staves>1</staves>
-      <clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>
+      ${clefXml}
     </attributes>
 `;
         }

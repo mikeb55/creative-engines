@@ -52,6 +52,8 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Composer OS** (under `engines/composer-os-v2/`) is the unified generative pipeline for this repo’s jazz/chamber tooling. **Web UI:** `apps/composer-os-app` (`npm run dev`). **Windows desktop:** `apps/composer-os-desktop` — packaged portable is always **`release/Composer-OS.exe`** (stable path; version is in-app only, so shortcuts do not need relinking each build).
 
+**Big Band:** **MusicXML generation — realisation wired** (ensemble MusicXML when realisation and export pass; planning JSON if either fails). See `engines/composer-os-v2/app-api/releaseMetadata.ts` and [CHANGELOG.md](CHANGELOG.md).
+
 ## Guitar Polyphony Status
 
 **Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes.
@@ -267,6 +269,7 @@ Next phase: expressive and rhetorical refinement layers (rhythm, phrasing, inter
 
 **Composer OS documentation (canonical):**
 
+- [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md) — **Composer OS Roadmap [dated]** — past / current / future handoff (update title date when refreshing)
 - [docs/COMPOSER_OS_ARCHITECTURE.md](docs/COMPOSER_OS_ARCHITECTURE.md) — pipeline, C1–C7 Song Mode rhythm stack, D1/D2, songwriter-driven chord tones (e.g. Wayne Shorter `shorterMode`)
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — V8.0 retrospective, **Song Mode baseline stabilisation**, pointer to archived pre-V8 history
 - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — friendly overview

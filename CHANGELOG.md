@@ -1,3 +1,14 @@
+## Big Band realisation wiring (2026-04-07) — COMPLETE
+
+- runBigBandRealisation now called from app API after planning
+- Big Band preset produces MusicXML when export pipeline passes
+- Falls back to planning JSON if realisation fails
+- Instruments: Alto Sax, Tenor Sax, Trumpet, Trombone, Double Bass
+- Piano and Jazz Drums added to rhythm section (fix in progress)
+- Next: String Quartet realisation wiring
+
+---
+
 ## Phase 18.2E — Validator gate tuning (2026-04-07) — COMPLETE
 
 - Loosened phrase arrival gate: expanded neighbour window from ±1 to ±2 semitones

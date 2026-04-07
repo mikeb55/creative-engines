@@ -10,6 +10,7 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode } from '../core/big-band/runBigBandMode';
+import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
 import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
 import { runSongMode } from '../core/song-mode/runSongMode';
@@ -596,12 +597,68 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       : undefined,
     era: eraFromPairing,
   });
-  const ok = bb.validation.ok;
   const runSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
+  const realised = runBigBandRealisation({
+    seed: req.seed,
+    title,
+    totalBars: req.totalBars,
+    variationId: req.variationId,
+    creativeControlLevel: req.creativeControlLevel,
+    ensembleConfigId: req.ensembleConfigId,
+    stylePairing: req.stylePairing
+      ? {
+          songwriterStyle: req.stylePairing.songwriterStyle,
+          arrangerStyle: req.stylePairing.arrangerStyle,
+          era: req.stylePairing.era,
+        }
+      : undefined,
+    era: eraFromPairing,
+  });
+  if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
+    const xmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
+    fs.mkdirSync(outputDir, { recursive: true });
+    const xmlFilepath = path.join(outputDir, xmlFilename);
+    fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
+    const pairingEarly = bb.stylePairingResolution;
+    const stylePairingReceiptEarly = pairingEarly
+      ? {
+          summary: `${pairingEarly.songwriterStyle} × ${pairingEarly.arrangerStyle}${
+            pairingEarly.era != null ? ` · ${pairingEarly.era}` : ''
+          }`,
+          confidenceScore: pairingEarly.confidenceScore,
+          experimentalFlag: pairingEarly.experimentalFlag,
+          songwriterStyle: pairingEarly.songwriterStyle,
+          arrangerStyle: pairingEarly.arrangerStyle,
+          era: pairingEarly.era,
+        }
+      : undefined;
+    return {
+      success: true,
+      productKind: 'musicxml',
+      filepath: xmlFilepath,
+      filename: xmlFilename,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      validation: validationForStructural(true, []),
+      runManifest: {
+        seed: runSeed,
+        presetId: 'big_band',
+        activeModules: ['big_band_plan', 'big_band_realise'],
+        timestamp: ts,
+        scoreTitle: title,
+        variationId: req.variationId,
+        creativeControlLevel: req.creativeControlLevel,
+        experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      },
+      scoreTitle: title,
+      requestEcho: requestEchoFromReq(req),
+      stylePairingReceipt: stylePairingReceiptEarly,
+    };
+  }
+  const ok = bb.validation.ok;
   const filename = `big_band_plan_${tsSafe}_${runSeed}.json`;
   const payload = {
     composerOsArtifact: 'big_band_planning',

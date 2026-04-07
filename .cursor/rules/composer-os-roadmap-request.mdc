@@ -1,0 +1,12 @@
+---
+description: When the user asks for a Composer OS roadmap, use the standard title and canonical doc.
+alwaysApply: true
+---
+
+# Composer OS roadmap requests
+
+When the user asks for a **roadmap** (for Claude or any assistant):
+
+1. Use the document title format **`Composer OS Roadmap [YYYY-MM-DD]`** where **`YYYY-MM-DD`** is the snapshot date (prefer the current date the user expects, or the date of the refresh).
+2. Prefer updating or aligning with **`docs/COMPOSER_OS_ROADMAP.md`** as the canonical single-doc summary; cross-link [CHANGELOG.md](docs/CHANGELOG.md) and [README.md](README.md) for detail.
+3. Structure **past / current / future** when a full roadmap is requested.
