@@ -748,12 +748,15 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     creativeControlLevel: req.creativeControlLevel,
   });
   const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
-  const quartetRealisationInput: StringQuartetRunInput & { formId?: string } = {
+  const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId } = {
     seed: effectiveSeed,
     title,
     totalBars: req.totalBars,
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
+    ...(parseBigBandEraFromPairing(req.stylePairing?.era)
+      ? { era: parseBigBandEraFromPairing(req.stylePairing?.era) }
+      : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {

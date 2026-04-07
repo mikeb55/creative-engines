@@ -1,3 +1,12 @@
+## String Quartet era passthrough fix (2026-04-07)
+
+- Fixed: era selector was not passing through app layer to engine
+- parseBigBandEraFromPairing now used for String Quartet era resolution
+- End-to-end integration test added: stringQuartetEraAppPassthrough.test.ts
+- All four eras (swing, bebop, post_bop, contemporary) confirmed producing distinct chord vocabularies in MusicXML piano staff
+
+---
+
 ## String Quartet era wiring (2026-04-07)
 
 - Era dropdown added to String Quartet preset in UI
