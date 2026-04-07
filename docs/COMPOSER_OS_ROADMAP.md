@@ -10,7 +10,7 @@
 
 - **Core:** `engines/composer-os-v2/` — single pipeline: preset → planning → score → MusicXML → gates → readiness.
 - **Apps:** `apps/composer-os-app`, `apps/composer-os-desktop` — call **app API** (`app-api/`), not raw core only.
-- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** = **full ensemble MusicXML** (**planning JSON** fallback on failure) — **complete**; **String Quartet** = **planning JSON only** until quartet realisation is wired (**present focus**).
+- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure) — **complete** for both ensembles.
 
 ---
 
@@ -53,6 +53,12 @@
 - **Verification:** `engines/composer-os-v2/scripts/bigband-verify.ts` — **11/11** checks.
 - **Scope:** behavioural scoring — not full professional arranging.
 
+### String Quartet (2026-04-07) — **complete**
+
+- **App wiring:** `runQuartetRealisation` after planning → **full 4-part ensemble MusicXML** when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
+- **Parts:** Violin I, Violin II, Viola, Violoncello.
+- **Scope:** behavioural scoring — not full professional arranging.
+
 ---
 
 ## Current (as of roadmap date)
@@ -63,7 +69,7 @@
 | **Phase 18.2E** | **Complete** (gates + bass export) |
 | **Phase 19** | **Complete** (UI ≤32 bars); longer forms not fully in UI |
 | **Song Mode D-phase** | **D1** intent resolution + C1–C7: **done** per architecture doc; **D2** UI sliders → `intent`: **in progress** (wire contract notes: pattern 0.5); **D3** reserved |
-| **String Quartet** (**present focus**) | **Planning JSON** in app; **next:** wire **`runQuartetRealisation`** → ensemble MusicXML (same pattern as Big Band) |
+| **Big Band + String Quartet — next** | **Piano part + chord input** for both ensembles (Generate / UX); see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **Roadmap doc (#16)** | README still lists chord robustness as ongoing UX/edge-case work (see architecture for partial completion notes) |
 
@@ -74,7 +80,7 @@
 ### Near term (high leverage)
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
-2. **String Quartet quick win:** wire **planning → `runQuartetRealisation`** (same pattern as Big Band) → **ensemble MusicXML** using existing core + tests.
+2. **Piano part + chord input (Big Band + String Quartet):** user-driven harmony / comping surface on top of ensemble MusicXML baselines.
 3. **Song Mode diversity:** expose **`styleStack`** (or presets) in UI; complete **D2** intent wiring per architecture.
 4. **18.2D verification sweep** — automated harness on new bass/phrase layer (parallel track).
 

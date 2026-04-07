@@ -59,7 +59,8 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
   {
     presetId: 'string_quartet',
     displayName: 'String Quartet',
-    capability: 'planning_only',
-    honestNote: 'Planning JSON only — no quartet MusicXML.',
+    capability: 'musicxml_generation',
+    honestNote:
+      'Full 4-part ensemble MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
   },
 ] as const;

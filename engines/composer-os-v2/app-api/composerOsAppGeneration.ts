@@ -13,6 +13,7 @@ import { runBigBandMode } from '../core/big-band/runBigBandMode';
 import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
 import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
+import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
@@ -734,6 +735,37 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     creativeControlLevel: req.creativeControlLevel,
   });
   const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
+  const realised = runQuartetRealisation({
+    seed: effectiveSeed,
+    title,
+    totalBars: req.totalBars,
+  });
+  if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
+    const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;
+    fs.mkdirSync(outputDir, { recursive: true });
+    const xmlFilepath = path.join(outputDir, xmlFilename);
+    fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
+    return {
+      success: true,
+      productKind: 'musicxml',
+      filepath: xmlFilepath,
+      filename: xmlFilename,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      validation: validationForStructural(true, []),
+      runManifest: {
+        seed: effectiveSeed,
+        presetId: 'string_quartet',
+        activeModules: ['string_quartet_plan', 'string_quartet_realise'],
+        timestamp: ts,
+        scoreTitle: title,
+        variationId: req.variationId,
+        creativeControlLevel: req.creativeControlLevel,
+        experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      },
+      scoreTitle: title,
+      requestEcho: requestEchoFromReq(req),
+    };
+  }
   const ok = sq.validation.ok;
   const filename = `string_quartet_plan_${tsSafe}_${effectiveSeed}.json`;
   const payload = {
@@ -759,7 +791,8 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   return {
     success: ok,
     productKind: 'planning',
-    planningNotice: 'String Quartet: planning only — no quartet MusicXML in this build.',
+    planningNotice:
+      'String Quartet: planning JSON — ensemble MusicXML not produced (realisation or export failed).',
     composerOsVersion: COMPOSER_OS_VERSION,
     filename,
     filepath,

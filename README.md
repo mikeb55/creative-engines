@@ -54,6 +54,8 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 **Big Band:** **COMPLETE** — **full ensemble MusicXML** (7 parts; planning JSON fallback if realisation or export fails). See `engines/composer-os-v2/app-api/releaseMetadata.ts` and [CHANGELOG.md](CHANGELOG.md).
 
+**String Quartet:** **COMPLETE** — **full ensemble MusicXML** (4 parts; planning JSON fallback if realisation or export fails). **Next:** piano part + chord input for Big Band + String Quartet (see [CHANGELOG.md](CHANGELOG.md)).
+
 ## Guitar Polyphony Status
 
 **Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes.

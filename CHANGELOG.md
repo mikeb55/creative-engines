@@ -6,7 +6,17 @@
 - Jazz Drums on percussion clef, channel 10
 - Falls back to planning JSON if realisation fails
 - 11/11 automated checks passing (bigband-verify.ts)
-- Next: String Quartet realisation wiring
+- Next: Piano part + chord input for Big Band + String Quartet
+
+---
+
+## String Quartet realisation wiring (2026-04-07) — COMPLETE
+
+- runQuartetRealisation wired from app API after planning
+- String Quartet preset produces full MusicXML
+- 4 parts: Violin I, Violin II, Viola, Violoncello
+- Falls back to planning JSON if realisation fails
+- Next: Piano part + chord input for Big Band + String Quartet
 
 ---
 
