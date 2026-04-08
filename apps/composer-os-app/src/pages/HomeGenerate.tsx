@@ -110,6 +110,20 @@ const ERA_OPTIONS: { id: string; label: string }[] = [
   { id: 'fusion', label: 'Fusion' },
 ];
 
+const DEFAULT_CUSTOM_HARMONY_PLACEHOLDER =
+  'e.g. Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
+const DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER =
+  'e.g. Cmaj9 | Am7 | Dm9 | G13 | Cmaj9 | Am7 | Dm9 | G7alt | ... (one chord per bar)';
+const ERA_CUSTOM_HARMONY_PLACEHOLDERS: Record<string, string> = {
+  swing: 'e.g. Cmaj6 | Am7 | Dm9 | G7 | ... (one chord per bar)',
+  bebop: 'e.g. Dm7b5 | G7b9 | Cmaj7 | Ab7#11 | ... (one chord per bar)',
+  cool_jazz: 'e.g. Cmaj7 | Am9 | DmMaj7 | G13 | ... (one chord per bar)',
+  hard_bop: 'e.g. Fm7 | Bb7#9 | Ebmaj7 | Cm7b5 | ... (one chord per bar)',
+  post_bop: 'e.g. Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
+  fusion: 'e.g. Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
+  contemporary: 'e.g. Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
+};
+
 const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
   { id: 'full_band', label: 'Full' },
   { id: 'medium_band', label: 'Medium' },
@@ -337,6 +351,14 @@ export function HomeGenerate({
   }, [songFormMenuOpen]);
 
   const songFormBars = clampSongFormBarCount(totalBars, 32);
+  const customHarmonyPlaceholder =
+    presetId === 'big_band' || presetId === 'string_quartet'
+      ? (ERA_CUSTOM_HARMONY_PLACEHOLDERS[era] ?? DEFAULT_CUSTOM_HARMONY_PLACEHOLDER)
+      : presetId === 'guitar_bass_duo' ||
+          presetId === 'guitar_bass_duo_single_line' ||
+          presetId === 'song_mode'
+        ? DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER
+        : DEFAULT_CUSTOM_HARMONY_PLACEHOLDER;
 
   const ensembleChordBarCountForLabel =
     presetId === 'big_band'
@@ -963,17 +985,7 @@ export function HomeGenerate({
             onChange={(e) => setChordProgressionText(e.target.value)}
             onBlur={songFormBarPreset ? onSongFormChordProgressionBlur : undefined}
             disabled={loading}
-            placeholder={
-              presetId === 'wyble_etude'
-                ? 'Dm9 | G13 | Cmaj7 | Cmaj7/E | Am9 | D7 | … (one chord per bar)'
-                : presetId === 'riff_generator'
-                  ? 'Am7 | D7 | Gmaj7 |'
-                : presetId === 'big_band' || presetId === 'string_quartet'
-                  ? 'Cmaj7 | Am7 | Dm7 | G7 | … (one chord per bar)'
-                  : songFormBarPreset
-                    ? `Pipe-separated chords — aligned to ${songFormBars} bars on blur`
-                    : 'Am7 | D7 | Gmaj7 |'
-            }
+            placeholder={customHarmonyPlaceholder}
             rows={
               songFormBarPreset
                 ? Math.min(12, Math.max(4, Math.ceil(songFormBars / 6)))

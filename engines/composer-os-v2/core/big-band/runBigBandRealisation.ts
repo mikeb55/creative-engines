@@ -19,7 +19,7 @@ export interface BigBandRealisationResult {
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
 }
 
-export function runBigBandRealisation(input: BigBandRunInput): BigBandRealisationResult {
+export function runBigBandRealisation(input: BigBandRunInput & { bpm?: number }): BigBandRealisationResult {
   const planning = runBigBandMode(input);
   const voicingPlan = planBigBandVoicing(planning.orchestrationPlan);
   const voicingValidation = validateEnsembleVoicing(voicingPlan);
@@ -52,7 +52,9 @@ export function runBigBandRealisation(input: BigBandRunInput): BigBandRealisatio
     chordBars,
   });
 
-  const exportPipeline = runEnsembleExportPipeline(score);
+  const exportPipeline = runEnsembleExportPipeline(score, {
+    ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),
+  });
 
   return {
     planning,

@@ -205,7 +205,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         wybleChordSource: resolved.source,
         wybleChordBarCount: chords.length,
         wybleChordsPerBar: chords,
-      },
+      } as GenerateResult['runManifest'],
     };
   }
 
@@ -268,7 +268,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       });
     }
     const barTarget = clampSongFormBarCount(req.totalBars, 32);
-    let expectedBarCount = barTarget;
+    let expectedBarCount: number = barTarget;
     if (req.formId != null) {
       const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
       if (formBarSum > 0) {
@@ -615,7 +615,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
-  const bigBandRealisationInput: BigBandRunInput & { formId?: string } = {
+  const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
     totalBars: req.totalBars,
@@ -632,6 +632,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     era: eraFromPairing,
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
+    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
@@ -756,7 +757,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     creativeControlLevel: req.creativeControlLevel,
   });
   const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
-  const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId } = {
+  const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
     totalBars: req.totalBars,
@@ -765,6 +766,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(parseBigBandEraFromPairing(req.stylePairing?.era)
       ? { era: parseBigBandEraFromPairing(req.stylePairing?.era) }
       : {}),
+    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {

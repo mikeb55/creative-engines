@@ -5,6 +5,7 @@
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { validateScoreModel } from '../score-model/scoreModelValidation';
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
+import type { MusicXmlExportOptions } from './exportTypes';
 import { exportScoreModelToMusicXml } from './musicxmlExporter';
 import { validateMusicXmlSchema } from './musicxmlValidation';
 import { validateExportedMusicXmlBarMath } from './validateMusicXmlBarMath';
@@ -17,7 +18,7 @@ export interface EnsembleExportPipelineResult {
 }
 
 /** Run score-model validation, strict bar math, export, schema + post-export bar math (same gates as duo path). */
-export function runEnsembleExportPipeline(score: ScoreModel): EnsembleExportPipelineResult {
+export function runEnsembleExportPipeline(score: ScoreModel, exportOptions?: MusicXmlExportOptions): EnsembleExportPipelineResult {
   const errors: string[] = [];
 
   const v1 = validateScoreModel(score);
@@ -26,7 +27,7 @@ export function runEnsembleExportPipeline(score: ScoreModel): EnsembleExportPipe
   const v2 = validateStrictBarMath(score);
   if (!v2.valid) errors.push(...v2.errors);
 
-  const ex = exportScoreModelToMusicXml(score);
+  const ex = exportScoreModelToMusicXml(score, exportOptions);
   if (!ex.success || !ex.xml) {
     errors.push(...(ex.errors.length ? ex.errors : ['MusicXML export failed']));
     return { ok: false, errors };

@@ -21,7 +21,7 @@ export interface QuartetRealisationResult {
 }
 
 export function runQuartetRealisation(
-  input: StringQuartetRunInput & { era?: BigBandEraId }
+  input: StringQuartetRunInput & { era?: BigBandEraId; bpm?: number }
 ): QuartetRealisationResult {
   const planning = runStringQuartetMode(input);
   const voicingPlan = planQuartetVoicing(planning.orchestrationPlan);
@@ -55,7 +55,9 @@ export function runQuartetRealisation(
     chordBars,
   });
 
-  const exportPipeline = runEnsembleExportPipeline(score);
+  const exportPipeline = runEnsembleExportPipeline(score, {
+    ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),
+  });
 
   return {
     planning,

@@ -14,6 +14,8 @@ export interface MusicXmlExportResult {
  * Use one at a time to isolate display issues in Sibelius.
  */
 export interface MusicXmlExportOptions {
+  /** Quarter-note BPM for measure-1 metronome + &lt;sound tempo&gt; (export); defaults with {@link ScoreModel.tempo} in exporter. */
+  bpm?: number;
   /** Variant A: bass part only — force every note/rest to voice 1 (monophonic staff). */
   bassStaffVoice1Only?: boolean;
   /** Variant B: omit all &lt;harmony&gt; chord symbols (measure-level). */
