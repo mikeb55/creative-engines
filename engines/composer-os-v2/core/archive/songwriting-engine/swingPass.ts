@@ -3,8 +3,8 @@
  * Modifies start/duration of note and rest events; never changes pitch.
  */
 
-import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
+import type { MeasureModel, PartModel, ScoreModel } from '../../score-model/scoreModelTypes';
+import { DIVISIONS, MEASURE_DIVISIONS } from '../../score-model/scoreModelTypes';
 
 const TICKS_PER_BEAT = DIVISIONS;
 const MEASURE_TICKS = MEASURE_DIVISIONS;
@@ -194,8 +194,8 @@ export function applySwingPass(score: ScoreModel, level: number): void {
   const L = Math.max(0, Math.min(5, Math.floor(level)));
   if (L === 0) return;
 
-  score.parts.forEach((part, partIdx) => {
-    part.measures.forEach((measure, mi) => {
+  score.parts.forEach((part: PartModel, partIdx: number) => {
+    part.measures.forEach((measure: MeasureModel, mi: number) => {
       const raw = eventsToSegments(measure);
       const swung = applySwingToSegments(raw, partIdx, measure.index - 1, L);
       segmentsToMeasure(measure, swung);

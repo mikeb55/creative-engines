@@ -2,10 +2,10 @@
  * Motif + melody → ScoreModel. Used only by generateSong (single pipeline).
  */
 
-import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
-import type { KeySignatureLine, MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
-import { createNote, createRest, createPart, createScore, addEvent } from '../score-model/scoreEventBuilder';
+import { chordTonesFromSymbol } from '../../harmony/chordSymbolAnalysis';
+import type { KeySignatureLine, MeasureModel, PartModel, ScoreModel } from '../../score-model/scoreModelTypes';
+import { BEATS_PER_MEASURE } from '../../score-model/scoreModelTypes';
+import { createNote, createRest, createPart, createScore, addEvent } from '../../score-model/scoreEventBuilder';
 
 const MELO_LOW = 60;
 const MELO_HIGH = 76;
@@ -78,7 +78,7 @@ export function generateMelodyFromMotif(
     0,
     'treble',
     n,
-    (bar) => chordBars[bar - 1],
+    (bar: number) => chordBars[bar - 1],
     () => undefined
   );
 

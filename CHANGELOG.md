@@ -1,3 +1,9 @@
+## Fix: broken import paths in archived songwriting engine resolved (2026-04-08)
+
+- Fix: broken import paths in archived songwriting engine resolved.
+
+---
+
 ## Fix: missing module path in songwritingEngine.test.ts resolved (2026-04-08)
 
 - Fix: missing module path in songwritingEngine.test.ts resolved.

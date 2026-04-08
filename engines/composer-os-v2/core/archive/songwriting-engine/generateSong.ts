@@ -5,10 +5,10 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
-import { getOutputPath } from '../../app-api/composerOsOutputPaths';
-import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
-import { validateScoreModel } from '../score-model/scoreModelValidation';
+import { parseChordProgressionInputWithBarCount } from '../../harmony/chordProgressionParser';
+import { getOutputPath } from '../../../app-api/composerOsOutputPaths';
+import { exportScoreModelToMusicXml } from '../../export/musicxmlExporter';
+import { validateScoreModel } from '../../score-model/scoreModelValidation';
 import type { SongRequest, SongResult } from './songEngineTypes';
 import { buildSongScoreModel } from './songEngineMusic';
 import { applySwingPass } from './swingPass';
