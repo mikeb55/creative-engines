@@ -5,12 +5,12 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { generateSong } from '../core/songwriting-engine/generateSong';
-import { buildSongScoreModel } from '../core/songwriting-engine/songEngineMusic';
-import { applySwingPass } from '../core/songwriting-engine/swingPass';
+const { generateSong } = require('../core/songwriting-engine/generateSong');
+const { buildSongScoreModel } = require('../core/songwriting-engine/songEngineMusic');
+const { applySwingPass } = require('../core/songwriting-engine/swingPass');
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { validateScoreModel } from '../core/score-model/scoreModelValidation';
-import type { ScoreModel } from '../core/score-model/scoreModelTypes';
+import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
 
 function cloneScore(score: ScoreModel): ScoreModel {
   return JSON.parse(JSON.stringify(score)) as ScoreModel;
@@ -76,7 +76,7 @@ export function runSongwritingEngineTests(): { ok: boolean; name: string }[] {
     });
     const mismatchOk =
       bad.success === false &&
-      (bad.errors?.some((e) => e.includes('8') && e.includes('4')) ?? false);
+      (bad.errors?.some((e: string) => e.includes('8') && e.includes('4')) ?? false);
     out.push({
       ok: mismatchOk,
       name: 'generateSong fails fast when bar count does not match chord count',
@@ -111,7 +111,13 @@ export function runSongwritingEngineTests(): { ok: boolean; name: string }[] {
     );
     const baseRhythm = rhythmFingerprint(base);
     const basePitches = JSON.stringify(
-      base.parts.map((p) => p.measures.map((m) => m.events.filter((e) => e.kind === 'note').map((e) => e.pitch)))
+      base.parts.map((p: PartModel) =>
+        p.measures.map((m: MeasureModel) =>
+          m.events
+            .filter((e: ScoreEvent) => e.kind === 'note')
+            .map((e: ScoreEvent) => (e as ScoreEvent & { pitch: number }).pitch)
+        )
+      )
     );
     const after0 = cloneScore(base);
     applySwingPass(after0, 0);
