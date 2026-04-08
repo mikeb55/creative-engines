@@ -5,9 +5,9 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-const { generateSong } = require('../core/songwriting-engine/generateSong');
-const { buildSongScoreModel } = require('../core/songwriting-engine/songEngineMusic');
-const { applySwingPass } = require('../core/songwriting-engine/swingPass');
+const { generateSong } = require('../core/archive/songwriting-engine/generateSong');
+const { buildSongScoreModel } = require('../core/archive/songwriting-engine/songEngineMusic');
+const { applySwingPass } = require('../core/archive/songwriting-engine/swingPass');
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { validateScoreModel } from '../core/score-model/scoreModelValidation';
 import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
