@@ -38,7 +38,20 @@ function clamp01(n: number): number {
 
 function blendProfiles(a: SongwriterStyleProfile, b: SongwriterStyleProfile, weightB: number): SongwriterStyleProfile {
   const w = clamp01(weightB);
-  const blend = (ka: keyof Omit<SongwriterStyleProfile, 'id'>) =>
+  const blend = (
+    ka:
+      | 'lineVsCellEmphasis'
+      | 'harmonyColourBias'
+      | 'formRegularity'
+      | 'prosodyInfluence'
+      | 'hookRepetitionBias'
+      | 'phraseRegularity'
+      | 'hookReturnVariation'
+      | 'harmonicSpeed'
+      | 'sectionContrast'
+      | 'syncopationBias'
+      | 'densityBias'
+  ) =>
     a[ka] * (1 - w) + b[ka] * w;
   return {
     id: a.id,

@@ -1,3 +1,9 @@
+## Fix: TypeScript errors in songwriterStyleResolver.ts resolved (2026-04-08)
+
+- Fix: TypeScript errors in songwriterStyleResolver.ts resolved.
+
+---
+
 ## Fix: TypeScript errors in behaviourGates.ts resolved (2026-04-08)
 
 - Fix: TypeScript errors in behaviourGates.ts resolved.
