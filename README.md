@@ -60,15 +60,15 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 ## Guitar Polyphony Status
 
-**Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes.
+**Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes. Recent work pushes the inner voice toward **true counterpoint**: **contrary-motion** and **stepwise** preferences (seeded), stronger **guide-tone (3rd/7th)** weighting, **higher Voice 2 bar coverage**, more **TWO_SLABS** and **internal micro-lines** so the line moves against the melody more often.
 
 Composer OS currently supports:
 
 - deterministic dual-voice guitar polyphony
 - Sibelius-safe and GP8-safe export
 - Voice-2 continuity across multiple bars
-- initial internal motion within sustained spans
-- sparse, non-chordal contrapuntal texture
+- internal motion within sustained spans (expanded toward majority of eligible spans)
+- contrapuntal inner-voice texture with directional and guide-tone bias
 
 ## Phase 18.2B - Guitar Polyphony (COMPLETE)
 

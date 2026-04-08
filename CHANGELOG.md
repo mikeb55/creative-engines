@@ -1,3 +1,16 @@
+## Feature: Voice 2 Wyble counterpoint improvements (2026-04-08)
+
+- Feature: Voice 2 Wyble counterpoint improvements
+  - Contrary motion preference added (70% probability)
+  - Stepwise motion preference added (72% probability)
+  - Guide tone bonus increased for 3rd and 7th
+  - TWO_SLABS probability increased by 20–25%
+  - Internal motion shaping frequency increased
+  - Voice 2 coverage targets raised (target min/max and hard max increased for higher bar activity)
+- Aggressive counterpoint pass (same release): coverage targets **0.65 / 0.75 / 0.85** (min / max / hard max), **V2_MAX_CONSECUTIVE_ACTIVE_BARS** **5**, breathing gap after runs **~25%** (was **~70%** on short runs; long runs no longer always gap), bar shapes weighted **~55% TWO_SLABS / ~25% SUSTAINED_BAR / ~20% OFFBEAT_HOLD**, internal motion gate **0.75**
+
+---
+
 ## CI: GitHub Actions workflow added for automated testing (2026-04-08)
 
 - CI: GitHub Actions workflow added for automated testing.

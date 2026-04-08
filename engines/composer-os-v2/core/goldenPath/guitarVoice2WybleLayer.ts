@@ -85,19 +85,19 @@ type BarV2RhythmShape = 'SUSTAINED_BAR' | 'TWO_SLABS' | 'OFFBEAT_HOLD' | 'REST';
 /** Phase 18.2B.2 — coarse weighting state (bar shape only; from schedule phase). */
 type Voice2RhythmWeightState182B2 = 'ENTERING' | 'CONTINUING' | 'RESOLVING' | 'RESTING';
 
-const V2_COV_TARGET_MIN = 0.35;
-/** Nominal upper band for repair / continuation caps (target coverage ~0.35–0.50). */
-const V2_COV_TARGET_MAX = 0.45;
+const V2_COV_TARGET_MIN = 0.65;
+/** Nominal upper band for repair / continuation caps (target coverage ~0.65–0.75). */
+const V2_COV_TARGET_MAX = 0.75;
 /** Realized normalization: coverage at or above this ratio is acceptable after aggressive trim (edge-case floor). */
 const V2_COVERAGE_FLOOR = 0.3;
 /** Warn when realized active-bar ratio falls below this (still above {@link V2_COVERAGE_FLOOR}). */
 const V2_COVERAGE_WARN_BELOW_REALIZED = 0.35;
 /** Hard ceiling: trim active bars until at or below this ratio (Phase 18.2B.3 breathing fix). */
-const V2_COV_HARD_MAX = 0.55;
+const V2_COV_HARD_MAX = 0.85;
 const V2_COV_FORCE_SUSTAINED = 0.3;
 const V2_MAX_GAP_INACTIVE_BARS = 3;
 /** Max consecutive active Voice-2 bars (runs longer than this are trimmed before inject). */
-const V2_MAX_CONSECUTIVE_ACTIVE_BARS = 3;
+const V2_MAX_CONSECUTIVE_ACTIVE_BARS = 5;
 
 function deriveVoice2WeightState182B2(
   schedulePhase: Voice2SchedulePhase | undefined
@@ -186,10 +186,10 @@ function enforceBreathingGapAfterRuns182B3(effective: Set<number>, tb: number, s
     const next = last + 1;
     if (next > tb || !effective.has(next)) continue;
     if (L >= 3) {
-      effective.delete(next);
+      if (seededUnit(seed, last, 18802) < 0.25) effective.delete(next);
       continue;
     }
-    if (seededUnit(seed, last, 18801) < 0.7) {
+    if (seededUnit(seed, last, 18801) < 0.25) {
       effective.delete(next);
     }
   }
@@ -246,6 +246,12 @@ function buildBarLevelVoice2ShapeMap(
   const out = new Map<number, BarV2RhythmShape>();
   const sorted = [...effectiveBars].filter((b) => b >= 1 && b <= tb).sort((a, b) => a - b);
   let prevActiveBar = 0;
+  const pickAggressiveMovementShape = (bar: number, salt: number): BarV2RhythmShape => {
+    const u = seededUnit(seed, bar, salt);
+    if (u < 0.55) return 'TWO_SLABS';
+    if (u < 0.8) return 'SUSTAINED_BAR';
+    return 'OFFBEAT_HOLD';
+  };
   for (const bar of sorted) {
     if (forceSustainedBars.has(bar)) {
       out.set(bar, 'SUSTAINED_BAR');
@@ -259,29 +265,25 @@ function buildBarLevelVoice2ShapeMap(
     const wState = deriveVoice2WeightState182B2(schedulePhase);
 
     if (gapSincePrev > V2_MAX_GAP_INACTIVE_BARS) {
-      out.set(bar, seededUnit(seed, bar, 18710) < 0.32 ? 'TWO_SLABS' : 'OFFBEAT_HOLD');
+      out.set(bar, pickAggressiveMovementShape(bar, 18710));
       continue;
     }
 
     switch (wState) {
       case 'RESOLVING':
-        out.set(bar, 'SUSTAINED_BAR');
+        out.set(bar, pickAggressiveMovementShape(bar, 18713));
         break;
-      case 'ENTERING': {
-        const u = seededUnit(seed, bar, 18711);
-        out.set(bar, u < 0.38 ? 'SUSTAINED_BAR' : 'TWO_SLABS');
+      case 'ENTERING':
+        out.set(bar, pickAggressiveMovementShape(bar, 18711));
         break;
-      }
-      case 'CONTINUING': {
-        const u = seededUnit(seed, bar, 18712);
-        out.set(bar, u < 0.28 ? 'TWO_SLABS' : 'OFFBEAT_HOLD');
+      case 'CONTINUING':
+        out.set(bar, pickAggressiveMovementShape(bar, 18712));
         break;
-      }
       case 'RESTING':
         out.set(bar, 'REST');
         break;
       default:
-        out.set(bar, 'SUSTAINED_BAR');
+        out.set(bar, pickAggressiveMovementShape(bar, 18714));
     }
   }
   return out;
@@ -1152,12 +1154,35 @@ function refineVoice2Pitch182B3(
   const thirdPc = ((tones.third % 12) + 12) % 12;
   const seventhPc = ((tones.seventh % 12) + 12) % 12;
   const rootPc = ((tones.root % 12) + 12) % 12;
+  const fifthPc = ((tones.fifth % 12) + 12) % 12;
   const sixthPc = ((sixth % 12) + 12) % 12;
   const ninthPc = ((ninth % 12) + 12) % 12;
   const occas69 = seededUnit(seed, bar + ctx.segmentSalt, 18321) < 0.28;
+  const isChordTonePc = (pc: number) =>
+    pc === thirdPc || pc === seventhPc || pc === fifthPc || pc === rootPc;
+
+  let work = candidates;
+  if (continuityRef !== null && ctx.v1Contour !== 0 && seededUnit(seed, bar, 18350 + ctx.segmentSalt) < 0.7) {
+    const contrary = candidates.filter(
+      (c) =>
+        (ctx.v1Contour === 1 && c < continuityRef) || (ctx.v1Contour === -1 && c > continuityRef)
+    );
+    if (contrary.length > 0) work = contrary;
+  }
+  if (continuityRef !== null && seededUnit(seed, bar, 18351 + ctx.segmentSalt) < 0.72) {
+    const stepwiseChord = candidates.filter((c) => {
+      if (Math.abs(c - continuityRef) > 2) return false;
+      return isChordTonePc(((c % 12) + 12) % 12);
+    });
+    if (stepwiseChord.length > 0) {
+      const inter = work.filter((c) => stepwiseChord.includes(c));
+      if (inter.length > 0) work = inter;
+    }
+  }
+
   let best = rawPlaced;
   let bd = Infinity;
-  for (const c of candidates) {
+  for (const c of work) {
     const pc = ((c % 12) + 12) % 12;
     let s = Math.abs(c - rawPlaced) * 0.3;
     if (continuityRef !== null) {
@@ -1167,15 +1192,15 @@ function refineVoice2Pitch182B3(
       else s += 6.5 + (dist - V2_CONTINUITY_MAX_LEAP_SEMITONES) * 2.8;
     }
     let guideBonus = 0;
-    if (pc === thirdPc || pc === seventhPc) guideBonus -= 1.05;
+    if (pc === thirdPc || pc === seventhPc) guideBonus -= 1.3125;
     else if ((pc === sixthPc || pc === ninthPc) && occas69) guideBonus -= 0.55;
     if (ctx.directedArrivalStrong) {
-      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.55;
+      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.6875;
       else if (pc === rootPc) guideBonus -= 0.22;
       else s += 0.62;
     }
     if (ctx.phraseEndResolution) {
-      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.48;
+      if (pc === thirdPc || pc === seventhPc) guideBonus -= 0.6;
       else if (pc === rootPc) guideBonus -= 0.12;
       else s += 0.72;
       if (pc === sixthPc || pc === ninthPc) s += 0.52;
@@ -1204,12 +1229,12 @@ function refineVoice2Pitch182B3(
       if (t < strictCeiling && t >= floorMidi) s += Math.abs(c - t) * 0.38;
     }
     if (ctx.weightState === 'ENTERING') {
-      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.22 : 0;
+      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.275 : 0;
       s += 0.18 * Math.abs(c - rawPlaced);
     } else if (ctx.weightState === 'CONTINUING') {
       if (continuityRef !== null && Math.abs(c - continuityRef) <= 2) s -= 0.4;
     } else if (ctx.weightState === 'RESOLVING') {
-      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.35 : 0;
+      guideBonus -= pc === thirdPc || pc === seventhPc ? 0.4375 : 0;
       s += 0.28 * Math.abs(c - rawPlaced);
     }
     s -= guideBonus;
@@ -1802,13 +1827,8 @@ function applyVoice2InternalMotionShaping(
 ): void {
   if (phraseCommitBar) return;
   const lyricalBoost = preferSingingMiniLine || forceV2PhraseAnchor || inPhraseActivityBar;
-  /** ~62% gate by default; singing / forced phrase / V2 anchor / activity window passes more often (motion-first). */
   const motionGate =
-    forcePhraseMotion || forceV2PhraseAnchor || inPhraseActivityBar
-      ? 1
-      : preferSingingMiniLine
-        ? 0.28
-        : 0.62;
+    forcePhraseMotion || forceV2PhraseAnchor || inPhraseActivityBar ? 1 : 0.75;
   if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > motionGate) return;
 
   const v2only = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
