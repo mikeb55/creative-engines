@@ -105,6 +105,9 @@ const ERA_OPTIONS: { id: string; label: string }[] = [
   { id: 'bebop', label: 'Bebop' },
   { id: 'post_bop', label: 'Post-bop' },
   { id: 'contemporary', label: 'Contemporary' },
+  { id: 'cool_jazz', label: 'Cool Jazz' },
+  { id: 'hard_bop', label: 'Hard Bop' },
+  { id: 'fusion', label: 'Fusion' },
 ];
 
 const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [

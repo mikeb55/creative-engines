@@ -79,6 +79,24 @@ const eraRules: Record<BigBandEraId, BigBandRule[]> = {
     R('contemp.modal_fields', 'Modal / non-functional fields', 'era', 'harmony', 72),
     R('contemp.meter_flex', 'Mixed meters / ostinati', 'era', 'rhythm', 74),
   ],
+  cool_jazz: [
+    R('cool.lighter_extensions', 'Lighter extensions; open voicings', 'era', 'harmony', 73),
+    R('cool.modal_hints', 'Modal colour; sparse brass hits', 'era', 'harmony', 71),
+    R('cool.mid_register', 'Mid-register blend emphasis', 'era', 'orchestration', 69),
+    R('cool.phrase_space', 'Phrase space / less dense fills', 'era', 'density', 70),
+  ],
+  hard_bop: [
+    R('hard_bop.blues_gospel', 'Blues/gospel inflection in lines', 'era', 'harmony', 75),
+    R('hard_bop.altered_dominants', 'Altered dominants in turnarounds', 'era', 'harmony', 77),
+    R('hard_bop.riff_line_mix', 'Riff stacks vs line peaks', 'era', 'density', 72),
+    R('hard_bop.shout_drive', 'Shout sections with rhythmic drive', 'era', 'rhythm', 74),
+  ],
+  fusion: [
+    R('fusion.modal_vamps', 'Modal vamps / static harmony fields', 'era', 'harmony', 74),
+    R('fusion.electric_colour', 'Electric rhythm-section colour', 'era', 'orchestration', 71),
+    R('fusion.groove_pocket', 'Groove pocket / backbeat clarity', 'era', 'rhythm', 76),
+    R('fusion.layered_lines', 'Layered lines over ostinato', 'era', 'density', 73),
+  ],
 };
 
 const foundationalRules: BigBandRule[] = [

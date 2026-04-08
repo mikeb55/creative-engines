@@ -12,7 +12,15 @@ import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 const SEED = 42;
 const TOTAL_BARS = 32;
 
-const ALL_ERAS: BigBandEraId[] = ['swing', 'bebop', 'post_bop', 'contemporary'];
+const ALL_ERAS: BigBandEraId[] = [
+  'swing',
+  'bebop',
+  'post_bop',
+  'contemporary',
+  'cool_jazz',
+  'hard_bop',
+  'fusion',
+];
 
 function minimalBigBandPlans(): { formPlan: BigBandFormPlan; sectionPlan: BigBandSectionPlan } {
   const roles: Record<BigBandInstrumentSection, BigBandRoleType> = {
@@ -44,10 +52,9 @@ function anyBarContainsOneOf(chords: string[], substrings: string[]): boolean {
   return chords.some((c) => substrings.some((s) => c.includes(s)));
 }
 
-function allFourDistinct(byEra: Record<BigBandEraId, string[]>): boolean {
-  const keys = ALL_ERAS;
-  const sigs = keys.map((e) => byEra[e].join('|'));
-  return new Set(sigs).size === keys.length;
+function allSevenDistinct(byEra: Record<BigBandEraId, string[]>): boolean {
+  const sigs = ALL_ERAS.map((e) => byEra[e].join('|'));
+  return new Set(sigs).size === ALL_ERAS.length;
 }
 
 export function runBigBandEraChordPoolsScoreTests(): { ok: boolean; name: string }[] {
@@ -74,21 +81,43 @@ export function runBigBandEraChordPoolsScoreTests(): { ok: boolean; name: string
   const bebopOk = anyBarContainsOneOf(byEra.bebop, ['7b9', '7#9', '7#11', 'm7b5']);
   const postOk = anyBarContainsOneOf(byEra.post_bop, ['maj7#11', '7alt', '7sus']);
   const contemporaryOk = anyBarContainsOneOf(byEra.contemporary, ['m9', 'm11', 'add9']);
-  const distinctOk = allFourDistinct(byEra);
+  const coolOk =
+    anyBarContainsOneOf(byEra.cool_jazz, ['maj7']) &&
+    anyBarContainsOneOf(byEra.cool_jazz, ['6/9']) &&
+    anyBarContainsOneOf(byEra.cool_jazz, ['mMaj7']);
+  const hardBopOk =
+    anyBarContainsOneOf(byEra.hard_bop, ['7b9']) &&
+    anyBarContainsOneOf(byEra.hard_bop, ['7#9']) &&
+    anyBarContainsOneOf(byEra.hard_bop, ['dim7']);
+  const fusionOk =
+    anyBarContainsOneOf(byEra.fusion, ['m9']) &&
+    anyBarContainsOneOf(byEra.fusion, ['m11']) &&
+    anyBarContainsOneOf(byEra.fusion, ['7sus']);
+  const distinctOk = allSevenDistinct(byEra);
 
-  const ok = swingOk && bebopOk && postOk && contemporaryOk && distinctOk;
+  const ok =
+    swingOk &&
+    bebopOk &&
+    postOk &&
+    contemporaryOk &&
+    coolOk &&
+    hardBopOk &&
+    fusionOk &&
+    distinctOk;
 
   const failures: string[] = [];
   if (!swingOk) failures.push('swing missing expected vocabulary (maj6|6/9|dim7|m6)');
   if (!bebopOk) failures.push('bebop missing expected vocabulary (7b9|7#9|7#11|m7b5)');
   if (!postOk) failures.push('post_bop missing expected vocabulary (maj7#11|7alt|7sus)');
   if (!contemporaryOk) failures.push('contemporary missing expected vocabulary (m9|m11|add9)');
-  if (!distinctOk) failures.push('not all four era chord sequences are distinct');
+  if (!coolOk) failures.push('cool_jazz missing expected vocabulary (maj7 + 6/9 + mMaj7)');
+  if (!hardBopOk) failures.push('hard_bop missing expected vocabulary (7b9 + 7#9 + dim7)');
+  if (!fusionOk) failures.push('fusion missing expected vocabulary (m9 + m11 + 7sus)');
+  if (!distinctOk) failures.push('not all seven era chord sequences are distinct');
 
-  const name =
-    ok
-      ? 'Big Band score: four eras (same seed, 32 bars) yield distinct chords and era-typical symbols'
-      : `Big Band era chord pool score test FAILED: ${failures.join('; ')}`;
+  const name = ok
+    ? 'Big Band score: seven eras (same seed, 32 bars) yield distinct chords and era-typical symbols'
+    : `Big Band era chord pool score test FAILED: ${failures.join('; ')}`;
 
   return [{ ok, name }];
 }

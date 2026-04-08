@@ -102,7 +102,15 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
 }
 
 function parseBigBandEraFromPairing(era?: string): BigBandEraId | undefined {
-  if (era === 'swing' || era === 'bebop' || era === 'post_bop' || era === 'contemporary') {
+  if (
+    era === 'swing' ||
+    era === 'bebop' ||
+    era === 'post_bop' ||
+    era === 'contemporary' ||
+    era === 'cool_jazz' ||
+    era === 'hard_bop' ||
+    era === 'fusion'
+  ) {
     return era;
   }
   return undefined;

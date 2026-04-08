@@ -1,3 +1,9 @@
+## Feature: Cool Jazz, Hard Bop, Fusion eras added to Big Band and String Quartet (2026-04-08)
+
+- Extended `BigBandEraId` with `cool_jazz`, `hard_bop`, `fusion`; chord pools and progression cycles in `bigBandScoreBuilder.ts` and `quartetScoreBuilder.ts`; app allowlist in `parseBigBandEraFromPairing`; UI era options in `HomeGenerate.tsx`; Big Band rule registry entries for new eras; era score/app tests cover all seven eras.
+
+---
+
 ## Fix: TypeScript spread type error in guitarVoice2WybleLayer.ts resolved (2026-04-08)
 
 - Fix: TypeScript spread type error in guitarVoice2WybleLayer.ts resolved (`TS2698` on fallback event clone: spread via `e as ScoreEvent`; no runtime change).

@@ -5,7 +5,14 @@
 
 export type BigBandComposerId = 'ellington' | 'basie' | 'thad' | 'schneider';
 
-export type BigBandEraId = 'swing' | 'bebop' | 'post_bop' | 'contemporary';
+export type BigBandEraId =
+  | 'swing'
+  | 'bebop'
+  | 'post_bop'
+  | 'contemporary'
+  | 'cool_jazz'
+  | 'hard_bop'
+  | 'fusion';
 
 export type RuleEffectType = 'density' | 'rhythm' | 'harmony' | 'orchestration' | 'form';
 
