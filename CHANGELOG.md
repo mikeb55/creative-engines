@@ -1,3 +1,9 @@
+## Fix: TypeScript errors in behaviourGates.ts resolved (2026-04-08)
+
+- Fix: TypeScript errors in behaviourGates.ts resolved.
+
+---
+
 ## Fix: TypeScript error in songModePhraseEngineV1.ts resolved (2026-04-08)
 
 - Fix: TypeScript error in songModePhraseEngineV1.ts resolved.

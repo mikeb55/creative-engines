@@ -206,11 +206,11 @@ export function runBehaviourGates(
   const duoIdentityWarnings: string[] = [];
   const songMode = opts?.compositionContext?.generationMetadata?.songModeHookFirstIdentity === true;
   const duoCtx = { compositionContext: opts?.compositionContext };
+  const guitarBarCount =
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   const effectiveFormBars =
     opts?.compositionContext?.form?.totalBars ?? guitarBarCount;
   const duoLockCtx = { compositionContext: opts?.compositionContext, effectiveFormBars };
-  const guitarBarCount =
-    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
   const duoGateScore =
     opts?.presetId && isGuitarBassDuoFamily(opts.presetId) && guitarBarCount > 8
       ? sliceScoreToFirstEightBars(score)
