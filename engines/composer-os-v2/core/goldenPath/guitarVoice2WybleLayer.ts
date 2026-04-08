@@ -85,15 +85,15 @@ type BarV2RhythmShape = 'SUSTAINED_BAR' | 'TWO_SLABS' | 'OFFBEAT_HOLD' | 'REST';
 /** Phase 18.2B.2 — coarse weighting state (bar shape only; from schedule phase). */
 type Voice2RhythmWeightState182B2 = 'ENTERING' | 'CONTINUING' | 'RESOLVING' | 'RESTING';
 
-const V2_COV_TARGET_MIN = 0.35;
-/** Nominal upper band for repair / continuation caps (target coverage ~0.35–0.50). */
-const V2_COV_TARGET_MAX = 0.45;
+const V2_COV_TARGET_MIN = 0.4;
+/** Nominal upper band for repair / continuation caps (target coverage ~0.40–0.55). */
+const V2_COV_TARGET_MAX = 0.5;
 /** Realized normalization: coverage at or above this ratio is acceptable after aggressive trim (edge-case floor). */
 const V2_COVERAGE_FLOOR = 0.3;
 /** Warn when realized active-bar ratio falls below this (still above {@link V2_COVERAGE_FLOOR}). */
 const V2_COVERAGE_WARN_BELOW_REALIZED = 0.35;
 /** Hard ceiling: trim active bars until at or below this ratio (Phase 18.2B.3 breathing fix). */
-const V2_COV_HARD_MAX = 0.55;
+const V2_COV_HARD_MAX = 0.6;
 const V2_COV_FORCE_SUSTAINED = 0.3;
 const V2_MAX_GAP_INACTIVE_BARS = 3;
 /** Max consecutive active Voice-2 bars (runs longer than this are trimmed before inject). */
@@ -189,7 +189,7 @@ function enforceBreathingGapAfterRuns182B3(effective: Set<number>, tb: number, s
       effective.delete(next);
       continue;
     }
-    if (seededUnit(seed, last, 18801) < 0.7) {
+    if (seededUnit(seed, last, 18801) < 0.55) {
       effective.delete(next);
     }
   }
@@ -534,7 +534,7 @@ export function collectPhraseAwareActiveBarIndices(totalBars: number, seed: numb
       continue;
     }
 
-    const wantThree = seededUnit(seed, phraseIdx, 3111) < 0.52;
+    const wantThree = seededUnit(seed, phraseIdx, 3111) < 0.45;
     const patList = wantThree ? PHRASE_PATTERNS_3 : PHRASE_PATTERNS_2;
     const pat = patList[(Math.abs(seed) + phraseIdx * 19) % patList.length]!;
     for (const off of pat) {

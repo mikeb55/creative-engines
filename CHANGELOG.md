@@ -1,6 +1,11 @@
-## Feature: Cool Jazz, Hard Bop, Fusion eras added to Big Band and String Quartet (2026-04-08)
+## Cool Jazz, Hard Bop, Fusion eras (2026-04-08)
 
-- Extended `BigBandEraId` with `cool_jazz`, `hard_bop`, `fusion`; chord pools and progression cycles in `bigBandScoreBuilder.ts` and `quartetScoreBuilder.ts`; app allowlist in `parseBigBandEraFromPairing`; UI era options in `HomeGenerate.tsx`; Big Band rule registry entries for new eras; era score/app tests cover all seven eras.
+- Added Cool Jazz, Hard Bop, Fusion to Big Band and String Quartet era dropdowns
+- Chord pools and progression cycles added for all three new eras
+- parseBigBandEraFromPairing allowlist extended to 7 eras
+- bigBandRuleRegistry updated for new era ids
+- Automated tests extended to cover all 7 eras — PASS
+- All 7 eras confirmed working in Sibelius output
 
 ---
 
