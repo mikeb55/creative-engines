@@ -857,7 +857,12 @@ function generatePhraseStatePitches(
     let fromHookResolution = false;
 
     if (hookFollow) {
-      const hf = hookFollow;
+      const hf: {
+        kind: 'leap-resolve' | 'contour' | 'accent';
+        delta: number;
+        phase: 1 | 2;
+        anchorRef: number;
+      } = hookFollow;
       if (hf.kind === 'leap-resolve') {
         if (hf.phase === 1) {
           want = prev - 2 + (seededUnit(seed, phraseIdx, 92050 + i) < 0.4 ? 1 : 0);
