@@ -1,3 +1,9 @@
+## Fix: increased Node heap size for test suite (2026-04-08)
+
+- Fix: increased Node heap size for test suite.
+
+---
+
 ## Fix: broken import paths in archived songwriting engine resolved (2026-04-08)
 
 - Fix: broken import paths in archived songwriting engine resolved.
