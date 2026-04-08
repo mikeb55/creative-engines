@@ -1,3 +1,9 @@
+## Fix: TypeScript error in activityScore.ts resolved (2026-04-08)
+
+- Fix: TypeScript error in activityScore.ts resolved.
+
+---
+
 ## Fix: tempo marking now appears once only on top staff (2026-04-08)
 
 - Fix: tempo marking now appears once only on top staff.

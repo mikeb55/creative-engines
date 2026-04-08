@@ -3,13 +3,13 @@
  * Guitar: Voice 1 (melody) only — Voice 2 inner layer must not inflate activity.
  */
 
-import type { PartModel } from '../score-model/scoreModelTypes';
+import type { PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
 
 const HIGH_ACTIVITY = 6;
 const EPS = 1e-4;
 
-function noteCountedForActivity(part: PartModel, e: { kind: string }): boolean {
+function noteCountedForActivity(part: PartModel, e: ScoreEvent): boolean {
   if (e.kind !== 'note') return false;
   if (part.instrumentIdentity === 'clean_electric_guitar') return isGuitarMelodyVoiceNote(e);
   return true;
