@@ -1,3 +1,9 @@
+## Fix: TypeScript spread type error in guitarVoice2WybleLayer.ts resolved (2026-04-08)
+
+- Fix: TypeScript spread type error in guitarVoice2WybleLayer.ts resolved (`TS2698` on fallback event clone: spread via `e as ScoreEvent`; no runtime change).
+
+---
+
 ## Fix: TypeScript errors in musicxmlExporter.ts resolved (2026-04-07)
 
 - Fix: TypeScript errors in musicxmlExporter.ts resolved (drum-layer error strings: `as ScoreEvent` for `kind` / `pitch` ternaries; no runtime change).

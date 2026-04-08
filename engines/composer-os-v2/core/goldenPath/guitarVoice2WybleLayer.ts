@@ -4026,7 +4026,7 @@ function cloneGuitarMeasuresDeepForV2Reentry(measures: MeasureModel[]): MeasureM
     events: m.events.map((e) => {
       if (e.kind === 'note') return { ...(e as NoteEvent) } as ScoreEvent;
       if (e.kind === 'rest') return { ...(e as RestEvent) } as ScoreEvent;
-      return { ...e };
+      return { ...(e as ScoreEvent) } as ScoreEvent;
     }),
   }));
 }
