@@ -1,3 +1,9 @@
+## CI: GitHub Actions workflow added for automated testing (2026-04-08)
+
+- CI: GitHub Actions workflow added for automated testing.
+
+---
+
 ## Fix: increased Node heap size for test suite (2026-04-08)
 
 - Fix: increased Node heap size for test suite.

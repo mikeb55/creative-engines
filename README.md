@@ -3,6 +3,8 @@
 **Version 1.0**  
 **Style-agnostic, instrumentation-agnostic**
 
+**CI:** GitHub Actions runs the full `engines/composer-os-v2` test suite on every push to `main` and on every pull request (see `.github/workflows/test.yml`).
+
 ---
 
 ## Repository Roles
