@@ -1,3 +1,14 @@
+## Voice 2 counterpoint fixes (2026-04-08)
+
+- Fixed: `buildBarLevelVoice2ShapeMap` was assigning REST to all bars — 0 notes were being injected.
+- Fixed: diagnostic logging added and removed.
+- Voice 2 now active in most bars with real melodic movement.
+- Phrase arc logic, stepwise entry bias, cadential resolution all in place.
+- Coverage targets 65–85% now actually realized.
+- Known: some gap bars remain; further melodic quality work planned.
+
+---
+
 ## Feature: Voice 2 Wyble counterpoint improvements (2026-04-08)
 
 - Feature: Voice 2 Wyble counterpoint improvements

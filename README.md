@@ -60,6 +60,8 @@ Wyble Etude engine now supports stable two-voice polyphony with rhythmic indepen
 
 ## Guitar Polyphony Status
 
+**Guitar / Bass Duo — Voice 2 counterpoint:** significantly improved; the inner voice is **active across most bars** with planned shapes, coverage in the 65–85% target band, and real melodic motion (phrase arc, stepwise entry bias, cadential resolution). Some intentional gap bars remain; further quality passes are planned.
+
 **Voice 2 (Guitar–Bass Duo)** uses **bar-level rhythm planning** (explicit bar shapes and coverage/gap control) rather than ad hoc per-event rhythm passes. Recent work pushes the inner voice toward **true counterpoint**: **contrary-motion** and **stepwise** preferences (seeded), stronger **guide-tone (3rd/7th)** weighting, **higher Voice 2 bar coverage**, more **TWO_SLABS** and **internal micro-lines** so the line moves against the melody more often.
 
 Composer OS currently supports:

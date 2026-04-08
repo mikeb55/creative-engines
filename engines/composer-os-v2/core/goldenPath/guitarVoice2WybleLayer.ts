@@ -26,7 +26,7 @@ const INNER_LOW = 48;
 /** Never stack more than two simultaneous guitar notes (melody + inner). */
 const MAX_GUITAR_SIMULT = 2;
 /** Minimum semitones below each overlapping melody pitch (clear gap, still realisable after post-passes). */
-const MIN_MELODY_INNER_GAP_SEMITONES = 2;
+const MIN_MELODY_INNER_GAP_SEMITONES = 1;
 /** Phase 18.2B.3: two active bars in a 4-bar window (offsets 0–3 from phrase base). */
 const PHRASE_PATTERNS_2: number[][] = [
   [0, 2],
@@ -280,7 +280,8 @@ function buildBarLevelVoice2ShapeMap(
         out.set(bar, pickAggressiveMovementShape(bar, 18712));
         break;
       case 'RESTING':
-        out.set(bar, 'REST');
+        /** Bars here are in {@link effectiveBars}; never assign REST — use a playable shape (same pool as other states). */
+        out.set(bar, pickAggressiveMovementShape(bar, 18715));
         break;
       default:
         out.set(bar, pickAggressiveMovementShape(bar, 18714));
@@ -312,7 +313,7 @@ function applySustainedWallSafety182B3(
       if (u < 0.55) {
         shapeByBar.set(bar, 'OFFBEAT_HOLD');
       } else {
-        shapeByBar.set(bar, 'REST');
+        /** Never assign REST on an active bar index; drop the bar from coverage instead of marking it REST-in-map. */
         effectiveBars.delete(bar);
       }
     }
@@ -536,7 +537,7 @@ export function collectPhraseAwareActiveBarIndices(totalBars: number, seed: numb
       continue;
     }
 
-    const wantThree = seededUnit(seed, phraseIdx, 3111) < 0.52;
+    const wantThree = seededUnit(seed, phraseIdx, 3111) < 0.75;
     const patList = wantThree ? PHRASE_PATTERNS_3 : PHRASE_PATTERNS_2;
     const pat = patList[(Math.abs(seed) + phraseIdx * 19) % patList.length]!;
     for (const off of pat) {
@@ -728,7 +729,7 @@ function v2OneNoteSpanPassesMelodyOverlapRule(v1: NoteEvent[], startBeat: number
   return countV1NotesOverlappingSpan(v1, t0, t1) >= 2;
 }
 
-/** Minimum Voice-2 effective bars implied by ~35% phrase floor (keeps global coverage in target band). */
+/** Minimum Voice-2 effective bars implied by ~60% phrase floor (keeps global coverage in target band). */
 function minEffectiveBarsByPhrasePresenceFloor(tb: number): number {
   const phraseCount = Math.ceil(tb / 4);
   let sum = 0;
@@ -736,7 +737,7 @@ function minEffectiveBarsByPhrasePresenceFloor(tb: number): number {
     const base = p * 4 + 1;
     const end = Math.min(base + 3, tb);
     const len = end - base + 1;
-    sum += Math.max(1, Math.floor(len * 0.35 + 1e-9));
+    sum += Math.max(1, Math.floor(len * 0.6 + 1e-9));
   }
   return sum;
 }
@@ -1190,6 +1191,22 @@ function refineVoice2Pitch182B3(
       if (dist <= 2) s += dist * 0.42;
       else if (dist <= V2_CONTINUITY_MAX_LEAP_SEMITONES) s += 1.1 + dist * 0.5;
       else s += 6.5 + (dist - V2_CONTINUITY_MAX_LEAP_SEMITONES) * 2.8;
+      const phraseIdx = Math.floor((bar - 1) / 4);
+      const posInPhrase = ((bar - 1) % 4) + 1;
+      const asc = seededUnit(seed, phraseIdx, 18861) < 0.5;
+      let arcTarget = continuityRef;
+      if (asc) {
+        if (posInPhrase <= 2) arcTarget = continuityRef + 2;
+        else if (posInPhrase === 3) arcTarget = continuityRef + 1;
+        else arcTarget = continuityRef - 2;
+      } else {
+        if (posInPhrase <= 2) arcTarget = continuityRef - 2;
+        else if (posInPhrase === 3) arcTarget = continuityRef - 1;
+        else arcTarget = continuityRef + 2;
+      }
+      const tArc = placeStrictlyBelowCeiling(strictCeiling, arcTarget, floorMidi);
+      const arcRef = tArc < strictCeiling && tArc >= floorMidi ? tArc : arcTarget;
+      s += Math.abs(c - arcRef) * 0.11;
     }
     let guideBonus = 0;
     if (pc === thirdPc || pc === seventhPc) guideBonus -= 1.3125;
@@ -1349,10 +1366,16 @@ function pickVoice2PitchForBehaviour(
   seed: number,
   bar: number,
   committedArrivalMidi?: number,
-  pitchCtx?: Voice2PitchPickContext182B3
+  pitchCtx?: Voice2PitchPickContext182B3,
+  legacyAnchor?: number | null
 ): number {
   const committed = committedArrivalMidi ?? runDestinationPlaced;
-  const wrap = (p: number) => applyPitch182B3IfPresent(p, chord, strictCeiling, context, seed, bar, pitchCtx);
+  const wrap = (p: number) => {
+    let x = applyPitch182B3IfPresent(p, chord, strictCeiling, context, seed, bar, pitchCtx);
+    x = applyLegacyStepwiseEntryBias182B(x, legacyAnchor, chord, strictCeiling, context, seed, bar);
+    x = applyPhraseFourBoundaryCadence182B(x, anchorMidi, bar, chord, strictCeiling, context, seed);
+    return x;
+  };
   if (behaviour === 'enter' || behaviour === 'rest' || anchorMidi === null) {
     return wrap(primary);
   }
@@ -1476,6 +1499,65 @@ function pickVoice2PitchFromAnchor(
 }
 
 /**
+ * Prefer first-attack pitch within 2 semitones of previous bar's last V2 (legacyAnchor), 75% gate.
+ */
+function applyLegacyStepwiseEntryBias182B(
+  p: number,
+  legacyAnchor: number | null | undefined,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number,
+  bar: number
+): number {
+  if (legacyAnchor == null || seededUnit(seed, bar, 18850) >= 0.75) return p;
+  if (Math.abs(p - legacyAnchor) <= 2) return p;
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return p;
+  const n = pickNearestChordToneWithinLeap182B4(
+    legacyAnchor,
+    p,
+    2,
+    chord,
+    strictCeiling,
+    context,
+    floorMidi,
+    innerHigh
+  );
+  if (Math.abs(n - legacyAnchor) <= 2) return n;
+  return p;
+}
+
+/**
+ * Every 4-bar boundary: stepwise move toward strongPhraseEndTargetPitch (3rd/7th priority).
+ */
+function applyPhraseFourBoundaryCadence182B(
+  p: number,
+  anchorMidi: number | null,
+  bar: number,
+  chord: string,
+  strictCeiling: number,
+  context: CompositionContext,
+  seed: number
+): number {
+  if (bar % 4 !== 0 || anchorMidi === null) return p;
+  const floorMidi = INNER_LOW;
+  const innerHigh = Math.min(63, strictCeiling - 1);
+  if (innerHigh < floorMidi) return p;
+  const tgt = strongPhraseEndTargetPitch(chord, strictCeiling, floorMidi, innerHigh, anchorMidi, context, bar);
+  if (tgt === null) return p;
+  const dest = placeStrictlyBelowCeiling(strictCeiling, tgt, floorMidi);
+  const stepped = pickChordToneStepToward(anchorMidi, dest, chord, strictCeiling, context, seed, bar, 9210, true, 2);
+  const tones = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+  const tpc = ((tones.third % 12) + 12) % 12;
+  const spc = ((tones.seventh % 12) + 12) % 12;
+  const pc = ((stepped % 12) + 12) % 12;
+  if (pc === tpc || pc === spc) return stepped;
+  return p;
+}
+
+/**
  * Phase 18.2B.3 + 18.2E — Expand scheduled bars into 2–3 bar continuation runs; global cap respects hard coverage ceiling.
  */
 function buildVoice2ContinuationSchedule(
@@ -1490,7 +1572,7 @@ function buildVoice2ContinuationSchedule(
   const hardCapBars = Math.max(1, Math.floor(tb * V2_COV_HARD_MAX));
   const targetMax = Math.min(
     hardCapBars,
-    Math.max(2, Math.floor(tb * V2_COV_TARGET_MAX), minByPhrase)
+    Math.max(2, Math.floor(tb * 0.82), minByPhrase)
   );
   let runEnd = -1;
   let runStart = -1;
@@ -1524,7 +1606,7 @@ function buildVoice2ContinuationSchedule(
 }
 
 /**
- * Phase 18.2E — Phrase floor: each phrase has Voice 2 in at least ~35% of its bars (distributed when adding from scheduled).
+ * Phase 18.2E — Phrase floor: each phrase has Voice 2 in at least ~60% of its bars (distributed when adding from scheduled).
  */
 function ensurePhraseVoice2PresenceFloor(
   tb: number,
@@ -1538,7 +1620,7 @@ function ensurePhraseVoice2PresenceFloor(
     const base = p * 4 + 1;
     const end = Math.min(base + 3, tb);
     const len = end - base + 1;
-    const minNeed = Math.max(1, Math.floor(len * 0.35 + 1e-9));
+    const minNeed = Math.max(1, Math.floor(len * 0.6 + 1e-9));
     let count = 0;
     for (let b = base; b <= end; b++) {
       if (effective.has(b)) count++;
@@ -1583,7 +1665,7 @@ function lastVoice2PitchInMeasure(m: MeasureModel): number | undefined {
   return best.pitch;
 }
 
-const INTERNAL_MOTION_MAX_STEP_SEMITONES = 4;
+const INTERNAL_MOTION_MAX_STEP_SEMITONES = 3;
 /** Phase 18.2E — lyrical mini-line: max leap between consecutive inner notes (perfect 5th). */
 const SINGING_LINE_MAX_STEP_SEMITONES = 7;
 /** Phase 18.2B.8 — Intentional motion: majority of eligible long spans get micro-line (still one bar, same total duration). */
@@ -2197,7 +2279,8 @@ function applyBarLevelShapeV2Events(
   seed: number,
   bar: number,
   frozenArrival: number,
-  pitchCtx?: Voice2PitchPickContext182B3
+  pitchCtx?: Voice2PitchPickContext182B3,
+  legacyAnchor?: number | null
 ): boolean {
   if (shape === 'REST') return true;
   if (shape === 'SUSTAINED_BAR') {
@@ -2218,7 +2301,8 @@ function applyBarLevelShapeV2Events(
         seed,
         bar,
         frozenArrival,
-        pitchCtx
+        pitchCtx,
+        legacyAnchor
       );
       addEvent(m, createNote(p, 0, 4, V2_VOICE));
     } else {
@@ -2239,7 +2323,8 @@ function applyBarLevelShapeV2Events(
         seed,
         bar,
         frozenArrival,
-        pitchCtx
+        pitchCtx,
+        legacyAnchor
       );
       addEvent(m, createRest(0, 1, V2_VOICE));
       addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -2264,7 +2349,8 @@ function applyBarLevelShapeV2Events(
       seed,
       bar,
       frozenArrival,
-      pitchCtx
+      pitchCtx,
+      legacyAnchor
     );
     addEvent(m, createRest(0, 1, V2_VOICE));
     addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -2295,7 +2381,8 @@ function applyBarLevelShapeV2Events(
     seed,
     bar,
     frozenArrival,
-    pitchCtx
+    pitchCtx,
+    legacyAnchor
   );
   const ctx1: Voice2PitchPickContext182B3 | undefined =
     pitchCtx === undefined
@@ -2315,11 +2402,93 @@ function applyBarLevelShapeV2Events(
     seed,
     bar,
     frozenArrival,
-    ctx1
+    ctx1,
+    legacyAnchor
   );
   addEvent(m, createNote(p0, 0, 2, V2_VOICE));
   addEvent(m, createNote(p1, 2, 2, V2_VOICE));
   return true;
+}
+
+/**
+ * Phase 18.2B.3 — When every bar shape fails post-{@link applyBarLevelShapeV2Events} validation, place one quarter rest
+ * then a chord-tone hold from beat 1 (same footprint as {@link BarV2RhythmShape} OFFBEAT_HOLD) so the bar still gets Voice 2.
+ */
+function tryPlaceMinimalOffbeatHoldVoice2Fallback(
+  m: MeasureModel,
+  chord: string,
+  v1notes: NoteEvent[],
+  cFull: number,
+  behaviour: Voice2BehaviourPhase,
+  anchorMidi: number | null,
+  movementTargetPitch: number,
+  runDestinationPlaced: number,
+  progressInRun: number,
+  contour: ReturnType<typeof v1MelodyContour>,
+  context: CompositionContext,
+  seed: number,
+  bar: number,
+  frozenArrival: number,
+  pitchCtx: Voice2PitchPickContext182B3 | undefined,
+  legacyAnchor: number | null
+): boolean {
+  const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
+  const sc = strictCeilingFromMinV1(cLate);
+  if (sc <= INNER_LOW + 1) return false;
+
+  const tryPitch = (pL: number): boolean => {
+    m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
+    addEvent(m, createRest(0, 1, V2_VOICE));
+    addEvent(m, createNote(pL, 1, 3, V2_VOICE));
+    m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+    const v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
+    const sum = v2notes.reduce((s, n) => s + n.duration, 0);
+    if (Math.abs(sum - 4) > 0.001) return false;
+    if (!voice2StrictlyBelowOverlappingV1(v1notes, v2notes)) return false;
+    if (v2SharesAttackWithV1(v1notes, v2notes)) return false;
+    if (maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) return false;
+    if (v1notes.length >= 2 && !v2PassesMelodyOverlapRule(v1notes, v2notes)) return false;
+    const v1Attacks = new Set(v1notes.map((n) => Math.round(n.startBeat * 4) / 4));
+    const v2Attacks = new Set(v2notes.map((n) => Math.round(n.startBeat * 4) / 4));
+    if (rhythmMirrorsVoice1(v1Attacks, v2Attacks)) return false;
+    return true;
+  };
+
+  const pairLate = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 18890, contour);
+  if (pairLate) {
+    const pL = pickVoice2PitchForBehaviour(
+      behaviour,
+      anchorMidi,
+      movementTargetPitch,
+      runDestinationPlaced,
+      progressInRun,
+      pairLate.primary,
+      pairLate.secondary,
+      chord,
+      sc,
+      context,
+      seed,
+      bar,
+      frozenArrival,
+      pitchCtx,
+      legacyAnchor
+    );
+    if (tryPitch(pL)) return true;
+  }
+
+  const fromGuide = pickChordToneVoice2AboveBassFloor(chord, INNER_LOW, sc, context);
+  if (fromGuide !== null && tryPitch(fromGuide)) return true;
+
+  const innerHigh = Math.min(63, sc - 1);
+  if (innerHigh >= INNER_LOW) {
+    const tones = guitarChordTonesInRange(chord, INNER_LOW, innerHigh, chordOpts(context));
+    for (const raw of [tones.third, tones.seventh, tones.fifth, tones.root]) {
+      const p = placeStrictlyBelowCeiling(sc, raw, INNER_LOW);
+      if (p >= INNER_LOW && p < sc && tryPitch(p)) return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -2448,7 +2617,10 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       barsRemainingInRun: runInfo.runEndBar - bar,
     };
 
-    const preferredShape = barShapeByBar.get(bar) ?? 'SUSTAINED_BAR';
+    const rawPreferredShape = barShapeByBar.get(bar) ?? 'SUSTAINED_BAR';
+    /** Shape map must never prefer REST for bars still in {@link effectiveBars} (playable footprint only). */
+    const preferredShape: BarV2RhythmShape =
+      rawPreferredShape === 'REST' ? 'SUSTAINED_BAR' : rawPreferredShape;
     const pitchCtx = buildVoice2PitchPickContext182B3(
       bar,
       seed,
@@ -2460,6 +2632,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       imitationRunBars,
       preferredShape
     );
+    const legacyAnchor = lastV2BarIndex === bar - 1 ? lastPitchV2 : null;
 
     const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
     const chain = uniqBarShapeFallbackChain(preferredShape);
@@ -2487,7 +2660,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           seed,
           bar,
           frozenArrival,
-          pitchCtx
+          pitchCtx,
+          legacyAnchor
         )
       ) {
         continue shapeLoop;
@@ -2515,7 +2689,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           seed,
           bar,
           frozenArrival,
-          pitchCtx
+          pitchCtx,
+          legacyAnchor
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLv, 1, 3, V2_VOICE));
@@ -2545,7 +2720,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
         seed,
         bar,
         frozenArrival,
-        pitchCtx
+        pitchCtx,
+        legacyAnchor
       );
       addEvent(m, createRest(0, 2, V2_VOICE));
       addEvent(m, createNote(pH, 2, 2, V2_VOICE));
@@ -2570,7 +2746,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           seed,
           bar,
           frozenArrival,
-          pitchCtx
+          pitchCtx,
+          legacyAnchor
         );
         addEvent(m, createRest(0, 3, V2_VOICE));
         addEvent(m, createNote(pQ, 3, 1, V2_VOICE));
@@ -2659,7 +2836,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           seed,
           bar,
           frozenArrival,
-          pitchCtx
+          pitchCtx,
+          legacyAnchor
         );
         addEvent(m, createNote(pW, 0, 4, V2_VOICE));
         m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
@@ -2693,7 +2871,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           seed,
           bar,
           frozenArrival,
-          pitchCtx
+          pitchCtx,
+          legacyAnchor
         );
         addEvent(m, createRest(0, 1, V2_VOICE));
         addEvent(m, createNote(pLd, 1, 3, V2_VOICE));
@@ -2737,7 +2916,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
             seed,
             bar,
             frozenArrival,
-            pitchCtx
+            pitchCtx,
+            legacyAnchor
           );
           addEvent(m, createRest(0, 2, V2_VOICE));
           addEvent(m, createNote(pFb, 2, 2, V2_VOICE));
@@ -2783,7 +2963,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
               seed,
               bar,
               frozenArrival,
-              pitchCtx
+              pitchCtx,
+              legacyAnchor
             );
             addEvent(m, createNote(pOv, 0, 4, V2_VOICE));
           } else {
@@ -2804,7 +2985,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                 seed,
                 bar,
                 frozenArrival,
-                pitchCtx
+                pitchCtx,
+                legacyAnchor
               );
               addEvent(m, createRest(0, 1, V2_VOICE));
               addEvent(m, createNote(pLo, 1, 3, V2_VOICE));
@@ -2825,7 +3007,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
                   seed,
                   bar,
                   frozenArrival,
-                  pitchCtx
+                  pitchCtx,
+                  legacyAnchor
                 );
                 addEvent(m, createRest(0, 2, V2_VOICE));
                 addEvent(m, createNote(pL2, 2, 2, V2_VOICE));
@@ -2861,7 +3044,30 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     break shapeLoop;
     }
 
-    if (!shapeOk) continue forBar;
+    if (!shapeOk) {
+      if (
+        !tryPlaceMinimalOffbeatHoldVoice2Fallback(
+          m,
+          chord,
+          v1notes,
+          cFull,
+          behaviour,
+          anchorMidi,
+          movementTargetPitch,
+          runDestinationPlaced,
+          progressInRun,
+          contour,
+          context,
+          seed,
+          bar,
+          frozenArrival,
+          pitchCtx,
+          legacyAnchor
+        )
+      ) {
+        continue forBar;
+      }
+    }
 
     const preferTerminalSustain =
       runLen >= 2 && offsetInRun >= runLen - 2 && runInfo.schedulePhase !== 'resolve';
@@ -3500,6 +3706,7 @@ function tryApplyOffbeatHoldMinimalFromRealized182B3(
     seed,
     m.index,
     undefined,
+    undefined,
     undefined
   );
   stripAllVoice2EventsFromMeasure182B3(m);
@@ -3569,6 +3776,7 @@ function tryApplyTwoSlabsMinimalFromRealized182B5(
     seed,
     m.index,
     undefined,
+    undefined,
     undefined
   );
   const p1 = pickVoice2PitchForBehaviour(
@@ -3584,6 +3792,7 @@ function tryApplyTwoSlabsMinimalFromRealized182B5(
     context,
     seed,
     m.index,
+    undefined,
     undefined,
     undefined
   );
