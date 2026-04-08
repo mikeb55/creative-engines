@@ -59,6 +59,14 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
+/** Quarter-note BPM for MusicXML metronome / sound — export options override score model; default 120. */
+function resolveExportBpm(opts: MusicXmlExportOptions, score: ScoreModel): number {
+  const raw = opts.bpm ?? score.tempo ?? 120;
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n)) return 120;
+  return Math.min(500, Math.max(20, n));
+}
+
 /** Song form sections on score (attached in runGoldenPath when `formId` is set); not on `ScoreModel` type. */
 type FormSectionExport = { startBar: number; label: string };
 
@@ -624,6 +632,20 @@ ${partList}
 `;
         }
 
+        if (i === 0 && partIndex === 0) {
+          const bpm = resolveExportBpm(opts, score);
+          xml += `    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>${bpm}</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="${bpm}"/>
+    </direction>
+`;
+        }
+
         /**
          * Sibelius-strict sibling order: beat-1 &lt;harmony&gt; BEFORE first &lt;note&gt; (not after &lt;sound&gt;/&lt;direction&gt;).
          * Single chord writer: lead-sheet harmony only on the guitar part (not bass, not by index).
@@ -662,7 +684,6 @@ ${partList}
         }
 
         if (i === 0) {
-          const tempoEl = score.tempo && partIndex === 0 ? `\n    <sound tempo="${score.tempo}"/>` : '';
           const feelEl =
             partIndex === 0 && score.feelProfile
               ? `    <direction placement="below"><direction-type><words>${escapeXml(
@@ -674,8 +695,7 @@ ${partList}
             partIndex === 0 && ks?.caption
               ? `    <direction placement="above"><direction-type><words>${escapeXml(ks.caption)}</words></direction-type></direction>\n`
               : '';
-          xml += `${tempoEl}
-${keyCaption}${feelEl}`;
+          xml += `${keyCaption}${feelEl}`;
         }
 
         /** Section rehearsal marks once on top staff (part 0); after harmony/sound so beat-1 chord stays first. */

@@ -1,3 +1,9 @@
+## Fix: tempo marking now appears once only on top staff (2026-04-08)
+
+- Fix: tempo marking now appears once only on top staff.
+
+---
+
 ## Cool Jazz, Hard Bop, Fusion eras (2026-04-08)
 
 - Added Cool Jazz, Hard Bop, Fusion to Big Band and String Quartet era dropdowns
