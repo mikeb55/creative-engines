@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Duo regression sweep (2026-04-09)
+- npm run test:duo: 10 fixed seeds, all passing
+- Guarantees V2 32/32 bars, coverage 1.00, rest gap 0
+- Behaviour gates informational only (bass phrase work next)
+
 ## Piano naming + Song Form dropdown (2026-04-09)
 - Piano named Piano/Pno./keyboard.piano for Big Band and String Quartet
 - Song Form dropdown wired for Big Band and String Quartet
