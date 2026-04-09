@@ -2581,7 +2581,14 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   const seed = context.seed;
   const tb = context.form.totalBars;
   let lastV2EndPitch: number | null = null;
+  /** Last Voice 2 move direction (+1 up, -1 down) for Rule 1 when Voice 1 is static. */
+  let lastV2MoveSign: number | null = null;
+  /** Pitch class (0–11) at end of previous bar for Rule 6. */
+  let lastBarEndPc: number | null = null;
   let injected = 0;
+
+  const pitchClass = (p: number): number => ((p % 12) + 12) % 12;
+  const inPool = (p: number, pool: number[]): boolean => pool.some((x) => Math.abs(x - p) < 0.01);
 
   for (let bar = 1; bar <= tb; bar++) {
     const m =
@@ -2604,7 +2611,6 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     const innerHigh = Math.min(63, strictCeiling - 1);
     if (innerHigh < floorMidi) continue;
 
-    const contour = v1MelodyContour(v1notes);
     const toneStruct = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
     const pool: number[] = [];
     const seen = new Set<number>();
@@ -2617,61 +2623,230 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     }
     if (pool.length === 0) continue;
 
-    const nearestChordTo = (want: number): number => {
-      let best = pool[0]!;
-      let bd = Math.abs(best - want);
-      for (const p of pool) {
-        const d = Math.abs(p - want);
-        if (d < bd || (d === bd && seededUnit(seed, bar, p + 9100) < 0.5)) {
-          bd = d;
-          best = p;
+    const v1Sorted = [...v1notes].sort((a, b) => a.startBeat - b.startBeat);
+    const v1First = v1Sorted[0]!.pitch;
+    const v1Last = v1Sorted[v1Sorted.length - 1]!.pitch;
+    let v1Overall = 0;
+    if (v1Last > v1First + 1) v1Overall = 1;
+    else if (v1Last < v1First - 1) v1Overall = -1;
+
+    /** Rule 7 — 8-bar phrase contour: bars 1–4 vs 5–8. */
+    const block8 = Math.floor((bar - 1) / 8);
+    const phraseAsc = seededUnit(seed, block8 + 1, 8877) < 0.5;
+    const posIn8 = ((bar - 1) % 8) + 1;
+    const phraseBiasSign = posIn8 <= 4 ? (phraseAsc ? 1 : -1) : phraseAsc ? -1 : 1;
+
+    /** Rule 4 — rhythmic independence: opposite rhythm to Voice 1 attack pattern (quarter-beat grid). */
+    const onsetQuarter = new Set<number>();
+    for (const n of v1notes) {
+      const q = Math.min(3, Math.max(0, Math.floor(n.startBeat + REAL_V2_BEAT_EPS)));
+      onsetQuarter.add(q);
+    }
+    const v1AttackCount = v1notes.length;
+    const v1HasLongNote = v1notes.some((n) => n.duration >= 2 - REAL_V2_BEAT_EPS);
+
+    let segStarts: number[];
+    let segEnds: number[];
+
+    if (v1AttackCount >= 4) {
+      /** Many short attacks: Voice 2 holds half + half (beats 1–2, 3–4). */
+      segStarts = [0, 2];
+      segEnds = [2, V2_BAR_DURATION_BEATS];
+    } else if (v1HasLongNote) {
+      /** Long half/whole in Voice 1: Voice 2 moving quarters on 1–4. */
+      segStarts = [0, 1, 2, 3];
+      segEnds = [1, 2, 3, V2_BAR_DURATION_BEATS];
+    } else if (
+      onsetQuarter.size === 2 &&
+      onsetQuarter.has(0) &&
+      onsetQuarter.has(2) &&
+      !onsetQuarter.has(1) &&
+      !onsetQuarter.has(3)
+    ) {
+      /** Voice 1 on beats 1 and 3 only: Voice 2 on beats 2 and 4 (rests on 1 and 3). */
+      segStarts = [1, 3];
+      segEnds = [2, V2_BAR_DURATION_BEATS];
+    } else if (onsetQuarter.size === 1 && onsetQuarter.has(0)) {
+      /** Only downbeat attack: Voice 2 starts beat 2, holds to bar end. */
+      segStarts = [1];
+      segEnds = [V2_BAR_DURATION_BEATS];
+    } else {
+      /** Default: quarter on beat 1, then dotted half. */
+      segStarts = [0, 1];
+      segEnds = [1, V2_BAR_DURATION_BEATS];
+    }
+
+    const contrarySignForStep = (): number => {
+      if (v1Overall === 1) return -1;
+      if (v1Overall === -1) return 1;
+      if (lastV2MoveSign === null) return seededUnit(seed, bar, 9901) < 0.5 ? -1 : 1;
+      return -lastV2MoveSign;
+    };
+
+    const scoreInterval = (minV1Seg: number, v2: number): number => {
+      const g = minV1Seg - v2;
+      if (g <= 0) return -1e9;
+      if (g <= 2) return -800 + g;
+      if (g >= 11 && g % 12 === 0) return -400;
+      if ([3, 4, 7, 8, 9, 10].includes(g)) return 220;
+      return 40 - Math.abs(g - 6);
+    };
+
+    const pickPitch = (
+      prevPitch: number | null,
+      segIndex: number,
+      minV1Seg: number,
+      ceilingSeg: number,
+      forcePhraseGuide: boolean
+    ): number => {
+      const lo = floorMidi;
+      const hi = Math.min(63, ceilingSeg - 1);
+      if (hi < lo) return clampPitch(prevPitch ?? lo, lo, hi);
+
+      const pThird = placeStrictlyBelowCeiling(ceilingSeg, toneStruct.third, lo);
+      const pSeventh = placeStrictlyBelowCeiling(ceilingSeg, toneStruct.seventh, lo);
+      const guideTargets = [pThird, pSeventh].filter((p) => p >= lo && p < ceilingSeg);
+
+      const trySteps = (primarySign: number): { pitch: number; step: number }[] => {
+        const out: { pitch: number; step: number }[] = [];
+        const magOrder = [1, 2, 3];
+        for (const mag of magOrder) {
+          for (const sgn of primarySign === 0 ? [-1, 1] : [primarySign]) {
+            const step = sgn * mag;
+            if (prevPitch === null) continue;
+            const raw = prevPitch + step;
+            if (raw < lo || raw > hi) continue;
+            out.push({ pitch: raw, step });
+          }
         }
+        if (prevPitch !== null) {
+          for (const mag of magOrder) {
+            for (const sgn of [-1, 1]) {
+              const step = sgn * mag;
+              const raw = prevPitch + step;
+              if (raw < lo || raw > hi) continue;
+              if (primarySign !== 0 && Math.sign(step) !== primarySign) out.push({ pitch: raw, step });
+            }
+          }
+        }
+        return out;
+      };
+
+      let primarySign = contrarySignForStep();
+      if (segIndex > 0) {
+        const blend = seededUnit(seed, bar * 10 + segIndex, 9910);
+        if (blend < 0.35) primarySign = phraseBiasSign;
+      }
+
+      const candidates: { pitch: number; step: number; score: number }[] = [];
+
+      const pushCand = (p: number, step: number) => {
+        if (p < lo || p >= ceilingSeg) return;
+        let sc = scoreInterval(minV1Seg, p);
+        if (inPool(p, pool)) sc += 45;
+        if (Math.sign(step) === phraseBiasSign) sc += 12;
+        if (Math.sign(step) === primarySign || primarySign === 0) sc += 80;
+        if (prevPitch !== null && Math.abs(p - prevPitch) > 3) sc -= 500;
+        candidates.push({ pitch: p, step, score: sc });
+      };
+
+      if (prevPitch === null) {
+        for (const p of pool) pushCand(p, 0);
+        if (candidates.length === 0) pushCand(lo, 0);
+      } else {
+        const stepset = trySteps(primarySign);
+        for (const { pitch, step } of stepset) pushCand(pitch, step);
+        if (candidates.length === 0) {
+          for (const mag of [1, 2, 3]) {
+            for (const sgn of [-1, 1]) {
+              const p = prevPitch + sgn * mag;
+              if (p >= lo && p < ceilingSeg) pushCand(p, sgn * mag);
+            }
+          }
+        }
+      }
+
+      if (forcePhraseGuide && guideTargets.length > 0 && prevPitch !== null) {
+        for (const gt of guideTargets) {
+          const d = Math.abs(gt - prevPitch);
+          if (d >= 1 - 1e-6 && d <= 2 + 1e-6) {
+            if (gt >= lo && gt < ceilingSeg) pushCand(gt, gt - prevPitch);
+          }
+        }
+      }
+
+      candidates.sort((a, b) => b.score - a.score);
+      let best = candidates[0]?.pitch ?? clampPitch(prevPitch ?? lo, lo, hi);
+
+      if (forcePhraseGuide && guideTargets.length > 0) {
+        const ok = guideTargets.some((g) => Math.abs(g - best) < 0.01);
+        if (!ok) {
+          let alt: number | undefined;
+          let bd = 999;
+          for (const gt of guideTargets) {
+            const d = Math.abs(gt - (prevPitch ?? best));
+            if (d < bd && d >= 1 && d <= 3 && gt >= lo && gt < ceilingSeg) {
+              bd = d;
+              alt = gt;
+            }
+          }
+          if (alt !== undefined) best = alt;
+        }
+      }
+
+      if (prevPitch !== null) {
+        const step = best - prevPitch;
+        lastV2MoveSign = step === 0 ? lastV2MoveSign : step > 0 ? 1 : -1;
       }
       return best;
     };
 
-    const stepwiseFrom = (from: number, deltaSign: number, maxLeap: number): number => {
-      const step = deltaSign === 0 ? 0 : deltaSign > 0 ? 1 : -1;
-      const want = from + step;
-      const capped = clampPitch(want, from - maxLeap, from + maxLeap);
-      return nearestChordTo(capped);
-    };
+    const pitches: number[] = [];
+    let prev = lastV2EndPitch;
 
-    let p0: number;
-    if (lastV2EndPitch === null) {
-      const preferThird = seededUnit(seed, bar, 1821) < 0.94;
-      const pThird = placeStrictlyBelowCeiling(strictCeiling, toneStruct.third, floorMidi);
-      const pSeventh = placeStrictlyBelowCeiling(strictCeiling, toneStruct.seventh, floorMidi);
-      if (pThird >= floorMidi && pThird < strictCeiling && pSeventh >= floorMidi && pSeventh < strictCeiling) {
-        p0 = preferThird ? pThird : pSeventh;
-      } else if (pThird >= floorMidi && pThird < strictCeiling) {
-        p0 = pThird;
-      } else if (pSeventh >= floorMidi && pSeventh < strictCeiling) {
-        p0 = pSeventh;
-      } else {
-        p0 = pool[0]!;
-      }
-    } else {
-      const delta =
-        contour === 'up' ? -1 : contour === 'down' ? 1 : seededUnit(seed, bar, 18311) < 0.5 ? -1 : 1;
-      p0 = stepwiseFrom(lastV2EndPitch, delta, 2);
+    for (let si = 0; si < segStarts.length; si++) {
+      const t0 = segStarts[si]!;
+      const t1 = segEnds[si]!;
+      const minVs = minOverlappingV1Pitch(v1notes, t0, t1) ?? minV1;
+      const ceilSeg = strictCeilingFromMinV1(minVs);
+      const isLast = si === segStarts.length - 1;
+      const forceGuide = isLast && bar % 4 === 0;
+      const p = pickPitch(prev, si, minVs, ceilSeg, forceGuide);
+      pitches.push(p);
+      prev = p;
     }
 
-    const delta2 =
-      contour === 'up' ? -1 : contour === 'down' ? 1 : seededUnit(seed, bar, 18312) < 0.5 ? -1 : 1;
-    const p1 = stepwiseFrom(p0, delta2, 2);
+    /** Rule 6 — no repeated pitch class across consecutive bars. */
+    if (lastBarEndPc !== null && pitchClass(pitches[0]!) === lastBarEndPc) {
+      const dir = phraseBiasSign;
+      let adj = pitches[0]! + (dir >= 0 ? 1 : -1);
+      adj = clampPitch(adj, floorMidi, Math.min(63, strictCeiling - 1));
+      if (pitchClass(adj) === lastBarEndPc) adj = clampPitch(pitches[0]! + (dir >= 0 ? -1 : 1), floorMidi, Math.min(63, strictCeiling - 1));
+      pitches[0] = adj;
+    }
 
-    const delta3 =
-      contour === 'up' ? -1 : contour === 'down' ? 1 : -delta2;
-    const p2 = stepwiseFrom(p1, delta3, 2);
-
+    let finals = [...pitches];
     m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-    addEvent(m, createNote(p0, 0, 1, V2_VOICE));
-    addEvent(m, createNote(p1, 1, 1, V2_VOICE));
-    addEvent(m, createNote(p2, 2, 2, V2_VOICE));
+    for (let si = 0; si < segStarts.length; si++) {
+      const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[si]! - segStarts[si]!);
+      addEvent(m, createNote(finals[si]!, segStarts[si]!, dur, V2_VOICE));
+    }
     m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
 
-    lastV2EndPitch = p2;
+    let v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
+    if (!voice2StrictlyBelowOverlappingV1(v1notes, v2notes)) {
+      finals = finals.map((p) => p - 12);
+      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
+      for (let sj = 0; sj < segStarts.length; sj++) {
+        const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[sj]! - segStarts[sj]!);
+        addEvent(m, createNote(finals[sj]!, segStarts[sj]!, dur, V2_VOICE));
+      }
+      m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+      v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
+    }
+
+    lastV2EndPitch = finals[finals.length - 1]!;
+    lastBarEndPc = pitchClass(lastV2EndPitch);
     injected++;
   }
 

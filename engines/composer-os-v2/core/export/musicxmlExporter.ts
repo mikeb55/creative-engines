@@ -465,9 +465,8 @@ function eventsToXml(
       if (e.kind === 'rest') {
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       } else {
-        /** Sibelius import ignores `clef-octave-change` for this part; +12 MIDI here raises written `<octave>` only (score model unchanged). */
-        const exportMidi =
-          part.instrumentIdentity === 'acoustic_upright_bass' ? e.pitch - 24 : e.pitch;
+        /** Bass `NoteEvent.pitch` is concert MIDI (same as score model; see upright bass hard range). */
+        const exportMidi = e.pitch;
         const { step, alter, octave } = midiToPitch(exportMidi);
         const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
         const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
@@ -594,10 +593,7 @@ ${partList}
       const isBigBandDrums = part.instrumentIdentity === 'big_band_jazz_drums';
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
-      const clefOctaveChangeXml =
-        part.clef === 'bass' && part.instrumentIdentity === 'acoustic_upright_bass'
-          ? '<clef-octave-change>-1</clef-octave-change>'
-          : '';
+      const clefOctaveChangeXml = '';
       const clefXml = isBigBandDrums
         ? '<clef number="1"><sign>percussion</sign><line>2</line></clef>'
         : `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;

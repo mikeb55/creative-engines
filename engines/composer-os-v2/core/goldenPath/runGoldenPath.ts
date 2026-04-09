@@ -254,7 +254,7 @@ function buildGoldenPathContext(
     bass: [40, 55] as [number, number],
     byInstrument: {
       clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
-      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [40, 55],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [28, 55],
     },
   };
 
@@ -355,7 +355,7 @@ function buildDuoTwentyFourBarCompositionContext(
     bass: [40, 55] as [number, number],
     byInstrument: {
       clean_electric_guitar: guitarMap.sections[0]?.preferredZone ?? [55, 79],
-      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [40, 55],
+      acoustic_upright_bass: bassMap.sections[0]?.preferredZone ?? [28, 55],
     },
   };
   const rehearsalMarkPlan = {

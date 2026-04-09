@@ -1,3 +1,12 @@
+## Voice 2 Wyble rules + rhythmic independence (2026-04-09)
+
+- Voice 2 rebuilt with contrary motion, stepwise movement,
+  guide tones, phrase shape, no repeated pitches
+- Rhythmic independence: Voice 2 attacks opposite to Voice 1
+- Upright Bass rename initiated
+
+---
+
 ## Voice 2 counterpoint rewrite (2026-04-09)
 
 - Replaced 4547-line shape/phase system with direct Wyble implementation

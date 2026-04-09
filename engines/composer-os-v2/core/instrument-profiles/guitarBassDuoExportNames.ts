@@ -4,10 +4,10 @@
  */
 
 /** Staff / part list name (not generic "Bass"). */
-export const GUITAR_BASS_DUO_BASS_PART_NAME = 'Double Bass';
+export const GUITAR_BASS_DUO_BASS_PART_NAME = 'Upright Bass';
 
-/** MusicXML 3.1 instrument-sound (MIDI mapping hint for notation apps). */
-export const GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND = 'pluck.bass.acoustic';
+/** MusicXML 3.1 instrument-sound (MIDI mapping hint): orchestral/arco bass (not plucked acoustic bass guitar). */
+export const GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND = 'strings.bass';
 
 /** GM Acoustic Bass: 0-based program index 32 → MusicXML midi-program element value 33 (1-based). */
 export const GUITAR_BASS_DUO_BASS_MIDI_PROGRAM_ZERO_BASED = 32;

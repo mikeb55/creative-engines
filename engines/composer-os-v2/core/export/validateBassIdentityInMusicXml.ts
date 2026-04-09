@@ -1,5 +1,5 @@
 /**
- * Guitar–Bass Duo: exported bass part must read as acoustic/upright double bass, not generic or vocal.
+ * Guitar–Bass Duo: exported bass part must read as upright bass (arco), not generic or vocal.
  */
 
 import {

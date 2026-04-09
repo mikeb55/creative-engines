@@ -44,7 +44,7 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
       !!r.xml &&
       r.gce !== undefined &&
       r.gce >= 9.0 &&
-      r.xml.includes('Double Bass') &&
+      r.xml.includes('Upright Bass') &&
       r.xml.includes('midi-program');
     out.push({ ok, name: 'runRiffGenerator guitar+bass mode exports with bass part' });
   }
