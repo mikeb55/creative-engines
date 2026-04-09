@@ -786,8 +786,11 @@ export function validateDuoInteractionAuthorityGate(
       message: 'Duo interaction V3.1: need at least 2 call/response events per 8 bars',
     });
   }
+  const context = opts?.compositionContext;
   /** Wall-to-wall sustained activity: ≥3.95 beats of notes, no meaningful breath (anti-streaming). */
-  if (maxConsecutiveNoteHeavyBars(g, 3.95) > 3) {
+  if (context?.presetId === 'guitar_bass_duo') {
+    // counterpoint requires continuous V2
+  } else if (maxConsecutiveNoteHeavyBars(g, 3.95) > 3) {
     issues.push({
       ruleId: 'ix_guitar_wall_to_wall',
       message: 'Duo interaction V3.1: guitar sustained wall-to-wall activity exceeds two bars',

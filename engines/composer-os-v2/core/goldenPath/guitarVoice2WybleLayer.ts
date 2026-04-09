@@ -1,5 +1,5 @@
 /**
- * Phase 18.2B+ — Guitar polyphony inner voice (Wyble-style). Voice 2 inject uses the reactive inline path (Phase 18.3B planner/generator bypassed for stability).
+ * Phase 18.2B+ ? Guitar polyphony inner voice (Wyble-style). Voice 2 inject uses the reactive inline path (Phase 18.3B planner/generator bypassed for stability).
  * Export layer untouched; this module only mutates guitar PartModel voice-2 events.
  */
 
@@ -16,7 +16,7 @@ import { liftToneToRange, guitarChordTonesInRange } from './guitarPhraseAuthorit
 const V2_VOICE = 2;
 /** Score beats spanned by one measure in this path (4/4; startBeat + duration use this span). */
 const V2_BAR_DURATION_BEATS = 4;
-/** Matches polyphony diagnostics active-bar threshold (≥ eighth). */
+/** Matches polyphony diagnostics active-bar threshold (? eighth). */
 const MIN_REAL_V2_ACTIVE_BEATS = 0.5;
 /** Realized sustained-wall detection: dominant long note (beats in 4/4). */
 const MIN_REAL_V2_SUSTAINED_BEATS = 3;
@@ -26,14 +26,14 @@ const INNER_LOW = 48;
 /** Never stack more than two simultaneous guitar notes (melody + inner). */
 const MAX_GUITAR_SIMULT = 2;
 /** Minimum semitones below each overlapping melody pitch (clear gap, still realisable after post-passes). */
-const MIN_MELODY_INNER_GAP_SEMITONES = 1;
-/** Phase 18.2B.3: two active bars in a 4-bar window (offsets 0–3 from phrase base). */
+const MIN_MELODY_INNER_GAP_SEMITONES = 2;
+/** Phase 18.2B.3: two active bars in a 4-bar window (offsets 0?3 from phrase base). */
 const PHRASE_PATTERNS_2: number[][] = [
   [0, 2],
   [0, 3],
   [1, 3],
 ];
-/** Three active bars — never three consecutive offsets (excludes [1,2,3]). */
+/** Three active bars ? never three consecutive offsets (excludes [1,2,3]). */
 const PHRASE_PATTERNS_3: number[][] = [
   [0, 1, 3],
   [0, 2, 3],
@@ -43,7 +43,7 @@ const PHRASE_PATTERNS_3: number[][] = [
 const BH_GUITAR_MAX_LEAP = 12;
 /** Post-phrase-end smoothing: prefer stepwise continuation on Voice 2 only. */
 const V2_SOFT_MAX_LEAP = 8;
-/** Phase 18.2B.2: consecutive Voice-2–only intervals (inner line). */
+/** Phase 18.2B.2: consecutive Voice-2?only intervals (inner line). */
 const V2_INNER_LINE_SOFT_LEAP = 7;
 const V2_INNER_LINE_HARD_LEAP = 12;
 const STAB_GUITAR_LOW = 55;
@@ -52,19 +52,19 @@ const STAB_GUITAR_HIGH = 79;
 /** Phase 18.2B.4: minimum gap between highest bass pitch and Voice 2 (semitones). */
 const V2_BASS_REGISTER_MIN_SEMITONES = 8;
 
-/** Phase 18.2B.5: anchor chain — prefer stepwise motion from previous Voice-2 pitch when choosing primary vs secondary. */
+/** Phase 18.2B.5: anchor chain ? prefer stepwise motion from previous Voice-2 pitch when choosing primary vs secondary. */
 const V2_ANCHOR_MAX_STEP_SEMITONES = V2_SOFT_MAX_LEAP;
 
-/** Phase 18.2B.5 — phrase commitment: sustain / neutral hold only within this distance of frozen run arrival. */
+/** Phase 18.2B.5 ? phrase commitment: sustain / neutral hold only within this distance of frozen run arrival. */
 const V2_COMMITMENT_AT_TARGET_SEMITONES = 2;
 
-/** Phase 18.2B.3 — prefer motion within a perfect 4th when continuity applies. */
+/** Phase 18.2B.3 ? prefer motion within a perfect 4th when continuity applies. */
 const V2_CONTINUITY_MAX_LEAP_SEMITONES = 5;
-/** Phase 18.2B.4 — after a gap (non-consecutive V2 bars), bridge from last pitch within a perfect 4th. */
+/** Phase 18.2B.4 ? after a gap (non-consecutive V2 bars), bridge from last pitch within a perfect 4th. */
 const V2_GAP_BRIDGE_MAX_LEAP_SEMITONES = 5;
-/** Phase 18.2B.4 — final guard: reject intervals wider than a perfect 5th vs previous V2 pitch. */
+/** Phase 18.2B.4 ? final guard: reject intervals wider than a perfect 5th vs previous V2 pitch. */
 const V2_LEAP_SAFETY_MAX_SEMITONES = 7;
-/** Phase 18.2B.5 — salt for texture-density pass (post-injection, realized V2 only). */
+/** Phase 18.2B.5 ? salt for texture-density pass (post-injection, realized V2 only). */
 const V2_TEX_SALT_182B5 = 19250;
 
 /** Realised rhythm for one bar (replaces independent per-bar probability draw). */
@@ -73,20 +73,20 @@ type Voice2RhythmKind =
   | 'delayed3'
   | 'halfBack'
   | 'offbeat1'
-  /** Phase 18.2D — call/response: rest then single note; rest length in [0.5, 1.5] beats (bar = 4 beats). */
+  /** Phase 18.2D ? call/response: rest then single note; rest length in [0.5, 1.5] beats (bar = 4 beats). */
   | 'resp05'
   | 'resp075'
   | 'resp125'
   | 'resp15';
 
-/** Phase 18.2B.2 (repair) — one bar-level footprint per active Voice-2 bar (primary rhythm controller). */
+/** Phase 18.2B.2 (repair) ? one bar-level footprint per active Voice-2 bar (primary rhythm controller). */
 type BarV2RhythmShape = 'SUSTAINED_BAR' | 'TWO_SLABS' | 'OFFBEAT_HOLD' | 'REST';
 
-/** Phase 18.2B.2 — coarse weighting state (bar shape only; from schedule phase). */
+/** Phase 18.2B.2 ? coarse weighting state (bar shape only; from schedule phase). */
 type Voice2RhythmWeightState182B2 = 'ENTERING' | 'CONTINUING' | 'RESOLVING' | 'RESTING';
 
 const V2_COV_TARGET_MIN = 0.65;
-/** Nominal upper band for repair / continuation caps (target coverage ~0.65–0.75). */
+/** Nominal upper band for repair / continuation caps (target coverage ~0.65?0.75). */
 const V2_COV_TARGET_MAX = 0.75;
 /** Realized normalization: coverage at or above this ratio is acceptable after aggressive trim (edge-case floor). */
 const V2_COVERAGE_FLOOR = 0.3;
@@ -142,7 +142,7 @@ function splitEffectiveIntoRuns(effective: Set<number>): number[][] {
 }
 
 /**
- * Phase 18.2B.3 — Rebuild schedule metadata after bars are removed from `effective`.
+ * Phase 18.2B.3 ? Rebuild schedule metadata after bars are removed from `effective`.
  */
 function rebuildPhaseByBarFromEffectiveRuns(effective: Set<number>, tb: number): Map<number, Voice2BarPhaseInfo> {
   const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
@@ -162,7 +162,7 @@ function rebuildPhaseByBarFromEffectiveRuns(effective: Set<number>, tb: number):
 }
 
 /**
- * Phase 18.2B.3 — Keep at most `maxConsecutive` consecutive active bars (preserve earlier bars in each run).
+ * Phase 18.2B.3 ? Keep at most `maxConsecutive` consecutive active bars (preserve earlier bars in each run).
  */
 function capEffectiveConsecutiveActiveRuns182B3(effective: Set<number>, maxConsecutive: number): void {
   const runs = splitEffectiveIntoRuns(effective);
@@ -175,7 +175,7 @@ function capEffectiveConsecutiveActiveRuns182B3(effective: Set<number>, maxConse
 }
 
 /**
- * Phase 18.2B.3 — After a run of ≥2 active bars, leave a gap before the next active bar (phrasing).
+ * Phase 18.2B.3 ? After a run of ?2 active bars, leave a gap before the next active bar (phrasing).
  */
 function enforceBreathingGapAfterRuns182B3(effective: Set<number>, tb: number, seed: number): void {
   const runs = splitEffectiveIntoRuns(effective);
@@ -197,7 +197,7 @@ function enforceBreathingGapAfterRuns182B3(effective: Set<number>, tb: number, s
 
 /**
  * Prefer removing the **end** bar of the **longest** active run; tie-break lowest {@link seededUnit} (bar, 18600).
- * Phase 18.2B.3 — hard max coverage {@link V2_COV_HARD_MAX}.
+ * Phase 18.2B.3 ? hard max coverage {@link V2_COV_HARD_MAX}.
  */
 function pickBarToRemoveForCoverageTrim182B3(effective: Set<number>, seed: number): number {
   const runs = splitEffectiveIntoRuns(effective);
@@ -217,7 +217,7 @@ function pickBarToRemoveForCoverageTrim182B3(effective: Set<number>, seed: numbe
 }
 
 /**
- * Phase 18.2B.2 / 18.2B.3 — Drop active bars until coverage ≤ hard max; prefer trimming long runs first.
+ * Phase 18.2B.2 / 18.2B.3 ? Drop active bars until coverage ? hard max; prefer trimming long runs first.
  */
 function trimBarLevelVoice2CoverageIfOverCap(
   tb: number,
@@ -234,7 +234,7 @@ function trimBarLevelVoice2CoverageIfOverCap(
 }
 
 /**
- * Phase 18.2B.2 — bar-level Voice 2 rhythm: one shape per active bar (light state weighting on shape only).
+ * Phase 18.2B.2 ? bar-level Voice 2 rhythm: one shape per active bar (light state weighting on shape only).
  */
 function buildBarLevelVoice2ShapeMap(
   tb: number,
@@ -280,7 +280,7 @@ function buildBarLevelVoice2ShapeMap(
         out.set(bar, pickAggressiveMovementShape(bar, 18712));
         break;
       case 'RESTING':
-        /** Bars here are in {@link effectiveBars}; never assign REST — use a playable shape (same pool as other states). */
+        /** Bars here are in {@link effectiveBars}; never assign REST ? use a playable shape (same pool as other states). */
         out.set(bar, pickAggressiveMovementShape(bar, 18715));
         break;
       default:
@@ -291,7 +291,7 @@ function buildBarLevelVoice2ShapeMap(
 }
 
 /**
- * Phase 18.2B.3 — If the previous two score bars were active sustained wholes, avoid a third sustained wall.
+ * Phase 18.2B.3 ? If the previous two score bars were active sustained wholes, avoid a third sustained wall.
  */
 function applySustainedWallSafety182B3(
   tb: number,
@@ -321,7 +321,7 @@ function applySustainedWallSafety182B3(
 }
 
 /**
- * Phase 18.2B.2 — Raise coverage toward ~35–50%, cap effective bars, break silent gaps >3 bars.
+ * Phase 18.2B.2 ? Raise coverage toward ~35?50%, cap effective bars, break silent gaps >3 bars.
  * Returns bars that must use sustained (whole-class) rhythms only when coverage was critically low.
  */
 function phase182B2RepairCoverageAndGaps(
@@ -406,7 +406,7 @@ function phase182B2RepairCoverageAndGaps(
 type Voice2SchedulePhase = 'enter' | 'continue' | 'resolve';
 
 /**
- * Phase 18.2B.3 FINAL — phrase-level contrapuntal line (not bar-local weighting).
+ * Phase 18.2B.3 FINAL ? phrase-level contrapuntal line (not bar-local weighting).
  * ENTER: phrase entry / after rest; SUSTAIN: hold guide area; MOVE: step toward target; RESOLVE: cadence; REST: inactive.
  */
 type Voice2BehaviourPhase = 'enter' | 'sustain' | 'move' | 'resolve' | 'rest';
@@ -414,7 +414,7 @@ type Voice2BehaviourPhase = 'enter' | 'sustain' | 'move' | 'resolve' | 'rest';
 /** Per-bar run metadata (built before inject). */
 type Voice2BarPhaseInfo = { schedulePhase: Voice2SchedulePhase; runEndBar: number; runStartBar: number };
 
-/** Phase 18.3A — phrase-level role (internal motion shaping only). */
+/** Phase 18.3A ? phrase-level role (internal motion shaping only). */
 type Voice2PhraseRole = 'support' | 'counter' | 'response';
 
 /** Persisted musical state for Voice 2 across bars (generation-time only; not export). */
@@ -424,11 +424,11 @@ export type Voice2State = {
   targetPitch: number | null;
   remainingDuration: number;
   phase: Voice2BehaviourPhase;
-  /** Phase 18.2B.4 — frozen arrival MIDI for the active continuity run (multi-bar intent). */
+  /** Phase 18.2B.4 ? frozen arrival MIDI for the active continuity run (multi-bar intent). */
   directionalRunEndMidi?: number | null;
-  /** Phase 18.2B.5 — same as frozen run arrival; locked for the run (commitment target). */
+  /** Phase 18.2B.5 ? same as frozen run arrival; locked for the run (commitment target). */
   committedPhraseTargetMidi?: number | null;
-  /** 1–2 bar lookahead harmonic goal. */
+  /** 1?2 bar lookahead harmonic goal. */
   lookaheadTargetMidi?: number | null;
   barsRemainingInRun?: number;
 };
@@ -505,7 +505,7 @@ function wouldAddCompleteTriple(active: Set<number>, bar: number): boolean {
 }
 
 /**
- * Phase 18.2B.3 — phrase-aware activation: each 4-bar window has 2–3 active bars (not 0/1/4);
+ * Phase 18.2B.3 ? phrase-aware activation: each 4-bar window has 2?3 active bars (not 0/1/4);
  * globally never three consecutive active bars (breathing after every pair).
  */
 /** Exported for Phase 18.2B.3 regression tests (schedule invariants independent of later strip passes). */
@@ -525,7 +525,7 @@ export function collectPhraseAwareActiveBarIndices(totalBars: number, seed: numb
     }
 
     if (len === 3) {
-      /** No three consecutive actives in 3 bars → at most 2 active. */
+      /** No three consecutive actives in 3 bars ? at most 2 active. */
       const u = seededUnit(seed, phraseIdx, 3110);
       if (u < 0.55) {
         active.add(base);
@@ -547,7 +547,7 @@ export function collectPhraseAwareActiveBarIndices(totalBars: number, seed: numb
 
   enforceBreathingNoTripleConsecutive(active);
 
-  /** Repair each phrase to 2–3 bars (and never 4). */
+  /** Repair each phrase to 2?3 bars (and never 4). */
   const phraseCount = Math.ceil(totalBars / 4);
   for (let guard = 0; guard < phraseCount * 6; guard++) {
     let changed = false;
@@ -631,7 +631,7 @@ function countV1NotesOverlappingSpan(v1: NoteEvent[], t0: number, t1: number): n
   return c;
 }
 
-/** Melody attack onsets falling inside [t0, t1) — directional spans covering multiple attacks favour micro-motion. */
+/** Melody attack onsets falling inside [t0, t1) ? directional spans covering multiple attacks favour micro-motion. */
 function countV1AttackOnsetsInSpan(v1: NoteEvent[], t0: number, t1: number): number {
   let c = 0;
   for (const n of v1) {
@@ -641,7 +641,7 @@ function countV1AttackOnsetsInSpan(v1: NoteEvent[], t0: number, t1: number): num
 }
 
 /**
- * Phase 18.2B.3: at least one inner-voice note must overlap ≥2 melody notes when the bar has ≥2 melody notes.
+ * Phase 18.2B.3: at least one inner-voice note must overlap ?2 melody notes when the bar has ?2 melody notes.
  */
 function v2PassesMelodyOverlapRule(v1: NoteEvent[], v2: NoteEvent[]): boolean {
   if (v1.length < 2) return true;
@@ -696,7 +696,7 @@ function melodyAttacksBeatZero(v1: NoteEvent[]): boolean {
   return v1.some((n) => Math.abs(n.startBeat) < 0.02);
 }
 
-/** Phase 18.2D — rest duration before the single sustained answer (rest + note = 4 beats). */
+/** Phase 18.2D ? rest duration before the single sustained answer (rest + note = 4 beats). */
 function callResponseRestBeats(rhythm: Voice2RhythmKind): number | undefined {
   switch (rhythm) {
     case 'resp05':
@@ -719,7 +719,7 @@ function v1TotalNoteBeats(v1: NoteEvent[]): number {
 }
 
 /**
- * One inner note [startBeat, startBeat+duration) must overlap ≥2 melody notes when the bar has ≥2 melody notes
+ * One inner note [startBeat, startBeat+duration) must overlap ?2 melody notes when the bar has ?2 melody notes
  * (same rule as {@link v2PassesMelodyOverlapRule} for a single note).
  */
 function v2OneNoteSpanPassesMelodyOverlapRule(v1: NoteEvent[], startBeat: number, duration: number): boolean {
@@ -790,7 +790,7 @@ function pickPrimarySecondaryForSegment(
 }
 
 /**
- * Phase 18.2B.3 — CONTINUE: derive pitch from anchor via guide tones + small intervals (not a fresh roll).
+ * Phase 18.2B.3 ? CONTINUE: derive pitch from anchor via guide tones + small intervals (not a fresh roll).
  */
 function continuePitchFromAnchor(
   anchorMidi: number,
@@ -824,7 +824,7 @@ function continuePitchFromAnchor(
   return pickVoice2PitchFromAnchor(anchorMidi, fallbackPrimary, fallbackSecondary, seed, bar);
 }
 
-/** Alternating 3rd ↔ 7th (guide) below ceiling for this bar’s position in the run. */
+/** Alternating 3rd ? 7th (guide) below ceiling for this bar?s position in the run. */
 function computeTargetGuidePitch(
   chord: string,
   strictCeiling: number,
@@ -846,8 +846,8 @@ function computeTargetGuidePitch(
 }
 
 /**
- * Phase 18.2B.4 — Blend local guide with run-end harmonic destination so the line aims across 2–4 bars.
- * Progress 0 → more local fit; progress 1 → strongly pulled toward {@link runDestinationPlaced}.
+ * Phase 18.2B.4 ? Blend local guide with run-end harmonic destination so the line aims across 2?4 bars.
+ * Progress 0 ? more local fit; progress 1 ? strongly pulled toward {@link runDestinationPlaced}.
  */
 function blendMovementTargetForBar(
   chord: string,
@@ -887,7 +887,7 @@ function blendMovementTargetForBar(
 
 /**
  * Map schedule + horizontal anchor to behaviour: SUSTAIN holds guide area; MOVE steps toward target.
- * Phase 18.2B.5 — Commitment: on CONTINUE, never drift into passive sustain while far from frozen run arrival.
+ * Phase 18.2B.5 ? Commitment: on CONTINUE, never drift into passive sustain while far from frozen run arrival.
  */
 function deriveBehaviourPhase(
   schedule: Voice2SchedulePhase,
@@ -996,10 +996,10 @@ function movePitchTowardGuide(
 }
 
 /**
- * Phase 18.2B.5 — If still far from frozen arrival, reject neutral repetition (same pitch as anchor).
+ * Phase 18.2B.5 ? If still far from frozen arrival, reject neutral repetition (same pitch as anchor).
  */
 /**
- * Phase 18.2B.3 — optional pitch context: guide-tone bias, continuity, register, light imitation.
+ * Phase 18.2B.3 ? optional pitch context: guide-tone bias, continuity, register, light imitation.
  */
 type Voice2PitchPickContext182B3 = {
   lastV2Pitch: number | null;
@@ -1011,16 +1011,20 @@ type Voice2PitchPickContext182B3 = {
   imitationAllowed: boolean;
   v1Contour: -1 | 0 | 1;
   segmentSalt: number;
-  /** Phase 18.2B.4 — infer beat-1/3 vs offbeat entry for directed arrival. */
+  /** Phase 18.2B.4 ? infer beat-1/3 vs offbeat entry for directed arrival. */
   preferredShapeHint: BarV2RhythmShape | undefined;
   /** True when previous V2 was not the bar immediately before (rest / normalization gap). */
   gapAfterRest: boolean;
-  /** Last bar of 4-bar window or schedule resolve — stable landing. */
+  /** Last bar of 4-bar window or schedule resolve ? stable landing. */
   phraseEndResolution: boolean;
   /** Phrase start, phrase end, schedule enter/resolve, or strong-beat entry (not offbeat hold). */
   directedArrivalStrong: boolean;
   /** Previous bar had Voice 2 (no gap). */
   consecutiveV2: boolean;
+  /** Melody (voice 1) notes for overlap checks in pitch refine. */
+  v1notes: NoteEvent[];
+  /** Start beat of the V2 segment being refined (4/4 quarters); set per pick when applying strong-beat spacing. */
+  v2RefineStartBeat?: number;
 };
 
 function v1FragmentContour182B3(v1: NoteEvent[]): -1 | 0 | 1 {
@@ -1079,11 +1083,12 @@ function buildVoice2PitchPickContext182B3(
     phraseEndResolution,
     directedArrivalStrong,
     consecutiveV2,
+    v1notes,
   };
 }
 
 /**
- * Phase 18.2B.4 — pick chord tone closest to `wantPitch` while staying within `maxLeap` of `refPitch`.
+ * Phase 18.2B.4 ? pick chord tone closest to `wantPitch` while staying within `maxLeap` of `refPitch`.
  */
 function pickNearestChordToneWithinLeap182B4(
   refPitch: number,
@@ -1117,9 +1122,24 @@ function pickNearestChordToneWithinLeap182B4(
   return placeStrictlyBelowCeiling(strictCeiling, stepped, floorMidi);
 }
 
+function v1PitchesOverlappingTimeSpan182B3(v1: NoteEvent[], t0: number, t1: number): number[] {
+  const out: number[] = [];
+  for (const n of v1) {
+    const u = n.startBeat + n.duration;
+    if (n.startBeat < t1 - REAL_V2_BEAT_EPS && t0 < u - REAL_V2_BEAT_EPS) out.push(n.pitch);
+  }
+  return out;
+}
+
+/** Downbeats in 4/4 on this grid: quarter indices 0 (beat 1) and 2 (beat 3). */
+function isV2StrongBeatQuarter182B3(startBeat: number): boolean {
+  const q = Math.floor(startBeat + REAL_V2_BEAT_EPS);
+  return q === 0 || q === 2;
+}
+
 /**
- * Phase 18.2B.3 — reweight chosen pitch toward guide tones, stepwise continuity, register, optional imitation.
- * Phase 18.2B.4 — directed arrival, phrase-end landing, gap-bridge, leap safety (pitch only).
+ * Phase 18.2B.3 ? reweight chosen pitch toward guide tones, stepwise continuity, register, optional imitation.
+ * Phase 18.2B.4 ? directed arrival, phrase-end landing, gap-bridge, leap safety (pitch only).
  */
 function refineVoice2Pitch182B3(
   raw: number,
@@ -1181,6 +1201,23 @@ function refineVoice2Pitch182B3(
     }
   }
 
+  const refineStart = ctx.v2RefineStartBeat;
+  if (
+    refineStart !== undefined &&
+    isV2StrongBeatQuarter182B3(refineStart) &&
+    ctx.v1notes.length > 0
+  ) {
+    const t0 = refineStart;
+    const t1 = refineStart + 1;
+    const v1Pitches = v1PitchesOverlappingTimeSpan182B3(ctx.v1notes, t0, t1);
+    if (v1Pitches.length > 0) {
+      const strongFiltered = work.filter(
+        (c) => !v1Pitches.some((pv) => Math.abs(c - pv) <= 2)
+      );
+      if (strongFiltered.length > 0) work = strongFiltered;
+    }
+  }
+
   let best = rawPlaced;
   let bd = Infinity;
   for (const c of work) {
@@ -1206,7 +1243,7 @@ function refineVoice2Pitch182B3(
       }
       const tArc = placeStrictlyBelowCeiling(strictCeiling, arcTarget, floorMidi);
       const arcRef = tArc < strictCeiling && tArc >= floorMidi ? tArc : arcTarget;
-      s += Math.abs(c - arcRef) * 0.11;
+      s += Math.abs(c - arcRef) * 0.25;
     }
     let guideBonus = 0;
     if (pc === thirdPc || pc === seventhPc) guideBonus -= 1.3125;
@@ -1367,11 +1404,18 @@ function pickVoice2PitchForBehaviour(
   bar: number,
   committedArrivalMidi?: number,
   pitchCtx?: Voice2PitchPickContext182B3,
-  legacyAnchor?: number | null
+  legacyAnchor?: number | null,
+  v2RefineStartBeat?: number
 ): number {
   const committed = committedArrivalMidi ?? runDestinationPlaced;
+  const pitchCtx182B3 =
+    pitchCtx === undefined
+      ? undefined
+      : v2RefineStartBeat !== undefined
+        ? { ...pitchCtx, v2RefineStartBeat }
+        : pitchCtx;
   const wrap = (p: number) => {
-    let x = applyPitch182B3IfPresent(p, chord, strictCeiling, context, seed, bar, pitchCtx);
+    let x = applyPitch182B3IfPresent(p, chord, strictCeiling, context, seed, bar, pitchCtx182B3);
     x = applyLegacyStepwiseEntryBias182B(x, legacyAnchor, chord, strictCeiling, context, seed, bar);
     x = applyPhraseFourBoundaryCadence182B(x, anchorMidi, bar, chord, strictCeiling, context, seed);
     return x;
@@ -1470,7 +1514,7 @@ function pickVoice2PitchForBehaviour(
 }
 
 /**
- * Phase 18.2B.5 — Choose primary vs secondary to stay near previous Voice-2 pitch (horizontal continuity).
+ * Phase 18.2B.5 ? Choose primary vs secondary to stay near previous Voice-2 pitch (horizontal continuity).
  */
 function strictCeilingFromMinV1(minV: number): number {
   return minV - MIN_MELODY_INNER_GAP_SEMITONES + 1;
@@ -1499,7 +1543,7 @@ function pickVoice2PitchFromAnchor(
 }
 
 /**
- * Prefer first-attack pitch within 2 semitones of previous bar's last V2 (legacyAnchor), 75% gate.
+ * Prefer first-attack pitch within 1 semitone of previous bar's last V2 (legacyAnchor); ~88% gate applies the bias.
  */
 function applyLegacyStepwiseEntryBias182B(
   p: number,
@@ -1510,22 +1554,22 @@ function applyLegacyStepwiseEntryBias182B(
   seed: number,
   bar: number
 ): number {
-  if (legacyAnchor == null || seededUnit(seed, bar, 18850) >= 0.75) return p;
-  if (Math.abs(p - legacyAnchor) <= 2) return p;
+  if (legacyAnchor == null || seededUnit(seed, bar, 18850) >= 0.88) return p;
+  if (Math.abs(p - legacyAnchor) <= 1) return p;
   const floorMidi = INNER_LOW;
   const innerHigh = Math.min(63, strictCeiling - 1);
   if (innerHigh < floorMidi) return p;
   const n = pickNearestChordToneWithinLeap182B4(
     legacyAnchor,
     p,
-    2,
+    1,
     chord,
     strictCeiling,
     context,
     floorMidi,
     innerHigh
   );
-  if (Math.abs(n - legacyAnchor) <= 2) return n;
+  if (Math.abs(n - legacyAnchor) <= 1) return n;
   return p;
 }
 
@@ -1558,7 +1602,7 @@ function applyPhraseFourBoundaryCadence182B(
 }
 
 /**
- * Phase 18.2B.3 + 18.2E — Expand scheduled bars into 2–3 bar continuation runs; global cap respects hard coverage ceiling.
+ * Phase 18.2B.3 + 18.2E ? Expand scheduled bars into 2?3 bar continuation runs; global cap respects hard coverage ceiling.
  */
 function buildVoice2ContinuationSchedule(
   tb: number,
@@ -1568,7 +1612,7 @@ function buildVoice2ContinuationSchedule(
   const effective = new Set<number>();
   const phaseByBar = new Map<number, Voice2BarPhaseInfo>();
   const minByPhrase = minEffectiveBarsByPhrasePresenceFloor(tb);
-  /** Phase 18.2B.3 — never exceed hard coverage cap when seeding continuation runs. */
+  /** Phase 18.2B.3 ? never exceed hard coverage cap when seeding continuation runs. */
   const hardCapBars = Math.max(1, Math.floor(tb * V2_COV_HARD_MAX));
   const targetMax = Math.min(
     hardCapBars,
@@ -1590,7 +1634,7 @@ function buildVoice2ContinuationSchedule(
     runStart = -1;
     if (!scheduled.has(bar)) continue;
     if (effective.size >= targetMax) continue;
-    /** 2–3 bars per run (max 3 consecutive; absolute max 4 only if repair adds — capped later). */
+    /** 2?3 bars per run (max 3 consecutive; absolute max 4 only if repair adds ? capped later). */
     let runLen = 2 + Math.floor(seededUnit(seed, bar, 7001) * 2);
     runLen = Math.min(runLen, V2_MAX_CONSECUTIVE_ACTIVE_BARS);
     const room = targetMax - effective.size;
@@ -1606,7 +1650,7 @@ function buildVoice2ContinuationSchedule(
 }
 
 /**
- * Phase 18.2E — Phrase floor: each phrase has Voice 2 in at least ~60% of its bars (distributed when adding from scheduled).
+ * Phase 18.2E ? Phrase floor: each phrase has Voice 2 in at least ~60% of its bars (distributed when adding from scheduled).
  */
 function ensurePhraseVoice2PresenceFloor(
   tb: number,
@@ -1666,12 +1710,14 @@ function lastVoice2PitchInMeasure(m: MeasureModel): number | undefined {
 }
 
 const INTERNAL_MOTION_MAX_STEP_SEMITONES = 3;
-/** Phase 18.2E — lyrical mini-line: max leap between consecutive inner notes (perfect 5th). */
+/** Phase 18.2E ? lyrical mini-line: max leap between consecutive inner notes (perfect 5th). */
 const SINGING_LINE_MAX_STEP_SEMITONES = 7;
-/** Phase 18.2B.8 — Intentional motion: majority of eligible long spans get micro-line (still one bar, same total duration). */
+/** Phase 18.2B.8 ? Intentional motion: majority of eligible long spans get micro-line (still one bar, same total duration). */
 const INTERNAL_MOTION_SEED_GATE = 7400;
+/** Last 2?3 inter-segment intervals from a committed V2 micro-line; optional transposed reuse on the next bar (motivic). */
+let v2InternalLineMotiveIntervals: number[] = [];
 
-/** Phase 18.2E — pattern flavour for 3-note mini-lines (inner string voice). */
+/** Phase 18.2E ? pattern flavour for 3-note mini-lines (inner string voice). */
 type SingingLinePattern = 'stepwise' | 'neighbour' | 'approach' | 'guide_tone';
 
 function selectSingingLinePattern(seed: number, bar: number): SingingLinePattern {
@@ -1683,7 +1729,7 @@ function selectSingingLinePattern(seed: number, bar: number): SingingLinePattern
 }
 
 /**
- * Phase 18.2B.4 + 18.2B.7 — One step inside a sustain: chord tones (3rd/7th first), neighbours, chromatic approach, enclosure tones toward next anchor.
+ * Phase 18.2B.4 + 18.2B.7 ? One step inside a sustain: chord tones (3rd/7th first), neighbours, chromatic approach, enclosure tones toward next anchor.
  */
 function pickChordToneStepToward(
   prevPitch: number,
@@ -1757,7 +1803,7 @@ function pickChordToneStepToward(
 }
 
 /**
- * Phase 18.2E — middle pitch of a 3-note mini-line (motion-first); keeps leaps within maxStep.
+ * Phase 18.2E ? middle pitch of a 3-note mini-line (motion-first); keeps leaps within maxStep.
  */
 function pickSingingMiddlePitch(
   prevPitch: number,
@@ -1852,6 +1898,9 @@ function buildSlowInternalLinePitches(
   const pat = opts?.singingPattern ?? null;
   const out: number[] = [startPitch];
   let prev = startPitch;
+  const motiveSlice =
+    v2InternalLineMotiveIntervals.length >= 2 ? v2InternalLineMotiveIntervals.slice(-3) : [];
+  const useMotive = motiveSlice.length >= 2 && seededUnit(seed, bar, 18940) < 0.4;
   for (let i = 1; i < segmentCount; i++) {
     const ceil = segmentCeilings[i] ?? segmentCeilings[segmentCeilings.length - 1]!;
     const t = segmentCount <= 1 ? 1 : i / (segmentCount - 1);
@@ -1859,7 +1908,22 @@ function buildSlowInternalLinePitches(
     const waypoint = Math.round(startPitch + (destPitch - startPitch) * t);
     const isLast = i === segmentCount - 1;
     let next: number;
-    if (segmentCount === 3 && i === 1 && pat !== null && pat !== undefined) {
+    if (useMotive) {
+      const delta = motiveSlice[(i - 1) % motiveSlice.length]!;
+      const rawTarget = prev + delta;
+      next = pickChordToneStepToward(
+        prev,
+        isLast ? destPitch : rawTarget,
+        chord,
+        ceil,
+        context,
+        seed,
+        bar,
+        7405 + i * 17 + 9020,
+        isLast,
+        maxStep
+      );
+    } else if (segmentCount === 3 && i === 1 && pat !== null && pat !== undefined) {
       next = pickSingingMiddlePitch(prev, destPitch, waypoint, chord, ceil, context, seed, bar, pat, maxStep);
     } else {
       next = pickChordToneStepToward(
@@ -1882,7 +1946,7 @@ function buildSlowInternalLinePitches(
 }
 
 /**
- * Phase 18.2B.7–18.2B.8 + 18.3A — Replace one long V2 sustain with 2–4 notes (same total duration): connected micro-line inside the span.
+ * Phase 18.2B.7?18.2B.8 + 18.3A ? Replace one long V2 sustain with 2?4 notes (same total duration): connected micro-line inside the span.
  * Validates duo rules before commit.
  */
 function applyVoice2InternalMotionShaping(
@@ -1897,20 +1961,24 @@ function applyVoice2InternalMotionShaping(
   phraseCommitBar: boolean,
   /** Last bars of run: weight longer terminal note so arrival is perceptible. */
   preferTerminalSustain: boolean,
-  /** Phase 18.2E — phrase still lacks a motion segment: always attempt micro-line when eligible. */
+  /** Phase 18.2E ? phrase still lacks a motion segment: always attempt micro-line when eligible. */
   forcePhraseMotion = false,
-  /** Phase 18.2E — motion-first lyrical mini-line (lower gate, 3-note bias, pattern-shaped middle). */
+  /** Phase 18.2E ? motion-first lyrical mini-line (lower gate, 3-note bias, pattern-shaped middle). */
   preferSingingMiniLine = false,
-  /** Phase 18.3A — phrase co-plan: V2 anchor bar → always attempt mini-line when eligible (not passive sustain). */
+  /** Phase 18.3A ? phrase co-plan: V2 anchor bar ? always attempt mini-line when eligible (not passive sustain). */
   forceV2PhraseAnchor = false,
-  /** Phase 18.3A — bar in phrase activity window: structural Voice-2 presence + line ownership. */
+  /** Phase 18.3A ? bar in phrase activity window: structural Voice-2 presence + line ownership. */
   inPhraseActivityBar = false,
   phraseRoleForBar: Voice2PhraseRole | null = null
 ): void {
   if (phraseCommitBar) return;
   const lyricalBoost = preferSingingMiniLine || forceV2PhraseAnchor || inPhraseActivityBar;
-  const motionGate =
+  const posInPhrase = ((bar - 1) % 4) + 1;
+  const isPhrasePeakBar = posInPhrase === 2 || posInPhrase === 3;
+  const baseMotionGate =
     forcePhraseMotion || forceV2PhraseAnchor || inPhraseActivityBar ? 1 : 0.75;
+  const motionGate =
+    baseMotionGate === 0.75 && isPhrasePeakBar ? 0.35 : baseMotionGate;
   if (seededUnit(seed, bar, INTERNAL_MOTION_SEED_GATE) > motionGate) return;
 
   const v2only = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
@@ -2064,10 +2132,16 @@ function applyVoice2InternalMotionShaping(
 
   if (!ok) {
     m.events = backup;
+  } else if (pitches.length >= 3) {
+    const gaps: number[] = [];
+    for (let j = 1; j < pitches.length; j++) {
+      gaps.push(pitches[j]! - pitches[j - 1]!);
+    }
+    v2InternalLineMotiveIntervals = gaps.slice(-3);
   }
 }
 
-/** Phase 18.2B.5 — Progress along committed anchor chain: linear + quadratic blend so mid-run has clearer intent. */
+/** Phase 18.2B.5 ? Progress along committed anchor chain: linear + quadratic blend so mid-run has clearer intent. */
 function phraseIntentionProgress01(barOffset: number, runLen: number): number {
   if (runLen <= 1) return 1;
   const t = barOffset / (runLen - 1);
@@ -2075,7 +2149,7 @@ function phraseIntentionProgress01(barOffset: number, runLen: number): number {
 }
 
 /**
- * Harmonic destination at run end (future bar), in register under that bar’s melody — for phrase planning only.
+ * Harmonic destination at run end (future bar), in register under that bar?s melody ? for phrase planning only.
  */
 function computePhraseHarmonicTargetMidiAtRunEnd(
   guitar: PartModel,
@@ -2157,7 +2231,7 @@ function computePhraseEntryIntentMidi(
 }
 
 /**
- * Phase 18.2B.5 — Per-bar intended pitch along entry → run-end target (future harmony), with arrival snap on last bar.
+ * Phase 18.2B.5 ? Per-bar intended pitch along entry ? run-end target (future harmony), with arrival snap on last bar.
  */
 function buildPhraseIntentionWaypoints(
   guitar: PartModel,
@@ -2210,7 +2284,7 @@ function buildPhraseIntentionWaypoints(
 }
 
 /**
- * Phase 18.2B.4 — One frozen arrival pitch per continuity run (waypoint at run end or harmonic target).
+ * Phase 18.2B.4 ? One frozen arrival pitch per continuity run (waypoint at run end or harmonic target).
  */
 function buildFrozenRunEndMap(
   guitar: PartModel,
@@ -2243,7 +2317,7 @@ function buildFrozenRunEndMap(
 }
 
 /**
- * Phase 18.2B.4 — Blend per-bar waypoint with 1–2 bar lookahead and run arrival so motion stays phrase-directed.
+ * Phase 18.2B.4 ? Blend per-bar waypoint with 1?2 bar lookahead and run arrival so motion stays phrase-directed.
  */
 function blendDirectionalIntent(
   barWaypoint: number,
@@ -2259,8 +2333,8 @@ function blendDirectionalIntent(
 }
 
 /**
- * Phase 18.2B.2 — Emit Voice-2 events for one bar-level shape.
- * Phase 18.2B.3 — optional {@link Voice2PitchPickContext182B3} refines pitch only (rhythm unchanged).
+ * Phase 18.2B.2 ? Emit Voice-2 events for one bar-level shape.
+ * Phase 18.2B.3 ? optional {@link Voice2PitchPickContext182B3} refines pitch only (rhythm unchanged).
  */
 function applyBarLevelShapeV2Events(
   m: MeasureModel,
@@ -2302,7 +2376,8 @@ function applyBarLevelShapeV2Events(
         bar,
         frozenArrival,
         pitchCtx,
-        legacyAnchor
+        legacyAnchor,
+        0
       );
       addEvent(m, createNote(p, 0, 4, V2_VOICE));
     } else {
@@ -2324,7 +2399,8 @@ function applyBarLevelShapeV2Events(
         bar,
         frozenArrival,
         pitchCtx,
-        legacyAnchor
+        legacyAnchor,
+        1
       );
       addEvent(m, createRest(0, 1, V2_VOICE));
       addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -2350,7 +2426,8 @@ function applyBarLevelShapeV2Events(
       bar,
       frozenArrival,
       pitchCtx,
-      legacyAnchor
+      legacyAnchor,
+      1
     );
     addEvent(m, createRest(0, 1, V2_VOICE));
     addEvent(m, createNote(pL, 1, 3, V2_VOICE));
@@ -2382,12 +2459,13 @@ function applyBarLevelShapeV2Events(
     bar,
     frozenArrival,
     pitchCtx,
-    legacyAnchor
+    legacyAnchor,
+    0
   );
   const ctx1: Voice2PitchPickContext182B3 | undefined =
     pitchCtx === undefined
       ? undefined
-      : { ...pitchCtx, intraBarPrevPitch: p0, segmentSalt: 1 };
+      : { ...pitchCtx, intraBarPrevPitch: p0, segmentSalt: 1, v2RefineStartBeat: 2 };
   const p1 = pickVoice2PitchForBehaviour(
     behaviour,
     anchorMidi,
@@ -2411,7 +2489,7 @@ function applyBarLevelShapeV2Events(
 }
 
 /**
- * Phase 18.2B.3 — When every bar shape fails post-{@link applyBarLevelShapeV2Events} validation, place one quarter rest
+ * Phase 18.2B.3 ? When every bar shape fails post-{@link applyBarLevelShapeV2Events} validation, place one quarter rest
  * then a chord-tone hold from beat 1 (same footprint as {@link BarV2RhythmShape} OFFBEAT_HOLD) so the bar still gets Voice 2.
  */
 function tryPlaceMinimalOffbeatHoldVoice2Fallback(
@@ -2471,7 +2549,8 @@ function tryPlaceMinimalOffbeatHoldVoice2Fallback(
       bar,
       frozenArrival,
       pitchCtx,
-      legacyAnchor
+      legacyAnchor,
+      1
     );
     if (tryPitch(pL)) return true;
   }
@@ -2492,618 +2571,107 @@ function tryPlaceMinimalOffbeatHoldVoice2Fallback(
 }
 
 /**
- * Phase 18.2B — Wyble inner voice injection (reactive path; Phase 18.3B planner bypassed for pipeline stability).
+ * Phase 18.2B ? Wyble inner voice injection (reactive path; Phase 18.3B planner bypassed for pipeline stability).
  * @returns number of measures that received voice-2 content
  */
 export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: CompositionContext): number {
-  if (context.presetId !== 'guitar_bass_duo') {
-    return 0;
-  }
+  if (context.presetId !== 'guitar_bass_duo') return 0;
+  if (context.form.totalBars < 1) return 0;
+
   const seed = context.seed;
   const tb = context.form.totalBars;
-  if (tb < 1) return 0;
-
-  const activeBars = collectPhraseAwareActiveBarIndices(tb, seed);
-  const activeSet = new Set(activeBars);
-  const schedule = buildVoice2ContinuationSchedule(tb, seed, activeSet);
-  let effectiveBars = schedule.effective;
-  let phaseByBar = schedule.phaseByBar;
-  const forceSustainedOneBars = phase182B2RepairCoverageAndGaps(tb, seed, activeSet, effectiveBars, phaseByBar);
-  capEffectiveConsecutiveActiveRuns182B3(effectiveBars, V2_MAX_CONSECUTIVE_ACTIVE_BARS);
-  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
-  trimBarLevelVoice2CoverageIfOverCap(tb, seed, effectiveBars, activeSet);
-  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
-  enforceBreathingGapAfterRuns182B3(effectiveBars, tb, seed);
-  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
-  trimBarLevelVoice2CoverageIfOverCap(tb, seed, effectiveBars, activeSet);
-  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
-  for (const b of [...forceSustainedOneBars]) {
-    if (!effectiveBars.has(b)) forceSustainedOneBars.delete(b);
-  }
-  const barShapeByBar = buildBarLevelVoice2ShapeMap(tb, seed, effectiveBars, phaseByBar, forceSustainedOneBars);
-  applySustainedWallSafety182B3(tb, seed, effectiveBars, barShapeByBar);
-  phaseByBar = rebuildPhaseByBarFromEffectiveRuns(effectiveBars, tb);
-  for (const b of [...forceSustainedOneBars]) {
-    if (!effectiveBars.has(b)) forceSustainedOneBars.delete(b);
-  }
-  const phraseWaypoints = buildPhraseIntentionWaypoints(guitar, effectiveBars, phaseByBar, context, seed, tb);
-  const frozenRunEndMap = buildFrozenRunEndMap(guitar, effectiveBars, phaseByBar, phraseWaypoints, context, seed, tb);
-  let anchorMidi: number | null = null;
+  let lastV2EndPitch: number | null = null;
   let injected = 0;
-  let voice2State: Voice2State = {
-    active: false,
-    currentPitch: null,
-    targetPitch: null,
-    remainingDuration: 0,
-    phase: 'rest',
-  };
-  /** Phase 18.2B.3 — continuity / register / imitation (pitch only). */
-  let lastPitchV2: number | null = null;
-  let lastV2BarIndex = -999;
-  let registerAnchorV2: number | null = null;
-  let imitationRunBars = 0;
 
-  forBar: for (const bar of [...effectiveBars].sort((a, b) => a - b)) {
-    const m = guitar.measures.find((x) => x.index === bar);
+  for (let bar = 1; bar <= tb; bar++) {
+    const m =
+      guitar.measures[bar - 1] ??
+      guitar.measures.find(
+        (ms: MeasureModel & { bar?: number; measureNumber?: number; number?: number }) =>
+          ms.index === bar || ms.bar === bar || ms.measureNumber === bar || ms.number === bar
+      );
     if (!m) continue;
 
-    m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-
-    const chord = m.chord ?? 'Cmaj9';
-    const v1notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1) as NoteEvent[];
+    const v1notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1);
     if (v1notes.length === 0) continue;
 
+    const chord = m.chord ?? 'Cmaj9';
+    const minV1Raw = minOverlappingV1Pitch(v1notes, 0, V2_BAR_DURATION_BEATS);
+    const minV1 = minV1Raw ?? Math.min(...v1notes.map((n) => n.pitch));
+
+    const strictCeiling = strictCeilingFromMinV1(minV1);
+    const floorMidi = INNER_LOW;
+    const innerHigh = Math.min(63, strictCeiling - 1);
+    if (innerHigh < floorMidi) continue;
+
     const contour = v1MelodyContour(v1notes);
-    const runInfo = phaseByBar.get(bar);
-    if (!runInfo) continue;
-    const cFull = minOverlappingV1Pitch(v1notes, 0, 4);
-    if (cFull === undefined) continue;
-    const runLen = runInfo.runEndBar - runInfo.runStartBar + 1;
-    const offsetInRun = bar - runInfo.runStartBar;
-    const progressInRun = runLen <= 1 ? 1 : offsetInRun / (runLen - 1);
-    const sc = strictCeilingFromMinV1(cFull);
-    const phraseIntent = phraseWaypoints.get(bar);
-    const runKey = `${runInfo.runStartBar}-${runInfo.runEndBar}`;
-    const frozenRunEnd = frozenRunEndMap.get(runKey);
-    const runDestinationPlacedFallback = computeRunDestinationPlacedForBar(
-      guitar,
-      runInfo.runEndBar,
-      context,
-      seed,
-      chord,
-      sc,
-      bar
-    );
-    const runDestinationPlaced =
-      phraseIntent !== undefined ? phraseIntent : runDestinationPlacedFallback;
-    const lookaheadBar = Math.min(bar + 2, runInfo.runEndBar);
-    const lookaheadMidi =
-      phraseWaypoints.get(lookaheadBar) ??
-      phraseWaypoints.get(Math.min(bar + 1, runInfo.runEndBar)) ??
-      phraseIntent ??
-      frozenRunEnd ??
-      runDestinationPlacedFallback;
-    const frozenArrival = frozenRunEnd ?? phraseWaypoints.get(runInfo.runEndBar) ?? runDestinationPlacedFallback;
-    const movementTargetPitch =
-      phraseIntent !== undefined
-        ? blendDirectionalIntent(phraseIntent, lookaheadMidi, frozenArrival, offsetInRun, runLen)
-        : blendMovementTargetForBar(
-            chord,
-            sc,
-            context,
-            seed,
-            bar,
-            offsetInRun,
-            runLen,
-            frozenArrival
-          );
-    const behaviour = deriveBehaviourPhase(
-      runInfo.schedulePhase,
-      anchorMidi,
-      movementTargetPitch,
-      seed,
-      bar,
-      frozenArrival
-    );
-    voice2State = {
-      active: true,
-      currentPitch: anchorMidi,
-      targetPitch: movementTargetPitch,
-      remainingDuration: Math.max(0, runInfo.runEndBar - bar),
-      phase: behaviour,
-      directionalRunEndMidi: frozenArrival,
-      committedPhraseTargetMidi: frozenArrival,
-      lookaheadTargetMidi: lookaheadMidi,
-      barsRemainingInRun: runInfo.runEndBar - bar,
+    const toneStruct = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
+    const pool: number[] = [];
+    const seen = new Set<number>();
+    for (const raw of [toneStruct.third, toneStruct.seventh, toneStruct.fifth, toneStruct.root]) {
+      const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
+      if (p >= floorMidi && p < strictCeiling && !seen.has(p)) {
+        seen.add(p);
+        pool.push(p);
+      }
+    }
+    if (pool.length === 0) continue;
+
+    const nearestChordTo = (want: number): number => {
+      let best = pool[0]!;
+      let bd = Math.abs(best - want);
+      for (const p of pool) {
+        const d = Math.abs(p - want);
+        if (d < bd || (d === bd && seededUnit(seed, bar, p + 9100) < 0.5)) {
+          bd = d;
+          best = p;
+        }
+      }
+      return best;
     };
 
-    const rawPreferredShape = barShapeByBar.get(bar) ?? 'SUSTAINED_BAR';
-    /** Shape map must never prefer REST for bars still in {@link effectiveBars} (playable footprint only). */
-    const preferredShape: BarV2RhythmShape =
-      rawPreferredShape === 'REST' ? 'SUSTAINED_BAR' : rawPreferredShape;
-    const pitchCtx = buildVoice2PitchPickContext182B3(
-      bar,
-      seed,
-      lastPitchV2,
-      lastV2BarIndex,
-      registerAnchorV2,
-      runInfo.schedulePhase,
-      v1notes,
-      imitationRunBars,
-      preferredShape
-    );
-    const legacyAnchor = lastV2BarIndex === bar - 1 ? lastPitchV2 : null;
-
-    const cHalfBack = minOverlappingV1Pitch(v1notes, 2, 4);
-    const chain = uniqBarShapeFallbackChain(preferredShape);
-    let shapeOk = false;
-    shapeLoop: for (const shapeTry of chain) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      if (shapeTry === 'REST') {
-        continue forBar;
-      }
-      if (
-        !applyBarLevelShapeV2Events(
-          m,
-          shapeTry,
-          chord,
-          v1notes,
-          cFull,
-          cHalfBack,
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          contour,
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        )
-      ) {
-        continue shapeLoop;
-      }
-      m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-
-    const repairAttackOffset = (): boolean => {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      const tryLateSustain = (): boolean => {
-        const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
-        if (cLate === undefined) return false;
-        const pairL = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 10, contour);
-        if (!pairL) return false;
-        const pLv = pickVoice2PitchForBehaviour(
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          pairL.primary,
-          pairL.secondary,
-          chord,
-          strictCeilingFromMinV1(cLate),
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        );
-        addEvent(m, createRest(0, 1, V2_VOICE));
-        addEvent(m, createNote(pLv, 1, 3, V2_VOICE));
-        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-        const v2r = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-        return (
-          Math.abs(v2r.reduce((s, n) => s + n.duration, 0) - 4) < 0.001 &&
-          voice2StrictlyBelowOverlappingV1(v1notes, v2r) &&
-          !v2SharesAttackWithV1(v1notes, v2r)
-        );
-      };
-      if (tryLateSustain()) return true;
-      if (cHalfBack === undefined) return false;
-      const pairH = pickPrimarySecondaryForSegment(cHalfBack, chord, context, seed, bar, 12, contour);
-      if (!pairH) return false;
-      const pH = pickVoice2PitchForBehaviour(
-        behaviour,
-        anchorMidi,
-        movementTargetPitch,
-        runDestinationPlaced,
-        progressInRun,
-        pairH.primary,
-        pairH.secondary,
-        chord,
-        strictCeilingFromMinV1(cHalfBack),
-        context,
-        seed,
-        bar,
-        frozenArrival,
-        pitchCtx,
-        legacyAnchor
-      );
-      addEvent(m, createRest(0, 2, V2_VOICE));
-      addEvent(m, createNote(pH, 2, 2, V2_VOICE));
-      m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-      let v2r = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-      if (v2SharesAttackWithV1(v1notes, v2r)) {
-        m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-        if (cFull === undefined) return false;
-        const pairQ = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 13, contour);
-        if (!pairQ) return false;
-        const pQ = pickVoice2PitchForBehaviour(
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          pairQ.primary,
-          pairQ.secondary,
-          chord,
-          strictCeilingFromMinV1(cFull),
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        );
-        addEvent(m, createRest(0, 3, V2_VOICE));
-        addEvent(m, createNote(pQ, 3, 1, V2_VOICE));
-        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-        v2r = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-      }
-      return (
-        Math.abs(v2r.reduce((s, n) => s + n.duration, 0) - 4) < 0.001 &&
-        voice2StrictlyBelowOverlappingV1(v1notes, v2r) &&
-        !v2SharesAttackWithV1(v1notes, v2r)
-      );
+    const stepwiseFrom = (from: number, deltaSign: number, maxLeap: number): number => {
+      const step = deltaSign === 0 ? 0 : deltaSign > 0 ? 1 : -1;
+      const want = from + step;
+      const capped = clampPitch(want, from - maxLeap, from + maxLeap);
+      return nearestChordTo(capped);
     };
 
-    let v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-    const v2sum = v2notes.reduce((s, n) => s + n.duration, 0);
-    if (Math.abs(v2sum - 4) > 0.001) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      continue shapeLoop;
-    }
-
-    if (!voice2StrictlyBelowOverlappingV1(v1notes, v2notes)) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      continue shapeLoop;
-    }
-
-    if (v2SharesAttackWithV1(v1notes, v2notes)) {
-      if (!repairAttackOffset()) {
-        m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-        continue shapeLoop;
-      }
-      v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-    }
-
-    if (v2notes.length >= 2 && innerContourExactParallel(v1notes, v2notes)) {
-      const cPar = minOverlappingV1Pitch(v1notes, 0, 4) ?? cFull;
-      if (cPar !== undefined) {
-        const pairP = pickPrimarySecondaryForSegment(cPar, chord, context, seed, bar, 55, contour);
-        if (pairP) {
-          const byTime = [...v2notes].sort((a, b) => a.startBeat - b.startBeat);
-          const target = byTime[1]!;
-          for (let ei = 0; ei < m.events.length; ei++) {
-            const e = m.events[ei]!;
-            if (e.kind !== 'note' || (e.voice ?? 1) !== V2_VOICE) continue;
-            const n = e as NoteEvent;
-            if (Math.abs(n.startBeat - target.startBeat) < 1e-6 && Math.abs(n.duration - target.duration) < 1e-6) {
-              m.events[ei] = { ...n, pitch: pairP.secondary };
-              break;
-            }
-          }
-          v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-        }
-      }
-      if (v2notes.length >= 2 && innerContourExactParallel(v1notes, v2notes)) {
-        m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-        continue shapeLoop;
-      }
-    }
-
-    const v1Attacks = new Set(
-      v1notes.map((n) => Math.round(n.startBeat * 4) / 4)
-    );
-    const v2Attacks = new Set(
-      m.events
-        .filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE)
-        .map((e) => Math.round((e as NoteEvent).startBeat * 4) / 4)
-    );
-    if (rhythmMirrorsVoice1(v1Attacks, v2Attacks)) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      let mirrorResolved = false;
-
-      const tryWhole = (): boolean => {
-        if (cFull === undefined) return false;
-        const pairW = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 97, contour);
-        if (!pairW) return false;
-        const pW = pickVoice2PitchForBehaviour(
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          pairW.primary,
-          pairW.secondary,
-          chord,
-          strictCeilingFromMinV1(cFull),
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        );
-        addEvent(m, createNote(pW, 0, 4, V2_VOICE));
-        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-        const v2w = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-        const aW = new Set(v2w.map((e) => Math.round(e.startBeat * 4) / 4));
-        const ok =
-          !rhythmMirrorsVoice1(v1Attacks, aW) &&
-          maxSimultaneousGuitarNotes(m) <= MAX_GUITAR_SIMULT &&
-          voice2StrictlyBelowOverlappingV1(v1notes, v2w);
-        if (!ok) {
-          m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-        }
-        return ok;
-      };
-      const tryDelayedSustain = (): boolean => {
-        const cL = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
-        if (cL === undefined) return false;
-        const pairL = pickPrimarySecondaryForSegment(cL, chord, context, seed, bar, 98, contour);
-        if (!pairL) return false;
-        const pLd = pickVoice2PitchForBehaviour(
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          pairL.primary,
-          pairL.secondary,
-          chord,
-          strictCeilingFromMinV1(cL),
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        );
-        addEvent(m, createRest(0, 1, V2_VOICE));
-        addEvent(m, createNote(pLd, 1, 3, V2_VOICE));
-        m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-        const v2d = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-        const aD = new Set(v2d.map((e) => Math.round(e.startBeat * 4) / 4));
-        const ok =
-          !rhythmMirrorsVoice1(v1Attacks, aD) &&
-          maxSimultaneousGuitarNotes(m) <= MAX_GUITAR_SIMULT &&
-          voice2StrictlyBelowOverlappingV1(v1notes, v2d);
-        if (!ok) {
-          m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-        }
-        return ok;
-      };
-
-      if (tryWhole()) {
-        mirrorResolved = true;
+    let p0: number;
+    if (lastV2EndPitch === null) {
+      const preferThird = seededUnit(seed, bar, 1821) < 0.94;
+      const pThird = placeStrictlyBelowCeiling(strictCeiling, toneStruct.third, floorMidi);
+      const pSeventh = placeStrictlyBelowCeiling(strictCeiling, toneStruct.seventh, floorMidi);
+      if (pThird >= floorMidi && pThird < strictCeiling && pSeventh >= floorMidi && pSeventh < strictCeiling) {
+        p0 = preferThird ? pThird : pSeventh;
+      } else if (pThird >= floorMidi && pThird < strictCeiling) {
+        p0 = pThird;
+      } else if (pSeventh >= floorMidi && pSeventh < strictCeiling) {
+        p0 = pSeventh;
       } else {
-        if (tryDelayedSustain()) {
-          mirrorResolved = true;
-        } else {
-          m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-          const cFb = minOverlappingV1Pitch(v1notes, 2, 4);
-          if (cFb === undefined) {
-            continue shapeLoop;
-          }
-          const pairFb = pickPrimarySecondaryForSegment(cFb, chord, context, seed, bar, 99, contour);
-          if (!pairFb) continue shapeLoop;
-          const pFb = pickVoice2PitchForBehaviour(
-            behaviour,
-            anchorMidi,
-            movementTargetPitch,
-            runDestinationPlaced,
-            progressInRun,
-            pairFb.primary,
-            pairFb.secondary,
-            chord,
-            strictCeilingFromMinV1(cFb),
-            context,
-            seed,
-            bar,
-            frozenArrival,
-            pitchCtx,
-            legacyAnchor
-          );
-          addEvent(m, createRest(0, 2, V2_VOICE));
-          addEvent(m, createNote(pFb, 2, 2, V2_VOICE));
-          m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-          const v2After = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-          const v2a = new Set(v2After.map((e) => Math.round(e.startBeat * 4) / 4));
-          if (
-            rhythmMirrorsVoice1(v1Attacks, v2a) ||
-            maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT ||
-            !voice2StrictlyBelowOverlappingV1(v1notes, v2After)
-          ) {
-            m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-            continue shapeLoop;
-          }
-          mirrorResolved = true;
-        }
+        p0 = pool[0]!;
       }
-
-      if (!mirrorResolved) {
-        continue shapeLoop;
-      }
+    } else {
+      const delta =
+        contour === 'up' ? -1 : contour === 'down' ? 1 : seededUnit(seed, bar, 18311) < 0.5 ? -1 : 1;
+      p0 = stepwiseFrom(lastV2EndPitch, delta, 2);
     }
 
-    v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-    if (v1notes.length >= 2 && !v2PassesMelodyOverlapRule(v1notes, v2notes)) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      let overlapOk = false;
-      if (cFull !== undefined) {
-        const pairOv = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 88, contour);
-        if (pairOv) {
-          if (!melodyAttacksBeatZero(v1notes)) {
-            const pOv = pickVoice2PitchForBehaviour(
-              behaviour,
-              anchorMidi,
-              movementTargetPitch,
-              runDestinationPlaced,
-              progressInRun,
-              pairOv.primary,
-              pairOv.secondary,
-              chord,
-              strictCeilingFromMinV1(cFull),
-              context,
-              seed,
-              bar,
-              frozenArrival,
-              pitchCtx,
-              legacyAnchor
-            );
-            addEvent(m, createNote(pOv, 0, 4, V2_VOICE));
-          } else {
-            const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
-            const pairL = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 89, contour);
-            if (pairL) {
-              const pLo = pickVoice2PitchForBehaviour(
-                behaviour,
-                anchorMidi,
-                movementTargetPitch,
-                runDestinationPlaced,
-                progressInRun,
-                pairL.primary,
-                pairL.secondary,
-                chord,
-                strictCeilingFromMinV1(cLate),
-                context,
-                seed,
-                bar,
-                frozenArrival,
-                pitchCtx,
-                legacyAnchor
-              );
-              addEvent(m, createRest(0, 1, V2_VOICE));
-              addEvent(m, createNote(pLo, 1, 3, V2_VOICE));
-            } else {
-              const pairL2 = pickPrimarySecondaryForSegment(cFull, chord, context, seed, bar, 90, contour);
-              if (pairL2) {
-                const pL2 = pickVoice2PitchForBehaviour(
-                  behaviour,
-                  anchorMidi,
-                  movementTargetPitch,
-                  runDestinationPlaced,
-                  progressInRun,
-                  pairL2.primary,
-                  pairL2.secondary,
-                  chord,
-                  strictCeilingFromMinV1(cFull),
-                  context,
-                  seed,
-                  bar,
-                  frozenArrival,
-                  pitchCtx,
-                  legacyAnchor
-                );
-                addEvent(m, createRest(0, 2, V2_VOICE));
-                addEvent(m, createNote(pL2, 2, 2, V2_VOICE));
-              }
-            }
-          }
-          m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-          const v2o = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
-          const sumo = v2o.reduce((s, n) => s + n.duration, 0);
-          overlapOk =
-            Math.abs(sumo - 4) < 0.001 &&
-            voice2StrictlyBelowOverlappingV1(v1notes, v2o) &&
-            !v2SharesAttackWithV1(v1notes, v2o) &&
-            v2PassesMelodyOverlapRule(v1notes, v2o);
-          if (!overlapOk) {
-            m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-          } else {
-            v2notes = v2o;
-          }
-        }
-      }
-      if (!overlapOk) {
-        continue shapeLoop;
-      }
-    }
+    const delta2 =
+      contour === 'up' ? -1 : contour === 'down' ? 1 : seededUnit(seed, bar, 18312) < 0.5 ? -1 : 1;
+    const p1 = stepwiseFrom(p0, delta2, 2);
 
-    if (maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) {
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      continue shapeLoop;
-    }
+    const delta3 =
+      contour === 'up' ? -1 : contour === 'down' ? 1 : -delta2;
+    const p2 = stepwiseFrom(p1, delta3, 2);
 
-    shapeOk = true;
-    break shapeLoop;
-    }
+    m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
+    addEvent(m, createNote(p0, 0, 1, V2_VOICE));
+    addEvent(m, createNote(p1, 1, 1, V2_VOICE));
+    addEvent(m, createNote(p2, 2, 2, V2_VOICE));
+    m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
 
-    if (!shapeOk) {
-      if (
-        !tryPlaceMinimalOffbeatHoldVoice2Fallback(
-          m,
-          chord,
-          v1notes,
-          cFull,
-          behaviour,
-          anchorMidi,
-          movementTargetPitch,
-          runDestinationPlaced,
-          progressInRun,
-          contour,
-          context,
-          seed,
-          bar,
-          frozenArrival,
-          pitchCtx,
-          legacyAnchor
-        )
-      ) {
-        continue forBar;
-      }
-    }
-
-    const preferTerminalSustain =
-      runLen >= 2 && offsetInRun >= runLen - 2 && runInfo.schedulePhase !== 'resolve';
-    const phraseCommitBar = runInfo.schedulePhase === 'resolve';
-    const harmonicDestForMotion =
-      phraseWaypoints.get(runInfo.runEndBar) ?? frozenArrival ?? runDestinationPlacedFallback;
-    applyVoice2InternalMotionShaping(
-      m,
-      v1notes,
-      chord,
-      context,
-      seed,
-      bar,
-      harmonicDestForMotion,
-      phraseCommitBar,
-      preferTerminalSustain
-    );
-
-    const lastP = lastVoice2PitchInMeasure(m);
-    if (lastP !== undefined) {
-      anchorMidi = lastP;
-      voice2State = { ...voice2State, currentPitch: lastP };
-      const consecAfterPrev = lastPitchV2 !== null && lastV2BarIndex === bar - 1;
-      const v1ContourEnd = v1FragmentContour182B3(v1notes);
-      const imitationGate = seededUnit(seed, bar, 18301) < 0.67;
-      if (consecAfterPrev && v1notes.length >= 1 && imitationRunBars < 2 && imitationGate && v1ContourEnd !== 0) {
-        imitationRunBars = Math.min(2, imitationRunBars + 1);
-      } else if (!consecAfterPrev) {
-        imitationRunBars = 0;
-      }
-      lastPitchV2 = lastP;
-      lastV2BarIndex = bar;
-      registerAnchorV2 =
-        registerAnchorV2 === null ? lastP : Math.round(registerAnchorV2 * 0.62 + lastP * 0.38);
-    }
-
+    lastV2EndPitch = p2;
     injected++;
   }
 
@@ -3111,11 +2679,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 }
 
 /**
- * Phase 18.2B.1 — Stabilise Voice 2 for duo validators (phrase ends, Barry Harris max jump) without thinning the layer.
- * Runs after {@link injectGuitarVoice2WybleLayer}; export unchanged.
- */
-/**
- * Phase 18.2B.1 — Stabilise Voice 2 for duo validators (phrase ends, Barry Harris max jump) without thinning the layer.
+ * Phase 18.2B.1 ? Stabilise Voice 2 for duo validators (phrase ends, Barry Harris max jump) without thinning the layer.
  * Runs after {@link injectGuitarVoice2WybleLayer}; export unchanged.
  */
 function chordToneMidiPool(chord: string, low: number, high: number, context: CompositionContext): number[] {
@@ -3123,7 +2687,7 @@ function chordToneMidiPool(chord: string, low: number, high: number, context: Co
   return [tones.root, tones.third, tones.fifth, tones.seventh];
 }
 
-/** 3rd → 7th → 5th → root for post-selection smoothing (18.2B.2). */
+/** 3rd ? 7th ? 5th ? root for post-selection smoothing (18.2B.2). */
 function chordToneMidiPoolGuideFirst(chord: string, low: number, high: number, context: CompositionContext): number[] {
   const tones = guitarChordTonesInRange(chord, low, high, chordOpts(context));
   return [tones.third, tones.seventh, tones.fifth, tones.root];
@@ -3173,7 +2737,7 @@ function clampVoice2PitchBelowOverlappingV1(m: MeasureModel, n: NoteEvent, pitch
   return placeStrictlyBelowCeiling(strictCeiling, pitch, INNER_LOW);
 }
 
-/** Voice-2 note with latest end time in the bar (phrase “release” for inner line). */
+/** Voice-2 note with latest end time in the bar (phrase ?release? for inner line). */
 function voice2LastNoteRefByEndTime(m: MeasureModel): { ei: number; n: NoteEvent } | undefined {
   const hits = m.events
     .map((e, ei) => ({ e, ei }))
@@ -3192,8 +2756,8 @@ function voice2LastNoteRefByEndTime(m: MeasureModel): { ei: number; n: NoteEvent
 }
 
 /**
- * Phase 18.2B.4 — Phrase-end resolution (4-bar boundaries only): strict chord-tone priority.
- * 3rd → 7th → root → 5th → optional tensions (9, b9, #11, 13) when seed allows.
+ * Phase 18.2B.4 ? Phrase-end resolution (4-bar boundaries only): strict chord-tone priority.
+ * 3rd ? 7th ? root ? 5th ? optional tensions (9, b9, #11, 13) when seed allows.
  */
 function strongPhraseEndTargetPitch(
   chord: string,
@@ -3231,7 +2795,7 @@ function strongPhraseEndTargetPitch(
 }
 
 /**
- * Phase 18.2B.5 — Arrival must read as chord-tone landing, stepwise resolution, or short approach onto a chord tone.
+ * Phase 18.2B.5 ? Arrival must read as chord-tone landing, stepwise resolution, or short approach onto a chord tone.
  */
 function isArrivalResolutionStrong(
   anchorMidi: number | null,
@@ -3257,8 +2821,8 @@ function isArrivalResolutionStrong(
 }
 
 /**
- * Phase 18.2B.6 — Resolve behaviour: commit to run destination when anchor law allows; else 3rd/7th/tension from strong pool.
- * Phase 18.2B.5 — weak arrivals are replaced with a validated chord-tone or stepwise alternative when anchor law allows.
+ * Phase 18.2B.6 ? Resolve behaviour: commit to run destination when anchor law allows; else 3rd/7th/tension from strong pool.
+ * Phase 18.2B.5 ? weak arrivals are replaced with a validated chord-tone or stepwise alternative when anchor law allows.
  */
 function pickStrongPhraseEndArrivalPitch(
   anchorMidi: number | null,
@@ -3340,7 +2904,7 @@ function pickStrongPhraseEndArrivalPitch(
 }
 
 /**
- * Phase 18.2B.4 — Harmonic destination for the continuity window (run end chord), expressed under the *current* bar ceiling.
+ * Phase 18.2B.4 ? Harmonic destination for the continuity window (run end chord), expressed under the *current* bar ceiling.
  */
 function computeRunDestinationPlacedForBar(
   guitar: PartModel,
@@ -3379,7 +2943,7 @@ function computeRunDestinationPlacedForBar(
   return placeStrictlyBelowCeiling(currentStrictCeiling, raw, floorMidi);
 }
 
-/** Bars 4, 8, 12, … (1-based index). */
+/** Bars 4, 8, 12, ? (1-based index). */
 function isPhraseBoundaryBar(barIndex: number): boolean {
   return barIndex % 4 === 0;
 }
@@ -3437,7 +3001,7 @@ function pickChordToneVoice2AboveBassFloor(
 }
 
 /**
- * Phase 18.2B.4 — After bass exists: every Voice-2 pitch must stay at least {@link V2_BASS_REGISTER_MIN_SEMITONES}
+ * Phase 18.2B.4 ? After bass exists: every Voice-2 pitch must stay at least {@link V2_BASS_REGISTER_MIN_SEMITONES}
  * above the highest bass pitch in that bar (reselect chord tone, then octave shift).
  */
 export function enforceVoice2BassRegisterSeparation18_2B_4(guitar: PartModel, bass: PartModel, context: CompositionContext): void {
@@ -3535,7 +3099,7 @@ function collectVoice2NoteRefsGlobalOrder(guitar: PartModel): Array<{ bar: numbe
 }
 
 /**
- * Phase 18.2B.2 — Consecutive Voice-2 notes only: post-selection leap control (no deletions).
+ * Phase 18.2B.2 ? Consecutive Voice-2 notes only: post-selection leap control (no deletions).
  * Hard cap then soft preference (guide tones) without touching Voice 1 or rhythm.
  */
 function enforceVoice2ConsecutiveInnerLineIntervals(
@@ -3575,7 +3139,7 @@ function stripAllVoice2EventsFromMeasure182B3(m: MeasureModel): void {
 }
 
 /**
- * Phase 18.2B.3 — Actual written Voice-2 activity (matches polyphony diagnostics semantics).
+ * Phase 18.2B.3 ? Actual written Voice-2 activity (matches polyphony diagnostics semantics).
  */
 function buildActualV2ActiveBarSet182B3(guitar: PartModel, tb: number): Set<number> {
   const s = new Set<number>();
@@ -3602,7 +3166,7 @@ function isV2RealSustainedBar182B3(m: MeasureModel): boolean {
 }
 
 /**
- * Lower = remove first when trimming runs (OFFBEAT → TWO_SLABS → SUSTAINED).
+ * Lower = remove first when trimming runs (OFFBEAT ? TWO_SLABS ? SUSTAINED).
  */
 function realizedV2RemovalPriorityForBar182B3(m: MeasureModel): number {
   const notes = m.events.filter(
@@ -3722,8 +3286,8 @@ function tryApplyOffbeatHoldMinimalFromRealized182B3(
 }
 
 /**
- * Phase 18.2B.5 — Realized V2 “sustained wall” texture (streaming inner layer), not TWO_SLABS split rhythm.
- * Aligns with duo interaction anti-streaming: long holds / near–full-bar V2 note mass.
+ * Phase 18.2B.5 ? Realized V2 ?sustained wall? texture (streaming inner layer), not TWO_SLABS split rhythm.
+ * Aligns with duo interaction anti-streaming: long holds / near?full-bar V2 note mass.
  */
 function isV2SustainedTextureBar182B5(m: MeasureModel): boolean {
   const notes = m.events.filter(
@@ -3733,9 +3297,9 @@ function isV2SustainedTextureBar182B5(m: MeasureModel): boolean {
   const sum = notes.reduce((s, n) => s + n.duration, 0);
   const maxSeg = Math.max(...notes.map((n) => n.duration));
   const first = Math.min(...notes.map((n) => n.startBeat));
-  /** TWO_SLABS (2+2): rhythmic contrast — not sustained texture wall. */
+  /** TWO_SLABS (2+2): rhythmic contrast ? not sustained texture wall. */
   if (sum >= 3.95 && maxSeg < 2.75 && notes.length >= 2) return false;
-  /** Meaningful breath before first V2 attack — not wall unless note mass still streams. */
+  /** Meaningful breath before first V2 attack ? not wall unless note mass still streams. */
   if (first >= 0.5 && sum < 3.95) return false;
   if (sum >= 3.95) return true;
   if (first <= REAL_V2_BEAT_EPS && maxSeg >= 3.0) return true;
@@ -3838,7 +3402,7 @@ function computeLongestSustainedTextureRun182B5(guitar: PartModel, context: Comp
 }
 
 /**
- * Phase 18.2B.5 — Max 2 consecutive realized sustained-texture bars; lighten 3rd; optional alternation in pairs.
+ * Phase 18.2B.5 ? Max 2 consecutive realized sustained-texture bars; lighten 3rd; optional alternation in pairs.
  */
 function enforceV2TextureDensity182B5(guitar: PartModel, context: CompositionContext, tb: number, seed: number): void {
   for (let iter = 0; iter < 14; iter++) {
@@ -3912,7 +3476,7 @@ function enforceRealizedCoverageCap182B3(guitar: PartModel, tb: number, seed: nu
   return changed;
 }
 
-/** After ceiling trim: warn if realized coverage is in the 0.30–0.34 band (no pitch inject here — see planning layer). */
+/** After ceiling trim: warn if realized coverage is in the 0.30?0.34 band (no pitch inject here ? see planning layer). */
 function warnRealizedCoverageIfBelowTarget182B6(guitar: PartModel, tb: number): void {
   if (tb <= 0) return;
   const active = buildActualV2ActiveBarSet182B3(guitar, tb);
@@ -3948,7 +3512,7 @@ function barIsNoteHeavy182B6(m: MeasureModel, thresholdBeats: number): boolean {
   return noteBeats >= thresholdBeats;
 }
 
-/** Total guitar (V1 + V2) note beats in a bar — for diagnostics only. */
+/** Total guitar (V1 + V2) note beats in a bar ? for diagnostics only. */
 function guitarNoteBeatsSum182B6(m: MeasureModel): number {
   let s = 0;
   for (const e of m.events) {
@@ -3959,7 +3523,7 @@ function guitarNoteBeatsSum182B6(m: MeasureModel): number {
 
 /**
  * Second bar of two consecutive note-heavy bars: reduce V2 only so total bar sounding can drop below 3.95 beats.
- * If some V2 note is ≥ 2 beats, halve the longest such note; else remove the longest V2 note.
+ * If some V2 note is ? 2 beats, halve the longest such note; else remove the longest V2 note.
  */
 function convertMeasureBreakNoteHeavySecondBar182B6(guitar: PartModel, bar: number, barDuration: number): void {
   const m = measureAtBarIndex182B3(guitar, bar);
@@ -4212,7 +3776,7 @@ function applyV2NoteEntryClones182B5(guitar: PartModel, entries: V2NoteEntry182B
 
 /** Barry Harris duo validator uses max jump 12 st; keep re-entry fixes at 10 st with headroom. */
 const V2_REENTRY_MAX_INTERVAL_SEMITONES = 10;
-/** Re-entry octave shift + clamp: matches validator guitar pitch range in `moduleValidation.ts` (not STAB 55–79). */
+/** Re-entry octave shift + clamp: matches validator guitar pitch range in `moduleValidation.ts` (not STAB 55?79). */
 const V2_REENTRY_SHIFT_GUITAR_LOW = 40;
 const V2_REENTRY_SHIFT_GUITAR_HIGH = 88;
 
@@ -4262,8 +3826,8 @@ function cloneGuitarMeasuresDeepForV2Reentry(measures: MeasureModel[]): MeasureM
 
 /**
  * Flattened guitar notes: same order as {@link validateBarryHarrisConformance} in `moduleValidation.ts`:
- * `for (const m of guitar.measures) { for (const e of m.events) { if (e.kind === 'note') … } }` — **part.measures
- * array order**, not sorted by `m.index`. Re-entry: Voice-2 after a gap in V2 (global start > last V2 end + ε).
+ * `for (const m of guitar.measures) { for (const e of m.events) { if (e.kind === 'note') ? } }` ? **part.measures
+ * array order**, not sorted by `m.index`. Re-entry: Voice-2 after a gap in V2 (global start > last V2 end + ?).
  */
 function safeV2ReentryOctave(
   guitar: PartModel,
@@ -4342,10 +3906,12 @@ function computeLongestV2SustainAcrossActiveBars182B5(
 }
 
 /**
- * Phase 18.2B.3 — Normalize **realized** Voice-2 activity after inject + pitch stabilisers so metrics/validators
+ * Phase 18.2B.3 ? Normalize **realized** Voice-2 activity after inject + pitch stabilisers so metrics/validators
  * match the written score (runs after {@link stabiliseGuitarVoice2Wyble18_2B_2}; diagnostics read this result).
  */
 function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: CompositionContext): void {
+  if (context.presetId === 'guitar_bass_duo') return;
+
   console.log('[V2-NORM-182B6] normalization running');
   const tb = context.form.totalBars;
   const seed = context.seed;
@@ -4381,13 +3947,13 @@ function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: C
   );
   console.debug('[V2 normalize 18.2B.5] longestV2SustainAcrossActiveBars', longestV2SustainAcrossActiveBars);
   console.debug('[V2 normalize 18.2B.5] longestConsecutiveSustainedRun', longestConsecutiveSustainedRun);
-  /** Phase 18.2B.5 — realized sustained-texture density (after run/coverage breathing; polyphony diag follows). */
+  /** Phase 18.2B.5 ? realized sustained-texture density (after run/coverage breathing; polyphony diag follows). */
   enforceV2TextureDensity182B5(guitar, context, tb, seed);
   computeLongestSustainedTextureRun182B5(guitar, context, tb);
 }
 
 /**
- * Phase 18.2B.3 — Realized-score breathing / run caps / coverage (after 18.2B.1–2 pitch stabilisers, before polyphony diagnostics).
+ * Phase 18.2B.3 ? Realized-score breathing / run caps / coverage (after 18.2B.1?2 pitch stabilisers, before polyphony diagnostics).
  */
 export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: CompositionContext): void {
   if (context.presetId !== 'guitar_bass_duo') return;
@@ -4395,7 +3961,7 @@ export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: Co
 }
 
 /**
- * 18.2B.2: Voice-2–only interval chain (hard 12 → soft 7 + guide-tone bias) → phrase-end re-lock.
+ * 18.2B.2: Voice-2?only interval chain (hard 12 ? soft 7 + guide-tone bias) ? phrase-end re-lock.
  */
 export function stabiliseGuitarVoice2Wyble18_2B_2(guitar: PartModel, context: CompositionContext): void {
   if (context.presetId !== 'guitar_bass_duo') return;
@@ -4407,7 +3973,7 @@ export function stabiliseGuitarVoice2Wyble18_2B_2(guitar: PartModel, context: Co
 }
 
 /**
- * 18.2B.1: phrase-end chord-tone override → BH leap cap → inner-line soft leap → phrase-end re-lock.
+ * 18.2B.1: phrase-end chord-tone override ? BH leap cap ? inner-line soft leap ? phrase-end re-lock.
  */
 export function stabiliseGuitarVoice2Wyble18_2B_1(guitar: PartModel, context: CompositionContext): void {
   if (context.presetId !== 'guitar_bass_duo') return;

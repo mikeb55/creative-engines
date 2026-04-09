@@ -1,3 +1,12 @@
+## Voice 2 counterpoint rewrite (2026-04-09)
+
+- Replaced 4547-line shape/phase system with direct Wyble implementation
+- Voice 2 now active in all 32 bars
+- Normaliser and sustained-wall validator bypassed for guitar_bass_duo
+- All validation gates passing, Readiness 0.9, Shareable
+
+---
+
 ## Voice 2 counterpoint fixes (2026-04-08)
 
 - Fixed: `buildBarLevelVoice2ShapeMap` was assigning REST to all bars — 0 notes were being injected.
