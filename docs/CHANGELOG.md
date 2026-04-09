@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## Voice 2 range expansion + contrary motion fix (2026-04-09)
+- FLOOR_MIDI expanded to C2, CEIL_MIDI to A3
+- Stepwise planning now allows minor third leaps
+- Parallel motion correction applied every bar
+- B section counterpoint improved
+
 ## Voice 2 melodic planning + minimum notes fix (2026-04-09)
 - Pre-planned melodic goal pitches across all 32 bars
 - Phrase arcs reverse direction every 4 bars

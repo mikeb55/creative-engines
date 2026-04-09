@@ -2588,15 +2588,16 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
   /** Pre-planned melodic goals per bar (1..tb); index tb+1 holds carry for “next goal” stepping. */
   const goalPitch: number[] = new Array(tb + 1);
-  const FLOOR_MIDI = 28;
-  const CEIL_MIDI = 55;
+  const FLOOR_MIDI = 36; // C2
+  const CEIL_MIDI = 57; // A3
   const sr = (salt: number) => seededUnit(seed, salt, 9010);
-  let planPitch = 45;
+  let planPitch = 43; // G2 — lower starting point
   let planDirection = sr(1) < 0.5 ? 1 : -1;
 
   for (let bar = 1; bar <= tb; bar++) {
     if (bar % 4 === 1 && bar > 1) planDirection *= -1;
-    const stepSize = sr(bar * 7) < 0.6 ? 1 : 2;
+    const stepSize =
+      sr(bar * 7) < 0.4 ? 1 : sr(bar * 7) < 0.7 ? 2 : 3; // half / whole / minor third
     planPitch += planDirection * stepSize;
     if (planPitch > CEIL_MIDI) {
       planPitch = CEIL_MIDI;
@@ -2642,6 +2643,24 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
     const v1notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1);
     if (v1notes.length === 0) continue;
+
+    const v1Sorted = [...v1notes].sort((a, b) => a.startBeat - b.startBeat);
+    const v1First = v1Sorted[0]!.pitch;
+    const v1Last = v1Sorted[v1Sorted.length - 1]!.pitch;
+    let v1Dir = 0;
+    if (v1Last > v1First + 1) v1Dir = 1;
+    else if (v1Last < v1First - 1) v1Dir = -1;
+
+    // Detect if planned direction matches V1 direction (parallel)
+    const plannedDir = goalPitch[bar] > (goalPitch[bar - 1] ?? goalPitch[bar]) ? 1 : -1;
+
+    if (v1Dir !== 0 && plannedDir === v1Dir) {
+      // Parallel motion detected — reverse the plan for this bar
+      goalPitch[bar] = goalPitch[bar - 1] ?? goalPitch[bar];
+      const correctedStep = sr(bar * 13) < 0.5 ? 1 : 2;
+      goalPitch[bar] -= v1Dir * correctedStep;
+      goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]));
+    }
 
     const chord = m.chord ?? 'Cmaj9';
     const minV1Raw = minOverlappingV1Pitch(v1notes, 0, V2_BAR_DURATION_BEATS);
@@ -2760,7 +2779,30 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       pitches[0] = adj;
     }
 
-    let finals = [...pitches];
+    const v1PitchSet = new Set(v1notes.map((n) => pitchClass(n.pitch)));
+
+    const deClash = (p: number): number => {
+      const pc = pitchClass(p);
+      const clashIntervals = new Set([0, 1, 11]);
+      const hasClash = [...v1PitchSet].some((v1pc) => {
+        const interval = Math.abs(pc - v1pc) % 12;
+        return clashIntervals.has(interval);
+      });
+      if (!hasClash) return p;
+      const nearestV1 = [...v1PitchSet].reduce((a, b) => (Math.abs(a - pc) < Math.abs(b - pc) ? a : b));
+      const direction = pc >= nearestV1 ? 1 : -1;
+      const adjusted = p + direction;
+      return Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, adjusted));
+    };
+
+    const pBar0 = pitches[0]!;
+    const pBar1 = pitches.length > 1 ? pitches[1]! : pBar0;
+    const pBar2 = pitches.length > 2 ? pitches[2]! : pBar1;
+    const safe0 = deClash(pBar0);
+    const safe1 = deClash(pBar1);
+    const safe2 = deClash(pBar2);
+    let finals = pitches.map((p, i) => (i === 0 ? safe0 : i === 1 ? safe1 : i === 2 ? safe2 : deClash(p)));
+
     m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
     for (let si = 0; si < segStarts.length; si++) {
       const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[si]! - segStarts[si]!);
