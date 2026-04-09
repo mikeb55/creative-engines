@@ -113,6 +113,7 @@ import {
   logGuitarVoice2Checkpoint,
 } from './phaseAGuitarPolyphonyProbe';
 import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
+import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -366,6 +367,227 @@ function lateClosingBassRhythmBreakVsPrevBar(
     duoBassAntiDuplicateRhythmVsAdjacent(m, mPrev);
     normalizeMeasureToEighthBeatGrid(m);
   }
+}
+
+function bassNoteCountInMeasure(m: MeasureModel): number {
+  return m.events.filter((e) => e.kind === 'note').length;
+}
+
+function isWalkingQuartersPattern(measure: MeasureModel): boolean {
+  const notes = [...measure.events]
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat) as NoteEvent[];
+  if (notes.length !== 4) return false;
+  for (const n of notes) {
+    if (Math.abs(n.duration - 1) > 0.15) return false;
+  }
+  return true;
+}
+
+function isHalfHalfPattern(measure: MeasureModel): boolean {
+  const notes = [...measure.events]
+    .filter((e) => e.kind === 'note')
+    .sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat) as NoteEvent[];
+  if (notes.length !== 2) return false;
+  for (const n of notes) {
+    if (Math.abs(n.duration - 2) > 0.2) return false;
+  }
+  return true;
+}
+
+function rewriteBassBarTwoHalvesOnBeatsOneAndThree(
+  m: MeasureModel,
+  rootClamped: number,
+  fifth: number,
+  walkLow: number,
+  effectiveHigh: number
+): void {
+  m.events = [];
+  addEvent(m, createNote(clampPitch(rootClamped, walkLow, effectiveHigh), 0, 2));
+  addEvent(m, createNote(clampPitch(fifth, walkLow, effectiveHigh), 2, 2));
+  normalizeMeasureToEighthBeatGrid(m);
+}
+
+/** Bass identity gate: 3 identical rhythm fingerprints in a row — break the current bar’s rhythm. */
+function applyBassRhythmTripleFingerprintBreak(
+  m: MeasureModel,
+  measures: MeasureModel[],
+  opts: {
+    rootClamped: number;
+    third: number;
+    fifth: number;
+    guide: number;
+    walkLow: number;
+    effectiveHigh: number;
+  }
+): void {
+  if (measures.length < 2) return;
+  const fp = rhythmFingerprint(m);
+  const fpPrev = rhythmFingerprint(measures[measures.length - 1]!);
+  const fpPrev2 = rhythmFingerprint(measures[measures.length - 2]!);
+  if (!fp.length || fp !== fpPrev || fp !== fpPrev2) return;
+  const ref = measures[measures.length - 1]!;
+  const firstN = m.events.find((e) => e.kind === 'note') as NoteEvent | undefined;
+  let t0 = firstN ? snapAttackBeatToGrid(firstN.startBeat) : 0;
+  if (t0 < 0) t0 = 0;
+  m.events = [];
+  if (t0 > 0.01) {
+    addEvent(m, createRest(0, t0));
+  }
+  const span = 4 - t0;
+  if (span <= 0.01) return;
+  if (isWalkingQuartersPattern(ref)) {
+    const dHalf = Math.min(2, span);
+    addEvent(m, createNote(opts.rootClamped, t0, dHalf));
+    const rem = span - dHalf;
+    const q1 = Math.min(1, rem);
+    addEvent(m, createNote(opts.third, t0 + dHalf, q1));
+    const q2 = Math.max(0, rem - q1);
+    if (q2 > 0.05) {
+      addEvent(m, createNote(opts.fifth, t0 + dHalf + q1, q2));
+    }
+  } else if (isHalfHalfPattern(ref)) {
+    const pool = [opts.rootClamped, opts.fifth, opts.third, opts.guide];
+    for (let i = 0; i < 4; i++) {
+      const p = clampPitch(pool[i % pool.length]!, opts.walkLow, opts.effectiveHigh);
+      addEvent(m, createNote(p, t0 + i, 1));
+    }
+  } else {
+    const dHalf = Math.min(2, span);
+    addEvent(m, createNote(opts.rootClamped, t0, dHalf));
+    const rem = span - dHalf;
+    const q1 = Math.min(1, rem);
+    addEvent(m, createNote(opts.third, t0 + dHalf, q1));
+    const q2 = Math.max(0, rem - q1);
+    if (q2 > 0.05) {
+      addEvent(m, createNote(opts.fifth, t0 + dHalf + q1, q2));
+    }
+  }
+  normalizeMeasureToEighthBeatGrid(m);
+}
+
+function applyBassContourFingerprintOveruseBreak(
+  m: MeasureModel,
+  contourHistoryForGate: string[],
+  seed: number,
+  bar: number,
+  walkLow: number,
+  effectiveHigh: number,
+  chordTonePool: number[]
+): void {
+  const cf = contourFingerprint(m);
+  if (!cf.length) return;
+  if (contourHistoryForGate.filter((x) => x === cf).length < 5) return;
+  breakMeasureContourLocally(m, seed + 9103, bar, {
+    walkLow,
+    high: effectiveHigh,
+    chordTonePool,
+  });
+  normalizeMeasureToEighthBeatGrid(m);
+}
+
+function applyBassWalkLikeCapReplace(
+  m: MeasureModel,
+  measures: MeasureModel[],
+  walkCap: number,
+  rootClamped: number,
+  fifth: number,
+  walkLow: number,
+  effectiveHigh: number
+): void {
+  const n = bassNoteCountInMeasure(m);
+  if (n < 5) return;
+  const priorWalk = measures.reduce((acc, mm) => acc + (bassNoteCountInMeasure(mm) >= 5 ? 1 : 0), 0);
+  if (priorWalk < walkCap) return;
+  rewriteBassBarTwoHalvesOnBeatsOneAndThree(m, rootClamped, fifth, walkLow, effectiveHigh);
+}
+
+function repairBassMotifEchoBars1to8(
+  measures: MeasureModel[],
+  guitarPart: PartModel,
+  context: CompositionContext,
+  bassMap: InstrumentRegisterMap
+): void {
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
+  const guitarPcSetForBar = (bar: number): Set<number> => {
+    const gm = guitarPart.measures.find((x) => x.index === bar);
+    const s = new Set<number>();
+    if (!gm) return s;
+    for (const e of gm.events) {
+      if (e.kind !== 'note' || !isGuitarMelodyVoiceNote(e)) continue;
+      s.add((((e as NoteEvent).pitch % 12) + 12) % 12);
+    }
+    return s;
+  };
+  const barHasEcho = (bar: number): boolean => {
+    const bm = measures.find((x) => x.index === bar);
+    const g = guitarPcSetForBar(bar);
+    if (!bm || g.size === 0) return false;
+    for (const e of bm.events) {
+      if (e.kind !== 'note') continue;
+      if (g.has((((e as NoteEvent).pitch % 12) + 12) % 12)) return true;
+    }
+    return false;
+  };
+  for (let bar = 1; bar <= 8; bar++) {
+    if (barHasEcho(bar)) return;
+  }
+  let bestBar = 1;
+  let bestFlex = -1;
+  for (let bar = 1; bar <= 8; bar++) {
+    const chord = getChordForBar(bar, context);
+    const tones = chordTonesForChordSymbolWithContext(chord, context);
+    const gm = guitarPart.measures.find((x) => x.index === bar);
+    let flex = 0;
+    if (gm) {
+      for (const e of gm.events) {
+        if (e.kind !== 'note' || !isGuitarMelodyVoiceNote(e)) continue;
+        const pc = (((e as NoteEvent).pitch % 12) + 12) % 12;
+        const pool = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) => (((p % 12) + 12) % 12) as number);
+        if (pool.includes(pc)) flex++;
+      }
+    }
+    if (flex > bestFlex) {
+      bestFlex = flex;
+      bestBar = bar;
+    }
+  }
+  const bm = measures.find((x) => x.index === bestBar);
+  const gm = guitarPart.measures.find((x) => x.index === bestBar);
+  if (!bm || !gm) return;
+  const chord = getChordForBar(bestBar, context);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
+  const [low, high] = getBassRegisterForBar(bassMap, bestBar, context);
+  const eh = Math.min(high, 52);
+  const toneMidiByPc = new Map<number, number>();
+  for (const p of [tones.root, tones.third, tones.fifth, tones.seventh]) {
+    const pc = (((p % 12) + 12) % 12) as number;
+    if (!toneMidiByPc.has(pc)) toneMidiByPc.set(pc, p);
+  }
+  let chosenMidi: number | undefined;
+  for (const e of gm.events) {
+    if (e.kind !== 'note' || !isGuitarMelodyVoiceNote(e)) continue;
+    const midi = (e as NoteEvent).pitch;
+    const pc = (((midi % 12) + 12) % 12) as number;
+    if (toneMidiByPc.has(pc)) {
+      chosenMidi = clampPitch(toneMidiByPc.get(pc)!, low, eh);
+      break;
+    }
+  }
+  if (chosenMidi === undefined) {
+    for (const e of gm.events) {
+      if (e.kind !== 'note' || !isGuitarMelodyVoiceNote(e)) continue;
+      const midi = (e as NoteEvent).pitch;
+      const pc = (((midi % 12) + 12) % 12) as number;
+      chosenMidi = clampPitch(pitchClassToBassMidi(pc, low, eh), low, eh);
+      break;
+    }
+  }
+  if (chosenMidi === undefined) return;
+  const bassNotes = bm.events.filter((e): e is NoteEvent => e.kind === 'note');
+  if (bassNotes.length === 0) return;
+  const victim = [...bassNotes].sort((a, b) => a.startBeat - b.startBeat)[0]!;
+  victim.pitch = chosenMidi;
 }
 
 /** Stronger landing on phrase-ending bars (2,4,6): extend last note toward ≥0.5 beats when possible. */
@@ -1296,6 +1518,8 @@ function buildBassPart(
   const evenEighthStreak = { n: 0 };
   const tb = totalBarsFromContext(context);
   const bassPlanStyle = readBassPlanStyle(bassPlan);
+  const walkCap = tb >= 16 ? 6 : 4;
+  const contourHistoryForGate: string[] = [];
 
   for (let b = 1; b <= tb; ) {
     const chord = getChordForBar(b, context);
@@ -1537,6 +1761,28 @@ function buildBassPart(
         slashBassPitch,
       });
       normalizeMeasureToEighthBeatGrid(m);
+      {
+        const chordTonePool = [rootClamped, third, fifth, seventh, guide];
+        if (slashBassPitch !== undefined) chordTonePool.push(slashBassPitch);
+        applyBassContourFingerprintOveruseBreak(
+          m,
+          contourHistoryForGate,
+          s,
+          b,
+          walkLow,
+          effectiveHigh,
+          chordTonePool
+        );
+        applyBassRhythmTripleFingerprintBreak(m, measures, {
+          rootClamped,
+          third,
+          fifth,
+          guide,
+          walkLow,
+          effectiveHigh,
+        });
+        applyBassWalkLikeCapReplace(m, measures, walkCap, rootClamped, fifth, walkLow, effectiveHigh);
+      }
       finalizeDuoBassExpressiveBar({
         m,
         bar: b,
@@ -1552,6 +1798,10 @@ function buildBassPart(
         slashBassPc: parsed.slashBassPc,
       });
       lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
+      {
+        const cfp = contourFingerprint(m);
+        if (cfp.length) contourHistoryForGate.push(cfp);
+      }
       const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBass7) prevBassPitch = lastBass7.pitch;
       measures.push(m);
@@ -1611,6 +1861,28 @@ function buildBassPart(
         slashBassPitch,
       });
       normalizeMeasureToEighthBeatGrid(m);
+      {
+        const chordTonePool = [rootClamped, third, fifth, seventh, guide];
+        if (slashBassPitch !== undefined) chordTonePool.push(slashBassPitch);
+        applyBassContourFingerprintOveruseBreak(
+          m,
+          contourHistoryForGate,
+          s,
+          b,
+          walkLow,
+          effectiveHigh,
+          chordTonePool
+        );
+        applyBassRhythmTripleFingerprintBreak(m, measures, {
+          rootClamped,
+          third,
+          fifth,
+          guide,
+          walkLow,
+          effectiveHigh,
+        });
+        applyBassWalkLikeCapReplace(m, measures, walkCap, rootClamped, fifth, walkLow, effectiveHigh);
+      }
       finalizeDuoBassExpressiveBar({
         m,
         bar: b,
@@ -1626,6 +1898,10 @@ function buildBassPart(
         slashBassPc: parsed.slashBassPc,
       });
       lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
+      {
+        const cfp = contourFingerprint(m);
+        if (cfp.length) contourHistoryForGate.push(cfp);
+      }
       const lastBassA = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBassA) prevBassPitch = lastBassA.pitch;
       measures.push(m);
@@ -1903,6 +2179,29 @@ function buildBassPart(
       }
     }
 
+    if (duoGoldenBass) {
+      const chordTonePool = [rootClamped, third, fifth, seventh, guide];
+      if (slashBassPitch !== undefined) chordTonePool.push(slashBassPitch);
+      applyBassContourFingerprintOveruseBreak(
+        m,
+        contourHistoryForGate,
+        s,
+        b,
+        walkLow,
+        effectiveHigh,
+        chordTonePool
+      );
+      applyBassRhythmTripleFingerprintBreak(m, measures, {
+        rootClamped,
+        third,
+        fifth,
+        guide,
+        walkLow,
+        effectiveHigh,
+      });
+      applyBassWalkLikeCapReplace(m, measures, walkCap, rootClamped, fifth, walkLow, effectiveHigh);
+    }
+
     finalizeDuoBassExpressiveBar({
       m,
       bar: b,
@@ -1919,6 +2218,11 @@ function buildBassPart(
     });
 
     lateClosingBassRhythmBreakVsPrevBar(m, measures, b, tb, context);
+
+    if (duoGoldenBass) {
+      const cfp = contourFingerprint(m);
+      if (cfp.length) contourHistoryForGate.push(cfp);
+    }
 
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (lastBass) prevBassPitch = lastBass.pitch;
@@ -1958,6 +2262,8 @@ function buildBassPart(
     }
     b++;
   }
+
+  repairBassMotifEchoBars1to8(measures, guitarPart, context, bassMap);
 
   return {
     id: 'bass',

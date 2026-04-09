@@ -1,5 +1,13 @@
 # Composer OS — Changelog
 
+## Bass phrase intelligence 18.2D (2026-04-09)
+- Rhythmic cell repeat prevention (3+ consecutive bars)
+- Contour overuse prevention (5+ same contour)
+- Motif echo repair for bars 1-8 (shared pitch class with guitar)
+- Walking cap enforced (max 6 bars with 5+ notes)
+- All behaviour gates passing
+- Both regression sweeps passing (test:duo + test:bass)
+
 ## Song Mode D2 complete (2026-04-09)
 - Groove, Space, Expression, Surprise echoed in generation receipt
 - Intent values confirmed passing from UI sliders to engine
