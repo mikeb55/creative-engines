@@ -234,6 +234,10 @@ type GenResult = {
     styleProfile?: SongModeStyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
     blendStrength?: 'light' | 'medium' | 'strong';
+    groove?: number;
+    space?: number;
+    expression?: number;
+    surprise?: number;
   };
   stylePairingReceipt?: {
     summary: string;
@@ -1907,6 +1911,22 @@ export function HomeGenerate({
                       : 'Medium'}
                 </p>
               )}
+              {presetId === 'song_mode' &&
+                echo != null &&
+                typeof echo.groove === 'number' &&
+                typeof echo.space === 'number' &&
+                typeof echo.expression === 'number' &&
+                typeof echo.surprise === 'number' && (
+                  <>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      Groove: {Math.round(echo.groove * 100)}% &nbsp; Space: {Math.round(echo.space * 100)}%
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      Expression: {Math.round(echo.expression * 100)}% &nbsp; Surprise:{' '}
+                      {Math.round(echo.surprise * 100)}%
+                    </p>
+                  </>
+                )}
               {result.stylePairingReceipt?.confidenceScore != null && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Confidence:</span>{' '}

@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Song Mode D2 complete (2026-04-09)
+- Groove, Space, Expression, Surprise echoed in generation receipt
+- Intent values confirmed passing from UI sliders to engine
+- Receipt displays percentages for all four intent fields
+
 ## Rehearsal mark copy fixed (2026-04-09)
 - Big Band: Intro, Melody Head, Solo Section, Soli Chorus, Shout Chorus, Rideout — explicit display map
 - String Quartet: Statement, Development, Contrast, Return, Coda — explicit display map

@@ -98,7 +98,15 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
-  };
+    ...(req.intent
+      ? {
+          groove: req.intent.groove,
+          space: req.intent.space,
+          expression: req.intent.expression,
+          surprise: req.intent.surprise,
+        }
+      : {}),
+  } as NonNullable<GenerateResult['requestEcho']>;
 }
 
 function parseBigBandEraFromPairing(era?: string): BigBandEraId | undefined {
