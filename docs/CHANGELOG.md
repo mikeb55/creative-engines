@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## Bass sweep baseline + chord input help (2026-04-09)
+- Bass phrase sweep: 32/32 bars, pitch range passing all seeds
+- Contour and rhythm informational only (18.2D work pending)
+- Chord parse error message improved with jazz notation examples
+- npm run test:bass exit 0
+
 ## Duo regression sweep (2026-04-09)
 - npm run test:duo: 10 fixed seeds, all passing
 - Guarantees V2 32/32 bars, coverage 1.00, rest gap 0

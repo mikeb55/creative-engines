@@ -31,6 +31,10 @@ const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
 
 const FORM_OPTIONS_UI = FORM_OPTIONS.filter((f) => !FORM_OPTION_IDS_EXCLUDED_FROM_UI.has(f.id));
 
+/** Client-side chord preflight failures (before generate). */
+const CHORD_PROGRESSION_PARSE_ERROR_MESSAGE =
+  'Could not parse chord progression. Use standard jazz notation e.g. Dm9, G13, Cmaj9, A7alt — separated by spaces or commas.';
+
 /** Receipt echo from engine (#17 chord export diagnostics). */
 type ChordDxReceiptUi = {
   summary: {
@@ -111,17 +115,17 @@ const ERA_OPTIONS: { id: string; label: string }[] = [
 ];
 
 const DEFAULT_CUSTOM_HARMONY_PLACEHOLDER =
-  'e.g. Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
+  'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
 const DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER =
-  'e.g. Cmaj9 | Am7 | Dm9 | G13 | Cmaj9 | Am7 | Dm9 | G7alt | ... (one chord per bar)';
+  'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj9 | Am7 | Dm9 | G13 | ... (one chord per bar)';
 const ERA_CUSTOM_HARMONY_PLACEHOLDERS: Record<string, string> = {
-  swing: 'e.g. Cmaj6 | Am7 | Dm9 | G7 | ... (one chord per bar)',
-  bebop: 'e.g. Dm7b5 | G7b9 | Cmaj7 | Ab7#11 | ... (one chord per bar)',
-  cool_jazz: 'e.g. Cmaj7 | Am9 | DmMaj7 | G13 | ... (one chord per bar)',
-  hard_bop: 'e.g. Fm7 | Bb7#9 | Ebmaj7 | Cm7b5 | ... (one chord per bar)',
-  post_bop: 'e.g. Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
-  fusion: 'e.g. Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
-  contemporary: 'e.g. Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
+  swing: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj6 | Am7 | Dm9 | G7 | ... (one chord per bar)',
+  bebop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Dm7b5 | G7b9 | Cmaj7 | Ab7#11 | ... (one chord per bar)',
+  cool_jazz: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7 | Am9 | DmMaj7 | G13 | ... (one chord per bar)',
+  hard_bop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Fm7 | Bb7#9 | Ebmaj7 | Cm7b5 | ... (one chord per bar)',
+  post_bop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
+  fusion: 'e.g. Dm9, G13, Cmaj9, A7alt — or Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
+  contemporary: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
 };
 
 const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
@@ -480,7 +484,7 @@ export function HomeGenerate({
             tbForm !== 8 ? [8] : undefined
           );
           if (!parsedDuo.ok) {
-            setError(parsedDuo.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -512,7 +516,7 @@ export function HomeGenerate({
             tbForm !== 8 ? [8] : undefined
           );
           if (!pLine.ok) {
-            setError(pLine.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -532,7 +536,7 @@ export function HomeGenerate({
         if (presetId === 'song_mode' && songChordLine) {
           const parsedSong = parseChordProgressionInputWithBarCount(songChordLine, tbForm);
           if (!parsedSong.ok) {
-            setError(parsedSong.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -545,7 +549,7 @@ export function HomeGenerate({
         if (presetId === 'wyble_etude' && chordTrim) {
           const wybleParsed = parseChordProgressionInputFlexible(chordTrim);
           if (!wybleParsed.ok) {
-            setError(wybleParsed.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -558,7 +562,7 @@ export function HomeGenerate({
         if (presetId === 'big_band' && chordTrim) {
           const parsedBb = parseChordProgressionInputWithBarCount(chordTrim, ensembleEffBarsBigBand);
           if (!parsedBb.ok) {
-            setError(parsedBb.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -571,7 +575,7 @@ export function HomeGenerate({
         if (presetId === 'string_quartet' && chordTrim) {
           const parsedSq = parseChordProgressionInputWithBarCount(chordTrim, ensembleEffBarsQuartet);
           if (!parsedSq.ok) {
-            setError(parsedSq.error);
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
             onResult({
@@ -936,7 +940,8 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              One chord per bar (any length). Same parsing as Song Mode / duo: <code>|</code>, <code>,</code>,{' '}
+              Standard jazz symbols such as <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>{' '}
+              — separated by spaces or commas, or one chord per bar with <code>|</code>, <code>,</code>,{' '}
               <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
               <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
             </p>
@@ -949,9 +954,10 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              Custom harmony: one chord per bar for the length you set under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              Use standard jazz notation (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>)
+              — spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
               (8, 16, or 32). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
-              study progression (e.g. Dm9 … A7alt).
+              study progression.
             </p>
           ) : presetId === 'big_band' || presetId === 'string_quartet' ? (
             <p
@@ -962,7 +968,8 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              Custom harmony: one chord per bar for the length you set under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              Use standard jazz notation (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>)
+              — spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
               (planning uses at least 16 bars). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study cycle.
             </p>
@@ -975,6 +982,7 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
+              Standard jazz symbols (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) — spaces or commas.
               One chord or a <strong style={{ color: 'var(--text)' }}>2–4</strong> chord loop — same separators
               as duo when you use more than one chord. Leave empty for a default vamp.
             </p>
@@ -988,8 +996,9 @@ export function HomeGenerate({
               }}
             >
               <strong style={{ color: 'var(--text)' }}>Exactly {songFormBars}</strong> chords for locked harmony (match{' '}
-              <strong style={{ color: 'var(--text)' }}>Number of bars</strong>). Slash chords (e.g.{' '}
-              <code>E7(#11)/G#</code>) are one symbol per bar.
+              <strong style={{ color: 'var(--text)' }}>Number of bars</strong>). Use standard jazz notation (e.g.{' '}
+              <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) — spaces or commas, or one per bar with{' '}
+              <code>|</code>. Slash chords (e.g. <code>E7(#11)/G#</code>) are one symbol per bar.
             </p>
           )}
           <textarea
