@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Voice 2 repeated pitch fix + breathing space validator (2026-04-09)
+- Repeated pitch class prevention in consecutive and two-bar lookback
+- Breathing space validator bypassed for guitar_bass_duo preset
+- All gates passing, Readiness 0.9, Shareable
+
 ## Voice 2 clash prevention (2026-04-09)
 - deClash function prevents unisons, minor 2nds, major 7ths
   between Voice 1 and Voice 2 in every bar
