@@ -3,7 +3,7 @@
  */
 
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
-import type { QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
+import type { QuartetFormPhase, QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
 import {
   QUARTET_INSTRUMENTS,
   SQ_PART_PIANO,
@@ -19,6 +19,15 @@ import { createNote, createPart, createRest, createScore, addEvent } from '../sc
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
+
+/** Human-readable rehearsal mark text in exported scores (internal `phase` ids unchanged). */
+const QUARTET_REHEARSAL_MARK_DISPLAY: Record<QuartetFormPhase, string> = {
+  statement: 'Statement',
+  development: 'Development',
+  contrast: 'Contrast',
+  return: 'Return',
+  coda: 'Coda',
+};
 
 /**
  * Per-era lead-sheet vocabulary tokens (research-aligned). Progressions below
@@ -225,12 +234,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
     if (!sl) return undefined;
-    const raw = String(sl.phase).replace(/_/g, ' ').trim();
-    if (!raw) return undefined;
-    return raw
-      .split(/\s+/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(' ');
+    return QUARTET_REHEARSAL_MARK_DISPLAY[sl.phase];
   };
 
   const parts = QUARTET_INSTRUMENTS.map((inst, idx) => {

@@ -3,7 +3,7 @@
  * Behavioural voicing: section stacks + harmonic rhythm, not finished arranging.
  */
 
-import type { BigBandFormPlan, BigBandSectionPlan } from './bigBandPlanTypes';
+import type { BigBandFormPhase, BigBandFormPlan, BigBandSectionPlan } from './bigBandPlanTypes';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
 import type { BigBandEraId } from './bigBandResearchTypes';
 import {
@@ -37,6 +37,16 @@ const BB_PART_IDS = [
 ] as const;
 
 const CHORD_CYCLE = ['Cmaj7', 'Am7', 'Dm7', 'G7'];
+
+/** Human-readable rehearsal mark text in exported scores (internal `phase` ids unchanged). */
+const BIG_BAND_REHEARSAL_MARK_DISPLAY: Record<BigBandFormPhase, string> = {
+  intro: 'Intro',
+  melody_head: 'Melody Head',
+  solo_section: 'Solo Section',
+  background_figures: 'Soli Chorus',
+  shout_chorus: 'Shout Chorus',
+  ending: 'Rideout',
+};
 
 /**
  * Per-era lead-sheet vocabulary tokens (research-aligned). Concrete progressions below
@@ -271,12 +281,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
     if (!sl) return undefined;
-    const raw = String(sl.phase).replace(/_/g, ' ').trim();
-    if (!raw) return undefined;
-    return raw
-      .split(/\s+/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(' ');
+    return BIG_BAND_REHEARSAL_MARK_DISPLAY[sl.phase];
   };
 
   const parts = BB_PART_IDS.map((partId, idx) => {

@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Rehearsal mark copy fixed (2026-04-09)
+- Big Band: Intro, Melody Head, Solo Section, Soli Chorus, Shout Chorus, Rideout — explicit display map
+- String Quartet: Statement, Development, Contrast, Return, Coda — explicit display map
+- UI Song Form help text updated to match
+
 ## Bass sweep baseline + chord input help (2026-04-09)
 - Bass phrase sweep: 32/32 bars, pitch range passing all seeds
 - Contour and rhythm informational only (18.2D work pending)

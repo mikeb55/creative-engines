@@ -1218,6 +1218,38 @@ export function HomeGenerate({
               </div>
             )}
           </div>
+          {(presetId === 'big_band' || presetId === 'string_quartet') && (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0.5rem 0 0',
+                maxWidth: 560,
+                lineHeight: 1.45,
+              }}
+            >
+              {presetId === 'big_band' ? (
+                <>
+                  Exported scores include rehearsal marks with section names such as{' '}
+                  <strong style={{ color: 'var(--text)' }}>Intro</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Melody Head</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Solo Section</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Soli Chorus</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Shout Chorus</strong>, and{' '}
+                  <strong style={{ color: 'var(--text)' }}>Rideout</strong> — not every chart uses every section.
+                </>
+              ) : (
+                <>
+                  Exported scores include rehearsal marks:{' '}
+                  <strong style={{ color: 'var(--text)' }}>Statement</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Development</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Contrast</strong>,{' '}
+                  <strong style={{ color: 'var(--text)' }}>Return</strong>, and{' '}
+                  <strong style={{ color: 'var(--text)' }}>Coda</strong>.
+                </>
+              )}
+            </p>
+          )}
         </div>
       )}
 
