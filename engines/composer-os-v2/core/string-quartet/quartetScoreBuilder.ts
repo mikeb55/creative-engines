@@ -264,6 +264,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     return p;
   });
 
+  /** GM Acoustic Grand (0); exporter emits `<midi-program>1</midi-program>` + `<midi-channel>1</midi-channel>` for `sq_piano`. */
   const pianoPart = createPart(
     SQ_PART_PIANO,
     'Piano',

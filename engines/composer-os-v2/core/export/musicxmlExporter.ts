@@ -543,8 +543,8 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
       <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
     </score-part>`;
         }
-        /** Match Big Band piano by identity (builder sets `big_band_piano`); `id` is normally `bb_piano` but identity is the reliable signal. */
-        if (isBigBandPianoPart(p) && !isStringQuartetPianoPart(p)) {
+        /** Big Band (`bb_piano`) + String Quartet (`sq_piano`): Sibelius-friendly piano part-list + GM Acoustic Grand (ch. 1, program 1). */
+        if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
           return `    <score-part id="${p.id}">
       <part-name>Piano</part-name>
       <part-abbreviation>Pno.</part-abbreviation>
@@ -559,16 +559,8 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
-        const partAbbrevXml =
-          isBigBandPianoPart(p) || isStringQuartetPianoPart(p)
-            ? '\n      <part-abbreviation>Pno.</part-abbreviation>'
-            : '';
-        /** Big Band + String Quartet piano: Sibelius-friendly GM Acoustic Grand (ch. 1, program 1). */
-        const midiInstrumentBody =
-          isBigBandPianoPart(p) || isStringQuartetPianoPart(p)
-            ? `        <midi-channel>1</midi-channel>
-        <midi-program>1</midi-program>`
-            : `        <midi-program>${mxProg}</midi-program>`;
+        const partAbbrevXml = '';
+        const midiInstrumentBody = `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
       <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
       <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>

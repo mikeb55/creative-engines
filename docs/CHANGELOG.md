@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## Piano naming + Song Form dropdown (2026-04-09)
+- Piano named Piano/Pno./keyboard.piano for Big Band and String Quartet
+- Song Form dropdown wired for Big Band and String Quartet
+- 8-bar option hidden for ensemble presets
+- Roadmap updated to 2026-04-09
+
 ## Voice 2 repeated pitch fix + breathing space validator (2026-04-09)
 - Repeated pitch class prevention in consecutive and two-bar lookback
 - Breathing space validator bypassed for guitar_bass_duo preset

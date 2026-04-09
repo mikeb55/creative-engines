@@ -325,20 +325,26 @@ export function HomeGenerate({
     return modePresets.find((m) => m.id === id)?.name ?? id;
   }
 
+  const ensembleSongFormPreset = presetId === 'big_band' || presetId === 'string_quartet';
   const songFormBarPreset =
     presetId === 'song_mode' ||
     presetId === 'guitar_bass_duo' ||
-    presetId === 'guitar_bass_duo_single_line';
+    presetId === 'guitar_bass_duo_single_line' ||
+    ensembleSongFormPreset;
 
   useEffect(() => {
     if (presetId === 'riff_generator') {
       setTotalBars((tb) => (tb >= 1 && tb <= 4 ? tb : 2));
     } else if (songFormBarPreset) {
-      setTotalBars((tb) => clampSongFormBarCount(tb, 32));
+      if (ensembleSongFormPreset) {
+        setTotalBars((tb) => (tb === 16 || tb === 24 || tb === 32 ? tb : 32));
+      } else {
+        setTotalBars((tb) => clampSongFormBarCount(tb, 32));
+      }
     } else {
       setTotalBars((tb) => (tb >= 8 ? tb : 32));
     }
-  }, [presetId, songFormBarPreset]);
+  }, [presetId, songFormBarPreset, ensembleSongFormPreset]);
 
   useEffect(() => {
     if (!songFormMenuOpen) return;
@@ -350,7 +356,11 @@ export function HomeGenerate({
     return () => document.removeEventListener('mousedown', onDown);
   }, [songFormMenuOpen]);
 
-  const songFormBars = clampSongFormBarCount(totalBars, 32);
+  const songFormBars = ensembleSongFormPreset
+    ? totalBars === 16 || totalBars === 24 || totalBars === 32
+      ? totalBars
+      : 32
+    : clampSongFormBarCount(totalBars, 32);
   const customHarmonyPlaceholder =
     presetId === 'big_band' || presetId === 'string_quartet'
       ? (ERA_CUSTOM_HARMONY_PLACEHOLDERS[era] ?? DEFAULT_CUSTOM_HARMONY_PLACEHOLDER)
@@ -433,7 +443,7 @@ export function HomeGenerate({
          */
         const songChordLine = presetId === 'song_mode' ? chordTrim || tonalTrim : chordTrim;
 
-        const tbForm = clampSongFormBarCount(totalBars, 32);
+        const tbForm = songFormBarPreset ? songFormBars : totalBars;
         const ensembleEffBarsBigBand = Math.max(
           16,
           Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 32
@@ -708,6 +718,8 @@ export function HomeGenerate({
       blendStrength,
       funkGroove,
       formId,
+      songFormBarPreset,
+      songFormBars,
       onResult,
     ]
   );
@@ -1051,7 +1063,7 @@ export function HomeGenerate({
                 color: 'var(--text)',
               }}
             >
-              <option value={8}>8 bars</option>
+              {!ensembleSongFormPreset && <option value={8}>8 bars</option>}
               <option value={16}>16 bars</option>
               <option value={24}>24 bars</option>
               <option value={32}>32 bars</option>
