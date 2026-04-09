@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## Voice 2 clash prevention (2026-04-09)
+- deClash function prevents unisons, minor 2nds, major 7ths
+  between Voice 1 and Voice 2 in every bar
+- Applies to all Guitar Bass Duo generations
+
 ## Voice 2 range expansion + contrary motion fix (2026-04-09)
 - FLOOR_MIDI expanded to C2, CEIL_MIDI to A3
 - Stepwise planning now allows minor third leaps

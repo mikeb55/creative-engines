@@ -2629,6 +2629,24 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       if (bestSnap !== undefined) planPitch = bestSnap;
     }
     goalPitch[bar] = planPitch;
+
+    if (bar > 1) {
+      const prevPc = goalPitch[bar - 1]! % 12;
+      const currPc = goalPitch[bar]! % 12;
+      if (currPc === prevPc) {
+        goalPitch[bar]! += planDirection;
+        goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]!));
+      }
+    }
+
+    if (bar > 2) {
+      const twoBackPc = goalPitch[bar - 2]! % 12;
+      const currPc = goalPitch[bar]! % 12;
+      if (currPc === twoBackPc) {
+        goalPitch[bar]! += planDirection * 2;
+        goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]!));
+      }
+    }
   }
   goalPitch[tb + 1] = planPitch;
 
