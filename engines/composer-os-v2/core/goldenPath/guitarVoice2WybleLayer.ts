@@ -2580,15 +2580,56 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
   const seed = context.seed;
   const tb = context.form.totalBars;
-  let lastV2EndPitch: number | null = null;
-  /** Last Voice 2 move direction (+1 up, -1 down) for Rule 1 when Voice 1 is static. */
-  let lastV2MoveSign: number | null = null;
   /** Pitch class (0–11) at end of previous bar for Rule 6. */
   let lastBarEndPc: number | null = null;
   let injected = 0;
 
   const pitchClass = (p: number): number => ((p % 12) + 12) % 12;
-  const inPool = (p: number, pool: number[]): boolean => pool.some((x) => Math.abs(x - p) < 0.01);
+
+  /** Pre-planned melodic goals per bar (1..tb); index tb+1 holds carry for “next goal” stepping. */
+  const goalPitch: number[] = new Array(tb + 1);
+  const FLOOR_MIDI = 28;
+  const CEIL_MIDI = 55;
+  const sr = (salt: number) => seededUnit(seed, salt, 9010);
+  let planPitch = 45;
+  let planDirection = sr(1) < 0.5 ? 1 : -1;
+
+  for (let bar = 1; bar <= tb; bar++) {
+    if (bar % 4 === 1 && bar > 1) planDirection *= -1;
+    const stepSize = sr(bar * 7) < 0.6 ? 1 : 2;
+    planPitch += planDirection * stepSize;
+    if (planPitch > CEIL_MIDI) {
+      planPitch = CEIL_MIDI;
+      planDirection = -1;
+    }
+    if (planPitch < FLOOR_MIDI) {
+      planPitch = FLOOR_MIDI;
+      planDirection = 1;
+    }
+
+    const mPl =
+      guitar.measures[bar - 1] ??
+      guitar.measures.find(
+        (ms: MeasureModel & { bar?: number; measureNumber?: number; number?: number }) =>
+          ms.index === bar || ms.bar === bar || ms.measureNumber === bar || ms.number === bar
+      );
+    const chordPl = mPl?.chord ?? 'Cmaj9';
+    const tsPl = guitarChordTonesInRange(chordPl, FLOOR_MIDI, CEIL_MIDI, chordOpts(context));
+    if (bar % 4 === 0) {
+      let bestSnap: number | undefined;
+      let bd = 999;
+      for (const c of [tsPl.third, tsPl.seventh]) {
+        const d = Math.abs(c - planPitch);
+        if (d <= 2 + 1e-6 && d < bd) {
+          bd = d;
+          bestSnap = c;
+        }
+      }
+      if (bestSnap !== undefined) planPitch = bestSnap;
+    }
+    goalPitch[bar] = planPitch;
+  }
+  goalPitch[tb + 1] = planPitch;
 
   for (let bar = 1; bar <= tb; bar++) {
     const m =
@@ -2623,18 +2664,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     }
     if (pool.length === 0) continue;
 
-    const v1Sorted = [...v1notes].sort((a, b) => a.startBeat - b.startBeat);
-    const v1First = v1Sorted[0]!.pitch;
-    const v1Last = v1Sorted[v1Sorted.length - 1]!.pitch;
-    let v1Overall = 0;
-    if (v1Last > v1First + 1) v1Overall = 1;
-    else if (v1Last < v1First - 1) v1Overall = -1;
-
-    /** Rule 7 — 8-bar phrase contour: bars 1–4 vs 5–8. */
-    const block8 = Math.floor((bar - 1) / 8);
-    const phraseAsc = seededUnit(seed, block8 + 1, 8877) < 0.5;
-    const posIn8 = ((bar - 1) % 8) + 1;
-    const phraseBiasSign = posIn8 <= 4 ? (phraseAsc ? 1 : -1) : phraseAsc ? -1 : 1;
+    /** Rule 6 — nudge direction when pitch class repeats; independent of goal planning. */
+    const phraseBiasSign = seededUnit(seed, bar, 8877) < 0.5 ? 1 : -1;
 
     /** Rule 4 — rhythmic independence: opposite rhythm to Voice 1 attack pattern (quarter-beat grid). */
     const onsetQuarter = new Set<number>();
@@ -2676,144 +2707,48 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       segEnds = [1, V2_BAR_DURATION_BEATS];
     }
 
-    const contrarySignForStep = (): number => {
-      if (v1Overall === 1) return -1;
-      if (v1Overall === -1) return 1;
-      if (lastV2MoveSign === null) return seededUnit(seed, bar, 9901) < 0.5 ? -1 : 1;
-      return -lastV2MoveSign;
+    // Minimum 2 segments per bar always
+    if (segStarts.length < 2) {
+      segStarts = [0, 2];
+      segEnds = [2, V2_BAR_DURATION_BEATS];
+    }
+
+    const barGoal = goalPitch[bar]!;
+    const nearestChordTo = (goal: number): number | null => {
+      let best: number | undefined;
+      let bd = 999;
+      for (const p of pool) {
+        const d = Math.abs(p - goal);
+        if (d <= 2 + 1e-6 && d < bd) {
+          bd = d;
+          best = p;
+        }
+      }
+      return best !== undefined ? best : null;
     };
 
-    const scoreInterval = (minV1Seg: number, v2: number): number => {
-      const g = minV1Seg - v2;
-      if (g <= 0) return -1e9;
-      if (g <= 2) return -800 + g;
-      if (g >= 11 && g % 12 === 0) return -400;
-      if ([3, 4, 7, 8, 9, 10].includes(g)) return 220;
-      return 40 - Math.abs(g - 6);
-    };
+    const lo0 = floorMidi;
+    const hi0 = innerHigh;
+    let p0 = nearestChordTo(barGoal);
+    if (p0 === null) p0 = clampPitch(barGoal, lo0, hi0);
+    p0 = clampPitch(placeStrictlyBelowCeiling(strictCeiling, p0, floorMidi), lo0, hi0);
 
-    const pickPitch = (
-      prevPitch: number | null,
-      segIndex: number,
-      minV1Seg: number,
-      ceilingSeg: number,
-      forcePhraseGuide: boolean
-    ): number => {
-      const lo = floorMidi;
-      const hi = Math.min(63, ceilingSeg - 1);
-      if (hi < lo) return clampPitch(prevPitch ?? lo, lo, hi);
-
-      const pThird = placeStrictlyBelowCeiling(ceilingSeg, toneStruct.third, lo);
-      const pSeventh = placeStrictlyBelowCeiling(ceilingSeg, toneStruct.seventh, lo);
-      const guideTargets = [pThird, pSeventh].filter((p) => p >= lo && p < ceilingSeg);
-
-      const trySteps = (primarySign: number): { pitch: number; step: number }[] => {
-        const out: { pitch: number; step: number }[] = [];
-        const magOrder = [1, 2, 3];
-        for (const mag of magOrder) {
-          for (const sgn of primarySign === 0 ? [-1, 1] : [primarySign]) {
-            const step = sgn * mag;
-            if (prevPitch === null) continue;
-            const raw = prevPitch + step;
-            if (raw < lo || raw > hi) continue;
-            out.push({ pitch: raw, step });
-          }
-        }
-        if (prevPitch !== null) {
-          for (const mag of magOrder) {
-            for (const sgn of [-1, 1]) {
-              const step = sgn * mag;
-              const raw = prevPitch + step;
-              if (raw < lo || raw > hi) continue;
-              if (primarySign !== 0 && Math.sign(step) !== primarySign) out.push({ pitch: raw, step });
-            }
-          }
-        }
-        return out;
-      };
-
-      let primarySign = contrarySignForStep();
-      if (segIndex > 0) {
-        const blend = seededUnit(seed, bar * 10 + segIndex, 9910);
-        if (blend < 0.35) primarySign = phraseBiasSign;
-      }
-
-      const candidates: { pitch: number; step: number; score: number }[] = [];
-
-      const pushCand = (p: number, step: number) => {
-        if (p < lo || p >= ceilingSeg) return;
-        let sc = scoreInterval(minV1Seg, p);
-        if (inPool(p, pool)) sc += 45;
-        if (Math.sign(step) === phraseBiasSign) sc += 12;
-        if (Math.sign(step) === primarySign || primarySign === 0) sc += 80;
-        if (prevPitch !== null && Math.abs(p - prevPitch) > 3) sc -= 500;
-        candidates.push({ pitch: p, step, score: sc });
-      };
-
-      if (prevPitch === null) {
-        for (const p of pool) pushCand(p, 0);
-        if (candidates.length === 0) pushCand(lo, 0);
-      } else {
-        const stepset = trySteps(primarySign);
-        for (const { pitch, step } of stepset) pushCand(pitch, step);
-        if (candidates.length === 0) {
-          for (const mag of [1, 2, 3]) {
-            for (const sgn of [-1, 1]) {
-              const p = prevPitch + sgn * mag;
-              if (p >= lo && p < ceilingSeg) pushCand(p, sgn * mag);
-            }
-          }
-        }
-      }
-
-      if (forcePhraseGuide && guideTargets.length > 0 && prevPitch !== null) {
-        for (const gt of guideTargets) {
-          const d = Math.abs(gt - prevPitch);
-          if (d >= 1 - 1e-6 && d <= 2 + 1e-6) {
-            if (gt >= lo && gt < ceilingSeg) pushCand(gt, gt - prevPitch);
-          }
-        }
-      }
-
-      candidates.sort((a, b) => b.score - a.score);
-      let best = candidates[0]?.pitch ?? clampPitch(prevPitch ?? lo, lo, hi);
-
-      if (forcePhraseGuide && guideTargets.length > 0) {
-        const ok = guideTargets.some((g) => Math.abs(g - best) < 0.01);
-        if (!ok) {
-          let alt: number | undefined;
-          let bd = 999;
-          for (const gt of guideTargets) {
-            const d = Math.abs(gt - (prevPitch ?? best));
-            if (d < bd && d >= 1 && d <= 3 && gt >= lo && gt < ceilingSeg) {
-              bd = d;
-              alt = gt;
-            }
-          }
-          if (alt !== undefined) best = alt;
-        }
-      }
-
-      if (prevPitch !== null) {
-        const step = best - prevPitch;
-        lastV2MoveSign = step === 0 ? lastV2MoveSign : step > 0 ? 1 : -1;
-      }
-      return best;
-    };
+    const nextGoal = goalPitch[bar + 1] ?? barGoal;
+    let stepDir = nextGoal > p0 ? 1 : nextGoal < p0 ? -1 : 0;
+    if (stepDir === 0) stepDir = seededUnit(seed, bar, 9933) < 0.5 ? -1 : 1;
 
     const pitches: number[] = [];
-    let prev = lastV2EndPitch;
-
     for (let si = 0; si < segStarts.length; si++) {
       const t0 = segStarts[si]!;
       const t1 = segEnds[si]!;
       const minVs = minOverlappingV1Pitch(v1notes, t0, t1) ?? minV1;
       const ceilSeg = strictCeilingFromMinV1(minVs);
-      const isLast = si === segStarts.length - 1;
-      const forceGuide = isLast && bar % 4 === 0;
-      const p = pickPitch(prev, si, minVs, ceilSeg, forceGuide);
-      pitches.push(p);
-      prev = p;
+      const lo = floorMidi;
+      const hi = Math.min(63, ceilSeg - 1);
+      let raw = si === 0 ? p0 : pitches[si - 1]! + stepDir;
+      raw = clampPitch(raw, lo, hi);
+      raw = clampPitch(placeStrictlyBelowCeiling(ceilSeg, raw, floorMidi), lo, hi);
+      pitches.push(raw);
     }
 
     /** Rule 6 — no repeated pitch class across consecutive bars. */
@@ -2845,8 +2780,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
     }
 
-    lastV2EndPitch = finals[finals.length - 1]!;
-    lastBarEndPc = pitchClass(lastV2EndPitch);
+    lastBarEndPc = pitchClass(finals[finals.length - 1]!);
     injected++;
   }
 

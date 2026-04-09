@@ -1,5 +1,12 @@
 # Composer OS — Changelog
 
+## Voice 2 melodic planning + minimum notes fix (2026-04-09)
+- Pre-planned melodic goal pitches across all 32 bars
+- Phrase arcs reverse direction every 4 bars
+- Minimum 2 notes per bar enforced
+- Upright Bass label confirmed
+- All validation gates passing, Shareable
+
 ## Phase 19 — Form Layer Complete — 2026-04-06
 Engine, UI, export, and automation complete.
 See root CHANGELOG.md for full detail.
