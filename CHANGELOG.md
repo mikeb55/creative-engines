@@ -6,6 +6,16 @@
 
 ---
 
+## Donald Fagen style rules (2026-04-10)
+
+- fagenAlteredDominantBias: rewrites root/fifth to altered tones on dominant 7th chords
+- fagenRootAvoidanceMelody: replaces root on strong beats with 3rd/7th/9th
+- fagenLydianMajorBias, fagenMuChordBias parameters added
+- SongwriterStyleProfile extended with Fagen fields
+- Rules fire as post-pass on voice 1 notes per bar
+
+---
+
 ## Vocal lead sheet bridge (2026-04-10)
 
 - songwriting_bridge integrated as optional Python subprocess
