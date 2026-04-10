@@ -46,6 +46,16 @@ export interface SongwriterStyleProfile {
   fagenRootAvoidanceMelody?: number;
   /** Fagen: probability of slash chord chains replacing plain V7 */
   fagenSlashChordDensity?: number;
+  /** Bacharach: probability of deceptive cadence (V→vi or V→bVI) */
+  bacharachDeceptiveCadenceRate?: number;
+  /** Bacharach: strength of chromatic inner voice movement */
+  bacharachChromaticVoiceLeading?: number;
+  /** Bacharach: probability of borrowed chords (iv, bVI, bVII) */
+  bacharachModalMixtureLevel?: number;
+  /** Bacharach: probability of melody landing on non-tonic degree */
+  bacharachCadentialAmbiguity?: number;
+  /** Bacharach: probability of pedal point (static bass) */
+  bacharachPedalUsage?: number;
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -62,6 +72,13 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     sectionContrast: 0.8,
     syncopationBias: 0.7,
     densityBias: 0.5,
+    bacharachDeceptiveCadenceRate: 0.4,
+    bacharachChromaticVoiceLeading: 0.7,
+    bacharachModalMixtureLevel: 0.65,
+    bacharachCadentialAmbiguity: 0.5,
+    bacharachPedalUsage: 0.3,
+    intervalPreference: 'chromatic',
+    motifCellSize: 4,
   },
   stevie_wonder: {
     id: 'stevie_wonder',

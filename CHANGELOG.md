@@ -16,6 +16,16 @@
 
 ---
 
+## Bacharach style rules (2026-04-10)
+
+- bacharachCadentialAmbiguity: phrase endings avoid tonic root
+- bacharachChromaticVoiceLeading: semitone steps between notes
+- bacharachModalMixtureLevel: minor colour on non-dominant chords
+- SongwriterStyleProfile extended with Bacharach fields
+- Title personalisation: "Burt Bacharach Study XXXXXXXX"
+
+---
+
 ## Vocal lead sheet bridge (2026-04-10)
 
 - songwriting_bridge integrated as optional Python subprocess

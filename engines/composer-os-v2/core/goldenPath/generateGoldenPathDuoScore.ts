@@ -815,6 +815,79 @@ function applyDonaldFagenGuitarBarPasses(
   }
 }
 
+function isChordDominantForBacharach(chord: string, context: CompositionContext): boolean {
+  const c = chord.trim();
+  if (!c) return false;
+  const toneSet = chordTonesForChordSymbolWithContext(c, context);
+  const h = parseChordSymbol(c).harmonyPart;
+  return harmonyPartLooksLikeDominantSeventh(h) && intervalClassesMatchMajorMinorSevenDom(toneSet);
+}
+
+function applyBacharachGuitarBarPasses(
+  m: MeasureModel,
+  bar: number,
+  context: CompositionContext,
+  seed: number,
+  low: number,
+  high: number,
+  biases: {
+    bacharachDeceptiveCadenceRate: number;
+    bacharachChromaticVoiceLeading: number;
+    bacharachModalMixtureLevel: number;
+    bacharachCadentialAmbiguity: number;
+  }
+): void {
+  void biases.bacharachDeceptiveCadenceRate;
+  const chordSym = m.chord ?? getChordForBar(bar, context);
+  const opts = shouldUseUserChordSemanticsForTones(context) ? { lockedHarmony: true } : undefined;
+  const tones = guitarChordTonesInRange(chordSym, low, high, opts);
+  const isDominant = isChordDominantForBacharach(chordSym, context);
+
+  if (biases.bacharachCadentialAmbiguity > 0 && bar % 4 === 0) {
+    const rootPc = ((tones.root % 12) + 12) % 12;
+    const secondMidi = liftToneToRange(tones.root + 2, low, high);
+    for (const e of m.events) {
+      if (e.kind !== 'note' || (e.voice ?? 1) !== 1) continue;
+      const isLastBeat = e.startBeat >= 3;
+      if (!isLastBeat) continue;
+      const pc = ((e.pitch % 12) + 12) % 12;
+      if (pc !== rootPc) continue;
+      if (seededUnit(seed, bar, 99301) >= biases.bacharachCadentialAmbiguity) continue;
+      const candidates = [tones.third, secondMidi];
+      e.pitch = nearestMidiPitch(e.pitch, candidates, low, high);
+    }
+  }
+
+  if (biases.bacharachChromaticVoiceLeading > 0) {
+    const v1Notes = m.events
+      .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .sort((a, b) => a.startBeat - b.startBeat);
+    for (let i = 0; i < v1Notes.length - 1; i++) {
+      const curr = v1Notes[i];
+      const next = v1Notes[i + 1];
+      if (!curr || !next) continue;
+      const interval = Math.abs(next.pitch - curr.pitch);
+      if (interval < 2 || interval > 4) continue;
+      if (seededUnit(seed, bar, 99320 + i) >= biases.bacharachChromaticVoiceLeading) continue;
+      const direction = next.pitch > curr.pitch ? 1 : -1;
+      curr.pitch = clampPitch(curr.pitch + direction, low, high);
+    }
+  }
+
+  if (biases.bacharachModalMixtureLevel > 0 && !isDominant) {
+    if (seededUnit(seed, bar, 99340) < biases.bacharachModalMixtureLevel * 0.3) {
+      const thirdPc = ((tones.third % 12) + 12) % 12;
+      for (const e of m.events) {
+        if (e.kind !== 'note' || (e.voice ?? 1) !== 1) continue;
+        const pc = ((e.pitch % 12) + 12) % 12;
+        if (pc !== thirdPc) continue;
+        if (seededUnit(seed, bar, 99350) >= 0.5) continue;
+        e.pitch = clampPitch(e.pitch - 1, low, high);
+      }
+    }
+  }
+}
+
 function buildGuitarPart(
   context: CompositionContext,
   _guitarPlan: GuitarBehaviourPlan,
@@ -841,6 +914,16 @@ function buildGuitarPart(
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
     typeof genMeta?.fagenRootAvoidanceMelody === 'number' ? genMeta.fagenRootAvoidanceMelody : 0;
+
+  const isSongwriterBacharach = genMeta?.songwriterStyleId === 'bacharach';
+  const bacharachDeceptiveCadenceRateR =
+    typeof genMeta?.bacharachDeceptiveCadenceRate === 'number' ? genMeta.bacharachDeceptiveCadenceRate : 0;
+  const bacharachChromaticVoiceLeadingR =
+    typeof genMeta?.bacharachChromaticVoiceLeading === 'number' ? genMeta.bacharachChromaticVoiceLeading : 0;
+  const bacharachModalMixtureLevelR =
+    typeof genMeta?.bacharachModalMixtureLevel === 'number' ? genMeta.bacharachModalMixtureLevel : 0;
+  const bacharachCadentialAmbiguityR =
+    typeof genMeta?.bacharachCadentialAmbiguity === 'number' ? genMeta.bacharachCadentialAmbiguity : 0;
 
   const seed = context.seed;
   const hints = readStyleHints(context);
@@ -1015,6 +1098,15 @@ function buildGuitarPart(
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
           fagenAlteredDominantBias: fagenAlteredDominantBiasR,
           fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+        });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isSongwriterBacharach && isDuoGolden) {
+        applyBacharachGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
+          bacharachDeceptiveCadenceRate: bacharachDeceptiveCadenceRateR,
+          bacharachChromaticVoiceLeading: bacharachChromaticVoiceLeadingR,
+          bacharachModalMixtureLevel: bacharachModalMixtureLevelR,
+          bacharachCadentialAmbiguity: bacharachCadentialAmbiguityR,
         });
         normalizeMeasureToEighthBeatGrid(m);
       }
@@ -1244,6 +1336,15 @@ function buildGuitarPart(
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
           fagenAlteredDominantBias: fagenAlteredDominantBiasR,
           fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+        });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isSongwriterBacharach && isDuoGolden) {
+        applyBacharachGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
+          bacharachDeceptiveCadenceRate: bacharachDeceptiveCadenceRateR,
+          bacharachChromaticVoiceLeading: bacharachChromaticVoiceLeadingR,
+          bacharachModalMixtureLevel: bacharachModalMixtureLevelR,
+          bacharachCadentialAmbiguity: bacharachCadentialAmbiguityR,
         });
         normalizeMeasureToEighthBeatGrid(m);
       }

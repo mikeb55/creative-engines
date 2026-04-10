@@ -1063,6 +1063,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       fagenAlteredDominantBias: p.fagenAlteredDominantBias ?? 0,
       fagenRootAvoidanceMelody: p.fagenRootAvoidanceMelody ?? 0,
       fagenSlashChordDensity: p.fagenSlashChordDensity ?? 0,
+      bacharachDeceptiveCadenceRate: p.bacharachDeceptiveCadenceRate ?? 0,
+      bacharachChromaticVoiceLeading: p.bacharachChromaticVoiceLeading ?? 0,
+      bacharachModalMixtureLevel: p.bacharachModalMixtureLevel ?? 0,
+      bacharachCadentialAmbiguity: p.bacharachCadentialAmbiguity ?? 0,
+      bacharachPedalUsage: p.bacharachPedalUsage ?? 0,
     };
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {
