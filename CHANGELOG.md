@@ -66,6 +66,16 @@
 
 ---
 
+## Songwriter chord pools wired to golden path (2026-04-10)
+
+- CompiledSong.chordPlan now converts to chordProgressionText
+- Songwriter-specific chord symbols reach the score
+- Wayne Shorter: Ebmaj7, Bbmaj7, sus chords, flat key centres
+- Donald Fagen: maj7#11, altered dominants, sharp key centres
+- Bacharach: extended diatonic chords, borrowed chords
+
+---
+
 ## Songwriter melody profiles (2026-04-10)
 
 - Melody density, offbeat bias, and rhythmic feel now differ per songwriter

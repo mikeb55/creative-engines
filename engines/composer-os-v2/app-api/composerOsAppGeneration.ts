@@ -15,6 +15,7 @@ import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode, type StringQuartetRunInput } from '../core/string-quartet/runStringQuartetMode';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
@@ -259,6 +260,10 @@ function songModeDefaultTitleFromSongwriter(req: GenerateRequest): string {
   return `${display} Study ${req.seed}`;
 }
 
+function chordPlanToProgressionText(chordPlan: SectionChordPlan[]): string {
+  return chordPlan.flatMap((s) => s.chordSymbols).join(' ');
+}
+
 function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResult {
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
@@ -281,6 +286,22 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         }
       : undefined,
   });
+  const barTarget = clampSongFormBarCount(req.totalBars, 32);
+  let expectedSongFormBars: number = barTarget;
+  if (req.formId != null) {
+    const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
+    if (formBarSum > 0) {
+      expectedSongFormBars = formBarSum;
+    }
+  }
+
+  const songwriterChordText = sm.compiledSong.chordPlan?.length
+    ? chordPlanToProgressionText(sm.compiledSong.chordPlan)
+    : undefined;
+
+  const primarySongwriterSet =
+    typeof req.primarySongwriterStyle === 'string' && req.primarySongwriterStyle.trim().length > 0;
+
   const rawCustomHarmony = typeof req.chordProgressionText === 'string' ? req.chordProgressionText.trim() : '';
   const useLockedCustomHarmony = rawCustomHarmony.length > 0;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
@@ -295,19 +316,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         normalizedBarCount: rawBars.length,
       });
     }
-    const barTarget = clampSongFormBarCount(req.totalBars, 32);
-    let expectedBarCount: number = barTarget;
-    if (req.formId != null) {
-      const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
-      if (formBarSum > 0) {
-        expectedBarCount = formBarSum;
-      }
-    }
     const altCounts =
       req.totalBars && req.totalBars !== barTarget ? [req.totalBars] : undefined;
     const parsedHarmony = parseChordProgressionInputWithBarCount(
       rawCustomHarmony,
-      expectedBarCount,
+      expectedSongFormBars,
       altCounts
     );
     if (!parsedHarmony.ok) {
@@ -333,6 +346,34 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     }
     lockedHarmonyBarsAuthoritative = [...parsedHarmony.bars];
   }
+
+  let songwriterLockedBars: string[] | undefined;
+  if (
+    primarySongwriterSet &&
+    !useLockedCustomHarmony &&
+    songwriterChordText &&
+    songwriterChordText.trim().length > 0
+  ) {
+    const altCountsSong =
+      req.totalBars && req.totalBars !== barTarget ? [req.totalBars] : undefined;
+    const tokens = songwriterChordText.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length > 0) {
+      const padded = tokens.slice(0, expectedSongFormBars);
+      while (padded.length < expectedSongFormBars) {
+        padded.push(padded[padded.length - 1]!);
+      }
+      const piped = padded.join('|');
+      const chk = parseChordProgressionInputWithBarCount(
+        piped,
+        expectedSongFormBars,
+        altCountsSong
+      );
+      if (chk.ok) {
+        songwriterLockedBars = [...chk.bars];
+      }
+    }
+  }
+
   /**
    * Without user paste, do not feed the 8-bar song scaffold (verse: Cmaj7→Am7→Fmaj7→G7) into duo32 as
    * `custom` — runGoldenPath would tile it ×4 and bar 2 becomes Am7 instead of any real progression.
@@ -344,16 +385,22 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   });
   const useBuiltinLongFormWithoutUserPaste =
     !useLockedCustomHarmony && (lf.kind === 'duo32' || lf.kind === 'duo16');
-  const chordProgressionText = useLockedCustomHarmony
+  let chordProgressionText = useLockedCustomHarmony
     ? rawCustomHarmony
     : useBuiltinLongFormWithoutUserPaste
       ? undefined
       : buildChordProgressionTextForDuoFromCompiledSong(sm.compiledSong);
-  const harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked' = useLockedCustomHarmony
+  let harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked' = useLockedCustomHarmony
     ? 'custom_locked'
     : useBuiltinLongFormWithoutUserPaste
       ? 'builtin'
       : 'custom';
+
+  if (songwriterLockedBars && songwriterLockedBars.length > 0) {
+    chordProgressionText = songwriterLockedBars.join('|');
+    harmonyModeForRun = 'custom_locked';
+    lockedHarmonyBarsAuthoritative = songwriterLockedBars;
+  }
   logSongModeHarmonyDebug({
     layer: 'composerOsAppGeneration:runSongStructure',
     uiChordProgressionChars: rawCustomHarmony.length,

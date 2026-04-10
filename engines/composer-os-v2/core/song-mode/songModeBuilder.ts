@@ -212,7 +212,7 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
-    params.primarySongwriterStyle ?? undefined
+    resolution.primaryId
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {
