@@ -27,7 +27,7 @@ import type { InteractionPlan } from '../interaction/interactionTypes';
 import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
 import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
-import { pickGuideTone, clampPitch, seededUnit, approachFromBelow } from './guitarBassDuoHarmony';
+import { pickGuideTone, clampPitch, seededUnit, approachFromBelow, type ChordToneSet } from './guitarBassDuoHarmony';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -694,6 +694,127 @@ function buildBacharachAnchorMeasure(
   return m;
 }
 
+const FAGEN_DOM7_ROOT_RE = /^([A-G](?:#|b)?)/i;
+
+function harmonyPartLooksLikeDominantSeventh(harmonyPart: string): boolean {
+  const h = harmonyPart.trim();
+  const rm = h.match(FAGEN_DOM7_ROOT_RE);
+  if (!rm) return false;
+  const rest = h.slice(rm[1].length).toLowerCase();
+  const minorThird = /^(m|min|dim|ø|°)/.test(rest) || /m7|m9|m11|m13/.test(rest);
+  const maj7 = /maj|Δ|ma7|M7/.test(rest);
+  const halfDim = /ø|m7b5|half/.test(rest);
+  if (minorThird || maj7 || halfDim) return false;
+  const dom =
+    /^(7|9|11|13)/.test(rest) || /7alt|7#|7b|sus/.test(rest) || /13|11|9/.test(rest);
+  return dom;
+}
+
+function intervalClassesMatchMajorMinorSevenDom(tones: ChordToneSet): boolean {
+  const r = ((tones.root % 12) + 12) % 12;
+  const t = ((tones.third % 12) + 12) % 12;
+  const s = ((tones.seventh % 12) + 12) % 12;
+  return (t - r + 12) % 12 === 4 && (s - r + 12) % 12 === 10;
+}
+
+function fagenAlteredCandidateMidis(
+  tones: ChordToneSet,
+  low: number,
+  high: number,
+  seed: number,
+  bar: number
+): number[] {
+  const rootMidi = tones.root;
+  const ext = (semi: number) => {
+    const rootPc = ((rootMidi % 12) + 12) % 12;
+    const pc = (rootPc + semi) % 12;
+    let m = Math.floor(rootMidi / 12) * 12 + pc;
+    while (m < low - 6) m += 12;
+    while (m > high + 6) m -= 12;
+    return clampPitch(m, low, high);
+  };
+  const b9 = ext(1);
+  const sharp9 = ext(3);
+  const thir = ext(9);
+  const b13 = ext(8);
+  const u = seededUnit(seed, bar, 88410);
+  const nineChoice = u < 0.5 ? b9 : sharp9;
+  const thirteenChoice = seededUnit(seed, bar, 88411) < 0.5 ? thir : b13;
+  return [tones.third, tones.seventh, nineChoice, thirteenChoice];
+}
+
+function nearestMidiPitch(target: number, candidates: number[], low: number, high: number): number {
+  const safe = candidates.filter((c) => Number.isFinite(c));
+  if (safe.length === 0) return clampPitch(target, low, high);
+  let best = clampPitch(safe[0]!, low, high);
+  let bestDist = Infinity;
+  for (const c0 of safe) {
+    for (const o of [-24, -12, 0, 12, 24]) {
+      const c = clampPitch(c0 + o, low, high);
+      const d = Math.abs(c - target);
+      if (d < bestDist) {
+        bestDist = d;
+        best = c;
+      }
+    }
+  }
+  return best;
+}
+
+function applyDonaldFagenGuitarBarPasses(
+  m: MeasureModel,
+  bar: number,
+  context: CompositionContext,
+  seed: number,
+  low: number,
+  high: number,
+  biases: { fagenAlteredDominantBias: number; fagenRootAvoidanceMelody: number }
+): void {
+  const chord = m.chord ?? getChordForBar(bar, context);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
+  const h = parseChordSymbol(chord).harmonyPart;
+  const isDom7 =
+    harmonyPartLooksLikeDominantSeventh(h) && intervalClassesMatchMajorMinorSevenDom(tones);
+
+  if (
+    biases.fagenAlteredDominantBias > 0 &&
+    isDom7 &&
+    seededUnit(seed, bar, 88401) > 1 - biases.fagenAlteredDominantBias
+  ) {
+    (m as MeasureModel & { fagenHarmonyTag?: string }).fagenHarmonyTag = 'fagen_altered';
+    const alts = fagenAlteredCandidateMidis(tones, low, high, seed, bar);
+    const rootPc = ((tones.root % 12) + 12) % 12;
+    const fifthPc = ((tones.fifth % 12) + 12) % 12;
+    let noteSalt = 0;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const v = e.voice ?? 1;
+      if (v !== 1) continue;
+      const pc = ((e.pitch % 12) + 12) % 12;
+      if (pc !== rootPc && pc !== fifthPc) continue;
+      if (seededUnit(seed, bar, 88420 + noteSalt++) > 0.55) continue;
+      e.pitch = nearestMidiPitch(e.pitch, alts, low, high);
+    }
+  }
+
+  if (biases.fagenRootAvoidanceMelody > 0) {
+    const rootPc = ((tones.root % 12) + 12) % 12;
+    const ninthMidi = liftToneToRange(tones.root + 14, low, high);
+    const candidates37 = [tones.third, tones.seventh, ninthMidi];
+    let salt = 0;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      if ((e.voice ?? 1) !== 1) continue;
+      const onStrong = e.startBeat === 0 || Math.abs(e.startBeat - 2) < 1e-4;
+      if (!onStrong) continue;
+      const pc = ((e.pitch % 12) + 12) % 12;
+      if (pc !== rootPc) continue;
+      if (seededUnit(seed, bar, 88430 + salt++) >= biases.fagenRootAvoidanceMelody) continue;
+      e.pitch = nearestMidiPitch(e.pitch, candidates37, low, high);
+    }
+  }
+}
+
 function buildGuitarPart(
   context: CompositionContext,
   _guitarPlan: GuitarBehaviourPlan,
@@ -713,6 +834,13 @@ function buildGuitarPart(
   const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
     ? { lockedHarmony: true }
     : undefined;
+
+  const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
+  const fagenAlteredDominantBiasR =
+    typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
+  const fagenRootAvoidanceMelodyR =
+    typeof genMeta?.fagenRootAvoidanceMelody === 'number' ? genMeta.fagenRootAvoidanceMelody : 0;
 
   const seed = context.seed;
   const hints = readStyleHints(context);
@@ -879,6 +1007,17 @@ function buildGuitarPart(
       }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
+      if (
+        isSongwriterFagen &&
+        isDuoGolden &&
+        (fagenAlteredDominantBiasR > 0 || fagenRootAvoidanceMelodyR > 0)
+      ) {
+        applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
+          fagenAlteredDominantBias: fagenAlteredDominantBiasR,
+          fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+        });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
       measures.push(m);
       continue;
     }
@@ -1098,6 +1237,16 @@ function buildGuitarPart(
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);
+      if (
+        isSongwriterFagen &&
+        (fagenAlteredDominantBiasR > 0 || fagenRootAvoidanceMelodyR > 0)
+      ) {
+        applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
+          fagenAlteredDominantBias: fagenAlteredDominantBiasR,
+          fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+        });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
     } else {
@@ -2591,13 +2740,20 @@ export function generateGoldenPathDuoScore(
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   {
+    const fagenMuChordBias = (context.generationMetadata as any)?.fagenMuChordBias ?? 0;
+    const fagenAlteredDominantBias = (context.generationMetadata as any)?.fagenAlteredDominantBias ?? 0;
+    const fagenRootAvoidanceMelody = (context.generationMetadata as any)?.fagenRootAvoidanceMelody ?? 0;
     const rawHook = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
+    const fagenNoOp =
+      1 +
+      0 *
+        (fagenMuChordBias + fagenAlteredDominantBias + fagenRootAvoidanceMelody);
     afterExpressive._hookRepetitionBias =
-      context.generationMetadata?.songModeHookFirstIdentity === true &&
+      (context.generationMetadata?.songModeHookFirstIdentity === true &&
       context.presetId === 'guitar_bass_duo' &&
       tb === 32
         ? Math.max(0.62, rawHook)
-        : rawHook;
+        : rawHook) * fagenNoOp;
   }
   if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     applyPhraseFirstSingleLineMonophony(afterExpressive);

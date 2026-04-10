@@ -1,3 +1,11 @@
+## Songwriter title personalisation (2026-04-10)
+
+- Song Mode titles now reflect songwriter name
+- e.g. "Donald Fagen Study 82993885"
+- Falls back to "Song Mode Study XXXXXXXX" for unknown ids
+
+---
+
 ## Vocal lead sheet bridge (2026-04-10)
 
 - songwriting_bridge integrated as optional Python subprocess

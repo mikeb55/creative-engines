@@ -1058,6 +1058,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       songwriterSyncopationBias: p.syncopationBias,
       songwriterDensityBias: p.densityBias,
       songwriterStyleId: resolution.primaryId,
+      fagenMuChordBias: p.fagenMuChordBias ?? 0,
+      fagenLydianMajorBias: p.fagenLydianMajorBias ?? 0,
+      fagenAlteredDominantBias: p.fagenAlteredDominantBias ?? 0,
+      fagenRootAvoidanceMelody: p.fagenRootAvoidanceMelody ?? 0,
+      fagenSlashChordDensity: p.fagenSlashChordDensity ?? 0,
     };
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {

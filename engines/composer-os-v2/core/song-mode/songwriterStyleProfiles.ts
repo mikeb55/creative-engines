@@ -36,6 +36,16 @@ export interface SongwriterStyleProfile {
   guitarLeadIntervals?: string;
   /** Primary modal preference for guitar. */
   guitarModalPreference?: string;
+  /** Fagen: probability of voicing major chords as Mu (add2) */
+  fagenMuChordBias?: number;
+  /** Fagen: probability of using maj7#11 on I and IV */
+  fagenLydianMajorBias?: number;
+  /** Fagen: probability of altered dominant on V chords */
+  fagenAlteredDominantBias?: number;
+  /** Fagen: strength of root avoidance in melody on strong beats */
+  fagenRootAvoidanceMelody?: number;
+  /** Fagen: probability of slash chord chains replacing plain V7 */
+  fagenSlashChordDensity?: number;
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -112,6 +122,13 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     sectionContrast: 0.45,
     syncopationBias: 0.6,
     densityBias: 0.5,
+    fagenMuChordBias: 0.7,
+    fagenLydianMajorBias: 0.65,
+    fagenAlteredDominantBias: 0.8,
+    fagenRootAvoidanceMelody: 0.75,
+    fagenSlashChordDensity: 0.6,
+    intervalPreference: 'chromatic',
+    motifCellSize: 3,
   },
   bob_dylan: {
     id: 'bob_dylan',
