@@ -761,6 +761,61 @@ function nearestMidiPitch(target: number, candidates: number[], low: number, hig
   return best;
 }
 
+function buildSongwriterMelodyProfile(
+  songwriterId: string | undefined,
+  seed: number
+): {
+  phraseIntentBias: 'ascending' | 'descending' | 'arch' | 'neutral';
+  densityBias: number;
+  offbeatBias: number;
+  intervalBias: 'stepwise' | 'leaping' | 'chromatic' | 'neutral';
+  rhythmicFeel: 'syncopated' | 'straight' | 'laid_back' | 'neutral';
+} {
+  void seed;
+  switch (songwriterId) {
+    case 'donald_fagen':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: 0.1,
+        offbeatBias: 0.7,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'syncopated',
+      };
+    case 'bacharach':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: -0.1,
+        offbeatBias: 0.3,
+        intervalBias: 'leaping',
+        rhythmicFeel: 'straight',
+      };
+    case 'wayne_shorter':
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: -0.2,
+        offbeatBias: 0.4,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'laid_back',
+      };
+    case 'bill_evans':
+      return {
+        phraseIntentBias: 'descending',
+        densityBias: -0.15,
+        offbeatBias: 0.35,
+        intervalBias: 'stepwise',
+        rhythmicFeel: 'laid_back',
+      };
+    default:
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: 0,
+        offbeatBias: 0.5,
+        intervalBias: 'neutral',
+        rhythmicFeel: 'neutral',
+      };
+  }
+}
+
 function applyDonaldFagenGuitarBarPasses(
   m: MeasureModel,
   bar: number,
@@ -926,6 +981,10 @@ function buildGuitarPart(
     typeof genMeta?.bacharachCadentialAmbiguity === 'number' ? genMeta.bacharachCadentialAmbiguity : 0;
 
   const seed = context.seed;
+  const songwriterMelodyProfile = buildSongwriterMelodyProfile(
+    genMeta?.songwriterStyleId as string | undefined,
+    seed
+  );
   const hints = readStyleHints(context);
   const measures: MeasureModel[] = [];
   const [baseLow] = profile.preferredMelodicZone;
@@ -1049,7 +1108,7 @@ function buildGuitarPart(
           : isDuoGolden && (phase === 4 || phase === 8)
             ? seededUnit(seed, b, 612) * 0.06 - 0.03
             : 0;
-    const staggerGuitar = isDuoGolden
+    let staggerGuitar = isDuoGolden
       ? snapAttackBeatToGrid(stagger.guitar + swingBump + phraseShapeBump)
       : qBeat(stagger.guitar + swingBump);
     const phraseShapeBar = isDuoGolden ? phase : context.presetId === 'ecm_chamber' ? phase : b;
@@ -1290,6 +1349,23 @@ function buildGuitarPart(
           chordToneOpts,
         });
       } else {
+        // Apply songwriter melody profile
+        if (songwriterMelodyProfile.rhythmicFeel === 'syncopated') {
+          useOffbeat = seededUnit(seed, b, 77701) < songwriterMelodyProfile.offbeatBias;
+        } else if (songwriterMelodyProfile.rhythmicFeel === 'laid_back') {
+          useOffbeat = seededUnit(seed, b, 77702) < songwriterMelodyProfile.offbeatBias;
+          staggerGuitar = Math.max(staggerGuitar, seededUnit(seed, b, 77703) * 0.15);
+        } else if (songwriterMelodyProfile.rhythmicFeel === 'straight') {
+          useOffbeat = seededUnit(seed, b, 77704) < songwriterMelodyProfile.offbeatBias;
+        }
+
+        if (songwriterMelodyProfile.densityBias !== 0) {
+          let d =
+            densityLevel === 'sparse' ? 0.35 : densityLevel === 'medium' ? 0.55 : 0.85;
+          d = Math.max(0.1, Math.min(0.95, d + songwriterMelodyProfile.densityBias));
+          densityLevel = d < 0.42 ? 'sparse' : d < 0.68 ? 'medium' : 'dense';
+        }
+
         emitGuitarPhraseBar({
           m,
           bar: phraseShapeBar,

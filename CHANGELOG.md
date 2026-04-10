@@ -66,6 +66,16 @@
 
 ---
 
+## Songwriter melody profiles (2026-04-10)
+
+- Melody density, offbeat bias, and rhythmic feel now differ per songwriter
+- Fagen: dense, syncopated, chromatic
+- Bacharach: medium density, straight feel, leaping intervals
+- Wayne Shorter: sparse, laid back
+- Bill Evans: sparse, stepwise, laid back
+
+---
+
 ## Donald Fagen style rules (2026-04-10)
 
 - fagenAlteredDominantBias: rewrites root/fifth to altered tones on dominant 7th chords
