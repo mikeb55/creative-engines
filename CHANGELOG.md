@@ -1,3 +1,51 @@
+# Changelog
+
+## V4.5
+
+### Added
+
+* 3 video integration points:
+
+  * Neurodiversity (Day 1 PM)
+  * Dissociation (Day 2 AM)
+  * Suicide conversation (Day 2 PM)
+
+### Changed
+
+* Rebalanced teaching timings to absorb video segments (~21 mins total)
+* Maintained full two-day structure without content loss
+* Updated speaker notes with timing markers
+
+### Case Studies
+
+* Finalised V4 versions (Leah, Ousmane, Emily, Michael)
+* Increased ambiguity and decision pressure
+* Embedded “hold uncertainty while acting” stance
+
+### Design
+
+* Maintained PET template formatting
+* Enforced centred layout and typography consistency
+
+---
+
+## V4.4
+
+* Pre-video integration baseline
+* Finalised structure and case placement
+
+---
+
+## V4.0–V4.3
+
+* Transition from V3.x to V4 structure
+* Integration of psychosynthesis themes
+* Strengthening of clinical teaching density
+
+---
+
+# Composer OS & platform (historical entries below)
+
 ## Songwriter title personalisation (2026-04-10)
 
 - Song Mode titles now reflect songwriter name

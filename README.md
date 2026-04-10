@@ -1,3 +1,49 @@
+# Psychopathology and Synthesis (PET Training)
+
+This repository contains materials for a two-day postgraduate psychotherapy training focused on:
+
+* Borderline presentations
+* Intersubjectivity
+* Projective identification (dependency, power, sexuality, ingratiation)
+* Risk, dissociation, and neurodiversity
+* Clinical formulation under uncertainty
+
+## Structure
+
+* **PowerPoint presentations**
+
+  * Versioned builds (V3.x → V4.x)
+* **Case studies**
+
+  * Located in:
+    `Psychopathology and Synthesis 2026/CASE STUDIES`
+  * ACE-Cases framework (100-point rubric)
+
+## Teaching Model
+
+Uses **ACE framework**:
+
+* Authority (clinical depth, structure)
+* Containment (risk, ethics, context)
+* Engagement (experiential learning)
+
+## Current Version
+
+**V4.5**
+
+* Integrated 3 lived-experience video points
+* Updated case studies (V4 format)
+* Improved pacing and timing alignment
+* Stronger uncertainty-based clinical reasoning
+
+## Notes
+
+* Slides are designed for teaching + student distribution
+* Speaker notes are content-only (no delivery instruction)
+* Videos are referenced in notes, not embedded on slides
+
+---
+
 # Creative Engines — Platform & Infrastructure
 
 **Version 1.0**  
