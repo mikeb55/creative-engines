@@ -6,6 +6,18 @@
 
 ---
 
+## Songwriter-aware chord progression generation (2026-04-10)
+
+- chordSymbolsForSection now uses per-songwriter chord pools
+- donald_fagen: maj7#11, altered dominants, sharp key centres
+- bacharach: diatonic extended chords, borrowed chords
+- wayne_shorter: non-functional shifts, sus chords
+- bill_evans: voice-leading progressions, lydian colour
+- Falls back to original progressions for unknown songwriters
+- Same seed now produces different harmony per songwriter
+
+---
+
 ## Donald Fagen style rules (2026-04-10)
 
 - fagenAlteredDominantBias: rewrites root/fifth to altered tones on dominant 7th chords

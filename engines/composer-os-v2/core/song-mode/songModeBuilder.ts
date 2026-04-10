@@ -36,8 +36,109 @@ function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] 
   }
 }
 
-/** Simple scaffold chords per section role (C major-ish, planning only). */
-function chordSymbolsForSection(kind: SongSectionKind, _seed: number): string[] {
+const SONGWRITER_CHORD_POOLS: Record<
+  string,
+  {
+    verse: string[][];
+    chorus: string[][];
+    bridge: string[][];
+    pre_chorus: string[][];
+  }
+> = {
+  donald_fagen: {
+    verse: [
+      ['Dm9', 'G13', 'Cmaj7#11', 'A7alt'],
+      ['Em9', 'A13', 'Dmaj7#11', 'B7alt'],
+      ['Gm9', 'C13', 'Fmaj7#11', 'D7alt'],
+      ['Am9', 'D13', 'Gmaj7#11', 'E7alt'],
+    ],
+    chorus: [
+      ['Cmaj7#11', 'Bm7', 'Em9', 'A7alt'],
+      ['Fmaj7#11', 'Em7', 'Am9', 'D7alt'],
+    ],
+    bridge: [
+      ['Ebmaj7', 'Abmaj7', 'Dm9', 'G7alt'],
+      ['Bbmaj7', 'Ebmaj7', 'Am9', 'D7alt'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'Em9', 'Fmaj7#11', 'G13sus'],
+    ],
+  },
+  bacharach: {
+    verse: [
+      ['Cmaj7', 'Am7', 'Fm7', 'G7'],
+      ['Fmaj7', 'Dm7', 'Bbmaj7', 'C7'],
+      ['Gmaj7', 'Em7', 'Cm7', 'D7'],
+      ['Ebmaj7', 'Cm7', 'Abmaj7', 'Bb7'],
+    ],
+    chorus: [
+      ['Cmaj7', 'G7', 'Am7', 'Fmaj7'],
+      ['Fmaj7', 'C7', 'Dm7', 'Bbmaj7'],
+    ],
+    bridge: [
+      ['Am7', 'Abmaj7', 'Gmaj7', 'Fmaj7'],
+      ['Dm7', 'Dbmaj7', 'Cmaj7', 'Bbmaj7'],
+    ],
+    pre_chorus: [
+      ['Dm7', 'Em7', 'Am7', 'G7sus'],
+    ],
+  },
+  wayne_shorter: {
+    verse: [
+      ['Dm9', 'Ebmaj7', 'Abmaj7', 'Bb13sus'],
+      ['Em9', 'Fmaj7', 'Bbmaj7', 'C13sus'],
+      ['Am9', 'Bbmaj7', 'Ebmaj7', 'F13sus'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Dbmaj7', 'Gbmaj7', 'F13sus'],
+      ['Gmaj7', 'Abmaj7', 'Dbmaj7', 'C13sus'],
+    ],
+    bridge: [
+      ['Fsus', 'Gbmaj7', 'Bmaj7', 'Esus'],
+      ['Csus', 'Dbmaj7', 'Gbmaj7', 'Bsus'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'Ebmaj7', 'Am9', 'Bbmaj7'],
+    ],
+  },
+  bill_evans: {
+    verse: [
+      ['Cmaj9', 'Am9', 'Dm9', 'G13'],
+      ['Fmaj9', 'Dm9', 'Gm9', 'C13'],
+      ['Gmaj9', 'Em9', 'Am9', 'D13'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Fmaj7', 'Bm7b5', 'E7alt'],
+      ['Gmaj7', 'Cmaj7', 'F#m7b5', 'B7alt'],
+    ],
+    bridge: [
+      ['Dm9', 'G13', 'Cmaj9', 'Fmaj7#11'],
+      ['Am9', 'D13', 'Gmaj9', 'Cmaj7#11'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'G9sus', 'Cmaj9', 'Am9'],
+    ],
+  },
+};
+
+function chordSymbolsForSection(kind: SongSectionKind, seed: number, songwriterId?: string): string[] {
+  const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
+  if (pool) {
+    const sectionPool =
+      kind === 'verse'
+        ? pool.verse
+        : kind === 'chorus'
+          ? pool.chorus
+          : kind === 'bridge'
+            ? pool.bridge
+            : kind === 'pre_chorus'
+              ? pool.pre_chorus
+              : pool.verse;
+    const idx = Math.abs(seed) % sectionPool.length;
+    return sectionPool[idx] ?? pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+  }
+
+  // Fallback: original hardcoded progressions
   switch (kind) {
     case 'verse':
       return ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
@@ -61,12 +162,16 @@ export function buildSongHook(seed: number): SongHook {
   };
 }
 
-export function buildSectionChordPlans(sections: SongSectionPlan[], seed: number): SectionChordPlan[] {
+export function buildSectionChordPlans(
+  sections: SongSectionPlan[],
+  seed: number,
+  songwriterId?: string
+): SectionChordPlan[] {
   return sections.map((s) => ({
     sectionOrder: s.order,
     sectionKind: s.kind,
     intensity: intensityForKind(s.kind),
-    chordSymbols: chordSymbolsForSection(s.kind, seed + s.order * 31),
+    chordSymbols: chordSymbolsForSection(s.kind, seed + s.order * 31, songwriterId),
   }));
 }
 
@@ -104,7 +209,11 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
       ? resolveStylePairing({ ...params.stylePairing, seed: params.seed })
       : null;
   const hook = buildSongHook(params.seed);
-  const chordPlan = buildSectionChordPlans(params.sections, params.seed);
+  const chordPlan = buildSectionChordPlans(
+    params.sections,
+    params.seed,
+    params.primarySongwriterStyle ?? undefined
+  );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {
     id: `song_${params.seed}_${params.title.replace(/\s+/g, '_').slice(0, 32)}`,
