@@ -8,10 +8,40 @@ import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
 import type { MeasureModel, NoteEvent, PartModel, RestEvent, ScoreEvent } from '../score-model/scoreModelTypes';
 import { addEvent, createNote, createRest } from '../score-model/scoreEventBuilder';
-import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
-import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import type { ChordTonesOptions, ParsedChordSymbol } from '../harmony/chordSymbolAnalysis';
+import {
+  chordTonesForChordSymbol as chordTonesForChordSymbolRaw,
+  noteNameToPitchClass,
+  parseChordSymbol as parseChordSymbolRaw,
+} from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
-import { liftToneToRange, guitarChordTonesInRange } from './guitarPhraseAuthority';
+import { liftToneToRange, guitarChordTonesInRange as guitarChordTonesInRangeRaw } from './guitarPhraseAuthority';
+
+/**
+ * Unicode musical flat (♭, U+266D) → ASCII `b` so root/slash parsing matches `b`-prefixed flats.
+ * With this pass, {@link chordTonesForChordSymbol} yields proper stacks for e.g. B♭maj7, A♭maj7, A♭13sus, E♭maj7
+ * (same as literal Bb/Ab/Eb symbols).
+ */
+function normalizeFlatChordSymbolForVoice2(s: string): string {
+  return s.replace(/\u266d/g, 'b').trim();
+}
+
+function parseChordSymbol(symbol: string): ParsedChordSymbol {
+  return parseChordSymbolRaw(normalizeFlatChordSymbolForVoice2(symbol));
+}
+
+function chordTonesForChordSymbol(fullChord: string, opts?: ChordTonesOptions) {
+  return chordTonesForChordSymbolRaw(normalizeFlatChordSymbolForVoice2(fullChord), opts);
+}
+
+function guitarChordTonesInRange(
+  chord: string,
+  low: number,
+  high: number,
+  chordToneOpts?: ChordTonesOptions
+): ReturnType<typeof guitarChordTonesInRangeRaw> {
+  return guitarChordTonesInRangeRaw(normalizeFlatChordSymbolForVoice2(chord), low, high, chordToneOpts);
+}
 
 const V2_VOICE = 2;
 /** Score beats spanned by one measure in this path (4/4; startBeat + duration use this span). */
@@ -23,6 +53,17 @@ const MIN_REAL_V2_SUSTAINED_BEATS = 3;
 const REAL_V2_BEAT_EPS = 1e-4;
 /** Inner voice register floor (MIDI); kept low for clear gap under melody. */
 const INNER_LOW = 48;
+/** Wyble Voice-2 written register: C3 (48) through B3 (59). */
+const V2_FLOOR = 48;
+const V2_CEIL = 59;
+
+function clampWybleV2WrittenMidi(pitch: number): number {
+  let p = pitch;
+  while (p > V2_CEIL) p -= 12;
+  while (p < V2_FLOOR) p += 12;
+  return Math.max(V2_FLOOR, Math.min(V2_CEIL, p));
+}
+
 /** Never stack more than two simultaneous guitar notes (melody + inner). */
 const MAX_GUITAR_SIMULT = 2;
 /** Minimum semitones below each overlapping melody pitch (clear gap, still realisable after post-passes). */
@@ -2570,6 +2611,30 @@ function tryPlaceMinimalOffbeatHoldVoice2Fallback(
   return false;
 }
 
+/** Shortest signed pitch-class delta from `fromPc` to `toPc` in semitones (−6..6). */
+function shortestRootPcMotion(fromPc: number, toPc: number): number {
+  let d = (toPc - fromPc + 12) % 12;
+  if (d > 6) d -= 12;
+  return d;
+}
+
+function rootPcFromChordSymbol(chord: string, context: CompositionContext): number {
+  const t = chordTonesForChordSymbol(chord, chordOpts(context));
+  return ((t.root % 12) + 12) % 12;
+}
+
+/**
+ * Major-seven family on a major triad: `maj` / Δ / `M7` in the suffix, excluding minor/dim roots (`m7`, `min`, …)
+ * but allowing `maj7` (leading `m` is not `m(?!aj)`).
+ */
+function harmonyPartLooksMajorSeventh(harmonyPart: string): boolean {
+  const rm = harmonyPart.match(/^([A-G](?:#|b)?)/i);
+  if (!rm) return false;
+  const rest = harmonyPart.slice(rm[0].length);
+  if (/^(m|min|dim|ø|°)(?!aj)/i.test(rest)) return false;
+  return /maj|Δ|ma7|M7/i.test(rest);
+}
+
 /**
  * Phase 18.2B ? Wyble inner voice injection (reactive path; Phase 18.3B planner bypassed for pipeline stability).
  * @returns number of measures that received voice-2 content
@@ -2582,16 +2647,18 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
   const tb = context.form.totalBars;
   /** Pitch class (0–11) at end of previous bar for Rule 6. */
   let lastBarEndPc: number | null = null;
+  /** MIDI at end of previous bar (non-functional root-motion Voice-2 step alignment). */
+  let lastBarEndMidi: number | null = null;
+  let prevBarChord: string | null = null;
   let injected = 0;
 
   const pitchClass = (p: number): number => ((p % 12) + 12) % 12;
 
   /** Pre-planned melodic goals per bar (1..tb); index tb+1 holds carry for “next goal” stepping. */
   const goalPitch: number[] = new Array(tb + 1);
-  const FLOOR_MIDI = 36; // C2
-  const CEIL_MIDI = 57; // A3
+  const CEIL_MIDI = V2_CEIL; // deClash upper bound (matches written Voice-2 register)
   const sr = (salt: number) => seededUnit(seed, salt, 9010);
-  let planPitch = 43; // G2 — lower starting point
+  let planPitch = V2_FLOOR;
   let planDirection = sr(1) < 0.5 ? 1 : -1;
 
   for (let bar = 1; bar <= tb; bar++) {
@@ -2599,12 +2666,12 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     const stepSize =
       sr(bar * 7) < 0.4 ? 1 : sr(bar * 7) < 0.7 ? 2 : 3; // half / whole / minor third
     planPitch += planDirection * stepSize;
-    if (planPitch > CEIL_MIDI) {
-      planPitch = CEIL_MIDI;
+    if (planPitch > V2_CEIL) {
+      planPitch = V2_CEIL;
       planDirection = -1;
     }
-    if (planPitch < FLOOR_MIDI) {
-      planPitch = FLOOR_MIDI;
+    if (planPitch < V2_FLOOR) {
+      planPitch = V2_FLOOR;
       planDirection = 1;
     }
 
@@ -2615,7 +2682,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
           ms.index === bar || ms.bar === bar || ms.measureNumber === bar || ms.number === bar
       );
     const chordPl = mPl?.chord ?? 'Cmaj9';
-    const tsPl = guitarChordTonesInRange(chordPl, FLOOR_MIDI, CEIL_MIDI, chordOpts(context));
+    const tsPl = guitarChordTonesInRange(chordPl, V2_FLOOR, V2_CEIL, chordOpts(context));
     if (bar % 4 === 0) {
       let bestSnap: number | undefined;
       let bd = 999;
@@ -2635,7 +2702,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       const currPc = goalPitch[bar]! % 12;
       if (currPc === prevPc) {
         goalPitch[bar]! += planDirection;
-        goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]!));
+        goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]!));
       }
     }
 
@@ -2644,7 +2711,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       const currPc = goalPitch[bar]! % 12;
       if (currPc === twoBackPc) {
         goalPitch[bar]! += planDirection * 2;
-        goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]!));
+        goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]!));
       }
     }
   }
@@ -2677,7 +2744,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       goalPitch[bar] = goalPitch[bar - 1] ?? goalPitch[bar];
       const correctedStep = sr(bar * 13) < 0.5 ? 1 : 2;
       goalPitch[bar] -= v1Dir * correctedStep;
-      goalPitch[bar] = Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, goalPitch[bar]));
+      goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]));
     }
 
     const chord = m.chord ?? 'Cmaj9';
@@ -2692,11 +2759,45 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     const toneStruct = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
     const pool: number[] = [];
     const seen = new Set<number>();
-    for (const raw of [toneStruct.third, toneStruct.seventh, toneStruct.fifth, toneStruct.root]) {
+    const pushPoolRaw = (raw: number): void => {
       const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
       if (p >= floorMidi && p < strictCeiling && !seen.has(p)) {
         seen.add(p);
         pool.push(p);
+      }
+    };
+    const harmonySus = /sus/i.test(parseChordSymbol(chord).harmonyPart);
+    if (harmonySus) {
+      const tRaw = chordTonesForChordSymbol(chord, chordOpts(context));
+      const ninthMidi = liftToneToRange(tRaw.root + 14, floorMidi, innerHigh);
+      for (const raw of [toneStruct.root, toneStruct.fifth, ninthMidi, toneStruct.seventh]) {
+        pushPoolRaw(raw);
+      }
+    } else {
+      for (const raw of [toneStruct.third, toneStruct.seventh, toneStruct.fifth, toneStruct.root]) {
+        pushPoolRaw(raw);
+      }
+    }
+    const hpForPool = parseChordSymbol(chord).harmonyPart;
+    if (!harmonySus && harmonyPartLooksMajorSeventh(hpForPool)) {
+      const rm = hpForPool.match(/^([A-G](?:#|b)?)/i);
+      if (rm) {
+        const rpc = noteNameToPitchClass(rm[1]!);
+        if (rpc !== undefined) {
+          const oct = (pc: number) => 36 + pc;
+          const br = oct(rpc);
+          const b3 = oct((rpc + 4) % 12);
+          const b5 = oct((rpc + 7) % 12);
+          const b7 = oct((rpc + 11) % 12);
+          for (const raw of [
+            liftToneToRange(b3, floorMidi, innerHigh),
+            liftToneToRange(b7, floorMidi, innerHigh),
+            liftToneToRange(b5, floorMidi, innerHigh),
+            liftToneToRange(br, floorMidi, innerHigh),
+          ]) {
+            pushPoolRaw(raw);
+          }
+        }
       }
     }
     if (pool.length === 0) continue;
@@ -2770,22 +2871,45 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     if (p0 === null) p0 = clampPitch(barGoal, lo0, hi0);
     p0 = clampPitch(placeStrictlyBelowCeiling(strictCeiling, p0, floorMidi), lo0, hi0);
 
-    const nextGoal = goalPitch[bar + 1] ?? barGoal;
-    let stepDir = nextGoal > p0 ? 1 : nextGoal < p0 ? -1 : 0;
-    if (stepDir === 0) stepDir = seededUnit(seed, bar, 9933) < 0.5 ? -1 : 1;
+    const buildSegmentPitchesFromP0 = (p0Start: number): number[] => {
+      const nextGoal = goalPitch[bar + 1] ?? barGoal;
+      let stepDir = nextGoal > p0Start ? 1 : nextGoal < p0Start ? -1 : 0;
+      if (stepDir === 0) stepDir = seededUnit(seed, bar, 9933) < 0.5 ? -1 : 1;
+      const out: number[] = [];
+      for (let si = 0; si < segStarts.length; si++) {
+        const t0 = segStarts[si]!;
+        const t1 = segEnds[si]!;
+        const minVs = minOverlappingV1Pitch(v1notes, t0, t1) ?? minV1;
+        const ceilSeg = strictCeilingFromMinV1(minVs);
+        const lo = floorMidi;
+        const hi = Math.min(63, ceilSeg - 1);
+        let raw = si === 0 ? p0Start : out[si - 1]! + stepDir;
+        raw = clampPitch(raw, lo, hi);
+        raw = clampPitch(placeStrictlyBelowCeiling(ceilSeg, raw, floorMidi), lo, hi);
+        out.push(raw);
+      }
+      return out;
+    };
 
-    const pitches: number[] = [];
-    for (let si = 0; si < segStarts.length; si++) {
-      const t0 = segStarts[si]!;
-      const t1 = segEnds[si]!;
-      const minVs = minOverlappingV1Pitch(v1notes, t0, t1) ?? minV1;
-      const ceilSeg = strictCeilingFromMinV1(minVs);
-      const lo = floorMidi;
-      const hi = Math.min(63, ceilSeg - 1);
-      let raw = si === 0 ? p0 : pitches[si - 1]! + stepDir;
-      raw = clampPitch(raw, lo, hi);
-      raw = clampPitch(placeStrictlyBelowCeiling(ceilSeg, raw, floorMidi), lo, hi);
-      pitches.push(raw);
+    let pitches = buildSegmentPitchesFromP0(p0);
+
+    if (bar > 1 && prevBarChord !== null && lastBarEndMidi !== null) {
+      const rd = shortestRootPcMotion(rootPcFromChordSymbol(prevBarChord, context), rootPcFromChordSymbol(chord, context));
+      const absRd = Math.abs(rd);
+      if (absRd === 1 || absRd === 6) {
+        const rootDir = rd > 0 ? 1 : -1;
+        const v2Delta = pitches[0]! - lastBarEndMidi;
+        const v2Dir = v2Delta === 0 ? 0 : v2Delta > 0 ? 1 : -1;
+        if (v2Dir !== rootDir) {
+          const aligned = clampPitch(
+            placeStrictlyBelowCeiling(strictCeiling, lastBarEndMidi + rootDir, floorMidi),
+            lo0,
+            hi0
+          );
+          p0 = aligned;
+          pitches = buildSegmentPitchesFromP0(p0);
+        }
+      }
     }
 
     /** Rule 6 — no repeated pitch class across consecutive bars. */
@@ -2798,10 +2922,40 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     }
 
     const v1PitchSet = new Set(v1notes.map((n) => pitchClass(n.pitch)));
+    const v1MidiExact = new Set(v1notes.map((n) => n.pitch));
+    const nearestChordToneInPoolTo = (target: number): number | null => {
+      let best: number | undefined;
+      let bd = 999;
+      for (const c of pool) {
+        const d = Math.abs(c - target);
+        if (d < bd) {
+          bd = d;
+          best = c;
+        }
+      }
+      return best !== undefined ? best : null;
+    };
 
     const deClash = (p: number): number => {
+      if (v1MidiExact.has(p)) {
+        const candidates: number[] = [];
+        for (const shifted of [p + 2, p - 2]) {
+          const hit = nearestChordToneInPoolTo(shifted);
+          if (hit !== null && !v1MidiExact.has(hit)) candidates.push(hit);
+        }
+        if (candidates.length > 0) {
+          p = candidates.reduce((a, b) => (Math.abs(a - p) <= Math.abs(b - p) ? a : b));
+        } else {
+          for (const c of pool) {
+            if (!v1MidiExact.has(c)) {
+              p = c;
+              break;
+            }
+          }
+        }
+      }
       const pc = pitchClass(p);
-      const clashIntervals = new Set([0, 1, 11]);
+      const clashIntervals = new Set([0, 1, 11, 13]);
       const hasClash = [...v1PitchSet].some((v1pc) => {
         const interval = Math.abs(pc - v1pc) % 12;
         return clashIntervals.has(interval);
@@ -2810,7 +2964,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       const nearestV1 = [...v1PitchSet].reduce((a, b) => (Math.abs(a - pc) < Math.abs(b - pc) ? a : b));
       const direction = pc >= nearestV1 ? 1 : -1;
       const adjusted = p + direction;
-      return Math.max(FLOOR_MIDI, Math.min(CEIL_MIDI, adjusted));
+      return Math.max(INNER_LOW, Math.min(CEIL_MIDI, adjusted));
     };
 
     const pBar0 = pitches[0]!;
@@ -2830,7 +2984,7 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
     let v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
     if (!voice2StrictlyBelowOverlappingV1(v1notes, v2notes)) {
-      finals = finals.map((p) => p - 12);
+      finals = finals.map((p) => Math.max(INNER_LOW, p - 12));
       m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
       for (let sj = 0; sj < segStarts.length; sj++) {
         const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[sj]! - segStarts[sj]!);
@@ -2841,6 +2995,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
     }
 
     lastBarEndPc = pitchClass(finals[finals.length - 1]!);
+    lastBarEndMidi = finals[finals.length - 1]!;
+    prevBarChord = chord;
     injected++;
   }
 

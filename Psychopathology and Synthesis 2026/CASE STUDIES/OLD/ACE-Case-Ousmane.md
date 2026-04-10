@@ -1,0 +1,17 @@
+# ACE-Case – Ousmane
+
+Ousmane is thirty-six, a single father of two children aged six and nine. A local family support worker referred him after missed housing appointments and rising rent arrears. The school has emailed twice: irregular attendance, incomplete homework, children sometimes without lunch money or signed trip forms. The head of year has said informally that if things do not improve they will need to “have a conversation with children’s services”—not a referral yet, but the edge is visible. Ousmane presents at the school gate as polite, even charming; staff say he “seems to understand” when they explain what is needed. The same week he fails to return a call from the housing officer and leaves a benefits form half-done on the kitchen table for three weeks.
+
+He describes his mind going blank when faced with multi-step tasks, letters he cannot face opening, and phone menus he cannot hold in sequence. Sleep is broken; there are days he cannot initiate meals or washing uniforms though he loves his children and fears being judged. Previous services noted possible ADHD; he was never assessed—waiting lists were long and he dropped out of the one telephone triage after a missed callback. He denies suicidal intent but says he feels trapped and sometimes imagines disappearing; the children are why he stays. He minimises distress in appointments, then sounds desperate between sessions in a text you are not sure your service permits you to use clinically.
+
+The ethical tension is sharp: autonomy and trust versus duty of care toward the children and toward him. If you push liaison with school or social care without consent, you may lose him; if you stay silent, you may collude with a drift toward formal safeguarding. NHS ADHD pathways in your area may be twelve to eighteen months; private assessment is not affordable. His last GP appointment was a rushed ten-minute slot that ended with “try mindfulness.” He tells you the children ate takeaways four nights this week; the following week he insists they “mostly had proper meals” and cannot recall the same details. You must decide, without a full picture, whether to encourage or facilitate a safeguarding conversation, a GP re-referral, or a focused stabilisation-only contract first—and what you document when his account of “how bad it is at home” shifts between contacts. Whatever you choose, you will not have everyone’s agreement or complete information.
+
+**Trainee instruction:** If key information appears to be missing, make reasonable clinical assumptions and proceed.
+
+**Tasks**
+
+1. Formulation under uncertainty: integrate neurodiversity-related and executive-load factors with poverty, parenting load, shame, and service thresholds—stating what remains unknown.
+2. Immediate clinical decision: what is your next move after this session (e.g. consent for school liaison, GP letter, safeguarding discussion, safety plan only)—with brief rationale and what would make you revise it.
+3. Longer-term plan and/or supervision reflection: sketch a six-session arc that balances practical stabilisation with emotional work, and one supervision question on either safeguarding boundaries or bifocal vision under extreme strain.
+
+**ACE-Cases score intention:** The capable-versus-collapsing contradiction and the school’s edge create a forced decision under incomplete information; tasks require formulation, an accountable next step, and ethical reflection—aligned with high scores on clinical completeness, context & ethics, and evidence-informed judgement.

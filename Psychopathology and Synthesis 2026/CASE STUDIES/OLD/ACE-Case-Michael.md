@@ -1,0 +1,17 @@
+# ACE-Case – Michael
+
+Michael is twenty-nine. He began counselling privately after a close relative died six months ago. Early sessions included some grief narrative; recently he cancels often, answers in monosyllables, and says he is “fine.” Relatives report he rarely goes out, has dropped running and music, and refuses GP contact—he says grief is not an illness. In session he denies suicidal ideation when asked directly; his voice is flat. Last week he mentioned in passing that he had looked at evening classes in photography “for when I feel better,” then said he had not followed up and changed the subject. The future-oriented snippet sits oddly against withdrawal and contradicts the story of total shutdown without confusing it with clear risk disclosure.
+
+His practitioner’s unease sits below threshold for emergency services: no plan, no intent stated, no recent attempt disclosed. Yet sleep is fragmented—waking at 3 a.m. or sleeping past midday—eating is patchy, and hygiene slips on bad weeks. He has lost weight without intending to; he says he forgets to eat until evening. The contradiction between “I’m coping” and observable narrowing of life is unresolved. Longstanding social awkwardness and possible neurodevelopmental difference are background noise, not explained. He works from home on a contract that barely covers rent; isolation during the day is almost total, and there is no occupational health route. NHS talking therapies in his area operate stepped-care thresholds; as a private client he may fall outside those pathways, which changes what “escalation” means but not whether concern exists. His sister has offered to attend a session; he refuses, then says “maybe later,” and does not follow up.
+
+The ethical tension is when concern becomes action without evidence that would satisfy a crisis team. Autonomy favours continuing the relationship and exploring ambivalence; duty of care asks whether colluding with minimisation is safe. If you insist on a GP letter now, he may end therapy; if you do not, you carry the uncertainty alone until supervision. Documentation must separate facts from inference: what was asked, what he answered, what remains unknown. Two competent clinicians could disagree on whether to insist on GP involvement now or to contract for fuller risk review next session—that disagreement is part of the teaching point, not a flaw in the case. You still have to choose what you will do before you leave the room, even though the file will stay incomplete.
+
+**Trainee instruction:** If key information appears to be missing, make reasonable clinical assumptions and proceed.
+
+**Tasks**
+
+1. Formulation under uncertainty: integrate bereavement, withdrawal, functional change, and the contradictory future hint—stating what supports low immediate risk and what keeps escalation on the table.
+2. Immediate clinical decision: do you act now (e.g. insist on GP contact, break routine boundaries) or hold and contract—and what would flip your choice overnight?
+3. Longer-term plan and/or supervision reflection: outline how you would use the next four sessions if he continues, and one supervision question that separates your anxiety from his data.
+
+**ACE-Cases score intention:** A single contradictory detail sharpens the act-versus-wait dilemma without artificial closure; tasks demand formulation with uncertainty, an accountable immediate stance, and reflective practice—supporting high marks on analytical clarity, clinical completeness, and mature risk judgement.

@@ -1,0 +1,14 @@
+---
+description: PET Psychopathology & Synthesis PowerPoint title slide source
+globs: Powerpoint Synthesis/**/*.py,Powerpoint Synthesis/**/*.pptx
+---
+
+# PET branded title slide
+
+When building or revising **Psychopathology & Synthesis** (or related PET) PowerPoint decks via script:
+
+- Use **`Powerpoint Synthesis/PET PowerPoint Title page.pptx`** as the presentation source so **slide 1** matches the official PET title layout (image strip, teal title band, date bar, Trust logo).
+- Open that file, **remove any extra sample slides** after the first slide, then **set only the title and subtitle placeholder text** on slide 1. Do **not** reapply generic Calibri sizing to the title slide text (preserve slide master / branding).
+- **Versioning:** this deck line is **V4.x** (current export **V4.1**); next scripted export should be **V4.2**, not V5/V7.
+
+Content template continues to use `slide_layouts[1]`, `[2]`, `[5]` etc. from the same file after trim.

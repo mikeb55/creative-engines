@@ -4,3 +4,8 @@ projects/
 __pycache__/
 node_modules/
 launchers/logs/
+
+# Office lock files
+~$*.pptx
+~$*.docx
+
