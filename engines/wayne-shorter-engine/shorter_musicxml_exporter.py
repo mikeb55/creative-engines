@@ -26,6 +26,25 @@ def _escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+def _kind_for(symbol: str) -> str:
+    s = symbol.lower()
+    if "maj7" in s:
+        return "major-seventh"
+    if "min7" in s or "m7" in s:
+        return "minor-seventh"
+    if "7" in s and "maj" not in s:
+        return "dominant"
+    if "min" in s or "m" in s:
+        return "minor"
+    if "dim" in s:
+        return "diminished"
+    if "aug" in s:
+        return "augmented"
+    if "sus" in s:
+        return "suspended-fourth"
+    return "major"
+
+
 def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
     """Export CompiledComposition to valid MusicXML string."""
     by_measure: Dict[int, List[Dict]] = {}
@@ -36,6 +55,21 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
                 by_measure[m] = []
             by_measure[m].append(e)
     total_bars = max(by_measure.keys(), default=0) + 1
+    # Build chord-per-measure lookup from section harmony
+    by_measure_chord: Dict[int, str] = {}
+    for sec in compiled.sections:
+        for h in sec.harmony:
+            bar = h.get("measure", h.get("bar", h.get("bar_index", None)))
+            symbol = h.get("symbol", h.get("chord", h.get("name", None)))
+            if bar is not None and symbol is not None:
+                by_measure_chord[int(bar)] = str(symbol)
+    # Fall back to CompiledComposition.harmony.chords if empty
+    if not by_measure_chord:
+        for h in compiled.harmony.chords:
+            bar = h.get("measure", h.get("bar", h.get("bar_index", None)))
+            symbol = h.get("symbol", h.get("chord", h.get("name", None)))
+            if bar is not None and symbol is not None:
+                by_measure_chord[int(bar)] = str(symbol)
     divisions = 4
     key_hint = compiled.metadata.get("key_hint", "C")
     tempo = compiled.metadata.get("tempo", 90)
@@ -57,6 +91,21 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
             lines.append('        <time><beats>4</beats><beat-type>4</beat-type></time>')
             lines.append('        <clef><sign>G</sign><line>2</line></clef></attributes>')
             lines.append(f'      <sound tempo="{tempo}"/>')
+        chord_sym = by_measure_chord.get(m)
+        if chord_sym:
+            lines.append("      <harmony>")
+            root_step = chord_sym[0]
+            root_alter = ""
+            if len(chord_sym) > 1 and chord_sym[1] == "b":
+                root_alter = "\n        <root-alter>-1</root-alter>"
+            elif len(chord_sym) > 1 and chord_sym[1] == "#":
+                root_alter = "\n        <root-alter>1</root-alter>"
+            lines.append(
+                f"        <root><root-step>{root_step}</root-step>"
+                f"{root_alter}</root>"
+            )
+            lines.append(f'        <kind text="{chord_sym}">{_kind_for(chord_sym)}</kind>')
+            lines.append("      </harmony>")
         evs = sorted(by_measure.get(m, []), key=lambda x: x.get("beat_position", 0))
         cursor = 0.0
         for e in evs:
