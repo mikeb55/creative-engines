@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-09]
+# Composer OS Roadmap [2026-04-10]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -28,7 +28,8 @@
 
 - **18.2A–B:** Voice 2 polyphony, Sibelius/GP8-safe export, span-based continuity, rhythm footprint (bar-level planning).
 - **18.2C (partial, historical):** validators/sweep/pitch floor; some bass musical issues deferred to phrase layer.
-- **18.2D:** Bass phrase intelligence (contour, phrase intents, `bassPlan.style`); pitch floor discipline.
+- **18.2D (2026-04-09):** Bass phrase intelligence — rhythmic cell triple-break, contour overuse break, motif echo repair (bars 1–8 vs guitar), walking density cap; behaviour gates + **`npm run test:duo`** + **`npm run test:bass`** passing. See [CHANGELOG.md](CHANGELOG.md).
+- **Wyble Voice 2 inject (single-line duo):** `injectGuitarVoice2WybleLayer` gated with **`isGuitarBassDuoFamily`** so **`guitar_bass_duo_single_line`** receives the same inner-voice injection path as standard duo (`guitarVoice2WybleLayer.ts`).
 - **18.2E (2026-04-07):** Phrase-arrival gate loosened (±2 semitones); 24-bar forms skip that gate; 32-bar checks phrase 1 only; bass **written** pitch offset for Sibelius (`acoustic_upright_bass`, export −24 MIDI vs score + `clef-octave-change` -1).
 
 ### Voice 2 counterpoint rewrite (2026-04-09)
@@ -87,9 +88,10 @@
 | Area | State |
 |------|--------|
 | **Duo / ECM / Song Mode / Riff / Wyble** | Shipping **MusicXML** path; validation + receipts; chord diagnostics (#17) |
-| **Phase 18.2E** | **Complete** (gates + bass export) |
+| **Phase 18.2D** | **Complete** (bass phrase intelligence + regression sweeps); **18.2E** **Complete** (gates + bass export) |
 | **Phase 19** | **Complete** (UI ≤32 bars); longer forms not fully in UI |
-| **Song Mode D-phase** | **D1** intent resolution + C1–C7: **done** per architecture doc; **D2** UI sliders → `intent`: **in progress** (wire contract notes: pattern 0.5); **D3** reserved |
+| **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
+| **Wyble Voice 2** | **Inject** extended to **single-line** duo family; other passes may still use stricter `guitar_bass_duo` checks — see **Future → next possible devs** |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16/24/32) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **#19 / #16 / #17 (chord track)** | **Baseline complete** — unified semantics (#19), robustness baseline + export/receipt behaviour (#16), diagnostics in UI (#17). Aligned across [README.md](../README.md) and [docs/CHANGELOG.md](./CHANGELOG.md). |
@@ -98,18 +100,33 @@
 
 ## Future (prioritized directions)
 
+### Next possible devs (pick list)
+
+| # | Dev | Notes |
+|---|-----|--------|
+| 1 | **Wyble single-line parity (full stack)** | Align **`stabiliseGuitarVoice2Wyble18_2B_*`** and any remaining **`presetId === 'guitar_bass_duo'`** guards with **`isGuitarBassDuoFamily`** where behaviour should match inject; add **`test:duo` / single-line** seed if missing. |
+| 2 | **Wyble “realized” normalization review** | `normalizeRealizedVoice2PostInjection182B3` skips **`guitar_bass_duo`** while the stabiliser wrapper targets duo — confirm intent; optionally unify so metrics/validators match single-line + standard duo. |
+| 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
+| 4 | **Phase 19.1 — longer forms in UI** | Engine paths exist for some extended lengths; expose **>32 bars** where supported + validation. |
+| 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
+| 6 | **Big Band / String Quartet polish** | Rehearsal copy, host import smoke tests, optional extra **`formId`** presets. |
+| 7 | **Song Mode — style exposure** | Surface **`styleStack`** or named presets in UI beyond current defaults. |
+| 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
+| 9 | **ECM / Barry Harris / Bacharach** | Implement from **`ECM_Bacharach_BarryHarris_Research.md`** when extending chamber feel or style stacks. |
+| 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. |
+| 11 | **Chord UX polish** | Rarer symbols, help text, parse-error tests; does **not** reopen #16 baseline. |
+
 ### Near term (high leverage)
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
 2. **Big Band + String Quartet polish:** rehearsal/section copy, host-specific import smoke tests; optional **form** presets beyond current `formId` set.
-3. **Song Mode diversity:** expose **`styleStack`** (or presets) in UI; complete **D2** intent wiring per architecture.
-4. **18.2D verification sweep** — automated harness on new bass/phrase layer (parallel track).
+3. **Song Mode diversity:** expose **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent.
+4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice).
 
 ### Medium term
 
-- **Voice 2:** Phase **18.2B.3**-style melodic imitation / counterpoint refinement.
+- **Voice 2:** Phase **18.2B.3**-style melodic imitation / counterpoint refinement; **realized** metrics alignment (see table above).
 - **Phase 19.1** — forms **>32 bars** in UI where engine supports.
-- **Wyble** — expressive/rhetorical refinement (rhythm, phrasing, lower voice).
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
 
 ### Longer term / explicit non-goals until designed
@@ -137,4 +154,4 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-09].*
+*End of Composer OS Roadmap [2026-04-10].*

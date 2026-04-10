@@ -44,6 +44,7 @@ import {
   logSongModeTruthDumpConsole,
   writeSongModeDesktopTruthDump,
 } from './desktopTruthDump';
+import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
 
 export const SUPPORTED_APP_PRESET_IDS = [
   'guitar_bass_duo',
@@ -431,11 +432,27 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let diskHarmonyTruthErrors: string[] = [];
   let filename: string | undefined;
   let filepath: string | undefined;
+  let vocalLeadSheetFilepath: string | undefined;
   if (gp.xml) {
     filename = `composer_os_song_mode_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
+    if (req.includeVocalLeadSheet) {
+      const bridgeScriptPath = path.resolve(
+        __dirname,
+        '../../songwriting_bridge/cli_export_lead_sheet.py'
+      );
+      const vocalXml = exportVocalLeadSheetMusicXmlViaPython(sm.compiledSong, gp.score, {
+        bridgeScriptPath,
+        voiceType: sm.compiledSong.voiceType,
+      });
+      if (vocalXml && filepath.toLowerCase().endsWith('.musicxml')) {
+        const vocalPath = filepath.replace(/\.musicxml$/i, '_vocal_lead_sheet.musicxml');
+        fs.writeFileSync(vocalPath, vocalXml, 'utf-8');
+        vocalLeadSheetFilepath = vocalPath;
+      }
+    }
     const locked = gp.context.lockedHarmonyBarsRaw;
     if (locked && locked.length === gp.context.form.totalBars) {
       try {
@@ -590,6 +607,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     scoreTitle: scoreTitleResolved,
     universalLeadSheet,
     requestEcho: requestEchoFromReq(req),
+    vocalLeadSheetFilepath,
   };
 }
 

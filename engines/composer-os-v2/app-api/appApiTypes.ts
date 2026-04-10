@@ -136,6 +136,8 @@ export interface GenerateRequest {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Phase 19: explicit musical form selection. */
   formId?: string;
+  /** Song Mode: after duo MusicXML, run Python bridge for vocal lead sheet (optional). */
+  includeVocalLeadSheet?: boolean;
 }
 
 export interface ValidationSummary {

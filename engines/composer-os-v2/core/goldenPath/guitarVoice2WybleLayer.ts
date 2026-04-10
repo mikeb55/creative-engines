@@ -2575,7 +2575,7 @@ function tryPlaceMinimalOffbeatHoldVoice2Fallback(
  * @returns number of measures that received voice-2 content
  */
 export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: CompositionContext): number {
-  if (context.presetId !== 'guitar_bass_duo') return 0;
+  if (!isGuitarBassDuoFamily(context.presetId)) return 0;
   if (context.form.totalBars < 1) return 0;
 
   const seed = context.seed;

@@ -248,6 +248,7 @@ type GenResult = {
     era: string | null;
   };
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
+  vocalLeadSheetFilepath?: string;
 };
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
@@ -282,6 +283,7 @@ export function HomeGenerate({
   const [intentSpace, setIntentSpace] = useState(0.5);
   const [intentExpression, setIntentExpression] = useState(0.5);
   const [intentSurprise, setIntentSurprise] = useState(0.5);
+  const [includeVocalLeadSheet, setIncludeVocalLeadSheet] = useState(false);
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
@@ -631,6 +633,7 @@ export function HomeGenerate({
                   surprise: intentSurprise,
                   pattern: 0.5,
                 },
+                ...(includeVocalLeadSheet ? { includeVocalLeadSheet: true as const } : {}),
               }
             : {}),
         };
@@ -722,6 +725,7 @@ export function HomeGenerate({
       intentSpace,
       intentExpression,
       intentSurprise,
+      includeVocalLeadSheet,
       c4Strength,
       blendStrength,
       funkGroove,
@@ -1624,6 +1628,25 @@ export function HomeGenerate({
             />
             <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentSurprise * 100)}%</span>
           </div>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: '0.75rem',
+              marginBottom: '0.65rem',
+              fontSize: '0.9rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={includeVocalLeadSheet}
+              onChange={(e) => setIncludeVocalLeadSheet(e.target.checked)}
+              disabled={loading}
+            />
+            Include vocal lead sheet (separate MusicXML for singers)
+          </label>
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing
           </span>
@@ -1963,6 +1986,30 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Output path:</span> {result.filepath}
                 </p>
               )}
+              {result.vocalLeadSheetFilepath ? (
+                <p
+                  style={{
+                    margin: '0.5rem 0 0',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  <span style={{ color: 'var(--text-muted)' }}>Vocal lead sheet:</span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      const p = result.vocalLeadSheetFilepath;
+                      if (p) void openFolder(dirnameOnly(p));
+                    }}
+                  >
+                    Open file folder
+                  </button>
+                </p>
+              ) : null}
               {v?.readiness?.mx != null && result.stylePairingReceipt?.confidenceScore == null && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Readiness (MX):</span> {v.readiness.mx}

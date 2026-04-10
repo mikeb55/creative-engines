@@ -1,3 +1,14 @@
+## Vocal lead sheet bridge (2026-04-10)
+
+- songwriting_bridge integrated as optional Python subprocess
+- CLI script: engines/songwriting_bridge/cli_export_lead_sheet.py
+- UI checkbox in Song Mode: Include vocal lead sheet
+- Bridge wired in composerOsAppGeneration.ts
+- test:vocal passing in isolation
+- NOTE: vocal output not yet showing in app — data pipeline gap between CompiledSong and Python bridge input shape
+
+---
+
 ## Voice 2 Wyble rules + rhythmic independence (2026-04-09)
 
 - Voice 2 rebuilt with contrary motion, stepwise movement,

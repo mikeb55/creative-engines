@@ -133,6 +133,8 @@ export interface GenerateResult {
   chordExportDiagnostics?: ChordExportDiagnosticsReceipt;
   /** Phase 18.2B.1 — Voice-2 polyphony diagnostic (guitar_bass_duo; engine snapshot, read-only). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
+  /** Song Mode — optional vocal lead sheet MusicXML path (Python `songwriting_bridge`). */
+  vocalLeadSheetFilepath?: string;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
