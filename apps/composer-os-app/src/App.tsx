@@ -1,10 +1,102 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { Outputs } from './pages/Outputs';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
+import { api } from './services/api';
 
-type Tab = 'home' | 'presets' | 'style' | 'outputs';
+type Tab = 'home' | 'presets' | 'style' | 'outputs' | 'composer-engines';
+
+function ComposerEngines() {
+  const [wsTitle, setWsTitle] = React.useState('');
+  const [wsResult, setWsResult] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  return (
+    <div style={{ padding: '1.5rem' }}>
+      <h2>Composer Engines</h2>
+      <p style={{ color: 'var(--text-muted)' }}>
+        Dedicated deterministic composer models.
+      </p>
+      <div style={{ 
+        border: '1px solid var(--border)', 
+        borderRadius: '8px',
+        padding: '1rem',
+        marginTop: '1rem',
+        maxWidth: '480px'
+      }}>
+        <h3 style={{ margin: '0 0 0.5rem' }}>
+          Wayne Shorter
+        </h3>
+        <p style={{ 
+          fontSize: '13px', 
+          color: 'var(--text-muted)',
+          margin: '0 0 1rem'
+        }}>
+          Instrumental composition engine. Asymmetrical 
+          form, motivic development, harmonic ambiguity.
+          Outputs a single-staff lead sheet with chord symbols.
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text"
+            placeholder="Composition title"
+            value={wsTitle}
+            onChange={e => setWsTitle(e.target.value)}
+            style={{ flex: 1, padding: '0.3rem' }}
+          />
+          <button
+            disabled={!wsTitle || loading}
+            onClick={() => {
+              setLoading(true);
+              (api as any).generateWayneShorter({
+                title: wsTitle,
+                seed: Math.floor(Math.random() * 1e9)
+              }).then((r: any) => {
+                setLoading(false);
+                setWsResult(r?.path ?? '');
+                setWsTitle('');
+              }).catch((e: any) => {
+                setLoading(false);
+                setWsResult('Error: ' + String(e?.message ?? e));
+              });
+            }}
+          >
+            {loading ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
+        {wsResult && (
+          <div style={{ 
+            marginTop: '0.75rem',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center'
+          }}>
+            <button
+              onClick={async () => {
+                if (!wsResult) {
+                  alert('No file path — generate a score first');
+                  return;
+                }
+                const result = await (window.composerOsDesktop as any)
+                  ?.showItemInFolder(wsResult);
+                if (!result?.ok) {
+                  alert('Could not open folder: ' +
+                    (result?.error ?? 'unknown error'));
+                }
+              }}
+            >
+              Open in folder
+            </button>
+            <button onClick={() => setWsResult('')}>
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function parseEmbeddedUiStamp(): {
   appShellVersion: string;
@@ -86,6 +178,12 @@ export default function App() {
               {t === 'home' ? 'Generate' : t === 'presets' ? 'Presets' : 'Outputs'}
             </button>
           ))}
+          <button
+            className={tab === 'composer-engines' ? 'active' : ''}
+            onClick={() => setTab('composer-engines')}
+          >
+            Composer Engines
+          </button>
         </nav>
       </header>
 
@@ -94,6 +192,9 @@ export default function App() {
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
       {tab === 'presets' && <Presets />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
+      {tab === 'composer-engines' && (
+        <ComposerEngines />
+      )}
     </div>
   );
 }

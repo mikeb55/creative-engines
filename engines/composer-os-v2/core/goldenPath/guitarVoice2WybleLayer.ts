@@ -2650,59 +2650,48 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
   for (const m of guitar.measures) {
     const v1: number[] = m.events
-      .filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1)
-      .map((e) => (e as NoteEvent).pitch);
+      .filter((e: any) => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .map((e: any) => e.pitch);
     if (v1.length === 0) continue;
 
-    const tSet = chordTonesForChordSymbol(m.chord ?? 'Cmaj7', chordOpts(context));
-    const raw: number[] = [tSet.root, tSet.third, tSet.fifth, tSet.seventh];
+    const raw: number[] = getChordTones(m.chord ?? 'Cmaj7');
     const src = raw.length > 0 ? raw : [48, 50, 52, 55, 57];
 
-    const pool: number[] = [
-      ...new Set(
-        src.map((t) => {
-          let x = t;
-          while (x > HI) x -= 12;
-          while (x < LO) x += 12;
-          return Math.max(LO, Math.min(HI, x));
-        })
-      ),
-    ].sort((a, b) => a - b);
+    // clamp all tones into LO..HI
+    const pool: number[] = [...new Set(
+      src.map(t => { while (t > HI) t -= 12; while (t < LO) t += 12; return t; })
+    )].sort((a, b) => a - b);
 
-    if (pool.length === 0) continue;
-
-    const safe = pool.filter((t) => v1.every((v) => v % 12 !== t % 12));
+    // no-double check: pitch class must not match any V1 pitch class
+    const safe = pool.filter(t => v1.every(v => v % 12 !== t % 12));
     const use = safe.length > 0 ? safe : pool;
 
-    const v1Dir = v1.length > 1 ? Math.sign(v1[v1.length - 1]! - v1[0]!) : 0;
+    // V1 direction → contrary motion preference
+    const v1Dir = v1.length > 1 ? Math.sign(v1[v1.length - 1] - v1[0]) : 0;
 
+    // pick p0
     let p0: number;
     if (last === null) {
-      p0 = use[Math.floor(use.length / 2)]!;
+      p0 = use[Math.floor(use.length / 2)];
     } else {
-      const step = use.filter((t) => Math.abs(t - last!) <= 3);
+      const step = use.filter(t => Math.abs(t - last!) <= 3);
       const cands = step.length > 0 ? step : use;
-      if (v1Dir > 0) p0 = cands[0]!;
-      else if (v1Dir < 0) p0 = cands[cands.length - 1]!;
-      else p0 = cands.reduce((a, b) => (Math.abs(a - last!) <= Math.abs(b - last!) ? a : b));
+      if (v1Dir > 0) p0 = cands[0];
+      else if (v1Dir < 0) p0 = cands[cands.length - 1];
+      else p0 = cands.reduce((a, b) =>
+        Math.abs(a - last!) <= Math.abs(b - last!) ? a : b);
     }
 
-    const above = pool.filter((t) => t > p0 && t <= 59);
-    const below = pool.filter((t) => t < p0 && t >= 48);
-    const p1candidates = above.length > 0 ? above : below;
-    const p1 = p1candidates.length > 0 ? p1candidates[0]! : (pool.find((t) => t !== p0) ?? p0);
-    let p1safe = Math.max(48, Math.min(59, p1));
+    // pick p1: stepwise from p0, different pitch
+    const step1 = use.filter(t => t !== p0 && Math.abs(t - p0) <= 3);
+    const p1 = step1.length > 0 ? step1[0] : (use.find(t => t !== p0) ?? p0);
 
-    m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-    p0 = Math.max(48, Math.min(59, p0));
-    p1safe = Math.max(48, Math.min(59, p1safe));
-    addEvent(m, createNote(p0, 0, 1, V2_VOICE));
-    p0 = Math.max(48, Math.min(59, p0));
-    p1safe = Math.max(48, Math.min(59, p1safe));
-    addEvent(m, createNote(p1safe, 1, 3, V2_VOICE));
-    m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
+    // write — clear existing V2 first
+    m.events = m.events.filter((e: any) => (e.voice ?? 1) !== 2);
+    addEvent(m, createNote({ pitch: p0, duration: 480, startBeat: 0, voice: 2, staff: 1 }));
+    addEvent(m, createNote({ pitch: p1, duration: 960, startBeat: 480, voice: 2, staff: 1 }));
 
-    last = p1safe;
+    last = p1;
     injected++;
   }
 

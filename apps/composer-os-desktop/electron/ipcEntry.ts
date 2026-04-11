@@ -107,4 +107,21 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       return { path: outPath, filename };
     }
   );
+
+  ipcMain.handle('show-item-in-folder', async (_event, filePath: string) => {
+    if (!filePath) return { ok: false, error: 'no path' };
+    const normalized = require('path').normalize(filePath);
+    if (!require('fs').existsSync(normalized)) {
+      return { ok: false, error: 'path not found' };
+    }
+    const { spawn } = require('child_process');
+    const winPath = normalized.replace(/\//g, '\\');
+    const child = spawn(
+      'explorer.exe',
+      ['/select,', winPath],
+      { detached: true, stdio: 'ignore' }
+    );
+    child.unref();
+    return { ok: true };
+  });
 }

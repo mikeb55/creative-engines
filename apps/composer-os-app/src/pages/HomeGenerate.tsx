@@ -308,9 +308,6 @@ export function HomeGenerate({
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [wsTitle, setWsTitle] = useState('');
-  const [wsVisible, setWsVisible] = useState(false);
-  const [wsResult, setWsResult] = useState('');
   const [result, setResult] = useState<GenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
@@ -1820,86 +1817,7 @@ export function HomeGenerate({
         <button className="secondary" type="button" onClick={() => openFolder()}>
           Open library folder
         </button>
-        {wsVisible && (
-          <div
-            style={{
-              display: 'flex',
-              gap: '0.5rem',
-              alignItems: 'center',
-              margin: '0.5rem 0',
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Composition title"
-              value={wsTitle}
-              onChange={(e) => setWsTitle(e.target.value)}
-              style={{ padding: '0.3rem', minWidth: '200px' }}
-            />
-            <button
-              type="button"
-              disabled={!wsTitle || loading}
-              onClick={() => {
-                setWsVisible(false);
-                setLoading(true);
-                api
-                  .generateWayneShorter({
-                    title: wsTitle,
-                    seed: Math.floor(Math.random() * 1e9),
-                  })
-                  .then((result) => {
-                    setLoading(false);
-                    setWsTitle('');
-                    setWsResult(result?.path ?? '');
-                  })
-                  .catch((err: any) => {
-                    setLoading(false);
-                    alert(`Failed:\n${err?.message ?? err}`);
-                  });
-              }}
-            >
-              Generate
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setWsVisible(false);
-                setWsTitle('');
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-        <button
-          className="secondary"
-          type="button"
-          disabled={loading}
-          onClick={() => setWsVisible(true)}
-        >
-          Wayne Shorter
-        </button>
       </div>
-
-      {wsResult && (
-        <div
-          style={{
-            margin: '0.5rem 0',
-            padding: '0.5rem',
-            background: 'var(--bg-secondary, #222)',
-            borderRadius: '4px',
-            fontSize: '12px',
-            wordBreak: 'break-all',
-          }}
-        >
-          <strong>Wayne Shorter score:</strong>
-          <br />
-          {wsResult}
-          <button type="button" style={{ marginLeft: '0.5rem' }} onClick={() => setWsResult('')}>
-            Clear
-          </button>
-        </div>
-      )}
 
       {showBigReceipt && (
         <div
