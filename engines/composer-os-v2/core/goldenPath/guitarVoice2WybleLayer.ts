@@ -2156,7 +2156,7 @@ function applyVoice2InternalMotionShaping(
 
   let beat = t0;
   for (let i = 0; i < durs.length; i++) {
-    addEvent(m, createNote(pitches[i]!, beat, durs[i]!, V2_VOICE));
+    addEvent(m, createNote(clampWybleV2WrittenMidi(pitches[i]!), beat, durs[i]!, V2_VOICE));
     beat += durs[i]!;
   }
   m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
@@ -2420,7 +2420,7 @@ function applyBarLevelShapeV2Events(
         legacyAnchor,
         0
       );
-      addEvent(m, createNote(p, 0, 4, V2_VOICE));
+      addEvent(m, createNote(clampWybleV2WrittenMidi(p), 0, 4, V2_VOICE));
     } else {
       const cLate = minOverlappingV1Pitch(v1notes, 1, 4) ?? cFull;
       const pairLate = pickPrimarySecondaryForSegment(cLate, chord, context, seed, bar, 41, contour);
@@ -2444,7 +2444,7 @@ function applyBarLevelShapeV2Events(
         1
       );
       addEvent(m, createRest(0, 1, V2_VOICE));
-      addEvent(m, createNote(pL, 1, 3, V2_VOICE));
+      addEvent(m, createNote(clampWybleV2WrittenMidi(pL), 1, 3, V2_VOICE));
     }
     return true;
   }
@@ -2471,7 +2471,7 @@ function applyBarLevelShapeV2Events(
       1
     );
     addEvent(m, createRest(0, 1, V2_VOICE));
-    addEvent(m, createNote(pL, 1, 3, V2_VOICE));
+    addEvent(m, createNote(clampWybleV2WrittenMidi(pL), 1, 3, V2_VOICE));
     return true;
   }
   /** TWO_SLABS */
@@ -2524,8 +2524,8 @@ function applyBarLevelShapeV2Events(
     ctx1,
     legacyAnchor
   );
-  addEvent(m, createNote(p0, 0, 2, V2_VOICE));
-  addEvent(m, createNote(p1, 2, 2, V2_VOICE));
+  addEvent(m, createNote(clampWybleV2WrittenMidi(p0), 0, 2, V2_VOICE));
+  addEvent(m, createNote(clampWybleV2WrittenMidi(p1), 2, 2, V2_VOICE));
   return true;
 }
 
@@ -2558,7 +2558,7 @@ function tryPlaceMinimalOffbeatHoldVoice2Fallback(
   const tryPitch = (pL: number): boolean => {
     m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
     addEvent(m, createRest(0, 1, V2_VOICE));
-    addEvent(m, createNote(pL, 1, 3, V2_VOICE));
+    addEvent(m, createNote(clampWybleV2WrittenMidi(pL), 1, 3, V2_VOICE));
     m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
     const v2notes = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
     const sum = v2notes.reduce((s, n) => s + n.duration, 0);
@@ -2640,363 +2640,69 @@ function harmonyPartLooksMajorSeventh(harmonyPart: string): boolean {
  * @returns number of measures that received voice-2 content
  */
 export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: CompositionContext): number {
-  if (!isGuitarBassDuoFamily(context.presetId)) return 0;
-  if (context.form.totalBars < 1) return 0;
+  if (context.presetId !== 'guitar_bass_duo') return 0;
 
-  const seed = context.seed;
-  const tb = context.form.totalBars;
-  /** Pitch class (0–11) at end of previous bar for Rule 6. */
-  let lastBarEndPc: number | null = null;
-  /** MIDI at end of previous bar (non-functional root-motion Voice-2 step alignment). */
-  let lastBarEndMidi: number | null = null;
-  let prevBarChord: string | null = null;
+  const LO = 48;
+  const HI = 59;
+
+  let last: number | null = null;
   let injected = 0;
 
-  const pitchClass = (p: number): number => ((p % 12) + 12) % 12;
+  for (const m of guitar.measures) {
+    const v1: number[] = m.events
+      .filter((e) => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .map((e) => (e as NoteEvent).pitch);
+    if (v1.length === 0) continue;
 
-  /** Pre-planned melodic goals per bar (1..tb); index tb+1 holds carry for “next goal” stepping. */
-  const goalPitch: number[] = new Array(tb + 1);
-  const CEIL_MIDI = V2_CEIL; // deClash upper bound (matches written Voice-2 register)
-  const sr = (salt: number) => seededUnit(seed, salt, 9010);
-  let planPitch = V2_FLOOR;
-  let planDirection = sr(1) < 0.5 ? 1 : -1;
+    const tSet = chordTonesForChordSymbol(m.chord ?? 'Cmaj7', chordOpts(context));
+    const raw: number[] = [tSet.root, tSet.third, tSet.fifth, tSet.seventh];
+    const src = raw.length > 0 ? raw : [48, 50, 52, 55, 57];
 
-  for (let bar = 1; bar <= tb; bar++) {
-    if (bar % 4 === 1 && bar > 1) planDirection *= -1;
-    const stepSize =
-      sr(bar * 7) < 0.4 ? 1 : sr(bar * 7) < 0.7 ? 2 : 3; // half / whole / minor third
-    planPitch += planDirection * stepSize;
-    if (planPitch > V2_CEIL) {
-      planPitch = V2_CEIL;
-      planDirection = -1;
-    }
-    if (planPitch < V2_FLOOR) {
-      planPitch = V2_FLOOR;
-      planDirection = 1;
-    }
+    const pool: number[] = [
+      ...new Set(
+        src.map((t) => {
+          let x = t;
+          while (x > HI) x -= 12;
+          while (x < LO) x += 12;
+          return Math.max(LO, Math.min(HI, x));
+        })
+      ),
+    ].sort((a, b) => a - b);
 
-    const mPl =
-      guitar.measures[bar - 1] ??
-      guitar.measures.find(
-        (ms: MeasureModel & { bar?: number; measureNumber?: number; number?: number }) =>
-          ms.index === bar || ms.bar === bar || ms.measureNumber === bar || ms.number === bar
-      );
-    const chordPl = mPl?.chord ?? 'Cmaj9';
-    const tsPl = guitarChordTonesInRange(chordPl, V2_FLOOR, V2_CEIL, chordOpts(context));
-    if (bar % 4 === 0) {
-      let bestSnap: number | undefined;
-      let bd = 999;
-      for (const c of [tsPl.third, tsPl.seventh]) {
-        const d = Math.abs(c - planPitch);
-        if (d <= 2 + 1e-6 && d < bd) {
-          bd = d;
-          bestSnap = c;
-        }
-      }
-      if (bestSnap !== undefined) planPitch = bestSnap;
-    }
-    goalPitch[bar] = planPitch;
-
-    if (bar > 1) {
-      const prevPc = goalPitch[bar - 1]! % 12;
-      const currPc = goalPitch[bar]! % 12;
-      if (currPc === prevPc) {
-        goalPitch[bar]! += planDirection;
-        goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]!));
-      }
-    }
-
-    if (bar > 2) {
-      const twoBackPc = goalPitch[bar - 2]! % 12;
-      const currPc = goalPitch[bar]! % 12;
-      if (currPc === twoBackPc) {
-        goalPitch[bar]! += planDirection * 2;
-        goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]!));
-      }
-    }
-  }
-  goalPitch[tb + 1] = planPitch;
-
-  for (let bar = 1; bar <= tb; bar++) {
-    const m =
-      guitar.measures[bar - 1] ??
-      guitar.measures.find(
-        (ms: MeasureModel & { bar?: number; measureNumber?: number; number?: number }) =>
-          ms.index === bar || ms.bar === bar || ms.measureNumber === bar || ms.number === bar
-      );
-    if (!m) continue;
-
-    const v1notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1);
-    if (v1notes.length === 0) continue;
-
-    const v1Sorted = [...v1notes].sort((a, b) => a.startBeat - b.startBeat);
-    const v1First = v1Sorted[0]!.pitch;
-    const v1Last = v1Sorted[v1Sorted.length - 1]!.pitch;
-    let v1Dir = 0;
-    if (v1Last > v1First + 1) v1Dir = 1;
-    else if (v1Last < v1First - 1) v1Dir = -1;
-
-    // Detect if planned direction matches V1 direction (parallel)
-    const plannedDir = goalPitch[bar] > (goalPitch[bar - 1] ?? goalPitch[bar]) ? 1 : -1;
-
-    if (v1Dir !== 0 && plannedDir === v1Dir) {
-      // Parallel motion detected — reverse the plan for this bar
-      goalPitch[bar] = goalPitch[bar - 1] ?? goalPitch[bar];
-      const correctedStep = sr(bar * 13) < 0.5 ? 1 : 2;
-      goalPitch[bar] -= v1Dir * correctedStep;
-      goalPitch[bar] = Math.max(V2_FLOOR, Math.min(V2_CEIL, goalPitch[bar]));
-    }
-
-    const chord = m.chord ?? 'Cmaj9';
-    const minV1Raw = minOverlappingV1Pitch(v1notes, 0, V2_BAR_DURATION_BEATS);
-    const minV1 = minV1Raw ?? Math.min(...v1notes.map((n) => n.pitch));
-
-    const strictCeiling = strictCeilingFromMinV1(minV1);
-    const floorMidi = INNER_LOW;
-    const innerHigh = Math.min(63, strictCeiling - 1);
-    if (innerHigh < floorMidi) continue;
-
-    const toneStruct = guitarChordTonesInRange(chord, floorMidi, innerHigh, chordOpts(context));
-    const pool: number[] = [];
-    const seen = new Set<number>();
-    const pushPoolRaw = (raw: number): void => {
-      const p = placeStrictlyBelowCeiling(strictCeiling, raw, floorMidi);
-      if (p >= floorMidi && p < strictCeiling && !seen.has(p)) {
-        seen.add(p);
-        pool.push(p);
-      }
-    };
-    const harmonySus = /sus/i.test(parseChordSymbol(chord).harmonyPart);
-    if (harmonySus) {
-      const tRaw = chordTonesForChordSymbol(chord, chordOpts(context));
-      const ninthMidi = liftToneToRange(tRaw.root + 14, floorMidi, innerHigh);
-      for (const raw of [toneStruct.root, toneStruct.fifth, ninthMidi, toneStruct.seventh]) {
-        pushPoolRaw(raw);
-      }
-    } else {
-      for (const raw of [toneStruct.third, toneStruct.seventh, toneStruct.fifth, toneStruct.root]) {
-        pushPoolRaw(raw);
-      }
-    }
-    const hpForPool = parseChordSymbol(chord).harmonyPart;
-    if (!harmonySus && harmonyPartLooksMajorSeventh(hpForPool)) {
-      const rm = hpForPool.match(/^([A-G](?:#|b)?)/i);
-      if (rm) {
-        const rpc = noteNameToPitchClass(rm[1]!);
-        if (rpc !== undefined) {
-          const oct = (pc: number) => 36 + pc;
-          const br = oct(rpc);
-          const b3 = oct((rpc + 4) % 12);
-          const b5 = oct((rpc + 7) % 12);
-          const b7 = oct((rpc + 11) % 12);
-          for (const raw of [
-            liftToneToRange(b3, floorMidi, innerHigh),
-            liftToneToRange(b7, floorMidi, innerHigh),
-            liftToneToRange(b5, floorMidi, innerHigh),
-            liftToneToRange(br, floorMidi, innerHigh),
-          ]) {
-            pushPoolRaw(raw);
-          }
-        }
-      }
-    }
     if (pool.length === 0) continue;
 
-    /** Rule 6 — nudge direction when pitch class repeats; independent of goal planning. */
-    const phraseBiasSign = seededUnit(seed, bar, 8877) < 0.5 ? 1 : -1;
+    const safe = pool.filter((t) => v1.every((v) => v % 12 !== t % 12));
+    const use = safe.length > 0 ? safe : pool;
 
-    /** Rule 4 — rhythmic independence: opposite rhythm to Voice 1 attack pattern (quarter-beat grid). */
-    const onsetQuarter = new Set<number>();
-    for (const n of v1notes) {
-      const q = Math.min(3, Math.max(0, Math.floor(n.startBeat + REAL_V2_BEAT_EPS)));
-      onsetQuarter.add(q);
-    }
-    const v1AttackCount = v1notes.length;
-    const v1HasLongNote = v1notes.some((n) => n.duration >= 2 - REAL_V2_BEAT_EPS);
+    const v1Dir = v1.length > 1 ? Math.sign(v1[v1.length - 1]! - v1[0]!) : 0;
 
-    let segStarts: number[];
-    let segEnds: number[];
-
-    if (v1AttackCount >= 4) {
-      /** Many short attacks: Voice 2 holds half + half (beats 1–2, 3–4). */
-      segStarts = [0, 2];
-      segEnds = [2, V2_BAR_DURATION_BEATS];
-    } else if (v1HasLongNote) {
-      /** Long half/whole in Voice 1: Voice 2 moving quarters on 1–4. */
-      segStarts = [0, 1, 2, 3];
-      segEnds = [1, 2, 3, V2_BAR_DURATION_BEATS];
-    } else if (
-      onsetQuarter.size === 2 &&
-      onsetQuarter.has(0) &&
-      onsetQuarter.has(2) &&
-      !onsetQuarter.has(1) &&
-      !onsetQuarter.has(3)
-    ) {
-      /** Voice 1 on beats 1 and 3 only: Voice 2 on beats 2 and 4 (rests on 1 and 3). */
-      segStarts = [1, 3];
-      segEnds = [2, V2_BAR_DURATION_BEATS];
-    } else if (onsetQuarter.size === 1 && onsetQuarter.has(0)) {
-      /** Only downbeat attack: Voice 2 starts beat 2, holds to bar end. */
-      segStarts = [1];
-      segEnds = [V2_BAR_DURATION_BEATS];
+    let p0: number;
+    if (last === null) {
+      p0 = use[Math.floor(use.length / 2)]!;
     } else {
-      /** Default: quarter on beat 1, then dotted half. */
-      segStarts = [0, 1];
-      segEnds = [1, V2_BAR_DURATION_BEATS];
+      const step = use.filter((t) => Math.abs(t - last!) <= 3);
+      const cands = step.length > 0 ? step : use;
+      if (v1Dir > 0) p0 = cands[0]!;
+      else if (v1Dir < 0) p0 = cands[cands.length - 1]!;
+      else p0 = cands.reduce((a, b) => (Math.abs(a - last!) <= Math.abs(b - last!) ? a : b));
     }
 
-    // Minimum 2 segments per bar always
-    if (segStarts.length < 2) {
-      segStarts = [0, 2];
-      segEnds = [2, V2_BAR_DURATION_BEATS];
-    }
-
-    const barGoal = goalPitch[bar]!;
-    const nearestChordTo = (goal: number): number | null => {
-      let best: number | undefined;
-      let bd = 999;
-      for (const p of pool) {
-        const d = Math.abs(p - goal);
-        if (d <= 2 + 1e-6 && d < bd) {
-          bd = d;
-          best = p;
-        }
-      }
-      return best !== undefined ? best : null;
-    };
-
-    const lo0 = floorMidi;
-    const hi0 = innerHigh;
-    let p0 = nearestChordTo(barGoal);
-    if (p0 === null) p0 = clampPitch(barGoal, lo0, hi0);
-    p0 = clampPitch(placeStrictlyBelowCeiling(strictCeiling, p0, floorMidi), lo0, hi0);
-
-    const buildSegmentPitchesFromP0 = (p0Start: number): number[] => {
-      const nextGoal = goalPitch[bar + 1] ?? barGoal;
-      let stepDir = nextGoal > p0Start ? 1 : nextGoal < p0Start ? -1 : 0;
-      if (stepDir === 0) stepDir = seededUnit(seed, bar, 9933) < 0.5 ? -1 : 1;
-      const out: number[] = [];
-      for (let si = 0; si < segStarts.length; si++) {
-        const t0 = segStarts[si]!;
-        const t1 = segEnds[si]!;
-        const minVs = minOverlappingV1Pitch(v1notes, t0, t1) ?? minV1;
-        const ceilSeg = strictCeilingFromMinV1(minVs);
-        const lo = floorMidi;
-        const hi = Math.min(63, ceilSeg - 1);
-        let raw = si === 0 ? p0Start : out[si - 1]! + stepDir;
-        raw = clampPitch(raw, lo, hi);
-        raw = clampPitch(placeStrictlyBelowCeiling(ceilSeg, raw, floorMidi), lo, hi);
-        out.push(raw);
-      }
-      return out;
-    };
-
-    let pitches = buildSegmentPitchesFromP0(p0);
-
-    if (bar > 1 && prevBarChord !== null && lastBarEndMidi !== null) {
-      const rd = shortestRootPcMotion(rootPcFromChordSymbol(prevBarChord, context), rootPcFromChordSymbol(chord, context));
-      const absRd = Math.abs(rd);
-      if (absRd === 1 || absRd === 6) {
-        const rootDir = rd > 0 ? 1 : -1;
-        const v2Delta = pitches[0]! - lastBarEndMidi;
-        const v2Dir = v2Delta === 0 ? 0 : v2Delta > 0 ? 1 : -1;
-        if (v2Dir !== rootDir) {
-          const aligned = clampPitch(
-            placeStrictlyBelowCeiling(strictCeiling, lastBarEndMidi + rootDir, floorMidi),
-            lo0,
-            hi0
-          );
-          p0 = aligned;
-          pitches = buildSegmentPitchesFromP0(p0);
-        }
-      }
-    }
-
-    /** Rule 6 — no repeated pitch class across consecutive bars. */
-    if (lastBarEndPc !== null && pitchClass(pitches[0]!) === lastBarEndPc) {
-      const dir = phraseBiasSign;
-      let adj = pitches[0]! + (dir >= 0 ? 1 : -1);
-      adj = clampPitch(adj, floorMidi, Math.min(63, strictCeiling - 1));
-      if (pitchClass(adj) === lastBarEndPc) adj = clampPitch(pitches[0]! + (dir >= 0 ? -1 : 1), floorMidi, Math.min(63, strictCeiling - 1));
-      pitches[0] = adj;
-    }
-
-    const v1PitchSet = new Set(v1notes.map((n) => pitchClass(n.pitch)));
-    const v1MidiExact = new Set(v1notes.map((n) => n.pitch));
-    const nearestChordToneInPoolTo = (target: number): number | null => {
-      let best: number | undefined;
-      let bd = 999;
-      for (const c of pool) {
-        const d = Math.abs(c - target);
-        if (d < bd) {
-          bd = d;
-          best = c;
-        }
-      }
-      return best !== undefined ? best : null;
-    };
-
-    const deClash = (p: number): number => {
-      if (v1MidiExact.has(p)) {
-        const candidates: number[] = [];
-        for (const shifted of [p + 2, p - 2]) {
-          const hit = nearestChordToneInPoolTo(shifted);
-          if (hit !== null && !v1MidiExact.has(hit)) candidates.push(hit);
-        }
-        if (candidates.length > 0) {
-          p = candidates.reduce((a, b) => (Math.abs(a - p) <= Math.abs(b - p) ? a : b));
-        } else {
-          for (const c of pool) {
-            if (!v1MidiExact.has(c)) {
-              p = c;
-              break;
-            }
-          }
-        }
-      }
-      const pc = pitchClass(p);
-      const clashIntervals = new Set([0, 1, 11, 13]);
-      const hasClash = [...v1PitchSet].some((v1pc) => {
-        const interval = Math.abs(pc - v1pc) % 12;
-        return clashIntervals.has(interval);
-      });
-      if (!hasClash) return p;
-      const nearestV1 = [...v1PitchSet].reduce((a, b) => (Math.abs(a - pc) < Math.abs(b - pc) ? a : b));
-      const direction = pc >= nearestV1 ? 1 : -1;
-      const adjusted = p + direction;
-      return Math.max(INNER_LOW, Math.min(CEIL_MIDI, adjusted));
-    };
-
-    const pBar0 = pitches[0]!;
-    const pBar1 = pitches.length > 1 ? pitches[1]! : pBar0;
-    const pBar2 = pitches.length > 2 ? pitches[2]! : pBar1;
-    const safe0 = deClash(pBar0);
-    const safe1 = deClash(pBar1);
-    const safe2 = deClash(pBar2);
-    let finals = pitches.map((p, i) => (i === 0 ? safe0 : i === 1 ? safe1 : i === 2 ? safe2 : deClash(p)));
+    const above = pool.filter((t) => t > p0 && t <= 59);
+    const below = pool.filter((t) => t < p0 && t >= 48);
+    const p1candidates = above.length > 0 ? above : below;
+    const p1 = p1candidates.length > 0 ? p1candidates[0]! : (pool.find((t) => t !== p0) ?? p0);
+    let p1safe = Math.max(48, Math.min(59, p1));
 
     m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-    for (let si = 0; si < segStarts.length; si++) {
-      const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[si]! - segStarts[si]!);
-      addEvent(m, createNote(finals[si]!, segStarts[si]!, dur, V2_VOICE));
-    }
+    p0 = Math.max(48, Math.min(59, p0));
+    p1safe = Math.max(48, Math.min(59, p1safe));
+    addEvent(m, createNote(p0, 0, 1, V2_VOICE));
+    p0 = Math.max(48, Math.min(59, p0));
+    p1safe = Math.max(48, Math.min(59, p1safe));
+    addEvent(m, createNote(p1safe, 1, 3, V2_VOICE));
     m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
 
-    let v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
-    if (!voice2StrictlyBelowOverlappingV1(v1notes, v2notes)) {
-      finals = finals.map((p) => Math.max(INNER_LOW, p - 12));
-      m.events = m.events.filter((e) => (e.voice ?? 1) !== V2_VOICE);
-      for (let sj = 0; sj < segStarts.length; sj++) {
-        const dur = Math.max(REAL_V2_BEAT_EPS, segEnds[sj]! - segStarts[sj]!);
-        addEvent(m, createNote(finals[sj]!, segStarts[sj]!, dur, V2_VOICE));
-      }
-      m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
-      v2notes = m.events.filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE);
-    }
-
-    lastBarEndPc = pitchClass(finals[finals.length - 1]!);
-    lastBarEndMidi = finals[finals.length - 1]!;
-    prevBarChord = chord;
+    last = p1safe;
     injected++;
   }
 
@@ -3600,7 +3306,7 @@ function tryApplyOffbeatHoldMinimalFromRealized182B3(
   );
   stripAllVoice2EventsFromMeasure182B3(m);
   addEvent(m, createRest(0, 1, V2_VOICE));
-  addEvent(m, createNote(p, 1, 3, V2_VOICE));
+  addEvent(m, createNote(clampWybleV2WrittenMidi(p), 1, 3, V2_VOICE));
   m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
   const v2 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
   if (!voice2StrictlyBelowOverlappingV1(v1, v2) || maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) {
@@ -3686,8 +3392,8 @@ function tryApplyTwoSlabsMinimalFromRealized182B5(
     undefined
   );
   stripAllVoice2EventsFromMeasure182B3(m);
-  addEvent(m, createNote(p0, 0, 2, V2_VOICE));
-  addEvent(m, createNote(p1, 2, 2, V2_VOICE));
+  addEvent(m, createNote(clampWybleV2WrittenMidi(p0), 0, 2, V2_VOICE));
+  addEvent(m, createNote(clampWybleV2WrittenMidi(p1), 2, 2, V2_VOICE));
   m.events.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
   const v2 = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === V2_VOICE) as NoteEvent[];
   if (!voice2StrictlyBelowOverlappingV1(v1, v2) || maxSimultaneousGuitarNotes(m) > MAX_GUITAR_SIMULT) {
@@ -4333,7 +4039,7 @@ export function stripVoice2IfCrossingMelody(guitar: PartModel): number {
         const e = m.events[i]!;
         if (e.kind !== 'note' || (e.voice ?? 1) !== V2_VOICE) continue;
         const n = e as NoteEvent;
-        m.events[i] = { ...n, pitch: n.pitch - 12 };
+        m.events[i] = { ...n, pitch: clampWybleV2WrittenMidi(n.pitch - 12) };
       }
       const v2a = m.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 2) as NoteEvent[];
       if (voice2StrictlyBelowOverlappingV1(v1, v2a)) fixed = true;

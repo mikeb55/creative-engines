@@ -1,7 +1,8 @@
 /**
  * Bundled separately (esbuild) — registers Composer OS API IPC; no HTTP server.
  */
-import type { IpcMain } from 'electron';
+import { app, type IpcMain } from 'electron';
+import path from 'path';
 import type { GenerateRequest } from '../../../engines/composer-os-v2/app-api/appApiTypes';
 import {
   apiGetPresets,
@@ -35,6 +36,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-output-directory', () => apiGetOutputDirectory(outputDir));
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));
   ipcMain.handle('composer-os-api:run-system-check', () => apiSystemCheck());
+  console.log('[ipcEntry] registering generate-wayne-shorter');
   ipcMain.handle(
     'composer-os-api:generate-wayne-shorter',
     async (
@@ -46,15 +48,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         profile?: string;
       }
     ) => {
-      const { execFile } = await import('child_process');
-      const { promisify } = await import('util');
-      const { join } = await import('path');
+      const { spawn } = await import('child_process');
       const { writeFile } = await import('fs/promises');
-      const execFileAsync = promisify(execFile);
 
-      const cliPath = join(
-        __dirname,
-        '../../../../engines/wayne-shorter-engine/wayne_shorter_cli.py'
+      const cliPath = path.join(
+        app.getPath('documents'),
+        'Cursor AI Projects',
+        'creative-engines',
+        'engines',
+        'wayne-shorter-engine',
+        'wayne_shorter_cli.py'
       );
       const input = JSON.stringify({
         title: body.title,
@@ -63,13 +66,42 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         profile: body.profile ?? 'balanced',
       });
 
-      const { stdout } = await execFileAsync('py', [cliPath], {
-        input,
-        maxBuffer: 2 * 1024 * 1024,
-      });
+      const pythonCmds = ['py', 'python', 'python3'];
+      let stdout: string | undefined;
+      let lastError: unknown;
+      for (const cmd of pythonCmds) {
+        try {
+          stdout = await new Promise<string>((resolve, reject) => {
+            const child = spawn(cmd, [cliPath], {
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            let out = '';
+            let err = '';
+            child.stdout.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            child.stderr.on('data', (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on('close', (code: number | null) => {
+              if (code === 0) resolve(out);
+              else reject(new Error(err || `exit code ${code}`));
+            });
+            child.on('error', reject);
+            child.stdin.write(input);
+            child.stdin.end();
+          });
+          break;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      if (stdout === undefined) {
+        throw lastError instanceof Error ? lastError : new Error(String(lastError));
+      }
 
       const filename = `wayne_shorter_${Date.now()}.musicxml`;
-      const outPath = join(outputDir, filename);
+      const outPath = path.join(outputDir, filename);
       await writeFile(outPath, stdout, 'utf8');
 
       return { path: outPath, filename };
