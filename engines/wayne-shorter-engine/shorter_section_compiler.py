@@ -72,6 +72,7 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     reg = composer_ir.registral_plan.get("primary", cell.registral_center)
+    reg = max(60, reg)
     events = _melody_from_cell(cell, bars, bar_start, section_id, reg)
     harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
@@ -96,6 +97,7 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     cell = composer_ir.motivic_cells[1] if len(composer_ir.motivic_cells) > 1 else composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     developed = develop_motif_cell(cell, "fragmentation")
     reg = composer_ir.registral_plan.get("contrast", cell.registral_center - 3)
+    reg = max(60, reg)
     events = _melody_from_cell(developed, bars, bar_start, section_id, reg)
     harm = derive_section_harmony(composer_ir.harmonic_field, "contrast")
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
@@ -120,6 +122,7 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     developed = develop_motif_cell(cell, "transposition")
     reg = composer_ir.registral_plan.get("return", cell.registral_center + 5)
+    reg = max(60, reg)
     events = _melody_from_cell(developed, bars, bar_start, section_id, reg)
     harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
@@ -142,7 +145,8 @@ def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     bars = section_plan.bar_count or 4
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5])
-    events = _melody_from_cell(cell, bars, bar_start, section_id, cell.registral_center)
+    reg = max(60, cell.registral_center)
+    events = _melody_from_cell(cell, bars, bar_start, section_id, reg)
     harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     return CompiledSection(
@@ -153,7 +157,7 @@ def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR,
         melody_events=events,
         harmony=harmony,
         phrase_lengths=[bars],
-        register_hint=cell.registral_center,
+        register_hint=reg,
     )
 
 
@@ -166,7 +170,7 @@ def _melody_from_cell(cell: MotivicCell, bars: int, bar_start: int, section_id: 
     idx = 0
     while beat < total_beats:
         inc = cell.intervals[idx % len(cell.intervals)]
-        pitch = max(36, min(84, pitch + inc))
+        pitch = max(60, min(84, pitch + inc))
         measure = bar_start + int(beat // 4)
         events.append({
             "pitch": pitch,
