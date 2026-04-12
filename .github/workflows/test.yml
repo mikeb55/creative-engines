@@ -7,21 +7,20 @@ on:
   pull_request:
 
 jobs:
-  composer-os-v2-tests:
+  test-main:
+    name: Test - main
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '18'
-          cache: npm
+          python-version: "3.11"
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install pytest
+        run: python -m pip install --upgrade pip pytest
 
-      - name: Run composer-os-v2 test suite
-        working-directory: engines/composer-os-v2
-        run: node --max-old-space-size=6144 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts
+      - name: Run Python test suite
+        run: python -m pytest -v
