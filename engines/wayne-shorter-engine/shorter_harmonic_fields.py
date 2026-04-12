@@ -2,6 +2,7 @@
 Shorter Harmonic Fields — Nonfunctional motion, ambiguity, expectation-diversion.
 """
 
+import re
 from typing import List, Dict, Any
 
 try:
@@ -30,6 +31,11 @@ CHORD_TYPES = {
 
 def _hash_int(seed: int, extra: int = 0) -> int:
     return (seed * 31 + extra) & 0xFFFFFFFF
+
+
+def _dedupe_minor_m(symbol: str) -> str:
+    """Remove double minor prefix when root already ends with 'm' (e.g. Fm + m11 -> Fmm11 -> Fm11)."""
+    return re.sub(r"([A-G](?:b|#)?)mm", lambda m: m.group(1) + "m", symbol)
 
 
 def _pc_root_from_center(center: str) -> str:
@@ -97,7 +103,8 @@ def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> 
     t = harmonic_field.chord_types
     if section_role == "contrast":
         idx = 1 % len(c)
-        return [f"{c[idx]}{t[idx % len(t)]}"] * 4
+        sym = _dedupe_minor_m(f"{c[idx]}{t[idx % len(t)]}")
+        return [sym] * 4
     seed = _hash_int(sum(ord(x) for x in section_role), len(c))
     roots = [_pc_root_from_center(c[0])]
     last_root = roots[0]
@@ -117,7 +124,7 @@ def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> 
             repeat_count = 0
         last_root = new_root
         roots.append(new_root)
-    return [f"{roots[i]}{t[i % len(t)]}" for i in range(4)]
+    return [_dedupe_minor_m(f"{roots[i]}{t[i % len(t)]}") for i in range(4)]
 
 
 def score_harmonic_ambiguity(harmonic_field: HarmonicField) -> float:
