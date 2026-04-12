@@ -27,22 +27,48 @@ def _escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
-def _kind_for(symbol: str) -> str:
-    s = symbol.lower()
+def _kind_for(suffix: str) -> str:
+    s = suffix.lower().strip()
+    if "maj7#11" in s or "maj7+11" in s:
+        return "major-seventh"
+    if "maj9" in s:
+        return "major-ninth"
     if "maj7" in s:
         return "major-seventh"
-    if "min7" in s or "m7" in s:
-        return "minor-seventh"
-    if "7" in s and "maj" not in s:
-        return "dominant"
-    if "min" in s or "m" in s:
-        return "minor"
+    if "maj" in s:
+        return "major"
+    if "dim7" in s:
+        return "diminished-seventh"
     if "dim" in s:
         return "diminished"
+    if "m11" in s or "min11" in s:
+        return "minor-11th"
+    if "m9" in s or "min9" in s:
+        return "minor-ninth"
+    if "m7" in s or "min7" in s:
+        return "minor-seventh"
     if "aug" in s:
         return "augmented"
+    if "13sus" in s or "sus13" in s:
+        return "suspended-fourth"
+    if "7sus" in s or "sus7" in s:
+        return "suspended-fourth"
     if "sus" in s:
         return "suspended-fourth"
+    if "7alt" in s or "alt" in s:
+        return "dominant"
+    if "7b9" in s or "7#9" in s or "13b9" in s:
+        return "dominant"
+    if "13" in s:
+        return "dominant-13th"
+    if "11" in s:
+        return "dominant-11th"
+    if "9" in s:
+        return "dominant-ninth"
+    if "7" in s:
+        return "dominant"
+    if "m" in s or "min" in s:
+        return "minor"
     return "major"
 
 
