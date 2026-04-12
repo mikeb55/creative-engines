@@ -2,6 +2,7 @@
 Shorter MusicXML Exporter — Valid MusicXML from CompiledComposition.
 """
 
+import re as _re
 from typing import Any, Dict, List
 
 try:
@@ -103,26 +104,30 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
         chord_sym = by_measure_chord.get(m)
         if chord_sym:
             lines.append("      <harmony>")
-            # Parse root: handle Bb, Eb, Ab, Db, Gb, F#, C#
-            if len(chord_sym) > 1 and chord_sym[1] == 'b':
-                root_step = chord_sym[0]
-                root_alter = '\n        <root-alter>-1</root-alter>'
-                kind_input = chord_sym[2:]
-            elif len(chord_sym) > 1 and chord_sym[1] == '#':
-                root_step = chord_sym[0]
-                root_alter = '\n        <root-alter>1</root-alter>'
-                kind_input = chord_sym[2:]
+            _rm = _re.match(r"^([A-G])(b|#)?(.*)$", chord_sym)
+            if _rm:
+                root_step = _rm.group(1)
+                acc = _rm.group(2) or ""
+                kind_input = _rm.group(3)
+                root_alter = (
+                    "\n        <root-alter>-1</root-alter>"
+                    if acc == "b"
+                    else "\n        <root-alter>1</root-alter>"
+                    if acc == "#"
+                    else ""
+                )
             else:
                 root_step = chord_sym[0]
-                root_alter = ''
+                root_alter = ""
                 kind_input = chord_sym[1:]
             lines.append(
-                f'        <root><root-step>{root_step}</root-step>'
-                f'{root_alter}</root>'
+                f"        <root>"
+                f"<root-step>{root_step}</root-step>"
+                f"{root_alter}</root>"
             )
             lines.append(
                 f'        <kind text="{chord_sym}">'
-                f'{_kind_for(kind_input)}</kind>'
+                f"{_kind_for(kind_input)}</kind>"
             )
             lines.append("      </harmony>")
         evs = sorted(by_measure.get(m, []), key=lambda x: x.get("beat_position", 0))
@@ -134,6 +139,11 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
                 divs = max(1, int((onset - cursor) * divisions))
                 lines.append(f'      <note><rest/><duration>{divs}</duration><type>quarter</type></note>')
                 cursor = onset
+            if e.get("is_rest") or e.get("pitch", 0) == 0:
+                divs = max(1, int(dur * divisions))
+                lines.append(f'      <note><rest/><duration>{divs}</duration><type>quarter</type></note>')
+                cursor = onset + dur
+                continue
             pitch = e.get("pitch", 60)
             step, alter, octave = _spell_pitch(pitch)
             alter_tag = f"<alter>{alter}</alter>" if alter != 0 else ""

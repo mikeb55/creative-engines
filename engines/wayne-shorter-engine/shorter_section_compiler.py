@@ -350,6 +350,8 @@ def _melody_from_cell(
                 pitch = max(60, min(84, pitch + inc))
         else:
             pitch = max(60, min(84, pitch + inc))
+        if pitch < 48 or pitch > 84:
+            pitch = max(60, min(84, pitch))
         dur = 2.0 if cadence_bar else 1.5
         events.append({
             "pitch": pitch,
@@ -375,4 +377,7 @@ def _melody_from_cell(
                 }
                 events.append(rest_event)
                 beat += 1.0
+    for e in events:
+        if e.get("pitch", 0) == 0:
+            e["is_rest"] = True
     return events
