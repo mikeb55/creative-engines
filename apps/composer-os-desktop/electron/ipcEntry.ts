@@ -113,6 +113,82 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     }
   );
 
+  ipcMain.handle(
+    'composer-os-api:generate-monk',
+    async (
+      _event,
+      body: {
+        title: string;
+        seed?: number;
+      }
+    ) => {
+      const { spawn } = await import('child_process');
+      const { writeFile } = await import('fs/promises');
+
+      const cliPath = path.join(
+        app.getPath('documents'),
+        'Cursor AI Projects',
+        'creative-engines',
+        'engines',
+        'monk-engine',
+        'monk_cli.py'
+      );
+      const input = JSON.stringify({
+        title: body.title,
+        seed: body.seed ?? 42,
+        mode: 'title',
+        profile: 'balanced',
+      });
+      const pythonCmds = ['py', 'python', 'python3'];
+      let stdout = '';
+      let lastErr: Error | null = null;
+      for (const cmd of pythonCmds) {
+        try {
+          stdout = await new Promise<string>((resolve, reject) => {
+            const child = spawn(cmd, [cliPath], {
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            let out = '';
+            let err = '';
+            child.stdout.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            child.stderr.on('data', (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on('close', (code: number | null) => {
+              if (code === 0) resolve(out);
+              else reject(new Error(err || `exit code ${code}`));
+            });
+            child.on('error', reject);
+            child.stdin.write(input);
+            child.stdin.end();
+          });
+          lastErr = null;
+          break;
+        } catch (e: unknown) {
+          const err = e instanceof Error ? e : new Error(String(e));
+          lastErr = err;
+          const msg = err.message ?? '';
+          if (!msg.includes('ENOENT')) throw err;
+        }
+      }
+      if (lastErr) {
+        throw new Error(`Python not found. Tried: ${pythonCmds.join(', ')}`);
+      }
+
+      const safeTitle = (body.title || 'untitled')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 40);
+      const filename = `monk_${safeTitle}.musicxml`;
+      const outPath = path.join(outputDir, filename);
+      await writeFile(outPath, stdout, 'utf8');
+      return { path: outPath, filename };
+    }
+  );
+
   ipcMain.handle('show-item-in-folder', async (_event, filePath: string) => {
     if (!filePath) return { ok: false, error: 'no path' };
     const normalized = require('path').normalize(filePath);

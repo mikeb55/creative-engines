@@ -171,6 +171,8 @@ export const api = {
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
   generateWayneShorter: (body: { title: string; seed?: number }) =>
     ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-wayne-shorter', body),
+  generateMonk: (body: { title: string; seed?: number }) =>
+    ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-monk', body),
   getOutputs: () => get<{ outputs: Array<Record<string, unknown>> }>('/outputs'),
   openOutputFolder: (opts?: { path?: string }) =>
     post<OpenOutputFolderResponse>('/open-output-folder', opts ?? {}),

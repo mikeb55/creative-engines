@@ -11,6 +11,9 @@ function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
   const [wsResult, setWsResult] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [monkTitle, setMonkTitle] = React.useState('');
+  const [monkResult, setMonkResult] = React.useState('');
+  const [monkLoading, setMonkLoading] = React.useState(false);
 
   return (
     <div style={{ padding: '1.5rem' }}>
@@ -89,6 +92,87 @@ function ComposerEngines() {
               Open in folder
             </button>
             <button onClick={() => setWsResult('')}>
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '1rem',
+        marginTop: '1rem',
+        maxWidth: '480px'
+      }}>
+        <h3 style={{ margin: '0 0 0.5rem' }}>
+          Thelonious Monk
+        </h3>
+        <p style={{
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+          margin: '0 0 1rem'
+        }}>
+          Blues-rooted composition engine. Tritone leaps,
+          flat 9 dominants, rhythmic displacement,
+          chromatic neighbour harmony.
+          Outputs a single-staff lead sheet.
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text"
+            placeholder="Composition title"
+            value={monkTitle}
+            onChange={e => setMonkTitle(e.target.value)}
+            style={{ flex: 1, padding: '0.3rem' }}
+          />
+          <button
+            disabled={!monkTitle || monkLoading}
+            onClick={() => {
+              setMonkLoading(true);
+              (api as any).generateMonk({
+                title: monkTitle,
+                seed: Math.floor(Math.random() * 1e9)
+              }).then((r: any) => {
+                setMonkLoading(false);
+                if (r?.path) {
+                  setMonkResult(r.path);
+                  setMonkTitle('');
+                } else {
+                  setMonkResult('');
+                  alert('Monk generation failed: no path returned');
+                }
+              }).catch((e: any) => {
+                setMonkLoading(false);
+                setMonkResult('Error: ' +
+                  String(e?.message ?? e));
+              });
+            }}
+          >
+            {monkLoading ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
+        {monkResult && (
+          <div style={{
+            marginTop: '0.75rem',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center'
+          }}>
+            <button onClick={async () => {
+              if (!monkResult || monkResult.startsWith('Error')) {
+                alert('No valid file path: ' + monkResult);
+                return;
+              }
+              const result = await (window.composerOsDesktop as any)
+                ?.showItemInFolder(monkResult);
+              if (!result?.ok) {
+                alert('Could not open folder: ' +
+                  (result?.error ?? 'unknown'));
+              }
+            }}>
+              Open in folder
+            </button>
+            <button onClick={() => setMonkResult('')}>
               Clear
             </button>
           </div>
