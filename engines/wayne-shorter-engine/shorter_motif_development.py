@@ -20,10 +20,23 @@ def generate_motivic_cells(seed: int, count: int = 3) -> List[MotivicCell]:
     cells = []
     for i in range(count):
         h = _hash_int(seed, i)
-        intervals = [
-            ((h >> (j * 3)) % 7) - 3 for j in range(4)
+        # Shorter fingerprint: bias toward 2nds, 3rds, 4ths
+        # Sparse tritone/maj7 as color events
+        INTERVAL_POOL = [
+            2, 2, 2,      # major 2nd (high weight)
+            -2, -2, -2,   # minor 2nd down
+            3, 3,         # minor 3rd
+            -3, -3,       # minor 3rd down
+            4, 4,         # major 3rd
+            5, 5,         # perfect 4th
+            -5, -5,       # 4th down
+            6,            # tritone (low, color)
+            -7,           # major 7th down (color)
         ]
-        intervals = [x for x in intervals if x != 0][:3] or [2, 5]
+        intervals = []
+        for j in range(3):
+            h2 = _hash_int(h, j + 100)
+            intervals.append(INTERVAL_POOL[h2 % len(INTERVAL_POOL)])
         contour = ["arch", "descent", "ascent", "wave"][h % 4]
         reg = 58 + (h % 12)
         cells.append(MotivicCell(intervals=intervals, contour=contour, registral_center=reg))
@@ -33,21 +46,43 @@ def generate_motivic_cells(seed: int, count: int = 3) -> List[MotivicCell]:
 def develop_motif_cell(cell: MotivicCell, operation: str) -> MotivicCell:
     """Apply development operation to cell."""
     intervals = list(cell.intervals)
-    if operation == "transposition":
-        return MotivicCell(intervals=intervals, contour=cell.contour, registral_center=cell.registral_center + 5)
-    if operation == "interval_expansion":
-        new_i = [x * 2 if abs(x) <= 2 else x for x in intervals]
-        return MotivicCell(intervals=new_i, contour=cell.contour, registral_center=cell.registral_center)
-    if operation == "contraction":
-        new_i = [x // 2 if x % 2 == 0 else x for x in intervals]
-        return MotivicCell(intervals=new_i or [1], contour=cell.contour, registral_center=cell.registral_center)
-    if operation == "fragmentation":
-        return MotivicCell(intervals=intervals[:2] if len(intervals) >= 2 else intervals, contour=cell.contour, registral_center=cell.registral_center)
-    if operation == "inversion_lite":
-        return MotivicCell(intervals=[-x for x in intervals], contour=cell.contour, registral_center=cell.registral_center)
-    if operation == "registral_shift":
-        return MotivicCell(intervals=intervals, contour=cell.contour, registral_center=cell.registral_center + 12)
-    return cell
+    INTERVAL_POOL = [
+        2, 2, 2,
+        -2, -2, -2,
+        3, 3,
+        -3, -3,
+        4, 4,
+        5, 5,
+        -5, -5,
+        6,
+        -7,
+    ]
+    h = _hash_int(cell.registral_center, sum(ord(c) for c in operation))
+    r = (h % 10000) / 10000.0
+    # Weighted Shorter-style transforms: repeat 0.20, transposition 0.30, fragmentation 0.25, contour/new pitches 0.25
+    if r < 0.20:
+        return MotivicCell(intervals=list(intervals), contour=cell.contour, registral_center=cell.registral_center)
+    if r < 0.50:
+        step_choices = [2, -2, 3, -3]
+        step = step_choices[(h >> 8) % len(step_choices)]
+        return MotivicCell(
+            intervals=list(intervals),
+            contour=cell.contour,
+            registral_center=cell.registral_center + step,
+        )
+    if r < 0.75:
+        return MotivicCell(
+            intervals=intervals[:2] if len(intervals) >= 2 else list(intervals),
+            contour=cell.contour,
+            registral_center=cell.registral_center,
+        )
+    new_intervals = []
+    for j in range(len(intervals) if intervals else 3):
+        h2 = _hash_int(h, j + 50)
+        new_intervals.append(INTERVAL_POOL[h2 % len(INTERVAL_POOL)])
+    if not new_intervals:
+        new_intervals = [2, 3, 5]
+    return MotivicCell(intervals=new_intervals, contour=cell.contour, registral_center=cell.registral_center)
 
 
 def build_development_plan(motivic_cells: List[MotivicCell], seed: int) -> dict:

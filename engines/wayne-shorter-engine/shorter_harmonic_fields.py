@@ -32,6 +32,49 @@ def _hash_int(seed: int, extra: int = 0) -> int:
     return (seed * 31 + extra) & 0xFFFFFFFF
 
 
+def _pc_root_from_center(center: str) -> str:
+    s = (center or "").strip()
+    if not s:
+        return "C"
+    if len(s) >= 2 and s[1] in ("b", "#"):
+        return s[:2]
+    return s[0]
+
+
+def _next_root(current_root: str, seed: int) -> str:
+    """Bias toward semitone/whole-step/third motion."""
+    CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F',
+                 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+    ROOT_MOTION_WEIGHTS = [
+        (1, 0.22),   # semitone up
+        (-1, 0.22),  # semitone down
+        (2, 0.13),   # whole step up
+        (-2, 0.13),  # whole step down
+        (3, 0.10),   # minor 3rd
+        (-3, 0.10),  # minor 3rd down
+        (6, 0.05),   # tritone
+        (5, 0.05),   # 4th up (suppress V-I)
+    ]
+    key = (current_root or "").strip()
+    if len(key) >= 2 and key[1] in ("b", "#"):
+        pitch = key[:2]
+    else:
+        pitch = key[0]
+    try:
+        idx = CHROMATIC.index(pitch)
+    except ValueError:
+        idx = 0
+    h = (seed * 31 + idx) & 0xFFFFFFFF
+    r = (h & 0xFF) / 255.0
+    cumulative = 0.0
+    for semitones, weight in ROOT_MOTION_WEIGHTS:
+        cumulative += weight
+        if r < cumulative:
+            new_idx = (idx + semitones) % 12
+            return CHROMATIC[new_idx]
+    return CHROMATIC[(idx + 2) % 12]
+
+
 def build_harmonic_field(seed: int, profile: str = "ambiguous") -> HarmonicField:
     """Build harmonic field. Deterministic."""
     prof = "ambiguous_modal" if profile == "ambiguous" else profile
@@ -55,9 +98,11 @@ def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> 
     if section_role == "contrast":
         idx = 1 % len(c)
         return [f"{c[idx]}{t[idx % len(t)]}"] * 4
-    base = c[0]
-    ct = t[0]
-    return [f"{base}{ct}", f"{c[1 % len(c)]}{t[1 % len(t)]}", f"{base}{ct}", f"{c[-1]}{t[-1]}"]
+    seed = _hash_int(sum(ord(x) for x in section_role), len(c))
+    roots = [_pc_root_from_center(c[0])]
+    for k in range(3):
+        roots.append(_next_root(roots[-1], _hash_int(seed, k + 1)))
+    return [f"{roots[i]}{t[i % len(t)]}" for i in range(4)]
 
 
 def score_harmonic_ambiguity(harmonic_field: HarmonicField) -> float:

@@ -19,6 +19,10 @@ except ImportError:
     from shorter_motif_development import develop_motif_cell
 
 
+def _hash_int(seed: int, extra: int = 0) -> int:
+    return (seed * 31 + extra) & 0xFFFFFFFF
+
+
 def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
     """Compile ComposerIR to CompiledComposition. Deterministic."""
     r = validate_composer_ir(composer_ir)
@@ -168,17 +172,39 @@ def _melody_from_cell(cell: MotivicCell, bars: int, bar_start: int, section_id: 
     beat = 0.0
     total_beats = bars * 4
     idx = 0
+    pitch_event_idx = 0
+    seed = _hash_int(bar_start, sum(ord(c) for c in section_id))
+    phrase_len = 4
     while beat < total_beats:
+        local_bar = int(beat // 4)
+        measure = bar_start + local_bar
+        local_bar_index = measure - bar_start
+        cadence_bar = phrase_len > 0 and ((local_bar_index + 1) % phrase_len == 0)
         inc = cell.intervals[idx % len(cell.intervals)]
         pitch = max(60, min(84, pitch + inc))
-        measure = bar_start + int(beat // 4)
+        dur = 2.0 if cadence_bar else 1.5
         events.append({
             "pitch": pitch,
-            "duration": 1.5,
+            "duration": dur,
             "measure": measure,
             "beat_position": beat % 4,
             "section_id": section_id,
         })
         idx += 1
-        beat += 1.5
+        pitch_event_idx += 1
+        beat += dur
+        if pitch_event_idx % 2 == 0:
+            h_rest = _hash_int(seed, measure * 17 + pitch_event_idx)
+            if (h_rest % 100) < 35:
+                measure_r = bar_start + int(beat // 4)
+                rest_event = {
+                    "measure": measure_r,
+                    "beat_position": beat % 4,
+                    "duration": 1.0,
+                    "pitch": 0,
+                    "is_rest": True,
+                    "section_id": section_id,
+                }
+                events.append(rest_event)
+                beat += 1.0
     return events
