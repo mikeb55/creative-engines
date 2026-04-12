@@ -9,13 +9,13 @@ try:
     from .composer_ir import ComposerIR, SectionPlan, MotivicCell
     from .composer_ir_validator import validate_composer_ir
     from .compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
-    from .shorter_harmonic_fields import derive_section_harmony
+    from .shorter_harmonic_fields import derive_section_harmony, _next_root
     from .shorter_motif_development import develop_motif_cell
 except ImportError:
     from composer_ir import ComposerIR, SectionPlan, MotivicCell
     from composer_ir_validator import validate_composer_ir
     from compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
-    from shorter_harmonic_fields import derive_section_harmony
+    from shorter_harmonic_fields import derive_section_harmony, _next_root
     from shorter_motif_development import develop_motif_cell
 
 
@@ -165,6 +165,33 @@ def _hash_int(seed: int, extra: int = 0) -> int:
     return (seed * 31 + extra) & 0xFFFFFFFF
 
 
+def _extend_harm(harm_list: List[str], needed: int, seed: int) -> List[str]:
+    """Extend a chord pattern to `needed` length; avoid repeating the same symbol consecutively."""
+    hl = list(harm_list)
+    if not hl:
+        return ["C"] * needed
+    result: List[str] = []
+    last: Optional[str] = None
+    repeat_count = 0
+    while len(result) < needed:
+        candidate = hl[len(result) % len(hl)]
+        if candidate == last:
+            repeat_count += 1
+            if repeat_count >= 1:
+                m = _re.match(r"^([A-G](?:b|#)?)", candidate)
+                root = m.group(1) if m else "C"
+                h = (seed * 31 + len(result) * 37) & 0xFFFFFFFF
+                new_root = _next_root(root, h)
+                suffix = _re.sub(r"^[A-G](?:b|#)?", "", candidate)
+                candidate = new_root + suffix
+                repeat_count = 0
+        else:
+            repeat_count = 0
+        last = candidate
+        result.append(candidate)
+    return result
+
+
 def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
     """Compile ComposerIR to CompiledComposition. Deterministic."""
     r = validate_composer_ir(composer_ir)
@@ -246,7 +273,8 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     reg = composer_ir.registral_plan.get("contrast", cell.registral_center - 3)
     reg = max(60, reg)
     harm = derive_section_harmony(composer_ir.harmonic_field, "contrast")
-    harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
+    harm_ext = _extend_harm(harm, bars, composer_ir.seed)
+    harmony = [{"symbol": harm_ext[i], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
     events = _melody_from_cell(developed, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
     pl = section_plan.phrase_lengths or [3, 3]
