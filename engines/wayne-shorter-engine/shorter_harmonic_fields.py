@@ -100,8 +100,18 @@ def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> 
         return [f"{c[idx]}{t[idx % len(t)]}"] * 4
     seed = _hash_int(sum(ord(x) for x in section_role), len(c))
     roots = [_pc_root_from_center(c[0])]
+    last_root = roots[0]
+    repeat_count = 0
     for k in range(3):
-        roots.append(_next_root(roots[-1], _hash_int(seed, k + 1)))
+        new_root = _next_root(roots[-1], _hash_int(seed, k + 1))
+        if new_root == last_root:
+            repeat_count += 1
+            if repeat_count >= 2:
+                new_root = _next_root(new_root, seed + 99)
+        else:
+            repeat_count = 0
+        last_root = new_root
+        roots.append(new_root)
     return [f"{roots[i]}{t[i % len(t)]}" for i in range(4)]
 
 

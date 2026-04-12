@@ -103,17 +103,27 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
         chord_sym = by_measure_chord.get(m)
         if chord_sym:
             lines.append("      <harmony>")
-            root_step = chord_sym[0]
-            root_alter = ""
-            if len(chord_sym) > 1 and chord_sym[1] == "b":
-                root_alter = "\n        <root-alter>-1</root-alter>"
-            elif len(chord_sym) > 1 and chord_sym[1] == "#":
-                root_alter = "\n        <root-alter>1</root-alter>"
+            # Parse root: handle Bb, Eb, Ab, Db, Gb, F#, C#
+            if len(chord_sym) > 1 and chord_sym[1] == 'b':
+                root_step = chord_sym[0]
+                root_alter = '\n        <root-alter>-1</root-alter>'
+                kind_input = chord_sym[2:]
+            elif len(chord_sym) > 1 and chord_sym[1] == '#':
+                root_step = chord_sym[0]
+                root_alter = '\n        <root-alter>1</root-alter>'
+                kind_input = chord_sym[2:]
+            else:
+                root_step = chord_sym[0]
+                root_alter = ''
+                kind_input = chord_sym[1:]
             lines.append(
-                f"        <root><root-step>{root_step}</root-step>"
-                f"{root_alter}</root>"
+                f'        <root><root-step>{root_step}</root-step>'
+                f'{root_alter}</root>'
             )
-            lines.append(f'        <kind text="{chord_sym}">{_kind_for(chord_sym)}</kind>')
+            lines.append(
+                f'        <kind text="{chord_sym}">'
+                f'{_kind_for(kind_input)}</kind>'
+            )
             lines.append("      </harmony>")
         evs = sorted(by_measure.get(m, []), key=lambda x: x.get("beat_position", 0))
         cursor = 0.0
