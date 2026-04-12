@@ -100,7 +100,12 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         throw lastError instanceof Error ? lastError : new Error(String(lastError));
       }
 
-      const filename = `wayne_shorter_${Date.now()}.musicxml`;
+      const safeTitle = (body.title || 'untitled')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 40);
+      const filename = `wayne_shorter_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
       await writeFile(outPath, stdout, 'utf8');
 
