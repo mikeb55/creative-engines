@@ -104,18 +104,19 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
         chord_sym = by_measure_chord.get(m)
         if chord_sym:
             lines.append("      <harmony>")
-            _rm = _re.match(r"^([A-G])(b|#)?(.*)$", chord_sym)
+            _rm = _re.match(r"^([A-G](?:b|#)?)(.*)$", chord_sym)
             if _rm:
-                root_step = _rm.group(1)
-                acc = _rm.group(2) or ""
-                kind_input = _rm.group(3)
-                root_alter = (
-                    "\n        <root-alter>-1</root-alter>"
-                    if acc == "b"
-                    else "\n        <root-alter>1</root-alter>"
-                    if acc == "#"
-                    else ""
-                )
+                root_full = _rm.group(1)
+                kind_input = _rm.group(2)
+                if root_full.endswith("b"):
+                    root_step = root_full[0]
+                    root_alter = "\n        <root-alter>-1</root-alter>"
+                elif root_full.endswith("#"):
+                    root_step = root_full[0]
+                    root_alter = "\n        <root-alter>1</root-alter>"
+                else:
+                    root_step = root_full
+                    root_alter = ""
             else:
                 root_step = chord_sym[0]
                 root_alter = ""

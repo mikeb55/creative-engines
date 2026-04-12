@@ -106,8 +106,13 @@ def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> 
         new_root = _next_root(roots[-1], _hash_int(seed, k + 1))
         if new_root == last_root:
             repeat_count += 1
-            if repeat_count >= 2:
-                new_root = _next_root(new_root, seed + 99)
+            if repeat_count >= 1:
+                nudge_seed = seed + 999 + k * 37
+                candidate = _next_root(new_root, nudge_seed)
+                if candidate == new_root:
+                    candidate = _next_root(new_root, nudge_seed + 1)
+                new_root = candidate
+                repeat_count = 0
         else:
             repeat_count = 0
         last_root = new_root
