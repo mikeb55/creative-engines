@@ -16,6 +16,11 @@ function ComposerEngines() {
   const [monkTitle, setMonkTitle] = React.useState('');
   const [monkResult, setMonkResult] = React.useState('');
   const [monkLoading, setMonkLoading] = React.useState(false);
+  const [cpTitle, setCpTitle] = useState('');
+  const [cpCustomChords, setCpCustomChords] = useState('');
+  const [cpSongForm, setCpSongForm] = useState('aaba');
+  const [cpResult, setCpResult] = useState<string | null>(null);
+  const [cpLoading, setCpLoading] = useState(false);
 
   return (
     <div style={{ padding: '1.5rem' }}>
@@ -205,6 +210,112 @@ function ComposerEngines() {
               Open in folder
             </button>
             <button onClick={() => setMonkResult('')}>
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '1rem',
+        marginTop: '1rem',
+        maxWidth: '480px'
+      }}>
+        <h3 style={{ margin: '0 0 0.5rem' }}>
+          Charlie Parker
+        </h3>
+        <p style={{
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+          margin: '0 0 1rem'
+        }}>
+          Bebop melody engine. Eighth-note line construction,
+          approach/enclosure vocabulary, ii-V-I and turnaround
+          awareness. Outputs a single-staff lead sheet.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="text"
+              placeholder="Composition title"
+              value={cpTitle}
+              onChange={e => setCpTitle(e.target.value)}
+              style={{ flex: 1, padding: '0.3rem' }}
+            />
+            <button
+              disabled={!cpTitle || cpLoading}
+              onClick={() => {
+                setCpLoading(true);
+                const trimmed = cpCustomChords.trim();
+                (api as any).generateCharliePark({
+                  title: cpTitle,
+                  seed: Math.floor(Math.random() * 1e9),
+                  song_form: cpSongForm,
+                  ...(trimmed.length > 0 ? { custom_chords: trimmed } : {}),
+                }).then((r: any) => {
+                  setCpLoading(false);
+                  setCpResult(r?.path ?? '');
+                  setCpTitle('');
+                }).catch((e: any) => {
+                  setCpLoading(false);
+                  setCpResult('Error: ' + String(e?.message ?? e));
+                });
+              }}
+            >
+              {cpLoading ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '13px' }}>
+            <span>Custom chords</span>
+            <input
+              type="text"
+              placeholder="Chords (optional): Dm7, Ebmaj7, Cm7, F7"
+              value={cpCustomChords}
+              onChange={e => setCpCustomChords(e.target.value)}
+              style={{ width: '100%', padding: '0.3rem', boxSizing: 'border-box' }}
+            />
+          </label>
+          <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8, display: 'block' }}>Song form</label>
+          <select
+            value={cpSongForm}
+            onChange={e => setCpSongForm(e.target.value)}
+            style={{ width: '100%', marginTop: 4 }}
+          >
+            <option value="aaba">AABA — 32 bars (A A' B A'')</option>
+            <option value="abac">ABAC — 32 bars (A B A' C)</option>
+            <option value="aba">ABA — 24 bars (A B A')</option>
+            <option value="ab">AB — 16 bars (A B)</option>
+            <option value="blues12">Blues (12 bars)</option>
+            <option value="blues24">Blues (24 bars)</option>
+            <option value="aab">AAB — 24 bars (A A' B)</option>
+            <option value="abcb">ABCB — 32 bars (A B C B')</option>
+          </select>
+        </div>
+        {cpResult && (
+          <div style={{
+            marginTop: '0.75rem',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center'
+          }}>
+            <button
+              onClick={async () => {
+                if (!cpResult) {
+                  alert('No file path — generate a score first');
+                  return;
+                }
+                const result = await (window.composerOsDesktop as any)
+                  ?.showItemInFolder(cpResult);
+                if (!result?.ok) {
+                  alert('Could not open folder: ' +
+                    (result?.error ?? 'unknown error'));
+                }
+              }}
+            >
+              Open in folder
+            </button>
+            <button onClick={() => setCpResult(null)}>
               Clear
             </button>
           </div>

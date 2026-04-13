@@ -121,12 +121,12 @@ def _midi_for_interval(sym: str, interval_from_root: int, bar_seed: int) -> int:
     midi = base + interval_from_root
     while midi < 58:
         midi += 12
-    while midi > 84:
+    while midi > 82:
         midi -= 12
     tweak = (bar_seed // 11) % 2
-    if tweak and midi + 12 <= 84:
+    if tweak and midi + 12 <= 82:
         midi += 12
-    return max(55, min(84, midi))
+    return max(58, min(82, midi))
 
 
 def _spell_pitch(midi: int) -> Tuple[str, float, int]:
@@ -222,7 +222,7 @@ def _snap_register(prev: int, raw: int) -> int:
             m += 12
         else:
             break
-    return max(55, min(84, m))
+    return max(58, min(82, m))
 
 
 def _is_triplet_beat(beats: float) -> bool:

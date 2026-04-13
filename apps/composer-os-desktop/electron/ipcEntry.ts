@@ -120,6 +120,122 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     }
   );
 
+  console.log('[ipcEntry] registering generate-charlie-parker');
+  ipcMain.handle(
+    'composer-os-api:generate-charlie-parker',
+    async (
+      _event,
+      body: {
+        title: string;
+        seed?: number;
+        mode?: string;
+        profile?: string;
+        custom_chords?: string | null;
+        song_form?: string;
+      }
+    ) => {
+      const { spawn } = await import('child_process');
+      const { readFile, writeFile } = await import('fs/promises');
+      const { existsSync } = await import('fs');
+
+      const cliPath = path.join(
+        app.getPath('documents'),
+        'Cursor AI Projects',
+        'creative-engines',
+        'engines',
+        'charlie-parker-engine',
+        'charlie_parker_cli.py'
+      );
+      const cc = body.custom_chords;
+      const custom_chords =
+        typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
+      const input = JSON.stringify({
+        title: body.title,
+        seed: body.seed ?? 42,
+        mode: body.mode ?? 'title',
+        profile: body.profile ?? 'balanced',
+        ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
+        song_form: body.song_form ?? 'aaba',
+      });
+
+      const pythonCmds = ['py', 'python', 'python3'];
+      let scoreXml: string | undefined;
+      let lastError: unknown;
+      for (const cmd of pythonCmds) {
+        try {
+          scoreXml = await new Promise<string>((resolve, reject) => {
+            const child = spawn(cmd, [cliPath], {
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            let out = '';
+            let err = '';
+            child.stdout.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            child.stderr.on('data', (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on('close', (code: number | null) => {
+              if (code !== 0) {
+                reject(new Error(err || `exit code ${code}`));
+                return;
+              }
+              void (async () => {
+                try {
+                  const lines = err
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+                  let srcPath: string | undefined;
+                  for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i];
+                    if (/\.musicxml$/i.test(line) && existsSync(line)) {
+                      srcPath = line;
+                      break;
+                    }
+                  }
+                  if (!srcPath) {
+                    reject(
+                      new Error(
+                        err ||
+                          'could not resolve generated MusicXML path from CLI stderr'
+                      )
+                    );
+                    return;
+                  }
+                  const xml = await readFile(srcPath, 'utf8');
+                  resolve(xml);
+                } catch (e) {
+                  reject(e instanceof Error ? e : new Error(String(e)));
+                }
+              })();
+            });
+            child.on('error', reject);
+            child.stdin.write(input);
+            child.stdin.end();
+          });
+          break;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      if (scoreXml === undefined) {
+        throw lastError instanceof Error ? lastError : new Error(String(lastError));
+      }
+
+      const safeTitle = (body.title || 'untitled')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 40);
+      const filename = `charlie_parker_${safeTitle}.musicxml`;
+      const outPath = path.join(outputDir, filename);
+      await writeFile(outPath, scoreXml, 'utf8');
+
+      return { path: outPath, filename };
+    }
+  );
+
   ipcMain.handle(
     'composer-os-api:generate-monk',
     async (
