@@ -246,7 +246,11 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     reg = composer_ir.registral_plan.get("primary", cell.registral_center)
     reg = max(60, reg)
-    harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
+    harm = derive_section_harmony(
+        composer_ir.harmonic_field,
+        "primary",
+        template_title=composer_ir.title if hasattr(composer_ir, "title") else None,
+    )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
     events = _melody_from_cell(cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
@@ -272,7 +276,11 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     developed = develop_motif_cell(cell, "fragmentation")
     reg = composer_ir.registral_plan.get("contrast", cell.registral_center - 3)
     reg = max(60, reg)
-    harm = derive_section_harmony(composer_ir.harmonic_field, "contrast")
+    harm = derive_section_harmony(
+        composer_ir.harmonic_field,
+        "contrast",
+        template_title=composer_ir.title if hasattr(composer_ir, "title") else None,
+    )
     harm_ext = _extend_harm(harm, bars, composer_ir.seed)
     harmony = [{"symbol": harm_ext[i], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
@@ -299,7 +307,11 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
     developed = develop_motif_cell(cell, "transposition")
     reg = composer_ir.registral_plan.get("return", cell.registral_center + 5)
     reg = max(60, reg)
-    harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
+    harm = derive_section_harmony(
+        composer_ir.harmonic_field,
+        "primary",
+        template_title=composer_ir.title if hasattr(composer_ir, "title") else None,
+    )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
     events = _melody_from_cell(developed, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
@@ -323,7 +335,11 @@ def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5])
     reg = max(60, cell.registral_center)
-    harm = derive_section_harmony(composer_ir.harmonic_field, "primary")
+    harm = derive_section_harmony(
+        composer_ir.harmonic_field,
+        "primary",
+        template_title=composer_ir.title if hasattr(composer_ir, "title") else None,
+    )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
     events = _melody_from_cell(cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)

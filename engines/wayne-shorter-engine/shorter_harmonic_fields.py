@@ -97,8 +97,34 @@ def build_harmonic_field(seed: int, profile: str = "ambiguous") -> HarmonicField
     )
 
 
-def derive_section_harmony(harmonic_field: HarmonicField, section_role: str) -> List[str]:
+def derive_section_harmony(
+    harmonic_field: HarmonicField,
+    section_role: str,
+    template_title=None,
+) -> List[str]:
     """Derive chord symbols for section from field."""
+    # Try to use real Shorter progression template
+    try:
+        from shorter_chord_templates import (
+            get_template, get_progression_for_bars)
+    except ImportError:
+        get_template = None
+        get_progression_for_bars = None
+
+    if template_title and get_template:
+        tmpl = get_template(template_title)
+        if tmpl:
+            prog = get_progression_for_bars(tmpl, 16)
+            section_idx = {
+                'primary': 0,
+                'contrast': len(prog) // 2,
+                'return': 0
+            }.get(section_role, 0)
+            slice_start = section_idx
+            slice_end = section_idx + 4
+            return prog[slice_start:slice_end] if \
+                len(prog) > slice_start else prog[:4]
+
     c = harmonic_field.centers
     t = harmonic_field.chord_types
     if section_role == "contrast":
