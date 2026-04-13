@@ -163,6 +163,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       for (const cmd of pythonCmds) {
         try {
           stdout = await new Promise<string>((resolve, reject) => {
+            console.log('[CP] spawning, input length:', input.length);
             const child = spawn(cmd, [cliPath], {
               stdio: ['pipe', 'pipe', 'pipe'],
             });
@@ -175,11 +176,17 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
               err += d.toString();
             });
             child.on('close', (code: number | null) => {
+              console.log('[CP] close fired, code:', code);
               if (code === 0) resolve(out);
               else reject(new Error(err || `exit code ${code}`));
             });
             child.on('error', reject);
-            child.stdin.write(input);
+            child.stdin.on('error', (e: Error) => {
+              console.error('[CP] stdin error:', e);
+            });
+            child.stdin.write(input, (writeErr) => {
+              if (writeErr) console.error('[CP] stdin write error:', writeErr);
+            });
             child.stdin.end();
           });
           break;

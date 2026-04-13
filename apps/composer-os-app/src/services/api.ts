@@ -177,6 +177,13 @@ export const api = {
     custom_chords?: string | null;
   }) =>
     ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-wayne-shorter', body),
+  generateCharliePark: (body: {
+    title: string;
+    seed?: number;
+    custom_chords?: string | null;
+    song_form?: string;
+  }) =>
+    ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-charlie-parker', body),
   generateMonk: (body: { title: string; seed?: number }) =>
     ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-monk', body),
   getOutputs: () => get<{ outputs: Array<Record<string, unknown>> }>('/outputs'),
