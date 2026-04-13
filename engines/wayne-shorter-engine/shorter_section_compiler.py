@@ -543,8 +543,7 @@ def _melody_from_cell(
         )
         for ev in bar_events:
             off_div = int(ev.get("offset", 0))
-            events.append({
-                "pitch": int(ev["pitch"]),
+            row: Dict[str, Any] = {
                 "duration": int(ev["duration"]),
                 "offset": off_div,
                 "type": ev.get("type"),
@@ -554,9 +553,18 @@ def _melody_from_cell(
                 "beat_position": off_div / 4.0,
                 "section_id": section_id,
                 "bebop_rhythm": True,
-            })
+            }
+            if ev.get("is_rest"):
+                row["is_rest"] = True
+                row["pitch"] = 0
+            else:
+                row["pitch"] = int(ev["pitch"])
+            events.append(row)
         if bar_events:
-            last_bar_last_pitch = int(bar_events[-1]["pitch"])
+            for ev in reversed(bar_events):
+                if not ev.get("is_rest") and ev.get("pitch") is not None:
+                    last_bar_last_pitch = int(ev["pitch"])
+                    break
 
     for e in events:
         if e.get("pitch", 0) == 0:

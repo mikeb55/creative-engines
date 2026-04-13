@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="4.0">
   <work><work-title>Speak No Evil</work-title></work>
   <part-list>
@@ -24,8 +24,13 @@
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>C</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="2">
       <harmony>
@@ -33,19 +38,21 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>8</duration><type>half</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="3">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="4">
       <harmony>
@@ -53,19 +60,27 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="5">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>6</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
       <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="6">
       <harmony>
@@ -73,26 +88,21 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>8</duration><type>half</type></note>
       <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="7">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="8">
       <harmony>
@@ -100,15 +110,24 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><type>half</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="9">
       <harmony>
         <root><root-step>B</root-step></root>
         <kind text="B7b5">dominant</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>A</step><alter>1</alter><octave>3</octave></pitch><duration>8</duration><type>half</type></note>
     </measure>
     <measure number="10">
@@ -116,64 +135,75 @@
         <root><root-step>C</root-step></root>
         <kind text="Cm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="11">
       <harmony>
         <root><root-step>B</root-step></root>
         <kind text="B7b5">dominant</kind>
       </harmony>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="12">
       <harmony>
         <root><root-step>C</root-step></root>
         <kind text="Cm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="13">
       <harmony>
         <root><root-step>B</root-step></root>
         <kind text="B7b5">dominant</kind>
       </harmony>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>6</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>3</octave></pitch><duration>8</duration><type>half</type></note>
     </measure>
     <measure number="14">
       <harmony>
         <root><root-step>C</root-step></root>
         <kind text="Cm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>A</step><alter>1</alter><octave>3</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="15">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="16">
       <harmony>
@@ -181,16 +211,27 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><type>half</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="17">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="18">
       <harmony>
@@ -198,19 +239,21 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>8</duration><type>half</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="19">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="20">
       <harmony>
@@ -218,19 +261,27 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
-      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="21">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>6</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
       <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="22">
       <harmony>
@@ -238,26 +289,21 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>G</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>8</duration><type>half</type></note>
       <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
       <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="23">
       <harmony>
         <root><root-step>D</root-step></root>
         <kind text="Dm7">minor-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><octave>5</octave></pitch><duration>1</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
     <measure number="24">
       <harmony>
@@ -265,8 +311,14 @@
         <root-alter>-1</root-alter></root>
         <kind text="Ebmaj7">major-seventh</kind>
       </harmony>
-      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
-      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><type>half</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><rest/><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
     </measure>
   </part>
 </score-partwise>

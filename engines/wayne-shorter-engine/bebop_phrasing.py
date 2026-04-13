@@ -59,24 +59,36 @@ def _clamp_melody_pitch(pitch: int) -> int:
     return p
 
 
+# Negative slot = rest (divisions = abs(slot)); positive 4 = quarter, 8 = half (not triplet).
+# All rows sum to 16 divisions when using abs() on each slot.
 EIGHTH_TEMPLATES = [
-    [2, 2, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 2, 2, 2, 4],
-    [4, 2, 2, 2, 2, 2, 2],
-    [2, 2, 2, 2, 4, 2, 2],
-    [2, 2, 2, 2, 2, 2, 2, 2],
-    [4, 2, 2, 2, 2, 2, 2],
-    [2, 2, 4, 2, 2, 2, 2],
-    [2, 2, 2, 2, 2, 4, 2],
+    [2, 2, 2, 2, 2, 2, 2, 2],  # 16 — 8 eighths
+    [2, 2, 2, 2, 2, 2, 2, 2],  # 16 — 8 eighths weighted
+    [-2, 2, 2, 2, 2, 2, 2, 2],  # 16 — 8th rest + 7 eighths
+    [2, 2, 2, 2, -2, 2, 2, 2],  # 16 — run, 8th rest, run
+    [4, 2, 2, 2, 2, 2, 2],  # 16 — quarter + 6 eighths
+    [2, 2, 2, 2, 2, 2, 4],  # 16 — 6 eighths + quarter
+    [-4, 2, 2, 2, 2, 2, 2],  # 16 — quarter rest + 6 eighths
+    [8, 2, 2, 2, 2],  # 16 — half + 4 eighths
+    [2, 2, 2, 2, 8],  # 16 — 4 eighths + half
+    [-8, 2, 2, 2, 2],  # 16 — half rest + 4 eighths
+    [8, -4, 2, 2],  # 16 — half, quarter rest, 2 eighths
+    [4, 4, 2, 2, 2, 2],  # 16 — 2 quarters + 4 eighths
 ]
 
 
-def _triplet_slot_indices(template_index: int, template: List[int]) -> set:
-    """Which slot index is a triplet group (dur=4 → 3× written eighth-triplet)."""
-    if template_index == 5 and len(template) >= 1:
-        return {len(template) - 1}
-    if template_index == 6 and len(template) >= 3:
-        return {2}
+def _rest_type_from_divisions(ad: int) -> str:
+    """MusicXML <type> for a rest from duration in divisions (divisions=4 per quarter)."""
+    a = int(ad)
+    if a <= 2:
+        return "eighth"
+    if a <= 4:
+        return "quarter"
+    return "half"
+
+
+def _triplet_slot_indices(_template_index: int, _template: List[int]) -> set:
+    """Triplet groups disabled: positive 4 in templates is a quarter note, not a tuplet."""
     return set()
 
 
@@ -280,6 +292,8 @@ def _apply_cross_bar_anticipation(
 ) -> None:
     """Anticipate next harmony on late-bar chord tones (non-triplet events only for peer lookup)."""
     for ev in events:
+        if ev.get("is_rest"):
+            continue
         off = ev.get("offset")
         if off is None or off < 12:
             continue
@@ -287,11 +301,11 @@ def _apply_cross_bar_anticipation(
             peer = next(
                 e
                 for e in events
-                if e["offset"] == off and e["time_mod"] is None
+                if e["offset"] == off and e["time_mod"] is None and not e.get("is_rest")
             )
         except StopIteration:
             continue
-        if peer is ev and ev.get("time_mod") is None:
+        if peer is ev and ev.get("time_mod") is None and not ev.get("is_rest"):
             ev["pitch"] = _chord_tone_midi(next_chord_root_pc, 0, center_midi)
 
 
@@ -308,7 +322,9 @@ def _build_bar_note_events(
         ^ ((bar_index + 1) * 1009)
         ^ sum(ord(c) for c in chord_curr)
     )
-    t_idx = bar_index % len(EIGHTH_TEMPLATES)
+    t_idx = (
+        bar_index * 3 + sum(ord(c) for c in chord_curr)
+    ) % len(EIGHTH_TEMPLATES)
     template = EIGHTH_TEMPLATES[t_idx]
     triplet_slots = _triplet_slot_indices(t_idx, list(template))
 
@@ -323,6 +339,19 @@ def _build_bar_note_events(
     events: List[Dict[str, Any]] = []
     off = 0
     for si, dur in enumerate(template):
+        if dur < 0:
+            ad = abs(int(dur))
+            events.append({
+                "pitch": None,
+                "duration": ad,
+                "offset": off,
+                "type": _rest_type_from_divisions(ad),
+                "dot": False,
+                "time_mod": None,
+                "is_rest": True,
+            })
+            off += ad
+            continue
         if si in triplet_slots and dur == 4:
             trip_durs = [1, 1, 2]
             slot_beat = min(3, off // 4)
@@ -355,9 +384,12 @@ def _build_bar_note_events(
         })
         off += dur
 
-    # BUG 1: chord tones on beats 0,4,8,12 — snap each beat to nearest attack (no extra duration)
+    # Chord tones on beats 0,4,8,12 — snap nearest pitched attack only (not rests)
     for beat_pos in BEAT_DIVISION_OFFSETS:
-        ev_pick = min(events, key=lambda e: abs(e["offset"] - beat_pos))
+        pitched = [e for e in events if not e.get("is_rest")]
+        if not pitched:
+            continue
+        ev_pick = min(pitched, key=lambda e: abs(e["offset"] - beat_pos))
         ev_pick["pitch"] = beat_pitch[beat_pos]
 
     events.sort(key=lambda e: (e["offset"], e["time_mod"] is not None))

@@ -139,7 +139,13 @@ def _build_measure_note_dicts(
             key=lambda x: int(x.get("offset", round(float(x.get("beat_position", 0)) * 4))),
         ):
             if e.get("is_rest") or e.get("pitch", 0) == 0:
-                notes_bb.append({"duration": int(e.get("duration", 1)), "is_rest": True})
+                notes_bb.append({
+                    "duration": int(e.get("duration", 1)),
+                    "is_rest": True,
+                    "type": e.get("type"),
+                    "dot": bool(e.get("dot", False)),
+                    "time_mod": e.get("time_mod"),
+                })
                 continue
             notes_bb.append({
                 "duration": int(e["duration"]),
