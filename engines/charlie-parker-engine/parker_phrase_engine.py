@@ -17,6 +17,10 @@ from parker_vocabulary import PARKER_VOCABULARY, get_pattern
 
 DIVISIONS = 4
 
+# Alto register (Bird): clamp all phrase MIDI to this span.
+_MIDI_LO = 58
+_MIDI_HI = 82
+
 NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
 
 # Per (section, 4-bar phrase): last main pattern id and contour sign for alternation.
@@ -249,14 +253,14 @@ def _midi_for_interval(sym: str, interval_from_root: int, bar_seed: int) -> int:
     pc = _root_pc(sym)
     base = 60 + ((pc - (60 % 12) + 12) % 12)
     midi = base + interval_from_root
-    while midi < 58:
+    while midi < _MIDI_LO:
         midi += 12
-    while midi > 82:
+    while midi > _MIDI_HI:
         midi -= 12
     tweak = (bar_seed // 11) % 2
-    if tweak and midi + 12 <= 82:
+    if tweak and midi + 12 <= _MIDI_HI:
         midi += 12
-    return max(58, min(82, midi))
+    return max(_MIDI_LO, min(_MIDI_HI, midi))
 
 
 def _midi_from_note_dict(n: Dict[str, Any]) -> int:
@@ -264,11 +268,11 @@ def _midi_from_note_dict(n: Dict[str, Any]) -> int:
     step = str(n["pitch"])
     want_alter = float(n.get("alter", 0.0))
     want_oct = int(n["octave"])
-    for m in range(55, 90):
+    for m in range(_MIDI_LO, _MIDI_HI + 1):
         s, al, o = _spell_pitch(m)
         if s == step and abs(al - want_alter) < 0.01 and o == want_oct:
             return m
-    return 67
+    return (_MIDI_LO + _MIDI_HI) // 2
 
 
 def _spell_pitch(midi: int) -> Tuple[str, float, int]:
@@ -364,7 +368,7 @@ def _snap_register(prev: int, raw: int) -> int:
             m += 12
         else:
             break
-    return max(58, min(82, m))
+    return max(_MIDI_LO, min(_MIDI_HI, m))
 
 
 def _is_triplet_beat(beats: float) -> bool:
