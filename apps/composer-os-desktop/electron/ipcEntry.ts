@@ -135,8 +135,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       }
     ) => {
       const { spawn } = await import('child_process');
-      const { readFile, writeFile } = await import('fs/promises');
-      const { existsSync } = await import('fs');
+      const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
         app.getPath('documents'),
@@ -159,11 +158,11 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       });
 
       const pythonCmds = ['py', 'python', 'python3'];
-      let scoreXml: string | undefined;
+      let stdout: string | undefined;
       let lastError: unknown;
       for (const cmd of pythonCmds) {
         try {
-          scoreXml = await new Promise<string>((resolve, reject) => {
+          stdout = await new Promise<string>((resolve, reject) => {
             const child = spawn(cmd, [cliPath], {
               stdio: ['pipe', 'pipe', 'pipe'],
             });
@@ -176,39 +175,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
               err += d.toString();
             });
             child.on('close', (code: number | null) => {
-              if (code !== 0) {
-                reject(new Error(err || `exit code ${code}`));
-                return;
-              }
-              void (async () => {
-                try {
-                  const lines = err
-                    .split(/\r?\n/)
-                    .map((l) => l.trim())
-                    .filter(Boolean);
-                  let srcPath: string | undefined;
-                  for (let i = lines.length - 1; i >= 0; i--) {
-                    const line = lines[i];
-                    if (/\.musicxml$/i.test(line) && existsSync(line)) {
-                      srcPath = line;
-                      break;
-                    }
-                  }
-                  if (!srcPath) {
-                    reject(
-                      new Error(
-                        err ||
-                          'could not resolve generated MusicXML path from CLI stderr'
-                      )
-                    );
-                    return;
-                  }
-                  const xml = await readFile(srcPath, 'utf8');
-                  resolve(xml);
-                } catch (e) {
-                  reject(e instanceof Error ? e : new Error(String(e)));
-                }
-              })();
+              if (code === 0) resolve(out);
+              else reject(new Error(err || `exit code ${code}`));
             });
             child.on('error', reject);
             child.stdin.write(input);
@@ -219,7 +187,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
           lastError = e;
         }
       }
-      if (scoreXml === undefined) {
+      if (stdout === undefined) {
         throw lastError instanceof Error ? lastError : new Error(String(lastError));
       }
 
@@ -230,7 +198,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `charlie_parker_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
-      await writeFile(outPath, scoreXml, 'utf8');
+      await writeFile(outPath, stdout, 'utf8');
 
       return { path: outPath, filename };
     }

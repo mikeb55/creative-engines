@@ -174,6 +174,7 @@ def main() -> None:
 
             xml = _export_compiled(comp, compile_form, rh_map)
             path = _write_output(xml)
+            sys.stdout.write(xml)
             print(path, file=sys.stderr)
         except ValueError as e:
             print(f"error: {e}", file=sys.stderr)
@@ -218,6 +219,7 @@ def main() -> None:
 
         xml = _export_compiled(comp, compile_form, rh_map)
         path = _write_output(xml)
+        sys.stdout.write(xml)
         print(path, file=sys.stderr)
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
