@@ -101,6 +101,59 @@ CHORD_TEMPLATES = {
 
 import re as _re
 
+# Melody register (A3–G5)
+MELODY_PITCH_LO = 57
+MELODY_PITCH_HI = 84
+
+# divisions=4 per quarter; each pattern sums to 16 (one 4/4 bar)
+RHYTHM_PATTERNS = [
+    [8, 8],
+    [4, 4, 4, 4],
+    [4, 8, 4],
+    [8, 4, 4],
+    [6, 2, 4, 4],
+    [4, 6, 2, 4],
+    [12, 4],
+    [4, 12],
+]
+
+
+def _chord_midi_in_range(pcs: dict, lo: int, hi: int) -> List[int]:
+    """Sorted MIDI pitches in [lo, hi] that match a chord tone class."""
+    out: List[int] = []
+    for midi in range(lo, hi + 1):
+        if any((midi % 12) == (pc % 12) for pc in pcs.values()):
+            out.append(midi)
+    return sorted(set(out))
+
+
+def _avoid_consecutive_repeat(
+    prev_midi: Optional[int],
+    chosen: int,
+    pcs: Optional[dict],
+    weights: Optional[dict],
+    lo: int,
+    hi: int,
+) -> int:
+    """If chosen equals previous melodic pitch, move to nearest other chord tone (or chromatic nudge)."""
+    if prev_midi is None or chosen != prev_midi:
+        return chosen
+    if pcs and weights:
+        cands = _chord_midi_in_range(pcs, lo, hi)
+        up = [m for m in cands if m > chosen]
+        down = [m for m in cands if m < chosen]
+        if up:
+            return min(up)
+        if down:
+            return max(down)
+        for delta in (12, -12, 24, -24):
+            alt = chosen + delta
+            if lo <= alt <= hi and alt != prev_midi:
+                return alt
+    if chosen < hi:
+        return chosen + 1
+    return chosen - 1
+
 
 def _parse_chord_field(symbol: str):
     """Parse chord symbol into pitch classes and weights."""
@@ -139,8 +192,8 @@ def _nearest_weighted_pitch(
     target: int,
     pcs: dict,
     weights: dict,
-    lo: int = 60,
-    hi: int = 84,
+    lo: int = MELODY_PITCH_LO,
+    hi: int = MELODY_PITCH_HI,
 ) -> int:
     """Find nearest pitch in chord field, weighted toward extensions."""
     best_score = None
@@ -245,7 +298,7 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     reg = composer_ir.registral_plan.get("primary", cell.registral_center)
-    reg = max(60, reg)
+    reg = max(MELODY_PITCH_LO, reg)
     harm = derive_section_harmony(
         composer_ir.harmonic_field,
         "primary",
@@ -275,7 +328,7 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     cell = composer_ir.motivic_cells[1] if len(composer_ir.motivic_cells) > 1 else composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     developed = develop_motif_cell(cell, "fragmentation")
     reg = composer_ir.registral_plan.get("contrast", cell.registral_center - 3)
-    reg = max(60, reg)
+    reg = max(MELODY_PITCH_LO, reg)
     harm = derive_section_harmony(
         composer_ir.harmonic_field,
         "contrast",
@@ -306,7 +359,7 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5, 7])
     developed = develop_motif_cell(cell, "transposition")
     reg = composer_ir.registral_plan.get("return", cell.registral_center + 5)
-    reg = max(60, reg)
+    reg = max(MELODY_PITCH_LO, reg)
     harm = derive_section_harmony(
         composer_ir.harmonic_field,
         "primary",
@@ -334,7 +387,7 @@ def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     bars = section_plan.bar_count or 4
     bar_end = bar_start + bars
     cell = composer_ir.motivic_cells[0] if composer_ir.motivic_cells else MotivicCell(intervals=[2, 5])
-    reg = max(60, cell.registral_center)
+    reg = max(MELODY_PITCH_LO, cell.registral_center)
     harm = derive_section_harmony(
         composer_ir.harmonic_field,
         "primary",
@@ -364,63 +417,58 @@ def _melody_from_cell(
     bar_harmony: Optional[Dict[int, str]] = None,
 ) -> List[Dict]:
     """Generate melody events from motivic cell."""
-    events = []
-    pitch = reg
-    beat = 0.0
-    total_beats = bars * 4
+    events: List[Dict] = []
+    pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, reg))
     idx = 0
-    pitch_event_idx = 0
-    seed = _hash_int(bar_start, sum(ord(c) for c in section_id))
-    phrase_len = 4
     bh = bar_harmony or {}
-    while beat < total_beats:
-        local_bar = int(beat // 4)
+    last_melodic_pitch: Optional[int] = None
+
+    for local_bar in range(bars):
         measure = bar_start + local_bar
-        local_bar_index = measure - bar_start
-        cadence_bar = phrase_len > 0 and ((local_bar_index + 1) % phrase_len == 0)
-        inc = cell.intervals[idx % len(cell.intervals)]
-        chord_sym = None
-        if hasattr(cell, "chord_symbol"):
-            chord_sym = getattr(cell, "chord_symbol", None)
-        if chord_sym is None and bh:
-            chord_sym = bh.get(measure)
-        if chord_sym:
-            parsed = _parse_chord_field(chord_sym)
-            pcs, weights = parsed[0], parsed[1]
-            if pcs and weights:
-                target = max(60, min(84, pitch + inc))
-                pitch = _nearest_weighted_pitch(target, pcs, weights, lo=60, hi=84)
+        pattern = RHYTHM_PATTERNS[measure % 8]
+        beat_in_bar = 0.0
+        for divs in pattern:
+            dur_beats = divs / 4.0
+            inc = cell.intervals[idx % len(cell.intervals)]
+            chord_sym = None
+            if hasattr(cell, "chord_symbol"):
+                chord_sym = getattr(cell, "chord_symbol", None)
+            if chord_sym is None and bh:
+                chord_sym = bh.get(measure)
+            pcs, weights = None, None
+            if chord_sym:
+                parsed = _parse_chord_field(chord_sym)
+                pcs, weights = parsed[0], parsed[1]
+                if pcs and weights:
+                    target = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch + inc))
+                    pitch = _nearest_weighted_pitch(
+                        target, pcs, weights, lo=MELODY_PITCH_LO, hi=MELODY_PITCH_HI
+                    )
+                    pitch = _avoid_consecutive_repeat(
+                        last_melodic_pitch, pitch, pcs, weights, MELODY_PITCH_LO, MELODY_PITCH_HI
+                    )
+                else:
+                    pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch + inc))
+                    pitch = _avoid_consecutive_repeat(
+                        last_melodic_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
+                    )
             else:
-                pitch = max(60, min(84, pitch + inc))
-        else:
-            pitch = max(60, min(84, pitch + inc))
-        if pitch < 48 or pitch > 84:
-            pitch = max(60, min(84, pitch))
-        dur = 2.0 if cadence_bar else 1.5
-        events.append({
-            "pitch": pitch,
-            "duration": dur,
-            "measure": measure,
-            "beat_position": beat % 4,
-            "section_id": section_id,
-        })
-        idx += 1
-        pitch_event_idx += 1
-        beat += dur
-        if pitch_event_idx % 2 == 0:
-            h_rest = _hash_int(seed, measure * 17 + pitch_event_idx)
-            if (h_rest % 100) < 35:
-                measure_r = bar_start + int(beat // 4)
-                rest_event = {
-                    "measure": measure_r,
-                    "beat_position": beat % 4,
-                    "duration": 1.0,
-                    "pitch": 0,
-                    "is_rest": True,
-                    "section_id": section_id,
-                }
-                events.append(rest_event)
-                beat += 1.0
+                pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch + inc))
+                pitch = _avoid_consecutive_repeat(
+                    last_melodic_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
+                )
+            if pitch < MELODY_PITCH_LO or pitch > MELODY_PITCH_HI:
+                pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch))
+            events.append({
+                "pitch": pitch,
+                "duration": dur_beats,
+                "measure": measure,
+                "beat_position": beat_in_bar,
+                "section_id": section_id,
+            })
+            last_melodic_pitch = pitch
+            idx += 1
+            beat_in_bar += dur_beats
     for e in events:
         if e.get("pitch", 0) == 0:
             e["is_rest"] = True

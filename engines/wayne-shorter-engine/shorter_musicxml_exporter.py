@@ -3,17 +3,71 @@ Shorter MusicXML Exporter — Valid MusicXML from CompiledComposition.
 """
 
 import re as _re
-from typing import Any, Dict, List
+from typing import Dict, List, Tuple
 
 try:
-    from .compiled_composition_types import CompiledComposition, CompiledSection
+    from .compiled_composition_types import CompiledComposition
 except ImportError:
-    from compiled_composition_types import CompiledComposition, CompiledSection
+    from compiled_composition_types import CompiledComposition
 
 ENHARMONIC = {
     0: ("C", 0), 1: ("C", 1), 2: ("D", 0), 3: ("D", 1), 4: ("E", 0), 5: ("F", 0),
     6: ("F", 1), 7: ("G", 0), 8: ("G", 1), 9: ("A", 0), 10: ("A", 1), 11: ("B", 0),
 }
+
+# divisions=4 => quarter=4, eighth=2, half=8, whole=16, dotted half=12, dotted quarter=6
+DEFAULT_DIVISIONS = 4
+DEFAULT_BEATS = 4
+
+
+def validate_bar(notes: List[Dict], divisions: int = 4, beats: int = 4) -> List[Dict]:
+    capacity = divisions * beats
+    while True:
+        total = sum(n["duration"] for n in notes if not n.get("is_chord"))
+        if total > capacity:
+            excess = total - capacity
+            if not notes:
+                break
+            notes[-1]["duration"] -= excess
+            while notes and notes[-1]["duration"] < 1:
+                notes.pop()
+            continue
+        if total < capacity:
+            notes.append({
+                "type": "quarter",
+                "duration": capacity - total,
+                "is_rest": True,
+            })
+        break
+    return notes
+
+
+def _beats_to_divisions(beats: float, divisions: int) -> int:
+    """Convert duration in quarter-note beats to MusicXML divisions (quarter = divisions)."""
+    if beats <= 0:
+        return 0
+    return max(1, int(round(beats * divisions)))
+
+
+def _type_and_dot_from_divisions(divs: int) -> Tuple[str, bool]:
+    """Map duration in divisions to <type> and whether to emit <dot/>."""
+    if divs >= 16:
+        return "whole", False
+    if divs == 12:
+        return "half", True
+    if divs == 8:
+        return "half", False
+    if divs == 6:
+        return "quarter", True
+    if divs == 4:
+        return "quarter", False
+    if divs == 3:
+        return "eighth", True
+    if divs == 2:
+        return "eighth", False
+    if divs == 1:
+        return "16th", False
+    return "quarter", False
 
 
 def _spell_pitch(midi: int) -> tuple:
@@ -72,6 +126,56 @@ def _kind_for(suffix: str) -> str:
     return "major"
 
 
+def _build_measure_note_dicts(
+    evs: List[Dict],
+    divisions: int,
+    beats_per_measure: float,
+) -> List[Dict]:
+    """Build ordered note/rest dicts with duration in divisions (not yet validated)."""
+    notes: List[Dict] = []
+    cursor = 0.0
+    for e in sorted(evs, key=lambda x: x.get("beat_position", 0)):
+        onset = float(e.get("beat_position", 0))
+        dur_beats = float(e.get("duration", 1.0))
+        if onset > cursor:
+            gap = onset - cursor
+            gdivs = _beats_to_divisions(gap, divisions)
+            if gdivs > 0:
+                notes.append({"duration": gdivs, "is_rest": True})
+            cursor = onset
+        if e.get("is_rest") or e.get("pitch", 0) == 0:
+            divs = _beats_to_divisions(dur_beats, divisions)
+            notes.append({"duration": divs, "is_rest": True})
+            cursor = onset + dur_beats
+            continue
+        pitch = int(e.get("pitch", 60))
+        divs = _beats_to_divisions(dur_beats, divisions)
+        notes.append({"duration": divs, "is_rest": False, "pitch": pitch})
+        cursor = onset + dur_beats
+    if cursor < beats_per_measure:
+        tail = _beats_to_divisions(beats_per_measure - cursor, divisions)
+        if tail > 0:
+            notes.append({"duration": tail, "is_rest": True})
+    return notes
+
+
+def _emit_note_line(note: Dict) -> str:
+    divs = int(note["duration"])
+    typ, dot = _type_and_dot_from_divisions(divs)
+    dot_tag = "<dot/>" if dot else ""
+    if note.get("is_rest"):
+        return (
+            f'      <note><rest/><duration>{divs}</duration>'
+            f'<type>{typ}</type>{dot_tag}</note>'
+        )
+    step, alter, octave = _spell_pitch(note["pitch"])
+    alter_tag = f"<alter>{alter}</alter>" if alter != 0 else ""
+    return (
+        f'      <note><pitch><step>{step}</step>{alter_tag}<octave>{octave}</octave></pitch>'
+        f'<duration>{divs}</duration><type>{typ}</type>{dot_tag}</note>'
+    )
+
+
 def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
     """Export CompiledComposition to valid MusicXML string."""
     by_measure: Dict[int, List[Dict]] = {}
@@ -97,7 +201,9 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
             symbol = h.get("symbol", h.get("chord", h.get("name", None)))
             if bar is not None and symbol is not None:
                 by_measure_chord[int(bar)] = str(symbol)
-    divisions = 4
+    divisions = DEFAULT_DIVISIONS
+    beats = DEFAULT_BEATS
+    beats_per_measure = float(beats)
     key_hint = compiled.metadata.get("key_hint", "C")
     tempo = compiled.metadata.get("tempo", 90)
     fifths = {"C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F": -1, "Bb": -2, "Eb": -3, "Am": 0, "Em": 1, "Bm": 2, "Dm": -1, "Gm": -2}.get(key_hint, 0)
@@ -157,33 +263,11 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
                 f"{_kind_for(kind_input)}</kind>"
             )
             lines.append("      </harmony>")
-        evs = sorted(by_measure.get(m, []), key=lambda x: x.get("beat_position", 0))
-        cursor = 0.0
-        for e in evs:
-            onset = e.get("beat_position", 0)
-            dur = e.get("duration", 1.0)
-            if onset > cursor:
-                divs = max(1, int((onset - cursor) * divisions))
-                lines.append(f'      <note><rest/><duration>{divs}</duration><type>quarter</type></note>')
-                cursor = onset
-            if e.get("is_rest") or e.get("pitch", 0) == 0:
-                divs = max(1, int(dur * divisions))
-                lines.append(f'      <note><rest/><duration>{divs}</duration><type>quarter</type></note>')
-                cursor = onset + dur
-                continue
-            pitch = e.get("pitch", 60)
-            step, alter, octave = _spell_pitch(pitch)
-            alter_tag = f"<alter>{alter}</alter>" if alter != 0 else ""
-            divs = max(1, int(dur * divisions))
-            typ = "quarter" if divs <= 4 else "half" if divs <= 8 else "whole"
-            lines.append(
-                f'      <note><pitch><step>{step}</step>{alter_tag}<octave>{octave}</octave></pitch>'
-                f'<duration>{divs}</duration><type>{typ}</type></note>'
-            )
-            cursor = onset + dur
-        if cursor < 4.0:
-            divs = max(1, int((4.0 - cursor) * divisions))
-            lines.append(f'      <note><rest/><duration>{divs}</duration><type>quarter</type></note>')
+        evs = by_measure.get(m, [])
+        measure_notes = _build_measure_note_dicts(evs, divisions, beats_per_measure)
+        measure_notes = validate_bar(measure_notes, divisions=divisions, beats=beats)
+        for n in measure_notes:
+            lines.append(_emit_note_line(n))
         lines.append('    </measure>')
     lines.extend(['  </part>', '</score-partwise>'])
     return "\n".join(lines)
