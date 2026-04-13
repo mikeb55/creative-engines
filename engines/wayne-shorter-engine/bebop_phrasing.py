@@ -59,8 +59,8 @@ def _clamp_melody_pitch(pitch: int) -> int:
     return p
 
 
-# Negative slot = rest (divisions = abs(slot)); positive 4 = quarter, 8 = half (not triplet).
-# All rows sum to 16 divisions when using abs() on each slot.
+# Negative slot = rest (abs divisions). 40 = triplet group (counts as 4 bar divisions).
+# Positive 4 = quarter, 8 = half. Sum _template_bar_units(row) == 16 for each row.
 EIGHTH_TEMPLATES = [
     [2, 2, 2, 2, 2, 2, 2, 2],  # 16 — 8 eighths
     [2, 2, 2, 2, 2, 2, 2, 2],  # 16 — 8 eighths weighted
@@ -74,7 +74,18 @@ EIGHTH_TEMPLATES = [
     [-8, 2, 2, 2, 2],  # 16 — half rest + 4 eighths
     [8, -4, 2, 2],  # 16 — half, quarter rest, 2 eighths
     [4, 4, 2, 2, 2, 2],  # 16 — 2 quarters + 4 eighths
+    [40, 2, 2, 2, 2, 2, 2],  # 16 — triplet + 6 eighths
+    [2, 2, 2, 2, 2, 2, 40],  # 16 — 6 eighths + triplet
 ]
+
+
+def _template_bar_units(slot: int) -> int:
+    """Bar duration contribution: sentinel 40 occupies 4 divisions (triplet slot)."""
+    if slot == 40:
+        return 4
+    if slot < 0:
+        return abs(int(slot))
+    return int(slot)
 
 
 def _rest_type_from_divisions(ad: int) -> str:
@@ -85,11 +96,6 @@ def _rest_type_from_divisions(ad: int) -> str:
     if a <= 4:
         return "quarter"
     return "half"
-
-
-def _triplet_slot_indices(_template_index: int, _template: List[int]) -> set:
-    """Triplet groups disabled: positive 4 in templates is a quarter note, not a tuplet."""
-    return set()
 
 
 def _parse_root(chord_symbol: str) -> str:
@@ -267,18 +273,101 @@ def _get_chord_tone(root_pc: int, beat_idx: int, center_midi: int) -> int:
     return _chord_tone_midi(root_pc, beat_idx, center_midi)
 
 
-def _chromatic_approach(target_pitch: int) -> int:
-    return _clamp_melody_pitch(target_pitch - 1)
+def _bebop_passing_quality_key(symbol: str) -> str:
+    """Classify chord for bebop passing tone (dominant7 / maj7 / minor7)."""
+    s = (symbol or "").lower()
+    if "maj7" in s or "ma7" in s or "major7" in s:
+        return "maj7"
+    if "m7" in s or "min7" in s or (s.startswith("m") and "maj" not in s):
+        return "minor7"
+    if "7" in s and "maj7" not in s:
+        return "dominant7"
+    if "maj" in s:
+        return "maj7"
+    if "m" in s or "min" in s:
+        return "minor7"
+    return "dominant7"
 
 
-def _diatonic_approach(target_pitch: int) -> int:
-    return _clamp_melody_pitch(target_pitch - 2)
+def _bebop_scale_pass(
+    prev_pitch: int,
+    target_pitch: int,
+    chord_symbol: str,
+    rng: random.Random,
+) -> int:
+    """Bebop scale chromatic passing tone near midpoint of prev → target."""
+    _ = rng
+    root_pc = _parse_chord_root_pc(chord_symbol)
+    qk = _bebop_passing_quality_key(chord_symbol)
+    if qk == "dominant7":
+        passing_pc = (root_pc - 1) % 12
+    elif qk == "maj7":
+        passing_pc = (root_pc + 8) % 12
+    else:
+        passing_pc = (root_pc + 8) % 12
+    mid = (int(prev_pitch) + int(target_pitch)) // 2
+    pitch = _pc_to_nearest_pitch(passing_pc, mid)
+    return _clamp_melody_pitch(pitch)
 
 
-def _enclosure_two_note(target_pitch: int, root_pc: int) -> Tuple[int, int]:
-    below = _neighbor_from_spec(target_pitch, "ch", root_pc, above=False)
-    above = _neighbor_from_spec(target_pitch, "ch", root_pc, above=True)
-    return below, above
+def _chromatic_approach(target_pitch: int, rng: random.Random) -> int:
+    return _clamp_melody_pitch(target_pitch + rng.choice([-1, 1]))
+
+
+def _diatonic_approach(
+    target_pitch: int,
+    chord_symbol: str,
+    rng: random.Random,
+) -> int:
+    root_pc = _parse_chord_root_pc(chord_symbol)
+    scale = _scale_for_quality(_chord_quality(chord_symbol))
+    tp = _clamp_melody_pitch(int(target_pitch))
+    below: List[int] = []
+    for semis in scale:
+        pc = (root_pc + int(semis)) % 12
+        cand = _clamp_melody_pitch(_pc_to_nearest_pitch(pc, tp))
+        if cand < tp:
+            below.append(cand)
+    if below:
+        return rng.choice(below)
+    return _clamp_melody_pitch(tp - 2)
+
+
+def _diatonic_step(
+    prev_pitch: int,
+    next_ct: int,
+    chord_symbol: str,
+    rng: random.Random,
+) -> int:
+    root_pc = _parse_chord_root_pc(chord_symbol)
+    scale = _scale_for_quality(_chord_quality(chord_symbol))
+    pp = _clamp_melody_pitch(int(prev_pitch))
+    neighbors: List[int] = []
+    for semis in scale:
+        pc = (root_pc + int(semis)) % 12
+        for delta in (-12, 0, 12):
+            cand = _pc_to_nearest_pitch(pc, pp) + delta
+            if MELODY_MIDI_LO <= cand <= MELODY_MIDI_HI and 1 <= abs(cand - pp) <= 2:
+                neighbors.append(_clamp_melody_pitch(cand))
+    if neighbors:
+        neighbors.sort(key=lambda c: (abs(c - next_ct), abs(c - pp)))
+        return neighbors[0]
+    return _clamp_melody_pitch(pp + rng.choice([-1, 1]))
+
+
+def _enclosure_two_note(
+    target_pitch: int,
+    chord_symbol: str,
+    rng: random.Random,
+) -> Tuple[int, int]:
+    _ = rng
+    root_pc = _parse_chord_root_pc(chord_symbol)
+    cat = _chord_category(chord_symbol)
+    above_spec, below_spec = ENCL_LOOKUP.get(cat, ENCL_LOOKUP["default"])
+    t = _clamp_melody_pitch(int(target_pitch))
+    above_pitch = _neighbor_from_spec(t, above_spec, root_pc, above=True)
+    below_pitch = _neighbor_from_spec(t, below_spec, root_pc, above=False)
+    return above_pitch, below_pitch
 
 
 def _pick_next_chord_tone(root_pc: int, beat_idx: int, center_midi: int) -> int:
@@ -309,6 +398,32 @@ def _apply_cross_bar_anticipation(
             ev["pitch"] = _chord_tone_midi(next_chord_root_pc, 0, center_midi)
 
 
+def _apply_cross_bar_leading(
+    events: List[Dict[str, Any]],
+    next_chord_symbol: str,
+    rng: random.Random,
+) -> None:
+    """Chance to place leading tone (chromatic below next root) on last bar attack."""
+    sym = (next_chord_symbol or "").strip()
+    if not sym or rng.random() >= 0.30:
+        return
+    pitched = [
+        e
+        for e in events
+        if not e.get("is_rest") and e.get("pitch") is not None
+    ]
+    if not pitched:
+        return
+    last_ev = max(
+        pitched,
+        key=lambda e: (int(e.get("offset", 0)), e.get("time_mod") is not None),
+    )
+    lp = int(last_ev["pitch"])
+    next_root_pc = _parse_chord_root_pc(next_chord_symbol)
+    leading = _pc_to_nearest_pitch((next_root_pc - 1) % 12, lp)
+    last_ev["pitch"] = _clamp_melody_pitch(leading)
+
+
 def _build_bar_note_events(
     _prior_events: List[Any],
     chord_curr: str,
@@ -316,8 +431,9 @@ def _build_bar_note_events(
     bar_index: int,
     target_midi: int,
     generation_seed: int,
+    prev_pitch_bar: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    _ = random.Random(
+    rng = random.Random(
         generation_seed
         ^ ((bar_index + 1) * 1009)
         ^ sum(ord(c) for c in chord_curr)
@@ -326,19 +442,48 @@ def _build_bar_note_events(
         bar_index * 3 + sum(ord(c) for c in chord_curr)
     ) % len(EIGHTH_TEMPLATES)
     template = EIGHTH_TEMPLATES[t_idx]
-    triplet_slots = _triplet_slot_indices(t_idx, list(template))
 
     root_curr = _parse_chord_root_pc(chord_curr)
     root_next = _parse_chord_root_pc(chord_next)
 
-    # BUG 1: beat anchors always [0,4,8,12] (fixed grid; no logical_positions / dur=3 mapper)
-    beat_pitch: Dict[int, int] = {}
-    for bi, beat_pos in enumerate(BEAT_DIVISION_OFFSETS):
-        beat_pitch[beat_pos] = _pick_next_chord_tone(root_curr, bi, target_midi)
+    prev_selected_pitch: Optional[int] = (
+        _clamp_melody_pitch(int(prev_pitch_bar)) if prev_pitch_bar is not None else None
+    )
 
     events: List[Dict[str, Any]] = []
     off = 0
-    for si, dur in enumerate(template):
+
+    def select_pitch(onset_div: int) -> int:
+        nonlocal prev_selected_pitch
+        beat_idx = min(3, onset_div // 4)
+        next_ct = _pick_next_chord_tone(root_curr, beat_idx, target_midi)
+        if onset_div in BEAT_DIVISION_OFFSETS:
+            pitch = int(next_ct)
+        else:
+            choice = rng.random()
+            pp = prev_selected_pitch if prev_selected_pitch is not None else next_ct
+            if choice < 0.30:
+                pitch = _diatonic_step(pp, next_ct, chord_curr, rng)
+            elif choice < 0.55:
+                pitch = _chromatic_approach(next_ct, rng)
+            elif choice < 0.75:
+                pitch = _diatonic_approach(next_ct, chord_curr, rng)
+            elif choice < 0.90:
+                upper, _lower = _enclosure_two_note(next_ct, chord_curr, rng)
+                pitch = upper
+            else:
+                pitch = _bebop_scale_pass(pp, next_ct, chord_curr, rng)
+        if prev_selected_pitch is not None and pitch == prev_selected_pitch:
+            pitch = int(next_ct) + rng.choice([-1, 1])
+            while pitch > MELODY_MIDI_HI:
+                pitch -= 12
+            while pitch < MELODY_MIDI_LO:
+                pitch += 12
+        pitch = _clamp_melody_pitch(int(pitch))
+        prev_selected_pitch = pitch
+        return pitch
+
+    for _si, dur in enumerate(template):
         if dur < 0:
             ad = abs(int(dur))
             events.append({
@@ -352,48 +497,52 @@ def _build_bar_note_events(
             })
             off += ad
             continue
-        if si in triplet_slots and dur == 4:
+        if dur == 40:
             trip_durs = [1, 1, 2]
             slot_beat = min(3, off // 4)
-            target_pitch = _pick_next_chord_tone(root_curr, slot_beat, target_midi)
+            target_tri = _pick_next_chord_tone(root_curr, slot_beat, target_midi)
             above, below, t_pitch = _trip_pitches_scale_above_below_target(
-                chord_curr, target_pitch
+                chord_curr, target_tri
             )
             trip_pitches = [above, below, t_pitch]
             for j, wdur in enumerate(trip_durs):
                 div = off + j
+                next_ct = _pick_next_chord_tone(root_curr, min(3, div // 4), target_midi)
+                p = int(trip_pitches[j])
+                if prev_selected_pitch is not None and p == prev_selected_pitch:
+                    p = int(next_ct) + rng.choice([-1, 1])
+                    while p > MELODY_MIDI_HI:
+                        p -= 12
+                    while p < MELODY_MIDI_LO:
+                        p += 12
+                p = _clamp_melody_pitch(p)
+                prev_selected_pitch = p
                 events.append({
                     "offset": div,
                     "duration": wdur,
                     "type": "eighth",
                     "dot": False,
-                    "pitch": trip_pitches[j],
+                    "pitch": p,
                     "time_mod": {"actual": 3, "normal": 2},
                 })
-            off += dur
+            off += 4
             continue
 
         ntype = "half" if dur >= 8 else ("quarter" if dur >= 4 else "eighth")
+        p_sel = select_pitch(off)
         events.append({
             "offset": off,
             "duration": dur,
             "type": ntype,
             "dot": False,
-            "pitch": _pick_next_chord_tone(root_curr, min(3, off // 4), target_midi),
+            "pitch": p_sel,
             "time_mod": None,
         })
         off += dur
 
-    # Chord tones on beats 0,4,8,12 — snap nearest pitched attack only (not rests)
-    for beat_pos in BEAT_DIVISION_OFFSETS:
-        pitched = [e for e in events if not e.get("is_rest")]
-        if not pitched:
-            continue
-        ev_pick = min(pitched, key=lambda e: abs(e["offset"] - beat_pos))
-        ev_pick["pitch"] = beat_pitch[beat_pos]
-
     events.sort(key=lambda e: (e["offset"], e["time_mod"] is not None))
     _apply_cross_bar_anticipation(events, root_next, target_midi)
+    _apply_cross_bar_leading(events, chord_next, rng)
 
     return events
 
@@ -411,7 +560,6 @@ def apply_bebop_phrasing(
     Replaces any prior per-note list: each returned dict has
     pitch, duration (divisions), offset (divisions), type, dot, time_mod.
     """
-    _ = prev_pitch  # reserved for future voice-leading / enclosure direction
     target_midi = _clamp_melody_pitch(int(bar_notes[0]["pitch"])) if bar_notes else 60
     return _build_bar_note_events(
         bar_notes,
@@ -420,4 +568,5 @@ def apply_bebop_phrasing(
         bar_index,
         target_midi,
         generation_seed,
+        prev_pitch_bar=prev_pitch,
     )
