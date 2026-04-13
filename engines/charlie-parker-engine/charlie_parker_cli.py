@@ -131,10 +131,68 @@ def _write_output(xml: str) -> str:
     return path
 
 
+def _compose_from_json_data(
+    data: Dict[str, Any], *, out_xml_path: Optional[str] = None
+) -> None:
+    """JSON dict pipeline (stdin or --input-file). If out_xml_path set, write only there (IPC)."""
+    title = data.get("title")
+    if not title or not isinstance(title, str):
+        print("title required (non-empty string)", file=sys.stderr)
+        sys.exit(1)
+    seed = int(data.get("seed", 42))
+
+    csv = _stdin_chords(data)
+    if csv is None or not str(csv).strip():
+        print(
+            "error: JSON must include non-empty chords (chords, custom_chords, or customChords).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    chord_list = _parse_and_validate_chords(str(csv))
+    if not chord_list:
+        print("error: no chord symbols parsed from chord field.", file=sys.stderr)
+        sys.exit(1)
+
+    sf_raw = _stdin_song_form_raw(data)
+    if sf_raw is not None and str(sf_raw).strip():
+        compile_form = _assert_known_song_form("song_form", sf_raw)
+        explicit_for_rh: Optional[str] = compile_form
+    else:
+        compile_form = "aaba"
+        explicit_for_rh = None
+
+    comp = compile_parker_composition(
+        title, chord_list, seed=seed, song_form=compile_form
+    )
+    bar_count = len(comp.get("bars") or [])
+    rh_map, rh_warn = _select_rehearsal_map(bar_count, explicit_for_rh)
+    if rh_warn:
+        print(rh_warn, file=sys.stderr)
+
+    xml = _export_compiled(comp, compile_form, rh_map)
+    if out_xml_path is not None:
+        with open(out_xml_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(xml)
+    else:
+        path = _write_output(xml)
+        sys.stdout.write(xml)
+        print(path, file=sys.stderr)
+
+
 def main() -> None:
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser(description="Charlie Parker bebop engine CLI")
-        parser.add_argument("--title", type=str, required=True, help="Composition title")
+        parser.add_argument(
+            "--input-file",
+            default=None,
+            help="JSON payload file (desktop IPC); requires --output-file.",
+        )
+        parser.add_argument(
+            "--output-file",
+            default=None,
+            help="Write MusicXML here; no stdout when used with --input-file.",
+        )
+        parser.add_argument("--title", type=str, default=None, help="Composition title")
         parser.add_argument(
             "--chords",
             type=str,
@@ -145,10 +203,35 @@ def main() -> None:
         parser.add_argument(
             "--song-form",
             type=str,
-            required=True,
+            default=None,
             help="Song form key (aaba, abac, aba, ab, blues12, blues24, aab, abcb).",
         )
         args = parser.parse_args()
+
+        if args.input_file:
+            if not args.output_file:
+                print(
+                    "error: --output-file is required with --input-file",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            try:
+                with open(args.input_file, encoding="utf-8-sig") as f:
+                    data = json.load(f)
+                _compose_from_json_data(data, out_xml_path=args.output_file)
+            except ValueError as e:
+                print(f"error: {e}", file=sys.stderr)
+                sys.exit(1)
+            except Exception as e:
+                print(str(e), file=sys.stderr)
+                sys.exit(1)
+            return
+
+        if not args.title or not args.song_form:
+            parser.error(
+                "--title and --song-form are required unless --input-file is used"
+            )
+
         try:
             csv = (args.chords if args.chords is not None else "").strip()
             if not csv:
@@ -186,41 +269,7 @@ def main() -> None:
 
     try:
         data = json.load(sys.stdin)
-        title = data.get("title")
-        if not title or not isinstance(title, str):
-            print("title required (non-empty string)", file=sys.stderr)
-            sys.exit(1)
-        seed = int(data.get("seed", 42))
-
-        csv = _stdin_chords(data)
-        if csv is None or not str(csv).strip():
-            print("error: stdin JSON must include non-empty chords (chords, custom_chords, or customChords).", file=sys.stderr)
-            sys.exit(1)
-        chord_list = _parse_and_validate_chords(str(csv))
-        if not chord_list:
-            print("error: no chord symbols parsed from stdin chord field.", file=sys.stderr)
-            sys.exit(1)
-
-        sf_raw = _stdin_song_form_raw(data)
-        if sf_raw is not None and str(sf_raw).strip():
-            compile_form = _assert_known_song_form("song_form", sf_raw)
-            explicit_for_rh: Optional[str] = compile_form
-        else:
-            compile_form = "aaba"
-            explicit_for_rh = None
-
-        comp = compile_parker_composition(
-            title, chord_list, seed=seed, song_form=compile_form
-        )
-        bar_count = len(comp.get("bars") or [])
-        rh_map, rh_warn = _select_rehearsal_map(bar_count, explicit_for_rh)
-        if rh_warn:
-            print(rh_warn, file=sys.stderr)
-
-        xml = _export_compiled(comp, compile_form, rh_map)
-        path = _write_output(xml)
-        sys.stdout.write(xml)
-        print(path, file=sys.stderr)
+        _compose_from_json_data(data, out_xml_path=None)
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         sys.exit(1)

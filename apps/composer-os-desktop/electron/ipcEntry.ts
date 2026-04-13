@@ -15,87 +15,6 @@ import {
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
 
-async function runPythonJsonCli(options: {
-  scriptPath: string;
-  payload: unknown;
-  timeoutMs?: number;
-}): Promise<string> {
-  const { spawn } = await import('child_process');
-  const pythonCmds = ['py', 'python', 'python3'];
-  let lastError: unknown;
-
-  for (const cmd of pythonCmds) {
-    try {
-      return await new Promise<string>((resolve, reject) => {
-        let settled = false;
-        const finalize = (fn: () => void) => {
-          if (settled) return;
-          settled = true;
-          fn();
-        };
-
-        const child = spawn(cmd, ['-u', options.scriptPath], {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          windowsHide: false,
-          env: { ...process.env, PYTHONUNBUFFERED: '1' },
-        });
-        console.log('[CP] spawning:', cmd, options.scriptPath);
-
-        const stdoutChunks: Buffer[] = [];
-        const stderrChunks: Buffer[] = [];
-
-        child.stdout.on('data', (d: Buffer) => stdoutChunks.push(d));
-        child.stderr.on('data', (d: Buffer) => stderrChunks.push(d));
-
-        child.on('error', (err) =>
-          finalize(() => reject(err))
-        );
-
-        const timeout = setTimeout(() => {
-          child.kill();
-          finalize(() =>
-            reject(new Error(
-              `Timeout: ${options.scriptPath} did not respond in ${options.timeoutMs ?? 30000}ms`
-            ))
-          );
-        }, options.timeoutMs ?? 30000);
-
-        child.on('exit', (code, signal) => {
-          setTimeout(() => {
-            clearTimeout(timeout);
-            const stdout = Buffer.concat(stdoutChunks)
-              .toString('utf8')
-              .replace(/^\uFEFF/, '')
-              .trim();
-            const stderr = Buffer.concat(stderrChunks)
-              .toString('utf8').trim();
-            console.log('[CP] exit code:', code, 'stdout bytes:', stdout.length);
-            if (code === 0 && stdout.length > 0) {
-              finalize(() => resolve(stdout));
-            } else {
-              finalize(() => reject(new Error(
-                `Python CLI failed: code=${code} signal=${signal} stderr=${stderr.slice(0,300)}`
-              )));
-            }
-          }, 100);
-        });
-
-        try {
-          child.stdin.write(JSON.stringify(options.payload));
-          child.stdin.end();
-        } catch (e) {
-          finalize(() => reject(e));
-        }
-      });
-    } catch (e) {
-      lastError = e;
-    }
-  }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error(String(lastError));
-}
-
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
@@ -209,13 +128,14 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       body: {
         title: string;
         seed?: number;
-        mode?: string;
-        profile?: string;
         custom_chords?: string | null;
         song_form?: string;
       }
     ) => {
-      const { writeFile } = await import('fs/promises');
+      const { execFile } = await import('child_process');
+      const { writeFile, readFile, unlink } = await import('fs/promises');
+      const os = await import('os');
+      const crypto = await import('crypto');
 
       const cliPath = path.join(
         app.getPath('documents'),
@@ -225,22 +145,78 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         'charlie-parker-engine',
         'charlie_parker_cli.py'
       );
+
       const cc = body.custom_chords;
       const custom_chords =
-        typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
+        typeof cc === 'string' && cc.trim().length > 0
+          ? cc.trim()
+          : undefined;
 
-      const xml = await runPythonJsonCli({
-        scriptPath: cliPath,
-        payload: {
-          title: body.title,
-          seed: body.seed ?? 42,
-          mode: body.mode ?? 'title',
-          profile: body.profile ?? 'balanced',
-          ...(custom_chords != null ? { custom_chords } : {}),
-          song_form: body.song_form ?? 'aaba',
-        },
-        timeoutMs: 30000,
+      const payload = JSON.stringify({
+        title: body.title,
+        seed: body.seed ?? 42,
+        song_form: body.song_form ?? 'aaba',
+        ...(custom_chords != null ? { custom_chords } : {}),
       });
+
+      const tmpId = crypto.randomBytes(8).toString('hex');
+      const tmpIn = path.join(os.tmpdir(), `cp_in_${tmpId}.json`);
+      const tmpOut = path.join(os.tmpdir(), `cp_out_${tmpId}.musicxml`);
+
+      await writeFile(tmpIn, payload, 'utf8');
+
+      const pythonCmds = ['py', 'python', 'python3'];
+      let lastError: unknown;
+      let succeeded = false;
+
+      for (const cmd of pythonCmds) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            execFile(
+              cmd,
+              ['-u', cliPath, '--input-file', tmpIn, '--output-file', tmpOut],
+              {
+                timeout: 30000,
+                env: { ...process.env, PYTHONUNBUFFERED: '1' },
+              },
+              (error, _stdout, stderr) => {
+                if (error) {
+                  reject(new Error(
+                    `Parker CLI error: ${error.message} stderr=${stderr}`
+                  ));
+                } else {
+                  resolve();
+                }
+              }
+            );
+          });
+          succeeded = true;
+          break;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      if (!succeeded) {
+        try {
+          await unlink(tmpIn);
+        } catch {
+          /* ignore */
+        }
+        throw lastError instanceof Error ? lastError : new Error(String(lastError));
+      }
+
+      const xml = await readFile(tmpOut, 'utf8');
+      try {
+        await unlink(tmpIn);
+      } catch {
+        /* ignore */
+      }
+      try {
+        await unlink(tmpOut);
+      } catch {
+        /* ignore */
+      }
 
       const safeTitle = (body.title || 'untitled')
         .toLowerCase()
