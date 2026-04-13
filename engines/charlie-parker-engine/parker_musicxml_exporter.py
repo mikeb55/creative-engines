@@ -170,13 +170,13 @@ def _note_xml(n: Dict[str, Any]) -> str:
     tm = _time_modification_xml(n)
     arts = _notations_articulations_xml(n)
     if n.get("is_rest"):
-        body = f"<rest/><duration>{dur}</duration>{tm}<type>{typ}</type>{dot_tag}{arts}"
+        body = f"<rest/><duration>{dur}</duration><type>{typ}</type>{dot_tag}{tm}{arts}"
         return f"      <note>{body}</note>"
     step = str(n["pitch"])
     octv = int(n["octave"])
     at = _alter_tag(float(n.get("alter", 0.0)))
     pitch = f"<pitch><step>{step}</step>{at}<octave>{octv}</octave></pitch>"
-    body = f"{pitch}<duration>{dur}</duration>{tm}<type>{typ}</type>{dot_tag}{arts}"
+    body = f"{pitch}<duration>{dur}</duration><type>{typ}</type>{dot_tag}{tm}{arts}"
     return f"      <note>{body}</note>"
 
 

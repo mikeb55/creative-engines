@@ -19,6 +19,136 @@ DIVISIONS = 4
 
 NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
 
+# Per (section, 4-bar phrase): last main pattern id and contour sign for alternation.
+_last_pattern_id: Dict[Tuple[int, int], str] = {}
+_last_contour_sign: Dict[Tuple[int, int], int] = {}
+
+
+def _phrase_group_key(section_index: int, bar_index: int) -> Tuple[int, int]:
+    return (section_index, bar_index // 4)
+
+
+def _contour_sign_from_intervals(ivs: List[int]) -> int:
+    s = sum(ivs)
+    if s > 0:
+        return 1
+    if s < 0:
+        return -1
+    return 0
+
+
+def _pick_main_pattern_entry(
+    main_key: str,
+    generation_seed: int,
+    rng: random.Random,
+    phrase_key: Tuple[int, int],
+) -> Tuple[str, List[int]]:
+    pool = PARKER_VOCABULARY.get(main_key, PARKER_VOCABULARY["dominant"])
+    last_id = _last_pattern_id.get(phrase_key)
+    prev_c = _last_contour_sign.get(phrase_key)
+
+    sel = generation_seed
+    entry = pool[sel % len(pool)]
+    if last_id is not None and entry["id"] == last_id:
+        sel += 1
+        entry = pool[sel % len(pool)]
+
+    ivs = list(entry["intervals_from_root"])
+    sign = _contour_sign_from_intervals(ivs)
+    if (
+        prev_c is not None
+        and prev_c != 0
+        and sign != 0
+        and sign == prev_c
+        and rng.random() < 0.6
+    ):
+        sel += 1
+        entry = pool[sel % len(pool)]
+        ivs = list(entry["intervals_from_root"])
+        sign = _contour_sign_from_intervals(ivs)
+
+    _last_pattern_id[phrase_key] = entry["id"]
+    if sign != 0:
+        _last_contour_sign[phrase_key] = sign
+    return entry["id"], ivs
+
+
+def _prepend_quarter_rest_trim(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Opening quarter rest (4 divisions); drop first 4 divisions of material."""
+    rest_q = _note_shape(4, is_rest=True)
+    consumed = 0
+    out: List[Dict[str, Any]] = []
+    for n in notes:
+        if consumed >= 4:
+            out.append(n)
+            continue
+        d = int(n["duration"])
+        if consumed + d <= 4:
+            consumed += d
+            continue
+        cut = 4 - consumed
+        rem = d - cut
+        consumed = 4
+        if n.get("is_rest"):
+            out.append(_note_shape(rem, is_rest=True))
+        else:
+            out.append(
+                _note_shape(
+                    rem,
+                    is_rest=False,
+                    step=n["pitch"],
+                    alter=float(n.get("alter", 0.0)),
+                    octv=int(n["octave"]),
+                    triplet=bool(n.get("triplet")) and rem <= 1,
+                )
+            )
+    return [rest_q] + out
+
+
+def _maybe_half_note_bar_end(notes: List[Dict[str, Any]], bar_index: int) -> List[Dict[str, Any]]:
+    """Every 4th bar (indices 3,7,…): first 8 divisions + closing half note on last pitch."""
+    if bar_index % 4 != 3 or not notes:
+        return notes
+    pitched = [n for n in notes if not n.get("is_rest")]
+    if not pitched:
+        return notes
+    last_p = pitched[-1]
+    prefix: List[Dict[str, Any]] = []
+    t = 0
+    for n in notes:
+        if t >= 8:
+            break
+        d = int(n["duration"])
+        if t + d <= 8:
+            prefix.append(n)
+            t += d
+        else:
+            need = 8 - t
+            if n.get("is_rest"):
+                prefix.append(_note_shape(need, is_rest=True))
+            else:
+                prefix.append(
+                    _note_shape(
+                        need,
+                        is_rest=False,
+                        step=n["pitch"],
+                        alter=float(n.get("alter", 0.0)),
+                        octv=int(n["octave"]),
+                        triplet=bool(n.get("triplet")) and need <= 1,
+                    )
+                )
+            t = 8
+            break
+    half = _note_shape(
+        8,
+        is_rest=False,
+        step=last_p["pitch"],
+        alter=float(last_p.get("alter", 0.0)),
+        octv=int(last_p["octave"]),
+        triplet=False,
+    )
+    return prefix + [half]
+
 
 def _norm_chord(sym: str) -> str:
     return (sym or "").split("/")[0].strip()
@@ -127,6 +257,18 @@ def _midi_for_interval(sym: str, interval_from_root: int, bar_seed: int) -> int:
     if tweak and midi + 12 <= 82:
         midi += 12
     return max(58, min(82, midi))
+
+
+def _midi_from_note_dict(n: Dict[str, Any]) -> int:
+    """Inverse of _spell_pitch for register carry (small search)."""
+    step = str(n["pitch"])
+    want_alter = float(n.get("alter", 0.0))
+    want_oct = int(n["octave"])
+    for m in range(55, 90):
+        s, al, o = _spell_pitch(m)
+        if s == step and abs(al - want_alter) < 0.01 and o == want_oct:
+            return m
+    return 67
 
 
 def _spell_pitch(midi: int) -> Tuple[str, float, int]:
@@ -305,7 +447,15 @@ def generate_parker_phrase(
     else:
         main_key = hctx if hctx in PARKER_VOCABULARY else "dominant"
 
-    main_pat = get_pattern(main_key, generation_seed)
+    phrase_key = _phrase_group_key(section_index, bar_index)
+    rest_period = 4 + (abs(generation_seed) % 5)
+    should_rest_open = (
+        bar_index > 0
+        and (bar_index % rest_period == 0)
+        and rng.random() < 0.3
+    )
+
+    _, main_pat = _pick_main_pattern_entry(main_key, generation_seed, rng, phrase_key)
 
     notes: List[Dict[str, Any]] = []
     prev_midi = start_pitch
@@ -397,5 +547,12 @@ def generate_parker_phrase(
         ]
         if not attacks or (len(eighth_like) / len(attacks)) >= 0.55:
             break
+
+    if should_rest_open:
+        notes = _prepend_quarter_rest_trim(notes)
+    notes = _maybe_half_note_bar_end(notes, bar_index)
+    attacks = [n for n in notes if not n.get("is_rest")]
+    if attacks:
+        prev_midi = _midi_from_note_dict(attacks[-1])
 
     return notes, prev_midi
