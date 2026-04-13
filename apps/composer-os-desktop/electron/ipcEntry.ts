@@ -15,6 +15,84 @@ import {
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
 
+async function runPythonJsonCli(options: {
+  scriptPath: string;
+  payload: unknown;
+  timeoutMs?: number;
+}): Promise<string> {
+  const { spawn } = await import('child_process');
+  const pythonCmds = ['py', 'python', 'python3'];
+  let lastError: unknown;
+
+  for (const cmd of pythonCmds) {
+    try {
+      return await new Promise<string>((resolve, reject) => {
+        let settled = false;
+        const finalize = (fn: () => void) => {
+          if (settled) return;
+          settled = true;
+          fn();
+        };
+
+        const child = spawn(cmd, ['-u', options.scriptPath], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: false,
+          env: { ...process.env, PYTHONUNBUFFERED: '1' },
+        });
+
+        const stdoutChunks: Buffer[] = [];
+        const stderrChunks: Buffer[] = [];
+
+        child.stdout.on('data', (d: Buffer) => stdoutChunks.push(d));
+        child.stderr.on('data', (d: Buffer) => stderrChunks.push(d));
+
+        child.on('error', (err) =>
+          finalize(() => reject(err))
+        );
+
+        const timeout = setTimeout(() => {
+          child.kill();
+          finalize(() =>
+            reject(new Error(
+              `Timeout: ${options.scriptPath} did not respond in ${options.timeoutMs ?? 30000}ms`
+            ))
+          );
+        }, options.timeoutMs ?? 30000);
+
+        child.on('close', (code) => {
+          clearTimeout(timeout);
+          const stdout = Buffer.concat(stdoutChunks).toString('utf8')
+            .replace(/^\uFEFF/, '').trim();
+          const stderr = Buffer.concat(stderrChunks).toString('utf8').trim();
+          if (code === 0 && stdout.length > 0) {
+            finalize(() => resolve(stdout));
+          } else {
+            finalize(() =>
+              reject(new Error(
+                `Python CLI failed: script=${options.scriptPath} ` +
+                `code=${code} stderr=${stderr.slice(0, 500)} ` +
+                `stdout=${stdout.slice(0, 200)}`
+              ))
+            );
+          }
+        });
+
+        try {
+          child.stdin.write(JSON.stringify(options.payload));
+          child.stdin.end();
+        } catch (e) {
+          finalize(() => reject(e));
+        }
+      });
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(String(lastError));
+}
+
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
@@ -134,7 +212,6 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         song_form?: string;
       }
     ) => {
-      const { spawn } = await import('child_process');
       const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
@@ -148,48 +225,19 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const cc = body.custom_chords;
       const custom_chords =
         typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
-      const input = JSON.stringify({
-        title: body.title,
-        seed: body.seed ?? 42,
-        mode: body.mode ?? 'title',
-        profile: body.profile ?? 'balanced',
-        ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
-        song_form: body.song_form ?? 'aaba',
-      });
 
-      const pythonCmds = ['py', 'python', 'python3'];
-      let stdout: string | undefined;
-      let lastError: unknown;
-      for (const cmd of pythonCmds) {
-        try {
-          stdout = await new Promise<string>((resolve, reject) => {
-            const child = spawn(cmd, [cliPath], {
-              stdio: ['pipe', 'pipe', 'pipe'],
-            });
-            let out = '';
-            let err = '';
-            child.stdout.on('data', (d: Buffer) => {
-              out += d.toString();
-            });
-            child.stderr.on('data', (d: Buffer) => {
-              err += d.toString();
-            });
-            child.on('close', (code: number | null) => {
-              if (code === 0) resolve(out);
-              else reject(new Error(err || `exit code ${code}`));
-            });
-            child.on('error', reject);
-            child.stdin.write(input);
-            child.stdin.end();
-          });
-          break;
-        } catch (e) {
-          lastError = e;
-        }
-      }
-      if (stdout === undefined) {
-        throw lastError instanceof Error ? lastError : new Error(String(lastError));
-      }
+      const xml = await runPythonJsonCli({
+        scriptPath: cliPath,
+        payload: {
+          title: body.title,
+          seed: body.seed ?? 42,
+          mode: body.mode ?? 'title',
+          profile: body.profile ?? 'balanced',
+          ...(custom_chords != null ? { custom_chords } : {}),
+          song_form: body.song_form ?? 'aaba',
+        },
+        timeoutMs: 30000,
+      });
 
       const safeTitle = (body.title || 'untitled')
         .toLowerCase()
@@ -198,7 +246,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `charlie_parker_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
-      await writeFile(outPath, stdout, 'utf8');
+      await writeFile(outPath, xml, 'utf8');
 
       return { path: outPath, filename };
     }
