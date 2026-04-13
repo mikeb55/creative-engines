@@ -81,8 +81,26 @@ def _escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+# Song Mode rehearsal letters (1-based bar numbers in comments; keys are 0-based measure indices).
+_REHEARSAL_BY_SONG_FORM: Dict[str, Dict[int, str]] = {
+    "aaba": {0: "A", 8: "A", 16: "B", 24: "A"},  # 1,9,17,25 → A,A,B,A
+    "abac": {0: "A", 8: "B", 16: "A", 24: "C"},  # 1,9,17,25 → A,B,A,C
+    "aba": {0: "A", 8: "B", 16: "A"},  # 1,9,17 → A,B,A
+    "ab": {0: "A", 8: "B"},  # 1,9 → A,B
+    "blues12": {0: "A"},  # bar 1 → A
+    "blues24": {0: "A", 12: "A'"},  # 1,13 → A,A'
+    "aab": {0: "A", 8: "A'", 16: "B"},  # 1,9,17 → A,A',B
+    "abcb": {0: "A", 8: "B", 16: "C", 24: "B'"},  # 1,9,17,25 → A,B,C,B'
+}
+
+
+def _rehearsal_map_for_song_form(song_form: Optional[str]) -> Dict[int, str]:
+    key = (song_form or "aaba").strip().lower()
+    return dict(_REHEARSAL_BY_SONG_FORM.get(key, _REHEARSAL_BY_SONG_FORM["aaba"]))
+
+
 def _rehearsal_direction_xml(label: str) -> str:
-    """AABA-style boxed rehearsal mark above the staff."""
+    """Boxed rehearsal mark above the staff."""
     esc = _escape(label)
     return (
         '      <direction placement="above">\n'
@@ -229,7 +247,10 @@ def _emit_note_line(note: Dict) -> str:
     )
 
 
-def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
+def export_composition_to_musicxml(
+    compiled: CompiledComposition,
+    song_form: Optional[str] = None,
+) -> str:
     """Export CompiledComposition to valid MusicXML string."""
     by_measure: Dict[int, List[Dict]] = {}
     for sec in compiled.sections:
@@ -253,18 +274,30 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
             symbol = h.get("symbol", h.get("chord", h.get("name", None)))
             if bar is not None and symbol is not None:
                 by_measure_chord[int(bar)] = str(symbol)
-    melody_bars = max(by_measure.keys(), default=0) + 1
-    n_harm = max(by_measure_chord.keys(), default=-1) + 1 if by_measure_chord else 0
-    if n_harm > melody_bars:
-        if n_harm >= 32:
-            chord_target = min(64, max(32, n_harm))
-        else:
-            chord_target = n_harm
-        total_bars = max(melody_bars, chord_target)
+    # Custom chord list from CLI/metadata: authoritative bar count and harmony (one chord per bar).
+    custom_tokens = compiled.metadata.get("musicxml_custom_chord_tokens")
+    if (
+        isinstance(custom_tokens, list)
+        and custom_tokens
+        and all(isinstance(x, str) and x.strip() for x in custom_tokens)
+    ):
+        tokens = [str(x).strip() for x in custom_tokens]
+        total_bars = len(tokens)
+        for i, tok in enumerate(tokens):
+            by_measure_chord[i] = tok
     else:
-        total_bars = melody_bars
-    # Rehearsal letters for measures 1, 9, 17, 25 (1-based) when present
-    _rehearsal_by_measure: Dict[int, str] = {0: "A", 8: "A", 16: "B", 24: "A"}
+        melody_bars = max(by_measure.keys(), default=0) + 1
+        n_harm = max(by_measure_chord.keys(), default=-1) + 1 if by_measure_chord else 0
+        if n_harm > melody_bars:
+            if n_harm >= 32:
+                chord_target = min(64, max(32, n_harm))
+            else:
+                chord_target = n_harm
+            total_bars = max(melody_bars, chord_target)
+        else:
+            total_bars = melody_bars
+    form_key = song_form or compiled.metadata.get("song_form") or "aaba"
+    _rehearsal_by_measure = _rehearsal_map_for_song_form(str(form_key))
     divisions = DEFAULT_DIVISIONS
     beats = DEFAULT_BEATS
     beats_per_measure = float(beats)

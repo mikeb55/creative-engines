@@ -10,6 +10,7 @@ type Tab = 'home' | 'presets' | 'style' | 'outputs' | 'composer-engines';
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
   const [wsCustomChords, setWsCustomChords] = React.useState('');
+  const [wsSongForm, setWsSongForm] = useState('aaba');
   const [wsResult, setWsResult] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [monkTitle, setMonkTitle] = React.useState('');
@@ -58,6 +59,7 @@ function ComposerEngines() {
                 (api as any).generateWayneShorter({
                   title: wsTitle,
                   seed: Math.floor(Math.random() * 1e9),
+                  song_form: wsSongForm,
                   ...(trimmed.length > 0 ? { custom_chords: trimmed } : {}),
                 }).then((r: any) => {
                   setLoading(false);
@@ -82,6 +84,21 @@ function ComposerEngines() {
               style={{ width: '100%', padding: '0.3rem', boxSizing: 'border-box' }}
             />
           </label>
+          <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8, display: 'block' }}>Song form</label>
+          <select
+            value={wsSongForm}
+            onChange={e => setWsSongForm(e.target.value)}
+            style={{ width: '100%', marginTop: 4 }}
+          >
+            <option value="aaba">AABA — 32 bars (A A' B A'')</option>
+            <option value="abac">ABAC — 32 bars (A B A' C)</option>
+            <option value="aba">ABA — 24 bars (A B A')</option>
+            <option value="ab">AB — 16 bars (A B)</option>
+            <option value="blues12">Blues (12 bars)</option>
+            <option value="blues24">Blues (24 bars)</option>
+            <option value="aab">AAB — 24 bars (A A' B)</option>
+            <option value="abcb">ABCB — 32 bars (A B C B')</option>
+          </select>
         </div>
         {wsResult && (
           <div style={{ 

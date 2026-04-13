@@ -3,7 +3,11 @@ import argparse
 import json
 import re
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+_VALID_SONG_FORMS = frozenset(
+    ("aaba", "abac", "aba", "ab", "blues12", "blues24", "aab", "abcb")
+)
 
 
 def _stdin_custom_chords(data: Dict[str, Any]) -> Optional[str]:
@@ -20,6 +24,45 @@ def _stdin_custom_chords(data: Dict[str, Any]) -> Optional[str]:
         parts = [str(x).strip() for x in raw if x is not None and str(x).strip()]
         return ",".join(parts) if parts else None
     return None
+
+
+def _custom_chord_tokens(s: str) -> List[str]:
+    """Same splitting rules as shorter_section_compiler._parse_custom_chords_csv (max 32)."""
+    return [
+        c.strip()
+        for c in re.split(r"[,;|]+", s.strip())
+        if c.strip()
+    ][:32]
+
+
+def _normalize_song_form(raw: Any) -> str:
+    if raw is None:
+        return "aaba"
+    if not isinstance(raw, str):
+        return "aaba"
+    key = raw.strip().lower()
+    return key if key in _VALID_SONG_FORMS else "aaba"
+
+
+def _stdin_song_form(data: Dict[str, Any]) -> str:
+    return _normalize_song_form(data.get("song_form") or data.get("songForm"))
+
+
+def _apply_export_metadata(composition: Any, custom: Optional[str], song_form: str) -> None:
+    """MusicXML export: custom chord tokens fix bar count; song form drives rehearsal marks."""
+    md = dict(composition.metadata)
+    md["song_form"] = song_form
+    if custom and str(custom).strip():
+        toks = _custom_chord_tokens(str(custom))
+        if toks:
+            md["musicxml_custom_chord_tokens"] = toks
+    composition.metadata = md
+
+
+def _export_musicxml(composition: Any, song_form: str) -> str:
+    from shorter_musicxml_exporter import export_composition_to_musicxml
+
+    return export_composition_to_musicxml(composition, song_form=song_form)
 
 
 _KIND_CLOSE_HARM = re.compile(
@@ -68,18 +111,26 @@ def main() -> None:
         parser.add_argument("--seed", type=int, default=42)
         parser.add_argument("--mode", type=str, default="title")
         parser.add_argument("--profile", type=str, default="balanced")
+        parser.add_argument(
+            "--song-form",
+            type=str,
+            default="aaba",
+            help="Song form for rehearsal marks: aaba, abac, aba, ab, blues12, blues24, aab, abcb (default aaba).",
+        )
         args = parser.parse_args()
         try:
             from engine_adapter import WayneShorterEngine
             from shorter_section_compiler import compile_composition_from_ir
 
+            song_form = _normalize_song_form(args.song_form)
             engine = WayneShorterEngine()
             ir = engine.generate_ir(
                 args.title, mode=args.mode, seed=args.seed, profile=args.profile
             )
             composition = compile_composition_from_ir(ir, custom_chords=args.chords)
+            _apply_export_metadata(composition, args.chords, song_form)
             sys.stdout.write(
-                _inject_bass_after_slash_kinds(engine.export_musicxml(composition))
+                _inject_bass_after_slash_kinds(_export_musicxml(composition, song_form))
             )
         except Exception as e:
             print(str(e), file=sys.stderr)
@@ -96,14 +147,16 @@ def main() -> None:
         mode = data.get("mode", "title")
         profile = data.get("profile", "balanced")
         custom = _stdin_custom_chords(data)
+        song_form = _stdin_song_form(data)
         from engine_adapter import WayneShorterEngine
         from shorter_section_compiler import compile_composition_from_ir
 
         engine = WayneShorterEngine()
         ir = engine.generate_ir(title, mode=mode, seed=seed, profile=profile)
         composition = compile_composition_from_ir(ir, custom_chords=custom)
+        _apply_export_metadata(composition, custom, song_form)
         sys.stdout.write(
-            _inject_bass_after_slash_kinds(engine.export_musicxml(composition))
+            _inject_bass_after_slash_kinds(_export_musicxml(composition, song_form))
         )
     except Exception as e:
         print(str(e), file=sys.stderr)
