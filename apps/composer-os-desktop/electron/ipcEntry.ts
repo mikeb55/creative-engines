@@ -47,6 +47,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         mode?: string;
         profile?: string;
         custom_chords?: string | null;
+        song_form?: string;
       }
     ) => {
       const { spawn } = await import('child_process');
@@ -69,6 +70,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         mode: body.mode ?? 'title',
         profile: body.profile ?? 'balanced',
         ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
+        song_form: body.song_form ?? 'aaba',
       });
 
       const pythonCmds = ['py', 'python', 'python3'];

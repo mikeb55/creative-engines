@@ -5,6 +5,7 @@ Deterministic: same IR + seed = same result.
 
 import math
 import random
+from dataclasses import replace
 from typing import Any, Dict, List, Optional
 
 try:
@@ -244,6 +245,31 @@ def _total_bars_planned(composer_ir: ComposerIR) -> int:
     return total
 
 
+def _custom_bars_per_section(composer_ir: ComposerIR, total_bars: int) -> List[int]:
+    """Split total_bars across section_order proportionally to planned section weights (integers, sum exact)."""
+    order = composer_ir.section_order
+    n = len(order)
+    if n == 0:
+        return []
+    weights: List[int] = []
+    for role in order:
+        sp = composer_ir.section_roles.get(role)
+        if sp is None:
+            sp = SectionPlan(role=role, bar_count=8)
+        weights.append(max(1, _section_planned_bars(sp)))
+    wsum = sum(weights)
+    if wsum <= 0:
+        weights = [1] * n
+        wsum = n
+    exact = [total_bars * (w / wsum) for w in weights]
+    floors = [int(x) for x in exact]
+    deficit = total_bars - sum(floors)
+    frac_order = sorted(range(n), key=lambda i: exact[i] - floors[i], reverse=True)
+    for k in range(deficit):
+        floors[frac_order[k % n]] += 1
+    return floors
+
+
 def _parse_custom_chords_csv(custom_chords: str) -> List[str]:
     """Split on comma, semicolon, or pipe only (preserves slash bass and minus notation)."""
     chords = [
@@ -318,18 +344,28 @@ def compile_composition_from_ir(
     _bebop_rng = random.Random(composer_ir.seed)
     generation_seed = _bebop_rng.randint(0, 2**31)
     custom_bar_chords: Optional[List[str]] = None
+    section_bar_overrides: Optional[List[int]] = None
     if custom_chords is not None and str(custom_chords).strip():
-        num_bars = _total_bars_planned(composer_ir)
-        custom_bar_chords = build_custom_chord_bar_sequence(str(custom_chords).strip(), num_bars)
-        if len(custom_bar_chords) != num_bars:
-            raise ValueError("custom_chords: internal length mismatch vs form")
+        parsed_syms = _parse_custom_chords_csv(str(custom_chords).strip())
+        num_bars = len(parsed_syms)
+        if num_bars <= 0:
+            custom_bar_chords = None
+        else:
+            custom_bar_chords = build_custom_chord_bar_sequence(str(custom_chords).strip(), num_bars)
+            if len(custom_bar_chords) != num_bars:
+                raise ValueError("custom_chords: internal length mismatch vs form")
+            planned_total = _total_bars_planned(composer_ir)
+            if num_bars != planned_total:
+                section_bar_overrides = _custom_bars_per_section(composer_ir, num_bars)
     sections = []
     all_events = []
     bar_start = 0
-    for role in composer_ir.section_order:
+    for idx, role in enumerate(composer_ir.section_order):
         sp = composer_ir.section_roles.get(role)
         if sp is None:
             sp = SectionPlan(role=role, bar_count=8)
+        if section_bar_overrides is not None and idx < len(section_bar_overrides):
+            sp = replace(sp, bar_count=section_bar_overrides[idx])
         compiled = compile_section(
             sp, composer_ir, role, bar_start, generation_seed, custom_bar_chords=custom_bar_chords
         )
