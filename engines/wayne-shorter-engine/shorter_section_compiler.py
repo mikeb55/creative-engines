@@ -3,6 +3,7 @@ Shorter Section Compiler — IR → CompiledComposition.
 Deterministic: same IR + seed = same result.
 """
 
+import random
 from typing import Any, Dict, List, Optional
 
 try:
@@ -11,12 +12,14 @@ try:
     from .compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
     from .shorter_harmonic_fields import derive_section_harmony, _next_root
     from .shorter_motif_development import develop_motif_cell
+    from .bebop_phrasing import apply_bebop_phrasing
 except ImportError:
     from composer_ir import ComposerIR, SectionPlan, MotivicCell
     from composer_ir_validator import validate_composer_ir
     from compiled_composition_types import CompiledComposition, CompiledSection, CompiledMelodyBlueprint, CompiledHarmonyPlan
     from shorter_harmonic_fields import derive_section_harmony, _next_root
     from shorter_motif_development import develop_motif_cell
+    from bebop_phrasing import apply_bebop_phrasing
 
 
 NOTE_TO_PC = {
@@ -250,6 +253,8 @@ def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
     r = validate_composer_ir(composer_ir)
     if not r.valid:
         raise ValueError(f"Invalid ComposerIR: {'; '.join(r.errors)}")
+    _bebop_rng = random.Random(composer_ir.seed)
+    generation_seed = _bebop_rng.randint(0, 2**31)
     sections = []
     all_events = []
     bar_start = 0
@@ -257,7 +262,7 @@ def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
         sp = composer_ir.section_roles.get(role)
         if sp is None:
             sp = SectionPlan(role=role, bar_count=8)
-        compiled = compile_section(sp, composer_ir, role, bar_start)
+        compiled = compile_section(sp, composer_ir, role, bar_start, generation_seed)
         sections.append(compiled)
         all_events.extend(compiled.melody_events)
         bar_start = compiled.bar_end
@@ -281,18 +286,30 @@ def compile_composition_from_ir(composer_ir: ComposerIR) -> CompiledComposition:
     )
 
 
-def compile_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def compile_section(
+    section_plan: SectionPlan,
+    composer_ir: ComposerIR,
+    section_id: str,
+    bar_start: int,
+    generation_seed: int,
+) -> CompiledSection:
     """Compile single section."""
     if section_plan.role == "primary":
-        return compile_primary_theme(section_plan, composer_ir, section_id, bar_start)
+        return compile_primary_theme(section_plan, composer_ir, section_id, bar_start, generation_seed)
     if section_plan.role == "contrast":
-        return compile_contrast_section(section_plan, composer_ir, section_id, bar_start)
+        return compile_contrast_section(section_plan, composer_ir, section_id, bar_start, generation_seed)
     if section_plan.role in ("return", "coda"):
-        return compile_return_section(section_plan, composer_ir, section_id, bar_start)
-    return _compile_generic_section(section_plan, composer_ir, section_id, bar_start)
+        return compile_return_section(section_plan, composer_ir, section_id, bar_start, generation_seed)
+    return _compile_generic_section(section_plan, composer_ir, section_id, bar_start, generation_seed)
 
 
-def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def compile_primary_theme(
+    section_plan: SectionPlan,
+    composer_ir: ComposerIR,
+    section_id: str,
+    bar_start: int,
+    generation_seed: int,
+) -> CompiledSection:
     """Compile primary thematic section."""
     bars = section_plan.bar_count or 8
     bar_end = bar_start + bars
@@ -306,7 +323,9 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
-    events = _melody_from_cell(cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
+    events = _melody_from_cell(
+        cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony, generation_seed=generation_seed
+    )
     pl = section_plan.phrase_lengths or [4, 4]
     return CompiledSection(
         section_id=section_id,
@@ -321,7 +340,13 @@ def compile_primary_theme(section_plan: SectionPlan, composer_ir: ComposerIR, se
     )
 
 
-def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def compile_contrast_section(
+    section_plan: SectionPlan,
+    composer_ir: ComposerIR,
+    section_id: str,
+    bar_start: int,
+    generation_seed: int,
+) -> CompiledSection:
     """Compile contrast section: different but related."""
     bars = section_plan.bar_count or 6
     bar_end = bar_start + bars
@@ -337,7 +362,15 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     harm_ext = _extend_harm(harm, bars, composer_ir.seed)
     harmony = [{"symbol": harm_ext[i], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
-    events = _melody_from_cell(developed, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
+    events = _melody_from_cell(
+        developed,
+        bars,
+        bar_start,
+        section_id,
+        reg,
+        bar_harmony=bar_harmony,
+        generation_seed=generation_seed,
+    )
     pl = section_plan.phrase_lengths or [3, 3]
     return CompiledSection(
         section_id=section_id,
@@ -352,7 +385,13 @@ def compile_contrast_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     )
 
 
-def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def compile_return_section(
+    section_plan: SectionPlan,
+    composer_ir: ComposerIR,
+    section_id: str,
+    bar_start: int,
+    generation_seed: int,
+) -> CompiledSection:
     """Compile return: transformed, not flat repeat."""
     bars = section_plan.bar_count or 8
     bar_end = bar_start + bars
@@ -367,7 +406,15 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
     )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
-    events = _melody_from_cell(developed, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
+    events = _melody_from_cell(
+        developed,
+        bars,
+        bar_start,
+        section_id,
+        reg,
+        bar_harmony=bar_harmony,
+        generation_seed=generation_seed,
+    )
     pl = section_plan.phrase_lengths or [4, 4]
     return CompiledSection(
         section_id=section_id,
@@ -382,7 +429,13 @@ def compile_return_section(section_plan: SectionPlan, composer_ir: ComposerIR, s
     )
 
 
-def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR, section_id: str, bar_start: int) -> CompiledSection:
+def _compile_generic_section(
+    section_plan: SectionPlan,
+    composer_ir: ComposerIR,
+    section_id: str,
+    bar_start: int,
+    generation_seed: int,
+) -> CompiledSection:
     """Generic section (intro, etc)."""
     bars = section_plan.bar_count or 4
     bar_end = bar_start + bars
@@ -395,7 +448,9 @@ def _compile_generic_section(section_plan: SectionPlan, composer_ir: ComposerIR,
     )
     harmony = [{"symbol": harm[i % len(harm)], "measure": bar_start + i, "duration": 4} for i in range(bars)]
     bar_harmony = {h.get("measure", h.get("bar", 0)): h.get("symbol", "") for h in harmony}
-    events = _melody_from_cell(cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony)
+    events = _melody_from_cell(
+        cell, bars, bar_start, section_id, reg, bar_harmony=bar_harmony, generation_seed=generation_seed
+    )
     return CompiledSection(
         section_id=section_id,
         role=section_plan.role,
@@ -415,6 +470,7 @@ def _melody_from_cell(
     section_id: str,
     reg: int,
     bar_harmony: Optional[Dict[int, str]] = None,
+    generation_seed: int = 0,
 ) -> List[Dict]:
     """Generate melody events from motivic cell."""
     events: List[Dict] = []
@@ -457,6 +513,15 @@ def _melody_from_cell(
                 pitch = _avoid_consecutive_repeat(
                     last_melodic_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
                 )
+            if pitch < MELODY_PITCH_LO or pitch > MELODY_PITCH_HI:
+                pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch))
+            pitch = apply_bebop_phrasing(
+                measure,
+                chord_sym or "",
+                pitch,
+                prev_pitch=last_melodic_pitch,
+                generation_seed=generation_seed,
+            )
             if pitch < MELODY_PITCH_LO or pitch > MELODY_PITCH_HI:
                 pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch))
             events.append({
