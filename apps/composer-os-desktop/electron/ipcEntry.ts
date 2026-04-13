@@ -39,6 +39,7 @@ async function runPythonJsonCli(options: {
           windowsHide: false,
           env: { ...process.env, PYTHONUNBUFFERED: '1' },
         });
+        console.log('[CP] spawning:', cmd, options.scriptPath);
 
         const stdoutChunks: Buffer[] = [];
         const stderrChunks: Buffer[] = [];
@@ -59,22 +60,24 @@ async function runPythonJsonCli(options: {
           );
         }, options.timeoutMs ?? 30000);
 
-        child.on('close', (code) => {
-          clearTimeout(timeout);
-          const stdout = Buffer.concat(stdoutChunks).toString('utf8')
-            .replace(/^\uFEFF/, '').trim();
-          const stderr = Buffer.concat(stderrChunks).toString('utf8').trim();
-          if (code === 0 && stdout.length > 0) {
-            finalize(() => resolve(stdout));
-          } else {
-            finalize(() =>
-              reject(new Error(
-                `Python CLI failed: script=${options.scriptPath} ` +
-                `code=${code} stderr=${stderr.slice(0, 500)} ` +
-                `stdout=${stdout.slice(0, 200)}`
-              ))
-            );
-          }
+        child.on('exit', (code, signal) => {
+          setTimeout(() => {
+            clearTimeout(timeout);
+            const stdout = Buffer.concat(stdoutChunks)
+              .toString('utf8')
+              .replace(/^\uFEFF/, '')
+              .trim();
+            const stderr = Buffer.concat(stderrChunks)
+              .toString('utf8').trim();
+            console.log('[CP] exit code:', code, 'stdout bytes:', stdout.length);
+            if (code === 0 && stdout.length > 0) {
+              finalize(() => resolve(stdout));
+            } else {
+              finalize(() => reject(new Error(
+                `Python CLI failed: code=${code} signal=${signal} stderr=${stderr.slice(0,300)}`
+              )));
+            }
+          }, 100);
         });
 
         try {
