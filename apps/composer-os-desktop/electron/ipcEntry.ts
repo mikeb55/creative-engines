@@ -132,6 +132,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         song_form?: string;
       }
     ) => {
+      console.log('[CP] handler called, title:', body.title);
       const { execFile } = await import('child_process');
       const { writeFile, readFile, unlink } = await import('fs/promises');
       const os = await import('os');
@@ -147,16 +148,18 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       );
 
       const cc = body.custom_chords;
+      const fallbackChords =
+        'Fmaj7,Dm7,G7,Cmaj7,Am7,Dm7,G7,Cmaj7';
       const custom_chords =
         typeof cc === 'string' && cc.trim().length > 0
           ? cc.trim()
-          : undefined;
+          : fallbackChords;
 
       const payload = JSON.stringify({
         title: body.title,
         seed: body.seed ?? 42,
         song_form: body.song_form ?? 'aaba',
-        ...(custom_chords != null ? { custom_chords } : {}),
+        custom_chords,
       });
 
       const tmpId = crypto.randomBytes(8).toString('hex');
@@ -164,6 +167,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const tmpOut = path.join(os.tmpdir(), `cp_out_${tmpId}.musicxml`);
 
       await writeFile(tmpIn, payload, 'utf8');
+      console.log('[CP] tmpIn written:', tmpIn);
 
       const pythonCmds = ['py', 'python', 'python3'];
       let lastError: unknown;
@@ -190,6 +194,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
               }
             );
           });
+          console.log('[CP] execFile completed');
           succeeded = true;
           break;
         } catch (e) {
@@ -207,6 +212,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       }
 
       const xml = await readFile(tmpOut, 'utf8');
+      console.log('[CP] tmpOut read, bytes:', xml.length);
       try {
         await unlink(tmpIn);
       } catch {

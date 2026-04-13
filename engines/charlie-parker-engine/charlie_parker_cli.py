@@ -143,15 +143,9 @@ def _compose_from_json_data(
 
     csv = _stdin_chords(data)
     if csv is None or not str(csv).strip():
-        print(
-            "error: JSON must include non-empty chords (chords, custom_chords, or customChords).",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    chord_list = _parse_and_validate_chords(str(csv))
-    if not chord_list:
-        print("error: no chord symbols parsed from chord field.", file=sys.stderr)
-        sys.exit(1)
+        chord_list: List[str] = []
+    else:
+        chord_list = _parse_and_validate_chords(str(csv))
 
     sf_raw = _stdin_song_form_raw(data)
     if sf_raw is not None and str(sf_raw).strip():
