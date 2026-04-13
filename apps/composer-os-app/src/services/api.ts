@@ -169,7 +169,13 @@ export const api = {
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
-  generateWayneShorter: (body: { title: string; seed?: number }) =>
+  generateWayneShorter: (body: {
+    title: string;
+    seed?: number;
+    mode?: string;
+    profile?: string;
+    custom_chords?: string | null;
+  }) =>
     ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-wayne-shorter', body),
   generateMonk: (body: { title: string; seed?: number }) =>
     ipcInvoke<{ path: string; filename: string }>('composer-os-api:generate-monk', body),

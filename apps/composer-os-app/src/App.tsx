@@ -9,6 +9,7 @@ type Tab = 'home' | 'presets' | 'style' | 'outputs' | 'composer-engines';
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
+  const [wsCustomChords, setWsCustomChords] = React.useState('');
   const [wsResult, setWsResult] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [monkTitle, setMonkTitle] = React.useState('');
@@ -40,33 +41,47 @@ function ComposerEngines() {
           form, motivic development, harmonic ambiguity.
           Outputs a single-staff lead sheet with chord symbols.
         </p>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input
-            type="text"
-            placeholder="Composition title"
-            value={wsTitle}
-            onChange={e => setWsTitle(e.target.value)}
-            style={{ flex: 1, padding: '0.3rem' }}
-          />
-          <button
-            disabled={!wsTitle || loading}
-            onClick={() => {
-              setLoading(true);
-              (api as any).generateWayneShorter({
-                title: wsTitle,
-                seed: Math.floor(Math.random() * 1e9)
-              }).then((r: any) => {
-                setLoading(false);
-                setWsResult(r?.path ?? '');
-                setWsTitle('');
-              }).catch((e: any) => {
-                setLoading(false);
-                setWsResult('Error: ' + String(e?.message ?? e));
-              });
-            }}
-          >
-            {loading ? 'Generating…' : 'Generate'}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="text"
+              placeholder="Composition title"
+              value={wsTitle}
+              onChange={e => setWsTitle(e.target.value)}
+              style={{ flex: 1, padding: '0.3rem' }}
+            />
+            <button
+              disabled={!wsTitle || loading}
+              onClick={() => {
+                setLoading(true);
+                const trimmed = wsCustomChords.trim();
+                (api as any).generateWayneShorter({
+                  title: wsTitle,
+                  seed: Math.floor(Math.random() * 1e9),
+                  ...(trimmed.length > 0 ? { custom_chords: trimmed } : {}),
+                }).then((r: any) => {
+                  setLoading(false);
+                  setWsResult(r?.path ?? '');
+                  setWsTitle('');
+                }).catch((e: any) => {
+                  setLoading(false);
+                  setWsResult('Error: ' + String(e?.message ?? e));
+                });
+              }}
+            >
+              {loading ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '13px' }}>
+            <span>Custom chords</span>
+            <input
+              type="text"
+              placeholder="Chords (optional): Dm7, Ebmaj7, Cm7, F7"
+              value={wsCustomChords}
+              onChange={e => setWsCustomChords(e.target.value)}
+              style={{ width: '100%', padding: '0.3rem', boxSizing: 'border-box' }}
+            />
+          </label>
         </div>
         {wsResult && (
           <div style={{ 

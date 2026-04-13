@@ -81,6 +81,18 @@ def _escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+def _rehearsal_direction_xml(label: str) -> str:
+    """AABA-style boxed rehearsal mark above the staff."""
+    esc = _escape(label)
+    return (
+        '      <direction placement="above">\n'
+        "        <direction-type>\n"
+        f'          <rehearsal enclosure="square">{esc}</rehearsal>\n'
+        "        </direction-type>\n"
+        "      </direction>"
+    )
+
+
 def _kind_for(suffix: str) -> str:
     s = suffix.lower().strip()
     if "maj7#11" in s or "maj7+11" in s:
@@ -226,7 +238,6 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
             if m not in by_measure:
                 by_measure[m] = []
             by_measure[m].append(e)
-    total_bars = max(by_measure.keys(), default=0) + 1
     # Build chord-per-measure lookup from section harmony
     by_measure_chord: Dict[int, str] = {}
     for sec in compiled.sections:
@@ -242,6 +253,18 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
             symbol = h.get("symbol", h.get("chord", h.get("name", None)))
             if bar is not None and symbol is not None:
                 by_measure_chord[int(bar)] = str(symbol)
+    melody_bars = max(by_measure.keys(), default=0) + 1
+    n_harm = max(by_measure_chord.keys(), default=-1) + 1 if by_measure_chord else 0
+    if n_harm > melody_bars:
+        if n_harm >= 32:
+            chord_target = min(64, max(32, n_harm))
+        else:
+            chord_target = n_harm
+        total_bars = max(melody_bars, chord_target)
+    else:
+        total_bars = melody_bars
+    # Rehearsal letters for measures 1, 9, 17, 25 (1-based) when present
+    _rehearsal_by_measure: Dict[int, str] = {0: "A", 8: "A", 16: "B", 24: "A"}
     divisions = DEFAULT_DIVISIONS
     beats = DEFAULT_BEATS
     beats_per_measure = float(beats)
@@ -304,6 +327,8 @@ def export_composition_to_musicxml(compiled: CompiledComposition) -> str:
                 f"{_kind_for(kind_input)}</kind>"
             )
             lines.append("      </harmony>")
+        if m in _rehearsal_by_measure:
+            lines.append(_rehearsal_direction_xml(_rehearsal_by_measure[m]))
         evs = by_measure.get(m, [])
         measure_notes = _build_measure_note_dicts(evs, divisions, beats_per_measure)
         measure_notes = validate_bar(measure_notes, divisions=divisions, beats=beats)

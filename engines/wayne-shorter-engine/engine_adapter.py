@@ -2,7 +2,7 @@
 Wayne Shorter Engine Adapter — ComposerEngine interface.
 """
 
-from typing import Any, List
+from typing import Any, List, Optional
 
 try:
     from .shorter_generator import generate_composer_ir_from_title, generate_composer_ir_from_premise
@@ -39,8 +39,8 @@ class WayneShorterEngine(ComposerEngine):
             return generate_composer_ir_from_premise(input_text or "Untitled", seed, kwargs.get("profile", "balanced"))
         return generate_composer_ir_from_title(input_text or "Untitled", seed, kwargs.get("profile", "balanced"))
 
-    def compile_from_ir(self, ir: Any) -> Any:
-        return compile_composition_from_ir(ir)
+    def compile_from_ir(self, ir: Any, custom_chords: Optional[str] = None) -> Any:
+        return compile_composition_from_ir(ir, custom_chords=custom_chords)
 
     def export_musicxml(self, compiled: Any) -> str:
         return export_composition_to_musicxml(compiled)

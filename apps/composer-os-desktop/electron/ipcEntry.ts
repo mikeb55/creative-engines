@@ -46,6 +46,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         seed?: number;
         mode?: string;
         profile?: string;
+        custom_chords?: string | null;
       }
     ) => {
       const { spawn } = await import('child_process');
@@ -59,11 +60,15 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         'wayne-shorter-engine',
         'wayne_shorter_cli.py'
       );
+      const cc = body.custom_chords;
+      const custom_chords =
+        typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
       const input = JSON.stringify({
         title: body.title,
         seed: body.seed ?? 42,
         mode: body.mode ?? 'title',
         profile: body.profile ?? 'balanced',
+        ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
       });
 
       const pythonCmds = ['py', 'python', 'python3'];
