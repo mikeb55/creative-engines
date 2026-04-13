@@ -5,6 +5,10 @@ __pycache__/
 node_modules/
 launchers/logs/
 
+# Charlie Parker engine — CLI stderr redirect / generated MusicXML
+engines/charlie-parker-engine/stderr.txt
+engines/charlie-parker-engine/outputs/*.musicxml
+
 # Office lock files
 ~$*.pptx
 ~$*.docx
