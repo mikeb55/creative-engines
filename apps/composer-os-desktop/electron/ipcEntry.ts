@@ -128,15 +128,14 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       body: {
         title: string;
         seed?: number;
+        mode?: string;
+        profile?: string;
         custom_chords?: string | null;
         song_form?: string;
       }
     ) => {
-      console.log('[CP] handler called, title:', body.title);
-      const { execFile } = await import('child_process');
-      const { writeFile, readFile, unlink } = await import('fs/promises');
-      const os = await import('os');
-      const crypto = await import('crypto');
+      const { spawn } = await import('child_process');
+      const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
         app.getPath('documents'),
@@ -146,82 +145,50 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         'charlie-parker-engine',
         'charlie_parker_cli.py'
       );
-
       const cc = body.custom_chords;
-      const fallbackChords =
-        'Fmaj7,Dm7,G7,Cmaj7,Am7,Dm7,G7,Cmaj7';
       const custom_chords =
-        typeof cc === 'string' && cc.trim().length > 0
-          ? cc.trim()
-          : fallbackChords;
-
-      const payload = JSON.stringify({
+        typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
+      const input = JSON.stringify({
         title: body.title,
         seed: body.seed ?? 42,
+        mode: body.mode ?? 'title',
+        profile: body.profile ?? 'balanced',
+        ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
         song_form: body.song_form ?? 'aaba',
-        custom_chords,
       });
 
-      const tmpId = crypto.randomBytes(8).toString('hex');
-      const tmpIn = path.join(os.tmpdir(), `cp_in_${tmpId}.json`);
-      const tmpOut = path.join(os.tmpdir(), `cp_out_${tmpId}.musicxml`);
-
-      await writeFile(tmpIn, payload, 'utf8');
-      console.log('[CP] tmpIn written:', tmpIn);
-
       const pythonCmds = ['py', 'python', 'python3'];
+      let stdout: string | undefined;
       let lastError: unknown;
-      let succeeded = false;
-
       for (const cmd of pythonCmds) {
         try {
-          await new Promise<void>((resolve, reject) => {
-            execFile(
-              cmd,
-              ['-u', cliPath, '--input-file', tmpIn, '--output-file', tmpOut],
-              {
-                timeout: 30000,
-                env: { ...process.env, PYTHONUNBUFFERED: '1' },
-              },
-              (error, _stdout, stderr) => {
-                if (error) {
-                  reject(new Error(
-                    `Parker CLI error: ${error.message} stderr=${stderr}`
-                  ));
-                } else {
-                  resolve();
-                }
-              }
-            );
+          stdout = await new Promise<string>((resolve, reject) => {
+            const child = spawn(cmd, [cliPath], {
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            let out = '';
+            let err = '';
+            child.stdout.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            child.stderr.on('data', (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on('close', (code: number | null) => {
+              if (code === 0) resolve(out);
+              else reject(new Error(err || `exit code ${code}`));
+            });
+            child.on('error', reject);
+            child.stdin.write(input);
+            child.stdin.end();
           });
-          console.log('[CP] execFile completed');
-          succeeded = true;
           break;
         } catch (e) {
           lastError = e;
         }
       }
-
-      if (!succeeded) {
-        try {
-          await unlink(tmpIn);
-        } catch {
-          /* ignore */
-        }
+      if (stdout === undefined) {
         throw lastError instanceof Error ? lastError : new Error(String(lastError));
-      }
-
-      const xml = await readFile(tmpOut, 'utf8');
-      console.log('[CP] tmpOut read, bytes:', xml.length);
-      try {
-        await unlink(tmpIn);
-      } catch {
-        /* ignore */
-      }
-      try {
-        await unlink(tmpOut);
-      } catch {
-        /* ignore */
       }
 
       const safeTitle = (body.title || 'untitled')
@@ -231,7 +198,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `charlie_parker_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
-      await writeFile(outPath, xml, 'utf8');
+      await writeFile(outPath, stdout, 'utf8');
 
       return { path: outPath, filename };
     }

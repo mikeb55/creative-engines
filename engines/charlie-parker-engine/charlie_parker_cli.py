@@ -168,9 +168,8 @@ def _compose_from_json_data(
         with open(out_xml_path, "w", encoding="utf-8", newline="\n") as f:
             f.write(xml)
     else:
-        path = _write_output(xml)
+        # Stdin mode: match Wayne Shorter CLI — MusicXML on stdout only.
         sys.stdout.write(xml)
-        print(path, file=sys.stderr)
 
 
 def main() -> None:
