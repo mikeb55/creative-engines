@@ -477,12 +477,15 @@ def _melody_from_cell(
     pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, reg))
     idx = 0
     bh = bar_harmony or {}
-    last_melodic_pitch: Optional[int] = None
+    last_bar_last_pitch: Optional[int] = None
 
     for local_bar in range(bars):
         measure = bar_start + local_bar
         pattern = RHYTHM_PATTERNS[measure % 8]
         beat_in_bar = 0.0
+        bar_chord_tones: List[Dict] = []
+        last_note_pitch = last_bar_last_pitch
+
         for divs in pattern:
             dur_beats = divs / 4.0
             inc = cell.intervals[idx % len(cell.intervals)]
@@ -501,39 +504,60 @@ def _melody_from_cell(
                         target, pcs, weights, lo=MELODY_PITCH_LO, hi=MELODY_PITCH_HI
                     )
                     pitch = _avoid_consecutive_repeat(
-                        last_melodic_pitch, pitch, pcs, weights, MELODY_PITCH_LO, MELODY_PITCH_HI
+                        last_note_pitch, pitch, pcs, weights, MELODY_PITCH_LO, MELODY_PITCH_HI
                     )
                 else:
                     pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch + inc))
                     pitch = _avoid_consecutive_repeat(
-                        last_melodic_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
+                        last_note_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
                     )
             else:
                 pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch + inc))
                 pitch = _avoid_consecutive_repeat(
-                    last_melodic_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
+                    last_note_pitch, pitch, None, None, MELODY_PITCH_LO, MELODY_PITCH_HI
                 )
             if pitch < MELODY_PITCH_LO or pitch > MELODY_PITCH_HI:
                 pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch))
-            pitch = apply_bebop_phrasing(
-                measure,
-                chord_sym or "",
-                pitch,
-                prev_pitch=last_melodic_pitch,
-                generation_seed=generation_seed,
-            )
-            if pitch < MELODY_PITCH_LO or pitch > MELODY_PITCH_HI:
-                pitch = max(MELODY_PITCH_LO, min(MELODY_PITCH_HI, pitch))
-            events.append({
+            bar_chord_tones.append({
                 "pitch": pitch,
-                "duration": dur_beats,
-                "measure": measure,
+                "duration": divs,
                 "beat_position": beat_in_bar,
-                "section_id": section_id,
             })
-            last_melodic_pitch = pitch
+            last_note_pitch = pitch
             idx += 1
             beat_in_bar += dur_beats
+
+        chord_sym_bar = getattr(cell, "chord_symbol", None)
+        if chord_sym_bar is None and bh:
+            chord_sym_bar = bh.get(measure)
+        current_chord = chord_sym_bar or ""
+        next_chord = (bh.get(measure + 1) if bh else None) or current_chord
+
+        bar_events = apply_bebop_phrasing(
+            bar_notes=bar_chord_tones,
+            chord_symbol=current_chord,
+            next_chord_symbol=next_chord,
+            bar_index=measure,
+            prev_pitch=last_bar_last_pitch,
+            generation_seed=generation_seed,
+        )
+        for ev in bar_events:
+            off_div = int(ev.get("offset", 0))
+            events.append({
+                "pitch": int(ev["pitch"]),
+                "duration": int(ev["duration"]),
+                "offset": off_div,
+                "type": ev.get("type"),
+                "dot": ev.get("dot", False),
+                "time_mod": ev.get("time_mod"),
+                "measure": measure,
+                "beat_position": off_div / 4.0,
+                "section_id": section_id,
+                "bebop_rhythm": True,
+            })
+        if bar_events:
+            last_bar_last_pitch = int(bar_events[-1]["pitch"])
+
     for e in events:
         if e.get("pitch", 0) == 0:
             e["is_rest"] = True

@@ -3,7 +3,7 @@ Shorter MusicXML Exporter — Valid MusicXML from CompiledComposition.
 """
 
 import re as _re
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from .compiled_composition_types import CompiledComposition
@@ -132,6 +132,25 @@ def _build_measure_note_dicts(
     beats_per_measure: float,
 ) -> List[Dict]:
     """Build ordered note/rest dicts with duration in divisions (not yet validated)."""
+    if evs and all(e.get("bebop_rhythm") for e in evs):
+        notes_bb: List[Dict[str, Any]] = []
+        for e in sorted(
+            evs,
+            key=lambda x: int(x.get("offset", round(float(x.get("beat_position", 0)) * 4))),
+        ):
+            if e.get("is_rest") or e.get("pitch", 0) == 0:
+                notes_bb.append({"duration": int(e.get("duration", 1)), "is_rest": True})
+                continue
+            notes_bb.append({
+                "duration": int(e["duration"]),
+                "is_rest": False,
+                "pitch": int(e["pitch"]),
+                "type": e.get("type"),
+                "dot": bool(e.get("dot", False)),
+                "time_mod": e.get("time_mod"),
+            })
+        return notes_bb
+
     notes: List[Dict] = []
     cursor = 0.0
     for e in sorted(evs, key=lambda x: x.get("beat_position", 0)):
@@ -159,20 +178,36 @@ def _build_measure_note_dicts(
     return notes
 
 
+def _time_mod_xml(tm: Optional[Dict]) -> str:
+    if not tm:
+        return ""
+    act = int(tm.get("actual", 3))
+    norm = int(tm.get("normal", 2))
+    return (
+        f"<time-modification><actual-notes>{act}</actual-notes>"
+        f"<normal-notes>{norm}</normal-notes></time-modification>"
+    )
+
+
 def _emit_note_line(note: Dict) -> str:
     divs = int(note["duration"])
-    typ, dot = _type_and_dot_from_divisions(divs)
+    typ = note.get("type")
+    dot = bool(note.get("dot", False))
+    if typ is None:
+        typ, auto_dot = _type_and_dot_from_divisions(divs)
+        dot = dot or auto_dot
     dot_tag = "<dot/>" if dot else ""
+    tm_xml = _time_mod_xml(note.get("time_mod"))
     if note.get("is_rest"):
         return (
             f'      <note><rest/><duration>{divs}</duration>'
-            f'<type>{typ}</type>{dot_tag}</note>'
+            f'<type>{typ}</type>{dot_tag}{tm_xml}</note>'
         )
-    step, alter, octave = _spell_pitch(note["pitch"])
+    step, alter, octave = _spell_pitch(int(note["pitch"]))
     alter_tag = f"<alter>{alter}</alter>" if alter != 0 else ""
     return (
         f'      <note><pitch><step>{step}</step>{alter_tag}<octave>{octave}</octave></pitch>'
-        f'<duration>{divs}</duration><type>{typ}</type>{dot_tag}</note>'
+        f'<duration>{divs}</duration><type>{typ}</type>{dot_tag}{tm_xml}</note>'
     )
 
 
