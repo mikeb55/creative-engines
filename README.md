@@ -1,17 +1,17 @@
 # Psychopathology & Synthesis (PET Training)
 
-Two-day postgraduate psychotherapy training (10:00‚Äì17:00, UK) focused on:
+Two-day postgraduate psychotherapy training (10:00ñ17:00, UK) focused on:
 
 * Borderline presentations (relational instability, identity tension)
 * Intersubjectivity and projective identification (dependency, power, sexuality, ingratiation)
 * Risk assessment under uncertainty
 * Neurodiversity, trauma, dissociation
-* Psychosynthesis (parts, I‚ÄìSelf, disidentification, meaning alongside risk)
+* Psychosynthesis (parts, IñSelf, disidentification, meaning alongside risk)
 
 ## Structure
 
-* Day 1: framing ‚Üí risk ‚Üí Leah ‚Üí break ‚Üí neurodiversity ‚Üí Ousmane ‚Üí video ‚Üí lunch ‚Üí applied practice ‚Üí break ‚Üí close
-* Day 2: opening ‚Üí trauma & ADHD overlap ‚Üí break ‚Üí dissociation ‚Üí Emily ‚Üí video ‚Üí clinical response ‚Üí lunch ‚Üí risk teaching ‚Üí video ‚Üí break ‚Üí Michael ‚Üí integration ‚Üí close
+* Day 1: framing ? risk ? Leah ? break ? neurodiversity ? Ousmane ? video ? lunch ? applied practice ? break ? close
+* Day 2: opening ? trauma & ADHD overlap ? break ? dissociation ? Emily ? video ? clinical response ? lunch ? risk teaching ? video ? break ? Michael ? integration ? close
 
 ## Teaching Model (ACE 100)
 
@@ -24,10 +24,10 @@ Two-day postgraduate psychotherapy training (10:00‚Äì17:00, UK) focused on:
 Location:
 Psychopathology and Synthesis 2026\CASE STUDIES
 
-* Leah ‚Äî shame, risk, family pressure
-* Ousmane ‚Äî neurodiversity, executive load, safeguarding
-* Emily ‚Äî dissociation, inconsistent risk account
-* Michael ‚Äî ambiguity, escalation decisions
+* Leah ó shame, risk, family pressure
+* Ousmane ó neurodiversity, executive load, safeguarding
+* Emily ó dissociation, inconsistent risk account
+* Michael ó ambiguity, escalation decisions
 
 Each follows ACE-Cases (100-point rubric).
 
@@ -44,7 +44,7 @@ Three videos (links in speaker notes only):
 V4.6
 
 * Corrected temporal structure (Day 1 vs Day 2)
-* Proper placement of breaks and lunches (2√ó20 min breaks/day, 1√ó lunch/day)
+* Proper placement of breaks and lunches (2◊20 min breaks/day, 1◊ lunch/day)
 * Clean video integration (3 points only)
 * Improved pacing and energy distribution
 * Minor refinements to clinical emphasis (risk, documentation, supervision)
@@ -56,23 +56,23 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 
 ### Architecture
 - **Generation unit:** Full 32-bar chorus in single GCE call, fallback to 8-bar sections
-- **GCE prompt:** Bird-specific rules ó anticipation, offbeat starts, ii-V-I entry/exit degrees, leap+compensation, turnaround chains
+- **GCE prompt:** Bird-specific rules ù anticipation, offbeat starts, ii-V-I entry/exit degrees, leap+compensation, turnaround chains
 - **Temperature:** 1.2
 - **System prompt:** "You are Charlie Parker's fingers on the alto saxophone"
 - **RAG:** 10 abstract Parker phrase templates + concrete note sequences from 8 transcriptions
 - **Transcriptions:** Ko-Ko, Anthropology, Donna Lee, Now's The Time, Billie's Bounce, Ornithology, Confirmation, Lou Donaldson (Birdland 1954)
 
 ### Post-generation Validators (in order)
-1. _patch_unison_runs ó eliminates clusters of 3+ identical consecutive pitches
-2. _cap_unison_frequency ó caps unisons at 3% of all intervals
-3. _enforce_opening_rest ó section openings (bars 1/9/17/25) start on rest
-4. _enforce_syncopation ó 40%+ of interior bars start on offbeat
-5. _enforce_midphrase_quarter ó quarter note landings mid-phrase (~50% of interior bars)
-6. _enforce_cadence_quarter ó every 4th bar has quarter note or longer
-7. _enforce_long_note_consonance ó notes longer than eighth must be strict chord tones
-8. _enforce_downbeat_consonance ó non-chord-tone on beat 1 ? syncopation rest inserted
-9. _enforce_no_chord_contradictions ó removes mode-contradicting notes from long values
-10. _fit_sixteen_divisions ó bar length integrity
+1. _patch_unison_runs ù eliminates clusters of 3+ identical consecutive pitches
+2. _cap_unison_frequency ù caps unisons at 3% of all intervals
+3. _enforce_opening_rest ù section openings (bars 1/9/17/25) start on rest
+4. _enforce_syncopation ù 40%+ of interior bars start on offbeat
+5. _enforce_midphrase_quarter ù quarter note landings mid-phrase (~50% of interior bars)
+6. _enforce_cadence_quarter ù every 4th bar has quarter note or longer
+7. _enforce_long_note_consonance ù notes longer than eighth must be strict chord tones
+8. _enforce_downbeat_consonance ù non-chord-tone on beat 1 ? syncopation rest inserted
+9. _enforce_no_chord_contradictions ù removes mode-contradicting notes from long values
+10. _fit_sixteen_divisions ù bar length integrity
 
 ### Key metrics (best build)
 - Syncopation: 53.6% of interior bars
@@ -83,7 +83,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 - Downbeat dissonance: eliminated on 10/12 previously flagged bars
 
 ### Key files
-- parker_phrase_engine.py ó GCE integration, RAG templates, all validators
-- parker_section_compiler.py ó chorus/section orchestration
-- parker_vocabulary.py ó interval patterns from transcriptions
-- parker_musicxml_exporter.py ó MusicXML output
+- parker_phrase_engine.py ù GCE integration, RAG templates, all validators
+- parker_section_compiler.py ù chorus/section orchestration
+- parker_vocabulary.py ù interval patterns from transcriptions
+- parker_musicxml_exporter.py ù MusicXML output
