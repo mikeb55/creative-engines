@@ -1,3 +1,28 @@
+## [2026-04-14] Thelonious Monk Engine ó Initial Build
+
+### Architecture
+- New engine: engines/monk-engine/
+- Copied from Charlie Parker engine, fully renamed
+- Monk-specific GCE prompt: space, b9s, tritone leaps,
+  obsessive repetition, angular shapes, quarter/half dominance
+- Monk rhythm skeleton: quarter-based, not eighth-based
+- Validators: cadence half-note enforcer, monk density cap
+  (max 5 notes/bar), chord contradictions disabled
+- RAG: 6 abstract Monk templates + concrete phrases from
+  5 transcriptions (Blue Monk, Epistrophy, Round Midnight,
+  Straight No Chaser, Well You Needn't)
+- Vocabulary: 1,732 notes, top patterns from real Monk solos
+- Key stat: 32% leaps ?5st (vs 13% Parker),
+  25% quarters (vs 5% Parker)
+
+### Files
+- monk_phrase_engine.py
+- monk_section_compiler.py
+- monk_vocabulary.py
+- monk_musicxml_exporter.py
+- monk_rhythm_engine.py
+- monk_engine_cli.py
+
 ## [2026-04-14] Charlie Parker: downbeat consonance ? syncopation rest
 
 ### Change
@@ -5,7 +30,7 @@
   when the first pitched note of a bar is not a strict chord
   tone, instead of shifting the pitch.
 - This converts dissonant downbeats into syncopated offbeat
-  entries ó fixing consonance AND increasing syncopation
+  entries ù fixing consonance AND increasing syncopation
   simultaneously.
 - Every third bar (bar_index % 3 == 0): pitch-nudge fallback
   retained for variety.
@@ -15,7 +40,7 @@
 - Syncopation expected to recover above 45%
 - Zero regressions on previously-measured problem bars
 
-## [2026-04-14] Charlie Parker Engine ó Best Build
+## [2026-04-14] Charlie Parker Engine ù Best Build
 
 ### Architecture
 - 8-bar section generation: GCE now sees full 8-bar phrase arc per call (A1/A2/B/A3)
@@ -58,7 +83,7 @@
 
 * Corrected day structure (removed Day 2 starting after Day 1 lunch)
 * Repositioned breaks to align with cognitive load
-* Ensured 2√ó20 min breaks and 1√ó lunch per day
+* Ensured 2◊20 min breaks and 1◊ lunch per day
 
 ### Changed
 
@@ -84,7 +109,7 @@
 ## V4.5
 
 * Stable full presentation build
-* Case studies upgraded to V4 (400‚Äì500 words, decision-focused)
+* Case studies upgraded to V4 (400ñ500 words, decision-focused)
 * ACE framework embedded
 
 ---

@@ -1,8 +1,8 @@
 {
   "schema": "composer-os-build-stamp/v1",
   "desktopPackageVersion": "1.0.37",
-  "generatedAt": "2026-04-14T10:54:51.269Z",
-  "gitCommit": "295b0e4453a1452c1b41203ff60ffc2976cbe9e7",
+  "generatedAt": "2026-04-14T11:17:53.906Z",
+  "gitCommit": "b350c08beed0682915fa192d7ba3c722c383136f",
   "ipcBundle": {
     "filename": "desktop-ipc.bundle.cjs",
     "sha256": "928f470795f0fb5847358a4943a166acb9615b824ebdb5567da50fc8201de711",
