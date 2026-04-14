@@ -35,12 +35,17 @@ _GCE_CACHE: Dict[str, List[Dict[str, Any]]] = {}
 
 # GCE: full 8-bar section cache (sha256 of label + chords + seed).
 _SECTION_CACHE: Dict[str, List[List[Dict[str, Any]]]] = {}
+# GCE: full 32-bar chorus cache (sha256 of "chorus" + chords + seed).
+_CHORUS_CACHE: Dict[str, List[List[Dict[str, Any]]]] = {}
 
 # GCE prompt context: previous bar chord (same composition), motif accumulation, chorus motif.
 _GCE_PREV_CHORD: str = ""
 _MOTIF_BAR_BUFFER: List[List[Dict[str, Any]]] = []
 _MOTIF_ROOT_CHORD: str = ""
 _CHORUS_MOTIF: Optional[Dict[str, Any]] = None
+# Set by callers immediately before _tag_chord_function (3-arg API) for lookahead / resolution.
+_GCE_TAG_PREV: str = ""
+_GCE_TAG_NN: str = ""
 
 PARKER_RAG_TEMPLATES = [
     {
@@ -732,8 +737,6 @@ def _tag_chord_function(
     chord_symbol: str,
     next_chord: str,
     bar_index: int,
-    prev_chord: str = "",
-    nn_chord: str = "",
 ) -> str:
     """
     Returns a function tag string for prompt injection.
@@ -748,11 +751,14 @@ def _tag_chord_function(
       tag all four as "turnaround chain"
     - Otherwise: tag as "interior dominant",
       "interior tonic", or "interior minor"
+
+    Callers must set module globals _GCE_TAG_PREV and _GCE_TAG_NN
+    (previous and next-next chord symbols) before each call.
     """
     c = _norm_chord(chord_symbol)
     n = _norm_chord(next_chord)
-    nn = _norm_chord(nn_chord)
-    prev = _norm_chord(prev_chord)
+    nn = _norm_chord(_GCE_TAG_NN)
+    prev = _norm_chord(_GCE_TAG_PREV)
 
     if c and n and nn and _turnaround_chain_triple(c, n, nn):
         return "turnaround chain"
@@ -772,6 +778,17 @@ def _tag_chord_function(
     if _has_min7(c) or _is_min_tonic(c):
         return "interior minor"
     return "interior dominant"
+
+
+def _turnaround_hint_for_tag(function_tag: str) -> str:
+    if "turnaround" in (function_tag or "").lower():
+        return " This is a turnaround — treat as one continuous dominant chain."
+    return ""
+
+
+def _format_bar_function_prompt_line(bar_num: int, chord: str, function_tag: str) -> str:
+    tw = _turnaround_hint_for_tag(function_tag)
+    return f"Bar {bar_num}: {chord} — function: {function_tag}.{tw}"
 
 
 def _degree_label_from_midi(midi: int, chord_sym: str) -> str:
@@ -794,10 +811,11 @@ def _degree_label_from_midi(midi: int, chord_sym: str) -> str:
     return names.get(rel, f"alt({rel})")
 
 
-def _extract_motif(notes: List[Dict[str, Any]], root_chord: str) -> Dict[str, Any]:
+def _extract_motif(notes: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     From the first 4 bars of generated notes, extract the
     first 3-5 pitched notes as a motif.
+    Uses _MOTIF_ROOT_CHORD for start_degree labeling.
     Return:
     {
       'intervals': [int, ...],  # semitone intervals
@@ -813,7 +831,8 @@ def _extract_motif(notes: List[Dict[str, Any]], root_chord: str) -> Dict[str, An
     mids = [_midi_from_note_dict(n) for n in chunk]
     intervals = [mids[i] - mids[i - 1] for i in range(1, len(mids))]
     rhythm = [str(n.get("type", "eighth")) for n in chunk]
-    start_degree = _degree_label_from_midi(mids[0], root_chord or "C")
+    root_chord = _MOTIF_ROOT_CHORD or "C"
+    start_degree = _degree_label_from_midi(mids[0], root_chord)
     return {
         "intervals": intervals,
         "rhythm": rhythm,
@@ -833,13 +852,12 @@ def _append_motif_bar(notes: List[Dict[str, Any]], bar_index: int) -> None:
         flat: List[Dict[str, Any]] = []
         for b in _MOTIF_BAR_BUFFER[:4]:
             flat.extend(b)
-        _CHORUS_MOTIF = _extract_motif(flat, _MOTIF_ROOT_CHORD or "C")
+        _CHORUS_MOTIF = _extract_motif(flat)
 
 
 def _build_rhythm_skeleton(
     bar_index: int,
     phrase_role: str,
-    generation_seed: int,
 ) -> List[str]:
     """
     Returns a list of note durations for the bar.
@@ -857,21 +875,11 @@ def _build_rhythm_skeleton(
     pr = (phrase_role or "").strip().lower()
     if pr == "turnaround" or pr == "turn":
         return ["eighth"] * 8
-    if pr == "interior":
-        slot = generation_seed % 3  # 0,1,2
-        if slot == 0:
-            # quarter on beat 3 (slot 4)
-            return ["eighth", "eighth", "eighth", "eighth", "quarter", "eighth", "eighth"]
-        if slot == 1:
-            # quarter on beat 2 (slot 2)
-            return ["eighth", "eighth", "quarter", "eighth", "eighth", "eighth", "eighth"]
-        # two quarters: beats 2 and 4
-        return ["eighth", "eighth", "quarter", "eighth", "quarter", "eighth", "eighth"]
     if pr == "launch" or pr == "opening":
         return ["eighth_rest"] + ["eighth"] * 7
     if (bar_index % 4) == 3 or pr == "cadence":
         return ["eighth"] * 4 + ["quarter"] * 2
-    rng = random.Random(generation_seed + bar_index * 31)
+    rng = random.Random(bar_index * 7919 + 13)
     sk = ["eighth"] * 8
     if rng.random() < 0.25:
         pos = 3 if rng.random() < 0.5 else 5
@@ -1314,14 +1322,19 @@ def _build_claude_prompt(
     )
     if not chord_string:
         chord_string = "Cmaj7"
+    c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
+    func_line = _format_bar_function_prompt_line(bar_index + 1, c0, function_tag)
     sk_txt = ", ".join(rhythm_skeleton)
     skeleton_line = (
-        f"Rhythm skeleton for this bar: [{sk_txt}]. "
-        "Fill in pitches. Do not change the rhythm unless musically essential."
+        f"Rhythm skeleton for this bar: [{sk_txt}].\n"
+        "Fill in pitches following Parker rules above.\n"
+        "Do not change the rhythm unless musically essential."
     )
     motif_block = motif_line.strip() if motif_line else ""
-    return f"""Chord: {chord_string}
-Bar: {bar_index} | Role: {phrase_role} | {function_tag}
+    return f"""{func_line}
+
+Chord window: {chord_string}
+Bar index: {bar_index} | Role: {phrase_role}
 {motif_block}
 {skeleton_line}
 
@@ -1386,6 +1399,69 @@ def _section_cache_key(
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _chorus_cache_key(chord_symbols: List[str], generation_seed: int) -> str:
+    raw = "chorus" + ",".join(str(c).strip() for c in chord_symbols) + str(generation_seed)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _normalize_dominant_function(function_tag: str) -> str:
+    low = (function_tag or "").lower()
+    if "ii-v-i" in low:
+        return "ii-V-I"
+    if "turnaround" in low:
+        return "turnaround"
+    if "interior dominant" in low:
+        return "interior-dominant"
+    if "interior tonic" in low:
+        return "interior-tonic"
+    if low.startswith("v "):
+        return "V-I"
+    return "ii-V-I"
+
+
+def _build_concrete_phrase_block(
+    function_tags: List[str],
+    max_examples: int,
+) -> str:
+    concrete_lines: List[str] = []
+    seen: set[str] = set()
+    for ft, _ in Counter(function_tags).most_common():
+        picks = _retrieve_concrete_phrases(ft, n=max_examples)
+        for p in picks:
+            key = f"{p.get('source','')}|{p.get('chord_context','')}|{p.get('intervals',[])}"
+            if key in seen:
+                continue
+            seen.add(key)
+            note_names: List[str] = []
+            for n in p.get("notes", []):
+                if n.get("is_rest"):
+                    continue
+                pitch = str(n.get("pitch", "")).strip().upper()[:1]
+                if pitch not in NOTE_TO_PC:
+                    continue
+                octv = int(n.get("octave", 4))
+                note_names.append(f"{pitch}{octv}")
+                if len(note_names) >= 6:
+                    break
+            notes_preview = " ".join(note_names) if note_names else "N/A"
+            concrete_lines.append(
+                f"Real Bird phrase over {p.get('chord_context', 'unknown context')}\n"
+                f"(entry: {p.get('entry_degree', '?')}, contour: {p.get('contour', '?')}):\n"
+                f"Interval sequence: {p.get('intervals', [])}\n"
+                "Note sequence (transpose to match your chord):\n"
+                f"{notes_preview}\n"
+                "Echo this shape and vocabulary. Do not copy literally —\n"
+                "transpose to your chord context and vary the rhythm."
+            )
+            if len(concrete_lines) >= max_examples:
+                break
+        if len(concrete_lines) >= max_examples:
+            break
+    if not concrete_lines:
+        return ""
+    return "\n\n".join(concrete_lines) + "\n\n"
+
+
 def _build_section_prompt(
     chord_symbols: List[str],
     section_label: str,
@@ -1401,20 +1477,21 @@ def _build_section_prompt(
     sk_lines = "\n".join(
         f"{i + 1}. [{', '.join(rhythm_skeletons[i])}]" for i in range(8)
     )
+    bar_detail_lines: List[str] = []
+    for i in range(8):
+        bn = bar_start + i + 1
+        ch = chord_symbols[i]
+        tag = function_tags[i]
+        sk_txt = ", ".join(rhythm_skeletons[i])
+        bar_detail_lines.append(_format_bar_function_prompt_line(bn, ch, tag))
+        bar_detail_lines.append(
+            f"Rhythm skeleton for this bar: [{sk_txt}].\n"
+            "Fill in pitches following Parker rules above.\n"
+            "Do not change the rhythm unless musically essential."
+        )
+    bar_detail_block = "\n\n".join(bar_detail_lines)
     dominant_function_raw = Counter(function_tags).most_common(1)[0][0]
-    dominant_lower = dominant_function_raw.lower()
-    if "ii-v-i" in dominant_lower:
-        dominant_function = "ii-V-I"
-    elif "turnaround" in dominant_lower:
-        dominant_function = "turnaround"
-    elif "interior dominant" in dominant_lower:
-        dominant_function = "interior-dominant"
-    elif "interior tonic" in dominant_lower:
-        dominant_function = "interior-tonic"
-    elif dominant_lower.startswith("v "):
-        dominant_function = "V-I"
-    else:
-        dominant_function = "ii-V-I"
+    dominant_function = _normalize_dominant_function(dominant_function_raw)
     section_role = (
         "opening" if bar_start == 0 else "cadence" if bar_start == 24 else "continuation"
     )
@@ -1435,40 +1512,7 @@ def _build_section_prompt(
         "copying them literally. Use the interval patterns\n"
         "and target degrees as guides, not as transcriptions.\n\n"
     )
-    concrete_lines: List[str] = []
-    for i in range(0, 8, 2):
-        if len(concrete_lines) >= 3:
-            break
-        pair_tags = function_tags[i : i + 2]
-        dominant_pair_tag = Counter(pair_tags).most_common(1)[0][0]
-        picks = _retrieve_concrete_phrases(dominant_pair_tag, n=1)
-        if not picks:
-            continue
-        p = picks[0]
-        note_names: List[str] = []
-        for n in p.get("notes", []):
-            if n.get("is_rest"):
-                continue
-            pitch = str(n.get("pitch", "")).strip().upper()[:1]
-            if pitch not in NOTE_TO_PC:
-                continue
-            octv = int(n.get("octave", 4))
-            note_names.append(f"{pitch}{octv}")
-            if len(note_names) >= 6:
-                break
-        notes_preview = " ".join(note_names) if note_names else "N/A"
-        concrete_lines.append(
-            f"Real Bird phrase over {p.get('chord_context', 'unknown context')}\n"
-            f"(entry: {p.get('entry_degree', '?')}, contour: {p.get('contour', '?')}):\n"
-            f"Interval sequence: {p.get('intervals', [])}\n"
-            "Note sequence (transpose to match your chord):\n"
-            f"{notes_preview}\n"
-            "Echo this shape and vocabulary. Do not copy literally —\n"
-            "transpose to your chord context and vary the rhythm."
-        )
-    concrete_block = ""
-    if concrete_lines:
-        concrete_block = "\n\n".join(concrete_lines) + "\n\n"
+    concrete_block = _build_concrete_phrase_block(function_tags, max_examples=3)
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
     return f"""Section: {section_label} | Bars {bar_start + 1}–{bar_start + 8}
 Chords (one per bar):
@@ -1477,6 +1521,10 @@ Function tags (one per bar):
 {func_lines}
 Rhythm skeletons (one per bar):
 {sk_lines}
+
+Per-bar harmony & rhythm (use together with lists above):
+{bar_detail_block}
+
 {rag_block}\
 {concrete_block}\
 {motif_block}You are Charlie Parker. Generate a complete 8-bar bebop
@@ -1518,6 +1566,81 @@ exactly 16 divisions.
 """
 
 
+def _build_chorus_prompt(
+    chord_symbols: List[str],
+    form: str,
+    function_tags: List[str],
+    rhythm_skeletons: List[List[str]],
+    motif_line: str,
+) -> str:
+    chords_lines = "\n".join(f"{i + 1}. {chord_symbols[i]}" for i in range(32))
+    func_lines = "\n".join(f"{i + 1}. {function_tags[i]}" for i in range(32))
+    sk_lines = "\n".join(
+        f"{i + 1}. [{', '.join(rhythm_skeletons[i])}]" for i in range(32)
+    )
+    bar_detail_lines: List[str] = []
+    for i in range(32):
+        bn = i + 1
+        ch = chord_symbols[i]
+        tag = function_tags[i]
+        sk_txt = ", ".join(rhythm_skeletons[i])
+        bar_detail_lines.append(_format_bar_function_prompt_line(bn, ch, tag))
+        bar_detail_lines.append(
+            f"Rhythm skeleton for this bar: [{sk_txt}].\n"
+            "Fill in pitches following Parker rules above.\n"
+            "Do not change the rhythm unless musically essential."
+        )
+    bar_detail_block = "\n\n".join(bar_detail_lines)
+    motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
+    concrete_block = _build_concrete_phrase_block(function_tags, max_examples=2)
+    return f"""Form: {form} — 32 bars total
+Chords (one per bar):
+{chords_lines}
+
+Function tags:
+{func_lines}
+
+Rhythm skeletons (one per bar):
+{sk_lines}
+
+Per-bar harmony & rhythm:
+{bar_detail_block}
+
+You are Charlie Parker. Generate a complete 32-bar
+bebop solo over these changes as one continuous
+musical statement.
+
+Think across the whole chorus:
+- A1 (bars 1-8): introduce your main idea
+- A2 (bars 9-16): develop and vary it
+- B (bars 17-24): contrast — different register,
+  different energy, new material
+- A3 (bars 25-32): return and resolve — echo your
+  opening phrase, close the statement
+
+Play across barlines. Anticipate chord changes.
+Start phrases on offbeats. Land on 3rds and 7ths.
+Breathe — rests are part of the line.
+Use the bebop scale with chromatic passing tones.
+Leap a 6th or tritone then fill back down stepwise.
+On turnarounds play one continuous dominant chain.
+
+{motif_block}{concrete_block}Return ONLY a JSON object:
+{{
+  "bars": [
+    {{"bar": 1, "notes": [...]}},
+    {{"bar": 2, "notes": [...]}},
+    ...
+    {{"bar": 32, "notes": [...]}}
+  ]
+}}
+
+Each notes array: same schema as always.
+All 32 bars must be present.
+Each bar must sum to exactly 16 divisions.
+"""
+
+
 def _parse_section_json_to_bars(text: str) -> Optional[List[List[Dict[str, Any]]]]:
     try:
         data = json.loads(text)
@@ -1551,6 +1674,46 @@ def _parse_section_json_to_bars(text: str) -> Optional[List[List[Dict[str, Any]]
     return out
 
 
+def _parse_chorus_json_to_bars_partial(text: str) -> Dict[int, List[Dict[str, Any]]]:
+    out: Dict[int, List[Dict[str, Any]]] = {}
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return out
+    if not isinstance(data, dict):
+        return out
+    bars = data.get("bars")
+    if not isinstance(bars, list):
+        return out
+    for item in bars:
+        if not isinstance(item, dict):
+            continue
+        bar_num_raw = item.get("bar", 0)
+        try:
+            bar_num = int(bar_num_raw)
+        except (TypeError, ValueError):
+            continue
+        if bar_num < 1 or bar_num > 32:
+            continue
+        notes_raw = item.get("notes")
+        if not isinstance(notes_raw, list):
+            continue
+        notes: List[Dict[str, Any]] = []
+        for n in notes_raw:
+            nn = _normalize_claude_note(n)
+            if nn:
+                notes.append(nn)
+        if not notes:
+            continue
+        notes = _fit_sixteen_divisions(notes)
+        if sum(int(x["duration"]) for x in notes) != 16:
+            continue
+        if not any(not x.get("is_rest") for x in notes):
+            continue
+        out[bar_num - 1] = notes
+    return out
+
+
 def _generate_parker_section_via_claude(
     chord_symbols: List[str],
     section_label: str,
@@ -1558,6 +1721,7 @@ def _generate_parker_section_via_claude(
     generation_seed: int,
     total_bars: int,
 ) -> Optional[List[List[Dict[str, Any]]]]:
+    global _GCE_TAG_PREV, _GCE_TAG_NN
     try:
         import anthropic
     except ImportError:
@@ -1574,17 +1738,14 @@ def _generate_parker_section_via_claude(
         nxt = ch8[(i + 1) % 8]
         nn = ch8[(i + 2) % 8]
         prev = ch8[i - 1] if i > 0 else (_GCE_PREV_CHORD if bar_start > 0 else "")
-        function_tags.append(
-            _tag_chord_function(c0, nxt, bar_idx, prev_chord=prev, nn_chord=nn)
-        )
+        _GCE_TAG_PREV = prev
+        _GCE_TAG_NN = nn
+        function_tags.append(_tag_chord_function(c0, nxt, bar_idx))
         phrase_role = _phrase_role_for_bar_local(bar_idx, total_bars)
         hctx = detect_harmonic_context(c0, nxt, nn)
         if hctx == "turnaround" and phrase_role not in ("ending", "launch"):
             phrase_role = "turnaround"
-        gen_seed_i = generation_seed + bar_idx * 17
-        rhythm_skeletons.append(
-            _build_rhythm_skeleton(bar_idx, phrase_role, gen_seed_i)
-        )
+        rhythm_skeletons.append(_build_rhythm_skeleton(bar_idx, phrase_role))
     motif_line = _motif_line_for_bar_index(bar_start)
     prompt = _build_section_prompt(
         ch8,
@@ -1610,6 +1771,60 @@ def _generate_parker_section_via_claude(
         return _parse_section_json_to_bars(jo)
     except Exception:
         return None
+
+
+def _generate_parker_chorus_via_claude(
+    chord_symbols: List[str],
+    form: str,
+    generation_seed: int,
+) -> Dict[int, List[Dict[str, Any]]]:
+    try:
+        import anthropic
+    except ImportError:
+        return {}
+    ch32 = [str(c).strip() for c in chord_symbols[:32]]
+    while len(ch32) < 32:
+        ch32.append(ch32[-1] if ch32 else "Cmaj7")
+    ch32 = ch32[:32]
+    function_tags: List[str] = []
+    rhythm_skeletons: List[List[str]] = []
+    global _GCE_TAG_PREV, _GCE_TAG_NN
+    for i in range(32):
+        c0 = ch32[i]
+        nxt = ch32[(i + 1) % 32]
+        nn = ch32[(i + 2) % 32]
+        prev = ch32[i - 1] if i > 0 else ""
+        _GCE_TAG_PREV = prev
+        _GCE_TAG_NN = nn
+        function_tags.append(_tag_chord_function(c0, nxt, i))
+        phrase_role = _phrase_role_for_bar_local(i, 32)
+        hctx = detect_harmonic_context(c0, nxt, nn)
+        if hctx == "turnaround" and phrase_role not in ("ending", "launch"):
+            phrase_role = "turnaround"
+        rhythm_skeletons.append(_build_rhythm_skeleton(i, phrase_role))
+    prompt = _build_chorus_prompt(
+        ch32,
+        form,
+        function_tags,
+        rhythm_skeletons,
+        _motif_line_for_bar_index(8),
+    )
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4000,
+            temperature=1.2,
+            system=_GCE_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw_text = _claude_response_text(response)
+        jo = _extract_json_object(raw_text)
+        if not jo:
+            return {}
+        return _parse_chorus_json_to_bars_partial(jo)
+    except Exception:
+        return {}
 
 
 def generate_parker_section(
@@ -1709,6 +1924,73 @@ def generate_parker_section(
     return result
 
 
+def generate_parker_chorus(
+    chord_symbols: list[str],  # all 32 chords
+    form: str,  # 'AABA'
+    generation_seed: int,
+) -> list[list[dict]]:
+    """
+    Generates the entire 32-bar chorus in one GCE call.
+    Falls back to generate_parker_section() per section
+    if GCE fails or returns invalid JSON.
+    """
+    ch32 = [str(c).strip() for c in chord_symbols if c and str(c).strip()]
+    while len(ch32) < 32:
+        ch32.append(ch32[-1] if ch32 else "Cmaj7")
+    ch32 = ch32[:32]
+
+    cache_key = _chorus_cache_key(ch32, generation_seed)
+    cached = _CHORUS_CACHE.get(cache_key)
+    if cached is not None and len(cached) == 32:
+        return [[dict(n) for n in bar] for bar in cached]
+
+    parsed = _generate_parker_chorus_via_claude(ch32, form, generation_seed)
+    out: List[List[Dict[str, Any]]] = []
+    start_pitch = 67
+    for block_start in (0, 8, 16, 24):
+        block_ok = all((block_start + i) in parsed for i in range(8))
+        if block_ok:
+            block_bars: List[List[Dict[str, Any]]] = []
+            for i in range(8):
+                bar_idx = block_start + i
+                raw = [dict(n) for n in parsed[bar_idx]]
+                role = _phrase_role_for_bar_local(bar_idx, 32)
+                gen_seed_i = generation_seed + bar_idx * 17
+                v = _apply_post_validators(raw, role, bar_idx, gen_seed_i)
+                v = _maybe_half_note_bar_end(v, bar_idx)
+                if not any(not n.get("is_rest") for n in v):
+                    block_ok = False
+                    break
+                block_bars.append(v)
+            if block_ok:
+                out.extend(block_bars)
+                lp = [n for n in block_bars[-1] if not n.get("is_rest")]
+                if lp:
+                    start_pitch = _midi_from_note_dict(lp[-1])
+                continue
+
+        label = "A1" if block_start == 0 else "A2" if block_start == 8 else "B" if block_start == 16 else "A3"
+        sec = generate_parker_section(
+            ch32[block_start : block_start + 8],
+            label,
+            block_start,
+            generation_seed,
+            total_bars=32,
+            start_pitch=start_pitch,
+        )
+        out.extend(sec)
+        lp = [n for n in sec[-1] if not n.get("is_rest")]
+        if lp:
+            start_pitch = _midi_from_note_dict(lp[-1])
+
+    if len(out) > 32:
+        out = out[:32]
+    while len(out) < 32:
+        out.append([_note_shape(16, is_rest=True)])
+    _CHORUS_CACHE[cache_key] = [[dict(n) for n in bar] for bar in out]
+    return out
+
+
 def _generate_parker_phrase_via_claude(
     chord_symbols: List[str],
     phrase_role: str,
@@ -1726,18 +2008,15 @@ def _generate_parker_phrase_via_claude(
     c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
     nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
     nn = chord_symbols[2] if len(chord_symbols) > 2 else ""
-    function_tag = _tag_chord_function(
-        c0,
-        nxt,
-        bar_index,
-        prev_chord=prev_chord,
-        nn_chord=nn,
-    )
-    rhythm_skeleton = _build_rhythm_skeleton(
-        bar_index,
-        phrase_role,
-        generation_seed,
-    )
+    global _GCE_TAG_PREV, _GCE_TAG_NN
+    _GCE_TAG_PREV = prev_chord
+    _GCE_TAG_NN = nn
+    function_tag = _tag_chord_function(c0, nxt, bar_index)
+    pr_rhythm = phrase_role
+    hctx = detect_harmonic_context(c0, nxt, nn)
+    if hctx == "turnaround" and pr_rhythm not in ("ending", "launch"):
+        pr_rhythm = "turnaround"
+    rhythm_skeleton = _build_rhythm_skeleton(bar_index, pr_rhythm)
     prompt = _build_claude_prompt(
         chord_symbols,
         phrase_role,
@@ -1940,6 +2219,7 @@ def generate_parker_phrase(
     for the next bar (parker_section_compiler contract).
     """
     global _GCE_PREV_CHORD, _MOTIF_BAR_BUFFER, _MOTIF_ROOT_CHORD, _CHORUS_MOTIF
+    global _GCE_TAG_PREV, _GCE_TAG_NN
 
     if bar_index == 0:
         _GCE_PREV_CHORD = ""
@@ -1951,13 +2231,9 @@ def generate_parker_phrase(
     c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
     nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
     nn = chord_symbols[2] if len(chord_symbols) > 2 else ""
-    function_tag = _tag_chord_function(
-        c0,
-        nxt,
-        bar_index,
-        prev_chord=prev,
-        nn_chord=nn,
-    )
+    _GCE_TAG_PREV = prev
+    _GCE_TAG_NN = nn
+    function_tag = _tag_chord_function(c0, nxt, bar_index)
     motif_line = ""
     if bar_index in (8, 16, 24) and _CHORUS_MOTIF:
         m = _CHORUS_MOTIF
@@ -1966,11 +2242,11 @@ def generate_parker_phrase(
             f'rhythm {m["rhythm"]}. Transpose to fit current chord. '
             "You may displace by 1-2 eighths or invert the contour."
         )
-    rhythm_skeleton = _build_rhythm_skeleton(
-        bar_index,
-        phrase_role,
-        generation_seed,
-    )
+    pr_rhythm = phrase_role
+    hctx_r = detect_harmonic_context(c0, nxt, nn)
+    if hctx_r == "turnaround" and pr_rhythm not in ("ending", "launch"):
+        pr_rhythm = "turnaround"
+    rhythm_skeleton = _build_rhythm_skeleton(bar_index, pr_rhythm)
     prompt_variant = _prompt_variant_hash(
         function_tag,
         rhythm_skeleton,
