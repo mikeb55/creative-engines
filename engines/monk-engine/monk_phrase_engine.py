@@ -1185,51 +1185,99 @@ def _append_motif_bar(notes: List[Dict[str, Any]], bar_index: int) -> None:
         _CHORUS_MOTIF = _extract_motif(flat)
 
 
-_SKEL_TOKEN_DIVS: Dict[str, int] = {
-    "quarter": 4,
-    "half": 8,
-    "whole": 16,
-    "eighth": 2,
-    "quarter_rest": 4,
-    "eighth_rest": 2,
-    "half_rest": 8,
-    # Prompt-only "rest" slot in a bar: treat as one beat (quarter) at divisions=4.
-    "rest": 4,
-}
-
-
-def _rhythm_skeleton_division_sum(skel: List[str]) -> int:
+def _rhythm_skeleton_division_sum(skel: List[Dict[str, Any]]) -> int:
     total = 0
-    for tok in skel:
-        key = (tok or "").strip().lower()
-        total += _SKEL_TOKEN_DIVS.get(key, 0)
+    for n in skel:
+        if not isinstance(n, dict):
+            continue
+        try:
+            total += int(n.get("duration", 0))
+        except (TypeError, ValueError):
+            continue
     return total
+
+
+def _skeleton_rhythm_placeholder(dur: int) -> Dict[str, Any]:
+    """Pitched placeholder for rhythm slots; duration in divisions (CAPACITY=16)."""
+    return _note_shape(
+        dur, is_rest=False, step="C", alter=0.0, octv=4, triplet=False
+    )
+
+
+def _skeleton_slot_prompt_label(n: Dict[str, Any]) -> str:
+    if bool(n.get("is_rest")):
+        d = int(n.get("duration", 0))
+        if d >= 8:
+            return "half_rest"
+        if d >= 4:
+            return "quarter_rest"
+        return "eighth_rest"
+    return str(n.get("type", "quarter")).lower()
+
+
+def _format_rhythm_skeleton_for_prompt(skel: List[Dict[str, Any]]) -> str:
+    return ", ".join(_skeleton_slot_prompt_label(x) for x in skel if isinstance(x, dict))
 
 
 def _build_rhythm_skeleton(
     bar_index: int,
     phrase_role: str,
-) -> List[str]:
-    """Rhythm slots for GCE prompts; must sum to CAPACITY (16) at divisions=4."""
+) -> List[Dict[str, Any]]:
+    """Rhythm slots as note-shaped dicts; durations sum to CAPACITY (divisions=4)."""
     pr = (phrase_role or "").strip().lower()
     if pr in ("opening", "launch") or bar_index in (0, 8, 16, 24):
-        sk: List[str] = ["quarter_rest", "quarter", "quarter", "quarter"]
+        sk = [
+            _note_shape(4, is_rest=True),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+        ]
+    elif pr == "turnaround":
+        # eighth+eighth+quarter+quarter = 12 divisions; need 16 at DIVISIONS=4.
+        # Two eighth pickups + three quarter beats = 2+2+4+4+4.
+        sk = [
+            _skeleton_rhythm_placeholder(2),
+            _skeleton_rhythm_placeholder(2),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+        ]
     elif bar_index % 4 == 3:
-        sk = ["quarter", "quarter", "half"]
+        sk = [
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+            _note_shape(8, is_rest=False, step="C", alter=0.0, octv=4, triplet=False),
+        ]
     else:
-        sk = ["quarter", "quarter", "quarter", "quarter"]
+        sk = [
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+            _skeleton_rhythm_placeholder(4),
+        ]
     if _rhythm_skeleton_division_sum(sk) != CAPACITY:
-        sk = ["quarter", "quarter", "quarter", "quarter"]
+        sk = [_skeleton_rhythm_placeholder(4)] * 4
     return sk
+
+
+def _skeleton_fingerprint(skel: List[Dict[str, Any]]) -> str:
+    parts: List[str] = []
+    for n in skel:
+        if not isinstance(n, dict):
+            continue
+        d = int(n.get("duration", 0))
+        rest = bool(n.get("is_rest"))
+        parts.append(f"{d}:{'r' if rest else str(n.get('type', ''))}")
+    return "|".join(parts)
 
 
 def _prompt_variant_hash(
     tag: str,
-    skeleton: List[str],
+    skeleton: List[Dict[str, Any]],
     motif_line: str,
 ) -> str:
     h = hashlib.sha256(
-        f"{tag}|{skeleton}|{motif_line}".encode("utf-8")
+        f"{tag}|{_skeleton_fingerprint(skeleton)}|{motif_line}".encode("utf-8")
     ).hexdigest()
     return h[:16]
 
@@ -1843,7 +1891,7 @@ def _build_claude_prompt(
     bar_index: int,
     *,
     function_tag: str,
-    rhythm_skeleton: List[str],
+    rhythm_skeleton: List[Dict[str, Any]],
     motif_line: str,
 ) -> str:
     chord_string = " | ".join(
@@ -1853,7 +1901,7 @@ def _build_claude_prompt(
         chord_string = "Cmaj7"
     c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
     func_line = _format_bar_function_prompt_line(bar_index + 1, c0, function_tag)
-    sk_txt = ", ".join(rhythm_skeleton)
+    sk_txt = _format_rhythm_skeleton_for_prompt(rhythm_skeleton)
     skeleton_line = (
         f"Rhythm skeleton for this bar: [{sk_txt}].\n"
         "Fill in pitches following Monk rules above.\n"
@@ -1996,13 +2044,14 @@ def _build_section_prompt(
     section_label: str,
     bar_start: int,
     function_tags: List[str],
-    rhythm_skeletons: List[List[str]],
+    rhythm_skeletons: List[List[Dict[str, Any]]],
     motif_line: str,
 ) -> str:
     chords_lines = "\n".join(f"{i + 1}. {chord_symbols[i]}" for i in range(8))
     func_lines = "\n".join(f"{i + 1}. {function_tags[i]}" for i in range(8))
     sk_lines = "\n".join(
-        f"{i + 1}. [{', '.join(rhythm_skeletons[i])}]" for i in range(8)
+        f"{i + 1}. [{_format_rhythm_skeleton_for_prompt(rhythm_skeletons[i])}]"
+        for i in range(8)
     )
     concrete_block = _build_concrete_phrase_block(function_tags, max_examples=3)
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
@@ -2068,13 +2117,14 @@ def _build_chorus_prompt(
     chord_symbols: List[str],
     form: str,
     function_tags: List[str],
-    rhythm_skeletons: List[List[str]],
+    rhythm_skeletons: List[List[Dict[str, Any]]],
     motif_line: str,
 ) -> str:
     chords_lines = "\n".join(f"{i + 1}. {chord_symbols[i]}" for i in range(32))
     func_lines = "\n".join(f"{i + 1}. {function_tags[i]}" for i in range(32))
     sk_lines = "\n".join(
-        f"{i + 1}. [{', '.join(rhythm_skeletons[i])}]" for i in range(32)
+        f"{i + 1}. [{_format_rhythm_skeleton_for_prompt(rhythm_skeletons[i])}]"
+        for i in range(32)
     )
     concrete_block = _build_concrete_phrase_block(function_tags, max_examples=2)
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
@@ -2222,7 +2272,7 @@ def _generate_monk_section_via_claude(
         ch8.append(ch8[-1] if ch8 else "Cmaj7")
     ch8 = ch8[:8]
     function_tags: List[str] = []
-    rhythm_skeletons: List[List[str]] = []
+    rhythm_skeletons: List[List[Dict[str, Any]]] = []
     for i in range(8):
         bar_idx = bar_start + i
         c0 = ch8[i]
@@ -2278,7 +2328,7 @@ def _generate_monk_chorus_via_claude(
         ch32.append(ch32[-1] if ch32 else "Cmaj7")
     ch32 = ch32[:32]
     function_tags: List[str] = []
-    rhythm_skeletons: List[List[str]] = []
+    rhythm_skeletons: List[List[Dict[str, Any]]] = []
     global _GCE_TAG_PREV, _GCE_TAG_NN
     for i in range(32):
         c0 = ch32[i]

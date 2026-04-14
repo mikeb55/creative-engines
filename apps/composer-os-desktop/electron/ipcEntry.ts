@@ -218,6 +218,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       body: {
         title: string;
         seed?: number;
+        custom_chords?: string | null;
+        song_form?: string;
       }
     ) => {
       const { spawn } = await import('child_process');
@@ -229,13 +231,18 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         'creative-engines',
         'engines',
         'monk-engine',
-        'monk_cli.py'
+        'monk_engine_cli.py'
       );
+      const cc = body.custom_chords;
+      const custom_chords =
+        typeof cc === 'string' && cc.trim().length > 0 ? cc.trim() : undefined;
       const input = JSON.stringify({
         title: body.title,
         seed: body.seed ?? 42,
-        mode: 'title',
-        profile: 'balanced',
+        ...(custom_chords != null ? { custom_chords: custom_chords } : {}),
+        ...(body.song_form != null && String(body.song_form).trim().length > 0
+          ? { song_form: String(body.song_form).trim() }
+          : {}),
       });
       const pythonCmds = ['py', 'python', 'python3'];
       let stdout = '';

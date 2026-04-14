@@ -89,6 +89,8 @@ def _select_rehearsal_map(
 def _stdin_chords(data: Dict[str, Any]) -> Optional[str]:
     raw = data.get("chords")
     if raw is None:
+        raw = data.get("chord_symbols")
+    if raw is None:
         raw = data.get("custom_chords")
     if raw is None:
         raw = data.get("customChords")

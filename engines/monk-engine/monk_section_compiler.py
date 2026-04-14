@@ -206,7 +206,7 @@ def _section_label_for_block(bar_start: int, song_form: str, total_bars: int) ->
 
 def compile_monk_composition(
     title: str,
-    chord_sequence: List[str],
+    chord_symbols: List[str],
     seed: int = 42,
     song_form: str = "aaba",
 ) -> Dict[str, Any]:
@@ -216,7 +216,7 @@ def compile_monk_composition(
       notes[{pitch, octave, alter, duration, type, is_rest, is_chord, dot, triplet}],
       bass_note.
     """
-    stripped = [str(c).strip() for c in (chord_sequence or []) if c and str(c).strip()]
+    stripped = [str(c).strip() for c in (chord_symbols or []) if c and str(c).strip()]
     provided = bool(stripped)
 
     sf = (song_form or "aaba").strip().lower()
