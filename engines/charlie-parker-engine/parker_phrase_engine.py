@@ -32,6 +32,12 @@ _last_contour_sign: Dict[Tuple[int, int], int] = {}
 # GCE (Claude): cache keyed by chord_sequence_hash + generation_seed (deterministic replay).
 _GCE_CACHE: Dict[str, List[Dict[str, Any]]] = {}
 
+# GCE prompt context: previous bar chord (same composition), motif accumulation, chorus motif.
+_GCE_PREV_CHORD: str = ""
+_MOTIF_BAR_BUFFER: List[List[Dict[str, Any]]] = []
+_MOTIF_ROOT_CHORD: str = ""
+_CHORUS_MOTIF: Optional[Dict[str, Any]] = None
+
 
 def _phrase_group_key(section_index: int, bar_index: int) -> Tuple[int, int]:
     return (section_index, bar_index // 4)
@@ -428,8 +434,184 @@ def _chord_sequence_hash(chord_symbols: List[str]) -> str:
     return hashlib.sha256(seq.encode("utf-8")).hexdigest()
 
 
-def _gce_cache_key(chord_symbols: List[str], generation_seed: int) -> str:
-    return f"{_chord_sequence_hash(chord_symbols)}:{generation_seed}"
+def _gce_cache_key(
+    chord_symbols: List[str],
+    generation_seed: int,
+    bar_index: int,
+    prompt_variant: str = "",
+) -> str:
+    base = f"{_chord_sequence_hash(chord_symbols)}:{generation_seed}:{bar_index}"
+    if not prompt_variant:
+        return base
+    return f"{base}:{prompt_variant}"
+
+
+def _root_interval_semitones(sym_a: str, sym_b: str) -> int:
+    return (_root_pc(sym_b) - _root_pc(sym_a)) % 12
+
+
+def _turnaround_chain_triple(chord: str, nxt: str, nn: str) -> bool:
+    c, n, x = _norm_chord(chord), _norm_chord(nxt), _norm_chord(nn)
+    if not c or not n or not x:
+        return False
+    return bool(
+        _has_maj7(c)
+        and _is_dom7(n)
+        and _has_min7(x)
+        and not _is_half_dim(x)
+    )
+
+
+def _tag_chord_function(
+    chord_symbol: str,
+    next_chord: str,
+    bar_index: int,
+    prev_chord: str = "",
+    nn_chord: str = "",
+) -> str:
+    """
+    Returns a function tag string for prompt injection.
+    Logic:
+    - If chord is dominant 7 and next chord is a 4th up
+      or 5th down: tag as "V in ii-V-I"
+    - If chord is minor 7 and next chord is dominant 7
+      a 4th up: tag as "ii in ii-V-I"
+    - If chord is major 7 and previous was V: tag as "I
+      (tonic resolution)"
+    - If pattern is maj7-dom7-min7-dom7 over 4 bars:
+      tag all four as "turnaround chain"
+    - Otherwise: tag as "interior dominant",
+      "interior tonic", or "interior minor"
+    """
+    c = _norm_chord(chord_symbol)
+    n = _norm_chord(next_chord)
+    nn = _norm_chord(nn_chord)
+    prev = _norm_chord(prev_chord)
+
+    if c and n and nn and _turnaround_chain_triple(c, n, nn):
+        return "turnaround chain"
+
+    iv = _root_interval_semitones(c, n) if c and n else -1
+    if _has_min7(c) and _is_dom7(n) and iv == 5:
+        return "ii in ii-V-I"
+    if _is_dom7(c) and n and iv == 5:
+        return "V in ii-V-I"
+    if _has_maj7(c) and prev and _is_dom7(prev):
+        return "I (tonic resolution)"
+
+    if _is_dom7(c) or "sus" in c.lower():
+        return "interior dominant"
+    if _has_maj7(c) or (c and "maj" in c.lower() and "7" in c.lower()):
+        return "interior tonic"
+    if _has_min7(c) or _is_min_tonic(c):
+        return "interior minor"
+    return "interior dominant"
+
+
+def _degree_label_from_midi(midi: int, chord_sym: str) -> str:
+    r = _root_pc(chord_sym)
+    rel = (midi % 12 - r) % 12
+    names = {
+        0: "root",
+        1: "b9",
+        2: "9",
+        3: "b3/3",
+        4: "3/11",
+        5: "4/11",
+        6: "tritone/#11",
+        7: "5",
+        8: "b13",
+        9: "13",
+        10: "7",
+        11: "7/b7",
+    }
+    return names.get(rel, f"alt({rel})")
+
+
+def _extract_motif(notes: List[Dict[str, Any]], root_chord: str) -> Dict[str, Any]:
+    """
+    From the first 4 bars of generated notes, extract the
+    first 3-5 pitched notes as a motif.
+    Return:
+    {
+      'intervals': [int, ...],  # semitone intervals
+      'rhythm': [str, ...],     # note types e.g. ['eighth','eighth','quarter']
+      'start_degree': str       # scale degree of first note
+    }
+    """
+    pitched = [x for x in notes if isinstance(x, dict) and not x.get("is_rest")]
+    if len(pitched) < 3:
+        return {"intervals": [], "rhythm": [], "start_degree": "?"}
+    take = min(5, max(3, len(pitched)))
+    chunk = pitched[:take]
+    mids = [_midi_from_note_dict(n) for n in chunk]
+    intervals = [mids[i] - mids[i - 1] for i in range(1, len(mids))]
+    rhythm = [str(n.get("type", "eighth")) for n in chunk]
+    start_degree = _degree_label_from_midi(mids[0], root_chord or "C")
+    return {
+        "intervals": intervals,
+        "rhythm": rhythm,
+        "start_degree": start_degree,
+    }
+
+
+def _append_motif_bar(notes: List[Dict[str, Any]], bar_index: int) -> None:
+    """Accumulate bars 0–3 for motif extraction; store chorus motif once bar 3 lands."""
+    global _MOTIF_BAR_BUFFER, _CHORUS_MOTIF, _MOTIF_ROOT_CHORD
+    if bar_index > 3:
+        return
+    while len(_MOTIF_BAR_BUFFER) <= bar_index:
+        _MOTIF_BAR_BUFFER.append([])
+    _MOTIF_BAR_BUFFER[bar_index] = [dict(n) for n in notes]
+    if bar_index == 3 and len(_MOTIF_BAR_BUFFER) >= 4:
+        flat: List[Dict[str, Any]] = []
+        for b in _MOTIF_BAR_BUFFER[:4]:
+            flat.extend(b)
+        _CHORUS_MOTIF = _extract_motif(flat, _MOTIF_ROOT_CHORD or "C")
+
+
+def _build_rhythm_skeleton(
+    bar_index: int,
+    phrase_role: str,
+    generation_seed: int,
+) -> List[str]:
+    """
+    Returns a list of note durations for the bar.
+    Rules:
+    - phrase_role 'opening': start with eighth rest,
+      then 7 eighths
+    - phrase_role 'cadence' (every 4th bar):
+      4 eighths then quarter then quarter
+    - phrase_role 'interior': 8 eighths, but insert
+      one eighth rest randomly on "and of 2" or
+      "and of 3" in ~25% of bars
+    - phrase_role 'turnaround': 8 eighths, no rests,
+      continuous flow
+    """
+    pr = (phrase_role or "").strip().lower()
+    if pr == "turnaround" or pr == "turn":
+        return ["eighth"] * 8
+    if pr == "launch" or pr == "opening":
+        return ["eighth_rest"] + ["eighth"] * 7
+    if (bar_index % 4) == 3 or pr == "cadence":
+        return ["eighth"] * 4 + ["quarter"] * 2
+    rng = random.Random(generation_seed + bar_index * 31)
+    sk = ["eighth"] * 8
+    if rng.random() < 0.25:
+        pos = 3 if rng.random() < 0.5 else 5
+        sk[pos] = "eighth_rest"
+    return sk
+
+
+def _prompt_variant_hash(
+    tag: str,
+    skeleton: List[str],
+    motif_line: str,
+) -> str:
+    h = hashlib.sha256(
+        f"{tag}|{skeleton}|{motif_line}".encode("utf-8")
+    ).hexdigest()
+    return h[:16]
 
 
 def _extract_json_array(text: str) -> Optional[str]:
@@ -531,30 +713,86 @@ def _build_claude_prompt(
     generation_seed: int,
     section_index: int,
     bar_index: int,
+    *,
+    function_tag: str,
+    turnaround_extra: str,
+    rhythm_skeleton: List[str],
+    motif_line: str,
 ) -> str:
     seq = " | ".join(str(c).strip() for c in (chord_symbols or []) if c and str(c).strip())
     if not seq:
         seq = "Cmaj7"
     bar_in_section = bar_index % 8
+    chord0 = _norm_chord(chord_symbols[0]) if chord_symbols else "?"
+    sk_txt = ", ".join(rhythm_skeleton)
+    motif_block = f"\n{motif_line}\n" if motif_line.strip() else ""
     return f"""You are generating one 4/4 bar of Charlie Parker (Bird) alto saxophone melody as MusicXML-oriented note data.
 
 Chord sequence (harmonic context for this bar; play through these changes in order across the bar as appropriate): {seq}
+
+Bar {bar_index + 1}: {chord0} — function: {function_tag}. {turnaround_extra}
 
 Phrase role: {phrase_role} (e.g. opening/launch, continuation, ending, turnaround — interpret musically).
 
 Section index (0-based 8-bar sections): {section_index}. Bar index within tune: {bar_index}. Bar within 8-bar section: {bar_in_section}.
 
+Rhythm skeleton for this bar: [{sk_txt}].
+Fill in pitches following Parker rules below.
+Do not change the rhythm unless musically essential.
+{motif_block}
 Register hint: prefer staying near MIDI pitch {start_pitch} (alto range), but keep all notes in MIDI range 58–82 inclusive.
 
-Style requirements (Bird / bebop):
-- At least 90% of attacked (non-rest) notes should be eighth-note length at this metric level (duration 2 in the schema below; quarter = 4, half = 8).
-- Use chromatic approach notes, enclosures around chord tones, and bebop-scale style passing tones.
-- Include triplet punctuation on some eighth-groupings when it fits (set triplet true on those notes; not every note).
-- Aim for triplet punctuation roughly every 2–4 bars — this bar index is {bar_index}; use triplets here if (bar_index % 3) == 0, otherwise sparse triplets only if musical.
-- Include short rests for breathing (is_rest true).
-- RULE 1 — Anti-repetition: Never repeat the same pitch more than twice in a row. Every note must move by at least 1 semitone from the previous, except for deliberate ornaments (max 2 repeats).
-- RULE 2 — Phrase shape: End each 4-bar phrase with a quarter note or dotted quarter on a strong chord tone (root, 3rd, 5th, 7th). Never run more than 8 consecutive eighth notes without a rhythmic break.
-- RULE 3 — Breathing rests: Begin each phrase section with a rest of at least one eighth-note duration. Include at least 2 rest-breath moments per 8-bar section.
+PARKER STYLE RULES:
+
+BARLINE & CADENCE:
+- Anticipate chord changes: use notes from the NEXT chord 1-3 eighth notes before the barline. At least once every 2 bars, resolve a chord tone of the next chord on "and of 4" of the previous bar instead of beat 1.
+- Do NOT always resolve on beat 1. In at least half of ii-V-I phrases, place the 3rd or 5th of I on beat 2 or beat 3, then continue the line past that resolution.
+- Start some phrases on "and of 4". At least once per 4-bar section, begin with 2-3 eighth notes on "and of 4" leading into the next bar.
+
+MOTIVIC DEVELOPMENT:
+- Invent a 3-5 note motive in bars 1-4. Reuse it at least 3 more times later, transposed to match new chords, rhythmically displaced by 1-2 eighths, or contour-inverted. Keep at least the same interval pattern between the first 3 notes on each reuse.
+- When starting a new 2-bar phrase, reuse the last 2-3 notes of the previous phrase (possibly transposed) before continuing with new material.
+
+CONTOUR & INTERVALS:
+- Over ii-V-I (2 bars), prefer a descending overall shape: start on the 9th or 11th of ii, move mostly downward through V, land on 3rd or 5th of I by beat 1-3 of the I bar.
+- At least once per 4 bars, use a leap of a 6th, tritone, or major 7th, then follow with stepwise motion in the opposite direction for at least 3 eighth notes.
+- On dominant chords, target #9, b9, or 13 on a strong beat (1, "and of 1", 2, or 3) at least once per 4 bars.
+
+ii-V-I ENTRY & RESOLUTION:
+- On ii chords, start phrases on the 9th or 3rd of ii on beat 1 or "and of 1". Use the root only as a passing tone.
+- On V chords, target the 3rd or b9 of V on beats 2 or 3, using a chromatic approach from above or below on the preceding "and".
+- On I chords, resolve to 3rd or 5th as main arrival. Place on beat 1, 2, or 3. Continue the line with passing or upper-structure tones rather than stopping.
+
+TURNAROUND (I-VI-ii-V):
+- Treat I-VI-ii-V as one long dominant chain. Connect all 4 chords with a single continuous descending or arch-shaped line. Treat VI as a dominant (V/ii): use b9, #9, #11 over it.
+- Use a consistent descending chromatic cell across the VI-ii-V span every time a turnaround appears.
+
+UPPER EXTENSIONS ON TONIC:
+- Over I chords, at least 50% of important notes must be upper extensions (9, 11, 13) or their chromatic neighbors. Avoid plain 1-3-5 arpeggios on tonic.
+
+RHYTHMIC ACCENT:
+- At least once per bar, place a chord tone (3rd, 7th, 9th) on "and of 1" or "and of 2", preceded by a weaker non-chord tone on the prior downbeat.
+- In about 1 of every 4 bars, insert an eighth rest on "and of 2" or "and of 3", then resume on the next beat with a strong chord tone.
+- Use triplets as 3-note figures starting on beats 1 or 3 only, as [approach, chromatic, chord tone] or [chord tone, passing, chord tone]. Maximum 1 triplet figure per 2 bars.
+
+PHRASE SHAPE:
+- Do NOT force every phrase to end at 4-bar boundaries. At least once per 8-bar section, let a line start in bar N and end in bar N+1.
+- At the end of each 8-bar A section, use a clear resolution with slightly more space. Inside A sections and through the bridge, allow continuous lines that cross 8-bar boundaries.
+
+ORNAMENTATION:
+- Decorate important chord tones with a 3-4 note turn: [step above, target, step below, target] or [target, step above, step below, target]. Use once every 4 bars.
+- At cadences, use "snap" approaches: one chromatic eighth approach note immediately before the target.
+
+REGISTER:
+- At the start of a new 4 or 8-bar section, sometimes jump up by a 6th, 7th, or octave from the previous note, then descend over the next 2-4 bars back to mid-register.
+- Never stay in the same register for more than 4 bars.
+
+EXISTING RULES TO KEEP:
+- MIDI range 58-82
+- Never repeat the same pitch more than twice consecutively
+- End each 4-bar phrase with at least one quarter note or dotted quarter on a strong chord tone
+- Breathing rests at phrase openings
+- Return only a JSON array of note objects in the specified schema
 
 Output: ONLY a JSON array (no prose, no markdown fences). Each element must be exactly:
 {{"pitch":"D","octave":4,"alter":0,"duration":2,"type":"eighth","is_rest":false,"triplet":false,"dot":false,"is_chord":false}}
@@ -586,11 +824,33 @@ def _generate_parker_phrase_via_claude(
     generation_seed: int,
     section_index: int,
     bar_index: int,
+    prev_chord: str,
+    motif_line: str,
 ) -> Optional[List[Dict[str, Any]]]:
     try:
         import anthropic
     except ImportError:
         return None
+    c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
+    nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
+    nn = chord_symbols[2] if len(chord_symbols) > 2 else ""
+    function_tag = _tag_chord_function(
+        c0,
+        nxt,
+        bar_index,
+        prev_chord=prev_chord,
+        nn_chord=nn,
+    )
+    turnaround_extra = ""
+    if "turnaround" in function_tag.lower():
+        turnaround_extra = (
+            "This is a turnaround — treat as one continuous dominant chain."
+        )
+    rhythm_skeleton = _build_rhythm_skeleton(
+        bar_index,
+        phrase_role,
+        generation_seed,
+    )
     prompt = _build_claude_prompt(
         chord_symbols,
         phrase_role,
@@ -598,6 +858,10 @@ def _generate_parker_phrase_via_claude(
         generation_seed,
         section_index,
         bar_index,
+        function_tag=function_tag,
+        turnaround_extra=turnaround_extra,
+        rhythm_skeleton=rhythm_skeleton,
+        motif_line=motif_line,
     )
     try:
         client = anthropic.Anthropic()
@@ -790,7 +1054,45 @@ def generate_parker_phrase(
     Primary melody output is the note list; return value includes carried MIDI register
     for the next bar (parker_section_compiler contract).
     """
-    key = _gce_cache_key(chord_symbols, generation_seed)
+    global _GCE_PREV_CHORD, _MOTIF_BAR_BUFFER, _MOTIF_ROOT_CHORD, _CHORUS_MOTIF
+
+    if bar_index == 0:
+        _GCE_PREV_CHORD = ""
+        _MOTIF_BAR_BUFFER = []
+        _MOTIF_ROOT_CHORD = chord_symbols[0] if chord_symbols else "Cmaj7"
+        _CHORUS_MOTIF = None
+
+    prev = _GCE_PREV_CHORD if bar_index > 0 else ""
+    c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
+    nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
+    nn = chord_symbols[2] if len(chord_symbols) > 2 else ""
+    function_tag = _tag_chord_function(
+        c0,
+        nxt,
+        bar_index,
+        prev_chord=prev,
+        nn_chord=nn,
+    )
+    motif_line = ""
+    if bar_index in (8, 16, 24) and _CHORUS_MOTIF:
+        m = _CHORUS_MOTIF
+        motif_line = (
+            f'Motif to reuse or vary: interval sequence {m["intervals"]}, '
+            f'rhythm {m["rhythm"]}. Transpose to fit current chord. '
+            "You may displace by 1-2 eighths or invert the contour."
+        )
+    rhythm_skeleton = _build_rhythm_skeleton(
+        bar_index,
+        phrase_role,
+        generation_seed,
+    )
+    prompt_variant = _prompt_variant_hash(
+        function_tag,
+        rhythm_skeleton,
+        motif_line,
+    )
+    key = _gce_cache_key(chord_symbols, generation_seed, bar_index, prompt_variant)
+
     gce_notes: Optional[List[Dict[str, Any]]] = _GCE_CACHE.get(key)
 
     if gce_notes is None:
@@ -801,6 +1103,8 @@ def generate_parker_phrase(
             generation_seed,
             section_index,
             bar_index,
+            prev,
+            motif_line,
         )
         if gce_notes is not None:
             _GCE_CACHE[key] = [dict(n) for n in gce_notes]
@@ -813,9 +1117,11 @@ def generate_parker_phrase(
             next_pitch = _midi_from_note_dict(attacks[-1])
         else:
             next_pitch = start_pitch
+        _append_motif_bar(notes, bar_index)
+        _GCE_PREV_CHORD = c0
         return notes, next_pitch
 
-    return _generate_parker_phrase_deterministic(
+    notes, next_pitch = _generate_parker_phrase_deterministic(
         chord_symbols,
         phrase_role,
         start_pitch,
@@ -823,3 +1129,6 @@ def generate_parker_phrase(
         section_index,
         bar_index,
     )
+    _append_motif_bar(notes, bar_index)
+    _GCE_PREV_CHORD = c0
+    return notes, next_pitch
