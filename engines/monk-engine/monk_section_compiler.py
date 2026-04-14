@@ -215,69 +215,39 @@ def compile_monk_composition(
       notes[{pitch, octave, alter, duration, type, is_rest, is_chord, dot, triplet}],
       bass_note.
     """
-    seq = [str(c).strip() for c in (chord_sequence or []) if c and str(c).strip()]
+    stripped = [str(c).strip() for c in (chord_sequence or []) if c and str(c).strip()]
+    provided = bool(stripped)
 
     sf = (song_form or "aaba").strip().lower()
     if sf not in _FORM_TARGET_BARS:
         sf = "aaba"
     form_target = _FORM_TARGET_BARS[sf]
 
-    if not seq:
+    if not stripped:
         seq = list(_DEFAULT_CHORDS)
         total_bars = min(64, form_target)
+        provided = False
     else:
-        seq = seq[:64]
+        seq = stripped[:64]
         total_bars = min(64, len(seq))
 
     if total_bars < 1:
         total_bars = 1
         seq = list(_DEFAULT_CHORDS)
+        provided = False
 
     bars_out: List[Dict[str, Any]] = []
     start_pitch = 67
-
-    # Try full-chorus generation first for 32-bar forms; fall back to section flow.
-    if total_bars == 32:
-        full_chords = [seq[i % len(seq)] for i in range(32)]
-        chorus = generate_monk_chorus(full_chords, sf.upper(), seed)
-        if len(chorus) == 32:
-            bars_out = []
-            for b in range(32):
-                chord = seq[b % len(seq)]
-                nxt = seq[(b + 1) % len(seq)]
-                nn = seq[(b + 2) % len(seq)]
-                hctx = detect_harmonic_context(chord, nxt, nn)
-                notes = _fill_bar_capacity(chorus[b])
-                pitched = [n for n in notes if not n.get("is_rest")]
-                if not pitched:
-                    half = min(8, CAPACITY)
-                    pat0 = 0
-                    midi = _midi_for_interval(chord, pat0, seed + b)
-                    step, alter, octv = _spell_pitch(midi)
-                    notes = [_note_shape(half, is_rest=False, step=step, alter=alter, octv=octv)]
-                    if half < CAPACITY:
-                        notes.append(_note_shape(CAPACITY - half, is_rest=True))
-                bars_out.append(
-                    {
-                        "bar_number": b + 1,
-                        "chord": chord,
-                        "chord_function": hctx,
-                        "notes": notes,
-                        "bass_note": _slash_bass(chord),
-                    }
-                )
-            return {
-                "title": title,
-                "song_form": sf,
-                "bars": bars_out,
-            }
 
     bar_idx = 0
     while bar_idx < total_bars:
         remaining = total_bars - bar_idx
         if remaining >= 8:
             label = _section_label_for_block(bar_idx, sf, total_bars)
-            ch8 = [seq[(bar_idx + i) % len(seq)] for i in range(8)]
+            if provided:
+                ch8 = [seq[bar_idx + i] for i in range(8)]
+            else:
+                ch8 = [seq[(bar_idx + i) % len(seq)] for i in range(8)]
             eight = generate_monk_section(
                 ch8,
                 label,
@@ -288,9 +258,14 @@ def compile_monk_composition(
             )
             for j in range(8):
                 b = bar_idx + j
-                chord = seq[b % len(seq)]
-                nxt = seq[(b + 1) % len(seq)]
-                nn = seq[(b + 2) % len(seq)]
+                if provided:
+                    chord = seq[b]
+                    nxt = seq[b + 1] if b + 1 < len(seq) else ""
+                    nn = seq[b + 2] if b + 2 < len(seq) else ""
+                else:
+                    chord = seq[b % len(seq)]
+                    nxt = seq[(b + 1) % len(seq)]
+                    nn = seq[(b + 2) % len(seq)]
                 hctx = detect_harmonic_context(chord, nxt, nn)
                 notes = eight[j]
 
@@ -321,9 +296,14 @@ def compile_monk_composition(
             bar_idx += 8
             continue
 
-        chord = seq[bar_idx % len(seq)]
-        nxt = seq[(bar_idx + 1) % len(seq)]
-        nn = seq[(bar_idx + 2) % len(seq)]
+        if provided:
+            chord = seq[bar_idx]
+            nxt = seq[bar_idx + 1] if bar_idx + 1 < len(seq) else ""
+            nn = seq[bar_idx + 2] if bar_idx + 2 < len(seq) else ""
+        else:
+            chord = seq[bar_idx % len(seq)]
+            nxt = seq[(bar_idx + 1) % len(seq)]
+            nn = seq[(bar_idx + 2) % len(seq)]
         window = [chord, nxt, nn]
         hctx = detect_harmonic_context(chord, nxt, nn)
         phrase_role = _phrase_role_for_bar(bar_idx, total_bars)

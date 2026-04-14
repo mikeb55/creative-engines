@@ -1795,9 +1795,21 @@ def _apply_post_validators(
 
 
 _GCE_SYSTEM_PROMPT = """You are Thelonious Monk's hands on the piano,
-transcribed for a single melodic line instrument.
-You do not play bebop. You play Monk.
+transcribed for a single melodic line.
+You play SLOWLY. You leave SPACE.
+You use QUARTER NOTES and HALF NOTES, not eighth notes.
+You repeat the same note or short cell obsessively.
+You use tritone leaps and flat 9ths deliberately.
+You NEVER play more than 6 notes in a bar.
+You rest for entire beats. Silence is your instrument.
 """
+
+_GCE_USER_PROMPT_PREFIX = (
+    "IMPORTANT: Use quarter notes and half notes.\n"
+    "Maximum 6 pitched notes per bar.\n"
+    "Leave at least one full beat of rest per bar.\n"
+    "Do NOT play eighth-note runs longer than 4 notes.\n\n"
+)
 
 
 def _build_claude_prompt(
@@ -1969,7 +1981,7 @@ def _build_section_prompt(
     )
     concrete_block = _build_concrete_phrase_block(function_tags, max_examples=3)
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
-    return f"""Section: {section_label} | Bars {bar_start + 1}-{bar_start + 8}
+    return f"""{_GCE_USER_PROMPT_PREFIX}Section: {section_label} | Bars {bar_start + 1}-{bar_start + 8}
 Chords:
 {chords_lines}
 Function tags:
@@ -2041,7 +2053,7 @@ def _build_chorus_prompt(
     )
     concrete_block = _build_concrete_phrase_block(function_tags, max_examples=2)
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
-    return f"""Section: {form} | Bars 1-32
+    return f"""{_GCE_USER_PROMPT_PREFIX}Section: {form} | Bars 1-32
 Chords:
 {chords_lines}
 Function tags:
@@ -2214,7 +2226,7 @@ def _generate_monk_section_via_claude(
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=8192,
-            temperature=1.2,
+            temperature=0.9,
             system=_GCE_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -2268,7 +2280,7 @@ def _generate_monk_chorus_via_claude(
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=4000,
-            temperature=1.2,
+            temperature=0.9,
             system=_GCE_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -2491,7 +2503,7 @@ def _generate_monk_phrase_via_claude(
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1000,
-            temperature=1.2,
+            temperature=0.9,
             system=_GCE_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
