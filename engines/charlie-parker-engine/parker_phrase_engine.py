@@ -531,6 +531,142 @@ def _root_pc(sym: str) -> int:
     return (pc + alt) % 12
 
 
+def _is_full_diminished(sym: str) -> bool:
+    """Fully diminished (dim / dim7 / °), not half-dim m7b5."""
+    if _is_half_dim(sym):
+        return False
+    low = sym.lower()
+    return "dim" in low or "°" in sym or "o7" in low
+
+
+def _chord_root_and_kind(sym: str) -> Tuple[Optional[int], str]:
+    """Pitch class 0–11 and a chord_kind string for consonance helpers."""
+    c = _norm_chord(sym)
+    if not c:
+        return None, ""
+    r = _root_pc(sym)
+    if _is_half_dim(c):
+        return r, "half-diminished"
+    if _is_full_diminished(c):
+        return r, "diminished"
+    if _has_maj7(c):
+        return r, "major-seventh"
+    if _has_min7(c):
+        return r, "minor seventh"
+    if _is_dom7(c):
+        return r, "dominant"
+    return r, ""
+
+
+def _chord_tone_pcs(chord_root: int, chord_kind: str) -> set:
+    """
+    Returns set of acceptable pitch classes for this chord.
+    Generous — includes extensions (9, 11, 13, b9, #9)
+    so chromatic colour tones are not flagged.
+    """
+    k = chord_kind.lower() if chord_kind else ""
+    r = chord_root
+    if "major-seventh" in k or "major seventh" in k:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 4) % 12,
+            (r + 6) % 12,
+            (r + 7) % 12,
+            (r + 9) % 12,
+            (r + 11) % 12,
+        }
+    elif "minor-seventh" in k or "minor seventh" in k:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 3) % 12,
+            (r + 5) % 12,
+            (r + 7) % 12,
+            (r + 10) % 12,
+            (r + 1) % 12,
+        }
+    elif "dominant" in k:
+        return {
+            r,
+            (r + 1) % 12,
+            (r + 2) % 12,
+            (r + 3) % 12,
+            (r + 4) % 12,
+            (r + 6) % 12,
+            (r + 7) % 12,
+            (r + 8) % 12,
+            (r + 9) % 12,
+            (r + 10) % 12,
+        }
+    elif "half-diminished" in k:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 3) % 12,
+            (r + 5) % 12,
+            (r + 6) % 12,
+            (r + 8) % 12,
+            (r + 10) % 12,
+        }
+    elif "diminished" in k:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 3) % 12,
+            (r + 6) % 12,
+            (r + 8) % 12,
+            (r + 9) % 12,
+        }
+    else:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 4) % 12,
+            (r + 7) % 12,
+            (r + 9) % 12,
+            (r + 11) % 12,
+        }
+
+
+def _strict_tone_pcs(chord_root: int, chord_kind: str) -> set:
+    """
+    Strict chord tones only — root, 3rd, 5th, 7th, 9th.
+    Used for long notes and downbeat enforcement.
+    """
+    k = chord_kind.lower() if chord_kind else ""
+    r = chord_root
+    if "major-seventh" in k or "major seventh" in k:
+        return {r, (r + 2) % 12, (r + 4) % 12, (r + 7) % 12, (r + 11) % 12}
+    elif "minor-seventh" in k or "minor seventh" in k:
+        return {r, (r + 2) % 12, (r + 3) % 12, (r + 7) % 12, (r + 10) % 12}
+    elif "dominant" in k:
+        return {
+            r,
+            (r + 2) % 12,
+            (r + 4) % 12,
+            (r + 7) % 12,
+            (r + 10) % 12,
+            (r + 1) % 12,
+            (r + 3) % 12,
+        }
+    elif "half-diminished" in k:
+        return {r, (r + 3) % 12, (r + 6) % 12, (r + 10) % 12}
+    elif "diminished" in k:
+        return {r, (r + 3) % 12, (r + 6) % 12, (r + 9) % 12}
+    else:
+        return {r, (r + 4) % 12, (r + 7) % 12, (r + 11) % 12}
+
+
+def _note_from_midi_like(n: Dict[str, Any], midi: int) -> Dict[str, Any]:
+    """Re-spell a pitched note from MIDI; preserves duration and triplet flag."""
+    m2 = max(_MIDI_LO, min(_MIDI_HI, int(midi)))
+    s, al, oc = _spell_pitch(m2)
+    d = int(n["duration"])
+    trip = bool(n.get("triplet"))
+    return _note_shape(d, is_rest=False, step=s, alter=al, octv=oc, triplet=trip)
+
+
 def _midi_for_interval(sym: str, interval_from_root: int, bar_seed: int) -> int:
     pc = _root_pc(sym)
     base = 60 + ((pc - (60 % 12) + 12) % 12)
@@ -1216,6 +1352,139 @@ def _enforce_cadence_quarter(
     return new_list
 
 
+def _enforce_long_note_consonance(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+    chord_root: Optional[int],
+    chord_kind: str,
+) -> List[Dict[str, Any]]:
+    """
+    Any note longer than an eighth (duration >= 4)
+    must be a strict chord tone.
+    If not, find the nearest strict chord tone
+    within ±2 semitones and shift to it.
+    Preserves all rhythm and duration values.
+    """
+    if chord_root is None:
+        return notes
+    strict = _strict_tone_pcs(chord_root, chord_kind)
+    out = [dict(n) for n in notes]
+    for i, n in enumerate(out):
+        if n.get("is_rest"):
+            continue
+        if int(n.get("duration", 2)) < 4:
+            continue
+        m = _midi_from_note_dict(n)
+        pc = m % 12
+        if pc in strict:
+            continue
+        for delta in (0, 1, -1, 2, -2):
+            candidate_pc = (pc + delta) % 12
+            if candidate_pc in strict:
+                out[i] = _note_from_midi_like(n, m + delta)
+                break
+    return out
+
+
+def _enforce_downbeat_consonance(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+    chord_root: Optional[int],
+    chord_kind: str,
+) -> List[Dict[str, Any]]:
+    """
+    The first PITCHED note of the bar (ignoring any
+    opening rest) must be a strict chord tone.
+
+    SYNCOPATION SAFE: if notes[0] is a rest (inserted
+    by _enforce_syncopation), skip — the phrase is
+    already syncopated and the first pitched note is
+    on an offbeat, which is correct bebop.
+
+    Only enforce when notes[0] is a pitched note
+    (i.e. no syncopation rest was inserted).
+    This means syncopation is never reduced.
+    """
+    if chord_root is None:
+        return notes
+    if notes and notes[0].get("is_rest"):
+        return notes
+
+    strict = _strict_tone_pcs(chord_root, chord_kind)
+    out = [dict(n) for n in notes]
+
+    for i, n in enumerate(out):
+        if n.get("is_rest"):
+            continue
+        m = _midi_from_note_dict(n)
+        pc = m % 12
+        if pc in strict:
+            break
+        for delta in (1, -1, 2, -2, 3, -3):
+            candidate_pc = (pc + delta) % 12
+            if candidate_pc in strict:
+                out[i] = _note_from_midi_like(n, m + delta)
+                break
+        break
+    return out
+
+
+def _enforce_no_chord_contradictions(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+    chord_root: Optional[int],
+    chord_kind: str,
+) -> List[Dict[str, Any]]:
+    """
+    Removes hard contradictions — notes that imply
+    the wrong chord mode — from long notes only
+    (duration >= 4). Short passing tones are fine.
+
+    Hard contradictions:
+    - maj7 interval over major-seventh chord held long:
+      (root-1)%12 e.g. Eb over Fmaj7
+    - natural 7 over dominant held long:
+      (root+11)%12 e.g. E over F7
+    - natural 6 over minor-seventh held long:
+      (root+9)%12 e.g. D over Cm7
+    """
+    if chord_root is None:
+        return notes
+    k = chord_kind.lower() if chord_kind else ""
+    r = chord_root
+
+    avoid: set[int] = set()
+    if "major-seventh" in k or "major seventh" in k:
+        avoid = {(r - 1) % 12, (r + 6) % 12}
+    elif "dominant" in k:
+        avoid = {(r + 11) % 12}
+    elif "minor-seventh" in k or "minor seventh" in k:
+        avoid = {(r + 4) % 12, (r + 11) % 12}
+
+    if not avoid:
+        return notes
+    strict = _strict_tone_pcs(chord_root, chord_kind)
+    out = [dict(n) for n in notes]
+
+    for i, n in enumerate(out):
+        if n.get("is_rest"):
+            continue
+        if int(n.get("duration", 2)) < 4:
+            continue
+        m = _midi_from_note_dict(n)
+        pc = m % 12
+        if pc not in avoid:
+            continue
+        for delta in (1, -1, 2, -2):
+            if (pc + delta) % 12 in strict:
+                out[i] = _note_from_midi_like(n, m + delta)
+                break
+    return out
+
+
 def _enforce_syncopation(
     notes: List[Dict[str, Any]],
     bar_index: int,
@@ -1293,6 +1562,8 @@ def _apply_post_validators(
     phrase_role: str,
     bar_index: int,
     generation_seed: int,
+    chord_root: Optional[int] = None,
+    chord_kind: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     n = _patch_unison_runs(notes, generation_seed)
     n = _cap_unison_frequency(n)
@@ -1300,6 +1571,16 @@ def _apply_post_validators(
     n = _enforce_syncopation(n, bar_index, generation_seed)
     n = _enforce_midphrase_quarter(n, bar_index, generation_seed)
     n = _enforce_cadence_quarter(n, bar_index)
+    ck = chord_kind if chord_kind is not None else ""
+    n = _enforce_long_note_consonance(
+        n, bar_index, generation_seed, chord_root, ck
+    )
+    n = _enforce_downbeat_consonance(
+        n, bar_index, generation_seed, chord_root, ck
+    )
+    n = _enforce_no_chord_contradictions(
+        n, bar_index, generation_seed, chord_root, ck
+    )
     return _fit_sixteen_divisions(n)
 
 
@@ -1889,11 +2170,14 @@ def generate_parker_section(
         section_index = bar_idx // 8
 
         bar_notes: Optional[List[Dict[str, Any]]] = None
+        chord_root, chord_kind = _chord_root_and_kind(c0)
         # Always run post-validators on every parsed GCE bar before acceptance.
         if gce_bars is not None and i < len(gce_bars):
             try:
                 raw = [dict(n) for n in gce_bars[i]]
-                v = _apply_post_validators(raw, phrase_role, bar_idx, gen_seed_i)
+                v = _apply_post_validators(
+                    raw, phrase_role, bar_idx, gen_seed_i, chord_root, chord_kind
+                )
                 v = _maybe_half_note_bar_end(v, bar_idx)
                 if any(not n.get("is_rest") for n in v):
                     bar_notes = v
@@ -1956,7 +2240,11 @@ def generate_parker_chorus(
                 raw = [dict(n) for n in parsed[bar_idx]]
                 role = _phrase_role_for_bar_local(bar_idx, 32)
                 gen_seed_i = generation_seed + bar_idx * 17
-                v = _apply_post_validators(raw, role, bar_idx, gen_seed_i)
+                ch_sym = ch32[bar_idx]
+                chord_root, chord_kind = _chord_root_and_kind(ch_sym)
+                v = _apply_post_validators(
+                    raw, role, bar_idx, gen_seed_i, chord_root, chord_kind
+                )
                 v = _maybe_half_note_bar_end(v, bar_idx)
                 if not any(not n.get("is_rest") for n in v):
                     block_ok = False
@@ -2229,6 +2517,7 @@ def generate_parker_phrase(
 
     prev = _GCE_PREV_CHORD if bar_index > 0 else ""
     c0 = chord_symbols[0] if chord_symbols else "Cmaj7"
+    chord_root, chord_kind = _chord_root_and_kind(c0)
     nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
     nn = chord_symbols[2] if len(chord_symbols) > 2 else ""
     _GCE_TAG_PREV = prev
@@ -2272,7 +2561,14 @@ def generate_parker_phrase(
 
     if gce_notes is not None:
         notes = [dict(n) for n in gce_notes]
-        notes = _apply_post_validators(notes, phrase_role, bar_index, generation_seed)
+        notes = _apply_post_validators(
+            notes,
+            phrase_role,
+            bar_index,
+            generation_seed,
+            chord_root,
+            chord_kind,
+        )
         notes = _maybe_half_note_bar_end(notes, bar_index)
         attacks = [n for n in notes if not n.get("is_rest")]
         if attacks:
@@ -2291,7 +2587,14 @@ def generate_parker_phrase(
         section_index,
         bar_index,
     )
-    notes = _apply_post_validators(notes, phrase_role, bar_index, generation_seed)
+    notes = _apply_post_validators(
+        notes,
+        phrase_role,
+        bar_index,
+        generation_seed,
+        chord_root,
+        chord_kind,
+    )
     attacks = [n for n in notes if not n.get("is_rest")]
     if attacks:
         next_pitch = _midi_from_note_dict(attacks[-1])
