@@ -754,6 +754,37 @@ def _patch_unison_runs(
     return out
 
 
+def _cap_unison_frequency(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    If unison intervals exceed 8% of all consecutive pitched intervals,
+    raise every second unison pair's second note by +1 semitone (58–82).
+    """
+    out = [dict(n) for n in notes]
+    idxs = [i for i, n in enumerate(out) if not n.get("is_rest")]
+    if len(idxs) < 2:
+        return out
+    total_iv = len(idxs) - 1
+    uni_second: List[int] = []
+    for k in range(total_iv):
+        i0, i1 = idxs[k], idxs[k + 1]
+        if _midi_from_note_dict(out[i0]) == _midi_from_note_dict(out[i1]):
+            uni_second.append(i1)
+    if uni_second and total_iv > 0 and (len(uni_second) / total_iv) > 0.08:
+        for j, note_i in enumerate(uni_second):
+            if j % 2 != 1:
+                continue
+            n = out[note_i]
+            m = _midi_from_note_dict(n) + 1
+            m = max(_MIDI_LO, min(_MIDI_HI, m))
+            s, al, oc = _spell_pitch(m)
+            d = int(n["duration"])
+            trip = bool(n.get("triplet"))
+            out[note_i] = _note_shape(
+                d, is_rest=False, step=s, alter=al, octv=oc, triplet=trip
+            )
+    return out
+
+
 def _enforce_opening_rest(
     notes: List[Dict[str, Any]],
     phrase_role: str,
@@ -854,9 +885,10 @@ def _apply_post_validators(
     generation_seed: int,
 ) -> List[Dict[str, Any]]:
     n = _patch_unison_runs(notes, generation_seed)
+    n = _cap_unison_frequency(n)
     n = _enforce_opening_rest(n, phrase_role, bar_index)
-    n = _enforce_cadence_quarter(n, bar_index)
     n = _enforce_syncopation(n, bar_index, generation_seed)
+    n = _enforce_cadence_quarter(n, bar_index)
     return _fit_sixteen_divisions(n)
 
 
