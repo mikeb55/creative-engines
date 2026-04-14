@@ -706,6 +706,126 @@ def _fit_sixteen_divisions(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
+def _patch_unison_runs(
+    notes: List[Dict[str, Any]],
+    generation_seed: int,
+) -> List[Dict[str, Any]]:
+    """Break runs of 3+ consecutive identical MIDI pitches (pitched notes only)."""
+    out = [dict(n) for n in notes]
+    direction = 1 if (generation_seed % 2) == 0 else -1
+    for _ in range(32):
+        changed = False
+        i = 0
+        while i < len(out):
+            if out[i].get("is_rest"):
+                i += 1
+                continue
+            m0 = _midi_from_note_dict(out[i])
+            run_idx: List[int] = [i]
+            j = i + 1
+            while j < len(out):
+                if out[j].get("is_rest"):
+                    break
+                if _midi_from_note_dict(out[j]) != m0:
+                    break
+                run_idx.append(j)
+                j += 1
+            if len(run_idx) < 3:
+                i += 1
+                continue
+            for r in range(2, len(run_idx)):
+                idx = run_idx[r]
+                dsemi = 1 + ((generation_seed // 2) + r) % 2
+                m = _midi_from_note_dict(out[idx])
+                m2 = m + direction * dsemi
+                m2 = max(_MIDI_LO, min(_MIDI_HI, m2))
+                if m2 == m:
+                    m2 = max(_MIDI_LO, min(_MIDI_HI, m - direction * dsemi))
+                s, al, oc = _spell_pitch(m2)
+                d = int(out[idx]["duration"])
+                trip = bool(out[idx].get("triplet"))
+                out[idx] = _note_shape(
+                    d, is_rest=False, step=s, alter=al, octv=oc, triplet=trip
+                )
+                changed = True
+            i = run_idx[-1] + 1
+        if not changed:
+            break
+    return out
+
+
+def _enforce_opening_rest(
+    notes: List[Dict[str, Any]],
+    phrase_role: str,
+    bar_index: int,
+) -> List[Dict[str, Any]]:
+    pr = (phrase_role or "").strip().lower()
+    if pr not in ("opening", "launch") and bar_index not in (0, 8, 16, 24):
+        return notes
+    out = [dict(n) for n in notes]
+    if not out or out[0].get("is_rest"):
+        return out
+    out.insert(0, _note_shape(2, is_rest=True))
+    total = sum(int(n.get("duration", 0)) for n in out)
+    excess = total - 16
+    while excess > 0 and out:
+        last = out[-1]
+        ld = int(last.get("duration", 0))
+        if ld <= excess:
+            excess -= ld
+            out.pop()
+        else:
+            new_d = ld - excess
+            if last.get("is_rest"):
+                out[-1] = _note_shape(
+                    new_d, is_rest=True, triplet=bool(last.get("triplet"))
+                )
+            else:
+                out[-1] = _note_shape(
+                    new_d,
+                    is_rest=False,
+                    step=str(last["pitch"]),
+                    alter=float(last.get("alter", 0.0)),
+                    octv=int(last["octave"]),
+                    triplet=bool(last.get("triplet")) and new_d <= 1,
+                )
+            excess = 0
+    return out
+
+
+def _enforce_cadence_quarter(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+) -> List[Dict[str, Any]]:
+    if (bar_index % 4) != 3:
+        return notes
+    out = [dict(n) for n in notes]
+    if any(int(n.get("duration", 0)) >= 4 for n in out):
+        return out
+    if len(out) < 7:
+        return out
+    n4 = out[4]
+    if n4.get("is_rest"):
+        return out
+    m = _midi_from_note_dict(n4)
+    s, al, oc = _spell_pitch(m)
+    quarter = _note_shape(4, is_rest=False, step=s, alter=al, octv=oc, triplet=False)
+    new_list = out[:4] + [quarter] + out[7:]
+    return new_list
+
+
+def _apply_post_validators(
+    notes: List[Dict[str, Any]],
+    phrase_role: str,
+    bar_index: int,
+    generation_seed: int,
+) -> List[Dict[str, Any]]:
+    n = _patch_unison_runs(notes, generation_seed)
+    n = _enforce_opening_rest(n, phrase_role, bar_index)
+    n = _enforce_cadence_quarter(n, bar_index)
+    return _fit_sixteen_divisions(n)
+
+
 def _build_claude_prompt(
     chord_symbols: List[str],
     phrase_role: str,
@@ -1111,6 +1231,7 @@ def generate_parker_phrase(
 
     if gce_notes is not None:
         notes = [dict(n) for n in gce_notes]
+        notes = _apply_post_validators(notes, phrase_role, bar_index, generation_seed)
         notes = _maybe_half_note_bar_end(notes, bar_index)
         attacks = [n for n in notes if not n.get("is_rest")]
         if attacks:
@@ -1129,6 +1250,12 @@ def generate_parker_phrase(
         section_index,
         bar_index,
     )
+    notes = _apply_post_validators(notes, phrase_role, bar_index, generation_seed)
+    attacks = [n for n in notes if not n.get("is_rest")]
+    if attacks:
+        next_pitch = _midi_from_note_dict(attacks[-1])
+    else:
+        next_pitch = start_pitch
     _append_motif_bar(notes, bar_index)
     _GCE_PREV_CHORD = c0
     return notes, next_pitch
