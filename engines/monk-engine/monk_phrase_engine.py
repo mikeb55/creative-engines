@@ -1810,33 +1810,81 @@ def _enforce_monk_density(
     notes: List[Dict[str, Any]],
     bar_index: int,
     generation_seed: int,
+    chord_root: Optional[int] = None,
+    chord_kind: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    pitched = [i for i, n in enumerate(notes) if not n.get("is_rest")]
+    if len(pitched) <= 6:
+        return notes
+    to_remove = set(pitched[6::2])
+    return [n for i, n in enumerate(notes) if i not in to_remove]
+
+
+def _enforce_monk_rhythm_variety(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+    chord_root: Optional[int] = None,
+    chord_kind: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
-    If a bar has more than 8 pitched notes, replace every other pitched
-    event starting from the 4th pitched note (index 3) with rests of the
-    same duration until at most 8 pitched notes remain.
-    Never removes so many pitched notes that fewer than 2 remain.
+    If all pitched notes are eighths, convert every
+    3rd note to a quarter (merge with next note).
+    Monk never plays pure eighth-note runs.
     """
-    out = [dict(n) for n in notes]
-    pit_ix = [i for i, n in enumerate(out) if not n.get("is_rest")]
-    if len(pit_ix) <= 8:
-        return out
-    to_rest: set[int] = set()
-    k = 3
-    while len(pit_ix) - len(to_rest) > 8 and k < len(pit_ix):
-        to_rest.add(pit_ix[k])
-        k += 2
-    while to_rest and len(pit_ix) - len(to_rest) < 2:
-        to_rest.discard(max(to_rest))
-    if not to_rest:
-        return out
-    for i in sorted(to_rest):
-        n = out[i]
-        d = int(n.get("duration", 0))
-        if d < 1:
-            continue
-        out[i] = _note_shape(d, is_rest=True, triplet=bool(n.get("triplet")))
+    pitched_idx = [i for i, n in enumerate(notes) if not n.get("is_rest")]
+    all_eighths = all(notes[i].get("type") == "eighth" for i in pitched_idx)
+    if not all_eighths:
+        return notes
+    if len(pitched_idx) < 4:
+        return notes
+
+    out = list(notes)
+    for k, idx in enumerate(pitched_idx):
+        if k % 3 == 2 and idx + 1 < len(out):
+            if not out[idx + 1].get("is_rest"):
+                out[idx] = dict(out[idx])
+                out[idx]["duration"] = 8
+                out[idx]["type"] = "half"
+                out[idx]["dot"] = False
+                out[idx + 1] = None
+    out = [n for n in out if n is not None]
     return out
+
+
+def _enforce_monk_breathing(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+    chord_root: Optional[int] = None,
+    chord_kind: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Monk leaves space. If a bar has no rests and
+    more than 5 pitched notes, insert a quarter rest
+    at beat 3 (slot 4 at div=4).
+    """
+    if bar_index in (0, 8, 16, 24):
+        return notes
+    has_rest = any(n.get("is_rest") for n in notes)
+    pitched = [n for n in notes if not n.get("is_rest")]
+    if has_rest or len(pitched) <= 5:
+        return notes
+
+    quarter_rest = {
+        "pitch": "",
+        "octave": 0,
+        "alter": 0,
+        "duration": 4,
+        "type": "quarter",
+        "is_rest": True,
+        "triplet": False,
+        "dot": False,
+        "is_chord": False,
+    }
+    out = list(notes)
+    out.insert(4, quarter_rest)
+    return out[:8]
 
 
 def _apply_post_validators(
@@ -1863,7 +1911,9 @@ def _apply_post_validators(
     n = _enforce_no_chord_contradictions(
         n, bar_index, generation_seed, chord_root, ck
     )
-    n = _enforce_monk_density(n, bar_index, generation_seed)
+    n = _enforce_monk_density(n, bar_index, generation_seed, chord_root, ck)
+    n = _enforce_monk_rhythm_variety(n, bar_index, generation_seed, chord_root, ck)
+    n = _enforce_monk_breathing(n, bar_index, generation_seed, chord_root, ck)
     return _fit_sixteen_divisions(n)
 
 
