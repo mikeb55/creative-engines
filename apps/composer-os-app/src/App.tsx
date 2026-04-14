@@ -14,6 +14,7 @@ function ComposerEngines() {
   const [wsResult, setWsResult] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [monkTitle, setMonkTitle] = React.useState('');
+  const [monkCustomChords, setMonkCustomChords] = React.useState('');
   const [monkResult, setMonkResult] = React.useState('');
   const [monkLoading, setMonkLoading] = React.useState(false);
   const [cpTitle, setCpTitle] = useState('');
@@ -154,39 +155,53 @@ function ComposerEngines() {
           chromatic neighbour harmony.
           Outputs a single-staff lead sheet.
         </p>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input
-            type="text"
-            placeholder="Composition title"
-            value={monkTitle}
-            onChange={e => setMonkTitle(e.target.value)}
-            style={{ flex: 1, padding: '0.3rem' }}
-          />
-          <button
-            disabled={!monkTitle || monkLoading}
-            onClick={() => {
-              setMonkLoading(true);
-              (api as any).generateMonk({
-                title: monkTitle,
-                seed: Math.floor(Math.random() * 1e9)
-              }).then((r: any) => {
-                setMonkLoading(false);
-                if (r?.path) {
-                  setMonkResult(r.path);
-                  setMonkTitle('');
-                } else {
-                  setMonkResult('');
-                  alert('Monk generation failed: no path returned');
-                }
-              }).catch((e: any) => {
-                setMonkLoading(false);
-                setMonkResult('Error: ' +
-                  String(e?.message ?? e));
-              });
-            }}
-          >
-            {monkLoading ? 'Generating…' : 'Generate'}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="text"
+              placeholder="Composition title"
+              value={monkTitle}
+              onChange={e => setMonkTitle(e.target.value)}
+              style={{ flex: 1, padding: '0.3rem' }}
+            />
+            <button
+              disabled={!monkTitle || monkLoading}
+              onClick={() => {
+                setMonkLoading(true);
+                const trimmed = monkCustomChords.trim();
+                (api as any).generateMonk({
+                  title: monkTitle,
+                  seed: Math.floor(Math.random() * 1e9),
+                  ...(trimmed.length > 0 ? { custom_chords: trimmed } : {}),
+                }).then((r: any) => {
+                  setMonkLoading(false);
+                  if (r?.path) {
+                    setMonkResult(r.path);
+                    setMonkTitle('');
+                  } else {
+                    setMonkResult('');
+                    alert('Monk generation failed: no path returned');
+                  }
+                }).catch((e: any) => {
+                  setMonkLoading(false);
+                  setMonkResult('Error: ' +
+                    String(e?.message ?? e));
+                });
+              }}
+            >
+              {monkLoading ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '13px' }}>
+            <span>Custom chords</span>
+            <input
+              type="text"
+              placeholder="Chords (optional): Bb7, Eb7, F7"
+              value={monkCustomChords}
+              onChange={e => setMonkCustomChords(e.target.value)}
+              style={{ width: '100%', padding: '0.3rem', boxSizing: 'border-box' }}
+            />
+          </label>
         </div>
         {monkResult && (
           <div style={{

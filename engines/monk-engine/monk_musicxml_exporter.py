@@ -49,34 +49,34 @@ def _kind_for_suffix(suffix: str) -> str:
 
 def _parse_chord_for_harmony(chord_sym: str) -> Tuple[str, str, str]:
     left = chord_sym.split("/")[0].strip() if chord_sym else "C"
-    rm = _re.match(r"^([A-G])([#b]?)(.*)$", left)
+    rm = _re.match(r"^([A-Ga-g])([#b♯♭]?)(.*)$", left)
     if rm:
-        root_step = rm.group(1)
+        root_step = rm.group(1).upper()
         acc = rm.group(2)
         kind_input = rm.group(3)
-        if acc == "b":
+        if acc in ("b", "♭"):
             root_alter = "\n        <root-alter>-1</root-alter>"
-        elif acc == "#":
+        elif acc in ("#", "♯"):
             root_alter = "\n        <root-alter>1</root-alter>"
         else:
             root_alter = ""
     else:
-        root_step = left[0] if left else "C"
+        root_step = (left[0].upper() if left else "C")
         root_alter = ""
         kind_input = left[1:] if len(left) > 1 else ""
     return root_step, root_alter, kind_input
 
 
 def _bass_xml(bass_note: str) -> str:
-    m = _re.match(r"^([A-G])([#b]?)", bass_note.strip())
+    m = _re.match(r"^([A-Ga-g])([#b♯♭]?)", bass_note.strip())
     if not m:
         return ""
-    step = m.group(1)
+    step = m.group(1).upper()
     acc = m.group(2)
     alt = ""
-    if acc == "b":
+    if acc in ("b", "♭"):
         alt = "\n          <bass-alter>-1</bass-alter>"
-    elif acc == "#":
+    elif acc in ("#", "♯"):
         alt = "\n          <bass-alter>1</bass-alter>"
     return (
         "        <bass>\n"

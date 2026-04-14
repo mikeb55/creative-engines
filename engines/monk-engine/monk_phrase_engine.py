@@ -19,12 +19,15 @@ from monk_rhythm_engine import (
 from monk_vocabulary import MONK_VOCABULARY, get_pattern
 
 DIVISIONS = 4
+# One 4/4 bar in divisions; must match monk_musicxml_exporter (DIVISIONS=4 → CAPACITY=16).
+CAPACITY = DIVISIONS * 4
 
 # Alto register (Monk): clamp all phrase MIDI to this span.
 _MIDI_LO = 58
 _MIDI_HI = 82
 
 NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
+_LETTER_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
 # Per (section, 4-bar phrase): last main pattern id and contour sign for alternation.
 _last_pattern_id: Dict[Tuple[int, int], str] = {}
@@ -714,7 +717,7 @@ def _parse_root(sym: str) -> Tuple[str, int]:
 
 def _root_pc(sym: str) -> int:
     step, alt = _parse_root(sym)
-    pc = NOTE_TO_PC[step.lower()]
+    pc = _LETTER_PC[step]
     return (pc + alt) % 12
 
 
@@ -911,7 +914,7 @@ def _note_shape(
     triplet: bool = False,
 ) -> Dict[str, Any]:
     if is_rest:
-        if dur >= 16:
+        if dur >= CAPACITY:
             typ = "whole"
         elif dur >= 8:
             typ = "half"
@@ -931,7 +934,7 @@ def _note_shape(
             "triplet": triplet,
         }
     dot = False
-    if dur >= 16:
+    if dur >= CAPACITY:
         typ = "whole"
     elif dur >= 12:
         typ = "half"
@@ -1355,8 +1358,8 @@ def _normalize_claude_note(obj: Any) -> Optional[Dict[str, Any]]:
 def _fit_sixteen_divisions(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     out = [dict(n) for n in notes if isinstance(n, dict)]
     total = sum(int(n.get("duration", 0)) for n in out)
-    while total > 16 and out:
-        excess = total - 16
+    while total > CAPACITY and out:
+        excess = total - CAPACITY
         last = out[-1]
         ld = int(last.get("duration", 0))
         if ld > excess:
@@ -1373,12 +1376,12 @@ def _fit_sixteen_divisions(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                     octv=int(last["octave"]),
                     triplet=bool(last.get("triplet")) and new_d <= 1,
                 )
-            total = 16
+            total = CAPACITY
             break
         out.pop()
         total -= ld
-    if total < 16:
-        out.append(_note_shape(16 - total, is_rest=True))
+    if total < CAPACITY:
+        out.append(_note_shape(CAPACITY - total, is_rest=True))
     return out
 
 
@@ -1475,7 +1478,7 @@ def _enforce_opening_rest(
         return out
     out.insert(0, _note_shape(2, is_rest=True))
     total = sum(int(n.get("duration", 0)) for n in out)
-    excess = total - 16
+    excess = total - CAPACITY
     while excess > 0 and out:
         last = out[-1]
         ld = int(last.get("duration", 0))
@@ -1604,7 +1607,7 @@ def _enforce_downbeat_consonance(
     out = [dict(n) for n in notes]
     out.insert(0, _note_shape(2, is_rest=True))
     total = sum(int(n.get("duration", 0)) for n in out)
-    excess = total - 16
+    excess = total - CAPACITY
     while excess > 0 and out:
         last = out[-1]
         ld = int(last.get("duration", 0))
@@ -1732,19 +1735,22 @@ def _enforce_monk_density(
     generation_seed: int,
 ) -> List[Dict[str, Any]]:
     """
-    If a bar has more than 5 pitched notes, replace every other pitched
+    If a bar has more than 8 pitched notes, replace every other pitched
     event starting from the 4th pitched note (index 3) with rests of the
-    same duration until at most 5 pitched notes remain.
+    same duration until at most 8 pitched notes remain.
+    Never removes so many pitched notes that fewer than 2 remain.
     """
     out = [dict(n) for n in notes]
     pit_ix = [i for i, n in enumerate(out) if not n.get("is_rest")]
-    if len(pit_ix) <= 5:
+    if len(pit_ix) <= 8:
         return out
     to_rest: set[int] = set()
     k = 3
-    while len(pit_ix) - len(to_rest) > 5 and k < len(pit_ix):
+    while len(pit_ix) - len(to_rest) > 8 and k < len(pit_ix):
         to_rest.add(pit_ix[k])
         k += 2
+    while to_rest and len(pit_ix) - len(to_rest) < 2:
+        to_rest.discard(max(to_rest))
     if not to_rest:
         return out
     for i in sorted(to_rest):
@@ -2013,7 +2019,7 @@ Rests: {{"pitch":"","octave":0,"alter":0,"duration":4,
 "dot":false,"is_chord":false}}
 
 All 8 bars must be present. Each bar must sum to
-exactly 16 divisions.
+exactly {CAPACITY} divisions.
 """
 
 
@@ -2081,7 +2087,7 @@ Rests: {{"pitch":"","octave":0,"alter":0,"duration":4,
 "dot":false,"is_chord":false}}
 
 All 32 bars must be present.
-Each bar must sum to exactly 16 divisions.
+Each bar must sum to exactly {CAPACITY} divisions.
 """
 
 
@@ -2110,7 +2116,7 @@ def _parse_section_json_to_bars(text: str) -> Optional[List[List[Dict[str, Any]]
         if not notes:
             return None
         notes = _fit_sixteen_divisions(notes)
-        if sum(int(x["duration"]) for x in notes) != 16:
+        if sum(int(x["duration"]) for x in notes) != CAPACITY:
             return None
         if not any(not x.get("is_rest") for x in notes):
             return None
@@ -2150,7 +2156,7 @@ def _parse_chorus_json_to_bars_partial(text: str) -> Dict[int, List[Dict[str, An
         if not notes:
             continue
         notes = _fit_sixteen_divisions(notes)
-        if sum(int(x["duration"]) for x in notes) != 16:
+        if sum(int(x["duration"]) for x in notes) != CAPACITY:
             continue
         if not any(not x.get("is_rest") for x in notes):
             continue
@@ -2437,7 +2443,7 @@ def generate_monk_chorus(
     if len(out) > 32:
         out = out[:32]
     while len(out) < 32:
-        out.append([_note_shape(16, is_rest=True)])
+        out.append([_note_shape(CAPACITY, is_rest=True)])
     _CHORUS_CACHE[cache_key] = [[dict(n) for n in bar] for bar in out]
     return out
 
@@ -2500,7 +2506,7 @@ def _generate_monk_phrase_via_claude(
         if not notes:
             return None
         notes = _fit_sixteen_divisions(notes)
-        if sum(int(x["duration"]) for x in notes) != 16:
+        if sum(int(x["duration"]) for x in notes) != CAPACITY:
             return None
         pitched = [x for x in notes if not x.get("is_rest")]
         if not pitched:

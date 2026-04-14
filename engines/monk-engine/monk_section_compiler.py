@@ -14,9 +14,9 @@ from monk_phrase_engine import (
 )
 
 DIVISIONS = 4
-CAPACITY = 16  # one 4/4 bar at divisions=4
+CAPACITY = 16  # one 4/4 bar at divisions=4; must match monk_musicxml_exporter.CAPACITY
 
-NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
+_LETTER_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
 _DEFAULT_CHORDS = ["Dm7", "G7", "Cmaj7"]
 
@@ -67,7 +67,7 @@ def _parse_root(sym: str) -> Tuple[str, int]:
 
 def _root_pc(sym: str) -> int:
     step, alt = _parse_root(sym)
-    pc = NOTE_TO_PC[step.lower()]
+    pc = _LETTER_PC[step]
     return (pc + alt) % 12
 
 
