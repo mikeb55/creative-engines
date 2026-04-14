@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import random
 import re as _re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from parker_rhythm_engine import (
     RHYTHM_TEMPLATES,
@@ -26,6 +28,9 @@ NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
 # Per (section, 4-bar phrase): last main pattern id and contour sign for alternation.
 _last_pattern_id: Dict[Tuple[int, int], str] = {}
 _last_contour_sign: Dict[Tuple[int, int], int] = {}
+
+# GCE (Claude): cache keyed by chord_sequence_hash + generation_seed (deterministic replay).
+_GCE_CACHE: Dict[str, List[Dict[str, Any]]] = {}
 
 
 def _phrase_group_key(section_index: int, bar_index: int) -> Tuple[int, int]:
@@ -416,7 +421,214 @@ def _pick_eighth_heavy_template(
     return top[(bar_index * 3 + generation_seed) % len(top)]
 
 
-def generate_parker_phrase(
+def _chord_sequence_hash(chord_symbols: List[str]) -> str:
+    seq = " | ".join(str(c).strip() for c in (chord_symbols or []) if c and str(c).strip())
+    if not seq:
+        seq = "?"
+    return hashlib.sha256(seq.encode("utf-8")).hexdigest()
+
+
+def _gce_cache_key(chord_symbols: List[str], generation_seed: int) -> str:
+    return f"{_chord_sequence_hash(chord_symbols)}:{generation_seed}"
+
+
+def _extract_json_array(text: str) -> Optional[str]:
+    if not text:
+        return None
+    s = text.strip()
+    fence = _re.search(r"```(?:json)?\s*(\[[\s\S]*?\])\s*```", s, _re.IGNORECASE)
+    if fence:
+        return fence.group(1).strip()
+    lo = s.find("[")
+    hi = s.rfind("]")
+    if lo < 0 or hi <= lo:
+        return None
+    return s[lo : hi + 1]
+
+
+def _coerce_float_alter(v: Any) -> float:
+    if v is None:
+        return 0.0
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _normalize_claude_note(obj: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(obj, dict):
+        return None
+    is_rest = bool(obj.get("is_rest"))
+    try:
+        dur = int(obj.get("duration", 0))
+    except (TypeError, ValueError):
+        return None
+    if dur < 1:
+        return None
+    triplet = bool(obj.get("triplet", False))
+    if is_rest:
+        return _note_shape(dur, is_rest=True, triplet=triplet)
+    pitch_raw = obj.get("pitch", "C")
+    step = str(pitch_raw).strip()
+    if not step:
+        step = "C"
+    step = step[0].upper()
+    if step.lower() not in NOTE_TO_PC:
+        return None
+    try:
+        octv = int(obj.get("octave", 4))
+    except (TypeError, ValueError):
+        octv = 4
+    alter = _coerce_float_alter(obj.get("alter", 0))
+    raw_midi = None
+    for m in range(12 * 5, 12 * 11):
+        s, al, o = _spell_pitch(m)
+        if s == step and abs(al - alter) < 0.01 and o == octv:
+            raw_midi = m
+            break
+    if raw_midi is None:
+        pc = (NOTE_TO_PC[step.lower()] + int(round(alter))) % 12
+        raw_midi = 12 * (octv + 1) + pc
+    raw_midi = max(_MIDI_LO, min(_MIDI_HI, int(raw_midi)))
+    step, alter, octv = _spell_pitch(raw_midi)
+    return _note_shape(dur, is_rest=False, step=step, alter=alter, octv=octv, triplet=triplet)
+
+
+def _fit_sixteen_divisions(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    out = [dict(n) for n in notes if isinstance(n, dict)]
+    total = sum(int(n.get("duration", 0)) for n in out)
+    while total > 16 and out:
+        excess = total - 16
+        last = out[-1]
+        ld = int(last.get("duration", 0))
+        if ld > excess:
+            new_d = ld - excess
+            is_r = bool(last.get("is_rest"))
+            if is_r:
+                out[-1] = _note_shape(new_d, is_rest=True, triplet=bool(last.get("triplet")))
+            else:
+                out[-1] = _note_shape(
+                    new_d,
+                    is_rest=False,
+                    step=str(last["pitch"]),
+                    alter=float(last.get("alter", 0.0)),
+                    octv=int(last["octave"]),
+                    triplet=bool(last.get("triplet")) and new_d <= 1,
+                )
+            total = 16
+            break
+        out.pop()
+        total -= ld
+    if total < 16:
+        out.append(_note_shape(16 - total, is_rest=True))
+    return out
+
+
+def _build_claude_prompt(
+    chord_symbols: List[str],
+    phrase_role: str,
+    start_pitch: int,
+    generation_seed: int,
+    section_index: int,
+    bar_index: int,
+) -> str:
+    seq = " | ".join(str(c).strip() for c in (chord_symbols or []) if c and str(c).strip())
+    if not seq:
+        seq = "Cmaj7"
+    bar_in_section = bar_index % 8
+    return f"""You are generating one 4/4 bar of Charlie Parker (Bird) alto saxophone melody as MusicXML-oriented note data.
+
+Chord sequence (harmonic context for this bar; play through these changes in order across the bar as appropriate): {seq}
+
+Phrase role: {phrase_role} (e.g. opening/launch, continuation, ending, turnaround — interpret musically).
+
+Section index (0-based 8-bar sections): {section_index}. Bar index within tune: {bar_index}. Bar within 8-bar section: {bar_in_section}.
+
+Register hint: prefer staying near MIDI pitch {start_pitch} (alto range), but keep all notes in MIDI range 58–82 inclusive.
+
+Style requirements (Bird / bebop):
+- At least 90% of attacked (non-rest) notes should be eighth-note length at this metric level (duration 2 in the schema below; quarter = 4, half = 8).
+- Use chromatic approach notes, enclosures around chord tones, and bebop-scale style passing tones.
+- Include triplet punctuation on some eighth-groupings when it fits (set triplet true on those notes; not every note).
+- Aim for triplet punctuation roughly every 2–4 bars — this bar index is {bar_index}; use triplets here if (bar_index % 3) == 0, otherwise sparse triplets only if musical.
+- Include short rests for breathing (is_rest true).
+
+Output: ONLY a JSON array (no prose, no markdown fences). Each element must be exactly:
+{{"pitch":"D","octave":4,"alter":0,"duration":2,"type":"eighth","is_rest":false,"triplet":false,"dot":false,"is_chord":false}}
+
+Rules:
+- pitch: letter A–G only (use alter for accidentals).
+- duration: integer in divisions where quarter note = 4 (so eighth = 2). The sum of all durations in the array must equal exactly 16 (one 4/4 bar).
+- type: one of whole, half, quarter, eighth (match duration).
+- is_rest: boolean; rests still need pitch/octave/alter placeholders (use middle C defaults) or use pitch C octave 4 alter 0 for rests.
+
+Deterministic id: generation_seed={generation_seed} — honor phrasing consistency with this seed.
+"""
+
+
+def _claude_response_text(response: Any) -> str:
+    blocks = getattr(response, "content", None) or []
+    parts: List[str] = []
+    for b in blocks:
+        t = getattr(b, "text", None)
+        if t:
+            parts.append(str(t))
+    return "".join(parts)
+
+
+def _generate_parker_phrase_via_claude(
+    chord_symbols: List[str],
+    phrase_role: str,
+    start_pitch: int,
+    generation_seed: int,
+    section_index: int,
+    bar_index: int,
+) -> Optional[List[Dict[str, Any]]]:
+    try:
+        import anthropic
+    except ImportError:
+        return None
+    prompt = _build_claude_prompt(
+        chord_symbols,
+        phrase_role,
+        start_pitch,
+        generation_seed,
+        section_index,
+        bar_index,
+    )
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw_text = _claude_response_text(response)
+        js = _extract_json_array(raw_text)
+        if not js:
+            return None
+        data = json.loads(js)
+        if not isinstance(data, list):
+            return None
+        notes: List[Dict[str, Any]] = []
+        for item in data:
+            n = _normalize_claude_note(item)
+            if n:
+                notes.append(n)
+        if not notes:
+            return None
+        notes = _fit_sixteen_divisions(notes)
+        if sum(int(x["duration"]) for x in notes) != 16:
+            return None
+        pitched = [x for x in notes if not x.get("is_rest")]
+        if not pitched:
+            return None
+        return notes
+    except Exception:
+        return None
+
+
+def _generate_parker_phrase_deterministic(
     chord_symbols: List[str],
     phrase_role: str,
     start_pitch: int,
@@ -424,10 +636,6 @@ def generate_parker_phrase(
     section_index: int = 0,
     bar_index: int = 0,
 ) -> Tuple[List[Dict[str, Any]], int]:
-    """
-    Build one bar of notes plus carried register.
-    Note dicts match parker_section_compiler / exporter expectations.
-    """
     rng = random.Random(generation_seed)
     chord = chord_symbols[0] if chord_symbols else "Cmaj7"
     nxt = chord_symbols[1] if len(chord_symbols) > 1 else ""
@@ -558,5 +766,57 @@ def generate_parker_phrase(
     attacks = [n for n in notes if not n.get("is_rest")]
     if attacks:
         prev_midi = _midi_from_note_dict(attacks[-1])
+    else:
+        prev_midi = start_pitch
 
     return notes, prev_midi
+
+
+def generate_parker_phrase(
+    chord_symbols: List[str],
+    phrase_role: str,
+    start_pitch: int,
+    generation_seed: int,
+    section_index: int = 0,
+    bar_index: int = 0,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Build one bar of notes plus carried register using Claude (GCE) when available,
+    else deterministic vocabulary/rhythm. Note dicts match parker_section_compiler.
+
+    Primary melody output is the note list; return value includes carried MIDI register
+    for the next bar (parker_section_compiler contract).
+    """
+    key = _gce_cache_key(chord_symbols, generation_seed)
+    gce_notes: Optional[List[Dict[str, Any]]] = _GCE_CACHE.get(key)
+
+    if gce_notes is None:
+        gce_notes = _generate_parker_phrase_via_claude(
+            chord_symbols,
+            phrase_role,
+            start_pitch,
+            generation_seed,
+            section_index,
+            bar_index,
+        )
+        if gce_notes is not None:
+            _GCE_CACHE[key] = [dict(n) for n in gce_notes]
+
+    if gce_notes is not None:
+        notes = [dict(n) for n in gce_notes]
+        notes = _maybe_half_note_bar_end(notes, bar_index)
+        attacks = [n for n in notes if not n.get("is_rest")]
+        if attacks:
+            next_pitch = _midi_from_note_dict(attacks[-1])
+        else:
+            next_pitch = start_pitch
+        return notes, next_pitch
+
+    return _generate_parker_phrase_deterministic(
+        chord_symbols,
+        phrase_role,
+        start_pitch,
+        generation_seed,
+        section_index,
+        bar_index,
+    )
