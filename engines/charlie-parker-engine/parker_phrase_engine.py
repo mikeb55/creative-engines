@@ -204,6 +204,46 @@ PARKER_CONCRETE_PHRASES = {
             ],
         },
     ],
+    "iiø-V": [
+        {
+            "source": "confirmation",
+            "chord_context": "Em7b5 → A7",
+            "entry_degree": "b3",
+            "exit_degree": "b9",
+            "contour": "descending",
+            "intervals": [-1, -2, -1, -2, 1, -1, -2, -1],
+            "notes": [
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 5, "alter": 1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "D", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 4, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+    ],
+    "interior-tonic": [
+        {
+            "source": "ornithology",
+            "chord_context": "Fmaj7 (tonic)",
+            "entry_degree": "9",
+            "exit_degree": "3",
+            "contour": "descending",
+            "intervals": [-1, -2, 1, -1, -2, -1, -2, 1],
+            "notes": [
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 5, "alter": 1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": 0, "duration": 4, "type": "quarter", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "D", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+    ],
     "V-I": [
         {
             "source": "ko-ko",
@@ -817,6 +857,16 @@ def _build_rhythm_skeleton(
     pr = (phrase_role or "").strip().lower()
     if pr == "turnaround" or pr == "turn":
         return ["eighth"] * 8
+    if pr == "interior":
+        slot = generation_seed % 3  # 0,1,2
+        if slot == 0:
+            # quarter on beat 3 (slot 4)
+            return ["eighth", "eighth", "eighth", "eighth", "quarter", "eighth", "eighth"]
+        if slot == 1:
+            # quarter on beat 2 (slot 2)
+            return ["eighth", "eighth", "quarter", "eighth", "eighth", "eighth", "eighth"]
+        # two quarters: beats 2 and 4
+        return ["eighth", "eighth", "quarter", "eighth", "quarter", "eighth", "eighth"]
     if pr == "launch" or pr == "opening":
         return ["eighth_rest"] + ["eighth"] * 7
     if (bar_index % 4) == 3 or pr == "cadence":
@@ -921,8 +971,10 @@ def _retrieve_concrete_phrases(function_tag: str, n: int = 1) -> list[dict]:
     """
     key_map = {
         "ii in ii-V-I": "ii-V",
+        "iiø in iiø-V": "iiø-V",
         "V in ii-V-I": "V-I",
-        "I (tonic resolution)": "V-I",
+        "interior-tonic": "interior-tonic",
+        "I (tonic resolution)": "interior-tonic",
         "turnaround chain": "turnaround",
         "turnaround": "turnaround",
     }
@@ -1066,8 +1118,8 @@ def _patch_unison_runs(
 
 def _cap_unison_frequency(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    If unison intervals exceed 5% of all consecutive pitched intervals,
-    raise every unison pair beyond the first by +1 semitone (58–82).
+    If unison intervals exceed 3% of all consecutive pitched intervals,
+    detune every unison pair beyond the first with alternating +/- 1 semitone.
     """
     out = [dict(n) for n in notes]
     idxs = [i for i, n in enumerate(out) if not n.get("is_rest")]
@@ -1079,12 +1131,13 @@ def _cap_unison_frequency(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         i0, i1 = idxs[k], idxs[k + 1]
         if _midi_from_note_dict(out[i0]) == _midi_from_note_dict(out[i1]):
             uni_second.append(i1)
-    if uni_second and total_iv > 0 and (len(uni_second) / total_iv) > 0.05:
+    if uni_second and total_iv > 0 and (len(uni_second) / total_iv) > 0.03:
         for j, note_i in enumerate(uni_second):
             if j <= 0:
                 continue
             n = out[note_i]
-            m = _midi_from_note_dict(n) + 1
+            delta = 1 if (j % 2) == 0 else -1
+            m = _midi_from_note_dict(n) + delta
             m = max(_MIDI_LO, min(_MIDI_HI, m))
             s, al, oc = _spell_pitch(m)
             d = int(n["duration"])
@@ -1344,7 +1397,7 @@ def _build_section_prompt(
     )
     concrete_lines: List[str] = []
     for i in range(0, 8, 2):
-        if len(concrete_lines) >= 2:
+        if len(concrete_lines) >= 3:
             break
         pair_tags = function_tags[i : i + 2]
         dominant_pair_tag = Counter(pair_tags).most_common(1)[0][0]
