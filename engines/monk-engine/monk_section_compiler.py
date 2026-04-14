@@ -59,6 +59,7 @@ def _slash_bass(sym: str) -> str | None:
 
 
 def _midi_for_interval(sym: str, interval_from_root: int, bar_seed: int) -> int:
+    """Melody register only; `sym` is the chord symbol at concert pitch (no transposition)."""
     pc = _root_pc(sym)
     base = 60 + ((pc - (60 % 12) + 12) % 12)
     midi = base + interval_from_root
@@ -229,12 +230,15 @@ def compile_monk_composition(
         provided = False
     else:
         seq = stripped[:64]
+        # Non-empty caller list: one bar per chord symbol (concert pitch; no transposition).
         total_bars = min(64, len(seq))
 
     if total_bars < 1:
         total_bars = 1
         seq = list(_DEFAULT_CHORDS)
         provided = False
+
+    print(f"DEBUG: len(seq)={len(seq)} total_bars={total_bars} provided={provided}")
 
     bars_out: List[Dict[str, Any]] = []
     start_pitch = 67

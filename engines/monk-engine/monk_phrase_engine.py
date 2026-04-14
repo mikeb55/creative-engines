@@ -1185,19 +1185,42 @@ def _append_motif_bar(notes: List[Dict[str, Any]], bar_index: int) -> None:
         _CHORUS_MOTIF = _extract_motif(flat)
 
 
+_SKEL_TOKEN_DIVS: Dict[str, int] = {
+    "quarter": 4,
+    "half": 8,
+    "whole": 16,
+    "eighth": 2,
+    "quarter_rest": 4,
+    "eighth_rest": 2,
+    "half_rest": 8,
+    # Prompt-only "rest" slot in a bar: treat as one beat (quarter) at divisions=4.
+    "rest": 4,
+}
+
+
+def _rhythm_skeleton_division_sum(skel: List[str]) -> int:
+    total = 0
+    for tok in skel:
+        key = (tok or "").strip().lower()
+        total += _SKEL_TOKEN_DIVS.get(key, 0)
+    return total
+
+
 def _build_rhythm_skeleton(
     bar_index: int,
     phrase_role: str,
 ) -> List[str]:
-    """Monk uses quarters and halves, not eighths."""
+    """Rhythm slots for GCE prompts; must sum to CAPACITY (16) at divisions=4."""
     pr = (phrase_role or "").strip().lower()
     if pr in ("opening", "launch") or bar_index in (0, 8, 16, 24):
-        return ["quarter_rest", "quarter", "quarter", "quarter"]
-    if bar_index % 4 == 3:
-        return ["quarter", "quarter", "half"]
-    if bar_index % 3 == 0:
-        return ["half", "rest", "quarter", "rest"]
-    return ["quarter", "quarter", "quarter", "quarter"]
+        sk: List[str] = ["quarter_rest", "quarter", "quarter", "quarter"]
+    elif bar_index % 4 == 3:
+        sk = ["quarter", "quarter", "half"]
+    else:
+        sk = ["quarter", "quarter", "quarter", "quarter"]
+    if _rhythm_skeleton_division_sum(sk) != CAPACITY:
+        sk = ["quarter", "quarter", "quarter", "quarter"]
+    return sk
 
 
 def _prompt_variant_hash(
@@ -1258,7 +1281,8 @@ def _motif_line_for_bar_index(bar_index: int) -> str:
     m = _CHORUS_MOTIF
     return (
         f'Motif to reuse or vary: interval sequence {m["intervals"]}, '
-        f'rhythm {m["rhythm"]}. Transpose to fit current chord. '
+        f'rhythm {m["rhythm"]}. Adapt the shape to the current chord at concert pitch '
+        "(do not relabel or transpose chord symbols). "
         "You may displace by 1-2 eighths or invert the contour."
     )
 
@@ -1524,6 +1548,7 @@ def _enforce_cadence_half(
         return out
     m = _midi_from_note_dict(n4)
     s, al, oc = _spell_pitch(m)
+    # divisions=4: half note = 8 divisions (quarter=4, eighth=2).
     half = _note_shape(8, is_rest=False, step=s, alter=al, octv=oc, triplet=False)
     return out[:4] + [half] + out[8:]
 
@@ -1536,8 +1561,8 @@ def _enforce_long_note_consonance(
     chord_kind: str,
 ) -> List[Dict[str, Any]]:
     """
-    Any note longer than an eighth (duration >= 4)
-    must be a strict chord tone.
+    Any note longer than an eighth (duration >= 4 at divisions=4: quarter+;
+    half notes use duration 8) must be a strict chord tone.
     If not, find the nearest strict chord tone
     within ±2 semitones and shift to it.
     Preserves all rhythm and duration values.
@@ -1952,10 +1977,10 @@ def _build_concrete_phrase_block(
                 f"Real Monk phrase over {p.get('chord_context', 'unknown context')}\n"
                 f"(entry: {p.get('entry_degree', '?')}, contour: {p.get('contour', '?')}):\n"
                 f"Interval sequence: {p.get('intervals', [])}\n"
-                "Note sequence (transpose to match your chord):\n"
+                "Note sequence (adapt pitches to your chord at concert pitch):\n"
                 f"{notes_preview}\n"
                 "Echo this shape and vocabulary. Do not copy literally —\n"
-                "transpose to your chord context and vary the rhythm."
+                "match the printed chord symbols; vary the rhythm."
             )
             if len(concrete_lines) >= max_examples:
                 break
@@ -2713,7 +2738,8 @@ def generate_monk_phrase(
         m = _CHORUS_MOTIF
         motif_line = (
             f'Motif to reuse or vary: interval sequence {m["intervals"]}, '
-            f'rhythm {m["rhythm"]}. Transpose to fit current chord. '
+            f'rhythm {m["rhythm"]}. Adapt the shape to the current chord at concert pitch '
+            "(do not relabel or transpose chord symbols). "
             "You may displace by 1-2 eighths or invert the contour."
         )
     pr_rhythm = phrase_role
