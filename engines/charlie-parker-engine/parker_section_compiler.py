@@ -5,7 +5,12 @@ from __future__ import annotations
 import re as _re
 from typing import Any, Dict, List, Tuple
 
-from parker_phrase_engine import detect_harmonic_context, generate_parker_phrase
+from parker_phrase_engine import (
+    _midi_from_note_dict,
+    detect_harmonic_context,
+    generate_parker_phrase,
+    generate_parker_section,
+)
 
 DIVISIONS = 4
 CAPACITY = 16  # one 4/4 bar at divisions=4
@@ -203,6 +208,21 @@ def _phrase_role_for_bar(bar_idx: int, total_bars: int) -> str:
     return "continuation"
 
 
+def _section_label_for_block(bar_start: int, song_form: str, total_bars: int) -> str:
+    """Labels for 8-bar GCE blocks; AABA 32-bar uses A1/A2/B/A3."""
+    sf = (song_form or "aaba").strip().lower()
+    if sf == "aaba" and total_bars >= 32:
+        if bar_start == 0:
+            return "A1"
+        if bar_start == 8:
+            return "A2"
+        if bar_start == 16:
+            return "B"
+        if bar_start == 24:
+            return "A3"
+    return f"S{bar_start // 8 + 1}"
+
+
 def compile_parker_composition(
     title: str,
     chord_sequence: List[str],
@@ -232,7 +252,55 @@ def compile_parker_composition(
 
     bars_out: List[Dict[str, Any]] = []
     start_pitch = 67
-    for bar_idx in range(total_bars):
+    bar_idx = 0
+    while bar_idx < total_bars:
+        remaining = total_bars - bar_idx
+        if remaining >= 8:
+            label = _section_label_for_block(bar_idx, sf, total_bars)
+            ch8 = [seq[(bar_idx + i) % len(seq)] for i in range(8)]
+            eight = generate_parker_section(
+                ch8,
+                label,
+                bar_idx,
+                seed,
+                total_bars=total_bars,
+                start_pitch=start_pitch,
+            )
+            for j in range(8):
+                b = bar_idx + j
+                chord = seq[b % len(seq)]
+                nxt = seq[(b + 1) % len(seq)]
+                nn = seq[(b + 2) % len(seq)]
+                hctx = detect_harmonic_context(chord, nxt, nn)
+                notes = eight[j]
+
+                notes = _fill_bar_capacity(notes)
+                pitched = [n for n in notes if not n.get("is_rest")]
+                if not pitched:
+                    half = min(8, CAPACITY)
+                    pat0 = 0
+                    midi = _midi_for_interval(chord, pat0, seed + b)
+                    step, alter, octv = _spell_pitch(midi)
+                    notes = [_note_shape(half, is_rest=False, step=step, alter=alter, octv=octv)]
+                    if half < CAPACITY:
+                        notes.append(_note_shape(CAPACITY - half, is_rest=True))
+
+                bars_out.append(
+                    {
+                        "bar_number": b + 1,
+                        "chord": chord,
+                        "chord_function": hctx,
+                        "notes": notes,
+                        "bass_note": _slash_bass(chord),
+                    }
+                )
+            last_notes = eight[-1]
+            lp = [n for n in last_notes if not n.get("is_rest")]
+            if lp:
+                start_pitch = _midi_from_note_dict(lp[-1])
+            bar_idx += 8
+            continue
+
         chord = seq[bar_idx % len(seq)]
         nxt = seq[(bar_idx + 1) % len(seq)]
         nn = seq[(bar_idx + 2) % len(seq)]
@@ -272,6 +340,7 @@ def compile_parker_composition(
                 "bass_note": _slash_bass(chord),
             }
         )
+        bar_idx += 1
 
     return {
         "title": title,
