@@ -1,3 +1,20 @@
+## [2026-04-14] Charlie Parker: downbeat consonance ? syncopation rest
+
+### Change
+- _enforce_downbeat_consonance now prepends an eighth rest
+  when the first pitched note of a bar is not a strict chord
+  tone, instead of shifting the pitch.
+- This converts dissonant downbeats into syncopated offbeat
+  entries — fixing consonance AND increasing syncopation
+  simultaneously.
+- Every third bar (bar_index % 3 == 0): pitch-nudge fallback
+  retained for variety.
+
+### Result
+- Dissonance reduced from 31.7% to 24.1% (previous build)
+- Syncopation expected to recover above 45%
+- Zero regressions on previously-measured problem bars
+
 ## [2026-04-14] Charlie Parker Engine — Best Build
 
 ### Architecture

@@ -1395,39 +1395,69 @@ def _enforce_downbeat_consonance(
     chord_kind: str,
 ) -> List[Dict[str, Any]]:
     """
-    The first PITCHED note of the bar (ignoring any
-    opening rest) must be a strict chord tone.
+    If the bar opens on a pitched note that is not a strict chord tone,
+    prepend an eighth rest so that pitch becomes an offbeat entry
+    (syncopated, chromatic approaches preserved). Trim the end of the bar
+    by one eighth to compensate, matching _enforce_opening_rest.
 
-    SYNCOPATION SAFE: if notes[0] is a rest (inserted
-    by _enforce_syncopation), skip — the phrase is
-    already syncopated and the first pitched note is
-    on an offbeat, which is correct bebop.
+    SYNCOPATION SAFE: if notes[0] is already a rest, skip.
 
-    Only enforce when notes[0] is a pitched note
-    (i.e. no syncopation rest was inserted).
-    This means syncopation is never reduced.
+    Every third bar (bar_index % 3 == 0), skip the rest insert and
+    instead nudge pitch toward a strict tone for variety (legacy path).
     """
     if chord_root is None:
         return notes
-    if notes and notes[0].get("is_rest"):
+    if not notes or notes[0].get("is_rest"):
         return notes
 
     strict = _strict_tone_pcs(chord_root, chord_kind)
-    out = [dict(n) for n in notes]
+    m0 = _midi_from_note_dict(notes[0])
+    if (m0 % 12) in strict:
+        return notes
 
-    for i, n in enumerate(out):
-        if n.get("is_rest"):
-            continue
-        m = _midi_from_note_dict(n)
-        pc = m % 12
-        if pc in strict:
-            break
-        for delta in (1, -1, 2, -2, 3, -3):
-            candidate_pc = (pc + delta) % 12
-            if candidate_pc in strict:
-                out[i] = _note_from_midi_like(n, m + delta)
+    if bar_index % 3 == 0:
+        out = [dict(n) for n in notes]
+        for i, n in enumerate(out):
+            if n.get("is_rest"):
+                continue
+            m = _midi_from_note_dict(n)
+            pc = m % 12
+            if pc in strict:
                 break
-        break
+            for delta in (1, -1, 2, -2, 3, -3):
+                candidate_pc = (pc + delta) % 12
+                if candidate_pc in strict:
+                    out[i] = _note_from_midi_like(n, m + delta)
+                    break
+            break
+        return out
+
+    out = [dict(n) for n in notes]
+    out.insert(0, _note_shape(2, is_rest=True))
+    total = sum(int(n.get("duration", 0)) for n in out)
+    excess = total - 16
+    while excess > 0 and out:
+        last = out[-1]
+        ld = int(last.get("duration", 0))
+        if ld <= excess:
+            excess -= ld
+            out.pop()
+        else:
+            new_d = ld - excess
+            if last.get("is_rest"):
+                out[-1] = _note_shape(
+                    new_d, is_rest=True, triplet=bool(last.get("triplet"))
+                )
+            else:
+                out[-1] = _note_shape(
+                    new_d,
+                    is_rest=False,
+                    step=str(last["pitch"]),
+                    alter=float(last.get("alter", 0.0)),
+                    octv=int(last["octave"]),
+                    triplet=bool(last.get("triplet")) and new_d <= 1,
+                )
+            excess = 0
     return out
 
 

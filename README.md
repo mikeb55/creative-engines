@@ -55,21 +55,35 @@ V4.6
 Generates Charlie Parker-style bebop melodies over chord changes using the Claude API.
 
 ### Architecture
-- **Generation unit:** 8-bar sections (A1/A2/B/A3) per Claude API call
+- **Generation unit:** Full 32-bar chorus in single GCE call, fallback to 8-bar sections
 - **GCE prompt:** Bird-specific rules — anticipation, offbeat starts, ii-V-I entry/exit degrees, leap+compensation, turnaround chains
-- **RAG:** 10 abstract Parker phrase templates + concrete note sequences from 8 real transcriptions
-- **Validators:** 5 post-generation Python validators enforce structural correctness
 - **Temperature:** 1.2
-- **Fallback:** Deterministic vocabulary-based generation if API fails
+- **System prompt:** "You are Charlie Parker's fingers on the alto saxophone"
+- **RAG:** 10 abstract Parker phrase templates + concrete note sequences from 8 transcriptions
+- **Transcriptions:** Ko-Ko, Anthropology, Donna Lee, Now's The Time, Billie's Bounce, Ornithology, Confirmation, Lou Donaldson (Birdland 1954)
 
-### Transcriptions used
-Ko-Ko, Anthropology, Donna Lee, Now's The Time, Billie's Bounce, Ornithology, Confirmation, Lou Donaldson solo (Birdland 1954)
+### Post-generation Validators (in order)
+1. _patch_unison_runs — eliminates clusters of 3+ identical consecutive pitches
+2. _cap_unison_frequency — caps unisons at 3% of all intervals
+3. _enforce_opening_rest — section openings (bars 1/9/17/25) start on rest
+4. _enforce_syncopation — 40%+ of interior bars start on offbeat
+5. _enforce_midphrase_quarter — quarter note landings mid-phrase (~50% of interior bars)
+6. _enforce_cadence_quarter — every 4th bar has quarter note or longer
+7. _enforce_long_note_consonance — notes longer than eighth must be strict chord tones
+8. _enforce_downbeat_consonance — non-chord-tone on beat 1 ? syncopation rest inserted
+9. _enforce_no_chord_contradictions — removes mode-contradicting notes from long values
+10. _fit_sixteen_divisions — bar length integrity
 
-### Usage
-From Composer OS desktop app: Charlie Parker card ? enter title + chords ? Generate
+### Key metrics (best build)
+- Syncopation: 53.6% of interior bars
+- Leaps ?5 semitones: 13.3%
+- Rests: 13.2% (target 12-15%)
+- Unison clusters: 0
+- Overall dissonance: 24.1% (down from 31.7%)
+- Downbeat dissonance: eliminated on 10/12 previously flagged bars
 
 ### Key files
-- parker_phrase_engine.py — GCE integration, RAG templates, validators
-- parker_section_compiler.py — 8-bar section orchestration
+- parker_phrase_engine.py — GCE integration, RAG templates, all validators
+- parker_section_compiler.py — chorus/section orchestration
 - parker_vocabulary.py — interval patterns from transcriptions
 - parker_musicxml_exporter.py — MusicXML output
