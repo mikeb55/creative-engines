@@ -145,6 +145,19 @@ def _time_modification_xml(n: Dict[str, Any]) -> str:
     return ""
 
 
+def _duration_type_for_xml(n: Dict[str, Any]) -> Tuple[int, str]:
+    """MusicXML requires <duration> and <type> on every note; default quarter if missing."""
+    raw = n.get("duration")
+    try:
+        dur = int(raw) if raw is not None else 4
+    except (TypeError, ValueError):
+        dur = 4
+    if dur < 1:
+        dur = 4
+    typ = str(n.get("type") or "quarter").strip() or "quarter"
+    return dur, typ
+
+
 def _notations_articulations_xml(n: Dict[str, Any]) -> str:
     raw = n.get("articulations")
     if not isinstance(raw, list) or not raw:
@@ -163,8 +176,7 @@ def _notations_articulations_xml(n: Dict[str, Any]) -> str:
 
 
 def _note_xml(n: Dict[str, Any]) -> str:
-    dur = int(n["duration"])
-    typ = str(n.get("type", "quarter"))
+    dur, typ = _duration_type_for_xml(n)
     dot = bool(n.get("dot", False))
     dot_tag = "<dot/>" if dot else ""
     tm = _time_modification_xml(n)

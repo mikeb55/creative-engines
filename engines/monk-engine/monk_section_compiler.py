@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple
 
 from monk_phrase_engine import (
     _midi_from_note_dict,
+    _root_pc,
     detect_harmonic_context,
     generate_monk_chorus,
     generate_monk_phrase,
@@ -15,8 +16,6 @@ from monk_phrase_engine import (
 
 DIVISIONS = 4
 CAPACITY = 16  # one 4/4 bar at divisions=4; must match monk_musicxml_exporter.CAPACITY
-
-_LETTER_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
 _DEFAULT_CHORDS = ["Dm7", "G7", "Cmaj7"]
 
@@ -49,26 +48,6 @@ def chord_function(sym: str) -> str:
     if lower.endswith("7") and "maj" not in lower and "m7" not in lower:
         return "V"
     return "tonic"
-
-
-def _parse_root(sym: str) -> Tuple[str, int]:
-    left = sym.split("/")[0].strip()
-    m = _re.match(r"^([A-Ga-g])([#b♯♭]?)", left)
-    if not m:
-        return "C", 0
-    step = m.group(1).upper()
-    acc = m.group(2) or ""
-    if acc in ("#", "♯"):
-        return step, 1
-    if acc in ("b", "♭"):
-        return step, -1
-    return step, 0
-
-
-def _root_pc(sym: str) -> int:
-    step, alt = _parse_root(sym)
-    pc = _LETTER_PC[step]
-    return (pc + alt) % 12
 
 
 def _slash_bass(sym: str) -> str | None:
@@ -237,16 +216,19 @@ def compile_monk_composition(
       bass_note.
     """
     seq = [str(c).strip() for c in (chord_sequence or []) if c and str(c).strip()]
-    if not seq:
-        seq = list(_DEFAULT_CHORDS)
-    seq = seq[:64]
 
     sf = (song_form or "aaba").strip().lower()
     if sf not in _FORM_TARGET_BARS:
         sf = "aaba"
     form_target = _FORM_TARGET_BARS[sf]
-    # len(chord_sequence) sets minimum length; extend up to song-form length by cycling; cap 64.
-    total_bars = min(64, max(len(seq), form_target))
+
+    if not seq:
+        seq = list(_DEFAULT_CHORDS)
+        total_bars = min(64, form_target)
+    else:
+        seq = seq[:64]
+        total_bars = min(64, len(seq))
+
     if total_bars < 1:
         total_bars = 1
         seq = list(_DEFAULT_CHORDS)

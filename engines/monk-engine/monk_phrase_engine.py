@@ -7,6 +7,7 @@ import hashlib
 import json
 import random
 import re as _re
+import unicodedata as _ud
 from typing import Any, Dict, List, Optional, Tuple
 
 from monk_rhythm_engine import (
@@ -27,6 +28,7 @@ _MIDI_LO = 58
 _MIDI_HI = 82
 
 NOTE_TO_PC = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}
+# Natural letter → PC; accidentals from _parse_root. Bb = B(11) + flat(-1) ≡ 10 (mod 12).
 _LETTER_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
 # Per (section, 4-bar phrase): last main pattern id and contour sign for alternation.
@@ -703,6 +705,8 @@ def detect_harmonic_context(
 
 def _parse_root(sym: str) -> Tuple[str, int]:
     left = sym.split("/")[0].strip()
+    left = _ud.normalize("NFKC", left)
+    left = left.lstrip("\ufeff\u200b\u200c\u200d")
     m = _re.match(r"^([A-Ga-g])([#b♯♭]?)", left)
     if not m:
         return "C", 0
