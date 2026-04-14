@@ -165,6 +165,105 @@ PARKER_RAG_TEMPLATES = [
     },
 ]
 
+PARKER_CONCRETE_PHRASES = {
+    "ii-V": [
+        {
+            "source": "ko-ko",
+            "chord_context": "Am7 → D7",
+            "entry_degree": "5th",
+            "exit_degree": "maj7",
+            "contour": "descending",
+            "intervals": [-2, -2, 4, 3, 4, -1, -1, -1, -1, -3, -4, -3, 10, -4],
+            "notes": [
+                {"pitch": "E", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "D", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": True, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": True, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 5, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+        {
+            "source": "ko-ko",
+            "chord_context": "Dm7 → G7",
+            "entry_degree": "5th",
+            "exit_degree": "maj7",
+            "contour": "descending",
+            "intervals": [-2, -2, 4, 3, 4, -1, -1, -1, -1, -3, -4, -3, 10, -4],
+            "notes": [
+                {"pitch": "A", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": True, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 6, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": True, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 6, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 6, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "D", "octave": 6, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+    ],
+    "V-I": [
+        {
+            "source": "ko-ko",
+            "chord_context": "D7 → Gmaj7",
+            "entry_degree": "11th",
+            "exit_degree": "5th",
+            "contour": "descending",
+            "intervals": [-3, -4, -3, 10, -4, -3, -4, 10, 1, 1, 1, -3, 1, -5],
+            "notes": [
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 4, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+        {
+            "source": "ko-ko",
+            "chord_context": "G7 → Cmaj7",
+            "entry_degree": "root",
+            "exit_degree": "5th",
+            "contour": "descending",
+            "intervals": [-4, -4, -4, 2, -4, -3, 5, -3, 3, 2, 2, 3, -2, -1],
+            "notes": [
+                {"pitch": "G", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 5, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "D", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+    ],
+    "turnaround": [
+        {
+            "source": "billies-bounce",
+            "chord_context": "D → G7 (I-V turnaround)",
+            "entry_degree": "root",
+            "exit_degree": "11th",
+            "contour": "descending",
+            "intervals": [-2, -1, -2, -2, -1, -2, -1, -1, -2, -1, 3, 4, 3, -2],
+            "notes": [
+                {"pitch": "D", "octave": 5, "alter": 0, "duration": 4, "type": "quarter", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "C", "octave": 5, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "B", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "A", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "G", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "F", "octave": 4, "alter": 1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 4, "alter": 0, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+                {"pitch": "E", "octave": 4, "alter": -1, "duration": 2, "type": "eighth", "is_rest": False, "triplet": False, "dot": False, "is_chord": False},
+            ],
+        },
+    ],
+}
+
 
 def _phrase_group_key(section_index: int, bar_index: int) -> Tuple[int, int]:
     return (section_index, bar_index // 4)
@@ -815,6 +914,30 @@ def _retrieve_parker_templates(
     return matches[:n]
 
 
+def _retrieve_concrete_phrases(function_tag: str, n: int = 1) -> list[dict]:
+    """
+    Maps function_tag to PARKER_CONCRETE_PHRASES key and
+    returns up to n concrete phrase examples.
+    """
+    key_map = {
+        "ii in ii-V-I": "ii-V",
+        "V in ii-V-I": "V-I",
+        "I (tonic resolution)": "V-I",
+        "turnaround chain": "turnaround",
+        "turnaround": "turnaround",
+    }
+    key = key_map.get(function_tag)
+    if not key:
+        low = function_tag.lower()
+        for k in PARKER_CONCRETE_PHRASES:
+            if k.lower() in low:
+                key = k
+                break
+    if not key:
+        return []
+    return PARKER_CONCRETE_PHRASES.get(key, [])[:n]
+
+
 def _coerce_float_alter(v: Any) -> float:
     if v is None:
         return 0.0
@@ -943,8 +1066,8 @@ def _patch_unison_runs(
 
 def _cap_unison_frequency(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    If unison intervals exceed 8% of all consecutive pitched intervals,
-    raise every second unison pair's second note by +1 semitone (58–82).
+    If unison intervals exceed 5% of all consecutive pitched intervals,
+    raise every unison pair beyond the first by +1 semitone (58–82).
     """
     out = [dict(n) for n in notes]
     idxs = [i for i, n in enumerate(out) if not n.get("is_rest")]
@@ -956,9 +1079,9 @@ def _cap_unison_frequency(notes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         i0, i1 = idxs[k], idxs[k + 1]
         if _midi_from_note_dict(out[i0]) == _midi_from_note_dict(out[i1]):
             uni_second.append(i1)
-    if uni_second and total_iv > 0 and (len(uni_second) / total_iv) > 0.08:
+    if uni_second and total_iv > 0 and (len(uni_second) / total_iv) > 0.05:
         for j, note_i in enumerate(uni_second):
-            if j % 2 != 1:
+            if j <= 0:
                 continue
             n = out[note_i]
             m = _midi_from_note_dict(n) + 1
@@ -1219,6 +1342,40 @@ def _build_section_prompt(
         "copying them literally. Use the interval patterns\n"
         "and target degrees as guides, not as transcriptions.\n\n"
     )
+    concrete_lines: List[str] = []
+    for i in range(0, 8, 2):
+        if len(concrete_lines) >= 2:
+            break
+        pair_tags = function_tags[i : i + 2]
+        dominant_pair_tag = Counter(pair_tags).most_common(1)[0][0]
+        picks = _retrieve_concrete_phrases(dominant_pair_tag, n=1)
+        if not picks:
+            continue
+        p = picks[0]
+        note_names: List[str] = []
+        for n in p.get("notes", []):
+            if n.get("is_rest"):
+                continue
+            pitch = str(n.get("pitch", "")).strip().upper()[:1]
+            if pitch not in NOTE_TO_PC:
+                continue
+            octv = int(n.get("octave", 4))
+            note_names.append(f"{pitch}{octv}")
+            if len(note_names) >= 6:
+                break
+        notes_preview = " ".join(note_names) if note_names else "N/A"
+        concrete_lines.append(
+            f"Real Bird phrase over {p.get('chord_context', 'unknown context')}\n"
+            f"(entry: {p.get('entry_degree', '?')}, contour: {p.get('contour', '?')}):\n"
+            f"Interval sequence: {p.get('intervals', [])}\n"
+            "Note sequence (transpose to match your chord):\n"
+            f"{notes_preview}\n"
+            "Echo this shape and vocabulary. Do not copy literally —\n"
+            "transpose to your chord context and vary the rhythm."
+        )
+    concrete_block = ""
+    if concrete_lines:
+        concrete_block = "\n\n".join(concrete_lines) + "\n\n"
     motif_block = (motif_line.strip() + "\n\n") if motif_line.strip() else ""
     return f"""Section: {section_label} | Bars {bar_start + 1}–{bar_start + 8}
 Chords (one per bar):
@@ -1228,6 +1385,7 @@ Function tags (one per bar):
 Rhythm skeletons (one per bar):
 {sk_lines}
 {rag_block}\
+{concrete_block}\
 {motif_block}You are Charlie Parker. Generate a complete 8-bar bebop
 phrase over these changes as one continuous musical thought.
 
@@ -1423,6 +1581,7 @@ def generate_parker_section(
         section_index = bar_idx // 8
 
         bar_notes: Optional[List[Dict[str, Any]]] = None
+        # Always run post-validators on every parsed GCE bar before acceptance.
         if gce_bars is not None and i < len(gce_bars):
             try:
                 raw = [dict(n) for n in gce_bars[i]]
