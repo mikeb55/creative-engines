@@ -1217,11 +1217,10 @@ def _enforce_syncopation(
     Shifts phrase forward by one eighth in ~40% of interior
     bars to create offbeat phrase starts.
     """
+    # Apply to all interior, non-cadence bars.
     if bar_index % 4 == 3:
         return notes
     if bar_index in (0, 8, 16, 24):
-        return notes
-    if bar_index % 5 == 0:
         return notes
 
     pitched = [n for n in notes if not n.get("is_rest")]
@@ -1241,6 +1240,46 @@ def _enforce_syncopation(
     return shifted
 
 
+def _enforce_midphrase_quarter(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+) -> List[Dict[str, Any]]:
+    """
+    In interior bars (not cadence, not opening),
+    force a quarter note landing mid-phrase.
+    Runs on bars where generation_seed % 3 != 2
+    (roughly 2/3 of interior bars).
+    """
+    if bar_index % 4 == 3:
+        return notes
+    if bar_index in (0, 8, 16, 24):
+        return notes
+    if generation_seed % 3 == 2:
+        return notes
+
+    pitched = [i for i, n in enumerate(notes) if not n.get("is_rest")]
+    if len(pitched) < 5:
+        return notes
+
+    # Target slot 4 (beat 3) or slot 2 (beat 2)
+    target = 4 if generation_seed % 2 == 0 else 2
+    if target >= len(notes):
+        return notes
+    if notes[target].get("is_rest"):
+        return notes
+
+    # Merge notes[target] and notes[target+1] into a quarter
+    if target + 1 < len(notes) and not notes[target + 1].get("is_rest"):
+        quarter = dict(notes[target])
+        quarter["duration"] = 4
+        quarter["type"] = "quarter"
+        quarter["dot"] = False
+        new_notes = notes[:target] + [quarter] + notes[target + 2 :]
+        return _fit_sixteen_divisions(new_notes)
+    return notes
+
+
 def _apply_post_validators(
     notes: List[Dict[str, Any]],
     phrase_role: str,
@@ -1251,6 +1290,7 @@ def _apply_post_validators(
     n = _cap_unison_frequency(n)
     n = _enforce_opening_rest(n, phrase_role, bar_index)
     n = _enforce_syncopation(n, bar_index, generation_seed)
+    n = _enforce_midphrase_quarter(n, bar_index, generation_seed)
     n = _enforce_cadence_quarter(n, bar_index)
     return _fit_sixteen_divisions(n)
 
