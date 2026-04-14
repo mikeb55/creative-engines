@@ -238,8 +238,6 @@ def compile_monk_composition(
         seq = list(_DEFAULT_CHORDS)
         provided = False
 
-    print(f"DEBUG: len(seq)={len(seq)} total_bars={total_bars} provided={provided}")
-
     bars_out: List[Dict[str, Any]] = []
     start_pitch = 67
 
