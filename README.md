@@ -48,3 +48,28 @@ V4.6
 * Clean video integration (3 points only)
 * Improved pacing and energy distribution
 * Minor refinements to clinical emphasis (risk, documentation, supervision)
+
+
+## Charlie Parker Engine
+
+Generates Charlie Parker-style bebop melodies over chord changes using the Claude API.
+
+### Architecture
+- **Generation unit:** 8-bar sections (A1/A2/B/A3) per Claude API call
+- **GCE prompt:** Bird-specific rules — anticipation, offbeat starts, ii-V-I entry/exit degrees, leap+compensation, turnaround chains
+- **RAG:** 10 abstract Parker phrase templates + concrete note sequences from 8 real transcriptions
+- **Validators:** 5 post-generation Python validators enforce structural correctness
+- **Temperature:** 1.2
+- **Fallback:** Deterministic vocabulary-based generation if API fails
+
+### Transcriptions used
+Ko-Ko, Anthropology, Donna Lee, Now's The Time, Billie's Bounce, Ornithology, Confirmation, Lou Donaldson solo (Birdland 1954)
+
+### Usage
+From Composer OS desktop app: Charlie Parker card ? enter title + chords ? Generate
+
+### Key files
+- parker_phrase_engine.py — GCE integration, RAG templates, validators
+- parker_section_compiler.py — 8-bar section orchestration
+- parker_vocabulary.py — interval patterns from transcriptions
+- parker_musicxml_exporter.py — MusicXML output
