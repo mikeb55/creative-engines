@@ -814,6 +814,39 @@ def _enforce_cadence_quarter(
     return new_list
 
 
+def _enforce_syncopation(
+    notes: List[Dict[str, Any]],
+    bar_index: int,
+    generation_seed: int,
+) -> List[Dict[str, Any]]:
+    """
+    Shifts phrase forward by one eighth in ~40% of interior
+    bars to create offbeat phrase starts.
+    """
+    if bar_index % 4 == 3:
+        return notes
+    if bar_index in (0, 8, 16, 24):
+        return notes
+    if bar_index % 5 == 0:
+        return notes
+
+    pitched = [n for n in notes if not n.get("is_rest")]
+    if not pitched:
+        return notes
+
+    first = notes[0]
+    if first.get("is_rest"):
+        return notes
+
+    rng = random.Random(generation_seed + bar_index * 17)
+    if rng.random() >= 0.4:
+        return notes
+
+    eighth_rest = _note_shape(2, is_rest=True)
+    shifted = [eighth_rest] + [dict(n) for n in notes[:-1]]
+    return shifted
+
+
 def _apply_post_validators(
     notes: List[Dict[str, Any]],
     phrase_role: str,
@@ -823,107 +856,77 @@ def _apply_post_validators(
     n = _patch_unison_runs(notes, generation_seed)
     n = _enforce_opening_rest(n, phrase_role, bar_index)
     n = _enforce_cadence_quarter(n, bar_index)
+    n = _enforce_syncopation(n, bar_index, generation_seed)
     return _fit_sixteen_divisions(n)
+
+
+_GCE_SYSTEM_PROMPT = """You are Charlie Parker's fingers on the alto saxophone.
+You do not follow rules. You play bebop.
+"""
 
 
 def _build_claude_prompt(
     chord_symbols: List[str],
     phrase_role: str,
-    start_pitch: int,
-    generation_seed: int,
-    section_index: int,
     bar_index: int,
     *,
     function_tag: str,
-    turnaround_extra: str,
     rhythm_skeleton: List[str],
     motif_line: str,
 ) -> str:
-    seq = " | ".join(str(c).strip() for c in (chord_symbols or []) if c and str(c).strip())
-    if not seq:
-        seq = "Cmaj7"
-    bar_in_section = bar_index % 8
-    chord0 = _norm_chord(chord_symbols[0]) if chord_symbols else "?"
+    chord_string = " | ".join(
+        str(c).strip() for c in (chord_symbols or []) if c and str(c).strip()
+    )
+    if not chord_string:
+        chord_string = "Cmaj7"
     sk_txt = ", ".join(rhythm_skeleton)
-    motif_block = f"\n{motif_line}\n" if motif_line.strip() else ""
-    return f"""You are generating one 4/4 bar of Charlie Parker (Bird) alto saxophone melody as MusicXML-oriented note data.
-
-Chord sequence (harmonic context for this bar; play through these changes in order across the bar as appropriate): {seq}
-
-Bar {bar_index + 1}: {chord0} — function: {function_tag}. {turnaround_extra}
-
-Phrase role: {phrase_role} (e.g. opening/launch, continuation, ending, turnaround — interpret musically).
-
-Section index (0-based 8-bar sections): {section_index}. Bar index within tune: {bar_index}. Bar within 8-bar section: {bar_in_section}.
-
-Rhythm skeleton for this bar: [{sk_txt}].
-Fill in pitches following Parker rules below.
-Do not change the rhythm unless musically essential.
+    skeleton_line = (
+        f"Rhythm skeleton for this bar: [{sk_txt}]. "
+        "Fill in pitches. Do not change the rhythm unless musically essential."
+    )
+    motif_block = motif_line.strip() if motif_line else ""
+    return f"""Chord: {chord_string}
+Bar: {bar_index} | Role: {phrase_role} | {function_tag}
 {motif_block}
-Register hint: prefer staying near MIDI pitch {start_pitch} (alto range), but keep all notes in MIDI range 58–82 inclusive.
+{skeleton_line}
 
-PARKER STYLE RULES:
+Play a Charlie Parker bebop line over these changes.
 
-BARLINE & CADENCE:
-- Anticipate chord changes: use notes from the NEXT chord 1-3 eighth notes before the barline. At least once every 2 bars, resolve a chord tone of the next chord on "and of 4" of the previous bar instead of beat 1.
-- Do NOT always resolve on beat 1. In at least half of ii-V-I phrases, place the 3rd or 5th of I on beat 2 or beat 3, then continue the line past that resolution.
-- Start some phrases on "and of 4". At least once per 4-bar section, begin with 2-3 eighth notes on "and of 4" leading into the next bar.
+You are Bird. Not a rule-follower. Not a textbook.
+You anticipate chord changes by 1-2 eighths before the
+barline. You start phrases on offbeats. You land on the
+3rd or 7th of each chord, never the root. You use the
+bebop scale with chromatic passing tones. You encircle
+chord tones from above and below. You leap a 6th or
+tritone and then fill back down stepwise. You play
+over barlines like they don't exist. You breathe —
+rests are part of the line, not gaps in it.
 
-MOTIVIC DEVELOPMENT:
-- Invent a 3-5 note motive in bars 1-4. Reuse it at least 3 more times later, transposed to match new chords, rhythmically displaced by 1-2 eighths, or contour-inverted. Keep at least the same interval pattern between the first 3 notes on each reuse.
-- When starting a new 2-bar phrase, reuse the last 2-3 notes of the previous phrase (possibly transposed) before continuing with new material.
+Your lines have shape: they climb, peak, and descend.
+They start low or mid, peak around bar 2-3, and resolve
+down. Or they explode high immediately and tumble down
+chromatically. Never meander at one register.
 
-CONTOUR & INTERVALS:
-- Over ii-V-I (2 bars), prefer a descending overall shape: start on the 9th or 11th of ii, move mostly downward through V, land on 3rd or 5th of I by beat 1-3 of the I bar.
-- At least once per 4 bars, use a leap of a 6th, tritone, or major 7th, then follow with stepwise motion in the opposite direction for at least 3 eighth notes.
-- On dominant chords, target #9, b9, or 13 on a strong beat (1, "and of 1", 2, or 3) at least once per 4 bars.
+On ii: enter on the 9th or 3rd.
+On V: target the 3rd or b9, approach chromatically.
+On I: resolve to 3rd or 5th, then keep moving.
+On turnaround: one continuous line across all four chords,
+treat VI as a dominant.
 
-ii-V-I ENTRY & RESOLUTION:
-- On ii chords, start phrases on the 9th or 3rd of ii on beat 1 or "and of 1". Use the root only as a passing tone.
-- On V chords, target the 3rd or b9 of V on beats 2 or 3, using a chromatic approach from above or below on the preceding "and".
-- On I chords, resolve to 3rd or 5th as main arrival. Place on beat 1, 2, or 3. Continue the line with passing or upper-structure tones rather than stopping.
+Use triplets as punctuation — a quick 3-note burst then
+back to eighths. Not randomly. At peaks and cadences.
 
-TURNAROUND (I-VI-ii-V):
-- Treat I-VI-ii-V as one long dominant chain. Connect all 4 chords with a single continuous descending or arch-shaped line. Treat VI as a dominant (V/ii): use b9, #9, #11 over it.
-- Use a consistent descending chromatic cell across the VI-ii-V span every time a turnaround appears.
+Do not be polite. Do not be safe. Play like you invented
+this music because you did.
 
-UPPER EXTENSIONS ON TONIC:
-- Over I chords, at least 50% of important notes must be upper extensions (9, 11, 13) or their chromatic neighbors. Avoid plain 1-3-5 arpeggios on tonic.
+Return ONLY a JSON array of note objects:
+[{{"pitch":"D","octave":4,"alter":0,"duration":2,
+"type":"eighth","is_rest":false,"triplet":false,
+"dot":false,"is_chord":false}}]
 
-RHYTHMIC ACCENT:
-- At least once per bar, place a chord tone (3rd, 7th, 9th) on "and of 1" or "and of 2", preceded by a weaker non-chord tone on the prior downbeat.
-- In about 1 of every 4 bars, insert an eighth rest on "and of 2" or "and of 3", then resume on the next beat with a strong chord tone.
-- Use triplets as 3-note figures starting on beats 1 or 3 only, as [approach, chromatic, chord tone] or [chord tone, passing, chord tone]. Maximum 1 triplet figure per 2 bars.
-
-PHRASE SHAPE:
-- Do NOT force every phrase to end at 4-bar boundaries. At least once per 8-bar section, let a line start in bar N and end in bar N+1.
-- At the end of each 8-bar A section, use a clear resolution with slightly more space. Inside A sections and through the bridge, allow continuous lines that cross 8-bar boundaries.
-
-ORNAMENTATION:
-- Decorate important chord tones with a 3-4 note turn: [step above, target, step below, target] or [target, step above, step below, target]. Use once every 4 bars.
-- At cadences, use "snap" approaches: one chromatic eighth approach note immediately before the target.
-
-REGISTER:
-- At the start of a new 4 or 8-bar section, sometimes jump up by a 6th, 7th, or octave from the previous note, then descend over the next 2-4 bars back to mid-register.
-- Never stay in the same register for more than 4 bars.
-
-EXISTING RULES TO KEEP:
-- MIDI range 58-82
-- Never repeat the same pitch more than twice consecutively
-- End each 4-bar phrase with at least one quarter note or dotted quarter on a strong chord tone
-- Breathing rests at phrase openings
-- Return only a JSON array of note objects in the specified schema
-
-Output: ONLY a JSON array (no prose, no markdown fences). Each element must be exactly:
-{{"pitch":"D","octave":4,"alter":0,"duration":2,"type":"eighth","is_rest":false,"triplet":false,"dot":false,"is_chord":false}}
-
-Rules:
-- pitch: letter A–G only (use alter for accidentals).
-- duration: integer in divisions where quarter note = 4 (so eighth = 2). The sum of all durations in the array must equal exactly 16 (one 4/4 bar).
-- type: one of whole, half, quarter, eighth (match duration).
-- is_rest: boolean; rests still need pitch/octave/alter placeholders (use middle C defaults) or use pitch C octave 4 alter 0 for rests.
-
-Deterministic id: generation_seed={generation_seed} — honor phrasing consistency with this seed.
+Rests: {{"pitch":"","octave":0,"alter":0,"duration":2,
+"type":"eighth","is_rest":true,"triplet":false,
+"dot":false,"is_chord":false}}
 """
 
 
@@ -961,11 +964,6 @@ def _generate_parker_phrase_via_claude(
         prev_chord=prev_chord,
         nn_chord=nn,
     )
-    turnaround_extra = ""
-    if "turnaround" in function_tag.lower():
-        turnaround_extra = (
-            "This is a turnaround — treat as one continuous dominant chain."
-        )
     rhythm_skeleton = _build_rhythm_skeleton(
         bar_index,
         phrase_role,
@@ -974,12 +972,8 @@ def _generate_parker_phrase_via_claude(
     prompt = _build_claude_prompt(
         chord_symbols,
         phrase_role,
-        start_pitch,
-        generation_seed,
-        section_index,
         bar_index,
         function_tag=function_tag,
-        turnaround_extra=turnaround_extra,
         rhythm_skeleton=rhythm_skeleton,
         motif_line=motif_line,
     )
@@ -988,6 +982,8 @@ def _generate_parker_phrase_via_claude(
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1000,
+            temperature=1.2,
+            system=_GCE_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
         raw_text = _claude_response_text(response)
