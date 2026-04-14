@@ -552,6 +552,9 @@ Style requirements (Bird / bebop):
 - Include triplet punctuation on some eighth-groupings when it fits (set triplet true on those notes; not every note).
 - Aim for triplet punctuation roughly every 2–4 bars — this bar index is {bar_index}; use triplets here if (bar_index % 3) == 0, otherwise sparse triplets only if musical.
 - Include short rests for breathing (is_rest true).
+- RULE 1 — Anti-repetition: Never repeat the same pitch more than twice in a row. Every note must move by at least 1 semitone from the previous, except for deliberate ornaments (max 2 repeats).
+- RULE 2 — Phrase shape: End each 4-bar phrase with a quarter note or dotted quarter on a strong chord tone (root, 3rd, 5th, 7th). Never run more than 8 consecutive eighth notes without a rhythmic break.
+- RULE 3 — Breathing rests: Begin each phrase section with a rest of at least one eighth-note duration. Include at least 2 rest-breath moments per 8-bar section.
 
 Output: ONLY a JSON array (no prose, no markdown fences). Each element must be exactly:
 {{"pitch":"D","octave":4,"alter":0,"duration":2,"type":"eighth","is_rest":false,"triplet":false,"dot":false,"is_chord":false}}
