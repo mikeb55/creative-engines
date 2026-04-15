@@ -113,7 +113,11 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('Riff options');
   });
 
-  it('maps Big Band pairing with default songwriter constant', () => {
-    expect(src).toContain('BIG_BAND_DEFAULT_SONGWRITER_STYLE');
+  it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {
+    expect(src).toMatch(/songwriterStyle:\s*songwriterStyle/);
+    expect(src).toContain("presetId === 'big_band'");
+    expect(src).toContain("presetId === 'string_quartet'");
+    expect(src).toContain('Big band pairing');
+    expect(src).toContain('String quartet harmony');
   });
 });

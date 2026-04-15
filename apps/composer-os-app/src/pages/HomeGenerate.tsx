@@ -137,9 +137,6 @@ const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
   { id: 'custom', label: 'Custom' },
 ];
 
-/** Internal default for Big Band style pairing when only arranger/era are exposed in UI. */
-const BIG_BAND_DEFAULT_SONGWRITER_STYLE = 'donald_fagen';
-
 /** Fixed style stack for MusicXML modes (duo / ECM) — not user-configurable in this UI. */
 const DEFAULT_SCORE_STYLE_STACK = {
   primary: 'barry_harris' as const,
@@ -423,7 +420,7 @@ export function HomeGenerate({
         const stylePairingBigBand =
           presetId === 'big_band'
             ? {
-                songwriterStyle: BIG_BAND_DEFAULT_SONGWRITER_STYLE,
+                songwriterStyle: songwriterStyle,
                 arrangerStyle: arrangerStyle,
                 era,
               }
@@ -431,7 +428,7 @@ export function HomeGenerate({
         const stylePairingStringQuartet =
           presetId === 'string_quartet'
             ? {
-                songwriterStyle: BIG_BAND_DEFAULT_SONGWRITER_STYLE,
+                songwriterStyle: songwriterStyle,
                 arrangerStyle: arrangerStyle,
                 era,
               }
@@ -478,7 +475,12 @@ export function HomeGenerate({
           creativeControlLevel,
           stylePairing: stylePairingSong ?? stylePairingBigBand ?? stylePairingStringQuartet,
           ensembleConfigId: presetId === 'big_band' ? ensembleConfigId : undefined,
-          primarySongwriterStyle: presetId === 'song_mode' ? songwriterStyle : undefined,
+          primarySongwriterStyle:
+            presetId === 'song_mode' ||
+            presetId === 'big_band' ||
+            presetId === 'string_quartet'
+              ? songwriterStyle
+              : undefined,
           formId,
         });
         /** Duo / Song Form: chord count matches selected total bars, or 8 bars (tiled) when length > 8. */
@@ -1708,8 +1710,24 @@ export function HomeGenerate({
             Big band pairing
           </span>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>
-            Arranger and era drive the plan; ensemble size sets the horn footprint.
+            Songwriter, arranger, and era blend for harmonic colour; ensemble size sets the horn footprint.
           </p>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Songwriter
+            </label>
+            <select
+              value={songwriterStyle}
+              onChange={(e) => setSongwriterStyle(e.target.value)}
+              disabled={loading}
+            >
+              {SONGWRITER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Arranger
@@ -1763,8 +1781,40 @@ export function HomeGenerate({
             String quartet harmony
           </span>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>
-            Era selects the built-in chord cycle when chord progression is empty (same options as Big Band).
+            Songwriter and arranger pair with era for planning colour; era selects the built-in chord cycle when chord progression is empty (same options as Big Band).
           </p>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Songwriter
+            </label>
+            <select
+              value={songwriterStyle}
+              onChange={(e) => setSongwriterStyle(e.target.value)}
+              disabled={loading}
+            >
+              {SONGWRITER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Arranger
+            </label>
+            <select
+              value={arrangerStyle}
+              onChange={(e) => setArrangerStyle(e.target.value)}
+              disabled={loading}
+            >
+              {ARRANGER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Era
