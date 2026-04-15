@@ -1,4 +1,20 @@
-ï»¿## [2026-04-15] End of day summary â€” all items verified working
+## [2026-04-16] Fix: vocal lead sheet flag now reaches engine
+
+### Change (composerOsApiCore.ts)
+- includeVocalLeadSheet: body.includeVocalLeadSheet === true
+  ? true : undefined
+  added to req_ in apiGenerate
+- Flag was previously silently dropped, meaning the
+  vocal lead sheet bridge never ran despite checkbox
+  being ticked in the UI
+- IPC path was already correct (passes full body through)
+
+### Status
+Vocal lead sheet pipeline: flag now reaches runSongStructure.
+Python bridge path and packaged build verification still
+needed — test by ticking checkbox and checking output folder.
+
+## [2026-04-15] End of day summary — all items verified working
 
 ### Verified today
 - Song Mode: Wayne Shorter + Post-Bop generating cleanly
@@ -28,7 +44,7 @@ Remaining:
 - Bass/duo regression expansion
 - Counterpoint Phase 3 (SQ + ECM + UI slider)
 
-## [2026-04-15] Song Mode style exposure â€” three new controls
+## [2026-04-15] Song Mode style exposure — three new controls
 
 ### UI additions (HomeGenerate.tsx)
 - Pattern slider: intent.pattern now user-controlled
@@ -37,19 +53,19 @@ Remaining:
 - Secondary Songwriter dropdown: optional blend at
   ~35% with primary; uses same SONGWRITER_OPTIONS
 - Lyric Author Influence dropdown: jimmy_webb,
-  pat_pattison, jack_perricone â€” optional overlay
+  pat_pattison, jack_perricone — optional overlay
 
 ### API pipeline (appApiTypes.ts, composerOsApiCore.ts,
   composerOsAppGeneration.ts, runSongMode.ts)
 - secondarySongwriterStyle and authorOverlay added
   to GenerateRequest type
-- Fields passed through API â†’ runSongStructure â†’
-  runSongMode â†’ buildCompiledSong â†’
+- Fields passed through API ? runSongStructure ?
+  runSongMode ? buildCompiledSong ?
   resolveSongwritingStyles
 - Empty strings stripped before blending so None
   selection has no effect
 
-## [2026-04-15] Big Band polish â€” complete
+## [2026-04-15] Big Band polish — complete
 
 ### All items done
 - Double Bass part name correct in MusicXML export
@@ -105,7 +121,7 @@ Remaining:
 - Dead helper removed
 - 14/14 checks passing
 
-## [2026-04-15] Counterpoint Phase 2 â€” voiceLeadingScorer wired into Guitar-Bass Duo
+## [2026-04-15] Counterpoint Phase 2 — voiceLeadingScorer wired into Guitar-Bass Duo
 
 ### Changes (guitarVoice2WybleLayer.ts)
 - Voice2PitchPickContext182B3: added bassMidi, prevV1Midi,
@@ -143,19 +159,19 @@ assertHookBarIdentityUnchanged was firing incorrectly
 when STYLE_SHORTER_POST_BOP / wayne_shorter activated
 shorterMode chord-tone policy. The mid-pipeline snapshot
 was taken before style-aware passes (overlay, melodic,
-phrase repair) ran, then compared after â€” legitimately
+phrase repair) ran, then compared after — legitimately
 different when shorterMode changes chord tone selection.
 
 ### Fix (generateGoldenPathDuoScore.ts)
 Removed mid-pipeline snapshot + assert block.
 Post-finalizeAndSealDuoScoreBarMath guard on bars 1
-and 25 retained â€” still catches unintended mutations
+and 25 retained — still catches unintended mutations
 after the score is sealed.
 
 ### No snapshot regeneration required
 No stored hook snapshot files exist to refresh.
 
-## [2026-04-15] Wayne Shorter â€” quick coherence fix
+## [2026-04-15] Wayne Shorter — quick coherence fix
 
 ### Changes
 - harmonyChordTonePolicy.ts: STYLE_SHORTER_POST_BOP now
@@ -165,7 +181,7 @@ No stored hook snapshot files exist to refresh.
   velocity shaping + shorterMode chord policy together
   form the complete Post-Bop style surface
 - songwriterStyleProfiles.ts: wayne_shorter description
-  added â€” post-bop harmonic language, upper-structure
+  added — post-bop harmonic language, upper-structure
   emphasis, activates shorterMode chord-tone policy
 
 ### Effect
@@ -199,7 +215,7 @@ two mechanisms were disconnected.
 - Guitar-Bass Duo / Song Mode: golden path still capped
   at 32 - engine extension deferred to future phase
 
-## [2026-04-15] Counterpoint scoring module â€” Phase 1 complete
+## [2026-04-15] Counterpoint scoring module — Phase 1 complete
 
 ### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
 Shared three-voice counterpoint scorer based on:
@@ -444,6 +460,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 

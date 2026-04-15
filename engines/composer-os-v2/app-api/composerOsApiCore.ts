@@ -272,6 +272,7 @@ export function apiGenerate(
           ? body.blendStrength
           : undefined,
       formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
+      includeVocalLeadSheet: body.includeVocalLeadSheet === true ? true : undefined,
     };
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;
