@@ -4,7 +4,7 @@
 
 import { assembleBigBandOrchestrationPlan, buildBigBandOrchestrationPlan } from '../core/big-band/buildBigBandOrchestrationPlan';
 import { planBigBandDensity } from '../core/big-band/bigBandDensityPlanner';
-import { planDefaultBigBandForm } from '../core/big-band/bigBandFormPlanner';
+import { planBigBandBlues12Form, planBigBandForm, planDefaultBigBandForm } from '../core/big-band/bigBandFormPlanner';
 import { planBigBandSections } from '../core/big-band/bigBandSectionPlanner';
 
 export function runBigBandPlanningTests(): { ok: boolean; name: string }[] {
@@ -16,6 +16,24 @@ export function runBigBandPlanningTests(): { ok: boolean; name: string }[] {
   out.push({
     ok: form.totalBars === 32 && form.slices.some((s) => s.phase === 'shout_chorus'),
     name: 'default big-band form is valid (32 bars, shout_chorus)',
+  });
+
+  const blues = planBigBandBlues12Form();
+  out.push({
+    ok:
+      blues.totalBars === 42 &&
+      blues.slices.length === 5 &&
+      blues.slices[0]!.phase === 'intro' &&
+      blues.slices[0]!.startBar === 1 &&
+      blues.slices[0]!.endBar === 2 &&
+      blues.slices[4]!.phase === 'ending' &&
+      blues.slices[4]!.endBar === 42,
+    name: 'big_band_blues12 form is 42 bars with intro/head/solo/shout/rideout slices',
+  });
+
+  out.push({
+    ok: planBigBandForm('big_band_blues12', 99, { totalBars: 32 }).totalBars === 42,
+    name: 'planBigBandForm routes big_band_blues12 to fixed 42-bar plan',
   });
 
   out.push({

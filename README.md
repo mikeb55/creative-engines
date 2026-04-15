@@ -122,7 +122,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 1. Wyble single-line parity
 2. Phase 19.1 long forms (>32 bars)
 3. Wayne Shorter TS integration
-4. Big Band / String Quartet polish
+4. ~~Big Band / String Quartet polish~~ **COMPLETE** (2026-04-15)
 5. Song Mode style surface
 6. Vocal lead sheet download path
 7. Bass/duo regression tests

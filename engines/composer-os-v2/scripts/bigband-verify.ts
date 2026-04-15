@@ -24,17 +24,19 @@ function partBlockById(xml: string, partId: string): string | undefined {
   return m?.[0];
 }
 
-function firstMeasureClefSign(partXml: string): string | undefined {
-  const m = partXml.match(/<measure[^>]*number="1"[^>]*>([\s\S]*?)<\/measure>/);
-  if (!m) return undefined;
-  const inner = m[1];
-  const sign = inner.match(/<clef>[\s\S]*?<sign>([^<]+)<\/sign>/);
-  return sign?.[1];
-}
-
 function measureCountInPart(partXml: string): number {
   const matches = partXml.match(/<measure[^>]*number="/g);
   return matches?.length ?? 0;
+}
+
+/** True if the part contains at least one non-rest note (pitch or unpitched, e.g. drums). */
+function partHasSoundingNote(partXml: string): boolean {
+  const noteBlocks = partXml.match(/<note[\s\S]*?<\/note>/g) ?? [];
+  for (const nb of noteBlocks) {
+    if (/<rest[\s/>]/.test(nb)) continue;
+    if (/<pitch\b/.test(nb) || /<unpitched\b/.test(nb)) return true;
+  }
+  return false;
 }
 
 function runChecks(xml: string): Check[] {
@@ -64,10 +66,11 @@ function runChecks(xml: string): Check[] {
     if (drumEntry) {
       const block = partBlockById(xml, drumEntry.id);
       if (block) {
-        const sign = firstMeasureClefSign(block);
-        percussionOk = sign === 'percussion';
-        percussionReason =
-          sign !== undefined ? `First measure clef sign="${sign}"` : 'No clef in measure 1';
+        /** Clef may appear after initial attributes; scan whole part for percussion staff. */
+        percussionOk = /<sign>\s*percussion\s*<\/sign>/i.test(block);
+        percussionReason = percussionOk
+          ? 'Found <sign>percussion</sign> in drum part'
+          : 'No percussion clef in drum part XML';
       } else {
         percussionReason = `No <part> block for id ${drumEntry.id}`;
       }
@@ -96,20 +99,60 @@ function runChecks(xml: string): Check[] {
   }
 
   const firstPartId = parts[0]?.id;
+  let expectedMeasures = 0;
   let barReason = 'No parts';
-  let barOk = false;
   if (firstPartId) {
-    const block = partBlockById(xml, firstPartId);
-    if (block) {
-      const n = measureCountInPart(block);
-      barOk = n === 32;
-      barReason = `First part (${firstPartId}) has ${n} measures`;
+    const block0 = partBlockById(xml, firstPartId);
+    if (block0) {
+      expectedMeasures = measureCountInPart(block0);
+      barReason = `First part (${firstPartId}) has ${expectedMeasures} measures`;
+    }
+  }
+
+  const mismatch: string[] = [];
+  if (expectedMeasures <= 0) {
+    mismatch.push('could not read measure count from first part');
+  } else {
+    for (const p of parts) {
+      const b = partBlockById(xml, p.id);
+      const n = b ? measureCountInPart(b) : 0;
+      if (n !== expectedMeasures) mismatch.push(`${p.partName} (${p.id}): ${n} vs ${expectedMeasures}`);
     }
   }
   checks.push({
-    name: 'Total bars === 32 (first part measure count)',
-    pass: barOk,
-    reason: barReason,
+    name: 'All score parts share the same measure count',
+    pass: mismatch.length === 0,
+    reason: mismatch.length === 0 ? barReason : mismatch.join('; '),
+  });
+
+  const missingSound: string[] = [];
+  for (const p of parts) {
+    if (p.partName === 'Piano') continue;
+    const block = partBlockById(xml, p.id);
+    if (!block) {
+      missingSound.push(`${p.partName} (no <part> block)`);
+      continue;
+    }
+    if (!partHasSoundingNote(block)) missingSound.push(p.partName);
+  }
+  checks.push({
+    name: 'Non-piano parts have at least one non-rest note',
+    pass: missingSound.length === 0,
+    reason: missingSound.length === 0 ? 'ok' : `All-rest or empty: ${missingSound.join(', ')}`,
+  });
+
+  const harmonyOk = /<harmony\b/i.test(xml);
+  checks.push({
+    name: 'Chord symbols: at least one <harmony> element',
+    pass: harmonyOk,
+    reason: harmonyOk ? 'ok' : 'No <harmony> in MusicXML',
+  });
+
+  const rehearsalOk = /<rehearsal\b/i.test(xml);
+  checks.push({
+    name: 'Rehearsal marks: at least one <rehearsal> element',
+    pass: rehearsalOk,
+    reason: rehearsalOk ? 'ok' : 'No <rehearsal> in MusicXML',
   });
 
   return checks;

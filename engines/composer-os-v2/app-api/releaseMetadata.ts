@@ -61,6 +61,6 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
     displayName: 'String Quartet',
     capability: 'musicxml_generation',
     honestNote:
-      'Full 4-part ensemble MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
+      '4-part string ensemble with piano chord reduction. Piano staff carries harmony symbols, not played notes. MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
   },
 ] as const;

@@ -7,7 +7,7 @@ import { assembleBigBandOrchestrationPlan } from './buildBigBandOrchestrationPla
 import { planBebopLineBehaviour, type BebopLineBehaviourMetadata } from './bebopLinePlanner';
 import { planBigBandDensity } from './bigBandDensityPlanner';
 import { resolveBigBandEraRules } from './bigBandEraResolver';
-import { planDefaultBigBandForm } from './bigBandFormPlanner';
+import { planBigBandForm } from './bigBandFormPlanner';
 import type { BigBandDensityPlan, BigBandEnhancedPlanning } from './bigBandPlanTypes';
 import type { BigBandFormPlan } from './bigBandPlanTypes';
 import type { BigBandSectionPlan } from './bigBandPlanTypes';
@@ -55,6 +55,11 @@ export interface BigBandRunInput {
   customEnsembleMask?: Omit<BigBandEnsembleSectionMask, 'rhythm_section'> | null;
   /** Optional `|`-separated chords — used by realisation / score only; ignored by planning. */
   chordProgressionText?: string;
+  /**
+   * Named big-band form preset (e.g. `big_band_blues12` → 42-bar blues chart). Omitted → default weighted form.
+   * Distinct from Generate UI `blues12` (12-bar duo/song option) in the app `formOptions` list.
+   */
+  formId?: string;
 }
 
 export interface BigBandRunManifestHints {
@@ -102,11 +107,13 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
   });
 
   const title = input.title ?? `Big Band Plan ${runSeed}`;
-  const totalBars = Math.max(16, input.totalBars ?? 32);
+  const requestedBars = Math.max(16, input.totalBars ?? 32);
+  const blues12 = input.formId?.trim() === 'big_band_blues12';
+  const totalBars = blues12 ? 42 : requestedBars;
   const era = input.era ?? 'post_bop';
   const composerStyle = input.composerStyle === undefined ? null : input.composerStyle;
 
-  const formPlan = planDefaultBigBandForm(runSeed, { totalBars });
+  const formPlan = planBigBandForm(input.formId, runSeed, { totalBars });
   const ensembleMask = resolveEnsembleMaskForConfig(
     input.ensembleConfigId ?? 'full_band',
     input.customEnsembleMask ?? null

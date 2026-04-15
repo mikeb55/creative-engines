@@ -279,7 +279,7 @@ const PART_META: Array<{
   { name: 'Trombone', instrumentIdentity: 'big_band_trombones', midiProgram: 57, clef: 'bass' },
   /** `midiProgram` 0 = GM Acoustic Grand; MusicXML export fixes `<midi-program>1</midi-program>` + ch. 1 for `bb_piano`. */
   { name: 'Piano', instrumentIdentity: 'big_band_piano', midiProgram: 0, clef: 'treble' },
-  { name: 'Rhythm Section', instrumentIdentity: 'acoustic_upright_bass', midiProgram: 32, clef: 'bass' },
+  { name: 'Double Bass', instrumentIdentity: 'acoustic_upright_bass', midiProgram: 32, clef: 'bass' },
   { name: 'Jazz Drums', instrumentIdentity: 'big_band_jazz_drums', midiProgram: 0, clef: 'treble' },
 ];
 

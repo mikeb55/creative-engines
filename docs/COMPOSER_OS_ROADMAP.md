@@ -74,7 +74,7 @@
 - **Parts:** Alto Sax, Tenor Sax, Trumpet, Trombone, Piano, Double Bass, Jazz Drums (percussion clef, MIDI channel 10 — confirmed).
 - **Chords / UI:** chord symbols on piano staff; **Generate** chord input wired.
 - **Piano staff (export):** part name **Piano**, abbreviation **Pno.**, `instrument-sound` **keyboard.piano**, MIDI channel **1**, program **1** (`bb_piano`).
-- **Verification:** `engines/composer-os-v2/scripts/bigband-verify.ts` — **11/11** checks.
+- **Verification:** `engines/composer-os-v2/scripts/bigband-verify.ts` — **14/14** checks.
 - **Research backlog (not implemented yet):** Perplexity deep research on **jazz eras / styles** — local file `c:\Users\mike\Documents\Perplexity Research\jazz-era.md`. **When refreshing this roadmap or deepening Big Band (and other jazz) harmonic and stylistic behaviour,** use it as a reference; assistants should remind the user to draw from this source when roadmap discussions focus on jazz-era vocabulary, arranging norms, or era-accurate defaults beyond current chord pools.
 - **Research backlog (not implemented yet):** Perplexity deep research **Big Band** (composers, sections, arranging vocabulary — complements engine rule shapes under `engines/composer-os-v2/core/big-band/`) — local file `c:\Users\mike\Documents\Perplexity Research\BigBandResearch.md`. **When refreshing this roadmap or extending Big Band rules, density, or orchestration defaults,** use it as a reference; assistants should remind the user to merge or reconcile with engine Big Band research when roadmap discussions focus on professional arranging depth.
 - **Scope:** behavioural scoring — not full professional arranging.
@@ -121,7 +121,7 @@
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
 | 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
-| 6 | **Big Band / String Quartet polish** | Rehearsal copy, host import smoke tests, optional extra **`formId`** presets. |
+| 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename, **`big_band_blues12`** 42-bar form, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | **Song Mode — style exposure** | Surface **primary / secondary songwriter**, **author** + **classical** overlays, and optional **songwriter × arranger** pairing in Generate; align with **`songwriterStyleResolver`** / **`stylePairingResolver`**. Also surface **`styleStack`** or named presets beyond current defaults where applicable. |
 | 12 | **Vocal lead sheet — pipeline** | Close **CompiledSong → bridge** shape gap so vocal MusicXML appears in app receipts/downloads (see CHANGELOG 2026-04-10). |
 | 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
@@ -132,7 +132,7 @@
 ### Near term (high leverage)
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
-2. **Big Band + String Quartet polish:** rehearsal/section copy, host-specific import smoke tests; optional **form** presets beyond current `formId` set.
+2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass label, **`big_band_blues12`** form, verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** end-to-end once pipeline matches bridge input.
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice).
 

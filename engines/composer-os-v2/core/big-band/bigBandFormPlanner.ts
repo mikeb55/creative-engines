@@ -24,6 +24,31 @@ export interface PlanBigBandFormOpts {
  * Default test form: intro → melody_head → solo_section → shout_chorus → ending.
  * Optional background_figures when includeBackgroundFigures is true.
  */
+/**
+ * 12-bar blues *chart* layout for big band: Intro (2) + Head (12) + Solo (12) + Shout (12) + Rideout (4) = 42 bars.
+ * Select via {@link planBigBandForm} with `formId` `big_band_blues12` (distinct from duo/song `blues12` = 12 bars).
+ */
+export function planBigBandBlues12Form(): BigBandFormPlan {
+  const totalBars = 42;
+  const slices: BigBandFormSlice[] = [
+    { index: 0, phase: 'intro', startBar: 1, endBar: 2 },
+    { index: 1, phase: 'melody_head', startBar: 3, endBar: 14 },
+    { index: 2, phase: 'solo_section', startBar: 15, endBar: 26 },
+    { index: 3, phase: 'shout_chorus', startBar: 27, endBar: 38 },
+    { index: 4, phase: 'ending', startBar: 39, endBar: 42 },
+  ];
+  return { totalBars, slices };
+}
+
+/** Resolve form plan from optional API/UI `formId`; defaults to weighted {@link planDefaultBigBandForm}. */
+export function planBigBandForm(formId: string | undefined, seed: number, opts?: PlanBigBandFormOpts): BigBandFormPlan {
+  const id = formId?.trim();
+  if (id === 'big_band_blues12') {
+    return planBigBandBlues12Form();
+  }
+  return planDefaultBigBandForm(seed, opts);
+}
+
 export function planDefaultBigBandForm(seed: number, opts?: PlanBigBandFormOpts): BigBandFormPlan {
   const totalBars = opts?.totalBars ?? 32;
   const includeBg = opts?.includeBackgroundFigures === true;

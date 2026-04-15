@@ -701,6 +701,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
         }
       : undefined,
     era: eraFromPairing,
+    ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
   });
   const runSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
@@ -710,7 +711,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
-    totalBars: req.totalBars,
+    totalBars: req.formId?.trim() === 'big_band_blues12' ? 42 : req.totalBars,
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
     ensembleConfigId: req.ensembleConfigId,

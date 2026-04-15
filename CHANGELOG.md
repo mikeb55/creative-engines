@@ -1,4 +1,31 @@
-﻿## [2026-04-15] Counterpoint Phase 2 — voiceLeadingScorer wired into Guitar-Bass Duo
+﻿## [2026-04-15] Big Band and String Quartet polish
+
+### Fixes
+- releaseMetadata.ts: String Quartet honestNote corrected
+  to "4-part string ensemble with piano chord reduction"
+- bigBandScoreBuilder.ts: bass part renamed from
+  "Rhythm Section" to "Double Bass" in PART_META
+
+### New: Big Band Blues 12 form preset (big_band_blues12)
+- 42-bar chart: Intro(2) + Head(12) + Solo(12) +
+  Shout(12) + Rideout(4)
+- Wired in: bigBandFormPlanner.ts, runBigBandMode.ts,
+  composerOsAppGeneration.ts, formOptions.ts,
+  HomeGenerate.tsx
+- Distinct from duo/song blues12 (12-bar) to avoid
+  id collision
+
+### bigband-verify.ts improvements
+- All parts share same measure count
+- Every non-piano part has at least one sounding note
+- At least one harmony element present
+- At least one rehearsal mark present
+- Drum percussion clef check made reliable
+  (scans whole part, not measure 1 only)
+- Dead helper removed
+- 14/14 checks passing
+
+## [2026-04-15] Counterpoint Phase 2 — voiceLeadingScorer wired into Guitar-Bass Duo
 
 ### Changes (guitarVoice2WybleLayer.ts)
 - Voice2PitchPickContext182B3: added bassMidi, prevV1Midi,
