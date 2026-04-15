@@ -1,4 +1,15 @@
-﻿## [2026-04-15] Fix: Big Band Blues 12 bar count validation
+﻿## [2026-04-15] Fix: Big Band bass part name in MusicXML export
+
+### Change (musicxmlExporter.ts)
+- partDisplayNameForExport now context-aware for
+  acoustic_upright_bass identity:
+  - Big Band (p.name === 'Double Bass'): uses p.name
+  - Guitar-Bass Duo: keeps GUITAR_BASS_DUO_BASS_PART_NAME
+    ('Upright Bass') unchanged
+- Fixes Big Band MusicXML showing 'Upright Bass'
+  instead of 'Double Bass'
+
+## [2026-04-15] Fix: Big Band Blues 12 bar count validation
 
 ### Change (composerOsApiCore.ts)
 - Added 42 to allowed totalBars for Big Band and

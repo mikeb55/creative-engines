@@ -34,6 +34,9 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
 
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
+    // Big Band bass uses p.name ('Double Bass');
+    // Guitar-Bass Duo uses the duo constant ('Upright Bass')
+    if (p.name === 'Double Bass') return p.name;
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
