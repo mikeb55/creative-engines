@@ -1,12 +1,12 @@
 # Psychopathology & Synthesis (PET Training)
 
-Two-day postgraduate psychotherapy training (10:00ñ17:00, UK) focused on:
+Two-day postgraduate psychotherapy training (10:00ù17:00, UK) focused on:
 
 * Borderline presentations (relational instability, identity tension)
 * Intersubjectivity and projective identification (dependency, power, sexuality, ingratiation)
 * Risk assessment under uncertainty
 * Neurodiversity, trauma, dissociation
-* Psychosynthesis (parts, IñSelf, disidentification, meaning alongside risk)
+* Psychosynthesis (parts, IùSelf, disidentification, meaning alongside risk)
 
 ## Structure
 
@@ -24,10 +24,10 @@ Two-day postgraduate psychotherapy training (10:00ñ17:00, UK) focused on:
 Location:
 Psychopathology and Synthesis 2026\CASE STUDIES
 
-* Leah ó shame, risk, family pressure
-* Ousmane ó neurodiversity, executive load, safeguarding
-* Emily ó dissociation, inconsistent risk account
-* Michael ó ambiguity, escalation decisions
+* Leah ù shame, risk, family pressure
+* Ousmane ù neurodiversity, executive load, safeguarding
+* Emily ù dissociation, inconsistent risk account
+* Michael ù ambiguity, escalation decisions
 
 Each follows ACE-Cases (100-point rubric).
 
@@ -44,7 +44,7 @@ Three videos (links in speaker notes only):
 V4.6
 
 * Corrected temporal structure (Day 1 vs Day 2)
-* Proper placement of breaks and lunches (2◊20 min breaks/day, 1◊ lunch/day)
+* Proper placement of breaks and lunches (2ù20 min breaks/day, 1ù lunch/day)
 * Clean video integration (3 points only)
 * Improved pacing and energy distribution
 * Minor refinements to clinical emphasis (risk, documentation, supervision)
@@ -90,7 +90,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 
 ---
 
-## Project Status ó 2026-04-15
+## Project Status ù 2026-04-15
 
 ### Composer OS Generate modes
 | Mode | Status |
