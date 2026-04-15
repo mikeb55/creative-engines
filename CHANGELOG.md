@@ -1,3 +1,25 @@
+## [2026-04-15] Wyble single-line parity + type fixes + Bizzi prep
+
+### Wyble single-line parity (guitarVoice2WybleLayer.ts, generateGoldenPathDuoScore.ts)
+- injectGuitarVoice2WybleLayer: gated to isGuitarBassDuoFamily (was guitar_bass_duo only)
+- stabiliseGuitarVoice2Wyble18_2B_1/_2/_3: gated to isGuitarBassDuoFamily
+- generateGoldenPathDuoScore: Voice 2 probe now runs for guitar_bass_duo_single_line
+- normalizeRealizedVoice2PostInjection182B3: logic unchanged, comment added explaining
+  intentional exclusion of standard duo from this normalization path
+- getChordTones: replaced missing symbol with chordTonesForChordSymbol utility
+- createNote: fixed object-style calls to positional signature
+
+### GenerationMetadata type fixes (compositionContext.ts)
+- Added missing Fagen style fields: fagenMuChordBias, fagenLydianMajorBias,
+  fagenAlteredDominantBias, fagenRootAvoidanceMelody, fagenSlashChordDensity
+- Added missing Bacharach style fields: bacharachDeceptiveCadenceRate,
+  bacharachChromaticVoiceLeading, bacharachModalMixtureLevel,
+  bacharachCadentialAmbiguity, bacharachPedalUsage
+- Restored fagenMuChordBias assignment in runGoldenPath.ts
+
+### Test result
+- npm run test:duo: 10/10 seeds PASS
+
 ## [2026-04-15] Composer OS ? Roadmap Snapshot & Recent Completions
 
 ### Shipped today
@@ -193,6 +215,7 @@
 * ACE framework embedded
 
 ---
+
 
 
 

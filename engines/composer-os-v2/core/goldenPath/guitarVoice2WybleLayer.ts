@@ -2640,7 +2640,7 @@ function harmonyPartLooksMajorSeventh(harmonyPart: string): boolean {
  * @returns number of measures that received voice-2 content
  */
 export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: CompositionContext): number {
-  if (context.presetId !== 'guitar_bass_duo') return 0;
+  if (!isGuitarBassDuoFamily(context.presetId)) return 0;
 
   const LO = 48;
   const HI = 59;
@@ -2654,7 +2654,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
       .map((e: any) => e.pitch);
     if (v1.length === 0) continue;
 
-    const raw: number[] = getChordTones(m.chord ?? 'Cmaj7');
+    const tones = chordTonesForChordSymbol(m.chord ?? 'Cmaj7', chordOpts(context));
+    const raw: number[] = [tones.root, tones.third, tones.fifth, tones.seventh];
     const src = raw.length > 0 ? raw : [48, 50, 52, 55, 57];
 
     // clamp all tones into LO..HI
@@ -2688,8 +2689,8 @@ export function injectGuitarVoice2WybleLayer(guitar: PartModel, context: Composi
 
     // write — clear existing V2 first
     m.events = m.events.filter((e: any) => (e.voice ?? 1) !== 2);
-    addEvent(m, createNote({ pitch: p0, duration: 480, startBeat: 0, voice: 2, staff: 1 }));
-    addEvent(m, createNote({ pitch: p1, duration: 960, startBeat: 480, voice: 2, staff: 1 }));
+    addEvent(m, createNote(p0, 0, 480, 2));
+    addEvent(m, createNote(p1, 480, 960, 2));
 
     last = p1;
     injected++;
@@ -3930,6 +3931,7 @@ function computeLongestV2SustainAcrossActiveBars182B5(
  * match the written score (runs after {@link stabiliseGuitarVoice2Wyble18_2B_2}; diagnostics read this result).
  */
 function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: CompositionContext): void {
+  // Standard duo uses a different normalization path; this function applies to single-line only.
   if (context.presetId === 'guitar_bass_duo') return;
 
   console.log('[V2-NORM-182B6] normalization running');
@@ -3976,7 +3978,7 @@ function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: C
  * Phase 18.2B.3 ? Realized-score breathing / run caps / coverage (after 18.2B.1?2 pitch stabilisers, before polyphony diagnostics).
  */
 export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   normalizeRealizedVoice2PostInjection182B3(guitar, context);
 }
 
@@ -3984,7 +3986,7 @@ export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: Co
  * 18.2B.2: Voice-2?only interval chain (hard 12 ? soft 7 + guide-tone bias) ? phrase-end re-lock.
  */
 export function stabiliseGuitarVoice2Wyble18_2B_2(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   enforceVoice2ConsecutiveInnerLineIntervals(guitar, context, V2_INNER_LINE_HARD_LEAP, false);
   enforceVoice2ConsecutiveInnerLineIntervals(guitar, context, V2_INNER_LINE_SOFT_LEAP, true);
   for (const m of guitar.measures) {
@@ -3996,7 +3998,7 @@ export function stabiliseGuitarVoice2Wyble18_2B_2(guitar: PartModel, context: Co
  * 18.2B.1: phrase-end chord-tone override ? BH leap cap ? inner-line soft leap ? phrase-end re-lock.
  */
 export function stabiliseGuitarVoice2Wyble18_2B_1(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
 
   for (const m of guitar.measures) {
     applyPhraseEndHardOverrideForMeasure(m, m.chord ?? 'Cmaj9', context);

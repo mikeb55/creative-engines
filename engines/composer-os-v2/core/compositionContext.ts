@@ -174,6 +174,16 @@ export interface GenerationMetadata {
   songwriterSyncopationBias?: number;
   /** Songwriter profile: density bias (0–1). */
   songwriterDensityBias?: number;
+  fagenMuChordBias?: number;
+  fagenLydianMajorBias?: number;
+  fagenAlteredDominantBias?: number;
+  fagenRootAvoidanceMelody?: number;
+  fagenSlashChordDensity?: number;
+  bacharachDeceptiveCadenceRate?: number;
+  bacharachChromaticVoiceLeading?: number;
+  bacharachModalMixtureLevel?: number;
+  bacharachCadentialAmbiguity?: number;
+  bacharachPedalUsage?: number;
   /** Song Mode Phase C5: control layer (roles, caps, muddy reduction) after C4 — no structural edits. */
   songModeC5ByPhrase?: Array<{
     phraseIndex: number;

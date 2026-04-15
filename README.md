@@ -126,3 +126,4 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 5. Song Mode style surface
 6. Vocal lead sheet download path
 7. Bass/duo regression tests
+

@@ -2766,7 +2766,7 @@ export function generateGoldenPathDuoScore(
     ) {
       applySongModePhraseEngineV1(guitarPart, context);
     }
-    if (context.presetId === 'guitar_bass_duo') {
+    if (isGuitarBassDuoFamily(context.presetId)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
       applyLateClosingGuitarContourNudge(guitarPart, context);
       const phaseABars = injectPhaseAGuitarVoice2Probe(guitarPart, context);
