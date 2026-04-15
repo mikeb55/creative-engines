@@ -87,3 +87,42 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 - parker_section_compiler.py  chorus/section orchestration
 - parker_vocabulary.py  interval patterns from transcriptions
 - parker_musicxml_exporter.py  MusicXML output
+
+---
+
+## Project Status — 2026-04-15
+
+### Composer OS Generate modes
+| Mode | Status |
+|------|--------|
+| Guitar-Bass Duo | Shipping MusicXML ? |
+| ECM Chamber | Shipping MusicXML ? |
+| Song Mode | Shipping MusicXML ? |
+| Riff | Shipping MusicXML ? |
+| Wyble Etude | Shipping MusicXML ? |
+| Big Band | Shipping MusicXML ? |
+| String Quartet | Shipping MusicXML ? |
+| Vocal Lead Sheet | Bridge wired, download path open |
+
+### Composer Engines (Python, Composer OS UI)
+| Engine | Status |
+|--------|--------|
+| Wayne Shorter | v1.0 shipped — asymmetric form, harmonic ambiguity |
+| Charlie Parker | v1.0 shipped — bebop, 32-bar chorus GCE, 10 validators |
+| Thelonious Monk | v1.0 shipped — blues form, space/density validators |
+
+### Recent completions
+- Songwriter dropdown for Big Band and String Quartet (2026-04-15)
+- Thelonious Monk Engine v1.0 (2026-04-15)
+- Guitar-bass duo Voice 2 counterpoint
+- Phase 19 Song Form UI and rehearsal marks
+- V9.0 chord baseline and Sibelius-safe MusicXML
+
+### Priority queue
+1. Wyble single-line parity
+2. Phase 19.1 long forms (>32 bars)
+3. Wayne Shorter TS integration
+4. Big Band / String Quartet polish
+5. Song Mode style surface
+6. Vocal lead sheet download path
+7. Bass/duo regression tests

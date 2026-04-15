@@ -1,3 +1,41 @@
+## [2026-04-15] Composer OS — Roadmap Snapshot & Recent Completions
+
+### Shipped today
+- **Thelonious Monk Engine v1.0** — blues/custom form, GCE melody (temp=0.9),
+  Monk-specific prompt + RAG from 5 transcriptions, 12 validators including
+  density cap, rhythm variety, breathing. See engines/monk-engine/.
+- **Generate UI: Songwriter for Big Band and String Quartet** — previously
+  locked to Donald Fagen silently; now exposes Songwriter dropdown for BB
+  and Songwriter + Arranger + Era for SQ. Uses same SONGWRITER_OPTIONS as
+  Song Mode. primarySongwriterStyle now sent for song_mode, big_band,
+  string_quartet.
+
+### Recently completed (from roadmap snapshot)
+- Guitar-bass duo Voice 2 counterpoint (Wyble rules, pre-planned goals,
+  clash/repeated-pitch prevention, range C2-A3)
+- Wyble Voice 2 inject extended to guitar_bass_duo_single_line
+- Phase 19: Song Form UI, formId ? engine, rehearsal marks, bar cap =32
+- Big Band: seven-part ensemble MusicXML, chords on piano, piano naming
+- String Quartet: strings + piano reduction, section markers, Song Form +
+  16/24/32 bars on Generate
+- Song Mode: compile/realise pipeline, D1+D2+C1-C7 delivered
+- V9.0 chord baseline: unified parsing/normalization, Sibelius-safe rhythm
+
+### In flight / gaps
+- Vocal lead sheet: bridge wired, download path not closed
+- Wyble single-line parity: stabilisers and guards incomplete
+- Song Mode style controls: thinner than core surface
+- Big Band / SQ polish: copy, host smoke tests ongoing
+
+### Priority queue (next up)
+1. Wyble single-line parity
+2. Phase 19.1 — forms longer than 32 bars
+3. Wayne Shorter TS integration
+4. Big Band / String Quartet polish
+5. Song Mode style exposure
+6. Vocal lead sheet pipeline closure
+7. Bass/duo regression expansion
+
 ## [2026-04-15] Thelonious Monk Engine — v1.0
 
 ### Status: Shipped
@@ -155,5 +193,6 @@
 * ACE framework embedded
 
 ---
+
 
 
