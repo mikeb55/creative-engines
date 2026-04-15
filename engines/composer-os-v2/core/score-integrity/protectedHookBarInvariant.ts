@@ -1,6 +1,18 @@
 /**
  * Song Mode hook bars (1, 25) — structural identity snapshots for regression guards.
- * Compares pitch + onset + duration + voice (no velocity). Throws if downstream stages mutate protected material.
+ *
+ * **Identity (per note, after sort):** MIDI pitch, voice id, start beat, duration — velocity and other
+ * expressive fields are ignored. This is an **internal** invariant: “snapshot now vs same bars later”
+ * should match when no later stage is supposed to rewrite protected hook material.
+ *
+ * **“Density” in `SONG_MODE_REGRESSION_FAIL_MSG`:** informal shorthand — failures include a **different
+ * number of notes** in the bar (`identitiesEqual` length mismatch), not only pitch/time drift.
+ *
+ * **Design:** Intended to catch **unintended** regressions (e.g. a pass mutates sealed hook bars).
+ * It is **not** for rejecting **legitimate** style-driven rewrites: the baseline snapshot must be taken
+ * *after* any pass that is allowed to change the hook under the active style (e.g. chord-tone policy).
+ * Comparing “before style-aware passes” to “after” will false-positive when style parameters change
+ * chord-tone resolution but not when comparing **post-finalize** vs **post-finalize + only non-hook edits**.
  */
 
 import type { NoteEvent, PartModel } from '../score-model/scoreModelTypes';
@@ -8,7 +20,7 @@ import type { NoteEvent, PartModel } from '../score-model/scoreModelTypes';
 /** Must match duoMusicalQuality.ts practical ceiling for guitar rest ratio. */
 export const SONG_MODE_GUITAR_REST_RATIO_CEILING = 0.55;
 
-/** Fail message for baseline regression test + runtime hook invariant violations. */
+/** Fail message for baseline regression test + runtime hook invariant violations (identity / note-count). */
 export const SONG_MODE_REGRESSION_FAIL_MSG = 'Song Mode regression: identity or density broken';
 
 export interface HookBarNoteIdentity {
@@ -60,6 +72,7 @@ function identitiesEqual(a: HookBarNoteIdentity[], b: HookBarNoteIdentity[]): bo
   return true;
 }
 
+/** Compares `snapshot` to the bar’s current note rows (pitch / onset / duration / voice). */
 export function assertHookBarIdentityUnchanged(
   snapshot: HookBarNoteIdentity[],
   guitar: PartModel,

@@ -1,4 +1,23 @@
-## [2026-04-15] Wayne Shorter � quick coherence fix
+﻿## [2026-04-15] Fix: Song Mode hook bar guard false positive
+
+### Problem
+assertHookBarIdentityUnchanged was firing incorrectly
+when STYLE_SHORTER_POST_BOP / wayne_shorter activated
+shorterMode chord-tone policy. The mid-pipeline snapshot
+was taken before style-aware passes (overlay, melodic,
+phrase repair) ran, then compared after — legitimately
+different when shorterMode changes chord tone selection.
+
+### Fix (generateGoldenPathDuoScore.ts)
+Removed mid-pipeline snapshot + assert block.
+Post-finalizeAndSealDuoScoreBarMath guard on bars 1
+and 25 retained — still catches unintended mutations
+after the score is sealed.
+
+### No snapshot regeneration required
+No stored hook snapshot files exist to refresh.
+
+## [2026-04-15] Wayne Shorter — quick coherence fix
 
 ### Changes
 - harmonyChordTonePolicy.ts: STYLE_SHORTER_POST_BOP now
@@ -8,7 +27,7 @@
   velocity shaping + shorterMode chord policy together
   form the complete Post-Bop style surface
 - songwriterStyleProfiles.ts: wayne_shorter description
-  added � post-bop harmonic language, upper-structure
+  added — post-bop harmonic language, upper-structure
   emphasis, activates shorterMode chord-tone policy
 
 ### Effect
@@ -42,7 +61,7 @@ two mechanisms were disconnected.
 - Guitar-Bass Duo / Song Mode: golden path still capped
   at 32 - engine extension deferred to future phase
 
-## [2026-04-15] Counterpoint scoring module � Phase 1 complete
+## [2026-04-15] Counterpoint scoring module — Phase 1 complete
 
 ### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
 Shared three-voice counterpoint scorer based on:
@@ -287,6 +306,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 

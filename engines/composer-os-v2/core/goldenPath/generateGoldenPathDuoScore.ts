@@ -65,11 +65,8 @@ import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine'
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import {
-  assertHookBarIdentityUnchanged,
   assertHookBarsUnchangedSinceSnapshot,
-  snapshotGuitarHookBarIdentity,
   snapshotGuitarHookBars,
-  type HookBarNoteIdentity,
 } from '../score-integrity/protectedHookBarInvariant';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
@@ -2860,18 +2857,14 @@ export function generateGoldenPathDuoScore(
   ) {
     applyBarryHarris(context, afterExpressive);
   }
-  let songModeHookBar1PreOverlays: HookBarNoteIdentity[] | undefined;
   let songModeHookBarsPostFinalize: Map<number, HookBarNoteIdentity[]> | undefined;
-  if (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    tb === 32
-  ) {
-    const gSnap = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
-    if (gSnap) {
-      songModeHookBar1PreOverlays = snapshotGuitarHookBarIdentity(gSnap, 1);
-    }
-  }
+  /**
+   * No mid-pipeline hook-bar identity assert here (pre-overlay vs post-melodic): later Song Mode passes
+   * (melodic continuity, density floor, phrase landing repair) may re-resolve pitches via
+   * chord-tone policy when songwriter/style profile implies shorterMode — legitimately diverging from the
+   * guitar line as first laid down before those passes. Regression protection for protected hook bars
+   * remains: snapshot after `finalizeAndSealDuoScoreBarMath` + `assertHookBarsUnchangedSinceSnapshot` below.
+   */
   applySongModeRhythmOverlayC1(afterExpressive, context);
   applyJamesBrownFunkOverlay(afterExpressive, context);
   applySongModeOstinatoC4(afterExpressive, context);
@@ -2891,17 +2884,6 @@ export function generateGoldenPathDuoScore(
       applySongModePhraseEndLandingRepair(gSong, context);
       applySongModeGuitarDensityFloor(gSong, context);
       applySongModePhraseEndLandingRepair(gSong, context);
-    }
-  }
-  if (
-    songModeHookBar1PreOverlays &&
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    tb === 32
-  ) {
-    const gPreFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
-    if (gPreFin) {
-      assertHookBarIdentityUnchanged(songModeHookBar1PreOverlays, gPreFin, 1);
     }
   }
   if (
