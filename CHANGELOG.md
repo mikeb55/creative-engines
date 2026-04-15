@@ -1,4 +1,12 @@
-﻿## [2026-04-15] Big Band and String Quartet polish
+﻿## [2026-04-15] Fix: Big Band Blues 12 bar count validation
+
+### Change (composerOsApiCore.ts)
+- Added 42 to allowed totalBars for Big Band and
+  String Quartet: [16, 24, 32, 40, 42, 48, 64]
+- Required for big_band_blues12 form (42-bar chart)
+- Error message updated to include 42
+
+## [2026-04-15] Big Band and String Quartet polish
 
 ### Fixes
 - releaseMetadata.ts: String Quartet honestNote corrected

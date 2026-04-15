@@ -292,6 +292,8 @@ export function HomeGenerate({
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [formId, setFormId] = useState<string>('');
+  /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
+  const [bigBandFormId, setBigBandFormId] = useState('');
   const [songFormMenuOpen, setSongFormMenuOpen] = useState(false);
   const songFormDropdownRef = useRef<HTMLDivElement>(null);
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
@@ -357,6 +359,15 @@ export function HomeGenerate({
       setTotalBars((tb) => (tb >= 8 ? tb : 32));
     }
   }, [presetId, songFormBarPreset, ensembleSongFormPreset]);
+
+  useEffect(() => {
+    if (presetId !== 'big_band') setBigBandFormId('');
+  }, [presetId]);
+
+  useEffect(() => {
+    if (presetId !== 'big_band' || bigBandFormId !== 'big_band_blues12') return;
+    if (totalBars !== 42) setTotalBars(42);
+  }, [presetId, bigBandFormId, totalBars]);
 
   useEffect(() => {
     if (!songFormMenuOpen) return;
@@ -481,7 +492,7 @@ export function HomeGenerate({
             presetId === 'string_quartet'
               ? songwriterStyle
               : undefined,
-          formId,
+          formId: presetId === 'big_band' ? bigBandFormId : formId,
         });
         /** Duo / Song Form: chord count matches selected total bars, or 8 bars (tiled) when length > 8. */
         let duoHarmonyFields: {
@@ -737,6 +748,7 @@ export function HomeGenerate({
       blendStrength,
       funkGroove,
       formId,
+      bigBandFormId,
       songFormBarPreset,
       songFormBars,
       onResult,
@@ -1076,6 +1088,7 @@ export function HomeGenerate({
               onChange={(e) => {
                 setTotalBars(Number(e.target.value));
                 setFormId('');
+                if (presetId === 'big_band') setBigBandFormId('');
               }}
               disabled={loading}
               style={{
@@ -1124,7 +1137,6 @@ export function HomeGenerate({
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
         presetId === 'song_mode' ||
-        presetId === 'big_band' ||
         presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{
@@ -1241,7 +1253,7 @@ export function HomeGenerate({
               </div>
             )}
           </div>
-          {(presetId === 'big_band' || presetId === 'string_quartet') && (
+          {presetId === 'string_quartet' && (
             <p
               style={{
                 fontSize: '0.8rem',
@@ -1251,26 +1263,12 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              {presetId === 'big_band' ? (
-                <>
-                  Exported scores include rehearsal marks with section names such as{' '}
-                  <strong style={{ color: 'var(--text)' }}>Intro</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Melody Head</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Solo Section</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Soli Chorus</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Shout Chorus</strong>, and{' '}
-                  <strong style={{ color: 'var(--text)' }}>Rideout</strong> — not every chart uses every section.
-                </>
-              ) : (
-                <>
-                  Exported scores include rehearsal marks:{' '}
-                  <strong style={{ color: 'var(--text)' }}>Statement</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Development</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Contrast</strong>,{' '}
-                  <strong style={{ color: 'var(--text)' }}>Return</strong>, and{' '}
-                  <strong style={{ color: 'var(--text)' }}>Coda</strong>.
-                </>
-              )}
+              Exported scores include rehearsal marks:{' '}
+              <strong style={{ color: 'var(--text)' }}>Statement</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Development</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Contrast</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Return</strong>, and{' '}
+              <strong style={{ color: 'var(--text)' }}>Coda</strong>.
             </p>
           )}
         </div>
@@ -1720,6 +1718,45 @@ export function HomeGenerate({
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>
             Songwriter, arranger, and era blend for harmonic colour; ensemble size sets the horn footprint.
           </p>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Form
+            </label>
+            <select
+              value={bigBandFormId}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === 'big_band_blues12') {
+                  setBigBandFormId('big_band_blues12');
+                  setTotalBars(42);
+                } else {
+                  setBigBandFormId('');
+                }
+              }}
+              disabled={loading}
+            >
+              <option value="">Standard</option>
+              <option value="big_band_blues12">Blues 12</option>
+            </select>
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0.5rem 0 0',
+                lineHeight: 1.45,
+              }}
+            >
+              Exported scores include rehearsal marks with section names such as{' '}
+              <strong style={{ color: 'var(--text)' }}>Intro</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Melody Head</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Solo Section</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Soli Chorus</strong>,{' '}
+              <strong style={{ color: 'var(--text)' }}>Shout Chorus</strong>, and{' '}
+              <strong style={{ color: 'var(--text)' }}>Rideout</strong> — not every chart uses every section.{' '}
+              <strong style={{ color: 'var(--text)' }}>Blues 12</strong> fixes a 42-bar chart (Intro 2 + Head 12 + Solo
+              12 + Shout 12 + Rideout 4).
+            </p>
+          </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Songwriter

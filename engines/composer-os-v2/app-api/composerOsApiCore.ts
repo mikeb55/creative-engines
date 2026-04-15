@@ -292,11 +292,11 @@ export function apiGenerate(
     if (
       (req_.presetId === 'big_band' || req_.presetId === 'string_quartet') &&
       tb !== undefined &&
-      ![16, 24, 32, 40, 48, 64].includes(tb)
+      ![16, 24, 32, 40, 42, 48, 64].includes(tb)
     ) {
       return {
         success: false,
-        error: 'totalBars must be 16, 24, 32, 40, 48, or 64 for Big Band and String Quartet.',
+        error: 'totalBars must be 16, 24, 32, 40, 42, 48, or 64 for Big Band and String Quartet.',
         composerOsVersion: COMPOSER_OS_VERSION,
       };
     }
