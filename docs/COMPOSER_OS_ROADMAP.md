@@ -121,7 +121,7 @@
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
 | 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
-| 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename, **`big_band_blues12`** 42-bar form, **`bigband-verify`** 14/14, SQ honestNote. |
+| 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | **Song Mode — style exposure** | Surface **primary / secondary songwriter**, **author** + **classical** overlays, and optional **songwriter × arranger** pairing in Generate; align with **`songwriterStyleResolver`** / **`stylePairingResolver`**. Also surface **`styleStack`** or named presets beyond current defaults where applicable. |
 | 12 | **Vocal lead sheet — pipeline** | Close **CompiledSong → bridge** shape gap so vocal MusicXML appears in app receipts/downloads (see CHANGELOG 2026-04-10). |
 | 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
@@ -132,7 +132,7 @@
 ### Near term (high leverage)
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
-2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass label, **`big_band_blues12`** form, verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
+2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** end-to-end once pipeline matches bridge input.
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice).
 

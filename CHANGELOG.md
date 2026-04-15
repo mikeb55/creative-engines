@@ -1,4 +1,14 @@
-﻿## [2026-04-15] Fix: Big Band bass part name in MusicXML export
+﻿## [2026-04-15] Big Band polish — complete
+
+### All items done
+- Double Bass part name correct in MusicXML export
+- big_band_blues12 form: 42 bars, correct rehearsal marks
+- Blues 12 form selector on Big Band card in UI
+- 42 added to allowed bar counts in API validation
+- bigband-verify.ts: 14/14 checks passing
+- String Quartet honestNote corrected in releaseMetadata.ts
+
+## [2026-04-15] Fix: Big Band bass part name in MusicXML export
 
 ### Change (musicxmlExporter.ts)
 - partDisplayNameForExport now context-aware for
