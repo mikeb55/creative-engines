@@ -6,6 +6,7 @@ import type { SongwriterRuleId } from './songwritingResearchTypes';
 
 export interface SongwriterStyleProfile {
   id: SongwriterRuleId;
+  description?: string;
   /** 0–1 — emphasis on continuous line vs riff-like cells. */
   lineVsCellEmphasis: number;
   /** 0–1 — harmonic colour vs diatonic simplicity. */
@@ -891,6 +892,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   wayne_shorter: {
     id: 'wayne_shorter',
+    description:
+      'Post-bop harmonic language with upper-structure emphasis (9, 11, 13), ambiguous tonality, motivic development. Activates shorterMode chord-tone policy.',
     lineVsCellEmphasis: 0.82,
     harmonyColourBias: 0.92,
     formRegularity: 0.22,

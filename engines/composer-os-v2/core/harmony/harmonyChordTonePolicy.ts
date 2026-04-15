@@ -24,6 +24,7 @@ export function chordTonesForChordSymbolWithContext(chord: string, context: Comp
   const styleProfile = (context.generationMetadata as any)?.styleProfile ?? '';
   const shorterMode = primaryStyle === 'wayne_shorter' 
     || primaryStyle === 'andrew_hill'
-    || styleProfile === 'STYLE_MODERN_JAZZ';
+    || styleProfile === 'STYLE_MODERN_JAZZ'
+    || styleProfile === 'STYLE_SHORTER_POST_BOP';
   return chordTonesForChordSymbol(chord, { lockedHarmony: locked, shorterMode });
 }

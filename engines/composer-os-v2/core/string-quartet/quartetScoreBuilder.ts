@@ -16,9 +16,13 @@ import {
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { QUARTET_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutHeuristics';
+import { WholeNoteDensityTracker } from '../ensemble-scoring/ensembleLayoutHeuristics';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
+
+const QUARTET_PART_IDS = [SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC] as const;
 
 /** Human-readable rehearsal mark text in exported scores (internal `phase` ids unchanged). */
 const QUARTET_REHEARSAL_MARK_DISPLAY: Record<QuartetFormPhase, string> = {
@@ -219,10 +223,21 @@ export interface BuildQuartetScoreModelInput {
   era?: BigBandEraId;
   /** When length matches `formPlan.totalBars`, overrides era pool / `CHORD_CYCLE` entirely. */
   chordBars?: string[];
+  /** If true, skips whole-note density + rhythm-split heuristics (pad / demo sketch). */
+  padSketch?: boolean;
+}
+
+function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): void {
+  if (useHalfHalf) {
+    addEvent(m, createNote(pitch, 0, 2, 1));
+    addEvent(m, createNote(pitch, 2, 2, 1));
+  } else {
+    addEvent(m, createNote(pitch, 0, 4, 1));
+  }
 }
 
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, texturePlan, era, chordBars } = input;
+  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -237,10 +252,10 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     return QUARTET_REHEARSAL_MARK_DISPLAY[sl.phase];
   };
 
-  const parts = QUARTET_INSTRUMENTS.map((inst, idx) => {
+  const stringParts: PartModel[] = QUARTET_INSTRUMENTS.map((inst, idx) => {
     const partId = partIdForQuartetInstrument(inst);
     const meta = PART_META[idx];
-    const p = createPart(
+    return createPart(
       partId,
       meta.name,
       meta.instrumentIdentity,
@@ -250,23 +265,48 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
       chordForBar,
       rehearsalForBar
     );
+  });
 
-    for (let bar = 1; bar <= totalBars; bar++) {
-      const m = p.measures[bar - 1];
-      const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
-      const texSlice = slice ? texturePlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+  const wholeTracker = new WholeNoteDensityTracker();
+
+  for (let bar = 1; bar <= totalBars; bar++) {
+    const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
+    const texSlice = slice ? texturePlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+    const sectionTag = (slice?.phase ?? 'other') as SectionTag;
+    const needSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
+    const splitIdx = (bar + seed) % 4;
+
+    const sym = chordForBar(bar);
+    const rpc = chordSymbolRootPc(sym) ?? 0;
+    const stack = pitchesQuartetString(rpc);
+
+    const barNotes: ScoredNote[] = [];
+
+    for (let idx = 0; idx < 4; idx++) {
+      const inst = QUARTET_INSTRUMENTS[idx]!;
+      const m = stringParts[idx]!.measures[bar - 1]!;
       const role = texSlice?.rolesByInstrument[inst];
+      const pid = QUARTET_PART_IDS[idx]!;
       if (role === 'silence') {
         addEvent(m, createRest(0, 4));
         continue;
       }
-      const sym = chordForBar(bar);
-      const rpc = chordSymbolRootPc(sym) ?? 0;
-      const stack = pitchesQuartetString(rpc);
-      addEvent(m, createNote(stack[idx], 0, 4));
+      const splitHere = needSplit && idx === splitIdx;
+      const pitch = stack[idx]!;
+      if (splitHere) {
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+      } else {
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
+      }
+      addStringBar(m, pitch, splitHere);
     }
-    return p;
-  });
+
+    wholeTracker.pushBarSlice(
+      { barIndex: bar, sectionTag, barBeats: 4, notes: barNotes },
+      padSketch ?? false
+    );
+  }
 
   /** GM Acoustic Grand (0); exporter emits `<midi-program>1</midi-program>` + `<midi-channel>1</midi-channel>` for `sq_piano`. */
   const pianoPart = createPart(
@@ -284,5 +324,5 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     addEvent(m, createRest(0, 4));
   }
 
-  return createScore(title, [...parts, pianoPart], { tempo: 96 });
+  return createScore(title, [...stringParts, pianoPart], { tempo: 96 });
 }

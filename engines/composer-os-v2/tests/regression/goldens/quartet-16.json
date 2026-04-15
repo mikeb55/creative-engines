@@ -1,0 +1,42 @@
+{
+  "barCount": 16,
+  "kind": "stringQuartet",
+  "maxConsecutiveBarsHighWholeRatio": 3,
+  "maxConsecutiveDuplicateV1Bars": 2,
+  "maxWindowV1WholeDominance": 1,
+  "partIds": [
+    "sq_cello",
+    "sq_piano",
+    "sq_viola",
+    "sq_violin_1",
+    "sq_violin_2"
+  ],
+  "perPartNonRestNoteCounts": {
+    "sq_cello": 16,
+    "sq_piano": 0,
+    "sq_viola": 20,
+    "sq_violin_1": 16,
+    "sq_violin_2": 16
+  },
+  "totalNonRestNotes": 68,
+  "v1v2OnsetDiversity": 1,
+  "wholeNoteRatioGlobal": 0.882353,
+  "wholeRatioPerBar": [
+    1,
+    1,
+    1,
+    0.6,
+    1,
+    1,
+    1,
+    0.6,
+    1,
+    1,
+    1,
+    0.6,
+    1,
+    1,
+    1,
+    0.6
+  ]
+}

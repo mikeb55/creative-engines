@@ -1,3 +1,27 @@
+## [2026-04-15] Wayne Shorter — quick coherence fix
+
+### Changes
+- harmonyChordTonePolicy.ts: STYLE_SHORTER_POST_BOP now
+  triggers shorterMode (upper-extension chord tone bias)
+  alongside wayne_shorter, andrew_hill, STYLE_MODERN_JAZZ
+- songModeStyleEngine.ts: comment added clarifying that
+  velocity shaping + shorterMode chord policy together
+  form the complete Post-Bop style surface
+- songwriterStyleProfiles.ts: wayne_shorter description
+  added — post-bop harmonic language, upper-structure
+  emphasis, activates shorterMode chord-tone policy
+
+### Effect
+Song Mode with Post-Bop style now correctly applies
+upper-extension (9/11/13) chord tone bias in addition
+to the existing velocity shaping. Previously these
+two mechanisms were disconnected.
+
+### Not done (deferred)
+- Full Wayne Shorter presetId on Generate page
+- Python engine bridge to TS pipeline
+- Unified Shorter mode knob across all mechanisms
+
 ## [2026-04-15] Phase 19.1 - Long forms >32 bars for Big Band and String Quartet
 
 ### UI changes (HomeGenerate.tsx)
@@ -263,6 +287,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 

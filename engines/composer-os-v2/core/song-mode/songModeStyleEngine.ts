@@ -130,6 +130,11 @@ function velocityDeltaForNote(
   }
 
   if (profile === 'STYLE_SHORTER_POST_BOP') {
+    // STYLE_SHORTER_POST_BOP: velocity shaping applied here.
+    // Upper-extension chord tone bias is applied upstream
+    // in harmonyChordTonePolicy.ts via shorterMode flag.
+    // These two mechanisms together form the complete
+    // Wayne Shorter / Post-Bop style surface.
     /** Phrase-edge push + stronger downbeats; wider contrast via full micro range. */
     let d = -3;
     if (posInPhrase === 0) d += 8;

@@ -4,6 +4,13 @@
  */
 
 import type { BigBandFormPhase, BigBandFormPlan, BigBandSectionPlan } from './bigBandPlanTypes';
+import type { HornCloningBarInput, ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutHeuristics';
+import {
+  WholeNoteDensityTracker,
+  advanceHornCloneStreaks,
+  initialHornCloneStreakState,
+  mitigateBigBandHornMidis,
+} from '../ensemble-scoring/ensembleLayoutHeuristics';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
 import type { BigBandEraId } from './bigBandResearchTypes';
 import {
@@ -15,7 +22,7 @@ import {
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
-import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -37,6 +44,25 @@ const BB_PART_IDS = [
 ] as const;
 
 const CHORD_CYCLE = ['Cmaj7', 'Am7', 'Dm7', 'G7'];
+
+function bigBandPhaseToSectionTag(phase: BigBandFormPhase | undefined): SectionTag {
+  switch (phase) {
+    case 'intro':
+      return 'head';
+    case 'melody_head':
+      return 'melody';
+    case 'solo_section':
+      return 'solo';
+    case 'background_figures':
+      return 'other';
+    case 'shout_chorus':
+      return 'shout';
+    case 'ending':
+      return 'out';
+    default:
+      return 'other';
+  }
+}
 
 /** Human-readable rehearsal mark text in exported scores (internal `phase` ids unchanged). */
 const BIG_BAND_REHEARSAL_MARK_DISPLAY: Record<BigBandFormPhase, string> = {
@@ -266,10 +292,25 @@ export interface BuildBigBandScoreModelInput {
   era?: BigBandEraId;
   /** When length matches `formPlan.totalBars`, overrides era pool / `CHORD_CYCLE` entirely. */
   chordBars?: string[];
+  /** If true, skips whole-note density + rhythm-split heuristics (pad / demo sketch). */
+  padSketch?: boolean;
+}
+
+function addWindOrBassNotes(
+  measure: MeasureModel,
+  pitch: number,
+  useHalfHalf: boolean
+): void {
+  if (useHalfHalf) {
+    addEvent(measure, createNote(pitch, 0, 2, 1));
+    addEvent(measure, createNote(pitch, 2, 2, 1));
+  } else {
+    addEvent(measure, createNote(pitch, 0, 4, 1));
+  }
 }
 
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, sectionPlan, chordBars, era } = input;
+  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -284,9 +325,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     return BIG_BAND_REHEARSAL_MARK_DISPLAY[sl.phase];
   };
 
-  const parts = BB_PART_IDS.map((partId, idx) => {
+  const parts: PartModel[] = BB_PART_IDS.map((partId, idx) => {
     const meta = PART_META[idx];
-    const p = createPart(
+    return createPart(
       partId,
       meta.name,
       meta.instrumentIdentity,
@@ -296,14 +337,62 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       chordForBar,
       rehearsalForBar
     );
+  });
 
-    for (let bar = 1; bar <= totalBars; bar++) {
-      const m = p.measures[bar - 1];
+  const wholeTracker = new WholeNoteDensityTracker();
+  let hornStreak = initialHornCloneStreakState();
+
+  for (let bar = 1; bar <= totalBars; bar++) {
+    const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
+    const secSlice = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+    const sectionTag = bigBandPhaseToSectionTag(slice?.phase);
+
+    const needRhythmSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
+    const splitWindSlot = (bar + seed) % 4;
+
+    const sym = chordForBar(bar);
+    const rpc = chordSymbolRootPc(sym) ?? 0;
+    const stack = pitchesForBigBandBar(rpc);
+    let altoMidi = stack[0];
+    let tenorMidi = stack[1];
+    let trumpetMidi = stack[2];
+    const boneMidi = stack[3];
+    const bassMidi = stack[5];
+
+    const snappedSax = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+    const snappedTrp = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
+
+    const mit = mitigateBigBandHornMidis(
+      hornStreak,
+      altoMidi,
+      tenorMidi,
+      trumpetMidi,
+      sectionTag,
+      snappedSax,
+      snappedTrp
+    );
+    altoMidi = mit.altoMidi;
+    tenorMidi = mit.tenorMidi;
+    trumpetMidi = mit.trumpetMidi;
+
+    const hornIn: HornCloningBarInput = {
+      altoMidi,
+      tenorMidi,
+      trumpetMidi,
+      sectionTag,
+    };
+    hornStreak = advanceHornCloneStreaks(hornStreak, hornIn);
+
+    const barNotes: ScoredNote[] = [];
+
+    for (let idx = 0; idx < BB_PART_IDS.length; idx++) {
+      const partId = BB_PART_IDS[idx];
+      const m = parts[idx]!.measures[bar - 1]!;
+
       if (partId === 'bb_drums') {
-        const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
-        const secSlice = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
-        const role = secSlice?.rolesBySection['rhythm_section'];
-        if (role === 'silence') {
+        const secSliceDr = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+        const roleDr = secSliceDr?.rolesBySection['rhythm_section'];
+        if (roleDr === 'silence') {
           addEvent(m, createRest(0, 4, 1));
           addEvent(m, createRest(0, 4, 2));
         } else {
@@ -311,31 +400,43 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         }
         continue;
       }
-      /** Piano reduction staff: chord symbols only (full-bar rest); no comping pitches. */
       if (partId === 'bb_piano') {
         addEvent(m, createRest(0, 4));
         continue;
       }
-      const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
-      const secSlice = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
+
       const inst = BB_ORDER[idx];
       const role = secSlice?.rolesBySection[inst];
       if (role === 'silence') {
         addEvent(m, createRest(0, 4));
         continue;
       }
-      const sym = chordForBar(bar);
-      const rpc = chordSymbolRootPc(sym) ?? 0;
-      const stack = pitchesForBigBandBar(rpc);
-      let pitch = stack[idx];
-      /** Double bass (`bb_rhythm_section`): written one octave higher for legibility. */
-      if (partId === BB_PART_RHYTHM) {
-        pitch += 12;
+
+      const splitHere = needRhythmSplit && idx === splitWindSlot && idx >= 0 && idx <= 3;
+
+      if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
+        const pitch = idx === 0 ? altoMidi : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
+        const pid = BB_PART_IDS[idx];
+        if (splitHere) {
+          barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+          barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+        } else {
+          barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
+        }
+        addWindOrBassNotes(m, pitch, splitHere);
+        continue;
       }
-      addEvent(m, createNote(pitch, 0, 4));
+      /** Upright bass (`bb_rhythm_section`) */
+      const pitch = bassMidi + 12;
+      barNotes.push({ partId: BB_PART_RHYTHM, midi: pitch, durationBeats: 4 });
+      addWindOrBassNotes(m, pitch, false);
     }
-    return p;
-  });
+
+    wholeTracker.pushBarSlice(
+      { barIndex: bar, sectionTag, barBeats: 4, notes: barNotes },
+      padSketch ?? false
+    );
+  }
 
   return createScore(title, parts, { tempo: 140 });
 }
