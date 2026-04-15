@@ -204,6 +204,14 @@ export function apiGenerate(
           : undefined,
       primarySongwriterStyle:
         typeof body.primarySongwriterStyle === 'string' ? body.primarySongwriterStyle : undefined,
+      secondarySongwriterStyle:
+        typeof body.secondarySongwriterStyle === 'string' && body.secondarySongwriterStyle.trim() !== ''
+          ? body.secondarySongwriterStyle.trim()
+          : undefined,
+      authorOverlay:
+        typeof body.authorOverlay === 'string' && body.authorOverlay.trim() !== ''
+          ? body.authorOverlay.trim()
+          : undefined,
       ensembleConfigId:
         body.ensembleConfigId === 'full_band' ||
         body.ensembleConfigId === 'medium_band' ||

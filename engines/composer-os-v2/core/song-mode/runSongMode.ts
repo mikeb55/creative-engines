@@ -75,6 +75,14 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
 
   const planVal = validateSectionPlanForSongMode(sections);
   const v0 = validateSongModeRunInput(input);
+  const secondaryTrimmed =
+    input.secondarySongwriterStyle != null && String(input.secondarySongwriterStyle).trim() !== ''
+      ? String(input.secondarySongwriterStyle).trim()
+      : undefined;
+  const authorTrimmed: AuthorRuleId | undefined =
+    input.authorOverlay != null && String(input.authorOverlay).trim() !== ''
+      ? (String(input.authorOverlay).trim() as AuthorRuleId)
+      : undefined;
   const compiled = buildCompiledSong({
     seed: input.seed,
     title,
@@ -82,8 +90,8 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     voiceType,
     researchPathOverride: input.researchPathOverride,
     primarySongwriterStyle: input.primarySongwriterStyle ?? undefined,
-    secondarySongwriterStyle: input.secondarySongwriterStyle ?? undefined,
-    authorOverlay: input.authorOverlay ?? undefined,
+    secondarySongwriterStyle: secondaryTrimmed,
+    authorOverlay: authorTrimmed,
     classicalOverlay: input.classicalOverlay ?? undefined,
     stylePairing: input.stylePairing ?? undefined,
   });

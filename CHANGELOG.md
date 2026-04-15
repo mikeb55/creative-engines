@@ -1,4 +1,25 @@
-﻿## [2026-04-15] Big Band polish — complete
+﻿## [2026-04-15] Song Mode style exposure — three new controls
+
+### UI additions (HomeGenerate.tsx)
+- Pattern slider: intent.pattern now user-controlled
+  (was hardcoded 0.5); range 0-1 alongside other
+  intent sliders
+- Secondary Songwriter dropdown: optional blend at
+  ~35% with primary; uses same SONGWRITER_OPTIONS
+- Lyric Author Influence dropdown: jimmy_webb,
+  pat_pattison, jack_perricone — optional overlay
+
+### API pipeline (appApiTypes.ts, composerOsApiCore.ts,
+  composerOsAppGeneration.ts, runSongMode.ts)
+- secondarySongwriterStyle and authorOverlay added
+  to GenerateRequest type
+- Fields passed through API → runSongStructure →
+  runSongMode → buildCompiledSong →
+  resolveSongwritingStyles
+- Empty strings stripped before blending so None
+  selection has no effect
+
+## [2026-04-15] Big Band polish — complete
 
 ### All items done
 - Double Bass part name correct in MusicXML export

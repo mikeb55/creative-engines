@@ -117,6 +117,10 @@ export interface GenerateRequest {
   ensembleConfigId?: 'full_band' | 'medium_band' | 'small_band' | 'reeds_only' | 'brass_only' | 'custom';
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
+  /** Song Mode: secondary songwriter id — blended ~35% with primary in `resolveSongwritingStyles`. */
+  secondarySongwriterStyle?: string;
+  /** Song Mode: lyric author overlay (`AuthorRuleId`), e.g. `jimmy_webb`. */
+  authorOverlay?: string;
   /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
   styleProfile?: StyleProfile;
   /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */

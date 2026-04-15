@@ -273,10 +273,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
+  const secondarySw =
+    typeof req.secondarySongwriterStyle === 'string' && req.secondarySongwriterStyle.trim() !== ''
+      ? req.secondarySongwriterStyle.trim()
+      : undefined;
+  const authorOv =
+    typeof req.authorOverlay === 'string' && req.authorOverlay.trim() !== '' ? req.authorOverlay.trim() : undefined;
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
     primarySongwriterStyle: req.primarySongwriterStyle,
+    secondarySongwriterStyle: secondarySw,
+    authorOverlay: authorOv,
     stylePairing: req.stylePairing
       ? {
           songwriterStyle: req.stylePairing.songwriterStyle,

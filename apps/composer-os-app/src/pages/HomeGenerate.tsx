@@ -285,6 +285,9 @@ export function HomeGenerate({
   const [intentSpace, setIntentSpace] = useState(0.5);
   const [intentExpression, setIntentExpression] = useState(0.5);
   const [intentSurprise, setIntentSurprise] = useState(0.5);
+  const [intentPattern, setIntentPattern] = useState(0.5);
+  const [secondarySongwriterStyle, setSecondarySongwriterStyle] = useState('');
+  const [authorOverlay, setAuthorOverlay] = useState('');
   const [includeVocalLeadSheet, setIncludeVocalLeadSheet] = useState(false);
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
@@ -649,9 +652,13 @@ export function HomeGenerate({
                   space: intentSpace,
                   expression: intentExpression,
                   surprise: intentSurprise,
-                  pattern: 0.5,
+                  pattern: intentPattern,
                 },
                 ...(includeVocalLeadSheet ? { includeVocalLeadSheet: true as const } : {}),
+                ...(secondarySongwriterStyle.trim()
+                  ? { secondarySongwriterStyle: secondarySongwriterStyle.trim() }
+                  : {}),
+                ...(authorOverlay.trim() ? { authorOverlay: authorOverlay.trim() } : {}),
               }
             : {}),
         };
@@ -743,6 +750,9 @@ export function HomeGenerate({
       intentSpace,
       intentExpression,
       intentSurprise,
+      intentPattern,
+      secondarySongwriterStyle,
+      authorOverlay,
       includeVocalLeadSheet,
       c4Strength,
       blendStrength,
@@ -1641,6 +1651,20 @@ export function HomeGenerate({
             />
             <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentSurprise * 100)}%</span>
           </div>
+          <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
+            <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Pattern</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={intentPattern}
+              onChange={(e) => setIntentPattern(Number(e.target.value))}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 360 }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>{Math.round(intentPattern * 100)}%</span>
+          </div>
           <label
             style={{
               display: 'flex',
@@ -1705,6 +1729,38 @@ export function HomeGenerate({
                   {o.label}
                 </option>
               ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Secondary Songwriter (optional)
+            </label>
+            <select
+              value={secondarySongwriterStyle}
+              onChange={(e) => setSecondarySongwriterStyle(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">None</option>
+              {SONGWRITER_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Lyric author influence (optional)
+            </label>
+            <select
+              value={authorOverlay}
+              onChange={(e) => setAuthorOverlay(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">None</option>
+              <option value="jimmy_webb">Jimmy Webb</option>
+              <option value="pat_pattison">Pat Pattison</option>
+              <option value="jack_perricone">Jack Perricone</option>
             </select>
           </div>
         </div>

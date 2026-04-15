@@ -123,7 +123,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 2. Phase 19.1 long forms (>32 bars)
 3. Wayne Shorter TS integration
 4. Big Band / String Quartet polish: **COMPLETE** (2026-04-15) — Double Bass export, blues12 42-bar form, verify 14/14, SQ honestNote
-5. Song Mode style surface
+5. Song Mode style exposure: **COMPLETE** (2026-04-15) — Pattern slider, secondary songwriter, author overlay
 6. Vocal lead sheet download path
 7. Bass/duo regression tests
 
