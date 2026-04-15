@@ -1,10 +1,10 @@
-## [2026-04-15] Composer OS ó Roadmap Snapshot & Recent Completions
+## [2026-04-15] Composer OS ? Roadmap Snapshot & Recent Completions
 
 ### Shipped today
-- **Thelonious Monk Engine v1.0** ó blues/custom form, GCE melody (temp=0.9),
+- **Thelonious Monk Engine v1.0** ? blues/custom form, GCE melody (temp=0.9),
   Monk-specific prompt + RAG from 5 transcriptions, 12 validators including
   density cap, rhythm variety, breathing. See engines/monk-engine/.
-- **Generate UI: Songwriter for Big Band and String Quartet** ó previously
+- **Generate UI: Songwriter for Big Band and String Quartet** ? previously
   locked to Donald Fagen silently; now exposes Songwriter dropdown for BB
   and Songwriter + Arranger + Era for SQ. Uses same SONGWRITER_OPTIONS as
   Song Mode. primarySongwriterStyle now sent for song_mode, big_band,
@@ -14,7 +14,7 @@
 - Guitar-bass duo Voice 2 counterpoint (Wyble rules, pre-planned goals,
   clash/repeated-pitch prevention, range C2-A3)
 - Wyble Voice 2 inject extended to guitar_bass_duo_single_line
-- Phase 19: Song Form UI, formId ? engine, rehearsal marks, bar cap =32
+- Phase 19: Song Form UI, formId ? engine, rehearsal marks, bar cap ?32
 - Big Band: seven-part ensemble MusicXML, chords on piano, piano naming
 - String Quartet: strings + piano reduction, section markers, Song Form +
   16/24/32 bars on Generate
@@ -29,14 +29,14 @@
 
 ### Priority queue (next up)
 1. Wyble single-line parity
-2. Phase 19.1 ó forms longer than 32 bars
+2. Phase 19.1 ? forms longer than 32 bars
 3. Wayne Shorter TS integration
 4. Big Band / String Quartet polish
 5. Song Mode style exposure
 6. Vocal lead sheet pipeline closure
 7. Bass/duo regression expansion
 
-## [2026-04-15] Thelonious Monk Engine ó v1.0
+## [2026-04-15] Thelonious Monk Engine ? v1.0
 
 ### Status: Shipped
 
@@ -78,7 +78,7 @@
 - monk_musicxml_exporter.py
 - monk_engine_cli.py
 
-## [2026-04-14] Thelonious Monk Engine ó Initial Build
+## [2026-04-14] Thelonious Monk Engine ? Initial Build
 
 ### Architecture
 - New engine: engines/monk-engine/
@@ -110,7 +110,7 @@
   when the first pitched note of a bar is not a strict chord
   tone, instead of shifting the pitch.
 - This converts dissonant downbeats into syncopated offbeat
-  entries ù fixing consonance AND increasing syncopation
+  entries ? fixing consonance AND increasing syncopation
   simultaneously.
 - Every third bar (bar_index % 3 == 0): pitch-nudge fallback
   retained for variety.
@@ -120,7 +120,7 @@
 - Syncopation expected to recover above 45%
 - Zero regressions on previously-measured problem bars
 
-## [2026-04-14] Charlie Parker Engine ù Best Build
+## [2026-04-14] Charlie Parker Engine ? Best Build
 
 ### Architecture
 - 8-bar section generation: GCE now sees full 8-bar phrase arc per call (A1/A2/B/A3)
@@ -163,7 +163,7 @@
 
 * Corrected day structure (removed Day 2 starting after Day 1 lunch)
 * Repositioned breaks to align with cognitive load
-* Ensured 2◊20 min breaks and 1◊ lunch per day
+* Ensured 2?20 min breaks and 1? lunch per day
 
 ### Changed
 
@@ -189,7 +189,7 @@
 ## V4.5
 
 * Stable full presentation build
-* Case studies upgraded to V4 (400ñ500 words, decision-focused)
+* Case studies upgraded to V4 (400?500 words, decision-focused)
 * ACE framework embedded
 
 ---
