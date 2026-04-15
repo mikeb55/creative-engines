@@ -1,3 +1,31 @@
+## [2026-04-15] Counterpoint scoring module — Phase 1 complete
+
+### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
+Shared three-voice counterpoint scorer based on:
+- Bizzi (1982) triple counterpoint / macchina rules
+- Tymoczko (2011) efficient voice leading geometry
+- Species counterpoint lite (parallel 5ths/8ths, lockstep)
+
+Exports:
+- scoreBizziVertical(pc1, pc2, pcBass, keyRoot) -> 0-1
+- scoreTymoczkoHorizontal(prev/curr x3 MIDI) -> 0-1
+- scoreSpeciesLitePenalties(prev/curr x3 MIDI) -> 0-1
+- scoreThreeVoices(params) -> 0-1 combined weighted score
+
+Default weights: Bizzi 0.4, Tymoczko 0.35, Species 0.25
+
+### New test infrastructure
+- engines/composer-os-v2/jest.config.cjs (ts-jest)
+- engines/composer-os-v2/tsconfig.jest.json
+- engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.test.ts
+- 10/10 tests passing
+
+### Status
+Phase 1 complete. Not yet wired into any module.
+Phase 2 (Guitar-Bass Duo wiring) deferred until after:
+- Phase 19.1 long forms
+- Wayne Shorter TS integration
+
 ## [2026-04-15] Wyble single-line parity + type fixes + Bizzi prep
 
 ### Wyble single-line parity (guitarVoice2WybleLayer.ts, generateGoldenPathDuoScore.ts)
@@ -215,6 +243,7 @@
 * ACE framework embedded
 
 ---
+
 
 
 

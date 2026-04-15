@@ -5,6 +5,7 @@
   "description": "V2.0 - Composer OS unified generative composition system",
   "main": "core/conductor/conductor.js",
   "scripts": {
+    "test:jest:counterpoint": "jest --config jest.config.cjs voiceLeadingScorer --no-coverage",
     "test": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts",
     "test:retro": "npx ts-node --project ../../tsconfig.json scripts/runRetroSelfTests.ts",
     "sibelius:diagnostic-variants": "npx ts-node --project ../../tsconfig.json scripts/sibeliusDiagnosticVariants.ts",
@@ -15,5 +16,11 @@
     "test:bass": "npx ts-node --project ../../tsconfig.json scripts/bass-phrase-sweep.ts",
     "test:vocal": "npx ts-node --project ../../tsconfig.json scripts/test-vocal-lead-sheet.ts"
   },
-  "types": "./core/conductor/conductorTypes.ts"
+  "types": "./core/conductor/conductorTypes.ts",
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.0.0"
+  }
 }
