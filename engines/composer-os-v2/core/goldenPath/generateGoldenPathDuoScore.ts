@@ -67,6 +67,7 @@ import { isProtectedBar } from '../score-integrity/identityLock';
 import {
   assertHookBarsUnchangedSinceSnapshot,
   snapshotGuitarHookBars,
+  type HookBarNoteIdentity,
 } from '../score-integrity/protectedHookBarInvariant';
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';

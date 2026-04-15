@@ -16,6 +16,7 @@ import {
 } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { liftToneToRange, guitarChordTonesInRange as guitarChordTonesInRangeRaw } from './guitarPhraseAuthority';
+import { scoreThreeVoices } from '../counterpoint/voiceLeadingScorer';
 
 /**
  * Unicode musical flat (♭, U+266D) → ASCII `b` so root/slash parsing matches `b`-prefixed flats.
@@ -1066,6 +1067,19 @@ type Voice2PitchPickContext182B3 = {
   v1notes: NoteEvent[];
   /** Start beat of the V2 segment being refined (4/4 quarters); set per pick when applying strong-beat spacing. */
   v2RefineStartBeat?: number;
+  /** Current beat bass MIDI (for Bizzi vertical scoring). */
+  bassMidi?: number;
+  /** Previous beat Voice 1 MIDI (Tymoczko / species horizontal). */
+  prevV1Midi?: number;
+  /** Previous beat Voice 2 MIDI. */
+  prevV2Midi?: number;
+  /** Previous beat bass MIDI. */
+  prevBassMidi?: number;
+  /**
+   * When set (duo path), {@link refineVoice2Pitch182B3} can resolve bass MIDI at {@link v2RefineStartBeat}.
+   * Not all call sites have bass at Voice-2 inject time; when unset, counterpoint bonus may be vertical-only or skipped.
+   */
+  counterpointBassPart?: PartModel;
 };
 
 function v1FragmentContour182B3(v1: NoteEvent[]): -1 | 0 | 1 {
@@ -1077,6 +1091,52 @@ function v1FragmentContour182B3(v1: NoteEvent[]): -1 | 0 | 1 {
   return 0;
 }
 
+/** Bass or any single-line part: MIDI at start of `[beatStart, beatStart+1)` in `bar`, if any note overlaps. */
+function midiAtBeatInPart182B3(part: PartModel | undefined, bar: number, beatStart: number): number | undefined {
+  if (part === undefined) return undefined;
+  const m = part.measures.find((x) => x.index === bar);
+  if (!m) return undefined;
+  const notes = m.events.filter((e): e is NoteEvent => e.kind === 'note');
+  const t0 = beatStart;
+  const t1 = beatStart + 1;
+  const ps = v1PitchesOverlappingTimeSpan182B3(notes, t0, t1);
+  if (ps.length === 0) return undefined;
+  return ps[0];
+}
+
+/**
+ * Bizzi / Tymoczko horizontal inputs: current beat bass, previous-beat V1/V2/bass when inferable from this bar + last V2.
+ * `beatStart` is the refinement quarter (0..3) for this Voice-2 pick.
+ */
+function computeVoice2CounterpointMidiFields182B3(
+  bassPart: PartModel | undefined,
+  bar: number,
+  beatStart: number,
+  v1notes: NoteEvent[],
+  lastPitchV2: number | null,
+  consecutiveV2: boolean,
+  intraBarPrevPitch: number | null
+): Pick<Voice2PitchPickContext182B3, 'bassMidi' | 'prevV1Midi' | 'prevV2Midi' | 'prevBassMidi'> {
+  const bassMidi = midiAtBeatInPart182B3(bassPart, bar, beatStart);
+
+  let prevV1Midi: number | undefined;
+  let prevV2Midi: number | undefined;
+  let prevBassMidi: number | undefined;
+
+  if (beatStart > 0) {
+    const pb = beatStart - 1;
+    const v1p = v1PitchesOverlappingTimeSpan182B3(v1notes, pb, pb + 1);
+    if (v1p.length > 0) prevV1Midi = v1p[0];
+    if (intraBarPrevPitch !== null) prevV2Midi = intraBarPrevPitch;
+    prevBassMidi = midiAtBeatInPart182B3(bassPart, bar, pb);
+  } else {
+    if (lastPitchV2 !== null && consecutiveV2) prevV2Midi = lastPitchV2;
+    prevBassMidi = midiAtBeatInPart182B3(bassPart, bar - 1, V2_BAR_DURATION_BEATS - 1);
+  }
+
+  return { bassMidi, prevV1Midi, prevV2Midi, prevBassMidi };
+}
+
 function buildVoice2PitchPickContext182B3(
   bar: number,
   seed: number,
@@ -1086,7 +1146,10 @@ function buildVoice2PitchPickContext182B3(
   schedulePhase: Voice2SchedulePhase,
   v1notes: NoteEvent[],
   imitationRunBars: number,
-  preferredShapeHint: BarV2RhythmShape | undefined
+  preferredShapeHint: BarV2RhythmShape | undefined,
+  bassPart?: PartModel,
+  /** Quarter index (0..3) for initial counterpoint MIDI snapshot; refined picks override via `v2RefineStartBeat`. */
+  v2RefineStartBeatHint?: number
 ): Voice2PitchPickContext182B3 {
   const consecutiveV2 = lastPitchV2 !== null && lastV2BarIndex === bar - 1;
   const gapAfterRest = lastPitchV2 !== null && lastV2BarIndex < bar - 1;
@@ -1110,6 +1173,16 @@ function buildVoice2PitchPickContext182B3(
     v1notes.length >= 1 &&
     imitationRunBars < 2 &&
     seededUnit(seed, bar, 18301) < 0.67;
+  const beatHint = v2RefineStartBeatHint ?? 0;
+  const ctr = computeVoice2CounterpointMidiFields182B3(
+    bassPart,
+    bar,
+    beatHint,
+    v1notes,
+    lastPitchV2,
+    consecutiveV2,
+    null
+  );
   return {
     lastV2Pitch: lastPitchV2,
     intraBarPrevPitch: null,
@@ -1125,6 +1198,8 @@ function buildVoice2PitchPickContext182B3(
     directedArrivalStrong,
     consecutiveV2,
     v1notes,
+    ...ctr,
+    counterpointBassPart: bassPart,
   };
 }
 
@@ -1259,6 +1334,27 @@ function refineVoice2Pitch182B3(
     }
   }
 
+  const refineBeat = ctx.v2RefineStartBeat ?? 0;
+  const ctrLive =
+    ctx.counterpointBassPart !== undefined
+      ? computeVoice2CounterpointMidiFields182B3(
+          ctx.counterpointBassPart,
+          bar,
+          refineBeat,
+          ctx.v1notes,
+          ctx.lastV2Pitch,
+          ctx.consecutiveV2,
+          ctx.intraBarPrevPitch
+        )
+      : undefined;
+  const bassMidi = ctrLive?.bassMidi ?? ctx.bassMidi;
+  const prevV1Midi = ctrLive?.prevV1Midi ?? ctx.prevV1Midi;
+  const prevV2Midi = ctrLive?.prevV2Midi ?? ctx.prevV2Midi;
+  const prevBassMidi = ctrLive?.prevBassMidi ?? ctx.prevBassMidi;
+  const v1Overlap = v1PitchesOverlappingTimeSpan182B3(ctx.v1notes, refineBeat, refineBeat + 1);
+  const v1MidiAtBeat = v1Overlap.length > 0 ? v1Overlap[0] : undefined;
+  const v1Pc = v1MidiAtBeat !== undefined ? ((v1MidiAtBeat % 12) + 12) % 12 : undefined;
+
   let best = rawPlaced;
   let bd = Infinity;
   for (const c of work) {
@@ -1333,6 +1429,23 @@ function refineVoice2Pitch182B3(
       s += 0.28 * Math.abs(c - rawPlaced);
     }
     s -= guideBonus;
+    // Counterpoint quality bonus (Bizzi + Tymoczko)
+    if (bassMidi !== undefined) {
+      const keyRoot = rootPcFromChordSymbol(chord, context);
+      const ctrScore = scoreThreeVoices({
+        pc1: v1Pc ?? 0,
+        pc2: ((c % 12) + 12) % 12,
+        pcBass: ((bassMidi % 12) + 12) % 12,
+        keyRoot,
+        prevMidi1: prevV1Midi,
+        prevMidi2: prevV2Midi,
+        prevMidiBass: prevBassMidi,
+        currMidi1: v1MidiAtBeat ?? c,
+        currMidi2: c,
+        currMidiBass: bassMidi,
+      });
+      s -= ctrScore * 0.8;
+    }
     s += seededUnit(seed, bar, 18340 + ctx.segmentSalt) * 0.018;
     if (s < bd) {
       bd = s;
@@ -2506,7 +2619,21 @@ function applyBarLevelShapeV2Events(
   const ctx1: Voice2PitchPickContext182B3 | undefined =
     pitchCtx === undefined
       ? undefined
-      : { ...pitchCtx, intraBarPrevPitch: p0, segmentSalt: 1, v2RefineStartBeat: 2 };
+      : {
+          ...pitchCtx,
+          intraBarPrevPitch: p0,
+          segmentSalt: 1,
+          v2RefineStartBeat: 2,
+          ...computeVoice2CounterpointMidiFields182B3(
+            pitchCtx.counterpointBassPart,
+            bar,
+            2,
+            pitchCtx.v1notes,
+            pitchCtx.lastV2Pitch,
+            pitchCtx.consecutiveV2,
+            p0
+          ),
+        };
   const p1 = pickVoice2PitchForBehaviour(
     behaviour,
     anchorMidi,

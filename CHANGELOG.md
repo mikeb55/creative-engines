@@ -1,4 +1,35 @@
-﻿## [2026-04-15] Fix: Song Mode hook bar guard false positive
+﻿## [2026-04-15] Counterpoint Phase 2 — voiceLeadingScorer wired into Guitar-Bass Duo
+
+### Changes (guitarVoice2WybleLayer.ts)
+- Voice2PitchPickContext182B3: added bassMidi, prevV1Midi,
+  prevV2Midi, prevBassMidi optional fields
+- buildVoice2PitchPickContext182B3: populates bass MIDI
+  from bass part at current beat; prev pitches from
+  previous beat or last bar
+- refineVoice2Pitch182B3 scoring loop: Bizzi/Tymoczko
+  bonus applied after guide tone scoring:
+  s -= scoreThreeVoices(...) * 0.8
+  Falls back to vertical-only (Bizzi) when bass
+  pitch unavailable
+
+### Also fixed
+- generateGoldenPathDuoScore.ts: restored HookBarNoteIdentity
+  type import removed during hook bar guard fix
+
+### Test result
+- npm run test:duo: 10/10 PASS
+
+### Status
+Phase 2 complete. Voice 2 candidates now scored by:
+- Bizzi vertical consonance (triple counterpoint validity)
+- Tymoczko horizontal smoothness (voice leading distance)
+- Species-lite penalties (parallel 5ths/8ths, lockstep)
+Combined weight: 0.8 bonus subtracted from candidate score.
+
+Phase 3 (String Quartet + ECM + UI slider) deferred
+per roadmap until after other priorities.
+
+## [2026-04-15] Fix: Song Mode hook bar guard false positive
 
 ### Problem
 assertHookBarIdentityUnchanged was firing incorrectly

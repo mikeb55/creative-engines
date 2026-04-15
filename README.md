@@ -107,14 +107,14 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 ### Composer Engines (Python, Composer OS UI)
 | Engine | Status |
 |--------|--------|
-| Wayne Shorter | v1.0 shipped ó asymmetric form, harmonic ambiguity |
-| Charlie Parker | v1.0 shipped ó bebop, 32-bar chorus GCE, 10 validators |
-| Thelonious Monk | v1.0 shipped ó blues form, space/density validators |
+| Wayne Shorter | v1.0 shipped ù asymmetric form, harmonic ambiguity |
+| Charlie Parker | v1.0 shipped ù bebop, 32-bar chorus GCE, 10 validators |
+| Thelonious Monk | v1.0 shipped ù blues form, space/density validators |
 
 ### Recent completions
 - Songwriter dropdown for Big Band and String Quartet (2026-04-15)
 - Thelonious Monk Engine v1.0 (2026-04-15)
-- Guitar-bass duo Voice 2 counterpoint
+- Counterpoint Phase 2 (Guitar-Bass Duo wiring): COMPLETE (2026-04-15) ó 10/10 test:duo pass ó Bizzi/Tymoczko/species-lite in Voice 2 candidate ranking (`guitarVoice2WybleLayer.ts`)
 - Phase 19 Song Form UI and rehearsal marks
 - V9.0 chord baseline and Sibelius-safe MusicXML
 
