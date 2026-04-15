@@ -46,6 +46,25 @@ import {
   writeSongModeDesktopTruthDump,
 } from './desktopTruthDump';
 import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
+import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
+
+/**
+ * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
+ * packaged Electron: ship alongside the app via `extraResources` and resolve from
+ * `process.resourcesPath` (see desktop `package.json` `extraResources`).
+ */
+function resolveSongwritingBridgeExportScriptPath(): string {
+  const scriptRel = path.join('songwriting_bridge', 'cli_export_lead_sheet.py');
+  /** Electron main process (packaged): set by runtime; not on standard Node `Process` typings. */
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  if (typeof resourcesPath === 'string' && resourcesPath.length > 0) {
+    const fromResources = path.join(resourcesPath, scriptRel);
+    if (fs.existsSync(fromResources)) {
+      return fromResources;
+    }
+  }
+  return path.resolve(__dirname, '../../songwriting_bridge/cli_export_lead_sheet.py');
+}
 
 export const SUPPORTED_APP_PRESET_IDS = [
   'guitar_bass_duo',
@@ -284,7 +303,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     title,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
-    authorOverlay: authorOv,
+    authorOverlay: authorOv as AuthorRuleId | undefined,
     stylePairing: req.stylePairing
       ? {
           songwriterStyle: req.stylePairing.songwriterStyle,
@@ -513,10 +532,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
     if (req.includeVocalLeadSheet) {
-      const bridgeScriptPath = path.resolve(
-        __dirname,
-        '../../songwriting_bridge/cli_export_lead_sheet.py'
-      );
+      const bridgeScriptPath = resolveSongwritingBridgeExportScriptPath();
       const vocalXml = exportVocalLeadSheetMusicXmlViaPython(sm.compiledSong, gp.score, {
         bridgeScriptPath,
         voiceType: sm.compiledSong.voiceType,

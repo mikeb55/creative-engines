@@ -1,3 +1,19 @@
+## [2026-04-16] Vocal lead sheet — full pipeline fix
+
+### Changes
+- composerOsAppGeneration.ts: AuthorRuleId type cast fixed
+- composerOsAppGeneration.ts: bridge script path now uses
+  process.resourcesPath when packaged, __dirname fallback
+  for dev
+- apps/composer-os-desktop/package.json: songwriting_bridge
+  added to extraResources so cli_export_lead_sheet.py
+  is available in packaged app
+
+### Status
+Vocal lead sheet should now generate in packaged app.
+Test: tick Include vocal lead sheet in Song Mode,
+check output folder for *_vocal_lead_sheet.musicxml
+
 ## [2026-04-16] Fix: vocal lead sheet flag now reaches engine
 
 ### Change (composerOsApiCore.ts)
@@ -460,6 +476,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 

@@ -80,6 +80,11 @@
       {
         "from": "resources/ui",
         "to": "ui"
+      },
+      {
+        "from": "../../engines/songwriting_bridge",
+        "to": "songwriting_bridge",
+        "filter": ["**/*.py", "**/*.txt", "**/*.json"]
       }
     ],
     "win": {
