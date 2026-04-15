@@ -290,6 +290,17 @@ export function apiGenerate(
     }
     const tb = req_.totalBars;
     if (
+      (req_.presetId === 'big_band' || req_.presetId === 'string_quartet') &&
+      tb !== undefined &&
+      ![16, 24, 32, 40, 48, 64].includes(tb)
+    ) {
+      return {
+        success: false,
+        error: 'totalBars must be 16, 24, 32, 40, 48, or 64 for Big Band and String Quartet.',
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
+    if (
       (req_.presetId === 'song_mode' ||
         req_.presetId === 'guitar_bass_duo' ||
         req_.presetId === 'guitar_bass_duo_single_line') &&

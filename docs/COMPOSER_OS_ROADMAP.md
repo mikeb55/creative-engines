@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-10]
+# Composer OS Roadmap [2026-04-15]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -10,7 +10,7 @@
 
 - **Core:** `engines/composer-os-v2/` — single pipeline: preset → planning → score → MusicXML → gates → readiness.
 - **Apps:** `apps/composer-os-app`, `apps/composer-os-desktop` — call **app API** (`app-api/`), not raw core only.
-- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure). **String Quartet** is **COMPLETE** (strings + piano harmony staff, section markers, chord symbols on piano, import fix for `SQ_PART_*`). **Big Band + String Quartet:** piano part-list naming (`Piano` / `Pno.` / `keyboard.piano`, MIDI ch. 1 program 1) and **Song Form** + bar-length select (16/24/32) wired in Generate.
+- **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure). **String Quartet** is **COMPLETE** (strings + piano harmony staff, section markers, chord symbols on piano, import fix for `SQ_PART_*`). **Big Band + String Quartet:** piano part-list naming (`Piano` / `Pno.` / `keyboard.piano`, MIDI ch. 1 program 1) and **Song Form** + bar-length select (**16 / 24 / 32 / 40 / 48 / 64**, 2026-04-15) wired in Generate.
 - **Song Mode — writers & arrangers:** `core/song-mode/` ships a **typed songwriter + arranger rule catalogue** (registry + resolution + optional **songwriter × arranger** pairing). Full detail under **Past → Songwriters & arrangers**; **Generate UI** still lighter than the engine surface (see **Current** / **Future**).
 
 ---
@@ -86,7 +86,7 @@
 - **Imports:** `quartetScoreBuilder` restores `SQ_PART_V1`–`SQ_PART_VC` for MIDI-bound lookups (regression fix).
 - **Section markers:** statement, development, contrast, return, coda (rehearsal / form slices in export).
 - **Chords / UI:** chord symbols on **piano** staff; **Generate** chord input wired for String Quartet (and Big Band).
-- **Generate UI:** **Song Form** dropdown + 16/24/32 bar select aligned with duo/song flow; `formId` passed on the generate request.
+- **Generate UI:** **Song Form** dropdown + **16–64** bar select (ensemble) aligned with duo/song flow; `formId` passed on the generate request.
 - **Research backlog (not implemented yet):** Perplexity deep research on **string quartet style parameters** — local file `c:\Users\mike\Documents\Perplexity Research\string-quartet-parameters.txt` (alias: `string-quartet-parameters.md`). **When refreshing this roadmap or extending SQ styles,** use it to plan texture/harmony/era-style work; assistants should remind the user to implement from this source when roadmap discussions touch String Quartet depth.
 - **Scope:** behavioural scoring — not full professional arranging.
 
@@ -98,12 +98,13 @@
 |------|--------|
 | **Duo / ECM / Song Mode / Riff / Wyble** | Shipping **MusicXML** path; validation + receipts; chord diagnostics (#17) |
 | **Phase 18.2D** | **Complete** (bass phrase intelligence + regression sweeps); **18.2E** **Complete** (gates + bass export) |
-| **Phase 19** | **Complete** (UI ≤32 bars); longer forms not fully in UI |
+| **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
+| **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
 | **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** (see Future → style exposure + pairing). |
 | **Vocal lead sheet (Song Mode)** | Bridge + checkbox **wired**; **app receipt / download path incomplete** — align **`CompiledSong`** → Python input (see [CHANGELOG.md](CHANGELOG.md) 2026-04-10). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family; other passes may still use stricter `guitar_bass_duo` checks — see **Future → next possible devs** |
-| **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16/24/32) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
+| **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **#19 / #16 / #17 (chord track)** | **Baseline complete** — unified semantics (#19), robustness baseline + export/receipt behaviour (#16), diagnostics in UI (#17). Aligned across [README.md](../README.md) and [docs/CHANGELOG.md](./CHANGELOG.md). |
 
@@ -118,7 +119,7 @@
 | 1 | **Wyble single-line parity (full stack)** | Align **`stabiliseGuitarVoice2Wyble18_2B_*`** and any remaining **`presetId === 'guitar_bass_duo'`** guards with **`isGuitarBassDuoFamily`** where behaviour should match inject; add **`test:duo` / single-line** seed if missing. |
 | 2 | **Wyble “realized” normalization review** | `normalizeRealizedVoice2PostInjection182B3` skips **`guitar_bass_duo`** while the stabiliser wrapper targets duo — confirm intent; optionally unify so metrics/validators match single-line + standard duo. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
-| 4 | **Phase 19.1 — longer forms in UI** | Engine paths exist for some extended lengths; expose **>32 bars** where supported + validation. |
+| 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
 | 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
 | 6 | **Big Band / String Quartet polish** | Rehearsal copy, host import smoke tests, optional extra **`formId`** presets. |
 | 7 | **Song Mode — style exposure** | Surface **primary / secondary songwriter**, **author** + **classical** overlays, and optional **songwriter × arranger** pairing in Generate; align with **`songwriterStyleResolver`** / **`stylePairingResolver`**. Also surface **`styleStack`** or named presets beyond current defaults where applicable. |
@@ -138,7 +139,7 @@
 ### Medium term
 
 - **Voice 2:** Phase **18.2B.3**-style melodic imitation / counterpoint refinement; **realized** metrics alignment (see table above).
-- **Phase 19.1** — forms **>32 bars** in UI where engine supports.
+- ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
 
 ### Longer term / explicit non-goals until designed
@@ -172,5 +173,5 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-10].*
+*End of Composer OS Roadmap [2026-04-15].*
 

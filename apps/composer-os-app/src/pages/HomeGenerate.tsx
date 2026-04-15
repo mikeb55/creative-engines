@@ -349,7 +349,7 @@ export function HomeGenerate({
       setTotalBars((tb) => (tb >= 1 && tb <= 4 ? tb : 2));
     } else if (songFormBarPreset) {
       if (ensembleSongFormPreset) {
-        setTotalBars((tb) => (tb === 16 || tb === 24 || tb === 32 ? tb : 32));
+        setTotalBars((tb) => ([16, 24, 32, 40, 48, 64].includes(tb) ? tb : 32));
       } else {
         setTotalBars((tb) => clampSongFormBarCount(tb, 32));
       }
@@ -369,7 +369,7 @@ export function HomeGenerate({
   }, [songFormMenuOpen]);
 
   const songFormBars = ensembleSongFormPreset
-    ? totalBars === 16 || totalBars === 24 || totalBars === 32
+    ? [16, 24, 32, 40, 48, 64].includes(totalBars)
       ? totalBars
       : 32
     : clampSongFormBarCount(totalBars, 32);
@@ -1091,6 +1091,13 @@ export function HomeGenerate({
               <option value={16}>16 bars</option>
               <option value={24}>24 bars</option>
               <option value={32}>32 bars</option>
+              {ensembleSongFormPreset && (
+                <>
+                  <option value={40}>40 bars</option>
+                  <option value={48}>48 bars</option>
+                  <option value={64}>64 bars</option>
+                </>
+              )}
             </select>
           ) : (
             <input

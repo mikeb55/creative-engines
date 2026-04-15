@@ -1,3 +1,23 @@
+## [2026-04-15] Phase 19.1 - Long forms >32 bars for Big Band and String Quartet
+
+### UI changes (HomeGenerate.tsx)
+- Big Band and String Quartet dropdown now offers:
+  16 / 24 / 32 / 40 / 48 / 64 bars
+- State normalization updated to accept all six values
+- Guitar-Bass Duo and Song Mode unchanged at 8/16/24/32
+
+### API validation (composerOsApiCore.ts)
+- New validation block for big_band and string_quartet:
+  accepts 16, 24, 32, 40, 48, 64
+- Existing guitar_bass_duo / song_mode cap (8/16/24/32)
+  unchanged
+
+### Engine status
+- runBigBandMode: no upper bar cap - engine-ready
+- runStringQuartetMode: no upper bar cap - engine-ready
+- Guitar-Bass Duo / Song Mode: golden path still capped
+  at 32 - engine extension deferred to future phase
+
 ## [2026-04-15] Counterpoint scoring module — Phase 1 complete
 
 ### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
