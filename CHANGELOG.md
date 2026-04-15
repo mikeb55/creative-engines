@@ -1,3 +1,45 @@
+## [2026-04-15] Thelonious Monk Engine — v1.0
+
+### Status: Shipped
+
+### Architecture
+- 12-bar blues and custom form support
+- GCE-powered melody generation (Claude API, temp=0.9)
+- Monk-specific system prompt: space, quarters/halves,
+  tritone leaps, b9 dominants, obsessive repetition
+- RAG: 6 abstract Monk templates + concrete phrases
+  from 5 transcriptions (Blue Monk, Epistrophy,
+  Round Midnight, Straight No Chaser, Well You Needn't)
+
+### Validators (in order)
+1. _patch_unison_runs
+2. _cap_unison_frequency
+3. _enforce_opening_rest
+4. _enforce_syncopation
+5. _enforce_midphrase_quarter
+6. _enforce_cadence_half
+7. _enforce_long_note_consonance
+8. _enforce_downbeat_consonance
+9. _enforce_monk_density (max 6 pitched notes/bar)
+10. _enforce_monk_rhythm_variety (no pure eighth bars)
+11. _enforce_monk_breathing (rest if >5 notes, no rests)
+12. _fit_sixteen_divisions
+
+### Key metrics (Blue Monk, 12 bars)
+- Avg notes/bar: 5.0 (target 4-5)
+- Eighths: 78.3%
+- Quarters: 10.0%
+- Halves: 11.7%
+- Bar length errors: 0
+- Rests: 11.8%
+
+### Key files
+- monk_phrase_engine.py
+- monk_section_compiler.py
+- monk_vocabulary.py
+- monk_musicxml_exporter.py
+- monk_engine_cli.py
+
 ## [2026-04-14] Thelonious Monk Engine — Initial Build
 
 ### Architecture
@@ -113,4 +155,5 @@
 * ACE framework embedded
 
 ---
+
 
