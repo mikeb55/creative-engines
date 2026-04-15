@@ -102,7 +102,7 @@
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
 | **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** (see Future → style exposure + pairing). |
-| **Vocal lead sheet (Song Mode)** | Bridge + checkbox **wired**; **app receipt / download path incomplete** — align **`CompiledSong`** → Python input (see [CHANGELOG.md](CHANGELOG.md) 2026-04-10). |
+| **Vocal lead sheet (Song Mode)** | **Next priority:** close **CompiledSong → bridge → download** path (bridge + checkbox wired; receipt/download incomplete — see [CHANGELOG.md](CHANGELOG.md) 2026-04-10). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family; other passes may still use stricter `guitar_bass_duo` checks — see **Future → next possible devs** |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
@@ -123,7 +123,7 @@
 | 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
 | 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | ~~**Song Mode — style exposure**~~ **COMPLETE** (2026-04-15) | Pattern slider, secondary songwriter, author overlay wired end-to-end; **`styleStack`** / classical overlay / further presets remain optional follow-ups. |
-| 12 | **Vocal lead sheet — pipeline** | Close **CompiledSong → bridge** shape gap so vocal MusicXML appears in app receipts/downloads (see CHANGELOG 2026-04-10). |
+| 12 | **Vocal lead sheet — pipeline** | **Next priority:** close **CompiledSong → bridge → download** so vocal MusicXML appears in app receipts/downloads (see CHANGELOG 2026-04-10). |
 | 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
 | 9 | **ECM / Barry Harris / Bacharach** | Implement from **`ECM_Bacharach_BarryHarris_Research.md`** when extending chamber feel or style stacks. |
 | 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. |

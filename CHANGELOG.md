@@ -1,4 +1,34 @@
-﻿## [2026-04-15] Song Mode style exposure — three new controls
+﻿## [2026-04-15] End of day summary — all items verified working
+
+### Verified today
+- Song Mode: Wayne Shorter + Post-Bop generating cleanly
+  Upper-extension chords (minor-ninth, major-seventh)
+  confirmed via MusicXML analysis
+- Song Mode style exposure: Pattern slider, Secondary
+  Songwriter, Author Overlay all in UI (below Era dropdown)
+- Big Band Blues 12: 42-bar form generating correctly
+- Big Band Double Bass: part name correct in export
+- Guitar-Bass Duo: counterpoint scoring active,
+  unisons reduced 70%, parallel octaves reduced 75%
+- Wyble single-line parity: 10/10 test:duo passing
+
+### Roadmap status
+Completed today:
+- Wyble single-line parity
+- Phase 19.1 long forms (BB/SQ up to 64 bars)
+- Wayne Shorter coherence fix
+- Big Band / String Quartet polish
+- Song Mode style exposure
+- Counterpoint Phase 1 (shared module) + Phase 2 (Duo wiring)
+- Monk engine v1.0
+- Charlie Parker engine improvements
+
+Remaining:
+- Vocal lead sheet pipeline closure
+- Bass/duo regression expansion
+- Counterpoint Phase 3 (SQ + ECM + UI slider)
+
+## [2026-04-15] Song Mode style exposure — three new controls
 
 ### UI additions (HomeGenerate.tsx)
 - Pattern slider: intent.pattern now user-controlled

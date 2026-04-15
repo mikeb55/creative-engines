@@ -102,7 +102,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 | Wyble Etude | Shipping MusicXML ? |
 | Big Band | Shipping MusicXML ? |
 | String Quartet | Shipping MusicXML ? |
-| Vocal Lead Sheet | Bridge wired, download path open |
+| Vocal Lead Sheet | Pipeline closure ù next priority (bridge wired; close download path) |
 
 ### Composer Engines (Python, Composer OS UI)
 | Engine | Status |
@@ -114,7 +114,7 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 ### Recent completions
 - Songwriter dropdown for Big Band and String Quartet (2026-04-15)
 - Thelonious Monk Engine v1.0 (2026-04-15)
-- Counterpoint Phase 2 (Guitar-Bass Duo wiring): COMPLETE (2026-04-15) ó 10/10 test:duo pass ó Bizzi/Tymoczko/species-lite in Voice 2 candidate ranking (`guitarVoice2WybleLayer.ts`)
+- Counterpoint Phase 2 (Guitar-Bass Duo wiring): COMPLETE (2026-04-15) ù 10/10 test:duo pass ù Bizzi/Tymoczko/species-lite in Voice 2 candidate ranking (`guitarVoice2WybleLayer.ts`)
 - Phase 19 Song Form UI and rehearsal marks
 - V9.0 chord baseline and Sibelius-safe MusicXML
 
@@ -122,8 +122,8 @@ Generates Charlie Parker-style bebop melodies over chord changes using the Claud
 1. Wyble single-line parity
 2. Phase 19.1 long forms (>32 bars)
 3. Wayne Shorter TS integration
-4. Big Band / String Quartet polish: **COMPLETE** (2026-04-15) ó Double Bass export, blues12 42-bar form, verify 14/14, SQ honestNote
-5. Song Mode style exposure: **COMPLETE** (2026-04-15) ó Pattern slider, secondary songwriter, author overlay
-6. Vocal lead sheet download path
+4. Big Band / String Quartet polish: **COMPLETE** (2026-04-15) ù Double Bass export, blues12 42-bar form, verify 14/14, SQ honestNote
+5. Song Mode style exposure: **COMPLETE** (2026-04-15) ù Pattern slider, secondary songwriter, author overlay
+6. Vocal lead sheet: pipeline closure ó next priority
 7. Bass/duo regression tests
 
