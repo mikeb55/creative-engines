@@ -143,7 +143,21 @@ export function exportVocalLeadSheetMusicXmlViaPython(
   const contract = buildLeadSheetContractFromCompiled(compiled);
   const guitar = realisedScore.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const melodyByMeasure = new Map<number, Array<{ beat_position: number; duration: number; pitch: number }>>();
-  const harmonyByMeasure = new Map<number, Array<{ root: number; quality: 'major' | 'minor'; bar_position: number }>>();
+  const harmonyByMeasure = new Map<
+    number,
+    Array<{ root: number; quality: 'major' | 'minor'; chord: string; bar_position: number }>
+  >();
+
+  let measureBase = 1;
+  for (const block of compiled.chordPlan) {
+    let m = measureBase;
+    for (const chordSymbol of block.chordSymbols) {
+      const { root, quality } = chordSymbolToRootAndQuality(chordSymbol);
+      harmonyByMeasure.set(m, [{ root, quality, chord: chordSymbol, bar_position: 0 }]);
+      m += 1;
+    }
+    measureBase = m;
+  }
 
   if (guitar) {
     for (const m of guitar.measures) {
@@ -157,16 +171,12 @@ export function exportVocalLeadSheetMusicXmlViaPython(
       if (evs.length > 0) {
         melodyByMeasure.set(m.index, evs);
       }
-      if (m.chord) {
-        const { root, quality } = chordSymbolToRootAndQuality(m.chord);
-        harmonyByMeasure.set(m.index, [{ root, quality, bar_position: 0 }]);
-      }
     }
   }
 
   const sections = contract.formSummary.sections.map((sec) => {
     const melody_events: Array<{ measure: number; beat_position: number; duration: number; pitch: number }> = [];
-    const harmony: Array<{ root: number; quality: 'major' | 'minor'; measure: number; bar_position: number }> = [];
+    const harmony: Array<{ root: number; quality: 'major' | 'minor'; chord: string; measure: number; bar_position: number }> = [];
     for (let bar = sec.barStart; bar <= sec.barEnd; bar++) {
       const barMelody = melodyByMeasure.get(bar) ?? [];
       for (const e of barMelody) {
@@ -182,6 +192,7 @@ export function exportVocalLeadSheetMusicXmlViaPython(
         harmony.push({
           root: h.root,
           quality: h.quality,
+          chord: h.chord,
           measure: bar - 1,
           bar_position: h.bar_position,
         });

@@ -1,3 +1,52 @@
+## Roadmap — Guitar/Harmony Module Assessment
+
+### Executive recommendation
+- Treat these repos as supporting modules, not core generation engines.
+- Pull low-risk UX/practice value now from the stable guitar-voicing tools.
+- Defer direct generation/export integration until output reliability meets Composer OS baseline.
+- Keep Composer OS focused on high-confidence MusicXML and deterministic pipeline quality.
+
+### Repo-by-repo assessment
+- `mikeb55/triadgen`
+  - What it is: lightweight triad/triad-pair explorer utility.
+  - Maturity: usable as a small standalone helper; limited production scope.
+  - Relevance: medium for educational overlays and idea prompts, low for core generation.
+  - Risk: low technical risk, low strategic impact.
+  - Status: Mine for ideas.
+
+- `mikeb55/gml-triadgen`
+  - What it is: guitar voicing/fretboard/practice-oriented module family.
+  - Maturity: launches and is practically useful in manual testing.
+  - Relevance: high for a Guitar Lab / voicing assistant add-on; not a core composition engine.
+  - Risk: moderate integration scope if UI/dependency coupling is heavy.
+  - Status: Integrate (as optional utility module).
+
+- `mikeb55/gml-triadgen` `Quartal_Atlas`
+  - What it is: quartal voicing atlas/module.
+  - Maturity: launches, but current MusicXML output is corrupt.
+  - Relevance: potentially high for harmony pedagogy once stable.
+  - Risk: high if integrated before export integrity is fixed.
+  - Status: Repair first.
+
+### Now / Next / Later
+- Now
+  - Position `gml-triadgen` as optional Guitar Lab utility (reference/open-launch workflow only).
+  - Reuse concepts/UX from `triadgen` for in-app voicing prompts and practice hints.
+
+- Next
+  - Define minimal adapter spec for external guitar modules (inputs, outputs, no core coupling).
+  - Triage `Quartal_Atlas` MusicXML corruption with a strict pass/fail fixture before any integration.
+
+- Later
+  - Consider deeper embedding (preset-aware voicing assistant, contextual chord-shape suggestions).
+  - Evaluate cross-module unification only after export fidelity and maintenance cost are proven.
+
+### Do Not Do Yet
+- Do not wire any of these as primary generation engines.
+- Do not rely on `Quartal_Atlas` MusicXML in production until corruption is resolved.
+- Do not expand roadmap scope into broad refactors to support these tools prematurely.
+- Do not dilute current Composer OS stabilization priorities (lead-sheet fidelity, deterministic export).
+
 ## [2026-04-16] Vocal Lead Sheet — feature complete (v1)
 
 ### What was fixed

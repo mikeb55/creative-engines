@@ -97,7 +97,13 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
                         f'{ch.get("root","C")}{ch.get("quality","") if ch.get("quality") != "major" else ""}').strip()
                 step, kind, ext = _parse_chord(cstr)
                 kind_tag = f'<kind text="{cstr[len(step):]}">{kind}</kind>' if ext else f'<kind>{kind}</kind>'
-                lines.append(f'      <harmony><root><root-step>{step}</root-step></root>{kind_tag}</harmony>')
+                letter = step[0]
+                alter = -1 if len(step) > 1 and step[1] == 'b' else \
+                         1 if len(step) > 1 and step[1] == '#' else 0
+                alter_tag = f"<root-alter>{alter}</root-alter>" if alter != 0 else ""
+                lines.append(
+                    f'      <harmony><root><root-step>{letter}</root-step>{alter_tag}</root>{kind_tag}</harmony>'
+                )
         evs = sorted(bar_data.get("notes", []), key=lambda x: x.get("beat_position", 0))
         cursor = 0.0
         for e in evs:
