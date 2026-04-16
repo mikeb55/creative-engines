@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-15]
+# Composer OS Roadmap [2026-04-16]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -116,6 +116,10 @@
 
 | # | Dev | Notes |
 |---|-----|--------|
+| 0 | **Vocal lead sheet stabilization handoff** | Confirm `includeVocalLeadSheet` reaches `apiGenerate` and `runSongStructure`; verify packaged app launches from `release/Composer-OS.exe` (not temp installer path) and produce one known-good vocal XML artifact before feature additions. |
+
+| # | Dev | Notes |
+|---|-----|--------|
 | 1 | **Wyble single-line parity (full stack)** | Align **`stabiliseGuitarVoice2Wyble18_2B_*`** and any remaining **`presetId === 'guitar_bass_duo'`** guards with **`isGuitarBassDuoFamily`** where behaviour should match inject; add **`test:duo` / single-line** seed if missing. |
 | 2 | **Wyble “realized” normalization review** | `normalizeRealizedVoice2PostInjection182B3` skips **`guitar_bass_duo`** while the stabiliser wrapper targets duo — confirm intent; optionally unify so metrics/validators match single-line + standard duo. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
@@ -173,5 +177,5 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-15].*
+*End of Composer OS Roadmap [2026-04-16].*
 
