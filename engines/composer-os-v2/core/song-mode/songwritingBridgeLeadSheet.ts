@@ -136,11 +136,65 @@ export function buildSongwritingBridgePayloadFromLeadSheetContract(
  */
 export function exportVocalLeadSheetMusicXmlViaPython(
   compiled: CompiledSong,
-  _realisedScore: ScoreModel,
+  realisedScore: ScoreModel,
   opts: VocalLeadSheetPythonOpts
 ): string | null {
   const contract = buildLeadSheetContractFromCompiled(compiled);
-  const payload = buildSongwritingBridgePayloadFromLeadSheetContract(contract);
+  const guitar = realisedScore.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const melodyByMeasure = new Map<number, Array<{ beat_position: number; duration: number; pitch: number }>>();
+  const harmonyByMeasure = new Map<number, Array<{ root: number; quality: 'major' | 'minor'; bar_position: number }>>();
+
+  if (guitar) {
+    for (const m of guitar.measures) {
+      const evs = m.events
+        .filter((e) => e.kind === 'note')
+        .map((e) => ({
+          beat_position: e.startBeat,
+          duration: e.duration,
+          pitch: e.pitch,
+        }));
+      if (evs.length > 0) {
+        melodyByMeasure.set(m.index, evs);
+      }
+      if (m.chord) {
+        const { root, quality } = chordSymbolToRootAndQuality(m.chord);
+        harmonyByMeasure.set(m.index, [{ root, quality, bar_position: 0 }]);
+      }
+    }
+  }
+
+  const sections = contract.formSummary.sections.map((sec) => {
+    const melody_events: Array<{ measure: number; beat_position: number; duration: number; pitch: number }> = [];
+    const harmony: Array<{ root: number; quality: 'major' | 'minor'; measure: number; bar_position: number }> = [];
+    for (let bar = sec.barStart; bar <= sec.barEnd; bar++) {
+      const barMelody = melodyByMeasure.get(bar) ?? [];
+      for (const e of barMelody) {
+        melody_events.push({
+          measure: bar - 1,
+          beat_position: e.beat_position,
+          duration: e.duration,
+          pitch: e.pitch,
+        });
+      }
+      const barHarmony = harmonyByMeasure.get(bar) ?? [];
+      for (const h of barHarmony) {
+        harmony.push({
+          root: h.root,
+          quality: h.quality,
+          measure: bar - 1,
+          bar_position: h.bar_position,
+        });
+      }
+    }
+    return {
+      role: mapSectionRoleForBridge(sec.role),
+      bar_start: sec.barStart - 1,
+      bar_end: sec.barEnd - 1,
+      melody_events,
+      harmony,
+    };
+  });
+  const payload = { title: contract.title, sections };
   const tmp = path.join(os.tmpdir(), `ce_vocal_ls_${process.pid}_${Date.now()}.json`);
   try {
     fs.writeFileSync(tmp, JSON.stringify(payload), 'utf-8');
