@@ -39,7 +39,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with open(args.input, "r", encoding="utf-8") as f:
         payload = json.load(f)
+    print("DEBUG PAYLOAD KEYS:", list(payload.keys()))
+
+    # Also check top-level and nested for any melody/notes/events data
+    def find_melody_keys(obj, path=""):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if any(x in k.lower() for x in ["melody", "note", "event", "pitch", "measure"]):
+                    print(f"DEBUG found: {path}.{k} ({type(v).__name__}, len={len(v) if hasattr(v, '__len__') else 'n/a'})")
+                find_melody_keys(v, f"{path}.{k}")
+        elif isinstance(obj, list) and len(obj) > 0:
+            find_melody_keys(obj[0], f"{path}[0]")
+
+    find_melody_keys(payload)
     compiled = compiled_from_payload(payload if isinstance(payload, dict) else {})
+    for i, sec in enumerate(getattr(compiled, "sections", [])):
+        evs = getattr(sec, "melody_events", [])
+        print(f"DEBUG section {i}: {len(evs)} melody_events")
+        for e in evs[:3]:
+            print(f"  {e}")
     lead_sheet = build_lead_sheet_from_composition(compiled, args.voice)
     xml = export_lead_sheet_to_musicxml(lead_sheet)
     print(xml)
