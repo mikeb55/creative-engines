@@ -1,3 +1,25 @@
+## [2026-04-16] Vocal Lead Sheet — feature complete (v1)
+
+### What was fixed
+- Pipeline wired end-to-end from Song Mode to Python bridge
+- Script path fixed for packaged Electron app (resourcesPath)
+- Replaced leadMelodyPlan placeholder (one chord tone per bar)
+  with real melody from gp.score guitar part
+- Filtered to voice 1 only — bass voice polyphony removed
+- Debug prints removed from cli_export_lead_sheet.py stdout
+
+### Known issues (next session)
+- Some residual polyphony in voice 1 (chordal guitar notes)
+- Chord extensions stripped (Dmaj7#11 renders as D major)
+- Rehearsal marks not yet on vocal lead sheet
+- Voice type selector not yet in UI (hardcoded male_tenor)
+- leadMelodyPlan is now dead code — needs cleanup
+
+### Status
+Vocal lead sheet generates alongside main score on every
+Song Mode generation. Single staff, treble clef, chord
+symbols, varied rhythm. Opens cleanly in Sibelius.
+
 ## [2026-04-16] Vocal lead sheet — full pipeline fix
 
 ### Changes
