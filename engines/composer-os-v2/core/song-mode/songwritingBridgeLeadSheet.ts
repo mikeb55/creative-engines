@@ -147,7 +147,7 @@ export function exportVocalLeadSheetMusicXmlViaPython(
   if (guitar) {
     for (const m of guitar.measures) {
       const evs = m.events
-        .filter((e) => e.kind === 'note')
+        .filter((e) => e.kind === 'note' && (e.voice === undefined || e.voice === 1))
         .map((e) => ({
           beat_position: e.startBeat,
           duration: e.duration,
