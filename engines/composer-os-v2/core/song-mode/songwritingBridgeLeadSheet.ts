@@ -114,6 +114,7 @@ export function buildSongwritingBridgePayloadFromLeadSheetContract(
         return {
           root,
           quality,
+          chord: c.chord,
           measure: c.measure - 1,
           bar_position: c.beat,
         };

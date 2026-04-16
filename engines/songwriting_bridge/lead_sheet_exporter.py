@@ -93,7 +93,8 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
         bar_data = by_measure.get(m, {"notes": [], "chords": []})
         for ch in bar_data.get("chords", []):
             if ch.get("beat", 0) == 0:
-                cstr = (ch.get("chord") or "C").strip()
+                cstr = (ch.get("chord") or
+                        f'{ch.get("root","C")}{ch.get("quality","") if ch.get("quality") != "major" else ""}').strip()
                 step, kind, ext = _parse_chord(cstr)
                 kind_tag = f'<kind text="{cstr[len(step):]}">{kind}</kind>' if ext else f'<kind>{kind}</kind>'
                 lines.append(f'      <harmony><root><root-step>{step}</root-step></root>{kind_tag}</harmony>')
