@@ -23,6 +23,35 @@ def _escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+def _parse_chord(cstr: str):
+    if not cstr:
+        return "C", "major", ""
+    # Root step + optional accidental
+    i = 1
+    step = cstr[0]
+    if len(cstr) > 1 and cstr[1] in ('#', 'b'):
+        step += cstr[1]
+        i = 2
+    remainder = cstr[i:]
+    # Quality
+    if remainder.startswith('min') or remainder.startswith('m'):
+        kind = 'minor'
+    elif remainder.startswith('maj') or remainder.startswith('M'):
+        kind = 'major'
+    elif remainder.startswith('dim'):
+        kind = 'diminished'
+    elif remainder.startswith('aug'):
+        kind = 'augmented'
+    elif remainder.startswith('7') or remainder.startswith('9') \
+         or remainder.startswith('11') or remainder.startswith('13'):
+        kind = 'dominant'
+    else:
+        kind = 'major'
+    # Extensions — keep as text for <kind text="...">
+    ext = cstr[i:].strip()
+    return step, kind, ext
+
+
 def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
     """
     Export lead sheet to MusicXML: vocal melody + chord symbols.
@@ -65,9 +94,9 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
         for ch in bar_data.get("chords", []):
             if ch.get("beat", 0) == 0:
                 cstr = (ch.get("chord") or "C").strip()
-                step = cstr[0] if cstr else "C"
-                kind = "minor" if "m" in (cstr or "").lower() else "major"
-                lines.append(f'      <harmony><root><root-step>{step}</root-step></root><kind>{kind}</kind></harmony>')
+                step, kind, ext = _parse_chord(cstr)
+                kind_tag = f'<kind text="{cstr[len(step):]}">{kind}</kind>' if ext else f'<kind>{kind}</kind>'
+                lines.append(f'      <harmony><root><root-step>{step}</root-step></root>{kind_tag}</harmony>')
         evs = sorted(bar_data.get("notes", []), key=lambda x: x.get("beat_position", 0))
         cursor = 0.0
         for e in evs:
