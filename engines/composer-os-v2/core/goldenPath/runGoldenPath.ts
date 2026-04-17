@@ -633,7 +633,7 @@ function buildGoldenPathPlans(
     B: 'contrast',
     "A''": 'return',
   };
-  const isDuoLong = context.presetId === 'guitar_bass_duo' && context.form.totalBars > 8;
+  const isDuoLong = isGuitarBassDuoFamily(context.presetId) && context.form.totalBars > 8;
   const duoRoles = isDuoLong ? duoRoles32 : duoRoles8;
   const sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
   const tb = context.form.totalBars;

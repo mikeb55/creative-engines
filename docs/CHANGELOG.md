@@ -1,5 +1,18 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Wyble single-line parity fixes
+
+### What was fixed
+- HomeGenerate.tsx: c4Strength/blendStrength/funkGroove now
+  spread for guitar_bass_duo_single_line via isGuitarBassDuoFamily
+- HomeGenerate.tsx: Hook Rhythm Strength UI now shows for
+  guitar_bass_duo_single_line via isGuitarBassDuoFamily
+- runGoldenPath.ts: isDuoLong now includes single-line preset
+
+### Tests
+- npm run test:duo: PASS
+- npm run test:bass: PASS
+
 ## [2026-04-17] Wyble reference 01 — assisted engine trial notes
 
 - First assisted comparison: `docs/wyble-targets/engine_trials/trial_01_guitar_line.musicxml` vs `Wyble_single_line_reference_01.musicxml`, anchor `Wyble_single_line_reference_01.descriptor.json`

@@ -20,6 +20,7 @@ import {
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
+import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -618,7 +619,7 @@ export function HomeGenerate({
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
-          ...(presetId === 'guitar_bass_duo' || presetId === 'song_mode'
+          ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
@@ -1323,7 +1324,7 @@ export function HomeGenerate({
         </div>
       </div>
 
-      {(presetId === 'guitar_bass_duo' || presetId === 'song_mode') && (
+      {(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode') && (
         <>
           <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
             <label
