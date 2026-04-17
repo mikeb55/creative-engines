@@ -1,3 +1,9 @@
+## [2026-04-17] BPM passthrough + Sibelius tempo export fix
+- buildGenerateRequestBody.ts always sends bpm
+- runGoldenPath forwards bpm to generateGoldenPathDuoScore
+- generateGoldenPathDuoScore uses opts.bpm ?? 120
+- lead_sheet_exporter.py emits full metronome direction block
+
 ## [2026-04-17] Vocal Lead Sheet — chord extensions, key signature, tempo
 
 ### What was fixed
