@@ -21,7 +21,12 @@ export interface QuartetRealisationResult {
 }
 
 export function runQuartetRealisation(
-  input: StringQuartetRunInput & { era?: BigBandEraId; bpm?: number }
+  input: StringQuartetRunInput & {
+    era?: BigBandEraId;
+    bpm?: number;
+    /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the quartet score build skips the Wyble inner-line chord-tone swap. */
+    suppressWybleVoiceLayoutForTest?: boolean;
+  }
 ): QuartetRealisationResult {
   const planning = runStringQuartetMode(input);
   const voicingPlan = planQuartetVoicing(planning.orchestrationPlan);
@@ -46,6 +51,9 @@ export function runQuartetRealisation(
     chordBars = p.ok ? p.bars : undefined;
   }
 
+  const wybleLayout =
+    input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
+
   const score = buildQuartetScoreModel({
     title: planning.title,
     seed: input.seed,
@@ -53,7 +61,7 @@ export function runQuartetRealisation(
     texturePlan: planning.texturePlan,
     era: input.era,
     chordBars,
-    wybleVoiceLayout: planning.orchestrationPlan.wybleVoiceLayout,
+    wybleVoiceLayout: wybleLayout,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

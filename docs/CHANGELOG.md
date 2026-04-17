@@ -1,5 +1,12 @@
 # Composer OS — Changelog
 
+## [2026-04-17] String quartet — real path Wyble inner line ON/OFF + export helper
+
+- **`runQuartetRealisation`** (not `runGoldenPathOnce`): optional **`suppressWybleVoiceLayoutForTest`** omits `wybleVoiceLayout` when calling **`buildQuartetScoreModel`**, so the existing **Violin II ↔ Viola chord-tone swap** (`quartetWybleChordToneStack.ts`) can be A/B’d without touching duo Wyble code.
+- **Audible span:** every bar uses the quartet chord-tone stack; Wyble ON cross-assigns **inner_counter** vs legacy viola slot (same mechanism as before; verified over **bars 1–2** in tests).
+- **Script:** `engines/composer-os-v2/scripts/quartetWybleOnOffExport.ts` writes two `.musicxml` files (same seed **12345**) for manual listening — see script header for `ts-node` command.
+- **Jest:** `engines/composer-os-v2/tests/quartetWybleAudibleInnerLine.test.ts` asserts ON vs OFF **note MIDI** patterns on Violin II + Viola (not receipts).
+
 ## [2026-04-17] Wyble — consumption diagnostics (receipt / manifest, no UI)
 
 - **`WybleConsumptionReceipt`** (`core/wyble/wybleConsumptionReceipt.ts`): `wybleLayoutPresent`, `wybleLayoutConsumed`, `wybleConsumptionMode` (`none` | `quartet_inner_swap` | `big_band_sax_split` | `duo_bass_anchor_nudge`), and `wybleConsumptionSummary` — metadata only; same static-map equality rules as the score hooks (no extra pitch work).
