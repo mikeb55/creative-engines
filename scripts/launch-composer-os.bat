@@ -1,5 +1,6 @@
 @echo off
 REM Composer OS — local dev launcher (Vite UI + API). Repo root = parent of this scripts\ folder.
+REM Browser opens via scripts\vite-dev-launcher.ps1 when Vite prints its Local: URL (any port).
 setlocal
 cd /d "%~dp0\.."
 if not exist "apps\composer-os-app\package.json" (
@@ -16,24 +17,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo.
-echo Composer OS — local dev
-echo Repository: %CD%
-echo Command:    npm run dev --prefix apps/composer-os-app
-echo UI:         http://localhost:5173
-echo API:        http://localhost:3001
-echo.
-echo Leave this window open while the dev servers run. Press Ctrl+C to stop.
-echo.
-
-REM Open default browser after a short delay so Vite can bind first.
-start "Composer OS — open browser" /min cmd /c "timeout /t 5 /nobreak >nul && start \"\" \"http://localhost:5173/\""
-
-call npm run dev --prefix apps/composer-os-app
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vite-dev-launcher.ps1" -RepoRoot "%CD%"
 set "ERR=%ERRORLEVEL%"
 if not "%ERR%"=="0" (
   echo.
-  echo npm exited with code %ERR%.
+  echo Launcher exited with code %ERR%.
   pause
 )
 exit /b %ERR%

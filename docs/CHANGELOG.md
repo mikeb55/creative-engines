@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Dev launcher opens real Vite Local URL (no `\\` popup)
+
+- **`scripts/launch-composer-os.bat`** — delegates to **`scripts/vite-dev-launcher.ps1`**, which streams **`npm run dev --prefix apps/composer-os-app`** and opens the first **`https?://localhost:PORT/`** URL from output (Vite **`Local:`** line). Removed the broken delayed **`start`** that triggered “Windows cannot find `\\`”. No fixed Vite port.
+- **`scripts/test-vite-url-launcher-regex.ps1`** — minimal regex/anti-false-positive check (run with PowerShell).
+
 ## [2026-04-17] Rename dev desktop shortcut (distinct from release)
 
 - **Desktop shortcut file:** **`Composer OS Dev Launcher.lnk`** (display **Composer OS Dev Launcher**) — replaces the too-similar **`Composer OS.lnk`**. **`scripts/create-composer-os-desktop-shortcut.ps1`** unchanged target: **`scripts/launch-composer-os.bat`**, working directory = repo root.

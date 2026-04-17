@@ -47,7 +47,7 @@ npm install
 npm run dev
 ```
 
-- **Web UI:** http://localhost:5173 (Vite dev server).
+- **Web UI:** Vite prints a **`Local:`** URL in the terminal (usually **`http://localhost:`** plus a port). If that port is busy, Vite picks another — use the URL Vite prints.
 - **API:** http://localhost:3001 — the UI calls `/api` via the Vite proxy. If the first page load shows short proxy errors, wait a moment for the API process to finish starting.
 
 **Build static UI only (from repo root):**
@@ -66,7 +66,7 @@ To avoid typing commands every time, create a **Desktop** shortcut once (from re
 powershell -ExecutionPolicy Bypass -File .\scripts\create-composer-os-desktop-shortcut.ps1
 ```
 
-That creates **`Composer OS Dev Launcher.lnk`** on your Desktop (label **Composer OS Dev Launcher**). Double-clicking it runs **`scripts/launch-composer-os.bat`**, which executes the same dev command as above: **`npm run dev --prefix apps/composer-os-app`**, waits a few seconds, then opens **http://localhost:5173/**. A **terminal window stays open** while the dev servers run (normal for local dev).
+That creates **`Composer OS Dev Launcher.lnk`** on your Desktop (label **Composer OS Dev Launcher**). Double-clicking it runs **`scripts/launch-composer-os.bat`**, which calls **`scripts/vite-dev-launcher.ps1`** to run **`npm run dev --prefix apps/composer-os-app`** and **open your browser once** using the **`Local:`** URL Vite prints (any port). If the browser does not open, copy that URL from the console. A **terminal window stays open** while the dev servers run (normal for local dev).
 
 **Packaged release:** A shortcut to **`Composer-OS.exe`** in `composer-os-desktop\release\` is the **built app**, not this launcher. Rename that shortcut to **`Composer OS Release`** if you use both, so it is not confused with **Composer OS Dev Launcher**.
 
