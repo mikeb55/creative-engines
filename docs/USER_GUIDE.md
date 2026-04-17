@@ -131,9 +131,33 @@ Optional arguments: `--family quartet|bigband|all`, `--seed 12345`, `--out "C:\p
 
 ---
 
+## Composer OS v2 engine tests (developers)
+
+**As of 2026-04-17**, engine test status is **partially baselined** — not all tests pass yet.
+
+**Step-by-step — quick regression bar (must stay green):**
+
+1. Open a terminal and go to **`engines/composer-os-v2`** (under this repo).
+2. Run each command; each should complete with **exit code 0**:
+   - `npm run test:jest:counterpoint`
+   - `npm run test:duo`
+   - `npm run test:bass`
+   - `npm run test:vocal`
+   - `npm run test:composer-os-regression`
+3. **Or** from the **repository root**:  
+   `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-baseline-composer-os-v2.ps1`  
+   (add `-IncludeRunAll` only if you intentionally want the long full `npm test`.)
+
+**Expected red (test debt):** `npm test` runs the large **`runAllTests.ts`** harness and may exit **non-zero** with many **`FAIL:`** lines until debt is cleared. That is **not** the same as the five commands above. **New** failures outside the [baseline doc](TEST_DEBT_COMPOSER_OS_V2.md) should be treated as **regressions**.
+
+Details: **[TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md)**.
+
+---
+
 ## Related docs
 
 - [README.md](../README.md) — project overview and quick start.
 - [CHANGELOG.md](CHANGELOG.md) — what changed and when.
 - [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md) — past / current / future (clearly separated).
+- [TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md) — engine test baseline vs `npm test` debt.
 - [apps/composer-os-app/README.md](../apps/composer-os-app/README.md) — app-specific run and build notes.

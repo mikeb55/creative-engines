@@ -103,6 +103,25 @@ Use `--out "C:\path\to\folder"` to choose the output directory. See [docs/USER_G
 
 ---
 
+## Composer OS v2 engine test baseline (developers)
+
+**As of 2026-04-17**, this is **test-debt triage / baselining**, not a full green suite.
+
+1. **Must stay green** (run before merging duo / bass / Wyble / song / ensemble?adjacent engine work): from `engines/composer-os-v2`, run:
+   - `npm run test:jest:counterpoint`
+   - `npm run test:duo`
+   - `npm run test:bass`
+   - `npm run test:vocal`
+   - `npm run test:composer-os-regression`
+2. **Known debt (expected failures until cleared):** `npm test` (`tests/runAllTests.ts`) still reports **`FAIL:`** lines in multiple suites ? **do not** assume exit code 0. If you see **new** failures outside the [documented baseline](docs/TEST_DEBT_COMPOSER_OS_V2.md), treat them as **regressions**.
+3. **One-shot helper** (repo root):  
+   `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-baseline-composer-os-v2.ps1`  
+   Optional: `-IncludeRunAll` runs `npm test` (slow).
+
+Full table and triage notes: **[docs/TEST_DEBT_COMPOSER_OS_V2.md](docs/TEST_DEBT_COMPOSER_OS_V2.md)**.
+
+---
+
 ## Documentation index
 
 | Doc | Purpose |
@@ -110,6 +129,7 @@ Use `--out "C:\path\to\folder"` to choose the output directory. See [docs/USER_G
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Practical guide for first-time users |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Release-style change notes |
 | [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md) | Past / current / future (Composer OS) |
+| [docs/TEST_DEBT_COMPOSER_OS_V2.md](docs/TEST_DEBT_COMPOSER_OS_V2.md) | Engine test baseline vs known `npm test` debt |
 | [apps/composer-os-app/README.md](apps/composer-os-app/README.md) | App dev server and build |
 
 ---

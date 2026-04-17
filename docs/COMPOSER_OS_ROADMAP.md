@@ -8,7 +8,8 @@
 
 ## User documentation (2026-04-17)
 
-- **[USER_GUIDE.md](USER_GUIDE.md)** — first-time user guide: what the app does **now**, local run commands, Generate workflow, MusicXML locations, Wyble ON/OFF **CLI** (not a UI toggle), limitations.
+- **[USER_GUIDE.md](USER_GUIDE.md)** — first-time user guide: what the app does **now**, local run commands, Generate workflow, MusicXML locations, Wyble ON/OFF **CLI** (not a UI toggle), limitations; **engine test baseline** for developers.
+- **[TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md)** — `engines/composer-os-v2` **must-stay-green** npm scripts vs **`npm test`** debt (2026-04-17 snapshot).
 - **Root [README.md](../README.md)** — short overview + links to the guide.
 - **In-app:** **Help** tab (`apps/composer-os-app/src/pages/UserGuide.tsx`) mirrors the guide for discoverability.
 - **Windows local dev shortcut (2026-04-17):** **`scripts/create-composer-os-desktop-shortcut.ps1`** creates Desktop **`Composer OS Dev Launcher.lnk`** (name **Composer OS Dev Launcher**) → **`scripts/launch-composer-os.bat`** → **`scripts/vite-dev-launcher.ps1`** runs **`npm run dev --prefix apps/composer-os-app`** and prints a framed **OPEN THIS IN YOUR BROWSER** block plus numbered **Next steps** when Vite emits **`Local:`** (any port; no auto-open). Not an installer; dev console stays open. Rename a packaged **`Composer-OS.exe`** shortcut to **`Composer OS Release`** to avoid confusion.
@@ -117,7 +118,8 @@
 ## Current (as of 2026-04-17 snapshot)
 
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
-- **`npm test`** in `engines/composer-os-v2` still shows a large set of failing regression/quality tests (export, golden-path gates, app API smoke, etc.) that appear pre-existing and unrelated to the BPM/vocal changes. This is **test debt**, not a blocker for the BPM/vocal fix.
+- **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs the **`npm test` / `runAllTests.ts`** debt bucket (still **not** all green). This is **baselining**, not a full fix pass.
+- **`npm test`** in `engines/composer-os-v2` still shows many **`FAIL:`** lines in the full harness (export, written-bar regression, etc.) — treat as **known debt** until the baseline doc is refreshed after fixes.
 
 | Area | State |
 |------|--------|
@@ -139,7 +141,7 @@
 
 ### Focus (2026-04-17)
 
-- **Decide on test debt:** Either baseline/triage the failing `npm test` set in `engines/composer-os-v2`, or document a known-red subset so new changes are not conflated with old failures.
+- **Test debt:** Initial **baseline** added — see **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** and **`scripts/test-baseline-composer-os-v2.ps1`**. Next: run `npm test` to completion, list remaining **`FAIL:`** cases, fix or document skips (no silent test deletion).
 - **Vocal lead sheet closure:** **DONE for 2026-04-17 packaged check** — runbook executed on `release\win-unpacked\Composer OS Desktop.exe`; keep **`npm run test:vocal`** on pre-release checklist for regressions. See [CHANGELOG.md](CHANGELOG.md).
 - **Wyble single-line parity** as the next feature follow-up: align guards with **`isGuitarBassDuoFamily`**, and keep **`npm run test:duo`** / **`npm run test:bass`** in the loop when touching duo/bass (see pick list #1 below). **2026-04-17:** `Wyble_single_line_reference_01.musicxml` and `engine_trials/trial_01_guitar_line.musicxml` now hold **real** repo MusicXML copies (Wyble imported single staff + latest on-disk `composer_os_guitar_bass_duo` export; not PDF-engrave, not `guitar_bass_duo_single_line` — see [CHANGELOG.md](CHANGELOG.md)); descriptor anchor unchanged; no engine wiring yet.
 - **Longer-horizon items** (Wayne Shorter product integration, ECM/Bacharach/Harris depth, Slonimsky tools, chord UX polish) remain on the roadmap in the sections below; this snapshot does not reprioritize them.

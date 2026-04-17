@@ -1,5 +1,13 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Composer OS v2 test-debt triage (baseline docs + helper)
+
+- **What:** Initial **test-debt baselining** for `engines/composer-os-v2` — **not** fixing the full `npm test` suite in this pass.
+- **Why:** Separate **must-stay-green** commands (duo / bass / vocal / counterpoint / ensemble regression) from the large **`runAllTests.ts`** debt bucket so new work is not confused with pre-existing failures.
+- **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** — Snapshot table (2026-04-17): five narrow scripts **PASS**; **`npm test`** **FAIL** (known debt; examples: Export major-kind assertion, MusicXML written-bar regression seen in partial runs).
+- **`scripts/test-baseline-composer-os-v2.ps1`** — Runs the five green commands from repo root; optional `-IncludeRunAll` for `npm test`.
+- **Docs:** [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
+
 ## [2026-04-17] Dev launcher: OPEN THIS box + numbered next steps
 
 - **`scripts/vite-dev-launcher.ps1`** — After the first detected Vite **`Local:`** URL, prints a framed **OPEN THIS IN YOUR BROWSER** block and a **Next steps** checklist (copy URL, paste in browser, leave window open / **Ctrl+C** to stop), so non-technical users see one obvious path without hunting the log.
