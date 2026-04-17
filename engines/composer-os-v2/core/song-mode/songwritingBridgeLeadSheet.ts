@@ -6,7 +6,7 @@ import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { CompiledSong } from './songCompilationTypes';
 import { buildHarmonyXmlLine } from '../../../core/chordSemantics';
 import { buildLeadSheetContractFromCompiled } from './songModeBuilder';
@@ -158,7 +158,7 @@ export function exportVocalLeadSheetMusicXmlViaPython(
   if (guitar) {
     for (const m of guitar.measures) {
       const evs = m.events
-        .filter((e) => e.kind === 'note' && (e.voice === undefined || e.voice === 1))
+        .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice === undefined || e.voice === 1))
         .map((e) => ({
           beat_position: e.startBeat,
           duration: e.duration,
