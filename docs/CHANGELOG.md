@@ -6,6 +6,7 @@
 - Generated `engine_trials/trial_01_notes.txt` (rough stats + placeholders; not full music analysis)
 - No engine code changes
 - **Update (same day):** Placeholder MusicXML shells replaced with real repo exports — reference from `outputs/wyble/imported/wyble_imported_01.musicxml`; trial from newest `composer_os_guitar_bass_duo_*.musicxml` under `engines/composer-os-v2/scripts/_diag32/` (no `guitar_bass_duo_single_line` MusicXML on disk). Descriptor unchanged.
+- **Wyble priority decision:** ship **guitar_bass_duo_single_line parity** (`isGuitarBassDuoFamily` + duo/bass checks) **before** Big Band / String Quartet Wyble extension; BB/SQ Wyble queued in roadmap after parity (no engine change in this note).
 
 ## [2026-04-17] Packaged app verification — Song Mode + vocal lead sheet
 
