@@ -1,3 +1,29 @@
+## [2026-04-17] Vocal Lead Sheet — chord extensions fully working
+
+### What was fixed
+- Replaced Python chord parser (_parse_chord) with TypeScript
+  buildHarmonyXmlLine from chordSemantics.ts
+- TypeScript now pre-renders full MusicXML <harmony> XML
+  and passes it as harmonyXml in the payload
+- Python lead_sheet_exporter.py now inserts harmony XML
+  verbatim — zero chord parsing on Python side
+- chord_symbol_extractor.py updated to forward harmonyXml
+- Fixed chord_symbol_extractor.py stripping extensions
+  by using raw chord string instead of rebuilding from
+  root + quality
+
+### Result
+Full jazz chord extensions now render correctly in Sibelius:
+- maj7, maj7#11, m7, m9, 13, alt, 7alt, #11
+- Donald Fagen and Wayne Shorter styles confirmed working
+
+### Root cause
+Python was rebuilding chord strings from integer root +
+quality enum, discarding all extensions. TypeScript
+buildHarmonyXmlLine already had correct MusicXML harmony
+generation — the fix was to use it as the single source
+of truth and treat Python as a dumb assembler.
+
 ## Roadmap — Guitar/Harmony Module Assessment
 
 ### Executive recommendation
@@ -547,6 +573,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 

@@ -26,16 +26,26 @@ def extract_chord_symbols(compiled_composition: Any) -> List[Dict[str, Any]]:
     symbols = []
     for sec in getattr(compiled_composition, "sections", []):
         for h in getattr(sec, "harmony", []):
-            root = h.get("root", 0)
-            quality = h.get("quality", "major")
             m = h.get("measure", 0)
             beat = h.get("bar_position", 0)
+            xml = (h.get("harmonyXml") or "").strip()
+            if xml:
+                symbols.append({
+                    "measure": m,
+                    "beat": beat,
+                    "harmonyXml": xml,
+                    "duration": 1.0,
+                })
+                continue
+            root = h.get("root", 0)
+            quality = h.get("quality", "major")
             root_str = _pitch_class_to_root(root if isinstance(root, int) else 0)
             qual = "m" if quality == "minor" else ""
+            raw_chord = h.get("chord") or (root_str + qual)
             symbols.append({
                 "measure": m,
                 "beat": beat,
-                "chord": root_str + qual,
+                "chord": raw_chord,
                 "duration": 1.0,
             })
     if not symbols:

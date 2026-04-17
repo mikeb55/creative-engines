@@ -8,6 +8,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { CompiledSong } from './songCompilationTypes';
+import { buildHarmonyXmlLine } from '../../../core/chordSemantics';
 import { buildLeadSheetContractFromCompiled } from './songModeBuilder';
 import type { LeadSheetContract } from './leadSheetContract';
 
@@ -110,11 +111,9 @@ export function buildSongwritingBridgePayloadFromLeadSheetContract(
     const harmony = contract.chordSymbols
       .filter((c) => c.measure >= barStart1 && c.measure <= barEnd1)
       .map((c) => {
-        const { root, quality } = chordSymbolToRootAndQuality(c.chord);
+        const harmonyXml = buildHarmonyXmlLine(c.chord).trim();
         return {
-          root,
-          quality,
-          chord: c.chord,
+          harmonyXml,
           measure: c.measure - 1,
           bar_position: c.beat,
         };
@@ -143,17 +142,14 @@ export function exportVocalLeadSheetMusicXmlViaPython(
   const contract = buildLeadSheetContractFromCompiled(compiled);
   const guitar = realisedScore.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const melodyByMeasure = new Map<number, Array<{ beat_position: number; duration: number; pitch: number }>>();
-  const harmonyByMeasure = new Map<
-    number,
-    Array<{ root: number; quality: 'major' | 'minor'; chord: string; bar_position: number }>
-  >();
+  const harmonyByMeasure = new Map<number, Array<{ harmonyXml: string; bar_position: number }>>();
 
   let measureBase = 1;
   for (const block of compiled.chordPlan) {
     let m = measureBase;
     for (const chordSymbol of block.chordSymbols) {
-      const { root, quality } = chordSymbolToRootAndQuality(chordSymbol);
-      harmonyByMeasure.set(m, [{ root, quality, chord: chordSymbol, bar_position: 0 }]);
+      const harmonyXml = buildHarmonyXmlLine(chordSymbol).trim();
+      harmonyByMeasure.set(m, [{ harmonyXml, bar_position: 0 }]);
       m += 1;
     }
     measureBase = m;
@@ -176,7 +172,7 @@ export function exportVocalLeadSheetMusicXmlViaPython(
 
   const sections = contract.formSummary.sections.map((sec) => {
     const melody_events: Array<{ measure: number; beat_position: number; duration: number; pitch: number }> = [];
-    const harmony: Array<{ root: number; quality: 'major' | 'minor'; chord: string; measure: number; bar_position: number }> = [];
+    const harmony: Array<{ harmonyXml: string; measure: number; bar_position: number }> = [];
     for (let bar = sec.barStart; bar <= sec.barEnd; bar++) {
       const barMelody = melodyByMeasure.get(bar) ?? [];
       for (const e of barMelody) {
@@ -190,9 +186,7 @@ export function exportVocalLeadSheetMusicXmlViaPython(
       const barHarmony = harmonyByMeasure.get(bar) ?? [];
       for (const h of barHarmony) {
         harmony.push({
-          root: h.root,
-          quality: h.quality,
-          chord: h.chord,
+          harmonyXml: h.harmonyXml,
           measure: bar - 1,
           bar_position: h.bar_position,
         });
