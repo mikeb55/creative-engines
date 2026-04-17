@@ -3,6 +3,7 @@
  */
 
 import type { EnsembleFamily } from './ensembleFamilyTypes';
+import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import type { OrchestrationSectionSlice, PartOrchestrationRow, SilenceEligibility } from './orchestrationTypes';
 import type { DensityOwnershipPlan } from './densityOwnershipPlanner';
 import type { RegisterOwnershipPlan } from './registerOwnershipPlanner';
@@ -32,6 +33,8 @@ export interface OrchestrationPlan {
   /** Bars where explicit silence is a valid assignment for eligible parts. */
   silenceEligibleByBar: boolean[];
   silenceEligibility: SilenceEligibility[];
+  /** Portable Wyble role → part map for this ensemble (optional; string quartet score build consumes SQ map in `quartetScoreBuilder`). */
+  wybleVoiceLayout?: EnsembleWybleRoleMap;
 }
 
 /** Narrow view for manifests / handoff (no planner internals). */

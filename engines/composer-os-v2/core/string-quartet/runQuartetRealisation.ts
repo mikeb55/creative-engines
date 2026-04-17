@@ -53,6 +53,7 @@ export function runQuartetRealisation(
     texturePlan: planning.texturePlan,
     era: input.era,
     chordBars,
+    wybleVoiceLayout: planning.orchestrationPlan.wybleVoiceLayout,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

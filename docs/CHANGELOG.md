@@ -1,5 +1,25 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Wyble — string quartet consumes `wybleVoiceLayout` in score build
+
+- `buildQuartetScoreModel` accepts optional `wybleVoiceLayout`; when it matches the static string-quartet map (`WYBLE_ROLE_MAP_STRING_QUARTET`), chord tones for **violin II** and **viola** are cross-assigned relative to the legacy stack (`quartetWybleChordToneStack.ts`).
+- `runQuartetRealisation` passes `planning.orchestrationPlan.wybleVoiceLayout` into the score builder (no UI change).
+- Jest: `tests/quartetWybleScoreConsumption.test.ts` asserts the swap and that realisation matches an explicit Wyble build for bar 1.
+
+## [2026-04-17] Wyble — optional `wybleVoiceLayout` metadata hook (read-only)
+
+- `GenerationMetadata.wybleVoiceLayout` and `OrchestrationPlan.wybleVoiceLayout`: optional static role maps for duo family (golden path / long-form contexts), string quartet, and big band orchestration plans.
+- Helper `wybleVoiceLayoutForPreset()` in `core/wyble/wybleVoiceLayoutForPreset.ts`; **no** note-generation or voicing logic reads the field yet.
+- `ensembleWybleRoleMaps`: big-band bass anchor uses literal `bb_rhythm_section` (avoids circular import with `buildBigBandOrchestrationPlan`).
+- Jest: `tests/wybleVoiceLayoutHook.test.ts` covers duo + SQ + BB attachment and basic 8-bar score shape.
+
+## [2026-04-17] Wyble — neutral voice layout + ensemble role maps (no behaviour change)
+
+- Added `engines/composer-os-v2/core/wyble/`: `WybleVoiceRole` (3 roles), `EnsembleWybleRoleMap`, and static maps for duo family, string quartet (`SQ_PART_*`), and big band (`bb_alto_sax`, `bb_tenor_sax`, `bb_rhythm_section`).
+- Jest: `engines/composer-os-v2/tests/wybleVoiceLayoutMaps.test.ts` asserts map shape and known part ids.
+- Docs: `docs/wyble-targets/portable_wyble_voice_layout.md` — roles + note that generation does not consume maps yet.
+- **No** change to golden path, Wyble inject, or ensemble realisation.
+
 ## [2026-04-17] Wyble single-line parity fixes
 
 ### What was fixed

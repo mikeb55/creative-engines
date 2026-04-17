@@ -21,6 +21,7 @@ import type { MotifShape } from './motif/motifShape';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
+import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -87,6 +88,10 @@ export interface GenerationMetadata {
   duoModeReceiptLabel?: string;
   /** Phase 18.2B.1 — Voice-2 polyphony snapshot after inject + stabilise (guitar_bass_duo polyphony path). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
+  /**
+   * Portable Wyble: abstract 3-role → score part targets for duo / SQ / BB (optional; string quartet score build reads SQ orchestration layout).
+   */
+  wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */

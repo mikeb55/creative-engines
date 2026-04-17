@@ -16,6 +16,7 @@ import type { QuartetInstrument } from './stringQuartetTypes';
 import { QUARTET_INSTRUMENTS, partIdForQuartetInstrument, SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC } from './stringQuartetTypes';
 import type { QuartetRoleType } from './quartetRoleTypes';
 import { mapQuartetRoleToOrchestrationRoles } from './quartetRoleMapping';
+import { WYBLE_ROLE_MAP_STRING_QUARTET } from '../wyble/ensembleWybleRoleMaps';
 
 const PART_ORDER = QUARTET_INSTRUMENTS;
 
@@ -137,6 +138,7 @@ export function assembleQuartetOrchestrationPlan(input: BuildQuartetOrchestratio
     densityOwnership,
     silenceEligibleByBar,
     silenceEligibility,
+    wybleVoiceLayout: WYBLE_ROLE_MAP_STRING_QUARTET,
   };
 }
 

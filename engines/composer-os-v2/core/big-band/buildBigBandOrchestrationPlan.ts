@@ -15,6 +15,7 @@ import type { BigBandSectionPlan } from './bigBandPlanTypes';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
 import type { BigBandRoleType } from './bigBandTypes';
 import { mapBigBandRoleToOrchestrationRoles } from './bigBandRoleMapping';
+import { WYBLE_ROLE_MAP_BIG_BAND } from '../wyble/ensembleWybleRoleMaps';
 import type { BigBandEnsembleSectionMask } from './bigBandEnsembleConfigTypes';
 import { FULL_BIG_BAND_MASK } from './bigBandEnsembleConfigTypes';
 
@@ -197,6 +198,7 @@ export function assembleBigBandOrchestrationPlan(input: BuildBigBandOrchestratio
     densityOwnership,
     silenceEligibleByBar,
     silenceEligibility,
+    wybleVoiceLayout: WYBLE_ROLE_MAP_BIG_BAND,
   };
 }
 

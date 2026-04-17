@@ -88,6 +88,7 @@
 
 ### String Quartet (2026-04-07) — **COMPLETE**
 
+- **Wyble layout (2026-04-17):** `OrchestrationPlan.wybleVoiceLayout` is forwarded into `buildQuartetScoreModel`; when it matches `WYBLE_ROLE_MAP_STRING_QUARTET`, **violin II** and **viola** receive each other’s legacy chord-tone slots (first real metadata consumer on SQ — not full Wyble counterpoint).
 - **App wiring:** `runQuartetRealisation` after planning → **full ensemble MusicXML** (strings + **piano** reduction staff) when the ensemble export pipeline passes; **planning JSON** if realisation or export fails.
 - **Parts:** Violin I, Violin II, Viola, Violoncello, **Piano** (`sq_piano` — rests + chord symbols on staff; same piano MusicXML naming as Big Band).
 - **Imports:** `quartetScoreBuilder` restores `SQ_PART_V1`–`SQ_PART_VC` for MIDI-bound lookups (regression fix).
@@ -156,7 +157,7 @@
 2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below.
-5. **Wyble for Big Band and String Quartet** — extend Wyble-style single-line / contrapuntal output to BB and SQ presets when desired; **near-term only after** item 4 parity is verified (`isGuitarBassDuoFamily` guards + **`npm run test:duo`** / **`npm run test:bass`**). Otherwise risk wrong inject/guard behavior copied into unrelated part layouts.
+5. **Wyble for Big Band and String Quartet** — extend Wyble-style single-line / contrapuntal output to BB and SQ presets when desired; **near-term only after** item 4 parity is verified (`isGuitarBassDuoFamily` guards + **`npm run test:duo`** / **`npm run test:bass`**). Otherwise risk wrong inject/guard behavior copied into unrelated part layouts. **2026-04-17:** Neutral 3-role layout + static duo / SQ / BB part maps live under `core/wyble/` (see [CHANGELOG.md](CHANGELOG.md)). **`wybleVoiceLayout`** on `GenerationMetadata` / `OrchestrationPlan` still **does not** drive duo or big-band note passes. **String quartet (2026-04-17):** `buildQuartetScoreModel` **does** consume the SQ static map to cross-assign violin II / viola chord tones (`quartetWybleChordToneStack.ts`); big band and full 3-voice Wyble generation remain future work.
 
 ### Medium term
 

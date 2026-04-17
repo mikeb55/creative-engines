@@ -73,6 +73,7 @@ import { planDuoLongFormInteraction } from '../interaction/duoLongFormInteractio
 import { evaluateDuoLongFormQuality } from '../quality/duoLongFormQuality';
 import { duoGuitarBarSevenIntervalPeakVsBarSixOk } from '../score-integrity/duoLockQuality';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { wybleVoiceLayoutForPreset } from '../wyble/wybleVoiceLayoutForPreset';
 import {
   assertContextMatchesLocked32,
   assertCustomLockedBeforeScoreGeneration,
@@ -267,9 +268,11 @@ function buildGoldenPathContext(
   const barsForLock =
     useCustom32 && expandedChordBars ? expandedChordBars : useCustom8Native && parsedChordBars ? parsedChordBars : undefined;
 
+  const resolvedPresetId = extras?.resolvedPresetId ?? 'guitar_bass_duo';
+
   return {
     systemVersion: '2.0.0',
-    presetId: extras?.resolvedPresetId ?? 'guitar_bass_duo',
+    presetId: resolvedPresetId,
     seed,
     form,
     feel,
@@ -292,6 +295,7 @@ function buildGoldenPathContext(
       chordProgressionParseFailed: parseFailed || undefined,
       builtInHarmonyFallbackOccurred: false,
       customHarmonyLocked: useCustom && extras?.harmonyModeRequested === 'custom_locked',
+      wybleVoiceLayout: wybleVoiceLayoutForPreset(resolvedPresetId),
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
@@ -394,6 +398,7 @@ function buildDuoTwentyFourBarCompositionContext(
             builtInHarmonyFallbackOccurred: false,
           }
         : { builtInHarmonyFallbackOccurred: false }),
+      wybleVoiceLayout: wybleVoiceLayoutForPreset(opts.presetId),
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },

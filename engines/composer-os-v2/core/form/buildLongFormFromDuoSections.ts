@@ -18,6 +18,7 @@ import { validateModulationPlan } from '../modulation/modulationValidation';
 import { buildDuoLongFormPlan, buildDuoLongFormPlan16 } from './duoLongFormPlanner';
 import { LONG_FORM_DUO_BARS } from './longFormRouteResolver';
 import { assertLockedHarmonyContractsToneParity, buildLockedHarmonyBarContracts } from '../harmony/harmonyBarContract';
+import { wybleVoiceLayoutForPreset } from '../wyble/wybleVoiceLayoutForPreset';
 
 const BUILTIN_EIGHT: readonly string[] = ['Dmin9', 'G13', 'Cmaj9', 'A7alt', 'Dmin9', 'G13', 'Cmaj9', 'A7alt'];
 
@@ -152,6 +153,7 @@ export function buildDuoLongFormCompositionContextFromBars(
       longFormDuo: true,
       modulationPlanActive: false,
       totalBars: n,
+      wybleVoiceLayout: wybleVoiceLayoutForPreset(opts?.presetId ?? 'guitar_bass_duo'),
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
@@ -246,6 +248,7 @@ export function buildDuoLongFormCompositionContext(
         longFormDuo: true,
         modulationPlanActive: modulationPlan.active,
         totalBars: 16,
+        wybleVoiceLayout: wybleVoiceLayoutForPreset(options?.presetId ?? 'guitar_bass_duo'),
       },
       validation: { gates: [], passed: true },
       readiness: { release: release.release, mx: release.mx },
@@ -327,6 +330,7 @@ export function buildDuoLongFormCompositionContext(
       longFormDuo: true,
       modulationPlanActive: modulationPlan.active,
       totalBars: LONG_FORM_DUO_BARS,
+      wybleVoiceLayout: wybleVoiceLayoutForPreset(options?.presetId ?? 'guitar_bass_duo'),
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },

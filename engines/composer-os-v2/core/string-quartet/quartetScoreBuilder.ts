@@ -19,6 +19,8 @@ import { createNote, createPart, createRest, createScore, addEvent } from '../sc
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutHeuristics';
 import { WholeNoteDensityTracker } from '../ensemble-scoring/ensembleLayoutHeuristics';
+import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
+import { applyQuartetWybleChordToneStack } from './quartetWybleChordToneStack';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
 
@@ -225,6 +227,11 @@ export interface BuildQuartetScoreModelInput {
   chordBars?: string[];
   /** If true, skips whole-note density + rhythm-split heuristics (pad / demo sketch). */
   padSketch?: boolean;
+  /**
+   * When set to the string-quartet Wyble map, chord tones for violin II and viola
+   * are cross-assigned from the default per-part stack (see `quartetWybleChordToneStack`).
+   */
+  wybleVoiceLayout?: EnsembleWybleRoleMap;
 }
 
 function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): void {
@@ -237,7 +244,7 @@ function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): voi
 }
 
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch } = input;
+  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -278,7 +285,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = pitchesQuartetString(rpc);
+    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc), wybleVoiceLayout);
 
     const barNotes: ScoredNote[] = [];
 
