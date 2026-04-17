@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-16]
+# Composer OS Roadmap [2026-04-17]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -16,6 +16,13 @@
 ---
 
 ## Past (delivered)
+
+### Reinforced (2026-04-17)
+
+- **BPM end-to-end:** Request body always carries BPM; golden path forwards it into score generation so export tempo is not stuck at 120 when the UI sends a value.
+- **Vocal lead sheet in Sibelius:** Python exporter now emits the metronome + `<sound tempo>` direction block, not bare `<sound tempo>`.
+- **Bridge TypeScript:** Vocal bridge file compiles cleanly with proper note vs rest narrowing; `npm run test:vocal` is green locally.
+- **Packaged app (2026-04-17):** Song Mode + vocal lead sheet **VERIFIED** end-to-end on `release\win-unpacked\Composer OS Desktop.exe` (BPM 100 in UI; main + vocal MusicXML at 100 BPM; Sibelius import correct). See [CHANGELOG.md](CHANGELOG.md).
 
 ### Foundation & export
 
@@ -60,7 +67,7 @@
 - **Rule bundles:** `songwriterRuleRegistry.ts` maps each id to concrete **`SongwritingRuleEntry`** rows (harmony / form / melody / hook / lyric / rhythm); **`applySongwritingRules`** consumes the resolved id set with bundled research prose in `Songwriting.md` (via parser).
 - **Style resolution:** `songwriterStyleResolver.ts` — **primary** + optional **secondary** (~35% weight on the blended **`SongwriterStyleProfile`**), optional **author** and **classical** overlays, deterministic **`resolvedRuleIds`** + **`styleFingerprint`**; wired from **`buildCompiledSong`** (`songModeBuilder.ts`).
 - **Songwriter × arranger pairing:** `stylePairingResolver.ts` — when **`stylePairing`** is passed into **`buildCompiledSong`**, soft domain weights plus Big Band **era ↔ arranger** alignment heuristics (non-blocking metadata / nudge).
-- **Vocal lead sheet (2026-04-10):** Python **`songwriting_bridge`** + **`cli_export_lead_sheet.py`**, app checkbox **Include vocal lead sheet**, bridge called from generation — see [CHANGELOG.md](CHANGELOG.md). **NOTE:** vocal file path not yet surfacing end-to-end in the app; **data pipeline gap** between **`CompiledSong`** and bridge input — treat as **wired, integration incomplete**.
+- **Vocal lead sheet (2026-04-10; packaged VERIFIED 2026-04-17):** Python **`songwriting_bridge`** + **`cli_export_lead_sheet.py`**, app checkbox **Include vocal lead sheet**, bridge called from generation — see [CHANGELOG.md](CHANGELOG.md). **Packaged Windows:** Song Mode + vocal + BPM confirmed on `release\win-unpacked\Composer OS Desktop.exe` (historical “integration incomplete” note superseded for tempo + export path).
 
 ### Other presets
 
@@ -92,7 +99,10 @@
 
 ---
 
-## Current (as of roadmap date)
+## Current (as of 2026-04-17 snapshot)
+
+- **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
+- **`npm test`** in `engines/composer-os-v2` still shows a large set of failing regression/quality tests (export, golden-path gates, app API smoke, etc.) that appear pre-existing and unrelated to the BPM/vocal changes. This is **test debt**, not a blocker for the BPM/vocal fix.
 
 | Area | State |
 |------|--------|
@@ -102,7 +112,7 @@
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
 | **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** (see Future → style exposure + pairing). |
-| **Vocal lead sheet (Song Mode)** | **Flag fix applied (2026-04-16):** `includeVocalLeadSheet` is now set on `req_` in `apiGenerate`, so the bridge runs when the checkbox is on. Remaining: verify Python env and packaged bridge path; see [CHANGELOG.md](CHANGELOG.md). |
+| **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family; other passes may still use stricter `guitar_bass_duo` checks — see **Future → next possible devs** |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
@@ -112,11 +122,18 @@
 
 ## Future (prioritized directions)
 
+### Focus (2026-04-17)
+
+- **Decide on test debt:** Either baseline/triage the failing `npm test` set in `engines/composer-os-v2`, or document a known-red subset so new changes are not conflated with old failures.
+- **Vocal lead sheet closure:** **DONE for 2026-04-17 packaged check** — runbook executed on `release\win-unpacked\Composer OS Desktop.exe`; keep **`npm run test:vocal`** on pre-release checklist for regressions. See [CHANGELOG.md](CHANGELOG.md).
+- **Wyble single-line parity** as the next feature follow-up: align guards with **`isGuitarBassDuoFamily`**, and keep **`npm run test:duo`** / **`npm run test:bass`** in the loop when touching duo/bass (see pick list #1 below).
+- **Longer-horizon items** (Wayne Shorter product integration, ECM/Bacharach/Harris depth, Slonimsky tools, chord UX polish) remain on the roadmap in the sections below; this snapshot does not reprioritize them.
+
 ### Next possible devs (pick list)
 
 | # | Dev | Notes |
 |---|-----|--------|
-| 0 | **Vocal lead sheet stabilization handoff** | Confirm `includeVocalLeadSheet` reaches `apiGenerate` and `runSongStructure`; verify packaged app launches from `release/Composer-OS.exe` (not temp installer path) and produce one known-good vocal XML artifact before feature additions. |
+| 0 | **Vocal lead sheet stabilization handoff** | **VERIFIED (2026-04-17)** on `release\win-unpacked\Composer OS Desktop.exe` (BPM 100; main + vocal; Sibelius). Ongoing: optional repeat on installer `release/Composer-OS.exe` if that is the ship path; keep **`npm run test:vocal`** on pre-release checklist; see [CHANGELOG.md](CHANGELOG.md). |
 
 | # | Dev | Notes |
 |---|-----|--------|
@@ -127,7 +144,7 @@
 | 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
 | 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | ~~**Song Mode — style exposure**~~ **COMPLETE** (2026-04-15) | Pattern slider, secondary songwriter, author overlay wired end-to-end; **`styleStack`** / classical overlay / further presets remain optional follow-ups. |
-| 12 | **Vocal lead sheet — pipeline** | **Flag fix applied** — same as Current table; verify end-to-end (output folder, optional `_vocal_lead_sheet.musicxml`); see [CHANGELOG.md](CHANGELOG.md). |
+| 12 | **Vocal lead sheet — pipeline** | **VERIFIED packaged (2026-04-17)** — same as Current table; `release\win-unpacked\Composer OS Desktop.exe`; see [CHANGELOG.md](CHANGELOG.md). |
 | 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
 | 9 | **ECM / Barry Harris / Bacharach** | Implement from **`ECM_Bacharach_BarryHarris_Research.md`** when extending chamber feel or style stacks. |
 | 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. |
@@ -137,7 +154,7 @@
 
 1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
 2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
-3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** end-to-end once pipeline matches bridge input.
+3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice).
 
 ### Medium term
@@ -177,5 +194,5 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-16].*
+*End of Composer OS Roadmap [2026-04-17].*
 

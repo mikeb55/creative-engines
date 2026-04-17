@@ -1,5 +1,14 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Packaged app verification — Song Mode + vocal lead sheet
+
+### Verified in packaged exe
+- BPM 100 set in UI
+- Both main score and vocal lead sheet exported at 100 BPM
+- Both opened correctly in Sibelius
+- Packaged path: release\win-unpacked\Composer OS Desktop.exe
+- Song Mode + vocal lead sheet pipeline confirmed end-to-end
+
 ## Bass phrase intelligence 18.2D (2026-04-09)
 - Rhythmic cell repeat prevention (3+ consecutive bars)
 - Contour overuse prevention (5+ same contour)
