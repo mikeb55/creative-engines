@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## [2026-04-17] User guide + in-app Help
+
+- **Docs:** [USER_GUIDE.md](USER_GUIDE.md) — plain-English guide for first-time users (run, generate, exports, limitations). **Root [README.md](../README.md)** rewritten for Composer OS and links to the guide.
+- **App:** **Help** tab in `apps/composer-os-app` (`UserGuide.tsx`) — same topics as the doc, shortened; reachable from the main navigation.
+- **Preset copy:** `getPresets.ts` + `composerOsPresetUi.ts` descriptions for Song Mode / Big Band / String Quartet aligned with `releaseMetadata.ts` (MusicXML vs planning JSON honestly stated).
+
 ## [2026-04-17] Developer Wyble ON/OFF MusicXML export (no UI)
 
 - **Unified script:** `engines/composer-os-v2/scripts/exportWybleOnOffExamples.ts` — calls **`runQuartetRealisation`** and **`runBigBandRealisation`** (Wyble **ON** = default layout; **OFF** = **`suppressWybleVoiceLayoutForTest`**). Writes **`quartet_wyble_ON|OFF_seed{N}.musicxml`** and **`bigband_wyble_ON|OFF_seed{N}.musicxml`** to **`C:\\Users\\mike\\Documents\\Mike Composer Files\\wyble-test\\`** by default (override with **`--out`**). CLI: **`--family quartet|bigband|all`**, **`--seed`**. **`npm run export:wyble-examples`** from `engines/composer-os-v2`.

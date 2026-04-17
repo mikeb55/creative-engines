@@ -40,21 +40,21 @@ const PRESETS: AppPreset[] = [
     id: songModePreset.id,
     name: songModePreset.name,
     description:
-      'Song Mode: structural song + lead-sheet-ready contract (JSON summary; no MusicXML lead sheet export in this build).',
+      'Song plan (hooks, sections, rules) then golden-path Guitar–Bass Duo realisation as exported MusicXML.',
     supported: true,
   },
   {
     id: bigBandPreset.id,
     name: bigBandPreset.name,
     description:
-      'Big band planning mode: form/section/density/orchestration via runBigBandMode (no full ensemble MusicXML yet).',
+      'Full 7-part ensemble MusicXML when realisation and export pass; planning JSON if realisation or export fails.',
     supported: true,
   },
   {
     id: stringQuartetPreset.id,
     name: stringQuartetPreset.name,
     description:
-      'String quartet planning: form/texture/density/orchestration via runStringQuartetMode (no quartet MusicXML yet).',
+      'Four strings plus piano harmony staff — MusicXML when realisation and export pass; planning JSON if not.',
     supported: true,
   },
   {

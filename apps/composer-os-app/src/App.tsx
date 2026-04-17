@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { Outputs } from './pages/Outputs';
+import { UserGuide } from './pages/UserGuide';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
 
-type Tab = 'home' | 'presets' | 'style' | 'outputs' | 'composer-engines';
+type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'guide';
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
@@ -410,7 +411,7 @@ export default function App() {
             {embeddedStamp.gitCommit ? ` · ${embeddedStamp.gitCommit.slice(0, 7)}` : ''}
           </p>
         )}
-        <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
           {(['home', 'presets', 'outputs'] as const).map((t) => (
             <button
               key={t}
@@ -421,10 +422,18 @@ export default function App() {
             </button>
           ))}
           <button
-            className={tab === 'composer-engines' ? 'active' : ''}
+            className={tab === 'composer-engines' ? '' : 'secondary'}
             onClick={() => setTab('composer-engines')}
           >
             Composer Engines
+          </button>
+          <button
+            className={tab === 'guide' ? '' : 'secondary'}
+            onClick={() => setTab('guide')}
+            type="button"
+            title="How to use Composer OS"
+          >
+            Help
           </button>
         </nav>
       </header>
@@ -437,6 +446,7 @@ export default function App() {
       {tab === 'composer-engines' && (
         <ComposerEngines />
       )}
+      {tab === 'guide' && <UserGuide />}
     </div>
   );
 }

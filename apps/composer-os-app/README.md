@@ -1,6 +1,10 @@
 # Composer OS App
 
-Local web UI for Composer OS — preset-first generation against the shared `app-api` layer (`composerOsApiCore.ts`). No direct imports of deep engine internals from the React app.
+Local web UI for Composer OS. It talks to the shared **app API** (`engines/composer-os-v2/app-api/composerOsApiCore.ts`) over HTTP (`/api/...`) or, in the desktop shell, IPC.
+
+**First-time user?** Read **[docs/USER_GUIDE.md](../../docs/USER_GUIDE.md)** — run commands, generation steps, export folders, and limitations. Use the in-app **Help** tab for a shorter version.
+
+---
 
 ## Run (recommended)
 
@@ -11,33 +15,33 @@ npm install
 npm run dev
 ```
 
-This starts the Vite UI (default http://localhost:5173) and the Composer OS HTTP API (http://localhost:3001) via `ts-node` and `scripts/startComposerOsAppApi.ts`.
+- **Web UI:** http://localhost:5173  
+- **API:** http://localhost:3001 — started by the same script (`scripts/startComposerOsAppApi.ts` from the repo root via `npm run dev:api`)
 
-**Alternative — API only (plain Node):** from repo root, `node scripts/startComposerOsAppApi.js` registers `ts-node` and loads `composerOsApiCore.ts` (serves static UI from `apps/composer-os-app/dist` if built).
+**Alternative — API only:** from repo root, `node scripts/startComposerOsAppApi.js` loads the API and can serve `dist/` if built.
 
-## Supported modes (V1)
+---
 
-| Mode | Output |
-|------|--------|
-| Guitar–Bass Duo | MusicXML |
-| ECM Chamber | MusicXML (Metheny / Schneider sub-modes in UI) |
-| Song Mode | Structural / lead-sheet contract JSON (no MusicXML export in this build) |
-| Big Band | Planning JSON only (labelled in UI) |
-| String Quartet | Planning JSON only (labelled in UI) |
+## Supported modes (Generate dropdown)
 
-Details and honest capability strings: `engines/composer-os-v2/app-api/releaseMetadata.ts`, `/api/diagnostics` (`supportedModes`).
+Eight presets: Guitar–Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator. Honest capability text: `engines/composer-os-v2/app-api/releaseMetadata.ts` and `/api/diagnostics`.
+
+- **Big Band / String Quartet:** full **MusicXML** when realisation and export succeed; otherwise **planning JSON** (receipt shows which).
+- **Wyble Etude:** requires **chords** in the UI (no silent fallback).
+
+---
 
 ## Workflow
 
-1. Choose **mode** — each mode has an **About this mode** card (what it does, best use, honest output type).
-2. Set **tonal centre**, **tempo**, **number of bars**, **variation** (New / Next), **creative control**, and optional **title**.
-3. Use **mode-specific** controls (ECM Metheny vs Schneider; Song Mode: songwriter × arranger × era; Big Band: arranger, era, ensemble size; String Quartet: explanatory copy only).
-4. **Generate** — duo/ECM MusicXML uses a **fixed internal style stack** (Barry Harris–led defaults) sent through the same API as before; there are no style module dropdowns on this screen.
-5. The **Result summary** includes mode, output type, variation, key/tempo/bars, pairing when relevant, ensemble for big band, creative level, confidence, experimental badge, and output path.
+1. **Help** tab — quick user guide; **Generate** — pick mode, set fields, **Generate**.
+2. **Presets** — names and descriptions.
+3. **Outputs** — recent files; open library or a file’s folder.
+4. **Composer Engines** — Wayne Shorter / Monk / Charlie Parker; “Open in folder” needs the desktop app in practice.
+5. **Diagnostics** — system check (dev checkout + npm).
 
-**Legacy Style Stack page:** `src/pages/StyleStack.tsx` is not linked from the app nav; it remains for reference. The **Style Stack** tab was removed in favour of the mode-driven Generate flow.
+**Legacy Style Stack page** (`src/pages/StyleStack.tsx`) is not linked from the main nav.
 
-**Diagnostics — system check:** Expand **Diagnostics** and use **Run system check** to run Composer OS engine tests, retro tests, and this app’s tests from the development repo (no terminal). Optional **Show technical details** expands npm output. Requires a full `creative-engines` checkout with `npm` available; packaged desktop without a repo shows a clear message.
+---
 
 ## Build
 
@@ -45,13 +49,16 @@ Details and honest capability strings: `engines/composer-os-v2/app-api/releaseMe
 npm run build
 ```
 
-Static assets go to `dist/`. The API server can serve them when `COMPOSER_OS_STATIC_DIR` points at `dist` or the default path exists.
+Static assets: `dist/`. From repo root: `npm run build --prefix apps/composer-os-app`.
+
+---
 
 ## Windows desktop
 
-Packaged app: **`apps/composer-os-desktop`** — Electron + `electron-builder`, same API surface over IPC. See that folder’s README for `desktop:package` and install/shortcut flow. Normal use does not require Python or `.bat` launchers.
+**`apps/composer-os-desktop`** — Electron + `electron-builder`, same API over IPC. See that folder’s README.
 
-## Limitations
+---
 
-- Big Band and String Quartet do not produce full ensemble MusicXML in V1.
-- Song Mode does not export a finished lead-sheet MusicXML file in this build; output is JSON + validation metadata suitable for structural review.
+## Wyble ON/OFF examples (CLI)
+
+Not a UI feature. From `engines/composer-os-v2`: `npm run export:wyble-examples` — see [docs/USER_GUIDE.md](../../docs/USER_GUIDE.md) §6.
