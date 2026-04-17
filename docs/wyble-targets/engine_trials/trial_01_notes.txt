@@ -9,3 +9,8 @@ contour: descriptor bar contours: arch, down, up, down; trial melody is mostly s
 density: descriptor densities: medium, sparse; trial has 11 written pitches across score — medium in bars 1–2 vs sparse in 3–4 by note count; approximate only.
 overall_wyble_ish_yes_no: no
 why_one_line: not enough evidence for strong Wyble match — replace trial_01_guitar_line.musicxml with your real engine export and re-edit this note if needed. Descriptor used as comparison anchor only; no engine code changes.
+
+--- 2026-04-17 repo scan replacement ---
+reference_source: outputs/wyble/imported/wyble_imported_01.musicxml (copied into docs/wyble-targets/Wyble_single_line_reference_01.musicxml). Real single-staff Wyble import export; not the same as a hand-engraved PDF line — descriptor may still drift.
+trial_source: engines/composer-os-v2/scripts/_diag32/composer_os_guitar_bass_duo_2026-04-06T19-15-26-622Z_312853305.musicxml (copied into trial_01_guitar_line.musicxml). Newest composer_os_guitar_bass_duo*.musicxml found; no filename match for guitar_bass_duo_single_line in repo.
+engine_preset: guitar_bass_duo (from trial filename), not single_line — update if you add a true single_line export later.
