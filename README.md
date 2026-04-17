@@ -53,7 +53,7 @@ Double-click **`Composer OS Dev Launcher`** on your Desktop after creating the s
    ```
 3. A shortcut **`Composer OS Dev Launcher.lnk`** appears on your Desktop (display name **Composer OS Dev Launcher**). Double-click it anytime.
 
-**What it does:** runs `npm run dev --prefix apps/composer-os-app` (same as manual dev: Vite + API) via **`scripts\vite-dev-launcher.ps1`**. When Vite prints its **`Local:`** line, your default browser opens that **http://localhost:?** URL (whatever port Vite chose ? e.g. 5173, 5174). If auto-open fails, the console tells you to paste the **`Local:`** URL from the log. A **console window stays open** while the servers run ? close it or press **Ctrl+C** to stop.
+**What it does:** runs `npm run dev --prefix apps/composer-os-app` (same as manual dev: Vite + API) via **`scripts\vite-dev-launcher.ps1`**. It does **not** open your browser. When Vite prints its **`Local:`** URL, the console shows a clear **OPEN THIS IN YOUR BROWSER:** block with that **http://localhost:?** URL ? copy it into the browser. A **console window stays open** while the servers run ? close it or press **Ctrl+C** to stop.
 
 **vs. packaged release:** If you also have a shortcut to **`Composer-OS.exe`** (or similar) under `apps\composer-os-desktop\release\`, rename that shortcut to **`Composer OS Release`** so it is not confused with **Composer OS Dev Launcher** (this repo script is **dev only**).
 

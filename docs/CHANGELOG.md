@@ -1,5 +1,10 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Dev launcher prints Vite URL only (no auto-open browser)
+
+- **`scripts/vite-dev-launcher.ps1`** — Removed **`Start-Process`** / auto-open. On first **`Local:`** / **`http://localhost:…/`** line, prints a bordered **OPEN THIS IN YOUR BROWSER:** block; streaming continues. If no URL after ~200 lines (or early exit), prints a one-line hint to find **`Local:`** in the log.
+- **`scripts/launch-composer-os.bat`** — Comment only (still invokes **`vite-dev-launcher.ps1`**).
+
 ## [2026-04-17] Dev launcher opens real Vite Local URL (no `\\` popup)
 
 - **`scripts/launch-composer-os.bat`** — delegates to **`scripts/vite-dev-launcher.ps1`**, which streams **`npm run dev --prefix apps/composer-os-app`** and opens the first **`https?://localhost:PORT/`** URL from output (Vite **`Local:`** line). Removed the broken delayed **`start`** that triggered “Windows cannot find `\\`”. No fixed Vite port.

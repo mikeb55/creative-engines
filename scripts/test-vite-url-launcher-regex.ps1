@@ -1,4 +1,5 @@
-# Minimal check: URL regex matches Vite Local lines (any port) and does not treat "\\" as a URL opener.
+# Minimal check: URL regex matches Vite Local lines (any port), does not treat "\\" as a URL.
+# The dev launcher uses this pattern to print OPEN THIS IN YOUR BROWSER (no Start-Process).
 $ErrorActionPreference = 'Stop'
 $localUrlRegex = '(https?://localhost:\d+/)'
 

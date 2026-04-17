@@ -1,6 +1,6 @@
 @echo off
 REM Composer OS — local dev launcher (Vite UI + API). Repo root = parent of this scripts\ folder.
-REM Browser opens via scripts\vite-dev-launcher.ps1 when Vite prints its Local: URL (any port).
+REM scripts\vite-dev-launcher.ps1 prints the Vite Local: URL — it does not auto-open the browser.
 setlocal
 cd /d "%~dp0\.."
 if not exist "apps\composer-os-app\package.json" (
