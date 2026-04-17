@@ -89,7 +89,7 @@ export interface GenerationMetadata {
   /** Phase 18.2B.1 — Voice-2 polyphony snapshot after inject + stabilise (guitar_bass_duo polyphony path). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /**
-   * Portable Wyble: abstract 3-role → score part targets for duo / SQ / BB (optional; SQ + big-band score builds read orchestration layout where wired).
+   * Portable Wyble: abstract 3-role → score part targets for duo / SQ / BB (optional; duo golden path + SQ/BB ensemble score builds consume their static maps in narrow ways).
    */
   wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */

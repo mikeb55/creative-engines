@@ -814,6 +814,11 @@ export interface RunGoldenPathOptions {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /**
+   * Jest / diagnostics: omit `wybleVoiceLayout` after context build so duo scores can be
+   * compared against the default portable Wyble map without forking the full planner.
+   */
+  suppressWybleVoiceLayoutForTest?: boolean;
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -1030,6 +1035,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  if (options?.suppressWybleVoiceLayoutForTest === true) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      wybleVoiceLayout: undefined,
+    };
+  }
   if (options?.formId) {
     const formSections = resolveFormSections(options.formId);
     context.form = {

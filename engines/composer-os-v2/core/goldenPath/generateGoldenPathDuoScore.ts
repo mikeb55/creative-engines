@@ -11,6 +11,7 @@ import type { ScoreModel, PartModel, MeasureModel, NoteEvent } from '../score-mo
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
+import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -2926,6 +2927,7 @@ export function generateGoldenPathDuoScore(
       repairSlashBassHonourInDuoScore(context, bassForSlash, plans.bassMap, walkLow, bassCeiling);
     }
   }
+  applyDuoWybleBassAnchorBar1Nudge(afterExpressive, context);
   clampAllBassNotesToValidatorHardRange(afterExpressive);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
