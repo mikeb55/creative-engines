@@ -9,7 +9,7 @@
 ## [2026-04-17] Wyble — optional `wybleVoiceLayout` metadata hook (read-only)
 
 - `GenerationMetadata.wybleVoiceLayout` and `OrchestrationPlan.wybleVoiceLayout`: optional static role maps for duo family (golden path / long-form contexts), string quartet, and big band orchestration plans.
-- Helper `wybleVoiceLayoutForPreset()` in `core/wyble/wybleVoiceLayoutForPreset.ts`; **no** note-generation or voicing logic reads the field yet.
+- Helper `wybleVoiceLayoutForPreset()` in `core/wyble/wybleVoiceLayoutForPreset.ts`; **Duo / big band:** still no note-generation or voicing reads — **string quartet** consumption landed in the section above (`quartetWybleChordToneStack.ts`).
 - `ensembleWybleRoleMaps`: big-band bass anchor uses literal `bb_rhythm_section` (avoids circular import with `buildBigBandOrchestrationPlan`).
 - Jest: `tests/wybleVoiceLayoutHook.test.ts` covers duo + SQ + BB attachment and basic 8-bar score shape.
 
@@ -17,8 +17,8 @@
 
 - Added `engines/composer-os-v2/core/wyble/`: `WybleVoiceRole` (3 roles), `EnsembleWybleRoleMap`, and static maps for duo family, string quartet (`SQ_PART_*`), and big band (`bb_alto_sax`, `bb_tenor_sax`, `bb_rhythm_section`).
 - Jest: `engines/composer-os-v2/tests/wybleVoiceLayoutMaps.test.ts` asserts map shape and known part ids.
-- Docs: `docs/wyble-targets/portable_wyble_voice_layout.md` — roles + note that generation does not consume maps yet.
-- **No** change to golden path, Wyble inject, or ensemble realisation.
+- Docs: `docs/wyble-targets/portable_wyble_voice_layout.md` — roles; **SQ score build** now applies the quartet map (see top section).
+- **No** change to golden path, Wyble inject, or duo / big-band realisation beyond metadata attachment.
 
 ## [2026-04-17] Wyble single-line parity fixes
 
