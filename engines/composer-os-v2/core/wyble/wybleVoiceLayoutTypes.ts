@@ -1,6 +1,6 @@
 /**
  * Ensemble-neutral Wyble voice layout (3 roles).
- * Maps abstract contrapuntal roles to concrete score parts; string quartet score build applies the SQ map to inner-part chord tones.
+ * Maps abstract contrapuntal roles to concrete score parts; string quartet and big-band score builds apply their static maps in narrow ways (see quartet / big-band Wyble helpers).
  */
 
 export type WybleVoiceRole = 'lead_line' | 'inner_counter' | 'bass_anchor';

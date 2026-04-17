@@ -23,6 +23,8 @@ import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUt
 import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
+import { applyBigBandWybleLeadInnerSaxMidis } from './bigBandWybleHornVoicing';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -294,6 +296,11 @@ export interface BuildBigBandScoreModelInput {
   chordBars?: string[];
   /** If true, skips whole-note density + rhythm-split heuristics (pad / demo sketch). */
   padSketch?: boolean;
+  /**
+   * When set to the big-band Wyble map, tenor sax is voiced below the alto lead tone
+   * in sax register (`bigBandWybleHornVoicing`) before horn-clone mitigation.
+   */
+  wybleVoiceLayout?: EnsembleWybleRoleMap;
 }
 
 function addWindOrBassNotes(
@@ -310,7 +317,7 @@ function addWindOrBassNotes(
 }
 
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
-  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch } = input;
+  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -361,6 +368,10 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
     const snappedSax = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
     const snappedTrp = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
+
+    const wybleSaxes = applyBigBandWybleLeadInnerSaxMidis(altoMidi, tenorMidi, wybleVoiceLayout, snappedSax);
+    altoMidi = wybleSaxes.altoMidi;
+    tenorMidi = wybleSaxes.tenorMidi;
 
     const mit = mitigateBigBandHornMidis(
       hornStreak,

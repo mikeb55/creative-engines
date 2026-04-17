@@ -1,6 +1,6 @@
 /**
  * Static maps: abstract Wyble roles → existing ensemble part ids (see quartet / big-band / duo score builders).
- * String quartet score building consumes `WYBLE_ROLE_MAP_STRING_QUARTET` for chord-tone assignment (violin II ↔ viola); other presets unchanged.
+ * String quartet score building consumes `WYBLE_ROLE_MAP_STRING_QUARTET` (violin II ↔ viola). Big band score building consumes `WYBLE_ROLE_MAP_BIG_BAND` (alto lead vs tenor inner separation). Duo preset unchanged for note passes.
  */
 
 import { SQ_PART_V1, SQ_PART_V2, SQ_PART_VC } from '../string-quartet/stringQuartetTypes';

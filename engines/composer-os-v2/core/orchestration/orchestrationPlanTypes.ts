@@ -33,7 +33,7 @@ export interface OrchestrationPlan {
   /** Bars where explicit silence is a valid assignment for eligible parts. */
   silenceEligibleByBar: boolean[];
   silenceEligibility: SilenceEligibility[];
-  /** Portable Wyble role → part map for this ensemble (optional; string quartet score build consumes SQ map in `quartetScoreBuilder`). */
+  /** Portable Wyble role → part map for this ensemble (optional; SQ + big-band score builds consume their static maps). */
   wybleVoiceLayout?: EnsembleWybleRoleMap;
 }
 

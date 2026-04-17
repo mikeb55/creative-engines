@@ -50,6 +50,7 @@ export function runBigBandRealisation(input: BigBandRunInput & { bpm?: number })
     sectionPlan: planning.sectionPlan,
     era: planning.era,
     chordBars,
+    wybleVoiceLayout: planning.orchestrationPlan.wybleVoiceLayout,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

@@ -10,4 +10,6 @@ TypeScript: `engines/composer-os-v2/core/wyble/wybleVoiceLayoutTypes.ts` and sta
 
 **String quartet score build** reads `OrchestrationPlan.wybleVoiceLayout` when it matches `WYBLE_ROLE_MAP_STRING_QUARTET`: chord tones for **violin II** (`inner_counter`) and **viola** (unmapped fourth part) are **swapped** versus the legacy per-instrument stack so inner-line assignment follows the Wyble map in a minimal way. Implementation: `engines/composer-os-v2/core/string-quartet/quartetWybleChordToneStack.ts` + `quartetScoreBuilder.ts`. Tests: `tests/quartetWybleScoreConsumption.test.ts`.
 
-**Duo / big band:** `GenerationMetadata.wybleVoiceLayout` remains metadata for duo-family golden-path / long-form contexts via `wybleVoiceLayoutForPreset()`. Big band orchestration still carries a static map; **no** big-band note pass consumes it yet — see `tests/wybleVoiceLayoutHook.test.ts`.
+**Big band score build** reads `OrchestrationPlan.wybleVoiceLayout` when it matches `WYBLE_ROLE_MAP_BIG_BAND`: **alto** keeps the sectional lead sax tone; **tenor** is voiced **three semitones lower** in sax register (`inner_counter` below `lead_line`) via `engines/composer-os-v2/core/big-band/bigBandWybleHornVoicing.ts` + `bigBandScoreBuilder.ts`. Tests: `tests/bigBandWybleScoreConsumption.test.ts`.
+
+**Duo:** `GenerationMetadata.wybleVoiceLayout` remains metadata for duo-family golden-path / long-form contexts via `wybleVoiceLayoutForPreset()` — no duo note pass consumes it yet. See also `tests/wybleVoiceLayoutHook.test.ts`.
