@@ -19,6 +19,7 @@
 
 ### Reinforced (2026-04-17)
 
+- **Big band Wyble A/B (2026-04-17):** Use **`runBigBandRealisation`** (full ensemble score → MusicXML). Optional **`suppressWybleVoiceLayoutForTest`** turns OFF **Wyble alto/tenor sax separation** (`bigBandWybleHornVoicing.ts`) for the same seed; **`tests/bigBandWybleAudibleInnerLine.test.ts`** compares **tenor** MIDI on bars **1–2**. Optional disk export: `engines/composer-os-v2/scripts/bigBandWybleOnOffExport.ts`. See [CHANGELOG.md](CHANGELOG.md).
 - **String quartet Wyble A/B (2026-04-17):** Use **`runQuartetRealisation`** (four string parts + piano staff) — not **`runGoldenPathOnce`** with `presetId: 'string_quartet'` (that path is still duo). Optional **`suppressWybleVoiceLayoutForTest`** turns OFF the **Violin II / Viola chord-tone swap** for the same seed; **`tests/quartetWybleAudibleInnerLine.test.ts`** compares bar **1–2** MIDI. Optional disk export: `engines/composer-os-v2/scripts/quartetWybleOnOffExport.ts`. See [CHANGELOG.md](CHANGELOG.md).
 - **Wyble consumption diagnostics (2026-04-17):** `WybleConsumptionReceipt` on **`ScoreModel`**, duo **`generationMetadata`**, **`RunManifest`**, and app **`GenerateResult.runManifest`** — flags + `wybleConsumptionMode` + one-line summary so SQ / BB / duo-family hooks are inspectable without diffing scores. See [CHANGELOG.md](CHANGELOG.md) and `docs/wyble-targets/portable_wyble_voice_layout.md`.
 - **BPM end-to-end:** Request body always carries BPM; golden path forwards it into score generation so export tempo is not stuck at 120 when the UI sends a value.

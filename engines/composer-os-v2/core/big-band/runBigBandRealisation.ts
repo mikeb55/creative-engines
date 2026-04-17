@@ -19,7 +19,13 @@ export interface BigBandRealisationResult {
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
 }
 
-export function runBigBandRealisation(input: BigBandRunInput & { bpm?: number }): BigBandRealisationResult {
+export function runBigBandRealisation(
+  input: BigBandRunInput & {
+    bpm?: number;
+    /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the BB score skips Wyble alto/tenor sax separation. */
+    suppressWybleVoiceLayoutForTest?: boolean;
+  }
+): BigBandRealisationResult {
   const planning = runBigBandMode(input);
   const voicingPlan = planBigBandVoicing(planning.orchestrationPlan);
   const voicingValidation = validateEnsembleVoicing(voicingPlan);
@@ -43,6 +49,9 @@ export function runBigBandRealisation(input: BigBandRunInput & { bpm?: number })
     chordBars = p.ok ? p.bars : undefined;
   }
 
+  const wybleLayout =
+    input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
+
   const score = buildBigBandScoreModel({
     title: planning.title,
     seed: input.seed,
@@ -50,7 +59,7 @@ export function runBigBandRealisation(input: BigBandRunInput & { bpm?: number })
     sectionPlan: planning.sectionPlan,
     era: planning.era,
     chordBars,
-    wybleVoiceLayout: planning.orchestrationPlan.wybleVoiceLayout,
+    wybleVoiceLayout: wybleLayout,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {
