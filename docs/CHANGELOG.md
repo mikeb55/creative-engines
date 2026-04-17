@@ -1,9 +1,14 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Rename dev desktop shortcut (distinct from release)
+
+- **Desktop shortcut file:** **`Composer OS Dev Launcher.lnk`** (display **Composer OS Dev Launcher**) — replaces the too-similar **`Composer OS.lnk`**. **`scripts/create-composer-os-desktop-shortcut.ps1`** unchanged target: **`scripts/launch-composer-os.bat`**, working directory = repo root.
+- **Docs:** Recommend renaming a packaged **`Composer-OS.exe`** / `release` shortcut to **Composer OS Release** so it is not confused with the dev launcher. Updated [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
+
 ## [2026-04-17] Windows desktop shortcut for local dev
 
 - **`scripts/launch-composer-os.bat`** — `cd` to repo root, runs **`npm run dev --prefix apps/composer-os-app`** (Vite + API), then opens **http://localhost:5173/** after a short delay. Console stays open until Ctrl+C (local dev).
-- **`scripts/create-composer-os-desktop-shortcut.ps1`** — creates **`Composer OS.lnk`** on the user Desktop pointing at the launcher; sets working directory to repo root. Re-run after moving the repo.
+- **`scripts/create-composer-os-desktop-shortcut.ps1`** — creates **`Composer OS Dev Launcher.lnk`** on the user Desktop pointing at the launcher; sets working directory to repo root. Re-run after moving the repo.
 - **Docs:** [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
 
 ## [2026-04-17] User guide + in-app Help

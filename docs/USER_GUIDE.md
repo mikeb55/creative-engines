@@ -66,9 +66,11 @@ To avoid typing commands every time, create a **Desktop** shortcut once (from re
 powershell -ExecutionPolicy Bypass -File .\scripts\create-composer-os-desktop-shortcut.ps1
 ```
 
-That creates **`Composer OS.lnk`** on your Desktop. Double-clicking it runs **`scripts/launch-composer-os.bat`**, which executes the same dev command as above: **`npm run dev --prefix apps/composer-os-app`**, waits a few seconds, then opens **http://localhost:5173/**. A **terminal window stays open** while the dev servers run (normal for local dev).
+That creates **`Composer OS Dev Launcher.lnk`** on your Desktop (label **Composer OS Dev Launcher**). Double-clicking it runs **`scripts/launch-composer-os.bat`**, which executes the same dev command as above: **`npm run dev --prefix apps/composer-os-app`**, waits a few seconds, then opens **http://localhost:5173/**. A **terminal window stays open** while the dev servers run (normal for local dev).
 
-**Windows desktop app:** See `apps/composer-os-desktop/README.md` for the packaged Electron app — optional; the shortcut is for **local development** only.
+**Packaged release:** A shortcut to **`Composer-OS.exe`** in `composer-os-desktop\release\` is the **built app**, not this launcher. Rename that shortcut to **`Composer OS Release`** if you use both, so it is not confused with **Composer OS Dev Launcher**.
+
+**Windows desktop app:** See `apps/composer-os-desktop/README.md` for the packaged Electron app — optional; **Composer OS Dev Launcher** is for **local development** only.
 
 ---
 

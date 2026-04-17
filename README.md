@@ -44,18 +44,20 @@ npm run build --prefix apps/composer-os-app
 
 ### Windows: desktop shortcut (local dev, no typing)
 
-Double-click **`Composer OS`** on your Desktop after creating the shortcut once:
+Double-click **`Composer OS Dev Launcher`** on your Desktop after creating the shortcut once:
 
 1. Open **PowerShell** in the **repository root**.
 2. Run:
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\scripts\create-composer-os-desktop-shortcut.ps1
    ```
-3. A shortcut **`Composer OS.lnk`** appears on your Desktop. Double-click it anytime.
+3. A shortcut **`Composer OS Dev Launcher.lnk`** appears on your Desktop (display name **Composer OS Dev Launcher**). Double-click it anytime.
 
 **What it does:** runs `npm run dev --prefix apps/composer-os-app` (same as manual dev: Vite + API). After a few seconds it opens **http://localhost:5173/** in your default browser. A **console window stays open** while the servers run ? close it or press **Ctrl+C** to stop.
 
-**Requirements:** Node.js/npm on `PATH`, and run `npm install` inside `apps/composer-os-app` at least once after clone. The shortcut points at **`scripts\launch-composer-os.bat`** in this repo; if you move the folder, run the PowerShell script again to recreate the shortcut.
+**vs. packaged release:** If you also have a shortcut to **`Composer-OS.exe`** (or similar) under `apps\composer-os-desktop\release\`, rename that shortcut to **`Composer OS Release`** so it is not confused with **Composer OS Dev Launcher** (this repo script is **dev only**).
+
+**Requirements:** Node.js/npm on `PATH`, and run `npm install` inside `apps/composer-os-app` at least once after clone. The shortcut points at **`scripts\launch-composer-os.bat`** in this repo; if you move the folder, run the PowerShell script again to recreate the shortcut. If you still have an older **`Composer OS.lnk`** from a previous run, delete it or rerun the script and keep the new name only.
 
 ---
 
