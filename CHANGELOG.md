@@ -1,3 +1,18 @@
+## [2026-04-17] Vocal Lead Sheet — chord extensions, key signature, tempo
+
+### What was fixed
+- Full chord extensions working via buildHarmonyXmlLine
+  (maj7, alt, #11, 13, m9 all rendering correctly)
+- Key signature now reads from ScoreModel.keySignature
+  instead of hardcoded C major
+- Tempo now reads from ScoreModel.tempo instead of
+  hardcoded 90 BPM
+
+### Known issue
+- ScoreModel.tempo is hardcoded to 120 in
+  generateGoldenPathDuoScore.ts — req.bpm from UI
+  never reaches the score model. Fix pending.
+
 ## [2026-04-17] Vocal Lead Sheet — chord extensions fully working
 
 ### What was fixed
@@ -573,6 +588,7 @@ Phase 2 (Guitar-Bass Duo wiring) deferred until after:
 * ACE framework embedded
 
 ---
+
 
 
 
