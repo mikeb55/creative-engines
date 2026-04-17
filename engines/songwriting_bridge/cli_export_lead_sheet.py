@@ -29,7 +29,12 @@ def compiled_from_payload(payload: dict):
                 harmony=list(sec.get("harmony", [])),
             )
         )
-    return types.SimpleNamespace(title=title, sections=sections)
+    return types.SimpleNamespace(
+        title=title,
+        sections=sections,
+        tempo=payload.get("tempo", 90),
+        keySignature=payload.get("keySignature") or {},
+    )
 
 
 if __name__ == "__main__":

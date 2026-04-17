@@ -200,7 +200,17 @@ export function exportVocalLeadSheetMusicXmlViaPython(
       harmony,
     };
   });
-  const payload = { title: contract.title, sections };
+  const payload = {
+    title: contract.title,
+    sections,
+    tempo: realisedScore.tempo ?? 120,
+    keySignature: realisedScore.keySignature
+      ? {
+          fifths: realisedScore.keySignature.fifths,
+          mode: realisedScore.keySignature.mode ?? 'major',
+        }
+      : { fifths: 0, mode: 'major' },
+  };
   const tmp = path.join(os.tmpdir(), `ce_vocal_ls_${process.pid}_${Date.now()}.json`);
   try {
     fs.writeFileSync(tmp, JSON.stringify(payload), 'utf-8');

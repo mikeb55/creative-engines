@@ -27,6 +27,11 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
     """
     Export lead sheet to MusicXML: vocal melody + chord symbols.
     """
+    payload = getattr(lead_sheet, "metadata", None) or {}
+    tempo = payload.get("tempo", 90)
+    ks = payload.get("keySignature", {}) or {}
+    fifths = ks.get("fifths", 0)
+    mode = ks.get("mode", "major")
     vm = lead_sheet.vocal_melody
     cs = lead_sheet.chord_symbols
     events = vm.events
@@ -57,10 +62,10 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
         lines.append(f'    <measure number="{m + 1}">')
         if m == 0:
             lines.append(f'      <attributes><divisions>{divisions}</divisions>')
-            lines.append('        <key><fifths>0</fifths><mode>major</mode></key>')
+            lines.append(f'        <key><fifths>{fifths}</fifths><mode>{mode}</mode></key>')
             lines.append('        <time><beats>4</beats><beat-type>4</beat-type></time>')
             lines.append('        <clef><sign>G</sign><line>2</line></clef></attributes>')
-            lines.append('      <sound tempo="90"/>')
+            lines.append(f'      <sound tempo="{tempo}"/>')
         bar_data = by_measure.get(m, {"notes": [], "chords": []})
         for ch in bar_data.get("chords", []):
             if ch.get("beat", 0) == 0:

@@ -37,7 +37,11 @@ def build_lead_sheet_from_composition(
         chord_symbols=ChordSymbolTrack(symbols=chords),
         lyric_alignment=lyric_align,
         form_summary=form,
-        metadata={"voice_type": voice_type},
+        metadata={
+            "voice_type": voice_type,
+            "tempo": getattr(compiled_composition, "tempo", 90),
+            "keySignature": getattr(compiled_composition, "keySignature", None) or {},
+        },
     )
 
 
