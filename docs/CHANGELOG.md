@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Dev launcher: OPEN THIS box + numbered next steps
+
+- **`scripts/vite-dev-launcher.ps1`** — After the first detected Vite **`Local:`** URL, prints a framed **OPEN THIS IN YOUR BROWSER** block and a **Next steps** checklist (copy URL, paste in browser, leave window open / **Ctrl+C** to stop), so non-technical users see one obvious path without hunting the log.
+- **Why:** Makes the dev launcher easier to follow than URL text alone, without auto-opening the browser.
+- **`scripts/launch-composer-os.bat`** — REM updated to mention the checklist (still only invokes **`vite-dev-launcher.ps1`**).
+
 ## [2026-04-17] Dev launcher prints Vite URL only (no auto-open browser)
 
 - **`scripts/vite-dev-launcher.ps1`** — Removed **`Start-Process`** / auto-open. On first **`Local:`** / **`http://localhost:…/`** line, prints a bordered **OPEN THIS IN YOUR BROWSER:** block; streaming continues. If no URL after ~200 lines (or early exit), prints a one-line hint to find **`Local:`** in the log.

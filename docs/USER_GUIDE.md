@@ -66,7 +66,13 @@ To avoid typing commands every time, create a **Desktop** shortcut once (from re
 powershell -ExecutionPolicy Bypass -File .\scripts\create-composer-os-desktop-shortcut.ps1
 ```
 
-That creates **`Composer OS Dev Launcher.lnk`** on your Desktop (label **Composer OS Dev Launcher**). Double-clicking it runs **`scripts/launch-composer-os.bat`**, which calls **`scripts/vite-dev-launcher.ps1`** to run **`npm run dev --prefix apps/composer-os-app`**. The launcher **does not open the browser**; when Vite prints its **`Local:`** line, look for the **OPEN THIS IN YOUR BROWSER:** box and **copy that URL** into your browser. A **terminal window stays open** while the dev servers run (normal for local dev).
+That creates **`Composer OS Dev Launcher.lnk`** on your Desktop (label **Composer OS Dev Launcher**). Then:
+
+1. **Double-click** **Composer OS Dev Launcher** (or run **`scripts\launch-composer-os.bat`** from the repo).
+2. Wait until the log shows Vite’s **`Local:`** line and the framed **OPEN THIS IN YOUR BROWSER:** block (with your **http://localhost:…** URL).
+3. Follow the **Next steps** in that box: **(1)** copy the URL, **(2)** paste it into your browser, **(3)** leave the black window open while you work; press **Ctrl+C** there when you want to stop the dev servers.
+
+The launcher **does not open the browser** for you. A **terminal window stays open** while the dev servers run (normal for local dev).
 
 **Packaged release:** A shortcut to **`Composer-OS.exe`** in `composer-os-desktop\release\` is the **built app**, not this launcher. Rename that shortcut to **`Composer OS Release`** if you use both, so it is not confused with **Composer OS Dev Launcher**.
 

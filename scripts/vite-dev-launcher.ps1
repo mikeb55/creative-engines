@@ -1,5 +1,5 @@
-# Streams `npm run dev` for apps/composer-os-app. When Vite prints a Local URL, prints one clear
-# "OPEN THIS IN YOUR BROWSER" block — does NOT launch the browser.
+# Streams `npm run dev` for apps/composer-os-app. When Vite prints a Local URL, prints a framed
+# "OPEN THIS IN YOUR BROWSER" block plus numbered Next steps — does NOT launch the browser.
 # Invoked from launch-composer-os.bat — do not hard-code a Vite port.
 
 param(
@@ -31,10 +31,16 @@ $localUrlRegex = '(https?://localhost:\d+/)'
 function Print-OpenThisBanner {
   param([string]$Url)
   Write-Host ''
-  Write-Host '----------------------------------------'
-  Write-Host 'OPEN THIS IN YOUR BROWSER:'
+  Write-Host '========================================'
+  Write-Host '  OPEN THIS IN YOUR BROWSER:'
+  Write-Host ''
   Write-Host "  $Url"
-  Write-Host '----------------------------------------'
+  Write-Host ''
+  Write-Host '  Next steps:'
+  Write-Host '    1) Copy the URL'
+  Write-Host '    2) Paste it into your browser'
+  Write-Host '    3) Leave this window open; press Ctrl+C to stop'
+  Write-Host '========================================'
   Write-Host ''
 }
 
