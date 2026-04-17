@@ -3,6 +3,7 @@
  */
 
 import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
+import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -108,4 +109,6 @@ export interface RunManifest {
   duoModeReceiptLabel?: string;
   /** Phase 18.2B.1 — Voice-2 polyphony diagnostic (guitar_bass_duo; after Wyble inject + stabilise). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
+  /** Portable Wyble: which narrow consumption path ran on this score (debug / replay). */
+  wybleConsumptionReceipt?: WybleConsumptionReceipt;
 }

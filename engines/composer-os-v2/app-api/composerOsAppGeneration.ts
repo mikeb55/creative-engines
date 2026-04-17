@@ -692,6 +692,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           keySignatureInferredFifths: gp.runManifest.keySignatureInferredFifths,
           keySignatureModeApplied: gp.runManifest.keySignatureModeApplied,
           keySignatureExportKeyWritten: gp.runManifest.keySignatureExportKeyWritten,
+          wybleConsumptionReceipt: gp.runManifest.wybleConsumptionReceipt,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

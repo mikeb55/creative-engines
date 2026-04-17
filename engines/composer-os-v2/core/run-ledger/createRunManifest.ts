@@ -5,6 +5,7 @@
 
 import type { RunManifest } from './runLedgerTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
+import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
 
 export interface CreateRunManifestInput {
   version: string;
@@ -71,6 +72,7 @@ export interface CreateRunManifestInput {
   rhythmIntentD1Receipt?: string;
   duoModeReceiptLabel?: string;
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
+  wybleConsumptionReceipt?: WybleConsumptionReceipt;
 }
 
 /** Create run manifest. */
@@ -140,5 +142,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     rhythmIntentD1Receipt: input.rhythmIntentD1Receipt,
     duoModeReceiptLabel: input.duoModeReceiptLabel,
     voice2PolyphonyDiagnostics: input.voice2PolyphonyDiagnostics,
+    wybleConsumptionReceipt: input.wybleConsumptionReceipt,
   };
 }

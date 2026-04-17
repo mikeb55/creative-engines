@@ -21,6 +21,7 @@ import type { ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutH
 import { WholeNoteDensityTracker } from '../ensemble-scoring/ensembleLayoutHeuristics';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyQuartetWybleChordToneStack } from './quartetWybleChordToneStack';
+import { wybleConsumptionReceiptForQuartet } from '../wyble/wybleConsumptionReceipt';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
 
@@ -331,5 +332,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     addEvent(m, createRest(0, 4));
   }
 
-  return createScore(title, [...stringParts, pianoPart], { tempo: 96 });
+  const score = createScore(title, [...stringParts, pianoPart], { tempo: 96 });
+  score.wybleConsumptionReceipt = wybleConsumptionReceiptForQuartet(wybleVoiceLayout);
+  return score;
 }

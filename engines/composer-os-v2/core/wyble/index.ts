@@ -10,3 +10,9 @@ export {
   WYBLE_ROLE_MAP_BIG_BAND,
 } from './ensembleWybleRoleMaps';
 export { wybleVoiceLayoutForPreset } from './wybleVoiceLayoutForPreset';
+export type { WybleConsumptionMode, WybleConsumptionReceipt } from './wybleConsumptionReceipt';
+export {
+  wybleConsumptionReceiptForQuartet,
+  wybleConsumptionReceiptForBigBand,
+  wybleConsumptionReceiptForDuoFamily,
+} from './wybleConsumptionReceipt';

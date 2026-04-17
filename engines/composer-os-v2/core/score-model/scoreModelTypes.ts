@@ -3,6 +3,8 @@
  * Single source of truth for export. All generation flows into this model.
  */
 
+import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
+
 /**
  * MusicXML divisions per quarter note (fixed; Sibelius-safe integer tick grid).
  * All <duration> values and <type>/<dot/> come from the same tick integer in the exporter.
@@ -130,5 +132,7 @@ export interface ScoreModel {
   keySignatureExportDebug?: { inferredKey: string; inferredFifths: number; exportKeyWritten: boolean };
   /** Hook repetition bias from songwriter profile — used by duoBarMathFinalize to gate bar 25 restoration. */
   _hookRepetitionBias?: number;
+  /** Portable Wyble: which static map (if any) was applied on this score build (metadata only). */
+  wybleConsumptionReceipt?: WybleConsumptionReceipt;
   parts: PartModel[];
 }

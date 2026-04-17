@@ -13,3 +13,16 @@ TypeScript: `engines/composer-os-v2/core/wyble/wybleVoiceLayoutTypes.ts` and sta
 **Big band score build** reads `OrchestrationPlan.wybleVoiceLayout` when it matches `WYBLE_ROLE_MAP_BIG_BAND`: **alto** keeps the sectional lead sax tone; **tenor** is voiced **three semitones lower** in sax register (`inner_counter` below `lead_line`) via `engines/composer-os-v2/core/big-band/bigBandWybleHornVoicing.ts` + `bigBandScoreBuilder.ts`. Tests: `tests/bigBandWybleScoreConsumption.test.ts`.
 
 **Duo family golden path** reads `GenerationMetadata.wybleVoiceLayout` when it matches `WYBLE_ROLE_MAP_DUO_FAMILY`: the **first bass attack in bar 1** is raised by **two semitones** (portable `bass_anchor` nudge before final bass clamping). Implementation: `engines/composer-os-v2/core/goldenPath/duoWybleBassAnchorNudge.ts`, invoked from `generateGoldenPathDuoScore.ts`. Applies to **`guitar_bass_duo`** and **`guitar_bass_duo_single_line`**. Tests: `tests/duoWybleScoreConsumption.test.ts` (uses `suppressWybleVoiceLayoutForTest` on `runGoldenPathOnce` for A/B only). See also `tests/wybleVoiceLayoutHook.test.ts`.
+
+### Consumption diagnostics (no UI)
+
+Each family’s score build sets a **`WybleConsumptionReceipt`** (metadata only — it does not change notes):
+
+| Field | Meaning |
+|--------|--------|
+| `wybleLayoutPresent` | A `wybleVoiceLayout` object was passed into that family’s score/metadata path. |
+| `wybleLayoutConsumed` | It matched the family’s **static** map (`WYBLE_ROLE_MAP_*`), so the narrow hook **would** apply (same equality checks as the musical branch). |
+| `wybleConsumptionMode` | `quartet_inner_swap` \| `big_band_sax_split` \| `duo_bass_anchor_nudge` \| `none`. |
+| `wybleConsumptionSummary` | One-line human text for logs / manifests. |
+
+Where it appears: **`ScoreModel.wybleConsumptionReceipt`**, duo **`GenerationMetadata.wybleConsumptionReceipt`**, **`RunManifest.wybleConsumptionReceipt`**, and app API **`GenerateResult.runManifest.wybleConsumptionReceipt`**. Builders: `core/wyble/wybleConsumptionReceipt.ts`. Tests: `tests/wybleConsumptionDiagnostics.test.ts`.

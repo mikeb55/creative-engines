@@ -12,6 +12,7 @@ import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
+import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -2984,5 +2985,11 @@ export function generateGoldenPathDuoScore(
       assertHookBarsUnchangedSinceSnapshot(songModeHookBarsPostFinalize, gEnd);
     }
   }
+  const wybleRec = wybleConsumptionReceiptForDuoFamily(context.presetId, context.generationMetadata?.wybleVoiceLayout);
+  afterExpressive.wybleConsumptionReceipt = wybleRec;
+  context.generationMetadata = {
+    ...context.generationMetadata,
+    wybleConsumptionReceipt: wybleRec,
+  };
   return afterExpressive;
 }

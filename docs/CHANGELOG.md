@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Wyble — consumption diagnostics (receipt / manifest, no UI)
+
+- **`WybleConsumptionReceipt`** (`core/wyble/wybleConsumptionReceipt.ts`): `wybleLayoutPresent`, `wybleLayoutConsumed`, `wybleConsumptionMode` (`none` | `quartet_inner_swap` | `big_band_sax_split` | `duo_bass_anchor_nudge`), and `wybleConsumptionSummary` — metadata only; same static-map equality rules as the score hooks (no extra pitch work).
+- **Attached to:** `ScoreModel.wybleConsumptionReceipt`, `GenerationMetadata.wybleConsumptionReceipt` (duo path), `RunManifest.wybleConsumptionReceipt`, and **`GenerateResult.runManifest`** in `app-api/generateComposition.ts` (Song Mode app mapping mirrors golden-path manifest).
+- **Jest:** `engines/composer-os-v2/tests/wybleConsumptionDiagnostics.test.ts` (string quartet, big band, duo golden path).
+
 ## [2026-04-17] Wyble — duo family consumes `wybleVoiceLayout` in golden-path score build
 
 - `generateGoldenPathDuoScore`: when `generationMetadata.wybleVoiceLayout` matches `WYBLE_ROLE_MAP_DUO_FAMILY`, the **first bass note in bar 1** is raised by **two semitones** before final bass clamping (`duoWybleBassAnchorNudge.ts`) — minimal `bass_anchor` register colour tied to the portable map.

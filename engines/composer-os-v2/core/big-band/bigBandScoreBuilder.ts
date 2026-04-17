@@ -25,6 +25,7 @@ import { createNote, createPart, createRest, createScore, addEvent } from '../sc
 import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyBigBandWybleLeadInnerSaxMidis } from './bigBandWybleHornVoicing';
+import { wybleConsumptionReceiptForBigBand } from '../wyble/wybleConsumptionReceipt';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -449,5 +450,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     );
   }
 
-  return createScore(title, parts, { tempo: 140 });
+  const score = createScore(title, parts, { tempo: 140 });
+  score.wybleConsumptionReceipt = wybleConsumptionReceiptForBigBand(wybleVoiceLayout);
+  return score;
 }

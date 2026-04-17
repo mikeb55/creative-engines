@@ -22,6 +22,7 @@ import type { StyleProfile } from './song-mode/songModeStyleProfile';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
+import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -92,6 +93,8 @@ export interface GenerationMetadata {
    * Portable Wyble: abstract 3-role → score part targets for duo / SQ / BB (optional; duo golden path + SQ/BB ensemble score builds consume their static maps in narrow ways).
    */
   wybleVoiceLayout?: EnsembleWybleRoleMap;
+  /** Receipt: which portable Wyble consumption path ran (debug; does not change MusicXML structure). */
+  wybleConsumptionReceipt?: WybleConsumptionReceipt;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */

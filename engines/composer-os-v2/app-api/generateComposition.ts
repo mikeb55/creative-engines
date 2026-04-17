@@ -18,6 +18,7 @@ import * as path from 'path';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import type { ChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import type { GuitarVoice2PolyphonyDiagnostics } from '../core/goldenPath/guitarVoice2PolyphonyDiagnostics';
+import type { WybleConsumptionReceipt } from '../core/wyble/wybleConsumptionReceipt';
 import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
@@ -99,6 +100,7 @@ export interface GenerateResult {
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
     duoModeReceiptLabel?: string;
+    wybleConsumptionReceipt?: WybleConsumptionReceipt;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -343,6 +345,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           keySignatureInferredFifths: result.runManifest.keySignatureInferredFifths,
           keySignatureModeApplied: result.runManifest.keySignatureModeApplied,
           keySignatureExportKeyWritten: result.runManifest.keySignatureExportKeyWritten,
+          wybleConsumptionReceipt: result.runManifest.wybleConsumptionReceipt,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,
