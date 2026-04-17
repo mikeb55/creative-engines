@@ -758,6 +758,8 @@ export interface RunGoldenPathOptions {
   presetId?: string;
   /** User-provided work title; default comes from resolveScoreTitleForPreset */
   scoreTitle?: string;
+  /** Export/score tempo in BPM for the generated ScoreModel. */
+  bpm?: number;
   /** Guitar–Bass Duo: explicit mode (custom requires non-empty `chordProgressionText`) */
   harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
   /** Guitar–Bass Duo: `|`-separated chords (8 bars default; 32 when long-form Song Mode / duo32) */
@@ -1122,6 +1124,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   const score = generateGoldenPathDuoScore(appliedContext, plans, {
+    bpm: options?.bpm,
     variationEnabled: options?.variationEnabled === true,
     ecmShapingEnabled: options?.ecmShapingEnabled,
     orchestrationEnabled: options?.orchestrationEnabled,

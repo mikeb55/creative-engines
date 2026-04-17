@@ -2710,6 +2710,8 @@ export interface GoldenPathPlans {
 }
 
 export interface GenerateGoldenPathDuoScoreOpts {
+  /** Export tempo in BPM forwarded from API/runGoldenPath (fallback 120 only when omitted). */
+  bpm?: number;
   /** Pitch-only mutation on guitar melody before bar-math seal (after expressive pass). */
   variationEnabled?: boolean;
   /** ECM chamber: post-variation aesthetic pass (default on; set false for A/B tests). */
@@ -2800,7 +2802,7 @@ export function generateGoldenPathDuoScore(
     enforceVoice2BassRegisterSeparation18_2B_4(guitarPart, bassPart, context);
   }
 
-  const bpm = 120;
+  const bpm = opts?.bpm ?? 120;
   const feelProfile =
     context.presetId === 'ecm_chamber'
       ? { swingRatio: 1, tempoFeel: 'medium' as const, driftTotalBeats: 0.06 }

@@ -65,7 +65,15 @@ def export_lead_sheet_to_musicxml(lead_sheet: LeadSheet) -> str:
             lines.append(f'        <key><fifths>{fifths}</fifths><mode>{mode}</mode></key>')
             lines.append('        <time><beats>4</beats><beat-type>4</beat-type></time>')
             lines.append('        <clef><sign>G</sign><line>2</line></clef></attributes>')
-            lines.append(f'      <sound tempo="{tempo}"/>')
+            lines.append(f'      <direction placement="above">')
+            lines.append(f'        <direction-type>')
+            lines.append(f'          <metronome>')
+            lines.append(f'            <beat-unit>quarter</beat-unit>')
+            lines.append(f'            <per-minute>{tempo}</per-minute>')
+            lines.append(f'          </metronome>')
+            lines.append(f'        </direction-type>')
+            lines.append(f'        <sound tempo="{tempo}"/>')
+            lines.append(f'      </direction>')
         bar_data = by_measure.get(m, {"notes": [], "chords": []})
         for ch in bar_data.get("chords", []):
             if ch.get("beat", 0) == 0:
