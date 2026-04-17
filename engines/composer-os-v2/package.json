@@ -15,7 +15,8 @@
     "d1:selftest": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/d1Selftest.ts",
     "test:duo": "npx ts-node --project ../../tsconfig.json scripts/duo-regression-sweep.ts",
     "test:bass": "npx ts-node --project ../../tsconfig.json scripts/bass-phrase-sweep.ts",
-    "test:vocal": "npx ts-node --project ../../tsconfig.json scripts/test-vocal-lead-sheet.ts"
+    "test:vocal": "npx ts-node --project ../../tsconfig.json scripts/test-vocal-lead-sheet.ts",
+    "export:wyble-examples": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/exportWybleOnOffExamples.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "devDependencies": {

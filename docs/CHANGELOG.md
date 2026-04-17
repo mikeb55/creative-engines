@@ -1,17 +1,22 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Developer Wyble ON/OFF MusicXML export (no UI)
+
+- **Unified script:** `engines/composer-os-v2/scripts/exportWybleOnOffExamples.ts` — calls **`runQuartetRealisation`** and **`runBigBandRealisation`** (Wyble **ON** = default layout; **OFF** = **`suppressWybleVoiceLayoutForTest`**). Writes **`quartet_wyble_ON|OFF_seed{N}.musicxml`** and **`bigband_wyble_ON|OFF_seed{N}.musicxml`** to **`C:\\Users\\mike\\Documents\\Mike Composer Files\\wyble-test\\`** by default (override with **`--out`**). CLI: **`--family quartet|bigband|all`**, **`--seed`**. **`npm run export:wyble-examples`** from `engines/composer-os-v2`.
+- **Jest:** `engines/composer-os-v2/tests/wybleOnOffExportExamples.test.ts` temp-writes all four files and checks MusicXML markers for real quartet vs big-band ensembles.
+
 ## [2026-04-17] Big band — real path Wyble inner sax ON/OFF + export helper
 
 - **`runBigBandRealisation`** (not golden-path duo): optional **`suppressWybleVoiceLayoutForTest`** omits `wybleVoiceLayout` when calling **`buildBigBandScoreModel`**, so the existing **alto vs tenor sax separation** (`bigBandWybleHornVoicing.ts`) can be A/B’d without touching duo/string-quartet Wyble code.
 - **Audible span:** sax stack runs **bar-by-bar**; Wyble ON lowers **tenor** below **alto** lead in sax bounds; verified over **bars 1–2** tenor MIDI in tests.
-- **Script:** `engines/composer-os-v2/scripts/bigBandWybleOnOffExport.ts` writes `bb_wyble_ON_seed12345.musicxml` / `bb_wyble_OFF_seed12345.musicxml` under the Mike Composer Files wyble-test folder — see script header for `ts-node` command.
+- **Disk export:** use the unified **`exportWybleOnOffExamples.ts`** (see developer export entry above); per-family scripts removed to avoid duplication.
 - **Jest:** `engines/composer-os-v2/tests/bigBandWybleAudibleInnerLine.test.ts` asserts ON vs OFF **tenor sax** MIDI patterns on bars **1–2** (alto unchanged).
 
 ## [2026-04-17] String quartet — real path Wyble inner line ON/OFF + export helper
 
 - **`runQuartetRealisation`** (not `runGoldenPathOnce`): optional **`suppressWybleVoiceLayoutForTest`** omits `wybleVoiceLayout` when calling **`buildQuartetScoreModel`**, so the existing **Violin II ↔ Viola chord-tone swap** (`quartetWybleChordToneStack.ts`) can be A/B’d without touching duo Wyble code.
 - **Audible span:** every bar uses the quartet chord-tone stack; Wyble ON cross-assigns **inner_counter** vs legacy viola slot (same mechanism as before; verified over **bars 1–2** in tests).
-- **Script:** `engines/composer-os-v2/scripts/quartetWybleOnOffExport.ts` writes two `.musicxml` files (same seed **12345**) for manual listening — see script header for `ts-node` command.
+- **Disk export:** use the unified **`exportWybleOnOffExamples.ts`** (see developer export entry above); per-family scripts removed to avoid duplication.
 - **Jest:** `engines/composer-os-v2/tests/quartetWybleAudibleInnerLine.test.ts` asserts ON vs OFF **note MIDI** patterns on Violin II + Viola (not receipts).
 
 ## [2026-04-17] Wyble — consumption diagnostics (receipt / manifest, no UI)

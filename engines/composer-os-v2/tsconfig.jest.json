@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node", "jest"]
   },
-  "include": ["core/**/*.ts", "tests/**/*.ts"]
+  "include": ["core/**/*.ts", "tests/**/*.ts", "scripts/exportWybleOnOffExamples.ts"]
 }
