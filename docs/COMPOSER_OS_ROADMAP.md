@@ -11,6 +11,7 @@
 - **[USER_GUIDE.md](USER_GUIDE.md)** — first-time user guide: what the app does **now**, local run commands, Generate workflow, MusicXML locations, Wyble ON/OFF **CLI** (not a UI toggle), limitations.
 - **Root [README.md](../README.md)** — short overview + links to the guide.
 - **In-app:** **Help** tab (`apps/composer-os-app/src/pages/UserGuide.tsx`) mirrors the guide for discoverability.
+- **Windows local dev shortcut (2026-04-17):** **`scripts/create-composer-os-desktop-shortcut.ps1`** creates Desktop **`Composer OS.lnk`** → **`scripts/launch-composer-os.bat`** → **`npm run dev --prefix apps/composer-os-app`** + browser to **http://localhost:5173/**. Not an installer; dev console stays open.
 
 ---
 

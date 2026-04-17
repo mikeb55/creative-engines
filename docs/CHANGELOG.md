@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Windows desktop shortcut for local dev
+
+- **`scripts/launch-composer-os.bat`** — `cd` to repo root, runs **`npm run dev --prefix apps/composer-os-app`** (Vite + API), then opens **http://localhost:5173/** after a short delay. Console stays open until Ctrl+C (local dev).
+- **`scripts/create-composer-os-desktop-shortcut.ps1`** — creates **`Composer OS.lnk`** on the user Desktop pointing at the launcher; sets working directory to repo root. Re-run after moving the repo.
+- **Docs:** [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
+
 ## [2026-04-17] User guide + in-app Help
 
 - **Docs:** [USER_GUIDE.md](USER_GUIDE.md) — plain-English guide for first-time users (run, generate, exports, limitations). **Root [README.md](../README.md)** rewritten for Composer OS and links to the guide.

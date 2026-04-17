@@ -58,7 +58,17 @@ npm run build --prefix apps/composer-os-app
 
 Output: `apps/composer-os-app/dist/`. The API script `scripts/startComposerOsAppApi.ts` can serve this folder when built.
 
-**Windows desktop app:** See `apps/composer-os-desktop/README.md` for packaging — optional; local development uses `npm run dev` above.
+### Windows: double-click shortcut (local dev)
+
+To avoid typing commands every time, create a **Desktop** shortcut once (from repo root in PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\create-composer-os-desktop-shortcut.ps1
+```
+
+That creates **`Composer OS.lnk`** on your Desktop. Double-clicking it runs **`scripts/launch-composer-os.bat`**, which executes the same dev command as above: **`npm run dev --prefix apps/composer-os-app`**, waits a few seconds, then opens **http://localhost:5173/**. A **terminal window stays open** while the dev servers run (normal for local dev).
+
+**Windows desktop app:** See `apps/composer-os-desktop/README.md` for the packaged Electron app — optional; the shortcut is for **local development** only.
 
 ---
 
