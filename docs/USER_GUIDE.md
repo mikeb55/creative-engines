@@ -23,7 +23,7 @@ Composer OS is an application that **generates instrumental music** from your ch
 | Mode | What you get (typical) |
 |------|-------------------------|
 | Guitar–Bass Duo | Full duo MusicXML (golden path). |
-| Guitar–Bass Duo (Single-Line) | Same harmony path, single-note guitar and bass — MusicXML. |
+| Guitar–Bass Duo (Single-Line) | Same harmony path as standard duo, **phrase-first** single-note guitar and bass — MusicXML. Inner-line (Wyble-style) behaviour is gated with the same **duo-family** preset id checks as standard duo where the engine intends shared rules; Song Mode / long-form **opt-ins** may still be **standard duo only** (see roadmap). |
 | Wyble Etude | Two-voice guitar etude — **requires** a chord progression in the UI. |
 | ECM Chamber | Chamber jazz — MusicXML (Metheny vs Schneider sub-mode in the UI). |
 | Song Mode | Song planning then **duo realisation** — MusicXML (see receipt if something else is returned). |
@@ -91,6 +91,15 @@ The launcher **does not open the browser** for you. A **terminal window stays op
 
 **After generation:** Open the `.musicxml` file in your notation program (File → Open). If you received **planning JSON** (Big Band / String Quartet fallback), that file is for inspection or tooling — not a full printed score.
 
+### Song Mode — Groove / Soul (first real “style surface” slice)
+
+As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Song Mode does more than a label:
+
+- The engine **increases** internal **syncopation** and **density** biases used by the Song Mode rhythm path (additive, clamped). You may hear busier or more off-beat leaning lines versus the default profile, depending on seed and harmony.
+- A short explanation may appear on the **receipt** and in the **`_meta`** sidecar manifest as **`songModeStyleSurfaceNotes`** (honest wording — not “sounds like” any artist).
+
+Other songwriter / era / lyric-author / arranger fields still behave as before (compile rules, pairing metadata, receipts); only this one profile has the extra golden-path nudge in this release.
+
 ---
 
 ## 5) How exports work
@@ -136,6 +145,10 @@ Optional arguments: `--family quartet|bigband|all`, `--seed 12345`, `--out "C:\p
 **As of 2026-04-17**, engine test status is **partially baselined** — not all tests pass yet.
 
 **Step-by-step — quick regression bar (must stay green):**
+
+When changing **Guitar–Bass Duo**, **Duo (Single-Line)**, **Wyble Voice 2**, or **bass phrase** logic, run the same five commands — they cover duo sweeps (including Wyble traces), bass phrase, vocal bridge, counterpoint, and ensemble regression.
+
+**Wyble “realized” Voice 2 (engine):** After inner-line inject, the engine may run a **realized-score** normalization pass on written Voice 2 (breathing and density limits so diagnostics match the score). Standard duo skips that pass; non-standard duo-family presets are the target when that pass is wired. After edits to Wyble normalization, run the five commands above.
 
 1. Open a terminal and go to **`engines/composer-os-v2`** (under this repo).
 2. Run each command; each should complete with **exit code 0**:

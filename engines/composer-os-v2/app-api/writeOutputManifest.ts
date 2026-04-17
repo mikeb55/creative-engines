@@ -71,6 +71,7 @@ export function writeOutputManifest(
     rhythmIntentD1Receipt?: string;
     c4_hook_rhythm_applied?: boolean;
     c4_bars_used?: number[];
+    songModeStyleSurfaceNotes?: string[];
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -124,6 +125,7 @@ export function writeOutputManifest(
     rhythmIntentD1Receipt: meta.rhythmIntentD1Receipt,
     c4_hook_rhythm_applied: meta.c4_hook_rhythm_applied,
     c4_bars_used: meta.c4_bars_used,
+    songModeStyleSurfaceNotes: meta.songModeStyleSurfaceNotes,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

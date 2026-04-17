@@ -1,0 +1,75 @@
+﻿FAIL: Bacharach gate inert when not in stack
+FAIL: Bacharach primary stack passes gates
+FAIL: Bacharach three seeds: conformance + success
+FAIL: Bacharach validation (golden path + conformance)
+FAIL: Bass identity validation passes multi-seed golden path
+FAIL: Custom mode: harmony source metadata
+FAIL: Custom progression: generation succeeds
+FAIL: Custom progression: score chords match input
+FAIL: Diagnostics payload: registeredPresets
+FAIL: Duo LOCK GCE ΓëÑ 9.0 on golden path
+FAIL: Duo melody identity V3 passes
+FAIL: Duo swing rhythm gate passes
+FAIL: Export: slash chords appear in MusicXML
+FAIL: exported harmony kind text: suffix only + guitar m2 divisions
+FAIL: Exporter: plain major uses empty kind text (no "major")
+FAIL: GCE ΓëÑ 9 and duo gates for LOCK seeds 101ΓÇô107
+FAIL: generateComposition: custom + slash progression writes file
+FAIL: generateComposition: custom progression writes MusicXML file
+FAIL: generateComposition: custom_locked 32-bar disk + locked harmony truth
+FAIL: Generation request: success
+FAIL: Golden path behaviour gates passed
+FAIL: Golden path exportRoundTrip passes strict written validation for same progression
+FAIL: golden path passes jazz duo behaviour gates (multi-seed)
+FAIL: Golden path returns valid score
+FAIL: Golden path: key receipt
+FAIL: golden path: strict + round-trip + bass + success
+FAIL: GuitarΓÇôBass Duo 32: Wyble V2 sparsity, register, max 2 simultaneous notes
+FAIL: harmonyMode builtin ignores chordProgressionText
+FAIL: Interaction validation passes
+FAIL: Key signature: desktop/API duo custom + tonal F ΓåÆ XML -1 fifths
+FAIL: Long-form: 32-bar opt-in route
+FAIL: Long-form: 8-bar backward compat
+FAIL: Long-form: 8-bar default unchanged
+FAIL: Long-form: quality layer + spread
+FAIL: Mixed slash + standard progression: not built-in-only labels
+FAIL: Multi-run smoke: success run 0
+FAIL: Multi-run smoke: success run 1
+FAIL: Multi-run smoke: success run 2
+FAIL: Multi-run smoke: success run 3
+FAIL: Multi-run smoke: success run 4
+FAIL: multi-seed duo: strict bar math + round-trip + bass (default + Bacharach)
+FAIL: Phrase authority passes multi-seed golden path
+FAIL: Phrase authority passes with Bacharach primary
+FAIL: Pipeline truth: builtin duo cycle passes all stages
+FAIL: Pipeline truth: regression progression (Bm9ΓÇªG#7alt)
+FAIL: Single-line preset: golden path success + duoModeReceiptLabel
+FAIL: Single-line: bass has no simultaneous note overlaps per bar
+FAIL: Single-line: guitar has no voice-2 / overlapping chordal layer
+FAIL: Slash bass Dmaj9/F# (bar 21): bass spells F# pitch class
+FAIL: Slash progression: success and bass spells slash bass
+FAIL: Song Mode custom_locked: 32 bars parse + score + MusicXML match pasted symbols
+FAIL: strict bar math: invalid measure rejected for receipt
+FAIL: strict bar math: underfilled fails
+FAIL: V3.1 interaction authority gate passes (seed 100)
+FAIL: V3.2 identity gate with Bacharach primary (sample)
+FAIL: V3.2 phrase identity gate (multi-seed)
+FAIL: V3.3 duo GCE ΓëÑ 9.0 (multi-seed)
+FAIL: V3.3 guitar note count Γëñ 48 (seed 101)
+FAIL: V3.3 polish gate (multi-seed)
+FAIL: V3.4b: golden path custom Bb XML
+FAIL: V3.5: C# symbols ΓÇö custom harmony applied (not builtin Dm9)
+FAIL: V3.5: Cb symbols ΓÇö custom harmony applied (not builtin Dm9)
+FAIL: V3.6b bass bar 2 duration sum equals 4 beats
+FAIL: V3.6b BH module validation strings are neutral (no Barry Harris name)
+FAIL: V3.6b custom harmony receipt: harmonySource + styleGrammar + explicit primary flag
+FAIL: V3.6b exported MusicXML bar math (voice sums)
+FAIL: V3.6b run manifest echoes style grammar + harmony source
+FAIL: V3.6b sealed score rejects mutating frozen measure events
+FAIL: V3.6b strict bar math on every duo measure (custom chords)
+FAIL: Variation OFF: baseline stable (two runs)
+FAIL: Variation OFF: undefined matches false
+FAIL: Variation ON vs OFF: different guitar pitches, identical rhythm fingerprint
+FAIL: Variation ON: deterministic pitches + XML for same seed
+FAIL: Variation ON: passes integrity, behaviour, MX, bar math + valid MusicXML
+FAIL: Written XML validateWrittenMusicXmlComplete (linear + per-voice + parity) ΓÇö 8-bar progression

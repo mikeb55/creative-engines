@@ -230,4 +230,6 @@ export interface OutputEntry {
   /** Song Mode C4 hook rhythm layer (manifest). */
   c4_hook_rhythm_applied?: boolean;
   c4_bars_used?: number[];
+  /** Song Mode: receipt lines when a style profile applies real metadata nudges (e.g. Groove/Soul). */
+  songModeStyleSurfaceNotes?: string[];
 }

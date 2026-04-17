@@ -49,3 +49,9 @@ Optional: `-IncludeRunAll` runs `npm test` as well (long). See script header.
 
 - [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md) — product focus and test-debt note.
 - [CHANGELOG.md](CHANGELOG.md) — triage changelog entries.
+
+## Dated notes (must-stay-green unchanged)
+
+- **2026-04-17 — Song Mode Groove/Soul style surface:** Optional Jest: `npx jest --config jest.config.cjs tests/songModeGrooveSoulSurface.test.ts` — not part of the five must-stay-green scripts; run when touching `songModeStyleSurface.ts` or Song Mode metadata wiring. The five baseline commands were re-run after the change and remained **PASS**; **`npm test`** debt bucket unchanged.
+- **2026-04-17 — Wyble single-line parity (small patch):** After `runGoldenPath` duo-family sweep + `guitarVoice2WybleLayer` clarifications, the five **must-stay-green** commands above were re-run and remained **PASS**; **`npm test`** debt bucket unchanged (still not a merge gate).
+- **2026-04-17 — Wyble “realized” normalization (tiny refinement):** After **`shouldApplyRealizedVoice2Normalization`** / Phase A probe tweaks, the five **must-stay-green** commands were re-run and remained **PASS**; **`npm test`** status unchanged.

@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import {
   injectGuitarVoice2WybleLayer,
@@ -61,7 +62,8 @@ export function logGuitarVoice2CheckpointFromScore(label: string, score: ScoreMo
 /** @returns how many measures received a voice-2 layer */
 export function injectPhaseAGuitarVoice2Probe(guitar: PartModel, context: CompositionContext): number {
   const n = injectGuitarVoice2WybleLayer(guitar, context);
-  if (context.presetId === 'guitar_bass_duo') {
+  /** Stabilisers (18.2B.1–3) run on standard duo only here; single-line uses `buildPhraseFirstDuoScore` and skips this probe. Realized Voice-2 normalization inside 18.2B.3 is a no-op for standard duo (`shouldApplyRealizedVoice2Normalization`). TODO: if this gate widens to `isGuitarBassDuoFamily`, confirm phrase-first + realized pass musically before shipping. */
+  if (isStandardGuitarBassDuo(context.presetId)) {
     stabiliseGuitarVoice2Wyble18_2B_1(guitar, context);
     stabiliseGuitarVoice2Wyble18_2B_2(guitar, context);
     stabiliseGuitarVoice2Wyble18_2B_3(guitar, context);

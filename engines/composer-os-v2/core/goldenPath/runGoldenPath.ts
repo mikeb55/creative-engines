@@ -86,6 +86,7 @@ import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
+import { applyGrooveSoulStyleSurface } from '../song-mode/songModeStyleSurface';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
@@ -988,7 +989,8 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     last = r;
     if (r.success) {
       const pid = resolved?.presetId ?? 'guitar_bass_duo';
-      if (pid === 'guitar_bass_duo' && !duoGuitarBarSevenIntervalPeakVsBarSixOk(r.score)) {
+      /** Duo-family parity: same bar-6 vs bar-7 melodic-interval sweep filter as standard duo (Wyble single-line included). */
+      if (isGuitarBassDuoFamily(pid) && !duoGuitarBarSevenIntervalPeakVsBarSixOk(r.score)) {
         continue;
       }
       const soft =
@@ -1087,6 +1089,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       bacharachCadentialAmbiguity: p.bacharachCadentialAmbiguity ?? 0,
       bacharachPedalUsage: p.bacharachPedalUsage ?? 0,
     };
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {
     context.generationMetadata = {
@@ -1422,6 +1427,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     duoModeReceiptLabel: appliedContext.generationMetadata.duoModeReceiptLabel,
     voice2PolyphonyDiagnostics: appliedContext.generationMetadata.voice2PolyphonyDiagnostics,
     wybleConsumptionReceipt: score.wybleConsumptionReceipt ?? appliedContext.generationMetadata.wybleConsumptionReceipt,
+    songModeStyleSurfaceNotes: appliedContext.generationMetadata.songModeStyleSurfaceNotes,
   });
 
   const success =

@@ -101,6 +101,7 @@ export interface GenerateResult {
     userExplicitPrimaryStyle?: boolean;
     duoModeReceiptLabel?: string;
     wybleConsumptionReceipt?: WybleConsumptionReceipt;
+    songModeStyleSurfaceNotes?: string[];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;

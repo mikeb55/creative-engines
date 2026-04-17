@@ -1,5 +1,26 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Song Mode — STYLE_GROOVE_SOUL first real “style surface” (rhythm biases + receipts)
+
+- **What:** Selecting **Style Engine profile** `STYLE_GROOVE_SOUL` in Song Mode now **nudges** `songwriterSyncopationBias` and `songwriterDensityBias` on `generationMetadata` (additive after optional primary-songwriter resolution, clamped 0–1). Phase **C1** rhythm overlay already reads syncopation bias (`songModeRhythmOverlayC1.ts`). **Receipt:** `songModeStyleSurfaceNotes` on run manifest, API `runManifest`, and `_meta` manifest JSON next to MusicXML — short honest bullets (not artist mimicry).
+- **Why:** Move Song Mode “feel” controls toward **testable, inspectable** behaviour instead of labels alone; one vertical slice only — other profiles unchanged (future passes can add similar small mappings).
+- **Code:** `core/song-mode/songModeStyleSurface.ts`, `runGoldenPath.ts`, `compositionContext.ts`, run manifest types, `composerOsAppGeneration.ts`, `writeOutputManifest.ts`, `appApiTypes.ts` (`OutputEntry`), `generateComposition.ts` type echo.
+- **Tests:** `npx jest --config jest.config.cjs tests/songModeGrooveSoulSurface.test.ts`; must-stay-green strip re-run: `test:vocal`, `test:duo`, `test:bass`, `test:jest:counterpoint`, `test:composer-os-regression` — **PASS**.
+
+## [2026-04-17] Wyble Voice-2 “realized” normalization (clarity + boundary guard)
+
+- **What:** Introduced **`shouldApplyRealizedVoice2Normalization`** (`isGuitarBassDuoFamily` && !**`isStandardGuitarBassDuo`**) so the rule for when Phase **18.2B.3** realized post-inject passes run lives in one place; **`stabiliseGuitarVoice2Wyble18_2B_3`** skips calling **`normalizeRealizedVoice2PostInjection182B3`** for standard duo (same outcome as before — realized pass is for non-standard duo, e.g. future single-line Wyble wiring). Expanded JSDoc on **`normalizeRealizedVoice2PostInjection182B3`** (breathing / run caps / coverage / texture bookkeeping on written Voice 2). **`injectPhaseAGuitarVoice2Probe`** uses **`isStandardGuitarBassDuo`** instead of a raw preset string, with a short comment on golden-path wiring and a **TODO** before widening stabilisers to the full duo family.
+- **Why:** Reduce misreads of “realized” vs standard duo and document intentional asymmetry; no Song Mode / ECM surface change.
+- **Tests kept green:** `npm run test:duo`, `test:bass`, `test:vocal`, `test:jest:counterpoint`, `test:composer-os-regression` (all **PASS**).
+- **Observable:** Standard duo output unchanged; realized body still not invoked from today’s golden path for standard duo (probe + guard).
+
+## [2026-04-17] Wyble single-line parity (small patch — golden-path sweep + stabiliser intent)
+
+- **What:** First **small** Guitar–Bass Duo **single-line** parity pass (not a full Wyble overhaul): (1) multi-seed **`runGoldenPath`** sweep now applies the same **bar 6 vs bar 7 melody interval** filter to the **whole duo family** (`isGuitarBassDuoFamily`), including **`guitar_bass_duo_single_line`**, matching standard duo behaviour. (2) **`normalizeRealizedVoice2PostInjection182B3`** documents the skip for **standard** duo via **`isStandardGuitarBassDuo`** (same runtime behaviour as before; clearer pairing with preset helpers).
+- **Why:** Align obvious duo-family **quality guards** with **`isGuitarBassDuoFamily`** where the musical rule is the same; keep Voice-2 “realized score” normalization explicitly **standard-duo–only** until a deeper unify pass (see roadmap pick list).
+- **Tests kept green:** `npm run test:duo`, `test:bass`, `test:vocal`, `test:jest:counterpoint`, `test:composer-os-regression` (all **PASS** after this change).
+- **Code:** `engines/composer-os-v2/core/goldenPath/runGoldenPath.ts`, `guitarVoice2WybleLayer.ts`.
+
 ## [2026-04-17] Composer OS v2 test-debt triage (baseline docs + helper)
 
 - **What:** Initial **test-debt baselining** for `engines/composer-os-v2` — **not** fixing the full `npm test` suite in this pass.

@@ -111,4 +111,6 @@ export interface RunManifest {
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /** Portable Wyble: which narrow consumption path ran on this score (debug / replay). */
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
+  /** Song Mode: honest receipt lines when a style profile applies real metadata nudges (e.g. Groove/Soul surface). */
+  songModeStyleSurfaceNotes?: string[];
 }

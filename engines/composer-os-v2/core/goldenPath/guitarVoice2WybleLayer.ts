@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
 import type { MeasureModel, NoteEvent, PartModel, RestEvent, ScoreEvent } from '../score-model/scoreModelTypes';
 import { addEvent, createNote, createRest } from '../score-model/scoreEventBuilder';
@@ -4054,13 +4054,26 @@ function computeLongestV2SustainAcrossActiveBars182B5(
 }
 
 /**
- * Phase 18.2B.3 ? Normalize **realized** Voice-2 activity after inject + pitch stabilisers so metrics/validators
+ * Voice-2 “realized score” pass applies only to **non-standard** Guitar–Bass Duo presets (e.g. phrase-first single-line).
+ * Standard `guitar_bass_duo` uses a different post-inject treatment; realized breathing/coverage caps are skipped there.
+ */
+function shouldApplyRealizedVoice2Normalization(context: CompositionContext): boolean {
+  return isGuitarBassDuoFamily(context.presetId) && !isStandardGuitarBassDuo(context.presetId);
+}
+
+/**
+ * Phase 18.2B.3 — Normalize **realized** Voice-2 activity after inject + pitch stabilisers so metrics/validators
  * match the written score (runs after {@link stabiliseGuitarVoice2Wyble18_2B_2}; diagnostics read this result).
+ *
+ * Musically: tightens written Voice-2 runs (length caps, breathing after runs, sustained-wall / coverage limits),
+ * bar-boundary clamps, and texture-density bookkeeping so polyphony diagnostics reflect what is actually notated.
+ *
+ * **Intentional asymmetry:** standard duo skips this pass ({@link shouldApplyRealizedVoice2Normalization}). The golden
+ * path currently calls {@link stabiliseGuitarVoice2Wyble18_2B_3} only from {@link injectPhaseAGuitarVoice2Probe} when
+ * {@link isStandardGuitarBassDuo} — so the heavy body stays inactive there until that probe is extended to other
+ * duo-family presets (TODO: review with phrase-first single-line Wyble before widening).
  */
 function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: CompositionContext): void {
-  // Standard duo uses a different normalization path; this function applies to single-line only.
-  if (context.presetId === 'guitar_bass_duo') return;
-
   console.log('[V2-NORM-182B6] normalization running');
   const tb = context.form.totalBars;
   const seed = context.seed;
@@ -4102,10 +4115,12 @@ function normalizeRealizedVoice2PostInjection182B3(guitar: PartModel, context: C
 }
 
 /**
- * Phase 18.2B.3 ? Realized-score breathing / run caps / coverage (after 18.2B.1?2 pitch stabilisers, before polyphony diagnostics).
+ * Phase 18.2B.3 — Realized-score breathing / run caps / coverage (after 18.2B.1–2 pitch stabilisers, before polyphony diagnostics).
+ * Standard duo: no realized pass (see {@link shouldApplyRealizedVoice2Normalization}).
  */
 export function stabiliseGuitarVoice2Wyble18_2B_3(guitar: PartModel, context: CompositionContext): void {
   if (!isGuitarBassDuoFamily(context.presetId)) return;
+  if (!shouldApplyRealizedVoice2Normalization(context)) return;
   normalizeRealizedVoice2PostInjection182B3(guitar, context);
 }
 

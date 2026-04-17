@@ -127,6 +127,8 @@ export interface GenerationMetadata {
   songModeReturnMotifShapeExpected?: MotifShape;
   /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
   styleProfile?: StyleProfile;
+  /** Song Mode: short honest lines for receipts when a style surface applies real metadata nudges (see `songModeStyleSurface.ts`). */
+  songModeStyleSurfaceNotes?: string[];
   /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
   songModeRhythmOverlayDisabled?: boolean;
   /** Song Mode: Stable / Balanced / Surprise — scales Phase C2 phrase intent only (from request). */

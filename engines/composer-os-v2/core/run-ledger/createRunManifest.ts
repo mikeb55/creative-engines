@@ -73,6 +73,7 @@ export interface CreateRunManifestInput {
   duoModeReceiptLabel?: string;
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
+  songModeStyleSurfaceNotes?: string[];
 }
 
 /** Create run manifest. */
@@ -143,5 +144,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     duoModeReceiptLabel: input.duoModeReceiptLabel,
     voice2PolyphonyDiagnostics: input.voice2PolyphonyDiagnostics,
     wybleConsumptionReceipt: input.wybleConsumptionReceipt,
+    songModeStyleSurfaceNotes: input.songModeStyleSurfaceNotes,
   };
 }

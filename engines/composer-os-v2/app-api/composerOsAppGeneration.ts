@@ -594,6 +594,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       keySignatureExportKeyWritten: gp.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
       c4_hook_rhythm_applied: gp.context.generationMetadata.c4HookRhythmApplied,
       c4_bars_used: gp.context.generationMetadata.c4BarsUsed,
+      songModeStyleSurfaceNotes: gp.context.generationMetadata.songModeStyleSurfaceNotes,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,
@@ -693,6 +694,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           keySignatureModeApplied: gp.runManifest.keySignatureModeApplied,
           keySignatureExportKeyWritten: gp.runManifest.keySignatureExportKeyWritten,
           wybleConsumptionReceipt: gp.runManifest.wybleConsumptionReceipt,
+          songModeStyleSurfaceNotes: gp.runManifest.songModeStyleSurfaceNotes,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

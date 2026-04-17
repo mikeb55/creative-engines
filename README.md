@@ -94,12 +94,31 @@ Use `--out "C:\path\to\folder"` to choose the output directory. See [docs/USER_G
 
 ---
 
+## Song Mode ? style & songwriter behaviour (first slice, 2026-04-17)
+
+Most Song Mode ?style? controls still route through compile-time rules, receipts, or light metadata. **One** feel profile now has a **small, testable** golden-path mapping:
+
+- In **Generate ? Song Mode**, set **Style Engine profile** to **Groove / Soul** (`STYLE_GROOVE_SOUL`). The engine **adds** to `songwriterSyncopationBias` and `songwriterDensityBias` (after any primary-songwriter resolution), which feeds Song Mode rhythm overlay selection and related intent. The **Style Engine** pass also applies profile-specific **velocities** (see engine code ? not artist mimicry).
+- The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** with one or two honest bullet lines.
+
+Developers: unit test `engines/composer-os-v2/tests/songModeGrooveSoulSurface.test.ts`; must-stay-green scripts unchanged. See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
+
+---
+
 ## What is not in the UI yet
 
 - No in-app control for **Wyble ON/OFF** CLI exports.
 - **Composer Engines** ?open in folder? works best in the **desktop** app, not always in a browser.
 - **Style Stack** legacy UI exists in the repo but is **not** linked from the main app nav.
 - **Planned** work is listed separately in [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md) ? do not assume those items are shipped.
+
+---
+
+## Guitar?Bass Duo (Single-Line) and Wyble (short note)
+
+**Guitar?Bass Duo (Single-Line)** shares the same harmony path as standard duo but builds a **phrase-first, single-note** guitar and bass line; Wyble **Voice 2** inner-line work still uses **`isGuitarBassDuoFamily`** gates in the engine. A **2026-04-17** small parity patch aligned the multi-seed golden-path **bar 6 vs bar 7** melodic-interval sweep with the rest of the duo family (see [docs/CHANGELOG.md](docs/CHANGELOG.md)). Deeper parity (e.g. unifying all ?realized? Voice-2 normalization paths) remains roadmap follow-up ? not done in that patch.
+
+**Developers ? ?realized? Voice 2:** After inject + pitch stabilisers, Phase **18.2B.3** can run a **realized-score** pass (breathing, run/coverage caps, texture bookkeeping on **written** Voice 2) for **non-standard** duo-family presets only (**`shouldApplyRealizedVoice2Normalization`**). Standard **`guitar_bass_duo`** skips that pass by design. Touching `guitarVoice2WybleLayer.ts` or Phase A probe ? re-run the **must-stay-green** five commands in the section below.
 
 ---
 
