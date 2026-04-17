@@ -1,0 +1,62 @@
+{
+  "id": "wyble_single_line_reference_01",
+  "source_pdf": "Jimmy-Wyble-Contrapuntal-Concepts-3.pdf",
+  "location": "fill from PDF (page / example id)",
+  "key_center": "G major",
+  "time_signature": "4/4",
+  "progression": ["Am7", "D7", "Gmaj7", "Gmaj7"],
+  "bars": [
+    {
+      "bar": 1,
+      "harmony_root": "A",
+      "harmony_quality": "m7",
+      "function": "ii",
+      "implied_upper_voice": ["G4", "A4", "Bb4", "C5"],
+      "implied_lower_voice": ["C4", "B3", "Bb3", "A3"],
+      "contour": "arch",
+      "interval_profile": ["S", "L3", "S"],
+      "contrapuntal_moves": ["passing", "neighbor"],
+      "register": "mid",
+      "density": "medium"
+    },
+    {
+      "bar": 2,
+      "harmony_root": "D",
+      "harmony_quality": "7",
+      "function": "V",
+      "implied_upper_voice": ["C5", "B4", "Bb4", "A4"],
+      "implied_lower_voice": ["F3", "G3", "Ab3", "A3"],
+      "contour": "down",
+      "interval_profile": ["S", "S", "S"],
+      "contrapuntal_moves": ["chromatic_approach", "passing"],
+      "register": "mid",
+      "density": "medium"
+    },
+    {
+      "bar": 3,
+      "harmony_root": "G",
+      "harmony_quality": "maj7",
+      "function": "I",
+      "implied_upper_voice": ["B4", "D5", "F#5"],
+      "implied_lower_voice": ["G3", "B3", "D4"],
+      "contour": "up",
+      "interval_profile": ["L3", "L3"],
+      "contrapuntal_moves": ["arpeggio"],
+      "register": "mid",
+      "density": "sparse"
+    },
+    {
+      "bar": 4,
+      "harmony_root": "G",
+      "harmony_quality": "maj7",
+      "function": "I",
+      "implied_upper_voice": ["G5", "F#5", "E5"],
+      "implied_lower_voice": ["G3", "A3", "B3"],
+      "contour": "down",
+      "interval_profile": ["S", "S"],
+      "contrapuntal_moves": ["resolution"],
+      "register": "mid",
+      "density": "sparse"
+    }
+  ]
+}

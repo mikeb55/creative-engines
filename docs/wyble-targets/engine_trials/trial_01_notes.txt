@@ -1,0 +1,11 @@
+engine_preset: guitar_bass_duo_single_line (assumed; replace if your export used another preset)
+date: 2026-04-17
+key_center: G major
+reference_file: Wyble_single_line_reference_01.musicxml
+trial_musicxml: engine_trials/trial_01_guitar_line.musicxml
+harmony_alignment: rough harmonic comparison only — trial XML has 4 harmony tags over 4 measures; descriptor progression is Am7 | D7 | Gmaj7 | Gmaj7. Not enough evidence for bar-for-bar Roman function match without deeper analysis.
+implied_upper_voice_vs_descriptor: automated skim only — trial uses stepwise motion in bars 1–2 similar in density to descriptor skeletons; accidentals and guide tones differ from implied_upper_voice in descriptor (e.g. bar 1 trial B4 vs descriptor Bb4). manual follow-up needed if you need exact voice-leading audit.
+contour: descriptor bar contours: arch, down, up, down; trial melody is mostly stepwise with small arches in first two bars — rough alignment possible, not proven Wyble match.
+density: descriptor densities: medium, sparse; trial has 11 written pitches across score — medium in bars 1–2 vs sparse in 3–4 by note count; approximate only.
+overall_wyble_ish_yes_no: no
+why_one_line: not enough evidence for strong Wyble match — replace trial_01_guitar_line.musicxml with your real engine export and re-edit this note if needed. Descriptor used as comparison anchor only; no engine code changes.

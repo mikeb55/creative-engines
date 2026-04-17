@@ -1,5 +1,11 @@
 # Composer OS — Changelog
 
+## [2026-04-17] Wyble reference 01 — assisted engine trial notes
+
+- First assisted comparison: `docs/wyble-targets/engine_trials/trial_01_guitar_line.musicxml` vs `Wyble_single_line_reference_01.musicxml`, anchor `Wyble_single_line_reference_01.descriptor.json`
+- Generated `engine_trials/trial_01_notes.txt` (rough stats + placeholders; not full music analysis)
+- No engine code changes
+
 ## [2026-04-17] Packaged app verification — Song Mode + vocal lead sheet
 
 ### Verified in packaged exe

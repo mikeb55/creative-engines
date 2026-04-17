@@ -126,7 +126,7 @@
 
 - **Decide on test debt:** Either baseline/triage the failing `npm test` set in `engines/composer-os-v2`, or document a known-red subset so new changes are not conflated with old failures.
 - **Vocal lead sheet closure:** **DONE for 2026-04-17 packaged check** — runbook executed on `release\win-unpacked\Composer OS Desktop.exe`; keep **`npm run test:vocal`** on pre-release checklist for regressions. See [CHANGELOG.md](CHANGELOG.md).
-- **Wyble single-line parity** as the next feature follow-up: align guards with **`isGuitarBassDuoFamily`**, and keep **`npm run test:duo`** / **`npm run test:bass`** in the loop when touching duo/bass (see pick list #1 below).
+- **Wyble single-line parity** as the next feature follow-up: align guards with **`isGuitarBassDuoFamily`**, and keep **`npm run test:duo`** / **`npm run test:bass`** in the loop when touching duo/bass (see pick list #1 below). **2026-04-17:** first assisted trial note vs **`docs/wyble-targets/Wyble_single_line_reference_01`** (descriptor anchor, `engine_trials/trial_01_notes.txt`) — no engine wiring yet; see [CHANGELOG.md](CHANGELOG.md).
 - **Longer-horizon items** (Wayne Shorter product integration, ECM/Bacharach/Harris depth, Slonimsky tools, chord UX polish) remain on the roadmap in the sections below; this snapshot does not reprioritize them.
 
 ### Next possible devs (pick list)
