@@ -52,6 +52,13 @@ Optional: `-IncludeRunAll` runs `npm test` as well (long). See script header.
 
 ## Dated notes (must-stay-green unchanged)
 
-- **2026-04-17 — Song Mode Groove/Soul style surface:** Optional Jest: `npx jest --config jest.config.cjs tests/songModeGrooveSoulSurface.test.ts` — not part of the five must-stay-green scripts; run when touching `songModeStyleSurface.ts` or Song Mode metadata wiring. The five baseline commands were re-run after the change and remained **PASS**; **`npm test`** debt bucket unchanged.
+- **2026-04-17 — Heap / full-suite OOM:**
+  Heap raised to 8192MB still OOMs (2026-04-17).
+  Full npm test suite cannot run in one process.
+  Must-stay-green scripts remain the reliability anchor.
+  Full suite triage deferred until test runner is split
+  or runAllTests.ts is chunked.
+
+- **2026-04-17 — Song Mode Groove/Soul + Donald Fagen surfaces:** Optional Jest: `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts` — not part of the five must-stay-green scripts; run when touching `songModeStyleSurface.ts` or Song Mode metadata wiring. The five baseline commands were re-run after the change and remained **PASS**; **`npm test`** debt bucket unchanged.
 - **2026-04-17 — Wyble single-line parity (small patch):** After `runGoldenPath` duo-family sweep + `guitarVoice2WybleLayer` clarifications, the five **must-stay-green** commands above were re-run and remained **PASS**; **`npm test`** debt bucket unchanged (still not a merge gate).
 - **2026-04-17 — Wyble “realized” normalization (tiny refinement):** After **`shouldApplyRealizedVoice2Normalization`** / Phase A probe tweaks, the five **must-stay-green** commands were re-run and remained **PASS**; **`npm test`** status unchanged.
