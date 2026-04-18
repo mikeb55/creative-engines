@@ -596,6 +596,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       c4_bars_used: gp.context.generationMetadata.c4BarsUsed,
       songModeStyleSurfaceNotes: gp.context.generationMetadata.songModeStyleSurfaceNotes,
       songModeDonaldFagenC1Receipt: gp.context.generationMetadata.songModeDonaldFagenC1Receipt,
+      songwriterStyleId: gp.context.generationMetadata.songwriterStyleId,
+      songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
+      fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
+      sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,
+      songwriterSyncopationBias: gp.context.generationMetadata.songwriterSyncopationBias,
+      songwriterDensityBias: gp.context.generationMetadata.songwriterDensityBias,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,

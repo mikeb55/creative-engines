@@ -234,4 +234,12 @@ export interface OutputEntry {
   songModeStyleSurfaceNotes?: string[];
   /** Song Mode — Donald Fagen primary: Phase C1 overlay receipt (when applicable). */
   songModeDonaldFagenC1Receipt?: string;
+  /** Song Mode — resolved primary songwriter id (manifest echo). */
+  songwriterStyleId?: string;
+  songModeFagenKeysCompV15Applied?: boolean;
+  fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
+  sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
+  /** Song Mode eval echo — rhythm intent biases after style surfaces (0–1). */
+  songwriterSyncopationBias?: number;
+  songwriterDensityBias?: number;
 }

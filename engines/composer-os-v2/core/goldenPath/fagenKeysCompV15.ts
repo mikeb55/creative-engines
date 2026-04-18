@@ -14,6 +14,7 @@ import {
   applyFagenKeysCompMusicalAugment,
   ensureFagenOpeningLhShellBars1to8,
   fagenCompanionMidiForSparseRhDyad,
+  fagenFormSegmentEnds,
   lhClampRangeForFagenBar,
   maxNotesFagenKeysCompBar,
   rhClampRangeForFagenBar,
@@ -55,7 +56,8 @@ function applyFagenRhSparseCompDyads(
   measure: MeasureModel,
   barIndex: number,
   context: CompositionContext,
-  maxAdds: number
+  maxAdds: number,
+  totalBars: number = 32
 ): void {
   if (maxAdds <= 0) return;
   const chord = getChordForBar(barIndex, context);
@@ -81,7 +83,7 @@ function applyFagenRhSparseCompDyads(
     if (g.length !== 1) continue;
     const base = g[0];
     if (base.duration < 0.125) continue;
-    const companion = fagenCompanionMidiForSparseRhDyad(base.pitch, tones, chord, context, barIndex);
+    const companion = fagenCompanionMidiForSparseRhDyad(base.pitch, tones, chord, context, barIndex, totalBars);
     if (companion === undefined) continue;
     const vel = Math.max(34, Math.min(120, (base.velocity ?? 74) - 5));
     /** Voice 2 = comp layer so Barry Harris VL checks (voice-1 chain) stay on the hook strand. */
@@ -109,13 +111,17 @@ export function applySongModeFagenKeysCompV15(score: ScoreModel, context: Compos
   const g = score.parts.find((p) => p.id === 'guitar');
   if (!g) return;
 
-  ensureFagenOpeningLhShellBars1to8(g, context);
+  const tb = context.form.totalBars ?? 32;
+
+  ensureFagenOpeningLhShellBars1to8(g, context, tb);
+
+  const { aEnd, bEnd } = fagenFormSegmentEnds(tb);
 
   for (const m of g.measures) {
     const b = m.index;
-    const cap = maxNotesFagenKeysCompBar(b);
-    const rh = rhClampRangeForFagenBar(b);
-    const lh = lhClampRangeForFagenBar(b);
+    const cap = maxNotesFagenKeysCompBar(b, tb);
+    const rh = rhClampRangeForFagenBar(b, tb);
+    const lh = lhClampRangeForFagenBar(b, tb);
 
     for (const ev of m.events) {
       if (ev.kind !== 'note') continue;
@@ -128,8 +134,8 @@ export function applySongModeFagenKeysCompV15(score: ScoreModel, context: Compos
       }
     }
 
-    const dyadBudget = b <= 8 ? 4 : b <= 16 ? 3 : 0;
-    applyFagenRhSparseCompDyads(m, b, context, dyadBudget);
+    const dyadBudget = b <= aEnd ? 4 : b <= bEnd ? 3 : 0;
+    applyFagenRhSparseCompDyads(m, b, context, dyadBudget, tb);
 
     thinMeasureNotesToCap(m, cap);
   }
@@ -138,8 +144,9 @@ export function applySongModeFagenKeysCompV15(score: ScoreModel, context: Compos
 
   appendSongModeStyleSurfaceNotes(md, [
     'Song Mode Fagen keys-comp (musical): keyboard-led syncopated comp fingerprint (anticipations toward 2/4, short off-beat stabs, pads thinned), inner-voice motion on LH shells, compact tension-rich dyads where harmony allows. Not an imitation of any artist.',
-    'Song Mode Fagen keys-comp (sections): B-section brighter register + higher density vs cool A; phrase landings simplified every 4 bars; return bars 17/21 get subtle voicing / entry-space gestures. Rule-based colour bias only.',
+    'Song Mode Fagen keys-comp (sections): B-section brighter register + higher density vs cool A; phrase tension sculpt; form-relative return entry / mid-return gestures (quarter-based pivots). Rule-based colour bias only.',
     'Song Mode Fagen keys-comp (duo gates): chord-tone companions on voice 2; opening A gains soft LH half-note shells when voice 2 was empty; Barry Harris behaviour check prefers the song_motif pitch strand when present (generative routing only).',
+    'Song Mode Fagen keys-comp (metrics): objective diagnostics on generationMetadata.fagenKeysCompMusicalDiagnostics — syncopation by section, voicing density, phrase tension means, optional single signature pivot, return variation summary.',
   ]);
 
   md.songModeFagenKeysCompV15Applied = true;

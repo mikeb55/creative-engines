@@ -43,6 +43,24 @@ export function applyGrooveSoulStyleSurface(metadata: GenerationMetadata, styleP
 }
 
 /**
+ * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
+ */
+export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (styleProfile !== 'STYLE_SOPHISTICATED_POP') return;
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.06);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.04);
+  metadata.bacharachModalMixtureLevel = clamp01((metadata.bacharachModalMixtureLevel ?? 0) + 0.07);
+
+  appendStyleSurfaceNotes(metadata, [
+    'STYLE_SOPHISTICATED_POP: raised syncopation and density biases slightly for Song Mode rhythm overlay (Phase C1); modest harmonic mixture metadata for dressed-up pop colour.',
+    'STYLE_SOPHISTICATED_POP: chord symbols may gain tasteful 7th/9th extensions by section (deterministic dressing pass); Style Engine applies profile-specific velocities.',
+    'STYLE_SOPHISTICATED_POP: B section targets brighter harmonic colour than opening sections (section-aware dressing). Not an imitation of any artist.',
+  ]);
+}
+
+/**
  * When the resolved primary songwriter is the **Donald Fagen** profile (`donald_fagen` / aliases including
  * `songwriter_donald_fagen`), apply small additive nudges **after** generic `resolveSongwritingStyles` so
  * phrase grid, harmony colour, and rhythm/density differ measurably from other primaries.

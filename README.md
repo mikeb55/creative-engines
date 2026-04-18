@@ -103,7 +103,7 @@ Most Song Mode ?style? controls still route through compile-time rules, receipts
 
 The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** (lines stack when both apply).
 
-Developers: Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
+**Developers — full Fagen / Song Mode / eval context:** [docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md](docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md) (engine hooks, diagnostics, `npm run eval:fagen`, baseline modes). Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See also [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
 
 ---
 
@@ -150,6 +150,7 @@ Full table and triage notes: **[docs/TEST_DEBT_COMPOSER_OS_V2.md](docs/TEST_DEBT
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Practical guide for first-time users |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Release-style change notes |
 | [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md) | Past / current / future (Composer OS) |
+| [docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md](docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md) | Song Mode Fagen engine, receipts, diagnostics, batch eval harness |
 | [docs/TEST_DEBT_COMPOSER_OS_V2.md](docs/TEST_DEBT_COMPOSER_OS_V2.md) | Engine test baseline vs known `npm test` debt |
 | [apps/composer-os-app/README.md](apps/composer-os-app/README.md) | App dev server and build |
 

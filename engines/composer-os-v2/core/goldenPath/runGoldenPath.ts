@@ -90,7 +90,9 @@ import {
   appendSongModeStyleSurfaceNotes,
   applyDonaldFagenSongwriterSurface,
   applyGrooveSoulStyleSurface,
+  applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
+import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
@@ -1113,6 +1115,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applySophisticatedPopStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applySophisticatedPopHarmonyDressing(context);
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {
     context.generationMetadata = {

@@ -185,15 +185,33 @@ export interface GenerationMetadata {
   songModeSongwriterCompProfileId?: SongwriterRuleId;
   /** Song Mode — Donald Fagen keys-comp v1.5 pass applied (`fagenKeysCompV15.ts`). */
   songModeFagenKeysCompV15Applied?: boolean;
-  /** Fagen-only keys-comp musical augmentations — inspectable; optional truth dump / tooling. */
+  /** STYLE_SOPHISTICATED_POP — harmony dressing + section contrast statistics (Song Mode eval). */
+  sophisticatedPopHarmonyDiagnostics?: {
+    barsConsidered: number;
+    barsChanged: number;
+    meanColourDepth: number;
+    meanColourDepthSectionA: number;
+    meanColourDepthSectionB: number;
+    sectionContrastDelta: number;
+    extensionAdds: number;
+  };
+  /** Fagen-only keys-comp musical augmentations — inspectable objective metrics for A/B tooling. */
   fagenKeysCompMusicalDiagnostics?: {
     rhythmPatternFamily: string;
     meanSyncopationIndex: number;
+    syncopationIndexBySection?: Partial<
+      Record<'a_open' | 'b' | 'a_return' | 'closing', number>
+    >;
     avgInnerMotionSemitonesV2Top: number;
     meanRhMidiV1OpenA: number;
     meanRhMidiV1SectionB: number;
     densityDeltaBMinusA: number;
+    voicingDensityBySection?: Partial<Record<'a_open' | 'b' | 'a_return' | 'closing', number>>;
+    openingVsReturnRhMeanDelta?: number;
+    returnVariationSummary?: string;
     returnPhraseGesturesApplied: number;
+    signatureMoment?: { applied: boolean; pivotBar: number | null; kind: string };
+    phraseTensionMeanDensityByPhrase?: number[];
   };
   /** Songwriter profile: hook repetition bias (0–1). */
   songwriterHookRepetitionBias?: number;

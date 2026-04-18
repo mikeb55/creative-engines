@@ -73,6 +73,13 @@ export function writeOutputManifest(
     c4_bars_used?: number[];
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
+    /** Song Mode — resolved primary songwriter id (eval / receipts). */
+    songwriterStyleId?: string;
+    songModeFagenKeysCompV15Applied?: boolean;
+    fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
+    sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
+    songwriterSyncopationBias?: number;
+    songwriterDensityBias?: number;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -128,6 +135,12 @@ export function writeOutputManifest(
     c4_bars_used: meta.c4_bars_used,
     songModeStyleSurfaceNotes: meta.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: meta.songModeDonaldFagenC1Receipt,
+    songwriterStyleId: meta.songwriterStyleId,
+    songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
+    fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
+    sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,
+    songwriterSyncopationBias: meta.songwriterSyncopationBias,
+    songwriterDensityBias: meta.songwriterDensityBias,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

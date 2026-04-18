@@ -7,11 +7,11 @@ import type { MeasureModel } from '../core/score-model/scoreModelTypes';
 
 describe('fagenKeysCompV15', () => {
   it('uses tighter caps in opening phrases and section contrast', () => {
-    expect(maxNotesFagenKeysCompV15Bar(1)).toBe(6);
-    expect(maxNotesFagenKeysCompV15Bar(10)).toBe(8);
-    expect(maxNotesFagenKeysCompV15Bar(12)).toBe(8);
+    expect(maxNotesFagenKeysCompV15Bar(1)).toBe(5);
+    expect(maxNotesFagenKeysCompV15Bar(10)).toBe(9);
+    expect(maxNotesFagenKeysCompV15Bar(12)).toBe(9);
     expect(maxNotesFagenKeysCompV15Bar(20)).toBe(7);
-    expect(maxNotesFagenKeysCompV15Bar(30)).toBe(9);
+    expect(maxNotesFagenKeysCompV15Bar(30)).toBe(8);
   });
 
   it('sparse RH dyad prefers a different chord tone than the anchor pitch class', () => {
