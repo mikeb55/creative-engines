@@ -94,6 +94,8 @@ import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from
 import { applySongModeMelodicContinuityPass } from './songModeMelodicContinuity';
 import { applySongModeGuitarDensityFloor } from './songModeGuitarDensityFloor';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
+import { applySongwriterKeysCompPresentation } from './songwriterKeysCompPass';
+import { applySongModeFagenKeysCompV15 } from './fagenKeysCompV15';
 import { applyJamesBrownFunkOverlay } from './jamesBrownFunkOverlay';
 import { applySongModeHookRhythmLayerC4, applySongModeOstinatoC4 } from './songModeOstinatoC4';
 import { applySongModeOstinatoC5, applyC5DensityLayer } from './songModeOstinatoC5';
@@ -2962,6 +2964,8 @@ export function generateGoldenPathDuoScore(
   ) {
     applyBarryHarris(context, afterExpressive);
   }
+  applySongwriterKeysCompPresentation(afterExpressive, context);
+  applySongModeFagenKeysCompV15(afterExpressive, context);
   let songModeHookBarsPostFinalize: Map<number, HookBarNoteIdentity[]> | undefined;
   /**
    * No mid-pipeline hook-bar identity assert here (pre-overlay vs post-melodic): later Song Mode passes

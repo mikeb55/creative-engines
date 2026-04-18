@@ -88,6 +88,12 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'xtc', label: 'XTC' },
 ];
 
+function primarySongwriterDisplayLabel(id: string | undefined): string | undefined {
+  if (!id?.trim()) return undefined;
+  const t = id.trim().toLowerCase();
+  return SONGWRITER_OPTIONS.find((o) => o.id === t)?.label ?? id.trim();
+}
+
 const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ellington', label: 'Duke Ellington' },
   { id: 'basie', label: 'Count Basie' },
@@ -223,6 +229,9 @@ type GenResult = {
     variationId?: string;
     creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
     experimentalCreativeLabel?: string;
+    /** Song Mode: style/songwriter receipt lines from the engine (same as `_meta` manifest). */
+    songModeStyleSurfaceNotes?: string[];
+    songModeDonaldFagenC1Receipt?: string;
   };
   scoreTitle?: string;
   requestEcho?: {
@@ -2042,6 +2051,14 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Style profile:</span> {echo.styleProfile}
                 </p>
               ) : null}
+              {summaryPresetId === 'song_mode' && echo?.primarySongwriterStyle?.trim() ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Primary songwriter:</span>{' '}
+                  <strong>
+                    {primarySongwriterDisplayLabel(echo.primarySongwriterStyle) ?? echo.primarySongwriterStyle}
+                  </strong>
+                </p>
+              ) : null}
               {(echo?.stylePairing || result.stylePairingReceipt) && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Pairing:</span>{' '}
@@ -2167,6 +2184,40 @@ export function HomeGenerate({
                   </button>
                 </p>
               ) : null}
+              {summaryPresetId === 'song_mode' &&
+                rm?.songModeStyleSurfaceNotes &&
+                rm.songModeStyleSurfaceNotes.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: '0.75rem',
+                      paddingTop: '0.75rem',
+                      borderTop: '1px solid var(--border)',
+                    }}
+                  >
+                    <p style={{ margin: '0 0 0.45rem', fontWeight: 600, fontSize: '0.92rem' }}>
+                      Song Mode generation notes
+                    </p>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Behaviour-level summary (not an imitation claim). Same list is written next to your MusicXML
+                      under <code>_meta</code>.
+                    </p>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: '1.15rem',
+                        lineHeight: 1.5,
+                        fontSize: '0.85rem',
+                        color: 'var(--text-muted)',
+                      }}
+                    >
+                      {rm.songModeStyleSurfaceNotes.map((line, i) => (
+                        <li key={i} style={{ marginBottom: '0.35rem' }}>
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               {v?.readiness?.mx != null && result.stylePairingReceipt?.confidenceScore == null && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Readiness (MX):</span> {v.readiness.mx}

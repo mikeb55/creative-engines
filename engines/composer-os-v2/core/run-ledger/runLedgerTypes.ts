@@ -113,4 +113,6 @@ export interface RunManifest {
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
   /** Song Mode: honest receipt lines when a style profile applies real metadata nudges (e.g. Groove/Soul surface). */
   songModeStyleSurfaceNotes?: string[];
+  /** Song Mode — Donald Fagen: Phase C1 rhythm-overlay receipt when primary songwriter resolved to `donald_fagen`. */
+  songModeDonaldFagenC1Receipt?: string;
 }

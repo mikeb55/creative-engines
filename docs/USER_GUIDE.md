@@ -98,7 +98,15 @@ As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Son
 - The engine **increases** internal **syncopation** and **density** biases used by the Song Mode rhythm path (additive, clamped). You may hear busier or more off-beat leaning lines versus the default profile, depending on seed and harmony.
 - A short explanation may appear on the **receipt** and in the **`_meta`** sidecar manifest as **`songModeStyleSurfaceNotes`** (honest wording — not “sounds like” any artist).
 
-Other songwriter / era / lyric-author / arranger fields still behave as before (compile rules, pairing metadata, receipts); only this one profile has the extra golden-path nudge in this release.
+Other songwriter / era / lyric-author / arranger fields still behave mostly as compile rules, pairing metadata, and receipts; **Groove / Soul** and **Donald Fagen** (below) also have small golden-path metadata nudges.
+
+### Song Mode — Donald Fagen primary songwriter (first real primary-songwriter slice)
+
+Choosing **primary songwriter → Donald Fagen** (or the API key **`songwriter_donald_fagen`**) applies **small additive** tweaks on top of the usual songwriter profile resolution: phrase-length regularity, moderate syncopation / medium-density steering, and harmonic-colour weights surfaced on **`generationMetadata`**, with short lines under **`songModeStyleSurfaceNotes`** on the receipt / **`_meta`** manifest — honest musical wording, not a mimicry claim.
+
+**Slice v2 (2026-04):** Song planning may draw from **extra generic jazz-pop verse rows** (ii–V–I colour + borrowed maj7 colours). Phase **C1** rhythm overlay uses a **slightly higher syncopation bias** for **early phrases (bars 1–12)** only when primary is **Donald Fagen**; **`songModeDonaldFagenC1Receipt`** is set after C1 runs. Still **not** an authenticity claim.
+
+**Listening recipe:** Same **seed**, **BPM**, **chords**, and **Style Engine profile**, then A/B **primary songwriter Donald Fagen** vs **another primary** (e.g. **Bacharach** or **Beatles**) and compare rhythm density and harmonic colour in the duo export.
 
 ---
 

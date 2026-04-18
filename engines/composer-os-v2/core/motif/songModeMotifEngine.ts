@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { MeasureModel, PartModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, PartModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { guitarChordTonesInRange } from '../goldenPath/guitarPhraseAuthority';
@@ -383,11 +383,35 @@ function validateSongModeBar1Strength(guitar: PartModel): string[] {
   return out;
 }
 
-/** Sliding 8-bar windows: ≥50% of melody notes must map to motif IDs. */
-function validateMotifCoverageSliding(guitar: PartModel): string[] {
+/**
+ * Song Mode Fagen keys-comp v1.5 adds LH (voice 2) shells and RH dyads — those notes often lack `song_motif` refs.
+ * Motif v2 coverage was written for single-line guitar hooks; for this path, measure motif identity on **voice 1** only.
+ */
+export function songModeMotifCoverageUsesVoiceOneOnly(context: CompositionContext): boolean {
+  return context.generationMetadata?.songModeFagenKeysCompV15Applied === true;
+}
+
+function noteCountsForMotifCoverage(
+  e: { kind: string; voice?: number; motifRef?: string },
+  motifRe: RegExp,
+  voiceOneOnly: boolean
+): { count: boolean; motif: boolean } {
+  if (e.kind !== 'note') return { count: false, motif: false };
+  const v = (e as NoteEvent).voice ?? 1;
+  if (voiceOneOnly && v !== 1) return { count: false, motif: false };
+  const ref = (e as NoteEvent).motifRef;
+  return {
+    count: true,
+    motif: !!(ref && motifRe.test(ref)),
+  };
+}
+
+/** Sliding 8-bar windows: ≥50% of counted guitar notes must map to motif IDs (voice 1 only when Fagen keys-comp v1.5 ran). */
+function validateMotifCoverageSliding(guitar: PartModel, context: CompositionContext): string[] {
   const totalBars = guitar.measures.length;
   if (totalBars < 8) return [];
   const motifRe = /^song_motif/;
+  const voiceOneOnly = songModeMotifCoverageUsesVoiceOneOnly(context);
   for (let start = 1; start <= totalBars - 7; start++) {
     let motifNotes = 0;
     let totalNotes = 0;
@@ -395,10 +419,10 @@ function validateMotifCoverageSliding(guitar: PartModel): string[] {
       const meas = guitar.measures.find((x) => x.index === b);
       if (!meas) continue;
       for (const e of meas.events) {
-        if (e.kind !== 'note') continue;
+        const { count, motif } = noteCountsForMotifCoverage(e, motifRe, voiceOneOnly);
+        if (!count) continue;
         totalNotes++;
-        const ref = (e as { motifRef?: string }).motifRef;
-        if (ref && motifRe.test(ref)) motifNotes++;
+        if (motif) motifNotes++;
       }
     }
     if (totalNotes === 0) continue;
@@ -411,8 +435,9 @@ function validateMotifCoverageSliding(guitar: PartModel): string[] {
   return [];
 }
 
-/** At most two consecutive bars may lack any motif-mapped note. */
-function validateMaxConsecutiveNonMotifBars(guitar: PartModel): string[] {
+/** At most two consecutive bars may lack any motif-mapped note (voice 1 only when Fagen keys-comp v1.5 ran). */
+function validateMaxConsecutiveNonMotifBars(guitar: PartModel, context: CompositionContext): string[] {
+  const voiceOneOnly = songModeMotifCoverageUsesVoiceOneOnly(context);
   let run = 0;
   let maxRun = 0;
   for (let b = 1; b <= guitar.measures.length; b++) {
@@ -420,7 +445,10 @@ function validateMaxConsecutiveNonMotifBars(guitar: PartModel): string[] {
     let anyMotif = false;
     if (meas) {
       for (const e of meas.events) {
-        if (e.kind === 'note' && (e as { motifRef?: string }).motifRef?.startsWith('song_motif')) {
+        if (e.kind !== 'note') continue;
+        const v = (e as NoteEvent).voice ?? 1;
+        if (voiceOneOnly && v !== 1) continue;
+        if ((e as NoteEvent).motifRef?.startsWith('song_motif')) {
           anyMotif = true;
           break;
         }
@@ -506,8 +534,8 @@ export function validateSongModeMotifSystem(
   const errs: string[] = [];
   errs.push(...validateSongModeHookIdentity(guitar, context));
   errs.push(...validateSongModeBar1Strength(guitar));
-  errs.push(...validateMotifCoverageSliding(guitar));
-  errs.push(...validateMaxConsecutiveNonMotifBars(guitar));
+  errs.push(...validateMotifCoverageSliding(guitar, context));
+  errs.push(...validateMaxConsecutiveNonMotifBars(guitar, context));
   errs.push(...validateMotifReturnSimilarity(guitar, context));
 
   if (coreMotifs && coreMotifs.length > 0) {

@@ -104,6 +104,8 @@ export interface PartModel {
   midiProgram: number;
   clef: 'treble' | 'bass';
   measures: MeasureModel[];
+  /** Song Mode keyboard-centric writer: export harmony staff as Piano / keys comp (same event layout as duo guitar). */
+  songModePresentAsPianoComp?: boolean;
 }
 
 /** MusicXML key signature line (additive; does not change harmony generation). */

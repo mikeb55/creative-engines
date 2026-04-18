@@ -51,6 +51,9 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em9', 'A13', 'Dmaj7#11', 'B7alt'],
       ['Gm9', 'C13', 'Fmaj7#11', 'D7alt'],
       ['Am9', 'D13', 'Gmaj7#11', 'E7alt'],
+      /** Slice v2 — turnaround / mixture-weighted rows (generic symbols; no fixed key). */
+      ['Dm7', 'G13', 'Cmaj9', 'Bbmaj9'],
+      ['Am7', 'D13', 'Gmaj9', 'Fmaj9'],
     ],
     chorus: [
       ['Cmaj7#11', 'Bm7', 'Em9', 'A7alt'],

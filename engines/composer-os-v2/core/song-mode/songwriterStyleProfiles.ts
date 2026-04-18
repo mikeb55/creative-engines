@@ -937,6 +937,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   joni_mitchell: 'joni_mitchell',
   fagen: 'donald_fagen',
   donald_fagen: 'donald_fagen',
+  /** UI / API enum-style id — same canonical profile as `donald_fagen`. */
+  songwriter_donald_fagen: 'donald_fagen',
   dylan: 'bob_dylan',
   bob_dylan: 'bob_dylan',
   simon: 'paul_simon',

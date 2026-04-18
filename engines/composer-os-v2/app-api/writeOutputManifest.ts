@@ -72,6 +72,7 @@ export function writeOutputManifest(
     c4_hook_rhythm_applied?: boolean;
     c4_bars_used?: number[];
     songModeStyleSurfaceNotes?: string[];
+    songModeDonaldFagenC1Receipt?: string;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -126,6 +127,7 @@ export function writeOutputManifest(
     c4_hook_rhythm_applied: meta.c4_hook_rhythm_applied,
     c4_bars_used: meta.c4_bars_used,
     songModeStyleSurfaceNotes: meta.songModeStyleSurfaceNotes,
+    songModeDonaldFagenC1Receipt: meta.songModeDonaldFagenC1Receipt,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

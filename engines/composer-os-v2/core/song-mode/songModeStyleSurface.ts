@@ -16,6 +16,11 @@ function appendStyleSurfaceNotes(metadata: GenerationMetadata, lines: string[]):
   metadata.songModeStyleSurfaceNotes = [...(metadata.songModeStyleSurfaceNotes ?? []), ...lines];
 }
 
+/** Append Song Mode receipt lines (primary songwriter surfaces, Phase C1 follow-ups, etc.). */
+export function appendSongModeStyleSurfaceNotes(metadata: GenerationMetadata, lines: string[]): void {
+  appendStyleSurfaceNotes(metadata, lines);
+}
+
 /**
  * When the user picks **Groove / Soul**, bias syncopation + density upward so Phase **C1** rhythm overlay
  * (`songwriterSyncopationBias` → `selectOverlaysForPhrase`) and related intent differ measurably from defaults.
@@ -70,5 +75,7 @@ export function applyDonaldFagenSongwriterSurface(
   appendStyleSurfaceNotes(metadata, [
     'Primary songwriter surface (Donald Fagen): phrase/hook-return weights nudged; syncopation raised slightly for C1 overlays; density kept moderate (harmonic colour over raw note count).',
     'Primary songwriter surface (Donald Fagen): jazz-pop harmony metadata nudged (Mu/add-colour, Lydian-on-symbol, altered dominants, slash density, cadence-side-step weights; chromatic voice-leading; lower static-pedal bias). Duo guitar consumes Mu/Lydian/altered/root-avoidance when primary resolves to donald_fagen.',
+    'Song Mode Donald Fagen slice v2: planning chord pools include extra bars with ii–V–I-type colour and borrowed maj7 sonorities (generic jazz-pop templates); Phase C1 separately raises syncopation overlay pull for early phrases (bars 1–12). Honest bias only — not a claim of authenticity.',
+    'Song Mode Donald Fagen keys-comp v1.5: split-hand register bias (LH shells vs RH colour), phrase-level density caps, and keyboard-oriented dynamic contour — see later v1.5 receipt lines after score pass. Generative rule set only.',
   ]);
 }

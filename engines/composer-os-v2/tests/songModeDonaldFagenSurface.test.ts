@@ -2,7 +2,10 @@
  * Song Mode — Donald Fagen primary songwriter surface: metadata nudges are deterministic; receipt lines present.
  */
 
-import { applyDonaldFagenSongwriterSurface } from '../core/song-mode/songModeStyleSurface';
+import {
+  appendSongModeStyleSurfaceNotes,
+  applyDonaldFagenSongwriterSurface,
+} from '../core/song-mode/songModeStyleSurface';
 import type { GenerationMetadata } from '../core/compositionContext';
 
 function baseMeta(): GenerationMetadata {
@@ -33,9 +36,11 @@ describe('applyDonaldFagenSongwriterSurface', () => {
     expect(m.songwriterSyncopationBias).toBeCloseTo(0.66, 5);
     expect(m.songwriterDensityBias).toBeCloseTo(0.53, 5);
     expect(m.bacharachPedalUsage).toBeCloseTo(0.02, 5);
-    expect(m.songModeStyleSurfaceNotes?.length).toBeGreaterThanOrEqual(2);
+    expect(m.songModeStyleSurfaceNotes?.length).toBeGreaterThanOrEqual(4);
     expect(m.songModeStyleSurfaceNotes?.some((l) => l.includes('Primary songwriter surface'))).toBe(true);
     expect(m.songModeStyleSurfaceNotes?.some((l) => l.includes('Duo guitar consumes'))).toBe(true);
+    expect(m.songModeStyleSurfaceNotes?.some((l) => l.includes('slice v2'))).toBe(true);
+    expect(m.songModeStyleSurfaceNotes?.some((l) => l.includes('keys-comp v1.5'))).toBe(true);
   });
 
   it('accepts SONGWRITER-style enum alias songwriter_donald_fagen', () => {
@@ -65,5 +70,15 @@ describe('applyDonaldFagenSongwriterSurface', () => {
     m.songModeHookFirstIdentity = false;
     applyDonaldFagenSongwriterSurface(m, 'donald_fagen');
     expect(m.songwriterPhraseRegularity).toBe(0.3);
+  });
+
+  it('Phase C1 receipt appends to the same visible note list as runGoldenPath (Fagen-only path)', () => {
+    const m = baseMeta();
+    applyDonaldFagenSongwriterSurface(m, 'donald_fagen');
+    const c1 =
+      'Song Mode Fagen slice v2: keyboard comp used Phase C1 off-beat hits and anticipations in phrases 0–2 (bars 1–12) for a subtle jazz-pop lift. Not an imitation of any artist.';
+    appendSongModeStyleSurfaceNotes(m, [c1]);
+    expect(m.songModeStyleSurfaceNotes?.length).toBe(5);
+    expect(m.songModeStyleSurfaceNotes?.some((l) => l.includes('keyboard comp used Phase C1'))).toBe(true);
   });
 });

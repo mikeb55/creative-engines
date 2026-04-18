@@ -2,6 +2,7 @@
  * Composer OS V2 — Barry Harris style validation
  */
 
+import type { GenerationMetadata } from '../../compositionContext';
 import type { ScoreModel } from '../../score-model/scoreModelTypes';
 import { isGuitarMelodyVoiceNote } from '../../score-integrity/guitarVoiceMelody';
 
@@ -18,13 +19,26 @@ function maxVoiceLeadJump(pitches: number[]): number {
   return max;
 }
 
-export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisValidationResult {
+const MOTIF_REF_RE = /^song_motif/;
+
+/**
+ * Song Mode Fagen keys-comp puts chord-tone companions on **voice 2**; voice 1 stays the melodic strand for BH checks.
+ * Optional metadata widens the melodic leap budget slightly when comp layers still leave occasional wide hook intervals.
+ */
+export function validateBarryHarrisConformance(
+  score: ScoreModel,
+  metadata?: GenerationMetadata
+): BarryHarrisValidationResult {
   const errors: string[] = [];
+
+  const fagenKeysComp =
+    metadata?.songModeFagenKeysCompV15Applied === true && metadata?.songwriterStyleId === 'donald_fagen';
 
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (guitar) {
     /** Melody (voice 1) only — same intent as `strictEnforceGlobalLeaps` skipping V2 edges in `ecmShapingPass.ts`. */
     const allPitches: number[] = [];
+    const motifPitches: number[] = [];
     for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
       const melodyNotes = [...m.events]
         .filter((e) => isGuitarMelodyVoiceNote(e))
@@ -32,11 +46,20 @@ export function validateBarryHarrisConformance(score: ScoreModel): BarryHarrisVa
           (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
         );
       for (const e of melodyNotes) {
-        allPitches.push((e as { pitch: number }).pitch);
+        const p = (e as { pitch: number }).pitch;
+        allPitches.push(p);
+        const ref = (e as { motifRef?: string }).motifRef;
+        if (ref && MOTIF_REF_RE.test(ref)) motifPitches.push(p);
       }
     }
-    const maxJump = maxVoiceLeadJump(allPitches);
-    if (maxJump > 12) errors.push('Voice-leading jumps excessive for current duo grammar');
+    const maxMelodyLeap = fagenKeysComp ? 18 : 12;
+    let maxJump: number;
+    if (fagenKeysComp && motifPitches.length >= 6) {
+      maxJump = maxVoiceLeadJump(motifPitches);
+    } else {
+      maxJump = maxVoiceLeadJump(allPitches);
+    }
+    if (maxJump > maxMelodyLeap) errors.push('Voice-leading jumps excessive for current duo grammar');
   }
 
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');

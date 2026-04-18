@@ -232,4 +232,6 @@ export interface OutputEntry {
   c4_bars_used?: number[];
   /** Song Mode: receipt lines when a style profile applies real metadata nudges (e.g. Groove/Soul). */
   songModeStyleSurfaceNotes?: string[];
+  /** Song Mode — Donald Fagen primary: Phase C1 overlay receipt (when applicable). */
+  songModeDonaldFagenC1Receipt?: string;
 }

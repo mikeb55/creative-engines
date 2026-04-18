@@ -32,6 +32,11 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'string_quartet_piano' || p.id === 'sq_piano';
 }
 
+/** Song Mode keyboard-centric primary: duo harmony staff exported as Piano (same part id `guitar`). */
+function isSongModeKeysCompPianoPart(p: PartModel): boolean {
+  return p.songModePresentAsPianoComp === true && p.id === 'guitar';
+}
+
 function partDisplayNameForExport(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     // Big Band bass uses p.name ('Double Bass');
@@ -39,7 +44,7 @@ function partDisplayNameForExport(p: PartModel): string {
     if (p.name === 'Double Bass') return p.name;
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
-  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
+  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
     return 'Piano';
   }
   return p.name;
@@ -52,7 +57,7 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (p.instrumentIdentity === 'big_band_jazz_drums') {
     return '';
   }
-  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
+  if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
     return '<instrument-sound>keyboard.piano</instrument-sound>';
   }
   return '';
@@ -547,7 +552,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
     </score-part>`;
         }
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`): Sibelius-friendly piano part-list + GM Acoustic Grand (ch. 1, program 1). */
-        if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p)) {
+        if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
           return `    <score-part id="${p.id}">
       <part-name>Piano</part-name>
       <part-abbreviation>Pno.</part-abbreviation>

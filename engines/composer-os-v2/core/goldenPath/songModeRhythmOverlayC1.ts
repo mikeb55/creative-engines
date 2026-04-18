@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { appendSongModeStyleSurfaceNotes } from '../song-mode/songModeStyleSurface';
 import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
@@ -20,6 +21,18 @@ import {
 } from './jamesBrownFunkOverlay';
 
 export { JAMES_BROWN_FUNK_OVERLAY_ID, JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE, SONG_MODE_OVERLAY_BASE_WEIGHTS };
+
+/** Donald Fagen Song Mode slice v2 — early phrases (bars 1–12) only; does not affect other songwriters. */
+export function fagenSliceV2SyncopationBiasForPhrase(
+  songwriterStyleId: string | undefined,
+  phraseIndex: number,
+  base: number
+): number {
+  if (songwriterStyleId !== 'donald_fagen') return base;
+  const b = Math.max(0, Math.min(1, base));
+  if (phraseIndex <= 2) return Math.min(1, b + 0.07);
+  return b;
+}
 
 const GRID_8TH = 0.5;
 const GRID_16TH = 0.25;
@@ -875,11 +888,16 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   const debug: SongModeRhythmOverlayPhraseDebug[] = [];
   const seed = context.seed;
   const strength = (context.generationMetadata as GenerationMetadata).songModeRhythmStrength;
-  const syncopationBias = (context.generationMetadata as GenerationMetadata).songwriterSyncopationBias ?? 0.5;
+  const baseSync = (context.generationMetadata as GenerationMetadata).songwriterSyncopationBias ?? 0.5;
   const phraseBuf: PhraseNoteRef[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
     const { startBar, endBar } = segments[pi];
+    const syncopationBias = fagenSliceV2SyncopationBiasForPhrase(
+      context.generationMetadata?.songwriterStyleId,
+      pi,
+      baseSync
+    );
     const applied = selectOverlaysForPhrase(pi, seed, syncopationBias);
     const intent =
       applied.length > 0
@@ -926,4 +944,10 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   }
 
   context.generationMetadata.songModeRhythmOverlayByPhrase = debug;
+  if (context.generationMetadata?.songwriterStyleId === 'donald_fagen') {
+    const line =
+      'Song Mode Fagen slice v2: keyboard comp used Phase C1 off-beat hits and anticipations in phrases 0–2 (bars 1–12) for a subtle jazz-pop lift. Not an imitation of any artist.';
+    context.generationMetadata.songModeDonaldFagenC1Receipt = line;
+    appendSongModeStyleSurfaceNotes(context.generationMetadata, [line]);
+  }
 }

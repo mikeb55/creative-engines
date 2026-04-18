@@ -74,6 +74,7 @@ export interface CreateRunManifestInput {
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
   songModeStyleSurfaceNotes?: string[];
+  songModeDonaldFagenC1Receipt?: string;
 }
 
 /** Create run manifest. */
@@ -145,5 +146,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     voice2PolyphonyDiagnostics: input.voice2PolyphonyDiagnostics,
     wybleConsumptionReceipt: input.wybleConsumptionReceipt,
     songModeStyleSurfaceNotes: input.songModeStyleSurfaceNotes,
+    songModeDonaldFagenC1Receipt: input.songModeDonaldFagenC1Receipt,
   };
 }

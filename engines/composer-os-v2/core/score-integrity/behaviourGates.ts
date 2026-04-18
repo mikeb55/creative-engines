@@ -249,7 +249,7 @@ export function runBehaviourGates(
     if (!blend.valid) errors.push(...blend.errors);
 
     if (styleModules.includes('barry_harris')) {
-      const style = validateBarryHarrisConformance(score);
+      const style = validateBarryHarrisConformance(score, opts?.compositionContext?.generationMetadata);
       styleValid = style.valid;
       if (!style.valid) errors.push(...style.errors);
     }

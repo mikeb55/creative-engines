@@ -595,6 +595,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       c4_hook_rhythm_applied: gp.context.generationMetadata.c4HookRhythmApplied,
       c4_bars_used: gp.context.generationMetadata.c4BarsUsed,
       songModeStyleSurfaceNotes: gp.context.generationMetadata.songModeStyleSurfaceNotes,
+      songModeDonaldFagenC1Receipt: gp.context.generationMetadata.songModeDonaldFagenC1Receipt,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,
@@ -695,6 +696,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           keySignatureExportKeyWritten: gp.runManifest.keySignatureExportKeyWritten,
           wybleConsumptionReceipt: gp.runManifest.wybleConsumptionReceipt,
           songModeStyleSurfaceNotes: gp.runManifest.songModeStyleSurfaceNotes,
+          songModeDonaldFagenC1Receipt: gp.runManifest.songModeDonaldFagenC1Receipt,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

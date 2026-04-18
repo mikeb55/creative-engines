@@ -86,7 +86,12 @@ import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
-import { applyGrooveSoulStyleSurface } from '../song-mode/songModeStyleSurface';
+import {
+  appendSongModeStyleSurfaceNotes,
+  applyDonaldFagenSongwriterSurface,
+  applyGrooveSoulStyleSurface,
+} from '../song-mode/songModeStyleSurface';
+import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
@@ -1089,6 +1094,22 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       bacharachCadentialAmbiguity: p.bacharachCadentialAmbiguity ?? 0,
       bacharachPedalUsage: p.bacharachPedalUsage ?? 0,
     };
+    const compProfile = getSongwriterCompProfile(resolution.primaryId);
+    if (compProfile?.primaryCompInstrument === 'keys') {
+      const syncBase = context.generationMetadata.songwriterSyncopationBias ?? 0.5;
+      context.generationMetadata = {
+        ...context.generationMetadata,
+        songModeSongwriterKeysCompActive: true,
+        songModeSongwriterCompProfileId: compProfile.id,
+        ...(compProfile.id === 'bacharach'
+          ? { songwriterSyncopationBias: Math.min(1, syncBase + 0.05) }
+          : {}),
+      };
+      appendSongModeStyleSurfaceNotes(context.generationMetadata, compProfile.receiptLines);
+    }
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyDonaldFagenSongwriterSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
@@ -1428,6 +1449,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     voice2PolyphonyDiagnostics: appliedContext.generationMetadata.voice2PolyphonyDiagnostics,
     wybleConsumptionReceipt: score.wybleConsumptionReceipt ?? appliedContext.generationMetadata.wybleConsumptionReceipt,
     songModeStyleSurfaceNotes: appliedContext.generationMetadata.songModeStyleSurfaceNotes,
+    songModeDonaldFagenC1Receipt: appliedContext.generationMetadata.songModeDonaldFagenC1Receipt,
   });
 
   const success =

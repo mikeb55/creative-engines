@@ -94,14 +94,16 @@ Use `--out "C:\path\to\folder"` to choose the output directory. See [docs/USER_G
 
 ---
 
-## Song Mode ? style & songwriter behaviour (first slice, 2026-04-17)
+## Song Mode ? style & songwriter behaviour (first slices, 2026-04-17)
 
-Most Song Mode ?style? controls still route through compile-time rules, receipts, or light metadata. **One** feel profile now has a **small, testable** golden-path mapping:
+Most Song Mode ?style? controls still route through compile-time rules, receipts, or light metadata. **Two** small golden-path mappings are testable today:
 
-- In **Generate ? Song Mode**, set **Style Engine profile** to **Groove / Soul** (`STYLE_GROOVE_SOUL`). The engine **adds** to `songwriterSyncopationBias` and `songwriterDensityBias` (after any primary-songwriter resolution), which feeds Song Mode rhythm overlay selection and related intent. The **Style Engine** pass also applies profile-specific **velocities** (see engine code ? not artist mimicry).
-- The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** with one or two honest bullet lines.
+- **Style Engine profile ? Groove / Soul** (`STYLE_GROOVE_SOUL`): the engine **adds** to `songwriterSyncopationBias` and `songwriterDensityBias` (after any primary-songwriter resolution), which feeds Song Mode rhythm overlay selection and related intent. The **Style Engine** pass also applies profile-specific **velocities** (see engine code ? not artist mimicry).
+- **Primary songwriter ? Donald Fagen** (keys such as `donald_fagen`, `fagen`, or `songwriter_donald_fagen`): **`applyDonaldFagenSongwriterSurface`** nudges phrase regularity, rhythm biases, and Fagen/Bacharach-tagged harmonic weights on `generationMetadata`, with **two** receipt bullets (honest rules, not mimicry).
 
-Developers: unit test `engines/composer-os-v2/tests/songModeGrooveSoulSurface.test.ts`; must-stay-green scripts unchanged. See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
+The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** (lines stack when both apply).
+
+Developers: Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
 
 ---
 

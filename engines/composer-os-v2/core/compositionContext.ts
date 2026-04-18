@@ -19,6 +19,7 @@ import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 import type { CoreMotif, Motif } from './motif/motifEngineTypes';
 import type { MotifShape } from './motif/motifShape';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
+import type { SongwriterRuleId } from './song-mode/songwritingResearchTypes';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
@@ -139,6 +140,8 @@ export interface GenerationMetadata {
   songModeJamesBrownFunkApplied?: boolean;
   /** Phase C3 receipt line for manifests (set when funk overlay applied). */
   songModeJamesBrownFunkReceiptTag?: string;
+  /** Song Mode — Donald Fagen slice v2: set when Phase C1 ran with primary `donald_fagen` (early-phrase sync lift). */
+  songModeDonaldFagenC1Receipt?: string;
   /** Song Mode Phase C1/C2: engine/debug — per-phrase overlays + Phase C2 rhythm intent summaries. */
   songModeRhythmOverlayByPhrase?: Array<{
     phraseIndex: number;
@@ -176,6 +179,22 @@ export interface GenerationMetadata {
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
   songwriterStyleId?: string;
+  /** Song Mode: keyboard-centric primary songwriter — route harmony staff to keys-comp presentation + register pass. */
+  songModeSongwriterKeysCompActive?: boolean;
+  /** Song Mode: which `SongwriterCompProfile` id was applied (keyboard-centric path). */
+  songModeSongwriterCompProfileId?: SongwriterRuleId;
+  /** Song Mode — Donald Fagen keys-comp v1.5 pass applied (`fagenKeysCompV15.ts`). */
+  songModeFagenKeysCompV15Applied?: boolean;
+  /** Fagen-only keys-comp musical augmentations — inspectable; optional truth dump / tooling. */
+  fagenKeysCompMusicalDiagnostics?: {
+    rhythmPatternFamily: string;
+    meanSyncopationIndex: number;
+    avgInnerMotionSemitonesV2Top: number;
+    meanRhMidiV1OpenA: number;
+    meanRhMidiV1SectionB: number;
+    densityDeltaBMinusA: number;
+    returnPhraseGesturesApplied: number;
+  };
   /** Songwriter profile: hook repetition bias (0–1). */
   songwriterHookRepetitionBias?: number;
   /** Songwriter profile: phrase regularity (0–1). */

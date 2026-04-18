@@ -1,5 +1,24 @@
 # Composer OS — Changelog
 
+## [2026-04-18] Song Mode — Donald Fagen keys-comp pass (v15 + musical augment + gates)
+
+- **What:** **`fagenKeysCompV15`** (via **`songwriterKeysCompPass`**) runs on golden-path duo when primary **Donald Fagen** keys-comp applies: sparse **voice-2 dyads** (inner line; companion notes do not copy **`motifRef`**), **`applyFagenKeysCompMusicalAugment`** (section-aware register/density, syncopated comp fingerprint on voice 1, inner motion on voice 2, motif-supportive ducking, seam-aware bar handling), **`ensureFagenOpeningLhShellBars1to8`** when bars **1–8** voice 2 would otherwise be empty. **`songwriterCompProfile`** (**FAGEN**) holds voicing/rhythm tokens; **`fagenKeysCompMusicalDiagnostics`** on **`generationMetadata`**. **Motif engine:** when **`songModeFagenKeysCompV15Applied`**, sliding motif coverage uses **voice 1 only**. **Barry Harris:** **`validateBarryHarrisConformance(score, metadata?)`** accepts optional metadata for leap budget / motif-strand handling when harmony is split across voices. **`appendSongModeStyleSurfaceNotes`** gains musical + duo-gate explanation lines where applicable.
+- **Why:** Keyboard-centric **comp** (LH shells + RH syncopation + harmonic colour) with inspectable receipts — not catalogue cloning.
+- **Code:** `core/goldenPath/fagenKeysCompV15.ts`, `fagenKeysCompMusical.ts`, `songwriterKeysCompPass.ts`, `songwriterCompProfile.ts`, `songModeMotifEngine.ts`, `style-modules/barry-harris/moduleValidation.ts`, `score-integrity/behaviourGates.ts`, `songModeStyleSurface.ts`, `compositionContext.ts`, `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`.
+- **Tests:** From `engines/composer-os-v2`: `npx jest --config jest.config.cjs tests/fagenKeysCompV15.test.ts tests/fagenKeysCompMusical.test.ts tests/songModeMotifFagenKeysComp.test.ts tests/songwriterCompProfile.test.ts tests/songModeDonaldFagenSurface.test.ts`.
+
+## [2026-04-18] Song Mode — Donald Fagen receipts visible (UI + `_meta` + run manifest)
+
+- **What:** **`appendSongModeStyleSurfaceNotes`**; Phase **C1** appends the Fagen C1 line into **`songModeStyleSurfaceNotes`**; **`songModeDonaldFagenC1Receipt`** on **`RunManifest`** and **`OutputEntry`** (`_meta` beside MusicXML). Desktop **Generate → Generation receipt** shows **Primary songwriter** and **Song Mode generation notes** when returned by the API.
+- **Why:** Inspectability — users can see that primary songwriter choice changed metadata/rhythm overlays without digging into logs.
+
+## [2026-04-18] Song Mode — Donald Fagen slice v2 (planning templates + C1 early-phrase sync lift)
+
+- **What:** **`SONGWRITER_CHORD_POOLS.donald_fagen.verse`** gains **two** extra four-bar rows (generic ii–V–I-type colour + borrowed maj7 colours). **`songModeRhythmOverlayC1`** applies **`fagenSliceV2SyncopationBiasForPhrase`**: **+0.07** syncopation bias for **phrases 0–2** (bars **1–12**) only when **`songwriterStyleId === 'donald_fagen'`**; sets **`songModeDonaldFagenC1Receipt`** after C1. **`applyDonaldFagenSongwriterSurface`** adds a third **`songModeStyleSurfaceNotes`** bullet (slice v2, modest wording).
+- **Why:** Small, inspectable Song Mode refinement for primary **Donald Fagen** only — no new runtime or global style path.
+- **Code:** `songModeBuilder.ts`, `songModeRhythmOverlayC1.ts`, `songModeStyleSurface.ts`, `compositionContext.ts`.
+- **Tests:** From `engines/composer-os-v2`: `npx jest --config jest.config.cjs tests/songModeDonaldFagenSurface.test.ts tests/songModeFagenSliceV2.test.ts`.
+
 ## [2026-04-18] Song Mode — Donald Fagen jazz-pop guitar colour passes (Mu / Lydian / existing altered + root)
 
 - **What:** **`fagenMuChordBias`** and **`fagenLydianMajorBias`** now drive **small duo-guitar passes** in `generateGoldenPathDuoScore.ts` (major-family **9th colour** on syncopated attacks; **#11** semitone nudge when the chord symbol implies Lydian), alongside existing **altered dominant** and **strong-beat root diversion** passes. **`applyDonaldFagenSongwriterSurface`** nudges **syncopation upward** (+0.06) and **density slightly** (+0.03) for Phase C1 overlays; receipt bullets updated. **`fagenJazzPopColourPassesReceipt`** on `generationMetadata` lists which passes were eligible (honest wording). Removed dead **`fagenNoOp`** hook-repetition multiply-by-zero block.
