@@ -1,3 +1,7 @@
+## [2026-04-18] Composer OS — Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
+
+- Developer automation: same-seed Bacharach vs neutral Song Mode batch, receipt/`_meta` checks, GCE-style diagnostic eval (not a gate), optional desktop rebuild. See **`docs/CHANGELOG.md`** and **`docs/USER_GUIDE.md`**.
+
 ## [2026-04-17] BPM passthrough + Sibelius tempo export fix
 - buildGenerateRequestBody.ts always sends bpm
 - runGoldenPath forwards bpm to generateGoldenPathDuoScore

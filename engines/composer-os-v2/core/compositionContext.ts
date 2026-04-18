@@ -195,6 +195,21 @@ export interface GenerationMetadata {
     sectionContrastDelta: number;
     extensionAdds: number;
   };
+  /** Primary `bacharach` — harmony dressing diagnostics (Song Mode eval / manifests). */
+  bacharachHarmonyDiagnostics?: {
+    barsConsidered: number;
+    barsChanged: number;
+    meanColourDepth: number;
+    meanColourDepthSectionA: number;
+    meanColourDepthSectionB: number;
+    sectionContrastDelta: number;
+    bridgeColourApplied: boolean;
+    returnCadenceLiftApplied: boolean;
+    secondaryDominantTouches: number;
+    mixtureTouches: number;
+  };
+  /** Bacharach Song Mode: documented rule bundle id (`bacharachSongModeRuleBundle.ts`; reference-informed v1). */
+  bacharachSongModeRuleBundleId?: string;
   /** Fagen-only keys-comp musical augmentations — inspectable objective metrics for A/B tooling. */
   fagenKeysCompMusicalDiagnostics?: {
     rhythmPatternFamily: string;

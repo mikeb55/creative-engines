@@ -105,6 +105,8 @@ The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list 
 
 **Developers — full Fagen / Song Mode / eval context:** [docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md](docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md) (engine hooks, diagnostics, `npm run eval:fagen`, baseline modes). Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See also [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
 
+**Bacharach (CLI):** `npm run workflow:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-workflow` (A/B vs neutral, receipts, eval, optional rebuild); `npm run eval:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-eval` (eval-only batch); `npm run mine:bacharach` (local MXL/MusicXML corpus stats). **`eval:bacharach`** scoring is **diagnostic only**. Defaults and notes: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (developers subsection).
+
 ---
 
 ## What is not in the UI yet

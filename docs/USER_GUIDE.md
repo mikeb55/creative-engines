@@ -108,6 +108,20 @@ Choosing **primary songwriter → Donald Fagen** (or the API key **`songwriter_d
 
 **Listening recipe:** Same **seed**, **BPM**, **chords**, and **Style Engine profile**, then A/B **primary songwriter Donald Fagen** vs **another primary** (e.g. **Bacharach** or **Beatles**) and compare rhythm density and harmonic colour in the duo export.
 
+### Developers — Bacharach Song Mode (CLI, not the Generate UI)
+
+Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.
+
+From **repository root**:
+
+```bash
+npm run workflow:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-workflow
+npm run eval:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-eval
+npm run mine:bacharach -- --dir reference/bacharach
+```
+
+Use **`--skip-build`** and **`--skip-launch`** on **`workflow:bacharach`** if you only want generations + eval. See **`reference/bacharach/README.md`** for pointing **`mine:bacharach`** at a local Bacharach score folder.
+
 ---
 
 ## 5) How exports work

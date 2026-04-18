@@ -600,6 +600,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,
+      bacharachHarmonyDiagnostics: gp.context.generationMetadata.bacharachHarmonyDiagnostics,
+      bacharachSongModeRuleBundleId: gp.context.generationMetadata.bacharachSongModeRuleBundleId,
       songwriterSyncopationBias: gp.context.generationMetadata.songwriterSyncopationBias,
       songwriterDensityBias: gp.context.generationMetadata.songwriterDensityBias,
       validation: {

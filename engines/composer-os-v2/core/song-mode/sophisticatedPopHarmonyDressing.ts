@@ -14,6 +14,7 @@ import {
   normalizeChordSymbol,
   normalizeLeadSheetChordSpelling,
 } from '../../../core/leadSheetChordNormalize';
+import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 
 export type SophisticatedPopSectionKind = 'A' | 'A_prime' | 'B' | 'return' | 'single';
 
@@ -134,6 +135,8 @@ function mean(nums: number[]): number {
 export function applySophisticatedPopHarmonyDressing(context: CompositionContext): void {
   const md = context.generationMetadata as GenerationMetadata;
   if (!md || md.styleProfile !== 'STYLE_SOPHISTICATED_POP') return;
+  /** Bacharach uses its own harmony dressing pass; Sophisticated Pop chord extensions would stack awkwardly. */
+  if (normalizeSongwriterStyleKey(md.songwriterStyleId ?? '') === 'bacharach') return;
   const bars = context.lockedHarmonyBarsRaw;
   if (!bars?.length) return;
 

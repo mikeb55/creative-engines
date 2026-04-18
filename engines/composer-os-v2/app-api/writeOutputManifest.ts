@@ -78,6 +78,8 @@ export function writeOutputManifest(
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
+    bacharachHarmonyDiagnostics?: GenerationMetadata['bacharachHarmonyDiagnostics'];
+    bacharachSongModeRuleBundleId?: string;
     songwriterSyncopationBias?: number;
     songwriterDensityBias?: number;
   }
@@ -139,6 +141,8 @@ export function writeOutputManifest(
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,
+    bacharachHarmonyDiagnostics: meta.bacharachHarmonyDiagnostics,
+    bacharachSongModeRuleBundleId: meta.bacharachSongModeRuleBundleId,
     songwriterSyncopationBias: meta.songwriterSyncopationBias,
     songwriterDensityBias: meta.songwriterDensityBias,
   };

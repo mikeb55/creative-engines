@@ -61,6 +61,31 @@ export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, 
 }
 
 /**
+ * Primary songwriter **Burt Bacharach** — conservative rhythm vs jazz-forward profiles, lighter comp density,
+ * phrase-flex metadata; receipts describe generative biases only (non-imitative).
+ */
+export function applyBacharachSongModeSurfaceV1(
+  metadata: GenerationMetadata,
+  primarySongwriterStyle: string | undefined
+): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'bacharach') return;
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.1);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.07);
+  metadata.songwriterPhraseRegularity = clamp01((metadata.songwriterPhraseRegularity ?? 0.5) - 0.08);
+  metadata.bacharachDeceptiveCadenceRate = clamp01((metadata.bacharachDeceptiveCadenceRate ?? 0) + 0.06);
+  metadata.bacharachPedalUsage = clamp01((metadata.bacharachPedalUsage ?? 0) + 0.05);
+
+  appendStyleSurfaceNotes(metadata, [
+    'Bacharach slice: favoured smooth I/IV/vi maj7-m7 colours and light secondary-dominant motion on key cadences.',
+    'Bacharach slice: bridge allowed a small controlled key-colour shift before returning home.',
+    'Bacharach slice: accompaniment stayed lighter and melody-supportive rather than densely syncopated.',
+  ]);
+}
+
+/**
  * When the resolved primary songwriter is the **Donald Fagen** profile (`donald_fagen` / aliases including
  * `songwriter_donald_fagen`), apply small additive nudges **after** generic `resolveSongwritingStyles` so
  * phrase grid, harmony colour, and rhythm/density differ measurably from other primaries.

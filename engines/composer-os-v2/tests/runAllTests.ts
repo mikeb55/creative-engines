@@ -122,6 +122,7 @@ import { runSystemCheckTests } from './systemCheck.test';
 import { runRiffGeneratorTests } from './riffGenerator.test';
 import { runSongwritingEngineTests } from './songwritingEngine.test';
 import { retroSuites } from './retro/index';
+import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
 
 const suites = [
   { name: 'Conductor', run: runConductorTests },
@@ -243,6 +244,7 @@ const suites = [
   { name: 'System check (repo root)', run: runSystemCheckTests },
   { name: 'Riff Generator', run: runRiffGeneratorTests },
   { name: 'Songwriting Engine (Phase 1)', run: runSongwritingEngineTests },
+  { name: 'Bacharach developer workflow', run: runBacharachWorkflowDeveloperTests },
   ...retroSuites,
 ];
 

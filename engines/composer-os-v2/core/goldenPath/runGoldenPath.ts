@@ -88,11 +88,13 @@ import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
 import {
   appendSongModeStyleSurfaceNotes,
+  applyBacharachSongModeSurfaceV1,
   applyDonaldFagenSongwriterSurface,
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
+import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
@@ -1121,6 +1123,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applySophisticatedPopHarmonyDressing(context);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyBacharachSongModeSurfaceV1(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyBacharachSongModeHarmonyDressing(context);
   }
   if (options?.songModeJamesBrownFunkOverlay === true) {
     context.generationMetadata = {

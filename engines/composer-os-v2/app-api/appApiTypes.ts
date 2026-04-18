@@ -239,6 +239,8 @@ export interface OutputEntry {
   songModeFagenKeysCompV15Applied?: boolean;
   fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
   sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
+  bacharachHarmonyDiagnostics?: GenerationMetadata['bacharachHarmonyDiagnostics'];
+  bacharachSongModeRuleBundleId?: string;
   /** Song Mode eval echo — rhythm intent biases after style surfaces (0–1). */
   songwriterSyncopationBias?: number;
   songwriterDensityBias?: number;
