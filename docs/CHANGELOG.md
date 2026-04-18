@@ -1,5 +1,19 @@
 # Composer OS — Changelog
 
+## [2026-04-18] Song Mode — Donald Fagen jazz-pop guitar colour passes (Mu / Lydian / existing altered + root)
+
+- **What:** **`fagenMuChordBias`** and **`fagenLydianMajorBias`** now drive **small duo-guitar passes** in `generateGoldenPathDuoScore.ts` (major-family **9th colour** on syncopated attacks; **#11** semitone nudge when the chord symbol implies Lydian), alongside existing **altered dominant** and **strong-beat root diversion** passes. **`applyDonaldFagenSongwriterSurface`** nudges **syncopation upward** (+0.06) and **density slightly** (+0.03) for Phase C1 overlays; receipt bullets updated. **`fagenJazzPopColourPassesReceipt`** on `generationMetadata` lists which passes were eligible (honest wording). Removed dead **`fagenNoOp`** hook-repetition multiply-by-zero block.
+- **Why:** Make Donald Fagen selection **audibly** and **inspectably** stronger without a new harmony engine or subprocess.
+- **Code:** `songModeStyleSurface.ts`, `compositionContext.ts`, `generateGoldenPathDuoScore.ts`.
+- **Tests:** `npx jest --config jest.config.cjs tests/songModeDonaldFagenSurface.test.ts`.
+
+## [2026-04-17] Song Mode — Donald Fagen primary songwriter thin surface (metadata + receipts)
+
+- **What:** When **primary songwriter** resolves to **`donald_fagen`** (keys such as `donald_fagen`, `fagen`, or **`songwriter_donald_fagen`**), **`applyDonaldFagenSongwriterSurface`** runs after generic **`resolveSongwritingStyles`** and **before** **`STYLE_GROOVE_SOUL`** surface: additive, clamped 0–1 nudges to phrase regularity, hook-return weight, syncopation/density, Fagen/Bacharach-tagged harmonic weights (altered dominants, slash density, deceptive cadence rate, chromatic voice-leading; lower static-pedal bias), plus **two** honest **`songModeStyleSurfaceNotes`** bullets (no mimic wording).
+- **Why:** First **primary-songwriter** golden-path slice with inspectable `generationMetadata` deltas alongside compile-time rules.
+- **Code:** `core/song-mode/songModeStyleSurface.ts` (`applyDonaldFagenSongwriterSurface`), `songwriterStyleProfiles.ts` alias **`songwriter_donald_fagen`**, `runGoldenPath.ts` call order (Fagen → Groove/Soul).
+- **Tests:** `npx jest --config jest.config.cjs tests/songModeDonaldFagenSurface.test.ts`.
+
 ## [2026-04-17] Song Mode — STYLE_GROOVE_SOUL first real “style surface” (rhythm biases + receipts)
 
 - **What:** Selecting **Style Engine profile** `STYLE_GROOVE_SOUL` in Song Mode now **nudges** `songwriterSyncopationBias` and `songwriterDensityBias` on `generationMetadata` (additive after optional primary-songwriter resolution, clamped 0–1). Phase **C1** rhythm overlay already reads syncopation bias (`songModeRhythmOverlayC1.ts`). **Receipt:** `songModeStyleSurfaceNotes` on run manifest, API `runManifest`, and `_meta` manifest JSON next to MusicXML — short honest bullets (not artist mimicry).

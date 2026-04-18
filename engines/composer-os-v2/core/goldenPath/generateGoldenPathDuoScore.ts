@@ -717,6 +717,80 @@ function intervalClassesMatchMajorMinorSevenDom(tones: ChordToneSet): boolean {
   return (t - r + 12) % 12 === 4 && (s - r + 12) % 12 === 10;
 }
 
+/** Major third quality; excludes minor-key symbols. */
+function intervalClassIsMajorThird(tones: ChordToneSet): boolean {
+  const r = ((tones.root % 12) + 12) % 12;
+  const t = ((tones.third % 12) + 12) % 12;
+  return (t - r + 12) % 12 === 4;
+}
+
+function chordSymbolImpliesSharpEleven(harmonyPart: string): boolean {
+  return /#11|#4|maj7\s*\(\s*#11\s*\)|△\s*\(\s*#11\s*\)/i.test(harmonyPart.trim());
+}
+
+function applyFagenMajorMuColourToMeasure(
+  m: MeasureModel,
+  bar: number,
+  seed: number,
+  tones: ChordToneSet,
+  low: number,
+  high: number,
+  muBias: number,
+  harmonyPart: string
+): void {
+  if (muBias <= 0) return;
+  if (!intervalClassIsMajorThird(tones)) return;
+  if (harmonyPartLooksLikeDominantSeventh(harmonyPart)) return;
+  const rootPc = ((tones.root % 12) + 12) % 12;
+  /** Ninth above root (same span as existing Fagen root-avoidance helpers). */
+  const ninthMidi = liftToneToRange(tones.root + 14, low, high);
+  let salt = 0;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    if ((e.voice ?? 1) !== 1) continue;
+    const pc = ((e.pitch % 12) + 12) % 12;
+    if (pc !== rootPc) continue;
+    /** Offbeat / syncopated attacks only — keep downbeats more grounded. */
+    const sb = e.startBeat ?? 0;
+    if (sb < 0.375) continue;
+    if (seededUnit(seed, bar, 88460 + salt++) > muBias * 0.38) continue;
+    e.pitch = nearestMidiPitch(e.pitch, [ninthMidi, tones.third, tones.seventh], low, high);
+  }
+}
+
+function applyFagenLydianSharpElevenNudge(
+  m: MeasureModel,
+  bar: number,
+  seed: number,
+  tones: ChordToneSet,
+  low: number,
+  high: number,
+  lydianBias: number,
+  harmonyPart: string
+): void {
+  if (lydianBias <= 0) return;
+  if (!chordSymbolImpliesSharpEleven(harmonyPart)) return;
+  if (!intervalClassIsMajorThird(tones)) return;
+  const rootPc = ((tones.root % 12) + 12) % 12;
+  /** Natural 11 (perfect 4th above root) — when symbol carries #11, occasionally raise by semitone toward Lydian colour. */
+  const natural11Pc = (rootPc + 5) % 12;
+  const sharp11Pc = (rootPc + 6) % 12;
+  let salt = 0;
+  let applied = 0;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    if ((e.voice ?? 1) !== 1) continue;
+    if (applied >= 2) break;
+    const pc = ((e.pitch % 12) + 12) % 12;
+    if (pc !== natural11Pc) continue;
+    if (seededUnit(seed, bar, 88470 + salt++) > lydianBias * 0.45) continue;
+    const cur = e.pitch;
+    const candidates = [cur + 1, cur - 11, cur + 13];
+    e.pitch = nearestMidiPitch(cur, candidates.map((c) => clampPitch(c, low, high)), low, high);
+    if (((e.pitch % 12) + 12) % 12 === sharp11Pc) applied++;
+  }
+}
+
 function fagenAlteredCandidateMidis(
   tones: ChordToneSet,
   low: number,
@@ -823,7 +897,12 @@ function applyDonaldFagenGuitarBarPasses(
   seed: number,
   low: number,
   high: number,
-  biases: { fagenAlteredDominantBias: number; fagenRootAvoidanceMelody: number }
+  biases: {
+    fagenAlteredDominantBias: number;
+    fagenRootAvoidanceMelody: number;
+    fagenMuChordBias?: number;
+    fagenLydianMajorBias?: number;
+  }
 ): void {
   const chord = m.chord ?? getChordForBar(bar, context);
   const tones = chordTonesForChordSymbolWithContext(chord, context);
@@ -868,6 +947,9 @@ function applyDonaldFagenGuitarBarPasses(
       e.pitch = nearestMidiPitch(e.pitch, candidates37, low, high);
     }
   }
+
+  applyFagenMajorMuColourToMeasure(m, bar, seed, tones, low, high, biases.fagenMuChordBias ?? 0, h);
+  applyFagenLydianSharpElevenNudge(m, bar, seed, tones, low, high, biases.fagenLydianMajorBias ?? 0, h);
 }
 
 function isChordDominantForBacharach(chord: string, context: CompositionContext): boolean {
@@ -969,6 +1051,10 @@ function buildGuitarPart(
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
     typeof genMeta?.fagenRootAvoidanceMelody === 'number' ? genMeta.fagenRootAvoidanceMelody : 0;
+  const fagenMuChordBiasR =
+    typeof genMeta?.fagenMuChordBias === 'number' ? genMeta.fagenMuChordBias : 0;
+  const fagenLydianMajorBiasR =
+    typeof genMeta?.fagenLydianMajorBias === 'number' ? genMeta.fagenLydianMajorBias : 0;
 
   const isSongwriterBacharach = genMeta?.songwriterStyleId === 'bacharach';
   const bacharachDeceptiveCadenceRateR =
@@ -990,6 +1076,11 @@ function buildGuitarPart(
   const [baseLow] = profile.preferredMelodicZone;
   const effectiveBase = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
   const tb = totalBarsFromContext(context);
+  const fagenAnyColourBiases =
+    fagenAlteredDominantBiasR > 0 ||
+    fagenRootAvoidanceMelodyR > 0 ||
+    fagenMuChordBiasR > 0 ||
+    fagenLydianMajorBiasR > 0;
   const anchorMidi = motifState.baseMotifs[0]?.notes[0]?.pitch;
   let consecutiveBusyGuitarBars = 0;
 
@@ -1149,14 +1240,12 @@ function buildGuitarPart(
       }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
-      if (
-        isSongwriterFagen &&
-        isDuoGolden &&
-        (fagenAlteredDominantBiasR > 0 || fagenRootAvoidanceMelodyR > 0)
-      ) {
+      if (isSongwriterFagen && isDuoGolden && fagenAnyColourBiases) {
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
           fagenAlteredDominantBias: fagenAlteredDominantBiasR,
           fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+          fagenMuChordBias: fagenMuChordBiasR,
+          fagenLydianMajorBias: fagenLydianMajorBiasR,
         });
         normalizeMeasureToEighthBeatGrid(m);
       }
@@ -1405,13 +1494,12 @@ function buildGuitarPart(
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);
-      if (
-        isSongwriterFagen &&
-        (fagenAlteredDominantBiasR > 0 || fagenRootAvoidanceMelodyR > 0)
-      ) {
+      if (isSongwriterFagen && fagenAnyColourBiases) {
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
           fagenAlteredDominantBias: fagenAlteredDominantBiasR,
           fagenRootAvoidanceMelody: fagenRootAvoidanceMelodyR,
+          fagenMuChordBias: fagenMuChordBiasR,
+          fagenLydianMajorBias: fagenLydianMajorBiasR,
         });
         normalizeMeasureToEighthBeatGrid(m);
       }
@@ -1430,6 +1518,18 @@ function buildGuitarPart(
       normalizeMeasureQuarterGrid(m);
     }
     measures.push(m);
+  }
+
+  if (isSongwriterFagen && fagenAnyColourBiases && context.generationMetadata) {
+    const bits: string[] = [];
+    if (fagenAlteredDominantBiasR > 0) bits.push('altered dominant extensions (where dom7)');
+    if (fagenRootAvoidanceMelodyR > 0) bits.push('strong-beat root diversion');
+    if (fagenMuChordBiasR > 0) bits.push('major-family 9th colour on syncopated attacks');
+    if (fagenLydianMajorBiasR > 0) bits.push('#11 phrase nudge when symbol implies Lydian');
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      fagenJazzPopColourPassesReceipt: `Guitar (duo): ${bits.join('; ')} — biased jazz-pop shaping, not an imitation of any artist.`,
+    };
   }
 
   return {
@@ -2904,20 +3004,13 @@ export function generateGoldenPathDuoScore(
   }
   // Final authority: exact 4/4 per voice, overlaps removed, bass monophonic; then strict validation; then freeze rhythm tree.
   {
-    const fagenMuChordBias = (context.generationMetadata as any)?.fagenMuChordBias ?? 0;
-    const fagenAlteredDominantBias = (context.generationMetadata as any)?.fagenAlteredDominantBias ?? 0;
-    const fagenRootAvoidanceMelody = (context.generationMetadata as any)?.fagenRootAvoidanceMelody ?? 0;
     const rawHook = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
-    const fagenNoOp =
-      1 +
-      0 *
-        (fagenMuChordBias + fagenAlteredDominantBias + fagenRootAvoidanceMelody);
     afterExpressive._hookRepetitionBias =
-      (context.generationMetadata?.songModeHookFirstIdentity === true &&
+      context.generationMetadata?.songModeHookFirstIdentity === true &&
       context.presetId === 'guitar_bass_duo' &&
       tb === 32
         ? Math.max(0.62, rawHook)
-        : rawHook) * fagenNoOp;
+        : rawHook;
   }
   if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     applyPhraseFirstSingleLineMonophony(afterExpressive);

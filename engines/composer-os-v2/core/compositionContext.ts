@@ -189,6 +189,8 @@ export interface GenerationMetadata {
   fagenAlteredDominantBias?: number;
   fagenRootAvoidanceMelody?: number;
   fagenSlashChordDensity?: number;
+  /** Song Mode — receipt only: duo guitar applied Fagen jazz-pop colour passes this run (inspectable; no mimic claim). */
+  fagenJazzPopColourPassesReceipt?: string;
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;
