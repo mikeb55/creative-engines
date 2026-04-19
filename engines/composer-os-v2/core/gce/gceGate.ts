@@ -32,13 +32,14 @@ export const GCE_GATE_MIN = 8.0;
 export function scoreResultForGce(
   score: ScoreModel,
   chords: string[],
-  sections: GceStructureSection[]
+  sections: GceStructureSection[],
+  songwriterId?: string
 ): GceGateResult {
   const melody = scoreModelToMelodicLine(score);
 
   const scores: Array<{ name: string; score: number; weight: number }> = [
     { name: 'Cadential Clarity', weight: 2, score: scoreCadentialClarity(melody, chords, sections).score },
-    { name: 'Melodic Identity', weight: 2, score: scoreMelodicIdentity(melody).score },
+    { name: 'Melodic Identity', weight: 2, score: scoreMelodicIdentity(melody, songwriterId).score },
     { name: 'Phrase Grammar', weight: 1, score: scorePhraseGrammar(melody).score },
     { name: 'Harmony & Language', weight: 1, score: scoreHarmonyAndLanguage(chords).score },
     { name: 'Rhythmic Identity', weight: 1, score: scoreRhythmicIdentity(melody).score },
@@ -134,5 +135,5 @@ export function scoreGoldenPathResultForGce(
 ): GceGateResult {
   const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
   const sections = gceSectionsFromFormMap(context.form);
-  return scoreResultForGce(score, chords, sections);
+  return scoreResultForGce(score, chords, sections, context.generationMetadata?.songwriterStyleId);
 }

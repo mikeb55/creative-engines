@@ -171,7 +171,12 @@ export function parseChordRootAndMusicXmlKindText(
   else if (m[2] === 'b') alter = -1;
   let suffix = (m[3] ?? '').trim();
 
-  const dup = suffix.match(/^([A-Ga-g])([#b]?)/);
+  /**
+   * Strip a duplicate root only when the suffix begins with **uppercase** A–G (+ optional #/b).
+   * Lowercase `a` at the start of `add9` matched `[A-Ga-g]` before → stripped as “duplicate” root,
+   * corrupting kind text (e.g. `Aadd9` → kind `Add9`).
+   */
+  const dup = suffix.match(/^([A-G])([#b]?)/);
   if (dup) {
     const sl = dup[1].toUpperCase();
     const sa = dup[2] === '#' ? 1 : dup[2] === 'b' ? -1 : 0;

@@ -28,7 +28,38 @@ export interface CategoryScore {
   justification: string;
 }
 
-function scoreJazzIntervalBalance(midi: number[]): number {
+function getIntervalTarget(songwriterId?: string): {
+  steps: number;
+  skips: number;
+  leaps: number;
+  wideLeaps: number;
+} {
+  switch (songwriterId) {
+    case 'donald_fagen':
+      // Keyboard style — more wide leaps, chromatic
+      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15 };
+    case 'wayne_shorter':
+      // Post-bop horn lines — angular, wide intervals
+      return { steps: 0.4, skips: 0.25, leaps: 0.25, wideLeaps: 0.1 };
+    case 'bacharach':
+      // Vocal/pop — very stepwise, lyrical
+      return { steps: 0.65, skips: 0.25, leaps: 0.08, wideLeaps: 0.02 };
+    case 'barry_harris':
+      // Bebop — mostly steps and skips, few wide leaps
+      return { steps: 0.55, skips: 0.3, leaps: 0.12, wideLeaps: 0.03 };
+    case 'ecm_chamber':
+      // ECM — sparse, wide open intervals acceptable
+      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15 };
+    case 'pat_metheny':
+      // Lyrical guitar — mostly stepwise with nice leaps
+      return { steps: 0.6, skips: 0.25, leaps: 0.12, wideLeaps: 0.03 };
+    default:
+      // Universal jazz target
+      return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05 };
+  }
+}
+
+export function scoreJazzIntervalBalance(midi: number[], songwriterId?: string): number {
   if (midi.length < 3) return 0.5;
 
   const intervals: number[] = [];
@@ -56,11 +87,12 @@ function scoreJazzIntervalBalance(midi: number[]): number {
   const pLeaps = leaps / n;
   const pWide = wideLeaps / n;
 
+  const t = getIntervalTarget(songwriterId);
   const distributionPenalty =
-    Math.abs(pSteps - 0.55) * 1.0 +
-    Math.abs(pSkips - 0.25) * 0.9 +
-    Math.abs(pLeaps - 0.15) * 1.1 +
-    Math.abs(pWide - 0.05) * 1.4;
+    Math.abs(pSteps - t.steps) * 1.0 +
+    Math.abs(pSkips - t.skips) * 0.9 +
+    Math.abs(pLeaps - t.leaps) * 1.1 +
+    Math.abs(pWide - t.wideLeaps) * 1.4;
 
   let recoverableLeaps = 0;
   let recoveredLeaps = 0;
@@ -94,7 +126,7 @@ function scoreJazzIntervalBalance(midi: number[]): number {
   );
 }
 
-export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
+export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
   if (notes.length < 4) {
     return { score: 0, justification: 'Too few notes' };
@@ -151,7 +183,7 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
   }
 
   // I — interval balance (jazz step/skip/leap distribution + recovery)
-  const intervalEconomy = scoreJazzIntervalBalance(pitches);
+  const intervalEconomy = scoreJazzIntervalBalance(pitches, songwriterId);
 
   // G — register cohesion
   const registerCohesion = 1 - Math.min(pitchStddev / 12, 1);

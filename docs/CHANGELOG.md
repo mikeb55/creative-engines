@@ -1,3 +1,21 @@
+## [2026-04-19] Pat Metheny + style interval targets + GCE UI
+
+### What landed
+- Pat Metheny songwriter profile — chord pools, registry,
+  style profile, UI dropdown, docs
+- Style-specific interval targets for all 6 styles:
+  Fagen (keyboard), Shorter (angular), Bacharach (vocal),
+  Barry Harris (bebop), ECM (open), Metheny (lyrical)
+- GCE Quality score visible on generation receipt UI
+- Motif v2 and voice-leading gates demoted to warnings
+- Chord parser fix: Aadd9 no longer written as Add9
+- GCE gate threshold: 8.0 (was 8.5)
+
+### Verified in packaged app
+- Pat Metheny: GCE 8.2/10, green border, authentic palette
+- Bacharach: GCE 8.3-8.5/10, green border
+- All styles show GCE Quality on receipt
+
 ## [2026-04-19] Pat Metheny songwriter profile + chord pools
 
 - **Song Mode:** pat_metheny primary — 4×8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
@@ -831,6 +849,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 
