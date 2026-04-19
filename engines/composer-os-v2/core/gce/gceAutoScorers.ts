@@ -1,6 +1,24 @@
 import { evaluateMelody } from './gce_melody_eval';
 import type { MelodicNote } from './gce_melody_eval';
+import type { FormMap } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
+
+/** Section slice for GCE Structure & Form (aligned with `FormMap` / lead sheet conventions). */
+export interface GceStructureSection {
+  label: string;
+  barStart: number;
+  barEnd: number;
+  role: string;
+}
+
+export function gceSectionsFromFormMap(form: FormMap): GceStructureSection[] {
+  return form.sections.map((s) => ({
+    label: s.label,
+    barStart: s.startBar,
+    barEnd: s.startBar + s.length - 1,
+    role: s.label,
+  }));
+}
 
 export interface CategoryScore {
   score: number;
@@ -172,17 +190,73 @@ export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
   };
 }
 
-export function scoreStructureAndForm(score: ScoreModel): CategoryScore {
-  const kinds = new Set(
-    score.parts[0]?.measures
-      .map((m) => (m as { sectionKind?: string }).sectionKind)
-      .filter(Boolean) ?? []
-  );
-  const count = kinds.size;
-  const s = count >= 3 ? 9 : count === 2 ? 7 : 4;
+export function scoreStructureAndForm(
+  _score: ScoreModel,
+  chords: string[],
+  sections: GceStructureSection[]
+): CategoryScore {
+  void _score;
+  if (!sections || sections.length < 2) {
+    return { score: 4, justification: 'Insufficient section data' };
+  }
+
+  // Adjacent contrast — distinct section roles
+  const roles = sections.map((s) => s.role);
+  const uniqueRoles = new Set(roles).size;
+  const adjacentChanges = roles.filter((r, i) => i > 0 && r !== roles[i - 1]).length;
+  const adjacentContrast = Math.min(adjacentChanges / (sections.length - 1), 1);
+
+  // Return consistency — same-role sections have similar chord content
+  const roleGroups = new Map<string, string[][]>();
+  for (const sec of sections) {
+    const secChords = chords.slice(sec.barStart - 1, sec.barEnd);
+    if (!roleGroups.has(sec.role)) roleGroups.set(sec.role, []);
+    roleGroups.get(sec.role)!.push(secChords);
+  }
+  const consistencyScores: number[] = [];
+  for (const [, groups] of roleGroups) {
+    if (groups.length < 2) continue;
+    for (let i = 1; i < groups.length; i++) {
+      const a = new Set(groups[0]);
+      const b = new Set(groups[i]);
+      const intersection = [...a].filter((c) => b.has(c)).length;
+      const union = new Set([...a, ...b]).size;
+      consistencyScores.push(union > 0 ? intersection / union : 0);
+    }
+  }
+  const returnConsistency =
+    consistencyScores.length > 0
+      ? consistencyScores.reduce((x, y) => x + y, 0) / consistencyScores.length
+      : 0.5;
+
+  // Boundary strength — chord changes at section boundaries
+  let boundaryChanges = 0;
+  for (const sec of sections) {
+    const boundaryBar = sec.barStart - 1;
+    if (boundaryBar > 0 && boundaryBar < chords.length) {
+      if (chords[boundaryBar] !== chords[boundaryBar - 1]) {
+        boundaryChanges++;
+      }
+    }
+  }
+  const boundaryStrength = Math.min(boundaryChanges / sections.length, 1);
+
+  const rawScore =
+    10 *
+    (0.35 * adjacentContrast + 0.35 * returnConsistency + 0.3 * boundaryStrength);
+
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+
+  const hardFail = adjacentContrast < 0.2;
+
   return {
-    score: s,
-    justification: `Sections: ${[...kinds].join(', ') || 'unknown'}`,
+    score: hardFail ? Math.min(score, 4) : score,
+    justification:
+      `${uniqueRoles} distinct roles, ` +
+      `${adjacentChanges}/${sections.length - 1} adjacent changes, ` +
+      `return consistency ${(returnConsistency * 10).toFixed(1)}, ` +
+      `boundary strength ${(boundaryStrength * 10).toFixed(1)}` +
+      (hardFail ? ' [HARD FAIL - no contrast]' : ''),
   };
 }
 

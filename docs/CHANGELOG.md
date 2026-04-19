@@ -1,3 +1,9 @@
+## [2026-04-19] Structure & form scorer — adjacent contrast + return + boundaries (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreStructureAndForm`** now takes **`chords`** + **section ranges** and scores **10 × (0.35A + 0.35R + 0.30B)** (adjacent role contrast, Jaccard-style return consistency between same-role sections, boundary chord changes), with **hard cap ≤4** when **`adjacentContrast < 0.2`**. Exported **`GceStructureSection`** and **`gceSectionsFromFormMap`** (`FormMap` → section slices; **`role`** mirrors **label** when no separate role plane exists).
+- **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: Builds sections from **`result.context.form`** via **`gceSectionsFromFormMap`** — previously only **`result.score`** was passed and measures had no usable **`sectionKind`**.
+
 ## [2026-04-19] Rhythmic identity scorer — GCE v2.0 formula (GCE)
 
 ### What changed
