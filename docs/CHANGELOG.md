@@ -1,3 +1,14 @@
+## [2026-04-19] Wayne Shorter � deep rule set added to songwriter registry
+
+### What changed
+- wayne_shorter entry in songwriterRuleRegistry.ts expanded
+  from 3 placeholder rules to 17 specific rules
+- Covers: harmony palette, root motion, anti-II-V-I,
+  pedal points, melody intervals, phrase asymmetry,
+  offbeat starts, density cap, open endings
+- Based on Perplexity research on post-1964 Shorter style
+  (Footprints, Nefertiti, ESP, Infant Eyes, Fall, Juju)
+
 # Composer OS — Changelog
 
 ## [2026-04-18] Song Mode — Bacharach slice + developer workflow / eval (diagnostic)
@@ -492,3 +503,4 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+

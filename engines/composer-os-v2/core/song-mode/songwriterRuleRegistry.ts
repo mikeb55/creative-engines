@@ -332,9 +332,142 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('af.repetition_build', 'Repetition builds tension', 'songwriter', 'hook', 7, 'chorus'),
   ],
   wayne_shorter: [
-    R('shorter.chromatic_side', 'Chromatic side-slips and colour', 'songwriter', 'harmony', 8, 'verse'),
-    R('shorter.irregular_phrase', 'Irregular phrase architecture', 'songwriter', 'form', 8, 'form'),
-    R('shorter.melodic_angle', 'Angular melodic cells', 'songwriter', 'melody', 8, 'global'),
+    R(
+      'shorter.palette_extensions',
+      'Chord palette prioritise maj7(#11), m7(9,11), m(maj7,9), m7b5(11), 7(#11,b9), sus4(add9)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'shorter.root_motion_fav',
+      'Root motion: prefer whole step, minor third, and tritone moves',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.avoid_clean_ii_v_i',
+      'Avoid clean II–V–I cadential resolution',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'shorter.dom_deceptive_sidestep',
+      'When dominant appears: resolve deceptively or by semitone sidestep — not to tonic',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'shorter.pedal_cycle_upper',
+      'Pedal point: hold bass 4–8 bars while cycling upper structures',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.interval_steps_and_wide',
+      'Melodic intervals: mix steps (±1, ±2) with leaps of 6th/7th',
+      'songwriter',
+      'melody',
+      9,
+      'global'
+    ),
+    R(
+      'shorter.phrase_len_three_five',
+      'Phrase length: prefer 3- or 5-bar phrases; avoid squared 4+4 grids',
+      'songwriter',
+      'melody',
+      8,
+      'form'
+    ),
+    R(
+      'shorter.phrase_start_offbeat',
+      'Start phrases on & of 1 or & of 2 — not on beat 1',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.climax_late_in_phrase',
+      'Place melodic climax late in phrase (e.g. bar 3 of a 4-bar unit)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.rest_after_dense',
+      'After a dense passage: enforce at least a half-bar rest',
+      'songwriter',
+      'melody',
+      7,
+      'global'
+    ),
+    R(
+      'shorter.offbeat_syncop_quarters',
+      'Rhythm: off-beat accents and syncopated quarter notes',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'shorter.density_cap_eighths',
+      'Rhythmic density cap: ≤65% of eighth-note slots filled',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.quarter_triplets_two_beats',
+      'Use quarter-note triplets spanning two beats',
+      'songwriter',
+      'rhythm',
+      7,
+      'global'
+    ),
+    R(
+      'shorter.rests_after_climax',
+      'Force rests immediately after climax moments',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'shorter.form_group_asym',
+      'Phrase groupings: prefer 3+2, 5+3, 4+3+1',
+      'songwriter',
+      'form',
+      9,
+      'form'
+    ),
+    R(
+      'shorter.open_final_chords',
+      'Open endings: favour maj7(#11), m(maj7), or 7alt as last harmony',
+      'songwriter',
+      'form',
+      8,
+      'form'
+    ),
+    R(
+      'shorter.no_squared_aaba_textbook',
+      'Avoid squared 8+8 AABA with textbook tonal resolutions',
+      'songwriter',
+      'form',
+      9,
+      'form'
+    ),
   ],
   andrew_hill: [
     R('hill.interval_cells', 'Interval-cell development and transposition', 'songwriter', 'melody', 8, 'global'),
