@@ -1,3 +1,8 @@
+## [2026-04-19] GCE ? `scoreTensionAndRelease` arc cooldown + thresholds
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreTensionAndRelease`** ? **arc counting** uses a **2-bar cooldown** after each matched arc instead of skipping the loop index (`i++`), so multiple ii?V?I style windows in 32 bars can count. **Score bands:** 0 arcs = 4, 1 = 6, 2 = 7, 3+ = 8, 4?5 = 9, 6+ = 10.
+
 ## [2026-04-19] GCE ? `scoreTensionAndRelease` dominant 13 + arc window
 
 ### What changed
@@ -12,7 +17,7 @@
 ## [2026-04-19] Economy & Focus GCE scorer ? jazz duo density bands
 
 ### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreEconomyAndFocus`** ? ideal band is **50?80%** note density (notes ÷ bars÷4 beats); **80?88%** acceptable; **88?95%** busy; **>95%** wall-to-wall; **<50%** sparse for duo; **<30%** too empty. Replaces the prior **30?70%** ?ideal? peak that skewed sparse for guitar?bass duo.
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreEconomyAndFocus`** ? ideal band is **50?80%** note density (notes ? bars?4 beats); **80?88%** acceptable; **88?95%** busy; **>95%** wall-to-wall; **<50%** sparse for duo; **<30%** too empty. Replaces the prior **30?70%** ?ideal? peak that skewed sparse for guitar?bass duo.
 
 ## [2026-04-19] GCE v2.0 evaluator ? current state
 
@@ -41,42 +46,42 @@
 - Arrangement: register gap still reading low on some styles
 - Thematic Recall: threshold too easy (saturates at 10/10)
 
-## [2026-04-19] Arrangement scorer â?? register gap uses melody guitar vs bass (GCE)
+## [2026-04-19] Arrangement scorer ??? register gap uses melody guitar vs bass (GCE)
 
 ### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreArrangementAndOrchestration`** â?? **register gap** is **`max(0, guitarMelodyMinMidi â?? bassMaxMidi)`**, where **guitar melody** follows the same **voice 1 / default** rule as **`scoreModelToMelodicLine`** (so **voice 2** comp shells no longer drag the guitar â??lowâ? into the bass register and force **0 st**); **notes with non-finite `pitch`** are ignored for range; if the bass part has **no** finite pitches, **bass max** falls back to **55** (**E1â??G3** upright ceiling, inlined as **28â??55** to match **`uprightBassProfile`** without import cycles); **sanitize** range outputs so **`NaN`** never enters the weighted sum. **Density Î?** unchanged in meaning â?? per-bar **|Ng/4 â?? Nb/4|** averaged (**note-count imbalance** scaled to **one beat** in 4/4). **Justification** string spells this out.
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreArrangementAndOrchestration`** ??? **register gap** is **`max(0, guitarMelodyMinMidi ??? bassMaxMidi)`**, where **guitar melody** follows the same **voice 1 / default** rule as **`scoreModelToMelodicLine`** (so **voice 2** comp shells no longer drag the guitar ???low??? into the bass register and force **0 st**); **notes with non-finite `pitch`** are ignored for range; if the bass part has **no** finite pitches, **bass max** falls back to **55** (**E1???G3** upright ceiling, inlined as **28???55** to match **`uprightBassProfile`** without import cycles); **sanitize** range outputs so **`NaN`** never enters the weighted sum. **Density ??** unchanged in meaning ??? per-bar **|Ng/4 ??? Nb/4|** averaged (**note-count imbalance** scaled to **one beat** in 4/4). **Justification** string spells this out.
 - **`engines/composer-os-v2/core/goldenPath/duoWybleBassAnchorNudge.ts`**: Bar 1 anchor nudge applies only when **`pitch`** is finite (**`undefined + 2`** was producing **NaN** bass MIDI).
 - **`engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`**: **`clampAllBassNotesToValidatorHardRange`** replaces non-finite bass **`pitch`** with a safe MIDI before **`finalizeAndSealDuoScoreBarMath`** ( **`clampPitch(NaN)`** did not).
-- **`engines/composer-os-v2/core/score-integrity/duoBarMathFinalize.ts`**: **`clampUprightBassNotesToHardRange`** after guitar clamp â?? last-chance repair before **`freezeScoreRhythmAfterFinalize`**.
+- **`engines/composer-os-v2/core/score-integrity/duoBarMathFinalize.ts`**: **`clampUprightBassNotesToHardRange`** after guitar clamp ??? last-chance repair before **`freezeScoreRhythmAfterFinalize`**.
 
-## [2026-04-19] Cadential clarity â?? tonic vs dominant, long endings, strong beats (GCE)
+## [2026-04-19] Cadential clarity ??? tonic vs dominant, long endings, strong beats (GCE)
 
 ### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreCadentialClarity`** â?? **tonic-family** now recognises **maj/min extensions** (e.g. **Dm9**, **Dmin9**, **Cmaj7#11**, **Bbmaj7**) via explicit stable patterns plus **â??no dominant markersâ?** (**`chordSymbolDominantFamily`**); **`min` spellings** align with Song Mode locked harmony (`Dmin9` vs `Dm9`); tonic credit uses a **cadential window** (**last 4 bars** per section) so **iiâ??Vâ??I** phrases with **V7 on the final bar** still pick up **I / ii** symbols; **long endings** use the **full** melodic line (**last two** section notes + **rest â?¥ 1** beat after); **strong-beat** landing uses integer beats **0â??3** (not only 0â??1).
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreCadentialClarity`** ??? **tonic-family** now recognises **maj/min extensions** (e.g. **Dm9**, **Dmin9**, **Cmaj7#11**, **Bbmaj7**) via explicit stable patterns plus **???no dominant markers???** (**`chordSymbolDominantFamily`**); **`min` spellings** align with Song Mode locked harmony (`Dmin9` vs `Dm9`); tonic credit uses a **cadential window** (**last 4 bars** per section) so **ii???V???I** phrases with **V7 on the final bar** still pick up **I / ii** symbols; **long endings** use the **full** melodic line (**last two** section notes + **rest ??? 1** beat after); **strong-beat** landing uses integer beats **0???3** (not only 0???1).
 
-## [2026-04-19] GCE style eval â?? v2.0 category names + four new scorers (GCE)
+## [2026-04-19] GCE style eval ??? v2.0 category names + four new scorers (GCE)
 
 ### What changed
 - **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: Replaced v1.0 subjective rows (**Emotional Core**, **Lyric Craft**, **Arrangement**, **Afterglow**) with **GCE v2.0** labels; removed Claude **`scoreSubjectiveCategories`** dependency for this harness.
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: Added **`scoreCadentialClarity`**, **`scorePhraseGrammar`**, **`scoreArrangementAndOrchestration`**, **`scoreThematicRecallPotential`** (section cadence checks, phrase/rest stats, guitarâ??bass density/register/activity, cross-section motif tallies).
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: Added **`scoreCadentialClarity`**, **`scorePhraseGrammar`**, **`scoreArrangementAndOrchestration`**, **`scoreThematicRecallPotential`** (section cadence checks, phrase/rest stats, guitar???bass density/register/activity, cross-section motif tallies).
 
-## [2026-04-19] Melodic identity scorer â?? GCE v2.0 formula (GCE)
-
-### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreMelodicIdentity`** no longer delegates to **`evaluateMelody`**; it scores **10 Ã? (0.35R + 0.25C + 0.20I + 0.20G)** â?? **R** sliding-window interval-vector recurrence (tolerant match), **C** contour **U/D/S** compression (1 â?? normalized entropy), **I** interval economy from unique step sizes, **G** register cohesion from MIDI spread; **hard cap â?¤6** when **`motifRecurrence < 0.35`**.
-
-## [2026-04-19] Structure & form scorer â?? adjacent contrast + return + boundaries (GCE)
+## [2026-04-19] Melodic identity scorer ??? GCE v2.0 formula (GCE)
 
 ### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreStructureAndForm`** now takes **`chords`** + **section ranges** and scores **10 Ã? (0.35A + 0.35R + 0.30B)** (adjacent role contrast, Jaccard-style return consistency between same-role sections, boundary chord changes), with **hard cap â?¤4** when **`adjacentContrast < 0.2`**. Exported **`GceStructureSection`** and **`gceSectionsFromFormMap`** (`FormMap` â?? section slices; **`role`** mirrors **label** when no separate role plane exists).
-- **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: Builds sections from **`result.context.form`** via **`gceSectionsFromFormMap`** â?? previously only **`result.score`** was passed and measures had no usable **`sectionKind`**.
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreMelodicIdentity`** no longer delegates to **`evaluateMelody`**; it scores **10 ?? (0.35R + 0.25C + 0.20I + 0.20G)** ??? **R** sliding-window interval-vector recurrence (tolerant match), **C** contour **U/D/S** compression (1 ??? normalized entropy), **I** interval economy from unique step sizes, **G** register cohesion from MIDI spread; **hard cap ???6** when **`motifRecurrence < 0.35`**.
 
-## [2026-04-19] Rhythmic identity scorer â?? GCE v2.0 formula (GCE)
+## [2026-04-19] Structure & form scorer ??? adjacent contrast + return + boundaries (GCE)
 
 ### What changed
-- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreRhythmicIdentity`** now follows **GCE v2.0**: **IOI variety** (normalized duration entropy), **syncopation** (fractional-beat attacks), **rhythm motif** (repeated duration 3-grams), **groove stability** (attack-count consistency per bar), combined as **10 Ã? (0.25I + 0.30S + 0.25R + 0.20G)** with hard cap at **6** when **`syncopation < 0.15`** and **`rhythmMotif < 0.20`** (GCE hard fail gate).
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreStructureAndForm`** now takes **`chords`** + **section ranges** and scores **10 ?? (0.35A + 0.35R + 0.30B)** (adjacent role contrast, Jaccard-style return consistency between same-role sections, boundary chord changes), with **hard cap ???4** when **`adjacentContrast < 0.2`**. Exported **`GceStructureSection`** and **`gceSectionsFromFormMap`** (`FormMap` ??? section slices; **`role`** mirrors **label** when no separate role plane exists).
+- **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: Builds sections from **`result.context.form`** via **`gceSectionsFromFormMap`** ??? previously only **`result.score`** was passed and measures had no usable **`sectionKind`**.
 
-## [2026-04-19] Harmony scorer â?? broader extended-chord detection (GCE)
+## [2026-04-19] Rhythmic identity scorer ??? GCE v2.0 formula (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreRhythmicIdentity`** now follows **GCE v2.0**: **IOI variety** (normalized duration entropy), **syncopation** (fractional-beat attacks), **rhythm motif** (repeated duration 3-grams), **groove stability** (attack-count consistency per bar), combined as **10 ?? (0.25I + 0.30S + 0.25R + 0.20G)** with hard cap at **6** when **`syncopation < 0.15`** and **`rhythmMotif < 0.20`** (GCE hard fail gate).
+
+## [2026-04-19] Harmony scorer ??? broader extended-chord detection (GCE)
 
 ### What changed
 - **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreHarmonyAndLanguage`** now uses regex patterns for extensions (e.g. **maj7**, **m9**, **7alt**, **#11**, **13sus**, slash chords) plus root variety and repetition/plain penalties, instead of a strict substring marker list that misclassified rich symbols as plain triads.
@@ -89,13 +94,13 @@
 ## [2026-04-19] GCE v2.0 universal music evaluation framework (docs)
 
 ### What changed
-- **`docs/GCE_FRAMEWORK_V2.md`**: Master **GCE v2.0** specification for **all** Composer OS musical outputs â?? ten automatable categories with formulas, pass thresholds, hard gates, implementation order, and output format. Supersedes jazz-only framing for **engineering** use; **`docs/GCE_FRAMEWORK.md`** remains the earlier song-rubric reference.
+- **`docs/GCE_FRAMEWORK_V2.md`**: Master **GCE v2.0** specification for **all** Composer OS musical outputs ??? ten automatable categories with formulas, pass thresholds, hard gates, implementation order, and output format. Supersedes jazz-only framing for **engineering** use; **`docs/GCE_FRAMEWORK.md`** remains the earlier song-rubric reference.
 - **Source review:** `mikeb55/grand-criteria-of-excellence-jazz` (`GCE_Jazz_v1_0.md`, `GCE_Melodic_Development_Rules.md`, project logs, BarryEngine) summarized as an appendix in that doc.
 
 ## [2026-04-19] Song Mode: bacharach, barry_harris, ecm_chamber chord pools
 
 ### What changed
-- `songModeBuilder.ts`: **bacharach** pools expanded to **4Ã?4** rows per section (verse, chorus, bridge, pre_chorus); new **barry_harris** and **ecm_chamber** songwriter chord pools (**4Ã?4** each).
+- `songModeBuilder.ts`: **bacharach** pools expanded to **4??4** rows per section (verse, chorus, bridge, pre_chorus); new **barry_harris** and **ecm_chamber** songwriter chord pools (**4??4** each).
 - `songwriterRuleRegistry.ts` / `songwritingResearchTypes.ts` / `songwriterStyleProfiles.ts` / `songwriterCompProfile.ts`: registry + style profiles + primary instrument map for **barry_harris**, **ecm_chamber**; **bacharach** rules trimmed to three placeholder ids (`chromatic_mediant`, `secondary_dominant`, `stepwise_bass`).
 
 ## [2026-04-19] Song Mode pools ? bridge / pre_chorus for Shorter & Fagen

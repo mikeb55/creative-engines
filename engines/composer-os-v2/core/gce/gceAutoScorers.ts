@@ -408,17 +408,28 @@ export function scoreTensionAndRelease(chords: string[]): CategoryScore {
     return { score: 4, justification: '0 tension-release arcs found' };
   }
   let arcs = 0;
+  let cooldown = 0;
   for (let i = 0; i < chords.length - 1; i++) {
+    if (cooldown > 0) {
+      cooldown--;
+      continue;
+    }
     const curr = chords[i] ?? '';
-    const currTension = isTensionChord(curr);
-    const nextRelease = isReleaseChord(chords[i + 1] ?? '');
-    const nextTwoRelease = isReleaseChord(chords[i + 2] ?? '');
-    if (currTension && (nextRelease || nextTwoRelease)) {
-      arcs++;
-      i++;
+    const next = chords[i + 1] ?? '';
+    const twoAhead = chords[i + 2] ?? '';
+    if (isTensionChord(curr)) {
+      if (isReleaseChord(next) || isReleaseChord(twoAhead)) {
+        arcs++;
+        cooldown = 2;
+      }
     }
   }
-  const score = arcs >= 3 ? 9 : arcs === 2 ? 8 : arcs === 1 ? 6 : 4;
+  let score = 4;
+  if (arcs >= 6) score = 10;
+  else if (arcs >= 4) score = 9;
+  else if (arcs >= 3) score = 8;
+  else if (arcs === 2) score = 7;
+  else if (arcs === 1) score = 6;
   return {
     score,
     justification: `${arcs} tension-release arcs found`,
