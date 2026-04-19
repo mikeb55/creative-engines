@@ -108,6 +108,16 @@ Choosing **primary songwriter → Donald Fagen** (or the API key **`songwriter_d
 
 **Listening recipe:** Same **seed**, **BPM**, **chords**, and **Style Engine profile**, then A/B **primary songwriter Donald Fagen** vs **another primary** (e.g. **Bacharach** or **Beatles**) and compare rhythm density and harmonic colour in the duo export.
 
+### Song Mode — Wayne Shorter primary songwriter
+
+Choose **Wayne Shorter** as the **primary songwriter** when you want a **post-bop** harmonic feel: **non-resolving** harmony, **chromatic root motion**, and **open endings** rather than textbook pop cadences.
+
+**How to use it:** Set **Songwriter** to **Wayne Shorter**, **Style profile** to **`STYLE_SHORTER_POST_BOP`**, and keep **BPM** roughly **60–90** for the intended pacing (adjust to taste).
+
+**What it generates:** By default you get **32 bars** of Shorter-flavoured harmony from extended pools (no padded repeat of a single short progression). The engine aims for **variety across the form** and avoids obvious **II–V–I chains** in the scaffold (honest wording ? not an authenticity guarantee).
+
+**Known limitation:** Rules in **`songwriterRuleRegistry`** and per-row **metadata tags** (**tension**, **motion**, **cadential**, **pedal**) **inform planning metadata** today. **Rule-to-chord wiring** is **metadata only** in the picker **until contextual selection** is implemented.
+
 ### Developers — Bacharach Song Mode (CLI, not the Generate UI)
 
 Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.
