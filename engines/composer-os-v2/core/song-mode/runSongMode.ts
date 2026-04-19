@@ -28,6 +28,8 @@ export type SongModeStructureVariant = 'default' | 'extended';
 export interface SongModeRunInput {
   seed: number;
   title?: string;
+  /** Song form length for default verse–chorus scaffold (planner); defaults to 32. */
+  totalBars?: number;
   variant?: SongModeStructureVariant;
   voiceType?: SongVoiceType;
   /** Override bundled `data/Songwriting.md` (or `COMPOSER_OS_SONGWRITING_RESEARCH`). */
@@ -70,8 +72,11 @@ export interface SongModeRunResult {
 export function runSongMode(input: SongModeRunInput): SongModeRunResult {
   const title = input.title ?? `Song Mode Study ${input.seed}`;
   const voiceType = input.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
+  const sectionBarTarget = input.totalBars ?? 32;
   const sections =
-    input.variant === 'extended' ? planExtendedPopStructure() : planDefaultVerseChorusStructure();
+    input.variant === 'extended'
+      ? planExtendedPopStructure()
+      : planDefaultVerseChorusStructure(sectionBarTarget);
 
   const planVal = validateSectionPlanForSongMode(sections);
   const v0 = validateSongModeRunInput(input);

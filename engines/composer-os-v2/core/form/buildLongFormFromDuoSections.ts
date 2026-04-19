@@ -15,19 +15,15 @@ import { generateModulationPlan } from '../modulation/modulationPlanner';
 import { transposeChordSymbol } from '../modulation/modulationTransitions';
 import type { ModulationPlan } from '../modulation/modulationPlanTypes';
 import { validateModulationPlan } from '../modulation/modulationValidation';
-import { buildDuoLongFormPlan, buildDuoLongFormPlan16 } from './duoLongFormPlanner';
+import {
+  buildDuoLongFormPlanForBarCount,
+  buildDuoLongFormPlan16,
+} from './duoLongFormPlanner';
 import { LONG_FORM_DUO_BARS } from './longFormRouteResolver';
 import { assertLockedHarmonyContractsToneParity, buildLockedHarmonyBarContracts } from '../harmony/harmonyBarContract';
 import { wybleVoiceLayoutForPreset } from '../wyble/wybleVoiceLayoutForPreset';
 
 const BUILTIN_EIGHT: readonly string[] = ['Dmin9', 'G13', 'Cmaj9', 'A7alt', 'Dmin9', 'G13', 'Cmaj9', 'A7alt'];
-
-const LONG_FORM_ROLE_MAP: Record<string, SectionRole> = {
-  A: 'statement',
-  "A'": 'development',
-  B: 'contrast',
-  "A''": 'return',
-};
 
 const LONG_FORM_ROLE_MAP_16: Record<string, SectionRole> = {
   A: 'statement',
@@ -53,13 +49,36 @@ function build32ChordBars(mod: ModulationPlan, seed: number): string[] {
 
 export interface BuildDuoLongFormContextOptions {
   parsedChordBars8?: string[];
-  /** 16: native 16-bar; 32: full long-form (default). */
-  targetTotalBars?: 16 | 32;
+  /** 16-bar mid-form, or 32–64-bar long-form (steps of 8). Default 32. */
+  targetTotalBars?: number;
   presetId?: string;
 }
 
+function duoSectionRoleMapFromPlan(plan: ReturnType<typeof buildDuoLongFormPlanForBarCount>): Record<string, SectionRole> {
+  return Object.fromEntries(plan.sections.map((s) => [s.label, s.role])) as Record<string, SectionRole>;
+}
+
+function tileBuiltinEightToLength(eight: readonly string[], target: number): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < target; i++) {
+    out.push(eight[i % eight.length]!);
+  }
+  return out;
+}
+
+/** Builtin long-form chords: derive a 32-bar baseline then repeat to `target` (32–64). */
+function expandBuiltinLongFormBars(mod: ModulationPlan, seed: number, target: number): string[] {
+  const b32 = build32ChordBars(mod, seed);
+  if (target <= 32) return b32.slice(0, target);
+  const out: string[] = [];
+  for (let i = 0; i < target; i++) {
+    out.push(b32[i % 32]!);
+  }
+  return out;
+}
+
 /**
- * Long-form Duo with **exact** user chords (one symbol per bar) — 16 or 32 bars; no tiling inside this function.
+ * Long-form Duo with **exact** user chords (one symbol per bar) — 16–64 bars in steps of 8.
  */
 export function buildDuoLongFormCompositionContextFromBars(
   seed: number,
@@ -67,12 +86,14 @@ export function buildDuoLongFormCompositionContextFromBars(
   opts?: { chordProgressionInputRaw?: string; presetId?: string }
 ): { context: CompositionContext; modulationPlan: ModulationPlan } {
   const n = bars.length;
-  if (n !== 16 && n !== 32) {
-    throw new Error(`buildDuoLongFormCompositionContextFromBars: expected 16 or 32 bars, got ${n}`);
+  if (n % 8 !== 0 || n < 16 || n > 64) {
+    throw new Error(
+      `buildDuoLongFormCompositionContextFromBars: expected 16–64 bars in steps of 8, got ${n}`
+    );
   }
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
-  const lf = n === 32 ? buildDuoLongFormPlan() : buildDuoLongFormPlan16();
+  const lf = buildDuoLongFormPlanForBarCount(n);
   const form = {
     sections: lf.sections.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
     totalBars: n,
@@ -85,7 +106,7 @@ export function buildDuoLongFormCompositionContextFromBars(
   const chordSymbolPlan = buildChordSymbolPlanFromBars(bars);
   const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: n };
 
-  const roleMap = n === 32 ? LONG_FORM_ROLE_MAP : LONG_FORM_ROLE_MAP_16;
+  const roleMap = duoSectionRoleMapFromPlan(lf);
   const sectionRoles = planSectionRoles(form.sections, roleMap);
   const densityPlan = planDensityCurve(sectionRoles, n);
   const densityCurve = { segments: densityPlan.segments, totalBars: n };
@@ -101,22 +122,9 @@ export function buildDuoLongFormCompositionContextFromBars(
     },
   };
 
-  const rehearsalMarkPlan =
-    n === 32
-      ? {
-          marks: [
-            { label: 'A', bar: 1 },
-            { label: "A'", bar: 9 },
-            { label: 'B', bar: 17 },
-            { label: "A''", bar: 25 },
-          ],
-        }
-      : {
-          marks: [
-            { label: 'A', bar: 1 },
-            { label: 'B', bar: 9 },
-          ],
-        };
+  const rehearsalMarkPlan = {
+    marks: lf.sections.map((s) => ({ label: s.label, bar: s.startBar })),
+  };
 
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
 
@@ -259,33 +267,41 @@ export function buildDuoLongFormCompositionContext(
 
   const preset = guitarBassDuoPreset;
   const feel = preset.defaultFeel;
-  const lf = buildDuoLongFormPlan();
+  const tb =
+    typeof options?.targetTotalBars === 'number' &&
+    options.targetTotalBars >= 32 &&
+    options.targetTotalBars <= 64 &&
+    options.targetTotalBars % 8 === 0
+      ? options.targetTotalBars
+      : LONG_FORM_DUO_BARS;
+
+  const lf = buildDuoLongFormPlanForBarCount(tb);
   const form = {
     sections: lf.sections.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
-    totalBars: LONG_FORM_DUO_BARS,
+    totalBars: tb,
   };
 
-  const modulationPlan = generateModulationPlan(seed, LONG_FORM_DUO_BARS);
+  const modulationPlan = generateModulationPlan(seed, tb);
   const v = validateModulationPlan(modulationPlan);
   if (!v.valid) {
     modulationPlan.active = false;
   }
 
-  let bars32: string[];
+  let barsTb: string[];
   if (options?.parsedChordBars8?.length === 8) {
-    const t = options.parsedChordBars8;
-    bars32 = [...t, ...t, ...t, ...t];
+    barsTb = tileBuiltinEightToLength(options.parsedChordBars8, tb);
   } else {
-    bars32 = build32ChordBars(modulationPlan, seed);
+    barsTb = expandBuiltinLongFormBars(modulationPlan, seed, tb);
   }
 
-  const harmony: HarmonyPlan = buildHarmonyPlanFromBars(bars32);
-  const chordSymbolPlan = buildChordSymbolPlanFromBars(bars32);
-  const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: LONG_FORM_DUO_BARS };
+  const harmony: HarmonyPlan = buildHarmonyPlanFromBars(barsTb);
+  const chordSymbolPlan = buildChordSymbolPlanFromBars(barsTb);
+  const phrase = { segments: form.sections.map((s) => ({ ...s, density: undefined })), totalBars: tb };
 
-  const sectionRoles = planSectionRoles(form.sections, LONG_FORM_ROLE_MAP);
-  const densityPlan = planDensityCurve(sectionRoles, LONG_FORM_DUO_BARS);
-  const densityCurve = { segments: densityPlan.segments, totalBars: LONG_FORM_DUO_BARS };
+  const roleMapLong = duoSectionRoleMapFromPlan(lf);
+  const sectionRoles = planSectionRoles(form.sections, roleMapLong);
+  const densityPlan = planDensityCurve(sectionRoles, tb);
+  const densityCurve = { segments: densityPlan.segments, totalBars: tb };
 
   const guitarMap = planGuitarRegisterMap(sectionRoles);
   const bassMap = planBassRegisterMap(sectionRoles);
@@ -299,12 +315,7 @@ export function buildDuoLongFormCompositionContext(
   };
 
   const rehearsalMarkPlan = {
-    marks: [
-      { label: 'A', bar: 1 },
-      { label: "A'", bar: 9 },
-      { label: 'B', bar: 17 },
-      { label: "A''", bar: 25 },
-    ],
+    marks: lf.sections.map((s) => ({ label: s.label, bar: s.startBar })),
   };
 
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
@@ -323,13 +334,13 @@ export function buildDuoLongFormCompositionContext(
     instrumentProfiles: preset.instrumentProfiles,
     chordSymbolPlan,
     rehearsalMarkPlan,
-    lockedHarmonyBarsRaw: [...bars32],
+    lockedHarmonyBarsRaw: [...barsTb],
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: options?.parsedChordBars8 ? 'custom' : 'builtin',
       longFormDuo: true,
       modulationPlanActive: modulationPlan.active,
-      totalBars: LONG_FORM_DUO_BARS,
+      totalBars: tb,
       wybleVoiceLayout: wybleVoiceLayoutForPreset(options?.presetId ?? 'guitar_bass_duo'),
     },
     validation: { gates: [], passed: true },

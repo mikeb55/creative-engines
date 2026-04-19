@@ -12,8 +12,36 @@ export interface DuoLongFormSectionSpec {
 }
 
 export interface DuoLongFormPlan {
-  totalBars: 16 | 32;
+  totalBars: number;
   sections: DuoLongFormSectionSpec[];
+}
+
+const ROLE_CYCLE: SectionRole[] = ['statement', 'development', 'contrast', 'return'];
+const LABEL_CYCLE = ['A', "A'", 'B', "A''"] as const;
+
+/**
+ * 8-bar chunks up to 64 bars — cycle A / A′ / B / A″ with numeric suffix when the cycle repeats (second pass).
+ */
+export function buildDuoLongFormPlanForBarCount(n: number): DuoLongFormPlan {
+  if (n === 16) return buildDuoLongFormPlan16();
+  if (n === 32) return buildDuoLongFormPlan();
+  if (n % 8 !== 0 || n < 8 || n > 64) {
+    throw new Error(`buildDuoLongFormPlanForBarCount: expected 8–64 bars in steps of 8, got ${n}`);
+  }
+  const numSections = n / 8;
+  const sections: DuoLongFormSectionSpec[] = [];
+  for (let i = 0; i < numSections; i++) {
+    const base = LABEL_CYCLE[i % 4]!;
+    const cycle = Math.floor(i / 4);
+    const label = cycle === 0 ? base : `${base}-${cycle + 1}`;
+    sections.push({
+      label,
+      startBar: 1 + i * 8,
+      length: 8,
+      role: ROLE_CYCLE[i % 4]!,
+    });
+  }
+  return { totalBars: n, sections };
 }
 
 /**

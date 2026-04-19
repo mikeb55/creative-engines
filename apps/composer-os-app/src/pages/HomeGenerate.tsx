@@ -1008,7 +1008,7 @@ export function HomeGenerate({
             >
               Use standard jazz notation (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>)
               — spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
-              (8, 16, or 32). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
+              (8–64 in allowed lengths). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study progression.
             </p>
           ) : presetId === 'big_band' || presetId === 'string_quartet' ? (
@@ -1129,6 +1129,14 @@ export function HomeGenerate({
               <option value={16}>16 bars</option>
               <option value={24}>24 bars</option>
               <option value={32}>32 bars</option>
+              {(presetId === 'song_mode' ||
+                presetId === 'guitar_bass_duo' ||
+                presetId === 'guitar_bass_duo_single_line') && (
+                <>
+                  <option value={48}>48 bars</option>
+                  <option value={64}>64 bars</option>
+                </>
+              )}
               {ensembleSongFormPreset && (
                 <>
                   <option value={40}>40 bars</option>

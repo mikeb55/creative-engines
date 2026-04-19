@@ -299,9 +299,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       : undefined;
   const authorOv =
     typeof req.authorOverlay === 'string' && req.authorOverlay.trim() !== '' ? req.authorOverlay.trim() : undefined;
+  const barTarget = clampSongFormBarCount(req.totalBars, 32);
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
+    totalBars: barTarget,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv as AuthorRuleId | undefined,
@@ -314,7 +316,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         }
       : undefined,
   });
-  const barTarget = clampSongFormBarCount(req.totalBars, 32);
   let expectedSongFormBars: number = barTarget;
   if (req.formId != null) {
     const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);

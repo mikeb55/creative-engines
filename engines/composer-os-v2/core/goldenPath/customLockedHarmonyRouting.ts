@@ -5,6 +5,7 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
+import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
 
 /** Subset of golden-path options — avoids circular import with runGoldenPath.ts */
 export interface CustomLockedRoutingWire {
@@ -33,9 +34,9 @@ export function assertCustomLockedRouting(
   const locked = options?.lockedHarmonyBarsRaw;
 
   if (hm === 'custom_locked') {
-    if (!lockedLen || ![8, 16, 32].includes(lockedLen)) {
+    if (!lockedLen || !isAllowedSongFormBarCount(lockedLen)) {
       throw new Error(
-        `CUSTOM HARMONY ROUTING FAILURE at ${layer}: custom_locked requires lockedHarmonyBarsRaw length 8, 16, or 32.`
+        `CUSTOM HARMONY ROUTING FAILURE at ${layer}: custom_locked requires lockedHarmonyBarsRaw length to match allowed song-form bar counts.`
       );
     }
     if (!parsedBars || parsedBars.length !== lockedLen) {
@@ -54,7 +55,7 @@ export function assertCustomLockedRouting(
     }
   } else if (
     typeof lockedLen === 'number' &&
-    [8, 16, 32].includes(lockedLen) &&
+    isAllowedSongFormBarCount(lockedLen) &&
     parsedBars?.length === lockedLen
   ) {
     if (!parsedBars) return;
@@ -82,7 +83,7 @@ export function assertScoreMatchesLockedHarmonyWire(
   options: CustomLockedRoutingWire | undefined
 ): void {
   const wire = options?.lockedHarmonyBarsRaw ?? options?.parsedChordBars;
-  if (!wire || ![8, 16, 32].includes(wire.length)) return;
+  if (!wire || !isAllowedSongFormBarCount(wire.length)) return;
   /** Full-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -141,7 +142,7 @@ export function assertContextMatchesLocked32(
   options: CustomLockedRoutingWire | undefined
 ): void {
   const tb = context.form.totalBars;
-  if (context.presetId !== 'guitar_bass_duo' || ![8, 16, 32].includes(tb)) return;
+  if (context.presetId !== 'guitar_bass_duo' || !isAllowedSongFormBarCount(tb)) return;
   const locked = context.lockedHarmonyBarsRaw;
   if (!locked || locked.length !== tb) return;
   /** Long-form can also use built-in tiled harmony — only assert pasted/custom locked paths */

@@ -4,21 +4,30 @@
 
 import type { SongSectionPlan } from './songModeTypes';
 
+const DEFAULT_32_BAR_VC: SongSectionPlan[] = [
+  { order: 0, kind: 'verse' },
+  { order: 1, kind: 'chorus' },
+  { order: 2, kind: 'verse' },
+  { order: 3, kind: 'chorus' },
+  { order: 4, kind: 'verse' },
+  { order: 5, kind: 'chorus' },
+  { order: 6, kind: 'verse' },
+  { order: 7, kind: 'chorus' },
+];
+
 /**
- * Default structure: two full verse–chorus cycles (8 sections × 4 bars = 32 chord symbols).
- * Matches common 32-bar Song Mode targets without cycling the scaffold via padding.
+ * Default structure: verse–chorus cycles in 4-bar sections (`totalBars / 4` sections).
+ * For **≤32** bars this returns the legacy 8-section × 4 bar scaffold (32 chord symbols).
+ * For **48** bars → 12 sections; **64** bars → 16 sections (proportionally extended).
  */
-export function planDefaultVerseChorusStructure(): SongSectionPlan[] {
-  return [
-    { order: 0, kind: 'verse' },
-    { order: 1, kind: 'chorus' },
-    { order: 2, kind: 'verse' },
-    { order: 3, kind: 'chorus' },
-    { order: 4, kind: 'verse' },
-    { order: 5, kind: 'chorus' },
-    { order: 6, kind: 'verse' },
-    { order: 7, kind: 'chorus' },
-  ];
+export function planDefaultVerseChorusStructure(totalBars: number = 32): SongSectionPlan[] {
+  if (totalBars <= 32) return DEFAULT_32_BAR_VC;
+  const sectionCount = Math.floor(totalBars / 4);
+  const pattern = ['verse', 'chorus'] as const;
+  return Array.from({ length: sectionCount }, (_, i) => ({
+    order: i,
+    kind: pattern[i % 2]!,
+  }));
 }
 
 /**
