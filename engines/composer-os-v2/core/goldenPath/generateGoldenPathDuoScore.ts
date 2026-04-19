@@ -93,6 +93,7 @@ import { planMotifReuse } from '../motif-plus/motifReusePlanner';
 import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from './songModePhraseEngineV1';
 import { applySongModeMelodicContinuityPass } from './songModeMelodicContinuity';
 import { applySongModeGuitarDensityFloor } from './songModeGuitarDensityFloor';
+import { enforceSongModeGuitarDensity } from './songModeGuitarDensityEnforcer';
 import { applySongModeRhythmOverlayC1 } from './songModeRhythmOverlayC1';
 import { applySongwriterKeysCompPresentation } from './songwriterKeysCompPass';
 import { applySongModeFagenKeysCompV15 } from './fagenKeysCompV15';
@@ -855,7 +856,7 @@ function buildSongwriterMelodyProfile(
     case 'donald_fagen':
       return {
         phraseIntentBias: 'arch',
-        densityBias: 0.1,
+        densityBias: -0.15,
         offbeatBias: 0.7,
         intervalBias: 'chromatic',
         rhythmicFeel: 'syncopated',
@@ -863,7 +864,7 @@ function buildSongwriterMelodyProfile(
     case 'bacharach':
       return {
         phraseIntentBias: 'arch',
-        densityBias: -0.1,
+        densityBias: -0.15,
         offbeatBias: 0.3,
         intervalBias: 'leaping',
         rhythmicFeel: 'straight',
@@ -874,6 +875,22 @@ function buildSongwriterMelodyProfile(
         densityBias: -0.2,
         offbeatBias: 0.4,
         intervalBias: 'chromatic',
+        rhythmicFeel: 'laid_back',
+      };
+    case 'barry_harris':
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: -0.1,
+        offbeatBias: 0.55,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'syncopated',
+      };
+    case 'ecm_chamber':
+      return {
+        phraseIntentBias: 'descending',
+        densityBias: -0.25,
+        offbeatBias: 0.35,
+        intervalBias: 'stepwise',
         rhythmicFeel: 'laid_back',
       };
     case 'bill_evans':
@@ -2872,6 +2889,14 @@ export function generateGoldenPathDuoScore(
       tb === 32
     ) {
       applySongModePhraseEngineV1(guitarPart, context);
+    }
+    if (context.generationMetadata?.songModeHookFirstIdentity) {
+      guitarPart.measures = enforceSongModeGuitarDensity(
+        guitarPart.measures,
+        0.6,
+        0.75,
+        context.seed
+      );
     }
     if (isGuitarBassDuoFamily(context.presetId)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
