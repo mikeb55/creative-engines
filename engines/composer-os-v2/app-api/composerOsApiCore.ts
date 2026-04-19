@@ -23,6 +23,7 @@ import {
   resolveComposerLibraryRoot,
   resolveOpenFolderTarget,
 } from './composerOsOutputPaths';
+import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmony/songFormBarCounts';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -314,14 +315,11 @@ export function apiGenerate(
         req_.presetId === 'guitar_bass_duo' ||
         req_.presetId === 'guitar_bass_duo_single_line') &&
       tb !== undefined &&
-      tb !== 8 &&
-      tb !== 16 &&
-      tb !== 24 &&
-      tb !== 32
+      !isAllowedSongFormBarCount(tb)
     ) {
       return {
         success: false,
-        error: 'totalBars must be 8, 16, 24, or 32 for Song Mode and Guitar–Bass Duo presets.',
+        error: `totalBars must be one of: ${SONG_FORM_BAR_OPTIONS.join(', ')} for Song Mode and Guitar–Bass Duo presets.`,
         composerOsVersion: COMPOSER_OS_VERSION,
       };
     }
