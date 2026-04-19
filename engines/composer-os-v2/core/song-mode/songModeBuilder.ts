@@ -35,8 +35,21 @@ export interface WayneShorterChordPoolRow {
   tags: WayneShorterRowTags;
 }
 
-/** Plain chord row or Wayne Shorter row with symbols + tags. */
-export type ChordPoolRow = string[] | WayneShorterChordPoolRow;
+/** Row-level tags for Donald Fagen pools (Steely Dan–flavoured harmony scaffolding). */
+export interface DonaldFagenRowTags {
+  tension: 'low' | 'medium' | 'high';
+  motion: 'chromatic' | 'stepwise' | 'functional' | 'slash';
+  cadential: boolean;
+  pedal: boolean;
+}
+
+export interface DonaldFagenChordPoolRow {
+  chords: string[];
+  tags: DonaldFagenRowTags;
+}
+
+/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen). */
+export type ChordPoolRow = string[] | WayneShorterChordPoolRow | DonaldFagenChordPoolRow;
 
 function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
@@ -68,17 +81,80 @@ const SONGWRITER_CHORD_POOLS: Record<
 > = {
   donald_fagen: {
     verse: [
-      ['Dm9', 'G13', 'Cmaj7#11', 'A7alt'],
-      ['Em9', 'A13', 'Dmaj7#11', 'B7alt'],
-      ['Gm9', 'C13', 'Fmaj7#11', 'D7alt'],
-      ['Am9', 'D13', 'Gmaj7#11', 'E7alt'],
-      /** Slice v2 — turnaround / mixture-weighted rows (generic symbols; no fixed key). */
-      ['Dm7', 'G13', 'Cmaj9', 'Bbmaj9'],
-      ['Am7', 'D13', 'Gmaj9', 'Fmaj9'],
+      {
+        chords: ['Gmaj7', 'F#7#9', 'Fmaj7', 'E7#9', 'Ebmaj7', 'D7#9', 'Dbmaj7', 'C13sus4'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Cmaj7#11', 'E7#9b13', 'Amaj9', 'D13sus4', 'Gmaj7#11', 'B7#9', 'Emaj9', 'A13sus4'],
+        tags: {
+          tension: 'high',
+          motion: 'functional',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Bb6/9', 'A/C#', 'Gm11', 'F/A', 'Ebmaj7', 'D7#9', 'Cm9', 'F13sus4'],
+        tags: {
+          tension: 'medium',
+          motion: 'slash',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Dm9', 'Fmaj7/A', 'G13', 'A7#9', 'Dm11', 'Bbmaj7', 'C13sus4', 'A7b13'],
+        tags: {
+          tension: 'medium',
+          motion: 'functional',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
     chorus: [
-      ['Cmaj7#11', 'Bm7', 'Em9', 'A7alt'],
-      ['Fmaj7#11', 'Em7', 'Am9', 'D7alt'],
+      {
+        chords: ['Gmaj9', 'Am11', 'D13sus4', 'Gmaj7#11', 'Em9', 'A13', 'D9sus4', 'Gmaj6/9'],
+        tags: {
+          tension: 'medium',
+          motion: 'functional',
+          cadential: true,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Cmaj7', 'Eb7#9', 'Abmaj7#11', 'B7#9', 'Emaj7', 'G7#9', 'Cmaj9', 'D13sus4'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Amaj9', 'G#7#9', 'Gmaj7', 'F#7#9', 'Fmaj7#11', 'E7b13', 'Ebmaj9', 'D13'],
+        tags: {
+          tension: 'high',
+          motion: 'slash',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Fmaj7#11', 'E7#9', 'Am9', 'D13sus4', 'Gmaj6/9', 'F#7alt', 'Bm9', 'E13sus4'],
+        tags: {
+          tension: 'medium',
+          motion: 'functional',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
     bridge: [
       ['Ebmaj7', 'Abmaj7', 'Dm9', 'G7alt'],

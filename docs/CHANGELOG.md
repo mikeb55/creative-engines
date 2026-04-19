@@ -1,4 +1,14 @@
-## [2026-04-19] Revert wayne_shorter row scoring - add row metadata tags
+## [2026-04-19] Donald Fagen Song Mode - deepened chord pools
+
+### What changed
+- donald_fagen verse/chorus: 4x8 Steely Dan-style rows
+  (chromatic dominants, Lydian/alt, slash bass, 6/9
+  color) with DonaldFagenRowTags (tension, motion,
+  cadential, pedal) for future contextual selection
+- Replaces prior thin 4+2 generic rows; seed-based row
+  pick unchanged
+
+# [2026-04-19] Revert wayne_shorter row scoring - add row metadata tags
 
 ### What changed
 - wayneShorterChordRowScore.ts removed; seed % pool.length
