@@ -100,11 +100,21 @@ As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Son
 
 Other songwriter / era / lyric-author / arranger fields still behave mostly as compile rules, pairing metadata, and receipts; **Groove / Soul** and **Donald Fagen** (below) also have small golden-path metadata nudges.
 
-### Song Mode — Donald Fagen primary songwriter (first real primary-songwriter slice)
+### Song Mode — Donald Fagen primary songwriter (default)
 
-Choosing **primary songwriter → Donald Fagen** (or the API key **`songwriter_donald_fagen`**) applies **small additive** tweaks on top of the usual songwriter profile resolution: phrase-length regularity, moderate syncopation / medium-density steering, and harmonic-colour weights surfaced on **`generationMetadata`**, with short lines under **`songModeStyleSurfaceNotes`** on the receipt / **`_meta`** manifest — honest musical wording, not a mimicry claim.
+**Donald Fagen** is the **default primary songwriter** for Song Mode unless you pick someone else (or the API key **`songwriter_donald_fagen`**).
 
-**Slice v2 (2026-04):** Song planning may draw from **extra generic jazz-pop verse rows** (ii–V–I colour + borrowed maj7 colours). Phase **C1** rhythm overlay uses a **slightly higher syncopation bias** for **early phrases (bars 1–12)** only when primary is **Donald Fagen**; **`songModeDonaldFagenC1Receipt`** is set after C1 runs. Still **not** an authenticity claim.
+**What it sounds like:** **Jazz-pop** harmony with a **functional** backbone ? **chromatic dominant chains**, **slash-chord** bass motion, **Lydian #11** colour, and a **blues/pop skeleton** ? not abstract post-bop drift.
+
+**How it differs from Wayne Shorter:** Fagen-style pools stay **more tonal** ? clearer **key centre**, **decorated II–V-I** and **functional** moves. **Wayne Shorter** leans **non-functional**, **non-resolving** harmony and **open endings** (see the Wayne Shorter subsection below).
+
+**Chord types you will see:** **maj7#11**, **7#9**, **13sus4**, **6/9**, **slash chords**, **m11**, altered dominants, **add9 / mu-major** colour ? the engine pools spell the full vocabulary.
+
+**Pools (deepened):** **4 verse rows x 8 chords** and **4 chorus rows x 8 chords** with **metadata tags** (**tension**, **motion**, **cadential**, **pedal**) for future contextual selection (today row choice is still seed-based).
+
+**Best settings:** **BPM** roughly **90-120** matches typical Song Mode defaults; **bar length** is up to your form ? **32** bars is the common full scaffold.
+
+**Behaviour:** **`applyDonaldFagenSongwriterSurface`** applies phrase regularity, syncopation/density steering, and **`songModeStyleSurfaceNotes`** on the receipt / **`_meta`** manifest ? honest wording, not mimicry. **Slice v2 / C1:** slightly **higher syncopation bias** for **early phrases** when primary is Donald Fagen; **`songModeDonaldFagenC1Receipt`** ? still **not** an authenticity claim.
 
 **Listening recipe:** Same **seed**, **BPM**, **chords**, and **Style Engine profile**, then A/B **primary songwriter Donald Fagen** vs **another primary** (e.g. **Bacharach** or **Beatles**) and compare rhythm density and harmonic colour in the duo export.
 
