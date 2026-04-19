@@ -137,6 +137,26 @@ Choose **Wayne Shorter** as the **primary songwriter** when you want a **post-bo
 
 **Known limitation:** Rules in **`songwriterRuleRegistry`** and per-row **metadata tags** (**tension**, **motion**, **cadential**, **pedal**) **inform planning metadata** today. **Rule-to-chord wiring** is **metadata only** in the picker **until contextual selection** is implemented.
 
+### Song Mode — Bacharach primary songwriter
+
+- **Sounds like:** *Walk On By*, *Alfie*, *Close to You*
+- **Harmony:** chromatic mediants, secondary dominants, Bm7b5 pivot chords, stepwise root motion
+- **Best BPM:** 60–90, ballad to mid-tempo
+
+### Song Mode — Barry Harris primary songwriter
+
+- **Sounds like:** bebop, Monk, Bird-era jazz
+- **Harmony:** C6/Ddim7 alternation, G7b9 dominants, sixth diminished chains, minor six tonic
+- **Best BPM:** 120–200, uptempo bebop
+
+### Song Mode — ECM Chamber primary songwriter (`ecm_chamber`)
+
+This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the same dropdown row as **Generate → ECM Chamber** (ensemble mode).
+
+- **Sounds like:** Keith Jarrett, Jan Garbarek, Tord Gustavsen
+- **Harmony:** Cmaj7#11, Gmaj9(no3), modal drift, sparse slow-moving roots, wide open voicings
+- **Best BPM:** 50–80, slow and spacious
+
 ### Developers — Bacharach Song Mode (CLI, not the Generate UI)
 
 Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.

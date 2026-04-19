@@ -104,6 +104,12 @@ Most Song Mode ?style? controls still route through compile-time rules, receipts
 
 **Primary songwriter ? Wayne Shorter** (`wayne_shorter`) is available in Song Mode. Harmony **chord pools** use a Shorter-flavoured palette ? **maj7#11**, **7alt**, **m9** / **m11**, **mmaj7**, **13sus**, and **non-functional root motion** (avoiding tidy functional cadences). Each pool row carries **typed metadata tags** (**tension**, **motion**, **cadential**, **pedal**) as scaffolding for **future contextual chord selection** (selection today remains seed-based modulo). In **`songwriterRuleRegistry`**, **17** Wayne Shorter rules cover harmony, melody, rhythm, and form ? they **inform planning metadata** today; wiring rules to **context-aware** row choice is the next milestone.
 
+**Song Mode songwriter options** (additional primaries):
+
+- **bacharach:** chromatic mediants, secondary dominants, stepwise bass lines, 9th/13th chord dressing
+- **barry_harris:** sixth diminished vocabulary, bebop scale harmony, C6/Ddim7 alternation, minor six tonic
+- **ecm_chamber:** modal drift, wide open voicings, sparse rhythm, maj7#11 and add9 colors, slow root movement
+
 The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** (lines stack when both apply).
 
 **Developers — full Fagen / Song Mode / eval context:** [docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md](docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md) (engine hooks, diagnostics, `npm run eval:fagen`, baseline modes). Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See also [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
