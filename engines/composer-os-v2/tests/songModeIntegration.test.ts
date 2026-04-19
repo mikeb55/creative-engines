@@ -33,7 +33,7 @@ export function runSongModeIntegrationTests(): { ok: boolean; name: string }[] {
     sections: planDefaultVerseChorusStructure(),
   });
   out.push({
-    ok: hookOrders.length >= 1 && hookOrders.every((o) => [1, 3].includes(o)),
+    ok: hookOrders.length === 4 && hookOrders.every((o) => [1, 3, 5, 7].includes(o)),
     name: 'hook-bearing orders point at chorus in default plan',
   });
 

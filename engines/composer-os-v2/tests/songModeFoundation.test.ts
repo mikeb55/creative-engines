@@ -42,15 +42,24 @@ export function runSongModeFoundationTests(): { ok: boolean; name: string }[] {
 
   const sections = planDefaultVerseChorusStructure();
   const skinds = sections.map((s) => s.kind);
-  const expected = ['verse', 'chorus', 'verse', 'chorus'] as const;
+  const expected = [
+    'verse',
+    'chorus',
+    'verse',
+    'chorus',
+    'verse',
+    'chorus',
+    'verse',
+    'chorus',
+  ] as const;
   const match =
-    sections.length === 4 &&
+    sections.length === 8 &&
     skinds.every((k, i) => k === expected[i]) &&
     sections.every((s, i) => s.order === i);
 
   out.push({
     ok: match,
-    name: 'planDefaultVerseChorusStructure is verse/chorus/verse/chorus',
+    name: 'planDefaultVerseChorusStructure is V-C-V-C-V-C-V-C (32 bars of chords)',
   });
 
   const ext = planExtendedPopStructure();

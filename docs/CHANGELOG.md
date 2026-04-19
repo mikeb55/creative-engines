@@ -1,3 +1,13 @@
+## [2026-04-19] Fix bars 25-32 repeat in Song Mode
+
+### What changed
+- planDefaultVerseChorusStructure extended from 4 to 8
+  sections (16 ? 32 chord symbols)
+- Bars 25-32 no longer repeat bars 9-16
+- Scaffold now reaches 32 unique chords before padding
+- Tests updated and passing: foundation, integration,
+  lead-sheet (20 checks)
+
 ## [2026-04-19] Wayne Shorter chord pools and padding fix
 
 ### What changed

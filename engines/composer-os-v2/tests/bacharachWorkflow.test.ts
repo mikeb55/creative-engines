@@ -304,3 +304,12 @@ export function runBacharachWorkflowDeveloperTests(): { name: string; ok: boolea
     ['workflow scripts do not import Fagen / Sophisticated Pop eval runners', testWorkflowScriptImportsIsolation],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
+
+/** Jest entry — same assertions as `npm run test --prefix engines/composer-os-v2` suite. */
+describe('bacharachWorkflowDeveloper', () => {
+  it('runBacharachWorkflowDeveloperTests all pass', () => {
+    const r = runBacharachWorkflowDeveloperTests();
+    const failed = r.filter((x) => !x.ok);
+    expect(failed).toEqual([]);
+  });
+});

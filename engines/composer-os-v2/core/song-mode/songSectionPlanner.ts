@@ -4,13 +4,20 @@
 
 import type { SongSectionPlan } from './songModeTypes';
 
-/** Default structure: verse → chorus → verse → chorus. */
+/**
+ * Default structure: two full verse–chorus cycles (8 sections × 4 bars = 32 chord symbols).
+ * Matches common 32-bar Song Mode targets without cycling the scaffold via padding.
+ */
 export function planDefaultVerseChorusStructure(): SongSectionPlan[] {
   return [
     { order: 0, kind: 'verse' },
     { order: 1, kind: 'chorus' },
     { order: 2, kind: 'verse' },
     { order: 3, kind: 'chorus' },
+    { order: 4, kind: 'verse' },
+    { order: 5, kind: 'chorus' },
+    { order: 6, kind: 'verse' },
+    { order: 7, kind: 'chorus' },
   ];
 }
 

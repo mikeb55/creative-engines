@@ -18,7 +18,7 @@ export function runLeadSheetContractTests(): { ok: boolean; name: string }[] {
   const v = validateLeadSheetContract(ls);
 
   out.push({
-    ok: v.valid && ls.chordSymbols.length >= 4 && ls.formSummary.sections.length === 4,
+    ok: v.valid && ls.chordSymbols.length >= 4 && ls.formSummary.sections.length === 8,
     name: 'lead sheet contract validates for default compiled song',
   });
 
