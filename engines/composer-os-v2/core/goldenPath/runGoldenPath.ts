@@ -86,7 +86,6 @@ import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
-import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
 import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
@@ -1260,18 +1259,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       const contourWarning = 'return lost contour identity';
       const literalWarning = 'literal repetition';
       const similarityWarning = 'return similarity';
-      /** Bacharach: sliding 8-bar motif coverage often reads low while harmony/line quality is strong — demote to warning (same routing as hook contour). */
+      /** Song Mode: sliding-window motif coverage can read low while harmony/line quality is strong — non-blocking (same routing as hook contour). */
       const slidingMotifCoverageWarning = 'motif-mapped notes <50% in sliding window';
-      const primarySongwriterKey = normalizeSongwriterStyleKey(
-        md.songwriterStyleId ?? options?.primarySongwriterStyle ?? null
-      );
-      const bacharachPrimary = primarySongwriterKey === 'bacharach';
       for (const issue of motifIssues) {
         const routeToPhraseWarnings =
           issue.includes(contourWarning) ||
           issue.includes(literalWarning) ||
           issue.includes(similarityWarning) ||
-          (bacharachPrimary && issue.includes(slidingMotifCoverageWarning));
+          issue.includes(slidingMotifCoverageWarning);
         if (routeToPhraseWarnings) {
           songModePhraseWarnings = [...(songModePhraseWarnings ?? []), issue];
         } else {

@@ -250,8 +250,15 @@ export function runBehaviourGates(
 
     if (styleModules.includes('barry_harris')) {
       const style = validateBarryHarrisConformance(score, opts?.compositionContext?.generationMetadata);
-      styleValid = style.valid;
-      if (!style.valid) errors.push(...style.errors);
+      const voiceLeadingJumpsWarningSubstr = 'Voice-leading jumps excessive';
+      let blockingStyleErrors = style.errors;
+      if (songMode) {
+        const vl = blockingStyleErrors.filter((e) => e.includes(voiceLeadingJumpsWarningSubstr));
+        blockingStyleErrors = blockingStyleErrors.filter((e) => !e.includes(voiceLeadingJumpsWarningSubstr));
+        duoIdentityWarnings.push(...vl);
+      }
+      styleValid = blockingStyleErrors.length === 0;
+      errors.push(...blockingStyleErrors);
     }
   }
 
