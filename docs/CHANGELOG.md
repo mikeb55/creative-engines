@@ -1,3 +1,9 @@
+## [2026-04-19] GCE style eval — v2.0 category names + four new scorers (GCE)
+
+### What changed
+- **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: Replaced v1.0 subjective rows (**Emotional Core**, **Lyric Craft**, **Arrangement**, **Afterglow**) with **GCE v2.0** labels; removed Claude **`scoreSubjectiveCategories`** dependency for this harness.
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: Added **`scoreCadentialClarity`**, **`scorePhraseGrammar`**, **`scoreArrangementAndOrchestration`**, **`scoreThematicRecallPotential`** (section cadence checks, phrase/rest stats, guitar–bass density/register/activity, cross-section motif tallies).
+
 ## [2026-04-19] Melodic identity scorer — GCE v2.0 formula (GCE)
 
 ### What changed

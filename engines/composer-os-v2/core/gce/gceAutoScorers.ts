@@ -1,6 +1,6 @@
 import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 
 /** Section slice for GCE Structure & Form (aligned with `FormMap` / lead sheet conventions). */
 export interface GceStructureSection {
@@ -365,5 +365,232 @@ export function scoreTensionAndRelease(chords: string[]): CategoryScore {
   return {
     score,
     justification: `${arcs} tension-release arcs found`,
+  };
+}
+
+function chordSymbolTonicFamily(raw: string): boolean {
+  const c = raw.trim();
+  if (/maj7|maj9/i.test(c)) return true;
+  if (/\bm7\b|\bm9\b|\bm11\b|\bm13\b/i.test(c)) return true;
+  return /^[A-G][#b]?m?$/.test(c) || /^[A-G][#b]?$/.test(c);
+}
+
+/** GCE v2.0 — Cadential Clarity */
+export function scoreCadentialClarity(
+  line: MelodicNote[],
+  chords: string[],
+  sections: GceStructureSection[]
+): CategoryScore {
+  if (!sections?.length || !chords.length) {
+    return { score: 0, justification: 'Insufficient section or chord data' };
+  }
+  const notes = line.filter((n) => !n.rest && n.midi > 0);
+  let strongBeatLandings = 0;
+  let tonicLandings = 0;
+  let longNoteEndings = 0;
+
+  for (const sec of sections) {
+    const inSection = notes.filter((n) => n.bar >= sec.barStart && n.bar <= sec.barEnd);
+    if (inSection.length === 0) continue;
+    const last = inSection[inSection.length - 1]!;
+    const beatInt = Math.floor(last.beat);
+    if (beatInt === 0 || beatInt === 1) strongBeatLandings++;
+
+    const chordIdx = last.bar - 1;
+    const chordSym = chordIdx >= 0 && chordIdx < chords.length ? chords[chordIdx]! : '';
+    if (chordSym && chordSymbolTonicFamily(chordSym)) tonicLandings++;
+
+    if (last.beats >= 1.5) longNoteEndings++;
+  }
+
+  const denom = 3 * sections.length;
+  const raw =
+    denom > 0 ? (10 * (strongBeatLandings + tonicLandings + longNoteEndings)) / denom : 0;
+  const score = Math.max(0, Math.min(10, Math.round(raw * 10) / 10));
+  return {
+    score,
+    justification:
+      `strong beats ${strongBeatLandings}, tonic-family ${tonicLandings}, long endings ${longNoteEndings} / ${sections.length} sections`,
+  };
+}
+
+/** GCE v2.0 — Phrase Grammar */
+export function scorePhraseGrammar(line: MelodicNote[]): CategoryScore {
+  const phrases: MelodicNote[][] = [];
+  let buf: MelodicNote[] = [];
+  for (const e of line) {
+    if (e.rest && e.beats >= 0.75) {
+      if (buf.length) {
+        phrases.push(buf);
+        buf = [];
+      }
+      continue;
+    }
+    buf.push(e);
+  }
+  if (buf.length) phrases.push(buf);
+
+  const pitchedPhrases = phrases.filter((p) => p.some((n) => !n.rest && n.midi > 0));
+  const totalPhrases = Math.max(pitchedPhrases.length, 1);
+  let closedPhrases = 0;
+  const lengths: number[] = [];
+  for (let p = 0; p < pitchedPhrases.length; p++) {
+    const pitched = pitchedPhrases[p]!.filter((n) => !n.rest && n.midi > 0);
+    if (!pitched.length) continue;
+    lengths.push(pitched.length);
+    const last = pitched[pitched.length - 1]!;
+    if (p < pitchedPhrases.length - 1 || last.beats >= 1.5) closedPhrases++;
+  }
+
+  const phraseCount = pitchedPhrases.length;
+  let phraseVariety = 0;
+  if (lengths.length > 0) {
+    const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const variance =
+      lengths.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / lengths.length;
+    phraseVariety = Math.min(Math.sqrt(variance) / (mean + 0.01), 1);
+  }
+
+  const rawScore =
+    10 *
+    (0.4 * (closedPhrases / totalPhrases) +
+      0.3 * Math.min(phraseCount / 6, 1) +
+      0.3 * phraseVariety);
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  return {
+    score,
+    justification: `${closedPhrases}/${totalPhrases} closed phrases, ${phraseCount} phrases, variety ${(phraseVariety * 10).toFixed(1)}`,
+  };
+}
+
+function countNotesPerBar(part: PartModel): Map<number, number> {
+  const m = new Map<number, number>();
+  for (const meas of part.measures) {
+    let n = 0;
+    for (const e of meas.events) {
+      if (e.kind === 'note') n++;
+    }
+    m.set(meas.index, n);
+  }
+  return m;
+}
+
+function collectMidiRange(part: PartModel): { min: number; max: number } {
+  let min = 127;
+  let max = 0;
+  for (const meas of part.measures) {
+    for (const e of meas.events) {
+      if (e.kind === 'note') {
+        min = Math.min(min, e.pitch);
+        max = Math.max(max, e.pitch);
+      }
+    }
+  }
+  return min <= max ? { min, max } : { min: 60, max: 60 };
+}
+
+/** GCE v2.0 — Arrangement & Orchestration */
+export function scoreArrangementAndOrchestration(score: ScoreModel): CategoryScore {
+  const guitar = score.parts.find((p) => p.id === 'guitar');
+  const bass = score.parts.find((p) => p.id === 'bass');
+  if (!guitar || !bass) {
+    return { score: 4, justification: 'Missing guitar or bass part' };
+  }
+
+  const gMap = countNotesPerBar(guitar);
+  const bMap = countNotesPerBar(bass);
+  const bars = new Set([...gMap.keys(), ...bMap.keys()]);
+  const barList = [...bars].sort((a, b) => a - b);
+  if (barList.length === 0) {
+    return { score: 0, justification: 'No measures' };
+  }
+
+  let diffSum = 0;
+  const totals: number[] = [];
+  for (const bar of barList) {
+    const gn = gMap.get(bar) ?? 0;
+    const bn = bMap.get(bar) ?? 0;
+    diffSum += Math.abs(gn / 4 - bn / 4);
+    totals.push(gn + bn);
+  }
+  const densityDifference = diffSum / barList.length;
+
+  const gR = collectMidiRange(guitar);
+  const bR = collectMidiRange(bass);
+  const registerSeparation = Math.max(0, gR.min - bR.max);
+
+  const meanTot = totals.reduce((a, b) => a + b, 0) / totals.length;
+  const varTot =
+    totals.reduce((s, v) => s + Math.pow(v - meanTot, 2), 0) / totals.length;
+  const activePartVariety = Math.sqrt(varTot);
+
+  const rawScore =
+    10 *
+    (0.4 * Math.min(densityDifference / 0.5, 1) +
+      0.35 * Math.min(registerSeparation / 12, 1) +
+      0.25 * Math.min(activePartVariety / 2, 1));
+  const sc = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  return {
+    score: sc,
+    justification:
+      `density Δ ${densityDifference.toFixed(2)}, register gap ${registerSeparation.toFixed(0)} semitones, part activity σ ${activePartVariety.toFixed(1)}`,
+  };
+}
+
+function sectionIndexForBar(bar: number, sections: GceStructureSection[]): number {
+  for (let s = 0; s < sections.length; s++) {
+    const sec = sections[s]!;
+    if (bar >= sec.barStart && bar <= sec.barEnd) return s;
+  }
+  return -1;
+}
+
+/** Same 4-note interval windows as scoreMelodicIdentity (for thematic recall). */
+function melodicIntervalWindows(pitches: number[]): number[][] {
+  const windowSize = 4;
+  const windows: number[][] = [];
+  for (let i = 0; i <= pitches.length - windowSize; i++) {
+    const win = pitches.slice(i, i + windowSize);
+    windows.push(win.slice(1).map((p, j) => (((p - win[j]!) % 12) + 12) % 12));
+  }
+  return windows;
+}
+
+/** GCE v2.0 — Thematic Recall Potential */
+export function scoreThematicRecallPotential(
+  line: MelodicNote[],
+  sections: GceStructureSection[]
+): CategoryScore {
+  const notes = line.filter((n) => !n.rest && n.midi > 0);
+  if (notes.length < 4 || !sections.length) {
+    return { score: 0, justification: 'Too few notes or no sections' };
+  }
+  const pitches = notes.map((n) => n.midi);
+  const windows = melodicIntervalWindows(pitches);
+  const motifSectionSets = new Map<string, Set<number>>();
+
+  for (let i = 0; i < windows.length; i++) {
+    for (let j = i + 2; j < windows.length; j++) {
+      const match = windows[i]!.every((iv, k) => Math.abs(iv - windows[j]![k]!) <= 2);
+      if (!match) continue;
+      const key = windows[i]!.join(',');
+      if (!motifSectionSets.has(key)) motifSectionSets.set(key, new Set());
+      const si = sectionIndexForBar(notes[i]!.bar, sections);
+      const sj = sectionIndexForBar(notes[j]!.bar, sections);
+      if (si >= 0) motifSectionSets.get(key)!.add(si);
+      if (sj >= 0) motifSectionSets.get(key)!.add(sj);
+    }
+  }
+
+  let crossSectionMotifs = 0;
+  for (const set of motifSectionSets.values()) {
+    if (set.size >= 2) crossSectionMotifs++;
+  }
+
+  const rawScore = 10 * Math.min(crossSectionMotifs / 3, 1);
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  return {
+    score,
+    justification: `${crossSectionMotifs} motif type(s) across 2+ sections`,
   };
 }
