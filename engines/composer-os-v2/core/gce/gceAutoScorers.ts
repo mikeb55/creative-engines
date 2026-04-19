@@ -36,6 +36,9 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
 
   const pitches = notes.map((n) => n.midi);
 
+  const uniquePitchCount = new Set(pitches).size;
+  const pitchClassCount = new Set(pitches.map((p) => p % 12)).size;
+
   // R — motif recurrence (sliding windows, pitch-class interval vectors)
   const windowSize = 4;
   const windows: number[][] = [];
@@ -70,19 +73,27 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
     if (p > 0) entropy -= p * Math.log2(p);
   }
   const maxEntropy = Math.log2(3);
-  const contourCompression = 1 - entropy / maxEntropy;
+  let contourCompression = 1 - entropy / maxEntropy;
+
+  const pitchMean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+  const pitchVariance =
+    pitches.reduce((s, p) => s + Math.pow(p - pitchMean, 2), 0) / pitches.length;
+  const pitchStddev = Math.sqrt(pitchVariance);
+  /** Flat / single repeated pitch: entropy favours “all same” → treat as no contour. */
+  if (pitchStddev < 1.0) {
+    contourCompression = 0;
+  }
 
   // I — interval economy
   const stepIntervals = pitches.slice(1).map((p, i) => Math.abs(p - pitches[i]!));
   const uniqueIntervals = new Set(stepIntervals.map((iv) => Math.min(iv, 12))).size;
-  const intervalEconomy = 1 - Math.min(uniqueIntervals / 10, 1);
+  let intervalEconomy = 1 - Math.min(uniqueIntervals / 10, 1);
+  if (uniqueIntervals <= 1) {
+    intervalEconomy = 0;
+  }
 
   // G — register cohesion
-  const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
-  const variance =
-    pitches.reduce((s, p) => s + Math.pow(p - mean, 2), 0) / pitches.length;
-  const stddev = Math.sqrt(variance);
-  const registerCohesion = 1 - Math.min(stddev / 12, 1);
+  const registerCohesion = 1 - Math.min(pitchStddev / 12, 1);
 
   const rawScore =
     10 *
@@ -91,7 +102,20 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
       0.2 * intervalEconomy +
       0.2 * registerCohesion);
 
-  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  let score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+
+  if (uniquePitchCount <= 2) {
+    return {
+      score: Math.min(2, score),
+      justification: 'HARD FAIL — insufficient pitch variety',
+    };
+  }
+  if (pitchClassCount <= 2) {
+    return {
+      score: Math.min(3, score),
+      justification: 'HARD FAIL — insufficient pitch class variety',
+    };
+  }
 
   const hardFail = motifRecurrence < 0.35;
 
