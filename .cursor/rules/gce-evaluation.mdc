@@ -1,0 +1,24 @@
+---
+description: GCE v2.0 universal evaluation — Composer OS MusicXML and musical output.
+alwaysApply: true
+---
+
+# GCE v2.0 — Universal Music Evaluation Standard
+# Applied automatically to ALL Composer OS musical output
+
+Every time Composer OS generates MusicXML output, evaluate
+against GCE v2.0 before confirming success.
+
+Full framework: see docs/GCE_FRAMEWORK_V2.md
+
+Quick reference:
+- 10 categories, all score 0-10
+- Overall must reach 9.0
+- If < 9.0: revise weakest only, one pass, no full rewrite
+- Hard fail: Melody <= 6, no section contrast, accidental ending
+
+Apply this framework whenever:
+- Generating or evaluating any MusicXML output
+- Reviewing chord progressions or melody lines
+- Assessing any musical sketch, song, or arrangement
+- Running gceStyleEval or any evaluation script

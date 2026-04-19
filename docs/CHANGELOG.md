@@ -1,3 +1,8 @@
+## [2026-04-19] GCE v2.0 system-wide Cursor rule
+
+### What changed
+- **`.cursor/rules/gce-evaluation.mdc`**: **`alwaysApply`** rule so agents evaluate Composer OS musical output against **GCE v2.0** (see **`docs/GCE_FRAMEWORK_V2.md`**) before treating generation as successful.
+
 ## [2026-04-19] GCE v2.0 universal music evaluation framework (docs)
 
 ### What changed
