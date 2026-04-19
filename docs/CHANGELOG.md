@@ -1,3 +1,8 @@
+## [2026-04-19] Melodic identity scorer — GCE v2.0 formula (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreMelodicIdentity`** no longer delegates to **`evaluateMelody`**; it scores **10 × (0.35R + 0.25C + 0.20I + 0.20G)** — **R** sliding-window interval-vector recurrence (tolerant match), **C** contour **U/D/S** compression (1 − normalized entropy), **I** interval economy from unique step sizes, **G** register cohesion from MIDI spread; **hard cap ≤6** when **`motifRecurrence < 0.35`**.
+
 ## [2026-04-19] Structure & form scorer — adjacent contrast + return + boundaries (GCE)
 
 ### What changed

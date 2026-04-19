@@ -1,4 +1,3 @@
-import { evaluateMelody } from './gce_melody_eval';
 import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
@@ -26,10 +25,80 @@ export interface CategoryScore {
 }
 
 export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
-  const result = evaluateMelody(line, { beatsPerBar: 4 });
+  const notes = line.filter((n) => !n.rest && n.midi > 0);
+  if (notes.length < 4) {
+    return { score: 0, justification: 'Too few notes' };
+  }
+
+  const pitches = notes.map((n) => n.midi);
+
+  // R — motif recurrence (sliding windows, pitch-class interval vectors)
+  const windowSize = 4;
+  const windows: number[][] = [];
+  for (let i = 0; i <= pitches.length - windowSize; i++) {
+    const win = pitches.slice(i, i + windowSize);
+    const intervals = win.slice(1).map((p, j) => (((p - win[j]!) % 12) + 12) % 12);
+    windows.push(intervals);
+  }
+  let recurrences = 0;
+  for (let i = 0; i < windows.length; i++) {
+    for (let j = i + 2; j < windows.length; j++) {
+      const match = windows[i]!.every((iv, k) => Math.abs(iv - windows[j]![k]!) <= 2);
+      if (match) {
+        recurrences++;
+        break;
+      }
+    }
+  }
+  const motifRecurrence =
+    windows.length > 0 ? Math.min(recurrences / (windows.length * 0.4), 1) : 0;
+
+  // C — contour compression (U/D/S entropy; lower entropy → more directed contour)
+  const contour = pitches.slice(1).map((p, i) =>
+    p > pitches[i]! ? 'U' : p < pitches[i]! ? 'D' : 'S'
+  );
+  const counts = { U: 0, D: 0, S: 0 };
+  for (const c of contour) counts[c as 'U' | 'D' | 'S']++;
+  const total = contour.length;
+  let entropy = 0;
+  for (const k of ['U', 'D', 'S'] as const) {
+    const p = counts[k] / total;
+    if (p > 0) entropy -= p * Math.log2(p);
+  }
+  const maxEntropy = Math.log2(3);
+  const contourCompression = 1 - entropy / maxEntropy;
+
+  // I — interval economy
+  const stepIntervals = pitches.slice(1).map((p, i) => Math.abs(p - pitches[i]!));
+  const uniqueIntervals = new Set(stepIntervals.map((iv) => Math.min(iv, 12))).size;
+  const intervalEconomy = 1 - Math.min(uniqueIntervals / 10, 1);
+
+  // G — register cohesion
+  const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+  const variance =
+    pitches.reduce((s, p) => s + Math.pow(p - mean, 2), 0) / pitches.length;
+  const stddev = Math.sqrt(variance);
+  const registerCohesion = 1 - Math.min(stddev / 12, 1);
+
+  const rawScore =
+    10 *
+    (0.35 * motifRecurrence +
+      0.25 * contourCompression +
+      0.2 * intervalEconomy +
+      0.2 * registerCohesion);
+
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+
+  const hardFail = motifRecurrence < 0.35;
+
   return {
-    score: result.score,
-    justification: result.reasons[0] ?? 'No reasons',
+    score: hardFail ? Math.min(score, 6) : score,
+    justification:
+      `motif recurrence ${(motifRecurrence * 10).toFixed(1)}, ` +
+      `contour ${(contourCompression * 10).toFixed(1)}, ` +
+      `interval economy ${(intervalEconomy * 10).toFixed(1)}, ` +
+      `register cohesion ${(registerCohesion * 10).toFixed(1)}` +
+      (hardFail ? ' [HARD FAIL]' : ''),
   };
 }
 
