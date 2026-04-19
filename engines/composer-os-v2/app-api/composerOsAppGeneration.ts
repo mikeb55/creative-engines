@@ -18,7 +18,8 @@ import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
-import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
+import { scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
@@ -436,7 +437,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
   });
-  const gp = runGoldenPath(effectiveSeed, {
+  const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
@@ -464,7 +465,35 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
     era: req.stylePairing?.era ?? undefined,
-  });
+  };
+
+  let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+
+  /** GCE ship gate — retry with deterministic seed offsets when below threshold (see `core/gce/gceGate.ts`). */
+  const GCE_GATE_MIN = 8.5;
+  const GCE_GATE_MAX_RETRIES = 3;
+  const GCE_RETRY_SEED_OFFSETS = [77777, 88883, 99991] as const;
+
+  let bestGceScore = -1;
+  if (gp.xml && gp.score) {
+    const gceResult = scoreGoldenPathResultForGce(gp.score, gp.context);
+    bestGceScore = gceResult.overallScore;
+
+    if (!gceResult.passed) {
+      for (let i = 0; i < GCE_GATE_MAX_RETRIES; i++) {
+        const retrySeed = effectiveSeed + GCE_RETRY_SEED_OFFSETS[i]!;
+        const retryGp = runGoldenPath(retrySeed, songModeGoldenPathOptions);
+        if (retryGp.xml && retryGp.score) {
+          const retryGce = scoreGoldenPathResultForGce(retryGp.score, retryGp.context);
+          if (retryGce.overallScore > bestGceScore) {
+            bestGceScore = retryGce.overallScore;
+            gp = retryGp;
+          }
+          if (retryGce.passed) break;
+        }
+      }
+    }
+  }
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
   if (isDesktopTruthDumpEnabled()) {
     logSongModeTruthDumpConsole({
@@ -606,6 +635,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songwriterSyncopationBias: gp.context.generationMetadata.songwriterSyncopationBias,
       songwriterDensityBias: gp.context.generationMetadata.songwriterDensityBias,
       songModeSectionShapingDiagnostics: gp.context.generationMetadata.songModeSectionShapingDiagnostics,
+      gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
+      gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,
@@ -714,6 +745,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     universalLeadSheet,
     requestEcho: requestEchoFromReq(req),
     vocalLeadSheetFilepath,
+    gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
+    gceGatePassed: bestGceScore >= GCE_GATE_MIN,
   };
 }
 

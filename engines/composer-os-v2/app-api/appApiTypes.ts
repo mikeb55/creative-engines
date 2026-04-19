@@ -245,4 +245,8 @@ export interface OutputEntry {
   songwriterSyncopationBias?: number;
   songwriterDensityBias?: number;
   songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
+  /** Song Mode — GCE weighted overall when gate ran (`core/gce/gceGate.ts`). */
+  gceScore?: number;
+  /** Song Mode — ship gate threshold met (≥ 8.5). */
+  gceGatePassed?: boolean;
 }

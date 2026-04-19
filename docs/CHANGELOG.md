@@ -1,3 +1,15 @@
+## [2026-04-19] GCE gate loop — generate->evaluate->retry
+
+### What was built
+- gceGate.ts: scores any GoldenPathResult against all
+  10 GCE v2.0 categories using same weights as eval
+- Gate wired into runSongStructure: if score < 8.5,
+  retries up to 3x with seed offsets [77777, 88883, 99991]
+- Keeps highest GCE scoring result across all attempts
+- gceScore and gceGatePassed added to GenerateResult,
+  OutputManifest, and appApiTypes
+- Tests: test:duo PASS, test:vocal PASS
+
 ## [2026-04-19] GCE v2.0 — definitive benchmark all presets
 
 ### Final scores (seed 50021, 32 bars, 100 BPM)
@@ -786,6 +798,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

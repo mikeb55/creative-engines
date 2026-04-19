@@ -83,6 +83,8 @@ export function writeOutputManifest(
     songwriterSyncopationBias?: number;
     songwriterDensityBias?: number;
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
+    gceScore?: number;
+    gceGatePassed?: boolean;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -147,6 +149,8 @@ export function writeOutputManifest(
     songwriterSyncopationBias: meta.songwriterSyncopationBias,
     songwriterDensityBias: meta.songwriterDensityBias,
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
+    gceScore: meta.gceScore,
+    gceGatePassed: meta.gceGatePassed,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }
