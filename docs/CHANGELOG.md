@@ -1,3 +1,15 @@
+## [2026-04-19] Era bias layer (golden path metadata)
+
+### What changed
+- `resolveEraProfile` / `applyEraBiasToGenerationMetadata`:
+  `post_bop`, `fusion`, `contemporary` nudge
+  `songwriterSyncopationBias` (rhythm; clamped 0?1) and set
+  `harmonyDensityBias`. `songModeRhythmStrength` stays an enum
+  (stable / balanced / surprise), not a scalar.
+- Runs in `runGoldenPathOnce` after songwriter + blend metadata
+  so era stacks on songwriter syncopation. Gated with
+  `era != null` only.
+
 ## [2026-04-19] RunGoldenPath: `era` metadata plumbing
 
 ### What changed

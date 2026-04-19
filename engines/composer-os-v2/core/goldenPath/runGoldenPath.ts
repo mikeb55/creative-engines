@@ -3,7 +3,7 @@
  * preset → feel → section roles → density → register map → behaviours → score → integrity → export → validation → manifest
  */
 
-import type { CompositionContext, HarmonyPipelineStage } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, HarmonyPipelineStage } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -415,6 +415,35 @@ function buildDuoTwentyFourBarCompositionContext(
     readiness: { release: release.release, mx: release.mx },
   };
   return context;
+}
+
+/**
+ * Era → small numeric biases. Recognised ids: `post_bop`, `fusion`, `contemporary`; other strings yield zeros.
+ * Rhythm bias applies to `songwriterSyncopationBias` (0–1), not `songModeRhythmStrength` (that field is stable | balanced | surprise).
+ */
+function resolveEraProfile(era: string): { rhythmBias: number; harmonyDensityBias: number } {
+  const k = era.trim().toLowerCase().replace(/-/g, '_');
+  switch (k) {
+    case 'post_bop':
+      return { rhythmBias: 0.15, harmonyDensityBias: 0.2 };
+    case 'fusion':
+      return { rhythmBias: 0.1, harmonyDensityBias: 0.1 };
+    case 'contemporary':
+      return { rhythmBias: 0.0, harmonyDensityBias: 0.0 };
+    default:
+      return { rhythmBias: 0.0, harmonyDensityBias: 0.0 };
+  }
+}
+
+/** Apply era nudges to existing metadata fields only; call after songwriter/style metadata merges when `era` is set. */
+function applyEraBiasToGenerationMetadata(md: GenerationMetadata | undefined, era: string): void {
+  if (md == null) return;
+  const eraProfile = resolveEraProfile(era);
+  md.songwriterSyncopationBias = Math.min(
+    1.0,
+    (md.songwriterSyncopationBias ?? 0.5) + eraProfile.rhythmBias
+  );
+  md.harmonyDensityBias = eraProfile.harmonyDensityBias;
 }
 
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
@@ -1173,6 +1202,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       blendStrength: options.blendStrength,
     };
+  }
+
+  /** Era bias after songwriter / surfaces / blend — stacks on `songwriterSyncopationBias` (not `songModeRhythmStrength`, which is an enum). */
+  const eraForBias = options?.era;
+  if (eraForBias != null) {
+    applyEraBiasToGenerationMetadata(context.generationMetadata, eraForBias);
   }
 
   appendHarmonyPipelineTrace(context, 'composition_context', [

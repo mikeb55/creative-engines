@@ -246,6 +246,8 @@ export interface GenerationMetadata {
   songwriterSyncopationBias?: number;
   /** Songwriter profile: density bias (0–1). */
   songwriterDensityBias?: number;
+  /** Golden path era hint: harmony density bias from `resolveEraProfile` (additive metadata; Song Mode when `era` set). */
+  harmonyDensityBias?: number;
   fagenMuChordBias?: number;
   fagenLydianMajorBias?: number;
   fagenAlteredDominantBias?: number;
