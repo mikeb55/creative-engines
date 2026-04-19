@@ -21,8 +21,6 @@ import {
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 
-const STYLES = ['donald_fagen', 'wayne_shorter', 'bacharach', 'barry_harris', 'ecm_chamber'] as const;
-
 /** Raw preset runs — seed 50021, 32 bars, 100 bpm; no songwriter / Song Mode hook flags. */
 const GCE_EVAL_PRESETS = [
   'guitar_bass_duo',
@@ -32,7 +30,18 @@ const GCE_EVAL_PRESETS = [
   'big_band',
   'string_quartet',
   'riff_generator',
-  'song_mode',
+] as const;
+
+/**
+ * Former `song_mode` preset used an 8-bar golden path — GCE melody must use long-form duo (32 bars).
+ * Evaluated as `guitar_bass_duo` + Song Mode hook + primary songwriter (same routing as style sweep).
+ */
+const SONG_MODE_GCE_RUNS = [
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'donald_fagen', label: 'song_mode_fagen' },
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'wayne_shorter', label: 'song_mode_shorter' },
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'bacharach', label: 'song_mode_bacharach' },
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'barry_harris', label: 'song_mode_barry_harris' },
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'ecm_chamber', label: 'song_mode_ecm' },
 ] as const;
 
 const CAT_PAD = 34;
@@ -188,38 +197,29 @@ function main(): void {
   /** One preset per process — avoids long-run heap growth when `npm run eval:gce-styles` OOMs (e.g. ECM + trace). */
   const singlePreset = process.env.GCE_SINGLE_PRESET?.trim();
   if (singlePreset) {
+    const songModeRun = SONG_MODE_GCE_RUNS.find((r) => r.label === singlePreset);
     console.log(`\n${'═'.repeat(50)}`);
     console.log(`GCE EVALUATION — PRESET: ${singlePreset}`);
     console.log('═'.repeat(50));
-    const result = runGoldenPath(50021, {
-      presetId: singlePreset,
-      totalBars: 32,
-      bpm: 100,
-      longFormEnabled: true,
-    });
+    const result = songModeRun
+      ? runGoldenPath(50021, {
+          presetId: songModeRun.presetId,
+          primarySongwriterStyle: songModeRun.primarySongwriterStyle,
+          totalBars: 32,
+          bpm: 100,
+          longFormEnabled: true,
+          creativeControlLevel: 'balanced',
+          songModeHookFirstIdentity: true,
+          styleProfile: styleProfileForSongwriter(songModeRun.primarySongwriterStyle),
+        })
+      : runGoldenPath(50021, {
+          presetId: singlePreset,
+          totalBars: 32,
+          bpm: 100,
+          longFormEnabled: true,
+        });
     printGceCategories(result);
     return;
-  }
-
-  for (const style of STYLES) {
-    console.log(`\n${'═'.repeat(50)}`);
-    console.log(`GCE EVALUATION — ${style.toUpperCase()}`);
-    console.log('═'.repeat(50));
-
-    /** Song Mode harmony + surfaces require `guitar_bass_duo` + `songModeHookFirstIdentity` (not `song_mode` preset id). */
-    /** Multi-seed sweep + duo-regression-aligned base seed (`50021` stays green on standard duo harness). */
-    const result = runGoldenPath(50021, {
-      presetId: 'guitar_bass_duo',
-      primarySongwriterStyle: style,
-      totalBars: 32,
-      longFormEnabled: true,
-      bpm: 100,
-      creativeControlLevel: 'balanced',
-      songModeHookFirstIdentity: true,
-      styleProfile: styleProfileForSongwriter(style),
-    });
-
-    printGceCategories(result);
   }
 
   for (const presetId of GCE_EVAL_PRESETS) {
@@ -232,6 +232,25 @@ function main(): void {
       totalBars: 32,
       bpm: 100,
       longFormEnabled: true,
+    });
+
+    printGceCategories(result);
+  }
+
+  for (const run of SONG_MODE_GCE_RUNS) {
+    console.log(`\n${'═'.repeat(50)}`);
+    console.log(`GCE EVALUATION — PRESET: ${run.label}`);
+    console.log('═'.repeat(50));
+
+    const result = runGoldenPath(50021, {
+      presetId: run.presetId,
+      primarySongwriterStyle: run.primarySongwriterStyle,
+      totalBars: 32,
+      bpm: 100,
+      longFormEnabled: true,
+      creativeControlLevel: 'balanced',
+      songModeHookFirstIdentity: true,
+      styleProfile: styleProfileForSongwriter(run.primarySongwriterStyle),
     });
 
     printGceCategories(result);
