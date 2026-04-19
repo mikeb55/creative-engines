@@ -19,7 +19,7 @@ import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
-import { scoreGoldenPathResultForGce } from '../core/gce/gceGate';
+import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
@@ -470,7 +470,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
 
   /** GCE ship gate — retry with deterministic seed offsets when below threshold (see `core/gce/gceGate.ts`). */
-  const GCE_GATE_MIN = 8.5;
   const GCE_GATE_MAX_RETRIES = 3;
   const GCE_RETRY_SEED_OFFSETS = [77777, 88883, 99991] as const;
 

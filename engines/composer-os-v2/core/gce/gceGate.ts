@@ -26,6 +26,9 @@ export interface GceGateResult {
   passed: boolean;
 }
 
+/** Ship gate: weighted GCE overall must meet or exceed this (aligned with Song Mode retry in `composerOsAppGeneration`). */
+export const GCE_GATE_MIN = 8.0;
+
 export function scoreResultForGce(
   score: ScoreModel,
   chords: string[],
@@ -55,7 +58,7 @@ export function scoreResultForGce(
   return {
     overallScore,
     weakestCategory: weakest.name,
-    passed: overallScore >= 8.5,
+    passed: overallScore >= GCE_GATE_MIN,
   };
 }
 

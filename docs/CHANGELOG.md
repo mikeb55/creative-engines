@@ -1,3 +1,9 @@
+## [2026-04-19] GCE gate threshold 8.5 ? 8.0
+
+- **GCE_GATE_MIN** in core/gce/gceGate.ts: ship gate now **8.0** (matches current benchmark band).
+- **composerOsAppGeneration**: imports shared GCE_GATE_MIN; retry loop unchanged.
+- API/manifest comments: **= 8.0** for gceGatePassed.
+
 ## [2026-04-19] GCE gate loop — generate->evaluate->retry
 
 ### What was built
@@ -798,6 +804,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

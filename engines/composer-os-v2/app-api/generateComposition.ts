@@ -143,7 +143,7 @@ export interface GenerateResult {
   vocalLeadSheetFilepath?: string;
   /** Song Mode — GCE weighted overall (see `core/gce/gceGate.ts`). */
   gceScore?: number;
-  /** Song Mode — true when `gceScore` meets the ship gate threshold (≥ 8.5). */
+  /** Song Mode — true when `gceScore` meets the ship gate threshold (≥ 8.0). */
   gceGatePassed?: boolean;
 }
 
