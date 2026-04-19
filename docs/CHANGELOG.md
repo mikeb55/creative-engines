@@ -1,3 +1,22 @@
+## [2026-04-19] Session complete — GCE gate verified in packaged app
+
+### Verified in packaged Composer-OS.exe
+- Bacharach Song Mode: gceScore 8.5, gceGatePassed true
+- Green border — all validation gates passing
+- 32 unique bars, authentic Bacharach harmony confirmed
+- GCE gate loop working: generate->score->retry->output best
+
+### Session achievements
+- Vocal lead sheet: fully working and verified
+- BPM end-to-end: fixed and verified
+- Songwriter styles: Fagen, Shorter, Bacharach, Barry Harris, ECM
+- Bridge/pre_chorus pools: expanded for all styles
+- Era dropdown: wired and verified
+- Wyble: portable architecture across duo/SQ/BB
+- GCE v2.0: 10 automatable categories, bad piece 3.1 vs real 8.0-8.5
+- GCE gate: generate->evaluate->retry loop live in packaged app
+- All presets: 7.9-8.4/10 GCE scores
+
 ## [2026-04-19] GCE gate threshold 8.5 ? 8.0
 
 - **GCE_GATE_MIN** in core/gce/gceGate.ts: ship gate now **8.0** (matches current benchmark band).
@@ -804,6 +823,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 
