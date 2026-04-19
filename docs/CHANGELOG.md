@@ -1,3 +1,9 @@
+## [2026-04-19] Song Mode: bacharach, barry_harris, ecm_chamber chord pools
+
+### What changed
+- `songModeBuilder.ts`: **bacharach** pools expanded to **4×4** rows per section (verse, chorus, bridge, pre_chorus); new **barry_harris** and **ecm_chamber** songwriter chord pools (**4×4** each).
+- `songwriterRuleRegistry.ts` / `songwritingResearchTypes.ts` / `songwriterStyleProfiles.ts` / `songwriterCompProfile.ts`: registry + style profiles + primary instrument map for **barry_harris**, **ecm_chamber**; **bacharach** rules trimmed to three placeholder ids (`chromatic_mediant`, `secondary_dominant`, `stepwise_bass`).
+
 ## [2026-04-19] Song Mode pools ? bridge / pre_chorus for Shorter & Fagen
 
 ### What changed

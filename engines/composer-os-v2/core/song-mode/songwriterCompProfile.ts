@@ -37,6 +37,8 @@ export const GUITAR_CENTRIC_SONGWRITER_IDS: ReadonlySet<SongwriterRuleId> = new 
 /** Canonical map: guitar trio explicit; all other Song Mode writers default to keys-centred comp for this slice. */
 export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterPrimaryInstrumentKind> = {
   bacharach: 'keys',
+  barry_harris: 'keys',
+  ecm_chamber: 'keys',
   stevie_wonder: 'keys',
   beatles: 'guitar',
   joni_mitchell: 'keys',

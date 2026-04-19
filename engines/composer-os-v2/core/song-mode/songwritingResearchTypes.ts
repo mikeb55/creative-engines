@@ -4,6 +4,8 @@
 
 export type SongwriterRuleId =
   | 'bacharach'
+  | 'barry_harris'
+  | 'ecm_chamber'
   | 'stevie_wonder'
   | 'beatles'
   | 'joni_mitchell'

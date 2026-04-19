@@ -25,11 +25,19 @@ function R(
 
 const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   bacharach: [
-    R('bacharach.phrase_asym', 'Allow 3–7 bar phrase groupings', 'songwriter', 'form', 8, 'form'),
-    R('bacharach.meter_flex', 'Meter changes when phrase requires', 'songwriter', 'rhythm', 7, 'form'),
-    R('bacharach.melody_first', 'Melody-first; lyric fits contour', 'songwriter', 'melody', 9, 'global'),
-    R('bacharach.borrowed', 'Borrowed chords + secondary dominants', 'songwriter', 'harmony', 8, 'global'),
-    R('bacharach.harm_rhythm_decouple', 'Harmonic rhythm may cross barlines', 'songwriter', 'harmony', 7, 'verse'),
+    R('bacharach.chromatic_mediant', 'Chromatic mediant moves (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R('bacharach.secondary_dominant', 'Secondary dominant colour (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R('bacharach.stepwise_bass', 'Stepwise bass motion (placeholder)', 'songwriter', 'harmony', 7, 'verse'),
+  ],
+  barry_harris: [
+    R('barry_harris.sixth_diminished', 'Sixth–diminished vocabulary (placeholder)', 'songwriter', 'harmony', 8, 'global'),
+    R('barry_harris.bebop_scale', 'Bebop scale targeting (placeholder)', 'songwriter', 'melody', 7, 'verse'),
+    R('barry_harris.minor_six_tonic', 'Minor-six tonic colour (placeholder)', 'songwriter', 'harmony', 7, 'verse'),
+  ],
+  ecm_chamber: [
+    R('ecm_chamber.modal_drift', 'Modal drift between centres (placeholder)', 'songwriter', 'harmony', 8, 'global'),
+    R('ecm_chamber.wide_voicing', 'Wide chamber voicings (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
+    R('ecm_chamber.sparse_rhythm', 'Sparse rhythmic pacing (placeholder)', 'songwriter', 'rhythm', 7, 'global'),
   ],
   stevie_wonder: [
     R('wonder.modal_mix', 'Modal mixture at pre-chorus/chorus', 'songwriter', 'harmony', 8, 'chorus'),
