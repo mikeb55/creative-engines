@@ -1,0 +1,116 @@
+---
+# GCE v2.0 — UNIVERSAL MUSIC EVALUATION FRAMEWORK
+# For Composer OS — applies to all musical output
+
+## Scope
+Applies to: songs, sketches, études, arrangements,
+works in progress, instrumental pieces, ensemble output.
+NOT limited to: bebop, songs with lyrics, or any single style.
+
+## Scoring
+- Score each category 0-10
+- Overall must reach 9.0 before final output
+- If < 9.0: revise weakest category only, one pass
+- Never full rewrite. Preserve asymmetry.
+
+## 10 Categories (all fully automatable)
+
+1. CADENTIAL CLARITY
+   Measures harmonic/melodic arrival points at phrase endings.
+   Pass >= 6.5. Hard fail if coverage < 0.4
+   Reads: MelodicNote[], chords[], ScoreModel, sections
+
+2. MELODIC IDENTITY
+   Motif recurrence + contour distinctiveness + interval economy
+   Formula: 10 * (0.35R + 0.25C + 0.20I + 0.20G)
+   Pass >= 6.5. Hard fail if motifRecurrence < 0.35
+   Reads: MelodicNote[]
+
+3. PHRASE GRAMMAR
+   Phrase segmentation, balance, closure, recurrence with variation
+   Formula: 10 * (0.30L + 0.30C + 0.30R + 0.10(1-O))
+   Pass >= 6.0. Fail if closureRate < 0.35
+   Reads: MelodicNote[], chords[], sections
+
+4. HARMONY & LANGUAGE
+   Extension value + functional motion + voice leading + variety
+   Formula: 10 * (0.25E + 0.30F + 0.30V + 0.15H)
+   Pass >= 6.5. Fail if voiceLeadingProxy < 0.35
+   Reads: chords[]
+
+5. RHYTHMIC IDENTITY
+   IOI variety + syncopation + rhythm motif + groove stability
+   Formula: 10 * (0.25I + 0.30S + 0.25R + 0.20G)
+   Pass >= 6.0. Fail if syncopation < 0.15 AND motifRecurrence < 0.20
+   Reads: MelodicNote[]
+
+6. STRUCTURE & FORM
+   Adjacent contrast + return consistency + boundary strength
+   Formula: 10 * (0.35A + 0.35R + 0.30B)
+   Pass >= 6.5. Fail if repeated labels differ > 0.55
+   Reads: ScoreModel, sections, chords[]
+
+7. ARRANGEMENT & ORCHESTRATION
+   Hierarchy clarity + density variation + register layering
+   Formula: 10 * (0.35H + 0.25D + 0.25L + 0.15(1-P))
+   Pass >= 6.0. Fail if hierarchyClarity < 0.40
+   Reads: ScoreModel
+
+8. ECONOMY & FOCUS
+   Note density + silence use - ornament overload - register waste
+   Formula: 10 * (0.40N + 0.25S + 0.20(1-O) + 0.15(1-W))
+   Pass >= 6.0. Fail if ornamentOverloadPenalty > 0.28
+   Reads: MelodicNote[], ScoreModel
+
+9. TENSION & RELEASE
+   Arc count + arrival resolution - overflat penalty
+   Formula: 10 * (0.45A + 0.40R + 0.15(1-F))
+   Pass >= 6.5. Fail if overflatPenalty > 0.6
+   Reads: MelodicNote[], chords[]
+
+10. THEMATIC RECALL POTENTIAL
+    Motif strength + section spread + variedness + compactness
+    Formula: 10 * (0.75P + 0.25S - penalty)
+    Pass >= 6.0. Fail if no motif has 3+ occurrences in 2+ sections
+    Reads: MelodicNote[], sections
+
+## Hard Gates (Auto-Fail any output)
+- Melodic Identity <= 6
+- No section contrast
+- Cadential Clarity coverage < 0.4
+- Final bar tension > 0.7 (accidental ending)
+
+## Engine Rules
+- Generate -> evaluate -> revise weakest only -> output once
+- Never full rewrite
+- Never optimise symmetry
+- Preserve asymmetry and asymmetrical phrasing
+
+## Implementation Order
+1. Parse melody: attacks, IOIs, phrase candidates, motifs
+2. Parse chords: root/quality/extensions per bar
+3. Summarize section vectors and boundary bars
+4. Score all 10 from shared intermediate features
+
+## Output Format
+- Category name: score/10 — one-line justification
+- Overall: X.X/10
+- Status: PASS / FAIL
+- If revised: what changed and why
+---
+
+## Reference — `grand-criteria-of-excellence-jazz` (GitHub)
+
+Repository: `https://github.com/mikeb55/grand-criteria-of-excellence-jazz` (local clone under *Cursor AI Projects*).
+
+Useful legacy material (jazz / workflow — **not** a substitute for this universal v2.0 spec, but worth cross-reading):
+
+| Asset | Notes |
+|-------|--------|
+| `Composition Rules/GCE_Jazz_v1_0.md` | Original **GCE Jazz v1.0** title and scope (jazz composition, arranging, harmony). |
+| `Composition Rules/GCE_Melodic_Development_Rules.md` | Melodic development techniques, counterpoint “actionable logic,” orchestration layering — qualitative companion to **Melodic Identity** / **Arrangement** categories above. |
+| `Composition Rules/CLEF_ASSIGNMENT_RULES.md` | Notation layout rules (instrumentation export quality). |
+| `Project Logs/GCE_Jazz_Transformation_Log.md`, `GCE_Transformation_Log_Orbit.md` | Project history tied to GCE-aligned tune work. |
+| `BarryEngine/` (e.g. `gce_scoring.py`) | Phrase/section-level scoring hooks in Python — different data model than Composer OS `ScoreModel`; useful for **tension–release** and **form** intuition only. |
+
+**Relationship:** `docs/GCE_FRAMEWORK.md` remains the earlier **song-oriented** Cursor/Claude rubric (10 subjective categories + hard gates). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.

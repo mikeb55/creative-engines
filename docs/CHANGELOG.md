@@ -1,3 +1,9 @@
+## [2026-04-19] GCE v2.0 universal music evaluation framework (docs)
+
+### What changed
+- **`docs/GCE_FRAMEWORK_V2.md`**: Master **GCE v2.0** specification for **all** Composer OS musical outputs — ten automatable categories with formulas, pass thresholds, hard gates, implementation order, and output format. Supersedes jazz-only framing for **engineering** use; **`docs/GCE_FRAMEWORK.md`** remains the earlier song-rubric reference.
+- **Source review:** `mikeb55/grand-criteria-of-excellence-jazz` (`GCE_Jazz_v1_0.md`, `GCE_Melodic_Development_Rules.md`, project logs, BarryEngine) summarized as an appendix in that doc.
+
 ## [2026-04-19] Song Mode: bacharach, barry_harris, ecm_chamber chord pools
 
 ### What changed
