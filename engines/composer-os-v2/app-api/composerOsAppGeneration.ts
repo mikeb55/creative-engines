@@ -387,7 +387,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     if (tokens.length > 0) {
       const padded = tokens.slice(0, expectedSongFormBars);
       while (padded.length < expectedSongFormBars) {
-        padded.push(padded[padded.length - 1]!);
+        padded.push(tokens[padded.length % tokens.length]!);
       }
       const piped = padded.join('|');
       const chk = parseChordProgressionInputWithBarCount(
@@ -604,6 +604,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       bacharachSongModeRuleBundleId: gp.context.generationMetadata.bacharachSongModeRuleBundleId,
       songwriterSyncopationBias: gp.context.generationMetadata.songwriterSyncopationBias,
       songwriterDensityBias: gp.context.generationMetadata.songwriterDensityBias,
+      songModeSectionShapingDiagnostics: gp.context.generationMetadata.songModeSectionShapingDiagnostics,
       validation: {
         scoreIntegrity: gp.integrityPassed,
         exportIntegrity: gp.exportIntegrityPassed,
@@ -705,6 +706,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           wybleConsumptionReceipt: gp.runManifest.wybleConsumptionReceipt,
           songModeStyleSurfaceNotes: gp.runManifest.songModeStyleSurfaceNotes,
           songModeDonaldFagenC1Receipt: gp.runManifest.songModeDonaldFagenC1Receipt,
+          songModeSectionShapingDiagnostics: gp.runManifest.songModeSectionShapingDiagnostics,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

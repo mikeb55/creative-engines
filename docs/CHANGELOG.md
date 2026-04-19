@@ -1,3 +1,16 @@
+## [2026-04-19] Wayne Shorter chord pools and padding fix
+
+### What changed
+- composerOsAppGeneration.ts: padding now cycles token list
+  instead of repeating last chord — fixes C13sus flooding
+  bars 17-32
+- songModeBuilder.ts: wayne_shorter verse rows expanded
+  4 ? 8 chords with authentic Shorter palette
+- songModeBuilder.ts: wayne_shorter chorus rows expanded
+  4 ? 8 chords with authentic Shorter palette
+- Palette: maj7#11, m9, m11, mmaj7, 7alt, 13sus,
+  whole-step/minor-third root motion, no clean II-V-I
+
 ## [2026-04-19] Wayne Shorter — deep rule set added to songwriter registry
 
 ### What changed
@@ -503,4 +516,5 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
