@@ -1,7 +1,11 @@
+## [2026-04-19] Final GCE benchmark (docs)
+
+- `GCE_FRAMEWORK_V2.md`: Final Benchmark table (seed 50021), all presets 7.9?8.4, universal weakest **Melodic Identity**.
+
 ## [2026-04-19] Pat Metheny + style interval targets + GCE UI
 
 ### What landed
-- Pat Metheny songwriter profile — chord pools, registry,
+- Pat Metheny songwriter profile ? chord pools, registry,
   style profile, UI dropdown, docs
 - Style-specific interval targets for all 6 styles:
   Fagen (keyboard), Shorter (angular), Bacharach (vocal),
@@ -18,17 +22,17 @@
 
 ## [2026-04-19] Pat Metheny songwriter profile + chord pools
 
-- **Song Mode:** pat_metheny primary — 4×8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
+- **Song Mode:** pat_metheny primary ? 4×8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
 - **Melody profile:** ascending phrase bias, stepwise intervals, low offbeat bias, **flowing** rhythmic feel on duo golden path.
 - **Rules:** five placeholder registry entries (metheny.*).
 - **Docs:** README + USER_GUIDE Pat Metheny subsection.
 
 
-## [2026-04-19] Session complete — GCE gate verified in packaged app
+## [2026-04-19] Session complete ? GCE gate verified in packaged app
 
 ### Verified in packaged Composer-OS.exe
 - Bacharach Song Mode: gceScore 8.5, gceGatePassed true
-- Green border — all validation gates passing
+- Green border ? all validation gates passing
 - 32 unique bars, authentic Bacharach harmony confirmed
 - GCE gate loop working: generate->score->retry->output best
 
@@ -49,7 +53,7 @@
 - **composerOsAppGeneration**: imports shared GCE_GATE_MIN; retry loop unchanged.
 - API/manifest comments: **= 8.0** for gceGatePassed.
 
-## [2026-04-19] GCE gate loop — generate->evaluate->retry
+## [2026-04-19] GCE gate loop ? generate->evaluate->retry
 
 ### What was built
 - gceGate.ts: scores any GoldenPathResult against all
@@ -61,7 +65,7 @@
   OutputManifest, and appApiTypes
 - Tests: test:duo PASS, test:vocal PASS
 
-## [2026-04-19] GCE v2.0 — definitive benchmark all presets
+## [2026-04-19] GCE v2.0 ? definitive benchmark all presets
 
 ### Final scores (seed 50021, 32 bars, 100 BPM)
 | Preset | Overall | Weakest |
