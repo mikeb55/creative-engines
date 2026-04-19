@@ -362,10 +362,20 @@ export function scoreEconomyAndFocus(line: MelodicNote[]): CategoryScore {
   const totalBars = Math.max(...line.map((n) => n.bar), 1);
   const density = notes.length / (totalBars * 4);
   let score: number;
-  if (density >= 0.3 && density <= 0.7) score = 9;
-  else if (density < 0.15) score = 5;
-  else if (density < 0.3) score = 7;
-  else score = 6;
+  /** Jazz duo melody: ideal ~50–80% notes per beat; wall-to-wall >95% penalised. */
+  if (density > 0.95) {
+    score = density >= 0.98 ? 3 : 4;
+  } else if (density > 0.88) {
+    score = density <= 0.915 ? 6 : 5;
+  } else if (density > 0.8) {
+    score = density <= 0.84 ? 8 : 7;
+  } else if (density >= 0.5) {
+    score = density >= 0.58 && density <= 0.72 ? 10 : 9;
+  } else if (density >= 0.3) {
+    score = density < 0.4 ? 6 : 7;
+  } else {
+    score = density < 0.15 ? 4 : 5;
+  }
   return {
     score,
     justification: `Note density ${Math.round(density * 100)}% (${notes.length} notes / ${totalBars} bars)`,
