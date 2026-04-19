@@ -4,6 +4,7 @@
 
 import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
+import type { SongModeSectionShapingDiagnosticsV1 } from '../song-mode/songModeSectionTypes';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -115,4 +116,6 @@ export interface RunManifest {
   songModeStyleSurfaceNotes?: string[];
   /** Song Mode — Donald Fagen: Phase C1 rhythm-overlay receipt when primary songwriter resolved to `donald_fagen`. */
   songModeDonaldFagenC1Receipt?: string;
+  /** Song Mode — aggregated section-role shaping diagnostics (stable field set for manifests / eval). */
+  songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
 }

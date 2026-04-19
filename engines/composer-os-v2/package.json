@@ -21,7 +21,8 @@
     "eval:style-soph-pop": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSophisticatedPopStyleEval.ts",
     "eval:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
     "workflow:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachWorkflow.ts",
-    "mine:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachReferenceMining.ts"
+    "mine:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachReferenceMining.ts",
+    "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "devDependencies": {

@@ -1,3 +1,40 @@
+## [2026-04-19] GCE v2.0 ? full preset benchmark complete
+
+### GCE scores (seed 50021, 32 bars, 100 BPM)
+| Preset | Overall | Weakest |
+|--------|---------|---------|
+| guitar_bass_duo | 7.8/10 | Melodic Identity |
+| guitar_bass_duo_single_line | 8.1/10 | Melodic Identity |
+| big_band | 8.0/10 | Melodic Identity |
+| string_quartet | 8.0/10 | Melodic Identity |
+| wyble_etude | 8.0/10 | Melodic Identity |
+| riff_generator | 8.0/10 | Melodic Identity |
+| song_mode | 8.0/10 | Melodic Identity |
+| ecm_chamber | OOM (pending fix) |
+
+### Fixes in this session
+- Harmony scorer: regex-based extension detection
+- Rhythmic Identity: GCE v2.0 IOI+syncopation+motif+groove
+- Structure & Form: adjacent contrast + return consistency
+- Cadential Clarity: tonic detection + long endings
+- Melodic Identity: hard fail for repeated pitch
+- Economy & Focus: recalibrated for jazz duo 50-80%
+- Tension & Release: full 32-bar chord sequence + cooldown arc detection
+- Song Mode density enforcer: 80-83% note density
+- GCE v2.0 categories: Cadential Clarity, Phrase Grammar,
+  Arrangement & Orchestration, Thematic Recall Potential
+
+### Bad piece sanity check
+- Deliberately bad piece: 3.1/10
+- Real music: 7.8-8.1/10
+- Separation confirmed
+
+### Next priorities
+- Melodic Identity: 4.9/10 universal weakness
+- Build GCE gate: generate->evaluate->retry loop
+- Fix ECM OOM
+- Target: 9.0/10 overall
+
 ## [2026-04-19] GCE eval ? full-bar chord sequence for harmony scorers
 
 ### What changed
@@ -723,6 +760,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

@@ -115,7 +115,21 @@ Useful legacy material (jazz / workflow — **not** a substitute for this univer
 
 **Relationship:** `docs/GCE_FRAMEWORK.md` remains the earlier **song-oriented** Cursor/Claude rubric (10 subjective categories + hard gates). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.
 
-## Current Benchmark Scores (2026-04-19, seed 50021)
+## Latest Benchmark (2026-04-19, seed 50021)
+| Preset | Score | Weakest |
+|--------|-------|---------|
+| guitar_bass_duo | 7.8/10 | Melodic Identity |
+| guitar_bass_duo_single_line | 8.1/10 | Melodic Identity |
+| big_band | 8.0/10 | Melodic Identity |
+| string_quartet | 8.0/10 | Melodic Identity |
+| wyble_etude | 8.0/10 | Melodic Identity |
+| riff_generator | 8.0/10 | Melodic Identity |
+| song_mode | 8.0/10 | Melodic Identity |
+| ecm_chamber | OOM pending |
+
+Bad piece: 3.1/10. Target: 9.0/10. Gap: 1.0 point.
+
+### Song Mode writer styles (same seed, harness)
 | Style | Overall | Weakest |
 |-------|---------|---------|
 | donald_fagen | 7.9/10 | Melodic Identity |
@@ -124,6 +138,4 @@ Useful legacy material (jazz / workflow — **not** a substitute for this univer
 | barry_harris | 7.9/10 | Melodic Identity |
 | ecm_chamber | 7.9/10 | Melodic Identity |
 
-Bad piece sanity check: 3.1/10 (separation confirmed)
-Target: 9.0/10
-Gap: 1.1 points
+Bad piece sanity check: 3.1/10 (separation confirmed).

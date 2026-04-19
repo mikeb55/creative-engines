@@ -244,4 +244,5 @@ export interface OutputEntry {
   /** Song Mode eval echo — rhythm intent biases after style surfaces (0–1). */
   songwriterSyncopationBias?: number;
   songwriterDensityBias?: number;
+  songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
 }

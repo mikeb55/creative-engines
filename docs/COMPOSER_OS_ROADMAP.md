@@ -9,6 +9,7 @@
 ## Known issues — engine (2026-04-19)
 
 - **`ecm_chamber` golden path — JavaScript heap OOM (deferred):** Unbounded retry behaviour in **`generateGoldenPathDuoScore.ts`** can exhaust heap at **32-bar** long-form generation. Not fixed in this snapshot. **Workaround:** **`GCE_SINGLE_PRESET`** (one preset per process) for GCE preset runs; omit **`ecm_chamber`** from single-process full eval until bounded. Detail: [CHANGELOG.md](CHANGELOG.md) § **Known issue — `ecm_chamber` golden path OOM**.
+- **GCE v2.0 preset benchmark (2026-04-19):** Non-ECM presets **7.8–8.1/10** overall (seed **50021**, 32 bars, 100 BPM); universal weakest pillar **Melodic Identity**; **`ecm_chamber`** eval **OOM** pending. Tables: [GCE_FRAMEWORK_V2.md](GCE_FRAMEWORK_V2.md), [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

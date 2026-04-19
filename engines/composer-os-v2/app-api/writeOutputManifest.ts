@@ -82,6 +82,7 @@ export function writeOutputManifest(
     bacharachSongModeRuleBundleId?: string;
     songwriterSyncopationBias?: number;
     songwriterDensityBias?: number;
+    songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -145,6 +146,7 @@ export function writeOutputManifest(
     bacharachSongModeRuleBundleId: meta.bacharachSongModeRuleBundleId,
     songwriterSyncopationBias: meta.songwriterSyncopationBias,
     songwriterDensityBias: meta.songwriterDensityBias,
+    songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

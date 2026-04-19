@@ -22,6 +22,7 @@ import type { WybleConsumptionReceipt } from '../core/wyble/wybleConsumptionRece
 import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
+import type { GenerationMetadata } from '../core/compositionContext';
 
 export interface GenerateResult {
   success: boolean;
@@ -103,6 +104,7 @@ export interface GenerateResult {
     wybleConsumptionReceipt?: WybleConsumptionReceipt;
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
+    songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -352,6 +354,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           wybleConsumptionReceipt: result.runManifest.wybleConsumptionReceipt,
           songModeStyleSurfaceNotes: result.runManifest.songModeStyleSurfaceNotes,
           songModeDonaldFagenC1Receipt: result.runManifest.songModeDonaldFagenC1Receipt,
+          songModeSectionShapingDiagnostics: result.runManifest.songModeSectionShapingDiagnostics,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

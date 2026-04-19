@@ -6,9 +6,8 @@ import type { DensityCurvePlan, DensitySegment, DensityLevel } from './densityCu
 import type { SectionWithRole } from '../section-roles/sectionRoleTypes';
 
 function roleToDensity(role: SectionWithRole): DensityLevel {
-  const t = role.metadata.densityTendency;
-  if (t === 'sparse') return 'sparse';
-  if (t === 'dense') return 'dense';
+  if (role.metadata.densityTendency === 'sparse') return 'sparse';
+  /** Medium for `dense` / `medium` / unset — avoids section curves sitting at max attack density. */
   return 'medium';
 }
 

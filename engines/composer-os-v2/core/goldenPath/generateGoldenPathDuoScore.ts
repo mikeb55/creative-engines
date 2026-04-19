@@ -1512,7 +1512,9 @@ function buildGuitarPart(
           }
         }
       }
-      console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
+      if (process.env.WYBLE_TRACE === '1') {
+        console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
+      }
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       normalizeMeasureToEighthBeatGrid(m);

@@ -5,6 +5,7 @@
 
 import type { GenerationMetadata } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
+import { registerSongModeSectionBehaviour } from './songModeSectionControl';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 
 function clamp01(n: number): number {
@@ -58,6 +59,14 @@ export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, 
     'STYLE_SOPHISTICATED_POP: chord symbols may gain tasteful 7th/9th extensions by section (deterministic dressing pass); Style Engine applies profile-specific velocities.',
     'STYLE_SOPHISTICATED_POP: B section targets brighter harmonic colour than opening sections (section-aware dressing). Not an imitation of any artist.',
   ]);
+
+  registerSongModeSectionBehaviour(metadata, {
+    sliceId: 'style_sophisticated_pop',
+    densityBiasByRole: { BRIDGE_LIFT: 0.04 },
+    harmonicColourBiasByRole: { BRIDGE_LIFT: 0.06, OPENING: 0.02 },
+    entryReturnGestures: { emphasizeBridgeLift: true },
+    returnVariationType: 'none',
+  });
 }
 
 /**
@@ -83,6 +92,14 @@ export function applyBacharachSongModeSurfaceV1(
     'Bacharach slice: bridge allowed a small controlled key-colour shift before returning home.',
     'Bacharach slice: accompaniment stayed lighter and melody-supportive rather than densely syncopated.',
   ]);
+
+  registerSongModeSectionBehaviour(metadata, {
+    sliceId: 'bacharach',
+    densityBiasByRole: { OPENING: -0.07, BRIDGE_LIFT: 0.03, RETURN: -0.02 },
+    harmonicColourBiasByRole: { BRIDGE_LIFT: 0.08, RETURN: 0.04 },
+    entryReturnGestures: { softenReturn: true, emphasizeBridgeLift: true },
+    returnVariationType: 'harmonic_recolour',
+  });
 }
 
 /**
@@ -121,4 +138,13 @@ export function applyDonaldFagenSongwriterSurface(
     'Song Mode Donald Fagen slice v2: planning chord pools include extra bars with ii–V–I-type colour and borrowed maj7 sonorities (generic jazz-pop templates); Phase C1 separately raises syncopation overlay pull for early phrases (bars 1–12). Honest bias only — not a claim of authenticity.',
     'Song Mode Donald Fagen keys-comp v1.5: split-hand register bias (LH shells vs RH colour), phrase-level density caps, and keyboard-oriented dynamic contour — see later v1.5 receipt lines after score pass. Generative rule set only.',
   ]);
+
+  registerSongModeSectionBehaviour(metadata, {
+    sliceId: 'donald_fagen',
+    densityBiasByRole: { BRIDGE_LIFT: 0.03, OPENING: 0.03 },
+    harmonicColourBiasByRole: { BRIDGE_LIFT: 0.06 },
+    registerBiasByRole: { OPENING: 0.02, BRIDGE_LIFT: 0.04 },
+    entryReturnGestures: { emphasizeBridgeLift: true },
+    returnVariationType: 'evolved_comp',
+  });
 }

@@ -19,8 +19,8 @@ import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score
 const LOW = 55;
 const HIGH = 79;
 const EPS = 1e-4;
-/** Aligned with C7 swing ceiling (`songModeSpaceC7`). */
-export const SONG_MODE_GUITAR_REST_FLOOR = 0.45;
+/** Minimum rest ratio on Song Mode guitar (voice 1+2); aligned with target ~60–75% melodic note density. */
+export const SONG_MODE_GUITAR_REST_FLOOR = 0.55;
 
 function chordToneOpts(context: CompositionContext) {
   return shouldUseUserChordSemanticsForTones(context) ? ({ lockedHarmony: true } as const) : undefined;
