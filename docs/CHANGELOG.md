@@ -1,3 +1,24 @@
+## [2026-04-19] GCE v2.0 — definitive benchmark all presets
+
+### Final scores (seed 50021, 32 bars, 100 BPM)
+| Preset | Overall | Weakest |
+|--------|---------|---------|
+| guitar_bass_duo_single_line | 8.3/10 | Melodic Identity |
+| song_mode_fagen | 8.3/10 | Melodic Identity |
+| song_mode_shorter | 8.4/10 | Melodic Identity |
+| song_mode_bacharach | 8.4/10 | Melodic Identity |
+| song_mode_barry_harris | 8.4/10 | Melodic Identity |
+| guitar_bass_duo | 8.0/10 | Economy & Focus |
+| big_band | 7.9/10 | Melodic Identity |
+| string_quartet | 7.9/10 | Melodic Identity |
+| wyble_etude | 7.9/10 | Melodic Identity |
+| riff_generator | 7.9/10 | Melodic Identity |
+| ecm_chamber | OOM pending |
+
+### Gap to GCE 9.0 target: 0.6-1.1 points
+### Universal weakness: Melodic Identity
+### Next: style-specific interval targets + GCE gate loop
+
 ## [2026-04-19] Melodic Identity ? jazz interval balance (I pillar)
 
 ### What changed
@@ -765,6 +786,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

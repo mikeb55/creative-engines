@@ -139,3 +139,19 @@ Bad piece: 3.1/10. Target: 9.0/10. Gap: 1.0 point.
 | ecm_chamber | 7.9/10 | Melodic Identity |
 
 Bad piece sanity check: 3.1/10 (separation confirmed).
+
+## Definitive Benchmark ([2026-04-19], seed 50021)
+| Preset | Score | Weakest |
+|--------|-------|---------|
+| guitar_bass_duo_single_line | 8.3/10 | Melodic Identity |
+| song_mode_fagen | 8.3/10 | Melodic Identity |
+| song_mode_shorter | 8.4/10 | Melodic Identity |
+| song_mode_bacharach | 8.4/10 | Melodic Identity |
+| song_mode_barry_harris | 8.4/10 | Melodic Identity |
+| guitar_bass_duo | 8.0/10 | Economy & Focus |
+| big_band | 7.9/10 | Melodic Identity |
+| string_quartet | 7.9/10 | Melodic Identity |
+| wyble_etude | 7.9/10 | Melodic Identity |
+| riff_generator | 7.9/10 | Melodic Identity |
+| ecm_chamber | OOM pending |
+Gap to 9.0: 0.6-1.1 points.
