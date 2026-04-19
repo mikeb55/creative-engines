@@ -382,21 +382,40 @@ export function scoreEconomyAndFocus(line: MelodicNote[]): CategoryScore {
   };
 }
 
+function isTensionChord(c: string): boolean {
+  if (!c) return false;
+  if (c.includes('maj7') || c.includes('maj9') || c.includes('maj13') || c.includes('6/9')) return false;
+  if (
+    ['alt', 'b9', '#9', '7#11', '7b13', 'dim7', 'm7b5', '7sus'].some((m) => c.includes(m))
+  ) {
+    return true;
+  }
+  const stem = chordStem(c);
+  return /^[A-G][#b]?13/.test(stem) && !stem.includes('maj');
+}
+
+function isReleaseChord(c: string): boolean {
+  if (!c) return false;
+  if (['maj7', 'maj9', 'maj7#11', '6/9', 'maj6'].some((m) => c.includes(m))) {
+    return true;
+  }
+  const stem = chordStem(c);
+  return /^[A-G][#b]?(m9|m7|m11|mmaj)/.test(stem);
+}
+
 export function scoreTensionAndRelease(chords: string[]): CategoryScore {
   if (chords.length === 0) {
     return { score: 4, justification: '0 tension-release arcs found' };
   }
-  const tensionMarkers = ['alt', 'b9', '#9', '7#11', '7b13'];
-  const releaseMarkers = ['maj7', 'maj9', 'maj7#11', '6/9'];
   let arcs = 0;
-  let inTension = false;
-  for (const c of chords) {
-    const isTension = tensionMarkers.some((m) => c.includes(m));
-    const isRelease = releaseMarkers.some((m) => c.includes(m));
-    if (isTension) inTension = true;
-    if (inTension && isRelease) {
+  for (let i = 0; i < chords.length - 1; i++) {
+    const curr = chords[i] ?? '';
+    const currTension = isTensionChord(curr);
+    const nextRelease = isReleaseChord(chords[i + 1] ?? '');
+    const nextTwoRelease = isReleaseChord(chords[i + 2] ?? '');
+    if (currTension && (nextRelease || nextTwoRelease)) {
       arcs++;
-      inTension = false;
+      i++;
     }
   }
   const score = arcs >= 3 ? 9 : arcs === 2 ? 8 : arcs === 1 ? 6 : 4;

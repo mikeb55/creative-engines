@@ -1,3 +1,8 @@
+## [2026-04-19] GCE ? `scoreTensionAndRelease` dominant 13 + arc window
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreTensionAndRelease`** ? detect **dominant 13th** symbols (`G13`, etc.) via stem regex (exclude **maj** colours); expand markers (**`7sus`**, **`dim7`**, **`m7b5`**); **`isReleaseChord`** adds **`maj6`** and minor/minmaj stem patterns. **Arc counting** no longer requires strict tension-then-immediate-release order: counts an arc when a tension chord is followed within **two** bars by a release chord (skip index to avoid double-count).
+
 ## [2026-04-19] Known issue ? `ecm_chamber` golden path OOM (deferred)
 
 ### Known issue
