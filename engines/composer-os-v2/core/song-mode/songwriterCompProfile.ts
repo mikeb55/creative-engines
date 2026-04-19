@@ -91,6 +91,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   radiohead: 'keys',
   sonic_youth: 'keys',
   wayne_shorter: 'keys',
+  pat_metheny: 'keys',
   andrew_hill: 'keys',
 };
 

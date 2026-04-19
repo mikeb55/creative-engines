@@ -1,3 +1,11 @@
+## [2026-04-19] Pat Metheny songwriter profile + chord pools
+
+- **Song Mode:** pat_metheny primary — 4×8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
+- **Melody profile:** ascending phrase bias, stepwise intervals, low offbeat bias, **flowing** rhythmic feel on duo golden path.
+- **Rules:** five placeholder registry entries (metheny.*).
+- **Docs:** README + USER_GUIDE Pat Metheny subsection.
+
+
 ## [2026-04-19] Session complete — GCE gate verified in packaged app
 
 ### Verified in packaged Composer-OS.exe
@@ -823,6 +831,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

@@ -73,6 +73,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
+  { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
   { id: 'prince', label: 'Prince' },
   { id: 'prokofiev', label: 'Prokofiev' },
@@ -261,6 +262,10 @@ type GenResult = {
   };
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   vocalLeadSheetFilepath?: string;
+  /** Song Mode — GCE weighted overall when the gate ran (engine receipt). */
+  gceScore?: number;
+  /** Song Mode — ship gate threshold met when scored. */
+  gceGatePassed?: boolean;
 };
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
@@ -2221,6 +2226,12 @@ export function HomeGenerate({
               {v?.readiness?.mx != null && result.stylePairingReceipt?.confidenceScore == null && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Readiness (MX):</span> {v.readiness.mx}
+                </p>
+              )}
+              {typeof result.gceScore === 'number' && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>GCE Quality:</span> {`${result.gceScore}/10`}{' '}
+                  {result.gceGatePassed ? '✓' : '⚠'}
                 </p>
               )}
             </div>

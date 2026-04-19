@@ -109,6 +109,7 @@ Most Song Mode ?style? controls still route through compile-time rules, receipts
 - **bacharach:** chromatic mediants, secondary dominants, stepwise bass lines, 9th/13th chord dressing
 - **barry_harris:** sixth diminished vocabulary, bebop scale harmony, C6/Ddim7 alternation, minor six tonic
 - **ecm_chamber:** modal drift, wide open voicings, sparse rhythm, maj7#11 and add9 colors, slow root movement
+- **pat_metheny:** open voicings and pedal colours, Lydian maj7#11, folk-jazz add9/sus; stepwise lyrical melody bias — ECM-influenced but warmer and more tonal than **`ecm_chamber`** alone
 
 The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list **`songModeStyleSurfaceNotes`** (lines stack when both apply).
 

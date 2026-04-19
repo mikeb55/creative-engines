@@ -849,7 +849,7 @@ function buildSongwriterMelodyProfile(
   densityBias: number;
   offbeatBias: number;
   intervalBias: 'stepwise' | 'leaping' | 'chromatic' | 'neutral';
-  rhythmicFeel: 'syncopated' | 'straight' | 'laid_back' | 'neutral';
+  rhythmicFeel: 'syncopated' | 'straight' | 'laid_back' | 'neutral' | 'flowing';
 } {
   void seed;
   switch (songwriterId) {
@@ -900,6 +900,14 @@ function buildSongwriterMelodyProfile(
         offbeatBias: 0.35,
         intervalBias: 'stepwise',
         rhythmicFeel: 'laid_back',
+      };
+    case 'pat_metheny':
+      return {
+        phraseIntentBias: 'ascending',
+        densityBias: -0.15,
+        offbeatBias: 0.1,
+        intervalBias: 'stepwise',
+        rhythmicFeel: 'flowing',
       };
     default:
       return {
@@ -1468,6 +1476,9 @@ function buildGuitarPart(
           staggerGuitar = Math.max(staggerGuitar, seededUnit(seed, b, 77703) * 0.15);
         } else if (songwriterMelodyProfile.rhythmicFeel === 'straight') {
           useOffbeat = seededUnit(seed, b, 77704) < songwriterMelodyProfile.offbeatBias;
+        } else if (songwriterMelodyProfile.rhythmicFeel === 'flowing') {
+          useOffbeat = seededUnit(seed, b, 77705) < songwriterMelodyProfile.offbeatBias;
+          staggerGuitar = Math.max(staggerGuitar, seededUnit(seed, b, 77706) * 0.08);
         }
 
         if (songwriterMelodyProfile.densityBias !== 0) {

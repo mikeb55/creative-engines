@@ -157,6 +157,16 @@ This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the sa
 - **Harmony:** Cmaj7#11, Gmaj9(no3), modal drift, sparse slow-moving roots, wide open voicings
 - **Best BPM:** 50–80, slow and spacious
 
+### Song Mode — Pat Metheny primary songwriter (`pat_metheny`)
+
+Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to this profile.
+
+- **Sounds like:** ECM-era Pat Metheny Group, *80/81*, *Offramp* — lyrical ensemble jazz with a folk-jazz warmth (honest wording, not mimicry).
+- **Harmony:** open voicings, pedal points, Lydian **maj7#11**, **add9** colours, modal **sus4** / chords with softer tertian clarity; root motion biased to **steps and thirds** rather than chromatic drift.
+- **Melody:** lyrical, **stepwise**, singable phrases (engine melody profile + GCE interval targets aligned to this slice).
+- **Best BPM:** **70–100**, mid-tempo flowing — faster than typical **`ecm_chamber`** ballad pacing if you want more motion.
+- **Differs from `ecm_chamber`:** warmer, **more tonal** centre, guitar-oriented lyrical lead vocabulary — less “pure drift,” more singable arches.
+
 ### Developers — Bacharach Song Mode (CLI, not the Generate UI)
 
 Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.

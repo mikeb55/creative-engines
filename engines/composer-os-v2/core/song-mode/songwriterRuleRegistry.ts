@@ -477,6 +477,13 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'form'
     ),
   ],
+  pat_metheny: [
+    R('metheny.open_voicing', 'Open voicings (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R('metheny.pedal_point', 'Pedal point (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R('metheny.lydian_color', 'Lydian maj7#11 colour (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R('metheny.stepwise_melody', 'Stepwise lyrical melody (placeholder)', 'songwriter', 'melody', 7, 'global'),
+    R('metheny.folk_jazz_color', 'Folk-jazz add9 colours (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+  ],
   andrew_hill: [
     R('hill.interval_cells', 'Interval-cell development and transposition', 'songwriter', 'melody', 8, 'global'),
     R('hill.asymmetric_phrase', 'Asymmetric phrase lengths vs grid', 'songwriter', 'form', 8, 'form'),

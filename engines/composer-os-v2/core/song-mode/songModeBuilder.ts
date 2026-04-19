@@ -537,6 +537,32 @@ const SONGWRITER_CHORD_POOLS: Record<
       },
     ],
   },
+  pat_metheny: {
+    verse: [
+      ['Gmaj9', 'Dadd9', 'Aadd9', 'Esus4', 'Cmaj7#11', 'Gmaj9', 'Dadd9/F#', 'Aadd9'],
+      ['Amaj9', 'Eadd9', 'Badd9', 'F#sus4', 'Dmaj7#11', 'Amaj9', 'Eadd9/G#', 'Badd9'],
+      ['Dmaj9', 'Aadd9', 'Eadd9', 'Bsus4', 'Gmaj7#11', 'Dmaj9', 'Aadd9/C#', 'Eadd9'],
+      ['Cmaj9', 'Gadd9', 'Dadd9', 'Asus4', 'Fmaj7#11', 'Cmaj9', 'Gadd9/B', 'Dadd9'],
+    ],
+    chorus: [
+      ['Gmaj7#11', 'F#m9', 'Bm9', 'Em9', 'Amaj9', 'D13sus4', 'Gmaj9', 'Dadd9'],
+      ['Amaj7#11', 'G#m9', 'C#m9', 'F#m9', 'Bmaj9', 'E13sus4', 'Amaj9', 'Eadd9'],
+      ['Dmaj7#11', 'C#m9', 'F#m9', 'Bm9', 'Emaj9', 'A13sus4', 'Dmaj9', 'Aadd9'],
+      ['Cmaj7#11', 'Bm9', 'Em9', 'Am9', 'Dmaj9', 'G13sus4', 'Cmaj9', 'Gadd9'],
+    ],
+    bridge: [
+      ['Dadd9/A', 'Gadd9/A', 'Aadd9', 'Dadd9/A', 'Gmaj9/A', 'Fmaj7#11/A', 'Aadd9', 'Esus4/A'],
+      ['Eadd9/B', 'Aadd9/B', 'Badd9', 'Eadd9/B', 'Amaj9/B', 'Gmaj7#11/B', 'Badd9', 'F#sus4/B'],
+      ['Gadd9/D', 'Cadd9/D', 'Dadd9', 'Gadd9/D', 'Cmaj9/D', 'Bbmaj7#11/D', 'Dadd9', 'Asus4/D'],
+      ['Aadd9/E', 'Dadd9/E', 'Eadd9', 'Aadd9/E', 'Dmaj9/E', 'Cmaj7#11/E', 'Eadd9', 'Bsus4/E'],
+    ],
+    pre_chorus: [
+      ['F#m9', 'Bm9', 'Em9', 'A13sus4', 'Dmaj9', 'G#m9', 'C#m9', 'F#13sus4'],
+      ['G#m9', 'C#m9', 'F#m9', 'B13sus4', 'Emaj9', 'A#m9', 'D#m9', 'G#13sus4'],
+      ['Bm9', 'Em9', 'Am9', 'D13sus4', 'Gmaj9', 'C#m9', 'F#m9', 'B13sus4'],
+      ['Am9', 'Dm9', 'Gm9', 'C13sus4', 'Fmaj9', 'Bm9', 'Em9', 'A13sus4'],
+    ],
+  },
   bill_evans: {
     verse: [
       ['Cmaj9', 'Am9', 'Dm9', 'G13'],

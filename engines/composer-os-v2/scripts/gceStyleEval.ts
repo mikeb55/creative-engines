@@ -54,6 +54,8 @@ function styleProfileForSongwriter(style: string): StyleProfile {
   switch (style) {
     case 'wayne_shorter':
       return 'STYLE_SHORTER_POST_BOP';
+    case 'pat_metheny':
+      return 'STYLE_ECM';
     case 'ecm_chamber':
       return 'STYLE_ECM';
     case 'bacharach':
@@ -151,7 +153,7 @@ function printGceCategories(result: GoldenPathResult): void {
   const sections = gceSectionsFromFormMap(result.context.form);
 
   const cadential = scoreCadentialClarity(melody, chords, sections);
-  const melodic = scoreMelodicIdentity(melody);
+  const melodic = scoreMelodicIdentity(melody, result.context.generationMetadata?.songwriterStyleId);
   const phraseGrammar = scorePhraseGrammar(melody);
   const harmony = scoreHarmonyAndLanguage(chords);
   const rhythm = scoreRhythmicIdentity(melody);
