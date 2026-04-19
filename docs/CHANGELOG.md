@@ -1,3 +1,9 @@
+## [2026-04-19] Era bias verified (Song Mode harness)
+
+### Verified (donald_fagen primary, seed 99999)
+- **post_bop:** `songwriterSyncopationBias` ? **0.81**, `harmonyDensityBias` **0.2**
+- **contemporary:** `songwriterSyncopationBias` ? **0.66**, `harmonyDensityBias` **0**
+
 ## [2026-04-19] Era bias layer (golden path metadata)
 
 ### What changed

@@ -100,6 +100,15 @@ As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Son
 
 Other songwriter / era / lyric-author / arranger fields still behave mostly as compile rules, pairing metadata, and receipts; **Groove / Soul** and **Donald Fagen** (below) also have small golden-path metadata nudges.
 
+### Song Mode — Era setting
+
+The **Era** field (style pairing) adjusts internal rhythm and harmony-density biases on the duo export:
+
+- **post_bop** ? denser harmony colour, more syncopation leaning.
+- **fusion** ? moderate groove / syncopation emphasis.
+- **contemporary** ? clean neutral baseline (near-zero additive bias).
+- **Verified:** same **seed** with **post_bop** vs **contemporary** yields measurably different **`songwriterSyncopationBias`** / **`harmonyDensityBias`** in generation metadata (and audibly different duo output for typical settings).
+
 ### Song Mode — Donald Fagen primary songwriter (default)
 
 **Donald Fagen** is the **default primary songwriter** for Song Mode unless you pick someone else (or the API key **`songwriter_donald_fagen`**).
