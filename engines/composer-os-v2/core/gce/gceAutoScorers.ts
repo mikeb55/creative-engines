@@ -368,11 +368,80 @@ export function scoreTensionAndRelease(chords: string[]): CategoryScore {
   };
 }
 
+/** Strip alternate bass / parenthetical extensions for classification (e.g. `Dm9/F` → `Dm9`). */
+function chordStem(raw: string): string {
+  const s = raw.trim();
+  const noParen = s.split('(')[0]!.trim();
+  return noParen.split('/')[0]!.trim();
+}
+
+/** Dominant-function markers (excludes maj7 / minor-7 types). */
+function chordSymbolDominantFamily(raw: string): boolean {
+  const s = chordStem(raw);
+  if (/maj7|mmaj|maj9|maj11|maj13/i.test(s)) return false;
+  if (/^[A-G][#b]?m(7|9|11|13)/i.test(s)) return false;
+  /** Lead-sheet spellings like `Dmin9` / `Ebmin11` (not dominant). */
+  if (/^[A-G][#b]?min(7|9|11|13)/i.test(s)) return false;
+  if (/7alt/i.test(s)) return true;
+  if (/7b9|7#9/i.test(s)) return true;
+  if (/b13/i.test(s)) return true;
+  if (/7#11/i.test(s)) return true;
+  if (/13/i.test(s) && !/13sus/i.test(s) && !/maj13/i.test(s) && !/m13/i.test(s)) return true;
+  if (/b9/i.test(s) && !/maj9/i.test(s) && !/add9/i.test(s)) return true;
+  if (/#9/i.test(s) && !/maj9/i.test(s)) return true;
+  if (/^[A-G][#b]?(9|11|13)$/i.test(s)) return true;
+  if (/^[A-G][#b]?7([^m]|$)/i.test(s)) return true;
+  return false;
+}
+
 function chordSymbolTonicFamily(raw: string): boolean {
-  const c = raw.trim();
-  if (/maj7|maj9/i.test(c)) return true;
-  if (/\bm7\b|\bm9\b|\bm11\b|\bm13\b/i.test(c)) return true;
-  return /^[A-G][#b]?m?$/.test(c) || /^[A-G][#b]?$/.test(c);
+  const c = chordStem(raw);
+  if (/maj7|maj9|maj6|maj11|maj13|mmaj7|add9/i.test(c)) return true;
+  if (/[A-G][#b]?m(7|9|11|13)/i.test(c) || /[A-G][#b]?min(7|9|11|13)/i.test(c)) return true;
+  if (/maj6|6\/9|6-9/i.test(c)) return true;
+  /** `Cm` / `Cmin` triads; `sus` without 7 reads as pedal / plagal-adjacent, not V7. */
+  if (/^[A-G][#b]?(m|min)?$/i.test(c)) return true;
+  if (!chordSymbolDominantFamily(c)) return true;
+  return false;
+}
+
+const CADENCE_TONIC_LOOKBACK_BARS = 4;
+
+/** Any tonic-family chord in the last N bars of the section (handles ii–V–I with V7 on the bar line). */
+function sectionCadenceHasTonicFamily(
+  chords: string[],
+  sec: GceStructureSection,
+  lookbackBars: number = CADENCE_TONIC_LOOKBACK_BARS
+): boolean {
+  const span = Math.min(
+    lookbackBars,
+    Math.max(0, sec.barEnd - sec.barStart + 1)
+  );
+  for (let i = 0; i < span; i++) {
+    const bar = sec.barEnd - i;
+    const idx = bar - 1;
+    const sym = idx >= 0 && idx < chords.length ? chords[idx]! : '';
+    if (sym.trim() !== '' && chordSymbolTonicFamily(sym)) return true;
+  }
+  return false;
+}
+
+function sectionHasLongEnding(line: MelodicNote[], sec: GceStructureSection): boolean {
+  const idxs: number[] = [];
+  for (let i = 0; i < line.length; i++) {
+    const n = line[i]!;
+    if (n.rest || n.midi <= 0) continue;
+    if (n.bar >= sec.barStart && n.bar <= sec.barEnd) idxs.push(i);
+  }
+  if (idxs.length === 0) return false;
+  const lastTwoIdx = idxs.slice(-2);
+  for (const i of lastTwoIdx) {
+    const n = line[i]!;
+    if (n.beats >= 1.5) return true;
+    const next = line[i + 1];
+    if (next?.rest === true && next.beats >= 1.0) return true;
+  }
+  return false;
 }
 
 /** GCE v2.0 — Cadential Clarity */
@@ -394,13 +463,11 @@ export function scoreCadentialClarity(
     if (inSection.length === 0) continue;
     const last = inSection[inSection.length - 1]!;
     const beatInt = Math.floor(last.beat);
-    if (beatInt === 0 || beatInt === 1) strongBeatLandings++;
+    if (beatInt >= 0 && beatInt <= 3) strongBeatLandings++;
 
-    const chordIdx = last.bar - 1;
-    const chordSym = chordIdx >= 0 && chordIdx < chords.length ? chords[chordIdx]! : '';
-    if (chordSym && chordSymbolTonicFamily(chordSym)) tonicLandings++;
+    if (sectionCadenceHasTonicFamily(chords, sec)) tonicLandings++;
 
-    if (last.beats >= 1.5) longNoteEndings++;
+    if (sectionHasLongEnding(line, sec)) longNoteEndings++;
   }
 
   const denom = 3 * sections.length;

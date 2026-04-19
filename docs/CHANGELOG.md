@@ -1,3 +1,8 @@
+## [2026-04-19] Cadential clarity — tonic vs dominant, long endings, strong beats (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreCadentialClarity`** — **tonic-family** now recognises **maj/min extensions** (e.g. **Dm9**, **Dmin9**, **Cmaj7#11**, **Bbmaj7**) via explicit stable patterns plus **“no dominant markers”** (**`chordSymbolDominantFamily`**); **`min` spellings** align with Song Mode locked harmony (`Dmin9` vs `Dm9`); tonic credit uses a **cadential window** (**last 4 bars** per section) so **ii–V–I** phrases with **V7 on the final bar** still pick up **I / ii** symbols; **long endings** use the **full** melodic line (**last two** section notes + **rest ≥ 1** beat after); **strong-beat** landing uses integer beats **0–3** (not only 0–1).
+
 ## [2026-04-19] GCE style eval — v2.0 category names + four new scorers (GCE)
 
 ### What changed
