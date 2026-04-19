@@ -28,6 +28,72 @@ export interface CategoryScore {
   justification: string;
 }
 
+function scoreJazzIntervalBalance(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.2;
+
+  let steps = 0,
+    skips = 0,
+    leaps = 0,
+    wideLeaps = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d);
+    if (a <= 2) steps++;
+    else if (a <= 4) skips++;
+    else if (a <= 7) leaps++;
+    else wideLeaps++;
+  }
+
+  const n = intervals.length;
+  const pSteps = steps / n;
+  const pSkips = skips / n;
+  const pLeaps = leaps / n;
+  const pWide = wideLeaps / n;
+
+  const distributionPenalty =
+    Math.abs(pSteps - 0.55) * 1.0 +
+    Math.abs(pSkips - 0.25) * 0.9 +
+    Math.abs(pLeaps - 0.15) * 1.1 +
+    Math.abs(pWide - 0.05) * 1.4;
+
+  let recoverableLeaps = 0;
+  let recoveredLeaps = 0;
+  for (let i = 0; i < intervals.length - 1; i++) {
+    const a1 = Math.abs(intervals[i]!);
+    const d1 = Math.sign(intervals[i]!);
+    const a2 = Math.abs(intervals[i + 1]!);
+    const d2 = Math.sign(intervals[i + 1]!);
+    if (a1 >= 5) {
+      recoverableLeaps++;
+      if (d1 !== 0 && d2 !== 0 && d1 !== d2 && a2 <= 2) recoveredLeaps++;
+    }
+  }
+  const leapRecoveryRate = recoverableLeaps > 0 ? recoveredLeaps / recoverableLeaps : 1;
+
+  const uniqueAbs = new Set(intervals.map((x) => Math.abs(x))).size;
+  let varietyScore = 1;
+  if (uniqueAbs < 3) varietyScore = uniqueAbs / 3;
+  else if (uniqueAbs <= 7) varietyScore = 1;
+  else varietyScore = Math.max(0, 1 - (uniqueAbs - 7) / 5);
+
+  return Math.max(
+    0,
+    Math.min(
+      1,
+      1 -
+        distributionPenalty * 0.55 +
+        (leapRecoveryRate - 0.6) * 0.25 +
+        (varietyScore - 0.8) * 0.15
+    )
+  );
+}
+
 export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
   if (notes.length < 4) {
@@ -84,13 +150,8 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
     contourCompression = 0;
   }
 
-  // I — interval economy
-  const stepIntervals = pitches.slice(1).map((p, i) => Math.abs(p - pitches[i]!));
-  const uniqueIntervals = new Set(stepIntervals.map((iv) => Math.min(iv, 12))).size;
-  let intervalEconomy = 1 - Math.min(uniqueIntervals / 10, 1);
-  if (uniqueIntervals <= 1) {
-    intervalEconomy = 0;
-  }
+  // I — interval balance (jazz step/skip/leap distribution + recovery)
+  const intervalEconomy = scoreJazzIntervalBalance(pitches);
 
   // G — register cohesion
   const registerCohesion = 1 - Math.min(pitchStddev / 12, 1);
@@ -124,7 +185,7 @@ export function scoreMelodicIdentity(line: MelodicNote[]): CategoryScore {
     justification:
       `motif recurrence ${(motifRecurrence * 10).toFixed(1)}, ` +
       `contour ${(contourCompression * 10).toFixed(1)}, ` +
-      `interval economy ${(intervalEconomy * 10).toFixed(1)}, ` +
+      `interval balance ${(intervalEconomy * 10).toFixed(1)}, ` +
       `register cohesion ${(registerCohesion * 10).toFixed(1)}` +
       (hardFail ? ' [HARD FAIL]' : ''),
   };

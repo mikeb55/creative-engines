@@ -1,3 +1,8 @@
+## [2026-04-19] Melodic Identity ? jazz interval balance (I pillar)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreMelodicIdentity`** ? **`scoreJazzIntervalBalance`** replaces unique-interval-count **interval economy**; blended step/skip/leap distribution targets, leap recovery, interval variety; justification uses **interval balance** (same weight in **0.35R + 0.25C + 0.20I + 0.20G**).
+
 ## [2026-04-19] GCE v2.0 ? full preset benchmark complete
 
 ### GCE scores (seed 50021, 32 bars, 100 BPM)
