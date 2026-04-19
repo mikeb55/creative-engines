@@ -1,4 +1,13 @@
-﻿## [2026-04-19] Fix bars 25-32 repeating bars 9-16 — root cause resolved
+﻿## [2026-04-19] Fix bars 25-32 repeating bars 9-16 — confirmed fixed
+
+### Verified
+- All 32 bars unique across seed 32904853
+- Zero chord repeats at 8-bar or 16-bar intervals
+- Per-kind ordinal (x997) breaks modulo symmetry
+- wayne_shorter verse: 3 -> 4 rows
+- wayne_shorter chorus: 2 -> 4 rows
+
+## [2026-04-19] Fix bars 25-32 repeating bars 9-16 — root cause resolved
 
 ### What changed
 - wayne_shorter verse pool: 3 rows -> 4 rows
@@ -536,6 +545,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 
