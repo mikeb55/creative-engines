@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-18]
+# Composer OS Roadmap [2026-04-19]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -27,7 +27,12 @@
 
 ## Past (delivered)
 
-### Reinforced (2026-04-17)
+### Reinforced (2026-04-17 — updated 2026-04-19)
+
+- **Song Mode — Wayne Shorter chord pools + row metadata (2026-04-19):** **`wayne_shorter`** verse/chorus rows use **`{ chords, tags }`** (`tension`, `motion`, `cadential`, `pedal`) as scaffolding for future contextual selection; row choice remains **seed modulo** (same path as other writers). Rules-based **`wayneShorterChordRowScore`** removed. See [CHANGELOG.md](CHANGELOG.md), `songModeBuilder.ts`.
+
+- **Song Mode — Burt Bacharach slice + developer tooling (2026-04-18):** Primary **`bacharach`** harmony dressing + diagnostics; **`npm run workflow:bacharach`** / **`eval:bacharach`** / **`mine:bacharach`** from repo root (batch A/B vs neutral, GCE-style diagnostic scoring **not** a gate); reference mining under **`reference/bacharach/`**. See [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md).
+- **Song Mode — shared section-aware control layer (2026-04-18):** **`songModeSectionTypes`** / **`songModeSectionControl`** — form-relative **`SongModeSectionRole`** (reuse **`sectionKindForBar`**), optional **outro** tail on long forms, **`SongModeSectionBehaviourDescriptor`** registrations from **Donald Fagen**, **Bacharach**, and **`STYLE_SOPHISTICATED_POP`** surfaces; **`finalizeSongModeSectionShaping`** aggregates **`songModeSectionShapingDiagnostics`** (B vs A colour/density proxies, opening vs return, return-variation summary) into **`RunManifest`**, **`_meta`**, and **`songModeStyleSurfaceNotes`**. Tests: **`tests/songModeSectionControl.test.ts`**. See core under `engines/composer-os-v2/core/song-mode/`.
 
 - **Song Mode — first non-placeholder “style surface” (2026-04-17):** **`STYLE_GROOVE_SOUL`** nudges **`songwriterSyncopationBias`** / **`songwriterDensityBias`** on duo realisation (after optional primary-songwriter resolution); receipt + **`_meta`** manifest echo **`songModeStyleSurfaceNotes`**. **First primary-songwriter golden-path slice (2026-04-17):** **`donald_fagen`** / **`songwriter_donald_fagen`** → **`applyDonaldFagenSongwriterSurface`** (metadata + same receipt field). Other UI style fields remain compile/pairing/receipt-heavy until future slices. See [CHANGELOG.md](CHANGELOG.md), `core/song-mode/songModeStyleSurface.ts`, `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`.
 - **Song Mode — Donald Fagen audible slice (2026-04-18):** Duo guitar **`generateGoldenPathDuoScore`** applies **Mu/add9 colour** (major harmony, syncopated attacks), **Lydian #11 nudge** when the symbol implies **`#11`**, plus existing **altered dominant** / **strong-beat root diversion**; **`fagenJazzPopColourPassesReceipt`** on **`generationMetadata`**; surface syncopation **+0.06** for Phase C1. See [CHANGELOG.md](CHANGELOG.md), `tests/songModeDonaldFagenSurface.test.ts`.
@@ -120,9 +125,10 @@
 
 ---
 
-## Current (as of 2026-04-17 snapshot)
+## Current (as of 2026-04-18 snapshot)
 
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
+- **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs the **`npm test` / `runAllTests.ts`** debt bucket (still **not** all green). This is **baselining**, not a full fix pass.
 - **`npm test`** in `engines/composer-os-v2` still shows many **`FAIL:`** lines in the full harness (export, written-bar regression, etc.) — treat as **known debt** until the baseline doc is refreshed after fixes.
 
@@ -133,7 +139,7 @@
 | **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
-| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** for most controls; **real golden-path slices (2026-04-17):** **`STYLE_GROOVE_SOUL`** (sync/density) + **`donald_fagen`** primary (`applyDonaldFagenSongwriterSurface`) + receipts. |
+| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** for most controls; **golden-path slices:** **`STYLE_GROOVE_SOUL`**, **`donald_fagen`**, **`bacharach`**, **`STYLE_SOPHISTICATED_POP`**, plus **section-aware descriptors + aggregated diagnostics** (2026-04-18). |
 | **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family. **2026-04-17:** Parity + **realized normalization review (first pass)** — `shouldApplyRealizedVoice2Normalization` centralizes when Phase 18.2B.3 runs; `injectPhaseAGuitarVoice2Probe` uses **`isStandardGuitarBassDuo`**; JSDoc on realized pass. Full unify of realized metrics with standard duo / phrase-first single-line still **deferred** (pick list #2). |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
@@ -143,6 +149,26 @@
 ---
 
 ## Future (prioritized directions)
+
+### Next best development (top 3 options — 2026-04-18)
+
+1. **Wire eval harnesses to `songModeSectionShapingDiagnostics`** — extend **`eval:fagen`**, **`eval:bacharach`**, and **`eval:style-soph-pop`** (or a thin shared reader) to consume the **stable v1** fields (`densityDeltaBMinusA`, `colourDeltaBMinusA`, `openingVsReturnDelta`, `returnVariationType`, `contributingSlices`) so batch A/B reports match manifest JSON without duplicating slice-specific parsers. Low risk; high inspectability payoff.
+2. **Reduce `npm test` / `runAllTests.ts` fragility** — address **heap OOM** (Node `--max-old-space-size`, split suites, or fix the worst regressions listed in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**) so full Composer OS v2 test runs finish in CI/dev. Unblocks safer refactors across Song Mode and export.
+3. **Continue Wyble single-line parity (pick list #1)** — align remaining **`guitar_bass_duo`**-only guards with **`isGuitarBassDuoFamily`** where musical rules match; keep **`npm run test:duo`** / **`test:bass`** green. Still the best **duo-product** leverage before deeper ensemble Wyble work.
+
+*Optional near alternates:* UI surfacing of **section shaping** lines in the Generate receipt panel; **duo/Song >32** golden path when form product spec is ready.
+
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** The **top 3** above are a **narrow slice** (Song Mode diagnostics + test harness + Wyble duo). They do **not** replace the wider roadmap:
+
+| Thread | Where it lives in this doc |
+|--------|----------------------------|
+| **Songwriting engine** (`runSongMode` → **`buildCompiledSong`**, **`applySongwritingRules`**, compile → golden-path realisation) | **Past → Song Mode (structural + realisation)**; **Past → Songwriters & arrangers**; **Related paths** → `songModeBuilder.ts` |
+| **Songwriter profiles & rule catalogue** | **Past → Songwriters & arrangers** — **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, typed **`SongwriterRuleId`**; **Current** table row **Songwriters & arrangers (Song Mode)** |
+| **Arrangers & songwriter × arranger pairing** | **`stylePairingResolver`**, **`buildCompiledSong`** + optional **`stylePairing`**; **Near term** item 3 “Song Mode diversity”; pairing metadata still **engine-strong / UI-thin** |
+| **Big Band** | **Past → Big Band** (COMPLETE); **Current** table **Phase 19.1 (BB/SQ)** + **Big Band + String Quartet — follow-ups**; pick list #6; **Near term** item 2 follow-ups |
+| **String Quartet** | **Past → String Quartet** (COMPLETE); same **Current** rows and Wyble ensemble note (**Near term** item 5) |
+
+**Research backlogs** for BB/SQ/ECM (`BigBandResearch.md`, `string-quartet-parameters`, `ECM_Bacharach_BarryHarris_Research.md`) remain **future depth**, not cancelled.
 
 ### Focus (2026-04-17)
 
@@ -208,6 +234,7 @@
 | `engines/composer-os-v2/core/song-mode/songwriterStyleResolver.ts` | Primary + secondary + overlays → resolved rules + blended profile |
 | `engines/composer-os-v2/core/style-pairing/stylePairingResolver.ts` | Songwriter × arranger pairing + era heuristics |
 | `engines/composer-os-v2/core/song-mode/songModeBuilder.ts` | **`buildCompiledSong`** — wires resolution + optional **`stylePairing`** |
+| `engines/composer-os-v2/core/song-mode/songModeSectionControl.ts` | **Section roles + behaviour descriptors + shaping diagnostics** (Song Mode; 2026-04-18) |
 | `engines/songwriting_bridge/cli_export_lead_sheet.py` | Optional vocal lead sheet export (Song Mode) |
 | `c:\Users\mike\Documents\Perplexity Research\string-quartet-parameters.txt` | **Future:** Perplexity research — string quartet style parameters to implement when SQ preset gains richer stylistic control (see String Quartet section above) |
 | `c:\Users\mike\Documents\Perplexity Research\jazz-era.md` | **Future:** Perplexity research — jazz era / style reference for Big Band and broader jazz presets (see Big Band section above) |
@@ -217,5 +244,5 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-17].*
+*End of Composer OS Roadmap [2026-04-18].*
 

@@ -21,7 +21,27 @@ import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
-import { scoreChordRowForShorter } from './wayneShorterChordRowScore';
+
+/** Row-level tags for Wayne Shorter pools (foundation for future contextual selection). */
+export interface WayneShorterRowTags {
+  tension: 'low' | 'medium' | 'high';
+  motion: 'static' | 'stepwise' | 'chromatic' | 'leap';
+  cadential: boolean;
+  pedal: boolean;
+}
+
+export interface WayneShorterChordPoolRow {
+  chords: string[];
+  tags: WayneShorterRowTags;
+}
+
+/** Plain chord row or Wayne Shorter row with symbols + tags. */
+export type ChordPoolRow = string[] | WayneShorterChordPoolRow;
+
+function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
+  return Array.isArray(row) ? row : row.chords;
+}
+
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
   switch (kind) {
     case 'verse':
@@ -40,8 +60,8 @@ function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] 
 const SONGWRITER_CHORD_POOLS: Record<
   string,
   {
-    verse: string[][];
-    chorus: string[][];
+    verse: ChordPoolRow[];
+    chorus: ChordPoolRow[];
     bridge: string[][];
     pre_chorus: string[][];
   }
@@ -89,88 +109,152 @@ const SONGWRITER_CHORD_POOLS: Record<
   },
   wayne_shorter: {
     verse: [
-      [
-        'Dm9',
-        'Ebmaj7#11',
-        'Abmaj9',
-        'Bb13sus',
-        'Cm11',
-        'Db7alt',
-        'Fmmaj7',
-        'A7alt',
-      ],
-      [
-        'Em11',
-        'Fmaj7#11',
-        'Bbmaj9',
-        'C13sus',
-        'Dm9',
-        'Eb7alt',
-        'Abmaj7#11',
-        'G7alt',
-      ],
-      [
-        'Am11',
-        'Bbmaj7#11',
-        'Ebmaj9',
-        'F13sus',
-        'Gm9',
-        'Ab13sus',
-        'Dbmaj7#11',
-        'Bb7alt',
-      ],
-      [
-        'Gbmaj7#11',
-        'Em11',
-        'A7alt',
-        'Dmaj9',
-        'Cm11',
-        'F7alt',
-        'Bbmaj7#11',
-        'Eb13sus',
-      ],
+      {
+        chords: [
+          'Dm9',
+          'Ebmaj7#11',
+          'Abmaj9',
+          'Bb13sus',
+          'Cm11',
+          'Db7alt',
+          'Fmmaj7',
+          'A7alt',
+        ],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: [
+          'Em11',
+          'Fmaj7#11',
+          'Bbmaj9',
+          'C13sus',
+          'Dm9',
+          'Eb7alt',
+          'Abmaj7#11',
+          'G7alt',
+        ],
+        tags: {
+          tension: 'medium',
+          motion: 'stepwise',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: [
+          'Am11',
+          'Bbmaj7#11',
+          'Ebmaj9',
+          'F13sus',
+          'Gm9',
+          'Ab13sus',
+          'Dbmaj7#11',
+          'Bb7alt',
+        ],
+        tags: {
+          tension: 'high',
+          motion: 'leap',
+          cadential: false,
+          pedal: true,
+        },
+      },
+      {
+        chords: [
+          'Gbmaj7#11',
+          'Em11',
+          'A7alt',
+          'Dmaj9',
+          'Cm11',
+          'F7alt',
+          'Bbmaj7#11',
+          'Eb13sus',
+        ],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
     ],
     chorus: [
-      [
-        'Cm9',
-        'Bbmaj7#11',
-        'Ebmaj9',
-        'Dm11',
-        'G7alt',
-        'Cmaj7#11',
-        'Fm11',
-        'Bb13sus',
-      ],
-      [
-        'Am11',
-        'Abmaj7#11',
-        'Dbmaj9',
-        'Gm11',
-        'C7alt',
-        'Fmmaj7',
-        'Eb13sus',
-        'Bb7alt',
-      ],
-      [
-        'Fm11',
-        'E7alt',
-        'Amaj7#11',
-        'Bm9',
-        'E13sus',
-        'Ebmaj7#11',
-        'Abmaj9',
-        'Db7alt',
-      ],
-      [
-        'Bm11',
-        'Bb7alt',
-        'Ebmaj7#11',
-        'Fm9',
-        'Ab13sus',
-        'Gmaj7#11',
-        'Cm11',
-        'F7alt',
-      ],
+      {
+        chords: [
+          'Cm9',
+          'Bbmaj7#11',
+          'Ebmaj9',
+          'Dm11',
+          'G7alt',
+          'Cmaj7#11',
+          'Fm11',
+          'Bb13sus',
+        ],
+        tags: {
+          tension: 'high',
+          motion: 'stepwise',
+          cadential: true,
+          pedal: false,
+        },
+      },
+      {
+        chords: [
+          'Am11',
+          'Abmaj7#11',
+          'Dbmaj9',
+          'Gm11',
+          'C7alt',
+          'Fmmaj7',
+          'Eb13sus',
+          'Bb7alt',
+        ],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: [
+          'Fm11',
+          'E7alt',
+          'Amaj7#11',
+          'Bm9',
+          'E13sus',
+          'Ebmaj7#11',
+          'Abmaj9',
+          'Db7alt',
+        ],
+        tags: {
+          tension: 'high',
+          motion: 'leap',
+          cadential: true,
+          pedal: false,
+        },
+      },
+      {
+        chords: [
+          'Bm11',
+          'Bb7alt',
+          'Ebmaj7#11',
+          'Fm9',
+          'Ab13sus',
+          'Gmaj7#11',
+          'Cm11',
+          'F7alt',
+        ],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
     bridge: [
       ['Fsus', 'Gbmaj7', 'Bmaj7', 'Esus'],
@@ -213,26 +297,9 @@ function chordSymbolsForSection(kind: SongSectionKind, seed: number, songwriterI
             : kind === 'pre_chorus'
               ? pool.pre_chorus
               : pool.verse;
-    if (songwriterId === 'wayne_shorter') {
-      if (sectionPool.length === 0) return pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
-      let bestScore = Number.NEGATIVE_INFINITY;
-      const ties: number[] = [];
-      for (let i = 0; i < sectionPool.length; i++) {
-        const row = sectionPool[i]!;
-        const sc = scoreChordRowForShorter(row);
-        if (sc > bestScore) {
-          bestScore = sc;
-          ties.length = 0;
-          ties.push(i);
-        } else if (sc === bestScore) ties.push(i);
-      }
-      const ranked = [...ties].sort((a, b) => a - b);
-      const chosenIdx = ranked.length > 0 ? ranked[Math.abs(seed) % ranked.length]! : 0;
-      const picked = sectionPool[chosenIdx] ?? pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
-      return picked;
-    }
     const idx = Math.abs(seed) % sectionPool.length;
-    return sectionPool[idx] ?? pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+    const raw = sectionPool[idx] ?? pool.verse[0];
+    return raw != null ? chordSymbolsFromPoolRow(raw) : ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
   }
 
   // Fallback: original hardcoded progressions
