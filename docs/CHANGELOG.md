@@ -1,3 +1,30 @@
+## [2026-04-19] GCE v2.0 evaluator — current state
+
+### GCE scores (all 5 styles, seed 50021)
+- Overall: 7.9/10 (target 9.0)
+- Cadential Clarity: 10/10
+- Melodic Identity: 4.9-5.0/10 (weakest — interval economy 0.0)
+- Phrase Grammar: 7.6-8.8/10
+- Harmony & Language: 8/10
+- Rhythmic Identity: 8.5-8.6/10
+- Structure & Form: 7.5/10
+- Arrangement & Orchestration: 5.6-6.3/10
+- Economy & Focus: 6/10 (note density 90-96% — too dense)
+- Tension & Release: 9/10
+- Thematic Recall Potential: 10/10
+
+### Bad piece sanity check
+- Deliberately bad piece scores 3.1/10
+- Meaningful separation from real output (7.9 vs 3.1)
+
+### Known issues for next session
+- Melodic Identity: interval economy scores 0.0 on all styles
+  — too many distinct interval sizes in golden path output
+- Economy & Focus: 90-96% note density means almost no rests
+  — generation quality issue, not just a scoring issue
+- Arrangement: register gap still reading low on some styles
+- Thematic Recall: threshold too easy (saturates at 10/10)
+
 ## [2026-04-19] Arrangement scorer â€” register gap uses melody guitar vs bass (GCE)
 
 ### What changed
@@ -670,6 +697,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

@@ -114,3 +114,16 @@ Useful legacy material (jazz / workflow — **not** a substitute for this univer
 | `BarryEngine/` (e.g. `gce_scoring.py`) | Phrase/section-level scoring hooks in Python — different data model than Composer OS `ScoreModel`; useful for **tension–release** and **form** intuition only. |
 
 **Relationship:** `docs/GCE_FRAMEWORK.md` remains the earlier **song-oriented** Cursor/Claude rubric (10 subjective categories + hard gates). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.
+
+## Current Benchmark Scores (2026-04-19, seed 50021)
+| Style | Overall | Weakest |
+|-------|---------|---------|
+| donald_fagen | 7.9/10 | Melodic Identity |
+| wayne_shorter | 7.9/10 | Melodic Identity |
+| bacharach | 7.9/10 | Melodic Identity |
+| barry_harris | 7.9/10 | Melodic Identity |
+| ecm_chamber | 7.9/10 | Melodic Identity |
+
+Bad piece sanity check: 3.1/10 (separation confirmed)
+Target: 9.0/10
+Gap: 1.1 points
