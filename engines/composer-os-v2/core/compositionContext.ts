@@ -19,6 +19,10 @@ import type { HarmonyBarContract } from './harmony/harmonyBarContract';
 import type { CoreMotif, Motif } from './motif/motifEngineTypes';
 import type { MotifShape } from './motif/motifShape';
 import type { StyleProfile } from './song-mode/songModeStyleProfile';
+import type {
+  SongModeSectionBehaviourDescriptor,
+  SongModeSectionShapingDiagnosticsV1,
+} from './song-mode/songModeSectionTypes';
 import type { SongwriterRuleId } from './song-mode/songwritingResearchTypes';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
@@ -58,6 +62,8 @@ export interface HarmonyPipelineStageRecord {
 /** Generation metadata. */
 export interface GenerationMetadata {
   generatedAt: string;
+  /** Optional era hint (e.g. style pairing); set from `RunGoldenPathOptions.era` for downstream use. */
+  era?: string;
   durationMs?: number;
   steps?: string[];
   /** Guitar–Bass Duo: built-in cycle vs user progression text */
@@ -210,6 +216,10 @@ export interface GenerationMetadata {
   };
   /** Bacharach Song Mode: documented rule bundle id (`bacharachSongModeRuleBundle.ts`; reference-informed v1). */
   bacharachSongModeRuleBundleId?: string;
+  /** Song Mode: section-aware behaviour declarations (Fagen / Bacharach / Sophisticated Pop / future slices). */
+  songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
+  /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
+  songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /** Fagen-only keys-comp musical augmentations — inspectable objective metrics for A/B tooling. */
   fagenKeysCompMusicalDiagnostics?: {
     rhythmPatternFamily: string;

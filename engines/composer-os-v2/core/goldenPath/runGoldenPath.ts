@@ -96,6 +96,7 @@ import {
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
+import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
@@ -417,6 +418,7 @@ function buildDuoTwentyFourBarCompositionContext(
 }
 
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
+  const ctx = ((): CompositionContext => {
   const presetId = options?.presetId ?? 'guitar_bass_duo';
   /** Song Mode / API inject: custom_locked uses ONLY lockedHarmonyBarsRaw (no planner / no alternate source). */
   if (isGuitarBassDuoFamily(presetId) && options?.harmonyMode === 'custom_locked' && options.lockedHarmonyBarsRaw) {
@@ -570,6 +572,14 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     resolvedPresetId: presetId,
     totalBarsForForm: options?.totalBars,
   });
+  })();
+  if (options?.era != null) {
+    ctx.generationMetadata = {
+      ...ctx.generationMetadata,
+      era: options.era ?? undefined,
+    };
+  }
+  return ctx;
 }
 
 function resolveExpectedCustomChordBarCount(options?: RunGoldenPathOptions): number {
@@ -824,6 +834,8 @@ export interface RunGoldenPathOptions {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
+  era?: string;
   /**
    * Jest / diagnostics: omit `wybleVoiceLayout` after context build so duo scores can be
    * compared against the default portable Wyble map without forking the full planner.
@@ -1188,6 +1200,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  if (options?.songModeHookFirstIdentity) {
+    finalizeSongModeSectionShaping(appliedContext.generationMetadata);
+  }
   if (options?.formId && context.form?.sections) {
     (score as unknown as {
       formSections?: { startBar: number; label: string }[];
@@ -1466,6 +1481,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     wybleConsumptionReceipt: score.wybleConsumptionReceipt ?? appliedContext.generationMetadata.wybleConsumptionReceipt,
     songModeStyleSurfaceNotes: appliedContext.generationMetadata.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: appliedContext.generationMetadata.songModeDonaldFagenC1Receipt,
+    songModeSectionShapingDiagnostics: appliedContext.generationMetadata.songModeSectionShapingDiagnostics,
   });
 
   const success =

@@ -1,3 +1,12 @@
+## [2026-04-19] RunGoldenPath: `era` metadata plumbing
+
+### What changed
+- `RunGoldenPathOptions.era` optional string; when set,
+  `generationMetadata.era` is filled in
+  `buildContextForGoldenPath` (no score behavior change yet).
+- Song Mode `runSongStructure` passes
+  `req.stylePairing?.era` into `runGoldenPath`.
+
 ## [2026-04-19] Donald Fagen Song Mode - deepened chord pools
 
 ### What changed

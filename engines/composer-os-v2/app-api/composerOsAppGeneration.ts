@@ -463,6 +463,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
+    era: req.stylePairing?.era ?? undefined,
   });
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;
   if (isDesktopTruthDumpEnabled()) {
