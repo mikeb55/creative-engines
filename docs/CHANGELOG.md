@@ -1,3 +1,8 @@
+## [2026-04-19] Rhythmic identity scorer — GCE v2.0 formula (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreRhythmicIdentity`** now follows **GCE v2.0**: **IOI variety** (normalized duration entropy), **syncopation** (fractional-beat attacks), **rhythm motif** (repeated duration 3-grams), **groove stability** (attack-count consistency per bar), combined as **10 × (0.25I + 0.30S + 0.25R + 0.20G)** with hard cap at **6** when **`syncopation < 0.15`** and **`rhythmMotif < 0.20`** (GCE hard fail gate).
+
 ## [2026-04-19] Harmony scorer — broader extended-chord detection (GCE)
 
 ### What changed

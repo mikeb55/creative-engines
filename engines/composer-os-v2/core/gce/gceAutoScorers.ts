@@ -102,21 +102,73 @@ export function scoreHarmonyAndLanguage(chords: string[]): CategoryScore {
 
 export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
-  const rests = line.filter((n) => n.rest || n.midi === 0);
-  const totalBeats = line.reduce((s, e) => s + e.beats, 0);
-  const restBeats = rests.reduce((s, e) => s + e.beats, 0);
-  const restRatio = totalBeats > 0 ? restBeats / totalBeats : 0;
-  const durVariety = new Set(notes.map((n) => Math.round(n.beats * 4))).size;
-  const hasLongNote = notes.some((n) => n.beats >= 2);
-  const hasSyncopation = notes.some((n) => ![0, 1, 2, 3].includes(Math.floor(n.beat)));
-  let score = 0;
-  if (restRatio >= 0.1 && restRatio <= 0.5) score += 3;
-  if (durVariety >= 3) score += 3;
-  if (hasLongNote) score += 2;
-  if (hasSyncopation) score += 2;
+  if (notes.length === 0) {
+    return { score: 0, justification: 'No notes' };
+  }
+
+  // IOI variety — normalized entropy of durations
+  const durBuckets = new Map<number, number>();
+  for (const n of notes) {
+    const bucket = Math.round(n.beats * 4);
+    durBuckets.set(bucket, (durBuckets.get(bucket) ?? 0) + 1);
+  }
+  const total = notes.length;
+  let entropy = 0;
+  for (const count of durBuckets.values()) {
+    const p = count / total;
+    entropy -= p * Math.log2(p);
+  }
+  const maxEntropy = Math.log2(Math.max(durBuckets.size, 1));
+  const ioiVariety = maxEntropy > 0 ? Math.min(entropy / maxEntropy, 1) : 0;
+
+  // Syncopation — offbeat attacks (beat not integer)
+  const offbeat = notes.filter((n) => {
+    const b = n.beat % 1;
+    return b > 0.1 && b < 0.9;
+  }).length;
+  const syncopation = Math.min(offbeat / total, 1);
+
+  // Rhythm motif recurrence — repeated duration 3-grams
+  const durations = notes.map((n) => Math.round(n.beats * 4));
+  let matches = 0;
+  const grams = new Map<string, number>();
+  for (let i = 0; i <= durations.length - 3; i++) {
+    const key = durations.slice(i, i + 3).join(',');
+    grams.set(key, (grams.get(key) ?? 0) + 1);
+  }
+  for (const count of grams.values()) {
+    if (count >= 2) matches++;
+  }
+  const rhythmMotif = Math.min(matches / Math.max(grams.size, 1), 1);
+
+  // Groove stability — consistency of attacks per bar
+  const barAttacks = new Map<number, number>();
+  for (const n of notes) {
+    barAttacks.set(n.bar, (barAttacks.get(n.bar) ?? 0) + 1);
+  }
+  const attackCounts = [...barAttacks.values()];
+  const mean = attackCounts.reduce((a, b) => a + b, 0) / attackCounts.length;
+  const variance =
+    attackCounts.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / attackCounts.length;
+  const stddev = Math.sqrt(variance);
+  const grooveStability = Math.max(0, 1 - Math.min(stddev / mean, 1));
+
+  const rawScore =
+    10 *
+    (0.25 * ioiVariety + 0.3 * syncopation + 0.25 * rhythmMotif + 0.2 * grooveStability);
+
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+
+  const hardFail = syncopation < 0.15 && rhythmMotif < 0.2;
+
   return {
-    score: Math.min(10, score),
-    justification: `Rest ratio ${Math.round(restRatio * 100)}%, ${durVariety} duration types`,
+    score: hardFail ? Math.min(score, 6) : score,
+    justification:
+      `IOI variety ${(ioiVariety * 10).toFixed(1)}, ` +
+      `syncopation ${(syncopation * 100).toFixed(0)}%, ` +
+      `rhythm motif ${(rhythmMotif * 10).toFixed(1)}, ` +
+      `groove ${(grooveStability * 10).toFixed(1)}` +
+      (hardFail ? ' [HARD FAIL]' : ''),
   };
 }
 
