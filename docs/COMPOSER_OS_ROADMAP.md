@@ -219,6 +219,16 @@
 - ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
 
+### Quartal Guitar Module (mid-term, after GCE gate + Pat Metheny)
+
+- User inputs chord progression
+- System outputs quartal guitar voicings as MusicXML
+- Assets already exist: Quartal Engine (Node+Python, 3-note/4-note stacks) + Quartal Atlas (fretboard viz)
+- Phase 1: isolated guitar utility, no Composer coupling
+- Phase 2: optional quartal voicing in duo guitar part
+- Phase 3: abstract voicing layer for BB/SQ (optional)
+- **CRITICAL:** guitar playability logic must never leak into Big Band or String Quartet modules
+
 ### Longer term / explicit non-goals until designed
 
 - **D3** — undefined control surface.
