@@ -1,3 +1,8 @@
+## [2026-04-19] Harmony scorer — broader extended-chord detection (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreHarmonyAndLanguage`** now uses regex patterns for extensions (e.g. **maj7**, **m9**, **7alt**, **#11**, **13sus**, slash chords) plus root variety and repetition/plain penalties, instead of a strict substring marker list that misclassified rich symbols as plain triads.
+
 ## [2026-04-19] GCE v2.0 system-wide Cursor rule
 
 ### What changed
