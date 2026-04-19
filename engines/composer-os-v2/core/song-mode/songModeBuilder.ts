@@ -21,6 +21,7 @@ import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
+import { scoreChordRowForShorter } from './wayneShorterChordRowScore';
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
   switch (kind) {
     case 'verse':
@@ -212,6 +213,24 @@ function chordSymbolsForSection(kind: SongSectionKind, seed: number, songwriterI
             : kind === 'pre_chorus'
               ? pool.pre_chorus
               : pool.verse;
+    if (songwriterId === 'wayne_shorter') {
+      if (sectionPool.length === 0) return pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+      let bestScore = Number.NEGATIVE_INFINITY;
+      const ties: number[] = [];
+      for (let i = 0; i < sectionPool.length; i++) {
+        const row = sectionPool[i]!;
+        const sc = scoreChordRowForShorter(row);
+        if (sc > bestScore) {
+          bestScore = sc;
+          ties.length = 0;
+          ties.push(i);
+        } else if (sc === bestScore) ties.push(i);
+      }
+      const ranked = [...ties].sort((a, b) => a - b);
+      const chosenIdx = ranked.length > 0 ? ranked[Math.abs(seed) % ranked.length]! : 0;
+      const picked = sectionPool[chosenIdx] ?? pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+      return picked;
+    }
     const idx = Math.abs(seed) % sectionPool.length;
     return sectionPool[idx] ?? pool.verse[0] ?? ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
   }

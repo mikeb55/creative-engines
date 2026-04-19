@@ -1,4 +1,16 @@
-﻿## [2026-04-19] Fix bars 25-32 repeating bars 9-16 — confirmed fixed
+﻿## [2026-04-19] Wayne Shorter rules wired to chord selection
+
+### What changed
+- chordSymbolsForSection now scores all pool rows for
+  wayne_shorter using scoreChordRowForShorter
+- Picks highest-scoring row instead of seed % pool.length
+- Scoring: +10 maj7#11/b5, +10 7alt/#11, +10 m9/m11/mmaj7,
+  +10 no plain triads, +15 whole-step/minor-third motion,
+  -20 obvious II-V-I
+- All other songwriter IDs unchanged
+- New file: wayneShorterChordRowScore.ts
+
+## [2026-04-19] Fix bars 25-32 repeating bars 9-16 — confirmed fixed
 
 ### Verified
 - All 32 bars unique across seed 32904853
@@ -545,6 +557,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 
