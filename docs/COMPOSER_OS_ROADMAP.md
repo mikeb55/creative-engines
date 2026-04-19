@@ -6,6 +6,12 @@
 
 ---
 
+## Known issues — engine (2026-04-19)
+
+- **`ecm_chamber` golden path — JavaScript heap OOM (deferred):** Unbounded retry behaviour in **`generateGoldenPathDuoScore.ts`** can exhaust heap at **32-bar** long-form generation. Not fixed in this snapshot. **Workaround:** **`GCE_SINGLE_PRESET`** (one preset per process) for GCE preset runs; omit **`ecm_chamber`** from single-process full eval until bounded. Detail: [CHANGELOG.md](CHANGELOG.md) § **Known issue — `ecm_chamber` golden path OOM**.
+
+---
+
 ## User documentation (2026-04-17)
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** — first-time user guide: what the app does **now**, local run commands, Generate workflow, MusicXML locations, Wyble ON/OFF **CLI** (not a UI toggle), limitations; **engine test baseline** for developers.
@@ -244,5 +250,5 @@
 
 ---
 
-*End of Composer OS Roadmap [2026-04-18].*
+*End of Composer OS Roadmap [2026-04-19].*
 

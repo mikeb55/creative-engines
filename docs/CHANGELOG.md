@@ -1,3 +1,9 @@
+## [2026-04-19] Known issue ? `ecm_chamber` golden path OOM (deferred)
+
+### Known issue
+- **`ecm_chamber` JavaScript heap OOM:** An **unbounded retry loop** in **`engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`** can exhaust the JS heap at **32 bars** (typical eval: seed **50021**, **100** BPM, **`longFormEnabled: true`**). **Fix deferred** (profile/bound retries; see roadmap).
+- **GCE / eval workaround:** Use **`GCE_SINGLE_PRESET`** so each preset runs in a **fresh Node process** and skip **`ecm_chamber`** in full single-process **`npm run eval:gce-styles`** runs until resolved.
+
 ## [2026-04-19] Economy & Focus GCE scorer ? jazz duo density bands
 
 ### What changed
