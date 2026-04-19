@@ -118,6 +118,16 @@ const SONGWRITER_CHORD_POOLS: Record<
         'Dbmaj7#11',
         'Bb7alt',
       ],
+      [
+        'Gbmaj7#11',
+        'Em11',
+        'A7alt',
+        'Dmaj9',
+        'Cm11',
+        'F7alt',
+        'Bbmaj7#11',
+        'Eb13sus',
+      ],
     ],
     chorus: [
       [
@@ -139,6 +149,26 @@ const SONGWRITER_CHORD_POOLS: Record<
         'Fmmaj7',
         'Eb13sus',
         'Bb7alt',
+      ],
+      [
+        'Fm11',
+        'E7alt',
+        'Amaj7#11',
+        'Bm9',
+        'E13sus',
+        'Ebmaj7#11',
+        'Abmaj9',
+        'Db7alt',
+      ],
+      [
+        'Bm11',
+        'Bb7alt',
+        'Ebmaj7#11',
+        'Fm9',
+        'Ab13sus',
+        'Gmaj7#11',
+        'Cm11',
+        'F7alt',
       ],
     ],
     bridge: [
@@ -215,12 +245,20 @@ export function buildSectionChordPlans(
   seed: number,
   songwriterId?: string
 ): SectionChordPlan[] {
-  return sections.map((s) => ({
-    sectionOrder: s.order,
-    sectionKind: s.kind,
-    intensity: intensityForKind(s.kind),
-    chordSymbols: chordSymbolsForSection(s.kind, seed + s.order * 31, songwriterId),
-  }));
+  /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
+  let verseOrdinal = 0;
+  let chorusOrdinal = 0;
+  return sections.map((s) => {
+    let ordinalBias = 0;
+    if (s.kind === 'verse') ordinalBias = verseOrdinal++ * 997;
+    else if (s.kind === 'chorus') ordinalBias = chorusOrdinal++ * 997;
+    return {
+      sectionOrder: s.order,
+      sectionKind: s.kind,
+      intensity: intensityForKind(s.kind),
+      chordSymbols: chordSymbolsForSection(s.kind, seed + s.order * 31 + ordinalBias, songwriterId),
+    };
+  });
 }
 
 export interface BuildCompiledSongParams {

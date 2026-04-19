@@ -1,3 +1,13 @@
+ï»¿## [2026-04-19] Fix bars 25-32 repeating bars 9-16 â€” root cause resolved
+
+### What changed
+- wayne_shorter verse pool: 3 rows -> 4 rows
+- wayne_shorter chorus pool: 2 rows -> 4 rows
+- buildSectionChordPlans: per-kind ordinal added (scaled
+  by 997) so 1st/2nd/3rd/4th chorus each pick different
+  pool rows regardless of seed modulo symmetry
+- Confirmed: all 4 chorus blocks unique at seed 12345
+
 ## [2026-04-19] Fix bars 25-32 repeat in Song Mode
 
 ### What changed
@@ -12,7 +22,7 @@
 
 ### What changed
 - composerOsAppGeneration.ts: padding now cycles token list
-  instead of repeating last chord — fixes C13sus flooding
+  instead of repeating last chord ï¿½ fixes C13sus flooding
   bars 17-32
 - songModeBuilder.ts: wayne_shorter verse rows expanded
   4 ? 8 chords with authentic Shorter palette
@@ -21,7 +31,7 @@
 - Palette: maj7#11, m9, m11, mmaj7, 7alt, 13sus,
   whole-step/minor-third root motion, no clean II-V-I
 
-## [2026-04-19] Wayne Shorter — deep rule set added to songwriter registry
+## [2026-04-19] Wayne Shorter ï¿½ deep rule set added to songwriter registry
 
 ### What changed
 - wayne_shorter entry in songwriterRuleRegistry.ts expanded
@@ -526,5 +536,6 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
