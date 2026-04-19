@@ -75,8 +75,8 @@ const SONGWRITER_CHORD_POOLS: Record<
   {
     verse: ChordPoolRow[];
     chorus: ChordPoolRow[];
-    bridge: string[][];
-    pre_chorus: string[][];
+    bridge: ChordPoolRow[];
+    pre_chorus: ChordPoolRow[];
   }
 > = {
   donald_fagen: {
@@ -157,11 +157,80 @@ const SONGWRITER_CHORD_POOLS: Record<
       },
     ],
     bridge: [
-      ['Ebmaj7', 'Abmaj7', 'Dm9', 'G7alt'],
-      ['Bbmaj7', 'Ebmaj7', 'Am9', 'D7alt'],
+      {
+        chords: ['Cmaj7#11', 'E7#9', 'Amaj9', 'C#7#9', 'F#maj7', 'A7#9', 'Dmaj9', 'F#7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Bbmaj7', 'G7#9b13', 'Cm9', 'Eb7#9', 'Abmaj7#11', 'B7#9', 'Emaj9', 'G#7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'functional',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Fmaj7/A', 'G13', 'Am9', 'D7#9b13', 'Gmaj7#11', 'B7#9', 'Em9', 'A13sus4'],
+        tags: {
+          tension: 'medium',
+          motion: 'slash',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Ebmaj7', 'C7#9', 'Fm9', 'Ab7#9b13', 'Dbmaj7#11', 'E7#9', 'Abmaj9', 'B7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'functional',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
     pre_chorus: [
-      ['Dm9', 'Em9', 'Fmaj7#11', 'G13sus'],
+      {
+        chords: ['Am9', 'D13sus4', 'Gmaj7#11', 'B7#9', 'Em9', 'A7#9b13', 'Dmaj9', 'F#7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Dm9', 'G13sus4', 'Cmaj7#11', 'E7#9', 'Am9', 'D7#9b13', 'Gmaj9', 'B7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'functional',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Gm9', 'C13sus4', 'Fmaj7#11', 'A7#9', 'Dm9', 'G7#9b13', 'Cmaj9', 'E7#9'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Cm9', 'F13sus4', 'Bbmaj7#11', 'D7#9', 'Gm9', 'C7#9b13', 'Fmaj9', 'A7#9'],
+        tags: {
+          tension: 'high',
+          motion: 'functional',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
   },
   bacharach: {
@@ -333,11 +402,80 @@ const SONGWRITER_CHORD_POOLS: Record<
       },
     ],
     bridge: [
-      ['Fsus', 'Gbmaj7', 'Bmaj7', 'Esus'],
-      ['Csus', 'Dbmaj7', 'Gbmaj7', 'Bsus'],
+      {
+        chords: ['Gbmaj7#11', 'Em11', 'A7alt', 'Dmaj9', 'Cm11', 'F7alt', 'Bbmaj7#11', 'Eb13sus'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Fmmaj7', 'E7alt', 'Amaj7#11', 'Bm9', 'Bb7alt', 'Ebmaj7#11', 'Abmaj9', 'Db7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'leap',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Cm11', 'B7alt', 'Emaj7#11', 'F#m9', 'Bb13sus', 'Abmaj7#11', 'Dbmaj9', 'G7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: true,
+        },
+      },
+      {
+        chords: ['Bm11', 'Bb7alt', 'Ebmaj7#11', 'Fm9', 'Ab13sus', 'Gmaj7#11', 'Cm11', 'F7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
     pre_chorus: [
-      ['Dm9', 'Ebmaj7', 'Am9', 'Bbmaj7'],
+      {
+        chords: ['Am11', 'Ab7alt', 'Dbmaj7#11', 'Bbm9', 'Eb13sus', 'Dbmaj7#11', 'Gb7alt', 'Bmaj7#11'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Dm11', 'Db7alt', 'Gbmaj7#11', 'Ebm9', 'Ab13sus', 'Gbmaj7#11', 'B7alt', 'Emaj7#11'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Gm11', 'F#7alt', 'Bmaj7#11', 'G#m9', 'C#13sus', 'Bmaj7#11', 'E7alt', 'Amaj7#11'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+        },
+      },
+      {
+        chords: ['Em11', 'Eb7alt', 'Abmaj7#11', 'Fm9', 'Bb13sus', 'Abmaj7#11', 'Db7alt', 'Gbmaj7#11'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: true,
+          pedal: false,
+        },
+      },
     ],
   },
   bill_evans: {

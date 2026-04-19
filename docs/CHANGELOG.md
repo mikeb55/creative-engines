@@ -1,3 +1,12 @@
+## [2026-04-19] Song Mode pools ? bridge / pre_chorus for Shorter & Fagen
+
+### What changed
+- `songModeBuilder.ts`: **wayne_shorter** and **donald_fagen**
+  **bridge** and **pre_chorus** pools expanded to **4 rows x 8
+  chords**, Shorter / Steely-flavoured palettes, **typed row tags**
+  (`tension`, `motion`, `cadential`, `pedal`). Pool record type:
+  `bridge` / `pre_chorus` are **`ChordPoolRow[]`** (tagged rows OK).
+
 ## [2026-04-19] Era bias verified (Song Mode harness)
 
 ### Verified (donald_fagen primary, seed 99999)
