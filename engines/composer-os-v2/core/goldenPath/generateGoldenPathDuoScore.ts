@@ -271,7 +271,10 @@ function clampAllBassNotesToValidatorHardRange(score: ScoreModel): void {
       const e = m.events[i]!;
       if (e.kind !== 'note') continue;
       const n = e as NoteEvent;
-      const np = clampPitch(n.pitch, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
+      /** `clampPitch(NaN)` is NaN — rebuildMonophonicVoiceLine would propagate invalid MIDI into finalized score. */
+      const base =
+        typeof n.pitch === 'number' && Number.isFinite(n.pitch) ? n.pitch : 40;
+      const np = clampPitch(base, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
       if (np !== n.pitch) {
         m.events[i] = { ...n, pitch: np };
       }

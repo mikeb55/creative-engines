@@ -14,6 +14,7 @@ import { applyBassBeatNotationGrouping } from './bassBeatNotationGrouping';
 import { extractMotifShapeFromGuitarBar, realizeReturnMidiFromMotifShape } from '../motif/motifShape';
 import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
+import { BASS_HARD_RANGE_HIGH, BASS_HARD_RANGE_LOW } from '../instrument-profiles/uprightBassProfile';
 
 const EPS = 1e-4;
 const HOOK_REGISTER_LOW = 55;
@@ -326,6 +327,24 @@ function clampCleanElectricGuitarNotesToHardRange(score: ScoreModel): void {
   }
 }
 
+/** Same contract as guitar clamp — notation passes must not leave bass `pitch` non-finite (breaks GCE / export math). */
+function clampUprightBassNotesToHardRange(score: ScoreModel): void {
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!bass) return;
+  for (const m of bass.measures) {
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      if (!Number.isFinite(n.pitch)) {
+        n.pitch = clampPitch(40, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
+        continue;
+      }
+      const c = clampPitch(n.pitch, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
+      if (c !== n.pitch) n.pitch = c;
+    }
+  }
+}
+
 /**
  * Authoritative end of rhythm pipeline: finalize → validate once → freeze parts.
  * Call only after all passes that may alter startBeat/duration (performance, expressive, ECM envelopes).
@@ -352,6 +371,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
   if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score);
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);
   clampCleanElectricGuitarNotesToHardRange(score);
+  clampUprightBassNotesToHardRange(score);
   const v = validateStrictBarMath(score);
   if (!v.valid) {
     throw new Error(`Bar math enforcement failed after finalize: ${v.errors.join('; ')}`);

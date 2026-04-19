@@ -6,7 +6,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { WYBLE_ROLE_MAP_DUO_FAMILY } from '../wyble/ensembleWybleRoleMaps';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
@@ -39,7 +39,10 @@ export function applyDuoWybleBassAnchorBar1Nudge(score: ScoreModel, context: Com
 
   for (const ev of m0.events) {
     if (ev.kind === 'note') {
-      ev.pitch += WYBLE_DUO_BASS_BAR1_ANCHOR_NUDGE_SEMITONES;
+      const n = ev as NoteEvent;
+      if (typeof n.pitch === 'number' && Number.isFinite(n.pitch)) {
+        n.pitch += WYBLE_DUO_BASS_BAR1_ANCHOR_NUDGE_SEMITONES;
+      }
       break;
     }
   }

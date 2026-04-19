@@ -1,6 +1,10 @@
 import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
-import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+
+/** Mirror **`uprightBassProfile`** hard range — inlined to avoid any module-init edge cases in GCE-only imports. */
+const UPRIGHT_BASS_HARD_LOW = 28;
+const UPRIGHT_BASS_HARD_HIGH = 55;
 
 /** Section slice for GCE Structure & Form (aligned with `FormMap` / lead sheet conventions). */
 export interface GceStructureSection {
@@ -542,24 +546,58 @@ function countNotesPerBar(part: PartModel): Map<number, number> {
   return m;
 }
 
-function collectMidiRange(part: PartModel): { min: number; max: number } {
+/**
+ * Lowest/highest MIDI in the part.
+ * **`melodyVoiceOnly`** — same convention as **`scoreModelToMelodicLine`**: voice **1** or unspecified (excludes guitar **voice 2** shells so register gap reflects lead vs bass).
+ */
+function collectMidiRange(
+  part: PartModel,
+  opts?: { melodyVoiceOnly?: boolean }
+): { min: number; max: number } {
   let min = 127;
   let max = 0;
+  let counted = 0;
   for (const meas of part.measures) {
     for (const e of meas.events) {
-      if (e.kind === 'note') {
-        min = Math.min(min, e.pitch);
-        max = Math.max(max, e.pitch);
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      if (!Number.isFinite(n.pitch)) continue;
+      if (
+        opts?.melodyVoiceOnly &&
+        n.voice !== undefined &&
+        n.voice !== 1
+      ) {
+        continue;
       }
+      counted++;
+      min = Math.min(min, n.pitch);
+      max = Math.max(max, n.pitch);
     }
   }
-  return min <= max ? { min, max } : { min: 60, max: 60 };
+  if (counted === 0 && opts?.melodyVoiceOnly) {
+    return collectMidiRange(part);
+  }
+  const isBassPart =
+    part.instrumentIdentity === 'acoustic_upright_bass' || part.id === 'bass';
+  if (counted === 0 && isBassPart) {
+    /** No finite pitches (pipeline bug / frozen sentinel) — use upright hard range, not `{60,60}` (that forces gap 0 vs melody at middle C). */
+    return { min: UPRIGHT_BASS_HARD_LOW, max: UPRIGHT_BASS_HARD_HIGH };
+  }
+  const out = min <= max ? { min, max } : { min: 60, max: 60 };
+  return {
+    min: Number.isFinite(out.min) ? out.min : 60,
+    max: Number.isFinite(out.max) ? out.max : 60,
+  };
 }
 
 /** GCE v2.0 — Arrangement & Orchestration */
 export function scoreArrangementAndOrchestration(score: ScoreModel): CategoryScore {
-  const guitar = score.parts.find((p) => p.id === 'guitar');
-  const bass = score.parts.find((p) => p.id === 'bass');
+  const guitar =
+    score.parts.find((p) => p.id === 'guitar') ??
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass =
+    score.parts.find((p) => p.id === 'bass') ??
+    score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar || !bass) {
     return { score: 4, justification: 'Missing guitar or bass part' };
   }
@@ -572,6 +610,7 @@ export function scoreArrangementAndOrchestration(score: ScoreModel): CategorySco
     return { score: 0, justification: 'No measures' };
   }
 
+  /** Per bar: **|Ng/4 − Nb/4|** = imbalance of note counts scaled to one beat (4/4). Mean → **densityDifference** ∈ ~0–2+. */
   let diffSum = 0;
   const totals: number[] = [];
   for (const bar of barList) {
@@ -582,9 +621,12 @@ export function scoreArrangementAndOrchestration(score: ScoreModel): CategorySco
   }
   const densityDifference = diffSum / barList.length;
 
-  const gR = collectMidiRange(guitar);
+  const gMelody = collectMidiRange(guitar, { melodyVoiceOnly: true });
   const bR = collectMidiRange(bass);
-  const registerSeparation = Math.max(0, gR.min - bR.max);
+  /** Low overlap between **melody-register** guitar bottom and bass ceiling (typical duo target ~5–20 st when separated). */
+  const gmin = Number.isFinite(gMelody.min) ? gMelody.min : 60;
+  const bmax = Number.isFinite(bR.max) ? bR.max : UPRIGHT_BASS_HARD_HIGH;
+  const registerSeparation = Math.max(0, gmin - bmax);
 
   const meanTot = totals.reduce((a, b) => a + b, 0) / totals.length;
   const varTot =
@@ -600,7 +642,7 @@ export function scoreArrangementAndOrchestration(score: ScoreModel): CategorySco
   return {
     score: sc,
     justification:
-      `density Δ ${densityDifference.toFixed(2)}, register gap ${registerSeparation.toFixed(0)} semitones, part activity σ ${activePartVariety.toFixed(1)}`,
+      `density Δ ${densityDifference.toFixed(2)} (mean |guitar−bass| notes/bar ÷ 4), register gap ${registerSeparation.toFixed(0)} st (melody guitar min − bass max), part activity σ ${activePartVariety.toFixed(1)}`,
   };
 }
 

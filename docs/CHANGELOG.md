@@ -1,3 +1,11 @@
+## [2026-04-19] Arrangement scorer — register gap uses melody guitar vs bass (GCE)
+
+### What changed
+- **`engines/composer-os-v2/core/gce/gceAutoScorers.ts`**: **`scoreArrangementAndOrchestration`** — **register gap** is **`max(0, guitarMelodyMinMidi − bassMaxMidi)`**, where **guitar melody** follows the same **voice 1 / default** rule as **`scoreModelToMelodicLine`** (so **voice 2** comp shells no longer drag the guitar “low” into the bass register and force **0 st**); **notes with non-finite `pitch`** are ignored for range; if the bass part has **no** finite pitches, **bass max** falls back to **55** (**E1–G3** upright ceiling, inlined as **28–55** to match **`uprightBassProfile`** without import cycles); **sanitize** range outputs so **`NaN`** never enters the weighted sum. **Density Δ** unchanged in meaning — per-bar **|Ng/4 − Nb/4|** averaged (**note-count imbalance** scaled to **one beat** in 4/4). **Justification** string spells this out.
+- **`engines/composer-os-v2/core/goldenPath/duoWybleBassAnchorNudge.ts`**: Bar 1 anchor nudge applies only when **`pitch`** is finite (**`undefined + 2`** was producing **NaN** bass MIDI).
+- **`engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`**: **`clampAllBassNotesToValidatorHardRange`** replaces non-finite bass **`pitch`** with a safe MIDI before **`finalizeAndSealDuoScoreBarMath`** ( **`clampPitch(NaN)`** did not).
+- **`engines/composer-os-v2/core/score-integrity/duoBarMathFinalize.ts`**: **`clampUprightBassNotesToHardRange`** after guitar clamp — last-chance repair before **`freezeScoreRhythmAfterFinalize`**.
+
 ## [2026-04-19] Cadential clarity — tonic vs dominant, long endings, strong beats (GCE)
 
 ### What changed
