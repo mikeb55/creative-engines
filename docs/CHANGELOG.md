@@ -1,3 +1,8 @@
+## [2026-04-19] GCE eval ? full-bar chord sequence for harmony scorers
+
+### What changed
+- **`engines/composer-os-v2/scripts/gceStyleEval.ts`**: **`chordsForGceScoring`** ? prefer **`context.lockedHarmonyBarsRaw`** when length matches **`form.totalBars`**, else **`generationMetadata.parsedCustomProgressionBars`**, else **tile** shorter locked/parsed sequences to **`totalBars`**, else merge **`measure.chord`** from **all** score parts by bar index (golden-path chord map pattern). **`scoreTensionAndRelease`**, **`scoreHarmonyAndLanguage`**, **`scoreCadentialClarity`**, and **`scoreStructureAndForm`** receive one chord per scored bar for long forms.
+
 ## [2026-04-19] GCE ? `scoreTensionAndRelease` arc cooldown + thresholds
 
 ### What changed
