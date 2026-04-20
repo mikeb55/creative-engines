@@ -10,6 +10,7 @@ import {
   partitionDuoIdentityIssues,
   type SongModeDuoIdentityIssue,
 } from '../song-mode/songModeDuoIdentityBehaviourRules';
+import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID } from '../presets/guitarBassDuoPresetIds';
 import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 export interface PhraseAuthorityResult {
@@ -75,6 +76,7 @@ export function validateDuoPhraseAuthority(
 ): PhraseAuthorityResult {
   const empty: PhraseAuthorityResult = { valid: true, errors: [], warnings: [], issues: [] };
   if (opts?.presetId === 'ecm_chamber') return empty;
+  if (opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return empty;
   const issues: SongModeDuoIdentityIssue[] = [];
   const notes = collectGuitarNotes(score);
   if (notes.length < 8) {

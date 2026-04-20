@@ -6,6 +6,7 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { guitarRestRatio } from './duoLockQuality';
+import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID } from '../presets/guitarBassDuoPresetIds';
 import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 export interface DuoMusicalQualityResult {
@@ -25,6 +26,7 @@ export function validateDuoMusicalQuality(
   _opts?: { styleStack?: StyleStack; presetId?: string }
 ): DuoMusicalQualityResult {
   if (_opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
+  if (_opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return { valid: true, errors: [] };
   const errors: string[] = [];
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');

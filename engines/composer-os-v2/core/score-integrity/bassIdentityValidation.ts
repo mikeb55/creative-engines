@@ -5,6 +5,7 @@
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { contourFingerprint, rhythmFingerprint } from '../goldenPath/bassLineFingerprints';
+import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID } from '../presets/guitarBassDuoPresetIds';
 import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 function chordForBar(barIndex: number): string {
@@ -24,6 +25,8 @@ export interface BassIdentityResult {
  */
 export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: string }): BassIdentityResult {
   if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
+  /** Walking-bass / LOCK gates target full duo texture; single-line mode enforces monophony elsewhere. */
+  if (opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return { valid: true, errors: [] };
   const errors: string[] = [];
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!bass) return { valid: true, errors: [] };

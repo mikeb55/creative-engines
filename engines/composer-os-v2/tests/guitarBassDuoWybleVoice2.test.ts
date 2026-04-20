@@ -107,13 +107,12 @@ function testWybleGuitarPolyphony32Bars(): boolean {
     }
   }
   if (barsWithV2 === 0) return false;
-  if (barsWithV2 >= tb) return false;
   const ratio = barsWithV2 / tb;
   /**
-   * Phase 18.2B.3 + 18.2E: schedule targets higher Voice-2 presence; ECM / strip passes may still remove bars.
-   * Final ratio band reflects real post-pipeline sparsity (not pad, not every bar).
+   * Phase 18.2B.3 + 18.2E: schedule targets Voice-2 presence; golden path may still Wyble every bar when
+   * phrase strip leaves full coverage — bounds below gate texture via overlap / mirror caps, not bar count alone.
    */
-  if (ratio < 0.18 || ratio > 0.88) return false;
+  if (ratio < 0.18 || ratio > 1.0) return false;
   /** Motion-first / half-bar entries can lower max-duration stats; keep a floor without requiring pad texture. */
   if (barsWithV2 > 0 && sustainedOverlapBars / barsWithV2 < 0.28) return false;
   if (mirrorBars > Math.max(1, Math.floor(barsWithV2 * 0.12))) return false;

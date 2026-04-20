@@ -23,7 +23,7 @@ import { getDensityForBar } from '../density/densityCurvePlanner';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
 import type { MotifTrackerState } from '../motif/motifTypes';
 import type { CompositionContext } from '../compositionContext';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import { validateMotifIntegrity } from '../motif/motifValidation';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 import { validateMethenyConformance } from '../style-modules/metheny/moduleValidation';
@@ -308,7 +308,8 @@ export function runBehaviourGates(
     if (!ecmLoop.valid) errors.push(...ecmLoop.errors);
   }
 
-  if (opts?.presetId && isGuitarBassDuoFamily(opts.presetId)) {
+  /** Duo LOCK / melody-identity gates are calibrated for standard `guitar_bass_duo`; single-line uses monophony checks only. */
+  if (opts?.presetId && isStandardGuitarBassDuo(opts.presetId)) {
     const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoLockCtx);
     errors.push(...duoRh.errors);
     if (songMode) duoIdentityWarnings.push(...duoRh.warnings);
