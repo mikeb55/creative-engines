@@ -156,3 +156,23 @@ Bad piece sanity check: 3.1/10 (separation confirmed).
 | riff_generator | 7.9/10 | Melodic Identity |
 | ecm_chamber | OOM pending |
 Gap to 9.0: 0.6-1.1 points. Universal weakness: Melodic Identity.
+
+## Definitive Benchmark ([2026-04-20], seed 50021, all 12 presets)
+| Preset | Score | Weakest |
+|--------|-------|---------|
+| song_mode_shorter | 8.4/10 | Melodic Identity |
+| song_mode_bacharach | 8.4/10 | Melodic Identity |
+| song_mode_barry_harris | 8.4/10 | Melodic Identity |
+| song_mode_fagen | 8.3/10 | Melodic Identity |
+| guitar_bass_duo_single_line | 8.3/10 | Melodic Identity |
+| guitar_bass_duo | 8.0/10 | Economy & Focus |
+| song_mode_metheny | 7.9/10 | Melodic Identity |
+| big_band | 7.9/10 | Melodic Identity |
+| string_quartet | 7.9/10 | Melodic Identity |
+| wyble_etude | 7.9/10 | Melodic Identity |
+| riff_generator | 7.9/10 | Melodic Identity |
+| ecm_chamber | 7.8/10 | Arrangement & Orchestration |
+
+Zero regressions. ECM first successful eval.
+Gap to GCE 9.0: 0.6-1.2 points.
+Next: Motif Authority Layer.
