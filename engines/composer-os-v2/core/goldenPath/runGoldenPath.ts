@@ -425,8 +425,16 @@ function buildDuoTwentyFourBarCompositionContext(
 function resolveEraProfile(era: string): { rhythmBias: number; harmonyDensityBias: number } {
   const k = era.trim().toLowerCase().replace(/-/g, '_');
   switch (k) {
+    case 'swing':
+      return { rhythmBias: -0.05, harmonyDensityBias: -0.1 };
+    case 'bebop':
+      return { rhythmBias: 0.2, harmonyDensityBias: 0.15 };
     case 'post_bop':
       return { rhythmBias: 0.15, harmonyDensityBias: 0.2 };
+    case 'cool_jazz':
+      return { rhythmBias: -0.1, harmonyDensityBias: -0.05 };
+    case 'hard_bop':
+      return { rhythmBias: 0.15, harmonyDensityBias: 0.1 };
     case 'fusion':
       return { rhythmBias: 0.1, harmonyDensityBias: 0.1 };
     case 'contemporary':

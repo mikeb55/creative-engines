@@ -55,6 +55,78 @@ function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
 }
 
+function resolveEraHarmonyDensityBias(era: string | undefined): number {
+  const k = era?.trim().toLowerCase().replace(/-/g, '_');
+  switch (k) {
+    case 'swing':
+      return -0.1;
+    case 'bebop':
+      return 0.15;
+    case 'post_bop':
+      return 0.2;
+    case 'cool_jazz':
+      return -0.05;
+    case 'hard_bop':
+      return 0.1;
+    case 'fusion':
+      return 0.1;
+    case 'contemporary':
+      return 0;
+    default:
+      return 0;
+  }
+}
+
+function seededUnit(seed: number): number {
+  let s = seed >>> 0;
+  s = (s * 1664525 + 1013904223) >>> 0;
+  return s / 0xffffffff;
+}
+
+function chordComplexityScore(chord: string): number {
+  const c = chord.toLowerCase();
+  let score = 0;
+  if (c.includes('alt')) score += 2.2;
+  if (c.includes('b9') || c.includes('#9')) score += 1.4;
+  if (c.includes('#11')) score += 1.2;
+  if (c.includes('13sus') || c.includes('7sus')) score += 1.1;
+  if (c.includes('13')) score += 0.8;
+  if (c.includes('11')) score += 0.7;
+  if (c.includes('maj9') || c.includes('m9')) score += 0.5;
+  if (c.includes('maj7') || c.includes('m7')) score -= 0.35;
+  if (c.includes('6/9') || c.includes('6')) score -= 0.45;
+  return score;
+}
+
+function rowComplexityScore(row: ChordPoolRow): number {
+  const chords = chordSymbolsFromPoolRow(row);
+  if (chords.length === 0) return 0;
+  const total = chords.reduce((sum, chord) => sum + chordComplexityScore(chord), 0);
+  return total / chords.length;
+}
+
+function pickChordPoolRowIndex(sectionPool: ChordPoolRow[], seed: number, harmonyDensityBias: number): number {
+  if (sectionPool.length <= 1) return 0;
+  const roll = seededUnit(seed);
+  if (harmonyDensityBias <= 0.1 && harmonyDensityBias >= -0.05) {
+    return Math.floor(roll * sectionPool.length);
+  }
+
+  const scores = sectionPool.map((row) => rowComplexityScore(row));
+  const wantsDense = harmonyDensityBias > 0.1;
+  const weighted = scores.map((score) => {
+    const preference = wantsDense ? score : -score;
+    return Math.max(0.15, Math.exp(preference * 0.9));
+  });
+  const sum = weighted.reduce((a, b) => a + b, 0);
+  let cursor = roll * sum;
+  for (let i = 0; i < weighted.length; i++) {
+    cursor -= weighted[i]!;
+    if (cursor <= 0) return i;
+  }
+  return weighted.length - 1;
+}
+
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
   switch (kind) {
     case 'verse':
@@ -583,7 +655,12 @@ const SONGWRITER_CHORD_POOLS: Record<
   },
 };
 
-function chordSymbolsForSection(kind: SongSectionKind, seed: number, songwriterId?: string): string[] {
+function chordSymbolsForSection(
+  kind: SongSectionKind,
+  seed: number,
+  songwriterId?: string,
+  harmonyDensityBias: number = 0
+): string[] {
   const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
   if (pool) {
     const sectionPool =
@@ -596,7 +673,7 @@ function chordSymbolsForSection(kind: SongSectionKind, seed: number, songwriterI
             : kind === 'pre_chorus'
               ? pool.pre_chorus
               : pool.verse;
-    const idx = Math.abs(seed) % sectionPool.length;
+    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), harmonyDensityBias);
     const raw = sectionPool[idx] ?? pool.verse[0];
     return raw != null ? chordSymbolsFromPoolRow(raw) : ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
   }
@@ -628,7 +705,8 @@ export function buildSongHook(seed: number): SongHook {
 export function buildSectionChordPlans(
   sections: SongSectionPlan[],
   seed: number,
-  songwriterId?: string
+  songwriterId?: string,
+  harmonyDensityBias: number = 0
 ): SectionChordPlan[] {
   /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
   let verseOrdinal = 0;
@@ -641,7 +719,12 @@ export function buildSectionChordPlans(
       sectionOrder: s.order,
       sectionKind: s.kind,
       intensity: intensityForKind(s.kind),
-      chordSymbols: chordSymbolsForSection(s.kind, seed + s.order * 31 + ordinalBias, songwriterId),
+      chordSymbols: chordSymbolsForSection(
+        s.kind,
+        seed + s.order * 31 + ordinalBias,
+        songwriterId,
+        harmonyDensityBias
+      ),
     };
   });
 }
@@ -679,11 +762,13 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     params.stylePairing != null
       ? resolveStylePairing({ ...params.stylePairing, seed: params.seed })
       : null;
+  const eraHarmonyDensityBias = resolveEraHarmonyDensityBias(params.stylePairing?.era);
   const hook = buildSongHook(params.seed);
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
-    resolution.primaryId
+    resolution.primaryId,
+    eraHarmonyDensityBias
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {

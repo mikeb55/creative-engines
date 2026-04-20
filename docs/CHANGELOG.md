@@ -1,3 +1,12 @@
+## [2026-04-20] Song Mode era bias expansion
+
+### What changed
+- Expanded Song Mode era profile handling in `runGoldenPath.ts` so all UI eras now map to real rhythm/harmony density values (`swing`, `bebop`, `cool_jazz`, `hard_bop`, `post_bop`, `fusion`, `contemporary`).
+- Wired era-driven `harmonyDensityBias` into Song Mode chord row selection in `songModeBuilder.ts` with weighted row preference:
+  - positive bias nudges toward denser extension-heavy rows (`alt`, `b9`, `#11`, `13sus`)
+  - negative bias nudges toward simpler rows (`maj7`, `m7`, `6/9`)
+  - neutral keeps prior near-uniform selection behavior
+
 ## [2026-04-20] Slonimsky Engine V1 — full sweep confirmed
 
 ### GCE benchmark post-Slonimsky (seed 50021)
