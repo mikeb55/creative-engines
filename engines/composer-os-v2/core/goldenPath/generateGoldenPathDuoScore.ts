@@ -2106,14 +2106,54 @@ function buildBassPart(
   const phraseHistory: string[] = [];
   let phraseRetryAttempt = 0;
   let phraseRewindTotal = 0;
+  const phraseRewindTotalCap = context.presetId === 'ecm_chamber' ? 24 : 80;
   const completedPhraseModes: DuoPhraseBehaviourMode[] = [];
   const evenEighthStreak = { n: 0 };
   const tb = totalBarsFromContext(context);
   const bassPlanStyle = readBassPlanStyle(bassPlan);
   const walkCap = tb >= 16 ? 6 : 4;
   const contourHistoryForGate: string[] = [];
+  const probeEcmBass = context.presetId === 'ecm_chamber' && process.env?.COMPOSER_OS_DEBUG_ECM_BASS === '1';
+  const ecmLoopGuardEnabled = context.presetId === 'ecm_chamber';
+  let lastAppendedBar: number | undefined;
+  let sameBarAppendCount = 0;
+  const registerMeasureAppend = (bar: number): void => {
+    if (!ecmLoopGuardEnabled) return;
+    if (lastAppendedBar === bar) sameBarAppendCount++;
+    else {
+      lastAppendedBar = bar;
+      sameBarAppendCount = 1;
+    }
+    if (sameBarAppendCount > 8 && process.env?.NODE_ENV !== 'production') {
+      throw new Error(
+        `ECM bass loop guard: appended ${sameBarAppendCount} measures at bar ${bar} without advancing.`
+      );
+    }
+  };
+  const bassEventsSoFar = () => measures.reduce((sum, mm) => sum + mm.events.length, 0);
+  const logBassProbe = (
+    phase: string,
+    b: number,
+    extras?: Record<string, string | number | boolean | undefined>
+  ): void => {
+    if (!probeEcmBass || typeof process === 'undefined' || typeof process.memoryUsage !== 'function') return;
+    const mu = process.memoryUsage();
+    const extraFields = extras
+      ? Object.entries(extras)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${String(v)}`)
+          .join(' ')
+      : '';
+    console.log(
+      `[ECM_BASS_PROBE] phase=${phase} b=${b} phraseRetryAttempt=${phraseRetryAttempt} phraseRewindTotal=${phraseRewindTotal} ` +
+        `measures=${measures.length} bassEvents=${bassEventsSoFar()} phraseHistoryLen=${phraseHistory.length} completedPhraseModesLen=${completedPhraseModes.length} ` +
+        `heapUsed=${mu.heapUsed} heapTotal=${mu.heapTotal} rss=${mu.rss}${extraFields ? ` ${extraFields}` : ''}`
+    );
+  };
+  logBassProbe('enter_buildBassPart', 1, { tb });
 
   for (let b = 1; b <= tb; ) {
+    logBassProbe('start_bar_loop', b);
     const chord = getChordForBar(b, context);
     const tones = chordTonesForChordSymbolWithContext(chord, context);
     const parsed = parseChordSymbol(chord);
@@ -2153,6 +2193,7 @@ function buildBassPart(
     const ecmMode = context.generationMetadata?.ecmMode;
     const tex = texturePlan?.find((t) => t.bar === b);
     if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET') {
+      logBassProbe('before_bar_generation', b, { branch: 'ECM_METHENY_QUARTET' });
       const pitch = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
       if (tex?.bassRole === 'inner_motion') {
         const p2 = clampPitch(pitch + (seededUnit(seed, b, 905) < 0.5 ? 2 : 5), walkLow, effectiveHigh);
@@ -2164,19 +2205,30 @@ function buildBassPart(
         prevBassPitch = pitch;
       }
       normalizeMeasureQuarterGrid(m);
+      logBassProbe('after_bar_generation', b, { branch: 'ECM_METHENY_QUARTET', generatedEvents: m.events.length });
+      logBassProbe('before_measure_push', b, { branch: 'ECM_METHENY_QUARTET' });
       measures.push(m);
+      registerMeasureAppend(b);
+      logBassProbe('after_measure_push', b, { branch: 'ECM_METHENY_QUARTET' });
+      b++;
       continue;
     }
 
     if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
+      logBassProbe('before_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
       const p1 = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
       const step = (seed + b) % 3 === 0 ? 1 : 2;
       const p2 = clampPitch(p1 + step, walkLow, effectiveHigh);
       if (tex?.bassRole === 'sustain_pad' && tex.guitarRole === 'lead') {
         addEvent(m, createNote(p1, 0, 4));
         normalizeMeasureQuarterGrid(m);
+        logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
+        logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
         measures.push(m);
+        registerMeasureAppend(b);
+        logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
         prevBassPitch = p1;
+        b++;
         continue;
       }
       if (tex?.guitarRole === 'sustain_pad' && tex.bassRole === 'inner_motion') {
@@ -2184,16 +2236,26 @@ function buildBassPart(
         addEvent(m, createNote(p1, 0, 2));
         addEvent(m, createNote(p2a, 2, 2));
         normalizeMeasureQuarterGrid(m);
+        logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
+        logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
         measures.push(m);
+        registerMeasureAppend(b);
+        logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
         prevBassPitch = p2a;
+        b++;
         continue;
       }
       const split = b % 2 === 0 ? 2 : 2.25;
       addEvent(m, createNote(p1, 0, split));
       addEvent(m, createNote(p2, split, 4 - split));
       normalizeMeasureQuarterGrid(m);
+      logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
+      logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
       measures.push(m);
+      registerMeasureAppend(b);
+      logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
       prevBassPitch = p2;
+      b++;
       continue;
     }
 
@@ -2333,6 +2395,7 @@ function buildBassPart(
     }
 
     if (duoGoldenBass && phase === 7) {
+      logBassProbe('before_bar_generation', b, { branch: 'phase7_identity' });
       const supportMode = seededUnit(s, b, 807) < 0.52;
       emitDuoBassIdentityBar7({
         m,
@@ -2396,17 +2459,27 @@ function buildBassPart(
       }
       const lastBass7 = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBass7) prevBassPitch = lastBass7.pitch;
+      logBassProbe('after_bar_generation', b, { branch: 'phase7_identity', generatedEvents: m.events.length });
+      logBassProbe('before_measure_push', b, { branch: 'phase7_identity' });
       measures.push(m);
+      logBassProbe('after_measure_push', b, { branch: 'phase7_identity' });
       if (b >= 2) {
         const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
         if (
           phraseHistory.slice(-3).includes(key) &&
           phraseRetryAttempt < 3 &&
-          phraseRewindTotal < 80
+          phraseRewindTotal < phraseRewindTotalCap
         ) {
+          logBassProbe('before_phrase_rewind', b, { key });
+          const removed = measures.slice(-2);
+          const removedEvents = removed.reduce((sum, mm) => sum + mm.events.length, 0);
           measures.splice(-2);
           phraseRetryAttempt++;
           phraseRewindTotal++;
+          console.log(
+            `[ECM_BASS_PROBE] phase=rewind_event b=${b} removedMeasures=${removed.length} removedEvents=${removedEvents} ` +
+              `phraseHistoryLen=${phraseHistory.length} completedPhraseModesLen=${completedPhraseModes.length}`
+          );
           b -= 1;
           const last = measures[measures.length - 1];
           if (last) {
@@ -2419,6 +2492,7 @@ function buildBassPart(
           }
           sameContourStreak = 0;
           if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+          logBassProbe('after_phrase_rewind', b, { key });
           continue;
         }
         phraseRetryAttempt = 0;
@@ -2434,6 +2508,7 @@ function buildBassPart(
     }
 
     if (duoGoldenBass && (phase === 3 || phase === 4)) {
+      logBassProbe('before_bar_generation', b, { branch: 'phase34_authority' });
       emitDuoBassAuthorityMomentBar({
         m,
         rootClamped,
@@ -2496,17 +2571,27 @@ function buildBassPart(
       }
       const lastBassA = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
       if (lastBassA) prevBassPitch = lastBassA.pitch;
+      logBassProbe('after_bar_generation', b, { branch: 'phase34_authority', generatedEvents: m.events.length });
+      logBassProbe('before_measure_push', b, { branch: 'phase34_authority' });
       measures.push(m);
+      logBassProbe('after_measure_push', b, { branch: 'phase34_authority' });
       if (b >= 2) {
         const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
         if (
           phraseHistory.slice(-3).includes(key) &&
           phraseRetryAttempt < 3 &&
-          phraseRewindTotal < 80
+          phraseRewindTotal < phraseRewindTotalCap
         ) {
+          logBassProbe('before_phrase_rewind', b, { key });
+          const removed = measures.slice(-2);
+          const removedEvents = removed.reduce((sum, mm) => sum + mm.events.length, 0);
           measures.splice(-2);
           phraseRetryAttempt++;
           phraseRewindTotal++;
+          console.log(
+            `[ECM_BASS_PROBE] phase=rewind_event b=${b} removedMeasures=${removed.length} removedEvents=${removedEvents} ` +
+              `phraseHistoryLen=${phraseHistory.length} completedPhraseModesLen=${completedPhraseModes.length}`
+          );
           b -= 1;
           const last = measures[measures.length - 1];
           if (last) {
@@ -2519,6 +2604,7 @@ function buildBassPart(
           }
           sameContourStreak = 0;
           if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+          logBassProbe('after_phrase_rewind', b, { key });
           continue;
         }
         phraseRetryAttempt = 0;
@@ -2533,6 +2619,7 @@ function buildBassPart(
       continue;
     }
     let swingBassMode = (s + b * 11) % 10 < 2;
+    logBassProbe('before_bar_generation', b, { branch: 'default' });
     if (duoGoldenBass && phraseRetryAttempt > 0) {
       swingBassMode = phraseRetryAttempt % 2 === 1 ? true : (s + b * 11 + phraseRetryAttempt * 7) % 10 < 4;
     }
@@ -2752,6 +2839,7 @@ function buildBassPart(
         }
         const contourBreakThreshold = isLateClosingSlice(b, tb) ? 2 : 3;
         let attempts = 0;
+        logBassProbe('before_contour_retry_loop', b, { contourBreakThreshold, sameContourStreak, attempts });
         while (sameContourStreak >= contourBreakThreshold && attempts < 2) {
           const pool = [rootClamped, third, fifth, seventh, guide].filter((p) => typeof p === 'number');
           if (slashBassPitch !== undefined) pool.push(slashBassPitch);
@@ -2767,6 +2855,7 @@ function buildBassPart(
           }
           attempts++;
         }
+        logBassProbe('after_contour_retry_loop', b, { contourBreakThreshold, sameContourStreak, attempts });
         prevBarContour = contourFingerprint(m);
       }
     }
@@ -2818,18 +2907,28 @@ function buildBassPart(
 
     const lastBass = [...m.events].reverse().find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (lastBass) prevBassPitch = lastBass.pitch;
+    logBassProbe('after_bar_generation', b, { branch: 'default', generatedEvents: m.events.length });
 
+    logBassProbe('before_measure_push', b, { branch: 'default' });
     measures.push(m);
+    logBassProbe('after_measure_push', b, { branch: 'default' });
     if (duoGoldenBass && b >= 2) {
       const key = phraseTwoBarFingerprint(measures[measures.length - 2], measures[measures.length - 1]);
       if (
         phraseHistory.slice(-3).includes(key) &&
         phraseRetryAttempt < 3 &&
-        phraseRewindTotal < 80
+        phraseRewindTotal < phraseRewindTotalCap
       ) {
+        logBassProbe('before_phrase_rewind', b, { key });
+        const removed = measures.slice(-2);
+        const removedEvents = removed.reduce((sum, mm) => sum + mm.events.length, 0);
         measures.splice(-2);
         phraseRetryAttempt++;
         phraseRewindTotal++;
+        console.log(
+          `[ECM_BASS_PROBE] phase=rewind_event b=${b} removedMeasures=${removed.length} removedEvents=${removedEvents} ` +
+            `phraseHistoryLen=${phraseHistory.length} completedPhraseModesLen=${completedPhraseModes.length}`
+        );
         b -= 1;
         const last = measures[measures.length - 1];
         if (last) {
@@ -2842,6 +2941,7 @@ function buildBassPart(
         }
         sameContourStreak = 0;
         if (duoGoldenBass && b % 2 === 0 && completedPhraseModes.length > 0) completedPhraseModes.pop();
+        logBassProbe('after_phrase_rewind', b, { key });
         continue;
       }
       phraseRetryAttempt = 0;
@@ -2856,6 +2956,7 @@ function buildBassPart(
   }
 
   repairBassMotifEchoBars1to8(measures, guitarPart, context, bassMap);
+  logBassProbe('before_return_bass', tb, { totalMeasures: measures.length, totalEvents: bassEventsSoFar() });
 
   return {
     id: 'bass',
@@ -2990,6 +3091,53 @@ export interface GenerateGoldenPathDuoScoreOpts {
   identityCellEnabled?: boolean;
 }
 
+type DuoScoreProbe = {
+  parts: number;
+  measures: number;
+  events: number;
+  roughObjects: number;
+};
+
+function estimateDuoScoreProbe(score: ScoreModel | undefined): DuoScoreProbe | null {
+  if (!score) return null;
+  let measures = 0;
+  let events = 0;
+  let roughObjects = 1;
+  for (const p of score.parts) {
+    roughObjects += 1;
+    measures += p.measures.length;
+    roughObjects += p.measures.length;
+    for (const m of p.measures) {
+      events += m.events.length;
+      roughObjects += m.events.length;
+    }
+  }
+  return { parts: score.parts.length, measures, events, roughObjects };
+}
+
+function logEcmInternalPhaseProbe(
+  enabled: boolean,
+  phase: string,
+  score?: ScoreModel,
+  extras?: Record<string, string | number | boolean | undefined>
+): void {
+  if (!enabled || typeof process === 'undefined' || typeof process.memoryUsage !== 'function') return;
+  const mu = process.memoryUsage();
+  const size = estimateDuoScoreProbe(score);
+  const sizeFields = size
+    ? ` parts=${size.parts} measures=${size.measures} events=${size.events} roughObjects=${size.roughObjects}`
+    : '';
+  const extraFields = extras
+    ? Object.entries(extras)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => `${k}=${String(v)}`)
+        .join(' ')
+    : '';
+  console.log(
+    `[ECM_PHASE_PROBE] phase=${phase} heapUsed=${mu.heapUsed} heapTotal=${mu.heapTotal} rss=${mu.rss}${sizeFields}${extraFields ? ` ${extraFields}` : ''}`
+  );
+}
+
 /**
  * Generate golden path duo score. `context` must already include any `applyStyleStack` transforms.
  */
@@ -2999,6 +3147,8 @@ export function generateGoldenPathDuoScore(
   opts?: GenerateGoldenPathDuoScoreOpts
 ): ScoreModel {
   const tb = totalBarsFromContext(context);
+  const probeEcm = context.presetId === 'ecm_chamber' && process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
+  logEcmInternalPhaseProbe(probeEcm, 'enter_generateGoldenPathDuoScore', undefined, { tb });
   const isEcmStyle = context.generationMetadata?.styleProfile === 'STYLE_ECM';
   const texturePlan =
     (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode)
@@ -3016,6 +3166,7 @@ export function generateGoldenPathDuoScore(
     bassPart = built.bassPart;
     plans.motifState = built.motifState;
   } else {
+    logEcmInternalPhaseProbe(probeEcm, 'before_buildPianoPart');
     guitarPart = buildGuitarPart(
       context,
       plans.guitarBehaviour,
@@ -3027,6 +3178,7 @@ export function generateGoldenPathDuoScore(
       texturePlan,
       plans.styleStack
     );
+    logEcmInternalPhaseProbe(probeEcm, 'after_buildPianoPart');
     if (
       context.generationMetadata?.songModeHookFirstIdentity === true &&
       context.presetId === 'guitar_bass_duo' &&
@@ -3075,9 +3227,16 @@ export function generateGoldenPathDuoScore(
       assertPhaseACheckpointA(guitarPart, phaseABars);
     }
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
+      logEcmInternalPhaseProbe(probeEcm, 'before_metheny_development');
       applyEcmMethenyMotifDevelopment(guitarPart, context.seed, tb, context);
+      logEcmInternalPhaseProbe(probeEcm, 'after_metheny_development');
+    }
+    if (!(context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET')) {
+      logEcmInternalPhaseProbe(probeEcm, 'before_metheny_development');
+      logEcmInternalPhaseProbe(probeEcm, 'after_metheny_development');
     }
     const phraseGuitarContours = computePhraseGuitarContours(guitarPart, tb);
+    logEcmInternalPhaseProbe(probeEcm, 'before_buildBassPart');
     bassPart = buildBassPart(
       context,
       plans.bassBehaviour,
@@ -3088,6 +3247,7 @@ export function generateGoldenPathDuoScore(
       texturePlan,
       phraseGuitarContours
     );
+    logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
   }
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
@@ -3112,14 +3272,19 @@ export function generateGoldenPathDuoScore(
     tempo: bpm,
     feelProfile,
   });
+  logEcmInternalPhaseProbe(probeEcm, 'after_initial_score_setup', rawScore);
   if (context.presetId === 'guitar_bass_duo' || context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     rawScore.duoRhythmSnap = 'eighth_beats';
   }
   const articulationOn = context.presetId !== 'ecm_chamber';
   let afterPerf = applyPerformancePass(rawScore, { applyArticulation: articulationOn });
+  logEcmInternalPhaseProbe(probeEcm, 'before_ecm_texture', afterPerf);
+  logEcmInternalPhaseProbe(probeEcm, 'after_ecm_texture', afterPerf);
+  logEcmInternalPhaseProbe(probeEcm, 'before_schneider_density', afterPerf);
   if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
     afterPerf = applyEcmSchneiderDensityEnvelope(afterPerf, tb);
   }
+  logEcmInternalPhaseProbe(probeEcm, 'after_schneider_density', afterPerf);
   // Last non-finalize transforms: articulation / velocity / feel metadata only (no rhythm after seal).
   const afterExpressive = applyExpressiveDuoFeel(afterPerf, {
     ecmEvenEighths: context.presetId === 'ecm_chamber',
@@ -3127,12 +3292,16 @@ export function generateGoldenPathDuoScore(
   if (opts?.variationEnabled === true) {
     applyDuoPitchVariationToGuitar(afterExpressive, context, context.seed);
   }
+  logEcmInternalPhaseProbe(probeEcm, 'before_ecm_shaping', afterExpressive);
   if (context.presetId === 'ecm_chamber' && opts?.ecmShapingEnabled !== false) {
     applyECMShapingPass(afterExpressive, context, context.seed);
   }
+  logEcmInternalPhaseProbe(probeEcm, 'after_ecm_shaping', afterExpressive);
+  logEcmInternalPhaseProbe(probeEcm, 'before_identity_cell', afterExpressive);
   if (context.presetId === 'ecm_chamber' && opts?.identityCellEnabled !== false) {
     applyEcmIdentityCellPass(afterExpressive, context, context.seed);
   }
+  logEcmInternalPhaseProbe(probeEcm, 'after_identity_cell', afterExpressive);
   if (
     (isGuitarBassDuoFamily(context.presetId) || context.presetId === 'ecm_chamber') &&
     opts?.orchestrationEnabled !== false &&
@@ -3285,5 +3454,6 @@ export function generateGoldenPathDuoScore(
     ...context.generationMetadata,
     wybleConsumptionReceipt: wybleRec,
   };
+  logEcmInternalPhaseProbe(probeEcm, 'before_return_score', afterExpressive);
   return afterExpressive;
 }

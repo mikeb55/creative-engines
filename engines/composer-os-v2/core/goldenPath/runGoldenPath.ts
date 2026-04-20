@@ -99,6 +99,8 @@ import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHar
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
+import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
+import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -681,10 +683,11 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     totalBarsForForm: options?.totalBars,
   });
   })();
-  if (options?.era != null) {
+  const resolvedEra = options?.stylePairing?.era ?? options?.era;
+  if (resolvedEra != null) {
     ctx.generationMetadata = {
       ...ctx.generationMetadata,
-      era: options.era ?? undefined,
+      era: resolvedEra ?? undefined,
     };
   }
   return ctx;
@@ -948,6 +951,8 @@ export interface RunGoldenPathOptions {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
+  /** Optional style-pairing envelope (UI/app parity). */
+  stylePairing?: StylePairingInput | null;
   /**
    * Jest / diagnostics: omit `wybleVoiceLayout` after context build so duo scores can be
    * compared against the default portable Wyble map without forking the full planner.
@@ -955,11 +960,86 @@ export interface RunGoldenPathOptions {
   suppressWybleVoiceLayoutForTest?: boolean;
 }
 
+function normalizeEraId(era: string | undefined): EraId | null {
+  if (!era) return null;
+  const k = era.trim().toLowerCase().replace(/-/g, '_');
+  if (
+    k === 'swing' ||
+    k === 'bebop' ||
+    k === 'cool_jazz' ||
+    k === 'hard_bop' ||
+    k === 'post_bop' ||
+    k === 'fusion' ||
+    k === 'contemporary'
+  ) {
+    return k;
+  }
+  return null;
+}
+
 /** Offsets tried by the duo lock (requested seed + each offset). */
 export const GOLDEN_PATH_VARIANT_SEED_OFFSETS = [0, 10007, 20011, 30011, 40009, 50021] as const;
 
 export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
   return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
+}
+
+type ScoreSizeProbe = {
+  totalParts: number;
+  totalMeasures: number;
+  totalEvents: number;
+  roughObjects: number;
+  eventsPerPart: number[];
+};
+
+type EcmPhaseProbeExtras = Record<string, string | number | boolean | undefined>;
+
+function estimateScoreSize(score: unknown): ScoreSizeProbe {
+  const s = (score ?? {}) as { parts?: Array<{ measures?: Array<{ events?: unknown[] }> }> };
+  const parts = Array.isArray(s.parts) ? s.parts : [];
+  let totalMeasures = 0;
+  let totalEvents = 0;
+  let roughObjects = 1; // root score object
+  const eventsPerPart: number[] = [];
+  for (const part of parts) {
+    roughObjects += 1;
+    const measures = Array.isArray(part?.measures) ? part.measures : [];
+    totalMeasures += measures.length;
+    roughObjects += measures.length;
+    let partEvents = 0;
+    for (const measure of measures) {
+      const events = Array.isArray(measure?.events) ? measure.events : [];
+      partEvents += events.length;
+      totalEvents += events.length;
+      roughObjects += events.length;
+    }
+    eventsPerPart.push(partEvents);
+  }
+  return {
+    totalParts: parts.length,
+    totalMeasures,
+    totalEvents,
+    roughObjects,
+    eventsPerPart,
+  };
+}
+
+function logEcmPhaseProbe(enabled: boolean, phase: string, score?: unknown, extras?: EcmPhaseProbeExtras): void {
+  if (!enabled || typeof process === 'undefined' || typeof process.memoryUsage !== 'function') return;
+  const mu = process.memoryUsage();
+  const scoreSize = score ? estimateScoreSize(score) : null;
+  const extraFields = extras
+    ? Object.entries(extras)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => `${k}=${String(v)}`)
+        .join(' ')
+    : '';
+  const scoreFields = scoreSize
+    ? ` parts=${scoreSize.totalParts} measures=${scoreSize.totalMeasures} events=${scoreSize.totalEvents} roughObjects=${scoreSize.roughObjects}`
+    : '';
+  console.log(
+    `[ECM_PHASE_PROBE] phase=${phase} heapUsed=${mu.heapUsed} heapTotal=${mu.heapTotal} rss=${mu.rss}${scoreFields}${extraFields ? ` ${extraFields}` : ''}`
+  );
 }
 
 export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptions): GoldenPathResult {
@@ -1114,13 +1194,43 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
       lockedHarmonyBarsRawLength: lockedCopy.length,
     });
   }
-  const seeds = candidateSeedsForGoldenPath(seed);
+  const allSeeds = candidateSeedsForGoldenPath(seed);
+  // ECM-specific OOM mitigation: keep a small candidate sweep budget at 32-bar chamber complexity.
+  // Non-ECM presets preserve the full 6-seed sweep behavior.
+  const seeds =
+    (resolved?.presetId ?? options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber'
+      ? allSeeds.slice(0, 3)
+      : allSeeds;
+  const isEcmChamber =
+    (resolved?.presetId ?? options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber' &&
+    process.env?.COMPOSER_OS_DEBUG_ECM_ATTEMPTS === '1';
   let best: GoldenPathResult | null = null;
   let bestSoft = -Infinity;
   let last: GoldenPathResult | null = null;
-  for (const s of seeds) {
+  for (let attemptIndex = 0; attemptIndex < seeds.length; attemptIndex++) {
+    const s = seeds[attemptIndex]!;
+    if (isEcmChamber) {
+      const targetBars = resolved?.totalBars ?? options?.totalBars ?? 0;
+      console.log(`[ECM_SIZE_PROBE] attempt_start attempt=${attemptIndex + 1}/${seeds.length} seed=${s} targetBars=${targetBars}`);
+    }
     const r = runGoldenPathOnce(s, resolved);
+    if (isEcmChamber) {
+      const size = estimateScoreSize(r.score);
+      const bars = r.context?.form?.totalBars ?? resolved?.totalBars ?? options?.totalBars ?? 0;
+      console.log(
+        `[ECM_SIZE_PROBE] attempt=${attemptIndex + 1}/${seeds.length} seed=${s} bars=${bars} parts=${size.totalParts} ` +
+          `measures=${size.totalMeasures} events=${size.totalEvents} roughObjects=${size.roughObjects} ` +
+          `eventsPerPart=[${size.eventsPerPart.join(',')}]`
+      );
+    }
     last = r;
+    if (isEcmChamber) {
+      const lastSize = estimateScoreSize(r.score);
+      console.log(
+        `[ECM_SIZE_PROBE] last_update attempt=${attemptIndex + 1} measures=${lastSize.totalMeasures} ` +
+          `events=${lastSize.totalEvents} roughObjects=${lastSize.roughObjects}`
+      );
+    }
     if (r.success) {
       const pid = resolved?.presetId ?? 'guitar_bass_duo';
       /** Duo-family parity: same bar-6 vs bar-7 melodic-interval sweep filter as standard duo (Wyble single-line included). */
@@ -1150,6 +1260,13 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
       if (soft > bestSoft) {
         bestSoft = soft;
         best = r;
+        if (isEcmChamber) {
+          const bestSize = estimateScoreSize(r.score);
+          console.log(
+            `[ECM_SIZE_PROBE] best_update attempt=${attemptIndex + 1} soft=${soft.toFixed(4)} ` +
+              `measures=${bestSize.totalMeasures} events=${bestSize.totalEvents} roughObjects=${bestSize.roughObjects}`
+          );
+        }
       }
     }
   }
@@ -1163,6 +1280,10 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
   let songModePhraseWarnings: string[] = [];
+  const probeEcm =
+    (options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber' &&
+    process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
+  logEcmPhaseProbe(probeEcm, 'start', undefined, { seed, targetBars: options?.totalBars ?? 0 });
 
   let effectiveOptions = options;
   if (effectiveOptions?.formId) {
@@ -1171,6 +1292,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  logEcmPhaseProbe(probeEcm, 'after_context_build', undefined, {
+    bars: context.form.totalBars,
+    chordPlanSegments: context.chordSymbolPlan?.segments?.length ?? 0,
+  });
   if (options?.suppressWybleVoiceLayoutForTest === true) {
     context.generationMetadata = {
       ...context.generationMetadata,
@@ -1288,8 +1413,22 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     };
   }
 
+  const eraForNormalization = normalizeEraId((options?.stylePairing?.era as string | undefined) ?? options?.era);
+  if (options?.songModeHookFirstIdentity && eraForNormalization && options?.harmonyMode !== 'custom_locked') {
+    const segments = context.chordSymbolPlan?.segments;
+    if (segments && segments.length > 0) {
+      const rewritten = normalizeChordSymbolsForEra(
+        segments.map((s) => s.chord),
+        eraForNormalization
+      );
+      for (let i = 0; i < segments.length; i++) {
+        segments[i]!.chord = rewritten[i] ?? segments[i]!.chord;
+      }
+    }
+  }
+
   /** Era bias after songwriter / surfaces / blend — stacks on `songwriterSyncopationBias` (not `songModeRhythmStrength`, which is an enum). */
-  const eraForBias = options?.era;
+  const eraForBias = options?.stylePairing?.era ?? options?.era;
   if (eraForBias != null) {
     applyEraBiasToGenerationMetadata(context.generationMetadata, eraForBias);
   }
@@ -1305,20 +1444,44 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   assertContextMatchesLocked32('runGoldenPathOnce:afterBuildContext', context, options);
   assertCustomLockedBeforeScoreGeneration(context, options);
 
-  const plans = buildGoldenPathPlans(seed, context, options);
+  logEcmPhaseProbe(probeEcm, 'before_plan_build');
+  let plans: GoldenPathPlans;
+  try {
+    plans = buildGoldenPathPlans(seed, context, options);
+  } finally {
+    logEcmPhaseProbe(probeEcm, 'after_plan_build', undefined, {
+      bars: context.form.totalBars,
+    });
+  }
   const { sections, densityPlan, guitarBehaviour, bassBehaviour, rhythmConstraints, motifState, styleStack, interactionPlan } =
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
-  const score = generateGoldenPathDuoScore(appliedContext, plans, {
-    bpm: options?.bpm,
-    variationEnabled: options?.variationEnabled === true,
+  logEcmPhaseProbe(probeEcm, 'before_render', undefined, {
     ecmShapingEnabled: options?.ecmShapingEnabled,
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  let score: ScoreModel | undefined;
+  try {
+    score = generateGoldenPathDuoScore(appliedContext, plans, {
+      bpm: options?.bpm,
+      variationEnabled: options?.variationEnabled === true,
+      ecmShapingEnabled: options?.ecmShapingEnabled,
+      orchestrationEnabled: options?.orchestrationEnabled,
+      identityCellEnabled: options?.identityCellEnabled,
+    });
+  } finally {
+    logEcmPhaseProbe(probeEcm, 'after_render', score, {
+      bars: appliedContext.form.totalBars,
+    });
+  }
+  if (!score) {
+    throw new Error('generateGoldenPathDuoScore did not produce a score');
+  }
+  logEcmPhaseProbe(probeEcm, 'before_post', score);
   if (options?.songModeHookFirstIdentity) {
     finalizeSongModeSectionShaping(appliedContext.generationMetadata);
   }
@@ -1440,6 +1603,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   );
   errors.push(...behaviourResult.errors);
+  logEcmPhaseProbe(probeEcm, 'after_post', score, {
+    errors: errors.length,
+    phraseWarnings: songModePhraseWarnings.length,
+  });
   if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
     songModePhraseWarnings.push(...behaviourResult.duoIdentityWarnings);
   }
@@ -1457,10 +1624,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     appliedContext.generationMetadata?.builtInHarmonyFallbackOccurred !== true
       ? [...lockedForExport]
       : undefined;
-  const exportResult = exportScoreModelToMusicXml(score, {
-    preserveChordKindLiterals: preserveLiterals,
-    assertLockedHarmonyBars: assertLockedExport,
+  logEcmPhaseProbe(probeEcm, 'before_export', score, {
+    guitarMeasures: guitarMeasureCount,
   });
+  let exportResult: ReturnType<typeof exportScoreModelToMusicXml>;
+  try {
+    exportResult = exportScoreModelToMusicXml(score, {
+      preserveChordKindLiterals: preserveLiterals,
+      assertLockedHarmonyBars: assertLockedExport,
+    });
+  } finally {
+    logEcmPhaseProbe(probeEcm, 'after_export', score);
+  }
   let xml: string | undefined;
   let mxValidationPassed = false;
   let sibeliusSafe = false;
@@ -1622,6 +1797,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     instrumentMetadataPassed &&
     pipelineTruthAllPassed(truthReport) &&
     errors.length === 0;
+  logEcmPhaseProbe(probeEcm, 'before_return', score, {
+    success,
+    errors: errors.length,
+    warnings: songModePhraseWarnings.length,
+    xmlBytes: xml?.length ?? 0,
+  });
 
   return {
     success,

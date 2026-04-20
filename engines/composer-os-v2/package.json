@@ -22,7 +22,9 @@
     "eval:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
     "workflow:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachWorkflow.ts",
     "mine:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachReferenceMining.ts",
-    "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts"
+    "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts",
+    "verify:eras": "ts-node scripts/eraVerification.ts",
+    "test:ecm": "ts-node scripts/testEcmStability.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "devDependencies": {
