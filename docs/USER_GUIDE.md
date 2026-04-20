@@ -27,11 +27,40 @@ Composer OS is an application that **generates instrumental music** from your ch
 | Wyble Etude | Two-voice guitar etude — **requires** a chord progression in the UI. |
 | ECM Chamber | Chamber jazz — MusicXML (Metheny vs Schneider sub-mode in the UI). |
 | Song Mode | Song planning then **duo realisation** — MusicXML (see receipt if something else is returned). |
-| Big Band | Full ensemble score **when** realisation and export succeed; otherwise **planning JSON**. |
+| Big Band | Full ensemble score **when** realisation and export succeed; otherwise **planning JSON**. See **Big Band preset** below for the V1.5 arranging window (soli, brass tacet, punches, shout). |
 | String Quartet | Quartet + piano harmony staff **when** export succeeds; otherwise **planning JSON**. |
 | Riff Generator | Short (1–4 bar) riffs — MusicXML to the **Riffs** library subfolder. |
 
 Honest capability strings also ship in `engines/composer-os-v2/app-api/releaseMetadata.ts` and in **Diagnostics**.
+
+### Big Band preset (arranging V1.5)
+
+- **Dedicated 8-bar sax soli** in **bars 17–24** (charts with **at least 24 bars**): alto and tenor carry the soli line every bar in that window.
+- **Brass rests** during the soli window (trumpet and trombone tacet there).
+- **Brass punches** on cadence-style bars outside that window.
+- **Shout chorus fragment** in the **late form** (near the end on typical 32-bar charts).
+- **Best at 32 bars** so the full soli window and tail layout match engine defaults.
+
+### ECM Chamber preset (ensemble mode)
+
+- **Stable and reliable** at up to **32 bars** after bass-loop and bar-routing fixes.
+- **GCE evaluation:** **7.8/10** overall in the definitive 12-preset benchmark; **weakest category:** Arrangement & Orchestration (deeper arrangement work is planned on the roadmap).
+
+### Era dropdown (Song Mode style pairing)
+
+All **7** era values produce genuinely different **harmonic vocabulary** via profile biasing plus **chord-symbol normalization** on export:
+
+- **swing:** 6, 6/9, 7b9 — simpler, traditional colours
+- **bebop:** 7b9, 7#9, dim7 — denser chromatic dominants
+- **cool_jazz:** maj7, add9 — lighter, spacious
+- **hard_bop:** bluesy dominant language
+- **post_bop:** maj7#11, 7alt, quartal modern colours
+- **fusion:** modal, sus colours
+- **contemporary:** most permissive palette
+
+### Experimental features
+
+- **Motif Authority V1:** set environment variable **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (or pass **`motifAuthorityV1: true`** where the API supports it) to enable experimental motif fingerprinting and return-phrase refinement. **Default OFF.**
 
 ---
 
@@ -185,7 +214,7 @@ Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to
 
 ### ECM Chamber stability note
 
-- ECM Chamber is now stable and generates reliably at up to **32 bars** in current production routing.
+- ECM Chamber is now stable and generates reliably at up to **32 bars** in current production routing. See **ECM Chamber preset** above for benchmark and weakest-pillar note.
 
 ### Developers — Bacharach Song Mode (CLI, not the Generate UI)
 

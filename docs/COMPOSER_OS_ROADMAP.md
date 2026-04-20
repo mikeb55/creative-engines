@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-19]
+# Composer OS Roadmap [2026-04-20]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -215,6 +215,8 @@
 
 ### Medium term
 
+- **ECM Chamber — Arrangement & Orchestration depth** — register separation, sparser bass vs guitar, silence/space enforcement; shares ideas with sectional Big Band work. (See **ECM Chamber — Arrangement & Orchestration depth** section below.)
+- **Big Band V2 (future)** — more distinctive soli lead lines (theme-driven development), richer **drum interplay** with punches and shout, and light **sectional counterpoint** beyond the V1.5 scaffold.
 - **Voice 2:** **Counterpoint Phase 2 (2026-04-15): COMPLETE** — `voiceLeadingScorer` (Bizzi / Tymoczko / species-lite) wired into Guitar–Bass Duo Voice 2 candidate ranking; **10/10** `test:duo` PASS. Further **18.2B.3**-style melodic imitation / counterpoint refinement and **realized** metrics alignment remain (see table above).
 - ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
@@ -282,5 +284,5 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-19].*
+*End of Composer OS Roadmap [2026-04-20].*
 

@@ -25,7 +25,8 @@
     "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts",
     "verify:eras": "ts-node scripts/eraVerification.ts",
     "test:ecm": "ts-node scripts/testEcmStability.ts",
-    "test:motif-authority": "ts-node scripts/testMotifAuthority.ts"
+    "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
+    "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "devDependencies": {

@@ -26,6 +26,7 @@ import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreMo
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyBigBandWybleLeadInnerSaxMidis } from './bigBandWybleHornVoicing';
 import { wybleConsumptionReceiptForBigBand } from '../wyble/wybleConsumptionReceipt';
+import { generateBrassPunches, generateSaxSoliPhrase, generateShoutChorus } from '../arranging/bigBandPatterns';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -45,6 +46,18 @@ const BB_PART_IDS = [
   BB_PART_RHYTHM,
   'bb_drums',
 ] as const;
+
+/** V1 arranging: fixed 8-bar sax soli; brass tacet. Requires `totalBars >= 24` so bars 17–24 exist. */
+const BB_DESIGNATED_SAX_SOLI_START = 17;
+const BB_DESIGNATED_SAX_SOLI_END = 24;
+
+function inDesignatedSaxSoliWindow(bar: number, totalBars: number): boolean {
+  return (
+    totalBars >= BB_DESIGNATED_SAX_SOLI_END &&
+    bar >= BB_DESIGNATED_SAX_SOLI_START &&
+    bar <= BB_DESIGNATED_SAX_SOLI_END
+  );
+}
 
 const CHORD_CYCLE = ['Cmaj7', 'Am7', 'Dm7', 'G7'];
 
@@ -317,6 +330,21 @@ function addWindOrBassNotes(
   }
 }
 
+function addPunchPattern(measure: MeasureModel, pitch: number, beats: number[], voice: number): void {
+  if (beats.length === 0) {
+    addEvent(measure, createRest(0, 4, voice));
+    return;
+  }
+  const ordered = [...beats].sort((a, b) => a - b);
+  let cursor = 0;
+  for (const b of ordered) {
+    if (b > cursor) addEvent(measure, createRest(cursor, b - cursor, voice));
+    addEvent(measure, createNote(pitch, b, 0.5, voice));
+    cursor = b + 0.5;
+  }
+  if (cursor < 4) addEvent(measure, createRest(cursor, 4 - cursor, voice));
+}
+
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
   const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
@@ -327,6 +355,13 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     }
     return barChord(b, seed, era);
   };
+  const chordSequence = Array.from({ length: totalBars }, (_, i) => chordForBar(i + 1));
+  const saxSoli = generateSaxSoliPhrase(chordSequence, [0, 2, 4, 5, 7, 5, 4, 2], {
+    startBar: Math.min(17, totalBars),
+    endBar: Math.min(24, totalBars),
+  });
+  const brassPunches = generateBrassPunches(chordSequence, [0, 2]);
+  const shoutFragment = generateShoutChorus(chordSequence);
   const rehearsalForBar = (b: number): string | undefined => {
     const sl = formPlan.slices.find((s) => b === s.startBar);
     if (!sl) return undefined;
@@ -419,16 +454,55 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
       const inst = BB_ORDER[idx];
       const role = secSlice?.rolesBySection[inst];
+      const designatedSaxSoli = inDesignatedSaxSoliWindow(bar, totalBars);
+
+      // Deterministic sax soli (bars 17–24): ignore section-plan silence for saxes; brass tacet.
+      if (designatedSaxSoli && idx <= 3) {
+        if (idx === 0 || idx === 1) {
+          const soliPattern = saxSoli.get(bar) ?? { leadOffsetSemitones: 0 };
+          const pid = BB_PART_IDS[idx];
+          const lead = snapMidiToRange(
+            altoMidi + soliPattern.leadOffsetSemitones,
+            ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]
+          );
+          const pitch = idx === 0 ? lead : snapMidiToRange(lead - 3, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+          addEvent(m, createNote(pitch, 0, 2, 1));
+          addEvent(m, createNote(pitch, 2, 2, 1));
+          barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+          barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+          continue;
+        }
+        if (idx === 2 || idx === 3) {
+          addEvent(m, createRest(0, 4));
+          continue;
+        }
+      }
+
       if (role === 'silence') {
         addEvent(m, createRest(0, 4));
         continue;
       }
 
       const splitHere = needRhythmSplit && idx === splitWindSlot && idx >= 0 && idx <= 3;
+      const brassBeats = brassPunches.get(bar);
+      const shoutBeats = shoutFragment.get(bar);
 
       if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
-        const pitch = idx === 0 ? altoMidi : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
+        let pitch = idx === 0 ? altoMidi : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
         const pid = BB_PART_IDS[idx];
+        if ((idx === 2 || idx === 3) && shoutBeats && shoutBeats.length > 0) {
+          // V1 shout fragment near ending.
+          const shoutPitch = idx === 2 ? snapMidiToRange(pitch + 5, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]) : pitch;
+          addPunchPattern(m, shoutPitch, shoutBeats, 1);
+          for (const _ of shoutBeats) barNotes.push({ partId: pid, midi: shoutPitch, durationBeats: 0.5 });
+          continue;
+        }
+        if ((idx === 2 || idx === 3) && brassBeats && brassBeats.length > 0) {
+          // V1 brass punches on cadential bars.
+          addPunchPattern(m, pitch, brassBeats, 1);
+          for (const _ of brassBeats) barNotes.push({ partId: pid, midi: pitch, durationBeats: 0.5 });
+          continue;
+        }
         if (splitHere) {
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });

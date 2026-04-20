@@ -1,3 +1,28 @@
+## [2026-04-20] Big Band arranging depth V1.5
+
+### Big Band arranging V1.5
+- New: `engines/composer-os-v2/core/arranging/bigBandPatterns.ts`
+  - `generateSaxSoliPhrase`, `generateBrassPunches`,
+    `generateShoutChorus` helpers
+- `bigBandScoreBuilder.ts` updated:
+  - Deterministic 8-bar sax soli window bars 17–24
+  - Alto and tenor soli always written in window
+  - Trumpet/trombone forced to rest in window
+  - Brass punches on cadence bars
+  - Shout fragment near end
+  - Soli logic runs before silence roles
+- `testBigBandArranging.ts`: 5-seed test suite
+  - `altoRun === 8`, `tenorRun === 8` in bars 17–24
+  - `brassSoliWindowNotes === 0` in 17–24
+  - All 5 seeds pass
+- GCE: no crashes, arranging depth visible
+
+### Also in this session (already merged)
+- ECM OOM fixed + 32-bar routing + stability tests
+- Era chord normalization verified (swing C6/9 etc.)
+- Motif Authority V1 scaffold (feature-flagged)
+- 12/12 preset benchmark, zero regressions
+
 ## [2026-04-20] Motif Authority V1 + ECM fixes + Era normalization
 
 ### Motif Authority V1 (feature-flagged)

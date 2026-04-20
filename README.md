@@ -16,10 +16,12 @@ Composer OS turns your settings ? **mode** (preset), tempo, harmony, form, and o
 
 - **Eight Generate modes:** Guitar?Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator.
 - **Songwriter styles include Pat Metheny** for Song Mode (ECM-era open voicings, Lydian/add9 colors, lyrical phrase bias).
-- **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes.
+- **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes; GCE benchmark **7.8/10** (weakest pillar: Arrangement & Orchestration).
+- **Big Band** now includes a deterministic **8-bar sax soli window (bars 17–24)** with alto and tenor leading, **brass tacet** in that window, **cadence brass punches** elsewhere, and a **shout fragment** near the end (`npm run test:big-band-arranging`).
 - **Extended form lengths:** 48 and 64 bars are available in Song Mode and Guitar-Bass Duo paths.
 - **All 7 era options now alter harmonic vocabulary** (swing, bebop, cool_jazz, hard_bop, post_bop, fusion, contemporary).
 - **Receipt shows GCE quality score** per generation, and the quality gate runs an automatic candidate retry loop.
+- **Motif Authority V1** (experimental): enable with **`motifAuthorityV1`** in API options or **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (default OFF; scoped presets only).
 - **Library output:** By default, files go under **Documents ? Mike Composer Files** (override with `COMPOSER_OS_OUTPUT_DIR` if needed).
 - **Outputs browser** and **Diagnostics** in the app; optional **Composer Engines** (Wayne Shorter, Monk, Charlie Parker) on a separate tab.
 - **Big Band / String Quartet:** Full **MusicXML** when realisation and export succeed; otherwise **planning JSON** (see on-screen receipt).
