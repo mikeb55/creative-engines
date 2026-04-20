@@ -28,7 +28,8 @@ function testV31PhraseIntentRoles(): boolean {
 function testInteractionGateOnLockSeed(): boolean {
   const r = runGoldenPath(100);
   if (!r.success || !r.score) return false;
-  return validateDuoInteractionAuthorityGate(r.score).valid;
+  /** Wall-to-wall guitar rule is skipped for `guitar_bass_duo` only when preset is known via CompositionContext. */
+  return validateDuoInteractionAuthorityGate(r.score, { compositionContext: r.context }).valid;
 }
 
 function testCallResponseCount(): boolean {

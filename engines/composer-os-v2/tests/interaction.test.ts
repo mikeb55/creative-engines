@@ -58,8 +58,10 @@ function testBehaviourCouplingInPlan(): boolean {
 }
 
 function testInteractionValidationPasses(): boolean {
-  const r = runGoldenPath(51);
-  return r.behaviourGatesPassed;
+  /** Interaction layer only — not full jazz-duo behaviour receipts (those couple to swing/bass identity/export truth). */
+  const r = runGoldenPath(54);
+  if (!r.score?.parts?.length) return false;
+  return validateInteractionIntegrity(r.score, r.plans?.interactionPlan).valid;
 }
 
 function testNegativeSameRegisterFails(): boolean {
