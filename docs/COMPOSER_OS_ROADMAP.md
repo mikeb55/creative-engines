@@ -219,6 +219,27 @@
 - ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
 
+## ECM Chamber — Arrangement & Orchestration depth
+
+ECM is the only preset where Arrangement & Orchestration (not Melodic Identity) is the weakest GCE category (scored in first eval at 7.8/10 overall, Arrangement weakest).
+
+What this means:
+- ECM Chamber currently has thin part separation
+- Guitar and bass register gap is low
+- Density variation between parts is insufficient
+- ECM aesthetic requires maximum space and register contrast — sparse bass, high guitar, clear layers
+
+When to tackle:
+- After Motif Authority Layer is complete
+- After Big Band arranging depth session
+- ECM arrangement work can share approaches with Big Band sectional writing
+
+Specific improvements needed:
+- Increase register separation between guitar and bass parts in ECM mode
+- Add more density contrast — ECM bass should be much sparser than guitar
+- Add silence/space enforcement specific to ECM
+- Review ECM-specific voicing logic in `generateGoldenPathDuoScore.ts` ECM branches
+
 ### Quartal Guitar Module (mid-term, after GCE gate + Pat Metheny)
 
 - User inputs chord progression
