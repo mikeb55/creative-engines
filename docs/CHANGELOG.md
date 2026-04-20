@@ -1,3 +1,16 @@
+## [2026-04-20] Era-aware chord symbol normalization pass
+
+### What changed
+- Added `core/harmony/eraChordNormalizer.ts` as a post-generation chord vocabulary normalizer that:
+  - parses chord symbols to structured parts (root/body/slash, extensions/alterations),
+  - classifies coarse function families,
+  - applies era-specific safe rewrites in-family only,
+  - preserves root and slash bass,
+  - scores candidates with safety + continuity checks,
+  - records debug counters per era and per rule.
+- Inserted the pass in Song Mode chord planning in `songModeBuilder.ts` after section chord generation and before downstream voicing/export.
+- Added `core/harmony/eraChordNormalizer.test.ts` with parse/classify/rewrite behavior checks for swing/bebop/fusion baselines.
+
 ## [2026-04-20] Deep era implementation from research
 
 ### What changed

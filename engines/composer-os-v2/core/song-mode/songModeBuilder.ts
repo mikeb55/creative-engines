@@ -22,6 +22,11 @@ import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
 import { chordSlotsForSectionHarmonicRhythm, type HarmonicRhythmProfile } from './songSectionPlanner';
+import {
+  createEraNormalizerDebugCounters,
+  normalizeChordSymbolsForEra,
+  type EraId,
+} from '../harmony/eraChordNormalizer';
 
 /** Row-level tags for Wayne Shorter pools (foundation for future contextual selection). */
 export interface WayneShorterRowTags {
@@ -159,6 +164,23 @@ function resolveEraProfile(era: string | undefined): EraProfile {
         functionalStrength: 'medium',
       };
   }
+}
+
+function normalizeEraId(era: string | undefined): EraId | null {
+  if (!era) return null;
+  const k = era.trim().toLowerCase().replace(/-/g, '_');
+  if (
+    k === 'swing' ||
+    k === 'bebop' ||
+    k === 'cool_jazz' ||
+    k === 'hard_bop' ||
+    k === 'post_bop' ||
+    k === 'fusion' ||
+    k === 'contemporary'
+  ) {
+    return k;
+  }
+  return null;
 }
 
 function seededUnit(seed: number): number {
@@ -835,12 +857,14 @@ export function buildSectionChordPlans(
   sections: SongSectionPlan[],
   seed: number,
   songwriterId?: string,
-  eraProfile?: EraProfile
+  eraProfile?: EraProfile,
+  eraId?: EraId | null
 ): SectionChordPlan[] {
+  const debugCounters = eraId ? createEraNormalizerDebugCounters(eraId) : undefined;
   /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
   let verseOrdinal = 0;
   let chorusOrdinal = 0;
-  return sections.map((s) => {
+  const planned = sections.map((s) => {
     let ordinalBias = 0;
     if (s.kind === 'verse') ordinalBias = verseOrdinal++ * 997;
     else if (s.kind === 'chorus') ordinalBias = chorusOrdinal++ * 997;
@@ -856,6 +880,21 @@ export function buildSectionChordPlans(
       ),
     };
   });
+  if (!eraId) return planned;
+
+  // Implementation plan:
+  // - insertion point is here: chords are generated and harmonic-rhythm-shaped,
+  //   but voicing/export has not started yet.
+  // - normalize symbols per era without changing root/bass/function family.
+  return planned.map((section, idx) => ({
+    ...section,
+    chordSymbols: normalizeChordSymbolsForEra(section.chordSymbols, eraId, {
+      previousChordSymbol: planned[idx - 1]?.chordSymbols.slice(-1)[0],
+      nextChordSymbol: planned[idx + 1]?.chordSymbols[0],
+      debug: process.env.COMPOSER_OS_ERA_CHORD_DEBUG === '1',
+      debugCounters,
+    }),
+  }));
 }
 
 export interface BuildCompiledSongParams {
@@ -892,12 +931,14 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
       ? resolveStylePairing({ ...params.stylePairing, seed: params.seed })
       : null;
   const eraProfile = resolveEraProfile(params.stylePairing?.era);
+  const eraId = normalizeEraId(params.stylePairing?.era);
   const hook = buildSongHook(params.seed);
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
     resolution.primaryId,
-    eraProfile
+    eraProfile,
+    eraId
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {
