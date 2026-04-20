@@ -30,7 +30,8 @@
     "probe:ecm-arrangement": "ts-node scripts/ecmArrangementProbe.ts",
     "eval:ecm-texture": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/ecmChamberTextureEval.ts",
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
-    "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts"
+    "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts",
+    "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "devDependencies": {

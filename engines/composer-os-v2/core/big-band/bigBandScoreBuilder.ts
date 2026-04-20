@@ -26,7 +26,13 @@ import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreMo
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyBigBandWybleLeadInnerSaxMidis } from './bigBandWybleHornVoicing';
 import { wybleConsumptionReceiptForBigBand } from '../wyble/wybleConsumptionReceipt';
-import { generateBrassPunches, generateSaxSoliPhrase, generateShoutChorus } from '../arranging/bigBandPatterns';
+import {
+  BB_V1_5_SOLI_MOTIF,
+  blendSoliMotifWithHeadTheme,
+  generateBrassPunches,
+  generateSaxSoliPhrase,
+  generateShoutChorus,
+} from '../arranging/bigBandPatterns';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -47,7 +53,10 @@ const BB_PART_IDS = [
   'bb_drums',
 ] as const;
 
-/** V1 arranging: fixed 8-bar sax soli; brass tacet. Requires `totalBars >= 24` so bars 17–24 exist. */
+/**
+ * Designated sax soli (bars 17–24 when `totalBars >= 24`): brass tacet; V2 blends head lead + bars 1–8
+ * harmonic contour into the soli motif (see `blendSoliMotifWithHeadTheme`).
+ */
 const BB_DESIGNATED_SAX_SOLI_START = 17;
 const BB_DESIGNATED_SAX_SOLI_END = 24;
 
@@ -259,12 +268,20 @@ const DRUM_BD = 36;
 const DRUM_HH = 42;
 
 /**
- * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = four quarter layers (BD only or BD+SN chord).
+ * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = BD layer (composite snare via `bb_drum_bs` on hits).
  * Voice 2 must sum to exactly 4 beats — chord snare is encoded via motifRef on the bass-drum note (not a second event).
+ *
+ * V2: non–ensemble-hit bars keep time with HH + downbeat BD only; punch/shout bars use fuller kicks aligned with horns.
  */
-function addBigBandDrumPattern(measure: MeasureModel): void {
+function addBigBandDrumPattern(measure: MeasureModel, opts?: { ensembleHit?: boolean }): void {
+  const ensembleHit = opts?.ensembleHit === true;
   for (let b = 0; b < 4; b++) {
     addEvent(measure, createNote(DRUM_HH, b, 1, 1));
+  }
+  if (!ensembleHit) {
+    addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
+    addEvent(measure, createRest(1, 3, 2));
+    return;
   }
   addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
   addEvent(measure, createNote(DRUM_BD, 1, 1, 2, 'bb_drum_bs'));
@@ -281,6 +298,66 @@ function pitchesForBigBandBar(rootPc: number): [number, number, number, number, 
   const piano = snapMidiToRange(60 + r, 55, 84);
   const bass = snapMidiToRange(36 + r, ...BIG_BAND_MIDI_BOUNDS[BB_PART_RHYTHM]);
   return [sax, sax, trp, bone, piano, bass];
+}
+
+/**
+ * Bars 1–8 only: simulated head lead vs nominal sax anchor (55+rpc+4), after Wyble + horn mitigation.
+ * Used for V2 theme-anchored soli / shout when `totalBars >= 24`.
+ */
+/** Exported for `scripts/bigBandChartEval.ts` (metrics only). */
+export function computeBigBandHeadLeadOffsets(params: {
+  chordSequence: string[];
+  formPlan: BigBandFormPlan;
+  wybleVoiceLayout?: EnsembleWybleRoleMap;
+}): number[] {
+  const { chordSequence, formPlan, wybleVoiceLayout } = params;
+  let hornStreak = initialHornCloneStreakState();
+  const out: number[] = [];
+
+  for (let bar = 1; bar <= 8; bar++) {
+    const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
+    const sectionTag = bigBandPhaseToSectionTag(slice?.phase);
+
+    const sym = chordSequence[bar - 1] ?? 'Cmaj7';
+    const rpc = chordSymbolRootPc(sym) ?? 0;
+    const stack = pitchesForBigBandBar(rpc);
+    let altoMidi = stack[0];
+    let tenorMidi = stack[1];
+    let trumpetMidi = stack[2];
+
+    const snappedSax = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+    const snappedTrp = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
+
+    const wybleSaxes = applyBigBandWybleLeadInnerSaxMidis(altoMidi, tenorMidi, wybleVoiceLayout, snappedSax);
+    altoMidi = wybleSaxes.altoMidi;
+    tenorMidi = wybleSaxes.tenorMidi;
+
+    const mit = mitigateBigBandHornMidis(
+      hornStreak,
+      altoMidi,
+      tenorMidi,
+      trumpetMidi,
+      sectionTag,
+      snappedSax,
+      snappedTrp
+    );
+    altoMidi = mit.altoMidi;
+    tenorMidi = mit.tenorMidi;
+    trumpetMidi = mit.trumpetMidi;
+
+    hornStreak = advanceHornCloneStreaks(hornStreak, {
+      altoMidi,
+      tenorMidi,
+      trumpetMidi,
+      sectionTag,
+    });
+
+    const nominalLead = snapMidiToRange(55 + rpc + 4, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+    const delta = Math.round(altoMidi - nominalLead);
+    out.push(Math.max(-12, Math.min(12, delta)));
+  }
+
+  return out;
 }
 
 const PART_META: Array<{
@@ -356,7 +433,22 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     return barChord(b, seed, era);
   };
   const chordSequence = Array.from({ length: totalBars }, (_, i) => chordForBar(i + 1));
-  const saxSoli = generateSaxSoliPhrase(chordSequence, [0, 2, 4, 5, 7, 5, 4, 2], {
+  const headLeadOffsets =
+    totalBars >= BB_DESIGNATED_SAX_SOLI_END
+      ? computeBigBandHeadLeadOffsets({
+          chordSequence,
+          formPlan,
+          wybleVoiceLayout,
+        })
+      : [];
+  const themeAvg =
+    headLeadOffsets.length === 8 ? Math.round(headLeadOffsets.reduce((a, b) => a + b, 0) / 8) : 0;
+  const headChordRootPcs = chordSequence.slice(0, 8).map((s) => chordSymbolRootPc(s) ?? 0);
+  const soliMotif =
+    totalBars >= BB_DESIGNATED_SAX_SOLI_END && headLeadOffsets.length === 8
+      ? blendSoliMotifWithHeadTheme(BB_V1_5_SOLI_MOTIF, headLeadOffsets, headChordRootPcs)
+      : [...BB_V1_5_SOLI_MOTIF];
+  const saxSoli = generateSaxSoliPhrase(chordSequence, soliMotif, {
     startBar: Math.min(17, totalBars),
     endBar: Math.min(24, totalBars),
   });
@@ -443,7 +535,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           addEvent(m, createRest(0, 4, 1));
           addEvent(m, createRest(0, 4, 2));
         } else {
-          addBigBandDrumPattern(m);
+          const ensembleHitBar =
+            (brassPunches.get(bar)?.length ?? 0) > 0 || (shoutFragment.get(bar)?.length ?? 0) > 0;
+          addBigBandDrumPattern(m, { ensembleHit: ensembleHitBar });
         }
         continue;
       }
@@ -491,8 +585,11 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         let pitch = idx === 0 ? altoMidi : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
         const pid = BB_PART_IDS[idx];
         if ((idx === 2 || idx === 3) && shoutBeats && shoutBeats.length > 0) {
-          // V1 shout fragment near ending.
-          const shoutPitch = idx === 2 ? snapMidiToRange(pitch + 5, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]) : pitch;
+          /** V2: trumpet lift biased by bars 1–8 head theme average (deterministic). */
+          const shoutLift =
+            idx === 2 ? 5 + indexMod(themeAvg + seed, 5) - 2 : 0;
+          const shoutPitch =
+            idx === 2 ? snapMidiToRange(pitch + shoutLift, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]) : pitch;
           addPunchPattern(m, shoutPitch, shoutBeats, 1);
           for (const _ of shoutBeats) barNotes.push({ partId: pid, midi: shoutPitch, durationBeats: 0.5 });
           continue;

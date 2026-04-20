@@ -1,3 +1,8 @@
+## [2026-04-20] Big Band V2 — theme-anchored soli/shout + drum support for hits
+
+- **Soli / shout:** Head window (bars 1–8) lead offsets and chord-root contour blend into the bars 17–24 soli motif; shout trumpet lift is biased by head theme average and seed. See `bigBandPatterns.ts` and `bigBandScoreBuilder.ts`.
+- **Drums:** Ensemble-hit bars (punch/shout) use fuller bass-drum + composite snare encoding; other bars use lighter timekeeping (hi-hat + downbeat kick). Run `npm run test:big-band-arranging` and `npm run eval:big-band-chart` (from `engines/composer-os-v2`).
+
 ## [2026-04-20] Song Mode eval harnesses — section-shaping diagnostics from manifests
 
 - **Shared reader:** `engines/composer-os-v2/scripts/eval/songModeSectionShapingDiagnosticsReader.ts` — reads **`songModeSectionShapingDiagnostics`** from manifest JSON (tolerant of missing fields; no hard throw on shape).

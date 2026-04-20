@@ -14,7 +14,7 @@ export function runBigBandRealisationTests(): { ok: boolean; name: string }[] {
     ok:
       r.planning.validation.ok &&
       r.score != null &&
-      r.score.parts.length === 4 &&
+      r.score.parts.length === 7 &&
       r.exportPipeline.ok &&
       (r.exportPipeline.xml?.includes('score-partwise') ?? false),
     name: 'runBigBandRealisation yields score + MusicXML through export pipeline',
