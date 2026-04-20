@@ -21,6 +21,7 @@ import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
+import { chordSlotsForSectionHarmonicRhythm, type HarmonicRhythmProfile } from './songSectionPlanner';
 
 /** Row-level tags for Wayne Shorter pools (foundation for future contextual selection). */
 export interface WayneShorterRowTags {
@@ -55,25 +56,108 @@ function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
 }
 
-function resolveEraHarmonyDensityBias(era: string | undefined): number {
+interface EraProfile {
+  rhythmBias: number;
+  harmonyDensityBias: number;
+  syncopationBias: number;
+  tempoTargetBpm: [number, number];
+  preferredExtensions: string[];
+  avoidedExtensions: string[];
+  harmonicRhythm: HarmonicRhythmProfile;
+  functionalStrength: 'strong' | 'medium' | 'weak';
+}
+
+function resolveEraProfile(era: string | undefined): EraProfile {
   const k = era?.trim().toLowerCase().replace(/-/g, '_');
   switch (k) {
     case 'swing':
-      return -0.1;
+      return {
+        rhythmBias: -0.05,
+        harmonyDensityBias: -0.15,
+        syncopationBias: -0.1,
+        tempoTargetBpm: [120, 220],
+        preferredExtensions: ['6', 'maj6', '6/9', '7', '9', '7b9'],
+        avoidedExtensions: ['7alt', '#11', 'quartal'],
+        harmonicRhythm: 'medium',
+        functionalStrength: 'strong',
+      };
     case 'bebop':
-      return 0.15;
+      return {
+        rhythmBias: 0.25,
+        harmonyDensityBias: 0.2,
+        syncopationBias: 0.25,
+        tempoTargetBpm: [160, 300],
+        preferredExtensions: ['7b9', '7#9', '7#11', '7b13', 'dim7', 'm7b5', 'maj7', '13'],
+        avoidedExtensions: ['sus4', 'quartal', 'add9'],
+        harmonicRhythm: 'fast',
+        functionalStrength: 'strong',
+      };
     case 'post_bop':
-      return 0.2;
+      return {
+        rhythmBias: 0.15,
+        harmonyDensityBias: 0.2,
+        syncopationBias: 0.15,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: ['maj7#11', '7alt', '7sus', 'quartal', 'mMaj7', 'm7b5'],
+        avoidedExtensions: ['6', 'maj6'],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
     case 'cool_jazz':
-      return -0.05;
+      return {
+        rhythmBias: -0.15,
+        harmonyDensityBias: -0.1,
+        syncopationBias: -0.15,
+        tempoTargetBpm: [90, 160],
+        preferredExtensions: ['maj7', '6/9', 'm7', 'add9', 'maj7#11', 'mMaj7'],
+        avoidedExtensions: ['7alt', '7b9', '7#9'],
+        harmonicRhythm: 'slow',
+        functionalStrength: 'medium',
+      };
     case 'hard_bop':
-      return 0.1;
+      return {
+        rhythmBias: 0.2,
+        harmonyDensityBias: 0.15,
+        syncopationBias: 0.2,
+        tempoTargetBpm: [110, 220],
+        preferredExtensions: ['7b9', '7#9', '7#11', '7b13', 'sus4', 'm7', '13'],
+        avoidedExtensions: ['quartal', 'add9', 'mMaj7'],
+        harmonicRhythm: 'fast',
+        functionalStrength: 'strong',
+      };
     case 'fusion':
-      return 0.1;
+      return {
+        rhythmBias: 0.1,
+        harmonyDensityBias: 0.1,
+        syncopationBias: 0.05,
+        tempoTargetBpm: [90, 200],
+        preferredExtensions: ['m7', 'm9', 'm11', '7sus', 'maj7#11', '6/9'],
+        avoidedExtensions: ['dim7', '7b9', 'bebop vocab'],
+        harmonicRhythm: 'slow',
+        functionalStrength: 'weak',
+      };
     case 'contemporary':
-      return 0;
+      return {
+        rhythmBias: 0,
+        harmonyDensityBias: 0,
+        syncopationBias: 0,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: [],
+        avoidedExtensions: [],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
     default:
-      return 0;
+      return {
+        rhythmBias: 0,
+        harmonyDensityBias: 0,
+        syncopationBias: 0,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: [],
+        avoidedExtensions: [],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
   }
 }
 
@@ -105,18 +189,42 @@ function rowComplexityScore(row: ChordPoolRow): number {
   return total / chords.length;
 }
 
-function pickChordPoolRowIndex(sectionPool: ChordPoolRow[], seed: number, harmonyDensityBias: number): number {
+function extensionAffinityWeight(row: ChordPoolRow, eraProfile: EraProfile): number {
+  const chords = chordSymbolsFromPoolRow(row);
+  if (chords.length === 0) return 1;
+  const lowered = chords.map((c) => c.toLowerCase());
+  const preferred = eraProfile.preferredExtensions;
+  const avoided = eraProfile.avoidedExtensions;
+  const preferredHits =
+    preferred.length > 0
+      ? preferred.filter((token) => lowered.some((c) => c.includes(token.toLowerCase()))).length /
+        preferred.length
+      : 0;
+  const avoidedHits =
+    avoided.length > 0
+      ? avoided.filter((token) => lowered.some((c) => c.includes(token.toLowerCase()))).length /
+        avoided.length
+      : 0;
+  const boost = preferredHits > 0 ? 1 + 0.3 * preferredHits : 1;
+  const penalty = avoidedHits > 0 ? 1 - 0.3 * avoidedHits : 1;
+  return Math.max(0.15, boost * penalty);
+}
+
+function pickChordPoolRowIndex(sectionPool: ChordPoolRow[], seed: number, eraProfile: EraProfile): number {
   if (sectionPool.length <= 1) return 0;
   const roll = seededUnit(seed);
+  const harmonyDensityBias = eraProfile.harmonyDensityBias;
   if (harmonyDensityBias <= 0.1 && harmonyDensityBias >= -0.05) {
     return Math.floor(roll * sectionPool.length);
   }
 
   const scores = sectionPool.map((row) => rowComplexityScore(row));
   const wantsDense = harmonyDensityBias > 0.1;
-  const weighted = scores.map((score) => {
+  const weighted = scores.map((score, idx) => {
     const preference = wantsDense ? score : -score;
-    return Math.max(0.15, Math.exp(preference * 0.9));
+    const base = Math.max(0.15, Math.exp(preference * 0.9));
+    const affinity = extensionAffinityWeight(sectionPool[idx]!, eraProfile);
+    return Math.max(0.15, base * affinity);
   });
   const sum = weighted.reduce((a, b) => a + b, 0);
   let cursor = roll * sum;
@@ -125,6 +233,24 @@ function pickChordPoolRowIndex(sectionPool: ChordPoolRow[], seed: number, harmon
     if (cursor <= 0) return i;
   }
   return weighted.length - 1;
+}
+
+function applyHarmonicRhythmToRow(
+  chords: string[],
+  harmonicRhythm: HarmonicRhythmProfile,
+  seed: number
+): string[] {
+  if (chords.length !== 4) return [...chords];
+  const slotMode = chordSlotsForSectionHarmonicRhythm(harmonicRhythm);
+  if (slotMode === 4) return [...chords];
+  if (slotMode === 1) {
+    const anchor = chords[Math.abs(seed) % chords.length]!;
+    return [anchor, anchor, anchor, anchor];
+  }
+  const a = chords[0]!;
+  const b = chords[1]!;
+  const c = chords[3]!;
+  return seed % 2 === 0 ? [a, b, b, c] : [a, a, b, c];
 }
 
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
@@ -659,7 +785,7 @@ function chordSymbolsForSection(
   kind: SongSectionKind,
   seed: number,
   songwriterId?: string,
-  harmonyDensityBias: number = 0
+  eraProfile?: EraProfile
 ): string[] {
   const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
   if (pool) {
@@ -673,9 +799,12 @@ function chordSymbolsForSection(
             : kind === 'pre_chorus'
               ? pool.pre_chorus
               : pool.verse;
-    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), harmonyDensityBias);
+    const profile = eraProfile ?? resolveEraProfile(undefined);
+    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile);
     const raw = sectionPool[idx] ?? pool.verse[0];
-    return raw != null ? chordSymbolsFromPoolRow(raw) : ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+    return raw != null
+      ? applyHarmonicRhythmToRow(chordSymbolsFromPoolRow(raw), profile.harmonicRhythm, seed)
+      : ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
   }
 
   // Fallback: original hardcoded progressions
@@ -706,7 +835,7 @@ export function buildSectionChordPlans(
   sections: SongSectionPlan[],
   seed: number,
   songwriterId?: string,
-  harmonyDensityBias: number = 0
+  eraProfile?: EraProfile
 ): SectionChordPlan[] {
   /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
   let verseOrdinal = 0;
@@ -723,7 +852,7 @@ export function buildSectionChordPlans(
         s.kind,
         seed + s.order * 31 + ordinalBias,
         songwriterId,
-        harmonyDensityBias
+        eraProfile
       ),
     };
   });
@@ -762,13 +891,13 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     params.stylePairing != null
       ? resolveStylePairing({ ...params.stylePairing, seed: params.seed })
       : null;
-  const eraHarmonyDensityBias = resolveEraHarmonyDensityBias(params.stylePairing?.era);
+  const eraProfile = resolveEraProfile(params.stylePairing?.era);
   const hook = buildSongHook(params.seed);
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
     resolution.primaryId,
-    eraHarmonyDensityBias
+    eraProfile
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {

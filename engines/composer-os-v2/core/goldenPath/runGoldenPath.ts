@@ -418,29 +418,111 @@ function buildDuoTwentyFourBarCompositionContext(
   return context;
 }
 
+interface EraProfile {
+  rhythmBias: number;
+  harmonyDensityBias: number;
+  syncopationBias: number;
+  tempoTargetBpm: [number, number];
+  preferredExtensions: string[];
+  avoidedExtensions: string[];
+  harmonicRhythm: 'fast' | 'medium' | 'slow' | 'variable';
+  functionalStrength: 'strong' | 'medium' | 'weak';
+}
+
 /**
- * Era → small numeric biases. Recognised ids: `post_bop`, `fusion`, `contemporary`; other strings yield zeros.
- * Rhythm bias applies to `songwriterSyncopationBias` (0–1), not `songModeRhythmStrength` (that field is stable | balanced | surprise).
+ * Era profile used by Song Mode overlays (rhythm/syncopation) and downstream harmony weighting.
  */
-function resolveEraProfile(era: string): { rhythmBias: number; harmonyDensityBias: number } {
+function resolveEraProfile(era: string): EraProfile {
   const k = era.trim().toLowerCase().replace(/-/g, '_');
   switch (k) {
     case 'swing':
-      return { rhythmBias: -0.05, harmonyDensityBias: -0.1 };
+      return {
+        rhythmBias: -0.05,
+        harmonyDensityBias: -0.15,
+        syncopationBias: -0.1,
+        tempoTargetBpm: [120, 220],
+        preferredExtensions: ['6', 'maj6', '6/9', '7', '9', '7b9'],
+        avoidedExtensions: ['7alt', '#11', 'quartal'],
+        harmonicRhythm: 'medium',
+        functionalStrength: 'strong',
+      };
     case 'bebop':
-      return { rhythmBias: 0.2, harmonyDensityBias: 0.15 };
+      return {
+        rhythmBias: 0.25,
+        harmonyDensityBias: 0.2,
+        syncopationBias: 0.25,
+        tempoTargetBpm: [160, 300],
+        preferredExtensions: ['7b9', '7#9', '7#11', '7b13', 'dim7', 'm7b5', 'maj7', '13'],
+        avoidedExtensions: ['sus4', 'quartal', 'add9'],
+        harmonicRhythm: 'fast',
+        functionalStrength: 'strong',
+      };
     case 'post_bop':
-      return { rhythmBias: 0.15, harmonyDensityBias: 0.2 };
+      return {
+        rhythmBias: 0.15,
+        harmonyDensityBias: 0.2,
+        syncopationBias: 0.15,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: ['maj7#11', '7alt', '7sus', 'quartal', 'mMaj7', 'm7b5'],
+        avoidedExtensions: ['6', 'maj6'],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
     case 'cool_jazz':
-      return { rhythmBias: -0.1, harmonyDensityBias: -0.05 };
+      return {
+        rhythmBias: -0.15,
+        harmonyDensityBias: -0.1,
+        syncopationBias: -0.15,
+        tempoTargetBpm: [90, 160],
+        preferredExtensions: ['maj7', '6/9', 'm7', 'add9', 'maj7#11', 'mMaj7'],
+        avoidedExtensions: ['7alt', '7b9', '7#9'],
+        harmonicRhythm: 'slow',
+        functionalStrength: 'medium',
+      };
     case 'hard_bop':
-      return { rhythmBias: 0.15, harmonyDensityBias: 0.1 };
+      return {
+        rhythmBias: 0.2,
+        harmonyDensityBias: 0.15,
+        syncopationBias: 0.2,
+        tempoTargetBpm: [110, 220],
+        preferredExtensions: ['7b9', '7#9', '7#11', '7b13', 'sus4', 'm7', '13'],
+        avoidedExtensions: ['quartal', 'add9', 'mMaj7'],
+        harmonicRhythm: 'fast',
+        functionalStrength: 'strong',
+      };
     case 'fusion':
-      return { rhythmBias: 0.1, harmonyDensityBias: 0.1 };
+      return {
+        rhythmBias: 0.1,
+        harmonyDensityBias: 0.1,
+        syncopationBias: 0.05,
+        tempoTargetBpm: [90, 200],
+        preferredExtensions: ['m7', 'm9', 'm11', '7sus', 'maj7#11', '6/9'],
+        avoidedExtensions: ['dim7', '7b9', 'bebop vocab'],
+        harmonicRhythm: 'slow',
+        functionalStrength: 'weak',
+      };
     case 'contemporary':
-      return { rhythmBias: 0.0, harmonyDensityBias: 0.0 };
+      return {
+        rhythmBias: 0,
+        harmonyDensityBias: 0,
+        syncopationBias: 0,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: [],
+        avoidedExtensions: [],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
     default:
-      return { rhythmBias: 0.0, harmonyDensityBias: 0.0 };
+      return {
+        rhythmBias: 0,
+        harmonyDensityBias: 0,
+        syncopationBias: 0,
+        tempoTargetBpm: [60, 280],
+        preferredExtensions: [],
+        avoidedExtensions: [],
+        harmonicRhythm: 'variable',
+        functionalStrength: 'medium',
+      };
   }
 }
 
@@ -450,7 +532,7 @@ function applyEraBiasToGenerationMetadata(md: GenerationMetadata | undefined, er
   const eraProfile = resolveEraProfile(era);
   md.songwriterSyncopationBias = Math.min(
     1.0,
-    (md.songwriterSyncopationBias ?? 0.5) + eraProfile.rhythmBias
+    (md.songwriterSyncopationBias ?? 0.5) + eraProfile.rhythmBias + eraProfile.syncopationBias
   );
   md.harmonyDensityBias = eraProfile.harmonyDensityBias;
 }

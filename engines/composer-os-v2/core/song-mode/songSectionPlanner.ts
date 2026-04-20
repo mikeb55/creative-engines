@@ -46,3 +46,19 @@ export function planExtendedPopStructure(): SongSectionPlan[] {
     { order: 7, kind: 'chorus' },
   ];
 }
+
+export type HarmonicRhythmProfile = 'fast' | 'medium' | 'slow' | 'variable';
+
+/**
+ * Per-section chord density preference for 4-bar Song Mode sections.
+ * - fast: allows two internal changes (3 harmonic regions over 4 bars)
+ * - slow: prefers one harmony for the full section
+ * - medium/variable: keep existing per-bar behaviour
+ */
+export function chordSlotsForSectionHarmonicRhythm(
+  harmonicRhythm: HarmonicRhythmProfile
+): 1 | 3 | 4 {
+  if (harmonicRhythm === 'fast') return 3;
+  if (harmonicRhythm === 'slow') return 1;
+  return 4;
+}

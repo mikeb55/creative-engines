@@ -1,3 +1,18 @@
+## [2026-04-20] Deep era implementation from research
+
+### What changed
+- Added `docs/jazz-era-research.md` with era-by-era reference specs (Swing, Bebop, Cool Jazz, Hard Bop, Post-Bop, Fusion, Contemporary).
+- Expanded Song Mode era profile modeling in `runGoldenPath.ts` from simple numeric nudges to a richer `EraProfile` (syncopation, tempo range, preferred/avoided extension vocab, harmonic rhythm mode, functional strength).
+- Updated Song Mode chord-row weighting in `songModeBuilder.ts` to combine:
+  - era harmony-density preference,
+  - preferred extension boost,
+  - avoided extension penalty
+  using soft probabilistic weighting.
+- Added harmonic rhythm planning hook in `songSectionPlanner.ts` and applied it in chord row shaping so:
+  - `fast` allows extra internal changes per section,
+  - `slow` prefers static harmony across a 4-bar section,
+  - `medium` / `variable` keep prior behaviour.
+
 ## [2026-04-20] Song Mode era bias expansion
 
 ### What changed
