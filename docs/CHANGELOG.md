@@ -1,3 +1,17 @@
+## [2026-04-20] Slonimsky Engine V1 scaffold
+
+### What changed
+- Added `core/slonimsky/slonimskyEngine.ts` with:
+  - core Slonimsky types and context model
+  - 8 interval patterns
+  - context-aware selector
+  - deterministic pattern generator with jitter/omit humanization
+  - Song Mode melody-line integration hook (`applySlonimskyToMelodyLine`)
+- Added `core/slonimsky/index.ts` exports
+- Added Slonimsky placeholder rule ids in `songwriterRuleRegistry.ts` for:
+  - `wayne_shorter`
+  - `ecm_chamber`
+
 ## [2026-04-20] 64-bar fix + Melodic Identity interval bias
 
 ### What changed

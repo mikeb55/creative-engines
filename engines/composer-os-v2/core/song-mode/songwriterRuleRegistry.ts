@@ -38,6 +38,9 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('ecm_chamber.modal_drift', 'Modal drift between centres (placeholder)', 'songwriter', 'harmony', 8, 'global'),
     R('ecm_chamber.wide_voicing', 'Wide chamber voicings (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
     R('ecm_chamber.sparse_rhythm', 'Sparse rhythmic pacing (placeholder)', 'songwriter', 'rhythm', 7, 'global'),
+    R('slonimsky.minor_third_cell', 'Slonimsky minor-third cell insertion (placeholder)', 'songwriter', 'melody', 7, 'verse'),
+    R('slonimsky.whole_tone_segment', 'Slonimsky whole-tone segment drift (placeholder)', 'songwriter', 'melody', 7, 'global'),
+    R('slonimsky.non_functional_logic', 'Slonimsky non-functional melodic logic (placeholder)', 'songwriter', 'harmony', 8, 'global'),
   ],
   stevie_wonder: [
     R('wonder.modal_mix', 'Modal mixture at pre-chorus/chorus', 'songwriter', 'harmony', 8, 'chorus'),
@@ -476,6 +479,9 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       9,
       'form'
     ),
+    R('slonimsky.minor_third_cell', 'Slonimsky minor-third cell insertion (placeholder)', 'songwriter', 'melody', 8, 'verse'),
+    R('slonimsky.whole_tone_segment', 'Slonimsky whole-tone segment drift (placeholder)', 'songwriter', 'melody', 8, 'global'),
+    R('slonimsky.non_functional_logic', 'Slonimsky non-functional melodic logic (placeholder)', 'songwriter', 'harmony', 9, 'global'),
   ],
   pat_metheny: [
     R('metheny.open_voicing', 'Open voicings (placeholder)', 'songwriter', 'harmony', 7, 'global'),
