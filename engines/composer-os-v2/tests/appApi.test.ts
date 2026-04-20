@@ -5,6 +5,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { getPresets } from '../app-api/getPresets';
+import { COMPOSER_OS_V1_SUPPORTED_MODES } from '../app-api/releaseMetadata';
 import { getStyleModules } from '../app-api/getStyleModules';
 import { generateComposition } from '../app-api/generateComposition';
 import { listOutputs } from '../app-api/listOutputs';
@@ -137,8 +138,10 @@ export function runAppApiTests(): TestResult[] {
     else if (d.activePort !== 3001) fail('Diagnostics payload: port');
     else if (!path.isAbsolute(d.outputDirectory)) fail('Diagnostics payload: canonical output');
     else if (!d.styleModules?.length || d.styleModules.length < 3) fail('Diagnostics payload: styleModules');
-    else if (!d.supportedModes || d.supportedModes.length !== 6) fail('Diagnostics payload: supportedModes V1');
-    else if (!d.registeredPresets || d.registeredPresets.length !== 6) fail('Diagnostics payload: registeredPresets');
+    else if (!d.supportedModes || d.supportedModes.length !== COMPOSER_OS_V1_SUPPORTED_MODES.length)
+      fail('Diagnostics payload: supportedModes V1');
+    else if (!d.registeredPresets || d.registeredPresets.length !== getPresets().length)
+      fail('Diagnostics payload: registeredPresets');
     else if (!d.registeredPresets.some((p) => p.id === 'riff_generator')) fail('Diagnostics payload: riff preset');
     else pass('Diagnostics payload');
     fs.rmSync(diagDir, { recursive: true, force: true });
@@ -221,7 +224,12 @@ export function runAppApiTests(): TestResult[] {
     if (!metheny.success || !schneider.success) fail('ECM Chamber: both modes generate');
     else if (metheny.runManifest?.ecmMode !== 'ECM_METHENY_QUARTET') fail('ECM Chamber: Metheny manifest');
     else if (schneider.runManifest?.ecmMode !== 'ECM_SCHNEIDER_CHAMBER') fail('ECM Chamber: Schneider manifest');
-    else if (!metheny.xml?.includes('Emin9') || !schneider.xml?.includes('Cmaj7'))
+    else if (
+      !metheny.xml?.includes('root-step>E') ||
+      !metheny.xml?.includes('minor-ninth') ||
+      !schneider.xml?.includes('root-step>C') ||
+      !schneider.xml?.includes('major-ninth')
+    )
       fail('ECM Chamber: distinct harmony in XML');
     else pass('ECM Chamber: Metheny + Schneider modes');
   } catch (e) {

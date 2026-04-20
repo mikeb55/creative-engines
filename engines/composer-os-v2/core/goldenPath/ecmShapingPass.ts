@@ -12,6 +12,7 @@ import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { enforceVoice2BassRegisterSeparation18_2B_4, stripVoice2IfCrossingMelody } from './guitarVoice2WybleLayer';
+import { collectMelodyMidiChronological } from '../score-integrity/guitarVoiceMelody';
 
 const G_LOW = 55;
 const G_HIGH = 79;
@@ -366,14 +367,12 @@ export function maxMelodicLeap(part: PartModel): number {
   return max;
 }
 
-/** Barry Harris global voice-leading order — matches style module validation. */
+/**
+ * Barry Harris global voice-leading on the guitar **melody line** (voice 1).
+ * Inner voice / voice-2 chordal tones are excluded — same boundary as `strictEnforceGlobalLeaps` skip branch.
+ */
 export function maxGlobalLeapBarryHarrisOrder(part: PartModel): number {
-  const pitches: number[] = [];
-  for (const m of [...part.measures].sort((a, b) => a.index - b.index)) {
-    for (const e of m.events) {
-      if (e.kind === 'note') pitches.push((e as NoteEvent).pitch);
-    }
-  }
+  const pitches = collectMelodyMidiChronological(part);
   let max = 0;
   for (let i = 1; i < pitches.length; i++) {
     max = Math.max(max, Math.abs(pitches[i] - pitches[i - 1]));
