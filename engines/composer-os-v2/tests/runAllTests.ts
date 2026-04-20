@@ -1,5 +1,17 @@
 /**
- * Composer OS V2 — Run all tests
+ * Composer OS V2 — unified custom test harness (`npm test` / `npm run test:full`).
+ *
+ * **Modes**
+ * - `full` (default): every suite below. Expect **known debt** (exit 1) until tests are fixed — see
+ *   `docs/TEST_DEBT_COMPOSER_OS_V2.md` and `docs/TEST_HARNESS_PLAN.md`.
+ * - `fast`: skips suites in `tests/harness/fastExcludeSuites.ts` (heavy golden-path / export / retro debt).
+ *   Pass `fast` as the **last argv token** (`npm run test:fast`) or set `COMPOSER_OS_TEST_MODE=fast`.
+ *
+ * **Optional env**
+ * - `COMPOSER_OS_SKIP_STAGE_EXIT_GATES=1` — skip **Stage Exit Gates** (retro aggregate; quarantine).
+ * - `COMPOSER_OS_TEST_EXCLUDE_SUBSTR=a,b` — skip suites whose **name contains** any substring.
+ *
+ * **Timings:** slowest suites printed at end for triage.
  */
 
 import { runConductorTests } from './conductor.test';
@@ -123,6 +135,7 @@ import { runRiffGeneratorTests } from './riffGenerator.test';
 import { runSongwritingEngineTests } from './songwritingEngine.test';
 import { retroSuites } from './retro/index';
 import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
+import { isFastExcludedSuiteName } from './harness/fastExcludeSuites';
 
 const suites = [
   { name: 'Conductor', run: runConductorTests },
@@ -248,30 +261,82 @@ const suites = [
   ...retroSuites,
 ];
 
+type SuiteEntry = (typeof suites)[number];
+
+function resolveTestMode(): 'fast' | 'full' {
+  const last = process.argv[process.argv.length - 1];
+  if (last === 'fast' || last === 'full') return last;
+  const env = process.env.COMPOSER_OS_TEST_MODE;
+  if (env === 'fast' || env === 'full') return env;
+  return 'full';
+}
+
+function filterSuitesForRun(all: SuiteEntry[], mode: 'fast' | 'full'): SuiteEntry[] {
+  let out = all;
+  if (process.env.COMPOSER_OS_SKIP_STAGE_EXIT_GATES === '1') {
+    out = out.filter((s) => s.name !== 'Stage Exit Gates');
+    console.log('[harness] COMPOSER_OS_SKIP_STAGE_EXIT_GATES=1 — skipping Stage Exit Gates');
+  }
+  const sub = process.env.COMPOSER_OS_TEST_EXCLUDE_SUBSTR?.trim();
+  if (sub) {
+    const parts = sub.split(',').map((p) => p.trim()).filter(Boolean);
+    if (parts.length) {
+      out = out.filter((s) => !parts.some((p) => s.name.includes(p)));
+      console.log(`[harness] COMPOSER_OS_TEST_EXCLUDE_SUBSTR active: ${parts.join(' | ')}`);
+    }
+  }
+  if (mode === 'fast') {
+    const skipped = all.filter((s) => isFastExcludedSuiteName(s.name)).map((s) => s.name);
+    out = out.filter((s) => !isFastExcludedSuiteName(s.name));
+    const total = all.length;
+    console.log(`[harness] mode=fast — running ${out.length}/${total} suites (${skipped.length} excluded).`);
+  } else {
+    console.log(`[harness] mode=full — running ${out.length} suites.`);
+  }
+  return out;
+}
+
 function main(): void {
+  const mode = resolveTestMode();
+  const toRun = filterSuitesForRun(suites, mode);
   let totalPassed = 0;
   let totalFailed = 0;
+  const timings: { name: string; ms: number; passed: number; failed: number }[] = [];
 
-  for (const suite of suites) {
+  for (const suite of toRun) {
+    const t0 = Date.now();
     const results = suite.run();
+    const dt = Date.now() - t0;
     console.log(`\n=== ${suite.name} ===`);
     const rows = Array.isArray(results)
       ? results
       : [{ name: suite.name, ok: (results as { success: boolean }).success }];
+    let p = 0;
+    let f = 0;
     for (const r of rows) {
       if (r.ok) {
         console.log(`  PASS: ${r.name}`);
         totalPassed++;
+        p++;
       } else {
         console.log(`  FAIL: ${r.name}`);
         totalFailed++;
+        f++;
       }
     }
+    timings.push({ name: suite.name, ms: dt, passed: p, failed: f });
   }
 
   console.log(`\n=== Summary ===`);
+  console.log(`Mode: ${mode}`);
   console.log(`Passed: ${totalPassed}`);
   console.log(`Failed: ${totalFailed}`);
+
+  const slow = [...timings].sort((a, b) => b.ms - a.ms).slice(0, 20);
+  console.log(`\n=== Slowest suites (top ${slow.length}, ms) ===`);
+  for (const row of slow) {
+    console.log(`  ${row.ms}ms  ${row.name}  (+${row.passed} / -${row.failed})`);
+  }
 
   if (totalFailed > 0) {
     process.exit(1);

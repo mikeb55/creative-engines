@@ -21,7 +21,9 @@
     "eval:bacharach": "npm --prefix engines/composer-os-v2 run eval:bacharach --",
     "workflow:bacharach": "npm --prefix engines/composer-os-v2 run workflow:bacharach --",
     "mine:bacharach": "npm --prefix engines/composer-os-v2 run mine:bacharach --",
-    "eval:ecm-texture": "npm --prefix engines/composer-os-v2 run eval:ecm-texture --"
+    "eval:ecm-texture": "npm --prefix engines/composer-os-v2 run eval:ecm-texture --",
+    "test:composer-fast": "npm --prefix engines/composer-os-v2 run test:fast --",
+    "test:composer-full": "npm --prefix engines/composer-os-v2 run test:full --"
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",
