@@ -24,6 +24,13 @@ const BB_MINOR_EIGHT = [
   'F7alt/A',
 ];
 
+/** `<key>` must not suppress staff key print; unrelated elements (e.g. harmony `<degree>`) may use `print-object="no"`. */
+function keySignatureOpenTagNotSuppressed(xml: string): boolean {
+  const m = xml.match(/<key\b[^>]*>/);
+  if (!m) return true;
+  return !/\bprint-object\s*=\s*"no"/.test(m[0]);
+}
+
 function testMajorDiatonicInference(): boolean {
   const ch = ['Cmaj7', 'Fmaj7', 'G7', 'Cmaj7'];
   const r = inferKeyFromChords(ch);
@@ -92,7 +99,7 @@ function testCustomProgressionTonalCentreFMajor(): boolean {
  */
 function testDesktopParityDuoApiGenerateShapeTonalCentreF(): boolean {
   const bars = ['Gmaj7', 'Em7', 'Am7', 'D7', 'Gmaj7', 'Em7', 'Am7', 'D7'];
-  const r = runGoldenPath(42_003, {
+  const r = runGoldenPath(0, {
     presetId: 'guitar_bass_duo',
     harmonyMode: 'custom',
     chordProgressionText: bars.join(' | '),
@@ -205,7 +212,7 @@ function testGoldenPathCustomBbXmlFiveFlats(): boolean {
   return (
     r.xml.includes('<fifths>-5</fifths>') &&
     r.xml.includes('<mode>minor</mode>') &&
-    !r.xml.includes('print-object="no"') &&
+    keySignatureOpenTagNotSuppressed(r.xml) &&
     r.context.generationMetadata.keySignatureReceipt?.exportKeyWritten === true
   );
 }
