@@ -123,6 +123,12 @@ export function metricsToRowFields(m: BacharachEvalMetrics): Pick<
   | 'mixtureTouches'
   | 'bacharachSliceReceiptLines'
   | 'receiptsDescribeBehaviours'
+  | 'sectionShaping_densityDeltaBMinusA'
+  | 'sectionShaping_colourDeltaBMinusA'
+  | 'sectionShaping_openingVsReturnDelta'
+  | 'sectionShaping_returnVariationType'
+  | 'sectionShaping_contributingSliceCount'
+  | 'sectionShaping_returnSummary'
 > {
   return {
     smoothMaj7M7Ratio: fmtMetric(m.smoothMaj7M7Ratio),
@@ -138,6 +144,14 @@ export function metricsToRowFields(m: BacharachEvalMetrics): Pick<
     mixtureTouches: fmtMetric(m.mixtureTouches),
     bacharachSliceReceiptLines: String(m.bacharachSliceReceiptLines),
     receiptsDescribeBehaviours: m.receiptsDescribeBehaviours ? 'true' : 'false',
+    sectionShaping_densityDeltaBMinusA: fmtMetric(m.sectionShaping_densityDeltaBMinusA),
+    sectionShaping_colourDeltaBMinusA: fmtMetric(m.sectionShaping_colourDeltaBMinusA),
+    sectionShaping_openingVsReturnDelta: fmtMetric(m.sectionShaping_openingVsReturnDelta),
+    sectionShaping_returnVariationType: m.sectionShaping_returnVariationType ?? '',
+    sectionShaping_contributingSliceCount: fmtMetric(m.sectionShaping_contributingSliceCount),
+    sectionShaping_returnSummary: m.sectionShaping_returnSummary
+      ? String(m.sectionShaping_returnSummary).slice(0, 200)
+      : '',
   };
 }
 
@@ -177,6 +191,12 @@ export function runSingleBacharachGeneration(
         mixtureTouches: '',
         bacharachSliceReceiptLines: '0',
         receiptsDescribeBehaviours: 'false',
+        sectionShaping_densityDeltaBMinusA: '',
+        sectionShaping_colourDeltaBMinusA: '',
+        sectionShaping_openingVsReturnDelta: '',
+        sectionShaping_returnVariationType: '',
+        sectionShaping_contributingSliceCount: '',
+        sectionShaping_returnSummary: '',
       };
 
   return {
@@ -221,6 +241,12 @@ export function emptyBacharachEvalRow(
     mixtureTouches: '',
     bacharachSliceReceiptLines: '0',
     receiptsDescribeBehaviours: 'false',
+    sectionShaping_densityDeltaBMinusA: '',
+    sectionShaping_colourDeltaBMinusA: '',
+    sectionShaping_openingVsReturnDelta: '',
+    sectionShaping_returnVariationType: '',
+    sectionShaping_contributingSliceCount: '',
+    sectionShaping_returnSummary: '',
     bacharachGceScore: '',
     flagSmoothWin: '',
     flagBridgeContrast: '',

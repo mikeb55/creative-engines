@@ -3,6 +3,10 @@
  */
 
 import { chordColourDepth } from '../../core/song-mode/sophisticatedPopHarmonyDressing';
+import {
+  readSongModeSectionShapingDiagnosticsFromManifestRoot,
+  type SongModeSectionShapingDiagnosticsEvalSnapshot,
+} from './songModeSectionShapingDiagnosticsReader';
 
 export type StyleEvalArm = 'neutral_ecm' | 'soph_pop';
 
@@ -23,6 +27,7 @@ export interface ParsedSophPopManifest {
   songwriterSyncopationBias: number | null;
   songwriterDensityBias: number | null;
   manifestBehaviourGates: boolean | null;
+  songModeSectionShapingDiagnostics: SongModeSectionShapingDiagnosticsEvalSnapshot;
   parseError?: string;
 }
 
@@ -87,6 +92,7 @@ export function parseManifestJsonForSophPopEval(raw: string): ParsedSophPopManif
       songwriterSyncopationBias: typeof j.songwriterSyncopationBias === 'number' ? j.songwriterSyncopationBias : null,
       songwriterDensityBias: typeof j.songwriterDensityBias === 'number' ? j.songwriterDensityBias : null,
       manifestBehaviourGates: gates,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot(j),
     };
   } catch (e) {
     return {
@@ -98,6 +104,7 @@ export function parseManifestJsonForSophPopEval(raw: string): ParsedSophPopManif
       songwriterSyncopationBias: null,
       songwriterDensityBias: null,
       manifestBehaviourGates: null,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot({}),
       parseError: e instanceof Error ? e.message : String(e),
     };
   }
@@ -151,11 +158,18 @@ export interface StyleEvalMetrics {
   syncBias: number | null;
   densityBias: number | null;
   sophPopReceiptsPresent: boolean;
+  sectionShaping_densityDeltaBMinusA: number | null;
+  sectionShaping_colourDeltaBMinusA: number | null;
+  sectionShaping_openingVsReturnDelta: number | null;
+  sectionShaping_returnVariationType: string | null;
+  sectionShaping_contributingSliceCount: number | null;
+  sectionShaping_returnSummary: string | null;
 }
 
 export function metricsFromParsedManifest(p: ParsedSophPopManifest): StyleEvalMetrics {
   const bars = p.parsedBars;
   const diag = p.sophisticatedPopHarmonyDiagnostics;
+  const ssd = p.songModeSectionShapingDiagnostics;
   const notes = p.songModeStyleSurfaceNotes ?? [];
   const sophReceipt =
     notes.some(
@@ -164,17 +178,25 @@ export function metricsFromParsedManifest(p: ParsedSophPopManifest): StyleEvalMe
         l.includes('Sophisticated Pop') ||
         l.includes('sophisticated pop')
     );
+  const sectionContrastDelta = ssd?.colourDeltaBMinusA ?? diag?.sectionContrastDelta ?? null;
+  const openingReturnDelta = ssd?.openingVsReturnDelta ?? openingReturnColourDelta(bars);
   return {
     extChordRatio: extendedChordRatioFromBars(bars),
     meanColourNorm: meanColourDepthNormalized(bars),
     nonDiatonicCount: nonDiatonicChordHeuristicCount(bars),
-    sectionContrastDelta: diag?.sectionContrastDelta ?? null,
+    sectionContrastDelta,
     densityColourA: diag?.meanColourDepthSectionA ?? null,
     densityColourB: diag?.meanColourDepthSectionB ?? null,
-    openingReturnDelta: openingReturnColourDelta(bars),
+    openingReturnDelta,
     syncBias: p.songwriterSyncopationBias,
     densityBias: p.songwriterDensityBias,
     sophPopReceiptsPresent: sophReceipt,
+    sectionShaping_densityDeltaBMinusA: ssd?.densityDeltaBMinusA ?? null,
+    sectionShaping_colourDeltaBMinusA: ssd?.colourDeltaBMinusA ?? null,
+    sectionShaping_openingVsReturnDelta: ssd?.openingVsReturnDelta ?? null,
+    sectionShaping_returnVariationType: ssd?.returnVariationType ?? null,
+    sectionShaping_contributingSliceCount: ssd?.contributingSliceCount ?? null,
+    sectionShaping_returnSummary: ssd?.returnVariationSummary ?? null,
   };
 }
 
@@ -196,15 +218,17 @@ export function computeGceStyleScore(
     soph.extChordRatio > neutral.extChordRatio + 1e-6;
 
   const sectionContrastLift =
+    (soph.sectionShaping_colourDeltaBMinusA != null && soph.sectionShaping_colourDeltaBMinusA > 0.05) ||
     (soph.sectionContrastDelta != null && soph.sectionContrastDelta > 0.05) ||
     (soph.densityColourB != null &&
       soph.densityColourA != null &&
       soph.densityColourB > soph.densityColourA + 0.02);
 
   const returnVariationLift =
-    neutral.openingReturnDelta != null &&
-    soph.openingReturnDelta != null &&
-    soph.openingReturnDelta > neutral.openingReturnDelta + 0.02;
+    (neutral.openingReturnDelta != null &&
+      soph.openingReturnDelta != null &&
+      soph.openingReturnDelta > neutral.openingReturnDelta + 0.02) ||
+    (soph.sectionShaping_returnVariationType != null && soph.sectionShaping_returnVariationType !== 'none');
 
   const receiptsPresent = soph.sophPopReceiptsPresent;
 
@@ -237,6 +261,12 @@ export interface StyleEvalCsvRow {
   syncBias: string;
   densityBias: string;
   receiptsSophPop: string;
+  sectionShaping_densityDeltaBMinusA: string;
+  sectionShaping_colourDeltaBMinusA: string;
+  sectionShaping_openingVsReturnDelta: string;
+  sectionShaping_returnVariationType: string;
+  sectionShaping_contributingSliceCount: string;
+  sectionShaping_returnSummary: string;
   gceStyleScore: string;
 }
 
@@ -257,6 +287,12 @@ export const SOPH_POP_EVAL_CSV_HEADERS = [
   'syncBias',
   'densityBias',
   'receiptsSophPop',
+  'sectionShaping_densityDeltaBMinusA',
+  'sectionShaping_colourDeltaBMinusA',
+  'sectionShaping_openingVsReturnDelta',
+  'sectionShaping_returnVariationType',
+  'sectionShaping_contributingSliceCount',
+  'sectionShaping_returnSummary',
   'gceStyleScore',
 ] as const;
 

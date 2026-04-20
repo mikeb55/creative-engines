@@ -8,6 +8,10 @@ import {
   type SophisticatedPopSectionKind,
 } from '../../core/song-mode/sophisticatedPopHarmonyDressing';
 import { nonDiatonicChordHeuristicCount, openingReturnColourDelta } from './sophisticatedPopStyleEvalCore';
+import {
+  readSongModeSectionShapingDiagnosticsFromManifestRoot,
+  type SongModeSectionShapingDiagnosticsEvalSnapshot,
+} from './songModeSectionShapingDiagnosticsReader';
 
 export type BacharachEvalArm = 'neutral' | 'bacharach';
 
@@ -31,6 +35,7 @@ export interface ParsedBacharachManifest {
   songwriterSyncopationBias: number | null;
   songwriterDensityBias: number | null;
   manifestBehaviourGates: boolean | null;
+  songModeSectionShapingDiagnostics: SongModeSectionShapingDiagnosticsEvalSnapshot;
   parseError?: string;
 }
 
@@ -82,6 +87,7 @@ export function parseManifestJsonForBacharachEval(raw: string): ParsedBacharachM
       songwriterSyncopationBias: typeof j.songwriterSyncopationBias === 'number' ? j.songwriterSyncopationBias : null,
       songwriterDensityBias: typeof j.songwriterDensityBias === 'number' ? j.songwriterDensityBias : null,
       manifestBehaviourGates: gates,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot(j),
     };
   } catch (e) {
     return {
@@ -93,6 +99,7 @@ export function parseManifestJsonForBacharachEval(raw: string): ParsedBacharachM
       songwriterSyncopationBias: null,
       songwriterDensityBias: null,
       manifestBehaviourGates: null,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot({}),
       parseError: e instanceof Error ? e.message : String(e),
     };
   }
@@ -178,6 +185,12 @@ export interface BacharachEvalMetrics {
   secondaryDominantTouchesDiag: number | null;
   bacharachSliceReceiptLines: number;
   receiptsDescribeBehaviours: boolean;
+  sectionShaping_densityDeltaBMinusA: number | null;
+  sectionShaping_colourDeltaBMinusA: number | null;
+  sectionShaping_openingVsReturnDelta: number | null;
+  sectionShaping_returnVariationType: string | null;
+  sectionShaping_contributingSliceCount: number | null;
+  sectionShaping_returnSummary: string | null;
 }
 
 function meanColourForKinds(bars: string[], totalBars: number, kinds: SophisticatedPopSectionKind[]): number | null {
@@ -193,10 +206,11 @@ function meanColourForKinds(bars: string[], totalBars: number, kinds: Sophistica
 export function metricsFromParsedBacharachManifest(p: ParsedBacharachManifest): BacharachEvalMetrics {
   const bars = p.parsedBars;
   const diag = p.bacharachHarmonyDiagnostics;
+  const ssd = p.songModeSectionShapingDiagnostics;
   const totalBars = bars?.length ?? 0;
 
-  let colourBMinusA: number | null = null;
-  if (bars && totalBars >= 8) {
+  let colourBMinusA: number | null = ssd?.colourDeltaBMinusA ?? null;
+  if (colourBMinusA == null && bars && totalBars >= 8) {
     const meanA = meanColourForKinds(bars, totalBars, ['A', 'A_prime', 'single']);
     const meanB = meanColourForKinds(bars, totalBars, ['B']);
     if (meanA != null && meanB != null) colourBMinusA = meanB - meanA;
@@ -230,6 +244,9 @@ export function metricsFromParsedBacharachManifest(p: ParsedBacharachManifest): 
     secDomTotal = bars.reduce((acc, c) => acc + dominantSevenHitsInBar(c), 0);
   }
 
+  const openingReturnDelta = ssd?.openingVsReturnDelta ?? openingReturnColourDelta(bars);
+  const sectionContrastDelta = ssd?.colourDeltaBMinusA ?? diag?.sectionContrastDelta ?? null;
+
   return {
     smoothMaj7M7Ratio: smoothMaj7M7RatioFromBars(bars),
     secDomTotal,
@@ -237,14 +254,20 @@ export function metricsFromParsedBacharachManifest(p: ParsedBacharachManifest): 
     safeNonDiatonicTotal: safeNonDiatonicMovesCount(bars),
     nonDiatonicBMinusA,
     colourBMinusA,
-    openingReturnDelta: openingReturnColourDelta(bars),
-    sectionContrastDelta: diag?.sectionContrastDelta ?? null,
+    openingReturnDelta,
+    sectionContrastDelta,
     bridgeColourApplied: diag?.bridgeColourApplied ?? false,
     returnCadenceLiftApplied: diag?.returnCadenceLiftApplied ?? false,
     mixtureTouches: diag?.mixtureTouches ?? null,
     secondaryDominantTouchesDiag: diag?.secondaryDominantTouches ?? null,
     bacharachSliceReceiptLines: sliceLines.length,
     receiptsDescribeBehaviours,
+    sectionShaping_densityDeltaBMinusA: ssd?.densityDeltaBMinusA ?? null,
+    sectionShaping_colourDeltaBMinusA: ssd?.colourDeltaBMinusA ?? null,
+    sectionShaping_openingVsReturnDelta: ssd?.openingVsReturnDelta ?? null,
+    sectionShaping_returnVariationType: ssd?.returnVariationType ?? null,
+    sectionShaping_contributingSliceCount: ssd?.contributingSliceCount ?? null,
+    sectionShaping_returnSummary: ssd?.returnVariationSummary ?? null,
   };
 }
 
@@ -281,6 +304,7 @@ export function computeBacharachGceScore(
     ((bach.secDomBMinusA != null && bach.secDomBMinusA > eps) ||
       (bach.nonDiatonicBMinusA != null && bach.nonDiatonicBMinusA > eps) ||
       (bach.colourBMinusA != null && bach.colourBMinusA > 0.02) ||
+      (bach.sectionShaping_colourDeltaBMinusA != null && bach.sectionShaping_colourDeltaBMinusA > 0.02) ||
       (bach.sectionContrastDelta != null && bach.sectionContrastDelta > 0.05));
 
   const returnVariationVersusNeutral =
@@ -288,7 +312,8 @@ export function computeBacharachGceScore(
       bach.openingReturnDelta != null &&
       bach.openingReturnDelta > neutral.openingReturnDelta + 0.02) ||
     bach.returnCadenceLiftApplied ||
-    (bach.openingReturnDelta != null && bach.openingReturnDelta >= 0.06);
+    (bach.openingReturnDelta != null && bach.openingReturnDelta >= 0.06) ||
+    (bach.sectionShaping_returnVariationType != null && bach.sectionShaping_returnVariationType !== 'none');
 
   const receiptsOk = bach.receiptsDescribeBehaviours;
 
@@ -329,6 +354,12 @@ export interface BacharachEvalCsvRow {
   mixtureTouches: string;
   bacharachSliceReceiptLines: string;
   receiptsDescribeBehaviours: string;
+  sectionShaping_densityDeltaBMinusA: string;
+  sectionShaping_colourDeltaBMinusA: string;
+  sectionShaping_openingVsReturnDelta: string;
+  sectionShaping_returnVariationType: string;
+  sectionShaping_contributingSliceCount: string;
+  sectionShaping_returnSummary: string;
   bacharachGceScore: string;
   flagSmoothWin: string;
   flagBridgeContrast: string;
@@ -356,6 +387,12 @@ export const BACHARACH_EVAL_CSV_HEADERS = [
   'mixtureTouches',
   'bacharachSliceReceiptLines',
   'receiptsDescribeBehaviours',
+  'sectionShaping_densityDeltaBMinusA',
+  'sectionShaping_colourDeltaBMinusA',
+  'sectionShaping_openingVsReturnDelta',
+  'sectionShaping_returnVariationType',
+  'sectionShaping_contributingSliceCount',
+  'sectionShaping_returnSummary',
   'bacharachGceScore',
   'flagSmoothWin',
   'flagBridgeContrast',

@@ -226,6 +226,8 @@ Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to
 
 Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.
 
+**Section-shaping diagnostics:** Song Mode writes a versioned aggregate **`songModeSectionShapingDiagnostics`** on each run manifest (density/colour B−A, opening vs return, return variation, contributing slices). The **Fagen**, **Bacharach**, and **Sophisticated Pop** eval scripts (`eval:fagen`, `eval:bacharach`, `eval:style-soph-pop`) read that field for batch A/B so metrics stay aligned with the engine’s own receipt line, without re-deriving the same numbers from chord-bar strings when the manifest already has them.
+
 From **repository root**:
 
 ```bash

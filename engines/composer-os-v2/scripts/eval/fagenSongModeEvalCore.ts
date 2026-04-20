@@ -3,6 +3,10 @@
  */
 
 import type { GenerationMetadata } from '../../core/compositionContext';
+import {
+  readSongModeSectionShapingDiagnosticsFromManifestRoot,
+  type SongModeSectionShapingDiagnosticsEvalSnapshot,
+} from './songModeSectionShapingDiagnosticsReader';
 
 export type EvalArm = 'fagen' | 'neutral_keys';
 
@@ -14,6 +18,8 @@ export interface ParsedManifestForEval {
   songModeStyleSurfaceNotes: string[] | null;
   /** Optional eval-only extension: >1 pivot bars ⇒ illegal (rule check). */
   fagenSignaturePivotBars: number[] | null;
+  /** Stable aggregate from `finalizeSongModeSectionShaping` (manifest root). */
+  songModeSectionShapingDiagnostics: SongModeSectionShapingDiagnosticsEvalSnapshot;
   parseError?: string;
 }
 
@@ -47,6 +53,7 @@ export function parseManifestJsonContent(raw: string): ParsedManifestForEval {
         ? (j.songModeStyleSurfaceNotes as string[])
         : null,
       fagenSignaturePivotBars,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot(j),
     };
   } catch (e) {
     return {
@@ -56,6 +63,7 @@ export function parseManifestJsonContent(raw: string): ParsedManifestForEval {
       fagenDiagnostics: null,
       songModeStyleSurfaceNotes: null,
       fagenSignaturePivotBars: null,
+      songModeSectionShapingDiagnostics: readSongModeSectionShapingDiagnosticsFromManifestRoot({}),
       parseError: e instanceof Error ? e.message : String(e),
     };
   }
@@ -90,6 +98,13 @@ export interface RunMetricRow {
   passReturnEvolution: boolean;
   /** Heuristic 0–100 */
   fagenQualityEvalScore: number | null;
+  /** Raw manifest `songModeSectionShapingDiagnostics` (stable aggregate). */
+  sectionShaping_densityDeltaBMinusA: number | null;
+  sectionShaping_colourDeltaBMinusA: number | null;
+  sectionShaping_openingVsReturnDelta: number | null;
+  sectionShaping_returnVariationType: string | null;
+  sectionShaping_contributingSliceCount: number | null;
+  sectionShaping_returnSummary: string | null;
 }
 
 function numOrNull(v: unknown): number | null {
@@ -122,6 +137,8 @@ export function buildRowFromManifest(args: {
     manifestContent,
   } = args;
   const parsed = manifestContent ? parseManifestJsonContent(manifestContent) : null;
+  const ssd =
+    parsed?.songModeSectionShapingDiagnostics ?? readSongModeSectionShapingDiagnosticsFromManifestRoot({});
   const manifestBehaviourGates =
     mbgArg !== undefined && mbgArg !== null
       ? mbgArg
@@ -164,13 +181,19 @@ export function buildRowFromManifest(args: {
     );
 
   const passSectionContrast =
+    (ssd?.densityDeltaBMinusA != null && Math.abs(ssd.densityDeltaBMinusA) > 1e-4) ||
+    (ssd?.colourDeltaBMinusA != null && ssd.colourDeltaBMinusA > 0.015) ||
     (syncBMinusA != null && syncBMinusA > 0) ||
     (densBMinusA != null && densBMinusA > 0) ||
     (numOrNull(fd?.densityDeltaBMinusA) != null && (fd?.densityDeltaBMinusA ?? 0) > 0);
 
-  const openRet = fd?.openingVsReturnRhMeanDelta;
+  const openRetManifest = ssd?.openingVsReturnDelta;
+  const openRetFagen = fd?.openingVsReturnRhMeanDelta;
   const passReturnEvolution =
-    (typeof openRet === 'number' && Math.abs(openRet) > 0.25) ||
+    (typeof openRetManifest === 'number' && Math.abs(openRetManifest) > 0.25) ||
+    (typeof openRetFagen === 'number' && Math.abs(openRetFagen) > 0.25) ||
+    (!!ssd?.returnVariationSummary && ssd.returnVariationSummary.length > 3) ||
+    (!!ssd?.returnVariationType && ssd.returnVariationType !== 'none') ||
     (!!fd?.returnVariationSummary && fd.returnVariationSummary.length > 3);
 
   const score =
@@ -182,8 +205,11 @@ export function buildRowFromManifest(args: {
           signatureRuleOk,
           receiptLineCount,
           hasDiagnostics: !!fd,
+          sectionShapingOpeningVsReturn: ssd?.openingVsReturnDelta ?? null,
         })
       : null;
+
+  const returnSummaryEff = ssd?.returnVariationSummary ?? fd?.returnVariationSummary ?? null;
 
   return {
     arm,
@@ -198,9 +224,9 @@ export function buildRowFromManifest(args: {
     syncBMinusA,
     densBMinusA,
     meanSyncopationIndex: numOrNull(fd?.meanSyncopationIndex),
-    openingVsReturnRhMeanDelta: numOrNull(fd?.openingVsReturnRhMeanDelta),
-    densityDeltaBMinusAMeta: numOrNull(fd?.densityDeltaBMinusA),
-    returnVariationSummary: fd?.returnVariationSummary ?? null,
+    openingVsReturnRhMeanDelta: openRetManifest ?? numOrNull(fd?.openingVsReturnRhMeanDelta),
+    densityDeltaBMinusAMeta: ssd?.densityDeltaBMinusA ?? numOrNull(fd?.densityDeltaBMinusA),
+    returnVariationSummary: returnSummaryEff,
     signatureApplied: sig?.applied ?? null,
     signaturePivotBar: sig?.pivotBar ?? null,
     signatureRuleOk,
@@ -210,6 +236,12 @@ export function buildRowFromManifest(args: {
     passSectionContrast,
     passReturnEvolution,
     fagenQualityEvalScore: score,
+    sectionShaping_densityDeltaBMinusA: ssd?.densityDeltaBMinusA ?? null,
+    sectionShaping_colourDeltaBMinusA: ssd?.colourDeltaBMinusA ?? null,
+    sectionShaping_openingVsReturnDelta: ssd?.openingVsReturnDelta ?? null,
+    sectionShaping_returnVariationType: ssd?.returnVariationType ?? null,
+    sectionShaping_contributingSliceCount: ssd?.contributingSliceCount ?? null,
+    sectionShaping_returnSummary: ssd?.returnVariationSummary ?? null,
   };
 }
 
@@ -220,6 +252,8 @@ export function computeFagenQualityScore(input: {
   signatureRuleOk: boolean;
   receiptLineCount: number | null;
   hasDiagnostics: boolean;
+  /** Manifest aggregate opening vs return (same field Song Mode writes to section diagnostics). */
+  sectionShapingOpeningVsReturn?: number | null;
 }): number {
   let s = 0;
   const fd = input.fd;
@@ -228,6 +262,7 @@ export function computeFagenQualityScore(input: {
 
   if (input.passReturnEvolution) s += 22;
   else if (typeof fd?.openingVsReturnRhMeanDelta === 'number') s += 8;
+  else if (typeof input.sectionShapingOpeningVsReturn === 'number') s += 8;
 
   const mot = fd?.avgInnerMotionSemitonesV2Top;
   if (typeof mot === 'number' && mot >= 1.2) s += 15;
@@ -305,6 +340,12 @@ export const FAGEN_EVAL_CSV_HEADERS = [
   'passSectionContrast',
   'passReturnEvolution',
   'fagenQualityEvalScore',
+  'sectionShaping_densityDeltaBMinusA',
+  'sectionShaping_colourDeltaBMinusA',
+  'sectionShaping_openingVsReturnDelta',
+  'sectionShaping_returnVariationType',
+  'sectionShaping_contributingSliceCount',
+  'sectionShaping_returnSummary',
 ] as const;
 
 export function rowToCsvRecord(r: RunMetricRow): Record<string, string | number | boolean> {
@@ -333,6 +374,14 @@ export function rowToCsvRecord(r: RunMetricRow): Record<string, string | number 
     passSectionContrast: r.passSectionContrast,
     passReturnEvolution: r.passReturnEvolution,
     fagenQualityEvalScore: r.fagenQualityEvalScore ?? '',
+    sectionShaping_densityDeltaBMinusA: r.sectionShaping_densityDeltaBMinusA ?? '',
+    sectionShaping_colourDeltaBMinusA: r.sectionShaping_colourDeltaBMinusA ?? '',
+    sectionShaping_openingVsReturnDelta: r.sectionShaping_openingVsReturnDelta ?? '',
+    sectionShaping_returnVariationType: r.sectionShaping_returnVariationType ?? '',
+    sectionShaping_contributingSliceCount: r.sectionShaping_contributingSliceCount ?? '',
+    sectionShaping_returnSummary: r.sectionShaping_returnSummary
+      ? String(r.sectionShaping_returnSummary).slice(0, 200)
+      : '',
   };
 }
 

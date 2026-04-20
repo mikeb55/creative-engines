@@ -133,6 +133,14 @@ function runOne(
     syncBias: fmt(m?.syncBias ?? null),
     densityBias: fmt(m?.densityBias ?? null),
     receiptsSophPop: m?.sophPopReceiptsPresent ? 'true' : 'false',
+    sectionShaping_densityDeltaBMinusA: fmt(m?.sectionShaping_densityDeltaBMinusA ?? null),
+    sectionShaping_colourDeltaBMinusA: fmt(m?.sectionShaping_colourDeltaBMinusA ?? null),
+    sectionShaping_openingVsReturnDelta: fmt(m?.sectionShaping_openingVsReturnDelta ?? null),
+    sectionShaping_returnVariationType: m?.sectionShaping_returnVariationType ?? '',
+    sectionShaping_contributingSliceCount: fmt(m?.sectionShaping_contributingSliceCount ?? null),
+    sectionShaping_returnSummary: m?.sectionShaping_returnSummary
+      ? String(m.sectionShaping_returnSummary).slice(0, 200)
+      : '',
     gceStyleScore: '',
     manifestRaw,
   };
@@ -160,6 +168,12 @@ function emptyRow(
     syncBias: '',
     densityBias: '',
     receiptsSophPop: 'false',
+    sectionShaping_densityDeltaBMinusA: '',
+    sectionShaping_colourDeltaBMinusA: '',
+    sectionShaping_openingVsReturnDelta: '',
+    sectionShaping_returnVariationType: '',
+    sectionShaping_contributingSliceCount: '',
+    sectionShaping_returnSummary: '',
     gceStyleScore: '',
     manifestRaw: null,
   };

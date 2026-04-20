@@ -1,3 +1,9 @@
+## [2026-04-20] Song Mode eval harnesses — section-shaping diagnostics from manifests
+
+- **Shared reader:** `engines/composer-os-v2/scripts/eval/songModeSectionShapingDiagnosticsReader.ts` — reads **`songModeSectionShapingDiagnostics`** from manifest JSON (tolerant of missing fields; no hard throw on shape).
+- **Fagen / Bacharach / Sophisticated Pop batch evals** now surface those diagnostics in CSV (new `sectionShaping_*` columns) and prefer them for **B vs A colour**, **opening vs return**, and related **GCE-style flags** where they replace ad-hoc chord-slice recomputation. **`fagenSongModeEvalCore`** also prefers manifest aggregates for density/opening-return columns when present.
+- **Tests:** `engines/composer-os-v2/tests/songModeSectionShapingDiagnosticsReader.test.ts` (Jest).
+
 ## [2026-04-21] ECM Chamber — automated texture eval (symbolic)
 
 - **Metrics module:** `engines/composer-os-v2/core/ecm/ecmChamberTextureMetrics.ts` — per-bar **bass/comp sounding coverage** (voice 1, finite MIDI only), half-bar splits, **double-dense** / **bass-only** / **comp-only** / **space** bar counts and ratios, **register span** + **gapGlobal** (`compMin ? bassMax`), **gapPerPhrase** (8-bar windows), **phrase-edge** thinning/silence flags (bars 8, 16, …).
