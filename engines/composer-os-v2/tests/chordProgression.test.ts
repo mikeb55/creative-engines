@@ -152,7 +152,7 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
   tests.push({
     name: 'harmonyMode builtin ignores chordProgressionText',
     ok: (() => {
-      const r = runGoldenPath(9, {
+      const r = runGoldenPath(0, {
         harmonyMode: 'builtin',
         chordProgressionText: 'Em7 | Em7 | Em7 | Em7 | Em7 | Em7 | Em7 | Em7',
       });
@@ -320,7 +320,7 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
         'Dm9 | G/B | Cmaj7/E | A7/C# | Dm9 | G13 | Cmaj9 | A7alt';
       const parsed = parseChordProgressionInput(text);
       if (!parsed.ok) return false;
-      const r = runGoldenPath(88, { harmonyMode: 'custom', chordProgressionText: text });
+      const r = runGoldenPath(0, { harmonyMode: 'custom', chordProgressionText: text });
       if (!r.success || !r.xml) return false;
       const g = r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
       if (!g) return false;
