@@ -1,3 +1,21 @@
+## [2026-04-20] 64-bar fix + Melodic Identity interval bias
+
+### What changed
+- customLockedHarmonyRouting.ts: replaced [8,16,32]
+  literal check with isAllowedSongFormBarCount()
+  — 64-bar Song Mode now generates successfully
+- generateGoldenPathDuoScore.ts: added intervalClassWeight
+  and leap recovery bias to nearestMidiPitch selection
+  — melody now favors stepwise motion over wide leaps
+
+### Results
+- 64-bar generation: confirmed working (64/64 bars)
+- Melodic Identity scores improved across all styles:
+  shorter 5.0->6.0, bacharach 5.0->5.8,
+  fagen 4.9->5.7, barry_harris 4.9->5.7
+- Interval balance: 0.0->5.0-6.9 across styles
+- Overall GCE: 8.2-8.4/10 maintained
+
 ## [2026-04-19] Final GCE benchmark (docs)
 
 - `GCE_FRAMEWORK_V2.md`: Final Benchmark table (seed 50021), all presets 7.9?8.4, universal weakest **Melodic Identity**.

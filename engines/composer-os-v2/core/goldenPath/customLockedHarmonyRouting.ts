@@ -111,9 +111,9 @@ export function assertCustomLockedBeforeScoreGeneration(
   const locked = context.lockedHarmonyBarsRaw;
   const wire = options.lockedHarmonyBarsRaw ?? options.parsedChordBars;
   const n = wire?.length ?? 0;
-  if (!locked || ![8, 16, 32].includes(locked.length) || !wire || wire.length !== n || locked.length !== n) {
+  if (!locked || !isAllowedSongFormBarCount(locked.length) || !wire || wire.length !== n || locked.length !== n) {
     throw new Error(
-      'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires matching 8/16/32 bars in both context.lockedHarmonyBarsRaw and options.'
+      'CUSTOM HARMONY NOT REACHING GOLDEN PATH: custom_locked requires matching allowed song-form bar counts in both context.lockedHarmonyBarsRaw and options.'
     );
   }
   for (let i = 0; i < n; i++) {

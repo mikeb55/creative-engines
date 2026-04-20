@@ -760,7 +760,13 @@ function applyFagenMajorMuColourToMeasure(
     const sb = e.startBeat ?? 0;
     if (sb < 0.375) continue;
     if (seededUnit(seed, bar, 88460 + salt++) > muBias * 0.38) continue;
-    e.pitch = nearestMidiPitch(e.pitch, [ninthMidi, tones.third, tones.seventh], low, high);
+    e.pitch = nearestMidiPitch(
+      e.pitch,
+      [ninthMidi, tones.third, tones.seventh],
+      low,
+      high,
+      previousIntervalIntoNote(m, e)
+    );
   }
 }
 
@@ -792,7 +798,13 @@ function applyFagenLydianSharpElevenNudge(
     if (seededUnit(seed, bar, 88470 + salt++) > lydianBias * 0.45) continue;
     const cur = e.pitch;
     const candidates = [cur + 1, cur - 11, cur + 13];
-    e.pitch = nearestMidiPitch(cur, candidates.map((c) => clampPitch(c, low, high)), low, high);
+    e.pitch = nearestMidiPitch(
+      cur,
+      candidates.map((c) => clampPitch(c, low, high)),
+      low,
+      high,
+      previousIntervalIntoNote(m, e)
+    );
     if (((e.pitch % 12) + 12) % 12 === sharp11Pc) applied++;
   }
 }
@@ -823,17 +835,63 @@ function fagenAlteredCandidateMidis(
   return [tones.third, tones.seventh, nineChoice, thirteenChoice];
 }
 
-function nearestMidiPitch(target: number, candidates: number[], low: number, high: number): number {
+function intervalClassWeight(semitones: number): number {
+  const abs = Math.abs(semitones);
+  if (abs <= 2) return 1.0;
+  if (abs <= 4) return 0.55;
+  if (abs <= 7) return 0.22;
+  if (abs <= 9) return 0.06;
+  return 0.02;
+}
+
+function previousIntervalIntoNote(
+  measure: MeasureModel,
+  note: NoteEvent
+): { semitones: number; direction: -1 | 0 | 1 } | undefined {
+  const v1 = measure.events
+    .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1)
+    .sort((a, b) => a.startBeat - b.startBeat);
+  const idx = v1.indexOf(note);
+  if (idx <= 0) return undefined;
+  const prev = v1[idx - 1];
+  if (!prev) return undefined;
+  const delta = note.pitch - prev.pitch;
+  return {
+    semitones: Math.abs(delta),
+    direction: delta > 0 ? 1 : delta < 0 ? -1 : 0,
+  };
+}
+
+function nearestMidiPitch(
+  target: number,
+  candidates: number[],
+  low: number,
+  high: number,
+  previousInterval?: { semitones: number; direction: -1 | 0 | 1 }
+): number {
   const safe = candidates.filter((c) => Number.isFinite(c));
   if (safe.length === 0) return clampPitch(target, low, high);
   let best = clampPitch(safe[0]!, low, high);
-  let bestDist = Infinity;
+  let bestScore = -Infinity;
   for (const c0 of safe) {
     for (const o of [-24, -12, 0, 12, 24]) {
       const c = clampPitch(c0 + o, low, high);
-      const d = Math.abs(c - target);
-      if (d < bestDist) {
-        bestDist = d;
+      const delta = c - target;
+      const distance = Math.abs(delta);
+      let score = intervalClassWeight(delta) / (1 + distance);
+      if (
+        previousInterval &&
+        previousInterval.semitones > 5 &&
+        previousInterval.direction !== 0 &&
+        distance <= 2
+      ) {
+        const candidateDirection: -1 | 0 | 1 = delta > 0 ? 1 : delta < 0 ? -1 : 0;
+        if (candidateDirection === -previousInterval.direction) {
+          score *= 1.3;
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
         best = c;
       }
     }
@@ -957,7 +1015,7 @@ function applyDonaldFagenGuitarBarPasses(
       const pc = ((e.pitch % 12) + 12) % 12;
       if (pc !== rootPc && pc !== fifthPc) continue;
       if (seededUnit(seed, bar, 88420 + noteSalt++) > 0.55) continue;
-      e.pitch = nearestMidiPitch(e.pitch, alts, low, high);
+      e.pitch = nearestMidiPitch(e.pitch, alts, low, high, previousIntervalIntoNote(m, e));
     }
   }
 
@@ -974,7 +1032,7 @@ function applyDonaldFagenGuitarBarPasses(
       const pc = ((e.pitch % 12) + 12) % 12;
       if (pc !== rootPc) continue;
       if (seededUnit(seed, bar, 88430 + salt++) >= biases.fagenRootAvoidanceMelody) continue;
-      e.pitch = nearestMidiPitch(e.pitch, candidates37, low, high);
+      e.pitch = nearestMidiPitch(e.pitch, candidates37, low, high, previousIntervalIntoNote(m, e));
     }
   }
 
@@ -1021,7 +1079,7 @@ function applyBacharachGuitarBarPasses(
       if (pc !== rootPc) continue;
       if (seededUnit(seed, bar, 99301) >= biases.bacharachCadentialAmbiguity) continue;
       const candidates = [tones.third, secondMidi];
-      e.pitch = nearestMidiPitch(e.pitch, candidates, low, high);
+      e.pitch = nearestMidiPitch(e.pitch, candidates, low, high, previousIntervalIntoNote(m, e));
     }
   }
 
