@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { normalizeChordSymbolsForEra } from '../core/harmony/eraChordNormalizer';
+import { buildEcmChamberTextureEvalRun } from '../core/ecm/ecmChamberTextureMetrics';
+import { meanEcmTextureScore, parseEcmTextureEvalJsonLines } from '../core/gce/ecmTextureEvalJson';
 
 function testEcmBarCount(): number {
   const result = runGoldenPath(50021, {
@@ -57,11 +59,36 @@ function testNonEcmRegression(): void {
   console.log('Test 4 PASS: non-ECM unaffected');
 }
 
+function testEcmChamberTextureMetricsAndGceJson(): void {
+  const r = runGoldenPath(50021, {
+    presetId: 'ecm_chamber',
+    totalBars: 32,
+    bpm: 100,
+    longFormEnabled: true,
+  });
+  assert.ok(r.score, 'score for texture metrics');
+  const row = buildEcmChamberTextureEvalRun(50021, 32, r.score!);
+  assert.equal(row.preset, 'ecm_chamber');
+  assert.equal(row.totalBars, 32);
+  assert.equal(row.metrics.totalBars, 32);
+  assert.ok(row.metrics.perBar.length === 32);
+  assert.ok(row.ecmTextureScore >= 0 && row.ecmTextureScore <= 10);
+  if (row.metrics.gapGlobal !== null) {
+    assert.ok(Number.isFinite(row.metrics.gapGlobal));
+  }
+  const line = `${JSON.stringify(row)}\n${JSON.stringify({ note: 'not-a-texture-run' })}`;
+  const parsed = parseEcmTextureEvalJsonLines(line);
+  assert.equal(parsed.length, 1);
+  assert.equal(meanEcmTextureScore(parsed), row.ecmTextureScore);
+  console.log('Test 5 PASS: ECM chamber texture metrics + GCE JSON ingest');
+}
+
 function main(): void {
   testEcmBarCount();
   testEcmBassLoopSafety();
   testEraNormalizationRegression();
   testNonEcmRegression();
+  testEcmChamberTextureMetricsAndGceJson();
 }
 
 main();

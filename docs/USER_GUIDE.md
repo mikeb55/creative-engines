@@ -66,6 +66,7 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 
 - **Era vocabulary:** from repo root, `cd engines/composer-os-v2` then **`npm run verify:eras`** — asserts era-normalized chord output on the fixed `song_mode_shorter` fixture.
 - **Big Band arranging:** **`npm run test:big-band-arranging`** — five seeds, deterministic **8-bar** sax soli in **17–24**, brass tacet there, end-window brass activity sanity.
+- **ECM Chamber texture (symbolic, no audio):** **`npm run eval:ecm-texture`** (repo root or `engines/composer-os-v2`) — golden-path **ECM Chamber** runs on fixed seeds; each line is JSON with **how busy bass vs guitar are per bar**, **bass vs treble register separation**, **phrase-end** comp thinning/silence hints, and a single **`ecmTextureScore`** (0–10). Use after ECM arrangement/orchestration edits instead of ad-hoc listening alone. **`npm run test:ecm`** stays the fast stability bar for ECM.
 
 ---
 
@@ -292,6 +293,7 @@ When changing **Guitar–Bass Duo**, **Duo (Single-Line)**, **Wyble Voice 2**, o
    - `npm run test:bass`
    - `npm run test:vocal`
    - `npm run test:composer-os-regression`
+   - **ECM Chamber only:** `npm run test:ecm` (under `engines/composer-os-v2`) — bar count, repeat-run sanity, era smoke, non-ECM control, **texture-eval JSON shape** / score range.
 3. **Or** from the **repository root**:  
    `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-baseline-composer-os-v2.ps1`  
    (add `-IncludeRunAll` only if you intentionally want the long full `npm test`.)

@@ -21,7 +21,10 @@ import {
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 
-/** Raw preset runs — seed 50021, 32 bars, 100 bpm; no songwriter / Song Mode hook flags. */
+/**
+ * Raw preset runs — seed 50021, 32 bars, 100 bpm; no songwriter / Song Mode hook flags.
+ * ECM Chamber symbolic texture (register / density / phrase-edge): `npm run eval:ecm-texture` in composer-os-v2.
+ */
 const GCE_EVAL_PRESETS = [
   'guitar_bass_duo',
   'guitar_bass_duo_single_line',

@@ -1,3 +1,13 @@
+## [2026-04-21] ECM Chamber — automated texture eval (symbolic)
+
+- **Metrics module:** `engines/composer-os-v2/core/ecm/ecmChamberTextureMetrics.ts` — per-bar **bass/comp sounding coverage** (voice 1, finite MIDI only), half-bar splits, **double-dense** / **bass-only** / **comp-only** / **space** bar counts and ratios, **register span** + **gapGlobal** (`compMin ? bassMax`), **gapPerPhrase** (8-bar windows), **phrase-edge** thinning/silence flags (bars 8, 16, …).
+- **Score:** **`ecmTextureScore`** (0–10) from explicit gap/density/space/phrase-edge rules (pragmatic heuristic, not GCE).
+- **Probe:** `npm run probe:ecm-arrangement` (from `engines/composer-os-v2`) emits **one JSON line per run** (same shape as eval).
+- **Batch CLI:** `npm run eval:ecm-texture` — fixed seeds + 24/32 bars; **JSON line per run** + **summary JSON** (means + delta vs baseline constant). Wired in **`engines/composer-os-v2/package.json`** and repo **`package.json`** (`npm --prefix engines/composer-os-v2 run eval:ecm-texture` or root alias).
+- **GCE ingest helper:** `engines/composer-os-v2/core/gce/ecmTextureEvalJson.ts` — parse stdout JSON lines, **`meanEcmTextureScore`** for future gates.
+- **Tests:** `npm run test:ecm` includes texture **output shape**, score **0–10** range, JSON-line filter smoke.
+- **Docs / pointers:** `gceStyleEval.ts` comment ? **`eval:ecm-texture`**; README + USER_GUIDE + roadmap updated for discoverability.
+
 ## [2026-04-20] Composer OS handoff — ECM, Era, Motif Authority, Big Band arranging
 
 End-state summary for assistants (detail also in dated sections below).

@@ -16,7 +16,7 @@ Composer OS turns your settings ? **mode** (preset), tempo, harmony, form, and o
 
 - **Eight Generate modes:** Guitar?Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator.
 - **Songwriter styles include Pat Metheny** for Song Mode (ECM-era open voicings, Lydian/add9 colors, lyrical phrase bias).
-- **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes; GCE benchmark **7.8/10** (weakest pillar: Arrangement & Orchestration).
+- **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes; GCE benchmark **7.8/10** (weakest pillar: Arrangement & Orchestration). **Symbolic texture check (developers):** from repo root or `engines/composer-os-v2`, run **`npm run eval:ecm-texture`** — prints **per-run JSON** (density, register gap, phrase-edge thinning/silence, **`ecmTextureScore`**) plus a **short mean summary** for fixed seeds/bar counts (no audio).
 - **Big Band** now includes a deterministic **8-bar sax soli window (bars 17–24)** with alto and tenor leading, **brass tacet** in that window, **cadence brass punches** elsewhere, and a **shout fragment** near the end (`npm run test:big-band-arranging`).
 - **Extended form lengths:** 48 and 64 bars are available in Song Mode and Guitar-Bass Duo paths.
 - **All 7 era options now alter harmonic vocabulary** (swing, bebop, cool_jazz, hard_bop, post_bop, fusion, contemporary) via profile bias **and** post-generation **chord-symbol normalization** on the Song Mode hook path (`npm run verify:eras`).

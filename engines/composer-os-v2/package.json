@@ -25,6 +25,8 @@
     "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts",
     "verify:eras": "ts-node scripts/eraVerification.ts",
     "test:ecm": "ts-node scripts/testEcmStability.ts",
+    "probe:ecm-arrangement": "ts-node scripts/ecmArrangementProbe.ts",
+    "eval:ecm-texture": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/ecmChamberTextureEval.ts",
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts"
   },

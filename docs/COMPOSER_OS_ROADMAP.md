@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-20]
+# Composer OS Roadmap [2026-04-21]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -59,7 +59,7 @@
 
 - **V9.0 chord baseline:** unified parsing/normalization (#19); Sibelius-safe MusicXML rhythm (undotted decomposition); multi-voice export discipline.
 - **Golden Path:** Guitar–Bass Duo 8-bar default; 16/32-bar long-form; optional modulation planning for 32-bar route. **Wyble (2026-04-17):** portable `wybleVoiceLayout` on duo `GenerationMetadata` nudges **bar 1 first bass** pitch when the duo-family static map matches (`duoWybleBassAnchorNudge.ts` — not full Wyble counterpoint).
-- **ECM Chamber:** full MusicXML golden path (`ecm_chamber`), Metheny vs Schneider feel scoring, ECM-specific style stack.
+- **ECM Chamber:** full MusicXML golden path (`ecm_chamber`), Metheny vs Schneider feel scoring, ECM-specific style stack. **Symbolic texture-eval harness (2026-04-21):** `ecmChamberTextureMetrics.ts`, **`npm run eval:ecm-texture`** / **`probe:ecm-arrangement`** (JSON lines + **`ecmTextureScore`** 0–10) — use to guide **arrangement / orchestration** iteration; not a substitute for full GCE listening review.
 - **Research backlog (not implemented yet):** Perplexity research bundle **ECM, Bacharach, Barry Harris** — local file `c:\Users\mike\Documents\Perplexity Research\ECM_Bacharach_BarryHarris_Research.md`. **When refreshing this roadmap or extending ECM chamber feel, pop songcraft, or jazz pedagogy-style harmony in-app,** use it as a reference; assistants should remind the user to implement from this source when roadmap discussions touch those areas.
 - **Key signatures (V3.4):** infer / override / hide from harmony API.
 
