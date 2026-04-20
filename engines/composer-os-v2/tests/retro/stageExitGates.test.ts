@@ -210,7 +210,7 @@ function testSongModeLeadMelodyGatePasses(): boolean {
 
 function testBigBandRealisationExportGatePasses(): boolean {
   const r = runBigBandRealisation({ seed: 9000, title: 'Retro BB Realise' });
-  return r.planning.validation.ok && r.exportPipeline.ok && (r.score?.parts.length ?? 0) === 4;
+  return r.planning.validation.ok && r.exportPipeline.ok && (r.score?.parts.length ?? 0) === 7;
 }
 
 function testNegativeStyleStackNeutralizedFails(): boolean {

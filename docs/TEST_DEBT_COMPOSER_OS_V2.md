@@ -1,69 +1,62 @@
-# Composer OS V2 — test debt baseline
+# Composer OS V2 — full harness test debt
 
-**Date:** 2026-04-21 (harness refresh); prior notes from 2026-04-17 below.  
-**Scope:** `engines/composer-os-v2` only. This document is **test-debt triage / baselining**, not a claim that all failures are acceptable forever.
+Last updated: 2026-04-20 (stage-exit Big Band gate).
 
-## How to use this doc
+## Snapshot (this machine)
 
-- **Known red (full harness):** `npm test` and `npm run test:full` run `tests/runAllTests.ts` in **full** mode. Expect **exit 1** with many `FAIL:` lines until debt is cleared — treat as **pre-existing debt**, not an unexplained hang.
-- **PR-friendly green:** `npm run test:fast` skips suites listed in `tests/harness/fastExcludeSuites.ts` (names that failed in a 2026-04-21 full triage). **Use this as the frequent local / CI smoke gate**; shrink the exclusion list as suites go green.
-- **Must stay green:** The **narrow** scripts in the table below are the **regression bar** for duo / bass / Wyble-adjacent sweeps, counterpoint, ensemble regression, and vocal bridge. If any flip to **FAIL**, treat that as a **regression** unless you intentionally changed that subsystem.
-- **New failures:** If `npm run test:full` shows **new** `FAIL:` suites outside known buckets, investigate before merging.
+| Metric | Before this pass | After this pass |
+|--------|------------------|-----------------|
+| `npm --prefix engines/composer-os-v2 run test:full` | **637 passed / 34 failed** | **638 passed / 33 failed** |
+| `npm --prefix engines/composer-os-v2 run test:fast` | Green | Green |
 
-See **[TEST_HARNESS_PLAN.md](TEST_HARNESS_PLAN.md)** (fast vs full, env flags, root aliases).
+Full harness completes without OOM/hang (~18–35s locally).
 
-## Command status (snapshot 2026-04-21)
+## What we fixed this pass
 
-| Command | Status | Notes |
-|--------|--------|--------|
-| `npm run test:jest:counterpoint` | **PASS** | Jest — `voiceLeadingScorer` (counterpoint Phase 2). |
-| `npm run test:duo` | **PASS** | ts-node — `duo-regression-sweep.ts` (32-bar duo / Wyble trace). |
-| `npm run test:bass` | **PASS** | ts-node — `bass-phrase-sweep.ts` (18.2D bass phrase). |
-| `npm run test:vocal` | **PASS** | ts-node — `test-vocal-lead-sheet.ts` (Song Mode vocal bridge). |
-| `npm run test:composer-os-regression` | **PASS** | Jest — `phase191EnsembleRegression.test.ts` (Big Band / String Quartet metrics). |
-| `npm run test:fast` | **PASS** | `runAllTests.ts fast` — ~20s locally; **intended Composer OS v2 smoke gate**. |
-| `npm test` / `npm run test:full` | **FAIL (debt)** | Full harness — e.g. **~40s**, **603 pass / 72 fail** on 2026-04-21 (4GB heap); no OOM in that run. Exit 1 until failures are fixed. |
+1. **Pipeline truth “export” false negatives (`pipelineTruthGates.ts`)**  
+   Rehearsal marks are exported as `<rehearsal enclosure="rectangle">`. The verifier used a regex that only matched `<rehearsal>` with no attributes, so bars 1/5 read as missing A/B even when XML was correct. Updated the regex to allow attributes.  
+   **Impact:** Restored `runGoldenPath` success for builtin/custom duo where pipeline truth gates apply; removed a large cascade (generation, App API smoke, correctness gates that depended on golden-path success, etc.).
 
-**Repo root:** `npm run test:composer-fast`, `npm run test:composer-full`.
+2. **Lead-sheet display vs MusicXML `kind/@text` (`engines/core/chordSymbolMusicXmlCore.ts`)**  
+   `parseChordForMusicXmlHarmonyDisplay` used `literalKind: true`, leaving redundant `"major"` in `kind/@text`. Switched display parsing to `literalKind: false` so plain major strips like the formatter.
 
-Run from **`engines/composer-os-v2`**:
+3. **Export regression test harness (`tests/export.test.ts`)**  
+   Plain-major exporter test used `instrumentIdentity: 'guitar'`; harmony is only written for `clean_electric_guitar`. Updated the fixture part identity.
 
-```bash
-cd engines/composer-os-v2
-npm run test:duo
-npm run test:fast
-npm run test:full
-```
+4. **Stale compiled test shadowing (`tests/appApi.test.js`)**  
+   A checked-in `appApi.test.js` next to `appApi.test.ts` was resolved ahead of the TypeScript source, so API tests ran outdated expectations (e.g. `registeredPresets` length `6`). **Removed** the stray `.js` file.
 
-## Helper script (repo root)
+5. **Release metadata drift TS vs JS (`app-api/releaseMetadata.js`)**  
+   `releaseMetadata.js` was out of date (6 modes, wrong capabilities vs `.ts`). Synced with `releaseMetadata.ts` (7 modes including `wyble_etude`, `musicxml_generation` for Big Band / String Quartet).
 
-From the **repository root**:
+6. **Hard-coded diagnostic counts (`tests/appApi.test.ts`, `tests/appShell.test.ts`)**  
+   Replaced magic numbers with `COMPOSER_OS_V1_SUPPORTED_MODES.length` and `getPresets().length`.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-baseline-composer-os-v2.ps1
-```
+7. **Mode exposure expectation (`tests/modeExposure.test.ts`)**  
+   Assertions still expected `big_band` / `string_quartet` as `planning_only`; metadata now marks them `musicxml_generation`. Updated the test to match `releaseMetadata.ts`.
 
-Optional: `-IncludeRunAll` runs `npm test` as well (long). See script header.
+8. **Harness readability (`tests/runAllTests.ts`)**  
+   When failures > 0: print **Failures by suite** (sorted by failure count) and a one-line note that exit 1 in full mode reflects known debt while fast remains the gate.
 
-## Next triage steps
+9. **Stage Exit Gates — Big Band part count (`tests/retro/stageExitGates.test.ts`)**  
+   `testBigBandRealisationExportGatePasses` still required `score.parts.length === 4` after the real score model grew to **7** parts (alto/tenor, brass, piano, bass, drums). Aligned the gate with `bigBandRealisation.test.ts` (`=== 7`). Export was already valid; this was **harness expectation drift** only.
 
-1. Drive **`FAIL:`** count down in **full** mode; remove suite names from `FAST_EXCLUDED_SUITE_NAMES` as they go green.
-2. Classify failures: export / golden path / song mode / app API / duo / retro / GCE, etc.
-3. Fix or quarantine with **documented** skips (no silent deletion of tests).
-4. Re-baseline this table when **must-stay-green** or **known-debt** sets change.
+## Quarantine
 
-## Related
+None this pass.
 
-- [TEST_HARNESS_PLAN.md](TEST_HARNESS_PLAN.md) — fast vs full, env hooks, npm script map.
-- [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md) — product focus and test-debt note.
-- [CHANGELOG.md](CHANGELOG.md) — triage changelog entries.
+## Highest-priority remaining debt (next triage)
 
-## Dated notes (must-stay-green unchanged)
+Roughly grouped by recurring failures in `test:full`:
 
-- **2026-04-21 — Harness (fast vs full, timings):** `tests/runAllTests.ts` logs per-suite timings and slowest 20 at end. **`test:fast`** excludes debt-heavy suite names in `tests/harness/fastExcludeSuites.ts`. Optional **`COMPOSER_OS_SKIP_STAGE_EXIT_GATES=1`** and **`COMPOSER_OS_TEST_EXCLUDE_SUBSTR`** documented in [TEST_HARNESS_PLAN.md](TEST_HARNESS_PLAN.md).
+- **Multi-seed duo gates:** Duo polish V3.3, Duo LOCK quality, Duo identity V3.2, interaction V3.1, phrase authority, bass identity, GCE thresholds (LOCK seeds), correctness gates (strict bar math / harmony export assertions).
+- **Single-line / Wyble duo:** Guitar–Bass Duo (Single-Line), Wyble voice 2 polyphony, long-form Wyble sparsity.
+- **Key inference / XML:** Desktop/API duo custom key — fifths / golden path custom Bb XML (key receipt tests).
+- **Chord progression semantics:** builtin vs custom harmony labelling (`harmonyMode builtin ignores chordProgressionText`, mixed slash progression).
+- **Pipeline truth custom regression:** `Bm9…G#7alt` progression still fails export/score agreement (narrow investigation vs golden path options).
+- **ECM:** Identity / shaping passes (BH-order leaps, Metheny vs Schneider heuristic).
+- **Ensemble realisation / App boundary:** String Quartet realisation + export; `apiGenerate` big_band planning JSON path; riff generator bass part; occasional **ECM Chamber** XML substring check (`Emin9` / `Cmaj7`) if harmony varies by seed. (Big Band **Stage Exit** export gate fixed 2026-04-20; direct **Big Band realisation** suite was already green.)
 
-- **2026-04-17 — Heap / full-suite OOM (historical):** Earlier report: heap at 8192MB could still OOM; full suite was hard to trust in one process. **Current** full run at **4096MB** completed in ~40s without OOM on 2026-04-21 — if OOM returns (e.g. ECM long-form growth), prefer subprocess isolation or raising heap in the npm script; see roadmap / harness plan.
+## Maintenance note
 
-- **2026-04-17 — Song Mode Groove/Soul + Donald Fagen surfaces:** Optional Jest: `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts` — not part of the five must-stay-green scripts; run when touching `songModeStyleSurface.ts` or Song Mode metadata wiring. The five baseline commands were re-run after the change and remained **PASS**; **`npm test`** debt bucket unchanged.
-- **2026-04-17 — Wyble single-line parity (small patch):** After `runGoldenPath` duo-family sweep + `guitarVoice2WybleLayer` clarifications, the five **must-stay-green** commands above were re-run and remained **PASS**; **`npm test`** debt bucket unchanged (still not a merge gate).
-- **2026-04-17 — Wyble “realized” normalization (tiny refinement):** After **`shouldApplyRealizedVoice2Normalization`** / Phase A probe tweaks, the five **must-stay-green** commands were re-run and remained **PASS**; **`npm test`** status unchanged.
+Avoid committing stray `tests/**/*.test.js` beside `*.test.ts`; Node may resolve `.js` first and run stale assertions.
