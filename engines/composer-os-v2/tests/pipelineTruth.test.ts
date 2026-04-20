@@ -16,6 +16,8 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
         const r = runGoldenPath(2026, {
           presetId: 'guitar_bass_duo',
           harmonyMode: 'custom',
+          /** Native 8-bar form; omitting `totalBars` tiles this progression to 32 and skips 8-bar pipeline truth. */
+          totalBars: 8,
           chordProgressionText: REGRESSION_PROGRESSION,
         });
         return (
