@@ -60,7 +60,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 
 ### Experimental features
 
-- **Motif Authority V1:** set environment variable **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (or pass **`motifAuthorityV1: true`** where the API supports it) to enable experimental motif fingerprinting and return-phrase refinement. **Default OFF.**
+- **Motif Authority V1:** set environment variable **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (or pass **`motifAuthorityV1: true`** where the API supports it) to enable experimental motif fingerprinting and return-phrase refinement. **Default OFF.** Intended for diagnostics and controlled A/B; not required for normal composing.
+
+### Developer checks (engine)
+
+- **Era vocabulary:** from repo root, `cd engines/composer-os-v2` then **`npm run verify:eras`** — asserts era-normalized chord output on the fixed `song_mode_shorter` fixture.
+- **Big Band arranging:** **`npm run test:big-band-arranging`** — five seeds, deterministic **8-bar** sax soli in **17–24**, brass tacet there, end-window brass activity sanity.
 
 ---
 

@@ -216,6 +216,7 @@
 ### Medium term
 
 - **ECM Chamber — Arrangement & Orchestration depth** — register separation, sparser bass vs guitar, silence/space enforcement; shares ideas with sectional Big Band work. (See **ECM Chamber — Arrangement & Orchestration depth** section below.)
+- **Big Band — V1 / V1.5 shipped (2026-04-20):** arranging scaffold in `bigBandPatterns.ts` + `bigBandScoreBuilder.ts` — deterministic **8-bar** sax soli **17–24** (when `totalBars >= 24`), brass tacet in-window, cadence punches + late shout fragment; **`npm run test:big-band-arranging`**.
 - **Big Band V2 (future)** — more distinctive soli lead lines (theme-driven development), richer **drum interplay** with punches and shout, and light **sectional counterpoint** beyond the V1.5 scaffold.
 - **Voice 2:** **Counterpoint Phase 2 (2026-04-15): COMPLETE** — `voiceLeadingScorer` (Bizzi / Tymoczko / species-lite) wired into Guitar–Bass Duo Voice 2 candidate ranking; **10/10** `test:duo` PASS. Further **18.2B.3**-style melodic imitation / counterpoint refinement and **realized** metrics alignment remain (see table above).
 - ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.

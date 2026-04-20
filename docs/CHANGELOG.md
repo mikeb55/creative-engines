@@ -1,27 +1,28 @@
-## [2026-04-20] Big Band arranging depth V1.5
+## [2026-04-20] Composer OS handoff — ECM, Era, Motif Authority, Big Band arranging
 
-### Big Band arranging V1.5
-- New: `engines/composer-os-v2/core/arranging/bigBandPatterns.ts`
-  - `generateSaxSoliPhrase`, `generateBrassPunches`,
-    `generateShoutChorus` helpers
-- `bigBandScoreBuilder.ts` updated:
-  - Deterministic 8-bar sax soli window bars 17–24
-  - Alto and tenor soli always written in window
-  - Trumpet/trombone forced to rest in window
-  - Brass punches on cadence bars
-  - Shout fragment near end
-  - Soli logic runs before silence roles
-- `testBigBandArranging.ts`: 5-seed test suite
-  - `altoRun === 8`, `tenorRun === 8` in bars 17–24
-  - `brassSoliWindowNotes === 0` in 17–24
-  - All 5 seeds pass
-- GCE: no crashes, arranging depth visible
+End-state summary for assistants (detail also in dated sections below).
 
-### Also in this session (already merged)
-- ECM OOM fixed + 32-bar routing + stability tests
-- Era chord normalization verified (swing C6/9 etc.)
-- Motif Authority V1 scaffold (feature-flagged)
-- 12/12 preset benchmark, zero regressions
+### ECM Chamber (stable, benchmarked)
+- **OOM:** fixed non-advancing bass loop in ECM Metheny/Schneider branches (`b++` before `continue` in `buildBassPart`).
+- **32 bars:** `runGoldenPath` forwards `options.ecmTotalBars ?? options.totalBars` into ECM context so **32 bars** are honoured when requested.
+- **Tests:** `npm run test:ecm` — bar count, repeat-run stability, swing normalization smoke, non-ECM control.
+- **GCE:** completes in full 12-preset sweep at **~7.8/10**; weakest pillar **Arrangement & Orchestration** (roadmap follow-up).
+
+### Era chord normalization (verified)
+- **Swing examples:** Cmaj9?C6/9, G13?G7, A7alt?A7b9 (and parallel rules for other roots).
+- **`npm run verify:eras`:** tension-class + modern-major contrast assertions matched to the current fixture.
+- **Seven eras:** profile biases plus post-generation **chord-symbol normalization** so vocabulary is audibly distinct.
+
+### Motif Authority V1 (feature-flagged scaffold)
+- **Scope:** `song_mode_*`, `guitar_bass_duo` only; **default OFF** (`motifAuthorityV1` option or `COMPOSER_OS_MOTIF_AUTHORITY_V1=1`).
+- **Behaviour:** motif fingerprint, contour/rhythm/anchor/register sub-scores, penalties, one bounded return-phrase refine pass; metadata on `GenerationMetadata`.
+- **`npm run test:motif-authority`:** ON/OFF path regression green.
+- **Tuning:** a **V1.1 parameter experiment** did not show a net Melodic Identity uplift; **shipped baseline remains stable V1**, default OFF (see `e1b99d6` and `core/motif/motifAuthorityV1.ts` history).
+
+### Big Band arranging depth V1 + V1.5 (shipped baseline `5e4993d`)
+- **V1:** new `engines/composer-os-v2/core/arranging/bigBandPatterns.ts` — `generateSaxSoliPhrase`, `generateBrassPunches`, `generateShoutChorus`; `bigBandScoreBuilder` integrates **designated sax soli** (bars 17–24 on long charts), **cadence brass punches**, **shout fragment** near end. Early checks: some seeds showed **only ~4 contiguous** soli bars; `big_band` GCE spot-checks **~7.4–7.5** vs **~7.9** historical baseline on small samples.
+- **V1.5 fix:** section **`role === 'silence'`** ran **before** soli and could silence saxes inside 17–24. **Change:** `BB_DESIGNATED_SAX_SOLI_START/END`, `inDesignatedSaxSoliWindow`, **write soli before silence roles** — alto/tenor **always** 8 bars in 17–24 when `totalBars >= 24`; trumpets/trombones **tacet** there; duplicate inner soli branches removed.
+- **Tests:** `engines/composer-os-v2/scripts/testBigBandArranging.ts` — **5 seeds**; asserts `altoRun === 8`, `tenorRun === 8`, `brassSoliWindowNotes === 0` in 17–24; `npm run test:big-band-arranging` green. Follow-up **5-seed** `big_band` GCE: no crashes, no large regression vs that horn-layer baseline.
 
 ## [2026-04-20] Motif Authority V1 + ECM fixes + Era normalization
 
