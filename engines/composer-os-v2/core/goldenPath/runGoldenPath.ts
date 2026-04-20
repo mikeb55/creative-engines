@@ -609,8 +609,9 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
   }
   if (presetId === 'ecm_chamber') {
     const mode: EcmChamberMode = options?.ecmMode ?? 'ECM_METHENY_QUARTET';
+    const requestedEcmBars = options?.ecmTotalBars ?? options?.totalBars;
     const ecmOpts: BuildEcmChamberContextOpts | undefined =
-      options?.ecmTotalBars !== undefined ? { totalBars: options.ecmTotalBars } : undefined;
+      requestedEcmBars !== undefined ? { totalBars: requestedEcmBars } : undefined;
     return buildEcmChamberContext(seed, mode, ecmOpts);
   }
   /** 24-bar forms (through3, aba, blues24, aab): do not use duo32 builder (always 32 measures). */

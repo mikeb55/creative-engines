@@ -1,3 +1,17 @@
+## [2026-04-20] ECM OOM fixed + bar count routing fixed
+
+### What landed
+- buildBassPart ECM branches: added b++ before continue
+  — fixes infinite loop causing heap OOM
+- runGoldenPath.ts: ECM now uses totalBars correctly
+  via options.ecmTotalBars ?? options.totalBars
+- Added testEcmStability.ts regression suite:
+  - ECM bar count correctness (32 bars)
+  - Bass loop stability (two runs, same seed)
+  - Swing normalization regression
+  - Non-ECM unaffected
+- All tests green: test:ecm, test:duo, test:vocal
+
 ## [2026-04-20] Era verification finalized on fixed fixture
 
 ### What changed
@@ -975,6 +989,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

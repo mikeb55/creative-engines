@@ -466,6 +466,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
     era: req.stylePairing?.era ?? undefined,
+    stylePairing: req.stylePairing
+      ? {
+          songwriterStyle: req.stylePairing.songwriterStyle,
+          arrangerStyle: req.stylePairing.arrangerStyle,
+          era: req.stylePairing.era,
+          seed: effectiveSeed,
+        }
+      : undefined,
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
