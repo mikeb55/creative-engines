@@ -104,6 +104,7 @@ import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
+import { applySlonimskyToMelodyLine, SlonimskyContext, SlonimskyNote } from '../slonimsky/slonimskyEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
 import {
@@ -285,6 +286,78 @@ function clampAllBassNotesToValidatorHardRange(score: ScoreModel): void {
 
 function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMotif[] {
   return placements.filter((p) => p.startBar === bar);
+}
+
+function extractVoiceOneMelodyFromPart(part: PartModel): SlonimskyNote[] {
+  const out: SlonimskyNote[] = [];
+  for (const measure of part.measures) {
+    const barStart = (measure.index - 1) * 4;
+    const notes = measure.events
+      .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .sort((a, b) => a.startBeat - b.startBeat);
+    for (const note of notes) {
+      out.push({
+        midi: note.pitch,
+        durationBeats: note.duration,
+        beat: barStart + note.startBeat,
+        role: 'passing',
+      });
+    }
+  }
+  if (out.length > 0) {
+    out[0]!.role = 'target';
+    out[out.length - 1]!.role = 'target';
+  }
+  return out;
+}
+
+function applyEnhancedPitchesByBar(
+  guitarPart: PartModel,
+  original: SlonimskyNote[],
+  enhanced: SlonimskyNote[]
+): void {
+  const byBar = (notes: SlonimskyNote[]): Map<number, SlonimskyNote[]> => {
+    const map = new Map<number, SlonimskyNote[]>();
+    for (const note of notes) {
+      const bar = Math.floor(note.beat / 4) + 1;
+      if (!map.has(bar)) map.set(bar, []);
+      map.get(bar)!.push(note);
+    }
+    for (const entries of map.values()) {
+      entries.sort((a, b) => a.beat - b.beat);
+    }
+    return map;
+  };
+
+  const originalByBar = byBar(original);
+  const enhancedByBar = byBar(enhanced);
+  const changedBars = new Set<number>();
+  for (const [bar, nextNotes] of enhancedByBar.entries()) {
+    const prevNotes = originalByBar.get(bar) ?? [];
+    if (nextNotes.length !== prevNotes.length) {
+      changedBars.add(bar);
+      continue;
+    }
+    for (let i = 0; i < nextNotes.length; i++) {
+      if (nextNotes[i]!.midi !== prevNotes[i]!.midi) {
+        changedBars.add(bar);
+        break;
+      }
+    }
+  }
+
+  for (const measure of guitarPart.measures) {
+    if (!changedBars.has(measure.index)) continue;
+    const enhancedNotes = enhancedByBar.get(measure.index);
+    if (!enhancedNotes || enhancedNotes.length === 0) continue;
+    const v1Events = measure.events
+      .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .sort((a, b) => a.startBeat - b.startBeat);
+    const count = Math.min(v1Events.length, enhancedNotes.length);
+    for (let i = 0; i < count; i++) {
+      v1Events[i]!.pitch = enhancedNotes[i]!.midi;
+    }
+  }
 }
 
 interface StyleHints {
@@ -2968,6 +3041,31 @@ export function generateGoldenPathDuoScore(
         0.75,
         context.seed
       );
+
+      const songwriterId = context.generationMetadata?.songwriterStyleId ?? 'default';
+      const outsideLevel: 0 | 1 | 2 =
+        songwriterId === 'wayne_shorter'
+          ? 2
+          : songwriterId === 'ecm_chamber'
+            ? 1
+            : songwriterId === 'barry_harris'
+              ? 2
+              : songwriterId === 'pat_metheny'
+                ? 1
+                : 1;
+      const slonimskyCtx: SlonimskyContext = {
+        keyPc: 0,
+        chordType: 'dominant',
+        functionalStrength: 'medium',
+        allowedOutsideLevel: outsideLevel,
+        phraseIntent: 'build',
+        basePitch: 62,
+        maxBeats: 2,
+      };
+      const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
+      const chords = context.lockedHarmonyBarsRaw ?? [];
+      const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
+      applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
     }
     if (isGuitarBassDuoFamily(context.presetId)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);

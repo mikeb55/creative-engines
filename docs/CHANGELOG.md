@@ -1,3 +1,10 @@
+## [2026-04-20] Slonimsky Song Mode wiring
+
+### What changed
+- Wired Slonimsky integration into `generateGoldenPathDuoScore.ts` in Song Mode immediately after `enforceSongModeGuitarDensity`.
+- Added Song Mode context mapping by songwriter id (`wayne_shorter`, `ecm_chamber`, `barry_harris`, `pat_metheny`) to `allowedOutsideLevel`.
+- Added voice-1 melody extraction and targeted per-bar pitch replacement so Slonimsky transformations alter melodic contour without rewriting bar/rhythm structure.
+
 ## [2026-04-20] Slonimsky Engine V1 scaffold
 
 ### What changed
