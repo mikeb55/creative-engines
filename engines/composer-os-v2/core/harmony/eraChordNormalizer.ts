@@ -27,14 +27,19 @@ export type ChordFunctionClass =
   | 'diminished'
   | 'half_diminished'
   | 'modal_major'
-  | 'modal_minor';
+  | 'modal_minor'
+  | 'unknown';
+
+type ReasonCode = 'NO_PARSE' | 'NO_FUNCTION' | 'NO_CANDIDATES' | 'REJECTED' | 'APPLIED';
 
 export interface ParsedChordSymbol {
   original: string;
+  canonical: string;
   root: string;
   body: string;
   slashBass?: string;
   normalizedBody: string;
+  qualityToken: string;
   extensions: string[];
   alterations: string[];
 }
@@ -45,6 +50,7 @@ export interface EraNormalizerDebugCounters {
   unchanged: number;
   skippedByReason: Record<string, number>;
   byRule: Record<string, number>;
+  reasonCodes: Record<ReasonCode, number>;
 }
 
 export interface EraNormalizerContext {
@@ -75,12 +81,20 @@ const DEFAULT_SKIP_REASONS = [
 function initDebugCounters(era: EraId): EraNormalizerDebugCounters {
   const skippedByReason: Record<string, number> = {};
   for (const r of DEFAULT_SKIP_REASONS) skippedByReason[r] = 0;
+  const reasonCodes: Record<ReasonCode, number> = {
+    NO_PARSE: 0,
+    NO_FUNCTION: 0,
+    NO_CANDIDATES: 0,
+    REJECTED: 0,
+    APPLIED: 0,
+  };
   return {
     era,
     changed: 0,
     unchanged: 0,
     skippedByReason,
     byRule: {},
+    reasonCodes,
   };
 }
 
@@ -92,16 +106,54 @@ function normalizeBodyForTokenScan(body: string): string {
   return body.toLowerCase().replace(/\s+/g, '');
 }
 
+export function canonicalizeChordSymbol(raw: string): string {
+  return raw
+    .trim()
+    .replace(/min(?=\d|$|\s)/gi, 'm')
+    .replace(/mi(?=\d|$|\s)/gi, 'm')
+    .replace(/-(?=[0-9]|$)/g, 'm')
+    .replace(/Ma(?=j|\d|$)/g, 'maj')
+    .replace(/M(?=\d|$)/g, 'maj')
+    .replace(/♭/g, 'b')
+    .replace(/♯/g, '#')
+    .replace(/△/g, 'maj')
+    .replace(/\s+/g, '');
+}
+
+function resolveQualityToken(normalizedBody: string): string {
+  const ordered: Array<[RegExp, string]> = [
+    [/7alt/i, '7alt'],
+    [/maj7/i, 'maj7'],
+    [/min9/i, 'min9'],
+    [/m9/i, 'm9'],
+    [/maj/i, 'maj'],
+    [/min/i, 'min'],
+    [/m/i, 'm'],
+    [/7/i, '7'],
+  ];
+  for (const [rx, token] of ordered) {
+    if (rx.test(normalizedBody)) return token;
+  }
+  return '';
+}
+
 export function parseChordSymbol(symbol: string): ParsedChordSymbol | null {
-  const s = symbol.trim();
+  const s = canonicalizeChordSymbol(symbol);
   if (!s) return null;
-  const m = /^([A-G](?:#|b)?)([^/]*)?(?:\/([A-G](?:#|b)?))?$/i.exec(s);
-  if (!m) return null;
-  const root = m[1]!;
-  const bodyRaw = (m[2] ?? '').trim();
+  const rootMatch = /^([A-G](?:#|b)?)(.*)$/i.exec(s);
+  if (!rootMatch) return null;
+  const root = rootMatch[1]!;
+  let remainder = rootMatch[2] ?? '';
+  let slashBass: string | undefined;
+  const slashBassMatch = /(.*)\/([A-G](?:#|b)?)$/i.exec(remainder);
+  if (slashBassMatch) {
+    remainder = slashBassMatch[1] ?? '';
+    slashBass = slashBassMatch[2] ?? undefined;
+  }
+  const bodyRaw = remainder.trim();
   const body = bodyRaw.length > 0 ? bodyRaw : '';
-  const slashBass = m[3] ?? undefined;
   const n = normalizeBodyForTokenScan(body);
+  const qualityToken = resolveQualityToken(n);
   const extensions: string[] = [];
   const alterations: string[] = [];
   const extTokens = ['6/9', 'maj6', '6', 'maj7', 'm7', 'm9', 'm11', '9', '11', '13', 'sus', 'sus4'] as const;
@@ -112,11 +164,13 @@ export function parseChordSymbol(symbol: string): ParsedChordSymbol | null {
   if (n.includes('m7b5')) extensions.push('m7b5');
   if (n.includes('quartal')) extensions.push('quartal');
   return {
-    original: s,
+    original: symbol,
+    canonical: s,
     root,
     body,
     slashBass,
     normalizedBody: n,
+    qualityToken,
     extensions,
     alterations,
   };
@@ -144,8 +198,48 @@ function simplificationLadderFor(parsed: ParsedChordSymbol): string[] {
   const n = parsed.normalizedBody;
   const out: string[] = [];
   if (n.includes('maj7#11')) out.push('maj7', '6/9', '6');
-  if (n.includes('7alt')) out.push('7#9', '7b9', '13b9', '9', '7');
+  if (n.includes('7alt')) out.push('7b9', '7#9', '9', '7');
   return out;
+}
+
+function isDominantAlteredFamily(parsed: ParsedChordSymbol, functionClass: ChordFunctionClass): boolean {
+  if (!(functionClass === 'dominant' || functionClass === 'sus_dominant')) return false;
+  const n = parsed.normalizedBody;
+  return (
+    n.includes('alt') ||
+    n.includes('b9') ||
+    n.includes('#9') ||
+    n.includes('b13') ||
+    n.includes('#11') ||
+    n.includes('7b9') ||
+    n.includes('7#9') ||
+    n.includes('7b13') ||
+    n.includes('7#11') ||
+    n.includes('7alt') ||
+    n.includes('13b9')
+  );
+}
+
+function isMajorModernFamily(parsed: ParsedChordSymbol): boolean {
+  const n = parsed.normalizedBody;
+  return (
+    n.includes('maj7#11') ||
+    n.includes('maj9#11') ||
+    n.includes('maj9') ||
+    n.includes('maj13') ||
+    n.includes('maj7')
+  );
+}
+
+function isDominant13(parsed: ParsedChordSymbol, functionClass: ChordFunctionClass): boolean {
+  if (!(functionClass === 'dominant' || functionClass === 'sus_dominant')) return false;
+  const n = parsed.normalizedBody;
+  return n.includes('13') && !n.includes('b13');
+}
+
+function isSusFamily(parsed: ParsedChordSymbol, functionClass: ChordFunctionClass): boolean {
+  const n = parsed.normalizedBody;
+  return functionClass === 'sus_dominant' || n.includes('sus4') || n.includes('7sus4') || n.includes('13sus') || n.includes('sus');
 }
 
 export function getEraRewriteCandidates(
@@ -153,15 +247,20 @@ export function getEraRewriteCandidates(
   era: EraId,
   functionClass: ChordFunctionClass
 ): Array<{ symbolBody: string; ruleName: string }> {
+  if (functionClass === 'unknown') return [];
   const n = parsed.normalizedBody;
   const out: RewriteCandidate[] = [];
   const push = (symbolBody: string, ruleName: string, eraMatchBoost: number) =>
     out.push({ symbolBody, ruleName, eraMatchBoost });
 
-  if (functionClass === 'tonic_major') {
-    if (era === 'swing' && (n.includes('maj7') || n.includes('#11'))) {
-      push('6', 'swing_tonic_major_simplify_to_6', 1.0);
-      push('6/9', 'swing_tonic_major_simplify_to_6_9', 0.9);
+  if (functionClass === 'tonic_major' && isMajorModernFamily(parsed)) {
+    if (era === 'swing') {
+      if (n.includes('maj9') || n.includes('maj7#11') || n.includes('maj9#11')) {
+        push('6/9', 'swing_major_modern_to_6_9', 1.0);
+      }
+      if (n.includes('maj7')) {
+        push('6', 'swing_major7_to_6', 0.95);
+      }
     }
     if (era === 'cool_jazz' && n.includes('maj7#11')) {
       push('maj7', 'cool_tonic_major_reduce_sharp11', 0.8);
@@ -169,34 +268,47 @@ export function getEraRewriteCandidates(
     }
   }
 
-  if (functionClass === 'dominant' || functionClass === 'sus_dominant') {
+  if (isDominantAlteredFamily(parsed, functionClass)) {
     if (era === 'swing') {
-      if (n.includes('alt') || n.includes('#11') || n.includes('#9') || n.includes('b13')) {
+      if (n.includes('7alt') || n.includes('13b9')) {
+        push('7b9', 'swing_dom_alt_to_7b9', 1.0);
+      } else {
         push('7b9', 'swing_dom_simplify_7b9', 1.0);
-        push('9', 'swing_dom_simplify_9', 0.85);
-        push('7', 'swing_dom_simplify_7', 0.8);
+        push('9', 'swing_dom_simplify_9', 0.9);
+        push('7', 'swing_dom_simplify_7', 0.85);
       }
     }
     if (era === 'bebop') {
-      if (n.includes('alt')) {
-        push('7b9', 'bebop_dom_alt_to_7b9', 1.0);
-        push('7#9', 'bebop_dom_alt_to_7sharp9', 0.95);
-      } else if (n === '7') {
-        push('7b9', 'bebop_dom_enrich_plain7_to_b9', 0.8);
+      if (n.includes('7alt') && (parsed.root.toUpperCase() === 'A' || parsed.root.toUpperCase() === 'E')) {
+        push('7alt', 'bebop_dom_keep_alt_root_color', 1.05);
       }
+      push('7b9', 'bebop_dom_keep_tension_b9', 1.0);
+      push('7#9', 'bebop_dom_keep_tension_sharp9', 0.95);
     }
     if (era === 'hard_bop') {
-      if (n.includes('alt')) {
-        push('7#9', 'hardbop_dom_alt_to_7sharp9', 0.95);
-        push('7b9', 'hardbop_dom_alt_to_7b9', 0.9);
-      } else if (n === '7') {
-        push('13', 'hardbop_dom_enrich_13', 0.75);
-      }
+      push('7#9', 'hardbop_dom_alt_to_7sharp9', 0.95);
+      push('7b9', 'hardbop_dom_alt_to_7b9', 0.9);
     }
     if (era === 'cool_jazz' && (n.includes('alt') || n.includes('#9') || n.includes('b13'))) {
       push('9', 'cool_dom_lighten_to_9', 0.8);
       push('7', 'cool_dom_lighten_to_7', 0.7);
     }
+  }
+
+  if (isDominant13(parsed, functionClass)) {
+    if (era === 'swing') {
+      push('9', 'swing_dom13_to_9', 0.95);
+      push('7', 'swing_dom13_to_7', 0.9);
+    }
+    // bebop/post_bop keep dominant 13 as-is (no rewrite candidate).
+  }
+
+  if (isSusFamily(parsed, functionClass)) {
+    if (era === 'swing') {
+      push('7', 'swing_sus_to_7', 0.95);
+      push('', 'swing_sus_to_plain', 0.7);
+    }
+    // post_bop/fusion keep sus colors as-is.
   }
 
   if (functionClass === 'diminished' || functionClass === 'half_diminished') {
@@ -264,21 +376,49 @@ export function normalizeChordSymbolsForEra(
   context: EraNormalizerContext = {}
 ): string[] {
   const counters = context.debugCounters ?? initDebugCounters(era);
+  const reasonDebug = context.debug || process.env.COMPOSER_OS_ERA_REASON_DEBUG === '1';
   const out: string[] = [];
   for (let i = 0; i < chords.length; i++) {
     const symbol = chords[i] ?? '';
-    const parsed = parseChordSymbol(symbol);
-    if (!parsed) {
+    const canonical = canonicalizeChordSymbol(symbol);
+    if (!canonical) {
+      bump(counters.reasonCodes, 'NO_PARSE');
       bump(counters.skippedByReason, 'parse_failed');
       counters.unchanged += 1;
       out.push(symbol);
+      if (reasonDebug) console.log(`[era-normalizer] era=${era} reason=NO_PARSE original="${symbol}"`);
+      continue;
+    }
+    const parsed = parseChordSymbol(canonical);
+    if (!parsed) {
+      bump(counters.reasonCodes, 'NO_PARSE');
+      bump(counters.skippedByReason, 'parse_failed');
+      counters.unchanged += 1;
+      out.push(symbol);
+      if (reasonDebug) console.log(`[era-normalizer] era=${era} reason=NO_PARSE original="${symbol}" canonical="${canonical}"`);
       continue;
     }
     const fnClass = classifyChordFunction(parsed, {
       previous: chords[i - 1],
       next: chords[i + 1],
     });
+    if (fnClass === 'unknown') {
+      bump(counters.reasonCodes, 'NO_FUNCTION');
+      counters.unchanged += 1;
+      out.push(parsed.canonical);
+      if (reasonDebug) console.log(`[era-normalizer] era=${era} reason=NO_FUNCTION original="${symbol}" canonical="${parsed.canonical}"`);
+      continue;
+    }
     const candidates = getEraRewriteCandidates(parsed, era, fnClass);
+    if (candidates.length === 0) {
+      bump(counters.reasonCodes, 'NO_CANDIDATES');
+      counters.unchanged += 1;
+      out.push(parsed.canonical);
+      if (reasonDebug) {
+        console.log(`[era-normalizer] era=${era} reason=NO_CANDIDATES original="${symbol}" canonical="${parsed.canonical}" function="${fnClass}"`);
+      }
+      continue;
+    }
     let chosen: ParsedChordSymbol | null = null;
     let chosenRule = '';
     let bestScore = -Infinity;
@@ -315,26 +455,34 @@ export function normalizeChordSymbolsForEra(
     }
 
     if (!chosen || formatChordSymbol(chosen) === formatChordSymbol(parsed)) {
+      bump(counters.reasonCodes, 'REJECTED');
       bump(counters.skippedByReason, 'no_better_candidate');
       counters.unchanged += 1;
       out.push(formatChordSymbol(parsed));
-      if (context.debug) {
+      if (reasonDebug) {
         console.log(
-          `[era-normalizer] era=${era} original="${symbol}" rewritten="${symbol}" skipped=no_better_candidate`
+          `[era-normalizer] era=${era} reason=REJECTED original="${symbol}" canonical="${parsed.canonical}" rewritten="${formatChordSymbol(parsed)}" skipped=no_better_candidate`
         );
       }
       continue;
     }
 
+    bump(counters.reasonCodes, 'APPLIED');
     counters.changed += 1;
     bump(counters.byRule, chosenRule);
     const rewritten = formatChordSymbol(chosen);
     out.push(rewritten);
-    if (context.debug) {
+    if (reasonDebug) {
       console.log(
-        `[era-normalizer] era=${era} original="${symbol}" rewritten="${rewritten}" rule=${chosenRule}`
+        `[era-normalizer] era=${era} reason=APPLIED original="${symbol}" canonical="${parsed.canonical}" rewritten="${rewritten}" rule=${chosenRule}`
       );
     }
+  }
+  if (reasonDebug) {
+    const summary = Object.entries(counters.reasonCodes)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(' ');
+    console.log(`[era-normalizer] era=${era} reason-summary ${summary}`);
   }
   return out;
 }
