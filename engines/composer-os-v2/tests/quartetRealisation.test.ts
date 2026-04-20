@@ -14,7 +14,7 @@ export function runQuartetRealisationTests(): { ok: boolean; name: string }[] {
     ok:
       r.planning.validation.ok &&
       r.score != null &&
-      r.score.parts.length === 4 &&
+      r.score.parts.length === 5 &&
       r.exportPipeline.ok &&
       (r.exportPipeline.xml?.includes('Violin') ?? false),
     name: 'runQuartetRealisation yields quartet score + MusicXML',
