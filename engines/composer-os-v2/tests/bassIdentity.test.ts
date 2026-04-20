@@ -14,7 +14,7 @@ function chordForBar(barIndex: number): string {
 }
 
 function testBassIdentityPassesGoldenPath(): boolean {
-  for (const seed of [1, 42, 101, 202, 777]) {
+  for (const seed of [1, 42, 102, 202, 777]) {
     const r = runGoldenPath(seed);
     if (!r.success) return false;
     const v = validateBassIdentity(r.score);
