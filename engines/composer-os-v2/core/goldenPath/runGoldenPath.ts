@@ -950,6 +950,8 @@ export interface RunGoldenPathOptions {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Feature flag: Motif Authority V1 (default off). */
+  motifAuthorityV1?: boolean;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1293,6 +1295,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  const motifAuthorityRequested =
+    options?.motifAuthorityV1 === true || process.env?.COMPOSER_OS_MOTIF_AUTHORITY_V1 === '1';
+  const motifAuthorityEligible = (() => {
+    const pid = options?.presetId ?? context.presetId;
+    return pid === 'guitar_bass_duo' || pid.startsWith('song_mode_');
+  })();
+  if (motifAuthorityRequested && motifAuthorityEligible) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      motifAuthorityV1: true,
+    };
+  }
   logEcmPhaseProbe(probeEcm, 'after_context_build', undefined, {
     bars: context.form.totalBars,
     chordPlanSegments: context.chordSymbolPlan?.segments?.length ?? 0,

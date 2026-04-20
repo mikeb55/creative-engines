@@ -102,12 +102,17 @@ Other songwriter / era / lyric-author / arranger fields still behave mostly as c
 
 ### Song Mode — Era setting
 
-The **Era** field (style pairing) adjusts internal rhythm and harmony-density biases on the duo export:
+All 7 Era dropdown values now produce genuinely different harmonic vocabulary and phrasing bias:
 
-- **post_bop** ? denser harmony colour, more syncopation leaning.
-- **fusion** ? moderate groove / syncopation emphasis.
-- **contemporary** ? clean neutral baseline (near-zero additive bias).
-- **Verified:** same **seed** with **post_bop** vs **contemporary** yields measurably different **`songwriterSyncopationBias`** / **`harmonyDensityBias`** in generation metadata (and audibly different duo output for typical settings).
+- **swing:** simpler extensions and cleaner dominant treatment (6, 6/9, 7, 7b9)
+- **bebop:** denser chromatic dominant colors (7b9, 7#9, altered movement)
+- **cool_jazz:** lighter, spacious colors (maj7, add9, softer tension profile)
+- **hard_bop:** blues-leaning dominant language with stronger drive
+- **post_bop:** modern colors retained (maj7#11, 7alt, suspended ambiguity)
+- **fusion:** modal/sus colors with modern voicing retention
+- **contemporary:** most permissive vocabulary, minimal simplification
+
+The era pipeline includes profile biasing plus chord-symbol normalization so the output vocabulary is audibly distinct per era.
 
 ### Song Mode — Donald Fagen primary songwriter (default)
 
@@ -161,11 +166,26 @@ This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the sa
 
 Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to this profile.
 
-- **Sounds like:** ECM-era Pat Metheny Group, *80/81*, *Offramp* — lyrical ensemble jazz with a folk-jazz warmth (honest wording, not mimicry).
-- **Harmony:** open voicings, pedal points, Lydian **maj7#11**, **add9** colours, modal **sus4** / chords with softer tertian clarity; root motion biased to **steps and thirds** rather than chromatic drift.
-- **Melody:** lyrical, **stepwise**, singable phrases (engine melody profile + GCE interval targets aligned to this slice).
-- **Best BPM:** **70–100**, mid-tempo flowing — faster than typical **`ecm_chamber`** ballad pacing if you want more motion.
-- **Differs from `ecm_chamber`:** warmer, **more tonal** centre, guitar-oriented lyrical lead vocabulary — less “pure drift,” more singable arches.
+- **Sound:** ECM-era Metheny Group feel, open voicings, Lydian **maj7#11**, and folk-jazz **add9** colors.
+- **Harmony:** pedal colors and modal/sus language with warmer tonal center than `ecm_chamber`.
+- **Melody:** lyrical, **stepwise**, singable phrase arcs.
+- **Best BPM:** **70-100**, flowing mid-tempo.
+- **Era pairing:** best with **post_bop** or **contemporary** in Song Mode style pairing.
+
+### Bar count options (Song Mode + Guitar-Bass Duo)
+
+- Song Mode and Guitar-Bass Duo now support extended form lengths including **48** and **64** bars in addition to standard shorter forms.
+- Use longer forms for narrative arc or motif-development tests; 32 bars remains the common baseline for quick A/B checks.
+
+### GCE Quality score on receipt
+
+- Each generation receipt includes a GCE quality score line (for example, `8.3/10`).
+- Current minimum passing threshold is **8.0**.
+- The engine runs an automatic quality retry loop (up to 3 candidate attempts) and keeps the strongest result.
+
+### ECM Chamber stability note
+
+- ECM Chamber is now stable and generates reliably at up to **32 bars** in current production routing.
 
 ### Developers — Bacharach Song Mode (CLI, not the Generate UI)
 

@@ -1,3 +1,38 @@
+## [2026-04-20] Motif Authority V1 + ECM fixes + Era normalization
+
+### Motif Authority V1 (feature-flagged)
+- New: core/motif/motifAuthorityV1.ts
+- Fingerprints opening phrase: contour, rhythm,
+  anchor tones, register band
+- Scores return phrase similarity vs opening
+- Single bounded refine pass if below threshold
+- Feature flag: motifAuthorityV1 option or
+  COMPOSER_OS_MOTIF_AUTHORITY_V1=1 env var
+- Default OFF — non-scoped presets unchanged
+- A/B verified: no regressions, diagnostics working
+- motifAuthorityScore, returnSimilarity, variationType
+  added to GenerationMetadata
+
+### ECM OOM + bar count fixes
+- buildBassPart: added b++ in ECM branches
+- runGoldenPath: ECM now uses
+  ecmTotalBars ?? totalBars correctly
+- ECM now scores 7.8/10, 12/12 presets complete
+
+### Era chord normalization verified
+- Swing: Cmaj9->C6/9, G13->G7, A7alt->A7b9
+- verify:eras green with tension-class assertions
+- All 7 eras have real biases and chord vocab
+
+### Full benchmark (seed 50021, 12 presets)
+- song_mode_shorter/bacharach/barry_harris: 8.4/10
+- song_mode_fagen/guitar_bass_duo_single_line: 8.3/10
+- guitar_bass_duo: 8.0/10
+- song_mode_metheny/big_band/string_quartet/
+  wyble_etude/riff_generator: 7.9/10
+- ecm_chamber: 7.8/10 (first successful eval)
+- Zero regressions
+
 ## [2026-04-20] ECM OOM fixed + bar count routing fixed
 
 ### What landed
@@ -989,6 +1024,7 @@ Status: Wyble is now a **production-ready generative jazz line engine**
 Detailed **pre-V8.0** Composer OS history (V2 foundation through V3.x prompts) is preserved in **[archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md)** to avoid duplicating hundreds of lines here.
 
 The engine README (`engines/composer-os-v2/README.md`) still describes implemented stages and links to these docs.
+
 
 
 

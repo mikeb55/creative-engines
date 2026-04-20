@@ -15,6 +15,11 @@ Composer OS turns your settings ? **mode** (preset), tempo, harmony, form, and o
 ## Current capabilities (high level)
 
 - **Eight Generate modes:** Guitar?Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator.
+- **Songwriter styles include Pat Metheny** for Song Mode (ECM-era open voicings, Lydian/add9 colors, lyrical phrase bias).
+- **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes.
+- **Extended form lengths:** 48 and 64 bars are available in Song Mode and Guitar-Bass Duo paths.
+- **All 7 era options now alter harmonic vocabulary** (swing, bebop, cool_jazz, hard_bop, post_bop, fusion, contemporary).
+- **Receipt shows GCE quality score** per generation, and the quality gate runs an automatic candidate retry loop.
 - **Library output:** By default, files go under **Documents ? Mike Composer Files** (override with `COMPOSER_OS_OUTPUT_DIR` if needed).
 - **Outputs browser** and **Diagnostics** in the app; optional **Composer Engines** (Wayne Shorter, Monk, Charlie Parker) on a separate tab.
 - **Big Band / String Quartet:** Full **MusicXML** when realisation and export succeed; otherwise **planning JSON** (see on-screen receipt).

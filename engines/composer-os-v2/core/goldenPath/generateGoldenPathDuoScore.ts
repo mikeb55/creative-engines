@@ -118,6 +118,14 @@ import {
 } from './phaseAGuitarPolyphonyProbe';
 import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
 import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
+import {
+  buildPhraseFingerprint,
+  classifyVariationType,
+  computeMotifAuthorityScore,
+  defaultMotifAuthorityPlan,
+  nudgeReturnPhraseTowardFingerprint,
+  type MotifPhraseRange,
+} from '../motif/motifAuthorityV1';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -138,6 +146,33 @@ function isDuoGoldenPathPreset(presetId: string): boolean {
 
 function totalBarsFromContext(context: CompositionContext): number {
   return context.form.totalBars;
+}
+
+function isMotifAuthorityScopePreset(presetId: string): boolean {
+  return presetId === 'guitar_bass_duo' || presetId.startsWith('song_mode_');
+}
+
+function snapshotPhrasePitches(part: PartModel, range: MotifPhraseRange): Array<{ bar: number; idx: number; pitch: number }> {
+  const out: Array<{ bar: number; idx: number; pitch: number }> = [];
+  for (const m of part.measures) {
+    if (m.index < range.startBar || m.index > range.endBar) continue;
+    for (let i = 0; i < m.events.length; i++) {
+      const e = m.events[i]!;
+      if (e.kind !== 'note') continue;
+      out.push({ bar: m.index, idx: i, pitch: e.pitch });
+    }
+  }
+  return out;
+}
+
+function restorePhrasePitches(part: PartModel, snapshot: Array<{ bar: number; idx: number; pitch: number }>): void {
+  for (const s of snapshot) {
+    const m = part.measures.find((x) => x.index === s.bar);
+    if (!m) continue;
+    const e = m.events[s.idx];
+    if (!e || e.kind !== 'note') continue;
+    (e as { pitch: number }).pitch = s.pitch;
+  }
 }
 
 function sectionLabelForBar(bar: number, context: CompositionContext): string {
@@ -3225,6 +3260,59 @@ export function generateGoldenPathDuoScore(
       const phaseABars = injectPhaseAGuitarVoice2Probe(guitarPart, context);
       logGuitarVoice2Checkpoint('A', guitarPart);
       assertPhaseACheckpointA(guitarPart, phaseABars);
+    }
+    const motifAuthorityActive =
+      context.generationMetadata?.motifAuthorityV1 === true &&
+      isMotifAuthorityScopePreset(context.presetId);
+    if (motifAuthorityActive && context.generationMetadata) {
+      const motifPlan = defaultMotifAuthorityPlan(tb);
+      const phraseAFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseA);
+      context.generationMetadata = {
+        ...context.generationMetadata,
+        motifPlan,
+        motifFingerprint: phraseAFingerprint,
+      };
+
+      // Checkpoint 2: development phrase should be variation, not copy or drift.
+      if (motifPlan.phraseB) {
+        const phraseBFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseB);
+        const devScore = computeMotifAuthorityScore(phraseAFingerprint, phraseBFingerprint);
+        context.generationMetadata = {
+          ...context.generationMetadata,
+          motifPlan: {
+            ...motifPlan,
+            developmentSimilarity: devScore.motifAuthorityScore,
+          },
+          variationType: classifyVariationType(devScore),
+          literalCopyPenalty: devScore.literalCopyPenalty,
+          overDriftPenalty: devScore.overDriftPenalty,
+        };
+      }
+
+      // Checkpoint 3: return phrase scored and optionally refined with one bounded nudge pass.
+      if (motifPlan.phraseReturn) {
+        const returnOriginalFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
+        const returnOriginalScore = computeMotifAuthorityScore(phraseAFingerprint, returnOriginalFingerprint);
+        let chosen = returnOriginalScore;
+        if (returnOriginalScore.motifAuthorityScore < motifPlan.returnThreshold) {
+          const snapshot = snapshotPhrasePitches(guitarPart, motifPlan.phraseReturn);
+          nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint);
+          const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
+          const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);
+          if (returnRefinedScore.motifAuthorityScore >= returnOriginalScore.motifAuthorityScore) {
+            chosen = returnRefinedScore;
+          } else {
+            restorePhrasePitches(guitarPart, snapshot);
+          }
+        }
+        context.generationMetadata = {
+          ...context.generationMetadata,
+          returnSimilarity: chosen.motifAuthorityScore,
+          motifAuthorityScore: chosen.motifAuthorityScore,
+          literalCopyPenalty: chosen.literalCopyPenalty,
+          overDriftPenalty: chosen.overDriftPenalty,
+        };
+      }
     }
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {
       logEcmInternalPhaseProbe(probeEcm, 'before_metheny_development');

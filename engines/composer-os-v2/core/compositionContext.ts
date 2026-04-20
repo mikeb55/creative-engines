@@ -28,6 +28,7 @@ import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIn
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
+import type { MotifAuthorityPlan, MotifFingerprint } from './motif/motifAuthorityV1';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -102,6 +103,22 @@ export interface GenerationMetadata {
   wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** Receipt: which portable Wyble consumption path ran (debug; does not change MusicXML structure). */
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
+  /** Feature flag: Motif Authority V1 gated vertical slice (song_mode_* + guitar_bass_duo). */
+  motifAuthorityV1?: boolean;
+  /** Motif Authority V1 phrase contract + thresholds. */
+  motifPlan?: MotifAuthorityPlan;
+  /** Opening phrase fingerprint captured for V1 diagnostics. */
+  motifFingerprint?: MotifFingerprint;
+  /** Development phrase classification (copy/variation/drifted). */
+  variationType?: 'copy' | 'variation' | 'drifted';
+  /** Return phrase similarity score (A vs A'). */
+  returnSimilarity?: number;
+  /** Final motif authority score used for V1 gating. */
+  motifAuthorityScore?: number;
+  /** Penalty when development/return is too close to literal copy. */
+  literalCopyPenalty?: number;
+  /** Penalty when development/return drifts too far from motif identity. */
+  overDriftPenalty?: number;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */
