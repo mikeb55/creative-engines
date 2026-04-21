@@ -31,3 +31,9 @@ Why this is highest ROI now:
 - `funk`: strongest offbeat/anticipation bias.
 
 Validation is added in `tests/riffGenerator.test.ts` with seeded symbolic checks for 2-bar and 4-bar outputs.
+
+### Status
+
+- Direction B implementation is committed on `main` as `5c2e933`.
+- Short riffs (2-4 bars) for `neutral` / `scofield` / `funk` are ready for ear-based play-testing.
+- No further engine changes are planned until after the listening session.
