@@ -87,7 +87,7 @@ export const MODE_UX: ModeUx[] = [
     label: 'Riff Generator',
     hint: '1–4 bar loopable riffs with chord symbols, rehearsal mark “Riff”, and Sibelius-safe MusicXML.',
     whatItDoes:
-      'Builds a short, high-identity riff on a strict eighth or sixteenth grid: repeating rhythm, syncopation, hook, and loop closure. Candidates are ranked; only GCE ≥ 9.0 exports.',
+      'Builds a short riff on a strict eighth or sixteenth grid: repeating rhythm, syncopation, hook, and loop closure. Candidates are ranked against an internal 0–10 riff composite only (not the duo/Song Mode GCE); only passes export when that gate is met.',
     bestFor: 'Practice cells, hooks, and grooves you can drop into Sibelius or extend into a full piece.',
     output: 'Single MusicXML file under the Riffs project folder (projects/riffs).',
   },

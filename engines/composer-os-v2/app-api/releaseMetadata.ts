@@ -34,7 +34,8 @@ export const COMPOSER_OS_V1_SUPPORTED_MODES: readonly SupportedModeInfo[] = [
     presetId: 'riff_generator',
     displayName: 'Riff Generator',
     capability: 'musicxml_generation',
-    honestNote: 'Short loopable riffs (1–4 bars) to the library Riffs folder; LOCK grid, GCE-gated MusicXML.',
+    honestNote:
+      'Short loopable riffs (1–4 bars) to the library Riffs folder; strict grid; internal riff composite gate only (not duo GCE).',
   },
   {
     presetId: 'song_mode',

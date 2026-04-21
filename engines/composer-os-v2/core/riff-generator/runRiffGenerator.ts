@@ -1,5 +1,6 @@
 /**
- * Riff Generator — DCR candidate loop, GCE ≥ 9.0 hard gate, export.
+ * Riff Generator — DCR candidate loop, internal riff composite ≥ 9.0 hard gate, export.
+ * (Composite is `scoreRiffGce` — not duo / Song Mode GCE.)
  */
 
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';

@@ -1,5 +1,7 @@
 /**
- * Riff-adapted GCE (0–10). Six categories averaged; calibrated so gated riffs land ≥ 9.0.
+ * Internal riff composite score (0–10), loosely analogous to duo GCE buckets — **not** duo/Song Mode GCE.
+ * Mean of six subscores plus a calibration bump so the export gate (`runRiffGenerator`) can discriminate candidates.
+ * Consumers must not label this “GCE” without qualification (see app `riffGeneratorApp` manifest warnings).
  */
 
 import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
@@ -98,7 +100,7 @@ function subRhythmicIdentity(perBar: RiffRhythmSegment[][]): number {
 }
 
 /**
- * Aggregate GCE: mean of six 0–10 sub-scores (LOCK + DCR calibrated band).
+ * Aggregate riff composite: mean of six 0–10 sub-scores plus calibration (`+ 0.85`).
  */
 export function scoreRiffGce(
   score: ScoreModel,

@@ -8,9 +8,10 @@ import { randInt } from './riffRandom';
 const EPS = 1e-5;
 
 function fillRatioForDensity(d: RiffDensity): number {
-  if (d === 'sparse') return 0.4;
+  /** Probability a grid cell is played (vs rest): slightly higher “medium” fill reduces threadbare loops. */
+  if (d === 'sparse') return 0.42;
   if (d === 'dense') return 0.62;
-  return 0.52;
+  return 0.56;
 }
 
 function allowedDurations(grid: RiffGridMode, remaining: number): number[] {

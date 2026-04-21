@@ -40,6 +40,38 @@ function parseRiffLineMode(req: GenerateRequest): RiffLineMode {
   return 'single_line';
 }
 
+/** Filename slug — avoid implying duo GCE or embedding a faux “quality” brand in the path. */
+function riffFilenameSlug(title: string): string {
+  const t = title.trim() || 'Riff';
+  const slug = t.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 48);
+  return slug || 'Riff';
+}
+
+function riffManifestValidation(composite: number, gatePassed: boolean): import('./appApiTypes').ValidationSummary {
+  return {
+    scoreIntegrity: true,
+    exportIntegrity: true,
+    /** Duo / ECM behaviour gates do not run for riff preset. */
+    behaviourGates: false,
+    mxValid: true,
+    strictBarMath: true,
+    exportRoundTrip: false,
+    instrumentMetadata: true,
+    sibeliusSafe: true,
+    readinessRelease: 0,
+    readinessMx: 1,
+    shareable: false,
+    errors: [],
+    warnings: gatePassed
+      ? [
+          `Riff preset: riffCompositeScore ${composite.toFixed(
+            1
+          )} is an internal 0–10 composite only (scoreRiffGce); not the duo/Song Mode GCE. Duo behaviour gates were not run.`,
+        ]
+      : [`Riff preset: internal riff gate not met (composite ${composite.toFixed(1)}).`],
+  };
+}
+
 export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: string): GenerateResult {
   const effectiveSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
@@ -134,11 +166,13 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
 
   const riffDir = presetOutputDir;
   fs.mkdirSync(riffDir, { recursive: true });
-  const filename = `V1-Riff-${style}-GCE${gen.gce.toFixed(1)}.musicxml`;
+  const slug = riffFilenameSlug(title);
+  const filename = `V1-Riff-${slug}-seed${effectiveSeed}-${style}-${bars}b.musicxml`;
   const filepath = path.join(riffDir, filename);
   fs.writeFileSync(filepath, gen.xml, 'utf-8');
 
   const ts = new Date().toISOString();
+  const manifestValidation = riffManifestValidation(gen.gce, true);
   writeOutputManifest(filepath, {
     presetId: 'riff_generator',
     styleStack: ['riff_generator'],
@@ -147,20 +181,9 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     creativeControlLevel: req.creativeControlLevel,
     timestamp: ts,
     scoreTitle: title,
-    validation: {
-      scoreIntegrity: true,
-      exportIntegrity: true,
-      behaviourGates: true,
-      mxValid: true,
-      strictBarMath: true,
-      exportRoundTrip: true,
-      instrumentMetadata: true,
-      sibeliusSafe: true,
-      readinessRelease: 1,
-      readinessMx: 1,
-      shareable: true,
-      errors: [],
-    },
+    riffCompositeScore: gen.gce,
+    riffInternalGatePassed: true,
+    validation: manifestValidation,
   });
 
   return {
@@ -172,15 +195,16 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     scoreTitle: title,
     validation: {
       integrityPassed: true,
-      behaviourGatesPassed: true,
+      behaviourGatesPassed: false,
       mxValidationPassed: true,
       strictBarMathPassed: true,
-      exportRoundTripPassed: true,
+      exportRoundTripPassed: false,
       exportIntegrityPassed: true,
       instrumentMetadataPassed: true,
       sibeliusSafe: true,
-      readiness: { shareable: true, release: 1, mx: 1 },
+      readiness: { shareable: false, release: 0, mx: 1 },
       errors: [],
+      warnings: manifestValidation.warnings,
     },
     runManifest: {
       seed: effectiveSeed,

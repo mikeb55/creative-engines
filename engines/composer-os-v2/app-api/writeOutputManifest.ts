@@ -85,6 +85,8 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
     gceScore?: number;
     gceGatePassed?: boolean;
+    riffCompositeScore?: number;
+    riffInternalGatePassed?: boolean;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -151,6 +153,8 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
     gceScore: meta.gceScore,
     gceGatePassed: meta.gceGatePassed,
+    riffCompositeScore: meta.riffCompositeScore,
+    riffInternalGatePassed: meta.riffInternalGatePassed,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

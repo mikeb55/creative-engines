@@ -249,4 +249,10 @@ export interface OutputEntry {
   gceScore?: number;
   /** Song Mode — ship gate threshold met (≥ 8.0). */
   gceGatePassed?: boolean;
+  /**
+   * Riff Generator only: internal 0–10 composite from `scoreRiffGce` (not duo / Song Mode GCE).
+   * Present when the riff candidate passed the riff-internal export gate only.
+   */
+  riffCompositeScore?: number;
+  riffInternalGatePassed?: boolean;
 }

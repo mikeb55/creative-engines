@@ -61,7 +61,7 @@ const PRESETS: AppPreset[] = [
     id: 'riff_generator',
     name: 'Riff Generator',
     description:
-      'Short loopable riffs (1–4 bars), high-identity rhythm & melody, LOCK grid, GCE ≥ 9, Sibelius-safe MusicXML to your library Riffs folder.',
+      'Short loopable riffs (1–4 bars), strict grid, rehearsal mark — internal riff composite gate before export (not duo GCE); Sibelius-safe MusicXML to your library Riffs folder.',
     supported: true,
   },
 ];
