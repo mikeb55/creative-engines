@@ -18,6 +18,7 @@ import type { RiffGeneratorParams, RiffGeneratorResult } from './riffTypes';
 import { validateRiffIdentity } from './riffIdentityValidation';
 import { validateBassHarmonicIntegrity } from './riffBassHarmonicGate';
 import { validateRiffMusicXmlStructure } from './riffMusicXmlSanity';
+import { evaluateRiffQualityRules } from './riffQualityRules';
 
 const CANDIDATES = 7;
 const MAX_ROUNDS = 40;
@@ -37,6 +38,10 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       xml: string;
       score: import('../score-model/scoreModelTypes').ScoreModel;
       coreMotif: CoreMotif;
+      perBarRhythm: import('./riffTypes').RiffRhythmSegment[][];
+      density: import('./riffTypes').RiffDensity;
+      bars: number;
+      grid: import('./riffTypes').RiffGridMode;
     } | null = null;
 
     for (let c = 0; c < CANDIDATES; c++) {
@@ -78,11 +83,27 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       if (!sanity.valid) continue;
 
       if (!best || gce > best.gce) {
-        best = { gce, xml: exp.xml, score, coreMotif: built.coreMotif };
+        best = {
+          gce,
+          xml: exp.xml,
+          score,
+          coreMotif: built.coreMotif,
+          perBarRhythm,
+          density: p.density,
+          bars: p.bars,
+          grid: p.grid,
+        };
       }
     }
 
     if (best && best.gce >= GCE_THRESHOLD) {
+      const riffQuality = evaluateRiffQualityRules({
+        score: best.score,
+        perBarRhythm: best.perBarRhythm,
+        density: best.density,
+        bars: best.bars,
+        grid: best.grid,
+      });
       return {
         success: true,
         score: best.score,
@@ -90,6 +111,8 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         gce: best.gce,
         version: 1,
         coreMotif: best.coreMotif,
+        perBarRhythm: best.perBarRhythm,
+        riffQuality,
       };
     }
   }

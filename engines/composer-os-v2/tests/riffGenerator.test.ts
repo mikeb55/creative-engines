@@ -9,6 +9,7 @@ import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { manifestPathForMusicXml } from '../app-api/composerOsOutputPaths';
+import { runRiffQualityRulesSuite } from './riffQualityRules.test';
 
 function countMelodicNotes(score: ScoreModel): number {
   let n = 0;
@@ -131,6 +132,7 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
           validation?: { behaviourGates?: boolean; shareable?: boolean };
           riffCompositeScore?: number;
           riffInternalGatePassed?: boolean;
+          riffQualityRules?: { aggregatePass?: boolean; rules?: unknown[] };
           seed?: number;
           gceScore?: number;
         };
@@ -141,7 +143,9 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
           mj.riffCompositeScore !== undefined &&
           mj.riffInternalGatePassed === true &&
           mj.seed === 101 &&
-          mj.gceScore === undefined;
+          mj.gceScore === undefined &&
+          typeof mj.riffQualityRules?.aggregatePass === 'boolean' &&
+          (mj.riffQualityRules?.rules?.length ?? 0) >= 8;
       } else {
         ok = false;
       }
@@ -151,5 +155,5 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     }
   }
 
-  return out;
+  return [...out, ...runRiffQualityRulesSuite()];
 }

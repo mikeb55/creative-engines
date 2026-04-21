@@ -87,6 +87,7 @@ export function writeOutputManifest(
     gceGatePassed?: boolean;
     riffCompositeScore?: number;
     riffInternalGatePassed?: boolean;
+    riffQualityRules?: import('../core/riff-generator/riffQualityRules').RiffQualityManifestCompact;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -155,6 +156,7 @@ export function writeOutputManifest(
     gceGatePassed: meta.gceGatePassed,
     riffCompositeScore: meta.riffCompositeScore,
     riffInternalGatePassed: meta.riffInternalGatePassed,
+    riffQualityRules: meta.riffQualityRules,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

@@ -11,6 +11,7 @@ import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
 import type { GenerateResult } from './generateComposition';
 import type { RiffDensity, RiffGridMode, RiffLineMode, RiffStyleId } from '../core/riff-generator/riffTypes';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
+import { compactRiffQualityForManifest } from '../core/riff-generator/riffQualityRules';
 
 function parseRiffBars(req: GenerateRequest): 1 | 2 | 3 | 4 {
   const n = req.totalBars;
@@ -47,7 +48,11 @@ function riffFilenameSlug(title: string): string {
   return slug || 'Riff';
 }
 
-function riffManifestValidation(composite: number, gatePassed: boolean): import('./appApiTypes').ValidationSummary {
+function riffManifestValidation(
+  composite: number,
+  gatePassed: boolean,
+  riffStructuralPass?: boolean
+): import('./appApiTypes').ValidationSummary {
   return {
     scoreIntegrity: true,
     exportIntegrity: true,
@@ -62,13 +67,22 @@ function riffManifestValidation(composite: number, gatePassed: boolean): import(
     readinessMx: 1,
     shareable: false,
     errors: [],
-    warnings: gatePassed
-      ? [
-          `Riff preset: riffCompositeScore ${composite.toFixed(
-            1
-          )} is an internal 0–10 composite only (scoreRiffGce); not the duo/Song Mode GCE. Duo behaviour gates were not run.`,
-        ]
-      : [`Riff preset: internal riff gate not met (composite ${composite.toFixed(1)}).`],
+    warnings: (() => {
+      const base =
+        gatePassed
+          ? [
+              `Riff preset: riffCompositeScore ${composite.toFixed(
+                1
+              )} is an internal 0–10 composite only (scoreRiffGce); not the duo/Song Mode GCE. Duo behaviour gates were not run.`,
+            ]
+          : [`Riff preset: internal riff gate not met (composite ${composite.toFixed(1)}).`];
+      if (riffStructuralPass === false) {
+        base.push(
+          'Riff structural supplement (riffQualityRules): one or more objective checks failed — see manifest riffQualityRules; not a general GCE failure.'
+        );
+      }
+      return base;
+    })(),
   };
 }
 
@@ -172,7 +186,8 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
   fs.writeFileSync(filepath, gen.xml, 'utf-8');
 
   const ts = new Date().toISOString();
-  const manifestValidation = riffManifestValidation(gen.gce, true);
+  const rqCompact = compactRiffQualityForManifest(gen.riffQuality);
+  const manifestValidation = riffManifestValidation(gen.gce, true, gen.riffQuality.aggregatePass);
   writeOutputManifest(filepath, {
     presetId: 'riff_generator',
     styleStack: ['riff_generator'],
@@ -183,6 +198,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     scoreTitle: title,
     riffCompositeScore: gen.gce,
     riffInternalGatePassed: true,
+    riffQualityRules: rqCompact,
     validation: manifestValidation,
   });
 

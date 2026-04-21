@@ -37,6 +37,10 @@ export interface RiffGeneratorSuccess {
   xml: string;
   gce: number;
   version: number;
+  /** Planned rhythm layers (hook for riff-only structural checks). */
+  perBarRhythm: RiffRhythmSegment[][];
+  /** Riff supplement — not duo GCE; see `riffQualityRules.ts`. */
+  riffQuality: import('./riffQualityRules').RiffQualitySummary;
   /** Abstract motif this riff realization derives from (identity linkage). */
   coreMotif?: CoreMotif;
 }

@@ -255,4 +255,15 @@ export interface OutputEntry {
    */
   riffCompositeScore?: number;
   riffInternalGatePassed?: boolean;
+  /**
+   * Riff Generator only: compact structural rule outcomes (`riffQualityRules.ts`).
+   * Not general GCE — kept separate from `gceScore` / duo metrics.
+   */
+  riffQualityRules?: {
+    rulesetVersion: string;
+    aggregatePass: boolean;
+    passedCount: number;
+    totalRules: number;
+    rules: { id: string; passed: boolean }[];
+  };
 }
