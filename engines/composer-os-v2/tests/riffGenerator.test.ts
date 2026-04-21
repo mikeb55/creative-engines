@@ -34,6 +34,25 @@ function barsWithNotes(score: ScoreModel): number {
   return b;
 }
 
+function firstAndLastGuitarPitchClass(score: ScoreModel): { firstPc: number; lastPc: number } | null {
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return null;
+  const notes: number[] = [];
+  for (const m of g.measures) {
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      const voice = (e as { voice?: number }).voice ?? 1;
+      if (voice !== 1) continue;
+      notes.push((e as { pitch: number }).pitch);
+    }
+  }
+  if (notes.length < 2) return null;
+  return {
+    firstPc: ((notes[0] % 12) + 12) % 12,
+    lastPc: ((notes[notes.length - 1] % 12) + 12) % 12,
+  };
+}
+
 export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
 
@@ -59,6 +78,25 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     out.push({
       ok,
       name: 'runRiffGenerator: 4-bar rhythm uses A/B call-response contrast with A recall',
+    });
+  }
+
+  {
+    const r = runRiffGenerator(1307, {
+      bars: 4,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'eighth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 104,
+      title: 'ClosureCadence',
+    });
+    const pcs = r.success ? firstAndLastGuitarPitchClass(r.score) : null;
+    const ok = r.success === true && pcs != null && pcs.firstPc === pcs.lastPc;
+    out.push({
+      ok,
+      name: 'runRiffGenerator: final melodic pitch class cadences to opening pitch class in 4-bar loop',
     });
   }
 

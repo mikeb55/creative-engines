@@ -162,14 +162,31 @@ export function enforceHook(notes: MelodyLine[], rng: () => number): void {
 export function applyLoopClosure(
   lastBarNotes: MelodyLine[],
   firstBarFirstPitch: number,
-  rng: () => number
+  _rng: () => number
 ): void {
   if (lastBarNotes.length === 0) return;
   const last = lastBarNotes[lastBarNotes.length - 1]!;
   const targetPc = firstBarFirstPitch % 12;
-  const curPc = last.pitch % 12;
-  const diff = ((targetPc - curPc + 6) % 12) - 6;
-  if (Math.abs(diff) <= 2) return;
-  /** Step toward target */
-  last.pitch = last.pitch + (diff > 0 ? 1 : -1) * randInt(rng, 1, 2);
+  const lo = 40;
+  const hi = 90;
+  const penult = lastBarNotes.length >= 2 ? lastBarNotes[lastBarNotes.length - 2]!.pitch : undefined;
+  const candidates: number[] = [];
+  for (let k = -6; k <= 10; k++) {
+    const p = targetPc + k * 12;
+    if (p >= lo && p <= hi) candidates.push(p);
+  }
+  if (candidates.length === 0) return;
+  let best = last.pitch;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const c of candidates) {
+    const closeToCurrent = Math.abs(c - last.pitch);
+    const closeToPenult = penult !== undefined ? Math.abs(c - penult) : 0;
+    const leapPenalty = penult !== undefined && closeToPenult > 7 ? 6 : 0;
+    const score = closeToCurrent + closeToPenult * 0.35 + leapPenalty;
+    if (score < bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  last.pitch = best;
 }
