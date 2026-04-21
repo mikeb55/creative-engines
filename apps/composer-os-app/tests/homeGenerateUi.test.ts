@@ -3,6 +3,22 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import React from 'react';
+import { act, create } from 'react-test-renderer';
+import { vi } from 'vitest';
+
+vi.mock('../src/services/api', () => {
+  const api = {
+    getPresets: vi.fn().mockResolvedValue({
+      presets: [{ id: 'song_mode', name: 'Song Mode', description: 'Song Mode', supported: true }],
+    }),
+    getStyleModules: vi.fn().mockResolvedValue({ modules: [] }),
+    getOutputDirectory: vi.fn().mockResolvedValue({ path: 'C:/tmp', displayPath: 'C:/tmp' }),
+    openOutputFolder: vi.fn().mockResolvedValue({ success: true }),
+    generate: vi.fn(),
+  };
+  return { api, displayOutputPath: (r: { displayPath?: string; path: string }) => r.displayPath ?? r.path };
+});
 
 describe('HomeGenerate mode-driven UI', () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/pages/HomeGenerate.tsx'), 'utf-8');
@@ -119,5 +135,77 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain("presetId === 'string_quartet'");
     expect(src).toContain('Big band pairing');
     expect(src).toContain('String quartet harmony');
+  });
+
+  it('renders both Song Mode dev diagnostics blocks from one result payload', async () => {
+    (globalThis as { window?: unknown }).window = { composerOsDesktop: undefined };
+    const { HomeGenerate } = await import('../src/pages/HomeGenerate');
+    const { api } = await import('../src/services/api');
+
+    vi.mocked(api.generate).mockResolvedValue({
+      success: true,
+      filename: 'composer_os_song_mode_test.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_test.musicxml',
+      runManifest: {
+        presetId: 'song_mode',
+        seed: 123,
+        timestamp: '2026-04-21T00:00:00.000Z',
+        songModeSectionShapingDiagnostics: {
+          version: 1,
+          totalBars: 32,
+          densityDeltaBMinusA: 0.12,
+          colourDeltaBMinusA: 0.08,
+          openingVsReturnDelta: 0.4,
+          returnVariationType: 'harmonic_recolour',
+          returnVariationSummary: 'Return cadence lift applied.',
+          contributingSlices: ['bacharach'],
+        },
+        songModeSectionBehaviourDescriptors: [
+          {
+            sliceId: 'bacharach',
+            densityBiasByRole: { BRIDGE_LIFT: 0.03 },
+            harmonicColourBiasByRole: { BRIDGE_LIFT: 0.08 },
+          },
+        ],
+        songModeProfileRuleDiagnostics: {
+          styleProfile: 'STYLE_SOPHISTICATED_POP',
+          primarySongwriterStyleId: 'bacharach',
+          resolvedRuleIds: ['bacharach.chromatic_mediant', 'found.hook_object'],
+          behaviourSourceIds: ['bacharach'],
+        },
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    let tree: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(HomeGenerate, { onResult: () => undefined }));
+    });
+    const generateButton = tree!.root.findAllByType('button').find((b) => {
+      const c = b.props.children;
+      return (typeof c === 'string' && c.includes('Generate')) || (Array.isArray(c) && c.join('').includes('Generate'));
+    });
+    expect(generateButton).toBeDefined();
+    await act(async () => {
+      generateButton!.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Section Shape (dev diagnostics)');
+    expect(text).toContain('Song Mode Profile / Rules (dev)');
+    expect(text).toContain('B / Bridge Lift');
+    expect(text).toContain('+0.120');
+    expect(text).toContain('Style profile');
+    expect(text).toContain('STYLE_SOPHISTICATED_POP');
   });
 });

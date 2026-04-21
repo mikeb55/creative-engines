@@ -19,6 +19,7 @@ import {
   parseChordProgressionInputWithBarCount,
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
+import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
 
@@ -233,6 +234,37 @@ type GenResult = {
     /** Song Mode: style/songwriter receipt lines from the engine (same as `_meta` manifest). */
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
+    songModeSectionShapingDiagnostics?: {
+      version?: number;
+      totalBars?: number;
+      densityDeltaBMinusA?: number | null;
+      colourDeltaBMinusA?: number | null;
+      openingVsReturnDelta?: number | null;
+      returnVariationSummary?: string | null;
+      returnVariationType?: string | null;
+      contributingSlices?: string[];
+    };
+    songModeSectionBehaviourDescriptors?: Array<{
+      sliceId: string;
+      densityBiasByRole?: Partial<Record<'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO', number>>;
+      registerBiasByRole?: Partial<Record<'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO', number>>;
+      harmonicColourBiasByRole?: Partial<
+        Record<'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO', number>
+      >;
+      returnVariationType?: string;
+    }>;
+    songModeProfileRuleDiagnostics?: {
+      styleProfile?: string;
+      primarySongwriterStyleId?: string;
+      secondarySongwriterStyleId?: string | null;
+      authorOverlayId?: string | null;
+      classicalOverlayId?: string | null;
+      styleFingerprint?: string;
+      resolvedRuleIds?: string[];
+      songwriterCompProfileId?: string;
+      bacharachSongModeRuleBundleId?: string;
+      behaviourSourceIds?: string[];
+    };
   };
   scoreTitle?: string;
   requestEcho?: {
@@ -267,6 +299,28 @@ type GenResult = {
   /** Song Mode — ship gate threshold met when scored. */
   gceGatePassed?: boolean;
 };
+
+type SongModeSectionRoleUi = 'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO';
+
+const SONG_MODE_SECTION_ROLE_ORDER: SongModeSectionRoleUi[] = ['OPENING', 'BRIDGE_LIFT', 'RETURN', 'OUTRO', 'WHOLE'];
+
+const SONG_MODE_SECTION_ROLE_LABELS: Record<SongModeSectionRoleUi, string> = {
+  OPENING: 'A / Opening',
+  BRIDGE_LIFT: 'B / Bridge Lift',
+  RETURN: 'A Return',
+  OUTRO: 'Outro',
+  WHOLE: 'Whole Form',
+};
+
+function mean(nums: number[]): number | null {
+  if (nums.length === 0) return null;
+  return nums.reduce((sum, n) => sum + n, 0) / nums.length;
+}
+
+function fmtSigned(v: number | null | undefined): string {
+  if (typeof v !== 'number' || Number.isNaN(v)) return '-';
+  return `${v >= 0 ? '+' : ''}${v.toFixed(3)}`;
+}
 
 function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): void {
   window.composerOsDesktop?.notifyGenerationPhase(phase);
@@ -800,17 +854,56 @@ export function HomeGenerate({
 
   const v = result?.validation;
   const rm = result?.runManifest;
+  const sectionShapeDiag = rm?.songModeSectionShapingDiagnostics;
+  const sectionShapeDescriptors = rm?.songModeSectionBehaviourDescriptors ?? [];
+  const songModeProfileRuleRows = buildSongModeProfileRuleRows(rm?.songModeProfileRuleDiagnostics);
+  const sectionShapeRows = SONG_MODE_SECTION_ROLE_ORDER.map((role) => {
+    const roleDescriptors = sectionShapeDescriptors.filter((descriptor) => {
+      const hasDensity = typeof descriptor.densityBiasByRole?.[role] === 'number';
+      const hasColour = typeof descriptor.harmonicColourBiasByRole?.[role] === 'number';
+      const hasRegister = typeof descriptor.registerBiasByRole?.[role] === 'number';
+      const hasReturnVariation = role === 'RETURN' && typeof descriptor.returnVariationType === 'string';
+      return hasDensity || hasColour || hasRegister || hasReturnVariation;
+    });
+    return {
+      role,
+      densityBiasMean: mean(
+        roleDescriptors
+          .map((descriptor) => descriptor.densityBiasByRole?.[role])
+          .filter((value): value is number => typeof value === 'number')
+      ),
+      colourBiasMean: mean(
+        roleDescriptors
+          .map((descriptor) => descriptor.harmonicColourBiasByRole?.[role])
+          .filter((value): value is number => typeof value === 'number')
+      ),
+      registerBiasMean: mean(
+        roleDescriptors
+          .map((descriptor) => descriptor.registerBiasByRole?.[role])
+          .filter((value): value is number => typeof value === 'number')
+      ),
+      contributingSlices: roleDescriptors.map((descriptor) => descriptor.sliceId),
+    };
+  }).filter((row) => row.contributingSlices.length > 0);
   const productKind = (result as { productKind?: string } | null)?.productKind;
+  const summaryPresetForPass = result?.runManifest?.presetId ?? presetId;
   const passed = result
     ? productKind && productKind !== 'musicxml'
       ? !!result.success && !(v?.errors?.length)
-      : !!v?.integrityPassed &&
-        !!v?.behaviourGatesPassed &&
-        !!v?.mxValidationPassed &&
-        !!v?.strictBarMathPassed &&
-        !!v?.exportRoundTripPassed &&
-        !!v?.instrumentMetadataPassed &&
-        !!result.success
+      : summaryPresetForPass === 'riff_generator'
+        ? !!v?.integrityPassed &&
+          !!v?.mxValidationPassed &&
+          !!v?.strictBarMathPassed &&
+          !!v?.instrumentMetadataPassed &&
+          !!result.success &&
+          !(v?.errors?.length)
+        : !!v?.integrityPassed &&
+          !!v?.behaviourGatesPassed &&
+          !!v?.mxValidationPassed &&
+          !!v?.strictBarMathPassed &&
+          !!v?.exportRoundTripPassed &&
+          !!v?.instrumentMetadataPassed &&
+          !!result.success
     : false;
 
   const receiptOk = result && !error && result.success && passed;
@@ -2231,6 +2324,102 @@ export function HomeGenerate({
                     </ul>
                   </div>
                 )}
+              {summaryPresetId === 'song_mode' && (
+                <details
+                  style={{
+                    marginTop: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '0.6rem 0.75rem',
+                    background: 'rgba(15,23,42,0.12)',
+                  }}
+                >
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                    Section Shape (dev diagnostics)
+                  </summary>
+                  {!sectionShapeDiag ? (
+                    <p style={{ margin: '0.5rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      No section-shaping diagnostics were attached to this Song Mode run.
+                    </p>
+                  ) : (
+                    <div style={{ marginTop: '0.6rem' }}>
+                      <p style={{ margin: '0 0 0.45rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                        Global deltas — density (B-A): {fmtSigned(sectionShapeDiag.densityDeltaBMinusA)} | colour
+                        (B-A): {fmtSigned(sectionShapeDiag.colourDeltaBMinusA)} | opening vs return:{' '}
+                        {fmtSigned(sectionShapeDiag.openingVsReturnDelta)} | return variation:{' '}
+                        {sectionShapeDiag.returnVariationType ?? '-'}
+                      </p>
+                      {sectionShapeRows.length === 0 ? (
+                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                          No per-section slice descriptors were present for this run.
+                        </p>
+                      ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Section</th>
+                              <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Density Bias</th>
+                              <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Colour Bias</th>
+                              <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Register Bias</th>
+                              <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Contributing Slices</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sectionShapeRows.map((row) => (
+                              <tr key={row.role} style={{ borderTop: '1px solid var(--border)' }}>
+                                <td style={{ padding: '0.25rem 0.2rem', whiteSpace: 'nowrap' }}>
+                                  {SONG_MODE_SECTION_ROLE_LABELS[row.role]}
+                                </td>
+                                <td style={{ padding: '0.25rem 0.2rem' }}>{fmtSigned(row.densityBiasMean)}</td>
+                                <td style={{ padding: '0.25rem 0.2rem' }}>{fmtSigned(row.colourBiasMean)}</td>
+                                <td style={{ padding: '0.25rem 0.2rem' }}>{fmtSigned(row.registerBiasMean)}</td>
+                                <td style={{ padding: '0.25rem 0.2rem' }}>{row.contributingSlices.join(', ')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                      {sectionShapeDiag.returnVariationSummary ? (
+                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          Return summary: {sectionShapeDiag.returnVariationSummary}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </details>
+              )}
+              {summaryPresetId === 'song_mode' && (
+                <details
+                  style={{
+                    marginTop: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '0.6rem 0.75rem',
+                    background: 'rgba(15,23,42,0.12)',
+                  }}
+                >
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                    Song Mode Profile / Rules (dev)
+                  </summary>
+                  {songModeProfileRuleRows.profileRows.length === 0 &&
+                  songModeProfileRuleRows.ruleSetRows.length === 0 &&
+                  songModeProfileRuleRows.behaviourSourceRows.length === 0 ? (
+                    <p style={{ margin: '0.5rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      No Song Mode profile/rule diagnostics were attached to this result.
+                    </p>
+                  ) : (
+                    <div style={{ marginTop: '0.6rem', fontSize: '0.83rem' }}>
+                      {[...songModeProfileRuleRows.profileRows, ...songModeProfileRuleRows.ruleSetRows, ...songModeProfileRuleRows.behaviourSourceRows].map(
+                        (row) => (
+                          <p key={row.label} style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                            <span style={{ color: 'var(--text)' }}>{row.label}:</span> {row.value}
+                          </p>
+                        )
+                      )}
+                    </div>
+                  )}
+                </details>
+              )}
               {v?.readiness?.mx != null && result.stylePairingReceipt?.confidenceScore == null && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Readiness (MX):</span> {v.readiness.mx}

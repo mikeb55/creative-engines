@@ -105,6 +105,8 @@ export interface GenerateResult {
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
+    songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
+    songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -256,6 +258,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       keySignatureExportKeyWritten: result.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
       songModeStyleSurfaceNotes: result.context.generationMetadata.songModeStyleSurfaceNotes,
       songModeDonaldFagenC1Receipt: result.context.generationMetadata.songModeDonaldFagenC1Receipt,
+      songModeSectionBehaviourDescriptors: result.context.generationMetadata.songModeSectionBehaviourDescriptors,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -359,6 +362,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           songModeStyleSurfaceNotes: result.runManifest.songModeStyleSurfaceNotes,
           songModeDonaldFagenC1Receipt: result.runManifest.songModeDonaldFagenC1Receipt,
           songModeSectionShapingDiagnostics: result.runManifest.songModeSectionShapingDiagnostics,
+          songModeSectionBehaviourDescriptors: result.runManifest.songModeSectionBehaviourDescriptors,
+          songModeProfileRuleDiagnostics: result.runManifest.songModeProfileRuleDiagnostics,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

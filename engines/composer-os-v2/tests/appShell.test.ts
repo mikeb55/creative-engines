@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { buildDiagnostics } from '../app-api/buildDiagnostics';
+import { COMPOSER_OS_V1_SUPPORTED_MODES } from '../app-api/releaseMetadata';
 
 export function runAppShellTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -36,7 +37,7 @@ export function runAppShellTests(): { ok: boolean; name: string }[] {
   try {
     const d = buildDiagnostics(tmp, 3001);
     out.push({
-      ok: d.supportedModes?.length === 6 && d.version.length > 0,
+      ok: d.supportedModes?.length === COMPOSER_OS_V1_SUPPORTED_MODES.length && d.version.length > 0,
       name: 'diagnostics exposes version + supportedModes (V1 baseline)',
     });
   } finally {

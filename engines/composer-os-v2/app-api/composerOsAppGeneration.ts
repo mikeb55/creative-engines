@@ -465,6 +465,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
+    secondarySongwriterStyle: secondarySw,
+    authorOverlay: authorOv,
     era: req.stylePairing?.era ?? undefined,
     stylePairing: req.stylePairing
       ? {
@@ -477,6 +479,23 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+  const resolvedSongModeStyle = sm.compiledSong.songwriting?.resolvedStyle;
+  if (resolvedSongModeStyle) {
+    gp.context.generationMetadata.songModeProfileRuleDiagnostics = {
+      styleProfile: req.styleProfile ?? 'STYLE_ECM',
+      primarySongwriterStyleId: resolvedSongModeStyle.primaryId,
+      secondarySongwriterStyleId: resolvedSongModeStyle.secondaryId,
+      authorOverlayId: resolvedSongModeStyle.authorOverlayId,
+      classicalOverlayId: resolvedSongModeStyle.classicalOverlayId,
+      styleFingerprint: resolvedSongModeStyle.styleFingerprint,
+      resolvedRuleIds: resolvedSongModeStyle.resolvedRuleIds,
+      songwriterCompProfileId: gp.context.generationMetadata.songModeSongwriterCompProfileId,
+      bacharachSongModeRuleBundleId: gp.context.generationMetadata.bacharachSongModeRuleBundleId,
+      behaviourSourceIds:
+        gp.context.generationMetadata.songModeSectionBehaviourDescriptors?.map((d) => d.sliceId) ?? [],
+    };
+    gp.runManifest.songModeProfileRuleDiagnostics = gp.context.generationMetadata.songModeProfileRuleDiagnostics;
+  }
 
   /** GCE ship gate — retry with deterministic seed offsets when below threshold (see `core/gce/gceGate.ts`). */
   const GCE_GATE_MAX_RETRIES = 3;
@@ -643,6 +662,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songwriterSyncopationBias: gp.context.generationMetadata.songwriterSyncopationBias,
       songwriterDensityBias: gp.context.generationMetadata.songwriterDensityBias,
       songModeSectionShapingDiagnostics: gp.context.generationMetadata.songModeSectionShapingDiagnostics,
+      songModeSectionBehaviourDescriptors: gp.context.generationMetadata.songModeSectionBehaviourDescriptors,
+      songModeProfileRuleDiagnostics: gp.context.generationMetadata.songModeProfileRuleDiagnostics,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
@@ -747,6 +768,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           songModeStyleSurfaceNotes: gp.runManifest.songModeStyleSurfaceNotes,
           songModeDonaldFagenC1Receipt: gp.runManifest.songModeDonaldFagenC1Receipt,
           songModeSectionShapingDiagnostics: gp.runManifest.songModeSectionShapingDiagnostics,
+          songModeSectionBehaviourDescriptors: gp.runManifest.songModeSectionBehaviourDescriptors,
+          songModeProfileRuleDiagnostics: gp.runManifest.songModeProfileRuleDiagnostics,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

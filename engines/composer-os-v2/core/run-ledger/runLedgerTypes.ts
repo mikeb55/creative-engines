@@ -4,7 +4,10 @@
 
 import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
-import type { SongModeSectionShapingDiagnosticsV1 } from '../song-mode/songModeSectionTypes';
+import type {
+  SongModeSectionBehaviourDescriptor,
+  SongModeSectionShapingDiagnosticsV1,
+} from '../song-mode/songModeSectionTypes';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -118,4 +121,19 @@ export interface RunManifest {
   songModeDonaldFagenC1Receipt?: string;
   /** Song Mode — aggregated section-role shaping diagnostics (stable field set for manifests / eval). */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
+  /** Song Mode — per-slice role bias descriptors (used to render per-section diagnostics in UI/dev tooling). */
+  songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
+  /** Song Mode — compact profile/rule inspector payload (stable ids and summaries). */
+  songModeProfileRuleDiagnostics?: {
+    styleProfile?: import('../song-mode/songModeStyleProfile').StyleProfile;
+    primarySongwriterStyleId?: import('../song-mode/songwritingResearchTypes').SongwriterRuleId;
+    secondarySongwriterStyleId?: import('../song-mode/songwritingResearchTypes').SongwriterRuleId | null;
+    authorOverlayId?: import('../song-mode/songwritingResearchTypes').AuthorRuleId | null;
+    classicalOverlayId?: import('../song-mode/songwritingResearchTypes').ClassicalSongRuleId | null;
+    styleFingerprint?: string;
+    resolvedRuleIds?: string[];
+    songwriterCompProfileId?: import('../song-mode/songwritingResearchTypes').SongwriterRuleId;
+    bacharachSongModeRuleBundleId?: string;
+    behaviourSourceIds?: string[];
+  };
 }

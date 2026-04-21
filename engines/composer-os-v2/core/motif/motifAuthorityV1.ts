@@ -114,13 +114,13 @@ export function literalCopyPenalty(a: MotifFingerprint, b: MotifFingerprint): nu
   const c = contourSimilarity(a, b);
   const r = rhythmSimilarity(a, b);
   const an = anchorToneSimilarity(a, b);
-  return c > 0.96 && r > 0.96 && an > 0.96 ? 0.3 : 0;
+  return c > 0.96 && r > 0.96 && an > 0.96 ? 0.25 : 0;
 }
 
 export function overDriftPenalty(a: MotifFingerprint, b: MotifFingerprint): number {
   const base = (contourSimilarity(a, b) + rhythmSimilarity(a, b) + anchorToneSimilarity(a, b)) / 3;
-  if (base >= 0.2) return 0;
-  return clamp01((0.2 - base) / 0.2) * 0.25;
+  if (base >= 0.16) return 0;
+  return clamp01((0.16 - base) / 0.16) * 0.2;
 }
 
 export function computeMotifAuthorityScore(
@@ -134,10 +134,10 @@ export function computeMotifAuthorityScore(
   const copyPenalty = literalCopyPenalty(fingerprintA, fingerprintB);
   const driftPenalty = overDriftPenalty(fingerprintA, fingerprintB);
   const weighted =
-    contourScore * 0.35 +
-    rhythmScore * 0.25 +
-    anchorScore * 0.25 +
-    registerScore * 0.15;
+    contourScore * 0.3 +
+    rhythmScore * 0.3 +
+    anchorScore * 0.3 +
+    registerScore * 0.1;
   const motifAuthorityScore = clamp01(weighted - copyPenalty - driftPenalty);
   return {
     contourScore,
@@ -168,7 +168,7 @@ export function defaultMotifAuthorityPlan(totalBars: number): MotifAuthorityPlan
     phraseA,
     phraseB,
     phraseReturn,
-    returnThreshold: 0.58,
+    returnThreshold: 0.54,
     variationMiddleBand: [0.28, 0.9],
   };
 }
@@ -206,7 +206,7 @@ export function nudgeReturnPhraseTowardFingerprint(
     if (curPc === targetPc) continue;
     const up = (targetPc - curPc + 12) % 12;
     const down = (curPc - targetPc + 12) % 12;
-    const delta = up <= down ? Math.min(up, 2) : -Math.min(down, 2);
+    const delta = up <= down ? Math.min(up, 1) : -Math.min(down, 1);
     const next = cur + delta;
     (m.events[first.idx] as { pitch: number }).pitch = next;
   }

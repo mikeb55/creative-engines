@@ -217,7 +217,8 @@ function extractRehearsalMarksFromFirstPartXml(xml: string): Map<number, string>
   for (const mb of measures) {
     const numMatch = mb.match(/<measure[^>]*number="(\d+)"/);
     const num = numMatch ? parseInt(numMatch[1], 10) : -1;
-    const rm = mb.match(/<rehearsal>([^<]*)<\/rehearsal>/);
+    /** Exporter uses `<rehearsal enclosure="rectangle">…` — attributes must be allowed. */
+    const rm = mb.match(/<rehearsal[^>]*>([^<]*)<\/rehearsal>/);
     if (rm && num >= 1) {
       map.set(num, rm[1].trim());
     }

@@ -23,7 +23,7 @@ import type {
   SongModeSectionBehaviourDescriptor,
   SongModeSectionShapingDiagnosticsV1,
 } from './song-mode/songModeSectionTypes';
-import type { SongwriterRuleId } from './song-mode/songwritingResearchTypes';
+import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './song-mode/songwritingResearchTypes';
 import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIntentTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
@@ -237,6 +237,22 @@ export interface GenerationMetadata {
   songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
+  /**
+   * Song Mode: compact inspectability payload for "which profile/rules drove this run".
+   * Travels engine -> manifest/app API -> desktop renderer dev inspector.
+   */
+  songModeProfileRuleDiagnostics?: {
+    styleProfile?: StyleProfile;
+    primarySongwriterStyleId?: SongwriterRuleId;
+    secondarySongwriterStyleId?: SongwriterRuleId | null;
+    authorOverlayId?: AuthorRuleId | null;
+    classicalOverlayId?: ClassicalSongRuleId | null;
+    styleFingerprint?: string;
+    resolvedRuleIds?: string[];
+    songwriterCompProfileId?: SongwriterRuleId;
+    bacharachSongModeRuleBundleId?: string;
+    behaviourSourceIds?: string[];
+  };
   /** Fagen-only keys-comp musical augmentations — inspectable objective metrics for A/B tooling. */
   fagenKeysCompMusicalDiagnostics?: {
     rhythmPatternFamily: string;

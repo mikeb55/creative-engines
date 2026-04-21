@@ -1,21 +1,24 @@
 "use strict";
 /**
- * Composer OS V2 — Acoustic / Upright Bass profile
- * Default: Acoustic Upright Bass (never vocal bass).
+ * Acoustic / Upright Bass profile — keep in sync with `uprightBassProfile.ts`.
+ * (Committed .js must export the same symbols Node resolves ahead of `.ts`.)
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ACOUSTIC_UPRIGHT_BASS = void 0;
-/** Acoustic Upright Bass — hard range E1–G4 (MIDI 28–67). */
+exports.ACOUSTIC_UPRIGHT_BASS = exports.BASS_HARD_RANGE_HIGH = exports.BASS_HARD_RANGE_LOW = void 0;
+/** Concert MIDI bounds for upright bass in score model (E1–G3); matches export without octave fudge. */
+exports.BASS_HARD_RANGE_LOW = 28;
+exports.BASS_HARD_RANGE_HIGH = 55;
+/** Acoustic Upright Bass — hard range aligned with validator; walking zone stays mid-bass. */
 exports.ACOUSTIC_UPRIGHT_BASS = {
-    instrumentIdentity: 'acoustic_upright_bass',
-    midiProgram: 32, // GM Acoustic Bass (0-based); MusicXML uses midi-program 33 (1-based)
-    hardRange: [28, 67], // E1–G4
-    preferredWalkingZone: [36, 55], // E2–G3
-    upperDangerZone: [60, 67], // C4–G4
-    lowerMudZone: [28, 35], // E1–B1
-    harmonicAnchorRequirements: {
-        rootOnOne: true,
-        walkingLine: true,
-        chordTones: true,
-    },
+  instrumentIdentity: "acoustic_upright_bass",
+  midiProgram: 32,
+  hardRange: [exports.BASS_HARD_RANGE_LOW, exports.BASS_HARD_RANGE_HIGH],
+  preferredWalkingZone: [28, 55],
+  upperDangerZone: [52, 55],
+  lowerMudZone: [28, 34],
+  harmonicAnchorRequirements: {
+    rootOnOne: true,
+    walkingLine: true,
+    chordTones: true,
+  },
 };

@@ -6,7 +6,10 @@
 import type { RunManifest } from './runLedgerTypes';
 import type { GuitarVoice2PolyphonyDiagnostics } from '../goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
-import type { SongModeSectionShapingDiagnosticsV1 } from '../song-mode/songModeSectionTypes';
+import type {
+  SongModeSectionBehaviourDescriptor,
+  SongModeSectionShapingDiagnosticsV1,
+} from '../song-mode/songModeSectionTypes';
 
 export interface CreateRunManifestInput {
   version: string;
@@ -77,6 +80,8 @@ export interface CreateRunManifestInput {
   songModeStyleSurfaceNotes?: string[];
   songModeDonaldFagenC1Receipt?: string;
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
+  songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
+  songModeProfileRuleDiagnostics?: RunManifest['songModeProfileRuleDiagnostics'];
 }
 
 /** Create run manifest. */
@@ -150,5 +155,7 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songModeStyleSurfaceNotes: input.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: input.songModeDonaldFagenC1Receipt,
     songModeSectionShapingDiagnostics: input.songModeSectionShapingDiagnostics,
+    songModeSectionBehaviourDescriptors: input.songModeSectionBehaviourDescriptors,
+    songModeProfileRuleDiagnostics: input.songModeProfileRuleDiagnostics,
   };
 }

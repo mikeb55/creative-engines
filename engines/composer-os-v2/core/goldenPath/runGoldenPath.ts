@@ -86,6 +86,7 @@ import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
+import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
 import {
   appendSongModeStyleSurfaceNotes,
@@ -940,6 +941,12 @@ export interface RunGoldenPathOptions {
   styleProfile?: StyleProfile;
   /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
   primarySongwriterStyle?: string;
+  /** Song Mode: optional secondary songwriter style key (for inspectability metadata). */
+  secondarySongwriterStyle?: string;
+  /** Song Mode: optional author overlay id (for inspectability metadata). */
+  authorOverlay?: string;
+  /** Song Mode: optional classical overlay id (for inspectability metadata). */
+  classicalOverlay?: string;
   /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
   creativeControlLevel?: 'stable' | 'balanced' | 'surprise';
   /** Song Mode Phase C3: James Brown funk overlay (opt-in; tests / manual). */
@@ -1343,6 +1350,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity && options?.primarySongwriterStyle) {
     const resolution = resolveSongwritingStyles({
       primary: options.primarySongwriterStyle,
+      secondary: options.secondarySongwriterStyle,
+      authorOverlay: options.authorOverlay as AuthorRuleId | undefined,
+      classicalOverlay: options.classicalOverlay as ClassicalSongRuleId | undefined,
     });
     const p = resolution.blendedProfile;
     context.generationMetadata = {
@@ -1362,6 +1372,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       bacharachModalMixtureLevel: p.bacharachModalMixtureLevel ?? 0,
       bacharachCadentialAmbiguity: p.bacharachCadentialAmbiguity ?? 0,
       bacharachPedalUsage: p.bacharachPedalUsage ?? 0,
+      songModeProfileRuleDiagnostics: {
+        styleProfile: context.generationMetadata.styleProfile,
+        primarySongwriterStyleId: resolution.primaryId,
+        secondarySongwriterStyleId: resolution.secondaryId,
+        authorOverlayId: resolution.authorOverlayId,
+        classicalOverlayId: resolution.classicalOverlayId,
+        styleFingerprint: resolution.styleFingerprint,
+        resolvedRuleIds: resolution.resolvedRuleIds,
+      },
     };
     const compProfile = getSongwriterCompProfile(resolution.primaryId);
     if (compProfile?.primaryCompInstrument === 'keys') {
@@ -1370,6 +1389,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ...context.generationMetadata,
         songModeSongwriterKeysCompActive: true,
         songModeSongwriterCompProfileId: compProfile.id,
+        songModeProfileRuleDiagnostics: {
+          ...(context.generationMetadata.songModeProfileRuleDiagnostics ?? {}),
+          songwriterCompProfileId: compProfile.id,
+        },
         ...(compProfile.id === 'bacharach'
           ? { songwriterSyncopationBias: Math.min(1, syncBase + 0.05) }
           : {}),
@@ -1798,6 +1821,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     songModeStyleSurfaceNotes: appliedContext.generationMetadata.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: appliedContext.generationMetadata.songModeDonaldFagenC1Receipt,
     songModeSectionShapingDiagnostics: appliedContext.generationMetadata.songModeSectionShapingDiagnostics,
+    songModeSectionBehaviourDescriptors: appliedContext.generationMetadata.songModeSectionBehaviourDescriptors,
+    songModeProfileRuleDiagnostics: {
+      ...(appliedContext.generationMetadata.songModeProfileRuleDiagnostics ?? {}),
+      bacharachSongModeRuleBundleId: appliedContext.generationMetadata.bacharachSongModeRuleBundleId,
+      behaviourSourceIds:
+        appliedContext.generationMetadata.songModeSectionBehaviourDescriptors?.map((d) => d.sliceId) ?? [],
+    },
   });
 
   const success =

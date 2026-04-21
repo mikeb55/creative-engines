@@ -150,7 +150,7 @@ function testExporterUsesEmptyKindForPlainMajor(): boolean {
   const score = createScore('Lead sheet major', [{
     id: 'p1',
     name: 'Part 1',
-    instrumentIdentity: 'guitar',
+    instrumentIdentity: 'clean_electric_guitar',
     midiProgram: 27,
     clef: 'treble',
     measures: [m],

@@ -83,6 +83,8 @@ export function writeOutputManifest(
     songwriterSyncopationBias?: number;
     songwriterDensityBias?: number;
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
+    songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
+    songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
     gceScore?: number;
     gceGatePassed?: boolean;
     riffCompositeScore?: number;
@@ -152,6 +154,8 @@ export function writeOutputManifest(
     songwriterSyncopationBias: meta.songwriterSyncopationBias,
     songwriterDensityBias: meta.songwriterDensityBias,
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
+    songModeSectionBehaviourDescriptors: meta.songModeSectionBehaviourDescriptors,
+    songModeProfileRuleDiagnostics: meta.songModeProfileRuleDiagnostics,
     gceScore: meta.gceScore,
     gceGatePassed: meta.gceGatePassed,
     riffCompositeScore: meta.riffCompositeScore,
