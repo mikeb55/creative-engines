@@ -21,6 +21,7 @@ import {
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
+import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
 
@@ -266,6 +267,12 @@ type GenResult = {
       bacharachSongModeRuleBundleId?: string;
       behaviourSourceIds?: string[];
     };
+    songModeDiagnosticsSummary?: {
+      profile?: string;
+      rules?: string;
+      sectionShape?: string;
+      sectionSources?: string[];
+    };
   };
   scoreTitle?: string;
   requestEcho?: {
@@ -302,6 +309,17 @@ type GenResult = {
 };
 
 type SongModeSectionRoleUi = 'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO';
+type SongModeRecentRun = {
+  id: string;
+  label: string;
+  seed?: number;
+  timestamp?: string;
+  filepath?: string;
+  summaryLine?: string;
+  shape?: NonNullable<NonNullable<GenResult['runManifest']>['songModeSectionShapingDiagnostics']>;
+  profile?: NonNullable<NonNullable<GenResult['runManifest']>['songModeProfileRuleDiagnostics']>;
+  sectionDescriptors: NonNullable<NonNullable<GenResult['runManifest']>['songModeSectionBehaviourDescriptors']>;
+};
 
 const SONG_MODE_SECTION_ROLE_ORDER: SongModeSectionRoleUi[] = ['OPENING', 'BRIDGE_LIFT', 'RETURN', 'OUTRO', 'WHOLE'];
 
@@ -381,6 +399,9 @@ export function HomeGenerate({
   const [riffBass, setRiffBass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenResult | null>(null);
+  const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
+  const [compareRunAId, setCompareRunAId] = useState('');
+  const [compareRunBId, setCompareRunBId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
   /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
@@ -396,6 +417,20 @@ export function HomeGenerate({
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (recentSongModeRuns.length === 0) {
+      setCompareRunAId('');
+      setCompareRunBId('');
+      return;
+    }
+    if (!compareRunAId || !recentSongModeRuns.some((r) => r.id === compareRunAId)) {
+      setCompareRunAId(recentSongModeRuns[0]!.id);
+    }
+    if (!compareRunBId || !recentSongModeRuns.some((r) => r.id === compareRunBId)) {
+      setCompareRunBId(recentSongModeRuns[1]?.id ?? recentSongModeRuns[0]!.id);
+    }
+  }, [recentSongModeRuns, compareRunAId, compareRunBId]);
 
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
@@ -765,6 +800,34 @@ export function HomeGenerate({
         }
         const r = (await api.generate(generatePayload)) as GenResult;
         setResult(r);
+        if (
+          r.runManifest?.presetId === 'song_mode' &&
+          (r.runManifest.songModeSectionShapingDiagnostics ||
+            r.runManifest.songModeProfileRuleDiagnostics ||
+            (r.runManifest.songModeSectionBehaviourDescriptors?.length ?? 0) > 0)
+        ) {
+          const id = `${r.runManifest.timestamp ?? 'no-ts'}:${r.runManifest.seed ?? 'no-seed'}:${r.filepath ?? ''}`;
+          const summaryParts = [
+            r.runManifest.songModeDiagnosticsSummary?.profile,
+            r.runManifest.songModeDiagnosticsSummary?.rules,
+            r.runManifest.songModeDiagnosticsSummary?.sectionShape,
+          ].filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+          const runEntry: SongModeRecentRun = {
+            id,
+            label: `Seed ${r.runManifest.seed ?? '-'} · ${r.runManifest.timestamp ?? 'run'}`,
+            seed: r.runManifest.seed,
+            timestamp: r.runManifest.timestamp,
+            filepath: r.filepath,
+            summaryLine: summaryParts.join(' | '),
+            shape: r.runManifest.songModeSectionShapingDiagnostics,
+            profile: r.runManifest.songModeProfileRuleDiagnostics,
+            sectionDescriptors: r.runManifest.songModeSectionBehaviourDescriptors ?? [],
+          };
+          setRecentSongModeRuns((prev) => {
+            const next = [runEntry, ...prev.filter((x) => x.id !== runEntry.id)];
+            return next.slice(0, 10);
+          });
+        }
         const ok = !!r.success;
         if (!ok) {
           const errMsg =
@@ -887,6 +950,47 @@ export function HomeGenerate({
       contributingSlices: roleDescriptors.map((descriptor) => descriptor.sliceId),
     };
   }).filter((row) => row.contributingSlices.length > 0);
+  const compareRunA = recentSongModeRuns.find((r) => r.id === compareRunAId) ?? null;
+  const compareRunB = recentSongModeRuns.find((r) => r.id === compareRunBId) ?? null;
+  const compareInsights =
+    compareRunA && compareRunB
+      ? buildSongModeCompareInsights(
+          {
+            label: 'Run A',
+            summaryLine: compareRunA.summaryLine,
+            profile: compareRunA.profile,
+            shape: compareRunA.shape,
+            sectionDescriptors: compareRunA.sectionDescriptors,
+          },
+          {
+            label: 'Run B',
+            summaryLine: compareRunB.summaryLine,
+            profile: compareRunB.profile,
+            shape: compareRunB.shape,
+            sectionDescriptors: compareRunB.sectionDescriptors,
+          }
+        )
+      : [];
+  const compareRowsA =
+    compareRunA != null
+      ? buildSongModeCompareCardRows({
+          label: 'Run A',
+          summaryLine: compareRunA.summaryLine,
+          profile: compareRunA.profile,
+          shape: compareRunA.shape,
+          sectionDescriptors: compareRunA.sectionDescriptors,
+        })
+      : [];
+  const compareRowsB =
+    compareRunB != null
+      ? buildSongModeCompareCardRows({
+          label: 'Run B',
+          summaryLine: compareRunB.summaryLine,
+          profile: compareRunB.profile,
+          shape: compareRunB.shape,
+          sectionDescriptors: compareRunB.sectionDescriptors,
+        })
+      : [];
   const productKind = (result as { productKind?: string } | null)?.productKind;
   const summaryPresetForPass = result?.runManifest?.presetId ?? presetId;
   const passed = result
@@ -2388,6 +2492,84 @@ export function HomeGenerate({
                       ) : null}
                     </div>
                   )}
+                </details>
+              )}
+              {summaryPresetId === 'song_mode' && recentSongModeRuns.length > 0 && (
+                <details
+                  style={{
+                    marginTop: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '0.6rem 0.75rem',
+                    background: 'rgba(15,23,42,0.12)',
+                  }}
+                >
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                    Compare recent Song Mode runs (dev)
+                  </summary>
+                  <div style={{ marginTop: '0.6rem', fontSize: '0.83rem' }}>
+                    <p style={{ margin: '0 0 0.45rem', color: 'var(--text-muted)' }}>
+                      Recent in-memory Song Mode runs (current session only)
+                    </p>
+                    <ul style={{ margin: '0 0 0.6rem', paddingLeft: '1rem' }}>
+                      {recentSongModeRuns.map((run) => (
+                        <li key={run.id} style={{ marginBottom: '0.2rem' }}>
+                          {run.label}
+                        </li>
+                      ))}
+                    </ul>
+                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+                      <label>
+                        Run A{' '}
+                        <select value={compareRunAId} onChange={(e) => setCompareRunAId(e.target.value)}>
+                          {recentSongModeRuns.map((run) => (
+                            <option key={run.id} value={run.id}>
+                              {run.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Run B{' '}
+                        <select value={compareRunBId} onChange={(e) => setCompareRunBId(e.target.value)}>
+                          {recentSongModeRuns.map((run) => (
+                            <option key={run.id} value={run.id}>
+                              {run.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    {compareInsights.length > 0 && (
+                      <div style={{ marginBottom: '0.6rem' }}>
+                        {compareInsights.map((line, i) => (
+                          <p key={i} style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {compareRunA && compareRunB && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div>
+                          <p style={{ margin: '0 0 0.35rem', fontWeight: 600 }}>Run A</p>
+                          {compareRowsA.map((row) => (
+                            <p key={`a-${row.label}`} style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                              <span style={{ color: 'var(--text)' }}>{row.label}:</span> {row.value}
+                            </p>
+                          ))}
+                        </div>
+                        <div>
+                          <p style={{ margin: '0 0 0.35rem', fontWeight: 600 }}>Run B</p>
+                          {compareRowsB.map((row) => (
+                            <p key={`b-${row.label}`} style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                              <span style={{ color: 'var(--text)' }}>{row.label}:</span> {row.value}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </details>
               )}
               {summaryPresetId === 'song_mode' && (

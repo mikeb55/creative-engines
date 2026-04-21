@@ -103,3 +103,15 @@ Manifest readability is also improved with compact summary fields:
 - `songModeDiagnosticsSummary.sectionSources`
 
 These summaries are intended for quick eval/batch scans without opening raw nested diagnostics objects.
+
+## In-app compare panel (dev)
+
+The Generate page now includes `Compare recent Song Mode runs (dev)`:
+
+- Stores the most recent Song Mode runs in memory (session-only; no database/history system).
+- Lets you pick two runs and view side-by-side compact rows for:
+  - summary line,
+  - profile/rules,
+  - section-shape deltas and return behavior,
+  - section sources/slates cues.
+- Adds deterministic review hints (e.g. stronger contrast, clearer return, broader source mix) to speed A/B judgement without opening raw manifests.

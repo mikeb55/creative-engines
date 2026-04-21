@@ -142,36 +142,91 @@ describe('HomeGenerate mode-driven UI', () => {
     const { HomeGenerate } = await import('../src/pages/HomeGenerate');
     const { api } = await import('../src/services/api');
 
-    vi.mocked(api.generate).mockResolvedValue({
+    vi.mocked(api.generate)
+      .mockResolvedValueOnce({
+        success: true,
+        filename: 'composer_os_song_mode_test_a.musicxml',
+        filepath: 'C:/tmp/composer_os_song_mode_test_a.musicxml',
+        runManifest: {
+          presetId: 'song_mode',
+          seed: 123,
+          timestamp: '2026-04-21T00:00:00.000Z',
+          songModeSectionShapingDiagnostics: {
+            version: 1,
+            totalBars: 32,
+            densityDeltaBMinusA: 0.12,
+            colourDeltaBMinusA: 0.08,
+            openingVsReturnDelta: 0.14,
+            returnVariationType: 'harmonic_recolour',
+            returnVariationSummary: 'Return cadence lift applied.',
+            contributingSlices: ['bacharach'],
+          },
+          songModeSectionBehaviourDescriptors: [
+            {
+              sliceId: 'bacharach',
+              densityBiasByRole: { BRIDGE_LIFT: 0.03 },
+              harmonicColourBiasByRole: { BRIDGE_LIFT: 0.08 },
+            },
+          ],
+          songModeProfileRuleDiagnostics: {
+            styleProfile: 'STYLE_SOPHISTICATED_POP',
+            primarySongwriterStyleId: 'bacharach',
+            resolvedRuleIds: ['bacharach.chromatic_mediant', 'found.hook_object'],
+            behaviourSourceIds: ['bacharach'],
+          },
+          songModeDiagnosticsSummary: {
+            profile: 'profile=STYLE_SOPHISTICATED_POP primary=bacharach secondary=-',
+            rules: 'rules=2 sources=1',
+            sectionShape: 'dB-A=0.12 cB-A=0.08 openRet=0.14 return=harmonic_recolour',
+          },
+        },
+        validation: {
+          integrityPassed: true,
+          behaviourGatesPassed: true,
+          mxValidationPassed: true,
+          strictBarMathPassed: true,
+          exportRoundTripPassed: true,
+          instrumentMetadataPassed: true,
+          readiness: { release: 10, mx: 10, shareable: true },
+          errors: [],
+        },
+      } as Record<string, unknown>)
+      .mockResolvedValueOnce({
       success: true,
-      filename: 'composer_os_song_mode_test.musicxml',
-      filepath: 'C:/tmp/composer_os_song_mode_test.musicxml',
+      filename: 'composer_os_song_mode_test_b.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_test_b.musicxml',
       runManifest: {
         presetId: 'song_mode',
-        seed: 123,
-        timestamp: '2026-04-21T00:00:00.000Z',
+        seed: 124,
+        timestamp: '2026-04-21T00:01:00.000Z',
         songModeSectionShapingDiagnostics: {
           version: 1,
           totalBars: 32,
-          densityDeltaBMinusA: 0.12,
-          colourDeltaBMinusA: 0.08,
-          openingVsReturnDelta: 0.4,
-          returnVariationType: 'harmonic_recolour',
-          returnVariationSummary: 'Return cadence lift applied.',
-          contributingSlices: ['bacharach'],
+          densityDeltaBMinusA: 0.27,
+          colourDeltaBMinusA: 0.11,
+          openingVsReturnDelta: 0.42,
+          returnVariationType: 'evolved_comp',
+          returnVariationSummary: 'Evolved return comp.',
+          contributingSlices: ['fagen', 'bacharach'],
         },
         songModeSectionBehaviourDescriptors: [
           {
-            sliceId: 'bacharach',
-            densityBiasByRole: { BRIDGE_LIFT: 0.03 },
-            harmonicColourBiasByRole: { BRIDGE_LIFT: 0.08 },
+            sliceId: 'fagen',
+            densityBiasByRole: { BRIDGE_LIFT: 0.06, RETURN: 0.02 },
+            harmonicColourBiasByRole: { BRIDGE_LIFT: 0.11 },
+            returnVariationType: 'evolved_comp',
           },
         ],
         songModeProfileRuleDiagnostics: {
           styleProfile: 'STYLE_SOPHISTICATED_POP',
-          primarySongwriterStyleId: 'bacharach',
-          resolvedRuleIds: ['bacharach.chromatic_mediant', 'found.hook_object'],
-          behaviourSourceIds: ['bacharach'],
+          primarySongwriterStyleId: 'donald_fagen',
+          resolvedRuleIds: ['fagen.voice_lead', 'found.hook_object', 'return.comp'],
+          behaviourSourceIds: ['fagen', 'bacharach', 'style_sophisticated_pop'],
+        },
+        songModeDiagnosticsSummary: {
+          profile: 'profile=STYLE_SOPHISTICATED_POP primary=donald_fagen secondary=-',
+          rules: 'rules=3 sources=3',
+          sectionShape: 'dB-A=0.27 cB-A=0.11 openRet=0.42 return=evolved_comp',
         },
       },
       validation: {
@@ -199,6 +254,10 @@ describe('HomeGenerate mode-driven UI', () => {
       generateButton!.props.onClick();
       await Promise.resolve();
     });
+    await act(async () => {
+      generateButton!.props.onClick();
+      await Promise.resolve();
+    });
 
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Section Shape (dev diagnostics)');
@@ -210,5 +269,9 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(text).toContain('density_bias');
     expect(text).toContain('Style profile');
     expect(text).toContain('STYLE_SOPHISTICATED_POP');
+    expect(text).toContain('Compare recent Song Mode runs (dev)');
+    expect(text).toContain('Seed 124 · 2026-04-21T00:01:00.000Z');
+    expect(text).toContain('Seed 123 · 2026-04-21T00:00:00.000Z');
+    expect(text).toContain('Runs are broadly similar on core contrast/return/source cues.');
   });
 });
