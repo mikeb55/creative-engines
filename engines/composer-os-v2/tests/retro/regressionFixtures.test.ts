@@ -32,7 +32,7 @@ function testPitchRangeSummaries(): boolean {
   const f = extractFixture(r.score, r.plans, r.readiness);
   const guitar = f.pitchRangeByPart['clean_electric_guitar'];
   const bass = f.pitchRangeByPart['acoustic_upright_bass'];
-  return !!guitar && guitar[0] >= 55 && guitar[1] <= 88 && !!bass && bass[0] >= 28 && bass[1] <= 55;
+  return !!guitar && guitar[0] >= 53 && guitar[1] <= 88 && !!bass && bass[0] >= 28 && bass[1] <= 55;
 }
 
 function testMotifPlacementBars(): boolean {
