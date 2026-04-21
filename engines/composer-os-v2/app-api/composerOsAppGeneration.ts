@@ -809,45 +809,14 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
+  /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
+  let ensembleMusicXmlFilename: string | undefined;
+  let ensembleMusicXmlFilepath: string | undefined;
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
-    const xmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
+    ensembleMusicXmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
-    const xmlFilepath = path.join(outputDir, xmlFilename);
-    fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
-    const pairingEarly = bb.stylePairingResolution;
-    const stylePairingReceiptEarly = pairingEarly
-      ? {
-          summary: `${pairingEarly.songwriterStyle} × ${pairingEarly.arrangerStyle}${
-            pairingEarly.era != null ? ` · ${pairingEarly.era}` : ''
-          }`,
-          confidenceScore: pairingEarly.confidenceScore,
-          experimentalFlag: pairingEarly.experimentalFlag,
-          songwriterStyle: pairingEarly.songwriterStyle,
-          arrangerStyle: pairingEarly.arrangerStyle,
-          era: pairingEarly.era,
-        }
-      : undefined;
-    return {
-      success: true,
-      productKind: 'musicxml',
-      filepath: xmlFilepath,
-      filename: xmlFilename,
-      composerOsVersion: COMPOSER_OS_VERSION,
-      validation: validationForStructural(true, []),
-      runManifest: {
-        seed: runSeed,
-        presetId: 'big_band',
-        activeModules: ['big_band_plan', 'big_band_realise'],
-        timestamp: ts,
-        scoreTitle: title,
-        variationId: req.variationId,
-        creativeControlLevel: req.creativeControlLevel,
-        experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
-      },
-      scoreTitle: title,
-      requestEcho: requestEchoFromReq(req),
-      stylePairingReceipt: stylePairingReceiptEarly,
-    };
+    ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
+    fs.writeFileSync(ensembleMusicXmlFilepath, realised.exportPipeline.xml, 'utf-8');
   }
   const ok = bb.validation.ok;
   const filename = `big_band_plan_${tsSafe}_${runSeed}.json`;
@@ -876,6 +845,15 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     bebopLineMetadata: bb.bebopLineMetadata,
     enhancedPlanning: bb.enhancedPlanning,
     stylePairingResolution: bb.stylePairingResolution ?? null,
+    ...(ensembleMusicXmlFilename && ensembleMusicXmlFilepath
+      ? {
+          ensembleMusicXmlFilename,
+          ensembleMusicXmlFilepath,
+          exportPipelineNotes:
+            realised.exportPipeline.errors?.join(' | ') ??
+            (ensembleMusicXmlFilepath ? 'Ensemble MusicXML generated alongside planning JSON.' : undefined),
+        }
+      : {}),
   };
   const { filepath } = writeArtifactJson(outputDir, filename, payload);
   const pairing = bb.stylePairingResolution;
@@ -896,7 +874,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     productKind: 'planning',
     planningNotice:
       realised.exportPipeline.errors?.join(' | ') ??
-      'Big Band: planning only — no full ensemble MusicXML in this build.',
+      (ensembleMusicXmlFilepath
+        ? 'Big Band: planning JSON is primary API artifact; ensemble MusicXML path is included in JSON payload.'
+        : 'Big Band: planning only — no full ensemble MusicXML in this build.'),
     composerOsVersion: COMPOSER_OS_VERSION,
     filename,
     filepath,
@@ -904,7 +884,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     runManifest: {
       seed: runSeed,
       presetId: 'big_band',
-      activeModules: ['big_band_plan'],
+      activeModules: ensembleMusicXmlFilepath ? ['big_band_plan', 'big_band_realise'] : ['big_band_plan'],
       timestamp: ts,
       scoreTitle: title,
       variationId: req.variationId,
