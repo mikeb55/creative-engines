@@ -2,6 +2,7 @@
  * Composer OS V2 — unified custom test harness (`npm test` / `npm run test:full`).
  *
  * **Modes**
+ * - `smoke`: **not** this file — use `npm run test:smoke` → `tests/runSmokeTests.ts` (small fixed allowlist).
  * - `full` (default): every suite below. Expect **known debt** (exit 1) until tests are fixed — see
  *   `docs/TEST_DEBT_COMPOSER_OS_V2.md` and `docs/TEST_HARNESS_PLAN.md`.
  * - `fast`: skips suites in `tests/harness/fastExcludeSuites.ts` (heavy golden-path / export / retro debt).
@@ -331,6 +332,21 @@ function main(): void {
   console.log(`Mode: ${mode}`);
   console.log(`Passed: ${totalPassed}`);
   console.log(`Failed: ${totalFailed}`);
+
+  if (totalFailed > 0) {
+    const debt = timings
+      .filter((t) => t.failed > 0)
+      .sort((a, b) => b.failed - a.failed || b.ms - a.ms);
+    console.log(`\n=== Failures by suite (${debt.length} suites, most failures first) ===`);
+    for (const row of debt) {
+      console.log(`  ${row.failed}\t${row.name}`);
+    }
+    if (mode === 'full') {
+      console.log(
+        `\n[harness] Exit code 1: full mode includes known debt (see docs/TEST_DEBT_COMPOSER_OS_V2.md). Fast mode remains the regression gate.`
+      );
+    }
+  }
 
   const slow = [...timings].sort((a, b) => b.ms - a.ms).slice(0, 20);
   console.log(`\n=== Slowest suites (top ${slow.length}, ms) ===`);

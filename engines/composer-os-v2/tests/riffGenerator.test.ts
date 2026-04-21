@@ -24,7 +24,9 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
       r.gce !== undefined &&
       r.gce >= 9.0 &&
       r.xml.includes('<score-partwise') &&
-      r.xml.includes('Riff');
+      r.xml.includes('Riff') &&
+      r.score.title === 'Smoke' &&
+      r.xml.includes('<work-title>Smoke</work-title>');
     out.push({ ok, name: 'runRiffGenerator seed 0 passes GCE gate and exports XML' });
   }
 
@@ -45,7 +47,9 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
       r.gce !== undefined &&
       r.gce >= 9.0 &&
       r.xml.includes('Upright Bass') &&
-      r.xml.includes('midi-program');
+      r.xml.includes('midi-program') &&
+      r.score.title === 'Bass' &&
+      r.xml.includes('<work-title>Bass</work-title>');
     out.push({ ok, name: 'runRiffGenerator guitar+bass mode exports with bass part' });
   }
 

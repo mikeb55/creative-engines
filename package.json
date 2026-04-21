@@ -23,7 +23,9 @@
     "mine:bacharach": "npm --prefix engines/composer-os-v2 run mine:bacharach --",
     "eval:ecm-texture": "npm --prefix engines/composer-os-v2 run eval:ecm-texture --",
     "test:composer-fast": "npm --prefix engines/composer-os-v2 run test:fast --",
-    "test:composer-full": "npm --prefix engines/composer-os-v2 run test:full --"
+    "test:composer-full": "npm --prefix engines/composer-os-v2 run test:full --",
+    "test:composer-smoke": "npm --prefix engines/composer-os-v2 run test:smoke --",
+    "test:composer-release": "npm --prefix engines/composer-os-v2 run test:full && npm --prefix engines/composer-os-v2 run test:ecm && npm --prefix apps/composer-os-desktop run build"
   },
   "devDependencies": {
     "@types/cors": "^2.8.0",

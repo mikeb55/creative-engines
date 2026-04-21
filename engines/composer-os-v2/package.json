@@ -10,6 +10,7 @@
     "test": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts full",
     "test:full": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts full",
     "test:fast": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts fast",
+    "test:smoke": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runSmokeTests.ts",
     "test:retro": "npx ts-node --project ../../tsconfig.json scripts/runRetroSelfTests.ts",
     "sibelius:diagnostic-variants": "npx ts-node --project ../../tsconfig.json scripts/sibeliusDiagnosticVariants.ts",
     "polyphony:diagnostic-export": "npx ts-node --project ../../tsconfig.json scripts/polyphonyDiagnosticExportCli.ts",

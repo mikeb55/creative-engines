@@ -1,6 +1,6 @@
 # Composer OS V2 — full harness test debt
 
-Last updated: 2026-04-21 (full harness green — App API big_band + Stage Exit First Intelligence).
+Last updated: 2026-04-21 (smoke tier `test:smoke` + release gate docs; harness green).
 
 ## Snapshot (this machine)
 
@@ -10,6 +10,16 @@ Last updated: 2026-04-21 (full harness green — App API big_band + Stage Exit F
 | `npm --prefix engines/composer-os-v2 run test:fast` | Green | Green |
 
 Full harness completes without OOM/hang (~18–40s locally). Exit code **0** when there is no harness debt under current policy.
+
+## Regression tiers (recommended use)
+
+| Tier | Command(s) | Role |
+|------|------------|------|
+| **Smoke** | `npm --prefix engines/composer-os-v2 run test:smoke` | Fast fixed allowlist (readiness, conductor, App API boundary incl. Big Band planning JSON, MusicXML harmony snippets). Use before rapid iteration or desktop rebuild sanity. Optional: `npm --prefix apps/composer-os-desktop run test` when changing Electron/UI. |
+| **Critical-path (dev)** | `npm --prefix engines/composer-os-v2 run test:fast` | Broader engine harness with **heavy** suites excluded (`tests/harness/fastExcludeSuites.ts`). Not interchangeable with smoke. |
+| **Release** | `npm --prefix engines/composer-os-v2 run test:full` → `npm --prefix engines/composer-os-v2 run test:ecm` → `npm --prefix apps/composer-os-desktop run build` | Full harness plus ECM stability script (multi-seed / runaway guards) plus desktop bundle (esbuild resolves API graph). Optionally `npm --prefix apps/composer-os-desktop run test` after build. |
+
+Root repo convenience (optional): `npm run test:composer-release` runs **full + test:ecm + desktop build** in sequence.
 
 ## What we fixed — closure pass (2026-04-21)
 
