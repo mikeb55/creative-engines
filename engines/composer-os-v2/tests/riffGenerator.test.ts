@@ -53,8 +53,103 @@ function firstAndLastGuitarPitchClass(score: ScoreModel): { firstPc: number; las
   };
 }
 
+function offbeatAttackCount(perBarRhythm: { startBeat: number; rest: boolean }[][]): number {
+  let n = 0;
+  for (const bar of perBarRhythm) {
+    for (const s of bar) {
+      if (s.rest) continue;
+      if (Math.abs(s.startBeat - Math.round(s.startBeat)) > 0.11) n++;
+    }
+  }
+  return n;
+}
+
 export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
+
+  {
+    const seed = 1701;
+    const neutral = runRiffGenerator(seed, {
+      bars: 2,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style2Neutral',
+    });
+    const scofield = runRiffGenerator(seed, {
+      bars: 2,
+      density: 'medium',
+      style: 'scofield',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style2Sco',
+    });
+    const funk = runRiffGenerator(seed, {
+      bars: 2,
+      density: 'medium',
+      style: 'funk',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style2Funk',
+    });
+    const nNeutral = neutral.success ? offbeatAttackCount(neutral.perBarRhythm) : -1;
+    const nSco = scofield.success ? offbeatAttackCount(scofield.perBarRhythm) : -1;
+    const nFunk = funk.success ? offbeatAttackCount(funk.perBarRhythm) : -1;
+    const ok = neutral.success && scofield.success && funk.success && nSco >= nNeutral && nFunk >= nSco;
+    out.push({
+      ok,
+      name: 'runRiffGenerator: 2-bar style profile yields neutral<=scofield<=funk offbeat attack count',
+    });
+  }
+
+  {
+    const seed = 1701;
+    const neutral = runRiffGenerator(seed, {
+      bars: 4,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style4Neutral',
+    });
+    const scofield = runRiffGenerator(seed, {
+      bars: 4,
+      density: 'medium',
+      style: 'scofield',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style4Sco',
+    });
+    const funk = runRiffGenerator(seed, {
+      bars: 4,
+      density: 'medium',
+      style: 'funk',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 102,
+      title: 'Style4Funk',
+    });
+    const nNeutral = neutral.success ? offbeatAttackCount(neutral.perBarRhythm) : -1;
+    const nSco = scofield.success ? offbeatAttackCount(scofield.perBarRhythm) : -1;
+    const nFunk = funk.success ? offbeatAttackCount(funk.perBarRhythm) : -1;
+    const ok = neutral.success && scofield.success && funk.success && nSco >= nNeutral && nFunk >= nSco;
+    out.push({
+      ok,
+      name: 'runRiffGenerator: 4-bar style profile yields neutral<=scofield<=funk offbeat attack count',
+    });
+  }
 
   {
     const r = runRiffGenerator(811, {

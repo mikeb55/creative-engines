@@ -2,7 +2,7 @@
  * Grid-aligned riff rhythms: eighth or sixteenth grid, allowed durations only.
  */
 
-import type { RiffDensity, RiffGridMode, RiffRhythmSegment } from './riffTypes';
+import type { RiffDensity, RiffGridMode, RiffRhythmSegment, RiffStyleId } from './riffTypes';
 import { randInt } from './riffRandom';
 
 const EPS = 1e-5;
@@ -20,6 +20,47 @@ function allowedDurations(grid: RiffGridMode, remaining: number): number[] {
   return base.filter((x) => x <= remaining + EPS).sort((a, b) => b - a);
 }
 
+function isStrong(startBeat: number): boolean {
+  return Math.abs(startBeat - Math.round(startBeat)) < 0.11;
+}
+
+/**
+ * Short-riff style identity pass:
+ * - neutral: slightly straighter attack profile (on-beat anchor preserved)
+ * - scofield: more off-beat articulation without destroying motif shape
+ * - funk: strongest off-beat bias (anticipation feel)
+ */
+function applyShortRiffStyleBias(
+  bar: RiffRhythmSegment[],
+  style: RiffStyleId,
+  grid: RiffGridMode,
+  rng: () => number
+): void {
+  if (style === 'neutral') {
+    const offPlayed = bar.find((s) => !s.rest && !isStrong(s.startBeat));
+    const onRest = bar.find((s) => s.rest && isStrong(s.startBeat));
+    if (offPlayed && onRest && rng() > 0.58) {
+      offPlayed.rest = true;
+      onRest.rest = false;
+    }
+    return;
+  }
+  const offPool = bar.filter((s) => !isStrong(s.startBeat));
+  if (offPool.length === 0) return;
+  const target =
+    style === 'funk'
+      ? offPool.find((s) => Math.abs((s.startBeat % 1) - 0.5) < 0.11) ?? offPool[0]
+      : offPool[offPool.length - 1];
+  if (!target) return;
+  target.rest = false;
+  if (style === 'funk') {
+    const strongPlayed = bar.find((s) => !s.rest && isStrong(s.startBeat) && s.duration <= (grid === 'sixteenth' ? 0.5 : 1));
+    if (strongPlayed && rng() > 0.52) {
+      strongPlayed.rest = true;
+    }
+  }
+}
+
 /**
  * One bar of rhythm segments (sum = 4 beats).
  */
@@ -27,7 +68,8 @@ export function buildOneBarRhythm(
   rng: () => number,
   grid: RiffGridMode,
   density: RiffDensity,
-  startOnAnd: boolean
+  startOnAnd: boolean,
+  style: RiffStyleId
 ): RiffRhythmSegment[] {
   const fill = fillRatioForDensity(density);
   const out: RiffRhythmSegment[] = [];
@@ -60,6 +102,7 @@ export function buildOneBarRhythm(
       { startBeat: 3, duration: 1, rest: false },
     ];
   }
+  applyShortRiffStyleBias(out, style, grid, rng);
   return out;
 }
 
@@ -106,10 +149,11 @@ export function buildMultiBarRhythm(
   rng: () => number,
   grid: RiffGridMode,
   density: RiffDensity,
-  bars: number
+  bars: number,
+  style: RiffStyleId
 ): RiffRhythmSegment[][] {
   const startOnAnd = rng() > 0.45;
-  const motifA = buildOneBarRhythm(rng, grid, density, startOnAnd);
+  const motifA = buildOneBarRhythm(rng, grid, density, startOnAnd, style);
   const motifB = buildResponseBar(motifA, rng);
   const perBar: RiffRhythmSegment[][] = [];
 

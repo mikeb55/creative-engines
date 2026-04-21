@@ -25,7 +25,7 @@ export interface BuiltRiffScore {
 export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore {
   const rng = mulberry32(params.seed);
   const coreMotif = generateRiffCoreMotif(params.seed);
-  const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars);
+  const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars, params.style);
   const chords = [...params.chordSymbols];
   while (chords.length < params.bars) {
     chords.push(chords[chords.length - 1] ?? 'Am7');
