@@ -10,6 +10,7 @@ import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { manifestPathForMusicXml } from '../app-api/composerOsOutputPaths';
 import { runRiffQualityRulesSuite } from './riffQualityRules.test';
+import { rhythmFingerprint } from '../core/riff-generator/riffRhythm';
 
 function countMelodicNotes(score: ScoreModel): number {
   let n = 0;
@@ -35,6 +36,31 @@ function barsWithNotes(score: ScoreModel): number {
 
 export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
+
+  {
+    const r = runRiffGenerator(811, {
+      bars: 4,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'eighth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 104,
+      title: 'CallResponse',
+    });
+    const fps = r.success ? r.perBarRhythm.map((bar) => rhythmFingerprint(bar)) : [];
+    const distinct = new Set(fps).size;
+    const ok =
+      r.success === true &&
+      fps.length === 4 &&
+      distinct >= 2 &&
+      fps[0] !== fps[1] &&
+      fps[0] === fps[2];
+    out.push({
+      ok,
+      name: 'runRiffGenerator: 4-bar rhythm uses A/B call-response contrast with A recall',
+    });
+  }
 
   {
     const r = runRiffGenerator(0, {

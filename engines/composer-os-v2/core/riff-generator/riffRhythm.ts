@@ -67,6 +67,29 @@ function copyBar(bar: RiffRhythmSegment[]): RiffRhythmSegment[] {
   return bar.map((b) => ({ ...b }));
 }
 
+/**
+ * Build a lightweight response bar from motif:
+ * keep attack geometry but rebalance rests across phrase halves so bar 2 answers bar 1.
+ */
+function buildResponseBar(motif: RiffRhythmSegment[], rng: () => number): RiffRhythmSegment[] {
+  const out = copyBar(motif);
+  const latePlayed = out.find((s) => !s.rest && s.startBeat >= 2);
+  const earlyRest = out.find((s) => s.rest && s.startBeat < 2);
+  if (latePlayed && earlyRest) {
+    latePlayed.rest = true;
+    earlyRest.rest = false;
+    return out;
+  }
+  const firstPlayed = out.find((s) => !s.rest);
+  if (firstPlayed) {
+    firstPlayed.rest = rng() > 0.5;
+  }
+  if (out.every((s) => s.rest) && out[0]) {
+    out[0].rest = false;
+  }
+  return out;
+}
+
 /** Slight variation for asymmetry (not identical to first bar). */
 function varyBar(motif: RiffRhythmSegment[], rng: () => number): RiffRhythmSegment[] {
   const v = copyBar(motif);
@@ -86,14 +109,17 @@ export function buildMultiBarRhythm(
   bars: number
 ): RiffRhythmSegment[][] {
   const startOnAnd = rng() > 0.45;
-  const motif = buildOneBarRhythm(rng, grid, density, startOnAnd);
+  const motifA = buildOneBarRhythm(rng, grid, density, startOnAnd);
+  const motifB = buildResponseBar(motifA, rng);
   const perBar: RiffRhythmSegment[][] = [];
 
   for (let b = 0; b < bars; b++) {
     if (bars >= 2 && b === bars - 1) {
-      perBar.push(varyBar(motif, rng));
+      const tailBase = bars >= 4 && b % 2 === 1 ? motifB : motifA;
+      perBar.push(varyBar(tailBase, rng));
     } else {
-      perBar.push(copyBar(motif));
+      const base = bars >= 4 && b % 2 === 1 ? motifB : motifA;
+      perBar.push(copyBar(base));
     }
   }
   return perBar;
