@@ -56,6 +56,19 @@ export function augmentEcmChamberTexturePlan(
       if (out.guitarRole === 'lead') out.guitarRole = 'sustain_pad';
     }
 
+    // Return-memory phrasing: during later cycles, softly echo the prior-cycle role shape
+    // to create evolved reprise behavior instead of neutral restating.
+    if (b > 8 && h < 0.4) {
+      const prevCycle = outRows[b - 9];
+      if (prevCycle) {
+        out.guitarRole = prevCycle.guitarRole;
+        if (h < 0.22) {
+          if (out.guitarRole === 'lead') out.guitarRole = 'shadow';
+          else if (out.guitarRole === 'sustain_pad') out.guitarRole = 'inner_motion';
+        }
+      }
+    }
+
     // Textural arc guard: prevent long static role-pair carryover by nudging one side.
     const rolePair = `${out.guitarRole}|${out.bassRole}`;
     if (rolePair === prevRolePair) repeatedRolePairRun += 1;

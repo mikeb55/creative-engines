@@ -36,5 +36,20 @@ export function runEcmArrangementPolicyTests(): TestResult[] {
   const aug = augmentEcmChamberTexturePlan(flat, 12, 4242, 'ECM_METHENY_QUARTET');
   t('ECM arrangement policy: limits static role-pair carryover to <= 3 bars', maxStaticRolePairRun(aug) <= 3);
 
+  const recallInput: EcmBarTexture[] = Array.from({ length: 16 }, (_, i) => ({
+    bar: i + 1,
+    guitarRole: i < 8 ? (i % 2 === 0 ? 'lead' : 'shadow') : 'silence',
+    bassRole: 'sustain_pad',
+    overlapHint: false,
+    layeringMode: 'balanced',
+  }));
+  const recallOut = augmentEcmChamberTexturePlan(recallInput, 16, 7777, 'ECM_METHENY_QUARTET');
+  const returnEchoCount = [9, 10, 11, 12, 13, 14, 15, 16].filter((bar) => {
+    const now = recallOut[bar - 1];
+    const prior = recallOut[bar - 9];
+    return now?.guitarRole === prior?.guitarRole;
+  }).length;
+  t('ECM arrangement policy: return cycle softly echoes prior-cycle guitar role shape', returnEchoCount >= 2);
+
   return out;
 }

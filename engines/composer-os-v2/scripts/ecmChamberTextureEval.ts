@@ -5,6 +5,7 @@
 
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { buildEcmChamberTextureEvalRun, type EcmChamberTextureEvalRun } from '../core/ecm/ecmChamberTextureMetrics';
+import { buildEcmReadableSummaryLine } from './eval/readableEvalSummary';
 
 const SEEDS = [50021, 50031, 50041, 50051, 50061];
 const BAR_SETS = [24, 32] as const;
@@ -34,6 +35,16 @@ function main(): void {
       const row = buildEcmChamberTextureEvalRun(seed, totalBars, r.score);
       runs.push(row);
       console.log(JSON.stringify(row));
+      console.log(
+        buildEcmReadableSummaryLine({
+          seed,
+          totalBars,
+          ecmTextureScore: row.ecmTextureScore,
+          gapGlobal: row.metrics.gapGlobal,
+          spaceBarsRatio: row.metrics.spaceBarsRatio,
+          doubleDenseRatio: row.metrics.doubleDenseRatio,
+        })
+      );
     }
   }
 

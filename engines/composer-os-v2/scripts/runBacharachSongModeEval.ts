@@ -18,6 +18,7 @@ import {
   runSingleBacharachGeneration,
   type BacharachEvalCsvRow,
 } from './bacharachSongModeWorkflowCore';
+import { buildSongModeReadableSummaryLine } from './eval/readableEvalSummary';
 
 function main(): void {
   const args = parseBacharachBatchArgs(process.argv, {
@@ -75,6 +76,15 @@ function main(): void {
   if (scores.length) {
     const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
     console.log(`Bacharach GCE score mean (diagnostic): ${mean.toFixed(2)}`);
+  }
+  console.log('Readable Song Mode summary lines:');
+  for (const row of internal.filter((r) => r.manifestRaw).slice(0, Math.min(6, internal.length))) {
+    try {
+      const manifest = JSON.parse(row.manifestRaw as string) as Record<string, unknown>;
+      console.log(buildSongModeReadableSummaryLine(manifest, `songmode arm=${row.arm} seed=${row.seed}`));
+    } catch {
+      console.log(`songmode arm=${row.arm} seed=${row.seed} | manifest-parse=failed`);
+    }
   }
 }
 

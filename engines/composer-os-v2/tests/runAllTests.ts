@@ -138,6 +138,8 @@ import { runRiffGeneratorTests } from './riffGenerator.test';
 import { runSongwritingEngineTests } from './songwritingEngine.test';
 import { retroSuites } from './retro/index';
 import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
+import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
+import { runSongModeAbInspectHarnessTests } from './songModeAbInspectHarness.test';
 import { isFastExcludedSuiteName } from './harness/fastExcludeSuites';
 
 const suites = [
@@ -263,6 +265,8 @@ const suites = [
   { name: 'Riff Generator', run: runRiffGeneratorTests },
   { name: 'Songwriting Engine (Phase 1)', run: runSongwritingEngineTests },
   { name: 'Bacharach developer workflow', run: runBacharachWorkflowDeveloperTests },
+  { name: 'Eval readable summary', run: runEvalReadableSummaryTests },
+  { name: 'Song Mode A/B inspect harness', run: runSongModeAbInspectHarnessTests },
   ...retroSuites,
 ];
 

@@ -30,6 +30,7 @@
     "test:ecm": "ts-node scripts/testEcmStability.ts",
     "probe:ecm-arrangement": "ts-node scripts/ecmArrangementProbe.ts",
     "eval:ecm-texture": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/ecmChamberTextureEval.ts",
+    "inspect:songmode-ab": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSongModeAbInspect.ts",
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts",
     "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts"
