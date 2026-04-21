@@ -8,6 +8,7 @@ import { getPresets } from '../app-api/getPresets';
 import { COMPOSER_OS_V1_SUPPORTED_MODES } from '../app-api/releaseMetadata';
 import { getStyleModules } from '../app-api/getStyleModules';
 import { generateComposition } from '../app-api/generateComposition';
+import { runAppGeneration } from '../app-api/composerOsAppGeneration';
 import { listOutputs } from '../app-api/listOutputs';
 import { buildDiagnostics } from '../app-api/buildDiagnostics';
 import { friendlyGenerateError } from '../app-api/apiErrorMessages';
@@ -199,6 +200,42 @@ export function runAppApiTests(): TestResult[] {
     else pass('Try Another filenames: distinct paths per seed');
   } catch (e) {
     fail(`Try Another filenames: ${e}`);
+  }
+
+  try {
+    const songModeDir = path.join(TEST_OUTPUT_DIR, 'song-mode-manifest-summary');
+    fs.mkdirSync(songModeDir, { recursive: true });
+    const sm = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris' },
+        seed: 424242,
+        totalBars: 32,
+        styleProfile: 'STYLE_SOPHISTICATED_POP',
+        primarySongwriterStyle: 'bacharach',
+      },
+      songModeDir
+    );
+    if (!sm.success || !sm.filepath) fail('Song Mode manifest summary: generation success');
+    else {
+      const mp = manifestPathForMusicXml(sm.filepath);
+      const m = JSON.parse(fs.readFileSync(mp, 'utf-8')) as Record<string, unknown>;
+      const dx = m.songModeDiagnosticsSummary as
+        | {
+            profile?: string;
+            rules?: string;
+            sectionShape?: string;
+            sectionSources?: string[];
+          }
+        | undefined;
+      if (!dx?.profile || !dx.profile.includes('profile=')) fail('Song Mode manifest summary: profile line');
+      else if (!dx.sectionShape || !dx.sectionShape.includes('dB-A=')) fail('Song Mode manifest summary: section line');
+      else if (!Array.isArray(dx.sectionSources) || dx.sectionSources.length === 0)
+        fail('Song Mode manifest summary: sources lines');
+      else pass('Song Mode manifest summary');
+    }
+  } catch (e) {
+    fail(`Song Mode manifest summary: ${e}`);
   }
 
   try {

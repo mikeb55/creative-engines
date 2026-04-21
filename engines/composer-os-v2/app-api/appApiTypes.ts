@@ -247,6 +247,13 @@ export interface OutputEntry {
   songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
   songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
   songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+  /** Song Mode: compact human-readable summary for eval/batch manifest scanning. */
+  songModeDiagnosticsSummary?: {
+    profile?: string;
+    rules?: string;
+    sectionShape?: string;
+    sectionSources?: string[];
+  };
   /** Song Mode — GCE weighted overall when gate ran (`core/gce/gceGate.ts`). */
   gceScore?: number;
   /** Song Mode — ship gate threshold met (≥ 8.0). */

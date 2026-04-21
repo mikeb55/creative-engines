@@ -20,6 +20,7 @@ import {
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
+import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
 
@@ -857,6 +858,7 @@ export function HomeGenerate({
   const sectionShapeDiag = rm?.songModeSectionShapingDiagnostics;
   const sectionShapeDescriptors = rm?.songModeSectionBehaviourDescriptors ?? [];
   const songModeProfileRuleRows = buildSongModeProfileRuleRows(rm?.songModeProfileRuleDiagnostics);
+  const sectionSourceRows = buildSongModeSectionSourceRows(sectionShapeDescriptors);
   const sectionShapeRows = SONG_MODE_SECTION_ROLE_ORDER.map((role) => {
     const roleDescriptors = sectionShapeDescriptors.filter((descriptor) => {
       const hasDensity = typeof descriptor.densityBiasByRole?.[role] === 'number';
@@ -2385,6 +2387,45 @@ export function HomeGenerate({
                         </p>
                       ) : null}
                     </div>
+                  )}
+                </details>
+              )}
+              {summaryPresetId === 'song_mode' && (
+                <details
+                  style={{
+                    marginTop: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '0.6rem 0.75rem',
+                    background: 'rgba(15,23,42,0.12)',
+                  }}
+                >
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                    Section Sources / Slates (dev)
+                  </summary>
+                  {sectionSourceRows.length === 0 ? (
+                    <p style={{ margin: '0.5rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      No per-section behaviour sources/slates were attached to this Song Mode run.
+                    </p>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', marginTop: '0.5rem' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Section</th>
+                          <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Sources</th>
+                          <th style={{ textAlign: 'left', padding: '0.25rem 0.2rem' }}>Slate Tags</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sectionSourceRows.map((row) => (
+                          <tr key={row.role} style={{ borderTop: '1px solid var(--border)' }}>
+                            <td style={{ padding: '0.25rem 0.2rem', whiteSpace: 'nowrap' }}>{row.sectionLabel}</td>
+                            <td style={{ padding: '0.25rem 0.2rem' }}>{row.sources.join(', ')}</td>
+                            <td style={{ padding: '0.25rem 0.2rem' }}>{row.tags.join(', ')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
                 </details>
               )}

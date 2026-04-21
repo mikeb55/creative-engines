@@ -19,6 +19,47 @@ function tryHideMetaFolderOnWindows(metaDir: string): void {
   }
 }
 
+function buildSongModeDiagnosticsSummary(meta: {
+  songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
+  songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
+  songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+}): OutputEntry['songModeDiagnosticsSummary'] | undefined {
+  const shape = meta.songModeSectionShapingDiagnostics;
+  const desc = meta.songModeSectionBehaviourDescriptors ?? [];
+  const profile = meta.songModeProfileRuleDiagnostics;
+  if (!shape && desc.length === 0 && !profile) return undefined;
+  const sectionSources = ['OPENING', 'BRIDGE_LIFT', 'RETURN', 'OUTRO', 'WHOLE']
+    .map((role) => {
+      const sources = desc
+        .filter((d) => {
+          const hasDensity = typeof d.densityBiasByRole?.[role as keyof typeof d.densityBiasByRole] === 'number';
+          const hasColour = typeof d.harmonicColourBiasByRole?.[role as keyof typeof d.harmonicColourBiasByRole] === 'number';
+          const hasRegister = typeof d.registerBiasByRole?.[role as keyof typeof d.registerBiasByRole] === 'number';
+          const hasReturn = role === 'RETURN' && typeof d.returnVariationType === 'string';
+          return hasDensity || hasColour || hasRegister || hasReturn;
+        })
+        .map((d) => d.sliceId);
+      if (sources.length === 0) return null;
+      return `${role}:${sources.join('|')}`;
+    })
+    .filter((x): x is string => x != null);
+  return {
+    profile:
+      profile != null
+        ? `profile=${profile.styleProfile ?? '-'} primary=${profile.primarySongwriterStyleId ?? '-'} secondary=${profile.secondarySongwriterStyleId ?? '-'}`
+        : undefined,
+    rules:
+      profile?.resolvedRuleIds?.length != null && profile.resolvedRuleIds.length > 0
+        ? `rules=${profile.resolvedRuleIds.length} comp=${profile.songwriterCompProfileId ?? '-'} bundle=${profile.bacharachSongModeRuleBundleId ?? '-'}`
+        : undefined,
+    sectionShape:
+      shape != null
+        ? `dB-A=${shape.densityDeltaBMinusA ?? 'n/a'} cB-A=${shape.colourDeltaBMinusA ?? 'n/a'} openRet=${shape.openingVsReturnDelta ?? 'n/a'} return=${shape.returnVariationType ?? '-'}`
+        : undefined,
+    sectionSources,
+  };
+}
+
 export function writeOutputManifest(
   xmlFilepath: string,
   meta: {
@@ -156,6 +197,7 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
     songModeSectionBehaviourDescriptors: meta.songModeSectionBehaviourDescriptors,
     songModeProfileRuleDiagnostics: meta.songModeProfileRuleDiagnostics,
+    songModeDiagnosticsSummary: buildSongModeDiagnosticsSummary(meta),
     gceScore: meta.gceScore,
     gceGatePassed: meta.gceGatePassed,
     riffCompositeScore: meta.riffCompositeScore,

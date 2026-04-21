@@ -7,6 +7,7 @@
 
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { WYBLE_ROLE_MAP_STRING_QUARTET } from '../wyble/ensembleWybleRoleMaps';
+import { nearestOctaveToPrevious } from '../wyble/wybleInnerLineMotion';
 
 /** Order matches `QUARTET_INSTRUMENTS`: violin_1, violin_2, viola, cello. */
 export type QuartetChordToneStack = readonly [number, number, number, number];
@@ -25,10 +26,14 @@ function isStringQuartetWybleMap(layout: EnsembleWybleRoleMap): boolean {
  */
 export function applyQuartetWybleChordToneStack(
   stack: QuartetChordToneStack,
-  layout: EnsembleWybleRoleMap | undefined
+  layout: EnsembleWybleRoleMap | undefined,
+  previousInner?: { violin2?: number; viola?: number }
 ): [number, number, number, number] {
   if (!layout || !isStringQuartetWybleMap(layout)) {
     return [stack[0]!, stack[1]!, stack[2]!, stack[3]!];
   }
-  return [stack[0]!, stack[2]!, stack[1]!, stack[3]!];
+  const raw = [stack[0]!, stack[2]!, stack[1]!, stack[3]!] as [number, number, number, number];
+  const v2 = nearestOctaveToPrevious(raw[1], previousInner?.violin2 ?? null);
+  const va = nearestOctaveToPrevious(raw[2], previousInner?.viola ?? null);
+  return [raw[0], v2, va, raw[3]];
 }

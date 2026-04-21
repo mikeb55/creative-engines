@@ -202,9 +202,12 @@ describe('HomeGenerate mode-driven UI', () => {
 
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Section Shape (dev diagnostics)');
+    expect(text).toContain('Section Sources / Slates (dev)');
     expect(text).toContain('Song Mode Profile / Rules (dev)');
     expect(text).toContain('B / Bridge Lift');
     expect(text).toContain('+0.120');
+    expect(text).toContain('Slate Tags');
+    expect(text).toContain('density_bias');
     expect(text).toContain('Style profile');
     expect(text).toContain('STYLE_SOPHISTICATED_POP');
   });

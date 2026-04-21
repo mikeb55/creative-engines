@@ -52,6 +52,7 @@ import { runChordProgressionTests } from './chordProgression.test';
 import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
 import { runChordSemanticsTests } from './chordSemantics.test';
 import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
+import { runWybleInnerLineDepthTests } from './wybleInnerLineDepth.test';
 import { runChordExportDiagnosticsTests } from './chordExportDiagnostics.test';
 import { runDuoV36bTests } from './duoV36b.test';
 import { runPipelineTruthTests } from './pipelineTruth.test';
@@ -176,6 +177,7 @@ const suites = [
   { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { name: 'Chord semantics (unified)', run: runChordSemanticsTests },
   { name: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
+  { name: 'Wyble inner-line depth (BB/SQ)', run: runWybleInnerLineDepthTests },
   { name: 'Chord export diagnostics (#17)', run: runChordExportDiagnosticsTests },
   { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
   { name: 'Pipeline truth (input/score/XML)', run: runPipelineTruthTests },

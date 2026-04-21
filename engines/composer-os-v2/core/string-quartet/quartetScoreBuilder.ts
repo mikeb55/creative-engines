@@ -276,6 +276,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   });
 
   const wholeTracker = new WholeNoteDensityTracker();
+  let prevQuartetInner: { violin2?: number; viola?: number } = {};
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
@@ -286,7 +287,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc), wybleVoiceLayout);
+    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc), wybleVoiceLayout, prevQuartetInner);
+    prevQuartetInner = { violin2: stack[1], viola: stack[2] };
 
     const barNotes: ScoredNote[] = [];
 

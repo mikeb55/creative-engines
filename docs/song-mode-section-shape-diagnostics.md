@@ -68,3 +68,38 @@ This block complements (but does not duplicate) Section Shape:
   - resolved rule ids,
   - keys-comp profile and Bacharach bundle id when present,
   - active behaviour source ids (slice ids).
+
+## Section Sources / Slates Inspector (Dev)
+
+Song Mode result cards now include:
+
+- `Generate -> latest result card -> Section Sources / Slates (dev)`
+
+This view is a compact per-section source/slate table:
+
+- `Section` — role label (A/Opening, B/Bridge Lift, Return, Outro, Whole)
+- `Sources` — contributing slice ids for that section role
+- `Slate Tags` — compact shaping tags inferred from active descriptor fields (e.g. `density_bias`, `colour_bias`, `register_bias`, return-variation tag)
+
+How it differs:
+
+- **Section Shape** = measured deltas/bias magnitudes and return diagnostics.
+- **Profile / Rules** = global profile/rule configuration that drove the run.
+- **Section Sources / Slates** = per-role source attribution and concise shaping tags.
+
+## Real-run verification (manual-style app path)
+
+A fresh Song Mode run generated via app-path execution (`runAppGeneration` / desktop pipeline) now confirms non-empty payloads for all three blocks:
+
+- `songModeSectionShapingDiagnostics`
+- `songModeProfileRuleDiagnostics`
+- `songModeSectionBehaviourDescriptors`
+
+Manifest readability is also improved with compact summary fields:
+
+- `songModeDiagnosticsSummary.profile`
+- `songModeDiagnosticsSummary.rules`
+- `songModeDiagnosticsSummary.sectionShape`
+- `songModeDiagnosticsSummary.sectionSources`
+
+These summaries are intended for quick eval/batch scans without opening raw nested diagnostics objects.
