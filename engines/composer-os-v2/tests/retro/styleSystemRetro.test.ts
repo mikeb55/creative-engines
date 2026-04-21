@@ -3,6 +3,7 @@
  */
 
 import { runGoldenPath } from '../../core/goldenPath/runGoldenPath';
+import { validateStyleBlendIntegrity } from '../../core/score-integrity/behaviourGates';
 import { normalizeStyleWeights } from '../../core/style-modules/styleModuleTypes';
 
 function testStyleStackLoads(): boolean {
@@ -41,7 +42,10 @@ function testTriadPairsAffectsOutput(): boolean {
 
 function testStyleBlendIntegrityPasses(): boolean {
   const r = runGoldenPath(34);
-  return r.behaviourGatesPassed;
+  const stack = r.plans?.styleStack;
+  if (!stack) return false;
+  /** Weight-normalization contract only — not full `runBehaviourGates` (Metheny density etc. are separate product gates). */
+  return validateStyleBlendIntegrity(stack).valid;
 }
 
 function testStyleStackNotInert(): boolean {

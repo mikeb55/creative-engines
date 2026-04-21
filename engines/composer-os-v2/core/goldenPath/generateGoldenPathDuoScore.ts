@@ -64,6 +64,10 @@ import {
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
 import { planEcmTextureBars, type EcmBarTexture } from '../ecm/ecmTextureEngine';
+import {
+  augmentEcmChamberTexturePlan,
+  applyEcmChamberPhraseEdgeSpaceToParts,
+} from '../ecm/ecmChamberArrangementPolicy';
 import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import {
@@ -2135,16 +2139,20 @@ function buildBassPart(
   const bassCeiling = Math.min(walkHigh, 52);
   const seed = context.seed;
   const measures: MeasureModel[] = [];
+  const tb = totalBarsFromContext(context);
   let prevBassPitch: number | undefined = walkLow;
   let prevBarContour = '';
   let sameContourStreak = 0;
   const phraseHistory: string[] = [];
   let phraseRetryAttempt = 0;
   let phraseRewindTotal = 0;
+  /** Max bass phrase rewinds per score — bounds memory/time if fingerprint logic mis-fires (ECM uses a tighter cap than duo). */
   const phraseRewindTotalCap = context.presetId === 'ecm_chamber' ? 24 : 80;
+  /** Hard ceiling on `for (b…)` body executions: forward progress through `tb` bars plus rewinds (each rewind costs extra iterations). */
+  const ECM_BASS_MAX_BAR_LOOP_ITERATIONS = tb + phraseRewindTotalCap + 64;
+  let ecmBassBarLoopIterations = 0;
   const completedPhraseModes: DuoPhraseBehaviourMode[] = [];
   const evenEighthStreak = { n: 0 };
-  const tb = totalBarsFromContext(context);
   const bassPlanStyle = readBassPlanStyle(bassPlan);
   const walkCap = tb >= 16 ? 6 : 4;
   const contourHistoryForGate: string[] = [];
@@ -2188,6 +2196,14 @@ function buildBassPart(
   logBassProbe('enter_buildBassPart', 1, { tb });
 
   for (let b = 1; b <= tb; ) {
+    if (ecmLoopGuardEnabled) {
+      ecmBassBarLoopIterations++;
+      if (ecmBassBarLoopIterations > ECM_BASS_MAX_BAR_LOOP_ITERATIONS) {
+        throw new Error(
+          `ECM bass bar-loop guard: exceeded ${ECM_BASS_MAX_BAR_LOOP_ITERATIONS} iterations (tb=${tb}, phraseRewindCap=${phraseRewindTotalCap}). Possible runaway rewind / stall.`
+        );
+      }
+    }
     logBassProbe('start_bar_loop', b);
     const chord = getChordForBar(b, context);
     const tones = chordTonesForChordSymbolWithContext(chord, context);
@@ -3185,12 +3201,15 @@ export function generateGoldenPathDuoScore(
   const probeEcm = context.presetId === 'ecm_chamber' && process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
   logEcmInternalPhaseProbe(probeEcm, 'enter_generateGoldenPathDuoScore', undefined, { tb });
   const isEcmStyle = context.generationMetadata?.styleProfile === 'STYLE_ECM';
-  const texturePlan =
+  let texturePlan: EcmBarTexture[] | undefined =
     (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode)
       ? planEcmTextureBars(tb, context.generationMetadata.ecmMode, context.seed)
       : (context.presetId === 'guitar_bass_duo' && isEcmStyle)
-      ? planEcmTextureBars(tb, 'ECM_METHENY_QUARTET', context.seed)
-      : undefined;
+        ? planEcmTextureBars(tb, 'ECM_METHENY_QUARTET', context.seed)
+        : undefined;
+  if (context.presetId === 'ecm_chamber' && texturePlan && context.generationMetadata?.ecmMode) {
+    texturePlan = augmentEcmChamberTexturePlan(texturePlan, tb, context.seed, context.generationMetadata.ecmMode);
+  }
 
   let guitarPart: PartModel;
   let bassPart: PartModel;
@@ -3336,6 +3355,9 @@ export function generateGoldenPathDuoScore(
       phraseGuitarContours
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
+    if (context.presetId === 'ecm_chamber') {
+      applyEcmChamberPhraseEdgeSpaceToParts(guitarPart, bassPart, tb, context.seed);
+    }
   }
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'

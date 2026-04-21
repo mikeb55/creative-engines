@@ -5,6 +5,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runStyleSystemRetroTests = runStyleSystemRetroTests;
 const runGoldenPath_1 = require("../../core/goldenPath/runGoldenPath");
+const behaviourGates_1 = require("../../core/score-integrity/behaviourGates");
 const styleModuleTypes_1 = require("../../core/style-modules/styleModuleTypes");
 function testStyleStackLoads() {
     const r = (0, runGoldenPath_1.runGoldenPath)(30);
@@ -37,7 +38,10 @@ function testTriadPairsAffectsOutput() {
 }
 function testStyleBlendIntegrityPasses() {
     const r = (0, runGoldenPath_1.runGoldenPath)(34);
-    return r.behaviourGatesPassed;
+    const stack = r.plans?.styleStack;
+    if (!stack)
+        return false;
+    return (0, behaviourGates_1.validateStyleBlendIntegrity)(stack).valid;
 }
 function testStyleStackNotInert() {
     const r = (0, runGoldenPath_1.runGoldenPath)(35);

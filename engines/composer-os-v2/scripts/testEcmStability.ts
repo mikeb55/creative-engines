@@ -40,6 +40,22 @@ function testEcmBassLoopSafety(): void {
   console.log('Test 2 PASS: ECM bass loop stable');
 }
 
+/** Golden-path ECM must finish in bounded time across seeds (guards against runaway bass rewind loops). */
+function testEcmChamberMultiSeedBarCount(): void {
+  const seeds = [42, 50021, 7777];
+  for (const s of seeds) {
+    const r = runGoldenPath(s, {
+      presetId: 'ecm_chamber',
+      totalBars: 32,
+      bpm: 100,
+      longFormEnabled: true,
+    });
+    const barCount = r.score?.parts?.[0]?.measures?.length ?? 0;
+    assert.equal(barCount, 32, `ECM seed ${s}: expected 32 guitar bars, got ${barCount}`);
+  }
+  console.log('Test 2b PASS: ECM chamber multi-seed 32-bar golden path completes');
+}
+
 function testEraNormalizationRegression(): void {
   const swingTest = normalizeChordSymbolsForEra(['Cmaj9', 'G13', 'A7alt', 'Dmin9'], 'swing');
   assert.equal(swingTest[0], 'C6/9', `Cmaj9 should -> C6/9, got ${swingTest[0]}`);
@@ -86,6 +102,7 @@ function testEcmChamberTextureMetricsAndGceJson(): void {
 function main(): void {
   testEcmBarCount();
   testEcmBassLoopSafety();
+  testEcmChamberMultiSeedBarCount();
   testEraNormalizationRegression();
   testNonEcmRegression();
   testEcmChamberTextureMetricsAndGceJson();

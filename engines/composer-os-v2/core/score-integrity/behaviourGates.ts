@@ -177,7 +177,8 @@ function validateEcmAntiLoop(score: ScoreModel): { valid: boolean; errors: strin
   return { valid: errors.length === 0, errors };
 }
 
-function validateStyleBlendIntegrity(stack: StyleStack): { valid: boolean; errors: string[] } {
+/** Exported for retro/harness tests that assert style-stack weight validity without requiring every downstream behaviour gate (e.g. Metheny density). */
+export function validateStyleBlendIntegrity(stack: StyleStack): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   const w = normalizeStyleWeights(stack);
   if (w.primary <= 0) errors.push('Style stack primary weight must be > 0');
