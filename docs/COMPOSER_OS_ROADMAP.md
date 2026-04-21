@@ -28,6 +28,7 @@
 - **Core:** `engines/composer-os-v2/` — single pipeline: preset → planning → score → MusicXML → gates → readiness.
 - **Apps:** `apps/composer-os-app`, `apps/composer-os-desktop` — call **app API** (`app-api/`), not raw core only.
 - **Modes matrix (honest):** see `app-api/releaseMetadata.ts` — duo / ECM / Song Mode / riff / Wyble / **Big Band** / **String Quartet** = **full ensemble MusicXML** (**planning JSON** fallback on failure). **String Quartet** is **COMPLETE** (strings + piano harmony staff, section markers, chord symbols on piano, import fix for `SQ_PART_*`). **Big Band + String Quartet:** piano part-list naming (`Piano` / `Pno.` / `keyboard.piano`, MIDI ch. 1 program 1) and **Song Form** + bar-length select (**16 / 24 / 32 / 40 / 48 / 64**, 2026-04-15) wired in Generate.
+- **MusicXML as user input for ensembles:** **not supported yet** — ensembles consume **seed + optional chord text** today. Planned future work: **lead-sheet XML → shared `LeadSheet` → quartet / big band** (see **Future → Lead-sheet MusicXML import**).
 - **Song Mode — writers & arrangers:** `core/song-mode/` ships a **typed songwriter + arranger rule catalogue** (registry + resolution + optional **songwriter × arranger** pairing). Full detail under **Past → Songwriters & arrangers**; **Generate UI** still lighter than the engine surface (see **Current** / **Future**).
 
 ---
@@ -102,7 +103,7 @@
 
 ### Other presets
 
-- **Riff Generator:** short-loop MusicXML to library path.
+- **Riff Generator:** short-loop MusicXML to library path. **Future direction:** evolve toward a shared **Phrase Engine / Riff Generator redesign** (motivic cells, not whole-song AI) — see **Future → Phrase Engine / Riff Generator redesign**.
 - **Wyble Etude:** Jimmy Wyble engine → MusicXML (chord resolution required).
 - **Research backlog (not implemented yet):** Perplexity research **Slonimsky / pattern systems** — local file `c:\Users\mike\Documents\Perplexity Research\Slonimsky Engine.md`. **When refreshing this roadmap or building melodic substitution, line generation, or scale/chord pattern tooling,** use it as a reference; assistants should remind the user to implement from this source when roadmap discussions touch Slonimsky-based or systematic pattern engines.
 
@@ -132,8 +133,9 @@
 
 ---
 
-## Current (as of 2026-04-18 snapshot)
+## Current (as of 2026-04-21 snapshot)
 
+- **Harness (project status):** full Composer OS V2 harness in strong shape (**~666 passed / ~5 failed** debt bucket); **`test:fast`** green; core ensemble + harmony + bar-math stacks stable. Detail: **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs the **`npm test` / `runAllTests.ts`** debt bucket (still **not** all green). This is **baselining**, not a full fix pass.
@@ -156,6 +158,52 @@
 ---
 
 ## Future (prioritized directions)
+
+### Lead-sheet MusicXML import → String Quartet + Big Band (planned — **not started**)
+
+**Next major capability under consideration:** a shared **`LeadSheet`** representation plus a **MusicXML → LeadSheet** importer that both **String Quartet** and **Big Band** realisers can consume. Today, ensemble paths are **export-centric** (no general MusicXML-as-input into `runQuartetRealisation` / `runBigBandRealisation`). This work is **staged in small PRs**, not one monolith.
+
+**v1 scope (intentionally narrow):**
+
+- Lead-sheet-like MusicXML: **single melody staff**, **optional** `<harmony>` / chord symbols, **simple meters** (e.g. 4/4, 3/4; maybe 6/8).
+- **Not in v1:** piano reductions as inputs, existing **multi-part** scores (downloaded quartet / big-band XML), or “messy” exports from arbitrary tools without clear lead-sheet semantics.
+
+**Intended shape (future implementation order):**
+
+1. **`LeadSheet` model** in core — metadata (title, key, time, tempo) + `bars[]` (`barIndex`, optional chord symbol, **monophonic** melody: pitch + startBeat + durationBeats).
+2. **MusicXML parser integration** — parse XML into a **generic** structured layer (parts, measures, notes, harmonies); keep ensemble-agnostic.
+3. **`leadSheetFromMusicXml(xml)`** — assume **first part = melody staff**, primary voice = melody; harmony from `<harmony>` (**v1:** roughly **one chord per bar**); **reject** inputs that violate v1 with **explicit errors**.
+4. **`realiseQuartetFromLeadSheet(leadSheet, options)`** / **`realiseBigBandFromLeadSheet(leadSheet, options)`** — map `bars[].chord` into existing **`chordProgressionText`** / arranger inputs; **v1:** melody **ignored** (engines keep generating lines); later optional **“head identity”** for violin I / horns.
+5. **Optional helpers:** `realiseQuartetFromMusicXml` / `realiseBigBandFromMusicXml` = (3) → (4).
+6. **Tests + docs** — small XML fixtures, importer tests, LeadSheet→ensemble smoke tests; user guide listing **accepted vs out-of-scope** MusicXML.
+
+**Explicit non-goal until scheduled:** changing behaviour of current Generate flows without the types/importer landed first.
+
+---
+
+### Phrase Engine / Riff Generator redesign (planned — motivic cells, not a “song writer”)
+
+**Product framing:** This is **not** a magical full-song AI. It is a **controllable phrase engine** that produces **short, reusable musical cells** (motifs, riffs, hooks, ostinati, arpeggio fragments) for import into Composer OS pipelines.
+
+**Goal:** Build a **shared** phrase abstraction and controls so generated material can feed **multiple** modules (duo guitar / guitar+bass, **Big Band** lead-line ideas, **String Quartet** melodic lines, **Song Mode** section hooks and inner-line fragments). **Guardrail:** stay in **phrase-length** generation; longer form remains the job of Song Mode, golden path, and ensemble realisers.
+
+**Stages**
+
+1. **Stage 1 — Neutral core:** Define a **Phrase** representation (instrument-agnostic) and **phrase controls**: range, rhythm complexity, gaps, repetition, feel, density, contour, harmonic role / progression awareness. **Motif-first** musical thinking; creative reference points include (non-exhaustive) melodists such as Wayne Shorter, Beethoven, Stevie Wonder, Donald Fagen, Messiaen, Joni Mitchell, Ligeti — as *direction*, not imitation engines.
+2. **Stage 2 — Module adapters:** Phrase **adapters / renderers** for selected surfaces (e.g. duo, quartet line, big-band lead line, songwriter section motif material). Prefer **MIDI-first / reusable phrase output** that existing arrangers can consume.
+3. **Stage 3 — Guitar idiom lane:** After the shared core exists, add a **deeper idiomatic guitar lane** (fretboard / playability / articulation), informed by artists such as Scofield, Beck, Metheny, Frisell, Montgomery, Halvorson, Holdsworth — **without** leaking guitar playability rules into Big Band or String Quartet cores (same discipline as **Quartal Guitar Module** below).
+
+**Lanes (conceptual):** Separate a **heavier riff / rhythmic cell** lane from a **clean arpeggio / “flow”** lane — analogous to preset phrase families and flow-style generation in tools like Riffler / Riffler Flow. **Borrow conceptually:** preset phrase families, explicit generation parameters, phrase-shaping controls, harmony-aware generation, MIDI-first reusable output. **Defer:** plugin packaging, amp/tone realism, huge tuning/style matrices.
+
+**Dependencies (likely):** Stable **score model + export** path; alignment with existing **motif** and melody tooling in core; harness/test stability for iterative generation work. Leverages **progression/harmony** inputs already used elsewhere. **Research overlaps:** Slonimsky / pattern-system backlog (pick list #10) may inform **systematic cells**, not a substitute for Stage 1’s neutral Phrase type.
+
+**Could unblock:** Richer **riff preset** behaviour without duplicating logic per ensemble; Song Mode **hook / motif** plumbing; ensemble **seed lines** without full arrangement; clearer handoff between **phrase layer** and **realisers** (BB/SQ/duo).
+
+**Relation to existing roadmap threads:** Distinct from **Lead-sheet MusicXML import** (input path vs generative phrases). Complements **ECM arrangement** and **Big Band** depth by supplying **material**, not replacing sectional arranging. **Quartal Guitar Module** remains **voicing-specific**; Stage 3 phrase lane is **melodic/guitar-idiom** — keep boundaries explicit.
+
+**Priority tier (recommended):** **Medium-term** for Stages 1–2 (after test-harness / core stability investments and alongside motif-related groundwork); **longer-horizon** for Stage 3 guitar idiom lane unless product pulls riff UX forward.
+
+---
 
 ### Next best development (top 3 options — 2026-04-18)
 
@@ -204,6 +252,8 @@
 | 9 | **ECM / Barry Harris / Bacharach** | Implement from **`ECM_Bacharach_BarryHarris_Research.md`** when extending chamber feel or style stacks. |
 | 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. |
 | 11 | **Chord UX polish** | Rarer symbols, help text, parse-error tests; does **not** reopen #16 baseline. |
+| 13 | **Lead-sheet MusicXML → SQ / BB (v1)** | **Planned** — shared **`LeadSheet`**, **`leadSheetFromMusicXml`**, **`realiseQuartetFromLeadSheet`** / **`realiseBigBandFromLeadSheet`**; staged PRs; see **Future → Lead-sheet MusicXML import**. |
+| 14 | **Phrase Engine / Riff redesign** | **Planned** — motivic phrase core + module adapters + later guitar idiom lane; **not** whole-song generation; see **Future → Phrase Engine / Riff Generator redesign**. |
 
 ### Near term (high leverage)
 
@@ -217,7 +267,7 @@
 
 - **ECM Chamber — Arrangement & Orchestration depth** — register separation, sparser bass vs guitar, silence/space enforcement; shares ideas with sectional Big Band work. (See **ECM Chamber — Arrangement & Orchestration depth** section below.)
 - **Big Band — V1 / V1.5 shipped (2026-04-20):** arranging scaffold in `bigBandPatterns.ts` + `bigBandScoreBuilder.ts` — deterministic **8-bar** sax soli **17–24** (when `totalBars >= 24`), brass tacet in-window, cadence punches + late shout fragment; **`npm run test:big-band-arranging`**.
-- **Big Band V2 (in progress, 2026-04-20):** theme-anchored **soli** (head lead + root contour) and **shout** lift; **drum** tiering (stronger on ensemble-hit bars, lighter timekeeping off hits); tests + **`eval:big-band-chart`**. Remaining V2+ ideas: **sectional counterpoint** and further drum/section colour beyond this pass.
+- **Big Band V2 (shipped 2026-04-20):** theme-anchored **soli** (head lead + root contour) and **shout** lift; **drum** tiering (stronger on ensemble-hit bars, lighter timekeeping off hits); tests + **`eval:big-band-chart`**. **Future polish:** sectional counterpoint and further drum/section colour beyond this pass.
 - **Voice 2:** **Counterpoint Phase 2 (2026-04-15): COMPLETE** — `voiceLeadingScorer` (Bizzi / Tymoczko / species-lite) wired into Guitar–Bass Duo Voice 2 candidate ranking; **10/10** `test:duo` PASS. Further **18.2B.3**-style melodic imitation / counterpoint refinement and **realized** metrics alignment remain (see table above).
 - ~~**Phase 19.1** — forms **>32 bars** in UI~~ **Done for BB/SQ** (2026-04-15). **Duo/Song >32** remains deferred until golden path extends.
 - **Chord handling (optional polish)** — rarer lead-sheet symbols, clearer in-app help / parse errors, and extra regression tests across presets/hosts; **does not reopen #16** (baseline marked **DONE** in README + docs/CHANGELOG).
@@ -285,5 +335,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-20].*
+*End of Composer OS Roadmap [2026-04-21].*
+
 
