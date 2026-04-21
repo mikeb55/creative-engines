@@ -25,6 +25,8 @@ export function augmentEcmChamberTexturePlan(
   mode: EcmChamberMode
 ): EcmBarTexture[] {
   let guitarLeadRun = 0;
+  let repeatedRolePairRun = 0;
+  let prevRolePair = '';
   const outRows: EcmBarTexture[] = [];
   for (const row of plan) {
     const b = row.bar;
@@ -53,6 +55,19 @@ export function augmentEcmChamberTexturePlan(
       out.overlapHint = false;
       if (out.guitarRole === 'lead') out.guitarRole = 'sustain_pad';
     }
+
+    // Textural arc guard: prevent long static role-pair carryover by nudging one side.
+    const rolePair = `${out.guitarRole}|${out.bassRole}`;
+    if (rolePair === prevRolePair) repeatedRolePairRun += 1;
+    else repeatedRolePairRun = 1;
+    if (repeatedRolePairRun >= 4) {
+      if (out.guitarRole === 'lead') out.guitarRole = 'shadow';
+      else if (out.guitarRole === 'sustain_pad') out.guitarRole = 'inner_motion';
+      else if (out.bassRole === 'sustain_pad') out.bassRole = 'inner_motion';
+      else if (out.bassRole === 'lead') out.bassRole = 'shadow';
+      repeatedRolePairRun = 1;
+    }
+    prevRolePair = `${out.guitarRole}|${out.bassRole}`;
     outRows.push(out);
   }
   return outRows;
