@@ -2,7 +2,7 @@
  * Wyble inner-line depth: keep inner voices closer across bars via octave-nearest motion.
  */
 
-import { nearestOctaveToPrevious } from '../core/wyble/wybleInnerLineMotion';
+import { nearestOctavePreferContrary, nearestOctaveToPrevious } from '../core/wyble/wybleInnerLineMotion';
 import { applyBigBandWybleLeadInnerSaxMidis } from '../core/big-band/bigBandWybleHornVoicing';
 import { applyQuartetWybleChordToneStack } from '../core/string-quartet/quartetWybleChordToneStack';
 import { WYBLE_ROLE_MAP_BIG_BAND, WYBLE_ROLE_MAP_STRING_QUARTET } from '../core/wyble/ensembleWybleRoleMaps';
@@ -41,6 +41,18 @@ export function runWybleInnerLineDepthTests(): TestResult[] {
     else pass('quartet violin2 inner line picks nearer octave');
   } catch (e) {
     fail(`quartet violin2 inner line picks nearer octave: ${e}`);
+  }
+
+  try {
+    const c = nearestOctavePreferContrary({
+      targetMidi: 64,
+      previousMidi: 67,
+      outerDelta: 3,
+    });
+    if (c >= 67) fail('contrary preference nudges inner direction against outer motion when feasible');
+    else pass('contrary preference nudges inner direction against outer motion when feasible');
+  } catch (e) {
+    fail(`contrary preference nudges inner direction against outer motion when feasible: ${e}`);
   }
 
   return results;

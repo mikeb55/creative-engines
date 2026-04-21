@@ -313,6 +313,7 @@ export function computeBigBandHeadLeadOffsets(params: {
   const { chordSequence, formPlan, wybleVoiceLayout } = params;
   let hornStreak = initialHornCloneStreakState();
   let prevTenorMidi: number | undefined;
+  let prevAltoMidi: number | undefined;
   const out: number[] = [];
 
   for (let bar = 1; bar <= 8; bar++) {
@@ -335,10 +336,13 @@ export function computeBigBandHeadLeadOffsets(params: {
       wybleVoiceLayout,
       snappedSax,
       prevTenorMidi
+      ,
+      prevAltoMidi
     );
     altoMidi = wybleSaxes.altoMidi;
     tenorMidi = wybleSaxes.tenorMidi;
     prevTenorMidi = tenorMidi;
+    prevAltoMidi = altoMidi;
 
     const mit = mitigateBigBandHornMidis(
       hornStreak,

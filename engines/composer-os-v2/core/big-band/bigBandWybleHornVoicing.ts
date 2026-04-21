@@ -7,7 +7,7 @@
 
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { WYBLE_ROLE_MAP_BIG_BAND } from '../wyble/ensembleWybleRoleMaps';
-import { nearestOctaveToPrevious } from '../wyble/wybleInnerLineMotion';
+import { nearestOctavePreferContrary } from '../wyble/wybleInnerLineMotion';
 
 /** Semitones below alto lead for `inner_counter` on `bb_tenor_sax` (minor third). */
 export const WYBLE_BB_INNER_BELOW_LEAD_SEMITONES = 3;
@@ -26,13 +26,18 @@ export function applyBigBandWybleLeadInnerSaxMidis(
   tenorMidi: number,
   layout: EnsembleWybleRoleMap | undefined,
   snapSax: (midi: number) => number,
-  previousTenorMidi?: number
+  previousTenorMidi?: number,
+  previousAltoMidi?: number
 ): { altoMidi: number; tenorMidi: number } {
   if (!layout || !isBigBandWybleMap(layout)) {
     return { altoMidi, tenorMidi };
   }
   const baseTenor = altoMidi - WYBLE_BB_INNER_BELOW_LEAD_SEMITONES;
-  const smootherTenor = nearestOctaveToPrevious(baseTenor, previousTenorMidi ?? null);
+  const smootherTenor = nearestOctavePreferContrary({
+    targetMidi: baseTenor,
+    previousMidi: previousTenorMidi ?? null,
+    outerDelta: typeof previousAltoMidi === 'number' ? altoMidi - previousAltoMidi : null,
+  });
   return {
     altoMidi,
     tenorMidi: snapSax(smootherTenor),
