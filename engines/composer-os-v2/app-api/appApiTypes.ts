@@ -142,6 +142,8 @@ export interface GenerateRequest {
   formId?: string;
   /** Song Mode: after duo MusicXML, run Python bridge for vocal lead sheet (optional). */
   includeVocalLeadSheet?: boolean;
+  /** Song Mode (Donald Fagen pilot): optional MusicXML lead-sheet input. */
+  songModeLeadSheetMusicXml?: string;
 }
 
 export interface ValidationSummary {
@@ -204,6 +206,8 @@ export interface OutputEntry {
   userSelectedStyleDisplayNames?: string[];
   userExplicitPrimaryStyle?: boolean;
   duoModeReceiptLabel?: string;
+  motifAuthorityLevel?: GenerationMetadata['motifAuthorityLevel'];
+  motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   /** Song Mode — echoed Style Engine profile when set. */
   styleProfile?: StyleProfile;
   /** Pipeline truth gates (Guitar–Bass Duo 8-bar). */

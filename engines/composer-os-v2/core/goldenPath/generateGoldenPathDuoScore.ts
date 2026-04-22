@@ -132,6 +132,7 @@ import {
   type MotifDevelopmentSummary,
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
+import type { SongModeLeadSheetMelodyAnchor } from '../song-mode/songModeLeadSheetAdapter';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -3169,6 +3170,24 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
   if (bestI >= 0) (m5.events[bestI] as { pitch: number }).pitch = alt;
 }
 
+function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: CompositionContext): boolean {
+  if (context.presetId !== 'guitar_bass_duo') return false;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return false;
+  if (context.generationMetadata?.songwriterStyleId !== 'donald_fagen') return false;
+  const anchors = context.generationMetadata?.songModeLeadSheetMelodyAnchors as
+    | SongModeLeadSheetMelodyAnchor[]
+    | undefined;
+  if (!anchors || anchors.length === 0) return false;
+  const firstAnchor = [...anchors].sort((a, b) => a.bar - b.bar)[0];
+  if (!firstAnchor) return false;
+  const measure = guitar.measures.find((m) => m.index === Math.max(1, firstAnchor.bar));
+  if (!measure) return false;
+  const firstNote = measure.events.find((e) => e.kind === 'note') as NoteEvent | undefined;
+  if (!firstNote) return false;
+  firstNote.pitch = clampPitch(firstAnchor.midi, 55, 79);
+  return true;
+}
+
 export interface GoldenPathPlans {
   sections: import('../section-roles/sectionRoleTypes').SectionWithRole[];
   guitarMap: InstrumentRegisterMap;
@@ -3326,6 +3345,10 @@ export function generateGoldenPathDuoScore(
       const chords = context.lockedHarmonyBarsRaw ?? [];
       const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
       applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
+    }
+    const leadSheetAnchorApplied = applySongModeLeadSheetAnchorStart(guitarPart, context);
+    if (leadSheetAnchorApplied) {
+      context.generationMetadata.songModeLeadSheetAnchorStartApplied = true;
     }
     if (isGuitarBassDuoFamily(context.presetId)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);

@@ -20,6 +20,7 @@ import {
 } from './songModeValidation';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 import { buildUniversalLeadSheetFromSongContract } from '../lead-sheet/universalLeadSheetBuilder';
+import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 
@@ -41,6 +42,8 @@ export interface SongModeRunInput {
   classicalOverlay?: ClassicalSongRuleId | null;
   /** Optional songwriter ↔ arranger pairing (additive metadata). */
   stylePairing?: StylePairingInput | null;
+  /** Optional imported lead sheet (threaded for Song Mode input slices). */
+  leadSheet?: LeadSheet;
 }
 
 export interface SongModeRunManifestHints {

@@ -59,6 +59,8 @@ export interface GenerateResult {
   userExplicitPrimaryStyle?: boolean;
   /** Guitar–Bass Duo family: receipt mode line when distinct from default duo. */
   duoModeReceiptLabel?: string;
+  motifAuthorityLevel?: GenerationMetadata['motifAuthorityLevel'];
+  motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   validation: {
     integrityPassed: boolean;
     behaviourGatesPassed: boolean;
@@ -101,12 +103,16 @@ export interface GenerateResult {
     userSelectedStyleDisplayNames?: string[];
     userExplicitPrimaryStyle?: boolean;
     duoModeReceiptLabel?: string;
+    motifAuthorityLevel?: GenerationMetadata['motifAuthorityLevel'];
     wybleConsumptionReceipt?: WybleConsumptionReceipt;
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
     songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
     songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+    songModeLeadSheetInputApplied?: GenerationMetadata['songModeLeadSheetInputApplied'];
+    songModeLeadSheetAnchorStartApplied?: GenerationMetadata['songModeLeadSheetAnchorStartApplied'];
+    motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -234,6 +240,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
       userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
       duoModeReceiptLabel: result.context.generationMetadata.duoModeReceiptLabel,
+      motifAuthorityLevel: result.context.generationMetadata.motifAuthorityLevel,
+      motifDevelopmentSummary: result.context.generationMetadata.motifDevelopmentSummary,
       chordProgressionSubmittedRaw: result.runManifest.chordProgressionSubmittedRaw,
       parsedChordBarsSnapshot: result.runManifest.parsedChordBarsSnapshot,
       pipelineTruthInputStage: result.runManifest.pipelineTruthInputStage,
@@ -327,6 +335,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     userSelectedStyleDisplayNames: result.context.generationMetadata.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: result.context.generationMetadata.userExplicitPrimaryStyle,
     duoModeReceiptLabel: result.context.generationMetadata.duoModeReceiptLabel,
+    motifAuthorityLevel: result.context.generationMetadata.motifAuthorityLevel,
+    motifDevelopmentSummary: result.context.generationMetadata.motifDevelopmentSummary,
     validation,
     runManifest: result.runManifest
       ? {
@@ -346,6 +356,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           userSelectedStyleDisplayNames: result.runManifest.userSelectedStyleDisplayNames,
           userExplicitPrimaryStyle: result.runManifest.userExplicitPrimaryStyle,
           duoModeReceiptLabel: result.runManifest.duoModeReceiptLabel,
+          motifAuthorityLevel: result.runManifest.motifAuthorityLevel,
           keySignatureInferredTonic: result.runManifest.keySignatureInferredTonic,
           keySignatureConfidence: result.runManifest.keySignatureConfidence,
           keySignatureOverrideUsed: result.runManifest.keySignatureOverrideUsed,
@@ -364,6 +375,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           songModeSectionShapingDiagnostics: result.runManifest.songModeSectionShapingDiagnostics,
           songModeSectionBehaviourDescriptors: result.runManifest.songModeSectionBehaviourDescriptors,
           songModeProfileRuleDiagnostics: result.runManifest.songModeProfileRuleDiagnostics,
+          motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

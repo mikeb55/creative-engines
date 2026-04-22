@@ -17,6 +17,7 @@ import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisat
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
+import { adaptLeadSheetMusicXmlForSongMode } from '../core/song-mode/songModeLeadSheetAdapter';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
@@ -300,10 +301,23 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const authorOv =
     typeof req.authorOverlay === 'string' && req.authorOverlay.trim() !== '' ? req.authorOverlay.trim() : undefined;
   const barTarget = clampSongFormBarCount(req.totalBars, 32);
+  const primarySongwriterNormalized =
+    typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
+  const leadSheetXmlInput = typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
+  const isDonaldFagenLeadSheetRoute = primarySongwriterNormalized === 'donald_fagen';
+  const leadSheetAdapted =
+    isDonaldFagenLeadSheetRoute && leadSheetXmlInput.length > 0
+      ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget)
+      : undefined;
+  const useLeadSheetHarmony = leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
+  if (leadSheetAdapted && !leadSheetAdapted.ok && leadSheetAdapted.errors.length > 0) {
+    console.warn('[Song Mode LeadSheet] Donald Fagen input ignored:', leadSheetAdapted.errors.join(' | '));
+  }
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
     totalBars: barTarget,
+    leadSheet: useLeadSheetHarmony ? leadSheetAdapted?.leadSheet : undefined,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv as AuthorRuleId | undefined,
@@ -332,7 +346,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     typeof req.primarySongwriterStyle === 'string' && req.primarySongwriterStyle.trim().length > 0;
 
   const rawCustomHarmony = typeof req.chordProgressionText === 'string' ? req.chordProgressionText.trim() : '';
-  const useLockedCustomHarmony = rawCustomHarmony.length > 0;
+  const useLockedCustomHarmony = rawCustomHarmony.length > 0 && !useLeadSheetHarmony;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
   if (useLockedCustomHarmony) {
     if (process.env.COMPOSER_OS_SONG_MODE_CHORD_DEBUG === '1') {
@@ -430,11 +444,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyModeForRun = 'custom_locked';
     lockedHarmonyBarsAuthoritative = songwriterLockedBars;
   }
+  if (useLeadSheetHarmony) {
+    lockedHarmonyBarsAuthoritative = [...(leadSheetAdapted?.lockedChordBars ?? [])];
+    chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
+    harmonyModeForRun = 'custom_locked';
+  }
   logSongModeHarmonyDebug({
     layer: 'composerOsAppGeneration:runSongStructure',
     uiChordProgressionChars: rawCustomHarmony.length,
     useLockedCustomHarmony,
     harmonyMode: harmonyModeForRun,
+    songModeLeadSheetApplied: useLeadSheetHarmony,
     totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
   });
@@ -465,6 +485,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
+    songModeLeadSheetMelodyAnchors: useLeadSheetHarmony ? leadSheetAdapted?.melodyAnchors : undefined,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
     era: req.stylePairing?.era ?? undefined,
@@ -664,6 +685,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songModeSectionShapingDiagnostics: gp.context.generationMetadata.songModeSectionShapingDiagnostics,
       songModeSectionBehaviourDescriptors: gp.context.generationMetadata.songModeSectionBehaviourDescriptors,
       songModeProfileRuleDiagnostics: gp.context.generationMetadata.songModeProfileRuleDiagnostics,
+      motifAuthorityLevel: gp.context.generationMetadata.motifAuthorityLevel,
+      motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
@@ -728,6 +751,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
     userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
     userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
+    motifAuthorityLevel: gp.context.generationMetadata.motifAuthorityLevel,
+    motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
     validation,
     runManifest: gp.runManifest
       ? {
@@ -752,6 +777,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           styleStackPrimaryDisplayName: gp.runManifest.styleStackPrimaryDisplayName,
           userSelectedStyleDisplayNames: gp.runManifest.userSelectedStyleDisplayNames,
           userExplicitPrimaryStyle: gp.runManifest.userExplicitPrimaryStyle,
+          motifAuthorityLevel: gp.runManifest.motifAuthorityLevel,
           keySignatureInferredTonic: gp.runManifest.keySignatureInferredTonic,
           keySignatureConfidence: gp.runManifest.keySignatureConfidence,
           keySignatureOverrideUsed: gp.runManifest.keySignatureOverrideUsed,
@@ -770,6 +796,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           songModeSectionShapingDiagnostics: gp.runManifest.songModeSectionShapingDiagnostics,
           songModeSectionBehaviourDescriptors: gp.runManifest.songModeSectionBehaviourDescriptors,
           songModeProfileRuleDiagnostics: gp.runManifest.songModeProfileRuleDiagnostics,
+          songModeLeadSheetInputApplied: gp.runManifest.songModeLeadSheetInputApplied,
+          songModeLeadSheetAnchorStartApplied: gp.runManifest.songModeLeadSheetAnchorStartApplied,
+          motifDevelopmentSummary: gp.runManifest.motifDevelopmentSummary,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,

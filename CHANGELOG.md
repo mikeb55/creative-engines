@@ -1,3 +1,28 @@
+## [2026-04-22] LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+
+- Added optional Song Mode LeadSheet MusicXML input plumbing (`songModeLeadSheetMusicXml`) for a single bounded route: `presetId === "song_mode"` with primary songwriter `donald_fagen`.
+- Added a narrow adapter at `engines/composer-os-v2/core/song-mode/songModeLeadSheetAdapter.ts`:
+  - LeadSheet chord events -> deterministic locked harmony bars
+  - LeadSheet melody events -> compact bar-level melody anchors
+- Wired Donald Fagen Song Mode to:
+  - parse/import the provided LeadSheet MusicXML
+  - use LeadSheet-derived locked harmony as primary harmonic input
+  - apply bounded melody-start anchor guidance
+- Added deterministic tests in `engines/composer-os-v2/tests/songModeLeadSheetInput.test.ts` and wired into `tests/runAllTests.ts`.
+- Scope is intentionally narrow and explicit: Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout are deferred.
+
+## [2026-04-22] Lead-sheet MusicXML Import ù Phase 1 vertical slice
+
+- Added a minimal shared `LeadSheet` model for import/handoff foundations at `engines/composer-os-v2/core/lead-sheet/leadSheetTypes.ts`.
+- Added bounded `score-partwise` MusicXML importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`:
+  - imports title/composer/tempo, first time signature and key signature
+  - imports harmony annotations as chord events (bar + beat offset)
+  - imports single-line melody events from first part / voice 1
+  - captures rehearsal sections and simple repeat/ending markers when present
+  - emits deterministic sorted output with explicit warnings for unsupported complexity
+- Added deterministic parser tests in `engines/composer-os-v2/tests/leadSheetMusicXmlImport.test.ts` and wired suite into `tests/runAllTests.ts`.
+- Scope is intentionally narrow: this is import foundation only (no String Quartet/Big Band realization integration in this slice).
+
 ## [2026-04-22] Docs: Motif Development Phase 1 release snapshot
 
 - Added/updated documentation for **Motif Development Phase 1**:
@@ -10,7 +35,7 @@
   - honest `off` semantics (no motif-development guarantee; minimal summary only)
   - hybrid `motifLedPrimaryIdentity` claim requires minimal recurrence/coherence evidence
 
-## [2026-04-18] Composer OS ó Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
+## [2026-04-18] Composer OS ù Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
 
 - Developer automation: same-seed Bacharach vs neutral Song Mode batch, receipt/`_meta` checks, GCE-style diagnostic eval (not a gate), optional desktop rebuild. See **`docs/CHANGELOG.md`** and **`docs/USER_GUIDE.md`**.
 
@@ -20,7 +45,7 @@
 - generateGoldenPathDuoScore uses opts.bpm ?? 120
 - lead_sheet_exporter.py emits full metronome direction block
 
-## [2026-04-17] Vocal Lead Sheet ó chord extensions, key signature, tempo
+## [2026-04-17] Vocal Lead Sheet ù chord extensions, key signature, tempo
 
 ### What was fixed
 - Full chord extensions working via buildHarmonyXmlLine
@@ -32,10 +57,10 @@
 
 ### Known issue
 - ScoreModel.tempo is hardcoded to 120 in
-  generateGoldenPathDuoScore.ts ó req.bpm from UI
+  generateGoldenPathDuoScore.ts ù req.bpm from UI
   never reaches the score model. Fix pending.
 
-## [2026-04-17] Vocal Lead Sheet ó chord extensions fully working
+## [2026-04-17] Vocal Lead Sheet ù chord extensions fully working
 
 ### What was fixed
 - Replaced Python chord parser (_parse_chord) with TypeScript
@@ -43,7 +68,7 @@
 - TypeScript now pre-renders full MusicXML <harmony> XML
   and passes it as harmonyXml in the payload
 - Python lead_sheet_exporter.py now inserts harmony XML
-  verbatim ó zero chord parsing on Python side
+  verbatim ù zero chord parsing on Python side
 - chord_symbol_extractor.py updated to forward harmonyXml
 - Fixed chord_symbol_extractor.py stripping extensions
   by using raw chord string instead of rebuilding from
@@ -58,10 +83,10 @@ Full jazz chord extensions now render correctly in Sibelius:
 Python was rebuilding chord strings from integer root +
 quality enum, discarding all extensions. TypeScript
 buildHarmonyXmlLine already had correct MusicXML harmony
-generation ó the fix was to use it as the single source
+generation ù the fix was to use it as the single source
 of truth and treat Python as a dumb assembler.
 
-## Roadmap ó Guitar/Harmony Module Assessment
+## Roadmap ù Guitar/Harmony Module Assessment
 
 ### Executive recommendation
 - Treat these repos as supporting modules, not core generation engines.
@@ -110,14 +135,14 @@ of truth and treat Python as a dumb assembler.
 - Do not expand roadmap scope into broad refactors to support these tools prematurely.
 - Do not dilute current Composer OS stabilization priorities (lead-sheet fidelity, deterministic export).
 
-## [2026-04-16] Vocal Lead Sheet ó feature complete (v1)
+## [2026-04-16] Vocal Lead Sheet ù feature complete (v1)
 
 ### What was fixed
 - Pipeline wired end-to-end from Song Mode to Python bridge
 - Script path fixed for packaged Electron app (resourcesPath)
 - Replaced leadMelodyPlan placeholder (one chord tone per bar)
   with real melody from gp.score guitar part
-- Filtered to voice 1 only ó bass voice polyphony removed
+- Filtered to voice 1 only ù bass voice polyphony removed
 - Debug prints removed from cli_export_lead_sheet.py stdout
 
 ### Known issues (next session)
@@ -125,14 +150,14 @@ of truth and treat Python as a dumb assembler.
 - Chord extensions stripped (Dmaj7#11 renders as D major)
 - Rehearsal marks not yet on vocal lead sheet
 - Voice type selector not yet in UI (hardcoded male_tenor)
-- leadMelodyPlan is now dead code ó needs cleanup
+- leadMelodyPlan is now dead code ù needs cleanup
 
 ### Status
 Vocal lead sheet generates alongside main score on every
 Song Mode generation. Single staff, treble clef, chord
 symbols, varied rhythm. Opens cleanly in Sibelius.
 
-## [2026-04-16] Vocal lead sheet ó full pipeline fix
+## [2026-04-16] Vocal lead sheet ù full pipeline fix
 
 ### Changes
 - composerOsAppGeneration.ts: AuthorRuleId type cast fixed
@@ -162,9 +187,9 @@ check output folder for *_vocal_lead_sheet.musicxml
 ### Status
 Vocal lead sheet pipeline: flag now reaches runSongStructure.
 Python bridge path and packaged build verification still
-needed ó test by ticking checkbox and checking output folder.
+needed ù test by ticking checkbox and checking output folder.
 
-## [2026-04-15] End of day summary ó all items verified working
+## [2026-04-15] End of day summary ù all items verified working
 
 ### Verified today
 - Song Mode: Wayne Shorter + Post-Bop generating cleanly
@@ -194,7 +219,7 @@ Remaining:
 - Bass/duo regression expansion
 - Counterpoint Phase 3 (SQ + ECM + UI slider)
 
-## [2026-04-15] Song Mode style exposure ó three new controls
+## [2026-04-15] Song Mode style exposure ù three new controls
 
 ### UI additions (HomeGenerate.tsx)
 - Pattern slider: intent.pattern now user-controlled
@@ -203,7 +228,7 @@ Remaining:
 - Secondary Songwriter dropdown: optional blend at
   ~35% with primary; uses same SONGWRITER_OPTIONS
 - Lyric Author Influence dropdown: jimmy_webb,
-  pat_pattison, jack_perricone ó optional overlay
+  pat_pattison, jack_perricone ù optional overlay
 
 ### API pipeline (appApiTypes.ts, composerOsApiCore.ts,
   composerOsAppGeneration.ts, runSongMode.ts)
@@ -215,7 +240,7 @@ Remaining:
 - Empty strings stripped before blending so None
   selection has no effect
 
-## [2026-04-15] Big Band polish ó complete
+## [2026-04-15] Big Band polish ù complete
 
 ### All items done
 - Double Bass part name correct in MusicXML export
@@ -271,7 +296,7 @@ Remaining:
 - Dead helper removed
 - 14/14 checks passing
 
-## [2026-04-15] Counterpoint Phase 2 ó voiceLeadingScorer wired into Guitar-Bass Duo
+## [2026-04-15] Counterpoint Phase 2 ù voiceLeadingScorer wired into Guitar-Bass Duo
 
 ### Changes (guitarVoice2WybleLayer.ts)
 - Voice2PitchPickContext182B3: added bassMidi, prevV1Midi,
@@ -309,19 +334,19 @@ assertHookBarIdentityUnchanged was firing incorrectly
 when STYLE_SHORTER_POST_BOP / wayne_shorter activated
 shorterMode chord-tone policy. The mid-pipeline snapshot
 was taken before style-aware passes (overlay, melodic,
-phrase repair) ran, then compared after ó legitimately
+phrase repair) ran, then compared after ù legitimately
 different when shorterMode changes chord tone selection.
 
 ### Fix (generateGoldenPathDuoScore.ts)
 Removed mid-pipeline snapshot + assert block.
 Post-finalizeAndSealDuoScoreBarMath guard on bars 1
-and 25 retained ó still catches unintended mutations
+and 25 retained ù still catches unintended mutations
 after the score is sealed.
 
 ### No snapshot regeneration required
 No stored hook snapshot files exist to refresh.
 
-## [2026-04-15] Wayne Shorter ó quick coherence fix
+## [2026-04-15] Wayne Shorter ù quick coherence fix
 
 ### Changes
 - harmonyChordTonePolicy.ts: STYLE_SHORTER_POST_BOP now
@@ -331,7 +356,7 @@ No stored hook snapshot files exist to refresh.
   velocity shaping + shorterMode chord policy together
   form the complete Post-Bop style surface
 - songwriterStyleProfiles.ts: wayne_shorter description
-  added ó post-bop harmonic language, upper-structure
+  added ù post-bop harmonic language, upper-structure
   emphasis, activates shorterMode chord-tone policy
 
 ### Effect
@@ -365,7 +390,7 @@ two mechanisms were disconnected.
 - Guitar-Bass Duo / Song Mode: golden path still capped
   at 32 - engine extension deferred to future phase
 
-## [2026-04-15] Counterpoint scoring module ó Phase 1 complete
+## [2026-04-15] Counterpoint scoring module ù Phase 1 complete
 
 ### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
 Shared three-voice counterpoint scorer based on:

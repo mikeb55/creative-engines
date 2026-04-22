@@ -8,6 +8,7 @@ import type {
   SongModeSectionBehaviourDescriptor,
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
+import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -136,4 +137,10 @@ export interface RunManifest {
     bacharachSongModeRuleBundleId?: string;
     behaviourSourceIds?: string[];
   };
+  /** Song Mode LeadSheet pilot: input routing applied on this run. */
+  songModeLeadSheetInputApplied?: boolean;
+  /** Song Mode LeadSheet pilot: first melody anchor was applied to guitar bar 1. */
+  songModeLeadSheetAnchorStartApplied?: boolean;
+  motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
+  motifDevelopmentSummary?: MotifDevelopmentSummary;
 }

@@ -88,6 +88,25 @@ In-app help: click **Help** in the app navigation (same content as the user guid
 
 ---
 
+## Lead-sheet MusicXML Import (Phase 1)
+
+- **What ships now:** a bounded `score-partwise` MusicXML importer into a shared `LeadSheet` model (`engines/composer-os-v2/core/lead-sheet/leadSheetTypes.ts`, `leadSheetMusicXmlImport.ts`).
+- **Supported now:** basic metadata (title/composer/tempo), first time/key signature, harmony tags as chord events, first-part single-line melody (voice 1), rehearsal labels, and simple repeat/ending markers.
+- **Safety posture:** deterministic parse output and explicit warnings when unsupported complexity is present (extra parts/staves, multiple voices, lyrics, stacked note chords).
+- **Intentionally deferred:** full score import, orchestral/staff expansion logic, and automatic String Quartet/Big Band realization from imported lead sheets.
+
+---
+
+## LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+
+- **Supported now:** exactly one path: `song_mode` with primary songwriter `donald_fagen` and request field `songModeLeadSheetMusicXml`.
+- **Behavior now:** the imported LeadSheet drives deterministic locked harmony bars for this route, and a bounded melody-start anchor guidance pass is applied.
+- **Safety posture:** if LeadSheet input is missing or not parseable, Song Mode behavior remains baseline; this slice fails safely instead of broad fallback rewrites.
+- **Inspectability:** run manifests include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied` for this bounded path.
+- **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
+
+---
+
 ## Wyble ON/OFF examples (CLI ? not a UI toggle)
 
 Developer-only A/B export for **string quartet** and **big band** scores (Wyble layout ON vs OFF). **Not** the same as the **Wyble Etude** preset in the UI.

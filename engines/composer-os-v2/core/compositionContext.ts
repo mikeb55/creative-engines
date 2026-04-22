@@ -28,7 +28,12 @@ import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIn
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
-import type { MotifAuthorityPlan, MotifFingerprint } from './motif/motifAuthorityV1';
+import type {
+  MotifAuthorityLevel,
+  MotifAuthorityPlan,
+  MotifDevelopmentSummary,
+  MotifFingerprint,
+} from './motif/motifAuthorityV1';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -105,6 +110,8 @@ export interface GenerationMetadata {
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
   /** Feature flag: Motif Authority V1 gated vertical slice (song_mode_* + guitar_bass_duo). */
   motifAuthorityV1?: boolean;
+  /** Explicit motif policy level for bounded pilot paths (`off`/`soft`/`strong`). */
+  motifAuthorityLevel?: MotifAuthorityLevel;
   /** Motif Authority V1 phrase contract + thresholds. */
   motifPlan?: MotifAuthorityPlan;
   /** Opening phrase fingerprint captured for V1 diagnostics. */
@@ -119,6 +126,8 @@ export interface GenerationMetadata {
   literalCopyPenalty?: number;
   /** Penalty when development/return drifts too far from motif identity. */
   overDriftPenalty?: number;
+  /** Pilot-path motif diagnostics for Phase 1 inspectability. */
+  motifDevelopmentSummary?: MotifDevelopmentSummary;
   /** True if user requested custom but parsing failed — no score was produced with that harmony */
   chordProgressionParseFailed?: boolean;
   /** True only if built-in harmony was used despite a valid custom request (must stay false) */
@@ -235,6 +244,12 @@ export interface GenerationMetadata {
   bacharachSongModeRuleBundleId?: string;
   /** Song Mode: section-aware behaviour declarations (Fagen / Bacharach / Sophisticated Pop / future slices). */
   songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
+  /** Song Mode LeadSheet pilot: compact per-bar melody anchors (Donald Fagen-only input slice). */
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number }>;
+  /** Song Mode LeadSheet pilot: LeadSheet input drove locked harmony in this run. */
+  songModeLeadSheetInputApplied?: boolean;
+  /** Song Mode LeadSheet pilot: first anchor was applied to guitar melody start. */
+  songModeLeadSheetAnchorStartApplied?: boolean;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /**

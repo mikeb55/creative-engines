@@ -71,6 +71,24 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **Big Band arranging:** **`npm run test:big-band-arranging`** — five seeds, deterministic **8-bar** sax soli in **17–24**, brass tacet there, end-window brass activity sanity.
 - **ECM Chamber texture (symbolic, no audio):** **`npm run eval:ecm-texture`** (repo root or `engines/composer-os-v2`) — golden-path **ECM Chamber** runs on fixed seeds; each line is JSON with **how busy bass vs guitar are per bar**, **bass vs treble register separation**, **phrase-end** comp thinning/silence hints, and a single **`ecmTextureScore`** (0–10). Use after ECM arrangement/orchestration edits instead of ad-hoc listening alone. **`npm run test:ecm`** stays the fast stability bar for ECM.
 
+### Lead-sheet MusicXML import (Phase 1, developer foundation)
+
+- The engine now includes a bounded MusicXML lead-sheet importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`.
+- It currently supports `score-partwise` input with first-part lead melody (voice 1), harmony tags, basic metadata, meter/key hints, and simple repeat/ending markers.
+- Unsupported complexity is handled safely with warnings (for example: extra parts, multiple melody voices, lyrics, stacked note chords) rather than pretending full support.
+- This phase does **not** yet realize imported lead sheets directly into String Quartet or Big Band; it provides the shared `LeadSheet` model foundation for later slices.
+
+### LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+
+- **Supported now:** one route only:
+  - `presetId = song_mode`
+  - `primarySongwriterStyle = donald_fagen`
+  - optional request field `songModeLeadSheetMusicXml`
+- **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route, and a bounded melody-start anchor guide is applied deterministically.
+- **If omitted/invalid:** Song Mode runs as before with baseline behavior.
+- **Inspectability fields:** run manifests for this route can include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied`.
+- **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
+
 ---
 
 ## 3) How to run the app locally

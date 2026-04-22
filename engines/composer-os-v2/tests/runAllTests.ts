@@ -52,6 +52,9 @@ import { runChordProgressionTests } from './chordProgression.test';
 import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
 import { runChordSemanticsTests } from './chordSemantics.test';
 import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
+import { runGuitarBassDuoFamilyParityTests } from './guitarBassDuoFamilyParity.test';
+import { runEvalDiagnosticsHarnessTests } from './evalDiagnosticsHarness.test';
+import { runEvalDiagnosticsRankingTests } from './evalDiagnosticsRanking.test';
 import { runWybleInnerLineDepthTests } from './wybleInnerLineDepth.test';
 import { runChordExportDiagnosticsTests } from './chordExportDiagnostics.test';
 import { runDuoV36bTests } from './duoV36b.test';
@@ -70,6 +73,7 @@ import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { runSongModeIntegrationTests } from './songModeIntegration.test';
 import { runSongModeMusicXmlTests } from './songModeMusicXml.test';
 import { runSongModeHookIdentityTests } from './songModeHookIdentity.test';
+import { runSongModeLeadSheetInputTests } from './songModeLeadSheetInput.test';
 import { runSongwritingResearchParsingTests } from './songwritingResearchParsing.test';
 import { runSongwriterRuleRegistryTests } from './songwriterRuleRegistry.test';
 import { runSongwriterStyleResolverTests } from './songwriterStyleResolver.test';
@@ -91,6 +95,7 @@ import { runHumanisationToggleTests } from './humanisationToggle.test';
 import { runReferenceImportTypesTests } from './referenceImportTypes.test';
 import { runMusicXmlReferenceParserTests } from './musicXmlReferenceParser.test';
 import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.test';
+import { runLeadSheetMusicXmlImportTests } from './leadSheetMusicXmlImport.test';
 import { runReferenceBehaviourExtractionTests } from './referenceBehaviourExtraction.test';
 import { runReferenceReuseAdapterTests } from './referenceReuseAdapter.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
@@ -140,6 +145,7 @@ import { retroSuites } from './retro/index';
 import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
 import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
 import { runSongModeAbInspectHarnessTests } from './songModeAbInspectHarness.test';
+import { runMotifAuthorityPilotSliceTests } from './motifAuthorityPilotSlice.test';
 import { isFastExcludedSuiteName } from './harness/fastExcludeSuites';
 
 const suites = [
@@ -180,6 +186,9 @@ const suites = [
   { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { name: 'Chord semantics (unified)', run: runChordSemanticsTests },
   { name: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
+  { name: 'Guitar–Bass Duo family parity (T2.1)', run: runGuitarBassDuoFamilyParityTests },
+  { name: 'Eval diagnostics harness (T2.2)', run: runEvalDiagnosticsHarnessTests },
+  { name: 'Eval diagnostics ranking (advisory)', run: runEvalDiagnosticsRankingTests },
   { name: 'Wyble inner-line depth (BB/SQ)', run: runWybleInnerLineDepthTests },
   { name: 'Chord export diagnostics (#17)', run: runChordExportDiagnosticsTests },
   { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
@@ -198,6 +207,7 @@ const suites = [
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Song Mode MusicXML app', run: runSongModeMusicXmlTests },
   { name: 'Song Mode regression baseline (50021)', run: runSongModeHookIdentityTests },
+  { name: 'Song Mode LeadSheet input (Donald Fagen Phase 1)', run: runSongModeLeadSheetInputTests },
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
   { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },
   { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },
@@ -223,6 +233,7 @@ const suites = [
   { name: 'Reference import types', run: runReferenceImportTypesTests },
   { name: 'MusicXML reference parser', run: runMusicXmlReferenceParserTests },
   { name: 'Lead sheet reference parser', run: runLeadSheetReferenceParserTests },
+  { name: 'Lead sheet MusicXML import (Phase 1)', run: runLeadSheetMusicXmlImportTests },
   { name: 'Reference behaviour extraction', run: runReferenceBehaviourExtractionTests },
   { name: 'Reference reuse adapter', run: runReferenceReuseAdapterTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },
@@ -267,6 +278,7 @@ const suites = [
   { name: 'Bacharach developer workflow', run: runBacharachWorkflowDeveloperTests },
   { name: 'Eval readable summary', run: runEvalReadableSummaryTests },
   { name: 'Song Mode A/B inspect harness', run: runSongModeAbInspectHarnessTests },
+  { name: 'Motif Authority pilot slice', run: runMotifAuthorityPilotSliceTests },
   ...retroSuites,
 ];
 

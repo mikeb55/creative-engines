@@ -102,6 +102,7 @@ import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionCont
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
+import type { MotifAuthorityLevel } from '../motif/motifAuthorityV1';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -941,6 +942,8 @@ export interface RunGoldenPathOptions {
   styleProfile?: StyleProfile;
   /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
   primarySongwriterStyle?: string;
+  /** Song Mode LeadSheet pilot: compact per-bar melody anchors from imported lead sheet. */
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number }>;
   /** Song Mode: optional secondary songwriter style key (for inspectability metadata). */
   secondarySongwriterStyle?: string;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -959,6 +962,8 @@ export interface RunGoldenPathOptions {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Feature flag: Motif Authority V1 (default off). */
   motifAuthorityV1?: boolean;
+  /** Pilot motif policy level (default `soft` when V1 is requested). */
+  motifAuthorityLevel?: MotifAuthorityLevel;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -968,6 +973,39 @@ export interface RunGoldenPathOptions {
    * compared against the default portable Wyble map without forking the full planner.
    */
   suppressWybleVoiceLayoutForTest?: boolean;
+}
+
+const MOTIF_PHASE1_SONG_MODE_WRITERS = new Set(['wayne_shorter', 'barry_harris', 'donald_fagen', 'bacharach']);
+
+function isMotifAuthorityPilotPreset(
+  presetId: string,
+  options?: RunGoldenPathOptions,
+  context?: CompositionContext
+): boolean {
+  if (presetId === 'ecm_chamber') return true;
+  const isSongModeRoute =
+    presetId === 'guitar_bass_duo' ||
+    presetId === 'song_mode' ||
+    presetId.startsWith('song_mode_');
+  if (!isSongModeRoute) return false;
+  const writerId = options?.primarySongwriterStyle ?? context?.generationMetadata?.songwriterStyleId;
+  const songModeIdentityRequested =
+    options?.songModeHookFirstIdentity === true ||
+    context?.generationMetadata?.songModeHookFirstIdentity === true;
+  if (!songModeIdentityRequested) return false;
+  if (!writerId || !MOTIF_PHASE1_SONG_MODE_WRITERS.has(writerId)) return false;
+  // Hybrid pilot (Shorter melody + Barry harmony) is an allowed subset of pilot Song Mode routes.
+  if (writerId === 'wayne_shorter') {
+    return options?.styleStack?.primary === 'barry_harris';
+  }
+  return true;
+}
+
+function resolveMotifAuthorityLevel(options: RunGoldenPathOptions | undefined): MotifAuthorityLevel {
+  const explicit = options?.motifAuthorityLevel;
+  if (explicit === 'off' || explicit === 'soft' || explicit === 'strong') return explicit;
+  const requested = options?.motifAuthorityV1 === true || process.env?.COMPOSER_OS_MOTIF_AUTHORITY_V1 === '1';
+  return requested ? 'soft' : 'off';
 }
 
 function normalizeEraId(era: string | undefined): EraId | null {
@@ -1302,16 +1340,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
-  const motifAuthorityRequested =
-    options?.motifAuthorityV1 === true || process.env?.COMPOSER_OS_MOTIF_AUTHORITY_V1 === '1';
-  const motifAuthorityEligible = (() => {
-    const pid = options?.presetId ?? context.presetId;
-    return pid === 'guitar_bass_duo' || pid.startsWith('song_mode_');
-  })();
-  if (motifAuthorityRequested && motifAuthorityEligible) {
+  const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
+  const motifAuthorityEligible = isMotifAuthorityPilotPreset(
+    options?.presetId ?? context.presetId,
+    options,
+    context
+  );
+  const motifAuthorityActive = motifAuthorityEligible && motifAuthorityLevelRequested !== 'off';
+  if (motifAuthorityEligible) {
     context.generationMetadata = {
       ...context.generationMetadata,
-      motifAuthorityV1: true,
+      motifAuthorityV1: motifAuthorityActive,
+      motifAuthorityLevel: motifAuthorityLevelRequested,
     };
   }
   logEcmPhaseProbe(probeEcm, 'after_context_build', undefined, {
@@ -1345,6 +1385,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
       styleProfile: styleProfileResolved,
+      songModeLeadSheetMelodyAnchors:
+        options.primarySongwriterStyle === 'donald_fagen' && options.songModeLeadSheetMelodyAnchors?.length
+          ? options.songModeLeadSheetMelodyAnchors
+          : undefined,
+      songModeLeadSheetInputApplied:
+        options.primarySongwriterStyle === 'donald_fagen' && options.songModeLeadSheetMelodyAnchors?.length
+          ? true
+          : undefined,
     };
   }
   if (options?.songModeHookFirstIdentity && options?.primarySongwriterStyle) {
@@ -1828,6 +1876,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       behaviourSourceIds:
         appliedContext.generationMetadata.songModeSectionBehaviourDescriptors?.map((d) => d.sliceId) ?? [],
     },
+    songModeLeadSheetInputApplied: appliedContext.generationMetadata.songModeLeadSheetInputApplied,
+    songModeLeadSheetAnchorStartApplied: appliedContext.generationMetadata.songModeLeadSheetAnchorStartApplied,
+    motifAuthorityLevel: appliedContext.generationMetadata.motifAuthorityLevel,
+    motifDevelopmentSummary: appliedContext.generationMetadata.motifDevelopmentSummary,
   });
 
   const success =

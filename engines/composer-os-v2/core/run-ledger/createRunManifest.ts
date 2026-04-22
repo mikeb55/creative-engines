@@ -82,6 +82,10 @@ export interface CreateRunManifestInput {
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
   songModeProfileRuleDiagnostics?: RunManifest['songModeProfileRuleDiagnostics'];
+  songModeLeadSheetInputApplied?: RunManifest['songModeLeadSheetInputApplied'];
+  songModeLeadSheetAnchorStartApplied?: RunManifest['songModeLeadSheetAnchorStartApplied'];
+  motifAuthorityLevel?: RunManifest['motifAuthorityLevel'];
+  motifDevelopmentSummary?: RunManifest['motifDevelopmentSummary'];
 }
 
 /** Create run manifest. */
@@ -157,5 +161,9 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songModeSectionShapingDiagnostics: input.songModeSectionShapingDiagnostics,
     songModeSectionBehaviourDescriptors: input.songModeSectionBehaviourDescriptors,
     songModeProfileRuleDiagnostics: input.songModeProfileRuleDiagnostics,
+    songModeLeadSheetInputApplied: input.songModeLeadSheetInputApplied,
+    songModeLeadSheetAnchorStartApplied: input.songModeLeadSheetAnchorStartApplied,
+    motifAuthorityLevel: input.motifAuthorityLevel,
+    motifDevelopmentSummary: input.motifDevelopmentSummary,
   };
 }
