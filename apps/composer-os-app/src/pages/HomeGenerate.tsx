@@ -303,6 +303,8 @@ type GenResult = {
     surprise?: number;
   };
   _uiHadLeadSheetInputForRun?: boolean;
+  _uiLeadSheetInputSourceForRun?: 'file' | 'paste';
+  _uiLeadSheetFileNameForRun?: string;
   stylePairingReceipt?: {
     summary: string;
     confidenceScore: number;
@@ -395,6 +397,7 @@ export function HomeGenerate({
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [songModeLeadSheetMusicXml, setSongModeLeadSheetMusicXml] = useState('');
   const [leadSheetFileName, setLeadSheetFileName] = useState<string | null>(null);
+  const [leadSheetInputSource, setLeadSheetInputSource] = useState<'file' | 'paste' | null>(null);
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
   const [bigBandFormId, setBigBandFormId] = useState('');
@@ -579,6 +582,13 @@ export function HomeGenerate({
         const chordTrim = chordProgressionText.trim();
         const songModeLeadSheetTrim = songModeLeadSheetMusicXml.trim();
         const hadLeadSheetInputForRun = songModeLeadSheetTrim.length > 0;
+        const uiLeadSheetInputSourceForRun: 'file' | 'paste' | undefined = hadLeadSheetInputForRun
+          ? leadSheetInputSource ?? 'paste'
+          : undefined;
+        const uiLeadSheetFileNameForRun =
+          hadLeadSheetInputForRun && uiLeadSheetInputSourceForRun === 'file' && leadSheetFileName
+            ? leadSheetFileName
+            : undefined;
         if (presetId === 'wyble_etude' && !chordTrim) {
           setError(
             'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
@@ -843,7 +853,12 @@ export function HomeGenerate({
           );
         }
         const r = (await api.generate(generatePayload)) as GenResult;
-        setResult({ ...r, _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun });
+        setResult({
+          ...r,
+          _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun,
+          _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
+          _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
+        });
         if (
           r.runManifest?.presetId === 'song_mode' &&
           (r.runManifest.songModeSectionShapingDiagnostics ||
@@ -923,6 +938,8 @@ export function HomeGenerate({
       presetId,
       scoreTitle,
       chordProgressionText,
+      leadSheetFileName,
+      leadSheetInputSource,
       ecmMode,
       riffStyle,
       riffDensity,
@@ -1090,6 +1107,8 @@ export function HomeGenerate({
     rm?.songModeProfileRuleDiagnostics?.primarySongwriterStyleId?.trim() ||
     undefined;
   const hadLeadSheetInputForRun = result?._uiHadLeadSheetInputForRun === true;
+  const leadSheetInputSourceForRun = result?._uiLeadSheetInputSourceForRun;
+  const leadSheetFileNameForRun = result?._uiLeadSheetFileNameForRun;
   const showLeadSheetStatusBlock =
     hadLeadSheetInputForRun &&
     isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
@@ -1879,7 +1898,9 @@ export function HomeGenerate({
               LeadSheet MusicXML input (Phase 1)
             </label>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
-              LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.
+              {isSongModeLeadSheetPhase1Writer
+                ? 'LeadSheet MusicXML input is active for this route.'
+                : 'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'}
             </p>
             <input
               type="file"
@@ -1893,6 +1914,7 @@ export function HomeGenerate({
                   .then((text) => {
                     setSongModeLeadSheetMusicXml(text);
                     setLeadSheetFileName(file.name);
+                    setLeadSheetInputSource('file');
                   })
                   .catch(() => {
                     setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
@@ -1920,6 +1942,7 @@ export function HomeGenerate({
                     onClick={() => {
                       setSongModeLeadSheetMusicXml('');
                       setLeadSheetFileName(null);
+                      setLeadSheetInputSource(null);
                       setError(null);
                     }}
                     disabled={loading}
@@ -1938,7 +1961,15 @@ export function HomeGenerate({
               onChange={(e) => {
                 const next = e.target.value;
                 setSongModeLeadSheetMusicXml(next);
-                if (next.trim().length === 0) setLeadSheetFileName(null);
+                if (next.trim().length === 0) {
+                  setLeadSheetFileName(null);
+                  setLeadSheetInputSource(null);
+                  return;
+                }
+                if (leadSheetInputSource === 'file') {
+                  setLeadSheetFileName(null);
+                }
+                setLeadSheetInputSource('paste');
               }}
               disabled={loading || !isSongModeLeadSheetPhase1Writer}
               placeholder="Paste MusicXML here (LeadSheet, <score-partwise> root)."
@@ -2438,6 +2469,12 @@ export function HomeGenerate({
               ) : null}
               {showLeadSheetStatusBlock && (
                 <div className="song-mode-leadsheet-status" style={{ margin: '0.4rem 0 0' }}>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    Input source: {leadSheetInputSourceForRun === 'file' ? 'File' : 'Paste'}
+                  </p>
+                  {leadSheetInputSourceForRun === 'file' && leadSheetFileNameForRun && (
+                    <p style={{ margin: '0.25rem 0' }}>LeadSheet file: {leadSheetFileNameForRun}</p>
+                  )}
                   <p style={{ margin: '0.25rem 0' }}>
                     LeadSheet input: {rm?.songModeLeadSheetInputApplied === true ? 'Applied' : 'Not applied'}
                   </p>

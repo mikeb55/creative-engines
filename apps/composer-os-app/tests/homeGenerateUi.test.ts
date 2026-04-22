@@ -181,6 +181,7 @@ describe('HomeGenerate mode-driven UI', () => {
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {
     expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
     expect(src).toContain('SONG_MODE_LEADSHEET_PHASE1_WRITERS');
+    expect(src).toContain('LeadSheet MusicXML input is active for this route.');
     expect(src).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
   });
 
@@ -193,6 +194,10 @@ describe('HomeGenerate mode-driven UI', () => {
     const tree = await renderHomeGenerate();
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('LeadSheet MusicXML input (Phase 1)');
+    expect(text).toContain('LeadSheet MusicXML input is active for this route.');
+    expect(text).not.toContain(
+      'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'
+    );
     const textarea = getLeadSheetTextarea(tree);
     expect(textarea.props.disabled).toBe(false);
   });
@@ -263,6 +268,137 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
     expect(getLeadSheetFileInput(tree).props.disabled).toBe(true);
     expect(getClearLeadSheetButton(tree)).toBeUndefined();
+  });
+
+  it('receipt shows file source and file name for LeadSheet-loaded run', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_leadsheet_file_source.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_leadsheet_file_source.musicxml',
+      requestEcho: { primarySongwriterStyle: 'donald_fagen' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: true,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+    const tree = await renderHomeGenerate();
+    const fileInput = getLeadSheetFileInput(tree);
+    const fakeFile = {
+      name: 'something.musicxml',
+      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+    };
+    await act(async () => {
+      fileInput.props.onChange({ target: { files: [fakeFile] } });
+      await Promise.resolve();
+    });
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('"Input source: ","File"');
+    expect(text).toContain('"LeadSheet file: ","something.musicxml"');
+  });
+
+  it('receipt shows paste source with no file-name line for pasted LeadSheet run', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_leadsheet_paste_source.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_leadsheet_paste_source.musicxml',
+      requestEcho: { primarySongwriterStyle: 'barry_harris' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: false,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+    const tree = await renderHomeGenerate();
+    const textarea = getLeadSheetTextarea(tree);
+    await act(async () => {
+      textarea.props.onChange({ target: { value: '<score-partwise version="4.0"></score-partwise>' } });
+    });
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('"Input source: ","Paste"');
+    expect(text).not.toContain('LeadSheet file:');
+  });
+
+  it('editing textarea after file load clears stale filename context and uses paste source', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_leadsheet_edit_after_file.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_leadsheet_edit_after_file.musicxml',
+      requestEcho: { primarySongwriterStyle: 'donald_fagen' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: true,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+    const tree = await renderHomeGenerate();
+    const fileInput = getLeadSheetFileInput(tree);
+    const fakeFile = {
+      name: 'stale.musicxml',
+      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+    };
+    await act(async () => {
+      fileInput.props.onChange({ target: { files: [fakeFile] } });
+      await Promise.resolve();
+    });
+    const textarea = getLeadSheetTextarea(tree);
+    await act(async () => {
+      textarea.props.onChange({ target: { value: '<score-partwise version="4.0"><part-list/></score-partwise>' } });
+      await Promise.resolve();
+    });
+    let text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('No file selected');
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+    text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('"Input source: ","Paste"');
+    expect(text).not.toContain('LeadSheet file:');
   });
 
   it('shows LeadSheet and Melody anchor Applied when flags are true', async () => {
