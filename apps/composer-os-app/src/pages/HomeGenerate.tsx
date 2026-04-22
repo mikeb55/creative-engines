@@ -92,6 +92,8 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'xtc', label: 'XTC' },
 ];
 
+const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set(['donald_fagen', 'barry_harris']);
+
 function primarySongwriterDisplayLabel(id: string | undefined): string | undefined {
   if (!id?.trim()) return undefined;
   const t = id.trim().toLowerCase();
@@ -382,6 +384,7 @@ export function HomeGenerate({
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  const [songModeLeadSheetMusicXml, setSongModeLeadSheetMusicXml] = useState('');
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
   const [bigBandFormId, setBigBandFormId] = useState('');
@@ -500,6 +503,8 @@ export function HomeGenerate({
           presetId === 'song_mode'
         ? DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER
         : DEFAULT_CUSTOM_HARMONY_PLACEHOLDER;
+  const isSongModeLeadSheetPhase1Writer =
+    presetId === 'song_mode' && SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(songwriterStyle.trim().toLowerCase());
 
   const ensembleChordBarCountForLabel =
     presetId === 'big_band'
@@ -555,6 +560,7 @@ export function HomeGenerate({
 
         const tonalTrim = tonalCenter.trim();
         const chordTrim = chordProgressionText.trim();
+        const songModeLeadSheetTrim = songModeLeadSheetMusicXml.trim();
         if (presetId === 'wyble_etude' && !chordTrim) {
           setError(
             'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
@@ -678,6 +684,23 @@ export function HomeGenerate({
             return;
           }
         }
+        if (
+          presetId === 'song_mode' &&
+          isSongModeLeadSheetPhase1Writer &&
+          songModeLeadSheetTrim.length > 0 &&
+          !/<score-partwise\b/i.test(songModeLeadSheetTrim)
+        ) {
+          setError(
+            'LeadSheet MusicXML must include a <score-partwise> root element. Paste valid MusicXML or clear the LeadSheet field.'
+          );
+          setLoading(false);
+          notifyGenPhase('failed');
+          onResult({
+            record: {},
+            summary: { status: 'failed', at: new Date().toISOString() },
+          });
+          return;
+        }
         if (presetId === 'wyble_etude' && chordTrim) {
           const wybleParsed = parseChordProgressionInputFlexible(chordTrim);
           if (!wybleParsed.ok) {
@@ -764,6 +787,9 @@ export function HomeGenerate({
                   ? { secondarySongwriterStyle: secondarySongwriterStyle.trim() }
                   : {}),
                 ...(authorOverlay.trim() ? { authorOverlay: authorOverlay.trim() } : {}),
+                ...(isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0
+                  ? { songModeLeadSheetMusicXml: songModeLeadSheetTrim }
+                  : {}),
               }
             : {}),
         };
@@ -846,7 +872,14 @@ export function HomeGenerate({
         api.getOutputDirectory().then((o) => setOutputDir(o)).catch(() => {});
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        setError(msg);
+        const lower = msg.toLowerCase();
+        const leadSheetHint =
+          presetId === 'song_mode' &&
+          isSongModeLeadSheetPhase1Writer &&
+          songModeLeadSheetMusicXml.trim().length > 0 &&
+          (lower.includes('lead') || lower.includes('musicxml') || lower.includes('xml'));
+        const displayMessage = leadSheetHint ? `LeadSheet MusicXML import failed: ${msg}` : msg;
+        setError(displayMessage);
         setResult(null);
         notifyGenPhase('failed');
         onResult({
@@ -886,6 +919,7 @@ export function HomeGenerate({
       intentPattern,
       secondarySongwriterStyle,
       authorOverlay,
+      songModeLeadSheetMusicXml,
       includeVocalLeadSheet,
       c4Strength,
       blendStrength,
@@ -1984,6 +2018,54 @@ export function HomeGenerate({
               <option value="pat_pattison">Pat Pattison</option>
               <option value="jack_perricone">Jack Perricone</option>
             </select>
+          </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              LeadSheet MusicXML input (Phase 1)
+            </label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
+              Active only for Song Mode with <strong style={{ color: 'var(--text)' }}>Donald Fagen</strong> or{' '}
+              <strong style={{ color: 'var(--text)' }}>Barry Harris</strong> as the primary songwriter. Leave empty to use current Song Mode behavior.
+            </p>
+            {!isSongModeLeadSheetPhase1Writer && (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
+                LeadSheet input is ignored for this songwriter route.
+              </p>
+            )}
+            <input
+              type="file"
+              accept=".musicxml,.xml,text/xml,application/xml"
+              disabled={loading || !isSongModeLeadSheetPhase1Writer}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                void file
+                  .text()
+                  .then((text) => setSongModeLeadSheetMusicXml(text))
+                  .catch(() => {
+                    setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
+                  });
+              }}
+              style={{ display: 'block', marginBottom: '0.5rem' }}
+            />
+            <textarea
+              value={songModeLeadSheetMusicXml}
+              onChange={(e) => setSongModeLeadSheetMusicXml(e.target.value)}
+              disabled={loading || !isSongModeLeadSheetPhase1Writer}
+              placeholder="<score-partwise ...>...</score-partwise>"
+              rows={6}
+              style={{
+                width: '100%',
+                maxWidth: 600,
+                padding: '0.5rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontSize: '0.82rem',
+              }}
+            />
           </div>
         </div>
       )}

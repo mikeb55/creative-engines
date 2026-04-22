@@ -84,8 +84,14 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
   - `presetId = song_mode`
   - `primarySongwriterStyle = donald_fagen` or `barry_harris`
   - optional request field `songModeLeadSheetMusicXml`
+- **Generate UI workflow (Phase 1):**
+  1. Go to **Generate** and choose **Song Mode**.
+  2. Set **Songwriter** to **Donald Fagen** or **Barry Harris**.
+  3. In **LeadSheet MusicXML input (Phase 1)**, either paste MusicXML text or load a local `.musicxml` / `.xml` file.
+  4. Click **Generate**. Leave the field empty to run normal Song Mode behavior.
 - **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route, and a bounded melody-start anchor guide is applied deterministically.
-- **If omitted/invalid:** Song Mode runs as before with baseline behavior.
+- **If omitted:** Song Mode runs as before with baseline behavior.
+- **If invalid:** the UI shows an honest LeadSheet/MusicXML import failure message (including a basic `<score-partwise>` preflight check).
 - **Inspectability fields:** run manifests for this route can include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied`.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 

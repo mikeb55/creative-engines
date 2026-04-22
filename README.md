@@ -101,6 +101,7 @@ In-app help: click **Help** in the app navigation (same content as the user guid
 
 - **Supported now:** two bounded Phase 1 Song Mode writer paths: `song_mode` with primary songwriter `donald_fagen` or `barry_harris`, using request field `songModeLeadSheetMusicXml`.
 - **Behavior now:** the imported LeadSheet drives deterministic locked harmony bars for this route, and a bounded melody-start anchor guidance pass is applied.
+- **User workflow now (UI Phase 1):** in **Generate -> Song Mode**, use **LeadSheet MusicXML input (Phase 1)** to either paste MusicXML text or load a local `.musicxml` / `.xml` file. This UI control is active only when Songwriter is **Donald Fagen** or **Barry Harris**.
 - **Safety posture:** if LeadSheet input is missing or not parseable, Song Mode behavior remains baseline; this slice fails safely instead of broad fallback rewrites.
 - **Inspectability:** run manifests include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied` for this bounded path.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.

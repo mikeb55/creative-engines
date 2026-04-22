@@ -129,6 +129,17 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('Riff options');
   });
 
+  it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {
+    expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
+    expect(src).toContain('SONG_MODE_LEADSHEET_PHASE1_WRITERS');
+    expect(src).toContain('LeadSheet input is ignored for this songwriter route.');
+  });
+
+  it('threads LeadSheet MusicXML into generate payload only for supported Song Mode writers', () => {
+    expect(src).toContain('songModeLeadSheetMusicXml');
+    expect(src).toContain('isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0');
+  });
+
   it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {
     expect(src).toMatch(/songwriterStyle:\s*songwriterStyle/);
     expect(src).toContain("presetId === 'big_band'");

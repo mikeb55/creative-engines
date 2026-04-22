@@ -1,3 +1,19 @@
+## [2026-04-22] LeadSheet user input workflow - Phase 1 (Song Mode UI slice)
+
+- Added a minimal user-facing LeadSheet MusicXML input block in `apps/composer-os-app/src/pages/HomeGenerate.tsx` for Song Mode.
+- Users can now either:
+  - paste MusicXML directly into a textarea, or
+  - load a local `.musicxml` / `.xml` file into that textarea.
+- The UI path is explicitly bounded to Phase 1 Song Mode writer routes only:
+  - `presetId === "song_mode"` with primary songwriter `donald_fagen` or `barry_harris`.
+- Request wiring now threads UI input into `songModeLeadSheetMusicXml` only for those supported routes; empty input does nothing.
+- Added minimal guardrails:
+  - unsupported songwriter routes show an honest "input ignored" message
+  - basic client-side root-element check (`<score-partwise>`) before request
+  - backend/import errors surface as user-facing LeadSheet import failure messages.
+- Added focused app tests in `apps/composer-os-app/tests/homeGenerateUi.test.ts` for UI presence, route gating, and payload field threading.
+- Explicitly deferred in this slice: Big Band, ECM, other Song Mode writers, and universal LeadSheet UI rollout.
+
 ## [2026-04-22] LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
 - Added optional Song Mode LeadSheet MusicXML input plumbing (`songModeLeadSheetMusicXml`) for bounded Phase 1 Song Mode writer routes: `presetId === "song_mode"` with primary songwriter `donald_fagen` or `barry_harris`.
