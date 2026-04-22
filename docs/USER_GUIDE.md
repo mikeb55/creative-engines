@@ -73,9 +73,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 
 ### Lead-sheet MusicXML import (Phase 1, developer foundation)
 
-- The engine now includes a bounded MusicXML lead-sheet importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`.
-- It currently supports `score-partwise` input with first-part lead melody (voice 1), harmony tags, basic metadata, meter/key hints, and simple repeat/ending markers.
+- The engine includes a bounded MusicXML lead-sheet importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`, plus **compressed `.mxl`** unpack at `musicXmlScoreInput.ts` (ZIP + `META-INF/container.xml`).
+- It supports **`score-partwise`** input with first-part lead melody (voice 1), harmony tags, basic metadata, meter/key hints, simple repeat/ending markers, and **lightweight expression** (dynamics, `<velocity>`, common articulations) used for **post-import performance shaping** — longer/shorter notes and MIDI velocity hints before Song Mode adaptation.
 - Unsupported complexity is handled safely with warnings (for example: extra parts, multiple melody voices, lyrics, stacked note chords) rather than pretending full support.
+- **Paste vs file:** pasted input must be **uncompressed MusicXML text**. The Generate UI **file picker** also accepts **`.mxl`**; the app unpacks it locally and sends normalized score XML to the API.
+- Optional API field **`leadSheetPerformanceBlend`** (0–1; default ~0.55 when omitted) tunes how strongly imported expression influences shaping.
+- **Not reconstructed from files yet:** tempo maps, ritardando/accelerando, fermatas, swing/rubato — treat timing feel as approximate beyond a single BPM hint when present.
 - This phase does **not** yet realize imported lead sheets directly into String Quartet or Big Band; it provides the shared `LeadSheet` model foundation for later slices.
 
 ### LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
@@ -87,12 +90,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **Generate UI workflow (Phase 1):**
   1. Go to **Generate** and choose **Song Mode**.
   2. Set **Songwriter** to **Donald Fagen** or **Barry Harris**.
-  3. In **LeadSheet MusicXML input (Phase 1)**, either paste MusicXML text or load a local `.musicxml` / `.xml` file.
+  3. In **LeadSheet MusicXML input (Phase 1)**, either paste **uncompressed** MusicXML text or load a local `.musicxml`, `.xml`, or **`.mxl`** file.
   4. Click **Generate**. Leave the field empty to run normal Song Mode behavior.
-- **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route, and a bounded melody-start anchor guide is applied deterministically.
+- **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route; a bounded melody-start anchor guide is applied deterministically; imported dynamics/articulation flavour can influence note shaping and gentle guitar velocity contour (`leadSheetPerformanceBlend`).
 - **If omitted:** Song Mode runs as before with baseline behavior.
-- **If invalid:** the UI shows an honest LeadSheet/MusicXML import failure message (including a basic `<score-partwise>` preflight check).
-- **Inspectability fields:** run manifests for this route can include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied`.
+- **If invalid:** the UI shows an honest LeadSheet/MusicXML import failure message (unpack/validation mirrors the engine rules).
+- **Inspectability fields:** run manifests for this route can include `songModeLeadSheetInputApplied`, `songModeLeadSheetAnchorStartApplied`, and `songModeLeadSheetPerformanceBlend` when applicable.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
 ---

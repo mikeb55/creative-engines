@@ -1,3 +1,13 @@
+## [2026-04-22] Lead-sheet MusicXML — MuseScore `.mxl` + imported performance shaping
+
+- **Compressed `.mxl`:** ZIP + `META-INF/container.xml` extraction (`musicXmlScoreInput.ts`; dependency `fflate` in `engines/composer-os-v2`).
+- **Validation:** clearer failures for corrupt/mislabeled MusicXML (`score-timewise` vs `score-partwise`, bad ZIPs, missing embedded score).
+- **Performance shaping:** dynamics / `<velocity>` / articulations adjust imported melody durations and velocity hints; optional request **`leadSheetPerformanceBlend`** (0–1) with engine default ~0.55.
+- **Song Mode:** shaped LeadSheet feeds locked harmony + anchors; manifests may echo **`songModeLeadSheetPerformanceBlend`** alongside existing LeadSheet flags.
+- **UI:** file picker accepts `.mxl`; paste remains uncompressed XML only.
+- **Samples / tests:** `Sample MIDI 2 Musicxml tracks/*.mxl` exercised by `musicXmlMxlSampleFolder.test.ts`.
+- **Out of scope for now:** tempo maps, rit./accel., fermatas, swing timing reconstruction.
+
 ## [2026-04-20] Big Band V2 — theme-anchored soli/shout + drum support for hits
 
 - **Soli / shout:** Head window (bars 1–8) lead offsets and chord-root contour blend into the bars 17–24 soli motif; shout trumpet lift is biased by head theme average and seed. See `bigBandPatterns.ts` and `bigBandScoreBuilder.ts`.

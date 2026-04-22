@@ -1,3 +1,14 @@
+## [2026-04-22] Lead-sheet MusicXML ? MuseScore `.mxl` + imported performance shaping
+
+- **Compressed `.mxl`:** MuseScore-style packages unpack safely in the UI and tests (`fflate`; `engines/composer-os-v2/core/lead-sheet/musicXmlScoreInput.ts`): ZIP + `META-INF/container.xml` ? embedded score XML.
+- **Validation:** clearer errors for corrupt ZIPs, missing container/rootfile paths, malformed XML, and **`score-partwise`** vs **`score-timewise`** mismatches at import.
+- **Imported performance shaping:** dynamics, per-note `<velocity>`, and basic articulations influence imported melody **note lengths** and **velocity** hints (`leadSheetPerformanceRendering.ts`; melody events carry `velocityMidi`, `articulationKind` on `LeadSheet`).
+- **Song Mode:** after import, shaping feeds locked harmony + per-bar melody anchors (including optional bar **velocity hints**); golden-path duo generation can apply **gentle guitar velocity nudges** from those hints when LeadSheet input is active.
+- **API:** optional `leadSheetPerformanceBlend` on requests (0?1; default ~0.55 when omitted) controls blend toward imported expression; echoed as `songModeLeadSheetPerformanceBlend` in metadata when anchors apply.
+- **UX:** Generate ? Song Mode LeadSheet **file picker** accepts `.musicxml`, `.xml`, and `.mxl` (`.mxl` is unpacked **before** the generate request). **Paste** still expects **uncompressed MusicXML text** only.
+- **Tests:** `leadSheetMusicXmlImport.test.ts`, `leadSheetPerformanceRendering.test.ts`, `musicXmlMxlSampleFolder.test.ts` (sample `.mxl` files under `Sample MIDI 2 Musicxml tracks/`).
+- **Not implemented yet:** tempo maps, ritardando / accelerando, fermatas, swing/rubato reconstruction ? beyond a single BPM hint where present.
+
 ## [2026-04-22] LeadSheet user input workflow - Phase 1 (Song Mode UI slice)
 
 - Added a minimal user-facing LeadSheet MusicXML input block in `apps/composer-os-app/src/pages/HomeGenerate.tsx` for Song Mode.

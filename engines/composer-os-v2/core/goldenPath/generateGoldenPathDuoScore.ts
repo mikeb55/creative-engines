@@ -133,6 +133,7 @@ import {
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
 import type { SongModeLeadSheetMelodyAnchor } from '../song-mode/songModeLeadSheetAdapter';
+import { DEFAULT_LEADSHEET_PERFORMANCE_BLEND } from '../lead-sheet/leadSheetPerformanceRendering';
 
 const DUO_DEFAULT_STYLE_STACK: StyleStack = {
   primary: 'barry_harris',
@@ -3173,7 +3174,8 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
 function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: CompositionContext): boolean {
   if (context.presetId !== 'guitar_bass_duo') return false;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return false;
-  if (context.generationMetadata?.songwriterStyleId !== 'donald_fagen') return false;
+  const songwriterId = context.generationMetadata?.songwriterStyleId;
+  if (songwriterId !== 'donald_fagen' && songwriterId !== 'barry_harris') return false;
   const anchors = context.generationMetadata?.songModeLeadSheetMelodyAnchors as
     | SongModeLeadSheetMelodyAnchor[]
     | undefined;
@@ -3186,6 +3188,44 @@ function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: Compositi
   if (!firstNote) return false;
   firstNote.pitch = clampPitch(firstAnchor.midi, 55, 79);
   return true;
+}
+
+/** Nudge generated guitar MIDI velocities bar-wise toward imported LeadSheet dynamic contour (Song Mode + LeadSheet only). */
+function applySongModeImportedLeadSheetVelocityNudges(guitar: PartModel, context: CompositionContext): void {
+  if (context.presetId !== 'guitar_bass_duo') return;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
+  if (context.generationMetadata?.songModeLeadSheetInputApplied !== true) return;
+
+  const blendRaw =
+    context.generationMetadata?.songModeLeadSheetPerformanceBlend ?? DEFAULT_LEADSHEET_PERFORMANCE_BLEND;
+  const blend = Math.min(1, Math.max(0, blendRaw));
+  if (blend <= 0) return;
+
+  const anchors = context.generationMetadata?.songModeLeadSheetMelodyAnchors as
+    | SongModeLeadSheetMelodyAnchor[]
+    | undefined;
+  if (!anchors?.length) return;
+
+  const byBar = new Map<number, number>();
+  for (const a of anchors) {
+    if (typeof a.velocityHint === 'number' && Number.isFinite(a.velocityHint)) {
+      byBar.set(a.bar, Math.round(a.velocityHint));
+    }
+  }
+  if (byBar.size === 0) return;
+
+  const strength = 0.62 * blend;
+
+  for (const m of guitar.measures) {
+    const hint = byBar.get(m.index);
+    if (hint === undefined) continue;
+    for (const ev of m.events) {
+      if (ev.kind !== 'note') continue;
+      const n = ev as NoteEvent;
+      const cur = n.velocity ?? 80;
+      n.velocity = Math.round(Math.min(127, Math.max(1, cur + (hint - cur) * strength)));
+    }
+  }
 }
 
 export interface GoldenPathPlans {
@@ -3350,6 +3390,7 @@ export function generateGoldenPathDuoScore(
     if (leadSheetAnchorApplied) {
       context.generationMetadata.songModeLeadSheetAnchorStartApplied = true;
     }
+    applySongModeImportedLeadSheetVelocityNudges(guitarPart, context);
     if (isGuitarBassDuoFamily(context.presetId)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
       applyLateClosingGuitarContourNudge(guitarPart, context);

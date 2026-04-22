@@ -96,6 +96,8 @@ import { runReferenceImportTypesTests } from './referenceImportTypes.test';
 import { runMusicXmlReferenceParserTests } from './musicXmlReferenceParser.test';
 import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.test';
 import { runLeadSheetMusicXmlImportTests } from './leadSheetMusicXmlImport.test';
+import { runMusicXmlMxlSampleFolderTests } from './musicXmlMxlSampleFolder.test';
+import { runLeadSheetPerformanceRenderingTests } from './leadSheetPerformanceRendering.test';
 import { runReferenceBehaviourExtractionTests } from './referenceBehaviourExtraction.test';
 import { runReferenceReuseAdapterTests } from './referenceReuseAdapter.test';
 import { runLeadSheetContractTests } from './leadSheetContract.test';
@@ -234,6 +236,8 @@ const suites = [
   { name: 'MusicXML reference parser', run: runMusicXmlReferenceParserTests },
   { name: 'Lead sheet reference parser', run: runLeadSheetReferenceParserTests },
   { name: 'Lead sheet MusicXML import (Phase 1)', run: runLeadSheetMusicXmlImportTests },
+  { name: 'MusicXML .mxl sample folder (MuseScore)', run: runMusicXmlMxlSampleFolderTests },
+  { name: 'Lead sheet performance shaping (import → expression)', run: runLeadSheetPerformanceRenderingTests },
   { name: 'Reference behaviour extraction', run: runReferenceBehaviourExtractionTests },
   { name: 'Reference reuse adapter', run: runReferenceReuseAdapterTests },
   { name: 'Lead sheet contract', run: runLeadSheetContractTests },

@@ -24,6 +24,10 @@ import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesV
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
+import {
+  extractScoreMusicXmlFromString,
+  extractScoreMusicXmlFromUint8Array,
+} from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -207,6 +211,12 @@ function nextVariationIdToken(current: string): string {
 
 function newVariationIdToken(): string {
   return `v-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
+}
+
+/** Phase 1 LeadSheet preflight — mirrors engine unpack rules for pasted/plain XML (files use binary extract). */
+function validateLeadSheetMusicXmlForPhase1(trimmed: string): string | null {
+  const r = extractScoreMusicXmlFromString(trimmed);
+  return r.ok ? null : r.errors[0] ?? 'LeadSheet MusicXML could not be validated.';
 }
 
 type GenResult = {
@@ -519,11 +529,8 @@ export function HomeGenerate({
   const isSongModeLeadSheetPhase1Writer =
     presetId === 'song_mode' && SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(songwriterStyle.trim().toLowerCase());
   const leadSheetPreflightError =
-    presetId === 'song_mode' &&
-    isSongModeLeadSheetPhase1Writer &&
-    songModeLeadSheetMusicXml.trim().length > 0 &&
-    !/<score-partwise\b/i.test(songModeLeadSheetMusicXml.trim())
-      ? 'LeadSheet MusicXML must include a <score-partwise> root element.'
+    presetId === 'song_mode' && isSongModeLeadSheetPhase1Writer && songModeLeadSheetMusicXml.trim().length > 0
+      ? validateLeadSheetMusicXmlForPhase1(songModeLeadSheetMusicXml.trim())
       : null;
 
   const ensembleChordBarCountForLabel =
@@ -712,22 +719,18 @@ export function HomeGenerate({
             return;
           }
         }
-        if (
-          presetId === 'song_mode' &&
-          isSongModeLeadSheetPhase1Writer &&
-          songModeLeadSheetTrim.length > 0 &&
-          !/<score-partwise\b/i.test(songModeLeadSheetTrim)
-        ) {
-          setError(
-            'LeadSheet MusicXML must include a <score-partwise> root element. Paste valid MusicXML or clear the LeadSheet field.'
-          );
-          setLoading(false);
-          notifyGenPhase('failed');
-          onResult({
-            record: {},
-            summary: { status: 'failed', at: new Date().toISOString() },
-          });
-          return;
+        if (presetId === 'song_mode' && isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0) {
+          const leadErr = validateLeadSheetMusicXmlForPhase1(songModeLeadSheetTrim);
+          if (leadErr) {
+            setError(leadErr);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
         }
         if (presetId === 'wyble_etude' && chordTrim) {
           const wybleParsed = parseChordProgressionInputFlexible(chordTrim);
@@ -1904,20 +1907,26 @@ export function HomeGenerate({
             </p>
             <input
               type="file"
-              accept=".musicxml,.xml"
+              accept=".musicxml,.xml,.mxl"
               disabled={loading || !isSongModeLeadSheetPhase1Writer}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 void file
-                  .text()
-                  .then((text) => {
-                    setSongModeLeadSheetMusicXml(text);
+                  .arrayBuffer()
+                  .then((buf) => {
+                    const extracted = extractScoreMusicXmlFromUint8Array(new Uint8Array(buf));
+                    if (!extracted.ok || !extracted.xml) {
+                      setError(extracted.errors[0] ?? 'Could not read the selected MusicXML file.');
+                      return;
+                    }
+                    setSongModeLeadSheetMusicXml(extracted.xml);
                     setLeadSheetFileName(file.name);
                     setLeadSheetInputSource('file');
+                    setError(null);
                   })
                   .catch(() => {
-                    setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
+                    setError('Could not read the selected MusicXML file (.musicxml, .xml, or MuseScore .mxl).');
                   });
               }}
               style={{ display: 'block', marginBottom: '0.45rem' }}
@@ -1972,7 +1981,7 @@ export function HomeGenerate({
                 setLeadSheetInputSource('paste');
               }}
               disabled={loading || !isSongModeLeadSheetPhase1Writer}
-              placeholder="Paste MusicXML here (LeadSheet, <score-partwise> root)."
+              placeholder="Paste uncompressed MusicXML here (<score-partwise>). For MuseScore .mxl, use Choose file above."
               rows={10}
               style={{
                 width: '100%',

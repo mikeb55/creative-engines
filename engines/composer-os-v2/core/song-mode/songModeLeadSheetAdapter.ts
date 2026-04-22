@@ -1,9 +1,16 @@
 import { importLeadSheetFromMusicXml } from '../lead-sheet/leadSheetMusicXmlImport';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
+import {
+  extractScoreMusicXmlFromString,
+  extractScoreMusicXmlFromUint8Array,
+} from '../lead-sheet/musicXmlScoreInput';
+import { applyLeadSheetPerformanceRendering } from '../lead-sheet/leadSheetPerformanceRendering';
 
 export interface SongModeLeadSheetMelodyAnchor {
   bar: number;
   midi: number;
+  /** Mean imported MIDI velocity for voice-1 notes in this bar (after performance shaping). */
+  velocityHint?: number;
 }
 
 export interface SongModeLeadSheetAdaptedInput {
@@ -44,14 +51,27 @@ function normalizeChordEventsByBar(leadSheet: LeadSheet, totalBars: number): str
 
 function melodyAnchorsByBar(leadSheet: LeadSheet, totalBars: number): SongModeLeadSheetMelodyAnchor[] {
   const ordered = [...leadSheet.melodyEvents].sort((a, b) => a.bar - b.bar || a.beat - b.beat);
-  const firstByBar = new Map<number, number>();
+  const firstMidiByBar = new Map<number, number>();
+  const velocitiesByBar = new Map<number, number[]>();
   for (const ev of ordered) {
     if (ev.bar < 1 || ev.bar > totalBars) continue;
-    if (!firstByBar.has(ev.bar)) firstByBar.set(ev.bar, ev.midi);
+    if (!firstMidiByBar.has(ev.bar)) firstMidiByBar.set(ev.bar, ev.midi);
+    if (ev.velocityMidi !== undefined) {
+      const arr = velocitiesByBar.get(ev.bar) ?? [];
+      arr.push(ev.velocityMidi);
+      velocitiesByBar.set(ev.bar, arr);
+    }
   }
   const out: SongModeLeadSheetMelodyAnchor[] = [];
-  for (const [bar, midi] of firstByBar.entries()) {
-    out.push({ bar, midi });
+  for (const [bar, midi] of firstMidiByBar.entries()) {
+    const vels = velocitiesByBar.get(bar);
+    const velocityHint =
+      vels && vels.length > 0 ? Math.round(vels.reduce((a, c) => a + c, 0) / vels.length) : undefined;
+    out.push({
+      bar,
+      midi,
+      ...(velocityHint !== undefined ? { velocityHint } : {}),
+    });
   }
   out.sort((a, b) => a.bar - b.bar);
   return out;
@@ -87,10 +107,25 @@ export interface SongModeLeadSheetXmlAdaptResult extends SongModeLeadSheetAdapte
 }
 
 export function adaptLeadSheetMusicXmlForSongMode(
-  xml: string,
-  totalBars: number
+  xmlOrPacked: string | Uint8Array,
+  totalBars: number,
+  opts?: { leadSheetPerformanceBlend?: number }
 ): SongModeLeadSheetXmlAdaptResult {
-  const parsed = importLeadSheetFromMusicXml(xml);
+  const extracted =
+    xmlOrPacked instanceof Uint8Array
+      ? extractScoreMusicXmlFromUint8Array(xmlOrPacked)
+      : extractScoreMusicXmlFromString(xmlOrPacked);
+  if (!extracted.ok || !extracted.xml) {
+    return {
+      ok: false,
+      warnings: [],
+      errors:
+        extracted.errors.length > 0
+          ? extracted.errors
+          : ['Song Mode LeadSheet: MusicXML could not be unpacked or validated'],
+    };
+  }
+  const parsed = importLeadSheetFromMusicXml(extracted.xml);
   if (!parsed.ok || !parsed.leadSheet) {
     return {
       ok: false,
@@ -98,10 +133,13 @@ export function adaptLeadSheetMusicXmlForSongMode(
       errors: parsed.errors ?? ['Song Mode LeadSheet adapter: MusicXML parse failed'],
     };
   }
-  const adapted = adaptLeadSheetForSongMode({ leadSheet: parsed.leadSheet, totalBars });
+  const shaped = applyLeadSheetPerformanceRendering(parsed.leadSheet, {
+    blendTowardImported: opts?.leadSheetPerformanceBlend,
+  });
+  const adapted = adaptLeadSheetForSongMode({ leadSheet: shaped, totalBars });
   return {
     ...adapted,
-    leadSheet: parsed.leadSheet,
+    leadSheet: shaped,
     warnings: [...(parsed.warnings ?? []), ...adapted.warnings],
   };
 }

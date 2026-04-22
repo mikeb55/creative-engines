@@ -943,7 +943,9 @@ export interface RunGoldenPathOptions {
   /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
   primarySongwriterStyle?: string;
   /** Song Mode LeadSheet pilot: compact per-bar melody anchors from imported lead sheet. */
-  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number }>;
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number }>;
+  /** Imported LeadSheet expression shaping vs engine defaults (0–1); omitted uses engine default blend. */
+  leadSheetPerformanceBlend?: number;
   /** Song Mode: optional secondary songwriter style key (for inspectability metadata). */
   secondarySongwriterStyle?: string;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -1394,6 +1396,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       songModeLeadSheetInputApplied:
         isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? true
+          : undefined,
+      songModeLeadSheetPerformanceBlend:
+        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
+          ? options.leadSheetPerformanceBlend
           : undefined,
     };
   }

@@ -144,6 +144,11 @@ export interface GenerateRequest {
   includeVocalLeadSheet?: boolean;
   /** Song Mode (Donald Fagen pilot): optional MusicXML lead-sheet input. */
   songModeLeadSheetMusicXml?: string;
+  /**
+   * Song Mode LeadSheet import: how strongly to honour imported articulations/dynamics vs neutral defaults (0–1).
+   * Omitted → engine default (~0.55).
+   */
+  leadSheetPerformanceBlend?: number;
 }
 
 export interface ValidationSummary {

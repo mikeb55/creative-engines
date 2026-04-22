@@ -127,6 +127,29 @@ export function runSongModeLeadSheetInputTests(): { ok: boolean; name: string }[
       ok: nonTarget.success === true && notApplied,
       name: 'Non-target Song Mode writer ignores LeadSheet input slice',
     });
+
+    const barry = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 77021,
+        totalBars: 32,
+        primarySongwriterStyle: 'barry_harris',
+        songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
+      },
+      tmp
+    );
+    const barryHarmonyLocked = expectedBars.every(
+      (c, i) => normalizeChordToken(barry.parsedCustomProgressionBars?.[i] ?? '') === normalizeChordToken(c)
+    );
+    out.push({
+      ok:
+        barry.success === true &&
+        barryHarmonyLocked &&
+        barry.runManifest?.songModeLeadSheetInputApplied === true &&
+        barry.runManifest?.songModeLeadSheetAnchorStartApplied === true,
+      name: 'Barry Harris Song Mode applies LeadSheet harmony lock and bounded anchor-start guidance',
+    });
   } catch (e) {
     out.push({
       ok: false,

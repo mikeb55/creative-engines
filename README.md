@@ -90,20 +90,20 @@ In-app help: click **Help** in the app navigation (same content as the user guid
 
 ## Lead-sheet MusicXML Import (Phase 1)
 
-- **What ships now:** a bounded `score-partwise` MusicXML importer into a shared `LeadSheet` model (`engines/composer-os-v2/core/lead-sheet/leadSheetTypes.ts`, `leadSheetMusicXmlImport.ts`).
-- **Supported now:** basic metadata (title/composer/tempo), first time/key signature, harmony tags as chord events, first-part single-line melody (voice 1), rehearsal labels, and simple repeat/ending markers.
-- **Safety posture:** deterministic parse output and explicit warnings when unsupported complexity is present (extra parts/staves, multiple voices, lyrics, stacked note chords).
-- **Intentionally deferred:** full score import, orchestral/staff expansion logic, and automatic String Quartet/Big Band realization from imported lead sheets.
+- **What ships now:** a bounded `score-partwise` MusicXML importer into a shared `LeadSheet` model (`engines/composer-os-v2/core/lead-sheet/leadSheetTypes.ts`, `leadSheetMusicXmlImport.ts`), plus **MuseScore compressed `.mxl`** intake (`musicXmlScoreInput.ts` — ZIP + `META-INF/container.xml`).
+- **Supported now:** basic metadata (title/composer/tempo), first time/key signature, harmony tags as chord events, first-part single-line melody (voice 1), rehearsal labels, simple repeat/ending markers, and **lightweight expression capture** (dynamics / `<velocity>` / common articulations) that feeds **post-import performance shaping** (`leadSheetPerformanceRendering.ts`).
+- **Safety posture:** deterministic parse output and explicit warnings when unsupported complexity is present (extra parts/staves, multiple voices, lyrics, stacked note chords); `.mxl` / XML intake surfaces **clear validation errors** for wrong roots, corrupt archives, or missing embedded scores.
+- **Intentionally deferred:** full score import, orchestral/staff expansion logic, automatic String Quartet/Big Band realization from imported lead sheets, and **score-native tempo maps / rubato** (no ritard, accel, fermata, or swing reconstruction yet).
 
 ---
 
 ## LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
 - **Supported now:** two bounded Phase 1 Song Mode writer paths: `song_mode` with primary songwriter `donald_fagen` or `barry_harris`, using request field `songModeLeadSheetMusicXml`.
-- **Behavior now:** the imported LeadSheet drives deterministic locked harmony bars for this route, and a bounded melody-start anchor guidance pass is applied.
-- **User workflow now (UI Phase 1):** in **Generate -> Song Mode**, use **LeadSheet MusicXML input (Phase 1)** to either paste MusicXML text or load a local `.musicxml` / `.xml` file. This UI control is active only when Songwriter is **Donald Fagen** or **Barry Harris**.
+- **Behavior now:** the imported LeadSheet drives deterministic locked harmony bars for this route, a bounded melody-start anchor guidance pass is applied, and **imported dynamics/articulation hints** can influence melody shaping and (lightly) guitar velocity contour. Optional **`leadSheetPerformanceBlend`** (0–1; default ~0.55) controls how strongly imported expression is honoured.
+- **User workflow now (UI Phase 1):** in **Generate -> Song Mode**, use **LeadSheet MusicXML input (Phase 1)** to paste **uncompressed MusicXML text**, or load a local `.musicxml`, `.xml`, or **`.mxl`** file (compressed files are unpacked in the browser before generate). This UI control is active only when Songwriter is **Donald Fagen** or **Barry Harris**.
 - **Safety posture:** if LeadSheet input is missing or not parseable, Song Mode behavior remains baseline; this slice fails safely instead of broad fallback rewrites.
-- **Inspectability:** run manifests include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied` for this bounded path.
+- **Inspectability:** run manifests include `songModeLeadSheetInputApplied`, `songModeLeadSheetAnchorStartApplied`, and (when applicable) `songModeLeadSheetPerformanceBlend` for this bounded path.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
 ---

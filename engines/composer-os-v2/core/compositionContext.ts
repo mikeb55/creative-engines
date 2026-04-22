@@ -245,7 +245,9 @@ export interface GenerationMetadata {
   /** Song Mode: section-aware behaviour declarations (Fagen / Bacharach / Sophisticated Pop / future slices). */
   songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
   /** Song Mode LeadSheet pilot: compact per-bar melody anchors (Donald Fagen-only input slice). */
-  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number }>;
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number }>;
+  /** Blend factor echoed from request when LeadSheet expression shaping ran (0–1). */
+  songModeLeadSheetPerformanceBlend?: number;
   /** Song Mode LeadSheet pilot: LeadSheet input drove locked harmony in this run. */
   songModeLeadSheetInputApplied?: boolean;
   /** Song Mode LeadSheet pilot: first anchor was applied to guitar melody start. */

@@ -31,11 +31,19 @@
     "probe:ecm-arrangement": "ts-node scripts/ecmArrangementProbe.ts",
     "eval:ecm-texture": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/ecmChamberTextureEval.ts",
     "inspect:songmode-ab": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSongModeAbInspect.ts",
+    "eval:riff-diagnostics": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runRiffEvalDiagnostics.ts",
+    "eval:riff-top": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runRiffEvalTopCandidates.ts",
+    "eval:duo-diagnostics": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runDuoEvalDiagnostics.ts",
+    "eval:duo-top": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runDuoEvalTopCandidates.ts",
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts",
     "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
+  "dependencies": {
+    "creative-engines": "file:../..",
+    "fflate": "^0.8.2"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^25.6.0",

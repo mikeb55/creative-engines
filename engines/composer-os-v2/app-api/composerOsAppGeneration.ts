@@ -304,14 +304,21 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const primarySongwriterNormalized =
     typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
   const leadSheetXmlInput = typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
-  const isDonaldFagenLeadSheetRoute = primarySongwriterNormalized === 'donald_fagen';
+  const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set(['donald_fagen', 'barry_harris']);
+  const isLeadSheetPhase1WriterRoute = SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(primarySongwriterNormalized);
+  const perfBlendRaw =
+    typeof req.leadSheetPerformanceBlend === 'number' && Number.isFinite(req.leadSheetPerformanceBlend)
+      ? Math.min(1, Math.max(0, req.leadSheetPerformanceBlend))
+      : undefined;
   const leadSheetAdapted =
-    isDonaldFagenLeadSheetRoute && leadSheetXmlInput.length > 0
-      ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget)
+    isLeadSheetPhase1WriterRoute && leadSheetXmlInput.length > 0
+      ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
+          leadSheetPerformanceBlend: perfBlendRaw,
+        })
       : undefined;
   const useLeadSheetHarmony = leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
   if (leadSheetAdapted && !leadSheetAdapted.ok && leadSheetAdapted.errors.length > 0) {
-    console.warn('[Song Mode LeadSheet] Donald Fagen input ignored:', leadSheetAdapted.errors.join(' | '));
+    console.warn('[Song Mode LeadSheet] Phase 1 writer input ignored:', leadSheetAdapted.errors.join(' | '));
   }
   const sm = runSongMode({
     seed: effectiveSeed,
@@ -486,6 +493,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
     songModeLeadSheetMelodyAnchors: useLeadSheetHarmony ? leadSheetAdapted?.melodyAnchors : undefined,
+    leadSheetPerformanceBlend: perfBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
     era: req.stylePairing?.era ?? undefined,
