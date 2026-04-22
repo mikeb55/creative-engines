@@ -1381,16 +1381,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity) {
     /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
     const styleProfileResolved: StyleProfile = options.styleProfile ?? 'STYLE_ECM';
+    const isLeadSheetPhase1Writer =
+      options.primarySongwriterStyle === 'donald_fagen' || options.primarySongwriterStyle === 'barry_harris';
     context.generationMetadata = {
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
       styleProfile: styleProfileResolved,
       songModeLeadSheetMelodyAnchors:
-        options.primarySongwriterStyle === 'donald_fagen' && options.songModeLeadSheetMelodyAnchors?.length
+        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? options.songModeLeadSheetMelodyAnchors
           : undefined,
       songModeLeadSheetInputApplied:
-        options.primarySongwriterStyle === 'donald_fagen' && options.songModeLeadSheetMelodyAnchors?.length
+        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? true
           : undefined,
     };
