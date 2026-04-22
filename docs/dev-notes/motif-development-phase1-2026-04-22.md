@@ -14,6 +14,7 @@
 - Hybrid pilot (`wayne_shorter` melody identity + `barry_harris` harmony stack) now marks `motifLedPrimaryIdentity` only when minimal recurrence/coherence evidence is present.
 - `off` now yields honest minimal output (`no motif-development guarantee`) and does not run rich motif plan/fingerprint scoring.
 - ECM Chamber pilot emits the same bounded motif summary payload path.
+- Hardening/validation pass: transformation summaries now state whether return anchor-nudge was attempted/applied/reverted, so `soft` vs `strong` behavior is inspectable from metadata without over-claiming.
 
 ## Planned later (not implemented in this slice)
 

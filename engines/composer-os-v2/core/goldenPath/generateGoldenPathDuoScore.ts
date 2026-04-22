@@ -128,6 +128,8 @@ import {
   computeMotifAuthorityScore,
   defaultMotifAuthorityPlan,
   nudgeReturnPhraseTowardFingerprint,
+  type MotifAuthorityLevel,
+  type MotifDevelopmentSummary,
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
 
@@ -152,8 +154,60 @@ function totalBarsFromContext(context: CompositionContext): number {
   return context.form.totalBars;
 }
 
-function isMotifAuthorityScopePreset(presetId: string): boolean {
-  return presetId === 'guitar_bass_duo' || presetId.startsWith('song_mode_');
+function isMotifAuthorityScopePreset(context: CompositionContext, styleStack?: StyleStack): boolean {
+  if (context.presetId === 'ecm_chamber') return true;
+  const isSongModeRoute =
+    context.presetId === 'guitar_bass_duo' ||
+    context.presetId === 'song_mode' ||
+    context.presetId.startsWith('song_mode_');
+  if (!isSongModeRoute) return false;
+  const songwriterId = context.generationMetadata?.songwriterStyleId;
+  const isSongPilot =
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    isSongModeMotifPilotWriter(songwriterId);
+  if (!isSongPilot) return false;
+  if (songwriterId === 'wayne_shorter') return styleStack?.primary === 'barry_harris';
+  return true;
+}
+
+const SONG_MODE_MOTIF_PILOT_WRITERS = new Set(['wayne_shorter', 'barry_harris', 'donald_fagen', 'bacharach']);
+
+function isSongModeMotifPilotWriter(writerId: string | undefined): boolean {
+  return writerId != null && SONG_MODE_MOTIF_PILOT_WRITERS.has(writerId);
+}
+
+function resolveMotifAuthorityLevelForPilot(context: CompositionContext, styleStack?: StyleStack): MotifAuthorityLevel {
+  const requested = context.generationMetadata?.motifAuthorityLevel ?? 'off';
+  if (requested === 'off') return 'off';
+  const songwriterId = context.generationMetadata?.songwriterStyleId;
+  const isSongPilot = context.generationMetadata?.songModeHookFirstIdentity === true && isSongModeMotifPilotWriter(songwriterId);
+  const isHybridPilot = isSongPilot && songwriterId === 'wayne_shorter' && styleStack?.primary === 'barry_harris';
+  const isEcmPilot = context.presetId === 'ecm_chamber';
+  if (requested === 'strong' && (isSongPilot || isHybridPilot || isEcmPilot)) return 'strong';
+  return 'soft';
+}
+
+function makeMotifDevelopmentSummary(params: {
+  level: MotifAuthorityLevel;
+  pilotPathTag: string;
+  coreCellEstablished: boolean;
+  recurrenceCountEstimate: number;
+  recurrenceSummary: string;
+  transformationSummary: string[];
+  motifCoherence: number;
+  motifLedPrimaryIdentity?: boolean;
+}): MotifDevelopmentSummary {
+  return {
+    motifAuthorityLevel: params.level,
+    pilotPathTag: params.pilotPathTag,
+    coreCellEstablished: params.coreCellEstablished,
+    recurrenceCountEstimate: params.recurrenceCountEstimate,
+    recurrenceSummary: params.recurrenceSummary,
+    transformationSummary: params.transformationSummary,
+    motifCoherence: Math.max(0, Math.min(1, params.motifCoherence)),
+    motifLedPrimaryIdentity: params.motifLedPrimaryIdentity,
+    experimental: true,
+  };
 }
 
 function snapshotPhrasePitches(part: PartModel, range: MotifPhraseRange): Array<{ bar: number; idx: number; pitch: number }> {
@@ -3280,57 +3334,136 @@ export function generateGoldenPathDuoScore(
       logGuitarVoice2Checkpoint('A', guitarPart);
       assertPhaseACheckpointA(guitarPart, phaseABars);
     }
-    const motifAuthorityActive =
-      context.generationMetadata?.motifAuthorityV1 === true &&
-      isMotifAuthorityScopePreset(context.presetId);
-    if (motifAuthorityActive && context.generationMetadata) {
-      const motifPlan = defaultMotifAuthorityPlan(tb);
-      const phraseAFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseA);
+    const motifAuthorityEligible = isMotifAuthorityScopePreset(context, plans.styleStack);
+    const motifAuthorityLevel = resolveMotifAuthorityLevelForPilot(context, plans.styleStack);
+    const motifAuthorityActive = motifAuthorityEligible && motifAuthorityLevel !== 'off';
+    if (motifAuthorityEligible && context.generationMetadata) {
+      const songwriterId = context.generationMetadata.songwriterStyleId;
+      const isSongPilot = context.generationMetadata.songModeHookFirstIdentity === true && isSongModeMotifPilotWriter(songwriterId);
+      const isHybridPilot = isSongPilot && songwriterId === 'wayne_shorter' && plans.styleStack?.primary === 'barry_harris';
+      const isEcmPilot = context.presetId === 'ecm_chamber';
+      const pilotPathTag = isHybridPilot
+        ? 'hybrid_shorter_melody_barry_harmony'
+        : isSongPilot
+          ? `song_mode_${songwriterId ?? 'unknown'}`
+          : isEcmPilot
+            ? 'ecm_chamber'
+            : 'non_pilot';
       context.generationMetadata = {
         ...context.generationMetadata,
-        motifPlan,
-        motifFingerprint: phraseAFingerprint,
+        motifAuthorityLevel,
       };
-
-      // Checkpoint 2: development phrase should be variation, not copy or drift.
-      if (motifPlan.phraseB) {
-        const phraseBFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseB);
-        const devScore = computeMotifAuthorityScore(phraseAFingerprint, phraseBFingerprint);
+      if (!motifAuthorityActive) {
         context.generationMetadata = {
           ...context.generationMetadata,
-          motifPlan: {
-            ...motifPlan,
-            developmentSimilarity: devScore.motifAuthorityScore,
-          },
-          variationType: classifyVariationType(devScore),
-          literalCopyPenalty: devScore.literalCopyPenalty,
-          overDriftPenalty: devScore.overDriftPenalty,
+          motifDevelopmentSummary: makeMotifDevelopmentSummary({
+            level: 'off',
+            pilotPathTag,
+            coreCellEstablished: false,
+            recurrenceCountEstimate: 0,
+            recurrenceSummary: 'No motif-development guarantee in this run.',
+            transformationSummary: ['none-guaranteed'],
+            motifCoherence: 0,
+          }),
         };
-      }
+      } else {
+        const motifPlan = defaultMotifAuthorityPlan(tb);
+        const phraseAFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseA);
+        context.generationMetadata = {
+          ...context.generationMetadata,
+          motifPlan,
+          motifFingerprint: phraseAFingerprint,
+        };
 
-      // Checkpoint 3: return phrase scored and optionally refined with one bounded nudge pass.
-      if (motifPlan.phraseReturn) {
-        const returnOriginalFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
-        const returnOriginalScore = computeMotifAuthorityScore(phraseAFingerprint, returnOriginalFingerprint);
-        let chosen = returnOriginalScore;
-        if (returnOriginalScore.motifAuthorityScore < motifPlan.returnThreshold) {
-          const snapshot = snapshotPhrasePitches(guitarPart, motifPlan.phraseReturn);
-          nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint);
-          const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
-          const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);
-          if (returnRefinedScore.motifAuthorityScore >= returnOriginalScore.motifAuthorityScore) {
-            chosen = returnRefinedScore;
-          } else {
-            restorePhrasePitches(guitarPart, snapshot);
-          }
+        // Checkpoint 2: development phrase should be variation, not copy or drift.
+        let developmentSimilarity = 0;
+        let variationType: 'copy' | 'variation' | 'drifted' | undefined;
+        let literalPenalty = 0;
+        let driftPenalty = 0;
+        if (motifPlan.phraseB) {
+          const phraseBFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseB);
+          const devScore = computeMotifAuthorityScore(phraseAFingerprint, phraseBFingerprint);
+          developmentSimilarity = devScore.motifAuthorityScore;
+          variationType = classifyVariationType(devScore);
+          literalPenalty = devScore.literalCopyPenalty;
+          driftPenalty = devScore.overDriftPenalty;
+          context.generationMetadata = {
+            ...context.generationMetadata,
+            motifPlan: {
+              ...motifPlan,
+              developmentSimilarity: devScore.motifAuthorityScore,
+            },
+            variationType,
+            literalCopyPenalty: devScore.literalCopyPenalty,
+            overDriftPenalty: devScore.overDriftPenalty,
+          };
         }
+
+        // Checkpoint 3: return phrase scored and optionally refined with one bounded nudge pass.
+        let returnCoherence = 0;
+        let returnNudgeAttempted = false;
+        let returnNudgeApplied = false;
+        if (motifPlan.phraseReturn) {
+          const returnOriginalFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
+          const returnOriginalScore = computeMotifAuthorityScore(phraseAFingerprint, returnOriginalFingerprint);
+          let chosen = returnOriginalScore;
+          const shouldRefineReturn =
+            motifAuthorityLevel === 'strong' ||
+            returnOriginalScore.motifAuthorityScore < motifPlan.returnThreshold;
+          if (shouldRefineReturn) {
+            returnNudgeAttempted = true;
+            const snapshot = snapshotPhrasePitches(guitarPart, motifPlan.phraseReturn);
+            nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint);
+            const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
+            const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);
+            if (returnRefinedScore.motifAuthorityScore >= returnOriginalScore.motifAuthorityScore) {
+              chosen = returnRefinedScore;
+              returnNudgeApplied = true;
+            } else {
+              restorePhrasePitches(guitarPart, snapshot);
+            }
+          }
+          context.generationMetadata = {
+            ...context.generationMetadata,
+            returnSimilarity: chosen.motifAuthorityScore,
+            motifAuthorityScore: chosen.motifAuthorityScore,
+            literalCopyPenalty: chosen.literalCopyPenalty,
+            overDriftPenalty: chosen.overDriftPenalty,
+          };
+          returnCoherence = chosen.motifAuthorityScore;
+        }
+        const recurrenceCountEstimate = motifPlan.phraseReturn ? 2 : motifPlan.phraseB ? 1 : 0;
+        const recurrenceSummary = motifPlan.phraseReturn
+          ? 'Core cell statement and return phrases were compared for recurrence.'
+          : 'Core cell recurrence assessed in opening/development phrases only.';
+        const transformationSummary = [
+          variationType ? `development:${variationType}` : 'development:unavailable',
+          returnNudgeAttempted ? 'return:anchor_nudge_attempted' : 'return:anchor_nudge_skipped',
+          returnNudgeAttempted
+            ? returnNudgeApplied
+              ? 'return:anchor_nudge_applied'
+              : 'return:anchor_nudge_reverted_or_unchanged'
+            : 'return:anchor_nudge_not_applicable',
+        ];
+        const motifCoherence = returnCoherence || developmentSimilarity || 0;
+        // Minimal evidence rule for hybrid identity claim: non-trivial recurrence plus coherence.
+        const motifLedPrimaryIdentity =
+          isHybridPilot && recurrenceCountEstimate >= 2 && motifCoherence >= 0.54 ? true : undefined;
         context.generationMetadata = {
           ...context.generationMetadata,
-          returnSimilarity: chosen.motifAuthorityScore,
-          motifAuthorityScore: chosen.motifAuthorityScore,
-          literalCopyPenalty: chosen.literalCopyPenalty,
-          overDriftPenalty: chosen.overDriftPenalty,
+          motifDevelopmentSummary: makeMotifDevelopmentSummary({
+            level: motifAuthorityLevel,
+            pilotPathTag,
+            coreCellEstablished: phraseAFingerprint.intervalContour.length > 0,
+            recurrenceCountEstimate,
+            recurrenceSummary,
+            transformationSummary,
+            motifCoherence,
+            motifLedPrimaryIdentity,
+          }),
         };
+        void literalPenalty;
+        void driftPenalty;
       }
     }
     if (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode === 'ECM_METHENY_QUARTET') {

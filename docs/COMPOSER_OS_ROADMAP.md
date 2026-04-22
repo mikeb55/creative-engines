@@ -73,6 +73,18 @@
 
 ## Past (delivered)
 
+### T2.4 — Lead-sheet MusicXML Import (Phase 1 vertical slice) (2026-04-22)
+
+- Added a minimal shared `LeadSheet` import model for future realization handoff (`core/lead-sheet/leadSheetTypes.ts`).
+- Added bounded `score-partwise` importer (`core/lead-sheet/leadSheetMusicXmlImport.ts`) for:
+  - title/composer/tempo, first time/key signature
+  - harmony tags as chord events
+  - single-line first-part voice-1 melody note events
+  - rehearsal labels and simple repeat/ending markers when present
+- Unsupported complexity is handled with explicit warnings (extra parts, multi-voice melody, lyrics, stacked note chords), keeping behaviour deterministic and production-safe.
+- Added deterministic parser tests (`tests/leadSheetMusicXmlImport.test.ts`) and wired suite into harness.
+- No realization integration yet (String Quartet / Big Band import-fed realization remains a later stage).
+
 ### T2.3 — Motif Development Phase 1 pilot slice (2026-04-22)
 
 - Added explicit `motifAuthorityLevel` semantics (`off`/`soft`/`strong`) while keeping existing Motif Authority V1 safety posture feature-flagged.
@@ -83,6 +95,7 @@
 - Tightened pilot activation to explicit whitelist context (no broad preset-family unlock).
 - `off` now emits minimal honest summary semantics (no motif-development guarantee) rather than rich motif-development claims.
 - Hybrid `motifLedPrimaryIdentity` now requires minimal recurrence/coherence evidence.
+- Hardening/validation update: motif transformation summaries now explicitly report return-anchor nudge attempted/applied/reverted state for pilot routes.
 - Added focused deterministic harness coverage for pilot metadata/manifest assertions (`tests/motifAuthorityPilotSlice.test.ts`).
 
 ### T2.2 — Eval diagnostics for riff + duo (`riffEvalDiagnostics` / `duoEvalDiagnostics`) (2026-04-21)
