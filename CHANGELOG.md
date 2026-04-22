@@ -1,10 +1,10 @@
-## [2026-04-22] LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+## [2026-04-22] LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
-- Added optional Song Mode LeadSheet MusicXML input plumbing (`songModeLeadSheetMusicXml`) for a single bounded route: `presetId === "song_mode"` with primary songwriter `donald_fagen`.
+- Added optional Song Mode LeadSheet MusicXML input plumbing (`songModeLeadSheetMusicXml`) for bounded Phase 1 Song Mode writer routes: `presetId === "song_mode"` with primary songwriter `donald_fagen` or `barry_harris`.
 - Added a narrow adapter at `engines/composer-os-v2/core/song-mode/songModeLeadSheetAdapter.ts`:
   - LeadSheet chord events -> deterministic locked harmony bars
   - LeadSheet melody events -> compact bar-level melody anchors
-- Wired Donald Fagen Song Mode to:
+- Wired Donald Fagen + Barry Harris Song Mode routes to:
   - parse/import the provided LeadSheet MusicXML
   - use LeadSheet-derived locked harmony as primary harmonic input
   - apply bounded melody-start anchor guidance

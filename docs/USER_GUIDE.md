@@ -78,11 +78,11 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - Unsupported complexity is handled safely with warnings (for example: extra parts, multiple melody voices, lyrics, stacked note chords) rather than pretending full support.
 - This phase does **not** yet realize imported lead sheets directly into String Quartet or Big Band; it provides the shared `LeadSheet` model foundation for later slices.
 
-### LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+### LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
-- **Supported now:** one route only:
+- **Supported now:** two bounded routes only:
   - `presetId = song_mode`
-  - `primarySongwriterStyle = donald_fagen`
+  - `primarySongwriterStyle = donald_fagen` or `barry_harris`
   - optional request field `songModeLeadSheetMusicXml`
 - **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route, and a bounded melody-start anchor guide is applied deterministically.
 - **If omitted/invalid:** Song Mode runs as before with baseline behavior.

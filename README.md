@@ -97,9 +97,9 @@ In-app help: click **Help** in the app navigation (same content as the user guid
 
 ---
 
-## LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+## LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
-- **Supported now:** exactly one path: `song_mode` with primary songwriter `donald_fagen` and request field `songModeLeadSheetMusicXml`.
+- **Supported now:** two bounded Phase 1 Song Mode writer paths: `song_mode` with primary songwriter `donald_fagen` or `barry_harris`, using request field `songModeLeadSheetMusicXml`.
 - **Behavior now:** the imported LeadSheet drives deterministic locked harmony bars for this route, and a bounded melody-start anchor guidance pass is applied.
 - **Safety posture:** if LeadSheet input is missing or not parseable, Song Mode behavior remains baseline; this slice fails safely instead of broad fallback rewrites.
 - **Inspectability:** run manifests include `songModeLeadSheetInputApplied` and `songModeLeadSheetAnchorStartApplied` for this bounded path.

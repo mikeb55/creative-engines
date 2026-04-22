@@ -1,13 +1,13 @@
-# LeadSheet -> Song Mode (Donald Fagen only) experimental Phase 1
+# LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
 Date: 2026-04-22
 
 ## Scope
 
-This slice intentionally supports one path only:
+This slice intentionally supports two bounded Song Mode writer paths:
 
 - `presetId === "song_mode"`
-- `primarySongwriterStyle === "donald_fagen"`
+- `primarySongwriterStyle === "donald_fagen"` or `primarySongwriterStyle === "barry_harris"`
 - optional input `songModeLeadSheetMusicXml`
 
 No other Song Mode writer, preset, or ensemble route is included in this phase.
@@ -30,9 +30,9 @@ No other Song Mode writer, preset, or ensemble route is included in this phase.
   - warnings for truncation/carry-forward cases
   - fallback to baseline Song Mode when unsupported/invalid
 
-3. Donald Fagen route integration
+3. Donald Fagen + Barry Harris route integration
 
-- In `runSongStructure()`, when the exact route and XML input are present:
+- In `runSongStructure()`, when one of the bounded writer routes and XML input are present:
   - parse/import LeadSheet via existing importer
   - apply LeadSheet-derived locked harmony as the primary harmonic input
   - pass compact melody anchors into Song Mode golden-path options
@@ -40,7 +40,7 @@ No other Song Mode writer, preset, or ensemble route is included in this phase.
 
 4. Inspectability
 
-- Added run-manifest booleans for this route:
+- Added run-manifest booleans for these bounded routes:
   - `songModeLeadSheetInputApplied`
   - `songModeLeadSheetAnchorStartApplied`
 
@@ -49,6 +49,7 @@ No other Song Mode writer, preset, or ensemble route is included in this phase.
 - Added `tests/songModeLeadSheetInput.test.ts` with deterministic checks:
   - Donald Fagen + LeadSheet input applies locked harmony
   - Donald Fagen + LeadSheet input applies melody-anchor guidance
+  - Barry Harris + LeadSheet input applies locked harmony + bounded melody-anchor guidance
   - Donald Fagen without LeadSheet remains baseline
   - non-target writer ignores this LeadSheet slice
 
