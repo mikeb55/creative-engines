@@ -24,6 +24,9 @@ function friendlyHttpMessage(status: number, bodyText: string): string {
   if (status === 404) {
     return 'That feature was not found. Update Composer OS.';
   }
+  if (status === 413) {
+    return 'LeadSheet MusicXML is too large for the current web request limit.';
+  }
   if (status === 408 || status === 504) {
     return 'The request took too long. Try again or use Try Another.';
   }
