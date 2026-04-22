@@ -23,6 +23,42 @@ vi.mock('../src/services/api', () => {
 describe('HomeGenerate mode-driven UI', () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/pages/HomeGenerate.tsx'), 'utf-8');
 
+  async function renderHomeGenerate() {
+    (globalThis as { window?: unknown }).window = { composerOsDesktop: undefined };
+    const { HomeGenerate } = await import('../src/pages/HomeGenerate');
+    let tree: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(HomeGenerate, { onResult: () => undefined }));
+    });
+    return tree!;
+  }
+
+  function getGenerateButton(tree: ReturnType<typeof create>) {
+    const generateButton = tree.root.findAllByType('button').find((b) => {
+      const c = b.props.children;
+      return (
+        (typeof c === 'string' && c.includes('Generate')) ||
+        (Array.isArray(c) && c.join('').includes('Generate'))
+      );
+    });
+    expect(generateButton).toBeDefined();
+    return generateButton!;
+  }
+
+  function getLeadSheetTextarea(tree: ReturnType<typeof create>) {
+    const nodes = tree.root.findAllByType('textarea');
+    const leadSheetNode = nodes.find((n) => n.props.placeholder === '<score-partwise ...>...</score-partwise>');
+    expect(leadSheetNode).toBeDefined();
+    return leadSheetNode!;
+  }
+
+  function getSongwriterSelect(tree: ReturnType<typeof create>) {
+    const nodes = tree.root.findAllByType('select');
+    const songwriterNode = nodes.find((n) => n.props.value === 'donald_fagen' || n.props.value === 'wayne_shorter');
+    expect(songwriterNode).toBeDefined();
+    return songwriterNode!;
+  }
+
   it('does not import Style Blend or style module dropdowns (retired from Generate)', () => {
     expect(src).not.toContain('StyleBlendControls');
     expect(src).not.toContain('useStyleModules');
@@ -138,6 +174,166 @@ describe('HomeGenerate mode-driven UI', () => {
   it('threads LeadSheet MusicXML into generate payload only for supported Song Mode writers', () => {
     expect(src).toContain('songModeLeadSheetMusicXml');
     expect(src).toContain('isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0');
+  });
+
+  it('shows LeadSheet and Melody anchor Applied when flags are true', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_leadsheet_applied.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_leadsheet_applied.musicxml',
+      requestEcho: { primarySongwriterStyle: 'donald_fagen' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: true,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    const tree = await renderHomeGenerate();
+    const leadSheetTextarea = getLeadSheetTextarea(tree);
+    await act(async () => {
+      leadSheetTextarea.props.onChange({ target: { value: '<score-partwise version="4.0"></score-partwise>' } });
+    });
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('"LeadSheet input: ","Applied"');
+    expect(text).toContain('"Melody anchor: ","Applied"');
+  });
+
+  it('shows LeadSheet and Melody anchor Not applied when flags are false', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_leadsheet_not_applied.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_leadsheet_not_applied.musicxml',
+      requestEcho: { primarySongwriterStyle: 'barry_harris' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: false,
+        songModeLeadSheetAnchorStartApplied: false,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    const tree = await renderHomeGenerate();
+    const leadSheetTextarea = getLeadSheetTextarea(tree);
+    await act(async () => {
+      leadSheetTextarea.props.onChange({ target: { value: '<score-partwise version="4.0"></score-partwise>' } });
+    });
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('"LeadSheet input: ","Not applied"');
+    expect(text).toContain('"Melody anchor: ","Not applied"');
+  });
+
+  it('does not render LeadSheet status when no LeadSheet was provided', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_no_leadsheet.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_no_leadsheet.musicxml',
+      requestEcho: { primarySongwriterStyle: 'donald_fagen' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: true,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    const tree = await renderHomeGenerate();
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).not.toContain('LeadSheet input:');
+    expect(text).not.toContain('Melody anchor:');
+  });
+
+  it('does not render LeadSheet status for unsupported songwriter', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_unsupported_writer.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_unsupported_writer.musicxml',
+      requestEcho: { primarySongwriterStyle: 'wayne_shorter' },
+      runManifest: {
+        presetId: 'song_mode',
+        songModeLeadSheetInputApplied: true,
+        songModeLeadSheetAnchorStartApplied: true,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    const tree = await renderHomeGenerate();
+    const songwriterSelect = getSongwriterSelect(tree);
+    await act(async () => {
+      songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
+    });
+    const leadSheetTextarea = getLeadSheetTextarea(tree);
+    await act(async () => {
+      leadSheetTextarea.props.onChange({ target: { value: '<score-partwise version="4.0"></score-partwise>' } });
+    });
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).not.toContain('LeadSheet input:');
+    expect(text).not.toContain('Melody anchor:');
   });
 
   it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {

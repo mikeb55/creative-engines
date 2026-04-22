@@ -100,6 +100,12 @@ function primarySongwriterDisplayLabel(id: string | undefined): string | undefin
   return SONGWRITER_OPTIONS.find((o) => o.id === t)?.label ?? id.trim();
 }
 
+function isLeadSheetSongModeRoute(presetId?: string, primarySongwriterStyle?: string): boolean {
+  if (presetId !== 'song_mode') return false;
+  const writer = primarySongwriterStyle?.trim().toLowerCase();
+  return writer === 'donald_fagen' || writer === 'barry_harris';
+}
+
 const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ellington', label: 'Duke Ellington' },
   { id: 'basie', label: 'Count Basie' },
@@ -275,6 +281,8 @@ type GenResult = {
       sectionShape?: string;
       sectionSources?: string[];
     };
+    songModeLeadSheetInputApplied?: boolean;
+    songModeLeadSheetAnchorStartApplied?: boolean;
   };
   scoreTitle?: string;
   requestEcho?: {
@@ -294,6 +302,7 @@ type GenResult = {
     expression?: number;
     surprise?: number;
   };
+  _uiHadLeadSheetInputForRun?: boolean;
   stylePairingReceipt?: {
     summary: string;
     confidenceScore: number;
@@ -561,6 +570,7 @@ export function HomeGenerate({
         const tonalTrim = tonalCenter.trim();
         const chordTrim = chordProgressionText.trim();
         const songModeLeadSheetTrim = songModeLeadSheetMusicXml.trim();
+        const hadLeadSheetInputForRun = songModeLeadSheetTrim.length > 0;
         if (presetId === 'wyble_etude' && !chordTrim) {
           setError(
             'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
@@ -825,7 +835,7 @@ export function HomeGenerate({
           );
         }
         const r = (await api.generate(generatePayload)) as GenResult;
-        setResult(r);
+        setResult({ ...r, _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun });
         if (
           r.runManifest?.presetId === 'song_mode' &&
           (r.runManifest.songModeSectionShapingDiagnostics ||
@@ -1067,6 +1077,14 @@ export function HomeGenerate({
       })()
     : null;
   const echo = result?.requestEcho;
+  const receiptPrimarySongwriterStyle =
+    echo?.primarySongwriterStyle?.trim() ||
+    rm?.songModeProfileRuleDiagnostics?.primarySongwriterStyleId?.trim() ||
+    undefined;
+  const hadLeadSheetInputForRun = result?._uiHadLeadSheetInputForRun === true;
+  const showLeadSheetStatusBlock =
+    hadLeadSheetInputForRun &&
+    isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
 
   return (
     <section>
@@ -2353,6 +2371,18 @@ export function HomeGenerate({
                   </strong>
                 </p>
               ) : null}
+              {showLeadSheetStatusBlock && (
+                <div className="song-mode-leadsheet-status" style={{ margin: '0.4rem 0 0' }}>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    LeadSheet input: {rm?.songModeLeadSheetInputApplied === true ? 'Applied' : 'Not applied'}
+                  </p>
+                  {typeof rm?.songModeLeadSheetAnchorStartApplied === 'boolean' && (
+                    <p style={{ margin: '0.25rem 0' }}>
+                      Melody anchor: {rm.songModeLeadSheetAnchorStartApplied ? 'Applied' : 'Not applied'}
+                    </p>
+                  )}
+                </div>
+              )}
               {(echo?.stylePairing || result.stylePairingReceipt) && (
                 <p style={{ margin: '0.25rem 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Pairing:</span>{' '}
