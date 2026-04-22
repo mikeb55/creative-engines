@@ -514,6 +514,13 @@ export function HomeGenerate({
         : DEFAULT_CUSTOM_HARMONY_PLACEHOLDER;
   const isSongModeLeadSheetPhase1Writer =
     presetId === 'song_mode' && SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(songwriterStyle.trim().toLowerCase());
+  const leadSheetPreflightError =
+    presetId === 'song_mode' &&
+    isSongModeLeadSheetPhase1Writer &&
+    songModeLeadSheetMusicXml.trim().length > 0 &&
+    !/<score-partwise\b/i.test(songModeLeadSheetMusicXml.trim())
+      ? 'LeadSheet MusicXML must include a <score-partwise> root element.'
+      : null;
 
   const ensembleChordBarCountForLabel =
     presetId === 'big_band'
@@ -1850,6 +1857,71 @@ export function HomeGenerate({
 
       {presetId === 'song_mode' && (
         <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+          <div
+            style={{
+              marginBottom: '0.9rem',
+              padding: '0.7rem 0.75rem',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-panel)',
+            }}
+          >
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: 'var(--text)',
+              }}
+            >
+              LeadSheet MusicXML input (Phase 1)
+            </label>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
+              LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.
+            </p>
+            <input
+              type="file"
+              accept=".musicxml,.xml"
+              disabled={loading || !isSongModeLeadSheetPhase1Writer}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                void file
+                  .text()
+                  .then((text) => setSongModeLeadSheetMusicXml(text))
+                  .catch(() => {
+                    setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
+                  });
+              }}
+              style={{ display: 'block', marginBottom: '0.45rem' }}
+            />
+            <textarea
+              value={songModeLeadSheetMusicXml}
+              onChange={(e) => setSongModeLeadSheetMusicXml(e.target.value)}
+              disabled={loading || !isSongModeLeadSheetPhase1Writer}
+              placeholder="Paste MusicXML here (LeadSheet, <score-partwise> root)."
+              rows={10}
+              style={{
+                width: '100%',
+                minHeight: 180,
+                maxWidth: 600,
+                resize: 'vertical',
+                padding: '0.5rem 0.6rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontSize: '0.82rem',
+              }}
+            />
+            {leadSheetPreflightError && (
+              <p style={{ margin: '0.45rem 0 0', fontSize: '0.82rem', color: 'var(--error)' }}>
+                {leadSheetPreflightError}
+              </p>
+            )}
+          </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Style
@@ -2036,54 +2108,6 @@ export function HomeGenerate({
               <option value="pat_pattison">Pat Pattison</option>
               <option value="jack_perricone">Jack Perricone</option>
             </select>
-          </div>
-          <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              LeadSheet MusicXML input (Phase 1)
-            </label>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
-              Active only for Song Mode with <strong style={{ color: 'var(--text)' }}>Donald Fagen</strong> or{' '}
-              <strong style={{ color: 'var(--text)' }}>Barry Harris</strong> as the primary songwriter. Leave empty to use current Song Mode behavior.
-            </p>
-            {!isSongModeLeadSheetPhase1Writer && (
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
-                LeadSheet input is ignored for this songwriter route.
-              </p>
-            )}
-            <input
-              type="file"
-              accept=".musicxml,.xml,text/xml,application/xml"
-              disabled={loading || !isSongModeLeadSheetPhase1Writer}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                void file
-                  .text()
-                  .then((text) => setSongModeLeadSheetMusicXml(text))
-                  .catch(() => {
-                    setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
-                  });
-              }}
-              style={{ display: 'block', marginBottom: '0.5rem' }}
-            />
-            <textarea
-              value={songModeLeadSheetMusicXml}
-              onChange={(e) => setSongModeLeadSheetMusicXml(e.target.value)}
-              disabled={loading || !isSongModeLeadSheetPhase1Writer}
-              placeholder="<score-partwise ...>...</score-partwise>"
-              rows={6}
-              style={{
-                width: '100%',
-                maxWidth: 600,
-                padding: '0.5rem 0.6rem',
-                borderRadius: 6,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-input, var(--bg))',
-                color: 'var(--text)',
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                fontSize: '0.82rem',
-              }}
-            />
           </div>
         </div>
       )}

@@ -47,9 +47,18 @@ describe('HomeGenerate mode-driven UI', () => {
 
   function getLeadSheetTextarea(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('textarea');
-    const leadSheetNode = nodes.find((n) => n.props.placeholder === '<score-partwise ...>...</score-partwise>');
+    const leadSheetNode = nodes.find(
+      (n) => n.props.placeholder === 'Paste MusicXML here (LeadSheet, <score-partwise> root).'
+    );
     expect(leadSheetNode).toBeDefined();
     return leadSheetNode!;
+  }
+
+  function getLeadSheetFileInput(tree: ReturnType<typeof create>) {
+    const nodes = tree.root.findAllByType('input');
+    const fileNode = nodes.find((n) => n.props.type === 'file');
+    expect(fileNode).toBeDefined();
+    return fileNode!;
   }
 
   function getSongwriterSelect(tree: ReturnType<typeof create>) {
@@ -168,12 +177,40 @@ describe('HomeGenerate mode-driven UI', () => {
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {
     expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
     expect(src).toContain('SONG_MODE_LEADSHEET_PHASE1_WRITERS');
-    expect(src).toContain('LeadSheet input is ignored for this songwriter route.');
+    expect(src).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
   });
 
   it('threads LeadSheet MusicXML into generate payload only for supported Song Mode writers', () => {
     expect(src).toContain('songModeLeadSheetMusicXml');
     expect(src).toContain('isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0');
+  });
+
+  it('shows LeadSheet MusicXML input label and enabled textarea for Song Mode Donald Fagen', async () => {
+    const tree = await renderHomeGenerate();
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('LeadSheet MusicXML input (Phase 1)');
+    const textarea = getLeadSheetTextarea(tree);
+    expect(textarea.props.disabled).toBe(false);
+  });
+
+  it('shows file input for LeadSheet with .musicxml/.xml accept on supported route', async () => {
+    const tree = await renderHomeGenerate();
+    const fileInput = getLeadSheetFileInput(tree);
+    expect(fileInput.props.accept).toContain('.musicxml');
+    expect(fileInput.props.accept).toContain('.xml');
+    expect(fileInput.props.disabled).toBe(false);
+  });
+
+  it('for unsupported songwriter keeps LeadSheet controls disabled and shows route note', async () => {
+    const tree = await renderHomeGenerate();
+    const songwriterSelect = getSongwriterSelect(tree);
+    await act(async () => {
+      songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
+    });
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
+    expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
+    expect(getLeadSheetFileInput(tree).props.disabled).toBe(true);
   });
 
   it('shows LeadSheet and Melody anchor Applied when flags are true', async () => {
