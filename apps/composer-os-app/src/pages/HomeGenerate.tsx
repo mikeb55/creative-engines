@@ -394,6 +394,7 @@ export function HomeGenerate({
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   const [songModeLeadSheetMusicXml, setSongModeLeadSheetMusicXml] = useState('');
+  const [leadSheetFileName, setLeadSheetFileName] = useState<string | null>(null);
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
   const [bigBandFormId, setBigBandFormId] = useState('');
@@ -1889,16 +1890,56 @@ export function HomeGenerate({
                 if (!file) return;
                 void file
                   .text()
-                  .then((text) => setSongModeLeadSheetMusicXml(text))
+                  .then((text) => {
+                    setSongModeLeadSheetMusicXml(text);
+                    setLeadSheetFileName(file.name);
+                  })
                   .catch(() => {
                     setError('Could not read the selected MusicXML file. Try a plain .musicxml or .xml file.');
                   });
               }}
               style={{ display: 'block', marginBottom: '0.45rem' }}
             />
+            {isSongModeLeadSheetPhase1Writer ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.45rem',
+                  marginBottom: '0.45rem',
+                }}
+              >
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  {leadSheetFileName ? `Loaded file: ${leadSheetFileName}` : 'No file selected'}
+                </span>
+                {(leadSheetFileName || songModeLeadSheetMusicXml.trim().length > 0) && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      setSongModeLeadSheetMusicXml('');
+                      setLeadSheetFileName(null);
+                      setError(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Clear LeadSheet
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.45rem' }}>
+                LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.
+              </p>
+            )}
             <textarea
               value={songModeLeadSheetMusicXml}
-              onChange={(e) => setSongModeLeadSheetMusicXml(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSongModeLeadSheetMusicXml(next);
+                if (next.trim().length === 0) setLeadSheetFileName(null);
+              }}
               disabled={loading || !isSongModeLeadSheetPhase1Writer}
               placeholder="Paste MusicXML here (LeadSheet, <score-partwise> root)."
               rows={10}

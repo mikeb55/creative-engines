@@ -61,6 +61,10 @@ describe('HomeGenerate mode-driven UI', () => {
     return fileNode!;
   }
 
+  function getClearLeadSheetButton(tree: ReturnType<typeof create>) {
+    return tree.root.findAllByType('button').find((b) => b.props.children === 'Clear LeadSheet');
+  }
+
   function getSongwriterSelect(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('select');
     const songwriterNode = nodes.find((n) => n.props.value === 'donald_fagen' || n.props.value === 'wayne_shorter');
@@ -201,6 +205,53 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(fileInput.props.disabled).toBe(false);
   });
 
+  it('shows No file selected when nothing has been chosen', async () => {
+    const tree = await renderHomeGenerate();
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('No file selected');
+  });
+
+  it('shows file name after selecting a LeadSheet file', async () => {
+    const tree = await renderHomeGenerate();
+    const fileInput = getLeadSheetFileInput(tree);
+    const fakeFile = {
+      name: 'my-song.musicxml',
+      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+    };
+    await act(async () => {
+      fileInput.props.onChange({ target: { files: [fakeFile] } });
+      await Promise.resolve();
+    });
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('Loaded file: my-song.musicxml');
+  });
+
+  it('clear button resets LeadSheet text and file name', async () => {
+    const tree = await renderHomeGenerate();
+    const fileInput = getLeadSheetFileInput(tree);
+    const fakeFile = {
+      name: 'my-song.musicxml',
+      text: () => Promise.resolve('not xml'),
+    };
+    await act(async () => {
+      fileInput.props.onChange({ target: { files: [fakeFile] } });
+      await Promise.resolve();
+    });
+    let text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('Loaded file: my-song.musicxml');
+    expect(text).toContain('LeadSheet MusicXML must include a <score-partwise> root element.');
+    const clearButton = getClearLeadSheetButton(tree);
+    expect(clearButton).toBeDefined();
+    await act(async () => {
+      clearButton!.props.onClick();
+      await Promise.resolve();
+    });
+    text = JSON.stringify(tree.toJSON());
+    expect(getLeadSheetTextarea(tree).props.value).toBe('');
+    expect(text).toContain('No file selected');
+    expect(text).not.toContain('LeadSheet MusicXML must include a <score-partwise> root element.');
+  });
+
   it('for unsupported songwriter keeps LeadSheet controls disabled and shows route note', async () => {
     const tree = await renderHomeGenerate();
     const songwriterSelect = getSongwriterSelect(tree);
@@ -211,6 +262,7 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(text).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
     expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
     expect(getLeadSheetFileInput(tree).props.disabled).toBe(true);
+    expect(getClearLeadSheetButton(tree)).toBeUndefined();
   });
 
   it('shows LeadSheet and Melody anchor Applied when flags are true', async () => {
