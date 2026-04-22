@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-21]
+# Composer OS Roadmap [2026-04-22]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -31,9 +31,73 @@
 - **MusicXML as user input for ensembles:** **not supported yet** — ensembles consume **seed + optional chord text** today. Planned future work: **lead-sheet XML → shared `LeadSheet` → quartet / big band** (see **Future → Lead-sheet MusicXML import**).
 - **Song Mode — writers & arrangers:** `core/song-mode/` ships a **typed songwriter + arranger rule catalogue** (registry + resolution + optional **songwriter × arranger** pairing). Full detail under **Past → Songwriters & arrangers**; **Generate UI** still lighter than the engine surface (see **Current** / **Future**).
 
+## Motif Development Plan (Phase 1)
+
+### Motivation
+
+- Motif development is one of the few cross-cutting quality levers that can improve coherence across Song Mode, core composer paths, hybrids, and ensemble realizations.
+- Composer OS already has **Motif Authority V1**, but today it is still narrow and uneven in impact/surfacing.
+- Product direction is intentionally bounded: incremental, inspectable motif governance rather than a broad "motif everywhere" rewrite.
+
+### Phase 1 implementation scope (bounded pilot)
+
+- **Song Mode pilot writers:** `wayne_shorter`, `barry_harris`, `donald_fagen`, `bacharach`.
+- **Hybrid pilot:** melody identity from Wayne Shorter + Barry Harris harmony stack.
+- **Ensemble pilot:** `ecm_chamber`.
+
+### Motif Authority levels
+
+- **Off** — no motif-development guarantee.
+- **Soft** — at least one recognizable core cell should recur with light variation.
+- **Strong** — piece should be built from a small motif set with explicit recurrence/transformation across the form.
+
+### Diagnostics / inspectability targets
+
+- Receipts / `_meta` / run manifests should expose:
+  - `motifAuthorityLevel`
+  - core-cell established/detected flag
+  - recurrence estimate / recurrence summary
+  - transformation summary
+  - dev-facing motif coherence metric
+- If a path cannot produce richer detail yet, summaries should be partial and explicit rather than invented.
+
+### Out of scope for Phase 1
+
+- Universal rollout to all engines/presets in one pass.
+- Altered guitar tuning governance.
+- Full Big Band motif governance.
+- Deep Bartok/Ligeti/Zappa motif system integration.
+- Broad UI redesign beyond minimal dev-facing inspectability.
+
 ---
 
 ## Past (delivered)
+
+### T2.3 — Motif Development Phase 1 pilot slice (2026-04-22)
+
+- Added explicit `motifAuthorityLevel` semantics (`off`/`soft`/`strong`) while keeping existing Motif Authority V1 safety posture feature-flagged.
+- Implemented bounded pilot-path motif inspectability fields (`motifDevelopmentSummary`) on generation metadata, run manifests, and `_meta` output manifests for:
+  - Song Mode pilot writers: Wayne Shorter, Barry Harris, Donald Fagen, Bacharach
+  - Hybrid pilot: Wayne melody identity + Barry harmony stack
+  - ECM Chamber pilot
+- Tightened pilot activation to explicit whitelist context (no broad preset-family unlock).
+- `off` now emits minimal honest summary semantics (no motif-development guarantee) rather than rich motif-development claims.
+- Hybrid `motifLedPrimaryIdentity` now requires minimal recurrence/coherence evidence.
+- Added focused deterministic harness coverage for pilot metadata/manifest assertions (`tests/motifAuthorityPilotSlice.test.ts`).
+
+### T2.2 — Eval diagnostics for riff + duo (`riffEvalDiagnostics` / `duoEvalDiagnostics`) (2026-04-21)
+
+- **Purpose:** Lightweight **symbolic readouts** (interval/contour/rhythm aggregates, riff quality closure row, preset/Wyble/duo-quality snapshots) so repeatability improves without changing generation, scoring exports, or Wyble wiring.
+- **Where:** `engines/composer-os-v2/core/diagnostics/riffEvalDiagnostics.ts`, `duoEvalDiagnostics.ts`; CLIs **`npm run eval:riff-diagnostics`** / **`npm run eval:duo-diagnostics`** under `engines/composer-os-v2`; harness **`tests/evalDiagnosticsHarness.test.ts`** (suite **Eval diagnostics harness (T2.2)**). Duo CLI prints **preset/Wyble classification for all ids**; raw **`song_mode`*** golden snapshots are skipped in this dev CLI (use app Generate for full Song Mode compile).
+- **Docs:** Short note appended to **`docs/dev-notes/short-riff-quality-2026-04-21.md`** pointing at riff CLI + metrics.
+- **Validation:** Same npm **`test:fast`** / **`test:full`** green after add; symbolic metrics complement listening — they do not replace ear checks.
+
+### T2.1 — Wyble / duo family parity (`isGuitarBassDuoFamily`) (2026-04-21)
+
+- **Problem:** `isGuitarBassDuoFamily` only listed the two literal jazz duo preset strings, so **`song_mode`** (and any future `song_mode_*` id) was not treated as the same **guitar + bass** structural family for **portable Wyble** (`wybleVoiceLayoutForPreset` → `WYBLE_ROLE_MAP_DUO_FAMILY`), **Wyble consumption receipts**, `generateComposition` duo-style harmony/chord-diagnostics gating, and other `isGuitarBassDuoFamily` call sites — even though `presets/songModePreset.ts` uses the same two-instrument stack and the app’s Song Mode run often injects `guitar_bass_duo` for the actual `runGoldenPath` call.
+- **Change:** `guitarBassDuoPresetIds.ts` now includes **`isSongModeFamily`** (`song_mode` + `song_mode_*`) inside **`isGuitarBassDuoFamily`**. `duoMusicalQuality` rest-ratio exception uses the same family helper. **No JS mirror** (TypeScript-only module); no new features.
+- **Tests:** `engines/composer-os-v2/tests/guitarBassDuoFamilyParity.test.ts` (harness suite **Guitar–Bass Duo family parity (T2.1)**) + doc note in `docs/wyble-targets/portable_wyble_voice_layout.md`.
+- **Validation:** `npm --prefix engines/composer-os-v2 run test:fast` and `test:full` after this change; desktop `npm --prefix apps/composer-os-desktop run desktop:package-no-bump` (packaging + `start` to `Composer-OS.exe`).
 
 ### Reinforced (2026-04-17 — updated 2026-04-19)
 
@@ -246,6 +310,7 @@
 - **Riff Generator bounded feel slice (phrase closure landing):** complete — `applyLoopClosure` now cadences the final melodic attack to the opening pitch class via nearest in-range target selection (with leap guard against awkward penultimate jumps), giving 4+ bar loops a clearer “landed” ending without changing interfaces. Validation added in `tests/riffGenerator.test.ts` by seeded symbolic first/last guitar pitch-class closure checks.
 - **Riff Generator bounded feel slice (short-riff style separation, Direction B):** complete — short 2-4 bar riff rhythm planning now applies style-biased attack profiles (`neutral` straighter, `scofield` moderate offbeat articulation, `funk` strongest offbeat/anticipation bias), improving perceived style identity without changing riff length or interfaces. Validation added via seeded symbolic tests asserting offbeat-attack ordering (`neutral <= scofield <= funk`) for both 2-bar and 4-bar riffs; see `docs/dev-notes/short-riff-quality-2026-04-21.md`.
   - Next action (no-code): run an ear-only play-test pass across `neutral` / `scofield` / `funk` short riffs and confirm style feel differences are audibly clear without consulting symbolic metrics.
+- **Riff Generator bounded feel slice (Direction A motif development, 2-4 bars):** complete — bars 2 and 4 are now derived as interval-based motif variations of bars 1 and 3 (A1: anchor-relative interval offsets plus one small ±1-2 semitone mutation), producing related-but-not-identical short riff units while preserving style rhythm profiles and phrase closure. Symbolic seeded tests validate bounded similarity (not unrelated, not exact copy) for both 2-bar and 4-bar neutral riffs.
 - **Eval readability pass (cross-mode):** complete — added compact one-line summary helpers for Song Mode and ECM eval outputs, and wired these into existing eval scripts for quick scanability in batch logs.
 - **Song Mode A/B inspection harness v1:** complete — added a deterministic CLI harness that runs small A/B seed sets and prints compact summary rows (section shape + profile/rules + source cues) for post-build inspection.
 - **Longer-horizon items** (Wayne Shorter product integration, ECM/Bacharach/Harris depth, Slonimsky tools, chord UX polish) remain on the roadmap in the sections below; this snapshot does not reprioritize them.
@@ -353,6 +418,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-21].*
+*End of Composer OS Roadmap [2026-04-22].*
 
 

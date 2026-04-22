@@ -21,7 +21,7 @@ Composer OS turns your settings ? **mode** (preset), tempo, harmony, form, and o
 - **Extended form lengths:** 48 and 64 bars are available in Song Mode and Guitar-Bass Duo paths.
 - **All 7 era options now alter harmonic vocabulary** (swing, bebop, cool_jazz, hard_bop, post_bop, fusion, contemporary) via profile bias **and** post-generation **chord-symbol normalization** on the Song Mode hook path (`npm run verify:eras`).
 - **Receipt shows GCE quality score** per generation, and the quality gate runs an automatic candidate retry loop.
-- **Motif Authority V1** (experimental): enable with **`motifAuthorityV1`** in API options or **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (default OFF; scoped presets only).
+- **Motif Development Phase 1** (experimental, bounded): pilot-only motif authority/inspectability for Song Mode pilot writers, the Shorter+Barry hybrid lane, and ECM Chamber (see section below).
 - **Library output:** By default, files go under **Documents ? Mike Composer Files** (override with `COMPOSER_OS_OUTPUT_DIR` if needed).
 - **Outputs browser** and **Diagnostics** in the app; optional **Composer Engines** (Wayne Shorter, Monk, Charlie Parker) on a separate tab.
 - **Big Band / String Quartet:** Full **MusicXML** when realisation and export succeed; otherwise **planning JSON** (see on-screen receipt).
@@ -123,6 +123,15 @@ The **receipt** and the **`_meta` JSON manifest** next to the MusicXML may list 
 **Developers — full Fagen / Song Mode / eval context:** [docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md](docs/FAGEN_SONG_MODE_DEVELOPMENT_BRIEF.md) (engine hooks, diagnostics, `npm run eval:fagen`, baseline modes). Jest `tests/songModeGrooveSoulSurface.test.ts`, `tests/songModeDonaldFagenSurface.test.ts`; must-stay-green scripts unchanged. See also [docs/CHANGELOG.md](docs/CHANGELOG.md) and [docs/COMPOSER_OS_ROADMAP.md](docs/COMPOSER_OS_ROADMAP.md).
 
 **Bacharach (CLI):** `npm run workflow:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-workflow` (A/B vs neutral, receipts, eval, optional rebuild); `npm run eval:bacharach -- --count 5 --seed-start 97000 --out output/bacharach-eval` (eval-only batch); `npm run mine:bacharach` (local MXL/MusicXML corpus stats). **`eval:bacharach`** scoring is **diagnostic only**. Defaults and notes: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (developers subsection).
+
+---
+
+## Motif Development Phase 1 (bounded pilot)
+
+- **Scope:** Song Mode pilot writers (`wayne_shorter`, `barry_harris`, `donald_fagen`, `bacharach`), hybrid (`wayne_shorter` melody identity + `barry_harris` harmony stack), and `ecm_chamber`.
+- **Control:** `motifAuthorityLevel = off | soft | strong` (legacy `motifAuthorityV1: true` maps to `soft` only when the run is in the pilot scope).
+- **Behaviour:** `off` = no motif-development guarantee and minimal motif summary; `soft`/`strong` = progressively stronger recurrence/transform evidence on pilot paths only.
+- **Inspectability:** motif fields (`motifAuthorityLevel`, `motifDevelopmentSummary`) appear on receipts / `_meta` / run manifest for supported pilot runs.
 
 ---
 

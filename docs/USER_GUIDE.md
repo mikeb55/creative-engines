@@ -58,9 +58,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **fusion:** modal, sus colours
 - **contemporary:** most permissive palette
 
-### Experimental features
+### Motif Development (Phase 1)
 
-- **Motif Authority V1:** set environment variable **`COMPOSER_OS_MOTIF_AUTHORITY_V1=1`** (or pass **`motifAuthorityV1: true`** where the API supports it) to enable experimental motif fingerprinting and return-phrase refinement. **Default OFF.** Intended for diagnostics and controlled A/B; not required for normal composing.
+- **Supported paths only:** Song Mode pilot writers (`wayne_shorter`, `barry_harris`, `donald_fagen`, `bacharach`), hybrid (Wayne melody identity + Barry harmony stack), and `ecm_chamber`.
+- **How to control it:** pass `motifAuthorityLevel` as `off`, `soft`, or `strong` on supported routes. Legacy `motifAuthorityV1: true` maps to `soft` only when the run is in this pilot scope.
+- **Practical meaning:** `off` = no motif-development guarantee and minimal motif summary; `soft`/`strong` = increasing recurrence/transform evidence for pilot runs.
+- **Inspectability fields:** receipts / `_meta` / run manifest may include `motifAuthorityLevel` and `motifDevelopmentSummary` on supported pilot runs.
 
 ### Developer checks (engine)
 

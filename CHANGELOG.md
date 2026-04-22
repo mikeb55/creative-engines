@@ -1,3 +1,15 @@
+## [2026-04-22] Docs: Motif Development Phase 1 release snapshot
+
+- Added/updated documentation for **Motif Development Phase 1**:
+  - explicit `motifAuthorityLevel` (`off` / `soft` / `strong`) for the bounded pilot routes:
+    - Song Mode pilot writers: `wayne_shorter`, `barry_harris`, `donald_fagen`, `bacharach`
+    - hybrid pilot: Wayne Shorter melody identity + Barry Harris harmony stack
+    - ensemble pilot: `ecm_chamber`
+  - pilot-only motif summaries and coherence fields on receipts / `_meta` / run manifest surfaces
+  - deterministic tests and tight whitelist gating for pilot activation
+  - honest `off` semantics (no motif-development guarantee; minimal summary only)
+  - hybrid `motifLedPrimaryIdentity` claim requires minimal recurrence/coherence evidence
+
 ## [2026-04-18] Composer OS — Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
 
 - Developer automation: same-seed Bacharach vs neutral Song Mode batch, receipt/`_meta` checks, GCE-style diagnostic eval (not a gate), optional desktop rebuild. See **`docs/CHANGELOG.md`** and **`docs/USER_GUIDE.md`**.
