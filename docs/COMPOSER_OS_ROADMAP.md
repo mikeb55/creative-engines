@@ -250,7 +250,7 @@
 2. **Stage 2 — Add `ImportHarmonyMode` plumbing through request/context/manifest, zero output change.**  
    **Status:** **implemented / in progress**
 3. **Stage 3 — Activate `lock_harmony` for Song Mode only.**  
-   **Status:** planned
+   **Status:** **implemented / in progress**
 4. **Stage 4 — Make `free_harmony` the explicit default/current path.**  
    **Status:** planned
 5. **Stage 5 — Add conservative `blend_harmony` with bounded control (e.g. `harmonyBlend`).**  
@@ -264,9 +264,11 @@
 
 - **Stage 1 implemented:** parse/store `ImportedHarmonyTimeline` only (storage-only; no harmony-generation consumption yet).
 - **Stage 2 implemented:** `ImportHarmonyMode` and `harmonyBlend` plumbing only (request → context → manifest telemetry).
-- **Generation still uses existing harmony behavior:** new timeline + mode fields are prep for future `lock_harmony` / `blend_harmony`.
-- **No code implementation approved beyond Stage 2.**
-- **Next action:** review and approve **Stage 3** (`lock_harmony` Song Mode activation) before implementation.
+- **Stage 3 implemented/in progress (Song Mode only):** when `importHarmonyMode === 'lock_harmony'` and imported timeline is usable, Song Mode routes into locked harmony from timeline-derived bars.
+- **Explicit fallback retained:** if timeline is missing/empty/unusable, Song Mode falls back to existing behavior and records fallback telemetry.
+- **Guardrails unchanged:** `free_harmony` remains the default path; `blend_harmony` is still inactive in behavior.
+- **No code implementation approved beyond Stage 3.**
+- **Next action:** plan/approve Stage 4 (`free_harmony` explicit default/current path documentation hardening) before implementation.
 
 ---
 
