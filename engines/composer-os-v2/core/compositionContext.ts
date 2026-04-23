@@ -65,6 +65,8 @@ export interface HarmonyPipelineStageRecord {
   detail: string;
 }
 
+export type ImportHarmonyMode = 'free_harmony' | 'lock_harmony' | 'blend_harmony';
+
 /** Generation metadata. */
 export interface GenerationMetadata {
   generatedAt: string;
@@ -245,13 +247,21 @@ export interface GenerationMetadata {
   /** Song Mode: section-aware behaviour declarations (Fagen / Bacharach / Sophisticated Pop / future slices). */
   songModeSectionBehaviourDescriptors?: SongModeSectionBehaviourDescriptor[];
   /** Song Mode LeadSheet pilot: compact per-bar melody anchors (Donald Fagen-only input slice). */
-  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number }>;
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number; connectionHint?: number }>;
   /** Blend factor echoed from request when LeadSheet expression shaping ran (0–1). */
   songModeLeadSheetPerformanceBlend?: number;
   /** Song Mode LeadSheet pilot: LeadSheet input drove locked harmony in this run. */
   songModeLeadSheetInputApplied?: boolean;
   /** Song Mode LeadSheet pilot: first anchor was applied to guitar melody start. */
   songModeLeadSheetAnchorStartApplied?: boolean;
+  /** Normalized imported-expression strength after blend mapping (0–1), shared across supported lead-sheet routes. */
+  songModeLeadSheetExpressionStrength?: number;
+  /** Stage 2 harmony-import mode telemetry (metadata-only in this stage). */
+  importHarmonyMode?: ImportHarmonyMode;
+  /** Stage 2 source tag for API-boundary mode normalization. */
+  importHarmonyModeSource?: 'defaulted' | 'explicit';
+  /** Stage 2 bounded harmony blend echo (telemetry-only in this stage). */
+  harmonyBlendRaw?: number;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /**

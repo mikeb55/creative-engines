@@ -3,10 +3,11 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
-import type { GenerationMetadata } from '../core/compositionContext';
+import type { GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 
 export type { StyleProfile };
+export type { ImportHarmonyMode };
 
 export interface AppPreset {
   id: string;
@@ -142,13 +143,17 @@ export interface GenerateRequest {
   formId?: string;
   /** Song Mode: after duo MusicXML, run Python bridge for vocal lead sheet (optional). */
   includeVocalLeadSheet?: boolean;
-  /** Song Mode (Donald Fagen pilot): optional MusicXML lead-sheet input. */
+  /** MusicXML lead-sheet input: Song Mode harmony+expression route, plus guarded phrase-expression pilot for selected non-Song presets. */
   songModeLeadSheetMusicXml?: string;
   /**
    * Song Mode LeadSheet import: how strongly to honour imported articulations/dynamics vs neutral defaults (0–1).
    * Omitted → engine default (~0.55).
    */
   leadSheetPerformanceBlend?: number;
+  /** Stage 2: metadata-only harmony import mode (no routing changes in this stage). */
+  importHarmonyMode?: ImportHarmonyMode;
+  /** Stage 2: metadata-only reharm blend control, stored for telemetry only. */
+  harmonyBlend?: number;
 }
 
 export interface ValidationSummary {

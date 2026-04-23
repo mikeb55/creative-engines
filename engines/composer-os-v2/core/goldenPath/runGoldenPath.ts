@@ -3,7 +3,7 @@
  * preset → feel → section roles → density → register map → behaviours → score → integrity → export → validation → manifest
  */
 
-import type { CompositionContext, GenerationMetadata, HarmonyPipelineStage } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, HarmonyPipelineStage, ImportHarmonyMode } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -943,9 +943,13 @@ export interface RunGoldenPathOptions {
   /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
   primarySongwriterStyle?: string;
   /** Song Mode LeadSheet pilot: compact per-bar melody anchors from imported lead sheet. */
-  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number }>;
+  songModeLeadSheetMelodyAnchors?: Array<{ bar: number; midi: number; velocityHint?: number; connectionHint?: number }>;
   /** Imported LeadSheet expression shaping vs engine defaults (0–1); omitted uses engine default blend. */
   leadSheetPerformanceBlend?: number;
+  /** Stage 2: normalized mode echo for imported harmony routing (metadata-only in this stage). */
+  importHarmonyMode?: ImportHarmonyMode;
+  /** Stage 2: bounded reharm blend echo (metadata-only in this stage). */
+  harmonyBlend?: number;
   /** Song Mode: optional secondary songwriter style key (for inspectability metadata). */
   secondarySongwriterStyle?: string;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -1025,6 +1029,15 @@ function normalizeEraId(era: string | undefined): EraId | null {
     return k;
   }
   return null;
+}
+
+/**
+ * Shared blend mapping for imported phrase-expression routes.
+ * Keeps low blend audible while leaving room for stronger high-blend pull.
+ */
+function resolveLeadSheetExpressionStrengthFromBlend(blendRaw: number | undefined): number {
+  const clamped = typeof blendRaw === 'number' && Number.isFinite(blendRaw) ? Math.min(1, Math.max(0, blendRaw)) : 0.55;
+  return Math.min(1, Math.max(0, 0.15 + 0.85 * clamped));
 }
 
 /** Offsets tried by the duo lock (requested seed + each offset). */
@@ -1380,6 +1393,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       songModeRhythmStrength: options.creativeControlLevel,
     };
   }
+  if (options?.importHarmonyMode !== undefined || options?.harmonyBlend !== undefined) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      importHarmonyMode: options.importHarmonyMode,
+      harmonyBlendRaw:
+        typeof options.harmonyBlend === 'number' && Number.isFinite(options.harmonyBlend) ? options.harmonyBlend : undefined,
+    };
+  }
   if (options?.songModeHookFirstIdentity) {
     /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
     const styleProfileResolved: StyleProfile = options.styleProfile ?? 'STYLE_ECM';
@@ -1401,6 +1422,23 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? options.leadSheetPerformanceBlend
           : undefined,
+      songModeLeadSheetExpressionStrength:
+        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
+          ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
+          : undefined,
+    };
+  }
+  const importExpressionPresetEnabled =
+    context.presetId === 'guitar_bass_duo' ||
+    context.presetId === 'guitar_bass_duo_single_line' ||
+    context.presetId === 'ecm_chamber';
+  if (importExpressionPresetEnabled && options?.songModeLeadSheetMelodyAnchors?.length) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      songModeLeadSheetMelodyAnchors: options.songModeLeadSheetMelodyAnchors,
+      songModeLeadSheetInputApplied: true,
+      songModeLeadSheetPerformanceBlend: options.leadSheetPerformanceBlend,
+      songModeLeadSheetExpressionStrength: resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend),
     };
   }
   if (options?.songModeHookFirstIdentity && options?.primarySongwriterStyle) {
@@ -1886,6 +1924,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     },
     songModeLeadSheetInputApplied: appliedContext.generationMetadata.songModeLeadSheetInputApplied,
     songModeLeadSheetAnchorStartApplied: appliedContext.generationMetadata.songModeLeadSheetAnchorStartApplied,
+    songModeLeadSheetExpressionStrength: appliedContext.generationMetadata.songModeLeadSheetExpressionStrength,
+    importHarmonyMode: appliedContext.generationMetadata.importHarmonyMode,
+    importHarmonyModeSource: appliedContext.generationMetadata.importHarmonyModeSource,
+    harmonyBlendRaw: appliedContext.generationMetadata.harmonyBlendRaw,
     motifAuthorityLevel: appliedContext.generationMetadata.motifAuthorityLevel,
     motifDevelopmentSummary: appliedContext.generationMetadata.motifDevelopmentSummary,
   });

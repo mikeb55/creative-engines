@@ -119,5 +119,40 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
     }
   }
 
+  const dir3 = fs.mkdtempSync(path.join(os.tmpdir(), 'song-mode-harmony-meta-'));
+  try {
+    const r = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 93003,
+        title: 'Song Mode harmony metadata',
+        importHarmonyMode: 'blend_harmony',
+        harmonyBlend: 1.4,
+      },
+      dir3
+    );
+    const ok3 =
+      r.success === true &&
+      r.runManifest?.importHarmonyMode === 'blend_harmony' &&
+      r.runManifest?.importHarmonyModeSource === 'explicit' &&
+      r.runManifest?.harmonyBlendRaw === 1;
+    out.push({
+      ok: ok3,
+      name: 'Song Mode: import harmony mode + harmonyBlendRaw propagate to run manifest',
+    });
+  } catch (e) {
+    out.push({
+      ok: false,
+      name: `Song Mode harmony metadata: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  } finally {
+    try {
+      fs.rmSync(dir3, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+
   return out;
 }

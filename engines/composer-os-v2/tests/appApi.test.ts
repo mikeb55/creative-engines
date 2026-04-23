@@ -274,6 +274,31 @@ export function runAppApiTests(): TestResult[] {
   }
 
   try {
+    const baseReq = {
+      presetId: 'guitar_bass_duo',
+      styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+      seed: 52_024,
+    } as const;
+    const omitted = generateComposition(baseReq, TEST_GBD_DIR);
+    const explicit = generateComposition({ ...baseReq, importHarmonyMode: 'free_harmony' }, TEST_GBD_DIR);
+    const invalid = generateComposition(
+      { ...(baseReq as unknown as Record<string, unknown>), importHarmonyMode: 'bad_mode' } as any,
+      TEST_GBD_DIR
+    );
+    const blend = generateComposition({ ...baseReq, harmonyBlend: 2.5 }, TEST_GBD_DIR);
+    if (omitted.runManifest?.importHarmonyMode !== 'free_harmony') fail('Import harmony mode: omitted defaults to free');
+    else if (omitted.runManifest?.importHarmonyModeSource !== 'defaulted') fail('Import harmony mode: omitted source');
+    else if (explicit.runManifest?.importHarmonyMode !== 'free_harmony') fail('Import harmony mode: explicit free');
+    else if (explicit.runManifest?.importHarmonyModeSource !== 'explicit') fail('Import harmony mode: explicit source');
+    else if (invalid.runManifest?.importHarmonyMode !== 'free_harmony') fail('Import harmony mode: invalid sanitizes');
+    else if (invalid.runManifest?.importHarmonyModeSource !== 'explicit') fail('Import harmony mode: invalid source explicit');
+    else if (blend.runManifest?.harmonyBlendRaw !== 1) fail('Import harmony mode: blend clamps and stores');
+    else pass('Import harmony mode: Stage 2 metadata plumbing');
+  } catch (e) {
+    fail(`Import harmony mode plumbing: ${e}`);
+  }
+
+  try {
     const msg = friendlyGenerateError(new Error('EACCES: permission denied'));
     if (msg.length < 10 || !msg.toLowerCase().includes('folder')) fail('Friendly error: message');
     else pass('Friendly error messages');

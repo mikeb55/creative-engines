@@ -84,6 +84,10 @@ export interface CreateRunManifestInput {
   songModeProfileRuleDiagnostics?: RunManifest['songModeProfileRuleDiagnostics'];
   songModeLeadSheetInputApplied?: RunManifest['songModeLeadSheetInputApplied'];
   songModeLeadSheetAnchorStartApplied?: RunManifest['songModeLeadSheetAnchorStartApplied'];
+  songModeLeadSheetExpressionStrength?: RunManifest['songModeLeadSheetExpressionStrength'];
+  importHarmonyMode?: RunManifest['importHarmonyMode'];
+  importHarmonyModeSource?: RunManifest['importHarmonyModeSource'];
+  harmonyBlendRaw?: RunManifest['harmonyBlendRaw'];
   motifAuthorityLevel?: RunManifest['motifAuthorityLevel'];
   motifDevelopmentSummary?: RunManifest['motifDevelopmentSummary'];
 }
@@ -163,6 +167,10 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     songModeProfileRuleDiagnostics: input.songModeProfileRuleDiagnostics,
     songModeLeadSheetInputApplied: input.songModeLeadSheetInputApplied,
     songModeLeadSheetAnchorStartApplied: input.songModeLeadSheetAnchorStartApplied,
+    songModeLeadSheetExpressionStrength: input.songModeLeadSheetExpressionStrength,
+    importHarmonyMode: input.importHarmonyMode,
+    importHarmonyModeSource: input.importHarmonyModeSource,
+    harmonyBlendRaw: input.harmonyBlendRaw,
     motifAuthorityLevel: input.motifAuthorityLevel,
     motifDevelopmentSummary: input.motifDevelopmentSummary,
   };

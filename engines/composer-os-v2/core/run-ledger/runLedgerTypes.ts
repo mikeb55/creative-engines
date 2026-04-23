@@ -9,6 +9,7 @@ import type {
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
 import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
+import type { ImportHarmonyMode } from '../compositionContext';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -141,6 +142,14 @@ export interface RunManifest {
   songModeLeadSheetInputApplied?: boolean;
   /** Song Mode LeadSheet pilot: first melody anchor was applied to guitar bar 1. */
   songModeLeadSheetAnchorStartApplied?: boolean;
+  /** Normalized imported-expression strength after blend mapping (0–1). */
+  songModeLeadSheetExpressionStrength?: number;
+  /** Stage 2: normalized import harmony mode telemetry. */
+  importHarmonyMode?: ImportHarmonyMode;
+  /** Stage 2: origin of mode value (`defaulted` at boundary vs user explicit). */
+  importHarmonyModeSource?: 'defaulted' | 'explicit';
+  /** Stage 2: bounded blend echo (metadata-only in this stage). */
+  harmonyBlendRaw?: number;
   motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
   motifDevelopmentSummary?: MotifDevelopmentSummary;
 }

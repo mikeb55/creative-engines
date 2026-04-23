@@ -2,7 +2,7 @@
  * Composer OS V2 — App API: generate composition
  */
 
-import type { GenerateRequest, StyleProfile } from './appApiTypes';
+import type { GenerateRequest, ImportHarmonyMode, StyleProfile } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
@@ -11,6 +11,7 @@ import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/valid
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
+import { extractLeadSheetMelodyAnchorsFromMusicXml } from '../core/song-mode/songModeLeadSheetAdapter';
 import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import * as fs from 'fs';
@@ -23,6 +24,19 @@ import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline'
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
+
+function isImportExpressionPilotPreset(presetId: string): boolean {
+  return presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' || presetId === 'ecm_chamber';
+}
+
+function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {
+  return input === 'lock_harmony' || input === 'blend_harmony' || input === 'free_harmony' ? input : 'free_harmony';
+}
+
+function normalizeHarmonyBlendRaw(input: unknown): number | undefined {
+  if (typeof input !== 'number' || !Number.isFinite(input)) return undefined;
+  return Math.min(1, Math.max(0, input));
+}
 
 export interface GenerateResult {
   success: boolean;
@@ -112,6 +126,10 @@ export interface GenerateResult {
     songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
     songModeLeadSheetInputApplied?: GenerationMetadata['songModeLeadSheetInputApplied'];
     songModeLeadSheetAnchorStartApplied?: GenerationMetadata['songModeLeadSheetAnchorStartApplied'];
+    songModeLeadSheetExpressionStrength?: GenerationMetadata['songModeLeadSheetExpressionStrength'];
+    importHarmonyMode?: GenerationMetadata['importHarmonyMode'];
+    importHarmonyModeSource?: GenerationMetadata['importHarmonyModeSource'];
+    harmonyBlendRaw?: GenerationMetadata['harmonyBlendRaw'];
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   };
   /** Resolved title used for the score (user or default). */
@@ -133,6 +151,8 @@ export interface GenerateResult {
     longFormEnabled?: boolean;
     styleProfile?: StyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
+    importHarmonyMode?: ImportHarmonyMode;
+    harmonyBlend?: number;
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -164,6 +184,21 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   const duo = isGuitarBassDuoFamily(req.presetId);
   const chordText =
     duo && typeof req.chordProgressionText === 'string' ? req.chordProgressionText : undefined;
+  const importLeadSheetXml =
+    typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
+  const importExpressionEnabled = isImportExpressionPilotPreset(req.presetId) && importLeadSheetXml.length > 0;
+  const totalBars = req.totalBars ?? (req.presetId === 'ecm_chamber' ? 32 : 8);
+  const adaptedImport =
+    importExpressionEnabled
+      ? extractLeadSheetMelodyAnchorsFromMusicXml(importLeadSheetXml, totalBars, {
+          leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
+        })
+      : undefined;
+  const importedAnchors = adaptedImport?.ok ? adaptedImport.melodyAnchors : undefined;
+  const modeExplicitlyProvided = req.importHarmonyMode !== undefined;
+  const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
+  const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
+  const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
   const result = runGoldenPath(effectiveSeed, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: req.presetId,
@@ -182,8 +217,20 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    songModeLeadSheetMelodyAnchors: importedAnchors,
+    leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
+    importHarmonyMode: normalizedImportHarmonyMode,
+    harmonyBlend: harmonyBlendRaw,
     ...(req.formId ? { formId: req.formId as FormId } : {}),
   });
+  result.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
+  result.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
+  result.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  if (result.runManifest) {
+    result.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
+    result.runManifest.importHarmonyModeSource = importHarmonyModeSource;
+    result.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+  }
 
   let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;
   const parsedBarsForDx = result.context?.generationMetadata.parsedCustomProgressionBars;
@@ -287,6 +334,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   const allErrors =
     diskHarmonyTruthErrors.length > 0 ? [...result.errors, ...diskHarmonyTruthErrors] : result.errors;
+  const importWarnings = adaptedImport?.warnings ?? [];
+  const allWarnings = [...(result.songModePhraseWarnings ?? []), ...importWarnings];
   const validation = {
     integrityPassed: result.integrityPassed,
     behaviourGatesPassed: result.behaviourGatesPassed,
@@ -298,7 +347,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     sibeliusSafe: result.sibeliusSafe,
     readiness: result.readiness,
     errors: allErrors,
-    warnings: result.songModePhraseWarnings?.length ? result.songModePhraseWarnings : undefined,
+    warnings: allWarnings.length ? allWarnings : undefined,
   };
 
   const scoreTitleResolved = result.runManifest?.scoreTitle;
@@ -375,6 +424,12 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           songModeSectionShapingDiagnostics: result.runManifest.songModeSectionShapingDiagnostics,
           songModeSectionBehaviourDescriptors: result.runManifest.songModeSectionBehaviourDescriptors,
           songModeProfileRuleDiagnostics: result.runManifest.songModeProfileRuleDiagnostics,
+          songModeLeadSheetInputApplied: result.runManifest.songModeLeadSheetInputApplied,
+          songModeLeadSheetAnchorStartApplied: result.runManifest.songModeLeadSheetAnchorStartApplied,
+          songModeLeadSheetExpressionStrength: result.runManifest.songModeLeadSheetExpressionStrength,
+          importHarmonyMode: result.runManifest.importHarmonyMode,
+          importHarmonyModeSource: result.runManifest.importHarmonyModeSource,
+          harmonyBlendRaw: result.runManifest.harmonyBlendRaw,
           motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
         }
       : undefined,
@@ -394,6 +449,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       longFormEnabled: req.longFormEnabled,
       styleProfile: req.styleProfile,
       c4Strength: req.c4Strength,
+      importHarmonyMode: normalizedImportHarmonyMode,
+      harmonyBlend: harmonyBlendRaw,
     },
     voice2PolyphonyDiagnostics: result.context.generationMetadata.voice2PolyphonyDiagnostics,
   };

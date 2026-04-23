@@ -2,6 +2,10 @@
  * Pipeline truth: custom 8-bar progression end-to-end (input → score → written MusicXML).
  */
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { generateComposition } from '../app-api/generateComposition';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { pipelineTruthAllPassed } from '../core/score-integrity/pipelineTruthGates';
 
@@ -42,6 +46,32 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
           r.truthReport.scoreStage === 'pass' &&
           r.truthReport.exportStage === 'pass'
         );
+      })(),
+    },
+    {
+      name: 'Pipeline truth: omitted vs explicit free_harmony yields identical musical output',
+      ok: (() => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pipeline-truth-harmony-mode-'));
+        try {
+          const base = {
+            presetId: 'guitar_bass_duo',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 2026,
+          } as const;
+          const a = generateComposition(base, dir);
+          const b = generateComposition({ ...base, importHarmonyMode: 'free_harmony' }, dir);
+          const onlySourceDiff =
+            a.runManifest?.importHarmonyMode === b.runManifest?.importHarmonyMode &&
+            a.runManifest?.importHarmonyModeSource === 'defaulted' &&
+            b.runManifest?.importHarmonyModeSource === 'explicit';
+          return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
+        } finally {
+          try {
+            fs.rmSync(dir, { recursive: true, force: true });
+          } catch {
+            /* ignore */
+          }
+        }
       })(),
     },
   ];

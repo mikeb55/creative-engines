@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { GenerateRequest } from './appApiTypes';
+import type { GenerateRequest, ImportHarmonyMode } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
@@ -17,7 +17,10 @@ import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisat
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
-import { adaptLeadSheetMusicXmlForSongMode } from '../core/song-mode/songModeLeadSheetAdapter';
+import {
+  adaptLeadSheetMusicXmlForSongMode,
+  extractLeadSheetMelodyAnchorsFromMusicXml,
+} from '../core/song-mode/songModeLeadSheetAdapter';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
@@ -118,6 +121,8 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     ensembleConfigId: req.ensembleConfigId,
     primarySongwriterStyle: req.primarySongwriterStyle,
     harmonyMode: req.harmonyMode,
+    importHarmonyMode: req.importHarmonyMode,
+    harmonyBlend: typeof req.harmonyBlend === 'number' && Number.isFinite(req.harmonyBlend) ? req.harmonyBlend : undefined,
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
@@ -130,6 +135,15 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
         }
       : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
+}
+
+function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {
+  return input === 'lock_harmony' || input === 'blend_harmony' || input === 'free_harmony' ? input : 'free_harmony';
+}
+
+function normalizeHarmonyBlendRaw(input: unknown): number | undefined {
+  if (typeof input !== 'number' || !Number.isFinite(input)) return undefined;
+  return Math.min(1, Math.max(0, input));
 }
 
 function parseBigBandEraFromPairing(era?: string): BigBandEraId | undefined {
@@ -310,12 +324,25 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     typeof req.leadSheetPerformanceBlend === 'number' && Number.isFinite(req.leadSheetPerformanceBlend)
       ? Math.min(1, Math.max(0, req.leadSheetPerformanceBlend))
       : undefined;
+  const modeExplicitlyProvided = req.importHarmonyMode !== undefined;
+  const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
+  const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
+  const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
   const leadSheetAdapted =
     isLeadSheetPhase1WriterRoute && leadSheetXmlInput.length > 0
       ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
           leadSheetPerformanceBlend: perfBlendRaw,
         })
       : undefined;
+  const leadSheetAnchorsOnly =
+    isLeadSheetPhase1WriterRoute && leadSheetXmlInput.length > 0
+      ? extractLeadSheetMelodyAnchorsFromMusicXml(leadSheetXmlInput, barTarget, {
+          leadSheetPerformanceBlend: perfBlendRaw,
+        })
+      : undefined;
+  const leadSheetMelodyAnchors = leadSheetAdapted?.melodyAnchors?.length
+    ? leadSheetAdapted.melodyAnchors
+    : leadSheetAnchorsOnly?.melodyAnchors;
   const useLeadSheetHarmony = leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
   if (leadSheetAdapted && !leadSheetAdapted.ok && leadSheetAdapted.errors.length > 0) {
     console.warn('[Song Mode LeadSheet] Phase 1 writer input ignored:', leadSheetAdapted.errors.join(' | '));
@@ -492,8 +519,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
     primarySongwriterStyle: req.primarySongwriterStyle,
-    songModeLeadSheetMelodyAnchors: useLeadSheetHarmony ? leadSheetAdapted?.melodyAnchors : undefined,
+    songModeLeadSheetMelodyAnchors: leadSheetMelodyAnchors,
     leadSheetPerformanceBlend: perfBlendRaw,
+    importHarmonyMode: normalizedImportHarmonyMode,
+    harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
     era: req.stylePairing?.era ?? undefined,
@@ -508,6 +537,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+  gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
+  gp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
+  gp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  gp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
+  gp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
+  gp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
   const resolvedSongModeStyle = sm.compiledSong.songwriting?.resolvedStyle;
   if (resolvedSongModeStyle) {
     gp.context.generationMetadata.songModeProfileRuleDiagnostics = {
@@ -539,6 +574,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       for (let i = 0; i < GCE_GATE_MAX_RETRIES; i++) {
         const retrySeed = effectiveSeed + GCE_RETRY_SEED_OFFSETS[i]!;
         const retryGp = runGoldenPath(retrySeed, songModeGoldenPathOptions);
+        retryGp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
+        retryGp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
+        retryGp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+        retryGp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
+        retryGp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
+        retryGp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
         if (retryGp.xml && retryGp.score) {
           const retryGce = scoreGoldenPathResultForGce(retryGp.score, retryGp.context);
           if (retryGce.overallScore > bestGceScore) {
@@ -806,6 +847,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           songModeProfileRuleDiagnostics: gp.runManifest.songModeProfileRuleDiagnostics,
           songModeLeadSheetInputApplied: gp.runManifest.songModeLeadSheetInputApplied,
           songModeLeadSheetAnchorStartApplied: gp.runManifest.songModeLeadSheetAnchorStartApplied,
+          songModeLeadSheetExpressionStrength: gp.runManifest.songModeLeadSheetExpressionStrength,
+          importHarmonyMode: gp.runManifest.importHarmonyMode,
+          importHarmonyModeSource: gp.runManifest.importHarmonyModeSource,
+          harmonyBlendRaw: gp.runManifest.harmonyBlendRaw,
           motifDevelopmentSummary: gp.runManifest.motifDevelopmentSummary,
         }
       : undefined,
