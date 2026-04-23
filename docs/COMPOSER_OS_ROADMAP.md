@@ -246,9 +246,9 @@
 ### Canonical 7-stage roadmap
 
 1. **Stage 1 — Parse/store MusicXML `<harmony>` into typed timeline, zero output change.**  
-   **Status:** **implemented**
+   **Status:** **implemented / in progress**
 2. **Stage 2 — Add `ImportHarmonyMode` plumbing through request/context/manifest, zero output change.**  
-   **Status:** **approved / ready**
+   **Status:** **implemented / in progress**
 3. **Stage 3 — Activate `lock_harmony` for Song Mode only.**  
    **Status:** planned
 4. **Stage 4 — Make `free_harmony` the explicit default/current path.**  
@@ -263,9 +263,10 @@
 ### Current implementation status
 
 - **Stage 1 implemented:** parse/store `ImportedHarmonyTimeline` only (storage-only; no harmony-generation consumption yet).
-- **Stage 2 concept finalized:** `ImportHarmonyMode` plumbing only.
+- **Stage 2 implemented:** `ImportHarmonyMode` and `harmonyBlend` plumbing only (request → context → manifest telemetry).
+- **Generation still uses existing harmony behavior:** new timeline + mode fields are prep for future `lock_harmony` / `blend_harmony`.
 - **No code implementation approved beyond Stage 2.**
-- **Next action:** implement **Stage 2** only after approval confirmation.
+- **Next action:** review and approve **Stage 3** (`lock_harmony` Song Mode activation) before implementation.
 
 ---
 

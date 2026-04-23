@@ -1,3 +1,7 @@
+## Unreleased
+
+- Add storage-only `ImportedHarmonyTimeline` for MusicXML `<harmony>` and `ImportHarmonyMode` / `harmonyBlend` plumbing (no change to harmony output yet).
+
 ## [2026-04-23] Stage 1 — ImportedHarmonyTimeline (MusicXML harmony storage-only)
 
 - Added storage-only `ImportedHarmonyTimeline` parsing for MusicXML `<harmony>` in lead-sheet import.
