@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Add storage-only `ImportedHarmonyTimeline` for MusicXML `<harmony>` and `ImportHarmonyMode` / `harmonyBlend` plumbing (no change to harmony output yet).
+- Stage 3: activate `lock_harmony` for Song Mode only using timeline-derived locked bars, with explicit fallback telemetry (`importHarmonyLockApplied`, fallback reason, locked bar count); `free_harmony` remains default and `blend_harmony` remains inactive.
 
 ## [2026-04-23] Stage 1 — ImportedHarmonyTimeline (MusicXML harmony storage-only)
 
