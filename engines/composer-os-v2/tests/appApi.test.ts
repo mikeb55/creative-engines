@@ -293,7 +293,11 @@ export function runAppApiTests(): TestResult[] {
     else if (invalid.runManifest?.importHarmonyMode !== 'free_harmony') fail('Import harmony mode: invalid sanitizes');
     else if (invalid.runManifest?.importHarmonyModeSource !== 'explicit') fail('Import harmony mode: invalid source explicit');
     else if (blend.runManifest?.harmonyBlendRaw !== 1) fail('Import harmony mode: blend clamps and stores');
-    else pass('Import harmony mode: Stage 2 metadata plumbing');
+    else if (omitted.runManifest?.importHarmonyPolicyVersion !== 2) fail('Import harmony policy: omitted → v2');
+    else if (explicit.runManifest?.importHarmonyPolicyVersion !== 2) fail('Import harmony policy: explicit free → v2');
+    else if (invalid.runManifest?.importHarmonyPolicyVersion !== 2) fail('Import harmony policy: invalid → v2');
+    else if (blend.runManifest?.importHarmonyPolicyVersion !== 2) fail('Import harmony policy: blend clamp run → v2');
+    else pass('Import harmony mode: Stage 2 + Stage 4 metadata plumbing');
   } catch (e) {
     fail(`Import harmony mode plumbing: ${e}`);
   }

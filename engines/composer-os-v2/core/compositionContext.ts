@@ -66,6 +66,7 @@ export interface HarmonyPipelineStageRecord {
 }
 
 export type ImportHarmonyMode = 'free_harmony' | 'lock_harmony' | 'blend_harmony';
+
 export type ImportHarmonyLockFallbackReason =
   | 'mode_not_lock'
   | 'no_musicxml_input'
@@ -270,6 +271,8 @@ export interface GenerationMetadata {
   importHarmonyModeSource?: 'defaulted' | 'explicit';
   /** Stage 2 bounded harmony blend echo (telemetry-only in this stage). */
   harmonyBlendRaw?: number;
+  /** Stage 4: import-harmony API/manifest contract version when telemetry is written (see `importHarmonyPolicy.ts`). */
+  importHarmonyPolicyVersion?: number;
   /** Stage 3: true when Song Mode lock_harmony path consumed timeline-derived bars. */
   importHarmonyLockApplied?: boolean;
   /** Stage 3: fallback reason when lock_harmony was requested but not applied. */

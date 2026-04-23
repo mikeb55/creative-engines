@@ -80,7 +80,8 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
       result.productKind === 'musicxml' &&
       !parseErr &&
       !!result.validation?.strictBarMathPassed &&
-      !!result.validation?.exportIntegrityPassed;
+      !!result.validation?.exportIntegrityPassed &&
+      result.runManifest?.importHarmonyPolicyVersion === 2;
     out.push({
       ok,
       name: 'Song Mode runAppGeneration writes .musicxml and passes duo validation gates',
@@ -174,7 +175,8 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
       r.success === true &&
       r.runManifest?.importHarmonyMode === 'blend_harmony' &&
       r.runManifest?.importHarmonyModeSource === 'explicit' &&
-      r.runManifest?.harmonyBlendRaw === 1;
+      r.runManifest?.harmonyBlendRaw === 1 &&
+      r.runManifest?.importHarmonyPolicyVersion === 2;
     out.push({
       ok: ok3,
       name: 'Song Mode: import harmony mode + harmonyBlendRaw propagate to run manifest',
@@ -214,7 +216,8 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
         expectedFirstEight.every((ch, idx) => normalizeChordToken(harm.get(idx + 1) ?? '') === normalizeChordToken(ch)) &&
         r.runManifest?.importHarmonyLockApplied === true &&
         (r.runManifest?.importHarmonyLockedBarsCount ?? 0) > 0 &&
-        r.runManifest?.importHarmonyLockFallbackReason === undefined;
+        r.runManifest?.importHarmonyLockFallbackReason === undefined &&
+        r.runManifest?.importHarmonyPolicyVersion === 2;
     }
     out.push({
       ok: ok4,
@@ -250,7 +253,9 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
       fallback.success === true &&
       baseline.xml === fallback.xml &&
       fallback.runManifest?.importHarmonyLockApplied === false &&
-      typeof fallback.runManifest?.importHarmonyLockFallbackReason === 'string';
+      typeof fallback.runManifest?.importHarmonyLockFallbackReason === 'string' &&
+      baseline.runManifest?.importHarmonyPolicyVersion === 2 &&
+      fallback.runManifest?.importHarmonyPolicyVersion === 2;
     out.push({
       ok: ok5,
       name: 'Song Mode: lock_harmony falls back on unusable timeline without changing output',

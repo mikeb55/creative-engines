@@ -150,6 +150,8 @@ export interface RunManifest {
   importHarmonyModeSource?: 'defaulted' | 'explicit';
   /** Stage 2: bounded blend echo (metadata-only in this stage). */
   harmonyBlendRaw?: number;
+  /** Stage 4: import-harmony policy contract version when import-harmony telemetry is present. */
+  importHarmonyPolicyVersion?: number;
   /** Stage 3: true when Song Mode lock_harmony consumed timeline-derived bars. */
   importHarmonyLockApplied?: boolean;
   /** Stage 3: fallback reason when lock_harmony was requested but not applied. */

@@ -295,6 +295,7 @@ type GenResult = {
     songModeLeadSheetAnchorStartApplied?: boolean;
     importHarmonyMode?: 'free_harmony' | 'lock_harmony' | 'blend_harmony';
     importHarmonyModeSource?: 'defaulted' | 'explicit';
+    importHarmonyPolicyVersion?: number;
     importHarmonyLockApplied?: boolean;
     importHarmonyLockFallbackReason?: string;
     importHarmonyLockedBarsCount?: number;
@@ -2065,6 +2066,10 @@ export function HomeGenerate({
                 <p style={{ margin: '0.35rem 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   Debug-only request knobs for Song Mode telemetry/lock routing checks.
                 </p>
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  API default: <code>free_harmony</code> when <code>importHarmonyMode</code> is not provided (Stage 4
+                  policy).
+                </p>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
                   harmonyBlend (stored only right now)
                 </label>
@@ -3030,6 +3035,12 @@ export function HomeGenerate({
                     <span style={{ color: 'var(--text)' }}>Import mode:</span>{' '}
                     {rm?.importHarmonyMode ?? 'free_harmony'} ({rm?.importHarmonyModeSource ?? 'defaulted'})
                   </p>
+                  {typeof rm?.importHarmonyPolicyVersion === 'number' && (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Import harmony policy version:</span>{' '}
+                      {rm.importHarmonyPolicyVersion}
+                    </p>
+                  )}
                   <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
                     <span style={{ color: 'var(--text)' }}>Lock applied:</span>{' '}
                     {rm?.importHarmonyLockApplied ? 'yes' : 'no'}

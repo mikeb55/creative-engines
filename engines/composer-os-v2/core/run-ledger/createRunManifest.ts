@@ -88,6 +88,7 @@ export interface CreateRunManifestInput {
   importHarmonyMode?: RunManifest['importHarmonyMode'];
   importHarmonyModeSource?: RunManifest['importHarmonyModeSource'];
   harmonyBlendRaw?: RunManifest['harmonyBlendRaw'];
+  importHarmonyPolicyVersion?: RunManifest['importHarmonyPolicyVersion'];
   importHarmonyLockApplied?: RunManifest['importHarmonyLockApplied'];
   importHarmonyLockFallbackReason?: RunManifest['importHarmonyLockFallbackReason'];
   importHarmonyLockedBarsCount?: RunManifest['importHarmonyLockedBarsCount'];
@@ -174,6 +175,7 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     importHarmonyMode: input.importHarmonyMode,
     importHarmonyModeSource: input.importHarmonyModeSource,
     harmonyBlendRaw: input.harmonyBlendRaw,
+    importHarmonyPolicyVersion: input.importHarmonyPolicyVersion,
     importHarmonyLockApplied: input.importHarmonyLockApplied,
     importHarmonyLockFallbackReason: input.importHarmonyLockFallbackReason,
     importHarmonyLockedBarsCount: input.importHarmonyLockedBarsCount,

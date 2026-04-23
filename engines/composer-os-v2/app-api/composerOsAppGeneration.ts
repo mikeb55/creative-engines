@@ -53,6 +53,7 @@ import {
 } from './desktopTruthDump';
 import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
 import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
+import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -579,12 +580,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   gp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
   gp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  // Stage 4: free_harmony is documented default; policy version set in GenerationMetadata.
+  gp.context.generationMetadata.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   gp.context.generationMetadata.importHarmonyLockApplied = importHarmonyLockApplied;
   gp.context.generationMetadata.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
   gp.context.generationMetadata.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
   gp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
   gp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
   gp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+  gp.runManifest.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   gp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
   gp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
   gp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
@@ -622,12 +626,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         retryGp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
         retryGp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
         retryGp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+        retryGp.context.generationMetadata.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
         retryGp.context.generationMetadata.importHarmonyLockApplied = importHarmonyLockApplied;
         retryGp.context.generationMetadata.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
         retryGp.context.generationMetadata.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
         retryGp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
         retryGp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
         retryGp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+        retryGp.runManifest.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
         retryGp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
         retryGp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
         retryGp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
@@ -787,6 +793,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songModeProfileRuleDiagnostics: gp.context.generationMetadata.songModeProfileRuleDiagnostics,
       motifAuthorityLevel: gp.context.generationMetadata.motifAuthorityLevel,
       motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
+      importHarmonyPolicyVersion: gp.context.generationMetadata.importHarmonyPolicyVersion,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
@@ -902,6 +909,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           importHarmonyMode: gp.runManifest.importHarmonyMode,
           importHarmonyModeSource: gp.runManifest.importHarmonyModeSource,
           harmonyBlendRaw: gp.runManifest.harmonyBlendRaw,
+          importHarmonyPolicyVersion: gp.runManifest.importHarmonyPolicyVersion,
           importHarmonyLockApplied: gp.runManifest.importHarmonyLockApplied,
           importHarmonyLockFallbackReason: gp.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: gp.runManifest.importHarmonyLockedBarsCount,

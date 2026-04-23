@@ -24,6 +24,7 @@ import { parseBarStringsToCanonicalChords } from '../core/harmony/chordPipeline'
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
+import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' || presetId === 'ecm_chamber';
@@ -130,6 +131,7 @@ export interface GenerateResult {
     importHarmonyMode?: GenerationMetadata['importHarmonyMode'];
     importHarmonyModeSource?: GenerationMetadata['importHarmonyModeSource'];
     harmonyBlendRaw?: GenerationMetadata['harmonyBlendRaw'];
+    importHarmonyPolicyVersion?: GenerationMetadata['importHarmonyPolicyVersion'];
     importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];
     importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
     importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
@@ -229,10 +231,13 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   result.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   result.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
   result.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  // Stage 4: free_harmony is documented default; policy version set in GenerationMetadata (no routing change).
+  result.context.generationMetadata.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   if (result.runManifest) {
     result.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
     result.runManifest.importHarmonyModeSource = importHarmonyModeSource;
     result.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+    result.runManifest.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   }
 
   let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;
@@ -317,6 +322,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       songModeStyleSurfaceNotes: result.context.generationMetadata.songModeStyleSurfaceNotes,
       songModeDonaldFagenC1Receipt: result.context.generationMetadata.songModeDonaldFagenC1Receipt,
       songModeSectionBehaviourDescriptors: result.context.generationMetadata.songModeSectionBehaviourDescriptors,
+      importHarmonyPolicyVersion: result.context.generationMetadata.importHarmonyPolicyVersion,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -433,6 +439,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           importHarmonyMode: result.runManifest.importHarmonyMode,
           importHarmonyModeSource: result.runManifest.importHarmonyModeSource,
           harmonyBlendRaw: result.runManifest.harmonyBlendRaw,
+          importHarmonyPolicyVersion: result.runManifest.importHarmonyPolicyVersion,
           importHarmonyLockApplied: result.runManifest.importHarmonyLockApplied,
           importHarmonyLockFallbackReason: result.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: result.runManifest.importHarmonyLockedBarsCount,

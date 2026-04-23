@@ -150,9 +150,16 @@ export interface GenerateRequest {
    * Omitted → engine default (~0.55).
    */
   leadSheetPerformanceBlend?: number;
-  /** Stage 2: metadata-only harmony import mode (no routing changes in this stage). */
+  /**
+   * MusicXML import policy only (orthogonal to `harmonyMode` on Guitar–Bass Duo).
+   * - Omitted → normalized to `'free_harmony'` at the API boundary (`importHarmonyModeSource: 'defaulted'`).
+   * - Invalid value → sanitized to `'free_harmony'` (source `'explicit'` when the field was present).
+   * Contract version is echoed as `importHarmonyPolicyVersion` in `GenerationMetadata` / run manifest (see `IMPORT_HARMONY_POLICY_VERSION` in `core/importHarmonyPolicy.ts`).
+   */
   importHarmonyMode?: ImportHarmonyMode;
-  /** Stage 2: metadata-only reharm blend control, stored for telemetry only. */
+  /**
+   * Optional; clamped to 0–1 at the API boundary. Telemetry-only — no `blend_harmony` reharm behaviour yet.
+   */
   harmonyBlend?: number;
 }
 
@@ -289,4 +296,6 @@ export interface OutputEntry {
     totalRules: number;
     rules: { id: string; passed: boolean }[];
   };
+  /** Stage 4: import-harmony policy contract version when import-harmony telemetry is written (`core/importHarmonyPolicy.ts`). */
+  importHarmonyPolicyVersion?: number;
 }

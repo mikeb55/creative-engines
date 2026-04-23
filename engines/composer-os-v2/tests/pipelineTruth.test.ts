@@ -64,7 +64,9 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
           const onlySourceDiff =
             a.runManifest?.importHarmonyMode === b.runManifest?.importHarmonyMode &&
             a.runManifest?.importHarmonyModeSource === 'defaulted' &&
-            b.runManifest?.importHarmonyModeSource === 'explicit';
+            b.runManifest?.importHarmonyModeSource === 'explicit' &&
+            a.runManifest?.importHarmonyPolicyVersion === 2 &&
+            b.runManifest?.importHarmonyPolicyVersion === 2;
           return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
         } finally {
           try {
@@ -89,7 +91,13 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
           } as const;
           const a = runAppGeneration(base, dir);
           const b = runAppGeneration({ ...base, importHarmonyMode: 'free_harmony' }, dir);
-          return a.success === true && b.success === true && a.xml === b.xml;
+          const onlySourceDiff =
+            a.runManifest?.importHarmonyMode === b.runManifest?.importHarmonyMode &&
+            a.runManifest?.importHarmonyModeSource === 'defaulted' &&
+            b.runManifest?.importHarmonyModeSource === 'explicit' &&
+            a.runManifest?.importHarmonyPolicyVersion === 2 &&
+            b.runManifest?.importHarmonyPolicyVersion === 2;
+          return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
         } finally {
           try {
             fs.rmSync(dir, { recursive: true, force: true });

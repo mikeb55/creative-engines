@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, HarmonyPipelineStage, ImportHarmonyMode } from '../compositionContext';
+import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -1393,12 +1394,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       songModeRhythmStrength: options.creativeControlLevel,
     };
   }
+  // From Stage 4 onward, importHarmonyPolicyVersion === 2 whenever import-harmony fields are written here
+  // (normalized mode / blend echo for manifests — not a routing switch).
   if (options?.importHarmonyMode !== undefined || options?.harmonyBlend !== undefined) {
     context.generationMetadata = {
       ...context.generationMetadata,
       importHarmonyMode: options.importHarmonyMode,
       harmonyBlendRaw:
         typeof options.harmonyBlend === 'number' && Number.isFinite(options.harmonyBlend) ? options.harmonyBlend : undefined,
+      importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
     };
   }
   if (options?.songModeHookFirstIdentity) {
@@ -1928,6 +1932,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     importHarmonyMode: appliedContext.generationMetadata.importHarmonyMode,
     importHarmonyModeSource: appliedContext.generationMetadata.importHarmonyModeSource,
     harmonyBlendRaw: appliedContext.generationMetadata.harmonyBlendRaw,
+    importHarmonyPolicyVersion: appliedContext.generationMetadata.importHarmonyPolicyVersion,
     importHarmonyLockApplied: appliedContext.generationMetadata.importHarmonyLockApplied,
     importHarmonyLockFallbackReason: appliedContext.generationMetadata.importHarmonyLockFallbackReason,
     importHarmonyLockedBarsCount: appliedContext.generationMetadata.importHarmonyLockedBarsCount,
