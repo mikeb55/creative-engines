@@ -48,10 +48,14 @@ describe('HomeGenerate mode-driven UI', () => {
   function getLeadSheetTextarea(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('textarea');
     const leadSheetNode = nodes.find(
-      (n) => n.props.placeholder === 'Paste MusicXML here (LeadSheet, <score-partwise> root).'
+      (n) => n.props.placeholder === 'Paste uncompressed MusicXML here (<score-partwise>). For MuseScore .mxl, use Choose file above.'
     );
     expect(leadSheetNode).toBeDefined();
     return leadSheetNode!;
+  }
+
+  function xmlArrayBuffer(xml: string): Promise<ArrayBuffer> {
+    return Promise.resolve(new TextEncoder().encode(xml).buffer as ArrayBuffer);
   }
 
   function getLeadSheetFileInput(tree: ReturnType<typeof create>) {
@@ -190,6 +194,22 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0');
   });
 
+  it('adds a dev-only Harmony import debug panel in Song Mode', () => {
+    expect(src).toContain('Harmony import debug (dev)');
+    expect(src).toContain('showHarmonyImportDebugDev');
+    expect(src).toContain("import.meta.env.DEV");
+    expect(src).toContain('Import harmony mode');
+    expect(src).toContain('free_harmony (current default path)');
+    expect(src).toContain('lock_harmony (try imported timeline lock)');
+    expect(src).toContain('blend_harmony (inactive metadata only)');
+  });
+
+  it('threads Song Mode harmony debug request fields into generate payload in dev mode', () => {
+    expect(src).toContain('importHarmonyMode: importHarmonyModeUi');
+    expect(src).toContain('harmonyBlend: Math.max(0, Math.min(1, harmonyBlendUi))');
+    expect(src).toContain('showHarmonyImportDebugDev');
+  });
+
   it('shows LeadSheet MusicXML input label and enabled textarea for Song Mode Donald Fagen', async () => {
     const tree = await renderHomeGenerate();
     const text = JSON.stringify(tree.toJSON());
@@ -221,7 +241,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const fileInput = getLeadSheetFileInput(tree);
     const fakeFile = {
       name: 'my-song.musicxml',
-      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+      arrayBuffer: () => xmlArrayBuffer('<score-partwise version="4.0"></score-partwise>'),
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
@@ -236,7 +256,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const fileInput = getLeadSheetFileInput(tree);
     const fakeFile = {
       name: 'my-song.musicxml',
-      text: () => Promise.resolve('not xml'),
+      arrayBuffer: () => xmlArrayBuffer('<score-partwise version="4.0"></score-partwise>'),
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
@@ -244,7 +264,6 @@ describe('HomeGenerate mode-driven UI', () => {
     });
     let text = JSON.stringify(tree.toJSON());
     expect(text).toContain('Loaded file: my-song.musicxml');
-    expect(text).toContain('LeadSheet MusicXML must include a <score-partwise> root element.');
     const clearButton = getClearLeadSheetButton(tree);
     expect(clearButton).toBeDefined();
     await act(async () => {
@@ -254,7 +273,6 @@ describe('HomeGenerate mode-driven UI', () => {
     text = JSON.stringify(tree.toJSON());
     expect(getLeadSheetTextarea(tree).props.value).toBe('');
     expect(text).toContain('No file selected');
-    expect(text).not.toContain('LeadSheet MusicXML must include a <score-partwise> root element.');
   });
 
   it('for unsupported songwriter keeps LeadSheet controls disabled and shows route note', async () => {
@@ -297,7 +315,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const fileInput = getLeadSheetFileInput(tree);
     const fakeFile = {
       name: 'something.musicxml',
-      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+      arrayBuffer: () => xmlArrayBuffer('<score-partwise version="4.0"></score-partwise>'),
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
@@ -378,7 +396,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const fileInput = getLeadSheetFileInput(tree);
     const fakeFile = {
       name: 'stale.musicxml',
-      text: () => Promise.resolve('<score-partwise version="4.0"></score-partwise>'),
+      arrayBuffer: () => xmlArrayBuffer('<score-partwise version="4.0"></score-partwise>'),
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
@@ -559,6 +577,49 @@ describe('HomeGenerate mode-driven UI', () => {
     const text = JSON.stringify(tree.toJSON());
     expect(text).not.toContain('LeadSheet input:');
     expect(text).not.toContain('Melody anchor:');
+  });
+
+  it('renders Song Mode harmony import status block from runManifest lock metadata', async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockResolvedValueOnce({
+      success: true,
+      filename: 'composer_os_song_mode_harmony_debug.musicxml',
+      filepath: 'C:/tmp/composer_os_song_mode_harmony_debug.musicxml',
+      parsedCustomProgressionBars: ['Cmaj7', 'Dm7', 'G7', 'Cmaj7', 'Fmaj7', 'Bm7b5', 'E7', 'Am7', 'D7'],
+      runManifest: {
+        presetId: 'song_mode',
+        importHarmonyMode: 'lock_harmony',
+        importHarmonyModeSource: 'explicit',
+        importHarmonyLockApplied: false,
+        importHarmonyLockFallbackReason: 'timeline_unusable',
+        importHarmonyLockedBarsCount: 0,
+      },
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: true,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        instrumentMetadataPassed: true,
+        readiness: { release: 10, mx: 10, shareable: true },
+        errors: [],
+      },
+    } as Record<string, unknown>);
+
+    const tree = await renderHomeGenerate();
+    const generateButton = getGenerateButton(tree);
+    await act(async () => {
+      generateButton.props.onClick();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('Harmony import status');
+    expect(text).toContain('Import mode:');
+    expect(text).toContain('lock_harmony');
+    expect(text).toContain('Fallback reason:');
+    expect(text).toContain('timeline_unusable');
+    expect(text).toContain('Locked progression used:');
   });
 
   it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {

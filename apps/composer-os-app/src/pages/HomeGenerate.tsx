@@ -293,6 +293,11 @@ type GenResult = {
     };
     songModeLeadSheetInputApplied?: boolean;
     songModeLeadSheetAnchorStartApplied?: boolean;
+    importHarmonyMode?: 'free_harmony' | 'lock_harmony' | 'blend_harmony';
+    importHarmonyModeSource?: 'defaulted' | 'explicit';
+    importHarmonyLockApplied?: boolean;
+    importHarmonyLockFallbackReason?: string;
+    importHarmonyLockedBarsCount?: number;
   };
   scoreTitle?: string;
   requestEcho?: {
@@ -313,6 +318,7 @@ type GenResult = {
     surprise?: number;
   };
   _uiHadLeadSheetInputForRun?: boolean;
+  _uiLeadSheetPreflightErrorForRun?: string | null;
   _uiLeadSheetInputSourceForRun?: 'file' | 'paste';
   _uiLeadSheetFileNameForRun?: string;
   stylePairingReceipt?: {
@@ -408,6 +414,10 @@ export function HomeGenerate({
   const [songModeLeadSheetMusicXml, setSongModeLeadSheetMusicXml] = useState('');
   const [leadSheetFileName, setLeadSheetFileName] = useState<string | null>(null);
   const [leadSheetInputSource, setLeadSheetInputSource] = useState<'file' | 'paste' | null>(null);
+  const [importHarmonyModeUi, setImportHarmonyModeUi] = useState<'free_harmony' | 'lock_harmony' | 'blend_harmony'>(
+    'free_harmony'
+  );
+  const [harmonyBlendUi, setHarmonyBlendUi] = useState(0.5);
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
   const [bigBandFormId, setBigBandFormId] = useState('');
@@ -532,6 +542,7 @@ export function HomeGenerate({
     presetId === 'song_mode' && isSongModeLeadSheetPhase1Writer && songModeLeadSheetMusicXml.trim().length > 0
       ? validateLeadSheetMusicXmlForPhase1(songModeLeadSheetMusicXml.trim())
       : null;
+  const showHarmonyImportDebugDev = presetId === 'song_mode' && import.meta.env.DEV;
 
   const ensembleChordBarCountForLabel =
     presetId === 'big_band'
@@ -589,6 +600,7 @@ export function HomeGenerate({
         const chordTrim = chordProgressionText.trim();
         const songModeLeadSheetTrim = songModeLeadSheetMusicXml.trim();
         const hadLeadSheetInputForRun = songModeLeadSheetTrim.length > 0;
+        const uiLeadSheetPreflightErrorForRun = leadSheetPreflightError;
         const uiLeadSheetInputSourceForRun: 'file' | 'paste' | undefined = hadLeadSheetInputForRun
           ? leadSheetInputSource ?? 'paste'
           : undefined;
@@ -821,6 +833,12 @@ export function HomeGenerate({
                 ...(isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0
                   ? { songModeLeadSheetMusicXml: songModeLeadSheetTrim }
                   : {}),
+                ...(showHarmonyImportDebugDev
+                  ? {
+                      importHarmonyMode: importHarmonyModeUi,
+                      harmonyBlend: Math.max(0, Math.min(1, harmonyBlendUi)),
+                    }
+                  : {}),
               }
             : {}),
         };
@@ -859,6 +877,7 @@ export function HomeGenerate({
         setResult({
           ...r,
           _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun,
+          _uiLeadSheetPreflightErrorForRun: uiLeadSheetPreflightErrorForRun,
           _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
           _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
         });
@@ -958,6 +977,10 @@ export function HomeGenerate({
       secondarySongwriterStyle,
       authorOverlay,
       songModeLeadSheetMusicXml,
+      leadSheetPreflightError,
+      showHarmonyImportDebugDev,
+      importHarmonyModeUi,
+      harmonyBlendUi,
       includeVocalLeadSheet,
       c4Strength,
       blendStrength,
@@ -1065,6 +1088,14 @@ export function HomeGenerate({
       : [];
   const productKind = (result as { productKind?: string } | null)?.productKind;
   const summaryPresetForPass = result?.runManifest?.presetId ?? presetId;
+  const harmonyImportPresentForRun = result?._uiHadLeadSheetInputForRun && !result?._uiLeadSheetPreflightErrorForRun;
+  const lockedProgressionPreviewBars = result?.parsedCustomProgressionBars ?? [];
+  const lockedProgressionPreviewText =
+    lockedProgressionPreviewBars.length > 0
+      ? `${lockedProgressionPreviewBars.slice(0, 8).join(' | ')}${
+          lockedProgressionPreviewBars.length > 8 ? ' | ...' : ''
+        }`
+      : undefined;
   const passed = result
     ? productKind && productKind !== 'musicxml'
       ? !!result.success && !(v?.errors?.length)
@@ -2003,6 +2034,56 @@ export function HomeGenerate({
               </p>
             )}
           </div>
+          {showHarmonyImportDebugDev && (
+            <details
+              style={{
+                marginBottom: '0.9rem',
+                padding: '0.6rem 0.75rem',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'rgba(15,23,42,0.1)',
+              }}
+            >
+              <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem' }}>
+                Harmony import debug (dev)
+              </summary>
+              <div style={{ marginTop: '0.55rem' }}>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                  Import harmony mode
+                </label>
+                <select
+                  value={importHarmonyModeUi}
+                  onChange={(e) =>
+                    setImportHarmonyModeUi(e.target.value as 'free_harmony' | 'lock_harmony' | 'blend_harmony')
+                  }
+                  disabled={loading}
+                >
+                  <option value="free_harmony">free_harmony (current default path)</option>
+                  <option value="lock_harmony">lock_harmony (try imported timeline lock)</option>
+                  <option value="blend_harmony">blend_harmony (inactive metadata only)</option>
+                </select>
+                <p style={{ margin: '0.35rem 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Debug-only request knobs for Song Mode telemetry/lock routing checks.
+                </p>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                  harmonyBlend (stored only right now)
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={harmonyBlendUi}
+                  onChange={(e) => setHarmonyBlendUi(Number(e.target.value))}
+                  disabled={loading}
+                  style={{ width: '100%', maxWidth: 320 }}
+                />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  {Math.round(harmonyBlendUi * 100)}%
+                </span>
+              </div>
+            </details>
+          )}
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Style
@@ -2928,6 +3009,49 @@ export function HomeGenerate({
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.35rem 0 0' }}>
                   {rm.timestamp}
                 </p>
+              )}
+              {summaryPresetId === 'song_mode' && (
+                <div
+                  style={{
+                    fontSize: '0.86rem',
+                    marginTop: '0.6rem',
+                    padding: '0.65rem 0.75rem',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(15,23,42,0.1)',
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Harmony import status</strong>
+                  <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--text)' }}>Imported harmony:</span>{' '}
+                    {harmonyImportPresentForRun ? 'present' : 'missing'}
+                  </p>
+                  <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--text)' }}>Import mode:</span>{' '}
+                    {rm?.importHarmonyMode ?? 'free_harmony'} ({rm?.importHarmonyModeSource ?? 'defaulted'})
+                  </p>
+                  <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--text)' }}>Lock applied:</span>{' '}
+                    {rm?.importHarmonyLockApplied ? 'yes' : 'no'}
+                  </p>
+                  {rm?.importHarmonyLockApplied === false && rm?.importHarmonyLockFallbackReason && (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Fallback reason:</span>{' '}
+                      {rm.importHarmonyLockFallbackReason}
+                    </p>
+                  )}
+                  {typeof rm?.importHarmonyLockedBarsCount === 'number' && (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Locked bars:</span> {rm.importHarmonyLockedBarsCount}
+                    </p>
+                  )}
+                  {lockedProgressionPreviewText && (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Locked progression used:</span>{' '}
+                      {lockedProgressionPreviewText}
+                    </p>
+                  )}
+                </div>
               )}
               {v && (
                 <div style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
