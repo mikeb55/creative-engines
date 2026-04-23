@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-22]
+# Composer OS Roadmap [2026-04-23]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -234,6 +234,41 @@
 
 ---
 
+## MusicXML Harmony Import for Lead Sheets (staged rollout)
+
+### Guardrails (must hold for every stage)
+
+- **No silent harmony-output changes** outside the stage that explicitly enables harmony behavior changes.
+- **`free_harmony` remains the default** for backward compatibility unless explicitly changed in a later approved stage.
+- **Tests are required at every stage** (unit + integration/regression as appropriate).
+- **Plan first, approve, then implement** (no implementation before explicit approval).
+
+### Canonical 7-stage roadmap
+
+1. **Stage 1 — Parse/store MusicXML `<harmony>` into typed timeline, zero output change.**  
+   **Status:** **implemented**
+2. **Stage 2 — Add `ImportHarmonyMode` plumbing through request/context/manifest, zero output change.**  
+   **Status:** **approved / ready**
+3. **Stage 3 — Activate `lock_harmony` for Song Mode only.**  
+   **Status:** planned
+4. **Stage 4 — Make `free_harmony` the explicit default/current path.**  
+   **Status:** planned
+5. **Stage 5 — Add conservative `blend_harmony` with bounded control (e.g. `harmonyBlend`).**  
+   **Status:** planned
+6. **Stage 6 — Extend support to other lead-sheet presets one by one.**  
+   **Status:** planned
+7. **Stage 7 — Add evals, regression gates, docs, telemetry.**  
+   **Status:** planned
+
+### Current implementation status
+
+- **Stage 1 implemented:** parse/store `ImportedHarmonyTimeline` only (storage-only; no harmony-generation consumption yet).
+- **Stage 2 concept finalized:** `ImportHarmonyMode` plumbing only.
+- **No code implementation approved beyond Stage 2.**
+- **Next action:** implement **Stage 2** only after approval confirmation.
+
+---
+
 ## Future (prioritized directions)
 
 ### Lead-sheet MusicXML import → String Quartet + Big Band (planned — **not started**)
@@ -431,6 +466,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-22].*
+*End of Composer OS Roadmap [2026-04-23].*
 
 

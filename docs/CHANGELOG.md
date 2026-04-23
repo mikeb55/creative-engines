@@ -1,3 +1,11 @@
+## [2026-04-23] Stage 1 — ImportedHarmonyTimeline (MusicXML harmony storage-only)
+
+- Added storage-only `ImportedHarmonyTimeline` parsing for MusicXML `<harmony>` in lead-sheet import.
+- New typed timeline models include root-or-numeral markers, required kind payload, optional bass/degrees, and deterministic time ordering metadata.
+- Wired timeline capture into `leadSheetMusicXmlImport` in parallel with existing `chordEvents` parsing.
+- Explicitly **no behavior change** to generation: timeline is stored for future harmony modes and not consumed by harmony generation yet.
+- Added focused tests for timeline parsing/ordering plus importer coverage and deterministic Song Mode regression checks.
+
 ## [2026-04-22] Lead-sheet MusicXML — MuseScore `.mxl` + imported performance shaping
 
 - **Compressed `.mxl`:** ZIP + `META-INF/container.xml` extraction (`musicXmlScoreInput.ts`; dependency `fflate` in `engines/composer-os-v2`).
