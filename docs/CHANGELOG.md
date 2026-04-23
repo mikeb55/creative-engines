@@ -1,10 +1,11 @@
 ## Unreleased
 
+- Document `free_harmony` as the default import harmony mode and add `importHarmonyPolicyVersion=2` metadata (no behavioral change).
 - Add storage-only `ImportedHarmonyTimeline` for MusicXML `<harmony>` and `ImportHarmonyMode` / `harmonyBlend` plumbing (no change to harmony output yet).
 - Stage 3: activate `lock_harmony` for Song Mode only using timeline-derived locked bars, with explicit fallback telemetry (`importHarmonyLockApplied`, fallback reason, locked bar count); `free_harmony` remains default and `blend_harmony` remains inactive.
 - Stage 3b (Dev UI): add Song Mode `Harmony import debug (dev)` controls/receipt surface in Composer web Generate flow to inspect `importHarmonyMode`, lock applied/fallback reason, locked bar count, and a compact locked progression preview.
 
-## [2026-04-23] Stage 1 ó ImportedHarmonyTimeline (MusicXML harmony storage-only)
+## [2026-04-23] Stage 1 ‚Äî ImportedHarmonyTimeline (MusicXML harmony storage-only)
 
 - Added storage-only `ImportedHarmonyTimeline` parsing for MusicXML `<harmony>` in lead-sheet import.
 - New typed timeline models include root-or-numeral markers, required kind payload, optional bass/degrees, and deterministic time ordering metadata.
@@ -12,45 +13,45 @@
 - Explicitly **no behavior change** to generation: timeline is stored for future harmony modes and not consumed by harmony generation yet.
 - Added focused tests for timeline parsing/ordering plus importer coverage and deterministic Song Mode regression checks.
 
-## [2026-04-22] Lead-sheet MusicXML ó MuseScore `.mxl` + imported performance shaping
+## [2026-04-22] Lead-sheet MusicXML ‚Äî MuseScore `.mxl` + imported performance shaping
 
 - **Compressed `.mxl`:** ZIP + `META-INF/container.xml` extraction (`musicXmlScoreInput.ts`; dependency `fflate` in `engines/composer-os-v2`).
 - **Validation:** clearer failures for corrupt/mislabeled MusicXML (`score-timewise` vs `score-partwise`, bad ZIPs, missing embedded score).
-- **Performance shaping:** dynamics / `<velocity>` / articulations adjust imported melody durations and velocity hints; optional request **`leadSheetPerformanceBlend`** (0ñ1) with engine default ~0.55.
+- **Performance shaping:** dynamics / `<velocity>` / articulations adjust imported melody durations and velocity hints; optional request **`leadSheetPerformanceBlend`** (0‚Äì1) with engine default ~0.55.
 - **Song Mode:** shaped LeadSheet feeds locked harmony + anchors; manifests may echo **`songModeLeadSheetPerformanceBlend`** alongside existing LeadSheet flags.
 - **UI:** file picker accepts `.mxl`; paste remains uncompressed XML only.
 - **Samples / tests:** `Sample MIDI 2 Musicxml tracks/*.mxl` exercised by `musicXmlMxlSampleFolder.test.ts`.
 - **Out of scope for now:** tempo maps, rit./accel., fermatas, swing timing reconstruction.
 
-## [2026-04-20] Big Band V2 ó theme-anchored soli/shout + drum support for hits
+## [2026-04-20] Big Band V2 ‚Äî theme-anchored soli/shout + drum support for hits
 
-- **Soli / shout:** Head window (bars 1ñ8) lead offsets and chord-root contour blend into the bars 17ñ24 soli motif; shout trumpet lift is biased by head theme average and seed. See `bigBandPatterns.ts` and `bigBandScoreBuilder.ts`.
+- **Soli / shout:** Head window (bars 1‚Äì8) lead offsets and chord-root contour blend into the bars 17‚Äì24 soli motif; shout trumpet lift is biased by head theme average and seed. See `bigBandPatterns.ts` and `bigBandScoreBuilder.ts`.
 - **Drums:** Ensemble-hit bars (punch/shout) use fuller bass-drum + composite snare encoding; other bars use lighter timekeeping (hi-hat + downbeat kick). Run `npm run test:big-band-arranging` and `npm run eval:big-band-chart` (from `engines/composer-os-v2`).
 
-## [2026-04-20] Song Mode eval harnesses ó section-shaping diagnostics from manifests
+## [2026-04-20] Song Mode eval harnesses ‚Äî section-shaping diagnostics from manifests
 
-- **Shared reader:** `engines/composer-os-v2/scripts/eval/songModeSectionShapingDiagnosticsReader.ts` ó reads **`songModeSectionShapingDiagnostics`** from manifest JSON (tolerant of missing fields; no hard throw on shape).
+- **Shared reader:** `engines/composer-os-v2/scripts/eval/songModeSectionShapingDiagnosticsReader.ts` ‚Äî reads **`songModeSectionShapingDiagnostics`** from manifest JSON (tolerant of missing fields; no hard throw on shape).
 - **Fagen / Bacharach / Sophisticated Pop batch evals** now surface those diagnostics in CSV (new `sectionShaping_*` columns) and prefer them for **B vs A colour**, **opening vs return**, and related **GCE-style flags** where they replace ad-hoc chord-slice recomputation. **`fagenSongModeEvalCore`** also prefers manifest aggregates for density/opening-return columns when present.
 - **Tests:** `engines/composer-os-v2/tests/songModeSectionShapingDiagnosticsReader.test.ts` (Jest).
 
-## [2026-04-21] ECM Chamber ó automated texture eval (symbolic)
+## [2026-04-21] ECM Chamber ‚Äî automated texture eval (symbolic)
 
-- **Metrics module:** `engines/composer-os-v2/core/ecm/ecmChamberTextureMetrics.ts` ó per-bar **bass/comp sounding coverage** (voice 1, finite MIDI only), half-bar splits, **double-dense** / **bass-only** / **comp-only** / **space** bar counts and ratios, **register span** + **gapGlobal** (`compMin ? bassMax`), **gapPerPhrase** (8-bar windows), **phrase-edge** thinning/silence flags (bars 8, 16, Ö).
-- **Score:** **`ecmTextureScore`** (0ñ10) from explicit gap/density/space/phrase-edge rules (pragmatic heuristic, not GCE).
+- **Metrics module:** `engines/composer-os-v2/core/ecm/ecmChamberTextureMetrics.ts` ‚Äî per-bar **bass/comp sounding coverage** (voice 1, finite MIDI only), half-bar splits, **double-dense** / **bass-only** / **comp-only** / **space** bar counts and ratios, **register span** + **gapGlobal** (`compMin ? bassMax`), **gapPerPhrase** (8-bar windows), **phrase-edge** thinning/silence flags (bars 8, 16, ‚Ä¶).
+- **Score:** **`ecmTextureScore`** (0‚Äì10) from explicit gap/density/space/phrase-edge rules (pragmatic heuristic, not GCE).
 - **Probe:** `npm run probe:ecm-arrangement` (from `engines/composer-os-v2`) emits **one JSON line per run** (same shape as eval).
-- **Batch CLI:** `npm run eval:ecm-texture` ó fixed seeds + 24/32 bars; **JSON line per run** + **summary JSON** (means + delta vs baseline constant). Wired in **`engines/composer-os-v2/package.json`** and repo **`package.json`** (`npm --prefix engines/composer-os-v2 run eval:ecm-texture` or root alias).
-- **GCE ingest helper:** `engines/composer-os-v2/core/gce/ecmTextureEvalJson.ts` ó parse stdout JSON lines, **`meanEcmTextureScore`** for future gates.
-- **Tests:** `npm run test:ecm` includes texture **output shape**, score **0ñ10** range, JSON-line filter smoke.
+- **Batch CLI:** `npm run eval:ecm-texture` ‚Äî fixed seeds + 24/32 bars; **JSON line per run** + **summary JSON** (means + delta vs baseline constant). Wired in **`engines/composer-os-v2/package.json`** and repo **`package.json`** (`npm --prefix engines/composer-os-v2 run eval:ecm-texture` or root alias).
+- **GCE ingest helper:** `engines/composer-os-v2/core/gce/ecmTextureEvalJson.ts` ‚Äî parse stdout JSON lines, **`meanEcmTextureScore`** for future gates.
+- **Tests:** `npm run test:ecm` includes texture **output shape**, score **0‚Äì10** range, JSON-line filter smoke.
 - **Docs / pointers:** `gceStyleEval.ts` comment ? **`eval:ecm-texture`**; README + USER_GUIDE + roadmap updated for discoverability.
 
-## [2026-04-20] Composer OS handoff ó ECM, Era, Motif Authority, Big Band arranging
+## [2026-04-20] Composer OS handoff ‚Äî ECM, Era, Motif Authority, Big Band arranging
 
 End-state summary for assistants (detail also in dated sections below).
 
 ### ECM Chamber (stable, benchmarked)
 - **OOM:** fixed non-advancing bass loop in ECM Metheny/Schneider branches (`b++` before `continue` in `buildBassPart`).
 - **32 bars:** `runGoldenPath` forwards `options.ecmTotalBars ?? options.totalBars` into ECM context so **32 bars** are honoured when requested.
-- **Tests:** `npm run test:ecm` ó bar count, repeat-run stability, swing normalization smoke, non-ECM control.
+- **Tests:** `npm run test:ecm` ‚Äî bar count, repeat-run stability, swing normalization smoke, non-ECM control.
 - **GCE:** completes in full 12-preset sweep at **~7.8/10**; weakest pillar **Arrangement & Orchestration** (roadmap follow-up).
 
 ### Era chord normalization (verified)
@@ -65,9 +66,9 @@ End-state summary for assistants (detail also in dated sections below).
 - **Tuning:** a **V1.1 parameter experiment** did not show a net Melodic Identity uplift; **shipped baseline remains stable V1**, default OFF (see `e1b99d6` and `core/motif/motifAuthorityV1.ts` history).
 
 ### Big Band arranging depth V1 + V1.5 (shipped baseline `5e4993d`)
-- **V1:** new `engines/composer-os-v2/core/arranging/bigBandPatterns.ts` ó `generateSaxSoliPhrase`, `generateBrassPunches`, `generateShoutChorus`; `bigBandScoreBuilder` integrates **designated sax soli** (bars 17ñ24 on long charts), **cadence brass punches**, **shout fragment** near end. Early checks: some seeds showed **only ~4 contiguous** soli bars; `big_band` GCE spot-checks **~7.4ñ7.5** vs **~7.9** historical baseline on small samples.
-- **V1.5 fix:** section **`role === 'silence'`** ran **before** soli and could silence saxes inside 17ñ24. **Change:** `BB_DESIGNATED_SAX_SOLI_START/END`, `inDesignatedSaxSoliWindow`, **write soli before silence roles** ó alto/tenor **always** 8 bars in 17ñ24 when `totalBars >= 24`; trumpets/trombones **tacet** there; duplicate inner soli branches removed.
-- **Tests:** `engines/composer-os-v2/scripts/testBigBandArranging.ts` ó **5 seeds**; asserts `altoRun === 8`, `tenorRun === 8`, `brassSoliWindowNotes === 0` in 17ñ24; `npm run test:big-band-arranging` green. Follow-up **5-seed** `big_band` GCE: no crashes, no large regression vs that horn-layer baseline.
+- **V1:** new `engines/composer-os-v2/core/arranging/bigBandPatterns.ts` ‚Äî `generateSaxSoliPhrase`, `generateBrassPunches`, `generateShoutChorus`; `bigBandScoreBuilder` integrates **designated sax soli** (bars 17‚Äì24 on long charts), **cadence brass punches**, **shout fragment** near end. Early checks: some seeds showed **only ~4 contiguous** soli bars; `big_band` GCE spot-checks **~7.4‚Äì7.5** vs **~7.9** historical baseline on small samples.
+- **V1.5 fix:** section **`role === 'silence'`** ran **before** soli and could silence saxes inside 17‚Äì24. **Change:** `BB_DESIGNATED_SAX_SOLI_START/END`, `inDesignatedSaxSoliWindow`, **write soli before silence roles** ‚Äî alto/tenor **always** 8 bars in 17‚Äì24 when `totalBars >= 24`; trumpets/trombones **tacet** there; duplicate inner soli branches removed.
+- **Tests:** `engines/composer-os-v2/scripts/testBigBandArranging.ts` ‚Äî **5 seeds**; asserts `altoRun === 8`, `tenorRun === 8`, `brassSoliWindowNotes === 0` in 17‚Äì24; `npm run test:big-band-arranging` green. Follow-up **5-seed** `big_band` GCE: no crashes, no large regression vs that horn-layer baseline.
 
 ## [2026-04-20] Motif Authority V1 + ECM fixes + Era normalization
 
@@ -79,7 +80,7 @@ End-state summary for assistants (detail also in dated sections below).
 - Single bounded refine pass if below threshold
 - Feature flag: motifAuthorityV1 option or
   COMPOSER_OS_MOTIF_AUTHORITY_V1=1 env var
-- Default OFF ó non-scoped presets unchanged
+- Default OFF ‚Äî non-scoped presets unchanged
 - A/B verified: no regressions, diagnostics working
 - motifAuthorityScore, returnSimilarity, variationType
   added to GenerationMetadata
@@ -108,7 +109,7 @@ End-state summary for assistants (detail also in dated sections below).
 
 ### What landed
 - buildBassPart ECM branches: added b++ before continue
-  ó fixes infinite loop causing heap OOM
+  ‚Äî fixes infinite loop causing heap OOM
 - runGoldenPath.ts: ECM now uses totalBars correctly
   via options.ecmTotalBars ?? options.totalBars
 - Added testEcmStability.ts regression suite:
@@ -178,7 +179,7 @@ End-state summary for assistants (detail also in dated sections below).
   - negative bias nudges toward simpler rows (`maj7`, `m7`, `6/9`)
   - neutral keeps prior near-uniform selection behavior
 
-## [2026-04-20] Slonimsky Engine V1 ù full sweep confirmed
+## [2026-04-20] Slonimsky Engine V1 ÔøΩ full sweep confirmed
 
 ### GCE benchmark post-Slonimsky (seed 50021)
 | Preset | Score | Weakest |
@@ -227,10 +228,10 @@ End-state summary for assistants (detail also in dated sections below).
 ### What changed
 - customLockedHarmonyRouting.ts: replaced [8,16,32]
   literal check with isAllowedSongFormBarCount()
-  ù 64-bar Song Mode now generates successfully
+  ÔøΩ 64-bar Song Mode now generates successfully
 - generateGoldenPathDuoScore.ts: added intervalClassWeight
   and leap recovery bias to nearestMidiPitch selection
-  ù melody now favors stepwise motion over wide leaps
+  ÔøΩ melody now favors stepwise motion over wide leaps
 
 ### Results
 - 64-bar generation: confirmed working (64/64 bars)
@@ -264,7 +265,7 @@ End-state summary for assistants (detail also in dated sections below).
 
 ## [2026-04-19] Pat Metheny songwriter profile + chord pools
 
-- **Song Mode:** pat_metheny primary ? 4ù8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
+- **Song Mode:** pat_metheny primary ? 4ÔøΩ8 chord pools per section (verse / chorus / bridge / pre_chorus); planning profile + aliases (metheny, pm).
 - **Melody profile:** ascending phrase bias, stepwise intervals, low offbeat bias, **flowing** rhythmic feel on duo golden path.
 - **Rules:** five placeholder registry entries (metheny.*).
 - **Docs:** README + USER_GUIDE Pat Metheny subsection.

@@ -253,8 +253,8 @@
    **Status:** **implemented / in progress**
 3b. **Stage 3b — Add Song Mode harmony import debug UI (Dev-first).**  
    **Status:** **implemented / in progress**
-4. **Stage 4 — Make `free_harmony` the explicit default/current path.**  
-   **Status:** planned
+4. **Stage 4 — Make `free_harmony` the explicit default behavior and surface this in API, metadata, manifests, and docs (no change to musical output).**  
+   **Status:** **implemented / in progress**
 5. **Stage 5 — Add conservative `blend_harmony` with bounded control (e.g. `harmonyBlend`).**  
    **Status:** planned
 6. **Stage 6 — Extend support to other lead-sheet presets one by one.**  
@@ -268,10 +268,10 @@
 - **Stage 2 implemented:** `ImportHarmonyMode` and `harmonyBlend` plumbing only (request → context → manifest telemetry).
 - **Stage 3 implemented/in progress (Song Mode only):** when `importHarmonyMode === 'lock_harmony'` and imported timeline is usable, Song Mode routes into locked harmony from timeline-derived bars.
 - **Stage 3b implemented/in progress (Dev app UI):** Song Mode Generate now includes a dev-only `Harmony import debug` surface for request knobs + receipt inspectability (`importHarmonyMode`, lock applied/fallback reason, locked bars count, compact progression preview).
+- **Stage 4 implemented/in progress:** API/docs state that omitted `importHarmonyMode` normalizes to `free_harmony`; manifests and `GenerationMetadata` echo **`importHarmonyPolicyVersion`** (= 2) whenever import-harmony telemetry is written — **no musical or routing behavior change**; `blend_harmony` remains inactive.
 - **Explicit fallback retained:** if timeline is missing/empty/unusable, Song Mode falls back to existing behavior and records fallback telemetry.
 - **Guardrails unchanged:** `free_harmony` remains the default path; `blend_harmony` is still inactive in behavior.
-- **No code implementation approved beyond Stage 3.**
-- **Next action:** plan/approve Stage 4 (`free_harmony` explicit default/current path documentation hardening) before implementation.
+- **Next action:** plan/approve Stage 5 (`blend_harmony` with bounded control) before implementation.
 
 ---
 
