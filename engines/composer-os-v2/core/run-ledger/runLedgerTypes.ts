@@ -9,7 +9,7 @@ import type {
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
 import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
-import type { ImportHarmonyMode } from '../compositionContext';
+import type { ImportHarmonyLockFallbackReason, ImportHarmonyMode } from '../compositionContext';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -150,6 +150,12 @@ export interface RunManifest {
   importHarmonyModeSource?: 'defaulted' | 'explicit';
   /** Stage 2: bounded blend echo (metadata-only in this stage). */
   harmonyBlendRaw?: number;
+  /** Stage 3: true when Song Mode lock_harmony consumed timeline-derived bars. */
+  importHarmonyLockApplied?: boolean;
+  /** Stage 3: fallback reason when lock_harmony was requested but not applied. */
+  importHarmonyLockFallbackReason?: ImportHarmonyLockFallbackReason;
+  /** Stage 3: count of locked bars derived from imported timeline. */
+  importHarmonyLockedBarsCount?: number;
   motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
   motifDevelopmentSummary?: MotifDevelopmentSummary;
 }

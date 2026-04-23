@@ -16,6 +16,44 @@ const SONG_MODE_32_BAR_REGRESSION =
   'G13 | B7(#9) | Em9 | A13 | Dmaj9/F# | F7(#11) | Bbmaj9 | Eb13 | ' +
   'Abmaj9 | Db13 | Gbmaj9 | B7alt | Em9 | A7 | Dmaj9 | G13';
 
+const LOCK_HARMONY_TIMELINE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>Lead</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <harmony><root><root-step>C</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+    <measure number="2">
+      <harmony><root><root-step>D</root-step></root><kind text="m7">minor-seventh</kind></harmony>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+    <measure number="3">
+      <harmony><root><root-step>G</root-step></root><kind text="7">dominant</kind></harmony>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+    <measure number="4">
+      <harmony><root><root-step>C</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+const LOCK_HARMONY_NO_TIMELINE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>Lead</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
 export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'song-mode-mx-'));
@@ -149,6 +187,82 @@ export function runSongModeMusicXmlTests(): { ok: boolean; name: string }[] {
   } finally {
     try {
       fs.rmSync(dir3, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const dir4 = fs.mkdtempSync(path.join(os.tmpdir(), 'song-mode-lock-harmony-success-'));
+  try {
+    const r = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 93004,
+        totalBars: 32,
+        primarySongwriterStyle: 'wayne_shorter',
+        importHarmonyMode: 'lock_harmony',
+        songModeLeadSheetMusicXml: LOCK_HARMONY_TIMELINE_XML,
+      },
+      dir4
+    );
+    let ok4 = false;
+    if (r.success && r.filepath && fs.existsSync(r.filepath)) {
+      const harm = extractHarmoniesFromFirstPartXml(fs.readFileSync(r.filepath, 'utf-8'));
+      const expectedFirstEight = ['Cmaj7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7', 'Cmaj7', 'Cmaj7', 'Cmaj7'];
+      ok4 =
+        expectedFirstEight.every((ch, idx) => normalizeChordToken(harm.get(idx + 1) ?? '') === normalizeChordToken(ch)) &&
+        r.runManifest?.importHarmonyLockApplied === true &&
+        (r.runManifest?.importHarmonyLockedBarsCount ?? 0) > 0 &&
+        r.runManifest?.importHarmonyLockFallbackReason === undefined;
+    }
+    out.push({
+      ok: ok4,
+      name: 'Song Mode: lock_harmony uses imported timeline progression and records lock telemetry',
+    });
+  } catch (e) {
+    out.push({
+      ok: false,
+      name: `Song Mode lock_harmony success: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  } finally {
+    try {
+      fs.rmSync(dir4, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const dir5 = fs.mkdtempSync(path.join(os.tmpdir(), 'song-mode-lock-harmony-fallback-'));
+  try {
+    const baseReq = {
+      presetId: 'song_mode',
+      styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+      seed: 93005,
+      totalBars: 32,
+      primarySongwriterStyle: 'wayne_shorter',
+      songModeLeadSheetMusicXml: LOCK_HARMONY_NO_TIMELINE_XML,
+    } as const;
+    const baseline = runAppGeneration(baseReq, dir5);
+    const fallback = runAppGeneration({ ...baseReq, importHarmonyMode: 'lock_harmony' }, dir5);
+    const ok5 =
+      baseline.success === true &&
+      fallback.success === true &&
+      baseline.xml === fallback.xml &&
+      fallback.runManifest?.importHarmonyLockApplied === false &&
+      typeof fallback.runManifest?.importHarmonyLockFallbackReason === 'string';
+    out.push({
+      ok: ok5,
+      name: 'Song Mode: lock_harmony falls back on unusable timeline without changing output',
+    });
+  } catch (e) {
+    out.push({
+      ok: false,
+      name: `Song Mode lock_harmony fallback: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  } finally {
+    try {
+      fs.rmSync(dir5, { recursive: true, force: true });
     } catch {
       /* ignore */
     }

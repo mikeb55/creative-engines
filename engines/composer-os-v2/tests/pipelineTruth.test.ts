@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { generateComposition } from '../app-api/generateComposition';
+import { runAppGeneration } from '../app-api/composerOsAppGeneration';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { pipelineTruthAllPassed } from '../core/score-integrity/pipelineTruthGates';
 
@@ -65,6 +66,52 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
             a.runManifest?.importHarmonyModeSource === 'defaulted' &&
             b.runManifest?.importHarmonyModeSource === 'explicit';
           return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
+        } finally {
+          try {
+            fs.rmSync(dir, { recursive: true, force: true });
+          } catch {
+            /* ignore */
+          }
+        }
+      })(),
+    },
+    {
+      name: 'Pipeline truth: song_mode omitted mode vs explicit free_harmony is identical',
+      ok: (() => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pipeline-truth-songmode-free-'));
+        try {
+          const base = {
+            presetId: 'song_mode',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 3030,
+            totalBars: 32,
+            primarySongwriterStyle: 'wayne_shorter',
+          } as const;
+          const a = runAppGeneration(base, dir);
+          const b = runAppGeneration({ ...base, importHarmonyMode: 'free_harmony' }, dir);
+          return a.success === true && b.success === true && a.xml === b.xml;
+        } finally {
+          try {
+            fs.rmSync(dir, { recursive: true, force: true });
+          } catch {
+            /* ignore */
+          }
+        }
+      })(),
+    },
+    {
+      name: 'Pipeline truth: non-song preset lock_harmony flag does not alter output',
+      ok: (() => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pipeline-truth-nonsong-lock-'));
+        try {
+          const base = {
+            presetId: 'guitar_bass_duo',
+            styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+            seed: 4040,
+          } as const;
+          const a = generateComposition(base, dir);
+          const b = generateComposition({ ...base, importHarmonyMode: 'lock_harmony' }, dir);
+          return a.success === true && b.success === true && a.xml === b.xml;
         } finally {
           try {
             fs.rmSync(dir, { recursive: true, force: true });

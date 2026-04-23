@@ -19,6 +19,7 @@ import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import {
   adaptLeadSheetMusicXmlForSongMode,
+  extractLockedHarmonyBarsFromImportedTimeline,
   extractLeadSheetMelodyAnchorsFromMusicXml,
 } from '../core/song-mode/songModeLeadSheetAdapter';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
@@ -328,8 +329,22 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
   const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
+  const lockHarmonyRequested = normalizedImportHarmonyMode === 'lock_harmony';
+  let importHarmonyLockApplied = false;
+  let importHarmonyLockFallbackReason:
+    | 'mode_not_lock'
+    | 'no_musicxml_input'
+    | 'musicxml_parse_failed'
+    | 'timeline_missing'
+    | 'timeline_empty'
+    | 'timeline_unusable'
+    | 'not_song_mode'
+    | undefined;
+  let importHarmonyLockedBarsCount: number | undefined;
+  const shouldParseLeadSheetInput =
+    leadSheetXmlInput.length > 0 && (isLeadSheetPhase1WriterRoute || lockHarmonyRequested);
   const leadSheetAdapted =
-    isLeadSheetPhase1WriterRoute && leadSheetXmlInput.length > 0
+    shouldParseLeadSheetInput
       ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
           leadSheetPerformanceBlend: perfBlendRaw,
         })
@@ -343,9 +358,30 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const leadSheetMelodyAnchors = leadSheetAdapted?.melodyAnchors?.length
     ? leadSheetAdapted.melodyAnchors
     : leadSheetAnchorsOnly?.melodyAnchors;
-  const useLeadSheetHarmony = leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
+  const useLeadSheetHarmony =
+    isLeadSheetPhase1WriterRoute && leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
+  const timelineLock =
+    lockHarmonyRequested && leadSheetAdapted?.ok && leadSheetAdapted.leadSheet
+      ? extractLockedHarmonyBarsFromImportedTimeline(leadSheetAdapted.leadSheet, barTarget)
+      : undefined;
+  if (lockHarmonyRequested) {
+    if (leadSheetXmlInput.length === 0) {
+      importHarmonyLockFallbackReason = 'no_musicxml_input';
+    } else if (!leadSheetAdapted?.ok) {
+      importHarmonyLockFallbackReason = 'musicxml_parse_failed';
+    } else if (timelineLock?.ok) {
+      importHarmonyLockApplied = true;
+      importHarmonyLockedBarsCount = timelineLock.lockedChordBars?.length;
+      importHarmonyLockFallbackReason = undefined;
+    } else {
+      importHarmonyLockFallbackReason = timelineLock?.fallbackReason ?? 'timeline_unusable';
+    }
+  }
   if (leadSheetAdapted && !leadSheetAdapted.ok && leadSheetAdapted.errors.length > 0) {
     console.warn('[Song Mode LeadSheet] Phase 1 writer input ignored:', leadSheetAdapted.errors.join(' | '));
+  }
+  if (timelineLock?.warnings?.length) {
+    console.warn('[Song Mode lock_harmony] Imported timeline warnings:', timelineLock.warnings.join(' | '));
   }
   const sm = runSongMode({
     seed: effectiveSeed,
@@ -473,15 +509,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? 'builtin'
       : 'custom';
 
-  if (songwriterLockedBars && songwriterLockedBars.length > 0) {
-    chordProgressionText = songwriterLockedBars.join('|');
+  if (!useLockedCustomHarmony && importHarmonyLockApplied && timelineLock?.lockedChordBars?.length) {
+    lockedHarmonyBarsAuthoritative = [...timelineLock.lockedChordBars];
+    chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
     harmonyModeForRun = 'custom_locked';
-    lockedHarmonyBarsAuthoritative = songwriterLockedBars;
-  }
-  if (useLeadSheetHarmony) {
+  } else if (!useLockedCustomHarmony && useLeadSheetHarmony) {
     lockedHarmonyBarsAuthoritative = [...(leadSheetAdapted?.lockedChordBars ?? [])];
     chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
     harmonyModeForRun = 'custom_locked';
+  } else if (!useLockedCustomHarmony && songwriterLockedBars && songwriterLockedBars.length > 0) {
+    chordProgressionText = songwriterLockedBars.join('|');
+    harmonyModeForRun = 'custom_locked';
+    lockedHarmonyBarsAuthoritative = songwriterLockedBars;
   }
   logSongModeHarmonyDebug({
     layer: 'composerOsAppGeneration:runSongStructure',
@@ -540,9 +579,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   gp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
   gp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  gp.context.generationMetadata.importHarmonyLockApplied = importHarmonyLockApplied;
+  gp.context.generationMetadata.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
+  gp.context.generationMetadata.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
   gp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
   gp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
   gp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+  gp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
+  gp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
+  gp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
   const resolvedSongModeStyle = sm.compiledSong.songwriting?.resolvedStyle;
   if (resolvedSongModeStyle) {
     gp.context.generationMetadata.songModeProfileRuleDiagnostics = {
@@ -577,9 +622,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         retryGp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
         retryGp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
         retryGp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+        retryGp.context.generationMetadata.importHarmonyLockApplied = importHarmonyLockApplied;
+        retryGp.context.generationMetadata.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
+        retryGp.context.generationMetadata.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
         retryGp.runManifest.importHarmonyMode = normalizedImportHarmonyMode;
         retryGp.runManifest.importHarmonyModeSource = importHarmonyModeSource;
         retryGp.runManifest.harmonyBlendRaw = harmonyBlendRaw;
+        retryGp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
+        retryGp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
+        retryGp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
         if (retryGp.xml && retryGp.score) {
           const retryGce = scoreGoldenPathResultForGce(retryGp.score, retryGp.context);
           if (retryGce.overallScore > bestGceScore) {
@@ -851,6 +902,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           importHarmonyMode: gp.runManifest.importHarmonyMode,
           importHarmonyModeSource: gp.runManifest.importHarmonyModeSource,
           harmonyBlendRaw: gp.runManifest.harmonyBlendRaw,
+          importHarmonyLockApplied: gp.runManifest.importHarmonyLockApplied,
+          importHarmonyLockFallbackReason: gp.runManifest.importHarmonyLockFallbackReason,
+          importHarmonyLockedBarsCount: gp.runManifest.importHarmonyLockedBarsCount,
           motifDevelopmentSummary: gp.runManifest.motifDevelopmentSummary,
         }
       : undefined,

@@ -88,6 +88,9 @@ export interface CreateRunManifestInput {
   importHarmonyMode?: RunManifest['importHarmonyMode'];
   importHarmonyModeSource?: RunManifest['importHarmonyModeSource'];
   harmonyBlendRaw?: RunManifest['harmonyBlendRaw'];
+  importHarmonyLockApplied?: RunManifest['importHarmonyLockApplied'];
+  importHarmonyLockFallbackReason?: RunManifest['importHarmonyLockFallbackReason'];
+  importHarmonyLockedBarsCount?: RunManifest['importHarmonyLockedBarsCount'];
   motifAuthorityLevel?: RunManifest['motifAuthorityLevel'];
   motifDevelopmentSummary?: RunManifest['motifDevelopmentSummary'];
 }
@@ -171,6 +174,9 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     importHarmonyMode: input.importHarmonyMode,
     importHarmonyModeSource: input.importHarmonyModeSource,
     harmonyBlendRaw: input.harmonyBlendRaw,
+    importHarmonyLockApplied: input.importHarmonyLockApplied,
+    importHarmonyLockFallbackReason: input.importHarmonyLockFallbackReason,
+    importHarmonyLockedBarsCount: input.importHarmonyLockedBarsCount,
     motifAuthorityLevel: input.motifAuthorityLevel,
     motifDevelopmentSummary: input.motifDevelopmentSummary,
   };

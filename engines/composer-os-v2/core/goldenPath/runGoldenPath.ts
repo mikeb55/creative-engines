@@ -1928,6 +1928,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     importHarmonyMode: appliedContext.generationMetadata.importHarmonyMode,
     importHarmonyModeSource: appliedContext.generationMetadata.importHarmonyModeSource,
     harmonyBlendRaw: appliedContext.generationMetadata.harmonyBlendRaw,
+    importHarmonyLockApplied: appliedContext.generationMetadata.importHarmonyLockApplied,
+    importHarmonyLockFallbackReason: appliedContext.generationMetadata.importHarmonyLockFallbackReason,
+    importHarmonyLockedBarsCount: appliedContext.generationMetadata.importHarmonyLockedBarsCount,
     motifAuthorityLevel: appliedContext.generationMetadata.motifAuthorityLevel,
     motifDevelopmentSummary: appliedContext.generationMetadata.motifDevelopmentSummary,
   });

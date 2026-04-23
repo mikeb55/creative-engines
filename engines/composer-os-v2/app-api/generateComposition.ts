@@ -130,6 +130,9 @@ export interface GenerateResult {
     importHarmonyMode?: GenerationMetadata['importHarmonyMode'];
     importHarmonyModeSource?: GenerationMetadata['importHarmonyModeSource'];
     harmonyBlendRaw?: GenerationMetadata['harmonyBlendRaw'];
+    importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];
+    importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
+    importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   };
   /** Resolved title used for the score (user or default). */
@@ -430,6 +433,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           importHarmonyMode: result.runManifest.importHarmonyMode,
           importHarmonyModeSource: result.runManifest.importHarmonyModeSource,
           harmonyBlendRaw: result.runManifest.harmonyBlendRaw,
+          importHarmonyLockApplied: result.runManifest.importHarmonyLockApplied,
+          importHarmonyLockFallbackReason: result.runManifest.importHarmonyLockFallbackReason,
+          importHarmonyLockedBarsCount: result.runManifest.importHarmonyLockedBarsCount,
           motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
         }
       : undefined,

@@ -66,6 +66,14 @@ export interface HarmonyPipelineStageRecord {
 }
 
 export type ImportHarmonyMode = 'free_harmony' | 'lock_harmony' | 'blend_harmony';
+export type ImportHarmonyLockFallbackReason =
+  | 'mode_not_lock'
+  | 'no_musicxml_input'
+  | 'musicxml_parse_failed'
+  | 'timeline_missing'
+  | 'timeline_empty'
+  | 'timeline_unusable'
+  | 'not_song_mode';
 
 /** Generation metadata. */
 export interface GenerationMetadata {
@@ -262,6 +270,12 @@ export interface GenerationMetadata {
   importHarmonyModeSource?: 'defaulted' | 'explicit';
   /** Stage 2 bounded harmony blend echo (telemetry-only in this stage). */
   harmonyBlendRaw?: number;
+  /** Stage 3: true when Song Mode lock_harmony path consumed timeline-derived bars. */
+  importHarmonyLockApplied?: boolean;
+  /** Stage 3: fallback reason when lock_harmony was requested but not applied. */
+  importHarmonyLockFallbackReason?: ImportHarmonyLockFallbackReason;
+  /** Stage 3: count of timeline-derived locked bars consumed by harmony routing. */
+  importHarmonyLockedBarsCount?: number;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /**
