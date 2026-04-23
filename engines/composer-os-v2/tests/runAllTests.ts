@@ -95,6 +95,7 @@ import { runHumanisationToggleTests } from './humanisationToggle.test';
 import { runReferenceImportTypesTests } from './referenceImportTypes.test';
 import { runMusicXmlReferenceParserTests } from './musicXmlReferenceParser.test';
 import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.test';
+import { runImportedHarmonyTimelineTests } from './importedHarmonyTimeline.test';
 import { runLeadSheetMusicXmlImportTests } from './leadSheetMusicXmlImport.test';
 import { runMusicXmlMxlSampleFolderTests } from './musicXmlMxlSampleFolder.test';
 import { runLeadSheetPerformanceRenderingTests } from './leadSheetPerformanceRendering.test';
@@ -235,6 +236,7 @@ const suites = [
   { name: 'Reference import types', run: runReferenceImportTypesTests },
   { name: 'MusicXML reference parser', run: runMusicXmlReferenceParserTests },
   { name: 'Lead sheet reference parser', run: runLeadSheetReferenceParserTests },
+  { name: 'Imported harmony timeline (Stage 1 storage)', run: runImportedHarmonyTimelineTests },
   { name: 'Lead sheet MusicXML import (Phase 1)', run: runLeadSheetMusicXmlImportTests },
   { name: 'MusicXML .mxl sample folder (MuseScore)', run: runMusicXmlMxlSampleFolderTests },
   { name: 'Lead sheet performance shaping (import → expression)', run: runLeadSheetPerformanceRenderingTests },

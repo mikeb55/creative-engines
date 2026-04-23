@@ -4,11 +4,18 @@
  */
 
 import { musicXmlKindContentFromKindText } from '../../../core/chordSymbolMusicXmlCore';
+import {
+  parseImportedHarmonyEvent,
+  sortImportedHarmonyTimeline,
+  type ImportedHarmonyTimeline,
+} from './importedHarmonyTimeline';
 import type {
   LeadSheet,
   LeadSheetArticulationKind,
+  LeadSheetDynamicSpan,
   LeadSheetImportResult,
   LeadSheetRepeatMarker,
+  LeadSheetTempoDirectionEvent,
 } from './leadSheetTypes';
 
 const STEP_TO_PC: Record<string, number> = {
@@ -126,6 +133,87 @@ function parseArticulationKind(noteXml: string): LeadSheetArticulationKind | und
   return undefined;
 }
 
+function parseTieFlags(noteXml: string): { tieStart?: boolean; tieStop?: boolean } {
+  const tieStart = /<tie[^>]*type="start"/i.test(noteXml) || /<tied[^>]*type="start"/i.test(noteXml);
+  const tieStop = /<tie[^>]*type="stop"/i.test(noteXml) || /<tied[^>]*type="stop"/i.test(noteXml);
+  return {
+    ...(tieStart ? { tieStart: true } : {}),
+    ...(tieStop ? { tieStop: true } : {}),
+  };
+}
+
+function parseSlurFlags(noteXml: string): { slurStart?: boolean; slurStop?: boolean } {
+  const slurStart = /<slur[^>]*type="start"/i.test(noteXml);
+  const slurStop = /<slur[^>]*type="stop"/i.test(noteXml);
+  return {
+    ...(slurStart ? { slurStart: true } : {}),
+    ...(slurStop ? { slurStop: true } : {}),
+  };
+}
+
+function parseFermata(noteXml: string): boolean {
+  return /<fermata\b/i.test(noteXml);
+}
+
+function parseDirectionOffsetBeats(directionXml: string, divisions: number): number {
+  const offM = directionXml.match(/<offset>(-?\d+)<\/offset>/i);
+  const offDivs = offM ? parseInt(offM[1], 10) : 0;
+  return offDivs / Math.max(1, divisions);
+}
+
+function parseDirectionTempoBpm(directionXml: string): number | undefined {
+  const soundTempoM = directionXml.match(/<sound[^>]*tempo="([\d.]+)"/i);
+  if (soundTempoM) {
+    const bpm = Number(soundTempoM[1]);
+    if (Number.isFinite(bpm) && bpm > 0) return bpm;
+  }
+  const perMinuteM = directionXml.match(/<per-minute>([\d.]+)<\/per-minute>/i);
+  if (perMinuteM) {
+    const bpm = Number(perMinuteM[1]);
+    if (Number.isFinite(bpm) && bpm > 0) return bpm;
+  }
+  return undefined;
+}
+
+function parseTempoWordKind(directionXml: string): 'ritardando' | 'accelerando' | undefined {
+  const words = (directionXml.match(/<words[^>]*>([\s\S]*?)<\/words>/i)?.[1] ?? '').toLowerCase();
+  if (!words) return undefined;
+  if (/(^|[^a-z])(rit|rit\.|ritard|rall|rall\.)([^a-z]|$)/i.test(words)) return 'ritardando';
+  if (/(^|[^a-z])(accel|accel\.|accelerando)([^a-z]|$)/i.test(words)) return 'accelerando';
+  return undefined;
+}
+
+function mergeTiedMelodyEvents(leadSheet: LeadSheet): void {
+  const sorted = [...leadSheet.melodyEvents].sort((a, b) => a.bar - b.bar || a.beat - b.beat || a.midi - b.midi);
+  const out = [...sorted];
+  const consumed = new Set<number>();
+
+  for (let i = 0; i < out.length; i++) {
+    if (consumed.has(i)) continue;
+    const cur = out[i]!;
+    if (!cur.tieStart) continue;
+    let scan = i + 1;
+    while (scan < out.length) {
+      if (consumed.has(scan)) {
+        scan++;
+        continue;
+      }
+      const nxt = out[scan]!;
+      if (nxt.midi !== cur.midi) break;
+      cur.durationBeats += nxt.durationBeats;
+      cur.tieStart = nxt.tieStart;
+      cur.tieStop = nxt.tieStop;
+      cur.slurStop = nxt.slurStop || cur.slurStop;
+      cur.fermata = cur.fermata || nxt.fermata;
+      consumed.add(scan);
+      if (!nxt.tieStart) break;
+      scan++;
+    }
+  }
+
+  leadSheet.melodyEvents = out.filter((_, idx) => !consumed.has(idx));
+}
+
 function parseNoteVelocityMidi(noteXml: string): number | undefined {
   const m = noteXml.match(/<velocity>(\d+)<\/velocity>/i);
   if (!m) return undefined;
@@ -190,6 +278,9 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     chordEvents: [],
     melodyEvents: [],
     repeatMarkers: [],
+    dynamicSpans: [],
+    tempoDirections: [],
+    importedHarmonyTimeline: { events: [] },
   };
 
   let divisions = 1;
@@ -199,6 +290,7 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   let sawMultiPart = (trimmed.match(/<part\s+id="/gi) ?? []).length > 1;
   let sawMultiNoteChords = false;
   let sawLyrics = false;
+  const openDynamicStack: Array<{ kind: 'crescendo' | 'decrescendo'; startBar: number; startBeat: number }> = [];
 
   for (let idx = 0; idx < measures.length; idx++) {
     const measureXml = measures[idx];
@@ -234,6 +326,44 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
         if (Number.isFinite(bpm) && bpm > 0) leadSheet.tempoBpm = bpm;
       }
     }
+    const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
+    for (const dir of directionBlocks) {
+      const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, divisions));
+      const tempoWordKind = parseTempoWordKind(dir);
+      const tempoBpm = parseDirectionTempoBpm(dir);
+      if (tempoWordKind) {
+        (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
+          kind: tempoWordKind,
+          bar,
+          beat: atBeat,
+        });
+      }
+      if (tempoBpm !== undefined) {
+        (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
+          kind: 'tempo_mark',
+          bar,
+          beat: atBeat,
+          bpm: tempoBpm,
+        });
+      }
+
+      if (/<wedge[^>]*type="crescendo"/i.test(dir)) {
+        openDynamicStack.push({ kind: 'crescendo', startBar: bar, startBeat: atBeat });
+      } else if (/<wedge[^>]*type="diminuendo"/i.test(dir)) {
+        openDynamicStack.push({ kind: 'decrescendo', startBar: bar, startBeat: atBeat });
+      } else if (/<wedge[^>]*type="stop"/i.test(dir)) {
+        const open = openDynamicStack.pop();
+        if (open) {
+          (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
+            kind: open.kind,
+            startBar: open.startBar,
+            startBeat: open.startBeat,
+            endBar: bar,
+            endBeat: atBeat,
+          });
+        }
+      }
+    }
 
     const rehearsalM = measureXml.match(/<rehearsal[^>]*>([^<]+)<\/rehearsal>/i);
     if (rehearsalM) {
@@ -241,7 +371,21 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     }
 
     const harmonyBlocks = measureXml.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/gi) ?? [];
-    for (const hb of harmonyBlocks) {
+    for (let harmonyIdx = 0; harmonyIdx < harmonyBlocks.length; harmonyIdx++) {
+      const hb = harmonyBlocks[harmonyIdx]!;
+      const timelineParsed = parseImportedHarmonyEvent({
+        harmonyXml: hb,
+        bar,
+        divisions,
+        beatsPerBar: activeBeatsPerBar,
+        eventIndexInBar: harmonyIdx,
+      });
+      if (timelineParsed.warnings.length > 0) {
+        warnings.push(...timelineParsed.warnings);
+      }
+      if (timelineParsed.event) {
+        (leadSheet.importedHarmonyTimeline as ImportedHarmonyTimeline).events.push(timelineParsed.event);
+      }
       const symbol = parseHarmonySymbol(hb);
       if (!symbol) continue;
       const offM = hb.match(/<offset>(-?\d+)<\/offset>/i);
@@ -255,7 +399,18 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     const measureDynVel = parseLastDynamicsMidiFromMeasure(measureXml);
 
     const noteBlocks = measureXml.match(/<note[^>]*>[\s\S]*?<\/note>/gi) ?? [];
+    let cursorDivs = 0;
     for (const noteXml of noteBlocks) {
+      const backupM = noteXml.match(/<backup>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/backup>/i);
+      if (backupM) {
+        cursorDivs = Math.max(0, cursorDivs - parseInt(backupM[1], 10));
+        continue;
+      }
+      const forwardM = noteXml.match(/<forward>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/forward>/i);
+      if (forwardM) {
+        cursorDivs += parseInt(forwardM[1], 10);
+        continue;
+      }
       if (/<rest\b/i.test(noteXml)) continue;
       if (/<chord\s*\/>/i.test(noteXml)) {
         sawMultiNoteChords = true;
@@ -286,10 +441,13 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
       const durBeats = durationDivs / divisions;
       const noteVel = parseNoteVelocityMidi(noteXml);
       const articulationKind = parseArticulationKind(noteXml);
+      const tieFlags = parseTieFlags(noteXml);
+      const slurFlags = parseSlurFlags(noteXml);
+      const fermata = parseFermata(noteXml);
       const velocityMidi = noteVel ?? measureDynVel;
       leadSheet.melodyEvents.push({
         bar,
-        beat: 0,
+        beat: cursorDivs / Math.max(1, divisions),
         durationBeats: durBeats,
         midi: pitchToMidi(stepM[1], octave, alter),
         step: stepM[1].toUpperCase(),
@@ -297,6 +455,22 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
         octave,
         ...(velocityMidi !== undefined ? { velocityMidi } : {}),
         ...(articulationKind ? { articulationKind } : {}),
+        ...tieFlags,
+        ...slurFlags,
+        ...(fermata ? { fermata: true } : {}),
+      });
+      cursorDivs += durationDivs;
+    }
+  }
+
+  if (openDynamicStack.length > 0) {
+    for (const open of openDynamicStack) {
+      (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
+        kind: open.kind,
+        startBar: open.startBar,
+        startBeat: open.startBeat,
+        endBar: leadSheet.totalBars,
+        endBeat: activeBeatsPerBar,
       });
     }
   }
@@ -314,6 +488,16 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   leadSheet.chordEvents.sort((a, b) => (a.bar - b.bar) || (a.beat - b.beat) || a.symbol.localeCompare(b.symbol));
   leadSheet.melodyEvents.sort((a, b) => (a.bar - b.bar) || (a.beat - b.beat) || (a.midi - b.midi));
   leadSheet.repeatMarkers.sort((a, b) => a.bar - b.bar || a.kind.localeCompare(b.kind));
+  (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).sort(
+    (a, b) => a.startBar - b.startBar || a.startBeat - b.startBeat || a.endBar - b.endBar || a.endBeat - b.endBeat
+  );
+  (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).sort(
+    (a, b) => a.bar - b.bar || a.beat - b.beat || a.kind.localeCompare(b.kind)
+  );
+  leadSheet.importedHarmonyTimeline = sortImportedHarmonyTimeline(
+    leadSheet.importedHarmonyTimeline as ImportedHarmonyTimeline
+  );
+  mergeTiedMelodyEvents(leadSheet);
 
   return {
     ok: true,

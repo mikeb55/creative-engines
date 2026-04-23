@@ -3,6 +3,8 @@
  * Intentionally narrow: single-line melody + chord/time/form essentials.
  */
 
+import type { ImportedHarmonyTimeline } from './importedHarmonyTimeline';
+
 export interface LeadSheetTimeSignature {
   beats: number;
   beatType: number;
@@ -39,6 +41,34 @@ export interface LeadSheetMelodyNoteEvent {
   velocityMidi?: number;
   /** Parsed `<notations><articulations>…` when present. */
   articulationKind?: LeadSheetArticulationKind;
+  /** Parsed tie continuity from `<tie>` / `<notations><tied>`. */
+  tieStart?: boolean;
+  tieStop?: boolean;
+  /** Parsed `<slur type="start|stop">` markers when present. */
+  slurStart?: boolean;
+  slurStop?: boolean;
+  /** Parsed `<fermata/>` from note notations. */
+  fermata?: boolean;
+}
+
+export type LeadSheetDynamicSpanKind = 'crescendo' | 'decrescendo';
+
+export interface LeadSheetDynamicSpan {
+  kind: LeadSheetDynamicSpanKind;
+  startBar: number;
+  startBeat: number;
+  endBar: number;
+  endBeat: number;
+}
+
+export type LeadSheetTempoDirectionKind = 'ritardando' | 'accelerando' | 'tempo_mark';
+
+export interface LeadSheetTempoDirectionEvent {
+  kind: LeadSheetTempoDirectionKind;
+  bar: number;
+  beat: number;
+  /** Absolute BPM when provided by MusicXML `<sound tempo>` or metronome marking. */
+  bpm?: number;
 }
 
 export type LeadSheetRepeatMarkerKind = 'repeat_start' | 'repeat_end' | 'ending_start' | 'ending_stop';
@@ -61,6 +91,10 @@ export interface LeadSheet {
   chordEvents: LeadSheetChordEvent[];
   melodyEvents: LeadSheetMelodyNoteEvent[];
   repeatMarkers: LeadSheetRepeatMarker[];
+  dynamicSpans?: LeadSheetDynamicSpan[];
+  tempoDirections?: LeadSheetTempoDirectionEvent[];
+  /** Stage 1 storage-only import data; not used by harmony generation yet. */
+  importedHarmonyTimeline?: ImportedHarmonyTimeline;
 }
 
 export interface LeadSheetImportResult {
