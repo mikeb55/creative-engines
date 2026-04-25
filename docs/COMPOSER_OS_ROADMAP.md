@@ -1,22 +1,8 @@
-# Composer OS Roadmap [2026-04-24]
+# Composer OS Roadmap [2026-04-23]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **Convention:** Whenever the user asks for a “roadmap,” use the title **`Composer OS Roadmap [YYYY-MM-DD]`** (snapshot date, typically today) and align content with this file or replace sections intentionally.
-
----
-
-## Volume 7 addendum — dev visibility, operator trust [2026-04-24]
-
-**Narrative.** A process that started is not an app you can use. A green run in the terminal is not proof that a browser tab or a Composer OS window is actually in front of you. For this chapter we finally treated that gap as a first-class engineering problem, not a shrug. Web dev no longer leans on Vite’s `server.open` in IDE shells: **`openViteWhenReady.mjs`** polls **http://127.0.0.1:5173/** until it answers, then opens the default browser on Windows with **`cmd /c start`**, and prints a plain, grep-friendly line you can require in your head—**`[Composer OS] Opened default browser: http://127.0.0.1:5173/`**—with **`status=ok` / `status=fail`** and an ISO timestamp so “maybe it opened” is not a category. Desktop dev is symmetric: the Electron main process always emits **`[Electron] Window created in {ms} | show() at {ms} | focus() at {ms}`**; with **`--verbose`** or **`COMPOSER_OS_ELECTRON_VERBOSE=1`** you get the full receipt (`app.whenReady`, single-instance lock, **`loadFile`** path, **`ready-to-show`**, **`show` / `focus`**). A second instance is no longer a silent no-op: it prints a clear **`[Electron]`** stderr line telling you to reuse the existing window. **`.vscode/tasks.json`** now labels **browser (localhost) web dev** and **Electron (file://) desktop dev** without pretending they are the same object, and adds **manual** open/launch fallbacks. None of this is product logic or music logic—it is *operator-trust* and *environment discipline*. The **portable .exe** lesson remains **separate and stricter still**: a **Composer-OS.exe** in **`release/`** only counts as “the new build” if the **running** process is **closed** and the **on-disk** binary is really the one you just rebuilt, not a stale process or a name on a menu.
-
-**What changed technically**
-
-- **Web** — `apps/composer-os-app`: **`concurrently`** runs **vite + api + ui**; **`ui`** = **`openViteWhenReady.mjs`**; **`vite.config.ts`** has **`server.open: false`**. The opener script polls the dev server, opens the browser on Windows, prints the success line, status, and timestamp; **`VITE_OPEN_BROWSER=0`** skips the open.
-- **Desktop** — `apps/composer-os-desktop` **`electron/main.ts`**: timing line for window lifecycle; verbose mode for the full handoff; explicit stderr when **single-instance lock** rejects a second start.
-- **Cursor** — **`.vscode/tasks.json`**: dev tasks named so **web = browser/localhost** and **desktop = Electron**, plus **Open web UI (manual)** and **Launch desktop (manual)** when automation was fine but *visibility* was not.
-
-**Why it belongs in Volume 7** — That chapter is where we keep refusing to trust proxies: green checkmarks, labels, menus, and filenames are not the song, the score, or the running binary. This work deepens the same rule for day-to-day dev: until something **opens, renders, and can be read in the log you chose**, the stack has not really delivered.
 
 ---
 
@@ -98,7 +84,6 @@
 - Unsupported complexity is handled with explicit warnings (extra parts, multi-voice melody, lyrics, stacked note chords), keeping behaviour deterministic and production-safe.
 - Added deterministic parser tests (`tests/leadSheetMusicXmlImport.test.ts`) and wired suite into harness.
 - No realization integration yet (String Quartet / Big Band import-fed realization remains a later stage).
-- **Stage 2 (2026-04-24):** `leadSheetMusicXmlImport` merges `<harmony>` from non-first `<part>` blocks into the same `LeadSheet` (`chordEvents` + `importedHarmonyTimeline`), using part 1’s divisions and beats-per-bar per measure index; melody and `totalBars` remain part 1 only; extra measures on harmony parts emit a bounded warning. **Stage 3** (broader multi-part semantics, dedupe policy beyond duplicates-as-imported) intentionally not collapsed here—only adjacent harness/telemetry test updates.
 
 ### T2.3 — Motif Development Phase 1 pilot slice (2026-04-22)
 
@@ -249,58 +234,44 @@
 
 ---
 
-## MusicXML import / harmony modes (staged rollout — **3 combined stages**)
+## MusicXML Harmony Import for Lead Sheets (staged rollout)
 
 ### Guardrails (must hold for every stage)
 
-- **Plan each stage before editing code**; **no silent behavior changes** outside the parts of a stage that explicitly authorize behavior changes (today: **Stage 2** adapter/support boundary; **Stage 3** mode rollout).
-- **`free_harmony` remains the default** for backward compatibility; omitted mode stays **free-equivalent** until users opt into lock/blend.
-- **Every behavior change is paired with tests and updated telemetry**; Stage 1 may add telemetry + tests **without** changing musical output.
-- **No implementation before explicit approval** for that stage’s scope.
+- **No silent harmony-output changes** outside the stage that explicitly enables harmony behavior changes.
+- **`free_harmony` remains the default** for backward compatibility unless explicitly changed in a later approved stage.
+- **Tests are required at every stage** (unit + integration/regression as appropriate).
+- **Plan first, approve, then implement** (no implementation before explicit approval).
 
-### Combined stage plan (replaces finer-grained Stages 1–7 list)
+### Canonical 7-stage roadmap
 
-**Stage 1 — Telemetry + tests together**
+1. **Stage 1 — Parse/store MusicXML `<harmony>` into typed timeline, zero output change.**  
+   **Status:** **implemented / in progress**
+2. **Stage 2 — Add `ImportHarmonyMode` plumbing through request/context/manifest, zero output change.**  
+   **Status:** **implemented / in progress**
+3. **Stage 3 — Activate `lock_harmony` for Song Mode only.**  
+   **Status:** **implemented / in progress**
+3b. **Stage 3b — Add Song Mode harmony import debug UI (Dev-first).**  
+   **Status:** **implemented / in progress**
+4. **Stage 4 — Make `free_harmony` the explicit default behavior and surface this in API, metadata, manifests, and docs (no change to musical output).**  
+   **Status:** **implemented / in progress**
+5. **Stage 5 — Add conservative `blend_harmony` with bounded control (e.g. `harmonyBlend`).**  
+   **Status:** planned
+6. **Stage 6 — Extend support to other lead-sheet presets one by one.**  
+   **Status:** planned
+7. **Stage 7 — Add evals, regression gates, docs, telemetry.**  
+   **Status:** planned
 
-- Refine the current `musicxml_parse_failed` bucket (and related lock fallbacks) into **more precise, non-breaking** reason codes — e.g. distinguish **syntax / extract failure**, **`no_chord_events`** (including wrong-part / first-part-only imports), **`unsupported_symbol_style`**, and **timeline / lock unusable** paths — without changing default routing until explicitly approved per sub-deliverable.
-- Immediately add **focused fixtures + tests** that:
-  - hit **each new telemetry path** with small MusicXML (or adapter-level) cases, and
-  - assert **unchanged musical behavior** for defaults and **exact emitted reason codes** on manifests / receipts.
-- **Deliverable mindset:** operators and tests can trust *why* lock did not apply, before any new notation support ships.
+### Current implementation status
 
-**Stage 2 — Support boundary + adapter extensions**
-
-- Make an explicit **Phase 1 support decision** for imported harmony used by **`lock_harmony`**:
-  - which chord-symbol styles / MusicXML notations are **in scope** and must parse to usable **`chordEvents`** / timeline material;
-  - which are **“valid but currently unsupported”** and must remain **safe, non-locking**, with clear telemetry (no silent lock).
-- Then extend **`importLeadSheetFromMusicXml`** / **`adaptLeadSheetMusicXmlForSongMode`** (and related helpers) **only within that boundary** so that:
-  - in-scope real-world exports (including multi-part / Sibelius-style scores **if** declared in scope) produce **usable chord events** instead of failing early;
-  - everything **out of scope** keeps prior behavior except **clearer telemetry** from Stage 1.
-- **Reference investigation:** multi-part harmony on non-first staff (e.g. [perplexity-musicxml-lock-harmony-investigation-2026-04-24.md](dev-notes/perplexity-musicxml-lock-harmony-investigation-2026-04-24.md)) informs scope decisions — **no code until Stage 2 is approved**.
-
-**Stage 3 — Mode rollout + evals + docs**
-
-- Gradually roll out **true** `lock_harmony` and **`blend_harmony`** behavior:
-  - start with **Song Mode**, then extend to **other lead-sheet presets one by one**;
-  - for each preset: **tests**, **receipts / telemetry**, and **defaults** that preserve **`free_harmony`-equivalent** output when users have not opted in.
-- In the same stage add:
-  - **small structural evals** comparing lock vs free vs blend on **fixed seeds**;
-  - **regression gates** so future import/lock changes fail loudly when expectations break;
-  - **user-facing docs** stating: what each mode does, which chord notations are supported for lock, and what to expect when a file is **valid but unsupported**.
-
-### Delivered baseline (historical finer stages — superseded by the plan above)
-
-The following shipped **before** this 3-stage consolidation; they remain true of the codebase but are **not** the forward planning grid:
-
-- Parse/store **`ImportedHarmonyTimeline`** + first-part lead-sheet import (**T2.4** / former Stage 1).
-- **`ImportHarmonyMode`** + **`harmonyBlend`** plumbing, manifests, **`importHarmonyPolicyVersion`**, explicit **`free_harmony`** default documentation (former Stages 2 / 4).
-- Song Mode **`lock_harmony`** path with fallback telemetry when lock cannot apply; receipt **Harmony import status** (former Stage 3).
-- Dev-first **Harmony import debug** UI + single-file regression tests (former Stage 3b); packaged visibility may still need **desktop / truth-dump gating** — treat as follow-up under Stage 3 docs or a small UI pass.
-- **`blend_harmony`:** metadata / request surface present; **audible blend behavior** remains **Stage 3** of the combined plan.
-
-### Next action
-
-- **Approve and execute Combined Stage 1** (telemetry split + fixture tests, **no** musical behavior change) before expanding adapter scope in Combined Stage 2.
+- **Stage 1 implemented:** parse/store `ImportedHarmonyTimeline` only (storage-only; no harmony-generation consumption yet).
+- **Stage 2 implemented:** `ImportHarmonyMode` and `harmonyBlend` plumbing only (request → context → manifest telemetry).
+- **Stage 3 implemented/in progress (Song Mode only):** when `importHarmonyMode === 'lock_harmony'` and imported timeline is usable, Song Mode routes into locked harmony from timeline-derived bars.
+- **Stage 3b implemented/in progress (Dev app UI):** Song Mode Generate now includes a dev-only `Harmony import debug` surface for request knobs + receipt inspectability (`importHarmonyMode`, lock applied/fallback reason, locked bars count, compact progression preview).
+- **Stage 4 implemented/in progress:** API/docs state that omitted `importHarmonyMode` normalizes to `free_harmony`; manifests and `GenerationMetadata` echo **`importHarmonyPolicyVersion`** (= 2) whenever import-harmony telemetry is written — **no musical or routing behavior change**; `blend_harmony` remains inactive.
+- **Explicit fallback retained:** if timeline is missing/empty/unusable, Song Mode falls back to existing behavior and records fallback telemetry.
+- **Guardrails unchanged:** `free_harmony` remains the default path; `blend_harmony` is still inactive in behavior.
+- **Next action:** plan/approve Stage 5 (`blend_harmony` with bounded control) before implementation.
 
 ---
 
@@ -501,6 +472,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-24].*
+*End of Composer OS Roadmap [2026-04-23].*
 
 

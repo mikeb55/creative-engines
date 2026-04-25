@@ -19,15 +19,10 @@ import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import {
   adaptLeadSheetMusicXmlForSongMode,
-  effectiveLeadSheetHarmonyDisplayModeAfterEnvGate,
   extractLockedHarmonyBarsFromImportedTimeline,
   extractLeadSheetMelodyAnchorsFromMusicXml,
-  normalizeLeadSheetHarmonyDisplayMode,
 } from '../core/song-mode/songModeLeadSheetAdapter';
-import { normalizeAlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
-import { normalizeStyleProfileId } from '../core/song-mode/songModeStyleProfile';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
-import { buildImportHarmonyLeadSheetTelemetry } from '../core/importHarmony/buildImportHarmonyLeadSheetTelemetry';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
@@ -59,7 +54,6 @@ import {
 import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
 import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
-import type { AlternateGuitarTuningResolved } from '../core/song-mode/alternateGuitarTunings';
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -119,7 +113,6 @@ function writeArtifactJson(
 }
 
 function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['requestEcho']> {
-  const normalizedStyleProfile = normalizeStyleProfileId(req.styleProfile);
   return {
     tonalCenter: req.tonalCenter,
     bpm: req.bpm,
@@ -131,14 +124,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     primarySongwriterStyle: req.primarySongwriterStyle,
     harmonyMode: req.harmonyMode,
     importHarmonyMode: req.importHarmonyMode,
-    leadSheetHarmonyDisplayMode: normalizeLeadSheetHarmonyDisplayMode(req.leadSheetHarmonyDisplayMode),
-    leadSheetHarmonyDisplayModeEffective: effectiveLeadSheetHarmonyDisplayModeAfterEnvGate(
-      req.leadSheetHarmonyDisplayMode
-    ),
     harmonyBlend: typeof req.harmonyBlend === 'number' && Number.isFinite(req.harmonyBlend) ? req.harmonyBlend : undefined,
     longFormEnabled: req.longFormEnabled,
-    styleProfile: normalizedStyleProfile,
-    debugFixtureMode: req.debugFixtureMode,
+    styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
     ...(req.intent
       ? {
@@ -342,124 +330,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
   const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
-  const fixtureMode = req.debugFixtureMode === 'indie_dual_guitar_tuning_proof' ? req.debugFixtureMode : undefined;
-  const fixtureTunings: AlternateGuitarTuningResolved = {
-    mode: 'separate',
-    guitar1: { presetId: 'custom', strings: ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'] },
-    guitar2: { presetId: 'custom', strings: ['C2', 'G2', 'D3', 'G3', 'B3', 'D4'] },
-  };
-  const alternateGuitarTuningNormalized =
-    fixtureMode === 'indie_dual_guitar_tuning_proof'
-      ? fixtureTunings
-      : normalizeAlternateGuitarTuningRequest(req.alternateGuitarTuning);
-  const normalizedStyleProfile =
-    fixtureMode === 'indie_dual_guitar_tuning_proof'
-      ? 'STYLE_INDIE_ART_POP'
-      : (normalizeStyleProfileId(req.styleProfile) ?? 'STYLE_ECM');
-  try {
-    const rawAlt = req.alternateGuitarTuning as { mode?: string } | undefined;
-    const rawMode = rawAlt && typeof rawAlt === 'object' && typeof rawAlt.mode === 'string' ? rawAlt.mode : null;
-    console.log(
-      '[DualTuning] runSongStructure incoming',
-      JSON.stringify({
-        styleProfile: req.styleProfile,
-        normalizedStyleProfile,
-        hasAlternateGuitarTuning: !!req.alternateGuitarTuning,
-        rawMode,
-        normalizedMode: alternateGuitarTuningNormalized?.mode ?? null,
-        normalizedNull: !alternateGuitarTuningNormalized,
-        fixture: fixtureMode ?? null,
-      })
-    );
-  } catch {
-    /* best-effort forensic */
-  }
-  if (
-    alternateGuitarTuningNormalized?.mode === 'separate' &&
-    normalizedStyleProfile !== 'STYLE_INDIE_ART_POP'
-  ) {
-    return {
-      success: false,
-      error:
-        'Separate Guitar 1/Guitar 2 tunings are only available on the Song Mode Indie Art Pop route. Select Indie Art Pop style and try again.',
-      productKind: 'musicxml',
-      composerOsVersion: COMPOSER_OS_VERSION,
-      validation: validationForStructural(false, [
-        `Song Mode separate-tuning request rejected because styleProfile resolved to ${normalizedStyleProfile} instead of STYLE_INDIE_ART_POP.`,
-      ]),
-      runManifest: {
-        seed: effectiveSeed,
-        presetId: 'song_mode',
-        activeModules: ['song_mode_compile'],
-        timestamp: ts,
-        scoreTitle: title,
-        variationId: req.variationId,
-        creativeControlLevel: req.creativeControlLevel,
-      },
-      scoreTitle: title,
-      requestEcho: requestEchoFromReq(req),
-    };
-  }
-  if (
-    normalizedStyleProfile === 'STYLE_INDIE_ART_POP' &&
-    alternateGuitarTuningNormalized?.mode === 'separate' &&
-    (alternateGuitarTuningNormalized.guitar1?.presetId === 'standard' ||
-      alternateGuitarTuningNormalized.guitar2?.presetId === 'standard')
-  ) {
-    return {
-      success: false,
-      error:
-        'Indie Art Pop with separate tunings requires both Guitar 1 and Guitar 2 to use non-standard tunings.',
-      productKind: 'musicxml',
-      composerOsVersion: COMPOSER_OS_VERSION,
-      validation: validationForStructural(false, [
-        'Indie Art Pop separate tuning route rejected because one guitar resolved to standard tuning.',
-      ]),
-      runManifest: {
-        seed: effectiveSeed,
-        presetId: 'song_mode',
-        activeModules: ['song_mode_compile'],
-        timestamp: ts,
-        scoreTitle: title,
-        variationId: req.variationId,
-        creativeControlLevel: req.creativeControlLevel,
-      },
-      scoreTitle: title,
-      requestEcho: requestEchoFromReq(req),
-    };
-  }
-  if (
-    !fixtureMode &&
-    req.alternateGuitarTuning &&
-    typeof req.alternateGuitarTuning === 'object' &&
-    (req.alternateGuitarTuning as { mode?: string }).mode === 'separate' &&
-    !alternateGuitarTuningNormalized
-  ) {
-    return {
-      success: false,
-      error:
-        'Separate guitar tunings could not be read. Check that each guitar has six valid string notes from low to high (for example D2 A2 D3 G3 A3 D4) or pick presets from the list.',
-      productKind: 'musicxml',
-      composerOsVersion: COMPOSER_OS_VERSION,
-      validation: validationForStructural(false, [
-        'Song Mode: alternateGuitarTuning.mode was separate but normalizeAlternateGuitarTuningRequest returned null.',
-      ]),
-      runManifest: {
-        seed: effectiveSeed,
-        presetId: 'song_mode',
-        activeModules: ['song_mode_compile'],
-        timestamp: ts,
-        scoreTitle: title,
-        variationId: req.variationId,
-        creativeControlLevel: req.creativeControlLevel,
-      },
-      scoreTitle: title,
-      requestEcho: requestEchoFromReq(req),
-    };
-  }
-  if (normalizedStyleProfile === 'STYLE_INDIE_ART_POP' && alternateGuitarTuningNormalized?.mode === 'separate') {
-    console.log('[DualTuning] validation ok separate+indie — engine runGoldenPath will receive alternateGuitarTuning (normalized)');
-  }
   const lockHarmonyRequested = normalizedImportHarmonyMode === 'lock_harmony';
   let importHarmonyLockApplied = false;
   let importHarmonyLockFallbackReason:
@@ -478,7 +348,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     shouldParseLeadSheetInput
       ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
           leadSheetPerformanceBlend: perfBlendRaw,
-          harmonyDisplayMode: normalizeLeadSheetHarmonyDisplayMode(req.leadSheetHarmonyDisplayMode),
         })
       : undefined;
   const leadSheetAnchorsOnly =
@@ -500,14 +369,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     if (leadSheetXmlInput.length === 0) {
       importHarmonyLockFallbackReason = 'no_musicxml_input';
     } else if (!leadSheetAdapted?.ok) {
-      /**
-       * Telemetry bucket: `musicxml_parse_failed` is assigned for *any* `adaptLeadSheetMusicXmlForSongMode` failure
-       * (`!leadSheetAdapted.ok`), not only XML syntax errors. That includes `importLeadSheetFromMusicXml` returning
-       * `ok: false`, extract/unpack failure, and `adaptLeadSheetForSongMode` rejecting the lead sheet (e.g. zero
-       * `chordEvents` after import — common when `<harmony>` exists only on a non-first part; Phase 1 import scans
-       * the first `<part>` only). Timeline lock extraction runs only after `leadSheetAdapted.ok` is true.
-       * @see docs/dev-notes/perplexity-musicxml-lock-harmony-investigation-2026-04-24.md
-       */
       importHarmonyLockFallbackReason = 'musicxml_parse_failed';
     } else if (timelineLock?.ok) {
       importHarmonyLockApplied = true;
@@ -662,11 +523,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyModeForRun = 'custom_locked';
     lockedHarmonyBarsAuthoritative = songwriterLockedBars;
   }
-  if (fixtureMode === 'indie_dual_guitar_tuning_proof') {
-    chordProgressionText = undefined;
-    harmonyModeForRun = 'builtin';
-    lockedHarmonyBarsAuthoritative = undefined;
-  }
   logSongModeHarmonyDebug({
     layer: 'composerOsAppGeneration:runSongStructure',
     uiChordProgressionChars: rawCustomHarmony.length,
@@ -682,7 +538,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     scoreTitle: title,
     songModeHookFirstIdentity: true,
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
-    styleProfile: normalizedStyleProfile,
+    styleProfile: req.styleProfile ?? 'STYLE_ECM',
     harmonyMode: harmonyModeForRun,
     chordProgressionText,
     ...(lockedHarmonyBarsAuthoritative
@@ -709,7 +565,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
-    alternateGuitarTuning: alternateGuitarTuningNormalized ?? undefined,
     era: req.stylePairing?.era ?? undefined,
     stylePairing: req.stylePairing
       ? {
@@ -719,43 +574,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           seed: effectiveSeed,
         }
       : undefined,
-    debugFixtureMode: fixtureMode,
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
-  try {
-    const m = gp.context?.generationMetadata;
-    const simultaneousByPart = gp.score?.parts?.map((p) => {
-      let count = 0;
-      for (const measure of p.measures ?? []) {
-        const byStart = new Map<number, number>();
-        for (const ev of measure.events ?? []) {
-          if (ev.kind !== 'note') continue;
-          byStart.set(ev.startBeat, (byStart.get(ev.startBeat) ?? 0) + 1);
-        }
-        for (const c of byStart.values()) if (c >= 2) count++;
-      }
-      return { id: p.id, simultaneousNoteStarts: count };
-    });
-    const parts = gp.score?.parts?.map((p) => ({
-      id: p.id,
-      name: p.name,
-      instrumentIdentity: p.instrumentIdentity,
-      midiProgram: p.midiProgram,
-    }));
-    console.log(
-      '[DualTuning] export parts snapshot (post runGoldenPath)',
-      JSON.stringify({
-        metaAltMode: m?.alternateGuitarTuning?.mode ?? null,
-        songModeHookFirstIdentity: m?.songModeHookFirstIdentity === true,
-        styleProfile: m?.styleProfile,
-        partSummary: parts ?? null,
-        simultaneousByPart: simultaneousByPart ?? null,
-      })
-    );
-  } catch {
-    /* best-effort */
-  }
   gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   gp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
   gp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
@@ -771,16 +592,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   gp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
   gp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
   gp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
-  const importHarmonyLeadSheetTelemetry = buildImportHarmonyLeadSheetTelemetry({
-    shouldParseLeadSheetInput,
-    leadSheetAdapted,
-  });
-  Object.assign(gp.context.generationMetadata, importHarmonyLeadSheetTelemetry);
-  Object.assign(gp.runManifest, importHarmonyLeadSheetTelemetry);
   const resolvedSongModeStyle = sm.compiledSong.songwriting?.resolvedStyle;
   if (resolvedSongModeStyle) {
     gp.context.generationMetadata.songModeProfileRuleDiagnostics = {
-      styleProfile: normalizedStyleProfile,
+      styleProfile: req.styleProfile ?? 'STYLE_ECM',
       primarySongwriterStyleId: resolvedSongModeStyle.primaryId,
       secondarySongwriterStyleId: resolvedSongModeStyle.secondaryId,
       authorOverlayId: resolvedSongModeStyle.authorOverlayId,
@@ -822,8 +637,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         retryGp.runManifest.importHarmonyLockApplied = importHarmonyLockApplied;
         retryGp.runManifest.importHarmonyLockFallbackReason = importHarmonyLockFallbackReason;
         retryGp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
-        Object.assign(retryGp.context.generationMetadata, importHarmonyLeadSheetTelemetry);
-        Object.assign(retryGp.runManifest, importHarmonyLeadSheetTelemetry);
         if (retryGp.xml && retryGp.score) {
           const retryGce = scoreGoldenPathResultForGce(retryGp.score, retryGp.context);
           if (retryGce.overallScore > bestGceScore) {
@@ -915,7 +728,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       }
     }
     const locked = gp.context.lockedHarmonyBarsRaw;
-    if (fixtureMode !== 'indie_dual_guitar_tuning_proof' && locked && locked.length === gp.context.form.totalBars) {
+    if (locked && locked.length === gp.context.form.totalBars) {
       try {
         const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
         if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
@@ -945,7 +758,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
       userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
       userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
-      styleProfile: normalizedStyleProfile,
+      styleProfile: req.styleProfile ?? 'STYLE_ECM',
       chordProgressionSubmittedRaw: gp.runManifest.chordProgressionSubmittedRaw,
       parsedChordBarsSnapshot: gp.runManifest.parsedChordBarsSnapshot,
       pipelineTruthInputStage: gp.runManifest.pipelineTruthInputStage,
@@ -980,12 +793,6 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songModeProfileRuleDiagnostics: gp.context.generationMetadata.songModeProfileRuleDiagnostics,
       motifAuthorityLevel: gp.context.generationMetadata.motifAuthorityLevel,
       motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
-      importHarmonyShouldParseLeadSheetInput:
-        gp.context.generationMetadata.importHarmonyShouldParseLeadSheetInput,
-      importHarmonyLeadSheetPipelineStage: gp.context.generationMetadata.importHarmonyLeadSheetPipelineStage,
-      importHarmonyLeadSheetAdaptDetail: gp.context.generationMetadata.importHarmonyLeadSheetAdaptDetail,
-      importHarmonyChordEventCount: gp.context.generationMetadata.importHarmonyChordEventCount,
-      importHarmonyTimelineEventCount: gp.context.generationMetadata.importHarmonyTimelineEventCount,
       importHarmonyPolicyVersion: gp.context.generationMetadata.importHarmonyPolicyVersion,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
@@ -1106,18 +913,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           importHarmonyLockApplied: gp.runManifest.importHarmonyLockApplied,
           importHarmonyLockFallbackReason: gp.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: gp.runManifest.importHarmonyLockedBarsCount,
-          importHarmonyShouldParseLeadSheetInput: gp.runManifest.importHarmonyShouldParseLeadSheetInput,
-          importHarmonyLeadSheetPipelineStage: gp.runManifest.importHarmonyLeadSheetPipelineStage,
-          importHarmonyLeadSheetAdaptDetail: gp.runManifest.importHarmonyLeadSheetAdaptDetail,
-          importHarmonyChordEventCount: gp.runManifest.importHarmonyChordEventCount,
-          importHarmonyTimelineEventCount: gp.runManifest.importHarmonyTimelineEventCount,
           motifDevelopmentSummary: gp.runManifest.motifDevelopmentSummary,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,
     universalLeadSheet,
     requestEcho: requestEchoFromReq(req),
-    harmonyInterpretationView: leadSheetAdapted?.harmonyInterpretationView,
     vocalLeadSheetFilepath,
     gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
     gceGatePassed: bestGceScore >= GCE_GATE_MIN,

@@ -6,7 +6,6 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
-import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 
 const KEYS_COMP_LOW = 58;
 const KEYS_COMP_HIGH = 77;
@@ -26,8 +25,6 @@ export function applySongwriterKeysCompPresentation(score: ScoreModel, context: 
   const md = context.generationMetadata;
   if (!md?.songModeSongwriterKeysCompActive) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  /** Indie Art Pop route keeps electric guitar identity; do not remap to piano comp. */
-  if (normalizeStyleProfileId(md.styleProfile) === 'STYLE_INDIE_ART_POP') return;
 
   const g = score.parts.find((p) => p.id === 'guitar');
   if (!g) return;

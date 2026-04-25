@@ -26,7 +26,6 @@ export function noteXmlRestFragment(opts: {
 /** Pitched note: pitch → duration → tie → voice → type (+ dots) → stem? → staff? → notations. */
 export function noteXmlPitchedFragment(opts: {
   dynamicsAttr: string;
-  chordXml?: string;
   pitchXml: string;
   durationTicks: number;
   tieXml: string;
@@ -40,7 +39,6 @@ export function noteXmlPitchedFragment(opts: {
 }): string {
   const {
     dynamicsAttr,
-    chordXml = '',
     pitchXml,
     durationTicks,
     tieXml,
@@ -50,5 +48,5 @@ export function noteXmlPitchedFragment(opts: {
     staffXml = '',
     notationsXml,
   } = opts;
-  return `        <note${dynamicsAttr}>${chordXml}${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
+  return `        <note${dynamicsAttr}>${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
 }

@@ -19,16 +19,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Listen on all interfaces (IPv4 + ::1) so both http://127.0.0.1:5173/ and http://localhost:5173/ work
-    // without half the app loading while /api requests fail in the Vite proxy.
-    host: true,
-    // Rely on scripts/openViteWhenReady.mjs (npm "ui" process) to open the browser. Vite's built-in
-    // `server.open` is unreliable from IDE-integrated shells on Windows (e.g. Cursor/VS Code tasks).
-    // Set VITE_OPEN_BROWSER=0 to skip the explicit opener; open http://127.0.0.1:5173/ yourself.
-    open: false,
-    // Target API by IPv4 literal: `localhost` can map to ::1 on Windows; Express dev may listen on 127.0.0.1.
     proxy: {
-      '/api': { target: `http://127.0.0.1:${apiPort}`, changeOrigin: true, secure: false },
+      '/api': { target: `http://localhost:${apiPort}`, changeOrigin: true },
     },
   },
 });

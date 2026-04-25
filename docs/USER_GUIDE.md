@@ -58,29 +58,6 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **fusion:** modal, sus colours
 - **contemporary:** most permissive palette
 
-### Indie Art Pop alternate guitar tuning (Song Mode, optional)
-
-- Available in Song Mode when you choose **Indie Art Pop** style.
-- Three modes: **Standard tuning**, **One tuning for both guitars**, and **Separate tunings for Guitar 1 and Guitar 2**.
-- Shared/separate paths include curated tuning presets plus a custom 6-string entry option.
-- In the **Separate tunings** path, Composer OS now keeps both guitar tunings through generation/export and presents that route as **two electric guitars** (not piano/upright-bass labels).
-- This is a bounded v1 surface: it adds light tuning-driven character (drone/register/split-role feel) without changing default behavior when unused.
-
-### Indie Art Pop with Alternate Tunings
-To generate two electric guitars with alternate tunings:
-1. Select **Song Mode**
-2. Choose **Indie Art Pop** style
-3. In tuning options, select **"separate tunings"**
-4. Generated output will contain two electric guitars with chordal voicings
-
-The system will automatically apply altered tunings to both guitars and generate simultaneous chord tones instead of traditional guitar/bass counterpoint.
-
-### Indie Art Pop listening pass (Song Mode)
-
-- Applies automatically when you choose the **Indie Art Pop** style in Song Mode (no extra controls).
-- You should hear **clearer melody vs inner-guitar roles**, a touch more **section-to-section loud/soft contrast**, and a bit more **air at phrase ends** (including a small lift before the return). Optional **alternate tunings** steer that further: shared presets lean **sustain / open color** or **cluster punch** depending on the preset, and **separate tunings** strengthen the **bed vs riff** split.
-- **Other Song Mode styles are unchanged.**
-
 ### Motif Development (Phase 1)
 
 - **Supported paths only:** Song Mode pilot writers (`wayne_shorter`, `barry_harris`, `donald_fagen`, `bacharach`), hybrid (Wayne melody identity + Barry harmony stack), and `ecm_chamber`.
@@ -94,18 +71,15 @@ The system will automatically apply altered tunings to both guitars and generate
 - **Big Band arranging:** **`npm run test:big-band-arranging`** — five seeds, deterministic **8-bar** sax soli in **17–24**, brass tacet there, end-window brass activity sanity.
 - **ECM Chamber texture (symbolic, no audio):** **`npm run eval:ecm-texture`** (repo root or `engines/composer-os-v2`) — golden-path **ECM Chamber** runs on fixed seeds; each line is JSON with **how busy bass vs guitar are per bar**, **bass vs treble register separation**, **phrase-end** comp thinning/silence hints, and a single **`ecmTextureScore`** (0–10). Use after ECM arrangement/orchestration edits instead of ad-hoc listening alone. **`npm run test:ecm`** stays the fast stability bar for ECM.
 
-### Lead-sheet MusicXML (melody + chords from your chart)
+### Lead-sheet MusicXML import (Phase 1, developer foundation)
 
-**Plain-language guide:** **[COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** — importing files, split parts (melody on part 1, chords elsewhere), raw vs optional enriched harmony, and compare mode.
-
-**What you should know in one breath**
-
-- **Melody and song length** come from the **first part** of the score.
-- **Chord symbols** can be on part 1 **or merged in from other parts** (matched by bar), which helps typical exports where the tune and the comping chords are split.
-- **Your written chords stay in charge** for the real harmony. An optional extra layer can add interpretation when your setup supports it; otherwise everything falls back safely to what you wrote.
-- **Paste vs file:** paste **uncompressed** MusicXML text, or use the file picker for `.musicxml`, `.xml`, or **`.mxl`** (the app unpacks `.mxl` for you).
-- **Expression:** imported dynamics and common articulations can gently shape note length and velocity before Song Mode uses the chart. Optional blend control: **`leadSheetPerformanceBlend`** (0–1) on the technical request when you need it.
-- **Honest limits:** very dense scores may still produce **warnings**; some markings (for example detailed tempo maps) are only approximated today.
+- The engine includes a bounded MusicXML lead-sheet importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`, plus **compressed `.mxl`** unpack at `musicXmlScoreInput.ts` (ZIP + `META-INF/container.xml`).
+- It supports **`score-partwise`** input with first-part lead melody (voice 1), harmony tags, basic metadata, meter/key hints, simple repeat/ending markers, and **lightweight expression** (dynamics, `<velocity>`, common articulations) used for **post-import performance shaping** — longer/shorter notes and MIDI velocity hints before Song Mode adaptation.
+- Unsupported complexity is handled safely with warnings (for example: extra parts, multiple melody voices, lyrics, stacked note chords) rather than pretending full support.
+- **Paste vs file:** pasted input must be **uncompressed MusicXML text**. The Generate UI **file picker** also accepts **`.mxl`**; the app unpacks it locally and sends normalized score XML to the API.
+- Optional API field **`leadSheetPerformanceBlend`** (0–1; default ~0.55 when omitted) tunes how strongly imported expression influences shaping.
+- **Not reconstructed from files yet:** tempo maps, ritardando/accelerando, fermatas, swing/rubato — treat timing feel as approximate beyond a single BPM hint when present.
+- This phase does **not** yet realize imported lead sheets directly into String Quartet or Big Band; it provides the shared `LeadSheet` model foundation for later slices.
 
 ### LeadSheet -> Song Mode (Donald Fagen + Barry Harris) experimental Phase 1
 
@@ -118,11 +92,10 @@ The system will automatically apply altered tunings to both guitars and generate
   2. Set **Songwriter** to **Donald Fagen** or **Barry Harris**.
   3. In **LeadSheet MusicXML input (Phase 1)**, either paste **uncompressed** MusicXML text or load a local `.musicxml`, `.xml`, or **`.mxl`** file.
   4. Click **Generate**. Leave the field empty to run normal Song Mode behavior.
-- **What it does now:** imported harmony from your chart (including chords from other parts when present) is converted to **locked Song Mode chord bars** for this route; a bounded melody-start anchor guide is applied deterministically; imported dynamics/articulation flavour can influence note shaping and gentle guitar velocity contour (`leadSheetPerformanceBlend`).
+- **What it does now:** imported LeadSheet harmony is converted to locked Song Mode chord bars for this route; a bounded melody-start anchor guide is applied deterministically; imported dynamics/articulation flavour can influence note shaping and gentle guitar velocity contour (`leadSheetPerformanceBlend`).
 - **If omitted:** Song Mode runs as before with baseline behavior.
 - **If invalid:** the UI shows an honest LeadSheet/MusicXML import failure message (unpack/validation mirrors the engine rules).
 - **Inspectability fields:** run manifests for this route can include `songModeLeadSheetInputApplied`, `songModeLeadSheetAnchorStartApplied`, and `songModeLeadSheetPerformanceBlend` when applicable.
-- **Harmony display (Raw / Enriched / Compare):** available on the **technical generate request** for integrations and advanced flows; the main Generate screen may not expose every option yet. See the plain guide linked above.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
 ---
@@ -191,12 +164,6 @@ As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Son
 - A short explanation may appear on the **receipt** and in the **`_meta`** sidecar manifest as **`songModeStyleSurfaceNotes`** (honest wording — not “sounds like” any artist).
 
 Other songwriter / era / lyric-author / arranger fields still behave mostly as compile rules, pairing metadata, and receipts; **Groove / Soul** and **Donald Fagen** (below) also have small golden-path metadata nudges.
-
-In Song Mode, the **Style** dropdown now separates profiles into **Advanced styles (deeper behavior)** and **Light touch styles (contour/velocity)** so the UI matches current implementation depth.
-
-For **ECM** in Song Mode, the style now emphasizes more open space, modal color, and softer dominant motion so the result feels less cadential and more airy.
-
-Song Mode now also includes **optional diversity presets** that prefill curated songwriter blends for quicker A/B contrast. If you do nothing, defaults stay the same; manual songwriter/arranger controls still work as before.
 
 ### Song Mode — Era setting
 

@@ -7,8 +7,6 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { vi } from 'vitest';
 
-(import.meta as { env: Record<string, string | undefined> }).env.VITE_COMPOSER_OS_TONALITY_VAULT_ENRICH ??= '1';
-
 vi.mock('../src/services/api', () => {
   const api = {
     getPresets: vi.fn().mockResolvedValue({
@@ -76,44 +74,6 @@ describe('HomeGenerate mode-driven UI', () => {
     const songwriterNode = nodes.find((n) => n.props.value === 'donald_fagen' || n.props.value === 'wayne_shorter');
     expect(songwriterNode).toBeDefined();
     return songwriterNode!;
-  }
-
-  function getHarmonyInterpretationSelect(tree: ReturnType<typeof create>) {
-    const nodes = tree.root.findAllByType('select');
-    const harmonyNode = nodes.find((n) => {
-      const children = n.props.children;
-      if (!Array.isArray(children)) return false;
-      const values = children.map((c: { props?: { value?: string } }) => c?.props?.value).filter(Boolean);
-      return values.includes('raw') && values.includes('enriched') && values.includes('compare');
-    });
-    expect(harmonyNode).toBeDefined();
-    return harmonyNode!;
-  }
-
-  function selectOptionValues(node: { props?: { children?: unknown } }): string[] {
-    const out: string[] = [];
-    const walk = (child: unknown) => {
-      if (!child) return;
-      if (Array.isArray(child)) {
-        child.forEach(walk);
-        return;
-      }
-      if (typeof child === 'object') {
-        const c = child as { type?: string; props?: { value?: string; children?: unknown } };
-        if (c.type === 'option' && typeof c.props?.value === 'string') out.push(c.props.value);
-        if (c.props?.children != null) walk(c.props.children);
-      }
-    };
-    walk(node.props?.children);
-    return out;
-  }
-
-  function findSelectByOptionValues(tree: ReturnType<typeof create>, requiredValues: string[]) {
-    const selects = tree.root.findAllByType('select');
-    return selects.find((s) => {
-      const values = selectOptionValues(s);
-      return requiredValues.every((v) => values.includes(v));
-    });
   }
 
   it('does not import Style Blend or style module dropdowns (retired from Generate)', () => {
@@ -248,119 +208,6 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('importHarmonyMode: importHarmonyModeUi');
     expect(src).toContain('harmonyBlend: Math.max(0, Math.min(1, harmonyBlendUi))');
     expect(src).toContain('showHarmonyImportDebugDev');
-  });
-
-  it('renders a Harmony interpretation control and threads leadSheetHarmonyDisplayMode into Song Mode payload', () => {
-    expect(src).toContain('Harmony interpretation');
-    expect(src).toContain('leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi');
-    expect(src).toContain('VITE_COMPOSER_OS_TONALITY_VAULT_ENRICH');
-  });
-
-  it('groups Song Mode styles by implementation depth with honest helper copy', () => {
-    expect(src).toContain('Advanced styles (deeper behavior)');
-    expect(src).toContain('Light touch styles (contour/velocity)');
-    expect(src).toContain('Advanced styles apply additional harmony/rhythm behavior.');
-    expect(src).toContain('Light touch styles mainly change contour and');
-    expect(src).toContain('velocity.');
-  });
-
-  it('adds a small Song Mode diversity preset selector with curated options', () => {
-    expect(src).toContain('Diversity preset (optional)');
-    expect(src).toContain('Manual (current controls)');
-    expect(src).toContain('SONG_MODE_DIVERSITY_PRESETS.map');
-    expect(src).toContain('Quick contrast presets that prefill songwriter blend and safe arranger/era hints.');
-  });
-
-  it('adds Indie Art Pop-only alternate guitar tuning controls with exact mode labels', () => {
-    expect(src).toContain("songModeStyleProfile === 'STYLE_INDIE_ART_POP'");
-    expect(src).toContain('Alternate Guitar Tuning (optional)');
-    expect(src).toContain('Standard tuning');
-    expect(src).toContain('One tuning for both guitars');
-    expect(src).toContain('Separate tunings for Guitar 1 and Guitar 2');
-  });
-
-  it('uses shared preset list and reset behavior for alternate tuning controls', () => {
-    expect(src).toContain('ALTERNATE_GUITAR_TUNING_PRESETS.map');
-    expect(src).toContain('Reset to standard tuning');
-  });
-
-  it('threads alternate tuning payload only when Indie Art Pop controls are enabled', () => {
-    expect(src).toContain("songModeStyleProfile === 'STYLE_INDIE_ART_POP' && alternateTuningEnabled");
-    expect(src).toContain('normalizeAlternateGuitarTuningRequest(alternateGuitarTuningPayload)');
-    expect(src).toContain('alternateGuitarTuning: alternateGuitarTuningPayload');
-  });
-
-  it('sends Song Mode Indie Art Pop separate-tuning payload from actual Generate UI flow', async () => {
-    const { api } = await import('../src/services/api');
-    vi.mocked(api.generate).mockResolvedValue({
-      success: true,
-      filename: 'composer_os_song_mode_indie_route.musicxml',
-      filepath: 'C:/tmp/composer_os_song_mode_indie_route.musicxml',
-      runManifest: { presetId: 'song_mode' },
-      validation: {
-        integrityPassed: true,
-        behaviourGatesPassed: true,
-        mxValidationPassed: true,
-        strictBarMathPassed: true,
-        exportRoundTripPassed: true,
-        instrumentMetadataPassed: true,
-        readiness: { release: 10, mx: 10, shareable: true },
-        errors: [],
-      },
-    } as Record<string, unknown>);
-
-    const tree = await renderHomeGenerate();
-    const styleSelect = findSelectByOptionValues(tree, ['STYLE_ECM', 'STYLE_INDIE_ART_POP']);
-    expect(styleSelect).toBeDefined();
-    await act(async () => {
-      styleSelect!.props.onChange({ target: { value: 'STYLE_INDIE_ART_POP' } });
-    });
-
-    const checkboxes = tree.root.findAllByType('input').filter((n) => n.props.type === 'checkbox');
-    let altTuningEnabled = false;
-    for (const cb of checkboxes) {
-      await act(async () => {
-        cb.props.onChange({ target: { checked: true } });
-      });
-      const tuningModeSelect = findSelectByOptionValues(tree, ['standard', 'shared', 'separate']);
-      if (tuningModeSelect) {
-        altTuningEnabled = true;
-        break;
-      }
-    }
-    expect(altTuningEnabled).toBe(true);
-
-    const tuningModeSelect = findSelectByOptionValues(tree, ['standard', 'shared', 'separate']);
-    expect(tuningModeSelect).toBeDefined();
-    await act(async () => {
-      tuningModeSelect!.props.onChange({ target: { value: 'separate' } });
-    });
-
-    const tuningPresetSelects = tree.root
-      .findAllByType('select')
-      .filter((s) => selectOptionValues(s).includes('dadgad') && selectOptionValues(s).includes('open_g'));
-    expect(tuningPresetSelects.length).toBeGreaterThanOrEqual(2);
-    await act(async () => {
-      tuningPresetSelects[0]!.props.onChange({ target: { value: 'dadgad' } });
-      tuningPresetSelects[1]!.props.onChange({ target: { value: 'open_g' } });
-    });
-
-    const generateButton = getGenerateButton(tree);
-    await act(async () => {
-      generateButton.props.onClick();
-      await Promise.resolve();
-    });
-
-    const calls = vi.mocked(api.generate).mock.calls;
-    expect(calls.length).toBeGreaterThan(0);
-    const payload = calls[calls.length - 1]![0] as Record<string, unknown>;
-    expect(payload.presetId).toBe('song_mode');
-    expect(payload.styleProfile).toBe('STYLE_INDIE_ART_POP');
-    expect(payload.alternateGuitarTuning).toEqual({
-      mode: 'separate',
-      guitar1: { presetId: 'dadgad' },
-      guitar2: { presetId: 'open_g' },
-    });
   });
 
   it('shows LeadSheet MusicXML input label and enabled textarea for Song Mode Donald Fagen', async () => {
@@ -612,53 +459,6 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(text).toContain('"Melody anchor: ","Applied"');
   });
 
-  it('sends leadSheetHarmonyDisplayMode values (raw/enriched/compare) in Song Mode generate requests', async () => {
-    const { api } = await import('../src/services/api');
-    vi.mocked(api.generate).mockResolvedValue({
-      success: true,
-      filename: 'composer_os_song_mode_harmony_mode.musicxml',
-      filepath: 'C:/tmp/composer_os_song_mode_harmony_mode.musicxml',
-      requestEcho: { primarySongwriterStyle: 'donald_fagen' },
-      runManifest: { presetId: 'song_mode' },
-      validation: {
-        integrityPassed: true,
-        behaviourGatesPassed: true,
-        mxValidationPassed: true,
-        strictBarMathPassed: true,
-        exportRoundTripPassed: true,
-        instrumentMetadataPassed: true,
-        readiness: { release: 10, mx: 10, shareable: true },
-        errors: [],
-      },
-    } as Record<string, unknown>);
-    const tree = await renderHomeGenerate();
-    const select = getHarmonyInterpretationSelect(tree);
-    const generateButton = getGenerateButton(tree);
-    for (const mode of ['raw', 'enriched', 'compare'] as const) {
-      await act(async () => {
-        select.props.onChange({ target: { value: mode } });
-      });
-      await act(async () => {
-        generateButton.props.onClick();
-        await Promise.resolve();
-      });
-    }
-    const calls = vi.mocked(api.generate).mock.calls.map((c) => c[0] as Record<string, unknown>);
-    expect(calls.length).toBeGreaterThanOrEqual(3);
-    expect(calls[calls.length - 3]?.leadSheetHarmonyDisplayMode).toBe('raw');
-    expect(calls[calls.length - 2]?.leadSheetHarmonyDisplayMode).toBe('enriched');
-    expect(calls[calls.length - 1]?.leadSheetHarmonyDisplayMode).toBe('compare');
-  });
-
-  it('wires diversity preset selection into existing songwriter/arranger/secondary controls', () => {
-    expect(src).toContain('resolveSongModeDiversityPreset(nextId)');
-    expect(src).toContain('setSongwriterStyle(preset.primarySongwriterStyle)');
-    expect(src).toContain('setSecondarySongwriterStyle(preset.secondarySongwriterStyle)');
-    expect(src).toContain('resolveSongModeDiversityStylePairing(preset.id)');
-    expect(src).toContain('setArrangerStyle(String(pairing.arrangerStyle))');
-    expect(src).toContain('setEra(String(pairing.era))');
-  });
-
   it('shows LeadSheet and Melody anchor Not applied when flags are false', async () => {
     const { api } = await import('../src/services/api');
     vi.mocked(api.generate).mockResolvedValueOnce({
@@ -820,111 +620,6 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(text).toContain('Fallback reason:');
     expect(text).toContain('timeline_unusable');
     expect(text).toContain('Locked progression used:');
-  });
-
-  it('renders compare view rows with raw chord, enriched interpretation, and why text', async () => {
-    const { api } = await import('../src/services/api');
-    vi.mocked(api.generate).mockResolvedValueOnce({
-      success: true,
-      filename: 'composer_os_song_mode_harmony_compare.musicxml',
-      filepath: 'C:/tmp/composer_os_song_mode_harmony_compare.musicxml',
-      requestEcho: {
-        primarySongwriterStyle: 'donald_fagen',
-        leadSheetHarmonyDisplayMode: 'compare',
-        leadSheetHarmonyDisplayModeEffective: 'compare',
-      },
-      runManifest: { presetId: 'song_mode' },
-      harmonyInterpretationView: {
-        requestedMode: 'compare',
-        effectiveMode: 'compare',
-        viewWarnings: [],
-        comparePayload: {
-          rawChordEvents: [{ bar: 1, beat: 1, symbol: 'Dm7' }],
-          tonalityVault: {
-            applied: true,
-            warnings: [],
-            enrichment: {
-              byChordIndex: [
-                {
-                  bar: 1,
-                  beat: 1,
-                  sourceSymbol: 'Dm7',
-                  diatonicClass: 'diatonic_major_key',
-                  scaleDegreeFromMajor: 'II',
-                  functionalHint: 'predominant_family',
-                  explanation: 'Dm7 reads as II (predominant-family color) in the local major key.',
-                },
-              ],
-            },
-          },
-        },
-      },
-      validation: {
-        integrityPassed: true,
-        behaviourGatesPassed: true,
-        mxValidationPassed: true,
-        strictBarMathPassed: true,
-        exportRoundTripPassed: true,
-        instrumentMetadataPassed: true,
-        readiness: { release: 10, mx: 10, shareable: true },
-        errors: [],
-      },
-    } as Record<string, unknown>);
-
-    const tree = await renderHomeGenerate();
-    const generateButton = getGenerateButton(tree);
-    await act(async () => {
-      generateButton.props.onClick();
-      await Promise.resolve();
-    });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Raw vs enriched (first 8 imported chords)');
-    expect(text).toContain('Raw');
-    expect(text).toContain('Enriched');
-    expect(text).toContain('Why:');
-    expect(text).toContain('predominant family');
-    expect(text).toContain('diatonic to local major');
-    expect(text).not.toContain('diatonic_major_key');
-  });
-
-  it('shows interpretation notes when compare/enriched falls back to raw', async () => {
-    const { api } = await import('../src/services/api');
-    vi.mocked(api.generate).mockResolvedValueOnce({
-      success: true,
-      filename: 'composer_os_song_mode_harmony_compare_fallback.musicxml',
-      filepath: 'C:/tmp/composer_os_song_mode_harmony_compare_fallback.musicxml',
-      requestEcho: {
-        primarySongwriterStyle: 'donald_fagen',
-        leadSheetHarmonyDisplayMode: 'compare',
-        leadSheetHarmonyDisplayModeEffective: 'raw',
-      },
-      runManifest: { presetId: 'song_mode' },
-      harmonyInterpretationView: {
-        requestedMode: 'compare',
-        effectiveMode: 'raw',
-        viewWarnings: ['Tonality Vault is disabled, so compare falls back to raw.'],
-      },
-      validation: {
-        integrityPassed: true,
-        behaviourGatesPassed: true,
-        mxValidationPassed: true,
-        strictBarMathPassed: true,
-        exportRoundTripPassed: true,
-        instrumentMetadataPassed: true,
-        readiness: { release: 10, mx: 10, shareable: true },
-        errors: [],
-      },
-    } as Record<string, unknown>);
-
-    const tree = await renderHomeGenerate();
-    const generateButton = getGenerateButton(tree);
-    await act(async () => {
-      generateButton.props.onClick();
-      await Promise.resolve();
-    });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Interpretation notes:');
-    expect(text).toContain('falls back to raw');
   });
 
   it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {

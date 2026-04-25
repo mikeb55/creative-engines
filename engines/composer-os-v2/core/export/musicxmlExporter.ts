@@ -151,7 +151,6 @@ function emitPitchedTicks(
   pitchXml: string,
   articulationXml: string,
   dynAttr: string,
-  chordXml = '',
   stemXml?: string,
   staffXml?: string
 ): string {
@@ -163,7 +162,6 @@ function emitPitchedTicks(
     const tie = tieXmlForSplitIndex(i, n);
     xml += noteXmlPitchedFragment({
       dynamicsAttr: dynAttr,
-      chordXml,
       pitchXml,
       durationTicks: t,
       tieXml: tie,
@@ -453,8 +451,7 @@ function eventsToXml(
     const stemXml = stemXmlForMultiVoiceLayer(voice, multiVoice);
     let voiceTickSum = 0;
 
-    for (let i = 0; i < voiceEvents.length; i++) {
-      const e = voiceEvents[i]!;
+    for (const e of voiceEvents) {
       const sb = e.startBeat;
       const eb = sb + e.duration;
       const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
@@ -476,41 +473,19 @@ function eventsToXml(
       if (e.kind === 'rest') {
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       } else {
-        let groupLastIdx = i;
-        while (groupLastIdx + 1 < voiceEvents.length) {
-          const next = voiceEvents[groupLastIdx + 1]!;
-          if (next.kind !== 'note') break;
-          if (next.startBeat !== sb) break;
-          if (next.duration !== e.duration) break;
-          groupLastIdx++;
-        }
-        const grouped = voiceEvents.slice(i, groupLastIdx + 1).filter((x): x is Extract<typeof x, { kind: 'note' }> => x.kind === 'note');
         /** Bass `NoteEvent.pitch` is concert MIDI (same as score model; see upright bass hard range). */
-        for (let gi = 0; gi < grouped.length; gi++) {
-          const note = grouped[gi]!;
-          const exportMidi = note.pitch;
-          const { step, alter, octave } = midiToPitch(exportMidi);
-          const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
-          const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
-          const art = (note as { articulation?: string }).articulation;
-          const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
-          const vel = (note as { velocity?: number }).velocity;
-          const dynAttr =
-            vel !== undefined
-              ? ` dynamics="${Math.min(100, Math.max(0, (vel / 127) * 100)).toFixed(2)}"`
-              : '';
-          xml += emitPitchedTicks(
-            parts,
-            voice,
-            pitchXml,
-            notationsEl,
-            dynAttr,
-            gi > 0 ? '<chord/>' : '',
-            stemXml,
-            staffPolyphonyXml
-          );
-        }
-        i = groupLastIdx;
+        const exportMidi = e.pitch;
+        const { step, alter, octave } = midiToPitch(exportMidi);
+        const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+        const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
+        const art = (e as { articulation?: string }).articulation;
+        const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
+        const vel = (e as { velocity?: number }).velocity;
+        const dynAttr =
+          vel !== undefined
+            ? ` dynamics="${Math.min(100, Math.max(0, (vel / 127) * 100)).toFixed(2)}"`
+            : '';
+        xml += emitPitchedTicks(parts, voice, pitchXml, notationsEl, dynAttr, stemXml, staffPolyphonyXml);
       }
       for (const p of parts) voiceTickSum += p;
       cursor = endDiv;

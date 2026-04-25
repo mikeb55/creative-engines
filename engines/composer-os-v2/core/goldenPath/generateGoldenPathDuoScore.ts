@@ -107,9 +107,7 @@ import { applySongModeOstinatoC5, applyC5DensityLayer } from './songModeOstinato
 import { applySongModeControlC5 } from './songModeControlC5';
 import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
-import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
-import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 import { applySlonimskyToMelodyLine, SlonimskyContext, SlonimskyNote } from '../slonimsky/slonimskyEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
@@ -145,68 +143,6 @@ const DUO_DEFAULT_STYLE_STACK: StyleStack = {
 };
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
-
-function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
-  const sp = normalizeStyleProfileId(context.generationMetadata?.styleProfile);
-  return (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    sp === 'STYLE_INDIE_ART_POP' &&
-    context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
-  );
-}
-
-function remapBassPartToElectricGuitar2ForIndieArtPop(bass: PartModel): PartModel {
-  const remappedMeasures: MeasureModel[] = bass.measures.map((m) => ({
-    ...m,
-    events: m.events.map((e) => {
-      if (e.kind !== 'note') return e;
-      const p = Math.max(43, e.pitch + 12);
-      return { ...e, pitch: p };
-    }),
-  }));
-  return {
-    ...bass,
-    id: 'guitar_2',
-    name: 'Electric Guitar 2',
-    instrumentIdentity: 'clean_electric_guitar',
-    midiProgram: 27,
-    clef: 'treble',
-    measures: remappedMeasures,
-  };
-}
-
-function forceChordalElectricGuitar2VoicingsForIndieRoute(
-  part: PartModel,
-  context: CompositionContext
-): PartModel {
-  const low = 40; // E2
-  const high = 76; // E5
-  for (const m of part.measures) {
-    const chord = m.chord ?? getChordForBar(m.index, context);
-    const tones = guitarChordTonesInRange(chord, Math.max(low + 7, 47), high);
-    const anchors = m.events
-      .filter((e): e is NoteEvent => e.kind === 'note')
-      .sort((a, b) => a.startBeat - b.startBeat);
-    if (anchors.length === 0) continue;
-    const extra: NoteEvent[] = [];
-    for (const a of anchors) {
-      const chordDur = Math.min(Math.max(a.duration, 0.5), 2);
-      const triadCandidates = [tones.third, tones.fifth, tones.seventh]
-        .filter((p) => Number.isFinite(p))
-        .map((p) => clampPitch(p, low, high))
-        .filter((p, i, arr) => arr.indexOf(p) === i && p !== a.pitch)
-        .slice(0, 2);
-      if (triadCandidates.length < 2) continue;
-      extra.push(
-        createNote(triadCandidates[0]!, a.startBeat, chordDur, 2),
-        createNote(triadCandidates[1]!, a.startBeat, chordDur, 3)
-      );
-    }
-    for (const ev of extra) addEvent(m, ev);
-  }
-  return part;
-}
 
 function isDuoGoldenPathPreset(presetId: string): boolean {
   return (
@@ -3292,38 +3228,6 @@ function applySongModeImportedLeadSheetVelocityNudges(guitar: PartModel, context
   }
 }
 
-/**
- * Guitar–Bass Duo (single-line): bounded duration stretch from imported phrase-connection hints when
- * LeadSheet expression strength is on. Used by `songModeLeadSheetInput` unit tests; safe to call from
- * the phrase-first path if product later wires the same metadata.
- */
-export function applySingleLineImportedExpressionConnectionNudges(
-  guitarPart: PartModel,
-  context: CompositionContext
-): void {
-  if (context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return;
-  if (context.generationMetadata?.songModeLeadSheetInputApplied !== true) return;
-  const raw = context.generationMetadata?.songModeLeadSheetExpressionStrength;
-  const strength = typeof raw === 'number' && Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0;
-  const anchors = context.generationMetadata?.songModeLeadSheetMelodyAnchors as SongModeLeadSheetMelodyAnchor[] | undefined;
-  let conn = 0;
-  for (const a of anchors ?? []) {
-    if (typeof a.connectionHint === 'number' && Number.isFinite(a.connectionHint)) {
-      conn = Math.max(conn, Math.min(1, a.connectionHint));
-    }
-  }
-  if (conn <= 0 || strength <= 0) return;
-  const scale = 1 + conn * strength * 0.12;
-  for (const m of guitarPart.measures) {
-    for (const e of m.events) {
-      if (e.kind !== 'note') continue;
-      const n = e as NoteEvent;
-      if ((n.voice ?? 1) !== 1) continue;
-      n.duration *= scale;
-    }
-  }
-}
-
 export interface GoldenPathPlans {
   sections: import('../section-roles/sectionRoleTypes').SectionWithRole[];
   guitarMap: InstrumentRegisterMap;
@@ -3648,7 +3552,7 @@ export function generateGoldenPathDuoScore(
       phraseGuitarContours
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
-    if (context.presetId === 'ecm_chamber' || (context.presetId === 'guitar_bass_duo' && isEcmStyle)) {
+    if (context.presetId === 'ecm_chamber') {
       applyEcmChamberPhraseEdgeSpaceToParts(guitarPart, bassPart, tb, context.seed);
     }
   }
@@ -3662,24 +3566,8 @@ export function generateGoldenPathDuoScore(
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
   }
-  const useIndieDualGuitar = shouldUseIndieArtPopDualGuitarRoute(context);
-  if (
-    isGuitarBassDuoFamily(context.presetId) &&
-    context.presetId !== 'ecm_chamber' &&
-    !useIndieDualGuitar
-  ) {
-    /**
-     * Wyble-style V2/bass register coupling is for true guitar–bass duo. The Indie + separate
-     * tunings path remaps the bass part to Electric Guitar 2; running this pass first forces
-     * guitar inner-voice + bass geometry that is no longer the requested dual-electric product.
-     */
-    console.log(
-      '[DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false)',
-      JSON.stringify({ presetId: context.presetId, hasWybleLayout: !!context.generationMetadata?.wybleVoiceLayout })
-    );
+  if (isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') {
     enforceVoice2BassRegisterSeparation18_2B_4(guitarPart, bassPart, context);
-  } else if (isGuitarBassDuoFamily(context.presetId) && useIndieDualGuitar) {
-    console.log('[DualTuning] route selected indie_dual_electric (skip enforceVoice2BassRegisterSeparation18_2B_4)');
   }
 
   const bpm = opts?.bpm ?? 120;
@@ -3687,26 +3575,6 @@ export function generateGoldenPathDuoScore(
     context.presetId === 'ecm_chamber'
       ? { swingRatio: 1, tempoFeel: 'medium' as const, driftTotalBeats: 0.06 }
       : buildFeelProfileFromTempo(bpm);
-  if (useIndieDualGuitar) {
-    console.log(
-      '[DualTuning] remapBassPartToElectricGuitar2ForIndieArtPop',
-      JSON.stringify({ bassIdBefore: bassPart.id, instrumentBefore: bassPart.instrumentIdentity })
-    );
-    bassPart = remapBassPartToElectricGuitar2ForIndieArtPop(bassPart);
-    bassPart = forceChordalElectricGuitar2VoicingsForIndieRoute(bassPart, context);
-  }
-  console.log(
-    '[DualTuning] route selected',
-    JSON.stringify({
-      dualGuitarIndieRoute: useIndieDualGuitar,
-      gate: {
-        songModeHook: context.generationMetadata?.songModeHookFirstIdentity === true,
-        presetId: context.presetId,
-        styleProfile: normalizeStyleProfileId(context.generationMetadata?.styleProfile),
-        metadataAltMode: context.generationMetadata?.alternateGuitarTuning?.mode ?? null,
-      },
-    })
-  );
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], {
     tempo: bpm,
     feelProfile,
@@ -3787,13 +3655,6 @@ export function generateGoldenPathDuoScore(
   applySongModeControlC5(afterExpressive, context);
   applySongModeExpressionC6(afterExpressive, context);
   applySongModeSpaceC7(afterExpressive, context);
-  if (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    normalizeStyleProfileId(context.generationMetadata.styleProfile ?? 'STYLE_ECM') === 'STYLE_INDIE_ART_POP'
-  ) {
-    applyIndieArtPopPhaseADeepening(afterExpressive, context, plans.sections);
-  }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     context.presetId === 'guitar_bass_duo' &&

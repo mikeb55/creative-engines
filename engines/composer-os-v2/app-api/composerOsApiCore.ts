@@ -272,16 +272,8 @@ export function apiGenerate(
         body.blendStrength === 'strong'
           ? body.blendStrength
           : undefined,
-      alternateGuitarTuning:
-        body.alternateGuitarTuning && typeof body.alternateGuitarTuning === 'object'
-          ? body.alternateGuitarTuning
-          : undefined,
       formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
       includeVocalLeadSheet: body.includeVocalLeadSheet === true ? true : undefined,
-      debugFixtureMode:
-        body.debugFixtureMode === 'indie_dual_guitar_tuning_proof'
-          ? body.debugFixtureMode
-          : undefined,
     };
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;
@@ -368,32 +360,11 @@ export async function apiOpenOutputFolder(
   composerRoot: string,
   body?: { path?: string }
 ): Promise<OpenOutputFolderResult> {
-  console.log(
-    '[OpenFolder] transport=node-http-api',
-    JSON.stringify({
-      pid: typeof process !== 'undefined' ? process.pid : null,
-      platform: typeof process !== 'undefined' ? process.platform : null,
-      impl:
-        'openOutputFolder.ts: primary cmd.exe /d /c start "" <abs>; fallback spawn(explorer.exe); see following [OpenFolder] target/strategy lines',
-    })
-  );
-  console.log(
-    '[Library API] open-output-folder requested',
-    body?.path && String(body.path).trim() ? `subpath: ${String(body.path).trim()}` : 'library root'
-  );
   const resolved = resolveOpenFolderTarget(composerRoot, body);
   if (!resolved.ok) {
-    console.error('[Library API] open-output-folder: rejected:', resolved.message);
     return { success: false, message: resolved.message };
   }
-  console.log('[Library API] open-output-folder: resolved target', resolved.target);
-  const r = await openOutputFolder(resolved.target);
-  if (r.success) {
-    console.log(`[Library API] open-output-folder: backend success path: ${r.openedPath ?? resolved.target}`);
-  } else {
-    console.error('[Library API] open-output-folder: backend failed:', r.message ?? '(no message)');
-  }
-  return r;
+  return openOutputFolder(resolved.target);
 }
 
 export async function apiSystemCheck(): Promise<

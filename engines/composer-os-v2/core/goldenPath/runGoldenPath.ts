@@ -37,7 +37,6 @@ import { getStyleModuleDisplayName } from '../style-modules/styleModuleRegistry'
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
-import { validateIndieArtPopDualGuitarIdentityInMusicXml } from '../export/validateIndieArtPopDualGuitarIdentityInMusicXml';
 import {
   assertDuoEightBarInputTruthEarly,
   runPipelineTruthGates,
@@ -88,10 +87,8 @@ import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
-import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
-import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
 import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
@@ -101,14 +98,12 @@ import {
 } from '../song-mode/songModeStyleSurface';
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
-import { applyEcmStyleHarmonyMotionPolicy } from '../song-mode/ecmStyleHarmonyPolicy';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
 import type { MotifAuthorityLevel } from '../motif/motifAuthorityV1';
-import { buildIndieDualGuitarTuningFixtureScore } from '../song-mode/indieDualGuitarTuningFixture';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -960,8 +955,6 @@ export interface RunGoldenPathOptions {
   secondarySongwriterStyle?: string;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
   authorOverlay?: string;
-  /** Song Mode v1 (Indie Art Pop): resolved optional alternate tuning envelope. */
-  alternateGuitarTuning?: AlternateGuitarTuningResolved;
   /** Song Mode: optional classical overlay id (for inspectability metadata). */
   classicalOverlay?: string;
   /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
@@ -978,8 +971,6 @@ export interface RunGoldenPathOptions {
   motifAuthorityV1?: boolean;
   /** Pilot motif policy level (default `soft` when V1 is requested). */
   motifAuthorityLevel?: MotifAuthorityLevel;
-  /** Diagnostic-only deterministic Song Mode Indie tuning proof fixture. */
-  debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -989,93 +980,6 @@ export interface RunGoldenPathOptions {
    * compared against the default portable Wyble map without forking the full planner.
    */
   suppressWybleVoiceLayoutForTest?: boolean;
-}
-
-function clamp01(n: number): number {
-  return Math.max(0, Math.min(1, n));
-}
-
-function applyIndieArtPopAlternateTuningPolicy(
-  context: CompositionContext,
-  tuning: AlternateGuitarTuningResolved | undefined
-): void {
-  if (!tuning) {
-    return;
-  }
-  if (context.generationMetadata?.songModeHookFirstIdentity !== true) {
-    console.log(
-      '[DualTuning] applyIndieArtPopAlternateTuningPolicy skip',
-      JSON.stringify({ reason: 'songModeHookFirstIdentity_not_true', mode: tuning.mode })
-    );
-    return;
-  }
-  if (normalizeStyleProfileId(context.generationMetadata?.styleProfile) !== 'STYLE_INDIE_ART_POP') {
-    console.log(
-      '[DualTuning] applyIndieArtPopAlternateTuningPolicy skip',
-      JSON.stringify({ reason: 'styleProfile_not_indie', mode: tuning.mode, sp: context.generationMetadata?.styleProfile })
-    );
-    return;
-  }
-
-  const next: GenerationMetadata = {
-    ...context.generationMetadata,
-    alternateGuitarTuning: tuning,
-    altTuningDroneTendency: tuning.mode === 'standard' ? 0 : tuning.mode === 'shared' ? 0.12 : 0.2,
-    altTuningRegisterBias:
-      tuning.mode === 'separate' ? 'high' : tuning.mode === 'shared' && tuning.shared?.presetId !== 'standard' ? 'low' : 'neutral',
-    altTuningSplitRoleActive: tuning.mode === 'separate',
-  };
-
-  if (tuning.mode !== 'standard') {
-    next.songwriterDensityBias = clamp01((next.songwriterDensityBias ?? 0.5) - (tuning.mode === 'separate' ? 0.08 : 0.04));
-  }
-  if (tuning.mode === 'separate') {
-    next.songwriterSyncopationBias = clamp01((next.songwriterSyncopationBias ?? 0.5) + 0.03);
-  }
-
-  const g = context.register.byInstrument?.clean_electric_guitar;
-  if (g && g.length === 2) {
-    const shift = next.altTuningRegisterBias === 'high' ? 3 : next.altTuningRegisterBias === 'low' ? -3 : 0;
-    context.register = {
-      ...context.register,
-      byInstrument: {
-        ...context.register.byInstrument,
-        clean_electric_guitar: [g[0] + shift, g[1] + shift],
-      },
-    };
-  }
-
-  context.generationMetadata = next;
-  if (tuning.mode !== 'standard') {
-    appendSongModeStyleSurfaceNotes(
-      context.generationMetadata,
-      tuning.mode === 'separate'
-        ? ['Indie Art Pop alt tuning: separate guitar tunings enabled (light drone/register/split-role nudges).']
-        : ['Indie Art Pop alt tuning: shared alternate tuning enabled (light drone/register nudges).']
-    );
-  }
-}
-
-function isIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
-  return (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
-    normalizeStyleProfileId(context.generationMetadata?.styleProfile) === 'STYLE_INDIE_ART_POP' &&
-    context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
-  );
-}
-
-function hasAnySimultaneousPolyphony(part: ScoreModel['parts'][number]): boolean {
-  for (const m of part.measures) {
-    const notes = m.events
-      .filter((e): e is Extract<typeof e, { kind: 'note' }> => e.kind === 'note')
-      .map((e) => ({ start: e.startBeat, end: e.startBeat + e.duration }))
-      .sort((a, b) => a.start - b.start);
-    for (let i = 0; i < notes.length - 1; i++) {
-      if (notes[i + 1]!.start < notes[i]!.end - 1e-6) return true;
-    }
-  }
-  return false;
 }
 
 const MOTIF_PHASE1_SONG_MODE_WRITERS = new Set(['wayne_shorter', 'barry_harris', 'donald_fagen', 'bacharach']);
@@ -1440,7 +1344,6 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
 export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
   const errors: string[] = [];
   let songModePhraseWarnings: string[] = [];
-  const isIndieTuningFixture = options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof';
   const probeEcm =
     (options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber' &&
     process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
@@ -1504,7 +1407,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
-    const styleProfileResolved: StyleProfile = normalizeStyleProfileId(options.styleProfile) ?? 'STYLE_ECM';
+    const styleProfileResolved: StyleProfile = options.styleProfile ?? 'STYLE_ECM';
     const isLeadSheetPhase1Writer =
       options.primarySongwriterStyle === 'donald_fagen' || options.primarySongwriterStyle === 'barry_harris';
     context.generationMetadata = {
@@ -1613,21 +1516,6 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity) {
     applyBacharachSongModeHarmonyDressing(context);
   }
-  if (options?.songModeHookFirstIdentity) {
-    applyIndieArtPopAlternateTuningPolicy(context, options?.alternateGuitarTuning);
-    if (options?.alternateGuitarTuning) {
-      const md = context.generationMetadata;
-      const dual = isIndieArtPopDualGuitarRoute(context);
-      console.log(
-        '[DualTuning] after applyIndieArtPopAlternateTuningPolicy',
-        JSON.stringify({
-          inputAltMode: options.alternateGuitarTuning?.mode,
-          metadataAltMode: md?.alternateGuitarTuning?.mode ?? null,
-          isIndieDualGuitarRouteFlag: dual,
-        })
-      );
-    }
-  }
   if (options?.songModeJamesBrownFunkOverlay === true) {
     context.generationMetadata = {
       ...context.generationMetadata,
@@ -1681,10 +1569,6 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     applyEraBiasToGenerationMetadata(context.generationMetadata, eraForBias);
   }
 
-  if (options?.songModeHookFirstIdentity) {
-    applyEcmStyleHarmonyMotionPolicy(context);
-  }
-
   appendHarmonyPipelineTrace(context, 'composition_context', [
     `totalBars=${context.form.totalBars}`,
     `harmonySource=${context.generationMetadata.harmonySource ?? 'n/a'}`,
@@ -1718,24 +1602,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   });
   let score: ScoreModel | undefined;
   try {
-    if (options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof') {
-      score = buildIndieDualGuitarTuningFixtureScore();
-      appliedContext.generationMetadata = {
-        ...appliedContext.generationMetadata,
-        songModeStyleSurfaceNotes: [
-          ...(appliedContext.generationMetadata.songModeStyleSurfaceNotes ?? []),
-          'Diagnostic fixture: deterministic dual-guitar tuning proof score emitted through standard export pipeline.',
-        ],
-      };
-    } else {
-      score = generateGoldenPathDuoScore(appliedContext, plans, {
-        bpm: options?.bpm,
-        variationEnabled: options?.variationEnabled === true,
-        ecmShapingEnabled: options?.ecmShapingEnabled,
-        orchestrationEnabled: options?.orchestrationEnabled,
-        identityCellEnabled: options?.identityCellEnabled,
-      });
-    }
+    score = generateGoldenPathDuoScore(appliedContext, plans, {
+      bpm: options?.bpm,
+      variationEnabled: options?.variationEnabled === true,
+      ecmShapingEnabled: options?.ecmShapingEnabled,
+      orchestrationEnabled: options?.orchestrationEnabled,
+      identityCellEnabled: options?.identityCellEnabled,
+    });
   } finally {
     logEcmPhaseProbe(probeEcm, 'after_render', score, {
       bars: appliedContext.form.totalBars,
@@ -1756,10 +1629,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       label: s.label,
     }));
   }
-  if (
-    appliedContext.generationMetadata?.songModeHookFirstIdentity &&
-    options?.debugFixtureMode !== 'indie_dual_guitar_tuning_proof'
-  ) {
+  if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
     const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     if (guitar) {
       const md = appliedContext.generationMetadata;
@@ -1809,11 +1679,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     songModePhraseWarnings = [...songModePhraseWarnings, ...slashBassWarnings];
   }
 
-  const modelValidation = isIndieTuningFixture ? { valid: true, errors: [] } : validateScoreModel(score);
+  const modelValidation = validateScoreModel(score);
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
   // Rhythm is finalized + validated once inside generateGoldenPathDuoScore; parts/measures/events are frozen — read-only gate.
-  const strictBarMath = isIndieTuningFixture ? { valid: true, errors: [] } : validateStrictBarMath(score);
+  const strictBarMath = validateStrictBarMath(score);
   if (!strictBarMath.valid) {
     errors.push(...strictBarMath.errors);
     const rich = validateStrictBarMathSibeliusSafe(score);
@@ -1842,61 +1712,39 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   const rehearsalMarks = Array.from(rehearsalByBar.entries()).map(([bar, label]) => ({ bar, label }));
 
-  const integrityResult = isIndieTuningFixture
-    ? { passed: true, errors: [] as string[] }
-    : runScoreIntegrityGate({
-        bars,
-        instruments: context.instrumentProfiles,
-        chordSymbols,
-        rehearsalMarks,
-        chordSymbolsRequired: true,
-        rehearsalMarksRequired: true,
-        pitchByInstrument: extractPitchByInstrument(score),
-      });
+  const integrityResult = runScoreIntegrityGate({
+    bars,
+    instruments: context.instrumentProfiles,
+    chordSymbols,
+    rehearsalMarks,
+    chordSymbolsRequired: true,
+    rehearsalMarksRequired: true,
+    pitchByInstrument: extractPitchByInstrument(score),
+  });
   if (!integrityResult.passed) errors.push(...integrityResult.errors);
 
-  const behaviourResult =
-    options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof'
-      ? { allValid: true, rhythmValid: true, errors: [], duoIdentityWarnings: [] as string[] }
-      : runBehaviourGates(
-          score,
-          rhythmConstraints,
-          guitarBehaviour,
-          bassBehaviour,
-          sections,
-          densityPlan,
-          {
-            motifState,
-            styleStack,
-            interactionPlan,
-            presetId: context.presetId,
-            compositionContext: appliedContext,
-          }
-        );
-  const dualGuitarRoute = isIndieArtPopDualGuitarRoute(appliedContext);
-  if (dualGuitarRoute) {
-    const filtered = behaviourResult.errors.filter((e) => !/bass|jazz duo/i.test(e));
-    errors.push(...filtered);
-  } else {
-    errors.push(...behaviourResult.errors);
-  }
-  const behaviourGatesPassedResolved =
-    dualGuitarRoute ? behaviourResult.errors.filter((e) => !/bass|jazz duo/i.test(e)).length === 0 : behaviourResult.allValid;
+  const behaviourResult = runBehaviourGates(
+    score,
+    rhythmConstraints,
+    guitarBehaviour,
+    bassBehaviour,
+    sections,
+    densityPlan,
+    {
+      motifState,
+      styleStack,
+      interactionPlan,
+      presetId: context.presetId,
+      compositionContext: appliedContext,
+    }
+  );
+  errors.push(...behaviourResult.errors);
   logEcmPhaseProbe(probeEcm, 'after_post', score, {
     errors: errors.length,
     phraseWarnings: songModePhraseWarnings.length,
   });
   if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
     songModePhraseWarnings.push(...behaviourResult.duoIdentityWarnings);
-  }
-  if (dualGuitarRoute) {
-    const g1 = score.parts.find((p) => p.id === 'guitar');
-    const g2 = score.parts.find((p) => p.id === 'guitar_2');
-    if (!g1 || !g2) {
-      errors.push('Indie Art Pop dual-guitar route must contain guitar and guitar_2 parts.');
-    } else if (!hasAnySimultaneousPolyphony(g1) && !hasAnySimultaneousPolyphony(g2)) {
-      errors.push('Indie Art Pop dual-guitar route produced strictly monophonic output in both guitar parts.');
-    }
   }
 
   const preserveLiterals =
@@ -1935,13 +1783,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     appendHarmonyPipelineTrace(appliedContext, 'musicxml_export', `bytes=${xml.length} customHarmonyTruth=${appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed ?? 'n/a'}`);
     mxValidationPassed = validateMusicXmlSchema(xml).valid;
     sibeliusSafe = checkSibeliusSafe(xml).safe;
-    if (isIndieTuningFixture) {
-      exportIntegrityPassed = true;
-    } else {
-      const exportIntegrity = validateExportIntegrity(xml);
-      exportIntegrityPassed = exportIntegrity.valid;
-      if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
-    }
+    const exportIntegrity = validateExportIntegrity(xml);
+    exportIntegrityPassed = exportIntegrity.valid;
+    if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
 
     const mxBar = validateExportedMusicXmlBarMath(xml);
     const writtenComplete = validateWrittenMusicXmlComplete(score, xml);
@@ -1949,18 +1793,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     if (!mxBar.valid) errors.push(...mxBar.errors);
     if (!writtenComplete.valid) errors.push(...writtenComplete.errors);
 
-    if (dualGuitarRoute) {
-      const dualGuitarMeta = validateIndieArtPopDualGuitarIdentityInMusicXml(xml);
-      instrumentMetadataPassed = dualGuitarMeta.valid;
-      if (!dualGuitarMeta.valid) errors.push(...dualGuitarMeta.errors);
-    } else {
-      const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
-      instrumentMetadataPassed = bassMeta.valid;
-      if (!bassMeta.valid) errors.push(...bassMeta.errors);
-    }
+    const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
+    instrumentMetadataPassed = bassMeta.valid;
+    if (!bassMeta.valid) errors.push(...bassMeta.errors);
 
     const lockedBars = appliedContext.lockedHarmonyBarsRaw;
-    if (!isIndieTuningFixture && lockedBars && lockedBars.length === appliedContext.form.totalBars) {
+    if (lockedBars && lockedBars.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, lockedBars);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;
       if (!lockedTruth.ok) errors.push(...lockedTruth.errors);
@@ -1969,30 +1807,19 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     errors.push(...exportResult.errors);
   }
 
-  const truthReport = isIndieTuningFixture
-    ? {
-        submittedChordString: null,
-        parsedBars: null,
-        scoreBars: null,
-        writtenXmlBars: null,
-        inputStage: 'skip' as const,
-        scoreStage: 'skip' as const,
-        exportStage: 'skip' as const,
-        errors: [] as string[],
-      }
-    : runPipelineTruthGates({
-        context: appliedContext,
-        options,
-        score,
-        xml,
-      });
+  const truthReport = runPipelineTruthGates({
+    context: appliedContext,
+    options,
+    score,
+    xml,
+  });
   errors.push(...truthReport.errors);
 
   const readinessResult = runReleaseReadinessGate({
     validationPassed:
       integrityResult.passed &&
       modelValidation.valid &&
-      behaviourGatesPassedResolved &&
+      behaviourResult.allValid &&
       strictBarMath.valid &&
       instrumentMetadataPassed &&
       pipelineTruthAllPassed(truthReport),
@@ -2002,12 +1829,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     registerCorrect: integrityResult.passed,
     sibeliusSafe,
     chordRehearsalComplete:
-      isIndieTuningFixture ||
-      (chordSymbols.length >=
+      chordSymbols.length >=
         (context.presetId === 'ecm_chamber' || isGuitarBassDuoFamily(context.presetId)
           ? context.form.totalBars
-          : 8) &&
-        rehearsalMarks.length >= 2),
+          : 8) && rehearsalMarks.length >= 2,
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
     phraseBehaviourWarningCount: songModePhraseWarnings.length,
@@ -2036,7 +1861,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },
     validationPassed:
       integrityResult.passed &&
-      behaviourGatesPassedResolved &&
+      behaviourResult.allValid &&
       strictBarMath.valid &&
       exportRoundTripPassed &&
       instrumentMetadataPassed &&
@@ -2119,7 +1944,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     modelValidation.valid &&
     strictBarMath.valid &&
     integrityResult.passed &&
-    behaviourGatesPassedResolved &&
+    behaviourResult.allValid &&
     exportResult.success &&
     mxValidationPassed &&
     exportIntegrityPassed &&
@@ -2142,7 +1967,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans,
     xml,
     integrityPassed: integrityResult.passed,
-    behaviourGatesPassed: behaviourGatesPassedResolved,
+    behaviourGatesPassed: behaviourResult.allValid,
     mxValidationPassed,
     strictBarMathPassed: strictBarMath.valid,
     exportRoundTripPassed,

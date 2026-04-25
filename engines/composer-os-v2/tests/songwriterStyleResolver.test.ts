@@ -2,11 +2,7 @@
  * Prompt 6.5/7 — Style resolution
  */
 
-import {
-  SONG_MODE_DIVERSITY_PRESETS,
-  resolveSongModeDiversityPreset,
-  resolveSongwritingStyles,
-} from '../core/song-mode/songwriterStyleResolver';
+import { resolveSongwritingStyles } from '../core/song-mode/songwriterStyleResolver';
 
 export function runSongwriterStyleResolverTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -31,20 +27,6 @@ export function runSongwriterStyleResolverTests(): { ok: boolean; name: string }
   out.push({
     ok: withAuthor.authorOverlayId === 'pat_pattison' && withAuthor.resolvedRuleIds.some((id) => id.includes('pattison')),
     name: 'author overlay adds author rule ids',
-  });
-
-  out.push({
-    ok:
-      SONG_MODE_DIVERSITY_PRESETS.length >= 5 &&
-      SONG_MODE_DIVERSITY_PRESETS.every((p) => !!resolveSongModeDiversityPreset(p.id)),
-    name: 'song mode diversity presets resolve to known songwriter blends',
-  });
-
-  const noPreset = resolveSongModeDiversityPreset('');
-  const baseline = resolveSongwritingStyles({});
-  out.push({
-    ok: noPreset === null && baseline.primaryId === 'beatles' && baseline.secondaryId === null,
-    name: 'defaults stay unchanged when no diversity preset is selected',
   });
 
   return out;

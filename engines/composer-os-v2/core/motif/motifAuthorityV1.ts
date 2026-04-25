@@ -22,22 +22,6 @@ export interface MotifAuthorityScoreBreakdown {
   motifAuthorityScore: number;
 }
 
-/** Pilot gating policy for motif authority diagnostics (manifest / receipts). */
-export type MotifAuthorityLevel = 'off' | 'soft' | 'strong';
-
-/** Bounded motif-development diagnostics payload (golden path Song Mode pilot). */
-export interface MotifDevelopmentSummary {
-  motifAuthorityLevel: MotifAuthorityLevel;
-  pilotPathTag: string;
-  coreCellEstablished: boolean;
-  recurrenceCountEstimate: number;
-  recurrenceSummary: string;
-  transformationSummary: string[];
-  motifCoherence: number;
-  motifLedPrimaryIdentity?: boolean;
-  experimental?: boolean;
-}
-
 export interface MotifAuthorityPlan {
   phraseA: MotifPhraseRange;
   phraseB?: MotifPhraseRange;
