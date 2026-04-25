@@ -24,6 +24,12 @@ import {
 } from './uiBundleVerify';
 import { registerOpenOutputFolderIpc } from './openFolderMain';
 
+const ELECTRON_T0 = Date.now();
+const electronVerbose =
+  process.argv.includes('--verbose') ||
+  process.env.COMPOSER_OS_ELECTRON_VERBOSE === '1' ||
+  process.env.COMPOSER_OS_ELECTRON_VERBOSE === 'true';
+
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';
 let cachedUiStamp: ComposerOsUiStamp | null = null;
@@ -38,8 +44,19 @@ function setStartupState(next: StartupState): void {
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
+  if (electronVerbose) {
+    console.error(
+      `[Electron] +${Date.now() - ELECTRON_T0}ms singleInstanceLock: denied (second process exiting)`
+    );
+  }
+  console.error(
+    '[Electron] Another instance is already running. Reuse existing window via taskbar or Alt+Tab.'
+  );
   app.quit();
 } else {
+  if (electronVerbose) {
+    console.log(`[Electron] +${Date.now() - ELECTRON_T0}ms singleInstanceLock: acquired`);
+  }
   app.on('second-instance', () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -231,6 +248,38 @@ function loadLoadingPage(win: BrowserWindow): void {
   );
 }
 
+function showWindowWhenReady(win: BrowserWindow, tWindowAt: number): void {
+  win.once('ready-to-show', () => {
+    if (electronVerbose) {
+      console.log(`[Electron] ready-to-show fired at +${Date.now() - ELECTRON_T0}ms`);
+    }
+    const tShowCall = Date.now();
+    if (electronVerbose) {
+      console.log(`[Electron] show() called at +${tShowCall - ELECTRON_T0}ms`);
+    }
+    win.show();
+    const tFocusCall = Date.now();
+    if (electronVerbose) {
+      console.log(`[Electron] focus() called at +${tFocusCall - ELECTRON_T0}ms`);
+    }
+    win.focus();
+    const tFocusDone = Date.now();
+    const createdIn = tWindowAt - ELECTRON_T0;
+    const showAt = tShowCall - ELECTRON_T0;
+    const focusAt = tFocusDone - ELECTRON_T0;
+    console.log(
+      `[Electron] Window created in ${createdIn}ms | show() at ${showAt}ms | focus() at ${focusAt}ms`
+    );
+    if (electronVerbose) {
+      console.log(
+        `[Electron] after show+focus: isVisible=${String(win.isVisible())} isMinimized=${String(
+          win.isMinimized()
+        )} isFocused=${String(win.isFocused())}`
+      );
+    }
+  });
+}
+
 function loadWrongBundleUiPage(win: BrowserWindow, vr: UiBundleVerifyFail): void {
   const safePath = escapeHtml(vr.resolvedPath);
   const safeReason = escapeHtml(vr.reason);
@@ -255,7 +304,13 @@ function loadWrongBundleUiPage(win: BrowserWindow, vr: UiBundleVerifyFail): void
 async function launchApp(): Promise<void> {
   setStartupState('booting');
   mainWindow = createWindowShell();
+  const tWindowAt = Date.now();
   const win = mainWindow;
+  if (electronVerbose) {
+    console.log(
+      `[Electron] BrowserWindow constructed at +${tWindowAt - ELECTRON_T0}ms (title=${win.getTitle()})`
+    );
+  }
   loadLoadingPage(win);
 
   const uiPath = resolveUiPath();
@@ -265,7 +320,7 @@ async function launchApp(): Promise<void> {
     cachedUiPath = vr.resolvedPath;
     setStartupState('fatal_error');
     loadWrongBundleUiPage(win, vr);
-    win.once('ready-to-show', () => win.show());
+    showWindowWhenReady(win, tWindowAt);
     return;
   }
   cachedUiStamp = vr.stamp;
@@ -295,7 +350,7 @@ async function launchApp(): Promise<void> {
       win,
       'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
     );
-    win.once('ready-to-show', () => win.show());
+    showWindowWhenReady(win, tWindowAt);
     return;
   }
 
@@ -307,19 +362,30 @@ async function launchApp(): Promise<void> {
       throw new Error(`UI index missing: ${indexHtml}`);
     }
     setStartupState('loading_ui');
+    if (electronVerbose) {
+      console.log(
+        `[Electron] loadFile: ${indexHtml} (resolveUiPath -> ${uiPath}, +${Date.now() - ELECTRON_T0}ms)`
+      );
+    }
     await win.loadFile(indexHtml);
     setStartupState('ready');
-    win.once('ready-to-show', () => win.show());
+    if (electronVerbose) {
+      console.log(`[Electron] loadFile finished at +${Date.now() - ELECTRON_T0}ms; waiting for ready-to-show`);
+    }
+    showWindowWhenReady(win, tWindowAt);
   } catch (err) {
     setStartupState('fatal_error');
     const msg = err instanceof Error ? err.message : String(err);
     loadErrorPage(win, msg);
-    win.once('ready-to-show', () => win.show());
+    showWindowWhenReady(win, tWindowAt);
   }
 }
 
 if (gotLock) {
   app.whenReady().then(() => {
+    if (electronVerbose) {
+      console.log(`[Electron] app.whenReady reached at +${Date.now() - ELECTRON_T0}ms`);
+    }
     app.setName(DESKTOP_PRODUCT_NAME);
     if (process.platform === 'win32') {
       app.setAppUserModelId(DESKTOP_APP_ID);

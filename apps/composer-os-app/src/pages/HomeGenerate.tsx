@@ -25,6 +25,17 @@ import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../u
 import type { GuitarVoice2PolyphonyDiagnostics } from '@composer-os/core/goldenPath/guitarVoice2PolyphonyDiagnostics';
 import { isGuitarBassDuoFamily } from '@composer-os/core/presets/guitarBassDuoPresetIds';
 import {
+  SONG_MODE_DIVERSITY_PRESETS,
+  resolveSongModeDiversityPreset,
+} from '@composer-os/core/song-mode/songwriterStyleResolver';
+import {
+  ALTERNATE_GUITAR_TUNING_PRESETS,
+  normalizeAlternateGuitarTuningRequest,
+  type AlternateGuitarTuningRequest,
+  type GuitarTuningMode,
+} from '@composer-os/core/song-mode/alternateGuitarTunings';
+import { resolveSongModeDiversityStylePairing } from '@composer-os/core/style-pairing/stylePairingResolver';
+import {
   extractScoreMusicXmlFromString,
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
@@ -97,6 +108,56 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
 ];
 
 const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set(['donald_fagen', 'barry_harris']);
+type HarmonyDisplayModeUi = 'raw' | 'enriched' | 'compare';
+type TonalityVaultUiFunctionalHint = 'tonic_family' | 'predominant_family' | 'dominant_family' | 'chromatic_or_unknown';
+
+type TonalityVaultUiAnnotation = {
+  bar: number;
+  beat: number;
+  sourceSymbol: string;
+  diatonicClass: 'diatonic_major_key' | 'chromatic_or_unknown';
+  scaleDegreeFromMajor?: string;
+  functionalHint: TonalityVaultUiFunctionalHint;
+  explanation: string;
+};
+
+type SongModeHarmonyInterpretationViewUi = {
+  requestedMode: HarmonyDisplayModeUi;
+  effectiveMode: HarmonyDisplayModeUi;
+  viewWarnings: string[];
+  enrichedDisplayFellBackToRaw?: boolean;
+  comparePayload?: {
+    rawChordEvents: Array<{ bar: number; beat: number; symbol: string }>;
+    tonalityVault: {
+      applied: boolean;
+      enrichment?: {
+        byChordIndex: TonalityVaultUiAnnotation[];
+      };
+      warnings: string[];
+    };
+  };
+};
+
+function formatTonalityVaultFunctionalHint(hint: TonalityVaultUiFunctionalHint): string {
+  return hint.replace(/_/g, ' ');
+}
+
+function formatTonalityVaultDiatonicClass(label: TonalityVaultUiAnnotation['diatonicClass']): string {
+  return label === 'diatonic_major_key' ? 'diatonic to local major' : 'chromatic or unknown';
+}
+
+function compareEnrichedLabelForUi(ann?: TonalityVaultUiAnnotation): string {
+  if (!ann) return 'No enriched annotation';
+  return `${ann.scaleDegreeFromMajor ?? '?'} · ${formatTonalityVaultFunctionalHint(ann.functionalHint)} · ${formatTonalityVaultDiatonicClass(ann.diatonicClass)}`;
+}
+
+function envTruthyFlag(raw: unknown): boolean {
+  if (typeof raw !== 'string') return false;
+  const t = raw.trim().toLowerCase();
+  return t === '1' || t === 'true' || t === 'yes';
+}
+
+const TONALITY_VAULT_UI_AVAILABLE = envTruthyFlag(import.meta.env.VITE_COMPOSER_OS_TONALITY_VAULT_ENRICH);
 
 function primarySongwriterDisplayLabel(id: string | undefined): string | undefined {
   if (!id?.trim()) return undefined;
@@ -185,6 +246,12 @@ const SONG_MODE_STYLE_OPTIONS = [
   'STYLE_CLASSICAL_INFLUENCE',
 ] as const;
 type SongModeStyleProfile = (typeof SONG_MODE_STYLE_OPTIONS)[number];
+const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
+  'STYLE_SHORTER_POST_BOP',
+  'STYLE_MODERN_JAZZ',
+  'STYLE_SOPHISTICATED_POP',
+  'STYLE_GROOVE_SOUL',
+]);
 
 function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {
   for (const o of SONG_MODE_STYLE_OPTIONS) {
@@ -194,8 +261,17 @@ function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | 
 }
 
 function songModeStyleProfileLabel(id: SongModeStyleProfile): string {
-  if (id === 'STYLE_SHORTER_POST_BOP') return 'Post-Bop';
-  return id;
+  if (id === 'STYLE_SHORTER_POST_BOP') return 'Post-Bop (Shorter)';
+  if (id === 'STYLE_ECM') return 'ECM';
+  if (id === 'STYLE_BEBOP_LITE') return 'Bebop (Light Touch)';
+  if (id === 'STYLE_MODERN_JAZZ') return 'Modern Jazz';
+  if (id === 'STYLE_BEBOP_POST_BOP') return 'Bebop/Post-Bop';
+  if (id === 'STYLE_SOPHISTICATED_POP') return 'Sophisticated Pop';
+  if (id === 'STYLE_GROOVE_SOUL') return 'Groove / Soul';
+  if (id === 'STYLE_INDIE_ART_POP') return 'Indie Art Pop';
+  if (id === 'STYLE_FOLK_GUITAR_NARRATIVE') return 'Folk Guitar Narrative';
+  if (id === 'STYLE_CLASSICAL_INFLUENCE') return 'Classical Influence';
+  return id.replace(/^STYLE_/, '').replace(/_/g, ' ');
 }
 
 function ensembleLabel(id: string): string {
@@ -313,11 +389,14 @@ type GenResult = {
     styleProfile?: SongModeStyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
     blendStrength?: 'light' | 'medium' | 'strong';
+    leadSheetHarmonyDisplayMode?: HarmonyDisplayModeUi;
+    leadSheetHarmonyDisplayModeEffective?: HarmonyDisplayModeUi;
     groove?: number;
     space?: number;
     expression?: number;
     surprise?: number;
   };
+  harmonyInterpretationView?: SongModeHarmonyInterpretationViewUi;
   _uiHadLeadSheetInputForRun?: boolean;
   _uiLeadSheetPreflightErrorForRun?: string | null;
   _uiLeadSheetInputSourceForRun?: 'file' | 'paste';
@@ -405,7 +484,16 @@ export function HomeGenerate({
   const [intentSurprise, setIntentSurprise] = useState(0.5);
   const [intentPattern, setIntentPattern] = useState(0.5);
   const [secondarySongwriterStyle, setSecondarySongwriterStyle] = useState('');
+  const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
   const [authorOverlay, setAuthorOverlay] = useState('');
+  const [alternateTuningEnabled, setAlternateTuningEnabled] = useState(false);
+  const [alternateTuningMode, setAlternateTuningMode] = useState<GuitarTuningMode>('standard');
+  const [sharedTuningPresetId, setSharedTuningPresetId] = useState('standard');
+  const [guitar1TuningPresetId, setGuitar1TuningPresetId] = useState('standard');
+  const [guitar2TuningPresetId, setGuitar2TuningPresetId] = useState('standard');
+  const [sharedCustomTuning, setSharedCustomTuning] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']);
+  const [guitar1CustomTuning, setGuitar1CustomTuning] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']);
+  const [guitar2CustomTuning, setGuitar2CustomTuning] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']);
   const [includeVocalLeadSheet, setIncludeVocalLeadSheet] = useState(false);
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
@@ -418,6 +506,7 @@ export function HomeGenerate({
   const [importHarmonyModeUi, setImportHarmonyModeUi] = useState<'free_harmony' | 'lock_harmony' | 'blend_harmony'>(
     'free_harmony'
   );
+  const [leadSheetHarmonyDisplayModeUi, setLeadSheetHarmonyDisplayModeUi] = useState<HarmonyDisplayModeUi>('raw');
   const [harmonyBlendUi, setHarmonyBlendUi] = useState(0.5);
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
@@ -784,6 +873,39 @@ export function HomeGenerate({
             return;
           }
         }
+        let alternateGuitarTuningPayload: AlternateGuitarTuningRequest | undefined;
+        if (presetId === 'song_mode' && songModeStyleProfile === 'STYLE_INDIE_ART_POP' && alternateTuningEnabled) {
+          const specFor = (
+            presetIdLocal: string,
+            customValues: string[]
+          ): { presetId: string; customStrings?: [string, string, string, string, string, string] } => {
+            if (presetIdLocal === 'custom') {
+              return { presetId: 'custom', customStrings: [...customValues] as [string, string, string, string, string, string] };
+            }
+            return { presetId: presetIdLocal };
+          };
+          alternateGuitarTuningPayload =
+            alternateTuningMode === 'standard'
+              ? { mode: 'standard' }
+              : alternateTuningMode === 'shared'
+                ? { mode: 'shared', shared: specFor(sharedTuningPresetId, sharedCustomTuning) }
+                : {
+                    mode: 'separate',
+                    guitar1: specFor(guitar1TuningPresetId, guitar1CustomTuning),
+                    guitar2: specFor(guitar2TuningPresetId, guitar2CustomTuning),
+                  };
+          const normalized = normalizeAlternateGuitarTuningRequest(alternateGuitarTuningPayload);
+          if (!normalized) {
+            setError('Alternate guitar tuning is invalid. Use six notes from low to high strings (for example: D2 A2 D3 G3 A3 D4).');
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
         const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
@@ -819,6 +941,7 @@ export function HomeGenerate({
           ...(presetId === 'song_mode'
             ? {
                 styleProfile: songModeStyleProfile,
+                leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi,
                 intent: {
                   groove: intentGroove,
                   space: intentSpace,
@@ -831,6 +954,7 @@ export function HomeGenerate({
                   ? { secondarySongwriterStyle: secondarySongwriterStyle.trim() }
                   : {}),
                 ...(authorOverlay.trim() ? { authorOverlay: authorOverlay.trim() } : {}),
+                ...(alternateGuitarTuningPayload ? { alternateGuitarTuning: alternateGuitarTuningPayload } : {}),
                 ...(isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0
                   ? { songModeLeadSheetMusicXml: songModeLeadSheetTrim }
                   : {}),
@@ -977,10 +1101,19 @@ export function HomeGenerate({
       intentPattern,
       secondarySongwriterStyle,
       authorOverlay,
+      alternateTuningEnabled,
+      alternateTuningMode,
+      sharedTuningPresetId,
+      guitar1TuningPresetId,
+      guitar2TuningPresetId,
+      sharedCustomTuning,
+      guitar1CustomTuning,
+      guitar2CustomTuning,
       songModeLeadSheetMusicXml,
       leadSheetPreflightError,
       showHarmonyImportDebugDev,
       importHarmonyModeUi,
+      leadSheetHarmonyDisplayModeUi,
       harmonyBlendUi,
       includeVocalLeadSheet,
       c4Strength,
@@ -1147,6 +1280,7 @@ export function HomeGenerate({
   const showLeadSheetStatusBlock =
     hadLeadSheetInputForRun &&
     isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
+  const indieArtPopAltTuningEligible = presetId === 'song_mode' && songModeStyleProfile === 'STYLE_INDIE_ART_POP';
 
   return (
     <section>
@@ -2034,6 +2168,31 @@ export function HomeGenerate({
                 {leadSheetPreflightError}
               </p>
             )}
+            <div style={{ marginTop: '0.65rem' }}>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                Harmony interpretation
+              </label>
+              <select
+                value={leadSheetHarmonyDisplayModeUi}
+                onChange={(e) => setLeadSheetHarmonyDisplayModeUi(e.target.value as HarmonyDisplayModeUi)}
+                disabled={loading || !isSongModeLeadSheetPhase1Writer}
+                style={{ maxWidth: 260 }}
+              >
+                <option value="raw">Raw</option>
+                <option value="enriched">Enriched</option>
+                <option value="compare">Compare</option>
+              </select>
+              {!TONALITY_VAULT_UI_AVAILABLE ? (
+                <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  This runtime does not expose optional harmony enrichment, so Enriched and Compare will safely fall
+                  back to Raw after you generate.
+                </p>
+              ) : (
+                <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Raw always keeps your imported chords as the source of truth. Enriched/Compare add optional analysis.
+                </p>
+              )}
+            </div>
           </div>
           {showHarmonyImportDebugDev && (
             <details
@@ -2101,12 +2260,26 @@ export function HomeGenerate({
               }}
               disabled={loading}
             >
-              {SONG_MODE_STYLE_OPTIONS.map((id) => (
-                <option key={id} value={id}>
-                  {songModeStyleProfileLabel(id)}
-                </option>
-              ))}
+              <optgroup label="Advanced styles (deeper behavior)">
+                {SONG_MODE_STYLE_OPTIONS.filter((id) => SONG_MODE_ADVANCED_STYLE_SET.has(id)).map((id) => (
+                  <option key={id} value={id}>
+                    {songModeStyleProfileLabel(id)}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Light touch styles (contour/velocity)">
+                {SONG_MODE_STYLE_OPTIONS.filter((id) => !SONG_MODE_ADVANCED_STYLE_SET.has(id)).map((id) => (
+                  <option key={id} value={id}>
+                    {songModeStyleProfileLabel(id)}
+                  </option>
+                ))}
+              </optgroup>
             </select>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Advanced styles apply additional harmony/rhythm behavior. Light touch styles mainly change contour and
+              velocity. Bebop (Light Touch) is dynamics/contour only; Post-Bop (Shorter) adds deeper post-bop harmony
+              behavior.
+            </p>
           </div>
           <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
             <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Groove</span>
@@ -2200,13 +2373,243 @@ export function HomeGenerate({
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing
           </span>
+          {indieArtPopAltTuningEligible && (
+            <details
+              style={{
+                marginBottom: '0.75rem',
+                padding: '0.55rem 0.7rem',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'rgba(15,23,42,0.08)',
+              }}
+            >
+              <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.86rem' }}>
+                Alternate Guitar Tuning (optional)
+              </summary>
+              <p style={{ margin: '0.5rem 0 0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Indie Art Pop only (v1). Leave this off to keep standard Song Mode behavior.
+              </p>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: '0.5rem',
+                  fontSize: '0.84rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={alternateTuningEnabled}
+                  onChange={(e) => setAlternateTuningEnabled(e.target.checked)}
+                  disabled={loading}
+                />
+                Use alternate guitar tuning
+              </label>
+              {alternateTuningEnabled && (
+                <>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    Tuning mode
+                  </label>
+                  <select
+                    value={alternateTuningMode}
+                    onChange={(e) => setAlternateTuningMode(e.target.value as GuitarTuningMode)}
+                    disabled={loading}
+                    style={{ marginBottom: '0.5rem' }}
+                  >
+                    <option value="standard">Standard tuning</option>
+                    <option value="shared">One tuning for both guitars</option>
+                    <option value="separate">Separate tunings for Guitar 1 and Guitar 2</option>
+                  </select>
+                  {alternateTuningMode === 'shared' && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                        Shared guitar tuning
+                      </label>
+                      <select
+                        value={sharedTuningPresetId}
+                        onChange={(e) => setSharedTuningPresetId(e.target.value)}
+                        disabled={loading}
+                      >
+                        {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      {sharedTuningPresetId === 'custom' && (
+                        <div style={{ marginTop: '0.35rem' }}>
+                          <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            Custom tuning (low to high strings)
+                          </p>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
+                            {sharedCustomTuning.map((v, i) => (
+                              <input
+                                key={`shared-${i}`}
+                                value={v}
+                                onChange={(e) =>
+                                  setSharedCustomTuning((prev) => {
+                                    const next = [...prev];
+                                    next[i] = e.target.value;
+                                    return next;
+                                  })
+                                }
+                                disabled={loading}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {alternateTuningMode === 'separate' && (
+                    <>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          Guitar 1 tuning
+                        </label>
+                        <select
+                          value={guitar1TuningPresetId}
+                          onChange={(e) => setGuitar1TuningPresetId(e.target.value)}
+                          disabled={loading}
+                        >
+                          {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
+                            <option key={`g1-${p.id}`} value={p.id}>
+                              {p.label}
+                            </option>
+                          ))}
+                        </select>
+                        {guitar1TuningPresetId === 'custom' && (
+                          <div style={{ marginTop: '0.35rem' }}>
+                            <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              Custom tuning (low to high strings)
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
+                              {guitar1CustomTuning.map((v, i) => (
+                                <input
+                                  key={`g1-custom-${i}`}
+                                  value={v}
+                                  onChange={(e) =>
+                                    setGuitar1CustomTuning((prev) => {
+                                      const next = [...prev];
+                                      next[i] = e.target.value;
+                                      return next;
+                                    })
+                                  }
+                                  disabled={loading}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          Guitar 2 tuning
+                        </label>
+                        <select
+                          value={guitar2TuningPresetId}
+                          onChange={(e) => setGuitar2TuningPresetId(e.target.value)}
+                          disabled={loading}
+                        >
+                          {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
+                            <option key={`g2-${p.id}`} value={p.id}>
+                              {p.label}
+                            </option>
+                          ))}
+                        </select>
+                        {guitar2TuningPresetId === 'custom' && (
+                          <div style={{ marginTop: '0.35rem' }}>
+                            <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              Custom tuning (low to high strings)
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
+                              {guitar2CustomTuning.map((v, i) => (
+                                <input
+                                  key={`g2-custom-${i}`}
+                                  value={v}
+                                  onChange={(e) =>
+                                    setGuitar2CustomTuning((prev) => {
+                                      const next = [...prev];
+                                      next[i] = e.target.value;
+                                      return next;
+                                    })
+                                  }
+                                  disabled={loading}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAlternateTuningEnabled(false);
+                      setAlternateTuningMode('standard');
+                      setSharedTuningPresetId('standard');
+                      setGuitar1TuningPresetId('standard');
+                      setGuitar2TuningPresetId('standard');
+                    }}
+                    disabled={loading}
+                    style={{ fontSize: '0.8rem' }}
+                  >
+                    Reset to standard tuning
+                  </button>
+                </>
+              )}
+            </details>
+          )}
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Diversity preset (optional)
+            </label>
+            <select
+              value={songModeDiversityPresetId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSongModeDiversityPresetId(nextId);
+                if (!nextId) return;
+                const preset = resolveSongModeDiversityPreset(nextId);
+                if (!preset) return;
+                setSongwriterStyle(preset.primarySongwriterStyle);
+                setSecondarySongwriterStyle(preset.secondarySongwriterStyle);
+                const pairing = resolveSongModeDiversityStylePairing(preset.id);
+                if (pairing?.arrangerStyle) setArrangerStyle(String(pairing.arrangerStyle));
+                if (pairing?.era) setEra(String(pairing.era));
+              }}
+              disabled={loading}
+            >
+              <option value="">Manual (current controls)</option>
+              {SONG_MODE_DIVERSITY_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            {songModeDiversityPresetId ? (
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {resolveSongModeDiversityPreset(songModeDiversityPresetId)?.audibleDescription}
+              </p>
+            ) : (
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Quick contrast presets that prefill songwriter blend and safe arranger/era hints.
+              </p>
+            )}
+          </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Songwriter
             </label>
             <select
               value={songwriterStyle}
-              onChange={(e) => setSongwriterStyle(e.target.value)}
+              onChange={(e) => {
+                setSongwriterStyle(e.target.value);
+                if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+              }}
               disabled={loading}
             >
               {SONGWRITER_OPTIONS.map((o) => (
@@ -2222,7 +2625,10 @@ export function HomeGenerate({
             </label>
             <select
               value={arrangerStyle}
-              onChange={(e) => setArrangerStyle(e.target.value)}
+              onChange={(e) => {
+                setArrangerStyle(e.target.value);
+                if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+              }}
               disabled={loading}
             >
               {ARRANGER_OPTIONS.map((o) => (
@@ -2236,7 +2642,14 @@ export function HomeGenerate({
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Era
             </label>
-            <select value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
+            <select
+              value={era}
+              onChange={(e) => {
+                setEra(e.target.value);
+                if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+              }}
+              disabled={loading}
+            >
               {ERA_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}
@@ -2250,7 +2663,10 @@ export function HomeGenerate({
             </label>
             <select
               value={secondarySongwriterStyle}
-              onChange={(e) => setSecondarySongwriterStyle(e.target.value)}
+              onChange={(e) => {
+                setSecondarySongwriterStyle(e.target.value);
+                if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+              }}
               disabled={loading}
             >
               <option value="">None</option>
@@ -3035,6 +3451,66 @@ export function HomeGenerate({
                     <span style={{ color: 'var(--text)' }}>Import mode:</span>{' '}
                     {rm?.importHarmonyMode ?? 'free_harmony'} ({rm?.importHarmonyModeSource ?? 'defaulted'})
                   </p>
+                  {(echo?.leadSheetHarmonyDisplayMode || echo?.leadSheetHarmonyDisplayModeEffective) && (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Harmony interpretation:</span>{' '}
+                      {echo?.leadSheetHarmonyDisplayMode ?? 'raw'} →{' '}
+                      {echo?.leadSheetHarmonyDisplayModeEffective ?? echo?.leadSheetHarmonyDisplayMode ?? 'raw'}
+                    </p>
+                  )}
+                  {result.harmonyInterpretationView?.viewWarnings?.length ? (
+                    <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                      <span style={{ color: 'var(--text)' }}>Interpretation notes:</span>{' '}
+                      {result.harmonyInterpretationView.viewWarnings.join(' | ')}
+                    </p>
+                  ) : null}
+                  {result.harmonyInterpretationView?.effectiveMode === 'compare' &&
+                  result.harmonyInterpretationView.comparePayload ? (
+                    <div
+                      style={{
+                        marginTop: '0.45rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '0.5rem 0.6rem',
+                        background: 'rgba(15,23,42,0.14)',
+                      }}
+                    >
+                      <strong style={{ display: 'block', marginBottom: '0.35rem' }}>
+                        Raw vs enriched (first 8 imported chords)
+                      </strong>
+                      {result.harmonyInterpretationView.comparePayload.tonalityVault.applied !== true ? (
+                        <>
+                          <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
+                            Enriched interpretation is unavailable for this run, so compare stays raw-only.
+                          </p>
+                          {result.harmonyInterpretationView.comparePayload.tonalityVault.warnings.length > 0 ? (
+                            <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                              Why: {result.harmonyInterpretationView.comparePayload.tonalityVault.warnings.join(' | ')}
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        result.harmonyInterpretationView.comparePayload.rawChordEvents.slice(0, 8).map((rawEv, idx) => {
+                          const ann =
+                            result.harmonyInterpretationView?.comparePayload?.tonalityVault?.enrichment?.byChordIndex?.[idx];
+                          const enrichedLabel = compareEnrichedLabelForUi(ann);
+                          const whyLine = ann?.explanation ?? 'No explanation available.';
+                          return (
+                            <div key={`${rawEv.bar}-${rawEv.beat}-${idx}`} style={{ marginBottom: '0.3rem' }}>
+                              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                                <span style={{ color: 'var(--text)' }}>
+                                  Bar {rawEv.bar} beat {rawEv.beat}:
+                                </span>{' '}
+                                Raw <strong style={{ color: 'var(--text)' }}>{rawEv.symbol}</strong> → Enriched{' '}
+                                <strong style={{ color: 'var(--text)' }}>{enrichedLabel}</strong>
+                              </p>
+                              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem' }}>Why: {whyLine}</p>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : null}
                   {typeof rm?.importHarmonyPolicyVersion === 'number' && (
                     <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
                       <span style={{ color: 'var(--text)' }}>Import harmony policy version:</span>{' '}

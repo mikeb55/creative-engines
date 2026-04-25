@@ -1,10 +1,12 @@
 /**
- * Electron main-process folder open: canonical path resolution + shell.openPath.
- * Loads a packaged-safe esbuild bundle (resources/open-folder-helpers.cjs), not loose engine paths.
+ * Electron main-process folder open: canonical path resolution, then show in Explorer.
+ * On Windows, prefers `cmd /c start` + explorer.exe + shell.openPath fallback (kept in sync with
+ * `openOutputFolder` in engines). Loads open-folder-helpers (resources/open-folder-helpers.cjs).
  */
 
 import { shell } from 'electron';
 import type { IpcMain } from 'electron';
+import { execFile, spawn } from 'child_process';
 import * as path from 'path';
 import { resolveOpenFolderHelpersBundlePath } from './config';
 
@@ -67,10 +69,58 @@ export async function openOutputFolderInMain(
   if (!prep.ok) {
     return { success: false, message: prep.message };
   }
-  const dir =
-    process.platform === 'win32'
-      ? path.normalize(prep.path).replace(/\//g, '\\')
-      : path.normalize(prep.path);
+  const dir = path.normalize(prep.path);
+  if (process.platform === 'win32') {
+    // Keep in sync with `normalizeForWindowsExplorer` in engines/.../openOutputFolder.ts
+    const n = path.resolve(dir);
+    const winPath = /^[A-Za-z]:\\$/.test(n) && n.length === 3 ? n : n.replace(/[/\\]+$/, '');
+    console.log(
+      '[OpenFolder] transport=electron-ipc',
+      JSON.stringify({
+        platform: 'win32',
+        opener: 'openFolderMain.ts: cmd /c start (primary) then explorer.exe / shell.openPath',
+        notNodeHttpApi: true,
+      })
+    );
+    console.log('[Library] Opening folder (Electron, Windows):', winPath);
+    return new Promise((resolve) => {
+      execFile(
+        'cmd.exe',
+        ['/d', '/c', 'start', '', winPath],
+        { windowsHide: false, shell: false },
+        (err) => {
+          if (err) {
+            console.error('[Library] cmd /c start failed, trying explorer.exe:', err);
+            const ch = spawn('explorer.exe', [winPath], {
+              detached: true,
+              stdio: 'ignore',
+              windowsHide: false,
+            });
+            ch.once('error', (e) => {
+              const msg = e instanceof Error ? e.message : String(e);
+              console.error('[Library] explorer.exe failed, trying shell.openPath:', msg);
+              void shell.openPath(winPath).then((e2) => {
+                if (e2) {
+                  resolve({ success: false, message: e2 || 'Could not open the folder in Explorer.' });
+                } else {
+                  console.log('[Library] Folder open finished successfully (shell.openPath).');
+                  resolve({ success: true, openedPath: winPath });
+                }
+              });
+            });
+            ch.once('spawn', () => {
+              ch.unref();
+              console.log('[Library] Folder open finished successfully (explorer).');
+              resolve({ success: true, openedPath: winPath });
+            });
+            return;
+          }
+          console.log('[Library] Folder open finished successfully (cmd start).');
+          resolve({ success: true, openedPath: winPath });
+        }
+      );
+    });
+  }
   const errMsg = await shell.openPath(dir);
   if (errMsg) {
     return {
@@ -78,6 +128,7 @@ export async function openOutputFolderInMain(
       message: errMsg || 'Could not open the folder in the system file manager.',
     };
   }
+  console.log('[Library] Folder open (shell.openPath) OK:', dir);
   return { success: true, openedPath: dir };
 }
 

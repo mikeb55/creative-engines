@@ -126,11 +126,19 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
     songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
     songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+    motifAuthorityLevel?: GenerationMetadata['motifAuthorityLevel'];
+    motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
     gceScore?: number;
     gceGatePassed?: boolean;
     riffCompositeScore?: number;
     riffInternalGatePassed?: boolean;
     riffQualityRules?: import('../core/riff-generator/riffQualityRules').RiffQualityManifestCompact;
+    /** Stage 1: LeadSheet MusicXML parse + adapt telemetry (same as `GenerationMetadata` / `RunManifest`). */
+    importHarmonyShouldParseLeadSheetInput?: GenerationMetadata['importHarmonyShouldParseLeadSheetInput'];
+    importHarmonyLeadSheetPipelineStage?: GenerationMetadata['importHarmonyLeadSheetPipelineStage'];
+    importHarmonyLeadSheetAdaptDetail?: GenerationMetadata['importHarmonyLeadSheetAdaptDetail'];
+    importHarmonyChordEventCount?: GenerationMetadata['importHarmonyChordEventCount'];
+    importHarmonyTimelineEventCount?: GenerationMetadata['importHarmonyTimelineEventCount'];
     /** Stage 4: echoed when import-harmony telemetry is present (`core/importHarmonyPolicy.ts`). */
     importHarmonyPolicyVersion?: number;
   }
@@ -199,12 +207,19 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
     songModeSectionBehaviourDescriptors: meta.songModeSectionBehaviourDescriptors,
     songModeProfileRuleDiagnostics: meta.songModeProfileRuleDiagnostics,
+    motifAuthorityLevel: meta.motifAuthorityLevel,
+    motifDevelopmentSummary: meta.motifDevelopmentSummary,
     songModeDiagnosticsSummary: buildSongModeDiagnosticsSummary(meta),
     gceScore: meta.gceScore,
     gceGatePassed: meta.gceGatePassed,
     riffCompositeScore: meta.riffCompositeScore,
     riffInternalGatePassed: meta.riffInternalGatePassed,
     riffQualityRules: meta.riffQualityRules,
+    importHarmonyShouldParseLeadSheetInput: meta.importHarmonyShouldParseLeadSheetInput,
+    importHarmonyLeadSheetPipelineStage: meta.importHarmonyLeadSheetPipelineStage,
+    importHarmonyLeadSheetAdaptDetail: meta.importHarmonyLeadSheetAdaptDetail,
+    importHarmonyChordEventCount: meta.importHarmonyChordEventCount,
+    importHarmonyTimelineEventCount: meta.importHarmonyTimelineEventCount,
     importHarmonyPolicyVersion: meta.importHarmonyPolicyVersion,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');

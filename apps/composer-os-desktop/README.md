@@ -12,9 +12,17 @@ npm install
 npm run desktop:dev
 ```
 
-Builds API bundle, IPC bundle, **open-folder-helpers** bundle (`resources/open-folder-helpers.cjs`), UI, and Electron main; launches the desktop app.
+**What this script does (in order):** `build:icon` → `build:api` → `build:desktop-ipc` → `build:stamp` → `build:open-folder-helpers` → `build:electron` (TypeScript `electron/` → `dist/`) → **`build:ui`** (Vite **production** build of `composer-os-app` copied to `resources/ui/`) → `verify:ui-resources` → **`electron .`**.
+
+**Visible result:** one **Electron** window titled like **Composer OS** — **not** a browser tab, **not** http://localhost:5173. The shell loads **`resources/ui/index.html`** from disk (`loadFile`). The window is created with `show: false` until the UI is ready, then shown and focused; if you still miss it, use **Alt+Tab** or the taskbar.
+
+**What “success” means in an IDE:** the first phase is a **batch build**; the script then **blocks** on `electron .` until you close the app. A green indicator that appears **without** a window usually means either (1) you ran a **different** script (for example `npm run build`, which exits without opening Electron), or (2) the Electron window is **behind** other windows or on another display.
+
+**Cursor / VS Code:** **Tasks: Run Task** → **Composer OS: Desktop dev (Electron)** (`.vscode/tasks.json`).
 
 Do **not** run `electron .` alone — run the full `desktop:dev` pipeline so UI, IPC bundle, and Electron main are built. Packaged mode uses **IPC + file UI**, not the HTTP API bundle inside Electron.
+
+**Web UI hot reload (optional):** for browser-based dev with Vite + API, use **`apps/composer-os-app`** and `npm run dev` there (http://localhost:5173/) — that path is separate from `desktop:dev`.
 
 **Port conflicts:** The app prefers port 3001. If it is busy, it checks whether Composer OS is already running (`GET /health`) and reuses it; otherwise it picks the next free port (3002, 3003, …). No manual restart or killing processes.
 
@@ -30,6 +38,16 @@ npm run desktop:package
 ```
 
 `desktop:package` sets `CSC_IDENTITY_AUTO_DISCOVERY=false` so unsigned dev machines do not pull **winCodeSign** (can fail on symlink privileges). `build.win.signAndEditExecutable` is `false`.
+
+## Packaging (safe rebuild) — Volume 7: verify the .exe, not the green line
+
+- Prefer `npm run desktop:package-safe` over `npm run desktop:package` (or ad-hoc build commands) when you need proof a new `release/Composer-OS.exe` is really what you think.
+- The script exits before building if `Composer-OS.exe` is already running (in-use = lock / no visible replace).
+- It records the old `release/Composer-OS.exe` (size, last-write, file `FileVersion`) plus `package.json` `version`, runs `npm run desktop:package-no-bump`, then fails (exit 1) if the build “succeeded” but the .exe’s last-write time is unchanged.
+- Exit 0 only when replacement is credible on disk (or first creation); prints SUCCESS / FAIL / WARN and deltas. No extra cleanup is required on failure.
+- Still open the new exe and use Help (or About) in-app to confirm the version; disk fields alone are not the whole story.
+
+**One-liner (from `apps/composer-os-desktop`):** `npm run desktop:package-safe`
 
 **Canonical deploy artifact (used by clean install):**  
 `release/Composer-OS.exe`
@@ -77,6 +95,10 @@ No manual server start. No Python. No .bat files.
 
 - **Default (dev and packaged):** `Documents\\Mike Composer Files\\` with preset subfolders (**Guitar-Bass Duos**, **Big-Band Compositions**, **ECM Chamber Compositions**). MusicXML and `.manifest.json` files live together per preset.
 - **Override:** `COMPOSER_OS_OUTPUT_DIR` replaces the **Mike Composer Files** root (preset subfolders still apply).
+
+## User documentation (MusicXML / harmony)
+
+Plain-language help for lead-sheet import, chords on multiple parts, and harmony display modes: **[../../docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](../../docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** · **Release notes:** **[../../docs/COMPOSER_OS_RELEASE_NOTES.md](../../docs/COMPOSER_OS_RELEASE_NOTES.md)**
 
 ## Icon
 

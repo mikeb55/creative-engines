@@ -259,11 +259,15 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     };
   }
 
-  const partM = trimmed.match(/<part\s+id="[^"]*"[^>]*>([\s\S]*?)<\/part>/i);
-  if (!partM) {
+  const partBlockRe = /<part\s+id="[^"]*"[^>]*>([\s\S]*?)<\/part>/gi;
+  const partInners: string[] = [];
+  for (const m of trimmed.matchAll(partBlockRe)) {
+    partInners.push(m[1]!);
+  }
+  if (partInners.length === 0) {
     return { ok: false, errors: ['No <part> block found for lead melody import.'], warnings };
   }
-  const partInner = partM[1];
+  const partInner = partInners[0]!;
   const measures = partInner.match(/<measure[^>]*>[\s\S]*?<\/measure>/gi) ?? [];
   if (measures.length === 0) {
     return { ok: false, errors: ['No measures found in first part.'], warnings };
@@ -291,6 +295,10 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   let sawMultiNoteChords = false;
   let sawLyrics = false;
   const openDynamicStack: Array<{ kind: 'crescendo' | 'decrescendo'; startBar: number; startBeat: number }> = [];
+
+  /** Stage 2 — per-measure rhythm from part 1 for aligning `<harmony>` in supplemental parts. */
+  const divisionsAtMeasureIndex: number[] = new Array(measures.length);
+  const beatsPerBarAtMeasureIndex: number[] = new Array(measures.length);
 
   for (let idx = 0; idx < measures.length; idx++) {
     const measureXml = measures[idx];
@@ -326,6 +334,10 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
         if (Number.isFinite(bpm) && bpm > 0) leadSheet.tempoBpm = bpm;
       }
     }
+
+    divisionsAtMeasureIndex[idx] = divisions;
+    beatsPerBarAtMeasureIndex[idx] = activeBeatsPerBar;
+
     const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
     for (const dir of directionBlocks) {
       const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, divisions));
@@ -390,7 +402,7 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
       if (!symbol) continue;
       const offM = hb.match(/<offset>(-?\d+)<\/offset>/i);
       const offsetDivs = offM ? parseInt(offM[1], 10) : 0;
-      const beat = Math.max(0, offsetDivs / divisions);
+      const beat = Math.max(0, offsetDivs / Math.max(1, divisions));
       leadSheet.chordEvents.push({ bar, beat, symbol });
     }
 
@@ -463,6 +475,51 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     }
   }
 
+  // Stage 2 — merge `<harmony>` from non-first parts (no note parsing); rhythm = part 1 per measure index.
+  if (partInners.length > 1) {
+    for (let p = 1; p < partInners.length; p++) {
+      const extraInner = partInners[p]!;
+      const extraMeasures = extraInner.match(/<measure[^>]*>[\s\S]*?<\/measure>/gi) ?? [];
+      for (let idx = 0; idx < extraMeasures.length; idx++) {
+        if (idx >= leadSheet.totalBars) {
+          warnings.push(
+            `Ignored non-first-part harmony past first-part length (part slot ${p + 1}, measure index ${
+              idx + 1
+            } > ${leadSheet.totalBars} bars).`
+          );
+          continue;
+        }
+        const measureXml = extraMeasures[idx]!;
+        const bar = parseMeasureNumber(measureXml, idx + 1);
+        const divs = divisionsAtMeasureIndex[idx] ?? divisions;
+        const bpb = beatsPerBarAtMeasureIndex[idx] ?? activeBeatsPerBar;
+        const harmonyBlocks = measureXml.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/gi) ?? [];
+        for (let harmonyIdx = 0; harmonyIdx < harmonyBlocks.length; harmonyIdx++) {
+          const hb = harmonyBlocks[harmonyIdx]!;
+          const timelineParsed = parseImportedHarmonyEvent({
+            harmonyXml: hb,
+            bar,
+            divisions: divs,
+            beatsPerBar: bpb,
+            eventIndexInBar: harmonyIdx,
+          });
+          if (timelineParsed.warnings.length > 0) {
+            warnings.push(...timelineParsed.warnings);
+          }
+          if (timelineParsed.event) {
+            (leadSheet.importedHarmonyTimeline as ImportedHarmonyTimeline).events.push(timelineParsed.event);
+          }
+          const symbol = parseHarmonySymbol(hb);
+          if (!symbol) continue;
+          const offM = hb.match(/<offset>(-?\d+)<\/offset>/i);
+          const offsetDivs = offM ? parseInt(offM[1], 10) : 0;
+          const beat = Math.max(0, offsetDivs / Math.max(1, divs));
+          leadSheet.chordEvents.push({ bar, beat, symbol });
+        }
+      }
+    }
+  }
+
   if (openDynamicStack.length > 0) {
     for (const open of openDynamicStack) {
       (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
@@ -478,7 +535,11 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   if (leadSheet.sections.length === 0) {
     leadSheet.sections = [{ label: 'A', startBar: 1 }];
   }
-  if (sawMultiPart) warnings.push('Ignored extra parts/staves; imported first-part lead line only.');
+  if (sawMultiPart) {
+    warnings.push(
+      'Scoped LeadSheet import: melody is first-part voice 1 staff 1 only; extra staves/parts do not add melody. When multiple <part> elements exist, <harmony> in non-first parts is merged by measure index using the first part’s divisions and meter per bar.'
+    );
+  }
   if (sawMultiVoice) warnings.push('Ignored non-voice-1 notes; Phase 1 supports single melody voice.');
   if (sawMultiNoteChords) warnings.push('Ignored stacked chord notes in melody; kept top-level note events only.');
   if (sawLyrics) warnings.push('Lyrics are currently ignored in LeadSheet import Phase 1.');

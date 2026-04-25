@@ -56,20 +56,20 @@ export function planEcmTextureBars(
       let layeringMode: EcmLayeringMode = 'balanced';
 
       if (phase <= 2) {
-        g = h < 0.35 ? 'silence' : 'lead';
+        g = h < 0.5 ? 'silence' : 'shadow';
         bass = 'sustain_pad';
       } else if (phase === 4 || phase === 8) {
-        g = 'lead';
-        bass = h2 < 0.45 ? 'shadow' : 'sustain_pad';
+        g = h < 0.65 ? 'sustain_pad' : 'lead';
+        bass = h2 < 0.58 ? 'inner_motion' : 'sustain_pad';
       } else if (phase >= 5 && phase <= 7) {
-        g = h < 0.38 ? 'shadow' : 'lead';
-        bass = 'sustain_pad';
+        g = h < 0.55 ? 'inner_motion' : 'sustain_pad';
+        bass = h2 < 0.52 ? 'inner_motion' : 'sustain_pad';
       } else {
         g = 'inner_motion';
         bass = 'sustain_pad';
       }
 
-      if (h < 0.12 && phase !== 4) g = 'silence';
+      if (h < 0.2 && phase !== 4) g = 'silence';
 
       // Arc: bars 3–5 sustain guitar harmony while bass anchors; 6–7 inner motion / contrary fragments
       if (phase >= 3 && phase <= 5) {
@@ -80,11 +80,12 @@ export function planEcmTextureBars(
       if (phase === 6 || phase === 7) {
         bass = h2 < 0.48 ? 'inner_motion' : 'sustain_pad';
         g = h < 0.4 ? 'inner_motion' : 'sustain_pad';
-        overlapHint = h3 > 0.62;
+        overlapHint = h3 > 0.74;
         layeringMode = g === 'sustain_pad' ? 'guitar_sustains' : 'bass_sustains';
       }
       if (phase === 8) {
-        overlapHint = h3 > 0.55;
+        if (h < 0.42) g = 'silence';
+        overlapHint = h3 > 0.78;
       }
 
       raw.push({

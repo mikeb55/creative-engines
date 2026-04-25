@@ -6,6 +6,58 @@ import {
 } from '../lead-sheet/musicXmlScoreInput';
 import { applyLeadSheetPerformanceRendering } from '../lead-sheet/leadSheetPerformanceRendering';
 import type { ImportedHarmonyEvent } from '../lead-sheet/importedHarmonyTimeline';
+import {
+  enrichHarmonyWithTonalityVault,
+  isTonalityVaultLeadSheetHarmonyEnrichmentEnabled,
+  type TonalityVaultEnrichmentRunResult,
+} from '../tonalityVault/tonalityVaultLeadSheetHarmonyEnrichment';
+
+/** User-facing harmony interpretation for MusicXML lead-sheet adapt (Tonality Vault is env-gated). */
+export type HarmonyDisplayMode = 'raw' | 'enriched' | 'compare';
+
+export function normalizeLeadSheetHarmonyDisplayMode(raw: unknown): HarmonyDisplayMode {
+  if (raw === 'enriched' || raw === 'compare' || raw === 'raw') return raw;
+  if (typeof raw === 'string') {
+    const t = raw.trim().toLowerCase();
+    if (t === 'enriched' || t === 'compare' || t === 'raw') return t;
+  }
+  return 'raw';
+}
+
+/**
+ * Mode the adapter will use after the Tonality Vault **env** gate (`COMPOSER_OS_TONALITY_VAULT_ENRICH`).
+ * Matches `harmonyInterpretationView.effectiveMode` on a successful adapt (vault failure does not change this).
+ */
+export function effectiveLeadSheetHarmonyDisplayModeAfterEnvGate(rawRequest: unknown): HarmonyDisplayMode {
+  const requested = normalizeLeadSheetHarmonyDisplayMode(rawRequest);
+  if (!isTonalityVaultLeadSheetHarmonyEnrichmentEnabled() && requested !== 'raw') return 'raw';
+  return requested;
+}
+
+/** Immutable snapshot of Stage 2 `chordEvents` (bar / beat / symbol) for compare UI. */
+export type RawLeadSheetChordSnapshot = ReadonlyArray<{ readonly bar: number; readonly beat: number; readonly symbol: string }>;
+
+export interface LeadSheetHarmonyComparePayload {
+  rawChordEvents: RawLeadSheetChordSnapshot;
+  tonalityVault: TonalityVaultEnrichmentRunResult;
+}
+
+/**
+ * Receipt for which harmony view the client should prefer. `lockedChordBars` on the same result
+ * always stays **raw-import** derived (source of truth); this object is for display / analysis only.
+ */
+export interface SongModeLeadSheetHarmonyInterpretationView {
+  requestedMode: HarmonyDisplayMode;
+  effectiveMode: HarmonyDisplayMode;
+  /** Gate coercion, enrichment fallback, or other non-fatal interpretation notes. */
+  viewWarnings: string[];
+  /** True when the user asked for enriched display but Tonality Vault did not produce `applied` output. */
+  enrichedDisplayFellBackToRaw?: boolean;
+  /**
+   * Present when `effectiveMode === 'compare'` and the Tonality Vault pass executed (including `applied: false`).
+   */
+  comparePayload?: LeadSheetHarmonyComparePayload;
+}
 
 export interface SongModeLeadSheetMelodyAnchor {
   bar: number;
@@ -117,6 +169,14 @@ export function adaptLeadSheetForSongMode(input: SongModeLeadSheetAdaptedInput):
 
 export interface SongModeLeadSheetXmlAdaptResult extends SongModeLeadSheetAdaptedResult {
   leadSheet?: LeadSheet;
+  /**
+   * Present when enrichment **ran** (`harmonyDisplayMode` is `enriched` or `compare` and the env gate is on).
+   * Companion to raw `leadSheet` harmony; never mutates imported chord symbols.
+   * If enrichment throws unexpectedly, `applied` is false and warnings carry the message; import/adapt still succeeds.
+   */
+  tonalityVaultHarmonyEnrichment?: TonalityVaultEnrichmentRunResult;
+  /** User-facing harmony mode + optional compare bundle (successful adapt only). */
+  harmonyInterpretationView?: SongModeLeadSheetHarmonyInterpretationView;
 }
 
 export type ImportHarmonyLockFallbackReason = 'timeline_missing' | 'timeline_empty' | 'timeline_unusable';
@@ -238,7 +298,19 @@ export interface LeadSheetPhraseAnchorExtractResult {
 export function adaptLeadSheetMusicXmlForSongMode(
   xmlOrPacked: string | Uint8Array,
   totalBars: number,
-  opts?: { leadSheetPerformanceBlend?: number }
+  opts?: {
+    leadSheetPerformanceBlend?: number;
+    /**
+     * Which harmony view to surface alongside raw import. Default `raw` (no Tonality Vault run).
+     * `enriched` / `compare` require `COMPOSER_OS_TONALITY_VAULT_ENRICH`; otherwise coerced to `raw` with `viewWarnings`.
+     */
+    harmonyDisplayMode?: HarmonyDisplayMode;
+    /**
+     * @internal Unit tests only — when the Tonality Vault env flag is on, forces an exception inside
+     * the enrichment try/catch to prove import/adapt still succeeds.
+     */
+    __testThrowTonalityVaultEnrich?: boolean;
+  }
 ): SongModeLeadSheetXmlAdaptResult {
   const extracted =
     xmlOrPacked instanceof Uint8Array
@@ -262,14 +334,79 @@ export function adaptLeadSheetMusicXmlForSongMode(
       errors: parsed.errors ?? ['Song Mode LeadSheet adapter: MusicXML parse failed'],
     };
   }
+
+  const requestedMode = normalizeLeadSheetHarmonyDisplayMode(opts?.harmonyDisplayMode);
+  const effectiveMode = effectiveLeadSheetHarmonyDisplayModeAfterEnvGate(opts?.harmonyDisplayMode);
+  const envGateOn = isTonalityVaultLeadSheetHarmonyEnrichmentEnabled();
+  const viewWarnings: string[] = [];
+  if (effectiveMode !== requestedMode) {
+    viewWarnings.push(
+      'Harmony display mode requested enriched/compare but Tonality Vault is disabled (unset COMPOSER_OS_TONALITY_VAULT_ENRICH); using raw only.'
+    );
+  }
+
+  const shouldRunEnrichment = envGateOn && (effectiveMode === 'enriched' || effectiveMode === 'compare');
+
+  let tonalityVaultHarmonyEnrichment: TonalityVaultEnrichmentRunResult | undefined;
+  if (shouldRunEnrichment) {
+    try {
+      if (opts?.__testThrowTonalityVaultEnrich === true) {
+        throw new Error('__testThrowTonalityVaultEnrich');
+      }
+      tonalityVaultHarmonyEnrichment = enrichHarmonyWithTonalityVault({
+        chordEvents: parsed.leadSheet.chordEvents,
+        keySignature: parsed.leadSheet.keySignature,
+        totalBars: parsed.leadSheet.totalBars,
+        importedHarmonyTimelineEventCount: parsed.leadSheet.importedHarmonyTimeline?.events.length,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      tonalityVaultHarmonyEnrichment = {
+        applied: false,
+        warnings: [`Tonality Vault enrichment failed (ignored): ${msg}`],
+      };
+    }
+  }
+
+  const rawImportChordSnapshot: RawLeadSheetChordSnapshot = parsed.leadSheet.chordEvents.map((e) => ({
+    bar: e.bar,
+    beat: e.beat,
+    symbol: e.symbol,
+  }));
+
+  let enrichedDisplayFellBackToRaw: boolean | undefined;
+  if (effectiveMode === 'enriched' && tonalityVaultHarmonyEnrichment && !tonalityVaultHarmonyEnrichment.applied) {
+    enrichedDisplayFellBackToRaw = true;
+    viewWarnings.push('Enriched harmony unavailable; use raw chord symbols and locked bars.');
+  }
+
   const shaped = applyLeadSheetPerformanceRendering(parsed.leadSheet, {
     blendTowardImported: opts?.leadSheetPerformanceBlend,
   });
   const adapted = adaptLeadSheetForSongMode({ leadSheet: shaped, totalBars });
+  const enrichWarnings = tonalityVaultHarmonyEnrichment?.warnings ?? [];
+
+  const harmonyInterpretationView: SongModeLeadSheetHarmonyInterpretationView = {
+    requestedMode,
+    effectiveMode,
+    viewWarnings: [...viewWarnings],
+    ...(enrichedDisplayFellBackToRaw ? { enrichedDisplayFellBackToRaw: true } : {}),
+    ...(effectiveMode === 'compare' && tonalityVaultHarmonyEnrichment
+      ? {
+          comparePayload: {
+            rawChordEvents: rawImportChordSnapshot,
+            tonalityVault: tonalityVaultHarmonyEnrichment,
+          },
+        }
+      : {}),
+  };
+
   return {
     ...adapted,
     leadSheet: shaped,
-    warnings: [...(parsed.warnings ?? []), ...adapted.warnings],
+    warnings: [...(parsed.warnings ?? []), ...adapted.warnings, ...enrichWarnings, ...viewWarnings],
+    harmonyInterpretationView,
+    ...(tonalityVaultHarmonyEnrichment ? { tonalityVaultHarmonyEnrichment } : {}),
   };
 }
 

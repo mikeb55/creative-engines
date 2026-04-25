@@ -11,7 +11,11 @@ import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/valid
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
-import { extractLeadSheetMelodyAnchorsFromMusicXml } from '../core/song-mode/songModeLeadSheetAdapter';
+import {
+  extractLeadSheetMelodyAnchorsFromMusicXml,
+  type HarmonyDisplayMode,
+  type SongModeLeadSheetHarmonyInterpretationView,
+} from '../core/song-mode/songModeLeadSheetAdapter';
 import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import * as fs from 'fs';
@@ -135,6 +139,11 @@ export interface GenerateResult {
     importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];
     importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
     importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
+    importHarmonyShouldParseLeadSheetInput?: GenerationMetadata['importHarmonyShouldParseLeadSheetInput'];
+    importHarmonyLeadSheetPipelineStage?: GenerationMetadata['importHarmonyLeadSheetPipelineStage'];
+    importHarmonyLeadSheetAdaptDetail?: GenerationMetadata['importHarmonyLeadSheetAdaptDetail'];
+    importHarmonyChordEventCount?: GenerationMetadata['importHarmonyChordEventCount'];
+    importHarmonyTimelineEventCount?: GenerationMetadata['importHarmonyTimelineEventCount'];
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
   };
   /** Resolved title used for the score (user or default). */
@@ -158,6 +167,10 @@ export interface GenerateResult {
     c4Strength?: 'light' | 'medium' | 'strong';
     importHarmonyMode?: ImportHarmonyMode;
     harmonyBlend?: number;
+    leadSheetHarmonyDisplayMode?: HarmonyDisplayMode;
+    /** After `COMPOSER_OS_TONALITY_VAULT_ENRICH` gate; matches adapt `harmonyInterpretationView.effectiveMode` when lead sheet adapt runs. */
+    leadSheetHarmonyDisplayModeEffective?: HarmonyDisplayMode;
+    debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -174,6 +187,8 @@ export interface GenerateResult {
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /** Song Mode — optional vocal lead sheet MusicXML path (Python `songwriting_bridge`). */
   vocalLeadSheetFilepath?: string;
+  /** Song Mode LeadSheet: receipt for raw/enriched/compare interpretation view. */
+  harmonyInterpretationView?: SongModeLeadSheetHarmonyInterpretationView;
   /** Song Mode — GCE weighted overall (see `core/gce/gceGate.ts`). */
   gceScore?: number;
   /** Song Mode — true when `gceScore` meets the ship gate threshold (≥ 8.0). */
@@ -443,6 +458,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           importHarmonyLockApplied: result.runManifest.importHarmonyLockApplied,
           importHarmonyLockFallbackReason: result.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: result.runManifest.importHarmonyLockedBarsCount,
+          importHarmonyShouldParseLeadSheetInput: result.runManifest.importHarmonyShouldParseLeadSheetInput,
+          importHarmonyLeadSheetPipelineStage: result.runManifest.importHarmonyLeadSheetPipelineStage,
+          importHarmonyLeadSheetAdaptDetail: result.runManifest.importHarmonyLeadSheetAdaptDetail,
+          importHarmonyChordEventCount: result.runManifest.importHarmonyChordEventCount,
+          importHarmonyTimelineEventCount: result.runManifest.importHarmonyTimelineEventCount,
           motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
         }
       : undefined,

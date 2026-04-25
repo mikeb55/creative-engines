@@ -48,6 +48,35 @@ const DONALD_FAGEN_LEADSHEET_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </part>
 </score-partwise>`;
 
+/** Stage 2 smoke — P1 melody measures + P2 `<harmony>` only (matches importer multi-part merge). */
+const STAGE2_MELODY_P1_HARMONY_P2_ADAPTER_XML = `<?xml version="1.0"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Lead</part-name></score-part>
+    <score-part id="P2"><part-name>Comp</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>4</divisions><key><fifths>0</fifths><mode>major</mode></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes><divisions>4</divisions></attributes>
+      <harmony><root><root-step>F</root-step></root><kind>major</kind></harmony>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
+    </measure>
+    <measure number="2">
+      <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony>
+      <note><pitch><step>F</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
 const MELODY_ONLY_EXPRESSION_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="3.1">
   <part-list><score-part id="P1"><part-name>Lead</part-name></score-part></part-list>
@@ -131,6 +160,26 @@ export function runSongModeLeadSheetInputTests(): { ok: boolean; name: string }[
         baseline.runManifest?.songModeLeadSheetInputApplied !== true &&
         baseline.runManifest?.songModeLeadSheetAnchorStartApplied !== true,
       name: 'Donald Fagen Song Mode without LeadSheet remains baseline (LeadSheet guidance disabled)',
+    });
+
+    const stage2MixedParts = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 77250,
+        totalBars: 8,
+        primarySongwriterStyle: 'donald_fagen',
+        songModeLeadSheetMusicXml: STAGE2_MELODY_P1_HARMONY_P2_ADAPTER_XML,
+        importHarmonyMode: 'free_harmony',
+      },
+      tmp
+    );
+    out.push({
+      ok:
+        stage2MixedParts.success === true &&
+        (stage2MixedParts.runManifest?.importHarmonyChordEventCount ?? 0) >= 1 &&
+        (stage2MixedParts.runManifest?.importHarmonyTimelineEventCount ?? 0) >= 1,
+      name: 'Song Mode LeadSheet adapter (Stage 2 smoke): P1 melody + P2 harmony surfaces import chord/timeline counts',
     });
 
     const nonTarget = runAppGeneration(

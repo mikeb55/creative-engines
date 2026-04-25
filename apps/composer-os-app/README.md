@@ -4,6 +4,8 @@ Local web UI for Composer OS. It talks to the shared **app API** (`engines/compo
 
 **First-time user?** Read **[docs/USER_GUIDE.md](../../docs/USER_GUIDE.md)** — run commands, generation steps, export folders, and limitations. Use the in-app **Help** tab for a shorter version.
 
+**MusicXML lead sheets (melody + chords across parts, optional harmony views):** **[docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](../../docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** · **User-facing release notes:** **[docs/COMPOSER_OS_RELEASE_NOTES.md](../../docs/COMPOSER_OS_RELEASE_NOTES.md)**
+
 ---
 
 ## Run (recommended)
@@ -15,10 +17,14 @@ npm install
 npm run dev
 ```
 
-- **Web UI:** http://localhost:5173  
-- **API:** http://localhost:3001 — started by the same script (`scripts/startComposerOsAppApi.ts` from the repo root via `npm run dev:api`)
+- **Web UI:** http://localhost:5173/ — Vite dev server (`npm run dev:vite`). With the default Vite config, your **default browser should open automatically** once the server is listening. If it does not (or you disabled it with `VITE_OPEN_BROWSER=0`), paste that URL manually.
+- **API:** http://localhost:3001/ — same command starts it (`npm run dev:api` → `scripts/startComposerOsAppApi.ts` from the repo root). Override with `PORT` / `VITE_API_PORT` (must match the Vite proxy in `vite.config.ts`).
 
-**Alternative — API only:** from repo root, `node scripts/startComposerOsAppApi.js` loads the API and can serve `dist/` if built.
+**What “success” means here:** `npm run dev` runs **until you stop it** (two child processes: Vite + API). Your IDE may show a **green check** when the script **starts** or when the terminal session is created — that does **not** mean “a window opened”; it often only means the dev command was launched. The **visible** app is either the **browser tab** Vite opens or the page at **http://localhost:5173/**.
+
+**Cursor / VS Code:** Command Palette → **Tasks: Run Task** → **Composer OS: Web dev (Vite + API)** (see repo `.vscode/tasks.json`).
+
+**Alternative — API only:** from repo root, `node scripts/startComposerOsAppApi.js` loads the API and can serve `dist/` if built (then open `http://localhost:3001/` in a browser only if you rely on the API’s static `dist/` hosting — normal UI dev uses Vite on 5173).
 
 ---
 

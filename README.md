@@ -1,21 +1,27 @@
-# Creative Engines ? Composer OS
+# Creative Engines — Composer OS
 
 **Composer OS** is a generative composition system that produces **MusicXML** (and sometimes planning **JSON**) for jazz and contemporary ensemble layouts. This repository contains the **Composer OS V2 engine** (`engines/composer-os-v2/`), a **web app** (`apps/composer-os-app/`), and optional **desktop** packaging (`apps/composer-os-desktop/`).
 
-If you are new here, start with **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** ? it explains what the app does **today**, how to run it, and how exports work in plain language.
+If you are new here, start with **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** — it explains what the app does **today**, how to run it, and how exports work in plain language.  
+**MusicXML lead sheets (melody + chords, optional harmony views):** **[docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** · **What’s new for users:** **[docs/COMPOSER_OS_RELEASE_NOTES.md](docs/COMPOSER_OS_RELEASE_NOTES.md)**
 
 ---
 
 ## What Composer OS is
 
-Composer OS turns your settings ? **mode** (preset), tempo, harmony, form, and other options ? into **score files on disk**. The usual output is **MusicXML**, which opens in **MuseScore**, **Dorico**, **Sibelius**, and other notation tools. You do not need to understand the engine architecture to use the Generate screen.
+Composer OS turns your settings — **mode** (preset), tempo, harmony, form, and other options — into **score files on disk**. The usual output is **MusicXML**, which opens in **MuseScore**, **Dorico**, **Sibelius**, and other notation tools. You do not need to understand the engine architecture to use the Generate screen.
 
 ---
 
 ## Current capabilities (high level)
 
-- **Eight Generate modes:** Guitar?Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator.
+- **Eight Generate modes:** Guitar–Bass Duo, Duo (Single-Line), Wyble Etude, ECM Chamber, Song Mode, Big Band, String Quartet, Riff Generator.
+- **MusicXML lead sheets:** melody stays on **part 1**; **chord symbols can be picked up from other parts** when your export splits melody and chords. Optional **harmony display** modes (Raw / Enriched / Compare) exist on the generate **request** for integrations; raw chords always drive the song. See **[docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** and **[docs/COMPOSER_OS_RELEASE_NOTES.md](docs/COMPOSER_OS_RELEASE_NOTES.md)**.
 - **Songwriter styles include Pat Metheny** for Song Mode (ECM-era open voicings, Lydian/add9 colors, lyrical phrase bias).
+- **Song Mode diversity presets (optional):** curated songwriter blends for stronger audible contrast between generations, without changing default behavior when left unused.
+- **Indie Art Pop alternate guitar tuning (optional v1):** Song Mode can use standard, shared alternate, or separate Guitar 1/Guitar 2 tunings (including custom six-string input) while keeping defaults unchanged when off.
+- **Indie Art Pop dual electric guitars:** Song Mode with Indie Art Pop + separate tunings now produces dual clean electric guitar arrangements (program 27 on both parts) with chordal voicing behavior.
+- **Indie Art Pop listening pass (Song Mode):** clearer melody vs inner-guitar contrast, a bit more sectional breathing and phrase-edge space, and tuning-aware texture when alternate tunings are used; other Song Mode styles unchanged.
 - **ECM Chamber is stable and reliable** after the non-advancing bass-loop and bar-routing fixes; GCE benchmark **7.8/10** (weakest pillar: Arrangement & Orchestration). **Symbolic texture check (developers):** from repo root or `engines/composer-os-v2`, run **`npm run eval:ecm-texture`** — prints **per-run JSON** (density, register gap, phrase-edge thinning/silence, **`ecmTextureScore`**) plus a **short mean summary** for fixed seeds/bar counts (no audio).
 - **Big Band** now includes a deterministic **8-bar sax soli window (bars 17–24)** with alto and tenor leading, **brass tacet** in that window, **cadence brass punches** elsewhere, and a **shout fragment** near the end (`npm run test:big-band-arranging`).
 - **Extended form lengths:** 48 and 64 bars are available in Song Mode and Guitar-Bass Duo paths.
@@ -40,6 +46,7 @@ npm run dev
 
 - **UI:** http://localhost:5173  
 - **API:** http://localhost:3001 (proxied from Vite; wait a second if you see brief proxy errors on first load)
+- **Windows WEB/DEV folder opening:** `Open library folder` now uses a reliable backend Windows strategy (`cmd.exe /c start` primary, `explorer.exe` fallback) for visible Explorer windows.
 
 **Production build (from repo root):**
 

@@ -2,7 +2,10 @@
  * Dual style pairing resolver + validation (Prompt 1/2 intelligence layer).
  */
 
-import { resolveStylePairing } from '../core/style-pairing/stylePairingResolver';
+import {
+  resolveSongModeDiversityStylePairing,
+  resolveStylePairing,
+} from '../core/style-pairing/stylePairingResolver';
 import { validateStylePairingResult } from '../core/style-pairing/stylePairingValidation';
 
 export function runStylePairingResolverTests(): { ok: boolean; name: string }[] {
@@ -38,6 +41,17 @@ export function runStylePairingResolverTests(): { ok: boolean; name: string }[] 
   out.push({
     ok: c.ok && c.warnings.length === 0,
     name: 'validateStylePairingResult allows absent pairing',
+  });
+
+  const d = resolveSongModeDiversityStylePairing('shorter_bacharach_arc');
+  out.push({
+    ok: d?.arrangerStyle === 'schneider' && d?.era === 'post_bop',
+    name: 'song mode diversity preset maps to curated arranger/era hint',
+  });
+
+  out.push({
+    ok: resolveSongModeDiversityStylePairing('') === null,
+    name: 'no diversity preset yields no style pairing override',
   });
 
   return out;

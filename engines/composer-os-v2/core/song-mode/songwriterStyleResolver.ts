@@ -32,6 +32,64 @@ export interface ResolvedSongwritingStyle {
   styleFingerprint: string;
 }
 
+export type SongModeDiversityPresetId =
+  | 'fagen_wonder_pocket'
+  | 'shorter_bacharach_arc'
+  | 'beatles_bach_counterline'
+  | 'kendrick_debussy_space'
+  | 'maxmartin_stravinsky_angles';
+
+export interface SongModeDiversityPreset {
+  id: SongModeDiversityPresetId;
+  label: string;
+  primarySongwriterStyle: SongwriterRuleId;
+  secondarySongwriterStyle: SongwriterRuleId;
+  audibleDescription: string;
+}
+
+export const SONG_MODE_DIVERSITY_PRESETS: readonly SongModeDiversityPreset[] = [
+  {
+    id: 'fagen_wonder_pocket',
+    label: 'Jazz-Pop Pocket',
+    primarySongwriterStyle: 'donald_fagen',
+    secondarySongwriterStyle: 'stevie_wonder',
+    audibleDescription: 'Smoother groove pocket with richer color chords and stronger hook lift.',
+  },
+  {
+    id: 'shorter_bacharach_arc',
+    label: 'Angular Lyric Arc',
+    primarySongwriterStyle: 'wayne_shorter',
+    secondarySongwriterStyle: 'bacharach',
+    audibleDescription: 'More angular harmonic motion balanced by clearer lyrical phrase turns.',
+  },
+  {
+    id: 'beatles_bach_counterline',
+    label: 'Hook + Counterline',
+    primarySongwriterStyle: 'beatles',
+    secondarySongwriterStyle: 'bach',
+    audibleDescription: 'Direct melodic hooks with tighter inner-line motion and form clarity.',
+  },
+  {
+    id: 'kendrick_debussy_space',
+    label: 'Motif + Colour Space',
+    primarySongwriterStyle: 'kendrick_lamar',
+    secondarySongwriterStyle: 'debussy',
+    audibleDescription: 'Punchier motif cells with softer harmonic color wash and wider breathing room.',
+  },
+  {
+    id: 'maxmartin_stravinsky_angles',
+    label: 'Hook Grid + Asymmetry',
+    primarySongwriterStyle: 'max_martin',
+    secondarySongwriterStyle: 'stravinsky',
+    audibleDescription: 'Pop-forward repetition anchored by sharper rhythmic accents and contour pivots.',
+  },
+];
+
+export function resolveSongModeDiversityPreset(id: string | null | undefined): SongModeDiversityPreset | null {
+  if (!id) return null;
+  return SONG_MODE_DIVERSITY_PRESETS.find((p) => p.id === id) ?? null;
+}
+
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }

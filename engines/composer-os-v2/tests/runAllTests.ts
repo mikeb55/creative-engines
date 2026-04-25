@@ -11,6 +11,9 @@
  * **Optional env**
  * - `COMPOSER_OS_SKIP_STAGE_EXIT_GATES=1` — skip **Stage Exit Gates** (retro aggregate; quarantine).
  * - `COMPOSER_OS_TEST_EXCLUDE_SUBSTR=a,b` — skip suites whose **name contains** any substring.
+ * - `COMPOSER_OS_TONALITY_VAULT_ENRICH=1` — optional post-import harmony interpretation (see
+ *   `core/tonalityVault/tonalityVaultLeadSheetHarmonyEnrichment.ts`); default unset = OFF.
+ *   With the flag on, `GenerateRequest.leadSheetHarmonyDisplayMode` may be `enriched` or `compare` (else stays `raw`).
  *
  * **Timings:** slowest suites printed at end for triage.
  */
@@ -64,6 +67,7 @@ import { runMusicXmlWrittenBarRegressionTests } from './musicXmlWrittenBarRegres
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runEcmShapingPassTests } from './ecmShapingPass.test';
 import { runEcmArrangementPolicyTests } from './ecmArrangementPolicy.test';
+import { runEcmStyleEcmDeepeningTests } from './ecmStyleEcmDeepening.test';
 import { runDuoOrchestrationPassTests } from './duoOrchestrationPass.test';
 import { runIdentityCellTests } from './identityCell.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
@@ -72,6 +76,8 @@ import { runModuleInvocationTests } from './moduleInvocation.test';
 import { runSongModeFoundationTests } from './songModeFoundation.test';
 import { runSongModeIntegrationTests } from './songModeIntegration.test';
 import { runSongModeMusicXmlTests } from './songModeMusicXml.test';
+import { runImportHarmonyModesSingleFileTests } from './importHarmonyModesSingleFile.test';
+import { runImportHarmonyLeadSheetTelemetryStage1Tests } from './importHarmonyLeadSheetTelemetryStage1.test';
 import { runSongModeHookIdentityTests } from './songModeHookIdentity.test';
 import { runSongModeLeadSheetInputTests } from './songModeLeadSheetInput.test';
 import { runSongwritingResearchParsingTests } from './songwritingResearchParsing.test';
@@ -97,6 +103,7 @@ import { runMusicXmlReferenceParserTests } from './musicXmlReferenceParser.test'
 import { runLeadSheetReferenceParserTests } from './leadSheetReferenceParser.test';
 import { runImportedHarmonyTimelineTests } from './importedHarmonyTimeline.test';
 import { runLeadSheetMusicXmlImportTests } from './leadSheetMusicXmlImport.test';
+import { runTonalityVaultLeadSheetHarmonyEnrichmentTests } from './tonalityVaultLeadSheetHarmonyEnrichment.test';
 import { runMusicXmlMxlSampleFolderTests } from './musicXmlMxlSampleFolder.test';
 import { runLeadSheetPerformanceRenderingTests } from './leadSheetPerformanceRendering.test';
 import { runReferenceBehaviourExtractionTests } from './referenceBehaviourExtraction.test';
@@ -149,6 +156,10 @@ import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
 import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
 import { runSongModeAbInspectHarnessTests } from './songModeAbInspectHarness.test';
 import { runMotifAuthorityPilotSliceTests } from './motifAuthorityPilotSlice.test';
+import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
+import { runIndieArtPopPhaseATests } from './indieArtPopPhaseA.test';
+import { runIndieDualGuitarTuningFixtureTests } from './indieDualGuitarTuningFixture.test';
+import { runIndieArtPopDualGuitarRouteTests } from './indieArtPopDualGuitarRoute.test';
 import { isFastExcludedSuiteName } from './harness/fastExcludeSuites';
 
 const suites = [
@@ -201,6 +212,7 @@ const suites = [
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'ECM shaping pass', run: runEcmShapingPassTests },
   { name: 'ECM arrangement policy', run: runEcmArrangementPolicyTests },
+  { name: 'STYLE_ECM deepening (Phase A/B)', run: runEcmStyleEcmDeepeningTests },
   { name: 'Duo orchestration pass', run: runDuoOrchestrationPassTests },
   { name: 'ECM identity cell', run: runIdentityCellTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },
@@ -209,6 +221,8 @@ const suites = [
   { name: 'Song Mode foundation', run: runSongModeFoundationTests },
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Song Mode MusicXML app', run: runSongModeMusicXmlTests },
+  { name: 'Import harmony modes (single Sibelius sample file)', run: runImportHarmonyModesSingleFileTests },
+  { name: 'Import harmony LeadSheet telemetry (Stage 1)', run: runImportHarmonyLeadSheetTelemetryStage1Tests },
   { name: 'Song Mode regression baseline (50021)', run: runSongModeHookIdentityTests },
   { name: 'Song Mode LeadSheet input (Donald Fagen Phase 1)', run: runSongModeLeadSheetInputTests },
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
@@ -238,6 +252,7 @@ const suites = [
   { name: 'Lead sheet reference parser', run: runLeadSheetReferenceParserTests },
   { name: 'Imported harmony timeline (Stage 1 storage)', run: runImportedHarmonyTimelineTests },
   { name: 'Lead sheet MusicXML import (Phase 1)', run: runLeadSheetMusicXmlImportTests },
+  { name: 'Tonality Vault lead-sheet harmony enrichment (optional)', run: runTonalityVaultLeadSheetHarmonyEnrichmentTests },
   { name: 'MusicXML .mxl sample folder (MuseScore)', run: runMusicXmlMxlSampleFolderTests },
   { name: 'Lead sheet performance shaping (import → expression)', run: runLeadSheetPerformanceRenderingTests },
   { name: 'Reference behaviour extraction', run: runReferenceBehaviourExtractionTests },
@@ -285,6 +300,10 @@ const suites = [
   { name: 'Eval readable summary', run: runEvalReadableSummaryTests },
   { name: 'Song Mode A/B inspect harness', run: runSongModeAbInspectHarnessTests },
   { name: 'Motif Authority pilot slice', run: runMotifAuthorityPilotSliceTests },
+  { name: 'Alternate guitar tunings (Song Mode v1)', run: runAlternateGuitarTuningsTests },
+  { name: 'Indie Art Pop Phase A deepening (Song Mode)', run: runIndieArtPopPhaseATests },
+  { name: 'Indie dual-guitar tuning verification fixture', run: runIndieDualGuitarTuningFixtureTests },
+  { name: 'Indie Art Pop dual-guitar route (golden path smoke)', run: runIndieArtPopDualGuitarRouteTests },
   ...retroSuites,
 ];
 

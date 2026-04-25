@@ -2,6 +2,18 @@ import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
 
 const BASE = '/api';
 
+/**
+ * In dev, optional VITE_DEV_API_BASE=http://127.0.0.1:3001 to bypass the Vite proxy and hit Express directly
+ * (same CORS: server uses `cors()` in startComposerOsAppApi.ts). Leave unset to use relative /api (proxied).
+ */
+function apiUrl(pathWithBase: string): string {
+  const v = import.meta.env.VITE_DEV_API_BASE;
+  if (import.meta.env.DEV && v && String(v).trim()) {
+    return `${String(v).replace(/\/$/, '')}${pathWithBase}`;
+  }
+  return pathWithBase;
+}
+
 function parseOkJson<T>(text: string): T {
   try {
     return JSON.parse(text) as T;
@@ -64,7 +76,7 @@ async function get<T>(path: string): Promise<T> {
   }
   let r: Response;
   try {
-    r = await fetch(`${BASE}${path}`);
+    r = await fetch(apiUrl(`${BASE}${path}`));
   } catch {
     throw new Error(
       'Composer OS is not reachable. Make sure the app is running and try again.'
@@ -90,9 +102,12 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
+  if (import.meta.env.DEV && path === '/open-output-folder') {
+    console.log('[UI] API fetch (dev)', { url: apiUrl(`${BASE}${path}`), body });
+  }
   let r: Response;
   try {
-    r = await fetch(`${BASE}${path}`, {
+    r = await fetch(apiUrl(`${BASE}${path}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

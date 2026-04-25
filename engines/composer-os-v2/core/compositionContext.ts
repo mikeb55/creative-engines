@@ -28,6 +28,7 @@ import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIn
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
+import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type {
   MotifAuthorityLevel,
   MotifAuthorityPlan,
@@ -75,6 +76,21 @@ export type ImportHarmonyLockFallbackReason =
   | 'timeline_empty'
   | 'timeline_unusable'
   | 'not_song_mode';
+
+/** LeadSheet MusicXML adapt pipeline position (Stage 1 telemetry; not a user-facing mode). */
+export type ImportHarmonyLeadSheetPipelineStage =
+  | 'skipped'
+  | 'musicxml_unpack_failed'
+  | 'musicxml_import_failed'
+  | 'adapt_failed'
+  | 'adapt_ok';
+
+/** Coarse reason when the adapt pipeline does not reach `adapt_ok` (Stage 1). */
+export type ImportHarmonyLeadSheetAdaptDetail =
+  | 'musicxml_unpack_failed'
+  | 'musicxml_import_failed'
+  | 'adapt_no_chord_events'
+  | 'adapt_other';
 
 /** Generation metadata. */
 export interface GenerationMetadata {
@@ -171,6 +187,19 @@ export interface GenerationMetadata {
   songModeReturnMotifShapeExpected?: MotifShape;
   /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
   styleProfile?: StyleProfile;
+  /** Song Mode v1 (Indie Art Pop): resolved optional alternate tuning envelope. */
+  alternateGuitarTuning?: AlternateGuitarTuningResolved;
+  /** Song Mode v1: tiny tuning nudges (bounded). */
+  altTuningDroneTendency?: number;
+  altTuningRegisterBias?: 'low' | 'neutral' | 'high';
+  altTuningSplitRoleActive?: boolean;
+  /** Song Mode STYLE_INDIE_ART_POP Phase A: texture / role / phrase-edge pass ran on the duo score. */
+  indieArtPopPhaseAApplied?: boolean;
+  /**
+   * Song Mode STYLE_INDIE_ART_POP — reserved mid/high guitar windows (bar indices) for a future string layer.
+   * Metadata only in Phase A; no string parts are generated yet.
+   */
+  indieArtPopStringsPlaceholderBars?: number[];
   /** Song Mode: short honest lines for receipts when a style surface applies real metadata nudges (see `songModeStyleSurface.ts`). */
   songModeStyleSurfaceNotes?: string[];
   /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
@@ -279,6 +308,16 @@ export interface GenerationMetadata {
   importHarmonyLockFallbackReason?: ImportHarmonyLockFallbackReason;
   /** Stage 3: count of timeline-derived locked bars consumed by harmony routing. */
   importHarmonyLockedBarsCount?: number;
+  /** Stage 1: whether LeadSheet MusicXML parsing was attempted for this run (Song Mode routing flag echo). */
+  importHarmonyShouldParseLeadSheetInput?: boolean;
+  /** Stage 1: LeadSheet MusicXML adapt pipeline outcome (telemetry-only). */
+  importHarmonyLeadSheetPipelineStage?: ImportHarmonyLeadSheetPipelineStage;
+  /** Stage 1: coarse adapt failure bucket when stage is not `adapt_ok`. */
+  importHarmonyLeadSheetAdaptDetail?: ImportHarmonyLeadSheetAdaptDetail;
+  /** Stage 1: imported `LeadSheet.chordEvents.length` after shaping (when parse ran). */
+  importHarmonyChordEventCount?: number;
+  /** Stage 1: imported harmony timeline storage event count (`importedHarmonyTimeline.events`). */
+  importHarmonyTimelineEventCount?: number;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /**

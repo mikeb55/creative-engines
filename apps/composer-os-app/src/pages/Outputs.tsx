@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type MouseEvent } from 'react';
 import { api, displayOutputPath } from '../services/api';
 
 type OutputRow = {
@@ -53,23 +53,60 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
     return () => window.removeEventListener('composer-os:outputs-changed', onChanged);
   }, [load]);
 
-  const openLibraryFolder = async () => {
+  const openLibraryFolder = async (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const step = (s: string, data?: unknown) => {
+      const line = data !== undefined ? `${s} ${JSON.stringify(data)}` : s;
+      console.log('[UI] open-library-folder', line);
+    };
+    step('click-detected', { t: new Date().toISOString() });
     setFolderError(null);
     try {
+      step('api-call-start', { path: 'POST /api/open-output-folder', body: {} });
       const r = await api.openOutputFolder();
-      if (!r.success && r.message) setFolderError(r.message);
-    } catch (e) {
-      setFolderError(e instanceof Error ? e.message : String(e));
+      step('api-response-body', r);
+      if (!r.success) {
+        setFolderError(r.message ?? 'Could not open the library folder.');
+        step('action-fail', { reason: r.message ?? 'no message' });
+        return;
+      }
+      if (r.openedPath) {
+        step('action-success', { openedPath: r.openedPath });
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          void navigator.clipboard.writeText(r.openedPath).then(
+            () => step('clipboard-copied', { path: r.openedPath }),
+            (err) => step('clipboard-skip', { err: String(err) })
+          );
+        }
+      } else {
+        step('action-ambiguous', { success: r.success, note: 'no openedPath in JSON' });
+      }
+    } catch (ex) {
+      const msg = ex instanceof Error ? ex.message : String(ex);
+      setFolderError(msg);
+      step('exception', { message: msg });
     }
   };
 
   const openFileFolder = async (filepath: string) => {
     setFolderError(null);
+    const dir = dirnameOnly(filepath);
     try {
-      const r = await api.openOutputFolder({ path: dirnameOnly(filepath) });
-      if (!r.success && r.message) setFolderError(r.message);
+      const r = await api.openOutputFolder({ path: dir });
+      if (!r.success) {
+        setFolderError(r.message ?? 'Could not open the folder for this file.');
+        console.error('[Library] Open failed (file row):', r.message ?? '(no message)', { dir });
+        return;
+      }
+      if (r.openedPath) {
+        console.log('[Library] Opening folder:', r.openedPath);
+        console.log('[Library] Folder opened successfully');
+      }
     } catch (e) {
-      setFolderError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setFolderError(msg);
+      console.error('[Library] Open error (file row):', msg, { dir });
     }
   };
 
@@ -96,10 +133,14 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
         Newest first — each row shows mode, output type, and path; filename is secondary.
       </p>
 
-      <button className="secondary" onClick={load} disabled={loading} style={{ marginBottom: '1rem' }}>
+      <button type="button" className="secondary" onClick={load} disabled={loading} style={{ marginBottom: '1rem' }}>
         {loading ? 'Loading…' : 'Refresh'}
       </button>
-      <button onClick={openLibraryFolder} style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
+      <button
+        type="button"
+        onClick={(e) => void openLibraryFolder(e)}
+        style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}
+      >
         Open library folder
       </button>
 
