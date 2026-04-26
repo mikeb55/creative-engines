@@ -91,6 +91,16 @@ If your environment does **not** offer the optional enrichment layer, **Enriched
 
 ---
 
+## Indie Art Pop + separate guitar tunings (dual electrics) — the second guitar
+
+When you use the **guitar + guitar** (dual electric) setup with **Indie Art Pop** and **separate** alternate tunings, **Electric Guitar 2** is a **chordal comp** part, not a second lead:
+
+- It does **not** carry the main melody; comp stacks are **2–4 chord tones** in a guitar range (shells plus extensions like 5th, 9th, or 13th when a fuller voicing is needed).
+- **Rhythm** is mostly on **downbeats and structural points**; a clearer texture usually comes from **how often** it strums, not from forcing every voicing down to the smallest two-note shape.
+- For a slightly more technical part-spec (big harmony vs. light bars, and how that relates to the engine), see **[COMPOSER_OS_INDIE_DUAL_GUITAR_GUITAR2_COMP.md](COMPOSER_OS_INDIE_DUAL_GUITAR_GUITAR2_COMP.md)**.
+
+---
+
 ## Quick recap
 
 1. **Import** your MusicXML (or `.mxl`).
