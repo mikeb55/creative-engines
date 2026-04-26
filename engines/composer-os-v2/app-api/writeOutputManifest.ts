@@ -126,6 +126,8 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
     songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
     songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+    motifAuthorityLevel?: GenerationMetadata['motifAuthorityLevel'];
+    motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
     gceScore?: number;
     gceGatePassed?: boolean;
     riffCompositeScore?: number;
@@ -199,6 +201,8 @@ export function writeOutputManifest(
     songModeSectionShapingDiagnostics: meta.songModeSectionShapingDiagnostics,
     songModeSectionBehaviourDescriptors: meta.songModeSectionBehaviourDescriptors,
     songModeProfileRuleDiagnostics: meta.songModeProfileRuleDiagnostics,
+    motifAuthorityLevel: meta.motifAuthorityLevel,
+    motifDevelopmentSummary: meta.motifDevelopmentSummary,
     songModeDiagnosticsSummary: buildSongModeDiagnosticsSummary(meta),
     gceScore: meta.gceScore,
     gceGatePassed: meta.gceGatePassed,

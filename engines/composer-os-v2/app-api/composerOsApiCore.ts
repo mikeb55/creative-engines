@@ -17,6 +17,10 @@ import type { GenerateRequest } from './appApiTypes';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
+  indieArtPopAlternateTuningWantsDualElectricGuitars,
+  normalizeAlternateGuitarTuningRequest,
+} from '../core/song-mode/alternateGuitarTunings';
+import {
   ensureOutputDirectoryForPreset,
   getComposerFilesRoot,
   PRESET_OUTPUT_SUBFOLDER,
@@ -213,6 +217,14 @@ export function apiGenerate(
         typeof body.authorOverlay === 'string' && body.authorOverlay.trim() !== ''
           ? body.authorOverlay.trim()
           : undefined,
+      alternateGuitarTuning:
+        body.alternateGuitarTuning &&
+        typeof body.alternateGuitarTuning === 'object' &&
+        ((body.alternateGuitarTuning as { mode?: unknown }).mode === 'standard' ||
+          (body.alternateGuitarTuning as { mode?: unknown }).mode === 'shared' ||
+          (body.alternateGuitarTuning as { mode?: unknown }).mode === 'separate')
+          ? (body.alternateGuitarTuning as GenerateRequest['alternateGuitarTuning'])
+          : undefined,
       ensembleConfigId:
         body.ensembleConfigId === 'full_band' ||
         body.ensembleConfigId === 'medium_band' ||
@@ -274,7 +286,27 @@ export function apiGenerate(
           : undefined,
       formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
       includeVocalLeadSheet: body.includeVocalLeadSheet === true ? true : undefined,
+      __generateCorrelationId:
+        typeof (body as { __generateCorrelationId?: unknown }).__generateCorrelationId === 'string' &&
+        (body as { __generateCorrelationId: string }).__generateCorrelationId.trim() !== ''
+          ? (body as { __generateCorrelationId: string }).__generateCorrelationId.trim()
+          : undefined,
     };
+    const genCorr = req_.__generateCorrelationId;
+    if (genCorr != null) {
+      const normalizedAlt = normalizeAlternateGuitarTuningRequest(req_.alternateGuitarTuning);
+      console.log('[GEN-CORR] apiGenerate:normalized-req', {
+        corr: genCorr,
+        presetId: req_.presetId,
+        styleProfile: req_.styleProfile,
+        alternateGuitarTuningRaw: req_.alternateGuitarTuning,
+        alternateGuitarTuningNormalized: normalizedAlt,
+        indieDualElectric:
+          req_.presetId === 'song_mode' &&
+          req_.styleProfile === 'STYLE_INDIE_ART_POP' &&
+          indieArtPopAlternateTuningWantsDualElectricGuitars(normalizedAlt ?? undefined),
+      });
+    }
     /** Riff writes only under `<library root>/Riffs` — never fall back to env/AppData if the root is missing. */
     let presetDir: string;
     if (req_.presetId === 'riff_generator') {
@@ -360,7 +392,9 @@ export async function apiOpenOutputFolder(
   composerRoot: string,
   body?: { path?: string }
 ): Promise<OpenOutputFolderResult> {
+  console.log('[API][handler] apiOpenOutputFolder entry', { composerRoot, body });
   const resolved = resolveOpenFolderTarget(composerRoot, body);
+  console.log('[API][handler] apiOpenOutputFolder resolved', resolved);
   if (!resolved.ok) {
     return { success: false, message: resolved.message };
   }

@@ -80,9 +80,17 @@ async function get<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   if (isDesktopIpc()) {
     if (path === '/generate') {
+      const rec = body as Record<string, unknown>;
+      if (typeof rec.__generateCorrelationId === 'string') {
+        console.log('[GEN-CORR] api ipc-invoke composer-os-api:generate', {
+          corr: rec.__generateCorrelationId,
+          alternateGuitarTuning: rec.alternateGuitarTuning,
+        });
+      }
       return ipcInvoke<T>('composer-os-api:generate', body);
     }
     if (path === '/open-output-folder') {
+      console.log('[OPEN-FOLDER] api ipc-invoke composer-os-api:open-output-folder', body ?? {});
       return ipcInvoke<T>('composer-os-api:open-output-folder', body ?? {});
     }
     if (path === '/system-check') {
@@ -91,8 +99,17 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
+  const url = `${BASE}${path}`;
   try {
-    r = await fetch(`${BASE}${path}`, {
+    const rec = body as Record<string, unknown>;
+    if (path === '/generate' && typeof rec.__generateCorrelationId === 'string') {
+      console.log('[GEN-CORR] api fetch POST serialized', {
+        corr: rec.__generateCorrelationId,
+        json: JSON.stringify(body),
+      });
+    }
+    console.log('[UI][api-post] start', { url, body });
+    r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -103,6 +120,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     );
   }
   const text = await r.text();
+  console.log('[UI][api-post] end', { url, status: r.status, ok: r.ok, body: text });
   if (!r.ok) {
     throw new Error(friendlyHttpMessage(r.status, text));
   }

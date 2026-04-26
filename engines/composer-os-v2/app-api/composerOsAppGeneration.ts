@@ -22,6 +22,10 @@ import {
   extractLockedHarmonyBarsFromImportedTimeline,
   extractLeadSheetMelodyAnchorsFromMusicXml,
 } from '../core/song-mode/songModeLeadSheetAdapter';
+import {
+  indieArtPopAlternateTuningWantsDualElectricGuitars,
+  normalizeAlternateGuitarTuningRequest,
+} from '../core/song-mode/alternateGuitarTunings';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
@@ -330,6 +334,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
   const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
+  const alternateGuitarTuningNormalized = normalizeAlternateGuitarTuningRequest(req.alternateGuitarTuning);
+  const genCorr = req.__generateCorrelationId;
+  if (typeof genCorr === 'string' && genCorr.length > 0) {
+    console.log('[GEN-CORR] runSongStructure:post-normalize', {
+      corr: genCorr,
+      alternateGuitarTuningNormalized,
+      indieDualElectric:
+        req.styleProfile === 'STYLE_INDIE_ART_POP' &&
+        indieArtPopAlternateTuningWantsDualElectricGuitars(alternateGuitarTuningNormalized ?? undefined),
+    });
+  }
   const lockHarmonyRequested = normalizedImportHarmonyMode === 'lock_harmony';
   let importHarmonyLockApplied = false;
   let importHarmonyLockFallbackReason:
@@ -565,6 +580,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
+    alternateGuitarTuning: alternateGuitarTuningNormalized ?? undefined,
     era: req.stylePairing?.era ?? undefined,
     stylePairing: req.stylePairing
       ? {

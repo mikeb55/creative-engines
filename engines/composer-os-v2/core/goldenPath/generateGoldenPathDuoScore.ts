@@ -10,6 +10,7 @@ import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '
 import type { ScoreModel, PartModel, MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { indieArtPopAlternateTuningWantsDualElectricGuitars } from '../song-mode/alternateGuitarTunings';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
@@ -143,6 +144,66 @@ const DUO_DEFAULT_STYLE_STACK: StyleStack = {
 };
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
+
+function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
+  const sp = context.generationMetadata?.styleProfile;
+  return (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.presetId === 'guitar_bass_duo' &&
+    sp === 'STYLE_INDIE_ART_POP' &&
+    indieArtPopAlternateTuningWantsDualElectricGuitars(context.generationMetadata?.alternateGuitarTuning)
+  );
+}
+
+function remapBassPartToElectricGuitar2ForIndieArtPop(bass: PartModel): PartModel {
+  const remappedMeasures: MeasureModel[] = bass.measures.map((m) => ({
+    ...m,
+    events: m.events.map((e) => {
+      if (e.kind !== 'note') return e;
+      const p = Math.max(43, e.pitch + 12);
+      return { ...e, pitch: p };
+    }),
+  }));
+  return {
+    ...bass,
+    id: 'guitar_2',
+    name: 'Electric Guitar 2',
+    instrumentIdentity: 'clean_electric_guitar',
+    midiProgram: 27,
+    clef: 'treble',
+    measures: remappedMeasures,
+  };
+}
+
+function forceChordalElectricGuitar2VoicingsForIndieRoute(
+  part: PartModel,
+  context: CompositionContext
+): PartModel {
+  const low = 40; // E2
+  const high = 76; // E5
+  for (const m of part.measures) {
+    const chord = m.chord ?? getChordForBar(m.index, context);
+    const tones = guitarChordTonesInRange(chord, Math.max(low + 7, 47), high);
+    const anchors = m.events
+      .filter((e): e is NoteEvent => e.kind === 'note')
+      .sort((a, b) => a.startBeat - b.startBeat);
+    if (anchors.length === 0) continue;
+    const extra: NoteEvent[] = [];
+    for (const a of anchors) {
+      const chordDur = Math.min(Math.max(a.duration, 0.5), 2);
+      const triadCandidates = [tones.third, tones.fifth, tones.seventh]
+        .filter((p) => Number.isFinite(p))
+        .map((p) => clampPitch(p, low, high))
+        .filter((p, i, arr) => arr.indexOf(p) === i && p !== a.pitch)
+        .slice(0, 2);
+      if (triadCandidates.length < 2) continue;
+      const supportingTone = triadCandidates[0]!;
+      extra.push(createNote(supportingTone, a.startBeat, chordDur, 2));
+    }
+    for (const ev of extra) addEvent(m, ev);
+  }
+  return part;
+}
 
 function isDuoGoldenPathPreset(presetId: string): boolean {
   return (
@@ -3567,7 +3628,10 @@ export function generateGoldenPathDuoScore(
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
   }
   if (isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber') {
-    enforceVoice2BassRegisterSeparation18_2B_4(guitarPart, bassPart, context);
+    const useIndieDualGuitar = shouldUseIndieArtPopDualGuitarRoute(context);
+    if (!useIndieDualGuitar) {
+      enforceVoice2BassRegisterSeparation18_2B_4(guitarPart, bassPart, context);
+    }
   }
 
   const bpm = opts?.bpm ?? 120;
@@ -3575,6 +3639,10 @@ export function generateGoldenPathDuoScore(
     context.presetId === 'ecm_chamber'
       ? { swingRatio: 1, tempoFeel: 'medium' as const, driftTotalBeats: 0.06 }
       : buildFeelProfileFromTempo(bpm);
+  if (shouldUseIndieArtPopDualGuitarRoute(context)) {
+    bassPart = remapBassPartToElectricGuitar2ForIndieArtPop(bassPart);
+    bassPart = forceChordalElectricGuitar2VoicingsForIndieRoute(bassPart, context);
+  }
   const rawScore = createScore(plans.scoreTitle, [guitarPart, bassPart], {
     tempo: bpm,
     feelProfile,

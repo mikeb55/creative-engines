@@ -3,6 +3,7 @@
  */
 
 import type { BigBandComposerId, BigBandEraId } from '../big-band/bigBandResearchTypes';
+import type { SongModeDiversityPresetId } from '../song-mode/songwriterStyleResolver';
 import type { StylePairingInput, StylePairingResult } from './stylePairingTypes';
 
 function clamp01(n: number): number {
@@ -83,4 +84,16 @@ export function resolveStylePairing(input: StylePairingInput): StylePairingResul
     experimentalFlag,
     notes,
   };
+}
+
+export function resolveSongModeDiversityStylePairing(
+  presetId: SongModeDiversityPresetId | string | null | undefined
+): Pick<StylePairingInput, 'arrangerStyle' | 'era'> | null {
+  if (!presetId) return null;
+  if (presetId === 'fagen_wonder_pocket') return { arrangerStyle: 'thad', era: 'contemporary' };
+  if (presetId === 'shorter_bacharach_arc') return { arrangerStyle: 'schneider', era: 'post_bop' };
+  if (presetId === 'beatles_bach_counterline') return { arrangerStyle: 'ellington', era: 'swing' };
+  if (presetId === 'kendrick_debussy_space') return { arrangerStyle: 'gil_evans', era: 'cool_jazz' };
+  if (presetId === 'maxmartin_stravinsky_angles') return { arrangerStyle: 'basie', era: 'bebop' };
+  return null;
 }

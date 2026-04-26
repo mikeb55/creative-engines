@@ -55,20 +55,29 @@ export function Outputs({ refreshTrigger }: { refreshTrigger?: number }) {
 
   const openLibraryFolder = async () => {
     setFolderError(null);
+    console.log('[UI][open-folder] click=open-library-folder');
     try {
+      console.log('[UI][open-folder] request body={}');
       const r = await api.openOutputFolder();
+      console.log('[UI][open-folder] response open-library-folder', r);
       if (!r.success && r.message) setFolderError(r.message);
     } catch (e) {
+      console.log('[UI][open-folder] exception open-library-folder', e);
       setFolderError(e instanceof Error ? e.message : String(e));
     }
   };
 
   const openFileFolder = async (filepath: string) => {
     setFolderError(null);
+    console.log('[UI][open-folder] click=open-file-folder', { filepath });
     try {
-      const r = await api.openOutputFolder({ path: dirnameOnly(filepath) });
+      const payload = { path: dirnameOnly(filepath) };
+      console.log('[UI][open-folder] request open-file-folder', payload);
+      const r = await api.openOutputFolder(payload);
+      console.log('[UI][open-folder] response open-file-folder', r);
       if (!r.success && r.message) setFolderError(r.message);
     } catch (e) {
+      console.log('[UI][open-folder] exception open-file-folder', e);
       setFolderError(e instanceof Error ? e.message : String(e));
     }
   };

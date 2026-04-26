@@ -5,9 +5,11 @@
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type { GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
+import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 
 export type { StyleProfile };
 export type { ImportHarmonyMode };
+export type { AlternateGuitarTuningRequest };
 
 export interface AppPreset {
   id: string;
@@ -122,6 +124,12 @@ export interface GenerateRequest {
   secondarySongwriterStyle?: string;
   /** Song Mode: lyric author overlay (`AuthorRuleId`), e.g. `jimmy_webb`. */
   authorOverlay?: string;
+  /** Song Mode v1 (Indie Art Pop): optional alternate guitar tuning controls. */
+  alternateGuitarTuning?: AlternateGuitarTuningRequest;
+  /**
+   * Dev tracing only: UI may set a correlation id for one generate hop; echoed in logs, not used by MusicXML routing.
+   */
+  __generateCorrelationId?: string;
   /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
   styleProfile?: StyleProfile;
   /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */

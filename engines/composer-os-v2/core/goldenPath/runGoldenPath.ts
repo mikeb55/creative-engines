@@ -89,6 +89,7 @@ import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehavi
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
+import { indieArtPopAlternateTuningWantsDualElectricGuitars } from '../song-mode/alternateGuitarTunings';
 import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
@@ -103,7 +104,8 @@ import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionCont
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
-import type { MotifAuthorityLevel } from '../motif/motifAuthorityV1';
+import type { MotifAuthorityPlan } from '../motif/motifAuthorityV1';
+import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -730,6 +732,15 @@ function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string
   });
 }
 
+function isIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
+  return (
+    context.presetId === 'guitar_bass_duo' &&
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    context.generationMetadata?.styleProfile === 'STYLE_INDIE_ART_POP' &&
+    indieArtPopAlternateTuningWantsDualElectricGuitars(context.generationMetadata?.alternateGuitarTuning)
+  );
+}
+
 /** Slash chords: if any bass note matches the slash pitch class in the bar → ok; else emit a non-blocking warning (does not fail render). */
 function validateSlashBassHonoured(score: ScoreModel): string[] {
   const out: string[] = [];
@@ -955,6 +966,8 @@ export interface RunGoldenPathOptions {
   secondarySongwriterStyle?: string;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
   authorOverlay?: string;
+  /** Song Mode v1 (Indie Art Pop): resolved optional alternate tuning envelope. */
+  alternateGuitarTuning?: AlternateGuitarTuningResolved;
   /** Song Mode: optional classical overlay id (for inspectability metadata). */
   classicalOverlay?: string;
   /** Song Mode Phase C2: scales phrase rhythm intent (Stable / Balanced / Surprise). */
@@ -970,7 +983,7 @@ export interface RunGoldenPathOptions {
   /** Feature flag: Motif Authority V1 (default off). */
   motifAuthorityV1?: boolean;
   /** Pilot motif policy level (default `soft` when V1 is requested). */
-  motifAuthorityLevel?: MotifAuthorityLevel;
+  motifAuthorityLevel?: MotifAuthorityPlan;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1008,7 +1021,7 @@ function isMotifAuthorityPilotPreset(
   return true;
 }
 
-function resolveMotifAuthorityLevel(options: RunGoldenPathOptions | undefined): MotifAuthorityLevel {
+function resolveMotifAuthorityLevel(options: RunGoldenPathOptions | undefined): MotifAuthorityPlan {
   const explicit = options?.motifAuthorityLevel;
   if (explicit === 'off' || explicit === 'soft' || explicit === 'strong') return explicit;
   const requested = options?.motifAuthorityV1 === true || process.env?.COMPOSER_OS_MOTIF_AUTHORITY_V1 === '1';
@@ -1430,6 +1443,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
           : undefined,
+      alternateGuitarTuning: options.alternateGuitarTuning,
     };
   }
   const importExpressionPresetEnabled =
@@ -1738,7 +1752,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       compositionContext: appliedContext,
     }
   );
-  errors.push(...behaviourResult.errors);
+  const dualGuitarRoute = isIndieArtPopDualGuitarRoute(appliedContext);
+  const behaviourErrors = dualGuitarRoute
+    ? behaviourResult.errors.filter((e) => !/bass|jazz duo/i.test(e))
+    : behaviourResult.errors;
+  const behaviourGatesPassed = dualGuitarRoute ? behaviourErrors.length === 0 : behaviourResult.allValid;
+  errors.push(...behaviourErrors);
   logEcmPhaseProbe(probeEcm, 'after_post', score, {
     errors: errors.length,
     phraseWarnings: songModePhraseWarnings.length,
@@ -1793,9 +1812,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     if (!mxBar.valid) errors.push(...mxBar.errors);
     if (!writtenComplete.valid) errors.push(...writtenComplete.errors);
 
-    const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
-    instrumentMetadataPassed = bassMeta.valid;
-    if (!bassMeta.valid) errors.push(...bassMeta.errors);
+    if (dualGuitarRoute) {
+      instrumentMetadataPassed = true;
+    } else {
+      const bassMeta = validateGuitarBassDuoBassIdentityInMusicXml(xml);
+      instrumentMetadataPassed = bassMeta.valid;
+      if (!bassMeta.valid) errors.push(...bassMeta.errors);
+    }
 
     const lockedBars = appliedContext.lockedHarmonyBarsRaw;
     if (lockedBars && lockedBars.length === appliedContext.form.totalBars) {
@@ -1819,7 +1842,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     validationPassed:
       integrityResult.passed &&
       modelValidation.valid &&
-      behaviourResult.allValid &&
+      behaviourGatesPassed &&
       strictBarMath.valid &&
       instrumentMetadataPassed &&
       pipelineTruthAllPassed(truthReport),
@@ -1861,7 +1884,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     readinessScores: { release: readinessResult.release.overall, mx: readinessResult.mx.overall },
     validationPassed:
       integrityResult.passed &&
-      behaviourResult.allValid &&
+      behaviourGatesPassed &&
       strictBarMath.valid &&
       exportRoundTripPassed &&
       instrumentMetadataPassed &&
@@ -1944,7 +1967,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     modelValidation.valid &&
     strictBarMath.valid &&
     integrityResult.passed &&
-    behaviourResult.allValid &&
+    behaviourGatesPassed &&
     exportResult.success &&
     mxValidationPassed &&
     exportIntegrityPassed &&
@@ -1967,7 +1990,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans,
     xml,
     integrityPassed: integrityResult.passed,
-    behaviourGatesPassed: behaviourResult.allValid,
+    behaviourGatesPassed,
     mxValidationPassed,
     strictBarMathPassed: strictBarMath.valid,
     exportRoundTripPassed,

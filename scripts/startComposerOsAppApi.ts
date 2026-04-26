@@ -63,7 +63,13 @@ app.get('/api/style-modules', (_req: Request, res: Response) => {
 
 app.post('/api/generate', (req: Request, res: Response) => {
   try {
-    const body = req.body as Partial<GenerateRequest>;
+    const body = req.body as Partial<GenerateRequest> & { __generateCorrelationId?: string };
+    if (typeof body.__generateCorrelationId === 'string') {
+      console.log('[GEN-CORR] http /api/generate body received', {
+        corr: body.__generateCorrelationId,
+        alternateGuitarTuning: body.alternateGuitarTuning,
+      });
+    }
     const result = apiGenerate(body, OUTPUT_DIR);
     if ('error' in result && !('validation' in result)) {
       res.status(500).json(result);
@@ -101,7 +107,9 @@ app.get('/api/diagnostics', (_req: Request, res: Response) => {
 });
 
 app.post('/api/open-output-folder', (req: Request, res: Response) => {
+  console.log('[API][route] /api/open-output-folder hit', req.body);
   apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
+    console.log('[API][route] /api/open-output-folder response', r);
     res.json(r);
   });
 });

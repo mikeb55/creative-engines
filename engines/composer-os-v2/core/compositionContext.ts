@@ -28,6 +28,7 @@ import type { RhythmIntentControl, RhythmIntentResolvedPhrase } from './rhythmIn
 import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2PolyphonyDiagnostics';
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
+import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type {
   MotifAuthorityLevel,
   MotifAuthorityPlan,
@@ -171,6 +172,8 @@ export interface GenerationMetadata {
   songModeReturnMotifShapeExpected?: MotifShape;
   /** Song Mode: Style Engine profile (request echo + Style Engine pass). */
   styleProfile?: StyleProfile;
+  /** Song Mode v1 (Indie Art Pop): resolved optional alternate tuning envelope. */
+  alternateGuitarTuning?: AlternateGuitarTuningResolved;
   /** Song Mode: short honest lines for receipts when a style surface applies real metadata nudges (see `songModeStyleSurface.ts`). */
   songModeStyleSurfaceNotes?: string[];
   /** Song Mode Phase C1: skip rhythm overlay (regression / A–B); when unset, overlay runs when Song Mode is active. */
