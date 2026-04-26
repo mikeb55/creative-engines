@@ -8,6 +8,7 @@
   startBeat and duration. Result: two voices per measure, exactly one <backup>, export passes.
 
 ### Added
+- Indie Art Pop **separate** dual-electric route: **measure 1 tuning captions** in MusicXML — each guitar part can show `<direction placement="above"><words>Tuning: …</words>` derived from the request `alternateGuitarTuning` guitar1/guitar2 specs (`ScoreModel.exportMeasure1TuningWordsByPartId`, written in `musicxmlExporter.ts`).
 - Regression test: Indie Art Pop + separate altered tuning (drop_d + dadgad, 32-bar SONG_MODE_32_BAR_REGRESSION):
   generation succeeds, 2 parts (guitar + guitar_2), both MIDI program 28, no bass part.
 - Chord density characterization test: guitar_2 cross-voice beat-level chord detection, threshold >0.65.
