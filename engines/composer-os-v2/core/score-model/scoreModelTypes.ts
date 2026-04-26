@@ -57,8 +57,18 @@ export interface RestEvent {
   voice?: number;
 }
 
-/** Union of note/rest. */
-export type ScoreEvent = NoteEvent | RestEvent;
+/** Timed chord stack (multiple MIDI pitches, one rhythmic attack); exporter emits MusicXML `<chord/>` followers. */
+export interface ChordEvent {
+  kind: 'chord';
+  pitches: number[];
+  startBeat: number;
+  duration: number;
+  voice: number;
+  motifRef?: string;
+}
+
+/** Union of note, rest, and timed chord stack. */
+export type ScoreEvent = NoteEvent | RestEvent | ChordEvent;
 
 /** Chord symbol event (measure-level). */
 export interface ChordSymbolEvent {

@@ -188,7 +188,7 @@ function stemXmlForMultiVoiceLayer(voice: number, multiVoice: boolean): string |
  */
 export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: number): number {
   const voiceEvents = [...measure.events]
-    .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord')
     .filter((e) => (e.voice ?? 1) === voice)
     .sort((a, b) => a.startBeat - b.startBeat);
   let cursor = 0;
@@ -421,7 +421,7 @@ function eventsToXml(
   forceDualVoiceSecondLayer: boolean
 ): string {
   const partId = part.id;
-  let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (opts.bassStaffVoice1Only && part.instrumentIdentity === 'acoustic_upright_bass') {
     raw = raw.map((e) => ({ ...e, voice: 1 }));
   }
@@ -451,13 +451,20 @@ function eventsToXml(
     let cursor = 0;
     const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
       if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
-      const aIsNote = a.kind === 'note' ? 0 : 1;
-      const bIsNote = b.kind === 'note' ? 0 : 1;
-      if (aIsNote !== bIsNote) return aIsNote - bIsNote;
+      const rankTimed = (x: ScoreEvent) => (x.kind === 'note' || x.kind === 'chord' ? 0 : 1);
+      const aR = rankTimed(a);
+      const bR = rankTimed(b);
+      if (aR !== bR) return aR - bR;
       if (a.kind === 'note' && b.kind === 'note') {
         if (a.duration !== b.duration) return b.duration - a.duration;
-        return ((a as any).pitch ?? 0) - ((b as any).pitch ?? 0);
+        return ((a as { pitch?: number }).pitch ?? 0) - ((b as { pitch?: number }).pitch ?? 0);
       }
+      if (a.kind === 'chord' && b.kind === 'chord') {
+        if (a.duration !== b.duration) return b.duration - a.duration;
+        return (a.pitches[0] ?? 0) - (b.pitches[0] ?? 0);
+      }
+      if (a.kind === 'note' && b.kind === 'chord') return -1;
+      if (a.kind === 'chord' && b.kind === 'note') return 1;
       return 0;
     });
     const stemXml = stemXmlForMultiVoiceLayer(voice, multiVoice);
@@ -485,6 +492,39 @@ function eventsToXml(
 
       const durDiv = endDiv - safeStart;
       const parts = decompose(durDiv);
+      if (e.kind === 'chord') {
+        const chordEv = e;
+        const firstTicks = parts[0]!;
+        const spec = tickSpecForLength(firstTicks);
+        const typeDots = typeAndDotsXml(spec);
+        const stem = stemXml ?? '';
+        const staff = staffPolyphonyXml ?? '';
+        for (let pi = 0; pi < chordEv.pitches.length; pi++) {
+          const mid = chordEv.pitches[pi]!;
+          const { step, alter, octave } = midiToPitch(mid);
+          const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+          const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
+          if (pi === 0) {
+            xml += emitPitchedTicks(parts, voice, pitchXml, '', '', '', stemXml, staffPolyphonyXml);
+          } else if (parts.length === 1) {
+            xml += noteXmlPitchedFragment({
+              dynamicsAttr: '',
+              chordXml: '<chord/>',
+              pitchXml,
+              durationTicks: firstTicks,
+              tieXml: '',
+              voice,
+              typeAndDotsXml: typeDots,
+              stemXml: stem,
+              staffXml: staff,
+              notationsXml: '',
+            });
+          }
+        }
+        for (const p of parts) voiceTickSum += p;
+        cursor = endDiv;
+        continue;
+      }
       if (e.kind === 'rest') {
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       } else {
@@ -663,7 +703,7 @@ ${partList}
         part.instrumentIdentity === 'clean_electric_guitar' &&
         orderedMeasures.some((mm) =>
           mm.events.some(
-            (e) => (e.kind === 'note' || e.kind === 'rest') && (e.voice ?? 1) === 2
+            (e) => (e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord') && (e.voice ?? 1) === 2
           )
         );
       for (let i = 0; i < orderedMeasures.length; i++) {

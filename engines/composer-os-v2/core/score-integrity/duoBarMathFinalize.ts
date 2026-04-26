@@ -4,7 +4,7 @@
  * `guitar_bass_duo` sets score.duoRhythmSnap = eighth_beats (Sibelius-friendly attacks); ECM keeps quarter grid.
  */
 
-import type { MeasureModel, NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ChordEvent, MeasureModel, NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
 import { validateStrictBarMath, validateSibeliusUndottedBeatAtoms } from './strictBarMath';
@@ -63,6 +63,20 @@ function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
         out.push(nn);
         t = snapSixteenthBeat(t + piece);
       });
+    } else if (e.kind === 'chord') {
+      const c = e as ChordEvent;
+      for (const piece of pieces) {
+        const ce: ChordEvent = {
+          kind: 'chord',
+          pitches: [...c.pitches],
+          startBeat: t,
+          duration: piece,
+          voice,
+        };
+        if (c.motifRef) ce.motifRef = c.motifRef;
+        out.push(ce);
+        t = snapSixteenthBeat(t + piece);
+      }
     } else {
       for (const piece of pieces) {
         out.push(createRest(t, piece, voice));
@@ -74,7 +88,7 @@ function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
 }
 
 function expandUndottedPreferredInMeasure(m: MeasureModel): void {
-  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) {
     m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
     return;
@@ -125,7 +139,7 @@ function mergeAdjacentRestsUndotted(events: ScoreEvent[]): ScoreEvent[] {
 }
 
 function mergeRestsInMeasure(m: MeasureModel): void {
-  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) return;
   const byVoice = new Map<number, ScoreEvent[]>();
   for (const e of raw) {
@@ -218,6 +232,17 @@ function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: R
       if (n.articulation) nn.articulation = n.articulation;
       if (n.velocity !== undefined) nn.velocity = n.velocity;
       out.push(nn);
+    } else if (e.kind === 'chord') {
+      const c = e as ChordEvent;
+      const ce: ChordEvent = {
+        kind: 'chord',
+        pitches: [...c.pitches],
+        startBeat: sb,
+        duration: dur,
+        voice,
+      };
+      if (c.motifRef) ce.motifRef = c.motifRef;
+      out.push(ce);
     } else {
       out.push(createRest(sb, dur, voice));
     }
@@ -231,7 +256,7 @@ function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: R
 
 /** One measure, one monophonic line (voice 1) — used for bass clarity. */
 function finalizeMeasureMonoVoice1(m: MeasureModel, mode: RhythmSnapMode): void {
-  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) {
     m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
     return;
@@ -241,7 +266,7 @@ function finalizeMeasureMonoVoice1(m: MeasureModel, mode: RhythmSnapMode): void 
 
 /** One measure: each voice ID gets its own monophonic line (guitar may use multiple voices in theory). */
 function finalizeMeasurePerVoiceLines(m: MeasureModel, mode: RhythmSnapMode): void {
-  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) {
     m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
     return;

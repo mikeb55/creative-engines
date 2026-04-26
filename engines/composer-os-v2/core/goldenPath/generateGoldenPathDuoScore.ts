@@ -14,6 +14,7 @@ import type {
   NoteEvent,
   RestEvent,
   ScoreEvent,
+  ChordEvent,
   DuoElectricVoiceRole,
 } from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -165,52 +166,26 @@ function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boole
   );
 }
 
-/**
- * Pick two distinct chord-tone MIDI pitches for guitar_2 comp (voice 2): prefer 3rd then 7th, then 5th/root.
- * Avoids doubling the voice-1 anchor pitch class; nudges by octave when needed. Register ~E2–E5.
- */
-function pickTwoIndieGuitar2ChordTonesForAnchor(
-  tones: ReturnType<typeof guitarChordTonesInRange>,
-  anchorMidi: number,
-  low: number,
-  high: number
-): [number, number] | undefined {
-  const anchorPc = ((anchorMidi % 12) + 12) % 12;
-  const usedPc = new Set<number>([anchorPc]);
-  const order = [tones.third, tones.seventh, tones.fifth, tones.root] as const;
-  const picked: number[] = [];
-  for (const raw of order) {
-    if (!Number.isFinite(raw)) continue;
-    let best: number | undefined;
-    for (const delta of [0, 12, -12, 24, -24]) {
-      const p = clampPitch(raw + delta, low, high);
-      const pc = ((p % 12) + 12) % 12;
-      if (pc === anchorPc) continue;
-      if (usedPc.has(pc)) continue;
-      if (picked.some((x) => x === p)) continue;
-      best = p;
-      break;
-    }
-    if (best === undefined) continue;
-    usedPc.add(((best % 12) + 12) % 12);
-    picked.push(best);
-    if (picked.length >= 2) return [picked[0]!, picked[1]!];
-  }
-  console.log('SKIP', anchorMidi);
-  return undefined;
-}
-
 /** Time / voice / pitch ordering so same-beat voice-2 chord stacks sit adjacent for MusicXML `<chord/>` grouping. */
 function sortIndieGuitar2MeasureEventsForExport(events: ScoreEvent[]): ScoreEvent[] {
   return [...events].sort((a, b) => {
-    const beatA = a.kind === 'note' || a.kind === 'rest' ? a.startBeat : 0;
-    const beatB = b.kind === 'note' || b.kind === 'rest' ? b.startBeat : 0;
+    const beatA = a.kind === 'note' || a.kind === 'rest' || a.kind === 'chord' ? a.startBeat : 0;
+    const beatB = b.kind === 'note' || b.kind === 'rest' || b.kind === 'chord' ? b.startBeat : 0;
     if (beatA !== beatB) return beatA - beatB;
-    const vA = (a as NoteEvent | RestEvent).voice ?? 1;
-    const vB = (b as NoteEvent | RestEvent).voice ?? 1;
+    const vA = (a as NoteEvent | RestEvent | ChordEvent).voice ?? 1;
+    const vB = (b as NoteEvent | RestEvent | ChordEvent).voice ?? 1;
     if (vA !== vB) return vA - vB;
-    if (a.kind !== b.kind) return a.kind === 'rest' ? 1 : -1;
+    if (a.kind !== b.kind) {
+      if (a.kind === 'rest') return 1;
+      if (b.kind === 'rest') return -1;
+      if (a.kind === 'note' && b.kind === 'chord') return -1;
+      if (a.kind === 'chord' && b.kind === 'note') return 1;
+      return 0;
+    }
     if (a.kind === 'note' && b.kind === 'note') return a.pitch - b.pitch;
+    if (a.kind === 'chord' && b.kind === 'chord') {
+      return (a.pitches[0] ?? 0) - (b.pitches[0] ?? 0);
+    }
     return 0;
   });
 }
@@ -235,6 +210,28 @@ function remapBassPartToElectricGuitar2ForIndieArtPop(bass: PartModel): PartMode
   };
 }
 
+/** Two distinct chord tones in register for voice-2 comp under a voice-1 anchor (third/seventh preferred). */
+function pickTwoIndieGuitar2ChordTonesForAnchor(
+  tones: ReturnType<typeof guitarChordTonesInRange>,
+  _anchorMidi: number,
+  low: number,
+  high: number
+): [number, number] | null {
+  const raw = [tones.third, tones.seventh, tones.fifth, tones.root].filter(
+    (p) => Number.isFinite(p) && p >= low && p <= high
+  );
+  const ordered: number[] = [];
+  const seen = new Set<number>();
+  for (const p of raw) {
+    if (!seen.has(p)) {
+      seen.add(p);
+      ordered.push(p);
+    }
+  }
+  if (ordered.length < 2) return null;
+  return [ordered[0]!, ordered[1]!];
+}
+
 function forceChordalElectricGuitar2VoicingsForIndieRoute(
   part: PartModel,
   context: CompositionContext
@@ -254,23 +251,19 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
       .sort((a, b) => a.startBeat - b.startBeat);
     /** No voice-1 anchors (e.g. measure is all rests on melody): skip chord-doubling for this measure (no-op). */
     if (voice1Anchors.length === 0) continue;
-    const extra: NoteEvent[] = [];
+    const extra: ChordEvent[] = [];
     for (const a of voice1Anchors) {
-      const chordDur = a.duration;
       const pair = pickTwoIndieGuitar2ChordTonesForAnchor(tones, a.pitch, low, high);
       if (!pair) continue;
       extra.push({
-        kind: 'note',
-        pitch: pair[0],
-        pitches: [pair[0], pair[1]],
+        kind: 'chord',
+        pitches: [pair[0], pair[1], a.pitch],
         startBeat: a.startBeat,
-        duration: chordDur,
+        duration: a.duration,
         voice: 2,
-      });
+      } as ChordEvent);
     }
-    // Add extras directly — no dedup. The two extras per anchor
-    // already have matching startBeat and duration by construction.
-    // The exporter chord grouping will stack them correctly.
+    // One ChordEvent per anchor; exporter emits stacked `<note>` with `<chord/>`.
     for (const ev of extra) addEvent(m, ev);
     m.events = sortIndieGuitar2MeasureEventsForExport(m.events);
   }
@@ -295,8 +288,7 @@ function applyVoiceRole(
   const tones = guitarChordTonesInRange(chordLabel, Math.max(low + 7, 47), high);
   const occupiedV2Starts = new Set(
     events
-      .filter((e): e is NoteEvent => e.kind === 'note')
-      .filter((e) => (e.voice ?? 1) === 2)
+      .filter((e) => (e.kind === 'note' || e.kind === 'chord') && (e.voice ?? 1) === 2)
       .map((e) => e.startBeat)
   );
   const v1Notes = events

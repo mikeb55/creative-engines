@@ -121,7 +121,7 @@ export function validateNotationSafeRhythm(score: ScoreModel): NotationSafeRhyth
     for (const m of p.measures) {
       const byVoice = new Map<number, ScoreEvent[]>();
       for (const e of m.events) {
-        if (e.kind !== 'note' && e.kind !== 'rest') continue;
+        if (e.kind !== 'note' && e.kind !== 'rest' && e.kind !== 'chord') continue;
         const v = e.voice ?? 1;
         if (!byVoice.has(v)) byVoice.set(v, []);
         byVoice.get(v)!.push(e);

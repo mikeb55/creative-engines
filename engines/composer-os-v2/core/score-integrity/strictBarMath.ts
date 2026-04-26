@@ -106,7 +106,7 @@ export function validateSibeliusUndottedBeatAtoms(score: ScoreModel): StrictBarM
   for (const part of score.parts) {
     for (const m of part.measures) {
       for (const e of m.events) {
-        if (e.kind !== 'note' && e.kind !== 'rest') continue;
+        if (e.kind !== 'note' && e.kind !== 'rest' && e.kind !== 'chord') continue;
         const d = e.duration;
         if (Math.abs(d - 1.5) < EPS || Math.abs(d - 0.75) < EPS) {
           errors.push(
