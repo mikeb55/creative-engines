@@ -704,6 +704,13 @@ ${partList}
           xml += buildHarmonyXmlLine(chordForHarmony);
         }
 
+        const measure1TuningWords = score.exportMeasure1TuningWordsByPartId?.[part.id];
+        if (i === 0 && measure1TuningWords) {
+          xml += `    <direction placement="above"><direction-type><words>${escapeXml(
+            measure1TuningWords
+          )}</words></direction-type></direction>\n`;
+        }
+
         if (i === 0) {
           const feelEl =
             partIndex === 0 && score.feelProfile

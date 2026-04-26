@@ -143,5 +143,10 @@ export interface ScoreModel {
   _hookRepetitionBias?: number;
   /** Portable Wyble: which static map (if any) was applied on this score build (metadata only). */
   wybleConsumptionReceipt?: WybleConsumptionReceipt;
+  /**
+   * Measure-1 only: per-part tuning labels for MusicXML `<direction><words>` (e.g. Indie separate dual-electric).
+   * Keys are part ids (`guitar`, `guitar_2`).
+   */
+  exportMeasure1TuningWordsByPartId?: Record<string, string>;
   parts: PartModel[];
 }

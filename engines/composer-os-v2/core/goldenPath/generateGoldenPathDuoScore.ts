@@ -117,6 +117,7 @@ import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
+import { formatAlternateGuitarTuningExportLine } from '../song-mode/alternateGuitarTunings';
 import { applySlonimskyToMelodyLine, SlonimskyContext, SlonimskyNote } from '../slonimsky/slonimskyEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
@@ -202,16 +203,23 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
     const extra: NoteEvent[] = [];
     for (const a of voice1Anchors) {
       const chordDur = Math.min(Math.max(a.duration, 0.5), 2);
-      const triadCandidates = [tones.third, tones.fifth, tones.seventh]
-        .filter((p) => Number.isFinite(p))
-        .map((p) => clampPitch(p, low, high))
-        .filter((p, i, arr) => arr.indexOf(p) === i && p !== a.pitch)
-        .slice(0, 2);
-      if (triadCandidates.length < 2) continue;
-      extra.push(
-        createNote(triadCandidates[0]!, a.startBeat, chordDur, 2),
-        createNote(triadCandidates[1]!, a.startBeat, chordDur, 2)
-      );
+      /** Prefer 3rd / 7th / 5th / root (lifted to register); 2–3 extras on voice 2 → 3–4 simultaneous pitches with anchor on v1. */
+      const ordered: number[] = [];
+      for (const p of [tones.third, tones.seventh, tones.fifth, tones.root]) {
+        if (!Number.isFinite(p)) continue;
+        const c = clampPitch(p, low, high);
+        if (c === a.pitch) continue;
+        if (ordered.includes(c)) continue;
+        ordered.push(c);
+      }
+      if (ordered.length < 2) continue;
+      const pickSalt = (Math.round(a.startBeat * 131) + a.pitch) & 0xfffff;
+      const wantThree =
+        ordered.length >= 3 && seededUnit(context.seed, m.index, pickSalt) < 0.55;
+      const nExtra = wantThree ? 3 : 2;
+      for (const p of ordered.slice(0, Math.min(nExtra, ordered.length))) {
+        extra.push(createNote(p, a.startBeat, chordDur, 2));
+      }
     }
     for (const ev of extra) addEvent(m, ev);
   }
@@ -260,8 +268,16 @@ function applyVoiceRole(
       .filter((p, j, arr) => arr.indexOf(p) === j && p !== a.pitch);
     if (triadCandidates.length === 0) continue;
     const u2 = seededUnit(context.seed, barNumber, (salt + 9013) & 0xfffff);
-    const wantTwo = triadCandidates.length >= 2 && u2 < 0.5;
-    const chosen = wantTwo ? triadCandidates.slice(0, 2) : triadCandidates.slice(0, 1);
+    /** Balanced (guitar_1): at most 2 harmony tones; bias toward 1 so the line stays melodic. */
+    const maxExtras =
+      role === 'balanced'
+        ? u2 < 0.55
+          ? 1
+          : Math.min(2, triadCandidates.length)
+        : triadCandidates.length >= 2 && u2 < 0.5
+          ? 2
+          : 1;
+    const chosen = triadCandidates.slice(0, Math.min(maxExtras, triadCandidates.length));
     for (const p of chosen) {
       extra.push(createNote(p, a.startBeat, chordDur, 2));
     }
@@ -3790,6 +3806,17 @@ export function generateGoldenPathDuoScore(
     tempo: bpm,
     feelProfile,
   });
+  if (useIndieDualGuitar) {
+    const alt = context.generationMetadata?.alternateGuitarTuning;
+    if (alt?.mode === 'separate') {
+      const byId: Record<string, string> = {};
+      const w1 = formatAlternateGuitarTuningExportLine(alt.guitar1);
+      const w2 = formatAlternateGuitarTuningExportLine(alt.guitar2);
+      if (w1) byId.guitar = w1;
+      if (w2) byId.guitar_2 = w2;
+      if (Object.keys(byId).length > 0) rawScore.exportMeasure1TuningWordsByPartId = byId;
+    }
+  }
   logEcmInternalPhaseProbe(probeEcm, 'after_initial_score_setup', rawScore);
   if (context.presetId === 'guitar_bass_duo' || context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     rawScore.duoRhythmSnap = 'eighth_beats';

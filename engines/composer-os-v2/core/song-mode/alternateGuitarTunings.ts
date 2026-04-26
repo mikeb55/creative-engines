@@ -73,6 +73,22 @@ export function getAlternateGuitarTuningPreset(id: string | null | undefined): A
   return ALTERNATE_GUITAR_TUNING_PRESETS.find((p) => p.id === id) ?? null;
 }
 
+/** One-line label for MusicXML export (from request `guitar1` / `guitar2` spec, not hardcoded tunings). */
+export function formatAlternateGuitarTuningExportLine(spec: AlternateGuitarTuningSpec | undefined): string | null {
+  if (!spec?.presetId) return null;
+  if (spec.presetId === 'custom') {
+    if (!spec.customStrings || spec.customStrings.length !== 6) return null;
+    const pcs = spec.customStrings.map((raw) => {
+      const m = /^\s*([A-Ga-g])([#b]?)/.exec(raw ?? '');
+      return m ? `${m[1]!.toUpperCase()}${m[2] ?? ''}` : '?';
+    });
+    return `Tuning: Custom (${pcs.join('–')})`;
+  }
+  const preset = getAlternateGuitarTuningPreset(spec.presetId);
+  if (!preset || preset.id === 'custom') return null;
+  return `Tuning: ${preset.label}`;
+}
+
 function normalizeNote(raw: string, stringIndex: number): string | null {
   const m = /^\s*([A-Ga-g])([#b]?)(-?\d+)?\s*$/.exec(raw);
   if (!m) return null;
