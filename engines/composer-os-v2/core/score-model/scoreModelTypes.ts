@@ -37,6 +37,8 @@ export interface FeelProfile {
 export interface NoteEvent {
   kind: 'note';
   pitch: number;
+  /** Optional multi-pitch stack (same startBeat/duration); exporter emits as `<chord/>` followers. */
+  pitches?: number[];
   startBeat: number;
   duration: number;
   voice?: number;

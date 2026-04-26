@@ -23,9 +23,26 @@ export function createMeasure(index: number, chord?: string, rehearsalMark?: str
   };
 }
 
-/** Create note event. */
-export function createNote(pitch: number, startBeat: number, duration: number, voice = 1, motifRef?: string): NoteEvent {
-  return { kind: 'note', pitch, startBeat, duration, voice, ...(motifRef ? { motifRef } : {}) };
+/**
+ * Create note event (`NoteEvent` in scoreModelTypes; optional `pitches` for same-beat chord stacks in export).
+ */
+export function createNote(
+  pitch: number,
+  startBeat: number,
+  duration: number,
+  voice = 1,
+  motifRef?: string,
+  pitches?: number[]
+): NoteEvent {
+  return {
+    kind: 'note',
+    pitch,
+    ...(pitches && pitches.length > 0 ? { pitches } : {}),
+    startBeat,
+    duration,
+    voice,
+    ...(motifRef ? { motifRef } : {}),
+  };
 }
 
 /** Create rest event. */

@@ -12,6 +12,7 @@
 - Regression test: Indie Art Pop + separate altered tuning (drop_d + dadgad, 32-bar SONG_MODE_32_BAR_REGRESSION):
   generation succeeds, 2 parts (guitar + guitar_2), both MIDI program 28, no bass part.
 - Chord density characterization test: guitar_2 cross-voice beat-level chord detection, threshold >0.65.
+- **Indie separate dual-electric route (ship pass):** Tuning labels working (**Tuning: Drop D** / **Tuning: DADGAD** above staves). **guitar_2** single-`<backup>` MusicXML export regression addressed. Chord voicing for stacked comp tones attempted (multi-pitch / chord followers) but output still reads as dyads in practice — **deferred** for a follow-up pass.
 
 ## [Unreleased] - 2026-04-25
 

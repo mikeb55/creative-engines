@@ -449,7 +449,17 @@ function eventsToXml(
       xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
     }
     let cursor = 0;
-    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => a.startBeat - b.startBeat);
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
+      if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
+      const aIsNote = a.kind === 'note' ? 0 : 1;
+      const bIsNote = b.kind === 'note' ? 0 : 1;
+      if (aIsNote !== bIsNote) return aIsNote - bIsNote;
+      if (a.kind === 'note' && b.kind === 'note') {
+        if (a.duration !== b.duration) return b.duration - a.duration;
+        return ((a as any).pitch ?? 0) - ((b as any).pitch ?? 0);
+      }
+      return 0;
+    });
     const stemXml = stemXmlForMultiVoiceLayer(voice, multiVoice);
     let voiceTickSum = 0;
 
@@ -463,7 +473,9 @@ function eventsToXml(
         continue;
       }
 
-      if (safeStart > cursor) {
+      const nextE = voiceEvents[i + 1];
+      const nextSharesBeat = nextE !== undefined && nextE.startBeat === sb;
+      if (safeStart > cursor && !nextSharesBeat) {
         const restDiv = safeStart - cursor;
         const parts = decompose(restDiv);
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);
@@ -481,7 +493,6 @@ function eventsToXml(
           const next = voiceEvents[groupLastIdx + 1]!;
           if (next.kind !== 'note') break;
           if (next.startBeat !== sb) break;
-          if (next.duration !== e.duration) break;
           groupLastIdx++;
         }
         const grouped = voiceEvents.slice(i, groupLastIdx + 1).filter((x): x is Extract<typeof x, { kind: 'note' }> => x.kind === 'note');
@@ -509,6 +520,29 @@ function eventsToXml(
             stemXml,
             staffPolyphonyXml
           );
+          const stack = note.pitches;
+          if (stack && stack.length > 1 && parts.length === 1) {
+            const durTicks = parts[0]!;
+            const spec = tickSpecForLength(durTicks);
+            const typeDots = typeAndDotsXml(spec);
+            for (let pi = 1; pi < stack.length; pi++) {
+              const { step: s2, alter: a2, octave: o2 } = midiToPitch(stack[pi]!);
+              const alterEl2 = a2 !== 0 ? `<alter>${a2}</alter>` : '';
+              const pitchXml2 = `<pitch><step>${s2}</step>${alterEl2}<octave>${o2}</octave></pitch>`;
+              xml += noteXmlPitchedFragment({
+                dynamicsAttr: '',
+                chordXml: '<chord/>',
+                pitchXml: pitchXml2,
+                durationTicks: durTicks,
+                tieXml: '',
+                voice,
+                typeAndDotsXml: typeDots,
+                stemXml: stemXml ?? '',
+                staffXml: staffPolyphonyXml ?? '',
+                notationsXml: '',
+              });
+            }
+          }
         }
         i = groupLastIdx;
       }
