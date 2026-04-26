@@ -43,6 +43,79 @@ function extractMeasurePitchesForPart(xml: string, partId: string, measureNumber
   return pitches.sort((a, b) => a - b);
 }
 
+/** Parsed pitched/rest entries for MusicXML chord-density characterization (voice + divisions offset within measure). */
+interface ParsedXmlNote {
+  measure: number;
+  voice: number;
+  startDiv: number;
+  isRest: boolean;
+}
+
+function parseNoteLayer(layerXml: string, measureNum: number, defaultVoice: number): ParsedXmlNote[] {
+  const events: ParsedXmlNote[] = [];
+  let time = 0;
+  let lastStart = -1;
+  const toks = layerXml.match(/<note\b[\s\S]*?<\/note>/g) ?? [];
+  for (const tok of toks) {
+    const dur = Number(tok.match(/<duration>\s*(\d+)\s*<\/duration>/)?.[1] ?? '0');
+    const voice = Number(tok.match(/<voice>\s*(\d+)\s*<\/voice>/)?.[1] ?? String(defaultVoice));
+    const isRest = /<rest/.test(tok);
+    const isChord = tok.includes('<chord/>') || tok.includes('<chord />');
+    if (isChord) {
+      const st = lastStart >= 0 ? lastStart : time;
+      events.push({ measure: measureNum, voice, startDiv: st, isRest });
+      continue;
+    }
+    const st = time;
+    lastStart = st;
+    events.push({ measure: measureNum, voice, startDiv: st, isRest });
+    time = st + dur;
+  }
+  return events;
+}
+
+/** Split at `</backup>` so voice-1 and voice-2 streams each get an independent division cursor (Sibelius duo export). */
+function parseMeasureNoteTimes(measureXml: string, measureNum: number): ParsedXmlNote[] {
+  const backupClose = measureXml.indexOf('</backup>');
+  const head = backupClose === -1 ? measureXml : measureXml.slice(0, backupClose);
+  const tail = backupClose === -1 ? '' : measureXml.slice(backupClose + '</backup>'.length);
+  return [...parseNoteLayer(head, measureNum, 1), ...parseNoteLayer(tail, measureNum, 2)];
+}
+
+function parsePartNotes(xml: string, partId: string): ParsedXmlNote[] {
+  const partRe = new RegExp(`<part id="${partId}"[^>]*>([\\s\\S]*?)</part>`);
+  const pm = xml.match(partRe);
+  if (!pm) return [];
+  const inner = pm[1] ?? '';
+  const measures = [...inner.matchAll(/<measure[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)];
+  const out: ParsedXmlNote[] = [];
+  for (const row of measures) {
+    const num = Number(row[1]);
+    const body = row[2] ?? '';
+    out.push(...parseMeasureNoteTimes(body, num));
+  }
+  return out;
+}
+
+function isChordToneSameVoice(n: ParsedXmlNote, all: ParsedXmlNote[]): boolean {
+  if (n.isRest) return false;
+  const same = all.filter(
+    (o) =>
+      !o.isRest &&
+      o.measure === n.measure &&
+      o.voice === n.voice &&
+      o.startDiv === n.startDiv
+  );
+  return same.length >= 2;
+}
+
+/** Duo export often doubles v1 melody + v2 shells at the same division (no `<chord/>` across voices). */
+function isChordalAttackAnyVoice(n: ParsedXmlNote, all: ParsedXmlNote[]): boolean {
+  if (n.isRest) return false;
+  const cluster = all.filter((o) => !o.isRest && o.measure === n.measure && o.startDiv === n.startDiv);
+  return cluster.length >= 2;
+}
+
 export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-api-boundary-'));
@@ -196,6 +269,14 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
       indieXml.includes('<part-name>Electric Guitar 2</part-name>');
     const hasChordSymbols = (indieXml.match(/<harmony>/g) ?? []).length >= 8;
     const notWyble = !(indieDualGuitar.runManifest?.activeModules ?? []).includes('jimmy_wyble_engine');
+    const g2Part = indieXml.match(/<part id="guitar_2"[\s\S]*?<\/part>/);
+    let guitar2SingleBackupPerMeasure = false;
+    if (g2Part && /<voice>2<\/voice>/.test(g2Part[0])) {
+      const measures = [...g2Part[0].matchAll(/<measure\b[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)];
+      guitar2SingleBackupPerMeasure =
+        measures.length > 0 &&
+        measures.every((row) => ((row[2] ?? '').match(/<backup>/g) ?? []).length === 1);
+    }
     out.push({
       ok:
         indieDualGuitar.success === true &&
@@ -204,9 +285,66 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
         noFallbackNames &&
         hasTwoGuitars &&
         hasChordSymbols &&
-        notWyble,
+        notWyble &&
+        guitar2SingleBackupPerMeasure,
       name:
         'song_mode indie alias route stays Song Mode, canonicalizes style, exports dual electric guitars, and avoids piano/upright/wyble fallback',
+    });
+
+    /** Same shape as packaged v1.0.47 oracle: preset tunings (drop_d + dadgad) + 32-bar locked harmony. */
+    const indieSeparatePresetTunings = apiGenerate(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' } },
+        seed: 881105,
+        tonalCenter: 'C',
+        bpm: 120,
+        totalBars: 32,
+        longFormEnabled: true,
+        harmonyMode: 'custom_locked',
+        chordProgressionText: SONG_MODE_32_BAR_REGRESSION,
+        primarySongwriterStyle: 'beatles',
+        stylePairing: { songwriterStyle: 'beatles', arrangerStyle: 'gil_evans', era: 'contemporary' },
+        styleProfile: 'STYLE_INDIE_ART_POP',
+        title: 'Regression indie separate preset tunings',
+        alternateGuitarTuning: {
+          mode: 'separate',
+          guitar1: { presetId: 'drop_d' },
+          guitar2: { presetId: 'dadgad' },
+        },
+      },
+      tmp
+    ) as { success?: boolean; xml?: string; error?: string };
+    const ox = indieSeparatePresetTunings.xml ?? '';
+    const midi28 = (ox.match(/<midi-program>28<\/midi-program>/g) ?? []).length;
+    const g2b = ox.match(/<part id="guitar_2"[\s\S]*?<\/part>/);
+    let g2bOk = false;
+    if (g2b && /<voice>2<\/voice>/.test(g2b[0])) {
+      const ms = [...g2b[0].matchAll(/<measure\b[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)];
+      g2bOk = ms.length > 0 && ms.every((row) => ((row[2] ?? '').match(/<backup>/g) ?? []).length === 1);
+    }
+    out.push({
+      ok:
+        indieSeparatePresetTunings.success === true &&
+        ox.includes('<score-part id="guitar">') &&
+        ox.includes('<score-part id="guitar_2">') &&
+        midi28 >= 2 &&
+        !/Upright Bass/i.test(ox) &&
+        g2bOk,
+      name:
+        'song_mode STYLE_INDIE_ART_POP + separate drop_d/dadgad: export succeeds, two GM28 guitars, no bass, one <backup> per guitar_2 measure',
+    });
+
+    const guitar2Notes = parsePartNotes(ox, 'guitar_2');
+    const guitar2Pitched = guitar2Notes.filter((n) => !n.isRest);
+    const chordNotesG2 = guitar2Pitched.filter((n) => isChordalAttackAnyVoice(n, guitar2Pitched));
+    const g2Density = guitar2Pitched.length === 0 ? 0 : chordNotesG2.length / guitar2Pitched.length;
+    const guitar1Notes = parsePartNotes(ox, 'guitar');
+    const guitar1Pitched = guitar1Notes.filter((n) => !n.isRest);
+    const guitar1Solo = guitar1Pitched.filter((n) => !isChordToneSameVoice(n, guitar1Pitched));
+    out.push({
+      ok: g2Density > 0.65 && guitar1Solo.length > 0,
+      name: `Indie separate regression: guitar_2 chord-density ${g2Density.toFixed(3)} (>0.65, same-beat any-voice), guitar solo pitched ${guitar1Solo.length} (>0)`,
     });
 
     const indieRejectStandard = apiGenerate(

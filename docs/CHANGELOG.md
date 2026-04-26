@@ -1,4 +1,16 @@
-## Unreleased
+## [Unreleased]
+
+### Fixed
+- Indie Art Pop / Separate altered tuning route: guitar_2 was emitting two <backup> elements
+  per measure instead of one, causing MusicXML export validation to fail and no file to be written.
+  Root cause: forceChordalElectricGuitar2VoicingsForIndieRoute was placing chord extras on voice 2
+  and voice 3. Fix: filter to voice-1 anchors only; place both chord extras on voice 2 at the same
+  startBeat and duration. Result: two voices per measure, exactly one <backup>, export passes.
+
+### Added
+- Regression test: Indie Art Pop + separate altered tuning (drop_d + dadgad, 32-bar SONG_MODE_32_BAR_REGRESSION):
+  generation succeeds, 2 parts (guitar + guitar_2), both MIDI program 28, no bass part.
+- Chord density characterization test: guitar_2 cross-voice beat-level chord detection, threshold >0.65.
 
 ## [Unreleased] - 2026-04-25
 

@@ -2,6 +2,15 @@
 
 **Composer OS** is a generative composition system that produces **MusicXML** (and sometimes planning **JSON**) for jazz and contemporary ensemble layouts. This repository contains the **Composer OS V2 engine** (`engines/composer-os-v2/`), a **web app** (`apps/composer-os-app/`), and optional **desktop** packaging (`apps/composer-os-desktop/`).
 
+### Song Mode — Known Behavior
+
+- **Separate altered tuning (Indie Art Pop):** produces two electric guitars (both MIDI program 28,
+  Clean Electric Guitar), no bass part. Valid MusicXML confirmed against v1.0.47 reference engine.
+- **Shared altered tuning (Indie Art Pop):** produces guitar + upright bass (programs 28 + 33).
+  This matches v1.0.47 shipped behavior and is intentional.
+- **Chord voicing on guitar_2:** currently produces dyads (2-note intervals). Full 3-4 note
+  chord voicings are the next planned improvement.
+
 If you are new here, start with **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** — it explains what the app does **today**, how to run it, and how exports work in plain language.  
 **MusicXML lead sheets (melody + chords, optional harmony views):** **[docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** · **What’s new for users:** **[docs/COMPOSER_OS_RELEASE_NOTES.md](docs/COMPOSER_OS_RELEASE_NOTES.md)**
 

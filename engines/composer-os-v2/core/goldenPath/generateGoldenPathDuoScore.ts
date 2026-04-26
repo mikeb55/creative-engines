@@ -7,7 +7,14 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol, pitchClassToBassMidi, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
-import type { ScoreModel, PartModel, MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
+import type {
+  ScoreModel,
+  PartModel,
+  MeasureModel,
+  NoteEvent,
+  ScoreEvent,
+  DuoElectricVoiceRole,
+} from '../score-model/scoreModelTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
@@ -185,12 +192,15 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
   for (const m of part.measures) {
     const chord = m.chord ?? getChordForBar(m.index, context);
     const tones = guitarChordTonesInRange(chord, Math.max(low + 7, 47), high);
-    const anchors = m.events
+    /** Voice-1 anchors only: chordal doubles must live in voice 2 (same beat → `<chord/>` in export). A third MusicXML voice layer would emit a second `<backup>` per measure and fail `assertSibeliusExportMeasureStructure`. */
+    const voice1Anchors = m.events
       .filter((e): e is NoteEvent => e.kind === 'note')
+      .filter((e) => (e.voice ?? 1) === 1)
       .sort((a, b) => a.startBeat - b.startBeat);
-    if (anchors.length === 0) continue;
+    /** No voice-1 anchors (e.g. measure is all rests on melody): skip chord-doubling for this measure (no-op). */
+    if (voice1Anchors.length === 0) continue;
     const extra: NoteEvent[] = [];
-    for (const a of anchors) {
+    for (const a of voice1Anchors) {
       const chordDur = Math.min(Math.max(a.duration, 0.5), 2);
       const triadCandidates = [tones.third, tones.fifth, tones.seventh]
         .filter((p) => Number.isFinite(p))
@@ -200,10 +210,73 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
       if (triadCandidates.length < 2) continue;
       extra.push(
         createNote(triadCandidates[0]!, a.startBeat, chordDur, 2),
-        createNote(triadCandidates[1]!, a.startBeat, chordDur, 3)
+        createNote(triadCandidates[1]!, a.startBeat, chordDur, 2)
       );
     }
     for (const ev of extra) addEvent(m, ev);
+  }
+  return part;
+}
+
+/**
+ * Deterministic chord-tone pass: for each voice-1 single-note anchor, roll against `chordBias`;
+ * on pass, add 1–2 harmony tones on voice 2 at the same startBeat/duration (MusicXML chord stack).
+ * Skips beats where voice 2 already has notes (preserves shells from `forceChordalElectricGuitar2VoicingsForIndieRoute`).
+ */
+function applyVoiceRole(
+  events: ScoreEvent[],
+  chordLabel: string,
+  context: CompositionContext,
+  barNumber: number,
+  role: DuoElectricVoiceRole,
+  chordBias: number
+): ScoreEvent[] {
+  const low = 40;
+  const high = 76;
+  const tones = guitarChordTonesInRange(chordLabel, Math.max(low + 7, 47), high);
+  const occupiedV2Starts = new Set(
+    events
+      .filter((e): e is NoteEvent => e.kind === 'note')
+      .filter((e) => (e.voice ?? 1) === 2)
+      .map((e) => e.startBeat)
+  );
+  const v1Notes = events
+    .filter((e): e is NoteEvent => e.kind === 'note')
+    .filter((e) => (e.voice ?? 1) === 1)
+    .sort((a, b) => (a.startBeat === b.startBeat ? a.pitch - b.pitch : a.startBeat - b.startBeat));
+  const extra: NoteEvent[] = [];
+  for (let i = 0; i < v1Notes.length; i++) {
+    const a = v1Notes[i]!;
+    if (occupiedV2Starts.has(a.startBeat)) continue;
+    const salt =
+      (Math.round(a.startBeat * 997) + a.pitch * 31 + (role === 'chordal' ? 401 : role === 'balanced' ? 402 : 403) + i * 7) &
+      0xfffff;
+    const u = seededUnit(context.seed, barNumber, salt);
+    if (u >= chordBias) continue;
+    const chordDur = Math.min(Math.max(a.duration, 0.5), 2);
+    const triadCandidates = [tones.third, tones.fifth, tones.seventh]
+      .filter((p) => Number.isFinite(p))
+      .map((p) => clampPitch(p, low, high))
+      .filter((p, j, arr) => arr.indexOf(p) === j && p !== a.pitch);
+    if (triadCandidates.length === 0) continue;
+    const u2 = seededUnit(context.seed, barNumber, (salt + 9013) & 0xfffff);
+    const wantTwo = triadCandidates.length >= 2 && u2 < 0.5;
+    const chosen = wantTwo ? triadCandidates.slice(0, 2) : triadCandidates.slice(0, 1);
+    for (const p of chosen) {
+      extra.push(createNote(p, a.startBeat, chordDur, 2));
+    }
+    occupiedV2Starts.add(a.startBeat);
+  }
+  if (extra.length === 0) return events;
+  return [...events, ...extra];
+}
+
+function applyVoiceRoleFromPartSpec(part: PartModel, context: CompositionContext): PartModel {
+  const role = part.voiceRole ?? 'balanced';
+  const bias = part.chordBias ?? 0.55;
+  for (const m of part.measures) {
+    const chord = m.chord ?? getChordForBar(m.index, context);
+    m.events = applyVoiceRole(m.events, chord, context, m.index, role, bias);
   }
   return part;
 }
@@ -3694,6 +3767,12 @@ export function generateGoldenPathDuoScore(
     );
     bassPart = remapBassPartToElectricGuitar2ForIndieArtPop(bassPart);
     bassPart = forceChordalElectricGuitar2VoicingsForIndieRoute(bassPart, context);
+    guitarPart.voiceRole = 'balanced';
+    guitarPart.chordBias = 0.55;
+    bassPart.voiceRole = 'chordal';
+    bassPart.chordBias = 0.8;
+    applyVoiceRoleFromPartSpec(guitarPart, context);
+    applyVoiceRoleFromPartSpec(bassPart, context);
   }
   console.log(
     '[DualTuning] route selected',

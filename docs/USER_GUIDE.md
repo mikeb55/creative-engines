@@ -66,6 +66,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - In the **Separate tunings** path, Composer OS now keeps both guitar tunings through generation/export and presents that route as **two electric guitars** (not piano/upright-bass labels).
 - This is a bounded v1 surface: it adds light tuning-driven character (drone/register/split-role feel) without changing default behavior when unused.
 
+### Altered Guitar Tuning — Song Mode
+
+- Choose **Separate** tuning to get two electric guitars with altered tunings.
+- Choose **Shared** tuning to get guitar + upright bass (standard duo arrangement).
+- Full chord voicings on the second guitar are coming in the next update.
+
 ### Indie Art Pop with Alternate Tunings
 To generate two electric guitars with alternate tunings:
 1. Select **Song Mode**
