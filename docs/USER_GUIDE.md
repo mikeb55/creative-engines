@@ -70,16 +70,16 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 
 - Choose **Separate** tuning to get two electric guitars with altered tunings.
 - Choose **Shared** tuning to get guitar + upright bass (standard duo arrangement).
-- Full chord voicings on the second guitar are coming in the next update.
+- **Separate / guitar_2:** comp harmony is **dyadic** (two tones per anchor in typical MusicXML today); richer same-beat stacks are planned.
 
 ### Indie Art Pop with Alternate Tunings
 To generate two electric guitars with alternate tunings:
 1. Select **Song Mode**
 2. Choose **Indie Art Pop** style
 3. In tuning options, select **"separate tunings"**
-4. Generated output will contain two electric guitars with chordal voicings
+4. Generated output will contain two electric guitars with dyadic comp voicing on **guitar_2**
 
-The system will automatically apply altered tunings to both guitars and generate simultaneous chord tones instead of traditional guitar/bass counterpoint.
+The system applies altered tunings to both guitars and adds dyadic comp harmony on **guitar_2** (not traditional guitar/bass counterpoint).
 
 ### Indie Art Pop listening pass (Song Mode)
 

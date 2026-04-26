@@ -12,9 +12,9 @@
   self-describing in Sibelius/MuseScore without editing the score.
 - **Shared altered tuning (Indie Art Pop):** produces guitar + upright bass (programs 28 + 33).
   This matches v1.0.47 shipped behavior and is intentional.
-- **Chord voicing on guitar_2 (separate dual-electric):** comp layer adds stacked harmony tones on
-  voice 2 at melody anchors (typically **2–3** chord tones per anchor from the locked bar chord),
-  while keeping the **single `<backup>` per measure** export shape.
+- **Chord voicing on guitar_2 (separate dual-electric):** comp layer adds **dyadic** harmony (two
+  chord tones per anchor in typical exports) on voice 2 at melody anchors, with **one `<backup>` per
+  measure**; fuller same-beat stacks are a follow-up.
 
 If you are new here, start with **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** — it explains what the app does **today**, how to run it, and how exports work in plain language.  
 **MusicXML lead sheets (melody + chords, optional harmony views):** **[docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md](docs/COMPOSER_OS_USER_GUIDE_MUSICXML_AND_HARMONY.md)** · **What’s new for users:** **[docs/COMPOSER_OS_RELEASE_NOTES.md](docs/COMPOSER_OS_RELEASE_NOTES.md)**
