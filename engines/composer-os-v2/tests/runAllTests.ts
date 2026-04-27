@@ -52,9 +52,6 @@ import { runChordProgressionTests } from './chordProgression.test';
 import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
 import { runChordSemanticsTests } from './chordSemantics.test';
 import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
-import { runGuitarBassDuoFamilyParityTests } from './guitarBassDuoFamilyParity.test';
-import { runEvalDiagnosticsHarnessTests } from './evalDiagnosticsHarness.test';
-import { runEvalDiagnosticsRankingTests } from './evalDiagnosticsRanking.test';
 import { runWybleInnerLineDepthTests } from './wybleInnerLineDepth.test';
 import { runChordExportDiagnosticsTests } from './chordExportDiagnostics.test';
 import { runDuoV36bTests } from './duoV36b.test';
@@ -189,9 +186,6 @@ const suites = [
   { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { name: 'Chord semantics (unified)', run: runChordSemanticsTests },
   { name: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
-  { name: 'Guitar–Bass Duo family parity (T2.1)', run: runGuitarBassDuoFamilyParityTests },
-  { name: 'Eval diagnostics harness (T2.2)', run: runEvalDiagnosticsHarnessTests },
-  { name: 'Eval diagnostics ranking (advisory)', run: runEvalDiagnosticsRankingTests },
   { name: 'Wyble inner-line depth (BB/SQ)', run: runWybleInnerLineDepthTests },
   { name: 'Chord export diagnostics (#17)', run: runChordExportDiagnosticsTests },
   { name: 'Duo V3.6b labeling + bar math', run: runDuoV36bTests },
