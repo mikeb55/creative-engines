@@ -1,6 +1,6 @@
 # Composer OS V2 — full harness test debt
 
-Last updated: 2026-04-21 (smoke tier `test:smoke` + release gate docs; harness green).
+Last updated: 2026-04-27 (Parked — B-category duo guards note; smoke tier unchanged).
 
 ## Snapshot (this machine)
 
@@ -87,6 +87,14 @@ Roughly grouped by recurring failures / historical buckets in `test:full` (may r
 - **Pipeline truth custom regression:** `Bm9…G#7alt` progression still fails export/score agreement (narrow investigation vs golden path options).
 - **ECM:** Identity / shaping passes (BH-order leaps, Metheny vs Schneider heuristic).
 - **Ensemble realisation / App boundary:** String Quartet realisation + export; `apiGenerate` big_band planning JSON path; riff generator bass part; occasional **ECM Chamber** XML substring check (`Emin9` / `Cmaj7`) if harmony varies by seed. (Big Band **Stage Exit** export gate fixed 2026-04-20; direct **Big Band realisation** suite was already green.)
+
+## Parked / Known Debt
+
+## Parked: B-category isGuitarBassDuoFamily guards (2026-04-27)
+
+38 sites in `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `duoMusicalQuality.ts`, `duoLockQuality.ts`, and `pipelineTruthGates.ts` still use literal `presetId === 'guitar_bass_duo'` where `song_mode` / single-line parity may eventually be intended. These are not broken — they are intentionally scoped to standard duo today. Revisit when `song_mode_*` variants are introduced or when a product decision is made to extend each gate.
+
+**Reference:** grep output categorised 2026-04-27, category B sites.
 
 ## Maintenance note
 
