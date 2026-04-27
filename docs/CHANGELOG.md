@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2026-04-27] Import harmony Stage 5 + Wayne Shorter motif / harmony session
+
+- **Lead-sheet import — `blend_harmony` Stage 5:** conservative bounded harmony blend (e.g. `harmonyBlend` request) merged with generated/locked bars where the import policy allows; `free_harmony` remains the default when the mode is omitted. See `importHarmonyPolicy`, app generation, and manifest telemetry.
+- **Song Mode — Wayne Shorter contextual chord bias:** `songModeBuilder` weights Wayne Shorter pool rows (pedal / low-tension in verse; chromatic / high-tension in chorus & bridge) and can **force one inner-slot disruption** on chorus/bridge when the selected row is not already high-tension / chromatic by tag.
+- **Golden path — form-aware Motif Authority for `wayne_shorter`:** `generateGoldenPathDuoScore` builds Motif Authority phrase A/B/return from **form section labels** (first verse, first chorus, bridge or second verse) with fallback to bar-index `defaultMotifAuthorityPlan` when labels are missing; `context.songwriterStyleId` mirror for nudge options.
+- **Motif Authority V1 — interval size + Wayne nudge:** `motifAuthorityV1` adds **intervallic size buckets** (`step` / `skip` / `leap`) beside U/D/S contour; **Wayne** return phrase uses **exact pitch-class snap** on the first note per bar and **±1 semitone** nudge on a second note when present, when `songwriterStyleId === 'wayne_shorter'`.
+
 ### Fixed
 - Indie Art Pop / Separate altered tuning route: guitar_2 was emitting two <backup> elements
   per measure instead of one, causing MusicXML export validation to fail and no file to be written.

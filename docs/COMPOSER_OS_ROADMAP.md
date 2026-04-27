@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-23]
+# Composer OS Roadmap [2026-04-27]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -256,7 +256,7 @@
 4. **Stage 4 — Make `free_harmony` the explicit default behavior and surface this in API, metadata, manifests, and docs (no change to musical output).**  
    **Status:** **implemented / in progress**
 5. **Stage 5 — Add conservative `blend_harmony` with bounded control (e.g. `harmonyBlend`).**  
-   **Status:** planned
+   **Status:** **implemented** (2026-04-27 session)
 6. **Stage 6 — Extend support to other lead-sheet presets one by one.**  
    **Status:** planned
 7. **Stage 7 — Add evals, regression gates, docs, telemetry.**  
@@ -268,10 +268,18 @@
 - **Stage 2 implemented:** `ImportHarmonyMode` and `harmonyBlend` plumbing only (request → context → manifest telemetry).
 - **Stage 3 implemented/in progress (Song Mode only):** when `importHarmonyMode === 'lock_harmony'` and imported timeline is usable, Song Mode routes into locked harmony from timeline-derived bars.
 - **Stage 3b implemented/in progress (Dev app UI):** Song Mode Generate now includes a dev-only `Harmony import debug` surface for request knobs + receipt inspectability (`importHarmonyMode`, lock applied/fallback reason, locked bars count, compact progression preview).
-- **Stage 4 implemented/in progress:** API/docs state that omitted `importHarmonyMode` normalizes to `free_harmony`; manifests and `GenerationMetadata` echo **`importHarmonyPolicyVersion`** (= 2) whenever import-harmony telemetry is written — **no musical or routing behavior change**; `blend_harmony` remains inactive.
+- **Stage 4 implemented/in progress:** API/docs state that omitted `importHarmonyMode` normalizes to `free_harmony`; manifests and `GenerationMetadata` echo **`importHarmonyPolicyVersion`** (= 2) whenever import-harmony telemetry is written — **no change to that default**; **Stage 5** now supplies `blend_harmony` when explicitly selected (2026-04-27).
 - **Explicit fallback retained:** if timeline is missing/empty/unusable, Song Mode falls back to existing behavior and records fallback telemetry.
-- **Guardrails unchanged:** `free_harmony` remains the default path; `blend_harmony` is still inactive in behavior.
-- **Next action:** plan/approve Stage 5 (`blend_harmony` with bounded control) before implementation.
+- **Stage 5 — `blend_harmony` (2026-04-27):** conservative bounded blend **active** when requested; `free_harmony` remains default when import mode is omitted.
+- **Guardrails:** prior stages’ no-surprise defaults retained; see [CHANGELOG.md](CHANGELOG.md) for session detail.
+
+---
+
+### Wayne Shorter — TypeScript pipeline integration (**complete**, 2026-04-27)
+
+- **Status:** **complete** — musical eval **8.3/10** on the integrated Song Mode + duo golden-path slice (Wayne contextual harmony + motif authority).
+- **Shipped in core:** contextual chord-row bias (verse vs chorus/bridge), optional forced disruption slot on peak sections, **form-aware Motif Authority** phrase windows (`verse` / `chorus` / `bridge` from `context.form.sections`), **interval-size buckets** on motif fingerprints (`step` / `skip` / `leap`), and **Wayne-specific return nudge** (exact pitch-class snap on bar lead + second-note bias; `songwriterStyleId` passed from golden path).
+- **Next (not in this tranche):** **rhythmic motif fingerprint** — durational/onset pattern beyond coarse onset strings; belongs with **Phrase Engine Stage 1** work (neutral `Phrase` type + phrase controls) so motif identity can align with engine-level rhythm cells without duplicating logic in Motif Authority alone.
 
 ---
 
@@ -307,7 +315,7 @@
 
 **Stages**
 
-1. **Stage 1 — Neutral core:** Define a **Phrase** representation (instrument-agnostic) and **phrase controls**: range, rhythm complexity, gaps, repetition, feel, density, contour, harmonic role / progression awareness. **Motif-first** musical thinking; creative reference points include (non-exhaustive) melodists such as Wayne Shorter, Beethoven, Stevie Wonder, Donald Fagen, Messiaen, Joni Mitchell, Ligeti — as *direction*, not imitation engines.
+1. **Stage 1 — Neutral core:** Define a **Phrase** representation (instrument-agnostic) and **phrase controls**: range, rhythm complexity, gaps, repetition, feel, density, contour, harmonic role / progression awareness. **Motif-first** musical thinking; creative reference points include (non-exhaustive) melodists such as Wayne Shorter, Beethoven, Stevie Wonder, Donald Fagen, Messiaen, Joni Mitchell, Ligeti — as *direction*, not imitation engines. **Rhythmic motif fingerprinting** (duration-weighted / grid-relative rhythm identity for recurrence scoring) is a natural fit here — complements Motif Authority V1’s coarse onset strings and should land alongside Stage 1 rather than as a one-off in `motifAuthorityV1.ts` only.
 2. **Stage 2 — Module adapters:** Phrase **adapters / renderers** for selected surfaces (e.g. duo, quartet line, big-band lead line, songwriter section motif material). Prefer **MIDI-first / reusable phrase output** that existing arrangers can consume.
 3. **Stage 3 — Guitar idiom lane:** After the shared core exists, add a **deeper idiomatic guitar lane** (fretboard / playability / articulation), informed by artists such as Scofield, Beck, Metheny, Frisell, Montgomery, Halvorson, Holdsworth — **without** leaking guitar playability rules into Big Band or String Quartet cores (same discipline as **Quartal Guitar Module** below).
 
@@ -381,7 +389,7 @@
 | 2 | **Wyble “realized” normalization review** | **2026-04-17 (started):** **`shouldApplyRealizedVoice2Normalization`** + stabiliser boundary + probe **`isStandardGuitarBassDuo`** + JSDoc (see [CHANGELOG.md](CHANGELOG.md)). **Deferred:** wiring realized pass into golden path for single-line / shared validators with standard duo — confirm product intent first. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
-| 5 | **Wayne Shorter integration** | Deepen TS pipeline: **`shorterMode`**, style modules, or UI; keep distinct from Python **`wayne-shorter-engine`**. |
+| 5 | ~~**Wayne Shorter integration**~~ **COMPLETE** (2026-04-27) | TS Song Mode path: contextual chord pools, form-aware motif plan, stronger motif fingerprint + Wayne return nudge; eval **8.3/10**. Python **`wayne-shorter-engine`** remains separate. **Next:** rhythmic motif fingerprint → Phrase Engine Stage 1. |
 | 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | ~~**Song Mode — style exposure**~~ **COMPLETE** (2026-04-15) | Pattern slider, secondary songwriter, author overlay wired end-to-end; **`styleStack`** / classical overlay / further presets remain optional follow-ups. |
 | 12 | **Vocal lead sheet — pipeline** | **VERIFIED packaged (2026-04-17)** — same as Current table; `release\win-unpacked\Composer OS Desktop.exe`; see [CHANGELOG.md](CHANGELOG.md). |
@@ -394,7 +402,7 @@
 
 ### Near term (high leverage)
 
-1. **Wayne Shorter “engine integration” (product meaning)** — deepen **Composer OS** integration: style modules, duo grammar, or UI surfacing; distinguish from standalone Python `wayne-shorter-engine`.
+1. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades shipped; optional UI surfacing / Python bridge remains future. **Follow-on:** rhythmic motif fingerprint with **Phrase Engine Stage 1**.
 2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below.
