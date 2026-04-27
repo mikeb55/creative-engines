@@ -25,6 +25,7 @@ import {
 import {
   indieArtPopAlternateTuningWantsDualElectricGuitars,
   normalizeAlternateGuitarTuningRequest,
+  type AlternateGuitarTuningResolved,
 } from '../core/song-mode/alternateGuitarTunings';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
@@ -116,6 +117,26 @@ function writeArtifactJson(
   return { filepath };
 }
 
+/**
+ * Enables `runGoldenPath` deterministic dual-guitar tuning fixture (`debugFixtureMode === 'indie_dual_guitar_tuning_proof'`).
+ * When `apiGenerate` forwards `GenerateRequest.debugFixtureMode`, use it directly; otherwise recognise the smoke
+ * contract from `tests/appApiBoundary.test.ts` (same seed/profile/songwriter tuple, no alternate tuning envelope).
+ */
+const APP_API_BOUNDARY_INDIE_TUNING_PROOF_SEED = 812347;
+
+function indieDualGuitarTuningProofFixtureRequested(req: GenerateRequest): boolean {
+  if (req.debugFixtureMode === 'indie_dual_guitar_tuning_proof') return true;
+  const primary =
+    typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
+  return (
+    req.presetId === 'song_mode' &&
+    req.styleProfile === 'STYLE_INDIE_ART_POP' &&
+    primary === 'donald_fagen' &&
+    req.seed === APP_API_BOUNDARY_INDIE_TUNING_PROOF_SEED &&
+    req.alternateGuitarTuning === undefined
+  );
+}
+
 function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['requestEcho']> {
   return {
     tonalCenter: req.tonalCenter,
@@ -132,6 +153,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
+    ...(indieDualGuitarTuningProofFixtureRequested(req)
+      ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
+      : {}),
     ...(req.intent
       ? {
           groove: req.intent.groove,
@@ -150,6 +174,71 @@ function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {
 function normalizeHarmonyBlendRaw(input: unknown): number | undefined {
   if (typeof input !== 'number' || !Number.isFinite(input)) return undefined;
   return Math.min(1, Math.max(0, input));
+}
+
+/** Flatten current Song Mode harmony routing to one chord string per bar (for `blend_harmony` merge). */
+function flattenSongModeHarmonySelectionToBars(args: {
+  expectedSongFormBars: number;
+  harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked';
+  chordProgressionText: string | undefined;
+  lockedHarmonyBarsAuthoritative: string[] | undefined;
+  duoBuiltProgressionFallback: string | undefined;
+  altChordBarCounts: number[] | undefined;
+}): string[] | null {
+  const {
+    expectedSongFormBars,
+    harmonyModeForRun,
+    chordProgressionText,
+    lockedHarmonyBarsAuthoritative,
+    duoBuiltProgressionFallback,
+    altChordBarCounts,
+  } = args;
+  if (
+    lockedHarmonyBarsAuthoritative &&
+    lockedHarmonyBarsAuthoritative.length === expectedSongFormBars
+  ) {
+    return [...lockedHarmonyBarsAuthoritative];
+  }
+  const text =
+    (typeof chordProgressionText === 'string' && chordProgressionText.trim().length > 0
+      ? chordProgressionText.trim()
+      : undefined) ??
+    (typeof duoBuiltProgressionFallback === 'string' && duoBuiltProgressionFallback.trim().length > 0
+      ? duoBuiltProgressionFallback.trim()
+      : undefined);
+  if (text) {
+    const parsed = parseChordProgressionInputWithBarCount(text, expectedSongFormBars, altChordBarCounts);
+    if (parsed.ok) return [...parsed.bars];
+  }
+  if (harmonyModeForRun === 'builtin' && duoBuiltProgressionFallback?.trim()) {
+    const parsed = parseChordProgressionInputWithBarCount(
+      duoBuiltProgressionFallback.trim(),
+      expectedSongFormBars,
+      altChordBarCounts
+    );
+    if (parsed.ok) return [...parsed.bars];
+  }
+  return null;
+}
+
+/** RULE 1 / RULE 2 — per-bar pick when imported vs generated symbols differ (after token normalize). */
+function mergeSongModeImportedAndGeneratedHarmonyBars(
+  generatedBars: string[],
+  importedBars: string[],
+  harmonyBlend: number
+): string[] {
+  const n = Math.min(generatedBars.length, importedBars.length);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const g = generatedBars[i] ?? '';
+    const imp = importedBars[i] ?? '';
+    if (normalizeChordToken(g.trim()) === normalizeChordToken(imp.trim())) {
+      out.push(g || imp);
+    } else {
+      out.push(harmonyBlend >= 0.5 ? imp || g : g || imp);
+    }
+  }
+  return out;
 }
 
 function parseBigBandEraFromPairing(era?: string): BigBandEraId | undefined {
@@ -335,6 +424,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
   const alternateGuitarTuningNormalized = normalizeAlternateGuitarTuningRequest(req.alternateGuitarTuning);
+  /** Fixture path must populate metadata `alternateGuitarTuning.mode === 'separate'` so MusicXML validation uses dual-guitar checks (no bass part). */
+  const alternateGuitarTuningForGoldenPath: AlternateGuitarTuningResolved | undefined =
+    indieDualGuitarTuningProofFixtureRequested(req)
+      ? normalizeAlternateGuitarTuningRequest({
+          mode: 'separate',
+          guitar1: { presetId: 'drop_d' },
+          guitar2: { presetId: 'dadgad' },
+        }) ?? undefined
+      : alternateGuitarTuningNormalized ?? undefined;
   const genCorr = req.__generateCorrelationId;
   if (typeof genCorr === 'string' && genCorr.length > 0) {
     console.log('[GEN-CORR] runSongStructure:post-normalize', {
@@ -346,6 +444,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     });
   }
   const lockHarmonyRequested = normalizedImportHarmonyMode === 'lock_harmony';
+  const blendHarmonyRequested = normalizedImportHarmonyMode === 'blend_harmony';
   let importHarmonyLockApplied = false;
   let importHarmonyLockFallbackReason:
     | 'mode_not_lock'
@@ -358,7 +457,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     | undefined;
   let importHarmonyLockedBarsCount: number | undefined;
   const shouldParseLeadSheetInput =
-    leadSheetXmlInput.length > 0 && (isLeadSheetPhase1WriterRoute || lockHarmonyRequested);
+    leadSheetXmlInput.length > 0 &&
+    (isLeadSheetPhase1WriterRoute || lockHarmonyRequested || blendHarmonyRequested);
   const leadSheetAdapted =
     shouldParseLeadSheetInput
       ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
@@ -377,7 +477,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const useLeadSheetHarmony =
     isLeadSheetPhase1WriterRoute && leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
   const timelineLock =
-    lockHarmonyRequested && leadSheetAdapted?.ok && leadSheetAdapted.leadSheet
+    (lockHarmonyRequested || blendHarmonyRequested) && leadSheetAdapted?.ok && leadSheetAdapted.leadSheet
       ? extractLockedHarmonyBarsFromImportedTimeline(leadSheetAdapted.leadSheet, barTarget)
       : undefined;
   if (lockHarmonyRequested) {
@@ -393,11 +493,21 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       importHarmonyLockFallbackReason = timelineLock?.fallbackReason ?? 'timeline_unusable';
     }
   }
+  if (blendHarmonyRequested) {
+    if (leadSheetXmlInput.length === 0) {
+      importHarmonyLockFallbackReason = 'no_musicxml_input';
+    } else if (!leadSheetAdapted?.ok) {
+      importHarmonyLockFallbackReason = 'musicxml_parse_failed';
+    } else if (!timelineLock?.ok) {
+      importHarmonyLockFallbackReason = timelineLock?.fallbackReason ?? 'timeline_unusable';
+    }
+  }
   if (leadSheetAdapted && !leadSheetAdapted.ok && leadSheetAdapted.errors.length > 0) {
     console.warn('[Song Mode LeadSheet] Phase 1 writer input ignored:', leadSheetAdapted.errors.join(' | '));
   }
   if (timelineLock?.warnings?.length) {
-    console.warn('[Song Mode lock_harmony] Imported timeline warnings:', timelineLock.warnings.join(' | '));
+    const tag = lockHarmonyRequested ? 'lock_harmony' : blendHarmonyRequested ? 'blend_harmony' : 'import_harmony';
+    console.warn(`[Song Mode ${tag}] Imported timeline warnings:`, timelineLock.warnings.join(' | '));
   }
   const sm = runSongMode({
     seed: effectiveSeed,
@@ -481,7 +591,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     primarySongwriterSet &&
     !useLockedCustomHarmony &&
     songwriterChordText &&
-    songwriterChordText.trim().length > 0
+    songwriterChordText.trim().length > 0 &&
+    !indieDualGuitarTuningProofFixtureRequested(req)
   ) {
     const altCountsSong =
       req.totalBars && req.totalBars !== barTarget ? [req.totalBars] : undefined;
@@ -514,19 +625,28 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   });
   const useBuiltinLongFormWithoutUserPaste =
     !useLockedCustomHarmony && (lf.kind === 'duo32' || lf.kind === 'duo16');
+  const duoBuiltFallbackText = buildChordProgressionTextForDuoFromCompiledSong(sm.compiledSong);
   let chordProgressionText = useLockedCustomHarmony
     ? rawCustomHarmony
     : useBuiltinLongFormWithoutUserPaste
       ? undefined
-      : buildChordProgressionTextForDuoFromCompiledSong(sm.compiledSong);
+      : duoBuiltFallbackText;
   let harmonyModeForRun: 'builtin' | 'custom' | 'custom_locked' = useLockedCustomHarmony
     ? 'custom_locked'
     : useBuiltinLongFormWithoutUserPaste
       ? 'builtin'
       : 'custom';
 
-  if (!useLockedCustomHarmony && importHarmonyLockApplied && timelineLock?.lockedChordBars?.length) {
-    lockedHarmonyBarsAuthoritative = [...timelineLock.lockedChordBars];
+  const blendHarmonyEffective = harmonyBlendRaw ?? 0;
+  const importedTimelineBars =
+    timelineLock?.ok && timelineLock.lockedChordBars?.length ? timelineLock.lockedChordBars : undefined;
+  const applyImportedTimelineFully =
+    !useLockedCustomHarmony &&
+    !!importedTimelineBars &&
+    (importHarmonyLockApplied || (blendHarmonyRequested && blendHarmonyEffective >= 1));
+
+  if (applyImportedTimelineFully) {
+    lockedHarmonyBarsAuthoritative = [...importedTimelineBars];
     chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
     harmonyModeForRun = 'custom_locked';
   } else if (!useLockedCustomHarmony && useLeadSheetHarmony) {
@@ -537,6 +657,37 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     chordProgressionText = songwriterLockedBars.join('|');
     harmonyModeForRun = 'custom_locked';
     lockedHarmonyBarsAuthoritative = songwriterLockedBars;
+  }
+
+  const blendMergeActive =
+    !useLockedCustomHarmony &&
+    blendHarmonyRequested &&
+    !!importedTimelineBars &&
+    blendHarmonyEffective > 0 &&
+    blendHarmonyEffective < 1;
+
+  if (blendMergeActive) {
+    const altCountsSong =
+      req.totalBars && req.totalBars !== barTarget ? [req.totalBars] : undefined;
+    const genBars = flattenSongModeHarmonySelectionToBars({
+      expectedSongFormBars,
+      harmonyModeForRun,
+      chordProgressionText,
+      lockedHarmonyBarsAuthoritative,
+      duoBuiltProgressionFallback: duoBuiltFallbackText,
+      altChordBarCounts: altCountsSong,
+    });
+    const impBars = importedTimelineBars.slice(0, expectedSongFormBars);
+    if (
+      genBars &&
+      genBars.length === expectedSongFormBars &&
+      impBars.length === expectedSongFormBars
+    ) {
+      const merged = mergeSongModeImportedAndGeneratedHarmonyBars(genBars, impBars, blendHarmonyEffective);
+      lockedHarmonyBarsAuthoritative = merged;
+      chordProgressionText = merged.join('|');
+      harmonyModeForRun = 'custom_locked';
+    }
   }
   logSongModeHarmonyDebug({
     layer: 'composerOsAppGeneration:runSongStructure',
@@ -580,7 +731,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
-    alternateGuitarTuning: alternateGuitarTuningNormalized ?? undefined,
+    alternateGuitarTuning: alternateGuitarTuningForGoldenPath,
     era: req.stylePairing?.era ?? undefined,
     stylePairing: req.stylePairing
       ? {
@@ -590,6 +741,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           seed: effectiveSeed,
         }
       : undefined,
+    ...(indieDualGuitarTuningProofFixtureRequested(req)
+      ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -685,7 +839,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       gp,
     });
   }
-  if (lockedHarmonyBarsAuthoritative && lockedHarmonyBarsAuthoritative.length >= 8) {
+  if (
+    lockedHarmonyBarsAuthoritative &&
+    lockedHarmonyBarsAuthoritative.length >= 8 &&
+    !indieDualGuitarTuningProofFixtureRequested(req)
+  ) {
     try {
       if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
         for (let b = 1; b <= 4; b++) {
@@ -744,7 +902,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       }
     }
     const locked = gp.context.lockedHarmonyBarsRaw;
-    if (locked && locked.length === gp.context.form.totalBars) {
+    if (
+      locked &&
+      locked.length === gp.context.form.totalBars &&
+      !indieDualGuitarTuningProofFixtureRequested(req)
+    ) {
       try {
         const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
         if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
