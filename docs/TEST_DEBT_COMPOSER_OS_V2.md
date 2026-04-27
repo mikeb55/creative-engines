@@ -96,6 +96,15 @@ Roughly grouped by recurring failures / historical buckets in `test:full` (may r
 
 **Reference:** grep output categorised 2026-04-27, category B sites.
 
+## Parked: Wayne Shorter cross-section motif binding (2026-04-27)
+Motif Authority plan uses fixed bar-index windows, not form section
+labels (verse/chorus/bridge). For wayne_shorter, replacing
+defaultMotifAuthorityPlan with a form-aware plan derived from
+context.form.sections would materially improve melodic binding
+(currently 4/10). Gate: motif pilot + barry_harris hybrid must
+already be active. File: generateGoldenPathDuoScore.ts.
+Musical eval score today: 6.8/10 (Output C). Target: 8+/10.
+
 ## Maintenance note
 
 Avoid committing stray `tests/**/*.test.js` beside `*.test.ts`; Node may resolve `.js` first and run stale assertions.
