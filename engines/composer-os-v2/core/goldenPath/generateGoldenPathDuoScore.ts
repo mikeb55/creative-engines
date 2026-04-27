@@ -9,6 +9,8 @@ declare module '../compositionContext' {
   interface CompositionContext {
     /** Mirrors `generationMetadata.songwriterStyleId` for motif passes (narrow extension). */
     songwriterStyleId?: string;
+    /** Wayne `buildPhrase` rhythm cells for phrase A (duration@beat), return nudge duration bias. */
+    waynePhraseAFingerprint?: string[];
   }
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
@@ -157,6 +159,7 @@ import {
   type MotifDevelopmentSummary,
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
+import { buildPhrase } from '../phrase/phraseBuilder';
 import type { SongModeLeadSheetMelodyAnchor } from '../song-mode/songModeLeadSheetAdapter';
 import { DEFAULT_LEADSHEET_PERFORMANCE_BLEND } from '../lead-sheet/leadSheetPerformanceRendering';
 
@@ -736,6 +739,25 @@ function motifRangeFromFormSection(
 
 function motifRangesOverlap(a: MotifPhraseRange, b: MotifPhraseRange): boolean {
   return !(a.endBar < b.startBar || b.endBar < a.startBar);
+}
+
+function collectGuitarNotesInBarRange(
+  guitarPart: PartModel | undefined,
+  range: MotifPhraseRange
+): NoteEvent[] {
+  if (!guitarPart?.measures?.length) return [];
+  const out: NoteEvent[] = [];
+  for (const m of guitarPart.measures) {
+    const idx = m.index;
+    if (idx < range.startBar || idx > range.endBar) continue;
+    for (const ev of m.events ?? []) {
+      if (ev.kind !== 'note') continue;
+      const n = ev as NoteEvent;
+      if ((n.voice ?? 1) !== 1) continue;
+      out.push(n);
+    }
+  }
+  return out;
 }
 
 /**
@@ -4012,6 +4034,12 @@ export function generateGoldenPathDuoScore(
           songwriterId === 'wayne_shorter'
             ? tryWayneFormAwareMotifAuthorityPlan(context, tb) ?? defaultMotifAuthorityPlan(tb)
             : defaultMotifAuthorityPlan(tb);
+        if (songwriterId === 'wayne_shorter') {
+          const phraseARange = motifPlan.phraseA;
+          const phraseANotes = collectGuitarNotesInBarRange(guitarPart, phraseARange);
+          const waynePhraseABuilt = buildPhrase('phraseA', phraseARange, phraseANotes, 'tonic');
+          context.waynePhraseAFingerprint = waynePhraseABuilt.rhythmFingerprint;
+        }
         const phraseAFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseA);
         context.generationMetadata = {
           ...context.generationMetadata,
@@ -4059,6 +4087,7 @@ export function generateGoldenPathDuoScore(
             const snapshot = snapshotPhrasePitches(guitarPart, motifPlan.phraseReturn);
             nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint, {
               songwriterStyleId: context.songwriterStyleId,
+              waynePhraseAFingerprint: context.waynePhraseAFingerprint,
             });
             const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
             const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);

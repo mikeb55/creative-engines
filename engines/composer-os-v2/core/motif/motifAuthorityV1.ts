@@ -1,4 +1,4 @@
-import type { PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import type { NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 
 /** Pilot motif policy tier (Motif Authority V1). */
 export type MotifAuthorityLevel = 'off' | 'soft' | 'strong';
@@ -218,6 +218,53 @@ function noteEventsInMeasure(events: ScoreEvent[]): Array<{ pitch: number; idx: 
   return out;
 }
 
+/** `buildPhrase` rhythm cells: `${duration}@${globalStartBeat}` — durations only for Wayne return bias. */
+function preferredDurationsFromRhythmFingerprint(cells: string[] | undefined): number[] {
+  if (!cells?.length) return [];
+  const seen = new Set<number>();
+  for (const c of cells) {
+    const at = c.indexOf('@');
+    if (at <= 0) continue;
+    const d = Number.parseFloat(c.slice(0, at));
+    if (Number.isFinite(d)) seen.add(d);
+  }
+  return [...seen];
+}
+
+function nearestPreferredDuration(beats: number, prefs: number[]): number {
+  if (prefs.length === 0) return beats;
+  let best = prefs[0]!;
+  let bestDist = Math.abs(beats - best);
+  for (const p of prefs) {
+    const dist = Math.abs(beats - p);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = p;
+    }
+  }
+  return best;
+}
+
+function nudgeReturnPhraseDurationsTowardWayneFingerprint(
+  part: PartModel,
+  returnRange: MotifPhraseRange,
+  rhythmFingerprint: string[]
+): void {
+  const prefs = preferredDurationsFromRhythmFingerprint(rhythmFingerprint);
+  if (prefs.length === 0) return;
+  for (let bar = returnRange.startBar; bar <= returnRange.endBar; bar++) {
+    const m = part.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    for (let i = 0; i < m.events.length; i++) {
+      const e = m.events[i]!;
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      if ((n.voice ?? 1) !== 1) continue;
+      n.duration = nearestPreferredDuration(n.duration, prefs);
+    }
+  }
+}
+
 /**
  * Single bounded nudge for return phrase: shift first-note pitch classes per bar
  * and a small subset of contour steps toward phrase A.
@@ -228,7 +275,7 @@ export function nudgeReturnPhraseTowardFingerprint(
   part: PartModel,
   returnRange: MotifPhraseRange,
   target: MotifFingerprint,
-  opts?: { songwriterStyleId?: string }
+  opts?: { songwriterStyleId?: string; waynePhraseAFingerprint?: string[] }
 ): void {
   const wayne = opts?.songwriterStyleId === 'wayne_shorter';
 
@@ -268,5 +315,9 @@ export function nudgeReturnPhraseTowardFingerprint(
     const delta = up <= down ? Math.min(up, 1) : -Math.min(down, 1);
     const next = cur + delta;
     (m.events[first.idx] as { pitch: number }).pitch = next;
+  }
+
+  if (wayne && opts?.waynePhraseAFingerprint?.length) {
+    nudgeReturnPhraseDurationsTowardWayneFingerprint(part, returnRange, opts.waynePhraseAFingerprint);
   }
 }
