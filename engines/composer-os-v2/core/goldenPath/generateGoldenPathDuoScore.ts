@@ -146,6 +146,7 @@ import {
   defaultMotifAuthorityPlan,
   nudgeReturnPhraseTowardFingerprint,
   type MotifAuthorityLevel,
+  type MotifAuthorityPlan,
   type MotifDevelopmentSummary,
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
@@ -703,6 +704,68 @@ function makeMotifDevelopmentSummary(params: {
     motifCoherence: Math.max(0, Math.min(1, params.motifCoherence)),
     motifLedPrimaryIdentity: params.motifLedPrimaryIdentity,
     experimental: true,
+  };
+}
+
+/** Song-mode style labels (`verse_0`, `chorus_1`, …); letter forms (A/B) → null. */
+function songSectionRoleFromFormLabel(label: string): 'verse' | 'chorus' | 'bridge' | null {
+  const L = label.trim().toLowerCase();
+  if (L.startsWith('verse')) return 'verse';
+  if (L.startsWith('chorus')) return 'chorus';
+  if (L.startsWith('bridge')) return 'bridge';
+  return null;
+}
+
+function motifRangeFromFormSection(
+  sec: { startBar: number; length: number },
+  totalBars: number
+): MotifPhraseRange | null {
+  if (!Number.isFinite(sec.startBar) || !Number.isFinite(sec.length) || sec.length <= 0) return null;
+  const startBar = Math.trunc(sec.startBar);
+  const endBar = startBar + Math.trunc(sec.length) - 1;
+  if (startBar < 1 || endBar > totalBars || startBar > endBar) return null;
+  return { startBar, endBar };
+}
+
+function motifRangesOverlap(a: MotifPhraseRange, b: MotifPhraseRange): boolean {
+  return !(a.endBar < b.startBar || b.endBar < a.startBar);
+}
+
+/**
+ * Wayne Shorter: align motif checkpoints with first verse / first chorus / (bridge | 2nd verse).
+ * Returns null → caller uses {@link defaultMotifAuthorityPlan}.
+ */
+function tryWayneFormAwareMotifAuthorityPlan(
+  context: CompositionContext,
+  totalBars: number
+): MotifAuthorityPlan | null {
+  const sections = context.form?.sections;
+  if (!Array.isArray(sections) || sections.length === 0) return null;
+
+  const verses = sections.filter((s) => songSectionRoleFromFormLabel(s.label) === 'verse');
+  const choruses = sections.filter((s) => songSectionRoleFromFormLabel(s.label) === 'chorus');
+  const bridges = sections.filter((s) => songSectionRoleFromFormLabel(s.label) === 'bridge');
+
+  const firstVerse = verses[0];
+  const firstChorus = choruses[0];
+  if (!firstVerse || !firstChorus) return null;
+
+  const phraseA = motifRangeFromFormSection(firstVerse, totalBars);
+  const phraseB = motifRangeFromFormSection(firstChorus, totalBars);
+  if (!phraseA || !phraseB) return null;
+  if (motifRangesOverlap(phraseA, phraseB)) return null;
+
+  const returnSource = bridges[0] ?? verses[1];
+  if (!returnSource) return null;
+  const phraseReturn = motifRangeFromFormSection(returnSource, totalBars);
+  if (!phraseReturn) return null;
+
+  return {
+    phraseA,
+    phraseB,
+    phraseReturn,
+    returnThreshold: 0.54,
+    variationMiddleBand: [0.28, 0.9],
   };
 }
 
@@ -3937,7 +4000,10 @@ export function generateGoldenPathDuoScore(
           }),
         };
       } else {
-        const motifPlan = defaultMotifAuthorityPlan(tb);
+        const motifPlan =
+          songwriterId === 'wayne_shorter'
+            ? tryWayneFormAwareMotifAuthorityPlan(context, tb) ?? defaultMotifAuthorityPlan(tb)
+            : defaultMotifAuthorityPlan(tb);
         const phraseAFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseA);
         context.generationMetadata = {
           ...context.generationMetadata,
