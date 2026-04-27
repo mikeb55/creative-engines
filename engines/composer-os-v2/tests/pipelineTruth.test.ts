@@ -65,8 +65,8 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
             a.runManifest?.importHarmonyMode === b.runManifest?.importHarmonyMode &&
             a.runManifest?.importHarmonyModeSource === 'defaulted' &&
             b.runManifest?.importHarmonyModeSource === 'explicit' &&
-            a.runManifest?.importHarmonyPolicyVersion === 2 &&
-            b.runManifest?.importHarmonyPolicyVersion === 2;
+            a.runManifest?.importHarmonyPolicyVersion === 3 &&
+            b.runManifest?.importHarmonyPolicyVersion === 3;
           return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
         } finally {
           try {
@@ -95,8 +95,8 @@ export function runPipelineTruthTests(): { name: string; ok: boolean }[] {
             a.runManifest?.importHarmonyMode === b.runManifest?.importHarmonyMode &&
             a.runManifest?.importHarmonyModeSource === 'defaulted' &&
             b.runManifest?.importHarmonyModeSource === 'explicit' &&
-            a.runManifest?.importHarmonyPolicyVersion === 2 &&
-            b.runManifest?.importHarmonyPolicyVersion === 2;
+            a.runManifest?.importHarmonyPolicyVersion === 3 &&
+            b.runManifest?.importHarmonyPolicyVersion === 3;
           return a.success === true && b.success === true && a.xml === b.xml && onlySourceDiff;
         } finally {
           try {

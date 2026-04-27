@@ -52,7 +52,7 @@ function assertImportHarmonyReceipt(
   if (rm.importHarmonyMode !== expected.mode) return `importHarmonyMode want ${expected.mode} got ${rm.importHarmonyMode}`;
   if (rm.importHarmonyModeSource !== expected.source)
     return `importHarmonyModeSource want ${expected.source} got ${rm.importHarmonyModeSource}`;
-  if (rm.importHarmonyPolicyVersion !== 2) return `importHarmonyPolicyVersion want 2 got ${rm.importHarmonyPolicyVersion}`;
+  if (rm.importHarmonyPolicyVersion !== 3) return `importHarmonyPolicyVersion want 3 got ${rm.importHarmonyPolicyVersion}`;
   if ((rm.importHarmonyLockApplied ?? false) !== expected.lockApplied)
     return `importHarmonyLockApplied want ${expected.lockApplied} got ${rm.importHarmonyLockApplied}`;
   if (expected.fallbackReason !== undefined && rm.importHarmonyLockFallbackReason !== expected.fallbackReason) {
