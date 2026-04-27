@@ -275,11 +275,11 @@
 
 ---
 
-### Wayne Shorter — TypeScript pipeline integration (**complete**, 2026-04-27)
+### Wayne Shorter — TypeScript pipeline integration (**COMPLETE**, 2026-04-27)
 
-- **Status:** **complete** — musical eval **8.3/10** on the integrated Song Mode + duo golden-path slice (Wayne contextual harmony + motif authority).
-- **Shipped in core:** contextual chord-row bias (verse vs chorus/bridge), optional forced disruption slot on peak sections, **form-aware Motif Authority** phrase windows (`verse` / `chorus` / `bridge` from `context.form.sections`), **interval-size buckets** on motif fingerprints (`step` / `skip` / `leap`), and **Wayne-specific return nudge** (exact pitch-class snap on bar lead + second-note bias; `songwriterStyleId` passed from golden path).
-- **Next (not in this tranche):** **rhythmic motif fingerprint** — durational/onset pattern beyond coarse onset strings; belongs with **Phrase Engine Stage 1** work (neutral `Phrase` type + phrase controls) so motif identity can align with engine-level rhythm cells without duplicating logic in Motif Authority alone.
+- **Status:** **COMPLETE** — musical eval **8.8/10** on the integrated Song Mode + duo golden-path slice (Wayne contextual harmony + motif authority + rhythmic return alignment).
+- **Shipped in core:** contextual chord-row bias (verse vs chorus/bridge), optional forced disruption slot on peak sections, **form-aware Motif Authority** phrase windows (`verse` / `chorus` / `bridge` from `context.form.sections`), **interval-size buckets** on motif fingerprints (`step` / `skip` / `leap`), **Wayne-specific return nudge** (pitch-class snap on bar lead + second-note bias; `songwriterStyleId` passed from golden path), and **phrase-A rhythmic fingerprint**: `buildPhrase` on phrase-A guitar notes stores `rhythmFingerprint` on context; return refinement **snaps voice-1 note durations** to the nearest duration values appearing in that fingerprint (duration values only, not beat positions).
+- **Future (medium-term, not current scope):** classical **motif development** transformations — **augmentation / compression / displacement** — plus richer shared **Phrase Engine** rhythm abstractions; intentionally **out of scope** for this Wayne tranche (track under **Phrase Engine / Riff Generator redesign** when scheduled).
 
 ---
 
@@ -389,7 +389,7 @@
 | 2 | **Wyble “realized” normalization review** | **2026-04-17 (started):** **`shouldApplyRealizedVoice2Normalization`** + stabiliser boundary + probe **`isStandardGuitarBassDuo`** + JSDoc (see [CHANGELOG.md](CHANGELOG.md)). **Deferred:** wiring realized pass into golden path for single-line / shared validators with standard duo — confirm product intent first. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
-| 5 | ~~**Wayne Shorter integration**~~ **COMPLETE** (2026-04-27) | TS Song Mode path: contextual chord pools, form-aware motif plan, stronger motif fingerprint + Wayne return nudge; eval **8.3/10**. Python **`wayne-shorter-engine`** remains separate. **Next:** rhythmic motif fingerprint → Phrase Engine Stage 1. |
+| 5 | ~~**Wayne Shorter integration**~~ **COMPLETE** (2026-04-27) | TS Song Mode path: contextual chord pools, form-aware motif plan, motif fingerprint + Wayne pitch/duration return nudge; eval **8.8/10**. Python **`wayne-shorter-engine`** remains separate. **Future:** augmentation / compression / displacement motif development — medium-term; fuller **Phrase Engine** rhythm cells remain complementary. |
 | 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | ~~**Song Mode — style exposure**~~ **COMPLETE** (2026-04-15) | Pattern slider, secondary songwriter, author overlay wired end-to-end; **`styleStack`** / classical overlay / further presets remain optional follow-ups. |
 | 12 | **Vocal lead sheet — pipeline** | **VERIFIED packaged (2026-04-17)** — same as Current table; `release\win-unpacked\Composer OS Desktop.exe`; see [CHANGELOG.md](CHANGELOG.md). |
@@ -402,7 +402,7 @@
 
 ### Near term (high leverage)
 
-1. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades shipped; optional UI surfacing / Python bridge remains future. **Follow-on:** rhythmic motif fingerprint with **Phrase Engine Stage 1**.
+1. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades + **rhythmic return duration snap** shipped; optional UI surfacing / Python bridge remains future. **Later:** augmentation / compression / displacement motif development (medium-term, not this scope); shared **Phrase Engine Stage 1** rhythm abstraction remains complementary.
 2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below.
@@ -480,6 +480,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-23].*
+*End of Composer OS Roadmap [2026-04-27].*
 
 
