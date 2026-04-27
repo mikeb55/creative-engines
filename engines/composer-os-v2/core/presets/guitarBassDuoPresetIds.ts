@@ -4,8 +4,16 @@
 
 export const GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID = 'guitar_bass_duo_single_line' as const;
 
+export function isSongModeFamily(presetId: string | undefined): boolean {
+  return presetId === 'song_mode' || (typeof presetId === 'string' && presetId.startsWith('song_mode_'));
+}
+
 export function isGuitarBassDuoFamily(presetId: string | undefined): boolean {
-  return presetId === 'guitar_bass_duo' || presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID;
+  return (
+    presetId === 'guitar_bass_duo' ||
+    presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID ||
+    isSongModeFamily(presetId)
+  );
 }
 
 /** Song Mode, duo32 long-form opt-in, bar-7 duo lock sweep, duoLock motifs — standard preset only. */
