@@ -13,6 +13,9 @@
   generation succeeds, 2 parts (guitar + guitar_2), both MIDI program 28, no bass part.
 - Chord density characterization test: guitar_2 cross-voice beat-level chord detection, threshold >0.65.
 - **Indie separate dual-electric:** Measure-1 **tuning labels** above staves (**Tuning: Drop D** / **Tuning: DADGAD**, or custom summary). **guitar_2** MusicXML uses a **single `<backup>`** per measure (export validation). Comp layer on **guitar_2** is **dyadic** (two pitch classes per anchor in typical bars); fuller same-beat chord stacks are **deferred**.
+- `thinGuitar2Voice1InChordMeasures`: thins `guitar_2` voice-1 to max 2 `NoteEvent`s in measures where voice-2 has a `ChordEvent`, preserving strong-beat and longer-duration notes first
+- `indieGuitar2ThinVoice1Peak` telemetry field on `GenerationMetadata`
+- Smoke assertion: `indieGuitar2ThinVoice1Peak` <= 2 confirmed (33 passed / 0 failed)
 
 ## [Unreleased] - 2026-04-25
 

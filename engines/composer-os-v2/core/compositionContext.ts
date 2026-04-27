@@ -196,6 +196,11 @@ export interface GenerationMetadata {
   /** Song Mode STYLE_INDIE_ART_POP Phase A: texture / role / phrase-edge pass ran on the duo score. */
   indieArtPopPhaseAApplied?: boolean;
   /**
+   * Indie dual-electric (`guitar_2`): peak voice-1 single-note count in any measure that also contains a voice-2 comp
+   * `ChordEvent`, measured immediately after `thinGuitar2Voice1InChordMeasures` (notation expand may emit more atoms later).
+   */
+  indieGuitar2ThinVoice1Peak?: number;
+  /**
    * Song Mode STYLE_INDIE_ART_POP — reserved mid/high guitar windows (bar indices) for a future string layer.
    * Metadata only in Phase A; no string parts are generated yet.
    */

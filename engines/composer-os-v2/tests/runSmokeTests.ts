@@ -7,6 +7,7 @@ import { runReadinessTests } from './readiness.test';
 import { runConductorTests } from './conductor.test';
 import { runAppApiBoundaryTests } from './appApiBoundary.test';
 import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony.test';
+import { runIndieGuitar2SongModeChordEventQualityTests } from './indieGuitar2SongModeChordEventQuality.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -15,6 +16,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Conductor', run: runConductorTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
+  { label: 'Indie guitar_2 Song Mode comp (ChordEvent quality)', run: runIndieGuitar2SongModeChordEventQualityTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

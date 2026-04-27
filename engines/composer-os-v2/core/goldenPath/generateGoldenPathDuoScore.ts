@@ -239,9 +239,94 @@ function isIndieGuitar2SectionStartBar(barIndex: number, context: CompositionCon
   return context.form.sections.some((s) => s.startBar === barIndex);
 }
 
+const INDIE_G2_SHEET_CLARITY_MIN = 48; // ~C3 — if mean pitch below this, thin 4-note grips for clarity
+
+function indieGuitar2HarmonicRank(midi: number, tones: ReturnType<typeof guitarChordTonesInRange>): number {
+  const pc = ((midi % 12) + 12) % 12;
+  const tr = (x: number) => ((x % 12) + 12) % 12;
+  if (tr(tones.third) === pc) return 0;
+  if (tr(tones.seventh) === pc) return 1;
+  if (tr(tones.fifth) === pc) return 2;
+  if (tr(tones.root) === pc) return 3;
+  return 4;
+}
+
 /**
- * 2–4 comp pitches (no lead doubling): priority 3–7–5, optional 9/13 in register. Never 1 note.
- * Global max 4 notes per `ChordEvent` attack; size is thinned on lighter anchors via caller `targetSize`.
+ * 2–4 **unique** pitch classes (no 5+ duplicates); optional maxTarget 2–4 from light vs big bars. Prefer mid-register per PC.
+ */
+function normalizeIndieGuitar2CompPitches(
+  raw: number[],
+  tones: ReturnType<typeof guitarChordTonesInRange>,
+  low: number,
+  high: number,
+  maxTarget: number
+): number[] | null {
+  const tr = (x: number) => ((x % 12) + 12) % 12;
+  const byPc = new Map<number, number>();
+  for (const p of raw) {
+    if (!Number.isFinite(p)) continue;
+    const cl = clampPitch(p, low, high);
+    const pc = tr(cl);
+    const prev = byPc.get(pc);
+    if (prev == null || cl > prev) {
+      byPc.set(pc, cl);
+    }
+  }
+  if (byPc.size === 0) return null;
+  const cap = Math.min(4, Math.max(2, maxTarget));
+  const orderRank = (m: number) => indieGuitar2HarmonicRank(m, tones);
+  let out = Array.from(byPc.values()).sort((a, b) => orderRank(a) - orderRank(b));
+  while (out.length > 4) {
+    let dropI = 0;
+    for (let j = 1; j < out.length; j++) {
+      if (orderRank(out[j]!) > orderRank(out[dropI]!)) dropI = j;
+    }
+    out = out.filter((_, j) => j !== dropI);
+  }
+  if (out.length < 2) {
+    for (const add of [tones.third, tones.seventh, tones.fifth, tones.root]) {
+      if (!Number.isFinite(add)) continue;
+      const t = liftToneToRange(add, low, high);
+      if (out.some((o) => tr(o) === tr(t))) continue;
+      out = [...out, t];
+      if (out.length >= 2) break;
+    }
+  }
+  if (out.length < 2) return null;
+  const mean = out.reduce((s, m) => s + m, 0) / out.length;
+  if (mean < INDIE_G2_SHEET_CLARITY_MIN && out.length > 2) {
+    out = out
+      .slice()
+      .sort((a, b) => a - b)
+      .slice(1);
+  }
+  while (out.length > cap) {
+    let dropI = 0;
+    for (let j = 1; j < out.length; j++) {
+      if (orderRank(out[j]!) > orderRank(out[dropI]!)) dropI = j;
+    }
+    out = out.filter((_, j) => j !== dropI);
+  }
+  if (out.length < 2) {
+    for (const add of [tones.seventh, tones.third, tones.fifth, tones.root]) {
+      if (!Number.isFinite(add)) continue;
+      const t = liftToneToRange(add, low, Math.min(72, high));
+      if (out.some((o) => tr(o) === tr(t))) continue;
+      out = [...out, t];
+      if (out.length >= 2) break;
+    }
+  }
+  if (out.length < 2 || out.length > 4) {
+    if (out.length < 2) return null;
+    return out
+      .sort((a, b) => orderRank(a) - orderRank(b))
+      .slice(0, Math.min(4, cap));
+  }
+  return out;
+}
+
+/**
+ * 2–4 comp pitches: shell + colour, unique pitch classes after normalization.
  */
 function pickIndieGuitar2CompPitches(
   tones: ReturnType<typeof guitarChordTonesInRange>,
@@ -250,31 +335,23 @@ function pickIndieGuitar2CompPitches(
   targetSize: number
 ): number[] | null {
   const t = Math.min(4, Math.max(2, Math.floor(targetSize)));
-  const raw = [tones.third, tones.seventh, tones.fifth, tones.root].filter(
-    (p) => Number.isFinite(p) && p >= low && p <= high
-  );
-  const ordered: number[] = [];
-  const seen = new Set<number>();
-  for (const p of raw) {
-    if (!seen.has(p)) {
-      seen.add(p);
-      ordered.push(p);
-    }
-  }
-  const havePc = (midi: number, list: number[]) => {
-    const want = ((midi % 12) + 12) % 12;
-    return list.some((p) => ((p % 12) + 12) % 12 === want);
+  const out: number[] = [];
+  const seenPc = new Set<number>();
+  const tr = (x: number) => ((x % 12) + 12) % 12;
+  const pick = (m: number) => {
+    if (!Number.isFinite(m)) return;
+    const cl = clampPitch(m, low, high);
+    const pc = tr(cl);
+    if (seenPc.has(pc)) return;
+    seenPc.add(pc);
+    out.push(cl);
   };
-  const ninth = liftToneToRange(tones.root + 14, low, high);
-  const thirteenth = liftToneToRange(tones.root + 21, low, high);
-  if (ordered.length < 4 && Number.isFinite(ninth) && !havePc(ninth, ordered)) {
-    ordered.push(ninth);
+  for (const p of [tones.third, tones.seventh, tones.fifth, tones.root]) pick(p);
+  for (const add of [liftToneToRange(tones.root + 14, low, high), liftToneToRange(tones.root + 21, low, high)]) {
+    if (out.length >= 4) break;
+    pick(add);
   }
-  if (ordered.length < 4 && Number.isFinite(thirteenth) && !havePc(thirteenth, ordered)) {
-    ordered.push(thirteenth);
-  }
-  if (ordered.length < 2) return null;
-  return ordered.slice(0, t);
+  return normalizeIndieGuitar2CompPitches(out, tones, low, high, t);
 }
 
 /** Whole-beat downbeats in 4/4 (0, 1, 2, 3); skips pickups and off-quarter grid. */
@@ -284,15 +361,10 @@ function indieGuitar2AnchorOnStrongBeat(startBeat: number): boolean {
 }
 
 /**
- * **Indie Art Pop + separate alternate tunings (dual electrics)** — `guitar_2` (remapped part id) is **chordal comp
- * only** (no doubling of the lead line). Registrational window ~E2–E5. Density is **mostly** on **downbeats
- * and structural anchors** (whole-number beats, or the first note after a barline harmony change); that keeps
- * the part readable while still sounding like real guitar. Each `ChordEvent` is **2–4** pitches (shell + 5/9/13 as
- * available): **3–4** in “big” bars (form start, or large harmonic move vs. the prior bar) and **2–3** otherwise,
- * up to a hard cap of **4** notes per attack. Lighter texture is from **fewer attacks per bar**, not from forcing
- * everything to two-note shells. Melody pitch is **never** included in these stacks. See
- * `docs/COMPOSER_OS_INDIE_DUAL_GUITAR_GUITAR2_COMP.md` for the human-readable part spec; `applyVoiceRoleFromPartSpec`
- * still skips the extra v2 *single-note* pass when a v2 comp chord is already in the measure.
+ * **Indie Art Pop + separate (dual electrics), guitar_2** — `ChordEvent` comp only: **2–4 unique pitch classes**
+ * (no doubles, no 5+ grips), **shell + 9/13** colour, ~mid register. Placements favour **quarters 0 & 2 (beats 1 & 3)**,
+ * then 1 & 2, with **eighths** (0.5,1.5,2.5,3.5) only rarely from seed. 2–3 strums per bar. Melody is never doubled
+ * in these stacks. See `docs/COMPOSER_OS_INDIE_DUAL_GUITAR_GUITAR2_COMP.md`.
  */
 function forceChordalElectricGuitar2VoicingsForIndieRoute(
   part: PartModel,
@@ -319,26 +391,62 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
     const measureIsBig = m.index === 1 || sectionStart || largeChange;
     const minV = 2;
     const maxV = measureIsBig ? 4 : 3;
-    const extra: ChordEvent[] = [];
+    const uN = seededUnit(context.seed, m.index, 77131);
+    const maxCompThisBar = 2 + (uN < 0.42 ? 1 : 0);
+    const beatKey = (x: number) => String(Math.round(x * 1000) / 1000);
+    type Cand = { startBeat: number; duration: number; pr: number };
+    const cands: Cand[] = [];
+    for (const sb of [0, 2, 1, 3] as const) {
+      cands.push({ startBeat: sb, duration: 1, pr: sb === 0 || sb === 2 ? 4.2 : 3.1 });
+    }
     for (let i = 0; i < voice1Anchors.length; i++) {
       const a = voice1Anchors[i]!;
-      const onStrong = indieGuitar2AnchorOnStrongBeat(a.startBeat);
-      const firstAnchorAfterHarmonyChange = i === 0 && harmonyChangedFromPriorBar;
-      if (!onStrong && !firstAnchorAfterHarmonyChange) continue;
-      const uSize = seededUnit(context.seed, m.index, ((i * 193 + 90217) & 0xfffff) + m.index);
+      const g = a.startBeat;
+      const isInt = indieGuitar2AnchorOnStrongBeat(g);
+      const firstH = i === 0 && harmonyChangedFromPriorBar;
+      if (!isInt) {
+        const uPick = seededUnit(context.seed, m.index, (i * 199 + 77117) & 0xfffff);
+        if (firstH) {
+          if (uPick > 0.12) continue;
+        } else if (uPick > 0.08) continue;
+      }
+      let pr = 0;
+      if (isInt) {
+        if (g === 0 || g === 2) pr = 4;
+        else if (g === 1 || g === 3) pr = 3.2;
+        else pr = 2.1;
+        pr += 0.05;
+      } else {
+        pr = firstH ? 1.1 : 0.5;
+      }
+      cands.push({ startBeat: g, duration: Math.max(0.5, a.duration), pr });
+    }
+    cands.sort((a, b) => b.pr - a.pr);
+    const uniq: Cand[] = [];
+    const seenB = new Set<string>();
+    for (const c of cands) {
+      const k = beatKey(c.startBeat);
+      if (seenB.has(k)) continue;
+      seenB.add(k);
+      uniq.push(c);
+    }
+    const chosen = uniq.slice(0, maxCompThisBar);
+    const extra: ChordEvent[] = [];
+    for (let ci = 0; ci < chosen.length; ci++) {
+      const c = chosen[ci]!;
+      const uSize = seededUnit(context.seed, m.index, (ci * 193 + 90217 + m.index * 13) & 0xfffff);
       const targetSize = minV + Math.floor(uSize * (maxV - minV + 1) * 0.9999999);
       const compPitches = pickIndieGuitar2CompPitches(tones, low, high, targetSize);
       if (!compPitches || compPitches.length < 2) continue;
-      const compDuration = Math.max(1.0, a.duration);
+      const compDuration = Math.max(0.5, Math.min(2, Math.max(1, c.duration)));
       extra.push({
         kind: 'chord',
         pitches: compPitches,
-        startBeat: a.startBeat,
+        startBeat: c.startBeat,
         duration: compDuration,
         voice: 2,
       } as ChordEvent);
     }
-    // One ChordEvent per anchor; exporter emits stacked `<note>` with `<chord/>`.
     for (const ev of extra) addEvent(m, ev);
     m.events = sortIndieGuitar2MeasureEventsForExport(m.events);
   }
@@ -420,6 +528,79 @@ function applyVoiceRoleFromPartSpec(part: PartModel, context: CompositionContext
     }
     m.events = applyVoiceRole(m.events, chord, context, m.index, role, bias);
   }
+  return part;
+}
+
+/**
+ * After `applyVoiceRoleFromPartSpec`, remove stray v2 **single** notes that start **off** the whole-beat
+ * grid (0.5, 1.5, …) when the measure already has a comp `ChordEvent` (v2: chordal first; no syncopated layer on top).
+ */
+function stripIndieGuitar2StrayV2OffbeatSingleNotes(part: PartModel, context: CompositionContext): PartModel {
+  if (part.id !== 'guitar_2' || !shouldUseIndieArtPopDualGuitarRoute(context)) return part;
+  for (const m of part.measures) {
+    const hasV2Chord = m.events.some((e) => e.kind === 'chord' && (e as ChordEvent).voice === 2);
+    if (!hasV2Chord) continue;
+    m.events = m.events.filter((e) => {
+      if (e.kind !== 'note' || (e as NoteEvent).voice !== 2) return true;
+      const b = (e as NoteEvent).startBeat;
+      if (indieGuitar2AnchorOnStrongBeat(b)) return true;
+      return false;
+    });
+  }
+  return part;
+}
+
+/** Strong beats 1 & 3 in 4/4 (local 0 and 2). */
+function indieGuitar2BeatOneOrThreeLocal(startBeat: number): boolean {
+  const p = ((startBeat % 4) + 4) % 4;
+  return p < 1e-5 || Math.abs(p - 2) < 1e-5;
+}
+
+/**
+ * Indie dual-electric only (caller): when voice 2 has comp `ChordEvent`s, thin voice-1 anchor clutter
+ * so the lower staff stays readable (max two v1 singles per measure).
+ */
+function thinGuitar2Voice1InChordMeasures(part: PartModel, context: CompositionContext): PartModel {
+  if (part.id !== 'guitar_2') return part;
+  let peakWithChord = 0;
+  for (const m of part.measures) {
+    const hasV2Chord = m.events.some((e) => e.kind === 'chord' && (e as ChordEvent).voice === 2);
+    if (!hasV2Chord) continue;
+
+    type Entry = { eventIndex: number; n: NoteEvent };
+    const v1Entries: Entry[] = [];
+    for (let ei = 0; ei < m.events.length; ei++) {
+      const ev = m.events[ei]!;
+      if (ev.kind !== 'note') continue;
+      const vn = ev as NoteEvent;
+      if ((vn.voice ?? 1) !== 1) continue;
+      v1Entries.push({ eventIndex: ei, n: vn });
+    }
+    if (v1Entries.length <= 2) {
+      peakWithChord = Math.max(peakWithChord, v1Entries.length);
+      continue;
+    }
+
+    const strength = (n: NoteEvent): number => {
+      const sb = n.startBeat;
+      const frac = Math.abs(((sb % 1) + 1) % 1);
+      const wholeBeat = frac < 1e-5 || frac > 1 - 1e-5;
+      let s = n.duration * 50;
+      if (wholeBeat) s += 40;
+      if (indieGuitar2BeatOneOrThreeLocal(sb)) s += 120;
+      return s;
+    };
+
+    const ranked = [...v1Entries].sort((a, b) => strength(a.n) - strength(b.n));
+    const dropCount = ranked.length - 2;
+    const dropIdx = new Set(ranked.slice(0, dropCount).map((x) => x.eventIndex));
+    if (dropIdx.size === 0) continue;
+    m.events = m.events.filter((_e, ei) => !dropIdx.has(ei));
+
+    const v1After = m.events.filter((e) => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1).length;
+    peakWithChord = Math.max(peakWithChord, v1After);
+  }
+  context.generationMetadata.indieGuitar2ThinVoice1Peak = peakWithChord;
   return part;
 }
 
@@ -3909,12 +4090,14 @@ export function generateGoldenPathDuoScore(
     );
     bassPart = remapBassPartToElectricGuitar2ForIndieArtPop(bassPart);
     bassPart = forceChordalElectricGuitar2VoicingsForIndieRoute(bassPart, context);
+    bassPart = thinGuitar2Voice1InChordMeasures(bassPart, context);
     guitarPart.voiceRole = 'balanced';
     guitarPart.chordBias = 0.55;
     bassPart.voiceRole = 'chordal';
     bassPart.chordBias = 0.8;
     applyVoiceRoleFromPartSpec(guitarPart, context);
     applyVoiceRoleFromPartSpec(bassPart, context);
+    bassPart = stripIndieGuitar2StrayV2OffbeatSingleNotes(bassPart, context);
   }
   console.log(
     '[DualTuning] route selected',
