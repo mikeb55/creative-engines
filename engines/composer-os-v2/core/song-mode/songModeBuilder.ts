@@ -28,6 +28,13 @@ import {
   type EraId,
 } from '../harmony/eraChordNormalizer';
 
+declare module './songCompilationTypes' {
+  interface SectionChordPlan {
+    /** Serialized Wayne Shorter pool row tags when applicable; empty when untagged / non-Wayne. */
+    chosenRowTags?: string[];
+  }
+}
+
 /** Row-level tags for Wayne Shorter pools (foundation for future contextual selection). */
 export interface WayneShorterRowTags {
   tension: 'low' | 'medium' | 'high';
@@ -232,29 +239,80 @@ function extensionAffinityWeight(row: ChordPoolRow, eraProfile: EraProfile): num
   return Math.max(0.15, boost * penalty);
 }
 
-function pickChordPoolRowIndex(sectionPool: ChordPoolRow[], seed: number, eraProfile: EraProfile): number {
+/** Wayne pools only; `intro` surrogate = `pre_chorus` here (no dedicated SongSectionKind). */
+function wayneChordPoolBiasMultiplier(
+  row: ChordPoolRow,
+  sectionKind: SongSectionKind | undefined,
+  songwriterId: string | undefined
+): number {
+  if (songwriterId !== 'wayne_shorter' || sectionKind === undefined) return 1;
+  if (Array.isArray(row) || !('tags' in row)) return 1;
+  const tags = row.tags as WayneShorterRowTags;
+
+  const openingLike = sectionKind === 'verse' || sectionKind === 'pre_chorus';
+  const peakLike = sectionKind === 'chorus' || sectionKind === 'bridge';
+
+  if (openingLike) {
+    if (tags.pedal === true || tags.tension === 'low') return 1.5;
+    return 1;
+  }
+  if (peakLike) {
+    const emphasize =
+      tags.tension === 'high' ||
+      tags.tension === 'medium' ||
+      tags.motion === 'chromatic' ||
+      tags.motion === 'leap';
+    if (emphasize) return 1.5;
+    return 1;
+  }
+  return 1;
+}
+
+function chosenRowTagsFromPoolRow(row: ChordPoolRow | undefined): string[] {
+  if (row == null || Array.isArray(row) || !('tags' in row)) return [];
+  const t = row.tags;
+  const out: string[] = [`tension:${t.tension}`, `motion:${t.motion}`];
+  if (t.cadential) out.push('cadential');
+  if (t.pedal) out.push('pedal');
+  return out;
+}
+
+function pickChordPoolRowIndex(
+  sectionPool: ChordPoolRow[],
+  seed: number,
+  eraProfile: EraProfile,
+  songwriterId?: string,
+  sectionKind?: SongSectionKind
+): number {
   if (sectionPool.length <= 1) return 0;
   const roll = seededUnit(seed);
   const harmonyDensityBias = eraProfile.harmonyDensityBias;
+
+  let weights: number[];
   if (harmonyDensityBias <= 0.1 && harmonyDensityBias >= -0.05) {
-    return Math.floor(roll * sectionPool.length);
+    weights = sectionPool.map(() => 1);
+  } else {
+    const scores = sectionPool.map((row) => rowComplexityScore(row));
+    const wantsDense = harmonyDensityBias > 0.1;
+    weights = scores.map((score, idx) => {
+      const preference = wantsDense ? score : -score;
+      const base = Math.max(0.15, Math.exp(preference * 0.9));
+      const affinity = extensionAffinityWeight(sectionPool[idx]!, eraProfile);
+      return Math.max(0.15, base * affinity);
+    });
   }
 
-  const scores = sectionPool.map((row) => rowComplexityScore(row));
-  const wantsDense = harmonyDensityBias > 0.1;
-  const weighted = scores.map((score, idx) => {
-    const preference = wantsDense ? score : -score;
-    const base = Math.max(0.15, Math.exp(preference * 0.9));
-    const affinity = extensionAffinityWeight(sectionPool[idx]!, eraProfile);
-    return Math.max(0.15, base * affinity);
-  });
-  const sum = weighted.reduce((a, b) => a + b, 0);
+  const biased = weights.map((w, idx) =>
+    w * wayneChordPoolBiasMultiplier(sectionPool[idx]!, sectionKind, songwriterId)
+  );
+
+  const sum = biased.reduce((a, b) => a + b, 0);
   let cursor = roll * sum;
-  for (let i = 0; i < weighted.length; i++) {
-    cursor -= weighted[i]!;
+  for (let i = 0; i < biased.length; i++) {
+    cursor -= biased[i]!;
     if (cursor <= 0) return i;
   }
-  return weighted.length - 1;
+  return biased.length - 1;
 }
 
 function applyHarmonicRhythmToRow(
@@ -803,44 +861,75 @@ const SONGWRITER_CHORD_POOLS: Record<
   },
 };
 
+function sectionChordPoolRows(
+  kind: SongSectionKind,
+  songwriterId: string | undefined
+): ChordPoolRow[] | undefined {
+  const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
+  if (!pool) return undefined;
+  return kind === 'verse'
+    ? pool.verse
+    : kind === 'chorus'
+      ? pool.chorus
+      : kind === 'bridge'
+        ? pool.bridge
+        : kind === 'pre_chorus'
+          ? pool.pre_chorus
+          : pool.verse;
+}
+
+/** Row tags already imply chromatic motion or peak tension — no forced slot swap. */
+function chordPlanRowHasChromOrHighTension(tags: string[]): boolean {
+  return tags.includes('motion:chromatic') || tags.includes('tension:high');
+}
+
+/** Among Wayne tagged pool rows, pick maximal `tags.tension` (seed tie-break among ties). */
+function pickHighestTensionWayneRow(sectionPool: ChordPoolRow[], seed: number): WayneShorterChordPoolRow | undefined {
+  const tagged: WayneShorterChordPoolRow[] = [];
+  for (const r of sectionPool) {
+    if (!Array.isArray(r) && 'tags' in r && 'chords' in r) tagged.push(r as WayneShorterChordPoolRow);
+  }
+  if (tagged.length === 0) return undefined;
+  const rank = (t: WayneShorterRowTags['tension']) => (t === 'high' ? 2 : t === 'medium' ? 1 : 0);
+  let best = rank(tagged[0]!.tags.tension);
+  for (const row of tagged) best = Math.max(best, rank(row.tags.tension));
+  const cand = tagged.filter((row) => rank(row.tags.tension) === best);
+  return cand[Math.abs(seed) % cand.length];
+}
+
 function chordSymbolsForSection(
   kind: SongSectionKind,
   seed: number,
   songwriterId?: string,
   eraProfile?: EraProfile
-): string[] {
+): { chordSymbols: string[]; chosenRowTags: string[] } {
   const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
   if (pool) {
-    const sectionPool =
-      kind === 'verse'
-        ? pool.verse
-        : kind === 'chorus'
-          ? pool.chorus
-          : kind === 'bridge'
-            ? pool.bridge
-            : kind === 'pre_chorus'
-              ? pool.pre_chorus
-              : pool.verse;
+    const sectionPool = sectionChordPoolRows(kind, songwriterId)!;
     const profile = eraProfile ?? resolveEraProfile(undefined);
-    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile);
+    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile, songwriterId, kind);
     const raw = sectionPool[idx] ?? pool.verse[0];
+    const chosenRowTags = chosenRowTagsFromPoolRow(raw);
     return raw != null
-      ? applyHarmonicRhythmToRow(chordSymbolsFromPoolRow(raw), profile.harmonicRhythm, seed)
-      : ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+      ? {
+          chordSymbols: applyHarmonicRhythmToRow(chordSymbolsFromPoolRow(raw), profile.harmonicRhythm, seed),
+          chosenRowTags,
+        }
+      : { chordSymbols: ['Cmaj7', 'Am7', 'Fmaj7', 'G7'], chosenRowTags: [] };
   }
 
   // Fallback: original hardcoded progressions
   switch (kind) {
     case 'verse':
-      return ['Cmaj7', 'Am7', 'Fmaj7', 'G7'];
+      return { chordSymbols: ['Cmaj7', 'Am7', 'Fmaj7', 'G7'], chosenRowTags: [] };
     case 'pre_chorus':
-      return ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
+      return { chordSymbols: ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'], chosenRowTags: [] };
     case 'chorus':
-      return ['Cmaj7', 'G7', 'Am7', 'Fmaj7'];
+      return { chordSymbols: ['Cmaj7', 'G7', 'Am7', 'Fmaj7'], chosenRowTags: [] };
     case 'bridge':
-      return ['Am7', 'Fmaj7', 'Dm7', 'G7'];
+      return { chordSymbols: ['Am7', 'Fmaj7', 'Dm7', 'G7'], chosenRowTags: [] };
     default:
-      return ['Cmaj7', 'Cmaj7', 'Cmaj7', 'Cmaj7'];
+      return { chordSymbols: ['Cmaj7', 'Cmaj7', 'Cmaj7', 'Cmaj7'], chosenRowTags: [] };
   }
 }
 
@@ -868,16 +957,45 @@ export function buildSectionChordPlans(
     let ordinalBias = 0;
     if (s.kind === 'verse') ordinalBias = verseOrdinal++ * 997;
     else if (s.kind === 'chorus') ordinalBias = chorusOrdinal++ * 997;
+    const secSeed = seed + s.order * 31 + ordinalBias;
+    let row = chordSymbolsForSection(s.kind, secSeed, songwriterId, eraProfile);
+
+    if (
+      songwriterId === 'wayne_shorter' &&
+      (s.kind === 'chorus' || s.kind === 'bridge') &&
+      !chordPlanRowHasChromOrHighTension(row.chosenRowTags)
+    ) {
+      const sectionPool = sectionChordPoolRows(s.kind, songwriterId);
+      const profile = eraProfile ?? resolveEraProfile(undefined);
+      const bestRow = sectionPool ? pickHighestTensionWayneRow(sectionPool, secSeed) : undefined;
+      const n = row.chordSymbols.length;
+      if (bestRow && n > 2) {
+        const inner = n - 2;
+        const replaceAt = 1 + (Math.abs(secSeed * 1103515245 + s.order * 12345) % inner);
+        const sourceChords = applyHarmonicRhythmToRow(
+          chordSymbolsFromPoolRow(bestRow),
+          profile.harmonicRhythm,
+          secSeed
+        );
+        const srcLen = sourceChords.length;
+        if (replaceAt < n && srcLen > 0) {
+          const symIdx = replaceAt < srcLen ? replaceAt : replaceAt % srcLen;
+          const next = [...row.chordSymbols];
+          next[replaceAt] = sourceChords[symIdx]!;
+          row = {
+            chordSymbols: next,
+            chosenRowTags: [...row.chosenRowTags, 'forced_disruption'],
+          };
+        }
+      }
+    }
+
     return {
       sectionOrder: s.order,
       sectionKind: s.kind,
       intensity: intensityForKind(s.kind),
-      chordSymbols: chordSymbolsForSection(
-        s.kind,
-        seed + s.order * 31 + ordinalBias,
-        songwriterId,
-        eraProfile
-      ),
+      chordSymbols: row.chordSymbols,
+      chosenRowTags: row.chosenRowTags,
     };
   });
   if (!eraId) return planned;
