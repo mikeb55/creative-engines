@@ -31,7 +31,6 @@
     "probe:ecm-arrangement": "ts-node scripts/ecmArrangementProbe.ts",
     "eval:ecm-texture": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/ecmChamberTextureEval.ts",
     "inspect:songmode-ab": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSongModeAbInspect.ts",
-    "fixture:indie-tuning-proof": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/exportIndieDualGuitarTuningFixture.ts",
     "eval:riff-diagnostics": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runRiffEvalDiagnostics.ts",
     "eval:riff-top": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runRiffEvalTopCandidates.ts",
     "eval:duo-diagnostics": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runDuoEvalDiagnostics.ts",

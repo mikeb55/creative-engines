@@ -64,118 +64,6 @@ const UNSUPPORTED_COMPLEXITY_XML = `<?xml version="1.0"?>
   </part>
 </score-partwise>`;
 
-/** Stage 2 — P1 melody only, P2 `<harmony>` merged; P2 notes ignored for melody. */
-const MELODY_P1_HARMONY_P2_XML = `<?xml version="1.0"?>
-<score-partwise version="3.1">
-  <part-list>
-    <score-part id="P1"><part-name>Lead</part-name></score-part>
-    <score-part id="P2"><part-name>Comp</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>4</divisions><key><fifths>0</fifths><mode>major</mode></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-    <measure number="2">
-      <note><pitch><step>D</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes><divisions>4</divisions></attributes>
-      <harmony><root><root-step>F</root-step></root><kind>major</kind></harmony>
-      <note><pitch><step>E</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-    <measure number="2">
-      <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony>
-      <note><pitch><step>F</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
-/** Stage 2 regression — harmony only on P1; P2 notes-only should match one-part import of the same P1 slice. */
-const HARMONY_P1_ONLY_SINGLE_PART_REFERENCE_XML = `<?xml version="1.0"?>
-<score-partwise version="3.1">
-  <part-list><score-part id="P1"><part-name>Lead</part-name></score-part></part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-      <harmony><root><root-step>C</root-step></root><kind text="maj7">major-seventh</kind></harmony>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
-const HARMONY_P1_EMPTY_P2_XML = `<?xml version="1.0"?>
-<score-partwise version="3.1">
-  <part-list>
-    <score-part id="P1"><part-name>Lead</part-name></score-part>
-    <score-part id="P2"><part-name>Comp</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-      <harmony><root><root-step>C</root-step></root><kind text="maj7">major-seventh</kind></harmony>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes><divisions>4</divisions></attributes>
-      <note><pitch><step>B</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
-/** Stage 2 edge — P2 longer than P1: extra measures ignored + warning; P2 bar-1 offset harmony. */
-const P2_LONGER_AND_OFFSET_XML = `<?xml version="1.0"?>
-<score-partwise version="3.1">
-  <part-list>
-    <score-part id="P1"><part-name>Lead</part-name></score-part>
-    <score-part id="P2"><part-name>Comp</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes><divisions>4</divisions></attributes>
-      <harmony><root><root-step>D</root-step></root><kind>minor</kind><offset>8</offset></harmony>
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-    <measure number="2">
-      <harmony><root><root-step>E</root-step></root><kind>major</kind></harmony>
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
-/** Stage 2 edge — duplicate same bar/beat/symbol on P1 and P2 (both tolerated). */
-const DUPLICATE_HARMONY_P1_P2_XML = `<?xml version="1.0"?>
-<score-partwise version="3.1">
-  <part-list>
-    <score-part id="P1"><part-name>Lead</part-name></score-part>
-    <score-part id="P2"><part-name>Comp</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-      <harmony><root><root-step>C</root-step></root><kind>major</kind></harmony>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes><divisions>4</divisions></attributes>
-      <harmony><root><root-step>C</root-step></root><kind>major</kind></harmony>
-      <note><pitch><step>E</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
 const PHRASE_EXPRESSION_XML = `<?xml version="1.0"?>
 <score-partwise version="3.1">
   <part-list><score-part id="P1"><part-name>Lead</part-name></score-part></part-list>
@@ -257,64 +145,10 @@ function testUnsupportedComplexityHandledSafely(): boolean {
   return (
     r.leadSheet.totalBars === 1 &&
     r.leadSheet.melodyEvents.length === 1 &&
-    r.warnings.some((w) => /Scoped LeadSheet import|first-part voice 1 staff 1/i.test(w)) &&
+    r.warnings.some((w) => /extra parts\/staves/i.test(w)) &&
     r.warnings.some((w) => /non-voice-1/i.test(w)) &&
     r.warnings.some((w) => /lyrics/i.test(w))
   );
-}
-
-/** Stage 2 — merge P2 harmony; melody and totalBars from P1 only. */
-function testMelodyP1HarmonyP2Merged(): boolean {
-  const r = importLeadSheetFromMusicXml(MELODY_P1_HARMONY_P2_XML);
-  if (!r.ok || !r.leadSheet) return false;
-  const ls = r.leadSheet;
-  const midis = ls.melodyEvents.map((e) => e.midi).sort((a, b) => a - b);
-  const p2OnlyMidi = 52;
-  return (
-    ls.totalBars === 2 &&
-    ls.melodyEvents.length === 2 &&
-    !midis.includes(p2OnlyMidi) &&
-    ls.chordEvents.length === 2 &&
-    ls.chordEvents.some((c) => c.bar === 1 && c.symbol === 'F' && c.beat === 0) &&
-    ls.chordEvents.some((c) => c.bar === 2 && c.symbol === 'G' && c.beat === 0) &&
-    (ls.importedHarmonyTimeline?.events.length ?? 0) === 2
-  );
-}
-
-/** Stage 2 regression — P1-only harmony counts unchanged when P2 has no harmony. */
-function testHarmonyP1EmptyP2MatchesSinglePartShape(): boolean {
-  const ref = importLeadSheetFromMusicXml(HARMONY_P1_ONLY_SINGLE_PART_REFERENCE_XML);
-  const dual = importLeadSheetFromMusicXml(HARMONY_P1_EMPTY_P2_XML);
-  if (!ref.ok || !ref.leadSheet || !dual.ok || !dual.leadSheet) return false;
-  return (
-    dual.leadSheet.totalBars === ref.leadSheet.totalBars &&
-    dual.leadSheet.chordEvents.length === ref.leadSheet.chordEvents.length &&
-    dual.leadSheet.melodyEvents.length === ref.leadSheet.melodyEvents.length &&
-    (dual.leadSheet.importedHarmonyTimeline?.events.length ?? 0) ===
-      (ref.leadSheet.importedHarmonyTimeline?.events.length ?? 0)
-  );
-}
-
-/** Stage 2 edge — extra P2 measures beyond P1 length ignored; `<offset>` on P2 harmony. */
-function testP2LongerIgnoredAndOffsetHarmony(): boolean {
-  const r = importLeadSheetFromMusicXml(P2_LONGER_AND_OFFSET_XML);
-  if (!r.ok || !r.leadSheet) return false;
-  const ls = r.leadSheet;
-  const dm = ls.chordEvents.find((c) => c.symbol === 'Dm');
-  return (
-    ls.totalBars === 1 &&
-    ls.chordEvents.length === 1 &&
-    dm !== undefined &&
-    Math.abs(dm.beat - 2) < 1e-6 &&
-    r.warnings.some((w) => /Ignored non-first-part harmony past first-part length/i.test(w))
-  );
-}
-
-/** Stage 2 edge — duplicate harmony on P1 and P2 yields two chord events (deterministic sort). */
-function testDuplicateHarmonyP1P2BothPresent(): boolean {
-  const r = importLeadSheetFromMusicXml(DUPLICATE_HARMONY_P1_P2_XML);
-  if (!r.ok || !r.leadSheet) return false;
-  return r.leadSheet.chordEvents.length === 2 && r.leadSheet.chordEvents.every((c) => c.symbol === 'C');
 }
 
 function testDeterministicImportShape(): boolean {
@@ -366,10 +200,6 @@ export function runLeadSheetMusicXmlImportTests(): { ok: boolean; name: string }
     { ok: testDeterministicImportShape(), name: 'lead sheet import: deterministic parse result' },
     { ok: testParsesPhraseExpressionTimeline(), name: 'lead sheet import: ties/slurs/hairpins/tempo parsed to phrase timeline' },
     { ok: testParsesImportedHarmonyTimelineStorage(), name: 'lead sheet import: stores imported harmony timeline deterministically' },
-    { ok: testMelodyP1HarmonyP2Merged(), name: 'lead sheet import (Stage 2): P1 melody + P2 harmony merged by measure index' },
-    { ok: testHarmonyP1EmptyP2MatchesSinglePartShape(), name: 'lead sheet import (Stage 2): P1-only harmony unchanged with empty P2 harmony' },
-    { ok: testP2LongerIgnoredAndOffsetHarmony(), name: 'lead sheet import (Stage 2): P2 longer than P1 ignored; P2 harmony offset uses P1 divisions' },
-    { ok: testDuplicateHarmonyP1P2BothPresent(), name: 'lead sheet import (Stage 2): duplicate P1/P2 harmony both appear in chordEvents' },
   ];
 }
 

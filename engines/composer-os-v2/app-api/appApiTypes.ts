@@ -3,9 +3,6 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
-import type { HarmonyDisplayMode } from '../core/song-mode/songModeLeadSheetAdapter';
-
-export type { HarmonyDisplayMode };
 import type { GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
@@ -129,6 +126,10 @@ export interface GenerateRequest {
   authorOverlay?: string;
   /** Song Mode v1 (Indie Art Pop): optional alternate guitar tuning controls. */
   alternateGuitarTuning?: AlternateGuitarTuningRequest;
+  /**
+   * Dev tracing only: UI may set a correlation id for one generate hop; echoed in logs, not used by MusicXML routing.
+   */
+  __generateCorrelationId?: string;
   /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
   styleProfile?: StyleProfile;
   /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */
@@ -158,18 +159,6 @@ export interface GenerateRequest {
    */
   leadSheetPerformanceBlend?: number;
   /**
-   * Song Mode MusicXML lead sheet: which harmony view to surface alongside raw import.
-   * `enriched` / `compare` require env `COMPOSER_OS_TONALITY_VAULT_ENRICH`; otherwise coerced to `raw` with warnings.
-   * Omitted → `raw`. Invalid values → normalized to `raw`. Case-insensitive string values are accepted (e.g. ` Enriched `).
-   * Receipts: `requestEcho.leadSheetHarmonyDisplayMode` is normalized **request**; `leadSheetHarmonyDisplayModeEffective` is after the env gate (matches adapt `harmonyInterpretationView.effectiveMode` when adapt succeeds).
-   */
-  leadSheetHarmonyDisplayMode?: HarmonyDisplayMode;
-  /**
-   * Diagnostic-only fixture modes (not user-facing): deterministic score builders routed through
-   * the normal Song Mode -> runGoldenPath -> MusicXML export pipeline.
-   */
-  debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
-  /**
    * MusicXML import policy only (orthogonal to `harmonyMode` on Guitar–Bass Duo).
    * - Omitted → normalized to `'free_harmony'` at the API boundary (`importHarmonyModeSource: 'defaulted'`).
    * - Invalid value → sanitized to `'free_harmony'` (source `'explicit'` when the field was present).
@@ -180,6 +169,8 @@ export interface GenerateRequest {
    * Optional; clamped to 0–1 at the API boundary. Telemetry-only — no `blend_harmony` reharm behaviour yet.
    */
   harmonyBlend?: number;
+  /** Dev/tests: deterministic indie dual-guitar tuning fixture (passed through to `runGoldenPath`). */
+  debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
 }
 
 export interface ValidationSummary {
@@ -315,12 +306,6 @@ export interface OutputEntry {
     totalRules: number;
     rules: { id: string; passed: boolean }[];
   };
-  /** Stage 1: LeadSheet MusicXML parse gate echo (manifest / `_meta`). */
-  importHarmonyShouldParseLeadSheetInput?: GenerationMetadata['importHarmonyShouldParseLeadSheetInput'];
-  importHarmonyLeadSheetPipelineStage?: GenerationMetadata['importHarmonyLeadSheetPipelineStage'];
-  importHarmonyLeadSheetAdaptDetail?: GenerationMetadata['importHarmonyLeadSheetAdaptDetail'];
-  importHarmonyChordEventCount?: GenerationMetadata['importHarmonyChordEventCount'];
-  importHarmonyTimelineEventCount?: GenerationMetadata['importHarmonyTimelineEventCount'];
   /** Stage 4: import-harmony policy contract version when import-harmony telemetry is written (`core/importHarmonyPolicy.ts`). */
   importHarmonyPolicyVersion?: number;
 }

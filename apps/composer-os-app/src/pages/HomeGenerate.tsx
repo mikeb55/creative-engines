@@ -533,6 +533,37 @@ export function HomeGenerate({
   /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
   const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
   const desktopTruthDumpEnabled = useRef(false);
+  const songModeStyleProfileRef = useRef<SongModeStyleProfile>(songModeStyleProfile);
+  const alternateTuningEnabledRef = useRef(alternateTuningEnabled);
+  const alternateTuningModeRef = useRef<GuitarTuningMode>(alternateTuningMode);
+  const sharedTuningPresetIdRef = useRef(sharedTuningPresetId);
+  const guitar1TuningPresetIdRef = useRef(guitar1TuningPresetId);
+  const guitar2TuningPresetIdRef = useRef(guitar2TuningPresetId);
+  const sharedCustomTuningRef = useRef(sharedCustomTuning);
+  const guitar1CustomTuningRef = useRef(guitar1CustomTuning);
+  const guitar2CustomTuningRef = useRef(guitar2CustomTuning);
+
+  useEffect(() => {
+    songModeStyleProfileRef.current = songModeStyleProfile;
+    alternateTuningEnabledRef.current = alternateTuningEnabled;
+    alternateTuningModeRef.current = alternateTuningMode;
+    sharedTuningPresetIdRef.current = sharedTuningPresetId;
+    guitar1TuningPresetIdRef.current = guitar1TuningPresetId;
+    guitar2TuningPresetIdRef.current = guitar2TuningPresetId;
+    sharedCustomTuningRef.current = sharedCustomTuning;
+    guitar1CustomTuningRef.current = guitar1CustomTuning;
+    guitar2CustomTuningRef.current = guitar2CustomTuning;
+  }, [
+    songModeStyleProfile,
+    alternateTuningEnabled,
+    alternateTuningMode,
+    sharedTuningPresetId,
+    guitar1TuningPresetId,
+    guitar2TuningPresetId,
+    sharedCustomTuning,
+    guitar1CustomTuning,
+    guitar2CustomTuning,
+  ]);
 
   useEffect(() => {
     const d = window.composerOsDesktop;
@@ -874,7 +905,11 @@ export function HomeGenerate({
           }
         }
         let alternateGuitarTuningPayload: AlternateGuitarTuningRequest | undefined;
-        if (presetId === 'song_mode' && songModeStyleProfile === 'STYLE_INDIE_ART_POP' && alternateTuningEnabled) {
+        const __generateCorrelationId =
+          presetId === 'song_mode' ? `gen-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : undefined;
+        const liveSongModeStyleProfile = songModeStyleProfileRef.current;
+        const liveAlternateTuningEnabled = alternateTuningEnabledRef.current;
+        if (presetId === 'song_mode' && liveSongModeStyleProfile === 'STYLE_INDIE_ART_POP' && liveAlternateTuningEnabled) {
           const specFor = (
             presetIdLocal: string,
             customValues: string[]
@@ -885,14 +920,14 @@ export function HomeGenerate({
             return { presetId: presetIdLocal };
           };
           alternateGuitarTuningPayload =
-            alternateTuningMode === 'standard'
+            alternateTuningModeRef.current === 'standard'
               ? { mode: 'standard' }
-              : alternateTuningMode === 'shared'
-                ? { mode: 'shared', shared: specFor(sharedTuningPresetId, sharedCustomTuning) }
+              : alternateTuningModeRef.current === 'shared'
+                ? { mode: 'shared', shared: specFor(sharedTuningPresetIdRef.current, sharedCustomTuningRef.current) }
                 : {
                     mode: 'separate',
-                    guitar1: specFor(guitar1TuningPresetId, guitar1CustomTuning),
-                    guitar2: specFor(guitar2TuningPresetId, guitar2CustomTuning),
+                    guitar1: specFor(guitar1TuningPresetIdRef.current, guitar1CustomTuningRef.current),
+                    guitar2: specFor(guitar2TuningPresetIdRef.current, guitar2CustomTuningRef.current),
                   };
           const normalized = normalizeAlternateGuitarTuningRequest(alternateGuitarTuningPayload);
           if (!normalized) {
@@ -940,7 +975,8 @@ export function HomeGenerate({
             : {}),
           ...(presetId === 'song_mode'
             ? {
-                styleProfile: songModeStyleProfile,
+                ...(typeof __generateCorrelationId === 'string' ? { __generateCorrelationId } : {}),
+                styleProfile: liveSongModeStyleProfile,
                 leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi,
                 intent: {
                   groove: intentGroove,
@@ -988,6 +1024,16 @@ export function HomeGenerate({
           }
         }
 
+        if (presetId === 'song_mode') {
+          console.log('[UI][manual-generate] final request payload', JSON.stringify(generatePayload, null, 2));
+        }
+        if (typeof __generateCorrelationId === 'string') {
+          const gp = generatePayload as { alternateGuitarTuning?: unknown };
+          console.log('[GEN-CORR] HomeGenerate:payload-built', {
+            corr: __generateCorrelationId,
+            alternateGuitarTuning: gp.alternateGuitarTuning,
+          });
+        }
         if (presetId === 'song_mode' && songChordLine.length > 0) {
           console.log('[Composer OS] outgoing harmony text:', songChordLine.slice(0, 50));
         }

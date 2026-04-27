@@ -63,7 +63,13 @@ app.get('/api/style-modules', (_req: Request, res: Response) => {
 
 app.post('/api/generate', (req: Request, res: Response) => {
   try {
-    const body = req.body as Partial<GenerateRequest>;
+    const body = req.body as Partial<GenerateRequest> & { __generateCorrelationId?: string };
+    if (typeof body.__generateCorrelationId === 'string') {
+      console.log('[GEN-CORR] http /api/generate body received', {
+        corr: body.__generateCorrelationId,
+        alternateGuitarTuning: body.alternateGuitarTuning,
+      });
+    }
     const result = apiGenerate(body, OUTPUT_DIR);
     if ('error' in result && !('validation' in result)) {
       res.status(500).json(result);
@@ -100,22 +106,13 @@ app.get('/api/diagnostics', (_req: Request, res: Response) => {
   }
 });
 
-const postOpenOutputFolder = (req: Request, res: Response) => {
-  apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string })
-    .then((r) => {
-      if (!r.success) {
-        console.error('[Library API] POST /api/open-output-folder → JSON fail:', r.message ?? r);
-      }
-      res.json(r);
-    })
-    .catch((err: unknown) => {
-      console.error('[Library API] /api/open-output-folder exception:', err);
-      res.status(500).json({ success: false, message: err instanceof Error ? err.message : String(err) });
-    });
-};
-app.post('/api/open-output-folder', postOpenOutputFolder);
-/** Alias for clients/docs that expect a `/library/`-shaped path; same handler as `open-output-folder`. */
-app.post('/api/library/open-folder', postOpenOutputFolder);
+app.post('/api/open-output-folder', (req: Request, res: Response) => {
+  console.log('[API][route] /api/open-output-folder hit', req.body);
+  apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
+    console.log('[API][route] /api/open-output-folder response', r);
+    res.json(r);
+  });
+});
 
 app.post('/api/system-check', async (_req: Request, res: Response) => {
   try {
@@ -140,17 +137,8 @@ if (fs.existsSync(staticPath)) {
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
-/**
- * Bind 0.0.0.0 in dev: on Windows, `localhost` in the Vite proxy / Node can resolve to IPv6 (::1)
- * first while this server previously listened on IPv4 only (127.0.0.1) — intermittent ECONNREFUSED
- * on `/api` and confusing “web broken / curl works” reports. CORS is already open for dev.
- * Override: COMPOSER_OS_API_BIND=127.0.0.1 to lock to loopback v4 only.
- */
-const listenHost = (process.env.COMPOSER_OS_API_BIND ?? '0.0.0.0').trim() || '0.0.0.0';
-const server = app.listen(PORT, listenHost, () => {
-  console.log(
-    `Composer OS API on http://127.0.0.1:${PORT} (bind host=${listenHost})`
-  );
+const server = app.listen(PORT, '127.0.0.1', () => {
+  console.log(`Composer OS API on http://localhost:${PORT}`);
 });
 
 server.on('error', (err: NodeJS.ErrnoException) => {

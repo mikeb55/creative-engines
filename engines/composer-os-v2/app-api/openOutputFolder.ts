@@ -1,10 +1,9 @@
 /**
- * Open a directory in the OS file manager (Explorer / Finder / xdg-open).
- * Windows (WEB/DEV API path): primary `cmd.exe /d /c start "" <abs>` for reliable foregrounding;
- * fallback `explorer.exe <abs>`. Matches the proven Electron main pattern in `openFolderMain.ts`.
+ * Open a directory/file location in the OS file manager (Explorer / Finder / xdg-open).
+ * Windows (WEB/DEV API path): use direct explorer.exe launch.
  */
 
-import { execFile, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -56,7 +55,8 @@ export function ensureFolderForOpen(outputDir: string):
   return { ok: true, path: dir };
 }
 
-function openWindowsWithCmdStartThenExplorer(f: string): Promise<OpenOutputFolderResult> {
+function openWindowsOpenFolder(folderPath: string): Promise<OpenOutputFolderResult> {
+  const f = normalizeForWindowsExplorer(folderPath);
   const sysroot = process.env.SystemRoot;
   const explorerPath =
     sysroot && sysroot.length > 0
@@ -64,67 +64,90 @@ function openWindowsWithCmdStartThenExplorer(f: string): Promise<OpenOutputFolde
       : 'explorer.exe';
 
   return new Promise((resolve) => {
-    const tryExplorer = () => {
-      console.log('[OpenFolder] fallback=explorer');
-      const ex = spawn(explorerPath, [f], {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: false,
-      });
-      ex.once('error', (e) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.log(`[OpenFolder] error=${msg}`);
-        resolve({ success: false, message: `Could not open File Explorer: ${msg}` });
-      });
-      ex.once('spawn', () => {
-        ex.unref();
-        console.log('[OpenFolder] success=true');
-        resolve({ success: true, openedPath: f });
-      });
-    };
-
-    console.log('[OpenFolder] strategy=cmd-start');
-    execFile(
-      'cmd.exe',
-      ['/d', '/c', 'start', '', f],
-      { windowsHide: false, shell: false },
-      (err) => {
-        if (!err) {
-          console.log('[OpenFolder] success=true');
-          resolve({ success: true, openedPath: f });
-          return;
-        }
-        console.log(`[OpenFolder] error=${err.message}`);
-        tryExplorer();
-      }
-    );
+    console.log(`[OpenFolder] command=${explorerPath} "${f}"`);
+    const child = spawn(explorerPath, [f], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+    });
+    child.once('error', (e) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[OpenFolder] error=${msg}`);
+      resolve({ success: false, message: `Could not open File Explorer: ${msg}` });
+    });
+    child.once('spawn', () => {
+      child.unref();
+      console.log('[OpenFolder] success=true');
+      resolve({ success: true, openedPath: f });
+    });
   });
 }
 
-function openWindowsFileExplorer(absoluteDir: string): Promise<OpenOutputFolderResult> {
-  const f = normalizeForWindowsExplorer(absoluteDir);
+function openWindowsSelectFile(filePath: string): Promise<OpenOutputFolderResult> {
+  const f = normalizeForWindowsExplorer(filePath);
+  const selectArg = `/select,${f}`;
+  return new Promise((resolve) => {
+    const sysroot = process.env.SystemRoot;
+    const explorerPath =
+      sysroot && sysroot.length > 0
+        ? `${sysroot.replace(/[/\\]+$/, '')}\\explorer.exe`
+        : 'explorer.exe';
+    console.log(`[OpenFolder] command=${explorerPath} ${selectArg}`);
+    const child = spawn(explorerPath, [selectArg], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+    });
+    child.once('error', (e) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[OpenFolder] error=${msg}`);
+      resolve({ success: false, message: `Could not open File Explorer for file selection: ${msg}` });
+    });
+    child.once('spawn', () => {
+      child.unref();
+      console.log('[OpenFolder] success=true');
+      resolve({ success: true, openedPath: f });
+    });
+  });
+}
+
+function openWindowsFileExplorer(absoluteTarget: string): Promise<OpenOutputFolderResult> {
+  const f = normalizeForWindowsExplorer(absoluteTarget);
   console.log(`[OpenFolder] target=${f}`);
   const exists = fs.existsSync(f);
   console.log(`[OpenFolder] exists=${exists}`);
   console.log('[OpenFolder] platform=win32');
-  if (!exists) {
-    const msg = 'Folder path does not exist.';
-    console.log(`[OpenFolder] error=${msg}`);
-    return Promise.resolve({ success: false, message: `${msg} (${f})` });
+  if (exists) {
+    try {
+      const stat = fs.statSync(f);
+      if (stat.isFile()) {
+        return openWindowsSelectFile(f);
+      }
+      if (stat.isDirectory()) {
+        return openWindowsOpenFolder(f);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[OpenFolder] error=${msg}`);
+      return Promise.resolve({ success: false, message: `Could not inspect target path: ${msg}` });
+    }
   }
-  return openWindowsWithCmdStartThenExplorer(f);
+  const prep = ensureFolderForOpen(f);
+  if (!prep.ok) {
+    console.log(`[OpenFolder] error=${prep.message}`);
+    return Promise.resolve({ success: false, message: prep.message });
+  }
+  return openWindowsOpenFolder(normalizeForWindowsExplorer(prep.path));
 }
 
 export async function openOutputFolder(outputDir: string): Promise<OpenOutputFolderResult> {
-  const prep = ensureFolderForOpen(outputDir);
-  if (!prep.ok) {
-    return { success: false, message: prep.message! };
-  }
-  const dir = path.normalize(prep.path);
-
+  console.log('[API][openOutputFolder.ts] entry', { outputDir, platform: process.platform });
   if (process.platform === 'win32') {
-    return openWindowsFileExplorer(dir);
+    return openWindowsFileExplorer(path.normalize(path.resolve(outputDir)));
   }
+  const prep = ensureFolderForOpen(outputDir);
+  if (!prep.ok) return { success: false, message: prep.message! };
+  const dir = path.normalize(prep.path);
   if (process.platform === 'darwin') {
     return new Promise((resolve) => {
       const child = spawn('open', [dir], { detached: true, stdio: 'ignore' });

@@ -3,8 +3,8 @@
  */
 
 import type { BigBandComposerId, BigBandEraId } from '../big-band/bigBandResearchTypes';
-import type { StylePairingInput, StylePairingResult } from './stylePairingTypes';
 import type { SongModeDiversityPresetId } from '../song-mode/songwriterStyleResolver';
+import type { StylePairingInput, StylePairingResult } from './stylePairingTypes';
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));

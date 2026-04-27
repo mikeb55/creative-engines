@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node ./scripts/printComposerOsDevUrls.mjs",
-    "dev": "concurrently -n vite,api,ui \"npm run dev:vite\" \"npm run dev:api\" \"node ./scripts/openViteWhenReady.mjs\"",
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:api\"",
     "dev:vite": "vite",
     "dev:api": "cd ../.. && npx ts-node --project tsconfig.json scripts/startComposerOsAppApi.ts",
     "build": "vite build",

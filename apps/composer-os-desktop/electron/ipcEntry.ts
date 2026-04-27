@@ -11,6 +11,7 @@ import {
   apiListOutputs,
   apiGetOutputDirectory,
   apiGetDiagnostics,
+  apiOpenOutputFolder,
   apiSystemCheck,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
@@ -22,6 +23,13 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:generate', (_e, body: unknown) => {
     const prevIpc = process.env.COMPOSER_OS_IPC_GENERATE_BODY_JSON;
     try {
+      const rec = body as Record<string, unknown>;
+      if (typeof rec.__generateCorrelationId === 'string') {
+        console.log('[GEN-CORR] ipc composer-os-api:generate received', {
+          corr: rec.__generateCorrelationId,
+          alternateGuitarTuning: rec.alternateGuitarTuning,
+        });
+      }
       if (process.env.COMPOSER_OS_TRUTH_DUMP === '1') {
         process.env.COMPOSER_OS_IPC_GENERATE_BODY_JSON = JSON.stringify(body);
         console.log('[composer-os truth] ipc generate payload', JSON.stringify(body, null, 2));
@@ -36,6 +44,11 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-output-directory', () => apiGetOutputDirectory(outputDir));
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));
   ipcMain.handle('composer-os-api:run-system-check', () => apiSystemCheck());
+  ipcMain.handle('composer-os-api:open-output-folder', (_e, body: unknown) => {
+    const b = body && typeof body === 'object' ? (body as { path?: string }) : {};
+    console.log('[OPEN-FOLDER] ipc composer-os-api:open-output-folder', { path: b.path });
+    return apiOpenOutputFolder(outputDir, b);
+  });
   console.log('[ipcEntry] registering generate-wayne-shorter');
   ipcMain.handle(
     'composer-os-api:generate-wayne-shorter',

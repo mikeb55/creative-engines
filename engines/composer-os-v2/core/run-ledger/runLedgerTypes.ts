@@ -9,12 +9,7 @@ import type {
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
 import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
-import type {
-  ImportHarmonyLeadSheetAdaptDetail,
-  ImportHarmonyLeadSheetPipelineStage,
-  ImportHarmonyLockFallbackReason,
-  ImportHarmonyMode,
-} from '../compositionContext';
+import type { ImportHarmonyLockFallbackReason, ImportHarmonyMode } from '../compositionContext';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -163,16 +158,6 @@ export interface RunManifest {
   importHarmonyLockFallbackReason?: ImportHarmonyLockFallbackReason;
   /** Stage 3: count of locked bars derived from imported timeline. */
   importHarmonyLockedBarsCount?: number;
-  /** Stage 1: LeadSheet MusicXML parse attempted (Song Mode routing echo). */
-  importHarmonyShouldParseLeadSheetInput?: boolean;
-  /** Stage 1: LeadSheet adapt pipeline stage. */
-  importHarmonyLeadSheetPipelineStage?: ImportHarmonyLeadSheetPipelineStage;
-  /** Stage 1: coarse adapt bucket when pipeline did not reach `adapt_ok`. */
-  importHarmonyLeadSheetAdaptDetail?: ImportHarmonyLeadSheetAdaptDetail;
-  /** Stage 1: `LeadSheet.chordEvents.length` after shaping. */
-  importHarmonyChordEventCount?: number;
-  /** Stage 1: imported harmony timeline event count. */
-  importHarmonyTimelineEventCount?: number;
   motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
   motifDevelopmentSummary?: MotifDevelopmentSummary;
 }

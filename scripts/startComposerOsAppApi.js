@@ -111,18 +111,11 @@ app.get('/api/diagnostics', (_req, res) => {
         res.status(500).json({ error: String(err) });
     }
 });
-const postOpenOutputFolder = (req, res) => {
-    (0, composerOsApiCore_1.apiOpenOutputFolder)(OUTPUT_DIR, req.body)
-        .then((r) => {
+app.post('/api/open-output-folder', (req, res) => {
+    (0, composerOsApiCore_1.apiOpenOutputFolder)(OUTPUT_DIR, req.body).then((r) => {
         res.json(r);
-    })
-        .catch((err) => {
-        console.error('[Library] /api/.../open-output-folder error:', err);
-        res.status(500).json({ success: false, message: err instanceof Error ? err.message : String(err) });
     });
-};
-app.post('/api/open-output-folder', postOpenOutputFolder);
-app.post('/api/library/open-folder', postOpenOutputFolder);
+});
 const staticPath = process.env.COMPOSER_OS_STATIC_DIR ?? path.join(path.resolve(__dirname, '..'), 'apps', 'composer-os-app', 'dist');
 if (fs.existsSync(staticPath)) {
     app.use(express_1.default.static(staticPath));

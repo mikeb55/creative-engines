@@ -243,7 +243,7 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
         bpm: 118,
         totalBars: 32,
         longFormEnabled: true,
-        styleProfile: 'STYLE_INDEPENDENT_ART_POP',
+        styleProfile: 'STYLE_INDIE_ART_POP',
         primarySongwriterStyle: 'donald_fagen',
         chordProgressionText: SONG_MODE_32_BAR_REGRESSION,
         alternateGuitarTuning: {
@@ -375,7 +375,7 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
         presetId: 'song_mode',
         styleStack: { primary: 'barry_harris', styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' } },
         seed: 812347,
-        styleProfile: 'STYLE_INDEPENDENT_ART_POP',
+        styleProfile: 'STYLE_INDIE_ART_POP',
         primarySongwriterStyle: 'donald_fagen',
         debugFixtureMode: 'indie_dual_guitar_tuning_proof',
       },
