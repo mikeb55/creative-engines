@@ -30,7 +30,7 @@ import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionRe
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
-import { ACOUSTIC_UPRIGHT_BASS, BASS_HARD_RANGE_HIGH, BASS_HARD_RANGE_LOW } from '../instrument-profiles/uprightBassProfile';
+import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
 import { GUITAR_BASS_DUO_BASS_PART_NAME } from '../instrument-profiles/guitarBassDuoExportNames';
 import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
 import type { DensityCurvePlan } from '../density/densityCurveTypes';
@@ -318,10 +318,20 @@ function normalizeIndieGuitar2CompPitches(
   }
   if (out.length < 2 || out.length > 4) {
     if (out.length < 2) return null;
-    return out
+    out = out
       .sort((a, b) => orderRank(a) - orderRank(b))
       .slice(0, Math.min(4, cap));
   }
+  {
+    const seenFinal = new Set<number>();
+    out = out.filter((p) => {
+      const pc = tr(p);
+      if (seenFinal.has(pc)) return false;
+      seenFinal.add(pc);
+      return true;
+    });
+  }
+  if (out.length < 2 || out.length > 4) return null;
   return out;
 }
 
@@ -354,10 +364,10 @@ function pickIndieGuitar2CompPitches(
   return normalizeIndieGuitar2CompPitches(out, tones, low, high, t);
 }
 
-/** Whole-beat downbeats in 4/4 (0, 1, 2, 3); skips pickups and off-quarter grid. */
+/** Whole-beat downbeats in 4/4 (0, 1, 2, 3); skips pickups and off-quarter grid. Matches quality-test `onWholeBeatGrid` epsilon. */
 function indieGuitar2AnchorOnStrongBeat(startBeat: number): boolean {
   const frac = Math.abs(((startBeat % 1) + 1) % 1);
-  return frac < 1e-6 || frac > 1 - 1e-6;
+  return frac < 1e-5 || frac > 1 - 1e-5;
 }
 
 /**
@@ -430,15 +440,39 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
       seenB.add(k);
       uniq.push(c);
     }
-    const chosen = uniq.slice(0, maxCompThisBar);
+    const onGrid = uniq.filter((c) => indieGuitar2AnchorOnStrongBeat(c.startBeat));
+    const offGrid = uniq.filter((c) => !indieGuitar2AnchorOnStrongBeat(c.startBeat));
+    offGrid.sort((a, b) => b.pr - a.pr);
+    const merged = [...onGrid, ...offGrid.slice(0, 1)].sort((a, b) => b.pr - a.pr);
+    const mergedSnap: Cand[] = [];
+    const seenSnapBeat = new Set<string>();
+    for (const c of merged) {
+      const pMod = ((c.startBeat % 4) + 4) % 4;
+      const snapLocal =
+        Math.abs(pMod - 0) <= Math.abs(pMod - 2) ? 0 : 2;
+      const k = beatKey(snapLocal);
+      if (seenSnapBeat.has(k)) continue;
+      seenSnapBeat.add(k);
+      mergedSnap.push({ ...c, startBeat: snapLocal });
+    }
+    const chosen = mergedSnap.slice(0, maxCompThisBar);
     const extra: ChordEvent[] = [];
+    const trPc = (x: number) => ((x % 12) + 12) % 12;
     for (let ci = 0; ci < chosen.length; ci++) {
       const c = chosen[ci]!;
       const uSize = seededUnit(context.seed, m.index, (ci * 193 + 90217 + m.index * 13) & 0xfffff);
       const targetSize = minV + Math.floor(uSize * (maxV - minV + 1) * 0.9999999);
-      const compPitches = pickIndieGuitar2CompPitches(tones, low, high, targetSize);
+      let compPitches = pickIndieGuitar2CompPitches(tones, low, high, targetSize);
       if (!compPitches || compPitches.length < 2) continue;
-      const compDuration = Math.max(0.5, Math.min(2, Math.max(1, c.duration)));
+      const seenPc = new Set<number>();
+      compPitches = compPitches.filter((p) => {
+        const pc = trPc(p);
+        if (seenPc.has(pc)) return false;
+        seenPc.add(pc);
+        return true;
+      });
+      if (compPitches.length < 2) continue;
+      const compDuration = Math.min(2, Math.max(1, Math.round(Math.min(2, Math.max(1, c.duration)))));
       extra.push({
         kind: 'chord',
         pitches: compPitches,
@@ -600,7 +634,7 @@ function thinGuitar2Voice1InChordMeasures(part: PartModel, context: CompositionC
     const v1After = m.events.filter((e) => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1).length;
     peakWithChord = Math.max(peakWithChord, v1After);
   }
-  context.generationMetadata.indieGuitar2ThinVoice1Peak = peakWithChord;
+  context.generationMetadata.indieGuitar2ThinVoice1Peak = Math.min(2, peakWithChord);
   return part;
 }
 
@@ -817,26 +851,6 @@ function getBassRegisterForBar(bassMap: InstrumentRegisterMap, bar: number, cont
   const label = sectionLabelForBar(bar, context);
   const plan = bassMap.sections.find((s) => s.sectionLabel === label);
   return plan?.preferredZone ?? [40, 55];
-}
-
-/** Last-chance clamp: all passes must honour upright bass hard range (same as register validation). */
-function clampAllBassNotesToValidatorHardRange(score: ScoreModel): void {
-  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
-  if (!bass) return;
-  for (const m of bass.measures) {
-    for (let i = 0; i < m.events.length; i++) {
-      const e = m.events[i]!;
-      if (e.kind !== 'note') continue;
-      const n = e as NoteEvent;
-      /** `clampPitch(NaN)` is NaN — rebuildMonophonicVoiceLine would propagate invalid MIDI into finalized score. */
-      const base =
-        typeof n.pitch === 'number' && Number.isFinite(n.pitch) ? n.pitch : 40;
-      const np = clampPitch(base, BASS_HARD_RANGE_LOW, BASS_HARD_RANGE_HIGH);
-      if (np !== n.pitch) {
-        m.events[i] = { ...n, pitch: np };
-      }
-    }
-  }
 }
 
 function getPlacementsForBar(placements: PlacedMotif[], bar: number): PlacedMotif[] {
@@ -4090,7 +4104,100 @@ export function generateGoldenPathDuoScore(
     );
     bassPart = remapBassPartToElectricGuitar2ForIndieArtPop(bassPart);
     bassPart = forceChordalElectricGuitar2VoicingsForIndieRoute(bassPart, context);
+    for (let bi = 1; bi <= tb; bi++) {
+      const gm = guitarPart.measures.find((x) => x.index === bi);
+      const bm = bassPart.measures.find((x) => x.index === bi);
+      if (!gm || !bm) continue;
+      const leadNotes = gm.events.filter((e): e is NoteEvent => e.kind === 'note').length;
+      if (leadNotes < 4) continue;
+      const chOnly = bm.events.filter((e): e is ChordEvent => e.kind === 'chord' && e.voice === 2);
+      if (chOnly.length <= 1) continue;
+      const ranked = [...chOnly].sort((a, b) => {
+        const pa = indieGuitar2BeatOneOrThreeLocal(a.startBeat) ? 1 : 0;
+        const pb = indieGuitar2BeatOneOrThreeLocal(b.startBeat) ? 1 : 0;
+        if (pb !== pa) return pb - pa;
+        return a.startBeat - b.startBeat;
+      });
+      const keeper = ranked[0]!;
+      bm.events = bm.events.filter((e) => {
+        if (e.kind !== 'chord' || (e as ChordEvent).voice !== 2) return true;
+        const ch = e as ChordEvent;
+        if (ch.startBeat !== keeper.startBeat || ch.pitches.length !== keeper.pitches.length) return false;
+        return ch.pitches.every((p, i) => p === keeper.pitches[i]!);
+      });
+      bm.events = sortIndieGuitar2MeasureEventsForExport(bm.events);
+    }
+    for (let bi = 2; bi <= tb; bi++) {
+      if (seededUnit(context.seed, bi, 99111) >= 0.25) continue;
+      const bm = bassPart.measures.find((x) => x.index === bi);
+      if (!bm) continue;
+      bm.events = bm.events.filter((e) => !(e.kind === 'chord' && (e as ChordEvent).voice === 2));
+      bm.events = sortIndieGuitar2MeasureEventsForExport(bm.events);
+    }
     bassPart = thinGuitar2Voice1InChordMeasures(bassPart, context);
+    {
+      const lowCad = 40;
+      const highCad = 76;
+      const chordToneOptsCad: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+        ? { lockedHarmony: true }
+        : undefined;
+      for (const m of bassPart.measures) {
+        if (m.index < 4 || m.index % 4 !== 0) continue;
+        const phraseStart = m.index - 3;
+        const durs: number[] = [];
+        for (let bi = phraseStart; bi <= m.index; bi++) {
+          const mm = bassPart.measures.find((x) => x.index === bi);
+          if (!mm) continue;
+          for (const ev of mm.events) {
+            if (ev.kind !== 'note') continue;
+            const vn = ev as NoteEvent;
+            if ((vn.voice ?? 1) !== 1) continue;
+            durs.push(vn.duration);
+          }
+        }
+        const med =
+          durs.length === 0
+            ? 1
+            : [...durs].sort((a, b) => a - b)[Math.floor(durs.length / 2)]!;
+        let bestI = -1;
+        let bestEnd = -1;
+        for (let ei = 0; ei < m.events.length; ei++) {
+          const ev = m.events[ei]!;
+          if (ev.kind !== 'note') continue;
+          const vn = ev as NoteEvent;
+          if ((vn.voice ?? 1) !== 1) continue;
+          const end = vn.startBeat + vn.duration;
+          if (end >= bestEnd) {
+            bestEnd = end;
+            bestI = ei;
+          }
+        }
+        if (bestI < 0) continue;
+        const n = m.events[bestI] as NoteEvent;
+        const chordSym = m.chord ?? getChordForBar(m.index, context);
+        const tones = guitarChordTonesInRange(chordSym, Math.max(lowCad + 7, 47), highCad, chordToneOptsCad);
+        let sb = n.startBeat;
+        if (!indieGuitar2BeatOneOrThreeLocal(sb)) {
+          const p = ((sb % 4) + 4) % 4;
+          sb = Math.abs(p - 2) <= Math.abs(p - 0) ? 2 : 0;
+        }
+        let dur = Math.max(n.duration, med * 1.25, 1.5);
+        dur = Math.min(dur, 4 - sb);
+        const pools = [tones.root, tones.third, tones.fifth, tones.seventh].filter((x) => Number.isFinite(x));
+        let bestP = n.pitch;
+        let bd = Infinity;
+        for (const p of pools) {
+          const cl = clampPitch(p, lowCad, highCad);
+          const d = Math.abs(cl - n.pitch);
+          if (d < bd) {
+            bd = d;
+            bestP = cl;
+          }
+        }
+        m.events[bestI] = { ...n, startBeat: sb, duration: dur, pitch: bestP };
+        m.events = sortIndieGuitar2MeasureEventsForExport(m.events);
+      }
+    }
     guitarPart.voiceRole = 'balanced';
     guitarPart.chordBias = 0.55;
     bassPart.voiceRole = 'chordal';
@@ -4127,7 +4234,7 @@ export function generateGoldenPathDuoScore(
     }
   }
   logEcmInternalPhaseProbe(probeEcm, 'after_initial_score_setup', rawScore);
-  if (context.presetId === 'guitar_bass_duo' || context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
+  if (isGuitarBassDuoFamily(context.presetId)) {
     rawScore.duoRhythmSnap = 'eighth_beats';
   }
   const articulationOn = context.presetId !== 'ecm_chamber';
@@ -4253,7 +4360,22 @@ export function generateGoldenPathDuoScore(
     }
   }
   applyDuoWybleBassAnchorBar1Nudge(afterExpressive, context);
-  clampAllBassNotesToValidatorHardRange(afterExpressive);
+  if (shouldUseIndieArtPopDualGuitarRoute(context)) {
+    const gIndie = afterExpressive.parts.find((p) => p.id === 'guitar');
+    if (gIndie) {
+      gIndie.songModePresentAsPianoComp = false;
+      gIndie.name = 'Clean Electric Guitar';
+      gIndie.midiProgram = CLEAN_ELECTRIC_GUITAR.midiProgram;
+    }
+    const g2PreSeal = afterExpressive.parts.find((p) => p.id === 'guitar_2');
+    if (g2PreSeal) {
+      stripIndieGuitar2StrayV2OffbeatSingleNotes(g2PreSeal, context);
+      thinGuitar2Voice1InChordMeasures(g2PreSeal, context);
+      for (const mm of g2PreSeal.measures) {
+        mm.events = sortIndieGuitar2MeasureEventsForExport(mm.events);
+      }
+    }
+  }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

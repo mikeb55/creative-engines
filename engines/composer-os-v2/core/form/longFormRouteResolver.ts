@@ -3,6 +3,7 @@
  */
 
 import type { LongFormRouteResolution, LongFormRequestHints } from './longFormRouteTypes';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const LONG_FORM_DUO_BARS = 32;
 const MID_FORM_DUO_BARS = 16;
@@ -17,7 +18,7 @@ export function resolveLongFormRoute(
   presetId: string | undefined,
   hints?: LongFormRequestHints
 ): LongFormRouteResolution {
-  if (presetId !== 'guitar_bass_duo' && presetId !== 'guitar_bass_duo_single_line') {
+  if (!isGuitarBassDuoFamily(presetId)) {
     return { kind: 'standard8' };
   }
   const tb = hints?.totalBars;

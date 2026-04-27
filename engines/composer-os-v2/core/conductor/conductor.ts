@@ -7,6 +7,7 @@ import type { CompositionContext } from '../compositionContext';
 import type { ConductorResult, PipelineStep } from './conductorTypes';
 import type { Preset } from '../../presets/presetTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { ecmChamberPreset } from '../../presets/ecmChamberPreset';
 import { bigBandPreset } from '../../presets/bigBandPreset';
 import { computeRhythmicConstraints } from '../rhythm-engine/rhythmEngine';
@@ -15,7 +16,7 @@ import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
 
 function getPreset(presetId: string): Preset {
-  if (presetId === 'guitar_bass_duo') return guitarBassDuoPreset;
+  if (isGuitarBassDuoFamily(presetId)) return guitarBassDuoPreset;
   if (presetId === 'ecm_chamber') return ecmChamberPreset;
   if (presetId === 'big_band') return bigBandPreset;
   return guitarBassDuoPreset;

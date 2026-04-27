@@ -3,6 +3,10 @@
  */
 
 import type { EcmChamberMode } from '../core/ecm/ecmChamberTypes';
+import {
+  GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID,
+  isGuitarBassDuoFamily,
+} from '../core/presets/guitarBassDuoPresetIds';
 
 /** Default when user omits title for Guitar–Bass Duo preset. */
 export const DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE = 'Guitar-Bass Duo Study';
@@ -22,8 +26,11 @@ export function resolveScoreTitleForPreset(
 ): string {
   const t = userTitle?.trim();
   if (t) return t.slice(0, MAX_TITLE_LEN);
-  if (presetId === 'guitar_bass_duo') return DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE;
-  if (presetId === 'guitar_bass_duo_single_line') return 'Guitar–Bass Duo (Single-Line) Study';
+  if (isGuitarBassDuoFamily(presetId)) {
+    return presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID
+      ? 'Guitar–Bass Duo (Single-Line) Study'
+      : DEFAULT_GUITAR_BASS_DUO_SCORE_TITLE;
+  }
   if (presetId === 'ecm_chamber') {
     return ecmMode === 'ECM_SCHNEIDER_CHAMBER' ? DEFAULT_ECM_SCHNEIDER_TITLE : DEFAULT_ECM_METHEENY_TITLE;
   }

@@ -6,6 +6,7 @@ import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 /** Subset of golden-path options — avoids circular import with runGoldenPath.ts */
 export interface CustomLockedRoutingWire {
@@ -142,7 +143,7 @@ export function assertContextMatchesLocked32(
   options: CustomLockedRoutingWire | undefined
 ): void {
   const tb = context.form.totalBars;
-  if (context.presetId !== 'guitar_bass_duo' || !isAllowedSongFormBarCount(tb)) return;
+  if (!isGuitarBassDuoFamily(context.presetId) || !isAllowedSongFormBarCount(tb)) return;
   const locked = context.lockedHarmonyBarsRaw;
   if (!locked || locked.length !== tb) return;
   /** Long-form can also use built-in tiled harmony — only assert pasted/custom locked paths */

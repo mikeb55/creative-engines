@@ -28,6 +28,7 @@ import {
   resolveOpenFolderTarget,
 } from './composerOsOutputPaths';
 import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmony/songFormBarCounts';
+import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -343,15 +344,26 @@ export function apiGenerate(
       };
     }
     if (
-      (req_.presetId === 'song_mode' ||
-        req_.presetId === 'guitar_bass_duo' ||
-        req_.presetId === 'guitar_bass_duo_single_line') &&
+      (req_.presetId === 'song_mode' || isGuitarBassDuoFamily(req_.presetId)) &&
       tb !== undefined &&
       !isAllowedSongFormBarCount(tb)
     ) {
       return {
         success: false,
         error: `totalBars must be one of: ${SONG_FORM_BAR_OPTIONS.join(', ')} for Song Mode and Guitar–Bass Duo presets.`,
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
+    const altForIndieGuard = normalizeAlternateGuitarTuningRequest(req_.alternateGuitarTuning);
+    if (
+      req_.styleProfile === 'STYLE_INDIE_ART_POP' &&
+      altForIndieGuard?.mode === 'separate' &&
+      (altForIndieGuard.guitar1?.presetId === 'standard' || altForIndieGuard.guitar2?.presetId === 'standard')
+    ) {
+      return {
+        success: false,
+        error:
+          'Indie Art Pop separate tuning: requires both Guitar 1 and Guitar 2 to use non-standard tunings.',
         composerOsVersion: COMPOSER_OS_VERSION,
       };
     }
