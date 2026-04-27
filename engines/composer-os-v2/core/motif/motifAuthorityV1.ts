@@ -1,5 +1,21 @@
 import type { PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 
+/** Pilot motif policy tier (Motif Authority V1). */
+export type MotifAuthorityLevel = 'off' | 'soft' | 'strong';
+
+/** Serialized motif-development diagnostics for inspectability / ledger. */
+export interface MotifDevelopmentSummary {
+  motifAuthorityLevel: MotifAuthorityLevel;
+  pilotPathTag: string;
+  coreCellEstablished: boolean;
+  recurrenceCountEstimate: number;
+  recurrenceSummary: string;
+  transformationSummary: string[];
+  motifCoherence: number;
+  motifLedPrimaryIdentity?: boolean;
+  experimental?: boolean;
+}
+
 export interface MotifPhraseRange {
   startBar: number;
   endBar: number;
@@ -7,6 +23,8 @@ export interface MotifPhraseRange {
 
 export interface MotifFingerprint {
   intervalContour: string[];
+  /** Absolute intervallic size between consecutive notes: step (≤2 ST), skip (3–4), leap (5+). */
+  intervalSizes: Array<'step' | 'skip' | 'leap'>;
   rhythmOnsets: string[];
   anchorTonesPerBar: number[];
   registerBand: 'low' | 'mid' | 'high';
@@ -35,6 +53,21 @@ function clamp01(v: number): number {
   if (v < 0) return 0;
   if (v > 1) return 1;
   return v;
+}
+
+function intervalSizeBucketAbsSemitones(absSemi: number): 'step' | 'skip' | 'leap' {
+  if (absSemi <= 2) return 'step';
+  if (absSemi <= 4) return 'skip';
+  return 'leap';
+}
+
+/** Smallest MIDI delta so `pitch` matches `targetPc` (0–11). */
+function snapPitchToPitchClass(pitch: number, targetPc: number): number {
+  const pc = ((pitch % 12) + 12) % 12;
+  let delta = targetPc - pc;
+  if (delta > 6) delta -= 12;
+  if (delta < -6) delta += 12;
+  return pitch + delta;
 }
 
 function noteEventsInRange(part: PartModel, range: MotifPhraseRange): Array<{ pitch: number; startBeat: number; bar: number }> {
@@ -73,11 +106,13 @@ function numberSequenceSimilarity(a: number[], b: number[]): number {
 export function buildPhraseFingerprint(part: PartModel, range: MotifPhraseRange): MotifFingerprint {
   const notes = noteEventsInRange(part, range);
   const intervalContour: string[] = [];
+  const intervalSizes: Array<'step' | 'skip' | 'leap'> = [];
   for (let i = 1; i < notes.length; i++) {
     const d = notes[i]!.pitch - notes[i - 1]!.pitch;
     if (d > 0) intervalContour.push('U');
     else if (d < 0) intervalContour.push('D');
     else intervalContour.push('S');
+    intervalSizes.push(intervalSizeBucketAbsSemitones(Math.abs(d)));
   }
   const rhythmOnsets = notes.map((n) => `${n.bar - range.startBar}:${Math.round(n.startBeat * 4) / 4}`);
 
@@ -90,7 +125,7 @@ export function buildPhraseFingerprint(part: PartModel, range: MotifPhraseRange)
   const avgPitch = notes.length > 0 ? notes.reduce((s, n) => s + n.pitch, 0) / notes.length : 60;
   const registerBand: 'low' | 'mid' | 'high' = avgPitch < 58 ? 'low' : avgPitch < 70 ? 'mid' : 'high';
 
-  return { intervalContour, rhythmOnsets, anchorTonesPerBar, registerBand };
+  return { intervalContour, intervalSizes, rhythmOnsets, anchorTonesPerBar, registerBand };
 }
 
 export function contourSimilarity(a: MotifFingerprint, b: MotifFingerprint): number {
@@ -186,12 +221,17 @@ function noteEventsInMeasure(events: ScoreEvent[]): Array<{ pitch: number; idx: 
 /**
  * Single bounded nudge for return phrase: shift first-note pitch classes per bar
  * and a small subset of contour steps toward phrase A.
+ * Optional `songwriterStyleId`: for `wayne_shorter`, snap the first note to the
+ * phrase-A anchor pitch class and nudge a second note by at most ±1 semitone toward that anchor.
  */
 export function nudgeReturnPhraseTowardFingerprint(
   part: PartModel,
   returnRange: MotifPhraseRange,
-  target: MotifFingerprint
+  target: MotifFingerprint,
+  opts?: { songwriterStyleId?: string }
 ): void {
+  const wayne = opts?.songwriterStyleId === 'wayne_shorter';
+
   // Anchor nudge: first note in each return bar toward phrase-A anchor pitch class.
   for (let bar = returnRange.startBar; bar <= returnRange.endBar; bar++) {
     const m = part.measures.find((x) => x.index === bar);
@@ -201,6 +241,25 @@ export function nudgeReturnPhraseTowardFingerprint(
     const first = notes[0]!;
     const targetPc = target.anchorTonesPerBar[Math.max(0, bar - returnRange.startBar)] ?? -1;
     if (targetPc < 0) continue;
+
+    if (wayne) {
+      const snapped = snapPitchToPitchClass(first.pitch, targetPc);
+      (m.events[first.idx] as { pitch: number }).pitch = snapped;
+
+      if (notes.length >= 2) {
+        const second = notes[1]!;
+        const cur2 = second.pitch;
+        const curPc2 = ((cur2 % 12) + 12) % 12;
+        if (curPc2 !== targetPc) {
+          const up = (targetPc - curPc2 + 12) % 12;
+          const down = (curPc2 - targetPc + 12) % 12;
+          const delta2 = up <= down ? Math.min(up, 1) : -Math.min(down, 1);
+          (m.events[second.idx] as { pitch: number }).pitch = cur2 + delta2;
+        }
+      }
+      continue;
+    }
+
     const cur = first.pitch;
     const curPc = ((cur % 12) + 12) % 12;
     if (curPc === targetPc) continue;

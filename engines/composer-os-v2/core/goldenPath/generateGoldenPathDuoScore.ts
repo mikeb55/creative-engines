@@ -4,6 +4,13 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+
+declare module '../compositionContext' {
+  interface CompositionContext {
+    /** Mirrors `generationMetadata.songwriterStyleId` for motif passes (narrow extension). */
+    songwriterStyleId?: string;
+  }
+}
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import {
@@ -3972,6 +3979,7 @@ export function generateGoldenPathDuoScore(
     const motifAuthorityActive = motifAuthorityEligible && motifAuthorityLevel !== 'off';
     if (motifAuthorityEligible && context.generationMetadata) {
       const songwriterId = context.generationMetadata.songwriterStyleId;
+      context.songwriterStyleId = songwriterId;
       const isSongPilot = context.generationMetadata.songModeHookFirstIdentity === true && isSongModeMotifPilotWriter(songwriterId);
       const isHybridPilot = isSongPilot && songwriterId === 'wayne_shorter' && plans.styleStack?.primary === 'barry_harris';
       const isEcmPilot = context.presetId === 'ecm_chamber';
@@ -4049,7 +4057,9 @@ export function generateGoldenPathDuoScore(
           if (shouldRefineReturn) {
             returnNudgeAttempted = true;
             const snapshot = snapshotPhrasePitches(guitarPart, motifPlan.phraseReturn);
-            nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint);
+            nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint, {
+              songwriterStyleId: context.songwriterStyleId,
+            });
             const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
             const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);
             if (returnRefinedScore.motifAuthorityScore >= returnOriginalScore.motifAuthorityScore) {
