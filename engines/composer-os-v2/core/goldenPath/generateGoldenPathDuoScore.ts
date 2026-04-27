@@ -4109,6 +4109,7 @@ export function generateGoldenPathDuoScore(
       const bm = bassPart.measures.find((x) => x.index === bi);
       if (!gm || !bm) continue;
       const leadNotes = gm.events.filter((e): e is NoteEvent => e.kind === 'note').length;
+      if (leadNotes === 0) continue;
       if (leadNotes < 4) continue;
       const chOnly = bm.events.filter((e): e is ChordEvent => e.kind === 'chord' && e.voice === 2);
       if (chOnly.length <= 1) continue;
