@@ -1,4 +1,5 @@
 import type { CompositionContext } from '../compositionContext';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 type EcmGravityBand = 'opening' | 'drift' | 'return';
 
@@ -107,7 +108,7 @@ function maybeApplyPedal(chord: string, pedalRoot: string | null, band: EcmGravi
  * - return bars avoid hard dominant gravity
  */
 export function applyEcmStyleHarmonyMotionPolicy(context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.generationMetadata?.styleProfile !== 'STYLE_ECM') return;
   if (context.generationMetadata?.harmonySource !== 'builtin') return;

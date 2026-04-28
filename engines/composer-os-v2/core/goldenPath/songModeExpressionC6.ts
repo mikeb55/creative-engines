@@ -8,6 +8,7 @@ import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-mo
 import { seededUnit } from './guitarBassDuoHarmony';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 type RhythmMode = 'stable' | 'balanced' | 'surprise';
 
@@ -265,7 +266,7 @@ function applyBarExpression(
 export function applySongModeExpressionC6(score: ScoreModel, context: CompositionContext): void {
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;

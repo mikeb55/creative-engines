@@ -10,6 +10,7 @@ import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { songModePhraseSegments } from './songModePhraseEngineV1';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 export type SongModeC5LayerId = 'c2' | 'c3' | 'c4';
 
@@ -198,7 +199,7 @@ function muddySevere(d: number, s: number, r: number): boolean {
 export function applySongModeControlC5(score: ScoreModel, context: CompositionContext): void {
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;

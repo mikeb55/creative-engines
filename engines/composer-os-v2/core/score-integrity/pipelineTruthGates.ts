@@ -10,6 +10,7 @@ import { chordSymbolsEqualForPipelineTruth, extractHarmoniesFromFirstPartXml } f
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
 import { validateStrictBarMath } from './strictBarMath';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 /** Matches BUILTIN_CHORD_SYMBOL_PLAN in runGoldenPath (one chord per bar, 8 bars). */
 export const DUO_BUILTIN_EIGHT_BARS: readonly string[] = [
@@ -62,7 +63,7 @@ export function resolveHarmonyModeForTruth(options?: PipelineTruthGoldenPathOpti
 }
 
 export function shouldRunDuoEightBarPipelineTruth(context: CompositionContext): boolean {
-  if (context.presetId !== 'guitar_bass_duo' || context.form.totalBars !== 8) return false;
+  if (!isGuitarBassDuoFamily(context.presetId) || context.form.totalBars !== 8) return false;
   if (context.generationMetadata.chordProgressionParseFailed) return false;
   return true;
 }
@@ -72,7 +73,7 @@ export function shouldRunDuo32LockedPipelineTruth(
   context: CompositionContext,
   options?: PipelineTruthGoldenPathOptions
 ): boolean {
-  if (context.presetId !== 'guitar_bass_duo' || context.form.totalBars !== 32) return false;
+  if (!isGuitarBassDuoFamily(context.presetId) || context.form.totalBars !== 32) return false;
   if (context.generationMetadata.chordProgressionParseFailed) return false;
   if (context.generationMetadata.harmonySource !== 'custom' || context.generationMetadata.customHarmonyLocked !== true) {
     return false;

@@ -97,11 +97,9 @@ Roughly grouped by recurring failures / historical buckets in `test:full` (may r
 
 ## Parked / Known Debt
 
-## Parked: B-category isGuitarBassDuoFamily guards (2026-04-27)
+## Complete: B-category isGuitarBassDuoFamily guards (2026-04-28)
 
-38 sites in `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `duoMusicalQuality.ts`, `duoLockQuality.ts`, and `pipelineTruthGates.ts` still use literal `presetId === 'guitar_bass_duo'` where `song_mode` / single-line parity may eventually be intended. These are not broken — they are intentionally scoped to standard duo today. Revisit when `song_mode_*` variants are introduced or when a product decision is made to extend each gate.
-
-**Reference:** grep output categorised 2026-04-27, category B sites.
+Replaced remaining B-category literal `guitar_bass_duo` preset guards with `isGuitarBassDuoFamily(context.presetId)` (and consolidated pilot helpers where equivalent) across `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `ecmShapingPass.ts`, `jamesBrownFunkOverlay.ts`, `duoMusicalQuality.ts`, `duoLockQuality.ts`, `pipelineTruthGates.ts`, `ecmStyleHarmonyPolicy.ts`, `indieArtPopPhaseA.ts`, plus **App API** `generateComposition.ts` / `listOutputs.ts` family-aligned checks. **Intentionally unchanged:** `guitarBassDuoPresetIds.ts` (`isGuitarBassDuoFamily` / `isStandardGuitarBassDuo` definitions), single-line–specific branches (`GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID`), motif target modes, reference-influence target literals, and defaults/comments that are not runtime preset guards.
 
 ## Parked: Wayne Shorter cross-section motif binding (2026-04-27)
 Motif Authority plan uses fixed bar-index windows, not form section

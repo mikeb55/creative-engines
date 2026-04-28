@@ -20,6 +20,7 @@ import {
 } from './jamesBrownFunkOverlay';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const GRID_16TH = 0.25;
 const EPS = 1e-4;
@@ -572,7 +573,7 @@ export function applySongModeOstinatoC4(score: ScoreModel, context: CompositionC
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeRhythmOverlayDisabled === true) return;
   if (meta.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;
@@ -686,7 +687,7 @@ export function applySongModeHookRhythmLayerC4(score: ScoreModel, context: Compo
     meta.c4BarsUsed = [];
   };
 
-  if (context.presetId !== 'guitar_bass_duo') {
+  if (!isGuitarBassDuoFamily(context.presetId)) {
     receiptNoop();
     return;
   }

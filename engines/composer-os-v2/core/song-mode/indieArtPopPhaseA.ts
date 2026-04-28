@@ -15,6 +15,7 @@ import {
   type IndieArtPopTuningTextureKind,
 } from './alternateGuitarTunings';
 import { normalizeStyleProfileId } from './songModeStyleProfile';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 function sectionRoleForBar(sections: SectionWithRole[], bar: number): SectionRole | null {
   for (const s of sections) {
@@ -47,7 +48,7 @@ export function applyIndieArtPopPhaseADeepening(
 ): void {
   const meta = context.generationMetadata;
   if (!meta?.songModeHookFirstIdentity) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (normalizeStyleProfileId(meta.styleProfile) !== 'STYLE_INDIE_ART_POP') return;
 
   const tuning = meta.alternateGuitarTuning as AlternateGuitarTuningResolved | undefined;

@@ -7,6 +7,7 @@ import { getPresets } from './getPresets';
 import { legacyManifestPathForMusicXml, manifestPathForMusicXml, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 import * as fs from 'fs';
 import * as path from 'path';
+import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 
 /** Legacy disk layout before `song_mode` folder was renamed. */
 const LEGACY_FOLDER_TO_PRESET: Record<string, string> = {
@@ -71,7 +72,7 @@ function outputTypeLabel(presetId: string, artifactKind: OutputEntry['artifactKi
   if (artifactKind === 'planning') {
     return presetId === 'song_mode' ? 'Lead-sheet-ready (structure)' : 'Planning';
   }
-  if (presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' || presetId === 'ecm_chamber') {
+  if (isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber') {
     return 'Score-ready (MusicXML)';
   }
   if (presetId === 'song_mode') {

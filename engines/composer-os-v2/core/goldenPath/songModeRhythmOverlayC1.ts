@@ -19,6 +19,7 @@ import {
   JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE,
   SONG_MODE_OVERLAY_BASE_WEIGHTS,
 } from './jamesBrownFunkOverlay';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 export { JAMES_BROWN_FUNK_OVERLAY_ID, JAMES_BROWN_FUNK_OVERLAY_SOFT_PROFILE, SONG_MODE_OVERLAY_BASE_WEIGHTS };
 
@@ -877,7 +878,7 @@ function applySoftToGuitarMeasure(
 export function applySongModeRhythmOverlayC1(score: ScoreModel, context: CompositionContext): void {
   if (context.generationMetadata?.songModeRhythmOverlayDisabled === true) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;

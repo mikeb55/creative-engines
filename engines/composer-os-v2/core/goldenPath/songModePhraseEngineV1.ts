@@ -18,6 +18,7 @@ import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 export type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
 
 const TB = 32;
@@ -546,7 +547,7 @@ function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionConte
  * identity-protected bars unchanged, rhythm untouched.
  */
 export function applySongModePhraseEndLandingRepair(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.form.totalBars !== TB) return;
   for (const seg of songModePhraseSegments()) {
@@ -1084,7 +1085,7 @@ function generatePhraseStatePitches(
  * Apply phrase-state generation (v2) + cadence weight on final bar; motif spans immutable except phrase-final cadence.
  */
 export function applySongModePhraseEngineV1(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.form.totalBars !== TB) return;
 
@@ -1282,7 +1283,7 @@ function validatePhraseDirectionality(
 /** Public validation — structured issues; severity is applied in golden-path aggregation (Song Mode). */
 export function validateSongModePhraseEngineV1(guitar: PartModel, context: CompositionContext): SongModePhraseIssue[] {
   const issues: SongModePhraseIssue[] = [];
-  if (context.presetId !== 'guitar_bass_duo') return issues;
+  if (!isGuitarBassDuoFamily(context.presetId)) return issues;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return issues;
   if (context.form.totalBars !== TB) return issues;
 

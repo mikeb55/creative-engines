@@ -73,6 +73,10 @@
 
 ## Past (delivered)
 
+### T2.9 — Wyble parity: B-category `isGuitarBassDuoFamily` guard replacement (2026-04-28)
+
+- **Complete:** Replaced remaining literal **`presetId === 'guitar_bass_duo'`** / **`!==`** guards that belong to the guitar–bass duo **family** with **`isGuitarBassDuoFamily(context.presetId)`** (matching Category-A patterns), including Song Mode overlays, ECM-style duo texture, duo pipeline truth helpers, **`ecmShapingPass`** post-orchestration VL, **`jamesBrownFunkOverlay`**, **`duoMusicalQuality`** / **`duoLockQuality`** exceptions, and **`generateComposition`** / **`listOutputs`** pilot labels. **`test:smoke`** **33 passed / 0 failed** after change. **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** B-category row marked complete.
+
 ### T2.8 — `runAllTests` stability — heap + chunked harness (2026-04-28)
 
 - **`runAllTests.ts` — complete:** Orchestrates **four sequential** Node runs (`tests/runAllTestsChunk1.ts`–`Chunk4.ts`) so the full matrix does not load every suite module in one process; each child uses **`--max-old-space-size=4096`**. Shared loop in **`tests/harness/runHarnessMain.ts`**. **`test:smoke`** remains **`runSmokeTests.ts`** (unchanged). **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** updated. No composer/generation logic changes.
@@ -406,7 +410,7 @@
 
 | # | Dev | Notes |
 |---|-----|--------|
-| 1 | **Wyble single-line parity (full stack)** | **2026-04-17:** Partial — `runGoldenPath` seed sweep bar-6/7 filter now uses **`isGuitarBassDuoFamily`**. Remaining: align other **`presetId === 'guitar_bass_duo'`** guards where behaviour should match inject; add **`test:duo` / single-line** seed if missing. |
+| 1 | **Wyble single-line parity (full stack)** | **2026-04-28:** B-category **`isGuitarBassDuoFamily`** guard sweep **complete** (golden path, Song Mode overlays, duo quality, pipeline truth, App API pilot checks). Optional: **`test:duo` / single-line** extra seeds if desired. |
 | 2 | **Wyble “realized” normalization review** | **2026-04-17 (started):** **`shouldApplyRealizedVoice2Normalization`** + stabiliser boundary + probe **`isStandardGuitarBassDuo`** + JSDoc (see [CHANGELOG.md](CHANGELOG.md)). **Deferred:** wiring realized pass into golden path for single-line / shared validators with standard duo — confirm product intent first. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |

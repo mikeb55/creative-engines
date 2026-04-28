@@ -15,6 +15,7 @@ import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const LOW = 55;
 const HIGH = 79;
@@ -171,7 +172,7 @@ function insertStepwiseEighthInBestGap(guitar: PartModel, context: CompositionCo
  * beyond one optional stepwise fill pass.
  */
 export function applySongModeGuitarDensityFloor(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.form.totalBars !== 32) return;
 

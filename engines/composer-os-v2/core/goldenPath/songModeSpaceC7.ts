@@ -13,6 +13,7 @@ import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 import { snapshotMeasureNotes } from './jamesBrownFunkOverlay';
 import { guitarRestRatio } from '../score-integrity/duoLockQuality';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 type RhythmMode = 'stable' | 'balanced' | 'surprise';
 
@@ -241,7 +242,7 @@ function c7CapScale(c5: { autoReductionStep?: number } | undefined): number {
 export function applySongModeSpaceC7(score: ScoreModel, context: CompositionContext): void {
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;

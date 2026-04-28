@@ -180,7 +180,7 @@ function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boole
   const sp = normalizeStyleProfileId(context.generationMetadata?.styleProfile);
   return (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     sp === 'STYLE_INDIE_ART_POP' &&
     context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
   );
@@ -654,11 +654,7 @@ function thinGuitar2Voice1InChordMeasures(part: PartModel, context: CompositionC
 }
 
 function isDuoGoldenPathPreset(presetId: string): boolean {
-  return (
-    presetId === 'guitar_bass_duo' ||
-    presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID ||
-    presetId === 'ecm_chamber'
-  );
+  return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
 }
 
 function totalBarsFromContext(context: CompositionContext): number {
@@ -667,10 +663,7 @@ function totalBarsFromContext(context: CompositionContext): number {
 
 function isMotifAuthorityScopePreset(context: CompositionContext, styleStack?: StyleStack): boolean {
   if (context.presetId === 'ecm_chamber') return true;
-  const isSongModeRoute =
-    context.presetId === 'guitar_bass_duo' ||
-    context.presetId === 'song_mode' ||
-    context.presetId.startsWith('song_mode_');
+  const isSongModeRoute = isGuitarBassDuoFamily(context.presetId);
   if (!isSongModeRoute) return false;
   const songwriterId = context.generationMetadata?.songwriterStyleId;
   const isSongPilot =
@@ -1970,7 +1963,7 @@ function buildGuitarPart(
 
   const songModeHook =
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     tb === 32;
   /** Indie dual-electric remap has tight chord-density smoke gates; Stage 3 anticipation would skew comp metrics. */
   const skipPhraseEngineStage3Anticipation = shouldUseIndieArtPopDualGuitarRoute(context);
@@ -3812,7 +3805,7 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
 }
 
 function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: CompositionContext): boolean {
-  if (context.presetId !== 'guitar_bass_duo') return false;
+  if (!isGuitarBassDuoFamily(context.presetId)) return false;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return false;
   const songwriterId = context.generationMetadata?.songwriterStyleId;
   if (songwriterId !== 'donald_fagen' && songwriterId !== 'barry_harris') return false;
@@ -3832,7 +3825,7 @@ function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: Compositi
 
 /** Nudge generated guitar MIDI velocities bar-wise toward imported LeadSheet dynamic contour (Song Mode + LeadSheet only). */
 function applySongModeImportedLeadSheetVelocityNudges(guitar: PartModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.generationMetadata?.songModeLeadSheetInputApplied !== true) return;
 
@@ -3989,7 +3982,7 @@ export function generateGoldenPathDuoScore(
   let texturePlan: EcmBarTexture[] | undefined =
     (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode)
       ? planEcmTextureBars(tb, context.generationMetadata.ecmMode, context.seed)
-      : (context.presetId === 'guitar_bass_duo' && isEcmStyle)
+      : (isGuitarBassDuoFamily(context.presetId) && isEcmStyle)
         ? planEcmTextureBars(tb, 'ECM_METHENY_QUARTET', context.seed)
         : undefined;
   if (context.presetId === 'ecm_chamber' && texturePlan && context.generationMetadata?.ecmMode) {
@@ -4028,7 +4021,7 @@ export function generateGoldenPathDuoScore(
     });
     if (
       context.generationMetadata?.songModeHookFirstIdentity === true &&
-      context.presetId === 'guitar_bass_duo' &&
+      isGuitarBassDuoFamily(context.presetId) &&
       tb === 32
     ) {
       applySongModePhraseEngineV1(guitarPart, context);
@@ -4246,7 +4239,7 @@ export function generateGoldenPathDuoScore(
       phraseGuitarContours
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
-    if (context.presetId === 'ecm_chamber' || (context.presetId === 'guitar_bass_duo' && isEcmStyle)) {
+    if (context.presetId === 'ecm_chamber' || (isGuitarBassDuoFamily(context.presetId) && isEcmStyle)) {
       applyEcmChamberPhraseEdgeSpaceToParts(guitarPart, bassPart, tb, context.seed);
     }
   }
@@ -4462,21 +4455,21 @@ export function generateGoldenPathDuoScore(
   /** Song Mode: velocity-only style layer must run before `finalizeAndSealDuoScoreBarMath` freezes events. */
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo'
+    isGuitarBassDuoFamily(context.presetId)
   ) {
     const sp = context.generationMetadata.styleProfile ?? 'STYLE_ECM';
     applySongModeStyleEngineToScore(afterExpressive, context.seed, sp);
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     tb === 32
   ) {
     ensureRhythmIntentResolvedIntoMetadata(context.generationMetadata as GenerationMetadata, context.seed);
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo'
+    isGuitarBassDuoFamily(context.presetId)
   ) {
     applyBarryHarris(context, afterExpressive);
   }
@@ -4500,14 +4493,14 @@ export function generateGoldenPathDuoScore(
   applySongModeSpaceC7(afterExpressive, context);
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     normalizeStyleProfileId(context.generationMetadata.styleProfile ?? 'STYLE_ECM') === 'STYLE_INDIE_ART_POP'
   ) {
     applyIndieArtPopPhaseADeepening(afterExpressive, context, plans.sections);
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     tb === 32
   ) {
     const gSong = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -4520,7 +4513,7 @@ export function generateGoldenPathDuoScore(
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo'
+    isGuitarBassDuoFamily(context.presetId)
   ) {
     const coreMotifs = context.generationMetadata.songModeCoreMotifs;
     if (coreMotifs && coreMotifs.length > 0) {
@@ -4534,7 +4527,7 @@ export function generateGoldenPathDuoScore(
     const rawHook = (context.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
     afterExpressive._hookRepetitionBias =
       context.generationMetadata?.songModeHookFirstIdentity === true &&
-      context.presetId === 'guitar_bass_duo' &&
+      isGuitarBassDuoFamily(context.presetId) &&
       tb === 32
         ? Math.max(0.62, rawHook)
         : rawHook;
@@ -4572,7 +4565,7 @@ export function generateGoldenPathDuoScore(
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     tb === 32
   ) {
     const gPost = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -4599,7 +4592,7 @@ export function generateGoldenPathDuoScore(
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    isGuitarBassDuoFamily(context.presetId) &&
     tb === 32
   ) {
     const guitar = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

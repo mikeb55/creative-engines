@@ -6,7 +6,7 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { StyleStack } from '../style-modules/styleModuleTypes';
 import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { guitarRestRatio } from './duoLockQuality';
-import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID } from '../presets/guitarBassDuoPresetIds';
+import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 
 export interface DuoMusicalQualityResult {
@@ -66,7 +66,7 @@ export function validateDuoMusicalQuality(
   if (restRatio < 0.2) {
     const context = _opts;
     // Counterpoint requires continuous Voice 2 activity — rests are not appropriate in this preset.
-    if (context?.presetId === 'guitar_bass_duo') {
+    if (isGuitarBassDuoFamily(context?.presetId)) {
       /* skip breathing-space minimum gate */
     } else {
       errors.push('Duo: guitar lacks breathing space (rest ratio below swing minimum ~20%)');

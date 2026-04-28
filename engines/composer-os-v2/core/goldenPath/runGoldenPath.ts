@@ -1059,7 +1059,7 @@ function applyIndieArtPopAlternateTuningPolicy(
 function isIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
   return (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    (context.presetId === 'guitar_bass_duo' || context.presetId === 'song_mode') &&
+    isGuitarBassDuoFamily(context.presetId) &&
     normalizeStyleProfileId(context.generationMetadata?.styleProfile) === 'STYLE_INDIE_ART_POP' &&
     context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
   );
@@ -1086,10 +1086,7 @@ function isMotifAuthorityPilotPreset(
   context?: CompositionContext
 ): boolean {
   if (presetId === 'ecm_chamber') return true;
-  const isSongModeRoute =
-    presetId === 'guitar_bass_duo' ||
-    presetId === 'song_mode' ||
-    presetId.startsWith('song_mode_');
+  const isSongModeRoute = isGuitarBassDuoFamily(presetId);
   if (!isSongModeRoute) return false;
   const writerId = options?.primarySongwriterStyle ?? context?.generationMetadata?.songwriterStyleId;
   const songModeIdentityRequested =
@@ -1530,9 +1527,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     };
   }
   const importExpressionPresetEnabled =
-    context.presetId === 'guitar_bass_duo' ||
-    context.presetId === 'guitar_bass_duo_single_line' ||
-    context.presetId === 'ecm_chamber';
+    isGuitarBassDuoFamily(context.presetId) || context.presetId === 'ecm_chamber';
   if (importExpressionPresetEnabled && options?.songModeLeadSheetMelodyAnchors?.length) {
     context.generationMetadata = {
       ...context.generationMetadata,

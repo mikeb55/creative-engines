@@ -21,6 +21,7 @@ import {
 import { normalizeMeasureToEighthBeatGrid } from '../score-integrity/duoEighthBeatGrid';
 import { getEffectiveRhythmStrength } from '../rhythmIntentResolve';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const GRID_16TH = 0.25;
 const EPS = 1e-4;
@@ -360,7 +361,7 @@ export function applySongModeOstinatoC5(score: ScoreModel, context: CompositionC
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeRhythmOverlayDisabled === true) return;
   if (meta.songModeHookFirstIdentity !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const { blendStart, blendLength, fromFeel, toFeel, c5Strength } = params;

@@ -23,6 +23,7 @@ import {
   collectMelodyMidiBarRangeInclusive,
   isGuitarMelodyVoiceNote,
 } from './guitarVoiceMelody';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 export interface DuoLockValidationResult {
   valid: boolean;
@@ -788,7 +789,7 @@ export function validateDuoInteractionAuthorityGate(
   }
   const context = opts?.compositionContext;
   /** Wall-to-wall sustained activity: ≥3.95 beats of notes, no meaningful breath (anti-streaming). */
-  if (context?.presetId === 'guitar_bass_duo') {
+  if (isGuitarBassDuoFamily(context?.presetId)) {
     // counterpoint requires continuous V2
   } else if (maxConsecutiveNoteHeavyBars(g, 3.95) > 3) {
     issues.push({

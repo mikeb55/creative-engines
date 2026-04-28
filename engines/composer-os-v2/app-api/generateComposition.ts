@@ -27,7 +27,7 @@ import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
-  return presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' || presetId === 'ecm_chamber';
+  return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
 }
 
 function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {

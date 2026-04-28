@@ -10,6 +10,7 @@ import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { snapAttackBeatToGrid, normalizeMeasureToEighthBeatGrid } from '../score-integrity/duoEighthBeatGrid';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const GRID_16TH = 0.25;
 
@@ -238,7 +239,7 @@ function applyJamesBrownFunkToPart(part: PartModel, seed: number, weights: James
 export function applyJamesBrownFunkOverlay(score: ScoreModel, context: CompositionContext): void {
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeJamesBrownFunkOverlay !== true) return;
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.form.totalBars !== 32) return;
 
   const weights: JamesBrownFunkWeights = {

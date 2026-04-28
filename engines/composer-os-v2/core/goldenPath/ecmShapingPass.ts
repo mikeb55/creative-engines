@@ -13,6 +13,7 @@ import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { enforceVoice2BassRegisterSeparation18_2B_4, stripVoice2IfCrossingMelody } from './guitarVoice2WybleLayer';
 import { collectMelodyMidiChronological } from '../score-integrity/guitarVoiceMelody';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 const G_LOW = 55;
 const G_HIGH = 79;
@@ -154,7 +155,7 @@ function strictEnforceGlobalLeaps(
       if (
         part.id === 'guitar' &&
         context.generationMetadata?.songModeHookFirstIdentity === true &&
-        context.presetId === 'guitar_bass_duo' &&
+        isGuitarBassDuoFamily(context.presetId) &&
         context.form.totalBars === 32 &&
         refs[i].bar === 25
       ) {
@@ -333,7 +334,7 @@ const DUO_GUITAR_MAX_LEAP = 12;
 
 /** Barry Harris cap for golden-path duo after non-ECM orchestration edits. */
 export function enforceDuoVoiceLeadingPostOrchestration(score: ScoreModel, context: CompositionContext): void {
-  if (context.presetId !== 'guitar_bass_duo') return;
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar) return;
