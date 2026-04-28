@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2026-04-28] fix: Brian Wilson Pet Sounds devices over full-form locked Song Mode harmony
+
+- **`generateGoldenPathDuoScore.ts`:** **`precomputeBrianWilsonEffectiveHarmonyBars`** runs for **`brian_wilson`** + duo golden path even when **`lockedHarmonyBarsRaw`** is full-form (removed **`!lockedFullForm`** gate).
+- **`harmonyResolution.ts`:** **`getChordForBar`** returns **`brianWilsonEffectiveHarmonyBars`** (Pet Sounds layer atop locked progression) when full-form and songwriter is **`brian_wilson`**, before the raw locked early return.
+- **Routing / truth:** **`pipelineTruthGates`** (32-bar locked), **`assertScoreMatchesLockedHarmonyWire`**, **`validateLockedHarmonyMusicXmlTruth`**, export **`assertLockedHarmonyBars`**, **`composerOsAppGeneration`** locked score/XML assertions, and disk **`validateLockedHarmonyMusicXmlTruthFromFile`** use **effective** harmony for Brian Wilson when present; non–Brian Wilson behaviour unchanged.
+- **Manifest:** **`OutputEntry`** / **`writeOutputManifest`** echo **`brianWilsonPetSoundsDiagnostics`**, **`brianWilsonPetSoundsDeviceReceipts`**, **`brianWilsonPetSoundsSliceReceipt`**, **`brianWilsonEffectiveHarmonyBars`**.
+- **`test:smoke`:** 34 passed / 0 failed.
+
 ## [2026-04-28] Brian Wilson Song Mode eval harness (`eval:brian_wilson`)
 
 - **CLI:** **`engines/composer-os-v2/scripts/runBrianWilsonSongModeEval.ts`** — same-shape **`song_mode`** **`GenerateRequest`** as **`runFagenSongModeEval`** (`STYLE_ECM`, 32 bars); **`brian_wilson`** vs **`carole_king`** neutral baseline (optional **`--baseline none`**); default **5** seeds (`--seed-start` **95100**).
@@ -11,7 +19,7 @@
 - **Chord pools:** **`brian_wilson`** in **`songModeBuilder.ts`** **`SONGWRITER_CHORD_POOLS`** — maj/add9/maj7/sus2 vocabulary, **ø7**, **aug**, **dim7**, chromatic/slash bass lines, parallel minor colour (`Fm`, `Gm`, `Bb`).
 - **Style profile:** **`songwriterStyleProfiles.ts`** — Pet Sounds–biased axes (lower template regularity, higher syncopation / section contrast, mixed intervals + guitar hints).
 - **Golden path — canonical module:** **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`** (re-exported from **`goldenPath/brianWilsonPetSoundsSlice.ts`**) — per-bar harmony diagnostics (chromatic bass steps, ø7 / aug / dim7 touches); **`applyBrianWilsonGuitarBarPasses`** (pickup entries, progressive register expansion, arch lift); **`buildSongwriterMelodyProfile`** case **`brian_wilson`** (arch / syncopated / leaping).
-- **Pet Sounds harmonic devices (duo golden path, `brian_wilson` + not full-form locked custom harmony):** precomputed per bar in order — **(1)** chromatic ascending bass → **ø7** on the raised step; **(2)** inverted **V** (V/3 or V/5), no root-position V on cadence landings; **(3)** verse-like sections: **IV → ♭VII** (Mixolydian subdominant bias); **(4)** two bars **I** (major) → next bar **i7** (modal mixture); **(5)** section boundary (verse → chorus/bridge): chord transposed **down a semitone**; receipts like **`bw:device1:chromatic_bass_dim7@barN`**, metadata **`brianWilsonSectionModulationHints`**, **`brianWilsonEffectiveHarmonyBars`**; **`getChordForBar`** in **`harmonyResolution.ts`** defers to effective bars when present.
+- **Pet Sounds harmonic devices (duo golden path, `brian_wilson`; layered on locked progression when Song Mode supplies full-form harmony):** precomputed per bar in order — **(1)** chromatic ascending bass → **ø7** on the raised step; **(2)** inverted **V** (V/3 or V/5), no root-position V on cadence landings; **(3)** verse-like sections: **IV → ♭VII** (Mixolydian subdominant bias); **(4)** two bars **I** (major) → next bar **i7** (modal mixture); **(5)** section boundary (verse → chorus/bridge): chord transposed **down a semitone**; receipts like **`bw:device1:chromatic_bass_dim7@barN`**, metadata **`brianWilsonSectionModulationHints`**, **`brianWilsonEffectiveHarmonyBars`**; **`getChordForBar`** in **`harmonyResolution.ts`** prefers effective bars when present (see **[2026-04-28] fix: Brian Wilson Pet Sounds devices over full-form locked Song Mode harmony**).
 - **Receipts:** **`GenerationMetadata`** — **`brianWilsonPetSoundsDiagnostics`** (incl. optional **`deviceReceipts`**), **`brianWilsonPetSoundsSliceReceipt`** (`compositionContext.ts`).
 - **Smoke:** **`tests/brianWilsonPetSoundsSliceSmoke.test.ts`** + **`runSmokeTests.ts`** allowlist.
 - **`test:smoke`:** 34 passed / 0 failed.

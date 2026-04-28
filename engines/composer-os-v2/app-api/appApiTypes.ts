@@ -308,4 +308,9 @@ export interface OutputEntry {
   };
   /** Stage 4: import-harmony policy contract version when import-harmony telemetry is written (`core/importHarmonyPolicy.ts`). */
   importHarmonyPolicyVersion?: number;
+  /** Brian Wilson Pet Sounds — diagnostics / receipts (Song Mode manifest echo). */
+  brianWilsonPetSoundsDiagnostics?: GenerationMetadata['brianWilsonPetSoundsDiagnostics'];
+  brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];
+  brianWilsonPetSoundsSliceReceipt?: GenerationMetadata['brianWilsonPetSoundsSliceReceipt'];
+  brianWilsonEffectiveHarmonyBars?: GenerationMetadata['brianWilsonEffectiveHarmonyBars'];
 }

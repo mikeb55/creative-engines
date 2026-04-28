@@ -1962,10 +1962,7 @@ function buildGuitarPart(
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
-  const lockedFullForm =
-    context.lockedHarmonyBarsRaw &&
-    context.lockedHarmonyBarsRaw.length === context.form.totalBars;
-  if (isSongwriterBrianWilson && isDuoGoldenPath && !lockedFullForm) {
+  if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }
 

@@ -52,7 +52,7 @@ thinGuitar2Voice1InChordMeasures
 - **Every** 4-bar boundary: phrase-end cadence lengthens voice 1 toward the bar/phrase end and snaps to a chord tone (runs with Song Mode hook path and standard golden-path duo).
 
 ### 9. Brian Wilson (Pet Sounds era) songwriter slice (2026-04-28)
-- Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping, **five harmonic devices** (chromatic-bass half-dim, inverted dominant, verse ♭VII subdominant colour, tonic **i7** mixture bar, semitone-down modulation at verse→chorus/bridge boundaries) + **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** / optional **`deviceReceipts`** on **`GenerationMetadata`**. Implementation: **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`**. See **`docs/CHANGELOG.md`**.
+- Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping, **five harmonic devices** (chromatic-bass half-dim, inverted dominant, verse ♭VII subdominant colour, tonic **i7** mixture bar, semitone-down modulation at verse→chorus/bridge boundaries) layered on **locked** Song Mode harmony when the full progression is fixed — **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** / **`deviceReceipts`** on **`GenerationMetadata`** (also echoed in output manifests). Implementation: **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`**. See **`docs/CHANGELOG.md`** (**fix:** devices over locked harmony, **2026-04-28**).
 
 ### 10. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.

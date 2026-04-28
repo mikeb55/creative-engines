@@ -406,7 +406,10 @@ export function runPipelineTruthGates(params: {
     const parsedBars = parsed32 ?? [];
     const inputResult = validateDuo32LockedInputStage(context, options);
     const inputStage: PipelineTruthStageResult = inputResult.ok ? 'pass' : 'fail';
-    const expected = [...parsedBars];
+    const mdT = context.generationMetadata;
+    const bwT = mdT.brianWilsonEffectiveHarmonyBars;
+    const expected =
+      mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32 ? [...bwT] : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';

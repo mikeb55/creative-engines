@@ -2,7 +2,7 @@
  * Song Mode / custom_locked: single routing path for pasted harmony — fail fast if layers drift.
  */
 
-import type { CompositionContext } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
@@ -81,20 +81,28 @@ export function assertCustomLockedRouting(
 /** After score build: every guitar measure chord must match locked wire (custom_locked only). */
 export function assertScoreMatchesLockedHarmonyWire(
   score: ScoreModel,
-  options: CustomLockedRoutingWire | undefined
+  options: CustomLockedRoutingWire | undefined,
+  context?: CompositionContext
 ): void {
   const wire = options?.lockedHarmonyBarsRaw ?? options?.parsedChordBars;
   if (!wire || !isAllowedSongFormBarCount(wire.length)) return;
   /** Full-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
+  const md = context?.generationMetadata as GenerationMetadata | undefined;
+  const tb = context?.form.totalBars ?? wire.length;
+  const bwEff = md?.brianWilsonEffectiveHarmonyBars;
+  const expectedWire =
+    md?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEff) && bwEff.length === tb && bwEff.length === wire.length
+      ? bwEff
+      : wire;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');
   }
-  const n = wire.length;
+  const n = expectedWire.length;
   for (let i = 1; i <= n; i++) {
     const m = g.measures.find((x) => x.index === i);
-    const exp = wire[i - 1];
+    const exp = expectedWire[i - 1];
     const got = m?.chord ?? '';
     if (normalizeChordToken(got) !== normalizeChordToken(exp ?? '')) {
       throw new Error(

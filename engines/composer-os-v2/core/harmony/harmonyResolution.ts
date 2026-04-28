@@ -41,6 +41,22 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     assertLockedMatchesParsedWhenBothFull(locked, parsed, tb);
   }
 
+  /**
+   * Brian Wilson Pet Sounds: `precomputeBrianWilsonEffectiveHarmonyBars` layers devices on top of the locked
+   * progression. After precompute, `brianWilsonEffectiveHarmonyBars` is full-form and authoritative for bar reads.
+   * While precompute runs, this array is unset — `getChordForBar` still returns the locked chain as the device input.
+   */
+  const bwEff = meta?.brianWilsonEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'brian_wilson' &&
+    Array.isArray(bwEff) &&
+    bwEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bwEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;
@@ -76,18 +92,6 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
       `HARMONY AUTHORITY: bar ${barIndex} — custom_locked progression cannot use chordSymbolPlan fallback ` +
         `(locked=${locked?.length ?? 0} parsed=${parsed?.length ?? 0} totalBars=${tb}).`
     );
-  }
-
-  /** Brian Wilson Pet Sounds slice: precomputed per-bar symbols after harmonic devices (duo golden path). */
-  const bwEff = meta?.brianWilsonEffectiveHarmonyBars;
-  if (
-    meta?.songwriterStyleId === 'brian_wilson' &&
-    Array.isArray(bwEff) &&
-    bwEff.length === tb &&
-    barIndex >= 1 &&
-    barIndex <= tb
-  ) {
-    return bwEff[barIndex - 1]!;
   }
 
   for (const seg of context.chordSymbolPlan.segments) {

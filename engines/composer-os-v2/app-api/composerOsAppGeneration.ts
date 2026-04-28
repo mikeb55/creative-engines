@@ -839,6 +839,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       gp,
     });
   }
+  const mdLockedTruth = gp.context.generationMetadata;
+  const tbLockedTruth = gp.context.form.totalBars;
+  const bwLockedTruth = mdLockedTruth?.brianWilsonEffectiveHarmonyBars;
+  const harmonyBarsForLockedAssertions =
+    mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
+    Array.isArray(bwLockedTruth) &&
+    bwLockedTruth.length === tbLockedTruth &&
+    lockedHarmonyBarsAuthoritative &&
+    bwLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+      ? bwLockedTruth
+      : lockedHarmonyBarsAuthoritative;
+
   if (
     lockedHarmonyBarsAuthoritative &&
     lockedHarmonyBarsAuthoritative.length >= 8 &&
@@ -848,7 +860,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
         for (let b = 1; b <= 4; b++) {
           const got = getChordForBar(b, gp.context);
-          const exp = lockedHarmonyBarsAuthoritative[b - 1]!;
+          const exp = harmonyBarsForLockedAssertions![b - 1]!;
           if (normalizeChordToken(got) !== normalizeChordToken(exp)) {
             throw new Error(
               `DESKTOP SONG MODE HARMONY: bar ${b} resolved "${got}" !== pasted "${exp}" (authority check bars 1–4)`
@@ -856,7 +868,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           }
         }
       }
-      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, lockedHarmonyBarsAuthoritative);
+      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, harmonyBarsForLockedAssertions!);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return {
@@ -902,13 +914,23 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       }
     }
     const locked = gp.context.lockedHarmonyBarsRaw;
-    if (
+    const mdDisk = gp.context.generationMetadata;
+    const bwDisk = mdDisk?.brianWilsonEffectiveHarmonyBars;
+    const barsForDiskHarmonyTruth =
+      mdDisk?.songwriterStyleId === 'brian_wilson' &&
+      Array.isArray(bwDisk) &&
+      bwDisk.length === gp.context.form.totalBars &&
       locked &&
-      locked.length === gp.context.form.totalBars &&
+      bwDisk.length === locked.length
+        ? bwDisk
+        : locked;
+    if (
+      barsForDiskHarmonyTruth &&
+      barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
       !indieDualGuitarTuningProofFixtureRequested(req)
     ) {
       try {
-        const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
+        const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, barsForDiskHarmonyTruth);
         if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
       } catch (e) {
         console.warn('VALIDATION BYPASSED:', (e as Error)?.message);
@@ -959,6 +981,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       songModeStyleSurfaceNotes: gp.context.generationMetadata.songModeStyleSurfaceNotes,
       songModeDonaldFagenC1Receipt: gp.context.generationMetadata.songModeDonaldFagenC1Receipt,
       songwriterStyleId: gp.context.generationMetadata.songwriterStyleId,
+      brianWilsonPetSoundsDiagnostics: gp.context.generationMetadata.brianWilsonPetSoundsDiagnostics,
+      brianWilsonPetSoundsDeviceReceipts: gp.context.generationMetadata.brianWilsonPetSoundsDeviceReceipts,
+      brianWilsonPetSoundsSliceReceipt: gp.context.generationMetadata.brianWilsonPetSoundsSliceReceipt,
+      brianWilsonEffectiveHarmonyBars: gp.context.generationMetadata.brianWilsonEffectiveHarmonyBars,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

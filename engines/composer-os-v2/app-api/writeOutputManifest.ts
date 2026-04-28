@@ -116,6 +116,10 @@ export function writeOutputManifest(
     songModeDonaldFagenC1Receipt?: string;
     /** Song Mode — resolved primary songwriter id (eval / receipts). */
     songwriterStyleId?: string;
+    brianWilsonPetSoundsDiagnostics?: GenerationMetadata['brianWilsonPetSoundsDiagnostics'];
+    brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];
+    brianWilsonPetSoundsSliceReceipt?: GenerationMetadata['brianWilsonPetSoundsSliceReceipt'];
+    brianWilsonEffectiveHarmonyBars?: GenerationMetadata['brianWilsonEffectiveHarmonyBars'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -191,6 +195,10 @@ export function writeOutputManifest(
     songModeStyleSurfaceNotes: meta.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: meta.songModeDonaldFagenC1Receipt,
     songwriterStyleId: meta.songwriterStyleId,
+    brianWilsonPetSoundsDiagnostics: meta.brianWilsonPetSoundsDiagnostics,
+    brianWilsonPetSoundsDeviceReceipts: meta.brianWilsonPetSoundsDeviceReceipts,
+    brianWilsonPetSoundsSliceReceipt: meta.brianWilsonPetSoundsSliceReceipt,
+    brianWilsonEffectiveHarmonyBars: meta.brianWilsonEffectiveHarmonyBars,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

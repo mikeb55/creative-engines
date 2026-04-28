@@ -1789,7 +1789,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
   try {
-    assertScoreMatchesLockedHarmonyWire(score, options);
+    assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
@@ -1899,13 +1899,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     !!(appliedContext.lockedHarmonyBarsRaw && appliedContext.lockedHarmonyBarsRaw.length > 0);
   const guitarMeasureCount = score.parts[0]?.measures.length ?? 0;
   const lockedForExport = appliedContext.lockedHarmonyBarsRaw;
+  const mdEx = appliedContext.generationMetadata;
+  const tbEx = appliedContext.form.totalBars;
+  const bwEx = mdEx?.brianWilsonEffectiveHarmonyBars;
+  const barsForLockedExportTruth =
+    mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx ? bwEx : lockedForExport;
   const assertLockedExport =
-    lockedForExport &&
-    lockedForExport.length === guitarMeasureCount &&
+    barsForLockedExportTruth &&
+    barsForLockedExportTruth.length === guitarMeasureCount &&
     guitarMeasureCount > 0 &&
     appliedContext.generationMetadata?.harmonySource === 'custom' &&
     appliedContext.generationMetadata?.builtInHarmonyFallbackOccurred !== true
-      ? [...lockedForExport]
+      ? [...barsForLockedExportTruth]
       : undefined;
   logEcmPhaseProbe(probeEcm, 'before_export', score, {
     guitarMeasures: guitarMeasureCount,
@@ -1955,8 +1960,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
 
     const lockedBars = appliedContext.lockedHarmonyBarsRaw;
-    if (!isIndieTuningFixture && lockedBars && lockedBars.length === appliedContext.form.totalBars) {
-      const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, lockedBars);
+    const mdLt = appliedContext.generationMetadata;
+    const tbLt = appliedContext.form.totalBars;
+    const bwLt = mdLt?.brianWilsonEffectiveHarmonyBars;
+    const expectedBarsForLockedTruth =
+      mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt ? bwLt : lockedBars;
+    if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
+      const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;
       if (!lockedTruth.ok) errors.push(...lockedTruth.errors);
     }
