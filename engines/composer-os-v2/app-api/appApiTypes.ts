@@ -313,4 +313,9 @@ export interface OutputEntry {
   brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];
   brianWilsonPetSoundsSliceReceipt?: GenerationMetadata['brianWilsonPetSoundsSliceReceipt'];
   brianWilsonEffectiveHarmonyBars?: GenerationMetadata['brianWilsonEffectiveHarmonyBars'];
+  /** Stevie Wonder (1972–76) slice — diagnostics / receipts (Song Mode manifest echo). */
+  stevieWonderDiagnostics?: GenerationMetadata['stevieWonderDiagnostics'];
+  stevieWonderDeviceReceipts?: GenerationMetadata['stevieWonderDeviceReceipts'];
+  stevieWonderSliceReceipt?: GenerationMetadata['stevieWonderSliceReceipt'];
+  stevieWonderEffectiveHarmonyBars?: GenerationMetadata['stevieWonderEffectiveHarmonyBars'];
 }

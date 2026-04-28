@@ -57,6 +57,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return bwEff[barIndex - 1]!;
   }
 
+  /**
+   * Stevie Wonder (1972–76): `precomputeStevieWonderEffectiveHarmonyBars` layers devices on the locked
+   * progression. After precompute, `stevieWonderEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const swEff = meta?.stevieWonderEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'stevie_wonder' &&
+    Array.isArray(swEff) &&
+    swEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return swEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

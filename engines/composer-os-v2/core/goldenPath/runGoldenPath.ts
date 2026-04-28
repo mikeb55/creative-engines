@@ -1902,8 +1902,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const mdEx = appliedContext.generationMetadata;
   const tbEx = appliedContext.form.totalBars;
   const bwEx = mdEx?.brianWilsonEffectiveHarmonyBars;
+  const swEx = mdEx?.stevieWonderEffectiveHarmonyBars;
   const barsForLockedExportTruth =
-    mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx ? bwEx : lockedForExport;
+    mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
+      ? bwEx
+      : mdEx?.songwriterStyleId === 'stevie_wonder' && Array.isArray(swEx) && swEx.length === tbEx
+        ? swEx
+        : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -1963,8 +1968,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const mdLt = appliedContext.generationMetadata;
     const tbLt = appliedContext.form.totalBars;
     const bwLt = mdLt?.brianWilsonEffectiveHarmonyBars;
+    const swLt = mdLt?.stevieWonderEffectiveHarmonyBars;
     const expectedBarsForLockedTruth =
-      mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt ? bwLt : lockedBars;
+      mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
+        ? bwLt
+        : mdLt?.songwriterStyleId === 'stevie_wonder' && Array.isArray(swLt) && swLt.length === tbLt
+          ? swLt
+          : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

@@ -1,3 +1,12 @@
+## [2026-04-28] Stevie Wonder (1972?1976) full-slice songwriter profile
+
+- **Chord pools:** `SONGWRITER_CHORD_POOLS.stevie_wonder` in `songModeBuilder.ts` (m7/maj7/7sus4, 9/13, altered dominants, sus colours).
+- **Style profile:** `stevie_wonder` in `SONGWRITER_STYLE_PROFILES` ? high syncopation, Dorian/Mixolydian guitar modal hint, irregular phrases, pentatonic interval preference.
+- **Slice:** `engines/composer-os-v2/core/song-mode/stevieWonderSlice.ts` ? five devices (`sw:device1` Dorian vamp, `sw:device2` vi?II?V7sus4?I phrase turns, `sw:device3` chromatic bridge chain, `sw:device4` chorus bII chromatic pivot, `sw:device5` pentatonic voice-1 bias on non-cadence bars); `precomputeStevieWonderEffectiveHarmonyBars` + `stevieWonderEffectiveHarmonyBars` wired through `getChordForBar` (`harmonyResolution.ts`), export/truth (`runGoldenPath.ts`, `customLockedHarmonyRouting.ts`, `pipelineTruthGates.ts`, `composerOsAppGeneration.ts`) same pattern as Brian Wilson locked harmony.
+- **Metadata / manifests:** `stevieWonderDiagnostics`, `stevieWonderSliceReceipt`, `stevieWonderEffectiveHarmonyBars`, `stevieWonderDeviceReceipts` on `GenerationMetadata` + `OutputEntry`.
+- **Smoke:** `stevieWonderSliceSmoke.test.ts` (seed **50100**); **`test:smoke`** 35 passed / 0 failed.
+- **Eval:** `npm run eval:stevie_wonder` ? `scripts/runStevieWonderSongModeEval.ts` (mirrors Brian Wilson eval harness).
+
 ## [2026-04-22] Lead-sheet MusicXML ? MuseScore `.mxl` + imported performance shaping
 
 - **Compressed `.mxl`:** MuseScore-style packages unpack safely in the UI and tests (`fflate`; `engines/composer-os-v2/core/lead-sheet/musicXmlScoreInput.ts`): ZIP + `META-INF/container.xml` ? embedded score XML.

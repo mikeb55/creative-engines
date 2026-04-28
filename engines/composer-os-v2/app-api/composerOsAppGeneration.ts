@@ -842,6 +842,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const mdLockedTruth = gp.context.generationMetadata;
   const tbLockedTruth = gp.context.form.totalBars;
   const bwLockedTruth = mdLockedTruth?.brianWilsonEffectiveHarmonyBars;
+  const swLockedTruth = mdLockedTruth?.stevieWonderEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -849,7 +850,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     lockedHarmonyBarsAuthoritative &&
     bwLockedTruth.length === lockedHarmonyBarsAuthoritative.length
       ? bwLockedTruth
-      : lockedHarmonyBarsAuthoritative;
+      : mdLockedTruth?.songwriterStyleId === 'stevie_wonder' &&
+          Array.isArray(swLockedTruth) &&
+          swLockedTruth.length === tbLockedTruth &&
+          lockedHarmonyBarsAuthoritative &&
+          swLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+        ? swLockedTruth
+        : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -916,6 +923,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const locked = gp.context.lockedHarmonyBarsRaw;
     const mdDisk = gp.context.generationMetadata;
     const bwDisk = mdDisk?.brianWilsonEffectiveHarmonyBars;
+    const swDisk = mdDisk?.stevieWonderEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -923,7 +931,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       locked &&
       bwDisk.length === locked.length
         ? bwDisk
-        : locked;
+        : mdDisk?.songwriterStyleId === 'stevie_wonder' &&
+            Array.isArray(swDisk) &&
+            swDisk.length === gp.context.form.totalBars &&
+            locked &&
+            swDisk.length === locked.length
+          ? swDisk
+          : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -985,6 +999,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       brianWilsonPetSoundsDeviceReceipts: gp.context.generationMetadata.brianWilsonPetSoundsDeviceReceipts,
       brianWilsonPetSoundsSliceReceipt: gp.context.generationMetadata.brianWilsonPetSoundsSliceReceipt,
       brianWilsonEffectiveHarmonyBars: gp.context.generationMetadata.brianWilsonEffectiveHarmonyBars,
+      stevieWonderDiagnostics: gp.context.generationMetadata.stevieWonderDiagnostics,
+      stevieWonderDeviceReceipts: gp.context.generationMetadata.stevieWonderDeviceReceipts,
+      stevieWonderSliceReceipt: gp.context.generationMetadata.stevieWonderSliceReceipt,
+      stevieWonderEffectiveHarmonyBars: gp.context.generationMetadata.stevieWonderEffectiveHarmonyBars,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

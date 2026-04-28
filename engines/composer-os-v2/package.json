@@ -22,6 +22,7 @@
     "export:wyble-examples": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/exportWybleOnOffExamples.ts",
     "eval:fagen": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runFagenSongModeEval.ts",
     "eval:brian_wilson": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBrianWilsonSongModeEval.ts",
+    "eval:stevie_wonder": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runStevieWonderSongModeEval.ts",
     "eval:style-soph-pop": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSophisticatedPopStyleEval.ts",
     "eval:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
     "workflow:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachWorkflow.ts",

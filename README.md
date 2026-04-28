@@ -54,11 +54,14 @@ thinGuitar2Voice1InChordMeasures
 ### 9. Brian Wilson (Pet Sounds era) songwriter slice (2026-04-28)
 - Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping, **five harmonic devices** (chromatic-bass half-dim, inverted dominant, verse ♭VII subdominant colour, tonic **i7** mixture bar, semitone-down modulation at verse→chorus/bridge boundaries) layered on **locked** Song Mode harmony when the full progression is fixed — **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** / **`deviceReceipts`** on **`GenerationMetadata`** (also echoed in output manifests). Implementation: **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`**. See **`docs/CHANGELOG.md`** (**fix:** devices over locked harmony, **2026-04-28**).
 
+### 10. Stevie Wonder (1972–1976) songwriter slice (2026-04-28)
+- Primary **`stevie_wonder`**: funk/R&B chord pools, high-syncopation melody profile, **five devices** (Dorian vamp, vi→II→V7sus4→I cadential turns, chromatic bridge sequence, chorus **bII** pivot, pentatonic voice-1 bias) on **locked** duo harmony — **`stevieWonderSliceReceipt`** / **`stevieWonderDiagnostics`** / effective bars on **`GenerationMetadata`**. Implementation: **`engines/composer-os-v2/core/song-mode/stevieWonderSlice.ts`**.
+
 ### 10. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Eval:** **`npm run eval:brian_wilson`** (repo root) or **`npm run eval:brian_wilson --prefix engines/composer-os-v2`** — Brian Wilson vs **`carole_king`** neutral baseline; markdown + CSV under **`output/brian-wilson-eval/`**.
+**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline; markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`**.
 
 **Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.11).
 
@@ -74,7 +77,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (34 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)** songwriter slice smoke
+- npm run test:smoke — PASS (35 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)** and **Stevie Wonder (1972–76)** songwriter slice smokes
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 

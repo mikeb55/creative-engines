@@ -120,6 +120,10 @@ export function writeOutputManifest(
     brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];
     brianWilsonPetSoundsSliceReceipt?: GenerationMetadata['brianWilsonPetSoundsSliceReceipt'];
     brianWilsonEffectiveHarmonyBars?: GenerationMetadata['brianWilsonEffectiveHarmonyBars'];
+    stevieWonderDiagnostics?: GenerationMetadata['stevieWonderDiagnostics'];
+    stevieWonderDeviceReceipts?: GenerationMetadata['stevieWonderDeviceReceipts'];
+    stevieWonderSliceReceipt?: GenerationMetadata['stevieWonderSliceReceipt'];
+    stevieWonderEffectiveHarmonyBars?: GenerationMetadata['stevieWonderEffectiveHarmonyBars'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -199,6 +203,10 @@ export function writeOutputManifest(
     brianWilsonPetSoundsDeviceReceipts: meta.brianWilsonPetSoundsDeviceReceipts,
     brianWilsonPetSoundsSliceReceipt: meta.brianWilsonPetSoundsSliceReceipt,
     brianWilsonEffectiveHarmonyBars: meta.brianWilsonEffectiveHarmonyBars,
+    stevieWonderDiagnostics: meta.stevieWonderDiagnostics,
+    stevieWonderDeviceReceipts: meta.stevieWonderDeviceReceipts,
+    stevieWonderSliceReceipt: meta.stevieWonderSliceReceipt,
+    stevieWonderEffectiveHarmonyBars: meta.stevieWonderEffectiveHarmonyBars,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

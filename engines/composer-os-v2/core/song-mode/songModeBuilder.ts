@@ -841,6 +841,32 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Am9', 'Dm9', 'Gm9', 'C13sus4', 'Fmaj9', 'Bm9', 'Em9', 'A13sus4'],
     ],
   },
+  stevie_wonder: {
+    verse: [
+      ['Dm7', 'G7(13)', 'Cmaj7', 'F7sus4', 'Em7(9)', 'A7(b9)', 'D7(#5)', 'G7sus4'],
+      ['Am7', 'D7(13)', 'Gmaj7', 'C7sus4', 'Bm7(9)', 'E7(b5)', 'A7sus4', 'D7(b9)'],
+      ['Gm7', 'C9sus4', 'Fmaj7', 'Bb7(13)', 'Am7(9)', 'D7(b5)', 'G13', 'C7(#5)'],
+      ['Fmaj7', 'Bb7sus4', 'Ebm7(9)', 'Ab13', 'Dbmaj7', 'C7(13)', 'Fm7', 'Bb7(b9)'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Am7(9)', 'D7(13)', 'G7sus4', 'C6/9', 'F#m7b5', 'B7(#5)', 'E7sus4'],
+      ['Bbmaj7', 'Gm7', 'C7(13)', 'F9sus4', 'Bb13', 'Eb7(b5)', 'Ab9', 'Dbmaj7'],
+      ['Gmaj7', 'Em7(9)', 'A7sus4', 'D7(#5)', 'G13', 'Cm7(9)', 'F7(b9)', 'Bb7sus4'],
+      ['Ebmaj7', 'Cm7', 'F7(13)', 'Bb7sus4', 'Eb9', 'Am7b5', 'D7(b9)', 'G7(13)'],
+    ],
+    bridge: [
+      ['D7(9)', 'Eb7(9b5)', 'D7(9)', 'C#7(b5)', 'C7(9sus4)', 'B7(#5)', 'Bbm7(9)', 'A7(13)'],
+      ['G7(9)', 'Ab7(9b5)', 'G7(9)', 'F#7(b5)', 'F7(9sus4)', 'E7(#5)', 'Ebm7(9)', 'D7(13)'],
+      ['C7(9)', 'Db7(9b5)', 'C7(9)', 'B7(b5)', 'Bb9sus4', 'A7(#5)', 'Am7(9)', 'G7sus4'],
+      ['F7(9)', 'Gb7(9b5)', 'F7(9)', 'E7(b5)', 'Eb9sus4', 'D7(#5)', 'Dm7(9)', 'C7(13)'],
+    ],
+    pre_chorus: [
+      ['Am7(9)', 'D7(13)', 'G7sus4', 'Cmaj9', 'Fm7', 'Bb7(b9)', 'Eb13', 'Ab7sus4'],
+      ['Dm7', 'G7(#5)', 'Cmaj7', 'F7sus4', 'Bm7b5', 'E7(9b5)', 'A13', 'D7sus4'],
+      ['Gm7(9)', 'C7(13)', 'Fmaj7', 'Bb7sus4', 'Ebm7(9)', 'Ab7(b5)', 'Db9', 'Gbmaj7'],
+      ['Em7', 'A7sus4', 'D7(13)', 'G7(b9)', 'Cm7(9)', 'F7(#5)', 'Bb9sus4', 'Eb7(13)'],
+    ],
+  },
   brian_wilson: {
     verse: [
       ['Cmaj7', 'Cadd9', 'Am7', 'Fmaj7'],

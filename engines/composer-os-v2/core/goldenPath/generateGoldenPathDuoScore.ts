@@ -60,6 +60,13 @@ import {
   finalizeBrianWilsonPetSoundsMetadata,
   precomputeBrianWilsonEffectiveHarmonyBars,
 } from './brianWilsonPetSoundsSlice';
+import {
+  accumulateStevieWonderHarmonyDiagnostics,
+  applyStevieWonderGuitarBarPasses,
+  createStevieWonderHarmonyAccumulator,
+  finalizeStevieWonderMetadata,
+  precomputeStevieWonderEffectiveHarmonyBars,
+} from './stevieWonderSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1772,6 +1779,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'leaping',
         rhythmicFeel: 'syncopated',
       };
+    case 'stevie_wonder':
+      return {
+        phraseIntentBias: 'ascending',
+        densityBias: -0.08,
+        offbeatBias: 0.82,
+        intervalBias: 'stepwise',
+        rhythmicFeel: 'syncopated',
+      };
     default:
       return {
         phraseIntentBias: 'neutral',
@@ -1960,10 +1975,15 @@ function buildGuitarPart(
     typeof genMeta?.bacharachCadentialAmbiguity === 'number' ? genMeta.bacharachCadentialAmbiguity : 0;
 
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
+  const isSongwriterStevieWonder = genMeta?.songwriterStyleId === 'stevie_wonder';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
+  const swAccum = createStevieWonderHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterStevieWonder && isDuoGoldenPath) {
+    precomputeStevieWonderEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2061,6 +2081,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         bwAccum
+      );
+    }
+    if (isSongwriterStevieWonder) {
+      accumulateStevieWonderHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        swAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2175,6 +2202,10 @@ function buildGuitarPart(
       if (isSongwriterBrianWilson && isDuoGolden) {
         const phaseHook = ((b - 1) % 8) + 1;
         applyBrianWilsonGuitarBarPasses(m, b, seed, effectiveLow, effectiveHigh, phaseHook);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isSongwriterStevieWonder && isDuoGolden) {
+        applyStevieWonderGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh);
         normalizeMeasureToEighthBeatGrid(m);
       }
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
@@ -2448,6 +2479,10 @@ function buildGuitarPart(
         applyBrianWilsonGuitarBarPasses(m, b, seed, effectiveLow, effectiveHigh, phase);
         normalizeMeasureToEighthBeatGrid(m);
       }
+      if (isSongwriterStevieWonder && isDuoGolden) {
+        applyStevieWonderGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
       if (!skipPhraseEngineStage3Anticipation) {
         applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
@@ -2474,6 +2509,10 @@ function buildGuitarPart(
 
   if (isSongwriterBrianWilson && context.generationMetadata) {
     finalizeBrianWilsonPetSoundsMetadata(context.generationMetadata, bwAccum);
+  }
+
+  if (isSongwriterStevieWonder && context.generationMetadata) {
+    finalizeStevieWonderMetadata(context.generationMetadata, swAccum);
   }
 
   return {

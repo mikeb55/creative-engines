@@ -400,6 +400,25 @@ export interface GenerationMetadata {
   }>;
   /** Flat list of device receipts (mirrors diagnostics.deviceReceipts when populated). */
   brianWilsonPetSoundsDeviceReceipts?: string[];
+  /** Stevie Wonder (1972–76) — per-bar harmony vocabulary scan (sus4, altered dominants, 9s, m7 colour). */
+  stevieWonderDiagnostics?: {
+    songwriterId: 'stevie_wonder';
+    barsConsidered: number;
+    sus4Touches: number;
+    alteredDominantTouches: number;
+    extensionNines: number;
+    minorSeventhColour: number;
+    /** Named harmonic device receipts for this run (e.g. `sw:device1:...`). */
+    deviceReceipts?: string[];
+  };
+  /** One-line digest for manifests / dev inspector when the classic-period slice ran. */
+  stevieWonderSliceReceipt?: string;
+  /** Duo golden path: effective one chord per bar after Stevie Wonder harmonic devices. */
+  stevieWonderEffectiveHarmonyBars?: string[];
+  /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
+  stevieWonderDeviceReceipts?: string[];
+  /** Guitar-only pentatonic bias receipts (device 5); merged into diagnostics in finalize. */
+  stevieWonderPentatonicReceipts?: string[];
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;
