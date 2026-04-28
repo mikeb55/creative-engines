@@ -87,6 +87,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return rhEff[barIndex - 1]!;
   }
 
+  /**
+   * James Brown: `precomputeJamesBrownEffectiveHarmonyBars` enforces dominant-centre vamps + bridge side.
+   * After precompute, `jamesBrownEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const jbEff = meta?.jamesBrownEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'james_brown' &&
+    Array.isArray(jbEff) &&
+    jbEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jbEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

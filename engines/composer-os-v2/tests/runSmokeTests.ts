@@ -11,6 +11,7 @@ import { runIndieGuitar2SongModeChordEventQualityTests } from './indieGuitar2Son
 import { runBrianWilsonPetSoundsSliceSmokeTests } from './brianWilsonPetSoundsSliceSmoke.test';
 import { runStevieWonderSliceSmokeTests } from './stevieWonderSliceSmoke.test';
 import { runRadioheadSliceSmokeTests } from './radioheadSliceSmoke.test';
+import { runJamesBrownSliceSmokeTests } from './jamesBrownSliceSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -23,6 +24,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Brian Wilson Pet Sounds songwriter slice', run: runBrianWilsonPetSoundsSliceSmokeTests },
   { label: 'Stevie Wonder (1972–76) songwriter slice', run: runStevieWonderSliceSmokeTests },
   { label: 'Radiohead (OK Computer–era) songwriter slice', run: runRadioheadSliceSmokeTests },
+  { label: 'James Brown songwriter slice', run: runJamesBrownSliceSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

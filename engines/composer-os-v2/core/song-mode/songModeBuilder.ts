@@ -893,6 +893,30 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em', 'Am', 'D', 'G'],
     ],
   },
+  james_brown: {
+    verse: [
+      ['E9', 'E9', 'E9', 'E9'],
+      ['E9', 'E9', 'D7', 'D7'],
+      ['F9', 'F9', 'F9', 'F9'],
+      ['Bb9', 'Bb9', 'Bb9', 'Bb9'],
+    ],
+    chorus: [
+      ['E9', 'E9', 'E9', 'E9'],
+      ['A9', 'A9', 'A9', 'A9'],
+      ['E9', 'E9', 'D7', 'D7'],
+      ['Bb9', 'Bb9', 'G7', 'G7'],
+    ],
+    bridge: [
+      ['D7', 'G7', 'D7', 'D7'],
+      ['E9', 'A9', 'E9', 'E9'],
+    ],
+    pre_chorus: [
+      ['E9', 'E9', 'E9', 'E9'],
+      ['E9', 'E9', 'D7', 'D7'],
+      ['F9', 'F9', 'F9', 'F9'],
+      ['Bb9', 'Bb9', 'Bb9', 'Bb9'],
+    ],
+  },
   brian_wilson: {
     verse: [
       ['Cmaj7', 'Cadd9', 'Am7', 'Fmaj7'],

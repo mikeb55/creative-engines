@@ -436,6 +436,38 @@ export interface GenerationMetadata {
   radioheadEffectiveHarmonyBars?: string[];
   /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
   radioheadDeviceReceipts?: string[];
+  /** James Brown (funk/soul dominant-centre) — per-bar harmony + device/guard stats. */
+  jamesBrownDiagnostics?: {
+    songwriterId: 'james_brown';
+    barsConsidered: number;
+    dominantVampTouches: number;
+    minorSeventhTouches: number;
+    extensionTouches: number;
+    /** Sum of reharm / turnaround / >13 extension guard triggers. */
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      reharmBlock: number;
+      turnaroundBlock: number;
+      extensionBeyond13: number;
+    };
+    deviceReceipts?: string[];
+    vampLockStats?: { minRun: number; maxRun: number; meanRun: number };
+    stabPlacement?: { eligibleBars: number; stabReceiptBars: number; hitRate: number };
+  };
+  /** One-line digest for manifests / dev inspector when the James Brown slice ran. */
+  jamesBrownSliceReceipt?: string;
+  /** Duo golden path: effective one chord per bar after James Brown harmonic devices. */
+  jamesBrownEffectiveHarmonyBars?: string[];
+  /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
+  jamesBrownDeviceReceipts?: string[];
+  /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
+  jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
+  /** Bars (1-based) where blues-tension colour was applied (device 5). */
+  jamesBrownBluesTensionBars?: number[];
+  /** Vamp run statistics (verse/chorus regions). */
+  jamesBrownVampLockStats?: { minRun: number; maxRun: number; meanRun: number };
+  /** Horn-stab receipt coverage vs eligible verse+chorus bars. */
+  jamesBrownStabPlacementStats?: { eligibleBars: number; stabReceiptBars: number; hitRate: number };
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;

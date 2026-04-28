@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [2026-04-28] James Brown — full Song Mode slice (`jamesBrownSlice.ts`)
+
+- **Chord pools:** **`SONGWRITER_CHORD_POOLS.james_brown`** — dominant-centre vamps (**E9**, **D7**, **F9**, **Bb9**, **A9**, **G7**); bridge vocabulary supports **I7→IV7** side-slide returns.
+- **Golden-path slice:** **`engines/composer-os-v2/core/song-mode/jamesBrownSlice.ts`** (re-export **`goldenPath/jamesBrownSlice.ts`**) — **`precomputeJamesBrownEffectiveHarmonyBars`**, per-bar diagnostics accumulator, **`finalizeJamesBrownMetadata`**, **`getChordForBar`** harmony authority via **`jamesBrownEffectiveHarmonyBars`**, **`isSongwriterJamesBrown`** guard; **`applyJamesBrownGuitarBarPasses`** for comp **`ChordEvent`** metadata where present.
+- **Devices (receipts `jb:*`):** **d1** **`the_one_anchor`** (changes on bar downbeats); **d2** **`dominant_vamp_lock`** (verse/chorus minimum hold); **d3** **`horn_stab_rhythm`** (beats 1 / 3 stab intent + **`stabDuration: 'short'`** when comp chords exist); **d4** **`iv_side_bridge`** (bridge-only **I7→IV7→I7**, once per song when a bridge section is present); **d5** **`blues_tension`** (verse/bridge colour flag **`bluesTension`** on comp hits).
+- **Anti-elaboration guards:** **`reharmBlock`**, **`extensionBeyond13`**, **`turnaroundBlock`** (aggregated as **`antiElaborationGuardTriggers`** / **`jamesBrownAntiElaborationGuards`**).
+- **Routing / truth / manifests:** **`harmonyResolution.ts`**, **`pipelineTruthGates`** (32-bar locked), **`customLockedHarmonyRouting`**, **`runGoldenPath`**, **`composerOsAppGeneration`**, **`writeOutputManifest`**, **`appApiTypes`** **`OutputEntry`** — same effective-bar pattern as Radiohead / Stevie / Brian Wilson.
+- **Eval:** **`npm run eval:james_brown`** (**`engines/composer-os-v2/scripts/runJamesBrownSongModeEval.ts`**); default batch uses **3** seeds (CSV + markdown under **`output/james-brown-eval/`**).
+- **Smoke:** **`tests/jamesBrownSliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **37** passed / **0** failed (**+1** vs Radiohead-era **36**).
+- **Known debt (non-blocking):** **d2** **`dominant_vamp_lock`** and **d4** **`iv_side_bridge`** may show **zero** receipts on typical **A/B** **32-bar** seeds (vamp already ≥4 bars; no **bridge** section label) — same “device quiet on harness seed” pattern as Stevie **d3**/**d4**, Radiohead **d2**/**d4**. **C3** **`songModeJamesBrownFunkOverlay`** + primary **`james_brown`** may still trip rhythm-overlay span asserts on some seeds (harmony slice remains authoritative when overlay is off).
+
 ## [2026-04-28] fix: Brian Wilson Pet Sounds devices over full-form locked Song Mode harmony
 
 - **`generateGoldenPathDuoScore.ts`:** **`precomputeBrianWilsonEffectiveHarmonyBars`** runs for **`brian_wilson`** + duo golden path even when **`lockedHarmonyBarsRaw`** is full-form (removed **`!lockedFullForm`** gate).

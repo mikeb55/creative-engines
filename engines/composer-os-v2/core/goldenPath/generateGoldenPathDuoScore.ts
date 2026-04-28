@@ -73,6 +73,13 @@ import {
   finalizeRadioheadMetadata,
   precomputeRadioheadEffectiveHarmonyBars,
 } from './radioheadSlice';
+import {
+  accumulateJamesBrownHarmonyDiagnostics,
+  applyJamesBrownGuitarBarPasses,
+  createJamesBrownHarmonyAccumulator,
+  finalizeJamesBrownMetadata,
+  precomputeJamesBrownEffectiveHarmonyBars,
+} from './jamesBrownSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1983,9 +1990,11 @@ function buildGuitarPart(
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
   const isSongwriterStevieWonder = genMeta?.songwriterStyleId === 'stevie_wonder';
   const isSongwriterRadiohead = genMeta?.songwriterStyleId === 'radiohead';
+  const isSongwriterJamesBrown = genMeta?.songwriterStyleId === 'james_brown';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
+  const jbAccum = createJamesBrownHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -1995,6 +2004,9 @@ function buildGuitarPart(
   }
   if (isSongwriterRadiohead && isDuoGoldenPath) {
     precomputeRadioheadEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJamesBrown && isDuoGoldenPath) {
+    precomputeJamesBrownEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2106,6 +2118,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         rhAccum
+      );
+    }
+    if (isSongwriterJamesBrown) {
+      accumulateJamesBrownHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        jbAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2224,6 +2243,10 @@ function buildGuitarPart(
       }
       if (isSongwriterStevieWonder && isDuoGolden) {
         applyStevieWonderGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (genMeta?.songwriterStyleId === 'james_brown' && isDuoGolden) {
+        applyJamesBrownGuitarBarPasses(m, b, context);
         normalizeMeasureToEighthBeatGrid(m);
       }
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
@@ -2535,6 +2558,10 @@ function buildGuitarPart(
 
   if (isSongwriterRadiohead && context.generationMetadata) {
     finalizeRadioheadMetadata(context.generationMetadata, rhAccum);
+  }
+
+  if (isSongwriterJamesBrown && context.generationMetadata) {
+    finalizeJamesBrownMetadata(context.generationMetadata, jbAccum);
   }
 
   return {

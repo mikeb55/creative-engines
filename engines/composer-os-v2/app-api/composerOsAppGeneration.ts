@@ -932,6 +932,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const bwDisk = mdDisk?.brianWilsonEffectiveHarmonyBars;
     const swDisk = mdDisk?.stevieWonderEffectiveHarmonyBars;
     const rhDisk = mdDisk?.radioheadEffectiveHarmonyBars;
+    const jbDisk = mdDisk?.jamesBrownEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -951,7 +952,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
               locked &&
               rhDisk.length === locked.length
             ? rhDisk
-            : locked;
+            : mdDisk?.songwriterStyleId === 'james_brown' &&
+                Array.isArray(jbDisk) &&
+                jbDisk.length === gp.context.form.totalBars &&
+                locked &&
+                jbDisk.length === locked.length
+              ? jbDisk
+              : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1021,6 +1028,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       radioheadDeviceReceipts: gp.context.generationMetadata.radioheadDeviceReceipts,
       radioheadSliceReceipt: gp.context.generationMetadata.radioheadSliceReceipt,
       radioheadEffectiveHarmonyBars: gp.context.generationMetadata.radioheadEffectiveHarmonyBars,
+      jamesBrownDiagnostics: gp.context.generationMetadata.jamesBrownDiagnostics,
+      jamesBrownDeviceReceipts: gp.context.generationMetadata.jamesBrownDeviceReceipts,
+      jamesBrownSliceReceipt: gp.context.generationMetadata.jamesBrownSliceReceipt,
+      jamesBrownEffectiveHarmonyBars: gp.context.generationMetadata.jamesBrownEffectiveHarmonyBars,
+      jamesBrownAntiElaborationGuards: gp.context.generationMetadata.jamesBrownAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

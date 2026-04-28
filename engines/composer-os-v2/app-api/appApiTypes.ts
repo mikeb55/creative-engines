@@ -323,4 +323,10 @@ export interface OutputEntry {
   radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
   radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
   radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
+  /** James Brown (dominant-centre funk/soul) slice — diagnostics / receipts (Song Mode manifest echo). */
+  jamesBrownDiagnostics?: GenerationMetadata['jamesBrownDiagnostics'];
+  jamesBrownDeviceReceipts?: GenerationMetadata['jamesBrownDeviceReceipts'];
+  jamesBrownSliceReceipt?: GenerationMetadata['jamesBrownSliceReceipt'];
+  jamesBrownEffectiveHarmonyBars?: GenerationMetadata['jamesBrownEffectiveHarmonyBars'];
+  jamesBrownAntiElaborationGuards?: GenerationMetadata['jamesBrownAntiElaborationGuards'];
 }

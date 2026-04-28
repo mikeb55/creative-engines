@@ -128,6 +128,11 @@ export function writeOutputManifest(
     radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
     radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
     radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
+    jamesBrownDiagnostics?: GenerationMetadata['jamesBrownDiagnostics'];
+    jamesBrownDeviceReceipts?: GenerationMetadata['jamesBrownDeviceReceipts'];
+    jamesBrownSliceReceipt?: GenerationMetadata['jamesBrownSliceReceipt'];
+    jamesBrownEffectiveHarmonyBars?: GenerationMetadata['jamesBrownEffectiveHarmonyBars'];
+    jamesBrownAntiElaborationGuards?: GenerationMetadata['jamesBrownAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -215,6 +220,11 @@ export function writeOutputManifest(
     radioheadDeviceReceipts: meta.radioheadDeviceReceipts,
     radioheadSliceReceipt: meta.radioheadSliceReceipt,
     radioheadEffectiveHarmonyBars: meta.radioheadEffectiveHarmonyBars,
+    jamesBrownDiagnostics: meta.jamesBrownDiagnostics,
+    jamesBrownDeviceReceipts: meta.jamesBrownDeviceReceipts,
+    jamesBrownSliceReceipt: meta.jamesBrownSliceReceipt,
+    jamesBrownEffectiveHarmonyBars: meta.jamesBrownEffectiveHarmonyBars,
+    jamesBrownAntiElaborationGuards: meta.jamesBrownAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

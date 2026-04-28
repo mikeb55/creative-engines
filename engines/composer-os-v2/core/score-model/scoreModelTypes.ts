@@ -65,6 +65,10 @@ export interface ChordEvent {
   duration: number;
   voice: number;
   motifRef?: string;
+  /** James Brown slice — short comp attack (horns / stab rhythm); export may treat as staccato. */
+  stabDuration?: 'short' | 'long';
+  /** James Brown slice — minor-pentatonic-over-dominant colour flag (not a harmony change). */
+  bluesTension?: boolean;
 }
 
 /** Union of note, rest, and timed chord stack. */
