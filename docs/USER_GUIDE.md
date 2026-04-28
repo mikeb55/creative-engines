@@ -23,7 +23,7 @@ Composer OS is an application that **generates instrumental music** from your ch
 | Mode | What you get (typical) |
 |------|-------------------------|
 | Guitar–Bass Duo | Full duo MusicXML (golden path). |
-| Guitar–Bass Duo (Single-Line) | Same harmony path as standard duo, **phrase-first** single-note guitar and bass — MusicXML. Inner-line (Wyble-style) behaviour is gated with the same **duo-family** preset id checks as standard duo where the engine intends shared rules; Song Mode / long-form **opt-ins** may still be **standard duo only** (see roadmap). |
+| Guitar–Bass Duo (Single-Line) | Same harmony path as standard duo, **phrase-first** single-note guitar and bass — MusicXML. Inner-line (Wyble-style) behaviour uses **`isGuitarBassDuoFamily`** (standard duo, **`song_mode`**, **`song_mode_*`**, single-line duo) wherever the engine intends shared guitar+bass golden-path rules — **not** only the literal `guitar_bass_duo` id; Song Mode / long-form **opt-ins** may still differ where roadmap marks standard-duo-only slices. |
 | Wyble Etude | Two-voice guitar etude — **requires** a chord progression in the UI. |
 | ECM Chamber | Chamber jazz — MusicXML (Metheny vs Schneider sub-mode in the UI). |
 | Song Mode | Song planning then **duo realisation** — MusicXML (see receipt if something else is returned). |
@@ -93,6 +93,16 @@ The system applies altered tunings to both guitars and adds dyadic comp harmony 
 - **How to control it:** pass `motifAuthorityLevel` as `off`, `soft`, or `strong` on supported routes. Legacy `motifAuthorityV1: true` maps to `soft` only when the run is in this pilot scope.
 - **Practical meaning:** `off` = no motif-development guarantee and minimal motif summary; `soft`/`strong` = increasing recurrence/transform evidence for pilot runs.
 - **Inspectability fields:** receipts / `_meta` / run manifest may include `motifAuthorityLevel` and `motifDevelopmentSummary` on supported pilot runs.
+
+### Guitar–Bass Duo golden path — phrase shaping (Song Mode uses same duo realisation)
+
+On **standard duo** and **Song Mode** runs that resolve to the **golden-path guitar+bass** stack:
+
+- **Phrase Engine Stage 2:** 4-bar **phrase sequencing types** repeat with **inter-phrase contrast** (successive phrases avoid cloning the same sequencing pattern; phrase intent is shared between **guitar** and **bass** so lines align).
+- **Phrase Engine Stage 3:** **Controlled anticipation** — at most **one** lead-guitar onset per bar may arrive **one eighth-note early**; **cadence bars** (every **fourth** bar in the phrase window) skip anticipation so phrase endings stay clear. The **Indie Art Pop separate dual-electric** route skips Stage 3 so **guitar_2** chord-density smoke stays stable.
+- **Bar-4 cadence:** On **every** 4-bar boundary, the engine **lengthens** the phrase-ending lead note toward the bar end and **snaps** it to a **chord tone** so phrase closures read in the score.
+
+Details: **`docs/CHANGELOG.md`** → **[2026-04-28]**.
 
 ### Developer checks (engine)
 
@@ -244,6 +254,8 @@ Choose **Wayne Shorter** as the **primary songwriter** when you want a **post-bo
 
 **What it generates:** By default you get **32 bars** of Shorter-flavoured harmony from extended pools (no padded repeat of a single short progression). The engine aims for **variety across the form** and avoids obvious **II–V–I chains** in the scaffold (honest wording ? not an authenticity guarantee).
 
+**Chorus / bridge motif development (lead guitar):** On the duo golden path, after the lead guitar part is built, a **seed-deterministic** pass may apply **one** light transform per **chorus** or **bridge** section (not verse/intro): e.g. **onset +1 beat**, **rhythmic augment**, or a **small leap nudge** on a second note. **At most one** of these per section. Inspect **`motifDevelopmentSummary`** on the manifest / `_meta` when present.
+
 **Known limitation:** Rules in **`songwriterRuleRegistry`** and per-row **metadata tags** (**tension**, **motion**, **cadential**, **pedal**) **inform planning metadata** today. **Rule-to-chord wiring** is **metadata only** in the picker **until contextual selection** is implemented.
 
 ### Song Mode — Bacharach primary songwriter
@@ -295,7 +307,7 @@ Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to
 
 Batch **same-seed** Bacharach vs neutral (**default neutral songwriter `carole_king`**), optional receipt/`_meta` checks, **GCE-style** CSV + Markdown (scores are **diagnostic only** — not a runtime lock). Outputs include **MusicXML**, **`_meta`** manifests, and eval artifacts under **`--out`**.
 
-**Section-shaping diagnostics:** Song Mode writes a versioned aggregate **`songModeSectionShapingDiagnostics`** on each run manifest (density/colour B−A, opening vs return, return variation, contributing slices). The **Fagen**, **Bacharach**, and **Sophisticated Pop** eval scripts (`eval:fagen`, `eval:bacharach`, `eval:style-soph-pop`) read that field for batch A/B so metrics stay aligned with the engine’s own receipt line, without re-deriving the same numbers from chord-bar strings when the manifest already has them.
+**Section-shaping diagnostics:** Song Mode writes a versioned aggregate **`songModeSectionShapingDiagnostics`** on each run manifest (density/colour B−A, opening vs return, return variation, contributing slices). The **Fagen**, **Bacharach**, and **Sophisticated Pop** eval scripts (`eval:fagen`, `eval:bacharach`, `eval:style-soph-pop`) read that field for batch A/B and append **wide per-seed tables** (including per-section **`phraseType`**, **`cadenceBar`**, **`anticipationCount`**, **`motifTransform`**) so A/B diffs stay aligned with the engine receipt, not re-derived from chord-bar strings alone.
 
 From **repository root**:
 
@@ -369,7 +381,7 @@ When changing **Guitar–Bass Duo**, **Duo (Single-Line)**, **Wyble Voice 2**, o
    `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-baseline-composer-os-v2.ps1`  
    (add `-IncludeRunAll` only if you intentionally want the long full `npm test`.)
 
-**Expected red (test debt):** `npm test` runs the large **`runAllTests.ts`** harness and may exit **non-zero** with many **`FAIL:`** lines until debt is cleared. That is **not** the same as the five commands above. **New** failures outside the [baseline doc](TEST_DEBT_COMPOSER_OS_V2.md) should be treated as **regressions**.
+**Full matrix:** `npm test` / root **`runAllTests`** loads the large harness as **sequential chunks** (separate Node processes with a raised heap limit) so the full suite is less likely to **OOM** one process; it may still exit **non-zero** with **`FAIL:`** lines where [test debt](TEST_DEBT_COMPOSER_OS_V2.md) is recorded. That is **not** the same as the five commands above. **New** failures outside the baseline doc should be treated as **regressions**.
 
 Details: **[TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md)**.
 
