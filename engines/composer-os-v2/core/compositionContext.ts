@@ -501,6 +501,18 @@ export interface GenerationMetadata {
     twoBarHoldForced: number;
     maj7CadenceMuted: number;
   };
+  /** Sonic Youth — alternate tuning / noise-harmony slice (additive; `ChordEvent.sonicYouth` optional). */
+  sonicYouthDiagnostics?: {
+    songwriterId: 'sonic_youth';
+    barsConsidered: number;
+    susOrAddTouches: number;
+    sharpElevenOrAltTouches: number;
+    slashTouches: number;
+    deviceReceipts?: string[];
+  };
+  sonicYouthSliceReceipt?: string;
+  sonicYouthEffectiveHarmonyBars?: string[];
+  sonicYouthDeviceReceipts?: string[];
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

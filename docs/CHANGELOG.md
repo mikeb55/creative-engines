@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2026-04-28] Sonic Youth — full Song Mode slice (`sonicYouthSlice.ts`)
+
+- **Chord pools:** **`SONGWRITER_CHORD_POOLS.sonic_youth`** — user-progression-aligned rows (**Emadd9**, slash colours, **Gsus2** / **Asus4**, **Cmaj7#11**, **F#7sus4**, **B7alt**, **G/E**, **Dsus4/A**, **A7sus4**, **Cadd9**, **Bbmaj7#11**); asymmetric repeats, not generic alt-rock voicing grammar.
+- **Golden-path slice:** **`engines/composer-os-v2/core/song-mode/sonicYouthSlice.ts`** (re-export **`goldenPath/sonicYouthSlice.ts`**) — **`precomputeSonicYouthEffectiveHarmonyBars`**, **`accumulateSonicYouthHarmonyDiagnostics`**, **`finalizeSonicYouthMetadata`**, **`applySonicYouthGuitarBarPasses`** (optional **`ChordEvent.sonicYouth`** via **`sonicYouthChordTypes`** + **`sonicYouthChordGuards`**); **`getChordForBar`** authority via **`sonicYouthEffectiveHarmonyBars`** when primary is **`sonic_youth`**.
+- **Devices (receipts `sy:*`):** **`alternate_tuning_colour`**, **`two_guitar_register_split`**, **`open_string_drone`**, **`dissonant_dyad_cluster`**, **`riff_cell_repetition`**, **`asymmetric_phrase_extension`**, **`noisy_cadence_destabilisation`** (optional dominants→**sus4** nudge), **`modal_static_harmony`** — seed-stable strings with section/bar hints where applicable.
+- **Routing / truth / manifests:** **`harmonyResolution.ts`**, **`pipelineTruthGates`** (32-bar locked), **`customLockedHarmonyRouting`**, **`runGoldenPath`**, **`composerOsAppGeneration`**, **`writeOutputManifest`**, **`appApiTypes`** — same effective-bar pattern as Joni Mitchell / Radiohead.
+- **Eval:** **`npm run eval:sonic_youth`** (**`engines/composer-os-v2/scripts/runSonicYouthSongModeEval.ts`**); sample seeds show **≥5** distinct **`sy:`** device families.
+- **Smoke:** **`tests/sonicYouthSliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **39** passed / **0** failed (**+1** vs Joni-era **38**).
+
 ## [2026-04-28] Joni Mitchell — full Song Mode slice (`joniMitchellSlice.ts`)
 
 - **Chord pools:** **`SONGWRITER_CHORD_POOLS.joni_mitchell`** — modal/suspended colours (**Dadd9**, **Gsus2**, **Asus4**, **Fadd9** / **Fmaj(add9)** family, **Cadd9**, **G6/9** / **Gmaj(6/9)**, **Bm11**, **Emadd9** / **Em(add9)**); rows stay non-functional (no ii–V–I grammar).

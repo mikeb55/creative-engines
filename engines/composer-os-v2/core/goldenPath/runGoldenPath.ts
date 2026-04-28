@@ -1905,6 +1905,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const swEx = mdEx?.stevieWonderEffectiveHarmonyBars;
   const rhEx = mdEx?.radioheadEffectiveHarmonyBars;
   const jmEx = mdEx?.joniMitchellEffectiveHarmonyBars;
+  const syEx = mdEx?.sonicYouthEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
       ? bwEx
@@ -1914,7 +1915,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           ? rhEx
           : mdEx?.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmEx) && jmEx.length === tbEx
             ? jmEx
-            : lockedForExport;
+            : mdEx?.songwriterStyleId === 'sonic_youth' && Array.isArray(syEx) && syEx.length === tbEx
+              ? syEx
+              : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -1978,6 +1981,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const rhLt = mdLt?.radioheadEffectiveHarmonyBars;
     const jbLt = mdLt?.jamesBrownEffectiveHarmonyBars;
     const jmLt = mdLt?.joniMitchellEffectiveHarmonyBars;
+    const syLt = mdLt?.sonicYouthEffectiveHarmonyBars;
     const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
         ? bwLt
@@ -1989,7 +1993,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
               ? jbLt
               : mdLt?.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmLt) && jmLt.length === tbLt
                 ? jmLt
-                : lockedBars;
+                : mdLt?.songwriterStyleId === 'sonic_youth' && Array.isArray(syLt) && syLt.length === tbLt
+                  ? syLt
+                  : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

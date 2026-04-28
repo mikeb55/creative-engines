@@ -13,6 +13,7 @@ import { runStevieWonderSliceSmokeTests } from './stevieWonderSliceSmoke.test';
 import { runRadioheadSliceSmokeTests } from './radioheadSliceSmoke.test';
 import { runJamesBrownSliceSmokeTests } from './jamesBrownSliceSmoke.test';
 import { runJoniMitchellSliceSmokeTests } from './joniMitchellSliceSmoke.test';
+import { runSonicYouthSliceSmokeTests } from './sonicYouthSliceSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -27,6 +28,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Radiohead (OK Computer–era) songwriter slice', run: runRadioheadSliceSmokeTests },
   { label: 'James Brown songwriter slice', run: runJamesBrownSliceSmokeTests },
   { label: 'Joni Mitchell songwriter slice', run: runJoniMitchellSliceSmokeTests },
+  { label: 'Sonic Youth songwriter slice', run: runSonicYouthSliceSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

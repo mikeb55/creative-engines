@@ -117,6 +117,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return jmEff[barIndex - 1]!;
   }
 
+  /**
+   * Sonic Youth: `precomputeSonicYouthEffectiveHarmonyBars` layers receipts + optional cadence nudges.
+   * After precompute, `sonicYouthEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const syEff = meta?.sonicYouthEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'sonic_youth' &&
+    Array.isArray(syEff) &&
+    syEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return syEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

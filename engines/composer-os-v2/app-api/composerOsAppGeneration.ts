@@ -846,6 +846,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const rhLockedTruth = mdLockedTruth?.radioheadEffectiveHarmonyBars;
   const jbLockedTruth = mdLockedTruth?.jamesBrownEffectiveHarmonyBars;
   const jmLockedTruth = mdLockedTruth?.joniMitchellEffectiveHarmonyBars;
+  const syLockedTruth = mdLockedTruth?.sonicYouthEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -877,7 +878,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                 lockedHarmonyBarsAuthoritative &&
                 jmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
               ? jmLockedTruth
-              : lockedHarmonyBarsAuthoritative;
+              : mdLockedTruth?.songwriterStyleId === 'sonic_youth' &&
+                  Array.isArray(syLockedTruth) &&
+                  syLockedTruth.length === tbLockedTruth &&
+                  lockedHarmonyBarsAuthoritative &&
+                  syLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                ? syLockedTruth
+                : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -948,6 +955,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const rhDisk = mdDisk?.radioheadEffectiveHarmonyBars;
     const jbDisk = mdDisk?.jamesBrownEffectiveHarmonyBars;
     const jmDisk = mdDisk?.joniMitchellEffectiveHarmonyBars;
+    const syDisk = mdDisk?.sonicYouthEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -979,7 +987,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                   locked &&
                   jmDisk.length === locked.length
                 ? jmDisk
-                : locked;
+                : mdDisk?.songwriterStyleId === 'sonic_youth' &&
+                    Array.isArray(syDisk) &&
+                    syDisk.length === gp.context.form.totalBars &&
+                    locked &&
+                    syDisk.length === locked.length
+                  ? syDisk
+                  : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1062,6 +1076,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       joniMitchellTuningPatternByBar: gp.context.generationMetadata.joniMitchellTuningPatternByBar,
       joniMitchellModalFieldLockLengthBars: gp.context.generationMetadata.joniMitchellModalFieldLockLengthBars,
       joniMitchellSliceMeta: gp.context.generationMetadata.joniMitchellSliceMeta,
+      sonicYouthDiagnostics: gp.context.generationMetadata.sonicYouthDiagnostics,
+      sonicYouthDeviceReceipts: gp.context.generationMetadata.sonicYouthDeviceReceipts,
+      sonicYouthSliceReceipt: gp.context.generationMetadata.sonicYouthSliceReceipt,
+      sonicYouthEffectiveHarmonyBars: gp.context.generationMetadata.sonicYouthEffectiveHarmonyBars,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

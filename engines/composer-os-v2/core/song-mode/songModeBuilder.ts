@@ -980,6 +980,24 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em7', 'A7', 'Dmaj7', 'Bm7'],
     ],
   },
+  sonic_youth: {
+    verse: [
+      ['Emadd9', 'Emadd9/D', 'Gsus2', 'Asus4'],
+      ['Asus4', 'Emadd9', 'Emadd9/D', 'Gsus2'],
+    ],
+    chorus: [
+      ['Cmaj7#11', 'Cmaj7#11/G', 'F#7sus4', 'B7alt'],
+      ['F#7sus4', 'B7alt', 'Emadd9', 'Cmaj7#11'],
+    ],
+    bridge: [
+      ['Emadd9', 'G/E', 'Dsus4/A', 'A7sus4'],
+      ['A7sus4', 'Cadd9', 'Bbmaj7#11', 'Asus2'],
+    ],
+    pre_chorus: [
+      ['Cadd9', 'Bbmaj7#11', 'Asus2', 'Emadd9'],
+      ['Emadd9', 'Cadd9', 'Bbmaj7#11', 'Asus2'],
+    ],
+  },
   bill_evans: {
     verse: [
       ['Cmaj9', 'Am9', 'Dm9', 'G13'],

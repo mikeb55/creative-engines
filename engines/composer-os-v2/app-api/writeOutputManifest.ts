@@ -141,6 +141,10 @@ export function writeOutputManifest(
     joniMitchellTuningPatternByBar?: GenerationMetadata['joniMitchellTuningPatternByBar'];
     joniMitchellModalFieldLockLengthBars?: GenerationMetadata['joniMitchellModalFieldLockLengthBars'];
     joniMitchellSliceMeta?: GenerationMetadata['joniMitchellSliceMeta'];
+    sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
+    sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
+    sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
+    sonicYouthEffectiveHarmonyBars?: GenerationMetadata['sonicYouthEffectiveHarmonyBars'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -241,6 +245,10 @@ export function writeOutputManifest(
     joniMitchellTuningPatternByBar: meta.joniMitchellTuningPatternByBar,
     joniMitchellModalFieldLockLengthBars: meta.joniMitchellModalFieldLockLengthBars,
     joniMitchellSliceMeta: meta.joniMitchellSliceMeta,
+    sonicYouthDiagnostics: meta.sonicYouthDiagnostics,
+    sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
+    sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,
+    sonicYouthEffectiveHarmonyBars: meta.sonicYouthEffectiveHarmonyBars,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

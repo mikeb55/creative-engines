@@ -25,6 +25,7 @@
     "eval:stevie_wonder": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runStevieWonderSongModeEval.ts",
     "eval:radiohead": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runRadioheadSongModeEval.ts",
     "eval:joni_mitchell": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runJoniMitchellSongModeEval.ts",
+    "eval:sonic_youth": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSonicYouthSongModeEval.ts",
     "eval:james_brown": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runJamesBrownSongModeEval.ts",
     "eval:style-soph-pop": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runSophisticatedPopStyleEval.ts",
     "eval:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachSongModeEval.ts",

@@ -338,4 +338,9 @@ export interface OutputEntry {
   joniMitchellTuningPatternByBar?: GenerationMetadata['joniMitchellTuningPatternByBar'];
   joniMitchellModalFieldLockLengthBars?: GenerationMetadata['joniMitchellModalFieldLockLengthBars'];
   joniMitchellSliceMeta?: GenerationMetadata['joniMitchellSliceMeta'];
+  /** Sonic Youth — dual-guitar / alternate-tuning noise-harmony slice (manifest echo). */
+  sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
+  sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
+  sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
+  sonicYouthEffectiveHarmonyBars?: GenerationMetadata['sonicYouthEffectiveHarmonyBars'];
 }

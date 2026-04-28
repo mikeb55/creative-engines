@@ -86,6 +86,13 @@ import {
   finalizeJoniMitchellMetadata,
   precomputeJoniMitchellEffectiveHarmonyBars,
 } from './joniMitchellSlice';
+import {
+  accumulateSonicYouthHarmonyDiagnostics,
+  applySonicYouthGuitarBarPasses,
+  createSonicYouthHarmonyAccumulator,
+  finalizeSonicYouthMetadata,
+  precomputeSonicYouthEffectiveHarmonyBars,
+} from './sonicYouthSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1998,11 +2005,13 @@ function buildGuitarPart(
   const isSongwriterRadiohead = genMeta?.songwriterStyleId === 'radiohead';
   const isSongwriterJamesBrown = genMeta?.songwriterStyleId === 'james_brown';
   const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
+  const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
   const jbAccum = createJamesBrownHarmonyAccumulator();
   const jmAccum = createJoniMitchellHarmonyAccumulator();
+  const syAccum = createSonicYouthHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2018,6 +2027,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJoniMitchell && isDuoGoldenPath) {
     precomputeJoniMitchellEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterSonicYouth && isDuoGoldenPath) {
+    precomputeSonicYouthEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2145,6 +2157,13 @@ function buildGuitarPart(
         jmAccum
       );
     }
+    if (isSongwriterSonicYouth) {
+      accumulateSonicYouthHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        syAccum
+      );
+    }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
     const placements = getPlacementsForBar(motifState.placements, b);
     const ecmMode = context.generationMetadata?.ecmMode;
@@ -2265,6 +2284,10 @@ function buildGuitarPart(
       }
       if (genMeta?.songwriterStyleId === 'james_brown' && isDuoGolden) {
         applyJamesBrownGuitarBarPasses(m, b, context);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isSongwriterSonicYouth && isDuoGolden) {
+        applySonicYouthGuitarBarPasses(m, b, context);
         normalizeMeasureToEighthBeatGrid(m);
       }
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
@@ -2542,6 +2565,10 @@ function buildGuitarPart(
         applyStevieWonderGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh);
         normalizeMeasureToEighthBeatGrid(m);
       }
+      if (isSongwriterSonicYouth && isDuoGolden) {
+        applySonicYouthGuitarBarPasses(m, b, context);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
       if (!skipPhraseEngineStage3Anticipation) {
         applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
@@ -2584,6 +2611,10 @@ function buildGuitarPart(
 
   if (isSongwriterJoniMitchell && context.generationMetadata) {
     finalizeJoniMitchellMetadata(context.generationMetadata, jmAccum);
+  }
+
+  if (isSongwriterSonicYouth && context.generationMetadata) {
+    finalizeSonicYouthMetadata(context.generationMetadata, syAccum);
   }
 
   return {
