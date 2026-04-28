@@ -67,6 +67,12 @@ import {
   finalizeStevieWonderMetadata,
   precomputeStevieWonderEffectiveHarmonyBars,
 } from './stevieWonderSlice';
+import {
+  accumulateRadioheadHarmonyDiagnostics,
+  createRadioheadHarmonyAccumulator,
+  finalizeRadioheadMetadata,
+  precomputeRadioheadEffectiveHarmonyBars,
+} from './radioheadSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1976,14 +1982,19 @@ function buildGuitarPart(
 
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
   const isSongwriterStevieWonder = genMeta?.songwriterStyleId === 'stevie_wonder';
+  const isSongwriterRadiohead = genMeta?.songwriterStyleId === 'radiohead';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
+  const rhAccum = createRadioheadHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }
   if (isSongwriterStevieWonder && isDuoGoldenPath) {
     precomputeStevieWonderEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterRadiohead && isDuoGoldenPath) {
+    precomputeRadioheadEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2088,6 +2099,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         swAccum
+      );
+    }
+    if (isSongwriterRadiohead) {
+      accumulateRadioheadHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        rhAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2513,6 +2531,10 @@ function buildGuitarPart(
 
   if (isSongwriterStevieWonder && context.generationMetadata) {
     finalizeStevieWonderMetadata(context.generationMetadata, swAccum);
+  }
+
+  if (isSongwriterRadiohead && context.generationMetadata) {
+    finalizeRadioheadMetadata(context.generationMetadata, rhAccum);
   }
 
   return {

@@ -419,6 +419,23 @@ export interface GenerationMetadata {
   stevieWonderDeviceReceipts?: string[];
   /** Guitar-only pentatonic bias receipts (device 5); merged into diagnostics in finalize. */
   stevieWonderPentatonicReceipts?: string[];
+  /** Radiohead (OK Computer / Kid A era) — per-bar harmony vocabulary scan (maj7, m, borrowed modal, slash pedals). */
+  radioheadDiagnostics?: {
+    songwriterId: 'radiohead';
+    barsConsidered: number;
+    maj7Touches: number;
+    minorTriadTouches: number;
+    borrowedModalTouches: number;
+    slashPedalTouches: number;
+    /** Named harmonic device receipts for this run (e.g. `rh:device1:...`). */
+    deviceReceipts?: string[];
+  };
+  /** One-line digest for manifests / dev inspector when the Radiohead slice ran. */
+  radioheadSliceReceipt?: string;
+  /** Duo golden path: effective one chord per bar after Radiohead harmonic devices. */
+  radioheadEffectiveHarmonyBars?: string[];
+  /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
+  radioheadDeviceReceipts?: string[];
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;

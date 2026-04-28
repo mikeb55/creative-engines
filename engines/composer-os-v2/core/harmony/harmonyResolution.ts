@@ -72,6 +72,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return swEff[barIndex - 1]!;
   }
 
+  /**
+   * Radiohead (OK Computer–era): `precomputeRadioheadEffectiveHarmonyBars` layers devices on the locked
+   * progression. After precompute, `radioheadEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const rhEff = meta?.radioheadEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'radiohead' &&
+    Array.isArray(rhEff) &&
+    rhEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return rhEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

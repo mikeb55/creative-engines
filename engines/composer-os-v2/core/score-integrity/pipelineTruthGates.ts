@@ -409,12 +409,15 @@ export function runPipelineTruthGates(params: {
     const mdT = context.generationMetadata;
     const bwT = mdT.brianWilsonEffectiveHarmonyBars;
     const swT = mdT.stevieWonderEffectiveHarmonyBars;
+    const rhT = mdT.radioheadEffectiveHarmonyBars;
     const expected =
       mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
         ? [...bwT]
         : mdT.songwriterStyleId === 'stevie_wonder' && Array.isArray(swT) && swT.length === 32
           ? [...swT]
-          : [...parsedBars];
+          : mdT.songwriterStyleId === 'radiohead' && Array.isArray(rhT) && rhT.length === 32
+            ? [...rhT]
+            : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';

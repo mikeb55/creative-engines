@@ -10,6 +10,7 @@ import { runChordSymbolMusicXmlHarmonyTests } from './chordSymbolMusicXmlHarmony
 import { runIndieGuitar2SongModeChordEventQualityTests } from './indieGuitar2SongModeChordEventQuality.test';
 import { runBrianWilsonPetSoundsSliceSmokeTests } from './brianWilsonPetSoundsSliceSmoke.test';
 import { runStevieWonderSliceSmokeTests } from './stevieWonderSliceSmoke.test';
+import { runRadioheadSliceSmokeTests } from './radioheadSliceSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -21,6 +22,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Indie guitar_2 Song Mode comp (ChordEvent quality)', run: runIndieGuitar2SongModeChordEventQualityTests },
   { label: 'Brian Wilson Pet Sounds songwriter slice', run: runBrianWilsonPetSoundsSliceSmokeTests },
   { label: 'Stevie Wonder (1972–76) songwriter slice', run: runStevieWonderSliceSmokeTests },
+  { label: 'Radiohead (OK Computer–era) songwriter slice', run: runRadioheadSliceSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

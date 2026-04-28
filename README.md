@@ -57,13 +57,16 @@ thinGuitar2Voice1InChordMeasures
 ### 10. Stevie Wonder (1972–1976) songwriter slice (2026-04-28)
 - Primary **`stevie_wonder`**: funk/R&B chord pools, high-syncopation melody profile, **five devices** (Dorian vamp, vi→II→V7sus4→I cadential turns, chromatic bridge sequence, chorus **bII** pivot, pentatonic voice-1 bias) on **locked** duo harmony — **`stevieWonderSliceReceipt`** / **`stevieWonderDiagnostics`** / effective bars on **`GenerationMetadata`**. Implementation: **`engines/composer-os-v2/core/song-mode/stevieWonderSlice.ts`**.
 
-### 10. Harness & product parity (session)
+### 11. Radiohead (OK Computer / Kid A era) songwriter slice (2026-04-28)
+- Primary **`radiohead`**: modal/minimal chord pools, low-syncopation / asymmetric-form profile, **five harmonic devices** (Phrygian pedal, parallel maj/min blocks, chromatic insertion, borrowed **iv**, absent tonic delay) on **locked** duo harmony — **`radioheadSliceReceipt`** / **`radioheadDiagnostics`** / **`radioheadEffectiveHarmonyBars`** on **`GenerationMetadata`**. Implementation: **`engines/composer-os-v2/core/song-mode/radioheadSlice.ts`**.
+
+### 12. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline; markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`**.
+**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline; markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`**.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.11).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.13).
 
 ---
 
@@ -77,7 +80,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (35 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)** and **Stevie Wonder (1972–76)** songwriter slice smokes
+- npm run test:smoke — PASS (36 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, and **Radiohead (OK Computer–era)** songwriter slice smokes
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 

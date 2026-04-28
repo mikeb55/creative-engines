@@ -318,4 +318,9 @@ export interface OutputEntry {
   stevieWonderDeviceReceipts?: GenerationMetadata['stevieWonderDeviceReceipts'];
   stevieWonderSliceReceipt?: GenerationMetadata['stevieWonderSliceReceipt'];
   stevieWonderEffectiveHarmonyBars?: GenerationMetadata['stevieWonderEffectiveHarmonyBars'];
+  /** Radiohead (OK Computer–era) slice — diagnostics / receipts (Song Mode manifest echo). */
+  radioheadDiagnostics?: GenerationMetadata['radioheadDiagnostics'];
+  radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
+  radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
+  radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
 }

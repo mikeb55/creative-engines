@@ -1,10 +1,20 @@
+## [2026-04-28] Radiohead (OK Computer / Kid A era) full-slice songwriter profile
+
+- **Chord pools:** `SONGWRITER_CHORD_POOLS.radiohead` in `songModeBuilder.ts` (triads, maj7/m7, modal borrow colours, `Dbmaj7` / `Eb6`, borrowed **iv**; pools avoid dominant-jazz extensions).
+- **Style profile:** `radiohead` in `SONGWRITER_STYLE_PROFILES` only ‚Äî low form regularity / phrase regularity, high harmonic ambiguity, low syncopation, slow harmonic rhythm, `intervalPreference: stepwise`, `guitarModalPreference: phrygian_aeolian`.
+- **Slice:** `engines/composer-os-v2/core/song-mode/radioheadSlice.ts` ‚Äî five devices (`rh:device1`‚Äì`rh:device5`); `precomputeRadioheadEffectiveHarmonyBars` + `radioheadEffectiveHarmonyBars` wired through `getChordForBar` (`harmonyResolution.ts`), export/truth (`runGoldenPath.ts`, `customLockedHarmonyRouting.ts`, `pipelineTruthGates.ts`, `composerOsAppGeneration.ts`) same pattern as Stevie Wonder.
+- **Metadata / manifests:** `radioheadDiagnostics`, `radioheadSliceReceipt`, `radioheadEffectiveHarmonyBars`, `radioheadDeviceReceipts` on `GenerationMetadata` + `OutputEntry`.
+- **Golden path:** `generateGoldenPathDuoScore.ts` ‚Äî `isSongwriterRadiohead && isDuoGoldenPath` precompute, per-bar accumulate, finalize (no extra guitar pass). Re-export: `core/goldenPath/radioheadSlice.ts`.
+- **Smoke:** `radioheadSliceSmoke.test.ts` (seed **50100**); **`test:smoke`** 36 passed / 0 failed.
+- **Eval:** `npm run eval:radiohead` ‚Üí `scripts/runRadioheadSongModeEval.ts` (root + `engines/composer-os-v2/package.json`).
+
 ## [2026-04-28] Stevie Wonder (1972?1976) full-slice songwriter profile
 
 - **Chord pools:** `SONGWRITER_CHORD_POOLS.stevie_wonder` in `songModeBuilder.ts` (m7/maj7/7sus4, 9/13, altered dominants, sus colours).
 - **Style profile:** `stevie_wonder` in `SONGWRITER_STYLE_PROFILES` ? high syncopation, Dorian/Mixolydian guitar modal hint, irregular phrases, pentatonic interval preference.
 - **Slice:** `engines/composer-os-v2/core/song-mode/stevieWonderSlice.ts` ? five devices (`sw:device1` Dorian vamp, `sw:device2` vi?II?V7sus4?I phrase turns, `sw:device3` chromatic bridge chain, `sw:device4` chorus bII chromatic pivot, `sw:device5` pentatonic voice-1 bias on non-cadence bars); `precomputeStevieWonderEffectiveHarmonyBars` + `stevieWonderEffectiveHarmonyBars` wired through `getChordForBar` (`harmonyResolution.ts`), export/truth (`runGoldenPath.ts`, `customLockedHarmonyRouting.ts`, `pipelineTruthGates.ts`, `composerOsAppGeneration.ts`) same pattern as Brian Wilson locked harmony.
 - **Metadata / manifests:** `stevieWonderDiagnostics`, `stevieWonderSliceReceipt`, `stevieWonderEffectiveHarmonyBars`, `stevieWonderDeviceReceipts` on `GenerationMetadata` + `OutputEntry`.
-- **Smoke:** `stevieWonderSliceSmoke.test.ts` (seed **50100**); **`test:smoke`** 35 passed / 0 failed.
+- **Smoke:** `stevieWonderSliceSmoke.test.ts` (seed **50100**); **`test:smoke`** includes Stevie + Radiohead smokes (**36** passed / 0 failed).
 - **Eval:** `npm run eval:stevie_wonder` ? `scripts/runStevieWonderSongModeEval.ts` (mirrors Brian Wilson eval harness).
 
 ## [2026-04-22] Lead-sheet MusicXML ? MuseScore `.mxl` + imported performance shaping
@@ -47,7 +57,7 @@
 - Added deterministic tests in `engines/composer-os-v2/tests/songModeLeadSheetInput.test.ts` and wired into `tests/runAllTests.ts`.
 - Scope is intentionally narrow and explicit: Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout are deferred.
 
-## [2026-04-22] Lead-sheet MusicXML Import ù Phase 1 vertical slice
+## [2026-04-22] Lead-sheet MusicXML Import ÔøΩ Phase 1 vertical slice
 
 - Added a minimal shared `LeadSheet` model for import/handoff foundations at `engines/composer-os-v2/core/lead-sheet/leadSheetTypes.ts`.
 - Added bounded `score-partwise` MusicXML importer at `engines/composer-os-v2/core/lead-sheet/leadSheetMusicXmlImport.ts`:
@@ -71,7 +81,7 @@
   - honest `off` semantics (no motif-development guarantee; minimal summary only)
   - hybrid `motifLedPrimaryIdentity` claim requires minimal recurrence/coherence evidence
 
-## [2026-04-18] Composer OS ù Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
+## [2026-04-18] Composer OS ÔøΩ Bacharach Song Mode CLI (`workflow:bacharach`, `eval:bacharach`, `mine:bacharach`)
 
 - Developer automation: same-seed Bacharach vs neutral Song Mode batch, receipt/`_meta` checks, GCE-style diagnostic eval (not a gate), optional desktop rebuild. See **`docs/CHANGELOG.md`** and **`docs/USER_GUIDE.md`**.
 
@@ -81,7 +91,7 @@
 - generateGoldenPathDuoScore uses opts.bpm ?? 120
 - lead_sheet_exporter.py emits full metronome direction block
 
-## [2026-04-17] Vocal Lead Sheet ù chord extensions, key signature, tempo
+## [2026-04-17] Vocal Lead Sheet ÔøΩ chord extensions, key signature, tempo
 
 ### What was fixed
 - Full chord extensions working via buildHarmonyXmlLine
@@ -93,10 +103,10 @@
 
 ### Known issue
 - ScoreModel.tempo is hardcoded to 120 in
-  generateGoldenPathDuoScore.ts ù req.bpm from UI
+  generateGoldenPathDuoScore.ts ÔøΩ req.bpm from UI
   never reaches the score model. Fix pending.
 
-## [2026-04-17] Vocal Lead Sheet ù chord extensions fully working
+## [2026-04-17] Vocal Lead Sheet ÔøΩ chord extensions fully working
 
 ### What was fixed
 - Replaced Python chord parser (_parse_chord) with TypeScript
@@ -104,7 +114,7 @@
 - TypeScript now pre-renders full MusicXML <harmony> XML
   and passes it as harmonyXml in the payload
 - Python lead_sheet_exporter.py now inserts harmony XML
-  verbatim ù zero chord parsing on Python side
+  verbatim ÔøΩ zero chord parsing on Python side
 - chord_symbol_extractor.py updated to forward harmonyXml
 - Fixed chord_symbol_extractor.py stripping extensions
   by using raw chord string instead of rebuilding from
@@ -119,10 +129,10 @@ Full jazz chord extensions now render correctly in Sibelius:
 Python was rebuilding chord strings from integer root +
 quality enum, discarding all extensions. TypeScript
 buildHarmonyXmlLine already had correct MusicXML harmony
-generation ù the fix was to use it as the single source
+generation ÔøΩ the fix was to use it as the single source
 of truth and treat Python as a dumb assembler.
 
-## Roadmap ù Guitar/Harmony Module Assessment
+## Roadmap ÔøΩ Guitar/Harmony Module Assessment
 
 ### Executive recommendation
 - Treat these repos as supporting modules, not core generation engines.
@@ -171,14 +181,14 @@ of truth and treat Python as a dumb assembler.
 - Do not expand roadmap scope into broad refactors to support these tools prematurely.
 - Do not dilute current Composer OS stabilization priorities (lead-sheet fidelity, deterministic export).
 
-## [2026-04-16] Vocal Lead Sheet ù feature complete (v1)
+## [2026-04-16] Vocal Lead Sheet ÔøΩ feature complete (v1)
 
 ### What was fixed
 - Pipeline wired end-to-end from Song Mode to Python bridge
 - Script path fixed for packaged Electron app (resourcesPath)
 - Replaced leadMelodyPlan placeholder (one chord tone per bar)
   with real melody from gp.score guitar part
-- Filtered to voice 1 only ù bass voice polyphony removed
+- Filtered to voice 1 only ÔøΩ bass voice polyphony removed
 - Debug prints removed from cli_export_lead_sheet.py stdout
 
 ### Known issues (next session)
@@ -186,14 +196,14 @@ of truth and treat Python as a dumb assembler.
 - Chord extensions stripped (Dmaj7#11 renders as D major)
 - Rehearsal marks not yet on vocal lead sheet
 - Voice type selector not yet in UI (hardcoded male_tenor)
-- leadMelodyPlan is now dead code ù needs cleanup
+- leadMelodyPlan is now dead code ÔøΩ needs cleanup
 
 ### Status
 Vocal lead sheet generates alongside main score on every
 Song Mode generation. Single staff, treble clef, chord
 symbols, varied rhythm. Opens cleanly in Sibelius.
 
-## [2026-04-16] Vocal lead sheet ù full pipeline fix
+## [2026-04-16] Vocal lead sheet ÔøΩ full pipeline fix
 
 ### Changes
 - composerOsAppGeneration.ts: AuthorRuleId type cast fixed
@@ -223,9 +233,9 @@ check output folder for *_vocal_lead_sheet.musicxml
 ### Status
 Vocal lead sheet pipeline: flag now reaches runSongStructure.
 Python bridge path and packaged build verification still
-needed ù test by ticking checkbox and checking output folder.
+needed ÔøΩ test by ticking checkbox and checking output folder.
 
-## [2026-04-15] End of day summary ù all items verified working
+## [2026-04-15] End of day summary ÔøΩ all items verified working
 
 ### Verified today
 - Song Mode: Wayne Shorter + Post-Bop generating cleanly
@@ -255,7 +265,7 @@ Remaining:
 - Bass/duo regression expansion
 - Counterpoint Phase 3 (SQ + ECM + UI slider)
 
-## [2026-04-15] Song Mode style exposure ù three new controls
+## [2026-04-15] Song Mode style exposure ÔøΩ three new controls
 
 ### UI additions (HomeGenerate.tsx)
 - Pattern slider: intent.pattern now user-controlled
@@ -264,7 +274,7 @@ Remaining:
 - Secondary Songwriter dropdown: optional blend at
   ~35% with primary; uses same SONGWRITER_OPTIONS
 - Lyric Author Influence dropdown: jimmy_webb,
-  pat_pattison, jack_perricone ù optional overlay
+  pat_pattison, jack_perricone ÔøΩ optional overlay
 
 ### API pipeline (appApiTypes.ts, composerOsApiCore.ts,
   composerOsAppGeneration.ts, runSongMode.ts)
@@ -276,7 +286,7 @@ Remaining:
 - Empty strings stripped before blending so None
   selection has no effect
 
-## [2026-04-15] Big Band polish ù complete
+## [2026-04-15] Big Band polish ÔøΩ complete
 
 ### All items done
 - Double Bass part name correct in MusicXML export
@@ -332,7 +342,7 @@ Remaining:
 - Dead helper removed
 - 14/14 checks passing
 
-## [2026-04-15] Counterpoint Phase 2 ù voiceLeadingScorer wired into Guitar-Bass Duo
+## [2026-04-15] Counterpoint Phase 2 ÔøΩ voiceLeadingScorer wired into Guitar-Bass Duo
 
 ### Changes (guitarVoice2WybleLayer.ts)
 - Voice2PitchPickContext182B3: added bassMidi, prevV1Midi,
@@ -370,19 +380,19 @@ assertHookBarIdentityUnchanged was firing incorrectly
 when STYLE_SHORTER_POST_BOP / wayne_shorter activated
 shorterMode chord-tone policy. The mid-pipeline snapshot
 was taken before style-aware passes (overlay, melodic,
-phrase repair) ran, then compared after ù legitimately
+phrase repair) ran, then compared after ÔøΩ legitimately
 different when shorterMode changes chord tone selection.
 
 ### Fix (generateGoldenPathDuoScore.ts)
 Removed mid-pipeline snapshot + assert block.
 Post-finalizeAndSealDuoScoreBarMath guard on bars 1
-and 25 retained ù still catches unintended mutations
+and 25 retained ÔøΩ still catches unintended mutations
 after the score is sealed.
 
 ### No snapshot regeneration required
 No stored hook snapshot files exist to refresh.
 
-## [2026-04-15] Wayne Shorter ù quick coherence fix
+## [2026-04-15] Wayne Shorter ÔøΩ quick coherence fix
 
 ### Changes
 - harmonyChordTonePolicy.ts: STYLE_SHORTER_POST_BOP now
@@ -392,7 +402,7 @@ No stored hook snapshot files exist to refresh.
   velocity shaping + shorterMode chord policy together
   form the complete Post-Bop style surface
 - songwriterStyleProfiles.ts: wayne_shorter description
-  added ù post-bop harmonic language, upper-structure
+  added ÔøΩ post-bop harmonic language, upper-structure
   emphasis, activates shorterMode chord-tone policy
 
 ### Effect
@@ -426,7 +436,7 @@ two mechanisms were disconnected.
 - Guitar-Bass Duo / Song Mode: golden path still capped
   at 32 - engine extension deferred to future phase
 
-## [2026-04-15] Counterpoint scoring module ù Phase 1 complete
+## [2026-04-15] Counterpoint scoring module ÔøΩ Phase 1 complete
 
 ### New file: engines/composer-os-v2/core/counterpoint/voiceLeadingScorer.ts
 Shared three-voice counterpoint scorer based on:

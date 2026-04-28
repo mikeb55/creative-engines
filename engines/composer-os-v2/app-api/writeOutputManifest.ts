@@ -124,6 +124,10 @@ export function writeOutputManifest(
     stevieWonderDeviceReceipts?: GenerationMetadata['stevieWonderDeviceReceipts'];
     stevieWonderSliceReceipt?: GenerationMetadata['stevieWonderSliceReceipt'];
     stevieWonderEffectiveHarmonyBars?: GenerationMetadata['stevieWonderEffectiveHarmonyBars'];
+    radioheadDiagnostics?: GenerationMetadata['radioheadDiagnostics'];
+    radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
+    radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
+    radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -207,6 +211,10 @@ export function writeOutputManifest(
     stevieWonderDeviceReceipts: meta.stevieWonderDeviceReceipts,
     stevieWonderSliceReceipt: meta.stevieWonderSliceReceipt,
     stevieWonderEffectiveHarmonyBars: meta.stevieWonderEffectiveHarmonyBars,
+    radioheadDiagnostics: meta.radioheadDiagnostics,
+    radioheadDeviceReceipts: meta.radioheadDeviceReceipts,
+    radioheadSliceReceipt: meta.radioheadSliceReceipt,
+    radioheadEffectiveHarmonyBars: meta.radioheadEffectiveHarmonyBars,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

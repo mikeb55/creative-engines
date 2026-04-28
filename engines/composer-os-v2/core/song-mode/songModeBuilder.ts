@@ -867,6 +867,32 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em7', 'A7sus4', 'D7(13)', 'G7(b9)', 'Cm7(9)', 'F7(#5)', 'Bb9sus4', 'Eb7(13)'],
     ],
   },
+  radiohead: {
+    verse: [
+      ['Am', 'Dbmaj7', 'Eb6', 'Fm'],
+      ['Cm', 'Abmaj7', 'Fm', 'Gm'],
+      ['Dm', 'Bb', 'Fmaj7', 'Gm'],
+      ['Em', 'Cmaj7', 'Am', 'Dm'],
+    ],
+    chorus: [
+      ['F', 'Dm', 'Bbm', 'C'],
+      ['G', 'Em', 'Cm', 'Dm'],
+      ['Ebmaj7', 'Cm', 'Ab', 'Bb'],
+      ['Am', 'Fmaj7', 'Dm', 'Gm'],
+    ],
+    bridge: [
+      ['Fm', 'Dbmaj7', 'Eb', 'Bb'],
+      ['Gm', 'Eb', 'Bb', 'Fm'],
+      ['Bm', 'G', 'D', 'A'],
+      ['Cm', 'Ab', 'Eb', 'Fm'],
+    ],
+    pre_chorus: [
+      ['Am', 'Dm', 'G', 'C'],
+      ['Bm', 'Em', 'A', 'D'],
+      ['Cm', 'Fm', 'Bb', 'Eb'],
+      ['Em', 'Am', 'D', 'G'],
+    ],
+  },
   brian_wilson: {
     verse: [
       ['Cmaj7', 'Cadd9', 'Am7', 'Fmaj7'],
