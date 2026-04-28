@@ -152,6 +152,7 @@ import {
 import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
 import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
 import {
+  applyWayneShorterChorusBridgeMotifDevelopment,
   buildPhraseFingerprint,
   classifyVariationType,
   computeMotifAuthorityScore,
@@ -3997,6 +3998,8 @@ export function generateGoldenPathDuoScore(
 
   let guitarPart: PartModel;
   let bassPart: PartModel;
+  /** Wayne chorus/bridge motif-development receipts (sparse; merged into motifDevelopmentSummary). */
+  let wayneSectionMotifReceipts: string[] = [];
 
   if (context.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     const built = buildPhraseFirstDuoScore(context);
@@ -4017,6 +4020,12 @@ export function generateGoldenPathDuoScore(
       plans.styleStack
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildPianoPart');
+    wayneSectionMotifReceipts = applyWayneShorterChorusBridgeMotifDevelopment(guitarPart, {
+      songwriterStyleId: context.generationMetadata?.songwriterStyleId,
+      sections: context.form.sections,
+      totalBars: tb,
+      seed: context.seed,
+    });
     if (
       context.generationMetadata?.songModeHookFirstIdentity === true &&
       context.presetId === 'guitar_bass_duo' &&
@@ -4098,7 +4107,7 @@ export function generateGoldenPathDuoScore(
             coreCellEstablished: false,
             recurrenceCountEstimate: 0,
             recurrenceSummary: 'No motif-development guarantee in this run.',
-            transformationSummary: ['none-guaranteed'],
+            transformationSummary: [...wayneSectionMotifReceipts, 'none-guaranteed'],
             motifCoherence: 0,
           }),
         };
@@ -4185,6 +4194,7 @@ export function generateGoldenPathDuoScore(
           ? 'Core cell statement and return phrases were compared for recurrence.'
           : 'Core cell recurrence assessed in opening/development phrases only.';
         const transformationSummary = [
+          ...wayneSectionMotifReceipts,
           variationType ? `development:${variationType}` : 'development:unavailable',
           returnNudgeAttempted ? 'return:anchor_nudge_attempted' : 'return:anchor_nudge_skipped',
           returnNudgeAttempted

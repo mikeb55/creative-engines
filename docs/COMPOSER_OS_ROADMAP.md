@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-27]
+# Composer OS Roadmap [2026-04-28]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -72,6 +72,10 @@
 ---
 
 ## Past (delivered)
+
+### T2.7 — Wayne Shorter — chorus/bridge controlled motif development (2026-04-28)
+
+- **`applyWayneShorterChorusBridgeMotifDevelopment` — complete:** After **`buildGuitarPart`** in **`generateGoldenPathDuoScore.ts`**, for **`songwriterStyleId === 'wayne_shorter'`** only, **one** **seed-deterministic** transform per **chorus** or **bridge** form section (**not** verse / intro): **(1)** shift voice-1 motif onset **+1 beat**, **(2)** augment rhythm (double durations within the bar), or **(3)** widen leaps (intervals **≥ a 4th**) by **±1 semitone** on the second note — **never combined** per section. Receipts merged into **`motifDevelopmentSummary.transformationSummary`** (`motifAuthorityV1.ts`). No new pipeline stage.
 
 ### T2.6 — Phrase Engine Stage 3 — controlled anticipation (2026-04-28)
 

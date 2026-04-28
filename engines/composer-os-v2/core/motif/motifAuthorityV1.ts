@@ -1,4 +1,6 @@
-import type { NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
+import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 
 /** Pilot motif policy tier (Motif Authority V1). */
 export type MotifAuthorityLevel = 'off' | 'soft' | 'strong';
@@ -320,4 +322,131 @@ export function nudgeReturnPhraseTowardFingerprint(
   if (wayne && opts?.waynePhraseAFingerprint?.length) {
     nudgeReturnPhraseDurationsTowardWayneFingerprint(part, returnRange, opts.waynePhraseAFingerprint);
   }
+}
+
+const WAYNE_WMot_EPS = 1e-4;
+
+function qBeatWayne(x: number): number {
+  return Math.round(x * 4) / 4;
+}
+
+/** Label → verse / chorus / bridge (Song Mode style); letter forms → null. */
+export function wayneFormSectionRoleFromLabel(label: string): 'verse' | 'chorus' | 'bridge' | null {
+  const L = label.trim().toLowerCase();
+  if (L.startsWith('verse')) return 'verse';
+  if (L.startsWith('chorus')) return 'chorus';
+  if (L.startsWith('bridge')) return 'bridge';
+  return null;
+}
+
+export function wayneMotifPhraseRangeFromFormSection(
+  sec: { startBar: number; length: number },
+  totalBars: number
+): MotifPhraseRange | null {
+  if (!Number.isFinite(sec.startBar) || !Number.isFinite(sec.length) || sec.length <= 0) return null;
+  const startBar = Math.trunc(sec.startBar);
+  const endBar = startBar + Math.trunc(sec.length) - 1;
+  if (startBar < 1 || endBar > totalBars || startBar > endBar) return null;
+  return { startBar, endBar };
+}
+
+function voice1NotesInMeasure(m: MeasureModel): NoteEvent[] {
+  const out: NoteEvent[] = [];
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as NoteEvent;
+    if ((n.voice ?? 1) !== 1) continue;
+    out.push(n);
+  }
+  return out;
+}
+
+function wayneShiftMotifPlusOneBeat(part: PartModel, range: MotifPhraseRange): void {
+  for (let bar = range.startBar; bar <= range.endBar; bar++) {
+    const m = part.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const v1 = voice1NotesInMeasure(m).sort((a, b) => a.startBeat - b.startBeat);
+    if (v1.length === 0) continue;
+    const e = v1[0]!;
+    const ns = snapAttackBeatToGrid(e.startBeat + 1);
+    const ne = ns + e.duration;
+    if (ne <= 4 + WAYNE_WMot_EPS) e.startBeat = ns;
+    normalizeMeasureToEighthBeatGrid(m);
+  }
+}
+
+function wayneAugmentMotifRhythms(part: PartModel, range: MotifPhraseRange): void {
+  for (let bar = range.startBar; bar <= range.endBar; bar++) {
+    const m = part.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    for (const e of voice1NotesInMeasure(m)) {
+      const cap = 4 - e.startBeat;
+      if (cap <= WAYNE_WMot_EPS) continue;
+      e.duration = qBeatWayne(Math.min(e.duration * 2, cap));
+    }
+    normalizeMeasureToEighthBeatGrid(m);
+  }
+}
+
+function wayneExpandLeapIntervals(part: PartModel, range: MotifPhraseRange, seed: number, salt: number): void {
+  type Ref = { bar: number; n: NoteEvent };
+  const seq: Ref[] = [];
+  for (let bar = range.startBar; bar <= range.endBar; bar++) {
+    const m = part.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    for (const e of voice1NotesInMeasure(m).sort((a, b) => a.startBeat - b.startBeat)) {
+      seq.push({ bar, n: e });
+    }
+  }
+  for (let i = 1; i < seq.length; i++) {
+    const a = seq[i - 1]!.n;
+    const b = seq[i]!.n;
+    const interval = Math.abs(b.pitch - a.pitch);
+    if (interval < 5) continue;
+    const widenUp = seededUnit(seed, seq[i]!.bar * 97 + i, 9622 + salt) >= 0.5;
+    const delta = widenUp ? 1 : -1;
+    b.pitch = Math.max(36, Math.min(96, b.pitch + delta));
+  }
+}
+
+export type WayneMotifSectionTransformKind = 'shift_plus_one_beat' | 'augment_rhythm' | 'expand_leaps';
+
+/**
+ * Wayne Shorter — one deterministic motif-development transform per chorus or bridge section (never combined).
+ * Does not run on verse / intro / pre-chorus.
+ */
+export function applyWayneShorterChorusBridgeMotifDevelopment(
+  part: PartModel,
+  opts: {
+    songwriterStyleId?: string;
+    sections: Array<{ label: string; startBar: number; length: number }>;
+    totalBars: number;
+    seed: number;
+  }
+): string[] {
+  const receipts: string[] = [];
+  if (opts.songwriterStyleId !== 'wayne_shorter') return receipts;
+  const { sections, totalBars, seed } = opts;
+  if (!Array.isArray(sections) || sections.length === 0) return receipts;
+
+  let salt = 0;
+  for (const sec of sections) {
+    const role = wayneFormSectionRoleFromLabel(sec.label);
+    if (role !== 'chorus' && role !== 'bridge') continue;
+    const range = wayneMotifPhraseRangeFromFormSection(sec, totalBars);
+    if (!range) continue;
+
+    const pick = Math.floor(seededUnit(seed, sec.startBar, 9610 + salt) * 3);
+    const kind: WayneMotifSectionTransformKind =
+      pick === 0 ? 'shift_plus_one_beat' : pick === 1 ? 'augment_rhythm' : 'expand_leaps';
+
+    if (kind === 'shift_plus_one_beat') wayneShiftMotifPlusOneBeat(part, range);
+    else if (kind === 'augment_rhythm') wayneAugmentMotifRhythms(part, range);
+    else wayneExpandLeapIntervals(part, range, seed, salt);
+
+    receipts.push(`wayne_section:${role}@${sec.startBar}:${kind}`);
+    salt++;
+  }
+
+  return receipts;
 }
