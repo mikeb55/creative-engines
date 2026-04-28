@@ -93,6 +93,12 @@ import {
   finalizeSonicYouthMetadata,
   precomputeSonicYouthEffectiveHarmonyBars,
 } from './sonicYouthSlice';
+import {
+  accumulatePatMethenyHarmonyDiagnostics,
+  createPatMethenyHarmonyAccumulator,
+  finalizePatMethenyMetadata,
+  precomputePatMethenyEffectiveHarmonyBars,
+} from './patMethenySlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2006,12 +2012,14 @@ function buildGuitarPart(
   const isSongwriterJamesBrown = genMeta?.songwriterStyleId === 'james_brown';
   const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
   const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
+  const isSongwriterPatMetheny = genMeta?.songwriterStyleId === 'pat_metheny';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
   const jbAccum = createJamesBrownHarmonyAccumulator();
   const jmAccum = createJoniMitchellHarmonyAccumulator();
   const syAccum = createSonicYouthHarmonyAccumulator();
+  const pmAccum = createPatMethenyHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2030,6 +2038,9 @@ function buildGuitarPart(
   }
   if (isSongwriterSonicYouth && isDuoGoldenPath) {
     precomputeSonicYouthEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterPatMetheny && isDuoGoldenPath) {
+    precomputePatMethenyEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2162,6 +2173,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         syAccum
+      );
+    }
+    if (isSongwriterPatMetheny) {
+      accumulatePatMethenyHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        pmAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2615,6 +2633,10 @@ function buildGuitarPart(
 
   if (isSongwriterSonicYouth && context.generationMetadata) {
     finalizeSonicYouthMetadata(context.generationMetadata, syAccum);
+  }
+
+  if (isSongwriterPatMetheny && context.generationMetadata) {
+    finalizePatMethenyMetadata(context.generationMetadata, pmAccum);
   }
 
   return {

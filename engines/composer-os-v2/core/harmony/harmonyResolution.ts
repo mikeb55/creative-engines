@@ -132,6 +132,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return syEff[barIndex - 1]!;
   }
 
+  /**
+   * Pat Metheny: `precomputePatMethenyEffectiveHarmonyBars` applies modal guards + device receipts.
+   * After precompute, `patMethenyEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const pmEff = meta?.patMethenyEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'pat_metheny' &&
+    Array.isArray(pmEff) &&
+    pmEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return pmEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

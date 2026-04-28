@@ -513,6 +513,34 @@ export interface GenerationMetadata {
   sonicYouthSliceReceipt?: string;
   sonicYouthEffectiveHarmonyBars?: string[];
   sonicYouthDeviceReceipts?: string[];
+  /** Pat Metheny (ECM / PMG modal–Lydian) — per-bar harmony + device/guard stats. */
+  patMethenyDiagnostics?: {
+    songwriterId: 'pat_metheny';
+    barsConsidered: number;
+    lydianColourHitRate: number;
+    susFloatHitRate: number;
+    slashPedalTouches: number;
+    pedalHoldMaxBars: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      twoFiveOneFlattened: number;
+      dominantChainFlattened: number;
+      twoBarHoldForced: number;
+      bluesDominantStripped: number;
+    };
+    deviceReceipts?: string[];
+  };
+  patMethenySliceReceipt?: string;
+  patMethenyEffectiveHarmonyBars?: string[];
+  patMethenyDeviceReceipts?: string[];
+  patMethenyAntiElaborationGuards?: {
+    twoFiveOneFlattened: number;
+    dominantChainFlattened: number;
+    twoBarHoldForced: number;
+    bluesDominantStripped: number;
+  };
+  /** Longest same–slash-bass run after slice passes (inspectability). */
+  patMethenyPedalHoldMaxBars?: number;
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

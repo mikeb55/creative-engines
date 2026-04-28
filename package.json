@@ -22,6 +22,7 @@
     "eval:radiohead": "npm --prefix engines/composer-os-v2 run eval:radiohead --",
     "eval:joni_mitchell": "npm --prefix engines/composer-os-v2 run eval:joni_mitchell --",
     "eval:sonic_youth": "npm --prefix engines/composer-os-v2 run eval:sonic_youth --",
+    "eval:pat_metheny": "npm --prefix engines/composer-os-v2 run eval:pat_metheny --",
     "eval:style-soph-pop": "npm --prefix engines/composer-os-v2 run eval:style-soph-pop --",
     "eval:bacharach": "npm --prefix engines/composer-os-v2 run eval:bacharach --",
     "workflow:bacharach": "npm --prefix engines/composer-os-v2 run workflow:bacharach --",

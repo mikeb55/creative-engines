@@ -343,4 +343,11 @@ export interface OutputEntry {
   sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
   sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
   sonicYouthEffectiveHarmonyBars?: GenerationMetadata['sonicYouthEffectiveHarmonyBars'];
+  /** Pat Metheny (ECM / PMG) slice — diagnostics / receipts (Song Mode manifest echo). */
+  patMethenyDiagnostics?: GenerationMetadata['patMethenyDiagnostics'];
+  patMethenyDeviceReceipts?: GenerationMetadata['patMethenyDeviceReceipts'];
+  patMethenySliceReceipt?: GenerationMetadata['patMethenySliceReceipt'];
+  patMethenyEffectiveHarmonyBars?: GenerationMetadata['patMethenyEffectiveHarmonyBars'];
+  patMethenyAntiElaborationGuards?: GenerationMetadata['patMethenyAntiElaborationGuards'];
+  patMethenyPedalHoldMaxBars?: GenerationMetadata['patMethenyPedalHoldMaxBars'];
 }

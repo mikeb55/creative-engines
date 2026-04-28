@@ -51,7 +51,7 @@ thinGuitar2Voice1InChordMeasures
 ### 8. Bar-4 phrase-end cadence (duo golden path)
 - **Every** 4-bar boundary: phrase-end cadence lengthens voice 1 toward the bar/phrase end and snaps to a chord tone (runs with Song Mode hook path and standard golden-path duo).
 
-**Songwriter profiles (full golden-path slices):** **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**.
+**Songwriter profiles (full golden-path slices):** **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**.
 
 ### 9. Brian Wilson (Pet Sounds era) songwriter slice (2026-04-28)
 - Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping, **five harmonic devices** (chromatic-bass half-dim, inverted dominant, verse ♭VII subdominant colour, tonic **i7** mixture bar, semitone-down modulation at verse→chorus/bridge boundaries) layered on **locked** Song Mode harmony when the full progression is fixed — **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** / **`deviceReceipts`** on **`GenerationMetadata`** (also echoed in output manifests). Implementation: **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`**. See **`docs/CHANGELOG.md`** (**fix:** devices over locked harmony, **2026-04-28**).
@@ -77,13 +77,22 @@ thinGuitar2Voice1InChordMeasures
 - **`sonicYouthChordTypes.ts`** + **`sonicYouthChordGuards.ts`** — additive **`ChordEvent`** extension
 - **Eval:** **`npm run eval:sonic_youth`** — markdown summaries under **`output/sonic-youth-eval/`**
 
-### 15. Harness & product parity (session)
+### 15. Pat Metheny (ECM / PMG modal–Lydian) songwriter slice (2026-04-28)
+- Primary **`pat_metheny`**
+- Implementation: **`patMethenySlice.ts`** (**`engines/composer-os-v2/core/song-mode/patMethenySlice.ts`**)
+- **Chord pool:** existing **`SONGWRITER_CHORD_POOLS.pat_metheny`** (maj9, maj7#11, add9, sus/13sus, slash bass) — not replaced by this slice
+- **Devices (`pm:`):** **`lydian_home`**, **`pedal_shimmer`**, **`diatonic_planing`**, **`sus_float`**, **`modal_sideSlip`**
+- **Guards:** ii–V–I flatten, dominant-chain strip, 2-bar minimum hold (per-bar change block), blues-dominant strip — receipts on **`patMethenyAntiElaborationGuards`**
+- **Effective harmony:** **`patMethenyEffectiveHarmonyBars`** on **`GenerationMetadata`**; export + disk truth use the same bars as score/MusicXML (**`runGoldenPath.ts`**, **`composerOsAppGeneration.ts`**)
+- **Eval:** **`npm run eval:pat_metheny`** — CSV + markdown under **`output/pat-metheny-eval/`**; sample seeds may show **d2**/**d4**/**d5** quiet (non-blocking)
+
+### 16. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** / **`npm run eval:joni_mitchell`** / **`npm run eval:sonic_youth`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`** / **`output/joni-mitchell-eval/`** / **`output/sonic-youth-eval/`**.
+**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** / **`npm run eval:joni_mitchell`** / **`npm run eval:sonic_youth`** / **`npm run eval:pat_metheny`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`** / **`output/joni-mitchell-eval/`** / **`output/sonic-youth-eval/`** / **`output/pat-metheny-eval/`**.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.16).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.17).
 
 ---
 
@@ -97,7 +106,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (39 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, **James Brown**, **Joni Mitchell**, and **Sonic Youth** songwriter slice smokes
+- npm run test:smoke — PASS (40 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, **James Brown**, **Joni Mitchell**, **Sonic Youth**, and **Pat Metheny** songwriter slice smokes
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 

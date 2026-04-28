@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [2026-04-28] Pat Metheny — full Song Mode slice (`patMethenySlice.ts`)
+
+- **Chord pool:** Existing **`SONGWRITER_CHORD_POOLS.pat_metheny`** preserved — **not** replaced (maj9, maj7#11, add9, sus/13sus, pedal slash-bass rows).
+- **Golden-path slice:** **`engines/composer-os-v2/core/song-mode/patMethenySlice.ts`** (re-export **`goldenPath/patMethenySlice.ts`**) — **`precomputePatMethenyEffectiveHarmonyBars`**, per-bar diagnostics, **`finalizePatMethenyMetadata`**, **`getChordForBar`** via **`patMethenyEffectiveHarmonyBars`** when primary is **`pat_metheny`**.
+- **Devices (receipts `pm:*`):** **d1** **`lydian_home`**; **d2** **`pedal_shimmer`**; **d3** **`diatonic_planing`**; **d4** **`sus_float`**; **d5** **`modal_sideSlip`**.
+- **Anti-elaboration guards:** ii–V–I block, dominant-7th chain block, per-bar change block (minimum 2-bar hold; slash-bass pedal exception), blues-dominant strip — aggregated as **`patMethenyAntiElaborationGuards`**; sample eval batch shows **32** total guard triggers across **2** runs (**16** per run) — expected when the slice enforces holds and strips colour.
+- **Pipeline fix:** **`patMethenyEffectiveHarmonyBars`** wired into MusicXML export assertion (**`assertLockedHarmonyBars`**) and post-write disk truth — **`runGoldenPath.ts`** (`barsForLockedExportTruth`) + **`composerOsAppGeneration.ts`** (`barsForDiskHarmonyTruth`); aligns with **`pipelineTruthGates`** / **`customLockedHarmonyRouting`**.
+- **Eval:** **`npm run eval:pat_metheny`** (**`engines/composer-os-v2/scripts/runPatMethenySongModeEval.ts`**) — CSV + markdown under **`output/pat-metheny-eval/`**; **`engineDeclaredSuccess: 1`** when disk truth matches effective bars.
+- **Smoke:** **`tests/patMethenySliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **40** passed / **0** failed (**+1** vs Sonic Youth–era **39**).
+- **Known debt (non-blocking):** **d2** **`pedal_shimmer`**, **d4** **`sus_float`**, **d5** **`modal_sideSlip`** may show **zero** receipts on sample harness seeds (gate / seed conditions).
+
 ## [2026-04-28] Sonic Youth — full Song Mode slice (`sonicYouthSlice.ts`)
 
 - **Chord pools:** **`SONGWRITER_CHORD_POOLS.sonic_youth`** — user-progression-aligned rows (**Emadd9**, slash colours, **Gsus2** / **Asus4**, **Cmaj7#11**, **F#7sus4**, **B7alt**, **G/E**, **Dsus4/A**, **A7sus4**, **Cadd9**, **Bbmaj7#11**); asymmetric repeats, not generic alt-rock voicing grammar.

@@ -145,6 +145,12 @@ export function writeOutputManifest(
     sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
     sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
     sonicYouthEffectiveHarmonyBars?: GenerationMetadata['sonicYouthEffectiveHarmonyBars'];
+    patMethenyDiagnostics?: GenerationMetadata['patMethenyDiagnostics'];
+    patMethenyDeviceReceipts?: GenerationMetadata['patMethenyDeviceReceipts'];
+    patMethenySliceReceipt?: GenerationMetadata['patMethenySliceReceipt'];
+    patMethenyEffectiveHarmonyBars?: GenerationMetadata['patMethenyEffectiveHarmonyBars'];
+    patMethenyAntiElaborationGuards?: GenerationMetadata['patMethenyAntiElaborationGuards'];
+    patMethenyPedalHoldMaxBars?: GenerationMetadata['patMethenyPedalHoldMaxBars'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -249,6 +255,12 @@ export function writeOutputManifest(
     sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
     sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,
     sonicYouthEffectiveHarmonyBars: meta.sonicYouthEffectiveHarmonyBars,
+    patMethenyDiagnostics: meta.patMethenyDiagnostics,
+    patMethenyDeviceReceipts: meta.patMethenyDeviceReceipts,
+    patMethenySliceReceipt: meta.patMethenySliceReceipt,
+    patMethenyEffectiveHarmonyBars: meta.patMethenyEffectiveHarmonyBars,
+    patMethenyAntiElaborationGuards: meta.patMethenyAntiElaborationGuards,
+    patMethenyPedalHoldMaxBars: meta.patMethenyPedalHoldMaxBars,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,
