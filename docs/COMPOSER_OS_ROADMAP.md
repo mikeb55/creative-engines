@@ -73,6 +73,10 @@
 
 ## Past (delivered)
 
+### T2.8 — `runAllTests` stability — heap + chunked harness (2026-04-28)
+
+- **`runAllTests.ts` — complete:** Orchestrates **four sequential** Node runs (`tests/runAllTestsChunk1.ts`–`Chunk4.ts`) so the full matrix does not load every suite module in one process; each child uses **`--max-old-space-size=4096`**. Shared loop in **`tests/harness/runHarnessMain.ts`**. **`test:smoke`** remains **`runSmokeTests.ts`** (unchanged). **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** updated. No composer/generation logic changes.
+
 ### T2.7 — Wayne Shorter — chorus/bridge controlled motif development (2026-04-28)
 
 - **`applyWayneShorterChorusBridgeMotifDevelopment` — complete:** After **`buildGuitarPart`** in **`generateGoldenPathDuoScore.ts`**, for **`songwriterStyleId === 'wayne_shorter'`** only, **one** **seed-deterministic** transform per **chorus** or **bridge** form section (**not** verse / intro): **(1)** shift voice-1 motif onset **+1 beat**, **(2)** augment rhythm (double durations within the bar), or **(3)** widen leaps (intervals **≥ a 4th**) by **±1 semitone** on the second note — **never combined** per section. Receipts merged into **`motifDevelopmentSummary.transformationSummary`** (`motifAuthorityV1.ts`). No new pipeline stage.
@@ -225,11 +229,11 @@
 
 ## Current (as of 2026-04-21 snapshot)
 
-- **Harness (project status):** full Composer OS V2 harness in strong shape (**~666 passed / ~5 failed** debt bucket); **`test:fast`** green; core ensemble + harmony + bar-math stacks stable. Detail: **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
-- **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs the **`npm test` / `runAllTests.ts`** debt bucket (still **not** all green). This is **baselining**, not a full fix pass.
-- **`npm test`** in `engines/composer-os-v2` still shows many **`FAIL:`** lines in the full harness (export, written-bar regression, etc.) — treat as **known debt** until the baseline doc is refreshed after fixes.
+- **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs occasional **`test:full`** suite-level failures (environment / heavy gates). **Runner stability** item (**chunked harness + 4096 MB heap on each chunk**) is **complete** (2026-04-28).
+- **`npm test` / `test:full`** — if **`FAIL:`** lines appear, treat as **known per-suite debt** or environment until triaged; **`test:fast`** remains the broader gate for day-to-day iteration.
 
 | Area | State |
 |------|--------|

@@ -1,6 +1,13 @@
 # Composer OS V2 — full harness test debt
 
-Last updated: 2026-04-27 (Parked — B-category duo guards note; smoke tier unchanged).
+Last updated: 2026-04-28 (Harness stability — chunked `runAllTests` + heap flag on orchestrated children).
+
+## Harness runner (2026-04-28) — infrastructure only
+
+- **`tests/runAllTests.ts`** is now a **thin orchestrator**: four sequential Node processes (`tests/runAllTestsChunk1.ts` … **`runAllTestsChunk4.ts`**) so **suite modules are not all parsed in one process** (mitigates JS heap OOM when running the full matrix). Each child is invoked with **`--max-old-space-size=4096`** (same as **`package.json`** `test` / `test:full` / `test:fast` / `test:smoke` scripts).
+- Shared per-chunk loop + filters: **`tests/harness/runHarnessMain.ts`** (`resolveTestMode`, `filterSuitesForRun`, summary).
+- **Smoke tier unchanged:** `npm run test:smoke` → **`tests/runSmokeTests.ts`** (not chunked).
+- **Assertion bodies unchanged** — runner/infrastructure only.
 
 ## Snapshot (this machine)
 

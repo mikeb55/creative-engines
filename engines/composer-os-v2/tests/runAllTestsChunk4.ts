@@ -1,0 +1,68 @@
+/**
+ * Full harness chunk 4/4 — ensembles, app shell, riff, retro suites (isolated process).
+ */
+
+import { runMutationEngineTests } from './mutationEngine.test';
+import { runExperimentalEvaluatorTests } from './experimentalEvaluator.test';
+import { runBigBandEnsembleConfigTests } from './bigBandEnsembleConfig.test';
+import { runStylePairingResolverTests } from './stylePairingResolver.test';
+import { runSongwriterResearchParsingTests } from './songwriterResearchParsing.test';
+import { runVoicingPlannerTests } from './voicingPlanner.test';
+import { runBigBandRealisationTests } from './bigBandRealisation.test';
+import { runBigBandEraChordPoolsScoreTests } from './bigBandEraChordPoolsScore.test';
+import { runQuartetEraChordPoolsScoreTests } from './quartetEraChordPoolsScore.test';
+import { runStringQuartetEraAppPassthroughTests } from './stringQuartetEraAppPassthrough.test';
+import { runQuartetRealisationTests } from './quartetRealisation.test';
+import { runEnsembleExportTests } from './ensembleExport.test';
+import { runStringQuartetTypesTests } from './stringQuartetTypes.test';
+import { runStringQuartetPlanningTests } from './stringQuartetPlanning.test';
+import { runStringQuartetValidationTests } from './stringQuartetValidation.test';
+import { runStringQuartetModeTests } from './stringQuartetMode.test';
+import { runAppApiBoundaryTests } from './appApiBoundary.test';
+import { runModeExposureTests } from './modeExposure.test';
+import { runWindowsPackagingPrepTests } from './windowsPackagingPrep.test';
+import { runOutputUxTests } from './outputUx.test';
+import { runAppShellTests } from './appShell.test';
+import { runSystemCheckTests } from './systemCheck.test';
+import { runRiffGeneratorTests } from './riffGenerator.test';
+import { runSongwritingEngineTests } from './songwritingEngine.test';
+import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
+import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
+import { runSongModeAbInspectHarnessTests } from './songModeAbInspectHarness.test';
+import { runMotifAuthorityPilotSliceTests } from './motifAuthorityPilotSlice.test';
+import { retroSuites } from './retro/index';
+import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
+
+const suites: SuiteEntry[] = [
+  { name: 'Mutation engine', run: runMutationEngineTests },
+  { name: 'Experimental evaluator', run: runExperimentalEvaluatorTests },
+  { name: 'Big Band ensemble config', run: runBigBandEnsembleConfigTests },
+  { name: 'Style pairing resolver', run: runStylePairingResolverTests },
+  { name: 'Songwriter research parsing (alias)', run: runSongwriterResearchParsingTests },
+  { name: 'Voicing planner', run: runVoicingPlannerTests },
+  { name: 'Big Band realisation', run: runBigBandRealisationTests },
+  { name: 'Big Band era chord pools (score)', run: runBigBandEraChordPoolsScoreTests },
+  { name: 'String Quartet era chord pools (score)', run: runQuartetEraChordPoolsScoreTests },
+  { name: 'String Quartet era app passthrough (MusicXML)', run: runStringQuartetEraAppPassthroughTests },
+  { name: 'String Quartet realisation', run: runQuartetRealisationTests },
+  { name: 'Ensemble export', run: runEnsembleExportTests },
+  { name: 'String Quartet types', run: runStringQuartetTypesTests },
+  { name: 'String Quartet planning', run: runStringQuartetPlanningTests },
+  { name: 'String Quartet validation', run: runStringQuartetValidationTests },
+  { name: 'String Quartet mode', run: runStringQuartetModeTests },
+  { name: 'App API boundary', run: runAppApiBoundaryTests },
+  { name: 'Mode exposure (V1)', run: runModeExposureTests },
+  { name: 'Windows packaging prep', run: runWindowsPackagingPrepTests },
+  { name: 'Output UX', run: runOutputUxTests },
+  { name: 'App shell (product)', run: runAppShellTests },
+  { name: 'System check (repo root)', run: runSystemCheckTests },
+  { name: 'Riff Generator', run: runRiffGeneratorTests },
+  { name: 'Songwriting Engine (Phase 1)', run: runSongwritingEngineTests },
+  { name: 'Bacharach developer workflow', run: runBacharachWorkflowDeveloperTests },
+  { name: 'Eval readable summary', run: runEvalReadableSummaryTests },
+  { name: 'Song Mode A/B inspect harness', run: runSongModeAbInspectHarnessTests },
+  { name: 'Motif Authority pilot slice', run: runMotifAuthorityPilotSliceTests },
+  ...retroSuites,
+];
+
+runHarnessMain(suites, '[harness] chunk 4/4 — ensembles + app + riff + retro');
