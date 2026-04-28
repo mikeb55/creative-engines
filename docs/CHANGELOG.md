@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2026-04-28] Brian Wilson Song Mode eval harness (`eval:brian_wilson`)
+
+- **CLI:** **`engines/composer-os-v2/scripts/runBrianWilsonSongModeEval.ts`** — same-shape **`song_mode`** **`GenerateRequest`** as **`runFagenSongModeEval`** (`STYLE_ECM`, 32 bars); **`brian_wilson`** vs **`carole_king`** neutral baseline (optional **`--baseline none`**); default **5** seeds (`--seed-start` **95100**).
+- **Outputs:** **`output/brian-wilson-eval/`** (repo root) — **`brian-wilson-songmode-eval.csv`**, **`brian-wilson-songmode-eval-report.md`** — per-run **`brianWilsonPetSoundsDiagnostics`** scalars, **`bw:device1`…`bw:device5`** receipt counts, **`brianWilsonPetSoundsSliceReceipt`** preview, **`buildBatchSectionShapingAbMarkdown`** ( **`songModeSectionShapingEvalTable.ts`** ).
+- **npm:** **`eval:brian_wilson`** in **`engines/composer-os-v2/package.json`** and root **`package.json`** passthrough. Read-only eval — no composer logic changes.
+
 ## [2026-04-28] Brian Wilson — Pet Sounds era full-slice songwriter profile
 
 - **Chord pools:** **`brian_wilson`** in **`songModeBuilder.ts`** **`SONGWRITER_CHORD_POOLS`** — maj/add9/maj7/sus2 vocabulary, **ø7**, **aug**, **dim7**, chromatic/slash bass lines, parallel minor colour (`Fm`, `Gm`, `Bb`).

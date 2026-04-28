@@ -58,6 +58,8 @@ thinGuitar2Voice1InChordMeasures
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
+**Eval:** **`npm run eval:brian_wilson`** (repo root) or **`npm run eval:brian_wilson --prefix engines/composer-os-v2`** — Brian Wilson vs **`carole_king`** neutral baseline; markdown + CSV under **`output/brian-wilson-eval/`**.
+
 **Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.11).
 
 ---

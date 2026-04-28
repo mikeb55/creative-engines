@@ -17,6 +17,7 @@
     "refresh:desktop": "npm --prefix apps/composer-os-desktop run refresh:desktop --",
     "sweep": "ts-node --project tsconfig.json engines/composer-os-v2/scripts/sweep.ts",
     "eval:fagen": "npm --prefix engines/composer-os-v2 run eval:fagen --",
+    "eval:brian_wilson": "npm --prefix engines/composer-os-v2 run eval:brian_wilson --",
     "eval:style-soph-pop": "npm --prefix engines/composer-os-v2 run eval:style-soph-pop --",
     "eval:bacharach": "npm --prefix engines/composer-os-v2 run eval:bacharach --",
     "workflow:bacharach": "npm --prefix engines/composer-os-v2 run workflow:bacharach --",
