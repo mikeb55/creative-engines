@@ -1,4 +1,5 @@
-import type { NoteEvent } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
+import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { PhraseIntent } from '../goldenPath/guitarPhraseAuthority';
 import { getDuoPhraseIntentV31 } from '../goldenPath/guitarPhraseAuthority';
 import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
@@ -239,4 +240,42 @@ export function duoGoldenPathPhraseIntentAtBar(seed: number, bar: number): Phras
       : phraseSequencingTypeFromIntent(duoGoldenPathPhraseIntentAtBar(seed, prevPhraseFirstBar));
 
   return applyPhraseEngineStage2AtPhraseStart(seed, bar, base, previousPhraseSequencingType);
+}
+
+const STAGE3_ANT_EPS = 1e-4;
+const STAGE3_EIGHTH = 0.5;
+
+/** Phrase Engine Stage 3: at most one voice-1 onset per bar shifted earlier by one eighth-note beat (deterministic). */
+export function applyDuoGoldenPhraseEngineStage3Anticipation(m: MeasureModel, seed: number, bar: number): void {
+  if (bar % 4 === 0) return;
+
+  const v1 = m.events.filter(
+    (e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1
+  );
+  if (v1.length === 0) return;
+
+  const spans = v1.map((n) => ({ n, s: n.startBeat, e: n.startBeat + n.duration }));
+  const validIndices: number[] = [];
+  for (let i = 0; i < spans.length; i++) {
+    const { n, s } = spans[i]!;
+    if (s < STAGE3_EIGHTH - STAGE3_ANT_EPS) continue;
+    const newS = snapAttackBeatToGrid(s - STAGE3_EIGHTH);
+    const newE = newS + n.duration;
+    if (newS < -STAGE3_ANT_EPS || newE > 4 + STAGE3_ANT_EPS) continue;
+    let ok = true;
+    for (let j = 0; j < spans.length && ok; j++) {
+      if (j === i) continue;
+      const o = spans[j]!;
+      if (newS < o.e - STAGE3_ANT_EPS && newE > o.s + STAGE3_ANT_EPS) ok = false;
+    }
+    if (ok) validIndices.push(i);
+  }
+  if (validIndices.length === 0) return;
+
+  const pick =
+    validIndices[
+      Math.min(validIndices.length - 1, Math.floor(seededUnit(seed, bar, 9420) * validIndices.length))
+    ]!;
+  const chosen = spans[pick]!.n;
+  chosen.startBeat = snapAttackBeatToGrid(chosen.startBeat - STAGE3_EIGHTH);
 }

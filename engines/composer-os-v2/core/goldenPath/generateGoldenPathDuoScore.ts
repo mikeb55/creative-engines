@@ -74,7 +74,10 @@ import {
 } from './bassMelodicLines';
 import { contourFingerprint, phraseTwoBarFingerprint, rhythmFingerprint } from './bassLineFingerprints';
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
-import { duoGoldenPathPhraseIntentAtBar } from '../phrase/phraseBuilder';
+import {
+  applyDuoGoldenPhraseEngineStage3Anticipation,
+  duoGoldenPathPhraseIntentAtBar,
+} from '../phrase/phraseBuilder';
 import {
   computeEnsembleStagger,
   emitGuitarDuoIdentityBar7,
@@ -1968,6 +1971,8 @@ function buildGuitarPart(
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     context.presetId === 'guitar_bass_duo' &&
     tb === 32;
+  /** Indie dual-electric remap has tight chord-density smoke gates; Stage 3 anticipation would skew comp metrics. */
+  const skipPhraseEngineStage3Anticipation = shouldUseIndieArtPopDualGuitarRoute(context);
   const [zL1, zH1] = getRegisterForBar(guitarMap, 1, context);
   const lab1 = sectionLabelForBar(1, context);
   const bump1 = lab1 === 'B' ? 5 : 0;
@@ -2137,6 +2142,10 @@ function buildGuitarPart(
           bacharachModalMixtureLevel: bacharachModalMixtureLevelR,
           bacharachCadentialAmbiguity: bacharachCadentialAmbiguityR,
         });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
+        applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
       }
       measures.push(m);
@@ -2397,6 +2406,10 @@ function buildGuitarPart(
           bacharachModalMixtureLevel: bacharachModalMixtureLevelR,
           bacharachCadentialAmbiguity: bacharachCadentialAmbiguityR,
         });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (!skipPhraseEngineStage3Anticipation) {
+        applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
       }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;

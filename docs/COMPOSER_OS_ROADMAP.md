@@ -73,6 +73,15 @@
 
 ## Past (delivered)
 
+### T2.6 — Phrase Engine Stage 3 — controlled anticipation (2026-04-28)
+
+- **`applyDuoGoldenPhraseEngineStage3Anticipation` — complete:** Duo golden-path **guitar** (**`phraseBuilder.ts`** → **`generateGoldenPathDuoScore.ts`**): at most **one** **voice-1** onset per measure may shift **earlier by exactly one eighth-note beat** (half a quarter in 4/4 beat units); **deterministic** candidate choice via **`seed`** / **`seededUnit`**; **skipped** on cadence bars (**`b % 4 === 0`**). Collision-safe against other voice-1 spans; **`normalizeMeasureToEighthBeatGrid`** after apply. **Indie Art Pop dual-electric** route skips Stage 3 (**`skipPhraseEngineStage3Anticipation`**) so **`guitar_2`** chord-density smoke thresholds stay stable. No new pipeline stage.
+
+### T2.5 — Duo golden path bar-4 cadence + Phrase Engine Stage 2 (2026-04-28)
+
+- **`duoEnforcePhraseEndCadence` — complete:** On **guitar–bass duo golden path**, phrase-end cadence runs on **every** 4-bar boundary (**`b % 4 === 0`**, 1-indexed bars): **lengthens** the final **voice-1** note toward the next attack / bar end, then **snaps** melody pitch to the **nearest chord tone** (root / 3 / 5 / 7) in register. Wired in **`generateGoldenPathDuoScore.ts`** after **`duoBoostPhraseEndLanding`** on duo golden paths (Song Mode hook runtime branch and main **`isDuoGolden`** branch).
+- **Phrase Engine Stage 2 — complete:** **4-bar phrase-type sequencing** and **inter-phrase contrast** via **`PhraseSequencingType`** (**`phraseTypes.ts`**) and **`duoGoldenPathPhraseIntentAtBar`** / **`phraseSequencingTypeFromIntent`** (**`phraseBuilder.ts`**): **(1)** no two consecutive 4-bar phrases share the same **`PhraseSequencingType`**; **(2)** after a **cadence landing**, the **next phrase** starts with **question / departure** sequencing (cadence / arrival intents replaced on that downbeat); **(3)** **deterministic** (**seed**-driven `seededUnit` only); **guitar** and **bass** both call **`duoGoldenPathPhraseIntentAtBar(seed, bar)`** so **`PhraseIntent`** stays **aligned**. No new pipeline stage.
+
 ### T2.4 — Lead-sheet MusicXML Import (Phase 1 vertical slice) (2026-04-22)
 
 - Added a minimal shared `LeadSheet` import model for future realization handoff (`core/lead-sheet/leadSheetTypes.ts`).
