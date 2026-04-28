@@ -83,8 +83,11 @@ thinGuitar2Voice1InChordMeasures
 - **Chord pool:** existing **`SONGWRITER_CHORD_POOLS.pat_metheny`** (maj9, maj7#11, add9, sus/13sus, slash bass) — not replaced by this slice
 - **Devices (`pm:`):** **`lydian_home`**, **`pedal_shimmer`**, **`diatonic_planing`**, **`sus_float`**, **`modal_sideSlip`**
 - **Guards:** ii–V–I flatten, dominant-chain strip, 2-bar minimum hold (per-bar change block), blues-dominant strip — receipts on **`patMethenyAntiElaborationGuards`**
+- **Eligibility + sections:** duo **`A'`**/**`A''`** map to verse/**chorus** (not **`other`**); **d5** pool includes **chorus**; **`patMethenyEligibilityStats`** on manifests for **d2/d4/d5** eligible bar counts
+- **Seeded rates:** **d2** **0.39**, **d4** **0.43**, **d5** **0.22** (Bernoulli vs eligible bars; tuned for harness seeds **50200 / 77123 / 90444** vs **≥20% / ≥26% / ≥10%** of eligible pools)
 - **Effective harmony:** **`patMethenyEffectiveHarmonyBars`** on **`GenerationMetadata`**; export + disk truth use the same bars as score/MusicXML (**`runGoldenPath.ts`**, **`composerOsAppGeneration.ts`**)
-- **Eval:** **`npm run eval:pat_metheny`** — CSV + markdown under **`output/pat-metheny-eval/`**; sample seeds may show **d2**/**d4**/**d5** quiet (non-blocking)
+- **Eval:** **`npm run eval:pat_metheny`** — CSV + markdown under **`output/pat-metheny-eval/`**
+- **Probe:** **`npm run probe:pat-metheny-eligibility`** (**`--prefix engines/composer-os-v2`**) — per-seed **`patMethenyEligibilityStats`** + optional bar-by-bar diagnostic file for seed **50200**
 
 ### 16. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.

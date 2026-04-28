@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2026-04-28] Pat Metheny — eligibility gates + device rate tuning (`patMethenySlice.ts`)
+
+- **Section tags:** Duo long-form section labels **`A'`**, **`A''`**, etc. map via **`A`/`B` prefix** — **`patMethenySectionTag`** no longer drops primed **A** sections to **`other`** (was excluding **16** bars from **d2**/**d5** gates).
+- **d5 structural pool:** **`chorus`** allowed for **`modal_sideSlip`** eligibility + device (**`D5_MODAL_SIDE_SLIP_SECTIONS`**) alongside verse/solo/bridge.
+- **Pipeline / diagnostics:** **`buildPatMethenyHarmonyPipelineSnapshot`**, **`formatPatMethenyEligibilityDiagnostics`**, **`resolvePatMethenySliceSourceChordForBar`** (prefers full-form **`lockedHarmonyBarsRaw`** for probes after **`patMethenyEffectiveHarmonyBars`** exists); **`precomputePatMethenyEffectiveHarmonyBars`** uses snapshot internally.
+- **Seeded fire rates (eligible-bar Bernoulli):** **`D2_PEDAL_SHIMMER_RATE`** **0.39**, **`D4_SUS_FLOAT_RATE`** **0.43**, **`D5_MODAL_SIDE_SLIP_RATE`** **0.22** — tuned so **`npm run eval:pat_metheny`** seeds **50200 / 77123 / 90444** meet **≥20% / ≥26% / ≥10%** of **`patMethenyEligibilityStats`** eligible pools (manifest receipts ÷ eligible counts).
+- **Probe CLI:** **`npm run probe:pat-metheny-eligibility`** (**`engines/composer-os-v2/scripts/patMethenyEligibilityProbe.ts`**) — echoes **`patMethenyEligibilityStats`** per seed + writes **`pat-metheny-diagnostics-<seed>.txt`** bar audit for **50200** (explains **`runGoldenPath`** candidate-seed sweep vs manifest **`seed`** when they differ).
+- **Smoke:** **`test:smoke`** **40** passed / **0** failed.
+
 ## [2026-04-28] Pat Metheny — full Song Mode slice (`patMethenySlice.ts`)
 
 - **Chord pool:** Existing **`SONGWRITER_CHORD_POOLS.pat_metheny`** preserved — **not** replaced (maj9, maj7#11, add9, sus/13sus, pedal slash-bass rows).
@@ -9,7 +18,7 @@
 - **Pipeline fix:** **`patMethenyEffectiveHarmonyBars`** wired into MusicXML export assertion (**`assertLockedHarmonyBars`**) and post-write disk truth — **`runGoldenPath.ts`** (`barsForLockedExportTruth`) + **`composerOsAppGeneration.ts`** (`barsForDiskHarmonyTruth`); aligns with **`pipelineTruthGates`** / **`customLockedHarmonyRouting`**.
 - **Eval:** **`npm run eval:pat_metheny`** (**`engines/composer-os-v2/scripts/runPatMethenySongModeEval.ts`**) — CSV + markdown under **`output/pat-metheny-eval/`**; **`engineDeclaredSuccess: 1`** when disk truth matches effective bars.
 - **Smoke:** **`tests/patMethenySliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **40** passed / **0** failed (**+1** vs Sonic Youth–era **39**).
-- **Known debt (non-blocking):** **d2** **`pedal_shimmer`**, **d4** **`sus_float`**, **d5** **`modal_sideSlip`** may show **zero** receipts on sample harness seeds (gate / seed conditions).
+- **Follow-up:** Eligibility + rate tuning — see **[2026-04-28] Pat Metheny — eligibility gates + device rate tuning (`patMethenySlice.ts`)**.
 
 ## [2026-04-28] Sonic Youth — full Song Mode slice (`sonicYouthSlice.ts`)
 
