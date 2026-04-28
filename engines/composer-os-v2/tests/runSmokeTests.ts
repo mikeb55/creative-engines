@@ -12,6 +12,7 @@ import { runBrianWilsonPetSoundsSliceSmokeTests } from './brianWilsonPetSoundsSl
 import { runStevieWonderSliceSmokeTests } from './stevieWonderSliceSmoke.test';
 import { runRadioheadSliceSmokeTests } from './radioheadSliceSmoke.test';
 import { runJamesBrownSliceSmokeTests } from './jamesBrownSliceSmoke.test';
+import { runJoniMitchellSliceSmokeTests } from './joniMitchellSliceSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -25,6 +26,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Stevie Wonder (1972–76) songwriter slice', run: runStevieWonderSliceSmokeTests },
   { label: 'Radiohead (OK Computer–era) songwriter slice', run: runRadioheadSliceSmokeTests },
   { label: 'James Brown songwriter slice', run: runJamesBrownSliceSmokeTests },
+  { label: 'Joni Mitchell songwriter slice', run: runJoniMitchellSliceSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

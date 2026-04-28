@@ -460,6 +460,47 @@ export interface GenerationMetadata {
   jamesBrownEffectiveHarmonyBars?: string[];
   /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
   jamesBrownDeviceReceipts?: string[];
+  /** Joni Mitchell (open-tuning modal) — per-bar harmony + device/guard stats. */
+  joniMitchellDiagnostics?: {
+    songwriterId: 'joni_mitchell';
+    barsConsidered: number;
+    suspensionHitRate: number;
+    nonRootBassHitRate: number;
+    addNineTouches: number;
+    modalFieldLockLengthBars: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      dominantFamilyStripped: number;
+      twoFiveOneFlattened: number;
+      twoBarHoldForced: number;
+      maj7CadenceMuted: number;
+    };
+    deviceReceipts?: string[];
+  };
+  /** One-line digest for manifests / dev inspector when the Joni Mitchell slice ran. */
+  joniMitchellSliceReceipt?: string;
+  /** Duo golden path: effective one chord per bar after Joni Mitchell harmonic devices. */
+  joniMitchellEffectiveHarmonyBars?: string[];
+  /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
+  joniMitchellDeviceReceipts?: string[];
+  /**
+   * Joni slice — optional per-bar open-tuning pattern labels (e.g. `x57543`); **annotation only**, not on `ChordEvent`.
+   */
+  joniMitchellTuningPatternByBar?: string[];
+  /** Longest run of identical symbols after slice passes (modal field lock length). */
+  joniMitchellModalFieldLockLengthBars?: number;
+  /** Versioned bag for slice-only metadata (tuning echo, future fields). */
+  joniMitchellSliceMeta?: {
+    tuningPatternByBar?: string[];
+    tuningAnnotationOnly?: boolean;
+    receiptsVersion?: number;
+  };
+  joniMitchellAntiElaborationGuards?: {
+    dominantFamilyStripped: number;
+    twoFiveOneFlattened: number;
+    twoBarHoldForced: number;
+    maj7CadenceMuted: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

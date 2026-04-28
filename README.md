@@ -63,13 +63,16 @@ thinGuitar2Voice1InChordMeasures
 ### 12. James Brown (funk/soul dominant-centre) songwriter slice (2026-04-28)
 - Primary **`james_brown`**: dominant-centre chord pools (**E9**, **D7**, **F9**, **Bb9**, **A9**, **G7**), **I7→IV7** bridge vocabulary, **five devices** (**`jb:`** d1–d5: downbeat anchor, vamp lock, horn-stab rhythm, iv-side bridge, blues tension) + anti-elaboration guards on **locked** duo harmony — **`jamesBrownSliceReceipt`** / **`jamesBrownDiagnostics`** / **`jamesBrownEffectiveHarmonyBars`** on **`GenerationMetadata`**. Implementation: **`engines/composer-os-v2/core/song-mode/jamesBrownSlice.ts`**. C3 **`songModeJamesBrownFunkOverlay`** remains opt-in (rhythm layer; harmony slice does not auto-enable it).
 
-### 13. Harness & product parity (session)
+### 13. Joni Mitchell (modal open-tuning) songwriter slice (2026-04-28)
+- Primary **`joni_mitchell`**: modal/suspended chord pools (**Dadd9**, **Gsus2**, **Asus4**, **Fmaj(add9)** / **Fadd9**, **Cadd9**, **Gmaj(6/9)**, **Bm11**, **Em(add9)**), **five devices** (**`jm:`** d1–d5: modal field lock, unresolved suspension, non-root bass, Lydian colour, modal centre shift) + anti-elaboration guards on **locked** duo harmony — **`joniMitchellSliceReceipt`** / **`joniMitchellDiagnostics`** / **`joniMitchellEffectiveHarmonyBars`** on **`GenerationMetadata`**; open-tuning pattern strings (**`x57543`**, etc.) live on slice metadata only (not on shared **`ChordEvent`**). Implementation: **`engines/composer-os-v2/core/song-mode/joniMitchellSlice.ts`**.
+
+### 14. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`**.
+**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** / **`npm run eval:joni_mitchell`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`** / **`output/joni-mitchell-eval/`**.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.14).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.15).
 
 ---
 
@@ -83,7 +86,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (37 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, and **James Brown** songwriter slice smokes
+- npm run test:smoke — PASS (38 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, **James Brown**, and **Joni Mitchell** songwriter slice smokes
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 

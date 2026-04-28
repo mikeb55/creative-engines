@@ -844,6 +844,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const bwLockedTruth = mdLockedTruth?.brianWilsonEffectiveHarmonyBars;
   const swLockedTruth = mdLockedTruth?.stevieWonderEffectiveHarmonyBars;
   const rhLockedTruth = mdLockedTruth?.radioheadEffectiveHarmonyBars;
+  const jbLockedTruth = mdLockedTruth?.jamesBrownEffectiveHarmonyBars;
+  const jmLockedTruth = mdLockedTruth?.joniMitchellEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -863,7 +865,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
             lockedHarmonyBarsAuthoritative &&
             rhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
           ? rhLockedTruth
-          : lockedHarmonyBarsAuthoritative;
+          : mdLockedTruth?.songwriterStyleId === 'james_brown' &&
+              Array.isArray(jbLockedTruth) &&
+              jbLockedTruth.length === tbLockedTruth &&
+              lockedHarmonyBarsAuthoritative &&
+              jbLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+            ? jbLockedTruth
+            : mdLockedTruth?.songwriterStyleId === 'joni_mitchell' &&
+                Array.isArray(jmLockedTruth) &&
+                jmLockedTruth.length === tbLockedTruth &&
+                lockedHarmonyBarsAuthoritative &&
+                jmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+              ? jmLockedTruth
+              : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -933,6 +947,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const swDisk = mdDisk?.stevieWonderEffectiveHarmonyBars;
     const rhDisk = mdDisk?.radioheadEffectiveHarmonyBars;
     const jbDisk = mdDisk?.jamesBrownEffectiveHarmonyBars;
+    const jmDisk = mdDisk?.joniMitchellEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -958,7 +973,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                 locked &&
                 jbDisk.length === locked.length
               ? jbDisk
-              : locked;
+              : mdDisk?.songwriterStyleId === 'joni_mitchell' &&
+                  Array.isArray(jmDisk) &&
+                  jmDisk.length === gp.context.form.totalBars &&
+                  locked &&
+                  jmDisk.length === locked.length
+                ? jmDisk
+                : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1033,6 +1054,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       jamesBrownSliceReceipt: gp.context.generationMetadata.jamesBrownSliceReceipt,
       jamesBrownEffectiveHarmonyBars: gp.context.generationMetadata.jamesBrownEffectiveHarmonyBars,
       jamesBrownAntiElaborationGuards: gp.context.generationMetadata.jamesBrownAntiElaborationGuards,
+      joniMitchellDiagnostics: gp.context.generationMetadata.joniMitchellDiagnostics,
+      joniMitchellDeviceReceipts: gp.context.generationMetadata.joniMitchellDeviceReceipts,
+      joniMitchellSliceReceipt: gp.context.generationMetadata.joniMitchellSliceReceipt,
+      joniMitchellEffectiveHarmonyBars: gp.context.generationMetadata.joniMitchellEffectiveHarmonyBars,
+      joniMitchellAntiElaborationGuards: gp.context.generationMetadata.joniMitchellAntiElaborationGuards,
+      joniMitchellTuningPatternByBar: gp.context.generationMetadata.joniMitchellTuningPatternByBar,
+      joniMitchellModalFieldLockLengthBars: gp.context.generationMetadata.joniMitchellModalFieldLockLengthBars,
+      joniMitchellSliceMeta: gp.context.generationMetadata.joniMitchellSliceMeta,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

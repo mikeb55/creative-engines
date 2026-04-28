@@ -102,6 +102,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return jbEff[barIndex - 1]!;
   }
 
+  /**
+   * Joni Mitchell (modal open-tuning): `precomputeJoniMitchellEffectiveHarmonyBars` applies modal holds + guards.
+   * After precompute, `joniMitchellEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const jmEff = meta?.joniMitchellEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'joni_mitchell' &&
+    Array.isArray(jmEff) &&
+    jmEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jmEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

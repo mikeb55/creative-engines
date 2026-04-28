@@ -80,6 +80,12 @@ import {
   finalizeJamesBrownMetadata,
   precomputeJamesBrownEffectiveHarmonyBars,
 } from './jamesBrownSlice';
+import {
+  accumulateJoniMitchellHarmonyDiagnostics,
+  createJoniMitchellHarmonyAccumulator,
+  finalizeJoniMitchellMetadata,
+  precomputeJoniMitchellEffectiveHarmonyBars,
+} from './joniMitchellSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1991,10 +1997,12 @@ function buildGuitarPart(
   const isSongwriterStevieWonder = genMeta?.songwriterStyleId === 'stevie_wonder';
   const isSongwriterRadiohead = genMeta?.songwriterStyleId === 'radiohead';
   const isSongwriterJamesBrown = genMeta?.songwriterStyleId === 'james_brown';
+  const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
   const jbAccum = createJamesBrownHarmonyAccumulator();
+  const jmAccum = createJoniMitchellHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2007,6 +2015,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJamesBrown && isDuoGoldenPath) {
     precomputeJamesBrownEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJoniMitchell && isDuoGoldenPath) {
+    precomputeJoniMitchellEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2125,6 +2136,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         jbAccum
+      );
+    }
+    if (isSongwriterJoniMitchell) {
+      accumulateJoniMitchellHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        jmAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2562,6 +2580,10 @@ function buildGuitarPart(
 
   if (isSongwriterJamesBrown && context.generationMetadata) {
     finalizeJamesBrownMetadata(context.generationMetadata, jbAccum);
+  }
+
+  if (isSongwriterJoniMitchell && context.generationMetadata) {
+    finalizeJoniMitchellMetadata(context.generationMetadata, jmAccum);
   }
 
   return {

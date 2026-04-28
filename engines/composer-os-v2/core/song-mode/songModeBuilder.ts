@@ -893,6 +893,31 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em', 'Am', 'D', 'G'],
     ],
   },
+  /**
+   * Joni Mitchell — modal / sus / add9 pools (max three distinct symbols per row; non-functional).
+   * Numeric tuning fingerings live in slice metadata (`joniMitchellTuningPatternByBar`), not here.
+   */
+  joni_mitchell: {
+    verse: [
+      ['Dadd9', 'Dadd9', 'Gsus2', 'Gsus2'],
+      ['Asus4', 'Asus4', 'Fadd9', 'Fadd9'],
+      ['Cadd9', 'Cadd9', 'Dadd9/F#', 'Dadd9/F#'],
+    ],
+    chorus: [
+      ['G6/9', 'G6/9', 'Dadd9/F#', 'Dadd9/F#'],
+      ['Fadd9', 'Fadd9', 'G6/9', 'G6/9'],
+      ['Dadd9', 'Dadd9', 'Fadd9', 'Fadd9'],
+    ],
+    bridge: [
+      ['Bm11', 'Bm11', 'Emadd9', 'Emadd9'],
+      ['Emadd9', 'Emadd9', 'Gsus2', 'Gsus2'],
+    ],
+    pre_chorus: [
+      ['Gsus2', 'Gsus2', 'Asus4', 'Asus4'],
+      ['Asus4', 'Asus4', 'Dadd9', 'Dadd9'],
+      ['Cadd9/E', 'Cadd9/E', 'Gsus2', 'Gsus2'],
+    ],
+  },
   james_brown: {
     verse: [
       ['E9', 'E9', 'E9', 'E9'],

@@ -4,6 +4,7 @@
  */
 
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
+import type { SonicYouthExtension } from './sonicYouthChordTypes';
 
 /**
  * MusicXML divisions per quarter note (fixed; Sibelius-safe integer tick grid).
@@ -65,6 +66,10 @@ export interface ChordEvent {
   duration: number;
   voice: number;
   motifRef?: string;
+  /** Optional resolved symbol for this stack (Sonic Youth / lead-sheet bridges); null = explicitly none. PIPELINE: guard before string ops. */
+  chordSymbol?: string | null;
+  /** Sonic Youth v1 — alternate tunings, drones, cross-guitar dissonance (profile-gated). */
+  sonicYouth?: SonicYouthExtension;
   /** James Brown slice — short comp attack (horns / stab rhythm); export may treat as staccato. */
   stabDuration?: 'short' | 'long';
   /** James Brown slice — minor-pentatonic-over-dominant colour flag (not a harmony change). */

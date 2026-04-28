@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [2026-04-28] Joni Mitchell — full Song Mode slice (`joniMitchellSlice.ts`)
+
+- **Chord pools:** **`SONGWRITER_CHORD_POOLS.joni_mitchell`** — modal/suspended colours (**Dadd9**, **Gsus2**, **Asus4**, **Fadd9** / **Fmaj(add9)** family, **Cadd9**, **G6/9** / **Gmaj(6/9)**, **Bm11**, **Emadd9** / **Em(add9)**); rows stay non-functional (no ii–V–I grammar).
+- **Golden-path slice:** **`engines/composer-os-v2/core/song-mode/joniMitchellSlice.ts`** (re-export **`goldenPath/joniMitchellSlice.ts`**) — **`precomputeJoniMitchellEffectiveHarmonyBars`**, **`accumulateJoniMitchellHarmonyDiagnostics`**, **`finalizeJoniMitchellMetadata`**, **`getChordForBar`** via **`joniMitchellEffectiveHarmonyBars`**, **`isSongwriterJoniMitchell`** guard.
+- **Devices (receipts `jm:*`):** **d1** **`modal_field_lock`**; **d2** **`unresolved_suspension`** (verse / pre-chorus **sus2**/**sus4**); **d3** **`non_root_bass`** (slash bass); **d4** **`lydian_colour`** (chorus **#11** / **6·9** / **F#** bass colour); **d5** **`modal_centre_shift`** (bridge, once/song when gate fires).
+- **Anti-elaboration guards:** dominant **7th**/**9**/**13** tertian strip on major roots, **ii–V–I** flatten, **minimum 2-bar** hold (per-bar change block), **maj7→I** cadence mute — aggregated as **`antiElaborationGuardTriggers`** / **`joniMitchellAntiElaborationGuards`**.
+- **Tuning annotation:** per-bar patterns (**`x57543`**, etc.) on **`joniMitchellTuningPatternByBar`** / **`joniMitchellSliceMeta` only** — **no** shared **`ChordEvent`** shape change.
+- **Routing / truth / manifests:** **`harmonyResolution.ts`**, **`pipelineTruthGates`** (32-bar locked), **`customLockedHarmonyRouting`**, **`runGoldenPath`**, **`composerOsAppGeneration`**, **`writeOutputManifest`**, **`appApiTypes`** **`OutputEntry`** — same effective-bar pattern as Radiohead / James Brown.
+- **Eval:** **`npm run eval:joni_mitchell`** (**`engines/composer-os-v2/scripts/runJoniMitchellSongModeEval.ts`**); sample batch **3** seeds — **d1–d4** firing; **d5** **known debt** (bridge + seed gate may yield **0** receipts).
+- **Smoke:** **`tests/joniMitchellSliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **38** passed / **0** failed (**+1** vs James Brown–era **37**).
+- **Additive (branch):** **`sonicYouthChordTypes.ts`** + **`sonicYouthChordGuards.ts`** — **`ChordEvent`** v1 extension (**Sonic Youth** / guitar_2), additive only.
+
 ## [2026-04-28] James Brown — full Song Mode slice (`jamesBrownSlice.ts`)
 
 - **Chord pools:** **`SONGWRITER_CHORD_POOLS.james_brown`** — dominant-centre vamps (**E9**, **D7**, **F9**, **Bb9**, **A9**, **G7**); bridge vocabulary supports **I7→IV7** side-slide returns.

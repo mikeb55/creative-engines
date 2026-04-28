@@ -133,6 +133,14 @@ export function writeOutputManifest(
     jamesBrownSliceReceipt?: GenerationMetadata['jamesBrownSliceReceipt'];
     jamesBrownEffectiveHarmonyBars?: GenerationMetadata['jamesBrownEffectiveHarmonyBars'];
     jamesBrownAntiElaborationGuards?: GenerationMetadata['jamesBrownAntiElaborationGuards'];
+    joniMitchellDiagnostics?: GenerationMetadata['joniMitchellDiagnostics'];
+    joniMitchellDeviceReceipts?: GenerationMetadata['joniMitchellDeviceReceipts'];
+    joniMitchellSliceReceipt?: GenerationMetadata['joniMitchellSliceReceipt'];
+    joniMitchellEffectiveHarmonyBars?: GenerationMetadata['joniMitchellEffectiveHarmonyBars'];
+    joniMitchellAntiElaborationGuards?: GenerationMetadata['joniMitchellAntiElaborationGuards'];
+    joniMitchellTuningPatternByBar?: GenerationMetadata['joniMitchellTuningPatternByBar'];
+    joniMitchellModalFieldLockLengthBars?: GenerationMetadata['joniMitchellModalFieldLockLengthBars'];
+    joniMitchellSliceMeta?: GenerationMetadata['joniMitchellSliceMeta'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -225,6 +233,14 @@ export function writeOutputManifest(
     jamesBrownSliceReceipt: meta.jamesBrownSliceReceipt,
     jamesBrownEffectiveHarmonyBars: meta.jamesBrownEffectiveHarmonyBars,
     jamesBrownAntiElaborationGuards: meta.jamesBrownAntiElaborationGuards,
+    joniMitchellDiagnostics: meta.joniMitchellDiagnostics,
+    joniMitchellDeviceReceipts: meta.joniMitchellDeviceReceipts,
+    joniMitchellSliceReceipt: meta.joniMitchellSliceReceipt,
+    joniMitchellEffectiveHarmonyBars: meta.joniMitchellEffectiveHarmonyBars,
+    joniMitchellAntiElaborationGuards: meta.joniMitchellAntiElaborationGuards,
+    joniMitchellTuningPatternByBar: meta.joniMitchellTuningPatternByBar,
+    joniMitchellModalFieldLockLengthBars: meta.joniMitchellModalFieldLockLengthBars,
+    joniMitchellSliceMeta: meta.joniMitchellSliceMeta,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

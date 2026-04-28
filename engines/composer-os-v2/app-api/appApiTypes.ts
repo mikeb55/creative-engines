@@ -329,4 +329,13 @@ export interface OutputEntry {
   jamesBrownSliceReceipt?: GenerationMetadata['jamesBrownSliceReceipt'];
   jamesBrownEffectiveHarmonyBars?: GenerationMetadata['jamesBrownEffectiveHarmonyBars'];
   jamesBrownAntiElaborationGuards?: GenerationMetadata['jamesBrownAntiElaborationGuards'];
+  /** Joni Mitchell (modal open-tuning) slice — diagnostics / receipts (Song Mode manifest echo). */
+  joniMitchellDiagnostics?: GenerationMetadata['joniMitchellDiagnostics'];
+  joniMitchellDeviceReceipts?: GenerationMetadata['joniMitchellDeviceReceipts'];
+  joniMitchellSliceReceipt?: GenerationMetadata['joniMitchellSliceReceipt'];
+  joniMitchellEffectiveHarmonyBars?: GenerationMetadata['joniMitchellEffectiveHarmonyBars'];
+  joniMitchellAntiElaborationGuards?: GenerationMetadata['joniMitchellAntiElaborationGuards'];
+  joniMitchellTuningPatternByBar?: GenerationMetadata['joniMitchellTuningPatternByBar'];
+  joniMitchellModalFieldLockLengthBars?: GenerationMetadata['joniMitchellModalFieldLockLengthBars'];
+  joniMitchellSliceMeta?: GenerationMetadata['joniMitchellSliceMeta'];
 }
