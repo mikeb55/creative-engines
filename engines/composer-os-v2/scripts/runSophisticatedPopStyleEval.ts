@@ -20,6 +20,7 @@ import {
   stringifyCsv,
   type StyleEvalCsvRow,
 } from './eval/sophisticatedPopStyleEvalCore';
+import { buildBatchSectionShapingAbMarkdown } from './eval/songModeSectionShapingEvalTable';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 
@@ -266,6 +267,19 @@ function main(): void {
         ? sorted[(sorted.length - 1) / 2]!
         : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
 
+  const shapingAb = buildBatchSectionShapingAbMarkdown({
+    seeds: args.seeds,
+    rows: internal.map((r) => ({
+      seed: r.seed,
+      arm: r.arm,
+      manifestRaw: r.manifestRaw,
+    })),
+    armA: 'neutral_ecm',
+    armB: 'soph_pop',
+    labelA: 'STYLE_ECM (neutral)',
+    labelB: 'STYLE_SOPHISTICATED_POP',
+  });
+
   const md = `# Sophisticated Pop style eval (GCE-style diagnostic)
 
 - **Runs:** ${finalRows.length} (${args.seeds.length} seeds × neutral STYLE_ECM + STYLE_SOPHISTICATED_POP)
@@ -286,6 +300,7 @@ Scores compare rhythm/metadata receipts + harmony diagnostics + chord progressio
 
 \`style-soph-pop-eval.csv\` — columns include \`gceStyleScore\` (same value on both arms for that seed).
 
+${shapingAb}
 `;
 
   fs.writeFileSync(path.join(args.outDir, 'style-soph-pop-eval.csv'), csv, 'utf-8');

@@ -21,6 +21,7 @@ import {
   type BacharachGceScoreBreakdown,
 } from './eval/bacharachSongModeEvalCore';
 import { stringifyCsv } from './eval/sophisticatedPopStyleEvalCore';
+import { buildBatchSectionShapingAbMarkdown } from './eval/songModeSectionShapingEvalTable';
 
 export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 
@@ -401,7 +402,7 @@ export function buildBacharachEvalPipeline(
   }).length;
 
   const outDirRel = path.relative(REPO_ROOT, outDirForReport);
-  const reportMd = buildBacharachEvalReportMarkdown({
+  const baseReport = buildBacharachEvalReportMarkdown({
     neutralPrimary,
     seeds,
     outDirRel: outDirRel || '.',
@@ -409,6 +410,19 @@ export function buildBacharachEvalPipeline(
     neutralHigherSmoothCount: neutralHigherSmooth,
     metricsPresentSeeds,
   });
+  const shapingAb = buildBatchSectionShapingAbMarkdown({
+    seeds,
+    rows: internal.map((r) => ({
+      seed: r.seed,
+      arm: r.arm,
+      manifestRaw: r.manifestRaw,
+    })),
+    armA: 'bacharach',
+    armB: 'neutral',
+    labelA: 'bacharach',
+    labelB: `neutral (${neutralPrimary})`,
+  });
+  const reportMd = `${baseReport}\n${shapingAb}`;
 
   return {
     finalRows,

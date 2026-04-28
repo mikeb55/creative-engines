@@ -24,6 +24,7 @@ import {
   stringifyCsv,
   type RunMetricRow,
 } from './eval/fagenSongModeEvalCore';
+import { buildBatchSectionShapingAbMarkdown } from './eval/songModeSectionShapingEvalTable';
 
 /** `scripts` → `composer-os-v2` → `engines` → repo root */
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -197,6 +198,15 @@ function compareFagenVsNeutral(rows: RunMetricRow[]): string {
   return lines.join('\n');
 }
 
+function manifestRawFromRow(r: RunMetricRow): string | null {
+  if (!r.manifestPath || !fs.existsSync(r.manifestPath)) return null;
+  try {
+    return fs.readFileSync(r.manifestPath, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
 function compareToBaselineDisk(fagenRows: RunMetricRow[], baselineBySeed: Map<number, string>): string {
   if (baselineBySeed.size === 0) return '_No baseline manifest dir or no matching seeds._';
   const lines: string[] = [
@@ -256,6 +266,19 @@ ${compareFagenVsNeutral(rows)}
 Folder: \`${baselineManifestDir ?? '(unset)'}\` — set \`COMPOSER_OS_EVAL_BASELINE_MANIFEST_DIR\` or \`--baseline-manifest-dir\`.
 
 ${compareToBaselineDisk(fagenRows, baselineBySeed)}
+
+${buildBatchSectionShapingAbMarkdown({
+    seeds,
+    rows: rows.map((r) => ({
+      seed: r.seed,
+      arm: r.arm,
+      manifestRaw: manifestRawFromRow(r),
+    })),
+    armA: 'fagen',
+    armB: 'neutral_keys',
+    labelA: `Fagen (${rows.find((x) => x.arm === 'fagen')?.songwriterId ?? 'donald_fagen'})`,
+    labelB: `neutral_keys (${DEFAULT_NEUTRAL_PRIMARY})`,
+  })}
 
 ## Interpretation (diagnostics-only)
 

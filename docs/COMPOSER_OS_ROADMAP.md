@@ -77,6 +77,10 @@
 
 - **`runAllTests.ts` — complete:** Orchestrates **four sequential** Node runs (`tests/runAllTestsChunk1.ts`–`Chunk4.ts`) so the full matrix does not load every suite module in one process; each child uses **`--max-old-space-size=4096`**. Shared loop in **`tests/harness/runHarnessMain.ts`**. **`test:smoke`** remains **`runSmokeTests.ts`** (unchanged). **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** updated. No composer/generation logic changes.
 
+### T2.X — Eval harness `songModeSectionShapingDiagnostics` A/B markdown (2026-04-28)
+
+- **Complete:** Shared **`scripts/eval/songModeSectionShapingEvalTable.ts`** parses existing manifest JSON (no schema changes). **`npm run eval:fagen`**, **`eval:bacharach`**, **`eval:style-soph-pop`** append wide per-seed tables (aggregate + per-section **`phraseType`**, **`cadenceBar`**, **`anticipationCount`**, **`motifTransform`**) with A/B columns aligned field-by-field for diffing. Eval/read-only — no composer logic changes.
+
 ### T2.7 — Wayne Shorter — chorus/bridge controlled motif development (2026-04-28)
 
 - **`applyWayneShorterChorusBridgeMotifDevelopment` — complete:** After **`buildGuitarPart`** in **`generateGoldenPathDuoScore.ts`**, for **`songwriterStyleId === 'wayne_shorter'`** only, **one** **seed-deterministic** transform per **chorus** or **bridge** form section (**not** verse / intro): **(1)** shift voice-1 motif onset **+1 beat**, **(2)** augment rhythm (double durations within the bar), or **(3)** widen leaps (intervals **≥ a 4th**) by **±1 semitone** on the second note — **never combined** per section. Receipts merged into **`motifDevelopmentSummary.transformationSummary`** (`motifAuthorityV1.ts`). No new pipeline stage.
