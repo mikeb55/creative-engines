@@ -78,6 +78,18 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     );
   }
 
+  /** Brian Wilson Pet Sounds slice: precomputed per-bar symbols after harmonic devices (duo golden path). */
+  const bwEff = meta?.brianWilsonEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'brian_wilson' &&
+    Array.isArray(bwEff) &&
+    bwEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bwEff[barIndex - 1]!;
+  }
+
   for (const seg of context.chordSymbolPlan.segments) {
     if (barIndex >= seg.startBar && barIndex < seg.startBar + seg.bars) {
       return seg.chord;

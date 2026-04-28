@@ -58,6 +58,7 @@ import {
   applyBrianWilsonGuitarBarPasses,
   createBrianWilsonHarmonyAccumulator,
   finalizeBrianWilsonPetSoundsMetadata,
+  precomputeBrianWilsonEffectiveHarmonyBars,
 } from './brianWilsonPetSoundsSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
@@ -1960,6 +1961,13 @@ function buildGuitarPart(
 
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
+  const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
+  const lockedFullForm =
+    context.lockedHarmonyBarsRaw &&
+    context.lockedHarmonyBarsRaw.length === context.form.totalBars;
+  if (isSongwriterBrianWilson && isDuoGoldenPath && !lockedFullForm) {
+    precomputeBrianWilsonEffectiveHarmonyBars(context);
+  }
 
   const seed = context.seed;
   const songwriterMelodyProfile = buildSongwriterMelodyProfile(

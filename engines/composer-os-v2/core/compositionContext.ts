@@ -384,9 +384,22 @@ export interface GenerationMetadata {
     halfDiminishedTouches: number;
     augmentedTouches: number;
     diminishedSeventhTouches: number;
+    /** Named Pet Sounds harmonic device receipts for this run (e.g. `bw:device1:...`). */
+    deviceReceipts?: string[];
   };
   /** One-line digest for manifests / dev inspector when the Pet Sounds slice ran. */
   brianWilsonPetSoundsSliceReceipt?: string;
+  /** Duo golden path: effective one chord per bar after Pet Sounds harmonic devices (Brian Wilson only). */
+  brianWilsonEffectiveHarmonyBars?: string[];
+  /** Section-boundary semitone modulation hints (Brian Wilson Pet Sounds device 5). */
+  brianWilsonSectionModulationHints?: Array<{
+    atBar: number;
+    semitoneDelta: -1;
+    fromRole: 'verse';
+    toRole: 'chorus' | 'bridge' | 'verse' | 'other';
+  }>;
+  /** Flat list of device receipts (mirrors diagnostics.deviceReceipts when populated). */
+  brianWilsonPetSoundsDeviceReceipts?: string[];
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;
