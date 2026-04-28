@@ -1059,7 +1059,7 @@ function applyIndieArtPopAlternateTuningPolicy(
 function isIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
   return (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
-    context.presetId === 'guitar_bass_duo' &&
+    (context.presetId === 'guitar_bass_duo' || context.presetId === 'song_mode') &&
     normalizeStyleProfileId(context.generationMetadata?.styleProfile) === 'STYLE_INDIE_ART_POP' &&
     context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
   );

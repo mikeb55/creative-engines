@@ -506,7 +506,11 @@ function eventsToXml(
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           if (pi === 0) {
             xml += emitPitchedTicks(parts, voice, pitchXml, '', '', '', stemXml, staffPolyphonyXml);
-          } else if (parts.length === 1) {
+          } else {
+            /**
+             * Stacked chord tones: same onset/duration as the first notehead (`firstTicks`), regardless of tie decomposition length on pitch 0.
+             * Smoke (`npm run test:smoke`, post-fix): the four Indie guitar_2 ChordEvent quality rows still FAIL — they probe in-memory ScoreModel / thinVoice1Peak, not MusicXML. Other unrelated smoke FAILs observed: indie alias route, separate-tuning substitution guardrail, tuning-proof fixture.
+             */
             xml += noteXmlPitchedFragment({
               dynamicsAttr: '',
               chordXml: '<chord/>',

@@ -175,3 +175,16 @@ export function normalizeAlternateGuitarTuningRequest(
   return null;
 }
 
+/** True when alternate tuning metadata implies two clean electrics (Indie Art Pop separate or non-standard shared). */
+export function indieArtPopAlternateTuningWantsDualElectricGuitars(
+  tuning: AlternateGuitarTuningResolved | undefined
+): boolean {
+  if (!tuning) return false;
+  if (tuning.mode === 'separate') return true;
+  if (tuning.mode === 'shared') {
+    const pid = tuning.shared?.presetId;
+    if (pid === 'custom') return true;
+    if (pid && pid !== 'standard') return true;
+  }
+  return false;
+}

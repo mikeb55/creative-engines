@@ -1,3 +1,6 @@
+/** Stage 2 phrase arc labels — 4-bar duo sequencing / contrast (not identical to bar-level PhraseIntent). */
+export type PhraseSequencingType = 'question' | 'departure' | 'cadence' | 'arrival';
+
 export type PhraseRhythmComplexity = 'simple' | 'moderate' | 'complex';
 export type PhraseFeel = 'straight' | 'swung' | 'laid_back' | 'pushed';
 export type PhraseContour = 'ascending' | 'descending' | 'arch' | 'flat' | 'wave';

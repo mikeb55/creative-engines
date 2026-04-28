@@ -30,3 +30,9 @@ const IDS: readonly StyleProfile[] = [
 export function isStyleProfile(v: unknown): v is StyleProfile {
   return typeof v === 'string' && (IDS as readonly string[]).includes(v);
 }
+
+/** Normalize wire/UI style profile id to a known StyleProfile, or undefined when absent/invalid. */
+export function normalizeStyleProfileId(profile: unknown): StyleProfile | undefined {
+  if (profile === undefined || profile === null) return undefined;
+  return isStyleProfile(profile) ? profile : undefined;
+}

@@ -158,6 +158,7 @@ export interface GenerateResult {
     c4Strength?: 'light' | 'medium' | 'strong';
     importHarmonyMode?: ImportHarmonyMode;
     harmonyBlend?: number;
+    debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {

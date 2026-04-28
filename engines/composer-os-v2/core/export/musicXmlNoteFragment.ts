@@ -31,6 +31,8 @@ export function noteXmlPitchedFragment(opts: {
   tieXml: string;
   voice: number;
   typeAndDotsXml: string;
+  /** Same duration as preceding note — stacked chord tone (`<chord/>` before pitch). */
+  chordXml?: string;
   /** Multi-voice: stem element so Sibelius / Guitar Pro render separate voices on one staff. */
   stemXml?: string;
   /** After stem: explicit staff for single-staff polyphony (Sibelius / GP8). */
@@ -44,9 +46,10 @@ export function noteXmlPitchedFragment(opts: {
     tieXml,
     voice,
     typeAndDotsXml,
+    chordXml = '',
     stemXml = '',
     staffXml = '',
     notationsXml,
   } = opts;
-  return `        <note${dynamicsAttr}>${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
+  return `        <note${dynamicsAttr}>${chordXml}${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
 }

@@ -1,4 +1,7 @@
 import type { NoteEvent } from '../score-model/scoreModelTypes';
+import type { PhraseIntent } from '../goldenPath/guitarPhraseAuthority';
+import { getDuoPhraseIntentV31 } from '../goldenPath/guitarPhraseAuthority';
+import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import type {
   Phrase,
   PhraseContour,
@@ -6,6 +9,7 @@ import type {
   PhraseHarmonicRole,
   PhraseRange,
   PhraseRhythmComplexity,
+  PhraseSequencingType,
 } from './phraseTypes';
 
 function clamp01(x: number): number {
@@ -127,4 +131,112 @@ export function buildPhrase(
     repetitionOf: undefined,
     rhythmFingerprint,
   };
+}
+
+// ---- Phrase Engine Stage 2: 4-bar phrase sequencing (duo golden path) — seed-only, no new pipeline stage. ----
+
+export function phraseSequencingTypeFromIntent(intent: PhraseIntent): PhraseSequencingType {
+  switch (intent) {
+    case 'cadence':
+      return 'cadence';
+    case 'return':
+      return 'arrival';
+    case 'development':
+    case 'contrast':
+      return 'departure';
+    default:
+      return 'question';
+  }
+}
+
+function pickQuestionOrDepartureIntent(seed: number, bar: number, salt: number): PhraseIntent {
+  const pool: PhraseIntent[] = [
+    'guitar_lead',
+    'answer_guitar',
+    'development',
+    'contrast',
+    'bass_lead',
+    'answer_bass',
+  ];
+  const u = seededUnit(seed, bar, 9300 + salt);
+  return pool[Math.min(pool.length - 1, Math.floor(u * pool.length))]!;
+}
+
+function rotatePhraseIntentForContrast(
+  seed: number,
+  bar: number,
+  guard: number,
+  previousPhraseSequencingType: PhraseSequencingType
+): PhraseIntent {
+  const u = seededUnit(seed, bar, 9310 + guard);
+  if (previousPhraseSequencingType === 'question') {
+    const dep: PhraseIntent[] = ['development', 'contrast'];
+    return dep[Math.min(dep.length - 1, Math.floor(u * dep.length))]!;
+  }
+  if (previousPhraseSequencingType === 'departure') {
+    const q: PhraseIntent[] = ['guitar_lead', 'answer_guitar', 'bass_lead', 'answer_bass'];
+    return q[Math.min(q.length - 1, Math.floor(u * q.length))]!;
+  }
+  const mixed: PhraseIntent[] = ['guitar_lead', 'development', 'contrast', 'answer_guitar'];
+  return mixed[Math.min(mixed.length - 1, Math.floor(u * mixed.length))]!;
+}
+
+function applyPhraseEngineStage2AtPhraseStart(
+  seed: number,
+  bar: number,
+  intent: PhraseIntent,
+  previousPhraseSequencingType: PhraseSequencingType | undefined
+): PhraseIntent {
+  const afterCadenceLanding = bar > 1 && bar % 4 === 1;
+  let out = intent;
+  if (afterCadenceLanding) {
+    const t = phraseSequencingTypeFromIntent(out);
+    if (t === 'cadence' || t === 'arrival') {
+      out = pickQuestionOrDepartureIntent(seed, bar, 0);
+    }
+  }
+
+  if (previousPhraseSequencingType !== undefined) {
+    let guard = 0;
+    while (phraseSequencingTypeFromIntent(out) === previousPhraseSequencingType && guard < 28) {
+      out = rotatePhraseIntentForContrast(seed, bar, guard, previousPhraseSequencingType);
+      guard++;
+    }
+    if (phraseSequencingTypeFromIntent(out) === previousPhraseSequencingType) {
+      out =
+        previousPhraseSequencingType === 'question'
+          ? seededUnit(seed, bar, 9340) < 0.5
+            ? 'development'
+            : 'contrast'
+          : 'guitar_lead';
+    }
+  }
+
+  if (afterCadenceLanding) {
+    const t = phraseSequencingTypeFromIntent(out);
+    if (t === 'cadence' || t === 'arrival') {
+      out = pickQuestionOrDepartureIntent(seed, bar, 48);
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Bar-level duo golden path intent: V3.1 authority, plus Stage 2 sequencing on each 4-bar phrase downbeat only.
+ * Deterministic in `seed`; guitar and bass must both call this with the same `(seed, bar)`.
+ */
+export function duoGoldenPathPhraseIntentAtBar(seed: number, bar: number): PhraseIntent {
+  const phase = ((bar - 1) % 8) + 1;
+  const phraseNumber8 = Math.floor((bar - 1) / 8) + 1;
+  const base = getDuoPhraseIntentV31(phase, phraseNumber8);
+  if ((bar - 1) % 4 !== 0) return base;
+
+  const prevPhraseFirstBar = bar - 4;
+  const previousPhraseSequencingType =
+    prevPhraseFirstBar < 1
+      ? undefined
+      : phraseSequencingTypeFromIntent(duoGoldenPathPhraseIntentAtBar(seed, prevPhraseFirstBar));
+
+  return applyPhraseEngineStage2AtPhraseStart(seed, bar, base, previousPhraseSequencingType);
 }

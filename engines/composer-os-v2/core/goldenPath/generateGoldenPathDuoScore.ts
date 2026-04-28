@@ -74,12 +74,12 @@ import {
 } from './bassMelodicLines';
 import { contourFingerprint, phraseTwoBarFingerprint, rhythmFingerprint } from './bassLineFingerprints';
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
+import { duoGoldenPathPhraseIntentAtBar } from '../phrase/phraseBuilder';
 import {
   computeEnsembleStagger,
   emitGuitarDuoIdentityBar7,
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
-  getDuoPhraseIntentV31,
   guitarChordTonesInRange,
   liftToneToRange,
   resolvePhraseEndForDuo,
@@ -1357,6 +1357,64 @@ function duoBoostPhraseEndLanding(m: MeasureModel, bar: number, isDuo: boolean):
   }
 }
 
+/**
+ * Bar-4 cadence (4-bar cycle, `bar` 1-indexed): lengthen final voice-1 note toward the next attack / bar end,
+ * then snap melody pitch to nearest chord tone (root/3/5/7) in register. Duo golden path: every phrase boundary (`bar % 4 === 0`).
+ */
+function duoEnforcePhraseEndCadence(
+  m: MeasureModel,
+  bar: number,
+  context: CompositionContext,
+  effectiveLow: number,
+  effectiveHigh: number,
+  songModeHook: boolean
+): void {
+  void songModeHook;
+  if (bar % 4 !== 0) return;
+
+  const chord = getChordForBar(bar, context);
+  const tones = chordTonesForChordSymbolWithContext(chord, context);
+  const v1 = m.events.filter(
+    (e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1
+  );
+  if (v1.length === 0) return;
+
+  const maxEnd = Math.max(...v1.map((n) => n.startBeat + n.duration));
+  const finals = v1.filter((n) => Math.abs(n.startBeat + n.duration - maxEnd) < 1e-5);
+  if (finals.length === 0) return;
+
+  let barrier = 4;
+  for (const n of v1) {
+    if (n.startBeat > maxEnd + 1e-8 && n.startBeat < barrier) barrier = n.startBeat;
+  }
+
+  for (const n of finals) {
+    const capDur = qBeat(barrier - n.startBeat);
+    if (n.duration + 1e-9 < capDur) n.duration = capDur;
+  }
+
+  const candidates = [
+    liftToneToRange(tones.root, effectiveLow, effectiveHigh),
+    liftToneToRange(tones.third, effectiveLow, effectiveHigh),
+    liftToneToRange(tones.fifth, effectiveLow, effectiveHigh),
+    liftToneToRange(tones.seventh, effectiveLow, effectiveHigh),
+  ];
+
+  for (const n of finals) {
+    let best = candidates[0]!;
+    let bestD = Math.abs(n.pitch - best);
+    for (let i = 1; i < candidates.length; i++) {
+      const c = candidates[i]!;
+      const d = Math.abs(n.pitch - c);
+      if (d < bestD) {
+        bestD = d;
+        best = c;
+      }
+    }
+    n.pitch = best;
+  }
+}
+
 /** Remove rests fully covered by a note span (motif tail rounding can leave orphan rests). Per-voice only so Wyble v2 notes do not strip v1 rests. */
 function collapseRestsInsideNotes(m: MeasureModel): void {
   const notes = m.events.filter((e) => e.kind === 'note') as {
@@ -2008,7 +2066,7 @@ function buildGuitarPart(
         : isEcmS
           ? getEcmSchneiderPhraseIntent(phase, seed)
           : isDuoGolden
-            ? getDuoPhraseIntentV31(phase)
+            ? duoGoldenPathPhraseIntentAtBar(seed, b)
             : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
     const swingBump = duoGuitarSwingStaggerBump(seed, b, isDuoGolden);
@@ -2050,6 +2108,7 @@ function buildGuitarPart(
       hookRuntime.emitScheduledBar(b, m);
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
+      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook);
       normalizeMeasureToEighthBeatGrid(m);
       if (b === 25 && context.seed === 50021) {
         const _b25AfterSecondNormalize = m.events
@@ -2320,6 +2379,7 @@ function buildGuitarPart(
       }
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
+      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook);
       normalizeMeasureToEighthBeatGrid(m);
       if (isSongwriterFagen && fagenAnyColourBiases) {
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
@@ -2942,7 +3002,7 @@ function buildBassPart(
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
     const phraseIntent = duoGoldenBass
-      ? getDuoPhraseIntentV31(phase, phraseNumber)
+      ? duoGoldenPathPhraseIntentAtBar(seed, b)
       : getDuoPhraseIntent(phraseBar, seed);
     const stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, duoGoldenBass ? s : seed, phraseIntent);
     const placements = getPlacementsForBar(motifState.placements, b);
