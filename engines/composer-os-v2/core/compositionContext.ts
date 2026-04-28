@@ -376,6 +376,17 @@ export interface GenerationMetadata {
   fagenSlashChordDensity?: number;
   /** Song Mode — receipt only: duo guitar applied Fagen jazz-pop colour passes this run (inspectable; no mimic claim). */
   fagenJazzPopColourPassesReceipt?: string;
+  /** Brian Wilson (Pet Sounds era) — per-bar harmony vocabulary scan (bass motion, ø7, aug, dim7). */
+  brianWilsonPetSoundsDiagnostics?: {
+    songwriterId: 'brian_wilson';
+    barsConsidered: number;
+    chromaticBassTransitions: number;
+    halfDiminishedTouches: number;
+    augmentedTouches: number;
+    diminishedSeventhTouches: number;
+  };
+  /** One-line digest for manifests / dev inspector when the Pet Sounds slice ran. */
+  brianWilsonPetSoundsSliceReceipt?: string;
   bacharachDeceptiveCadenceRate?: number;
   bacharachChromaticVoiceLeading?: number;
   bacharachModalMixtureLevel?: number;

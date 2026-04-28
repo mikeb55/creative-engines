@@ -95,5 +95,9 @@ export function resolveSongModeDiversityStylePairing(
   if (presetId === 'beatles_bach_counterline') return { arrangerStyle: 'ellington', era: 'swing' };
   if (presetId === 'kendrick_debussy_space') return { arrangerStyle: 'gil_evans', era: 'cool_jazz' };
   if (presetId === 'maxmartin_stravinsky_angles') return { arrangerStyle: 'basie', era: 'bebop' };
+  if (presetId === 'dylan_messiaen_literate_vs_sublime') return { arrangerStyle: 'schneider', era: 'post_bop' };
+  if (presetId === 'james_brown_joni_groove_vs_line') return { arrangerStyle: 'ellington', era: 'contemporary' };
+  if (presetId === 'barry_harris_max_martin_bebop_vs_charts') return { arrangerStyle: 'basie', era: 'bebop' };
+  if (presetId === 'ecm_chamber_prince_space_vs_pocket') return { arrangerStyle: 'gil_evans', era: 'cool_jazz' };
   return null;
 }

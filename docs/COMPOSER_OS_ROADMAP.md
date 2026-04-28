@@ -73,6 +73,10 @@
 
 ## Past (delivered)
 
+### T2.11 — Brian Wilson (Pet Sounds era) full-slice songwriter profile (2026-04-28)
+
+- **Complete:** Chord pools (**`SONGWRITER_CHORD_POOLS.brian_wilson`**), updated **`brian_wilson`** **`SONGWRITER_STYLE_PROFILES`** entry, duo golden-path slice (**`brianWilsonPetSoundsSlice.ts`**, **`generateGoldenPathDuoScore.ts`** **`buildSongwriterMelodyProfile`** + guitar passes), metadata receipts (**`brianWilsonPetSoundsDiagnostics`**, **`brianWilsonPetSoundsSliceReceipt`** on **`GenerationMetadata`**), smoke coverage (**`brianWilsonPetSoundsSliceSmoke.test.ts`**). See [CHANGELOG.md](CHANGELOG.md) § **[2026-04-28] Brian Wilson — Pet Sounds era full-slice songwriter profile**. **`test:smoke`** 34 passed / 0 failed.
+
 ### T2.10 — Phrase Engine Stage 4 — motif augmentation / compression / displacement (2026-04-28)
 
 - **`applyDuoGoldenPhraseEngineStage4MotifRhythm` — complete:** Duo golden-path **guitar voice 1** only (**`phraseBuilder.ts`** → **`buildGuitarPart`** / **`generateGoldenPathDuoScore.ts`** **before** **`duoBoostPhraseEndLanding`** / **`duoEnforcePhraseEndCadence`**, same **`isDuoGolden`** block). Within each 4-bar cycle (**1-indexed bars**): **phrase 2** (**`b % 4 === 2`**) **compression** (½ durations on grid); **phrase 3** (**`b % 4 === 3`**) **augmentation** (×2 durations) only when doubled rhythm fits in-bar without overlap; **phrase 4 / cadence** (**`b % 4 === 0`**) **displacement** (+½ beat to every v1 onset; notes pushed past the bar end removed). **Phrase 1** unchanged. **At most one** of these per bar — bar position chooses the transform (no stacking). **Indie Art Pop dual-electric** skips Stage 4 (**same gate as Stage 3:** **`skipPhraseEngineStage3Anticipation`**). **`test:smoke`** **33 passed / 0 failed**. No new pipeline stage; **Stage 2 / Stage 3 / cadence** logic untouched.
@@ -239,7 +243,7 @@
 
 ---
 
-## Current (as of 2026-04-21 snapshot)
+## Current (as of 2026-04-28 snapshot)
 
 - **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
@@ -254,12 +258,26 @@
 | **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
-| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Generate UI:** primary/secondary/author/classical + arranger pairing exposure still **thin vs engine** for most controls; **golden-path slices:** **`STYLE_GROOVE_SOUL`**, **`donald_fagen`**, **`bacharach`**, **`STYLE_SOPHISTICATED_POP`**, plus **section-aware descriptors + aggregated diagnostics** (2026-04-18). |
+| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Golden-path slices** today: **`STYLE_GROOVE_SOUL`**, **`donald_fagen`**, **`bacharach`**, **`STYLE_SOPHISTICATED_POP`**, Wayne / Barry / ECM-writer / Metheny hooks where wired — plus **section-aware descriptors + diagnostics**. **Next product push:** **Priority stack** — more **end-to-end primary writer profiles** + **Generate UI** discoverability (not registry-only ids). |
 | **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family. **2026-04-17:** Parity + **realized normalization review (first pass)** — `shouldApplyRealizedVoice2Normalization` centralizes when Phase 18.2B.3 runs; `injectPhaseAGuitarVoice2Probe` uses **`isStandardGuitarBassDuo`**; JSDoc on realized pass. Full unify of realized metrics with standard duo / phrase-first single-line still **deferred** (pick list #2). |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **#19 / #16 / #17 (chord track)** | **Baseline complete** — unified semantics (#19), robustness baseline + export/receipt behaviour (#16), diagnostics in UI (#17). Aligned across [README.md](../README.md) and [docs/CHANGELOG.md](./CHANGELOG.md). |
+
+---
+
+## Priority stack (2026-04-28)
+
+Ordered for **product leverage** (what to schedule first). Adjust when ship goals change.
+
+1. **More Song Mode songwriter profiles (primary writer slices)** — Expand **working** profiles beyond the current deep slices (e.g. Fagen, Bacharach, Wayne, Barry Harris, ECM-as-writer, Pat Metheny hooks): each profile should win **chord-row / planning bias + duo golden-path behaviour + receipts + diagnostics + smoke**, using the same bounded patterns as existing pilots. The **typed catalogue** (`SongwriterRuleId`, `songwriterRuleRegistry`) can list many ids; **user-visible value** is **end-to-end writer slices**, not registry-only rows.
+2. **Generate UI / discoverability for writers** — Surface **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** so new profiles are choosable and A/B-able without spelunking the API (pairs with **Near term** item 1).
+3. **Harness + composer stability** — Keep **`test:smoke`** / **`test:fast`** green; use chunked **`runAllTests`** for full matrix; triage **`TEST_DEBT_COMPOSER_OS_V2.md`** so refactors stay safe while profile count grows.
+4. **Lead-sheet MusicXML import** — Finish staged harmony import (ensemble presets, evals) where product needs **chart-in**; complements writers but is a **different axis** than “more profiles.”
+5. **Phrase Engine / riff material layer** — Shared motivic cells feeding duo / Song hooks / ensembles (**Phrase Engine / Riff Generator redesign**).
+6. **ECM arrangement & orchestration depth** — Weakest GCE pillar on ECM; after profiles/harness pressure eases.
+7. **Wyble parity + ensemble Wyble** — Duo single-line alignment first; BB/SQ inner-line depth after.
 
 ---
 
@@ -308,11 +326,18 @@
 
 - **Status:** **COMPLETE** — musical eval **8.8/10** on the integrated Song Mode + duo golden-path slice (Wayne contextual harmony + motif authority + rhythmic return alignment).
 - **Shipped in core:** contextual chord-row bias (verse vs chorus/bridge), optional forced disruption slot on peak sections, **form-aware Motif Authority** phrase windows (`verse` / `chorus` / `bridge` from `context.form.sections`), **interval-size buckets** on motif fingerprints (`step` / `skip` / `leap`), **Wayne-specific return nudge** (pitch-class snap on bar lead + second-note bias; `songwriterStyleId` passed from golden path), and **phrase-A rhythmic fingerprint**: `buildPhrase` on phrase-A guitar notes stores `rhythmFingerprint` on context; return refinement **snaps voice-1 note durations** to the nearest duration values appearing in that fingerprint (duration values only, not beat positions).
-- **Future (medium-term, not current scope):** classical **motif development** transformations — **augmentation / compression / displacement** — plus richer shared **Phrase Engine** rhythm abstractions; intentionally **out of scope** for this Wayne tranche (track under **Phrase Engine / Riff Generator redesign** when scheduled).
+- **Future:** Duo golden-path **Phrase Engine Stage 4** (**motif augmentation / compression / displacement** on guitar v1) shipped **2026-04-28** (`phraseBuilder.ts`). Wayne-specific **chorus/bridge** motif pass remains separate (`applyWayneShorterChorusBridgeMotifDevelopment`). Richer **neutral Phrase** type + riff UX remains **Phrase Engine / Riff Generator redesign**.
 
 ---
 
 ## Future (prioritized directions)
+
+### Songwriter profiles & Song Mode writer expansion — **priority 1**
+
+- **Goal:** **More primary songwriter profiles** that behave distinctly in Song Mode: section-aware **chord pools**, **golden-path** guitar/bass realisation hooks where appropriate, **surface receipts** / **`songModeStyleSurfaceNotes`**, **`songModeSectionShapingDiagnostics`** alignment, and **eval harness** rows where a script exists (`eval:fagen`, `eval:bacharach`, etc.).
+- **Implementation pattern:** Follow shipped slices — **registry + resolver** (`songwriterStyleResolver`, `songwriterRuleRegistry`) → **`songModeBuilder`** weighting / rows → **`generateGoldenPathDuoScore`** passes → manifests. Keep **pilot gating** (`motifAuthorityLevel`, motif summaries) until the slice is stable.
+- **Candidate directions (pick small batches):** elevate **thin or compile-only** writers to full slices; add **era- or scene-cluster** presets (e.g. singer-songwriter, classic rock book, modern alt) as **product bundles** mapping to existing or new ids; extend **hybrid** pairs (melody writer × harmony writer) with tests.
+- **Explicit dependency:** More profiles **increase** the need for **UI exposure** (priority stack item 2) and **test/eval** discipline (item 3).
 
 ### Lead-sheet MusicXML import → String Quartet + Big Band (planned — **not started**)
 
@@ -360,22 +385,22 @@
 
 ---
 
-### Next best development (top 3 options — 2026-04-18)
+### Next best development (top 3 options — refreshed 2026-04-28)
 
-1. **Wire eval harnesses to `songModeSectionShapingDiagnostics`** — extend **`eval:fagen`**, **`eval:bacharach`**, and **`eval:style-soph-pop`** (or a thin shared reader) to consume the **stable v1** fields (`densityDeltaBMinusA`, `colourDeltaBMinusA`, `openingVsReturnDelta`, `returnVariationType`, `contributingSlices`) so batch A/B reports match manifest JSON without duplicating slice-specific parsers. Low risk; high inspectability payoff.
-2. **Reduce `npm test` / `runAllTests.ts` fragility** — address **heap OOM** (Node `--max-old-space-size`, split suites, or fix the worst regressions listed in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**) so full Composer OS v2 test runs finish in CI/dev. Unblocks safer refactors across Song Mode and export.
-3. **Continue Wyble single-line parity (pick list #1)** — align remaining **`guitar_bass_duo`**-only guards with **`isGuitarBassDuoFamily`** where musical rules match; keep **`npm run test:duo`** / **`test:bass`** green. Still the best **duo-product** leverage before deeper ensemble Wyble work.
+1. **Ship more Song Mode songwriter profiles (golden-path slices)** — Add or deepen **primary writer** behaviour using the **Songwriter profiles — priority 1** pattern above; pair each slice with **smoke** + **manifest receipts** + optional **eval** script row.
+2. **Generate UI: writer & style discoverability** — Make **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** easy to find so new profiles are testable without API-only workflows (**priority stack** item 2).
+3. **Lead-sheet import stages 6–7 + ensemble chart-in** — Extend **MusicXML harmony import** rollout (`importHarmonyPolicy`, blend modes) toward **String Quartet / Big Band** handoff when **`LeadSheet`** realisers land (**Lead-sheet MusicXML import** below).
 
-*Optional near alternates:* UI surfacing of **section shaping** lines in the Generate receipt panel; **duo/Song >32** golden path when form product spec is ready.
+*Near alternates:* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass.
 
-**Scope note — songwriting engine, profiles, ensembles, arrangers:** The **top 3** above are a **narrow slice** (Song Mode diagnostics + test harness + Wyble duo). They do **not** replace the wider roadmap:
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** The **top 3** above centre **songwriter product surface** and **chart input**; infra items (Wyble, chunked harness) remain in **priority stack** and **pick list** below.
 
 | Thread | Where it lives in this doc |
 |--------|----------------------------|
 | **Songwriting engine** (`runSongMode` → **`buildCompiledSong`**, **`applySongwritingRules`**, compile → golden-path realisation) | **Past → Song Mode (structural + realisation)**; **Past → Songwriters & arrangers**; **Related paths** → `songModeBuilder.ts` |
 | **Songwriter profiles & rule catalogue** | **Past → Songwriters & arrangers** — **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, typed **`SongwriterRuleId`**; **Current** table row **Songwriters & arrangers (Song Mode)** |
-| **Arrangers & songwriter × arranger pairing** | **`stylePairingResolver`**, **`buildCompiledSong`** + optional **`stylePairing`**; **Near term** item 3 “Song Mode diversity”; pairing metadata still **engine-strong / UI-thin** |
-| **Big Band** | **Past → Big Band** (COMPLETE); **Current** table **Phase 19.1 (BB/SQ)** + **Big Band + String Quartet — follow-ups**; pick list #6; **Near term** item 2 follow-ups |
+| **Arrangers & songwriter × arranger pairing** | **`stylePairingResolver`**, **`buildCompiledSong`** + optional **`stylePairing`**; **Near term** item 1 “Song Mode diversity” + **priority stack**; pairing metadata still **engine-strong / UI-thin** |
+| **Big Band** | **Past → Big Band** (COMPLETE); **Current** table **Phase 19.1 (BB/SQ)** + **Big Band + String Quartet — follow-ups**; pick list #6; **Near term** item 3 follow-ups |
 | **String Quartet** | **Past → String Quartet** (COMPLETE); same **Current** rows and Wyble ensemble note (**Near term** item 5) |
 
 **Research backlogs** for BB/SQ/ECM (`BigBandResearch.md`, `string-quartet-parameters`, `ECM_Bacharach_BarryHarris_Research.md`) remain **future depth**, not cancelled.
@@ -414,11 +439,12 @@
 
 | # | Dev | Notes |
 |---|-----|--------|
+| A | **Song Mode — new songwriter profiles** | **Priority product lane:** ship **full slices** (chord pools + golden-path passes + receipts + **`test:smoke`** / eval), not ids-only — see **Priority stack** + **Future → Songwriter profiles — priority 1**. |
 | 1 | **Wyble single-line parity (full stack)** | **2026-04-28:** B-category **`isGuitarBassDuoFamily`** guard sweep **complete** (golden path, Song Mode overlays, duo quality, pipeline truth, App API pilot checks). Optional: **`test:duo` / single-line** extra seeds if desired. |
 | 2 | **Wyble “realized” normalization review** | **2026-04-17 (started):** **`shouldApplyRealizedVoice2Normalization`** + stabiliser boundary + probe **`isStandardGuitarBassDuo`** + JSDoc (see [CHANGELOG.md](CHANGELOG.md)). **Deferred:** wiring realized pass into golden path for single-line / shared validators with standard duo — confirm product intent first. |
 | 3 | **Wyble Etude / product preset** | Today “Wyble” is mostly inner voice on duo; optional **`wyble_etude`** (or flag) for study mode, stricter rules, or dedicated release metadata row. |
 | 4 | ~~**Phase 19.1 — longer forms in UI**~~ **COMPLETE** (2026-04-15) | Big Band + String Quartet: **16–64** bars in UI/API. Duo/Song **>32** still deferred (engine). |
-| 5 | ~~**Wayne Shorter integration**~~ **COMPLETE** (2026-04-27) | TS Song Mode path: contextual chord pools, form-aware motif plan, motif fingerprint + Wayne pitch/duration return nudge; eval **8.8/10**. Python **`wayne-shorter-engine`** remains separate. **Future:** augmentation / compression / displacement motif development — medium-term; fuller **Phrase Engine** rhythm cells remain complementary. |
+| 5 | ~~**Wayne Shorter integration**~~ **COMPLETE** (2026-04-27) | TS Song Mode path: contextual chord pools, form-aware motif plan, motif fingerprint + Wayne pitch/duration return nudge; eval **8.8/10**. Python **`wayne-shorter-engine`** remains separate. **Also shipped:** duo **Phrase Engine Stage 4** (2026-04-28). Fuller **Phrase Engine** neutral abstraction + riff module remain complementary. |
 | 6 | ~~**Big Band / String Quartet polish**~~ **COMPLETE** (2026-04-15) | Double Bass rename + MusicXML export label, **`big_band_blues12`** 42-bar form + UI/API, **`bigband-verify`** 14/14, SQ honestNote. |
 | 7 | ~~**Song Mode — style exposure**~~ **COMPLETE** (2026-04-15) | Pattern slider, secondary songwriter, author overlay wired end-to-end; **`styleStack`** / classical overlay / further presets remain optional follow-ups. |
 | 12 | **Vocal lead sheet — pipeline** | **VERIFIED packaged (2026-04-17)** — same as Current table; `release\win-unpacked\Composer OS Desktop.exe`; see [CHANGELOG.md](CHANGELOG.md). |
@@ -431,11 +457,11 @@
 
 ### Near term (high leverage)
 
-1. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades + **rhythmic return duration snap** shipped; optional UI surfacing / Python bridge remains future. **Later:** augmentation / compression / displacement motif development (medium-term, not this scope); shared **Phrase Engine Stage 1** rhythm abstraction remains complementary.
-2. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
-3. **Song Mode diversity:** expose **songwriter / arranger / overlay** controls and **`styleStack`** (or presets) in UI; **D2** receipt path — **done**; next: diversity presets / advanced intent; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
-4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below.
-5. **Wyble for ensembles** — extend Wyble-style single-line / contrapuntal depth when desired; **near-term only after** item 4 parity is verified (`isGuitarBassDuoFamily` guards + **`npm run test:duo`** / **`npm run test:bass`**). **2026-04-17:** Static duo / SQ / BB maps under `core/wyble/`; **all three** families have a **minimal** score-path consumer: duo bar-1 bass nudge (`duoWybleBassAnchorNudge.ts`), SQ inner swap (`quartetWybleChordToneStack.ts`), BB alto/tenor separation (`bigBandWybleHornVoicing.ts`). Full 3-voice Wyble ensemble generation remains future work.
+1. **Song Mode — more songwriter profiles + UI discovery:** Ship **additional primary-writer slices** (see **Future → Songwriter profiles — priority 1**) and expose **songwriter / arranger / overlay / styleStack / diversity presets** in Generate so profiles are **discoverable and A/B-able**. **D2** receipt path — **done**; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
+2. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades + **rhythmic return duration snap** shipped; optional UI surfacing / Python bridge remains future. Duo golden-path **Phrase Engine Stage 4** shipped **2026-04-28**; shared **Phrase Engine Stage 1** neutral abstraction remains complementary.
+3. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
+4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below. **2026-04-28:** B-category **`isGuitarBassDuoFamily`** sweep **complete**; optional extra **`test:duo`** seeds.
+5. **Wyble for ensembles** — extend Wyble-style single-line / contrapuntal depth when desired; **near-term only after** item 4 parity is verified (`isGuitarBassDuoFamily` guards + **`npm run test:duo`** / **`test:bass`**). **2026-04-17:** Static duo / SQ / BB maps under `core/wyble/`; **all three** families have a **minimal** score-path consumer: duo bar-1 bass nudge (`duoWybleBassAnchorNudge.ts`), SQ inner swap (`quartetWybleChordToneStack.ts`), BB alto/tenor separation (`bigBandWybleHornVoicing.ts`). Full 3-voice Wyble ensemble generation remains future work.
 
 ### Medium term
 
@@ -509,6 +535,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-27].*
+*End of Composer OS Roadmap [2026-04-28].*
 
 

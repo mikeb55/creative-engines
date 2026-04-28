@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2026-04-28] Brian Wilson — Pet Sounds era full-slice songwriter profile
+
+- **Chord pools:** **`brian_wilson`** in **`songModeBuilder.ts`** **`SONGWRITER_CHORD_POOLS`** — maj/add9/maj7/sus2 vocabulary, **ø7**, **aug**, **dim7**, chromatic/slash bass lines, parallel minor colour (`Fm`, `Gm`, `Bb`).
+- **Style profile:** **`songwriterStyleProfiles.ts`** — Pet Sounds–biased axes (lower template regularity, higher syncopation / section contrast, mixed intervals + guitar hints).
+- **Golden path:** **`brianWilsonPetSoundsSlice.ts`** — per-bar harmony diagnostics (chromatic bass steps, ø7 / aug / dim7 touches); **`applyBrianWilsonGuitarBarPasses`** (pickup entries, progressive register expansion, arch lift); **`buildSongwriterMelodyProfile`** case **`brian_wilson`** (arch / syncopated / leaping).
+- **Receipts:** **`GenerationMetadata`** — **`brianWilsonPetSoundsDiagnostics`**, **`brianWilsonPetSoundsSliceReceipt`** (`compositionContext.ts`).
+- **Smoke:** **`tests/brianWilsonPetSoundsSliceSmoke.test.ts`** + **`runSmokeTests.ts`** allowlist.
+- **`test:smoke`:** 34 passed / 0 failed.
+
 ## [2026-04-28] Phrase Engine Stage 4 — motif augmentation / compression / displacement
 
 - **Phrase Engine Stage 4:** **`applyDuoGoldenPhraseEngineStage4MotifRhythm`** in **`phraseBuilder.ts`** — duo golden-path **guitar voice 1** only, wired in **`generateGoldenPathDuoScore.ts`** **`buildGuitarPart`** before **`duoBoostPhraseEndLanding`** / **`duoEnforcePhraseEndCadence`** (Song Mode hook branch + main **`isDuoGolden`** branch). Per 4-bar group: **phrase 2** bars (**`b % 4 === 2`**) **compress** durations (×½); **phrase 3** (**`b % 4 === 3`**) **augment** (×2) when in-bar feasible; **phrase 4 / cadence** (**`b % 4 === 0`**) **displace** all v1 onsets by **+½** beat. One transform type per bar (position-defined). **Indie Art Pop dual-electric** skipped (**`skipPhraseEngineStage3Anticipation`**). **`test:smoke`** 33 passed / 0 failed.

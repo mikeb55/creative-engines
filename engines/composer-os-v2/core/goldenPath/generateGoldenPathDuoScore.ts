@@ -53,6 +53,12 @@ import { getInteractionForBar } from '../interaction/interactionPlanner';
 import { applyPerformancePass } from '../performance/performancePass';
 import { applyExpressiveDuoFeel, buildFeelProfileFromTempo } from './expressiveDuoFeel';
 import { pickGuideTone, clampPitch, seededUnit, approachFromBelow, type ChordToneSet } from './guitarBassDuoHarmony';
+import {
+  accumulateBrianWilsonHarmonyDiagnostics,
+  applyBrianWilsonGuitarBarPasses,
+  createBrianWilsonHarmonyAccumulator,
+  finalizeBrianWilsonPetSoundsMetadata,
+} from './brianWilsonPetSoundsSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -1757,6 +1763,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'flowing',
       };
+    case 'brian_wilson':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: -0.12,
+        offbeatBias: 0.64,
+        intervalBias: 'leaping',
+        rhythmicFeel: 'syncopated',
+      };
     default:
       return {
         phraseIntentBias: 'neutral',
@@ -1944,6 +1958,9 @@ function buildGuitarPart(
   const bacharachCadentialAmbiguityR =
     typeof genMeta?.bacharachCadentialAmbiguity === 'number' ? genMeta.bacharachCadentialAmbiguity : 0;
 
+  const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
+  const bwAccum = createBrianWilsonHarmonyAccumulator();
+
   const seed = context.seed;
   const songwriterMelodyProfile = buildSongwriterMelodyProfile(
     genMeta?.songwriterStyleId as string | undefined,
@@ -2034,6 +2051,13 @@ function buildGuitarPart(
   }
 
   for (let b = 1; b <= tb; b++) {
+    if (isSongwriterBrianWilson) {
+      accumulateBrianWilsonHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        bwAccum
+      );
+    }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
     const placements = getPlacementsForBar(motifState.placements, b);
     const ecmMode = context.generationMetadata?.ecmMode;
@@ -2141,6 +2165,11 @@ function buildGuitarPart(
           bacharachModalMixtureLevel: bacharachModalMixtureLevelR,
           bacharachCadentialAmbiguity: bacharachCadentialAmbiguityR,
         });
+        normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isSongwriterBrianWilson && isDuoGolden) {
+        const phaseHook = ((b - 1) % 8) + 1;
+        applyBrianWilsonGuitarBarPasses(m, b, seed, effectiveLow, effectiveHigh, phaseHook);
         normalizeMeasureToEighthBeatGrid(m);
       }
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
@@ -2410,6 +2439,10 @@ function buildGuitarPart(
         });
         normalizeMeasureToEighthBeatGrid(m);
       }
+      if (isSongwriterBrianWilson && isDuoGolden) {
+        applyBrianWilsonGuitarBarPasses(m, b, seed, effectiveLow, effectiveHigh, phase);
+        normalizeMeasureToEighthBeatGrid(m);
+      }
       if (!skipPhraseEngineStage3Anticipation) {
         applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
@@ -2432,6 +2465,10 @@ function buildGuitarPart(
       ...context.generationMetadata,
       fagenJazzPopColourPassesReceipt: `Guitar (duo): ${bits.join('; ')} — biased jazz-pop shaping, not an imitation of any artist.`,
     };
+  }
+
+  if (isSongwriterBrianWilson && context.generationMetadata) {
+    finalizeBrianWilsonPetSoundsMetadata(context.generationMetadata, bwAccum);
   }
 
   return {

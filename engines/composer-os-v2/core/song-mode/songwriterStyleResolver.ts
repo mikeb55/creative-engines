@@ -150,7 +150,11 @@ export type SongModeDiversityPresetId =
   | 'shorter_bacharach_arc'
   | 'beatles_bach_counterline'
   | 'kendrick_debussy_space'
-  | 'maxmartin_stravinsky_angles';
+  | 'maxmartin_stravinsky_angles'
+  | 'dylan_messiaen_literate_vs_sublime'
+  | 'james_brown_joni_groove_vs_line'
+  | 'barry_harris_max_martin_bebop_vs_charts'
+  | 'ecm_chamber_prince_space_vs_pocket';
 
 export interface SongModeDiversityPreset {
   id: SongModeDiversityPresetId;
@@ -195,6 +199,38 @@ export const SONG_MODE_DIVERSITY_PRESETS: readonly SongModeDiversityPreset[] = [
     primarySongwriterStyle: 'max_martin',
     secondarySongwriterStyle: 'stravinsky',
     audibleDescription: 'Pop-forward repetition anchored by sharper rhythmic accents and contour pivots.',
+  },
+  {
+    id: 'dylan_messiaen_literate_vs_sublime',
+    label: 'Literate Folk vs Sublime Colour',
+    primarySongwriterStyle: 'bob_dylan',
+    secondarySongwriterStyle: 'messiaen',
+    audibleDescription:
+      'Prosody-led narrative phrasing pulled toward modal colour fields and non-template harmonic stasis.',
+  },
+  {
+    id: 'james_brown_joni_groove_vs_line',
+    label: 'Groove Cell vs Shifting Line',
+    primarySongwriterStyle: 'james_brown',
+    secondarySongwriterStyle: 'joni_mitchell',
+    audibleDescription:
+      'Tight on-the-one funk hooks tempered by prosody-first melodic arcs and less square returns.',
+  },
+  {
+    id: 'barry_harris_max_martin_bebop_vs_charts',
+    label: 'Bebop Line vs Chart Template',
+    primarySongwriterStyle: 'barry_harris',
+    secondarySongwriterStyle: 'max_martin',
+    audibleDescription:
+      'Harmonic motion and line grammar from bebop blended with section clarity and hook-forward repetition.',
+  },
+  {
+    id: 'ecm_chamber_prince_space_vs_pocket',
+    label: 'Chamber Space vs Pocket Funk',
+    primarySongwriterStyle: 'ecm_chamber',
+    secondarySongwriterStyle: 'prince',
+    audibleDescription:
+      'Sparse harmonic rhythm and wide colour room pulled toward syncopated pocket and denser lift.',
   },
 ];
 

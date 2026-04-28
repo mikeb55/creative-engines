@@ -51,11 +51,14 @@ thinGuitar2Voice1InChordMeasures
 ### 8. Bar-4 phrase-end cadence (duo golden path)
 - **Every** 4-bar boundary: phrase-end cadence lengthens voice 1 toward the bar/phrase end and snaps to a chord tone (runs with Song Mode hook path and standard golden-path duo).
 
-### 9. Harness & product parity (session)
+### 9. Brian Wilson (Pet Sounds era) songwriter slice (2026-04-28)
+- Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping + **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** on **`GenerationMetadata`**. See **`docs/CHANGELOG.md`** and **`engines/composer-os-v2/core/goldenPath/brianWilsonPetSoundsSlice.ts`**.
+
+### 10. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.10).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.11).
 
 ---
 
@@ -69,7 +72,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (33 passed / 0 failed)
+- npm run test:smoke — PASS (34 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)** songwriter slice smoke
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 
