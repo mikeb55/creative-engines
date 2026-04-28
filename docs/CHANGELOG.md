@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [2026-04-28] Phrase Engine Stage 4 — motif augmentation / compression / displacement
+
+- **Phrase Engine Stage 4:** **`applyDuoGoldenPhraseEngineStage4MotifRhythm`** in **`phraseBuilder.ts`** — duo golden-path **guitar voice 1** only, wired in **`generateGoldenPathDuoScore.ts`** **`buildGuitarPart`** before **`duoBoostPhraseEndLanding`** / **`duoEnforcePhraseEndCadence`** (Song Mode hook branch + main **`isDuoGolden`** branch). Per 4-bar group: **phrase 2** bars (**`b % 4 === 2`**) **compress** durations (×½); **phrase 3** (**`b % 4 === 3`**) **augment** (×2) when in-bar feasible; **phrase 4 / cadence** (**`b % 4 === 0`**) **displace** all v1 onsets by **+½** beat. One transform type per bar (position-defined). **Indie Art Pop dual-electric** skipped (**`skipPhraseEngineStage3Anticipation`**). **`test:smoke`** 33 passed / 0 failed.
+
 ## [2026-04-28] feat/chord-event-guitar2 — Phrase Engine, Wayne Shorter, harness, eval, Wyble parity
 
 Session summary on branch **`feat/chord-event-guitar2`** (golden-path duo + Song Mode surfaces unless noted).

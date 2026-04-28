@@ -40,9 +40,10 @@ thinGuitar2Voice1InChordMeasures
 - MusicXML output preserves voicings exactly
 - Fully compatible with Sibelius and MuseScore
 
-### 6. Phrase Engine (duo golden path) — Stages 2 & 3 (2026-04-28)
+### 6. Phrase Engine (duo golden path) — Stages 2–4 (2026-04-28)
 - **Stage 2:** 4-bar phrase-type sequencing and inter-phrase contrast (**`PhraseSequencingType`**) — guitar and bass share **`duoGoldenPathPhraseIntentAtBar`** / aligned **`PhraseIntent`**.
 - **Stage 3:** Controlled anticipation — at most one voice-1 onset per bar may shift earlier by **one eighth-note**; skipped on cadence bars; Indie dual-electric route skips Stage 3 for stable chord-density metrics.
+- **Stage 4:** Motif rhythm — **phrase 2** of each 4-bar cycle (**`b % 4 === 2`**) **compression** (half durations); **phrase 3** (**`b % 4 === 3`**) **augmentation** (double durations when feasible); **phrase 4 / cadence** (**`b % 4 === 0`**) **displacement** (+½ beat on all voice-1 onsets). Indie dual-electric skips Stage 4 (same gate as Stage 3).
 
 ### 7. Wayne Shorter — chorus / bridge motif transforms (2026-04-28)
 - Seed-deterministic **one** transform per chorus or bridge section (onset shift, rhythmic augment, or leap nudge); merged into **`motifDevelopmentSummary`**.
@@ -54,7 +55,7 @@ thinGuitar2Voice1InChordMeasures
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.9).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.10).
 
 ---
 

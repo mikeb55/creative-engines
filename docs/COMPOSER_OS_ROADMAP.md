@@ -73,6 +73,10 @@
 
 ## Past (delivered)
 
+### T2.10 — Phrase Engine Stage 4 — motif augmentation / compression / displacement (2026-04-28)
+
+- **`applyDuoGoldenPhraseEngineStage4MotifRhythm` — complete:** Duo golden-path **guitar voice 1** only (**`phraseBuilder.ts`** → **`buildGuitarPart`** / **`generateGoldenPathDuoScore.ts`** **before** **`duoBoostPhraseEndLanding`** / **`duoEnforcePhraseEndCadence`**, same **`isDuoGolden`** block). Within each 4-bar cycle (**1-indexed bars**): **phrase 2** (**`b % 4 === 2`**) **compression** (½ durations on grid); **phrase 3** (**`b % 4 === 3`**) **augmentation** (×2 durations) only when doubled rhythm fits in-bar without overlap; **phrase 4 / cadence** (**`b % 4 === 0`**) **displacement** (+½ beat to every v1 onset; notes pushed past the bar end removed). **Phrase 1** unchanged. **At most one** of these per bar — bar position chooses the transform (no stacking). **Indie Art Pop dual-electric** skips Stage 4 (**same gate as Stage 3:** **`skipPhraseEngineStage3Anticipation`**). **`test:smoke`** **33 passed / 0 failed**. No new pipeline stage; **Stage 2 / Stage 3 / cadence** logic untouched.
+
 ### T2.9 — Wyble parity: B-category `isGuitarBassDuoFamily` guard replacement (2026-04-28)
 
 - **Complete:** Replaced remaining literal **`presetId === 'guitar_bass_duo'`** / **`!==`** guards that belong to the guitar–bass duo **family** with **`isGuitarBassDuoFamily(context.presetId)`** (matching Category-A patterns), including Song Mode overlays, ECM-style duo texture, duo pipeline truth helpers, **`ecmShapingPass`** post-orchestration VL, **`jamesBrownFunkOverlay`**, **`duoMusicalQuality`** / **`duoLockQuality`** exceptions, and **`generateComposition`** / **`listOutputs`** pilot labels. **`test:smoke`** **33 passed / 0 failed** after change. **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** B-category row marked complete.

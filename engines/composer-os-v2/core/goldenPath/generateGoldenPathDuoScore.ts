@@ -76,6 +76,7 @@ import { contourFingerprint, phraseTwoBarFingerprint, rhythmFingerprint } from '
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
   applyDuoGoldenPhraseEngineStage3Anticipation,
+  applyDuoGoldenPhraseEngineStage4MotifRhythm,
   duoGoldenPathPhraseIntentAtBar,
 } from '../phrase/phraseBuilder';
 import {
@@ -2106,6 +2107,10 @@ function buildGuitarPart(
       const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
       hookRuntime.emitScheduledBar(b, m);
       normalizeMeasureToEighthBeatGrid(m);
+      if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
+        applyDuoGoldenPhraseEngineStage4MotifRhythm(m, seed, b);
+      }
+      normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
       duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook);
       normalizeMeasureToEighthBeatGrid(m);
@@ -2379,6 +2384,9 @@ function buildGuitarPart(
       }
       if (process.env.WYBLE_TRACE === '1') {
         console.warn(`[wyble-trace] bar=${b} isDuoGolden=true events=${m.events.length}`);
+      }
+      if (!skipPhraseEngineStage3Anticipation) {
+        applyDuoGoldenPhraseEngineStage4MotifRhythm(m, seed, b);
       }
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);

@@ -279,3 +279,113 @@ export function applyDuoGoldenPhraseEngineStage3Anticipation(m: MeasureModel, se
   const chosen = spans[pick]!.n;
   chosen.startBeat = snapAttackBeatToGrid(chosen.startBeat - STAGE3_EIGHTH);
 }
+
+// ---- Phrase Engine Stage 4: motif augmentation / compression / displacement (duo golden guitar v1 only). ----
+
+const STAGE4_EPS = 1e-5;
+const STAGE4_MIN_DUR = 0.25;
+
+function qBeatPhraseStage4(x: number): number {
+  return Math.round(x * 4) / 4;
+}
+
+function voice1NotesSorted(m: MeasureModel): NoteEvent[] {
+  return m.events
+    .filter((e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1)
+    .sort((a, b) => a.startBeat - b.startBeat);
+}
+
+function resolveOverlapsVoice1(notes: NoteEvent[]): void {
+  for (let i = 0; i < notes.length - 1; i++) {
+    const a = notes[i]!;
+    const b = notes[i + 1]!;
+    const endA = a.startBeat + a.duration;
+    if (endA > b.startBeat + STAGE4_EPS) {
+      a.duration = qBeatPhraseStage4(Math.max(STAGE4_MIN_DUR, b.startBeat - a.startBeat));
+    }
+  }
+}
+
+function stage4AugmentationFits(notes: NoteEvent[]): boolean {
+  const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat);
+  for (let i = 0; i < sorted.length; i++) {
+    const n = sorted[i]!;
+    const nextS = i + 1 < sorted.length ? sorted[i + 1]!.startBeat : 4;
+    if (n.startBeat + 2 * n.duration > nextS + STAGE4_EPS) return false;
+  }
+  return true;
+}
+
+function applyStage4Compression(notes: NoteEvent[]): void {
+  for (const n of notes) {
+    let d = qBeatPhraseStage4(n.duration / 2);
+    d = Math.max(STAGE4_MIN_DUR, d);
+    n.duration = d;
+  }
+}
+
+function applyStage4Augmentation(notes: NoteEvent[]): void {
+  for (const n of notes) {
+    n.duration = qBeatPhraseStage4(n.duration * 2);
+  }
+}
+
+function applyStage4Displacement(m: MeasureModel, notes: NoteEvent[]): void {
+  const toRemove: NoteEvent[] = [];
+  for (const n of notes) {
+    const ns = snapAttackBeatToGrid(n.startBeat + 0.5);
+    if (ns >= 4 - STAGE4_EPS) {
+      toRemove.push(n);
+      continue;
+    }
+    n.startBeat = ns;
+    n.duration = qBeatPhraseStage4(Math.min(n.duration, 4 - n.startBeat));
+  }
+  for (const n of toRemove) {
+    m.events = m.events.filter((e) => e !== n);
+  }
+}
+
+/**
+ * Phrase Engine Stage 4 (duo golden path, guitar voice 1):
+ * - Phrase 2 of each 4-bar group (bars 2,6,10,…): compress motif durations (×½).
+ * - Phrase 3 (bars 3,7,11,…): augment (×2) when the doubled rhythm fits in-bar without overlap.
+ * - Phrase 4 cadence bar (`bar % 4 === 0`): displace all v1 onsets by +½ beat.
+ * At most one of these per bar; Indie dual-electric skip is caller-side (same as Stage 3).
+ */
+export function applyDuoGoldenPhraseEngineStage4MotifRhythm(m: MeasureModel, seed: number, bar: number): void {
+  const posInFourBarGroup = ((bar - 1) % 4) + 1;
+  if (posInFourBarGroup === 1) return;
+
+  let notes = voice1NotesSorted(m);
+  if (notes.length === 0) return;
+  if (notes.length >= 2) {
+    notes.sort(
+      (a, b) =>
+        a.startBeat - b.startBeat ||
+        a.pitch - b.pitch ||
+        seededUnit(seed, bar, 9900 + a.pitch) - seededUnit(seed, bar, 9900 + b.pitch)
+    );
+  }
+
+  if (posInFourBarGroup === 2) {
+    applyStage4Compression(notes);
+    notes = voice1NotesSorted(m);
+    resolveOverlapsVoice1(notes);
+    return;
+  }
+
+  if (posInFourBarGroup === 3) {
+    if (!stage4AugmentationFits(notes)) return;
+    applyStage4Augmentation(notes);
+    notes = voice1NotesSorted(m);
+    resolveOverlapsVoice1(notes);
+    return;
+  }
+
+  if (posInFourBarGroup === 4) {
+    applyStage4Displacement(m, notes);
+    notes = voice1NotesSorted(m);
+    resolveOverlapsVoice1(notes);
+  }
+}
