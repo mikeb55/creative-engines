@@ -51,6 +51,8 @@ thinGuitar2Voice1InChordMeasures
 ### 8. Bar-4 phrase-end cadence (duo golden path)
 - **Every** 4-bar boundary: phrase-end cadence lengthens voice 1 toward the bar/phrase end and snaps to a chord tone (runs with Song Mode hook path and standard golden-path duo).
 
+**Songwriter profiles (full golden-path slices):** **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**.
+
 ### 9. Brian Wilson (Pet Sounds era) songwriter slice (2026-04-28)
 - Primary **`brian_wilson`**: Pet Sounds–biased chord pools, melody profile (arch / syncopation / leaps), light guitar shaping, **five harmonic devices** (chromatic-bass half-dim, inverted dominant, verse ♭VII subdominant colour, tonic **i7** mixture bar, semitone-down modulation at verse→chorus/bridge boundaries) layered on **locked** Song Mode harmony when the full progression is fixed — **`brianWilsonPetSoundsSliceReceipt`** / **`brianWilsonPetSoundsDiagnostics`** / **`deviceReceipts`** on **`GenerationMetadata`** (also echoed in output manifests). Implementation: **`engines/composer-os-v2/core/song-mode/brianWilsonPetSoundsSlice.ts`**. See **`docs/CHANGELOG.md`** (**fix:** devices over locked harmony, **2026-04-28**).
 
@@ -66,13 +68,22 @@ thinGuitar2Voice1InChordMeasures
 ### 13. Joni Mitchell (modal open-tuning) songwriter slice (2026-04-28)
 - Primary **`joni_mitchell`**: modal/suspended chord pools (**Dadd9**, **Gsus2**, **Asus4**, **Fmaj(add9)** / **Fadd9**, **Cadd9**, **Gmaj(6/9)**, **Bm11**, **Em(add9)**), **five devices** (**`jm:`** d1–d5: modal field lock, unresolved suspension, non-root bass, Lydian colour, modal centre shift) + anti-elaboration guards on **locked** duo harmony — **`joniMitchellSliceReceipt`** / **`joniMitchellDiagnostics`** / **`joniMitchellEffectiveHarmonyBars`** on **`GenerationMetadata`**; open-tuning pattern strings (**`x57543`**, etc.) live on slice metadata only (not on shared **`ChordEvent`**). Implementation: **`engines/composer-os-v2/core/song-mode/joniMitchellSlice.ts`**.
 
-### 14. Harness & product parity (session)
+### 14. Sonic Youth (dual-guitar / alternate-tuning noise harmony) songwriter slice (2026-04-28)
+- Primary **`sonic_youth`**
+- Implementation: **`sonicYouthSlice.ts`** (**`engines/composer-os-v2/core/song-mode/sonicYouthSlice.ts`**)
+- **Two-guitar architecture:** Guitar 1 + Guitar 2 **separate tunings**
+- **Chord pools:** **Emadd9**, **sus**, **#11**, **slash**, **alt** vocabulary
+- **Devices:** **`sy:alternate_tuning_colour`**, **`sy:two_guitar_register_split`**, **`sy:open_string_drone`**, **`sy:dissonant_dyad_cluster`**, **`sy:asymmetric_phrase_extension`**, **`sy:noisy_cadence_destabilisation`**
+- **`sonicYouthChordTypes.ts`** + **`sonicYouthChordGuards.ts`** — additive **`ChordEvent`** extension
+- **Eval:** **`npm run eval:sonic_youth`** — markdown summaries under **`output/sonic-youth-eval/`**
+
+### 15. Harness & product parity (session)
 - Full test matrix: chunked **`runAllTests`** + heap on children; **`test:smoke`** gate unchanged.
 - **Wyble parity:** B-category guards use **`isGuitarBassDuoFamily`** so **`song_mode`** / **`song_mode_*`** / single-line duo share intended duo-family rules where the engine meant “guitar + bass stack,” not only the literal **`guitar_bass_duo`** id.
 
-**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** / **`npm run eval:joni_mitchell`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`** / **`output/joni-mitchell-eval/`**.
+**Eval:** **`npm run eval:brian_wilson`** / **`npm run eval:stevie_wonder`** / **`npm run eval:radiohead`** / **`npm run eval:james_brown`** / **`npm run eval:joni_mitchell`** / **`npm run eval:sonic_youth`** (repo root) or **`--prefix engines/composer-os-v2`** — songwriter vs **`carole_king`** neutral baseline (where each harness supports it); markdown + CSV under **`output/brian-wilson-eval/`** / **`output/stevie-wonder-eval/`** / **`output/radiohead-eval/`** / **`output/james-brown-eval/`** / **`output/joni-mitchell-eval/`** / **`output/sonic-youth-eval/`**.
 
-**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.15).
+**Detail:** see **`docs/CHANGELOG.md`** **[2026-04-28]** and **`docs/COMPOSER_OS_ROADMAP.md`** (T2.5–T2.16).
 
 ---
 
@@ -86,7 +97,7 @@ thinGuitar2Voice1InChordMeasures
 - indieGuitar2ThinVoice1Peak <= 2
 
 ### Build + Validation
-- npm run test:smoke — PASS (38 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, **James Brown**, and **Joni Mitchell** songwriter slice smokes
+- npm run test:smoke — PASS (39 passed / 0 failed) — includes **Brian Wilson (Pet Sounds)**, **Stevie Wonder (1972–76)**, **Radiohead (OK Computer–era)**, **James Brown**, **Joni Mitchell**, and **Sonic Youth** songwriter slice smokes
 - npm run desktop:build — PASS
 - MusicXML exports verified valid
 
