@@ -632,6 +632,28 @@ export interface GenerationMetadata {
     bareTriadRaised: number;
     strongCadenceSoftened: number;
   };
+  /** Bacharach (theatre-pop / studio orchestration) — slice diagnostics + effective harmony. */
+  bacharachDiagnostics?: {
+    songwriterId: 'bacharach';
+    barsConsidered: number;
+    chromaticSideTouches: number;
+    extensionTouches: number;
+    deceptiveTouches: number;
+    slashBassTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      clusterVoicingReduced: number;
+      denseAlterationReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  bacharachSliceReceipt?: string;
+  bacharachEffectiveHarmonyBars?: string[];
+  bacharachDeviceReceipts?: string[];
+  bacharachAntiElaborationGuards?: {
+    clusterVoicingReduced: number;
+    denseAlterationReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

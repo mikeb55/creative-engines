@@ -980,6 +980,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const pmDisk = mdDisk?.patMethenyEffectiveHarmonyBars;
     const wsDisk = mdDisk?.wayneShorterEffectiveHarmonyBars;
     const bhDisk = mdDisk?.barryHarrisEffectiveHarmonyBars;
+    const baDisk = mdDisk?.bacharachEffectiveHarmonyBars;
+    const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -1035,7 +1037,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                           locked &&
                           bhDisk.length === locked.length
                         ? bhDisk
-                        : locked;
+                        : mdDisk?.songwriterStyleId === 'bacharach' &&
+                            Array.isArray(baDisk) &&
+                            baDisk.length === gp.context.form.totalBars &&
+                            locked &&
+                            baDisk.length === locked.length
+                          ? baDisk
+                          : mdDisk?.songwriterStyleId === 'bill_evans' &&
+                              Array.isArray(beDisk) &&
+                              beDisk.length === gp.context.form.totalBars &&
+                              locked &&
+                              beDisk.length === locked.length
+                            ? beDisk
+                            : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1140,6 +1154,16 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       barryHarrisSliceReceipt: gp.context.generationMetadata.barryHarrisSliceReceipt,
       barryHarrisEffectiveHarmonyBars: gp.context.generationMetadata.barryHarrisEffectiveHarmonyBars,
       barryHarrisAntiElaborationGuards: gp.context.generationMetadata.barryHarrisAntiElaborationGuards,
+      billEvansDiagnostics: gp.context.generationMetadata.billEvansDiagnostics,
+      billEvansDeviceReceipts: gp.context.generationMetadata.billEvansDeviceReceipts,
+      billEvansSliceReceipt: gp.context.generationMetadata.billEvansSliceReceipt,
+      billEvansEffectiveHarmonyBars: gp.context.generationMetadata.billEvansEffectiveHarmonyBars,
+      billEvansAntiElaborationGuards: gp.context.generationMetadata.billEvansAntiElaborationGuards,
+      bacharachDiagnostics: gp.context.generationMetadata.bacharachDiagnostics,
+      bacharachDeviceReceipts: gp.context.generationMetadata.bacharachDeviceReceipts,
+      bacharachSliceReceipt: gp.context.generationMetadata.bacharachSliceReceipt,
+      bacharachEffectiveHarmonyBars: gp.context.generationMetadata.bacharachEffectiveHarmonyBars,
+      bacharachAntiElaborationGuards: gp.context.generationMetadata.bacharachAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

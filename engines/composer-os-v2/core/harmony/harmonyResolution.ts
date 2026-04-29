@@ -192,6 +192,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return beEff[barIndex - 1]!;
   }
 
+  /**
+   * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
+   * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const baEff = meta?.bacharachEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bacharach' &&
+    Array.isArray(baEff) &&
+    baEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return baEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

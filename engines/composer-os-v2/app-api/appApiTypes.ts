@@ -364,4 +364,16 @@ export interface OutputEntry {
   barryHarrisSliceReceipt?: GenerationMetadata['barryHarrisSliceReceipt'];
   barryHarrisEffectiveHarmonyBars?: GenerationMetadata['barryHarrisEffectiveHarmonyBars'];
   barryHarrisAntiElaborationGuards?: GenerationMetadata['barryHarrisAntiElaborationGuards'];
+  /** Bill Evans (impressionist) slice — diagnostics / receipts (Song Mode manifest echo). */
+  billEvansDiagnostics?: GenerationMetadata['billEvansDiagnostics'];
+  billEvansDeviceReceipts?: GenerationMetadata['billEvansDeviceReceipts'];
+  billEvansSliceReceipt?: GenerationMetadata['billEvansSliceReceipt'];
+  billEvansEffectiveHarmonyBars?: GenerationMetadata['billEvansEffectiveHarmonyBars'];
+  billEvansAntiElaborationGuards?: GenerationMetadata['billEvansAntiElaborationGuards'];
+  /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
+  bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];
+  bacharachSliceReceipt?: GenerationMetadata['bacharachSliceReceipt'];
+  bacharachEffectiveHarmonyBars?: GenerationMetadata['bacharachEffectiveHarmonyBars'];
+  bacharachAntiElaborationGuards?: GenerationMetadata['bacharachAntiElaborationGuards'];
 }

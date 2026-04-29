@@ -117,6 +117,12 @@ import {
   finalizeBillEvansMetadata,
   precomputeBillEvansEffectiveHarmonyBars,
 } from './billEvansSlice';
+import {
+  accumulateBacharachHarmonyDiagnostics,
+  createBacharachHarmonyAccumulator,
+  finalizeBacharachMetadata,
+  precomputeBacharachEffectiveHarmonyBars,
+} from './bacharachSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2044,6 +2050,7 @@ function buildGuitarPart(
   const wsAccum = createWayneShorterHarmonyAccumulator();
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
+  const baAccum = createBacharachHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2074,6 +2081,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBillEvans && isDuoGoldenPath) {
     precomputeBillEvansEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterBacharach && isDuoGoldenPath) {
+    precomputeBacharachEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2234,6 +2244,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         beAccum
+      );
+    }
+    if (isSongwriterBacharach) {
+      accumulateBacharachHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        baAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2703,6 +2720,10 @@ function buildGuitarPart(
 
   if (isSongwriterBillEvans && context.generationMetadata) {
     finalizeBillEvansMetadata(context.generationMetadata, beAccum);
+  }
+
+  if (isSongwriterBacharach && context.generationMetadata) {
+    finalizeBacharachMetadata(context.generationMetadata, baAccum);
   }
 
   return {

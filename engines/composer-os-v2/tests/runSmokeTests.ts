@@ -22,6 +22,7 @@ import { runPatMethenySliceSmokeTests } from './patMethenySliceSmoke.test';
 import { runWayneShorterSliceSmokeTests } from './wayneShorterSliceSmoke.test';
 import { runBarryHarrisSliceSmokeTests } from './barryHarrisSliceSmoke.test';
 import { runBillEvansSliceSmokeTests } from './billEvansSliceSmoke.test';
+import { runBacharachSliceSmokeTests } from './bacharachSliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 
 type Row = { name: string; ok: boolean };
@@ -42,6 +43,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Wayne Shorter songwriter slice', run: runWayneShorterSliceSmokeTests },
   { label: 'Barry Harris songwriter slice', run: runBarryHarrisSliceSmokeTests },
   { label: 'Bill Evans songwriter slice', run: runBillEvansSliceSmokeTests },
+  { label: 'Bacharach songwriter slice', run: runBacharachSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
 ];
 

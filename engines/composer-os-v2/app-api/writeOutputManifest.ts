@@ -163,6 +163,16 @@ export function writeOutputManifest(
     barryHarrisSliceReceipt?: GenerationMetadata['barryHarrisSliceReceipt'];
     barryHarrisEffectiveHarmonyBars?: GenerationMetadata['barryHarrisEffectiveHarmonyBars'];
     barryHarrisAntiElaborationGuards?: GenerationMetadata['barryHarrisAntiElaborationGuards'];
+    billEvansDiagnostics?: GenerationMetadata['billEvansDiagnostics'];
+    billEvansDeviceReceipts?: GenerationMetadata['billEvansDeviceReceipts'];
+    billEvansSliceReceipt?: GenerationMetadata['billEvansSliceReceipt'];
+    billEvansEffectiveHarmonyBars?: GenerationMetadata['billEvansEffectiveHarmonyBars'];
+    billEvansAntiElaborationGuards?: GenerationMetadata['billEvansAntiElaborationGuards'];
+    bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
+    bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];
+    bacharachSliceReceipt?: GenerationMetadata['bacharachSliceReceipt'];
+    bacharachEffectiveHarmonyBars?: GenerationMetadata['bacharachEffectiveHarmonyBars'];
+    bacharachAntiElaborationGuards?: GenerationMetadata['bacharachAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -285,6 +295,16 @@ export function writeOutputManifest(
     barryHarrisSliceReceipt: meta.barryHarrisSliceReceipt,
     barryHarrisEffectiveHarmonyBars: meta.barryHarrisEffectiveHarmonyBars,
     barryHarrisAntiElaborationGuards: meta.barryHarrisAntiElaborationGuards,
+    billEvansDiagnostics: meta.billEvansDiagnostics,
+    billEvansDeviceReceipts: meta.billEvansDeviceReceipts,
+    billEvansSliceReceipt: meta.billEvansSliceReceipt,
+    billEvansEffectiveHarmonyBars: meta.billEvansEffectiveHarmonyBars,
+    billEvansAntiElaborationGuards: meta.billEvansAntiElaborationGuards,
+    bacharachDiagnostics: meta.bacharachDiagnostics,
+    bacharachDeviceReceipts: meta.bacharachDeviceReceipts,
+    bacharachSliceReceipt: meta.bacharachSliceReceipt,
+    bacharachEffectiveHarmonyBars: meta.bacharachEffectiveHarmonyBars,
+    bacharachAntiElaborationGuards: meta.bacharachAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,
