@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: ECM Chamber Song Mode slice — 52/52 smoke
+
+- **Engine (`engines/composer-os-v2`):** **`ecmChamberSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/ecmChamberSlice.ts`**) — **`precomputeEcmChamberEffectiveHarmonyBars`**, **`ec:*`** device receipts, **`ecmChamberEffectiveHarmonyBars`** + **`getChordForBar`**, metadata + manifest echo; **`ecmChamberSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **52** passed / **0** failed (**19** suites).
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`** — **`ecm_chamber`** under **Shipped slices** (**13** total); **Pools ready to slice** empty. **`CLAUDE.md`** — thirteen shipped slices + smoke **52**/0 (**19** suites).
+- **Note:** All **ready** pools are now shipped — **next territory** is **Jobim** or **new workstreams** (see roadmap **Future — compositional diversity**).
+
 ## [2026-04-29] feat: Donald Fagen Song Mode slice — 51/51 smoke
 
 - **Engine (`engines/composer-os-v2`):** **`donaldFagenSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/donaldFagenSlice.ts`**) — **`precomputeDonaldFagenEffectiveHarmonyBars`**, **`df:*`** device receipts, **`donaldFagenEffectiveHarmonyBars`** + **`getChordForBar`**, metadata + manifest echo; **`donaldFagenSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **51** passed / **0** failed (**18** suites).

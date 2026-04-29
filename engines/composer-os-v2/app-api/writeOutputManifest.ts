@@ -178,6 +178,11 @@ export function writeOutputManifest(
     donaldFagenSliceReceipt?: GenerationMetadata['donaldFagenSliceReceipt'];
     donaldFagenEffectiveHarmonyBars?: GenerationMetadata['donaldFagenEffectiveHarmonyBars'];
     donaldFagenAntiElaborationGuards?: GenerationMetadata['donaldFagenAntiElaborationGuards'];
+    ecmChamberDiagnostics?: GenerationMetadata['ecmChamberDiagnostics'];
+    ecmChamberDeviceReceipts?: GenerationMetadata['ecmChamberDeviceReceipts'];
+    ecmChamberSliceReceipt?: GenerationMetadata['ecmChamberSliceReceipt'];
+    ecmChamberEffectiveHarmonyBars?: GenerationMetadata['ecmChamberEffectiveHarmonyBars'];
+    ecmChamberAntiElaborationGuards?: GenerationMetadata['ecmChamberAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -315,6 +320,11 @@ export function writeOutputManifest(
     donaldFagenSliceReceipt: meta.donaldFagenSliceReceipt,
     donaldFagenEffectiveHarmonyBars: meta.donaldFagenEffectiveHarmonyBars,
     donaldFagenAntiElaborationGuards: meta.donaldFagenAntiElaborationGuards,
+    ecmChamberDiagnostics: meta.ecmChamberDiagnostics,
+    ecmChamberDeviceReceipts: meta.ecmChamberDeviceReceipts,
+    ecmChamberSliceReceipt: meta.ecmChamberSliceReceipt,
+    ecmChamberEffectiveHarmonyBars: meta.ecmChamberEffectiveHarmonyBars,
+    ecmChamberAntiElaborationGuards: meta.ecmChamberAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

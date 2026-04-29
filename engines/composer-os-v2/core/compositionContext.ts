@@ -676,6 +676,28 @@ export interface GenerationMetadata {
     clusterVoicingReduced: number;
     denseAlterationReduced: number;
   };
+  /** ECM Chamber (Nordic / sparse modal harmony) — slice diagnostics + effective harmony. */
+  ecmChamberDiagnostics?: {
+    songwriterId: 'ecm_chamber';
+    barsConsidered: number;
+    modalOpenTouches: number;
+    quartalSusTouches: number;
+    pedalSlashTouches: number;
+    phraseHangTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      denseClusterReduced: number;
+      functionalDominantMuted: number;
+    };
+    deviceReceipts?: string[];
+  };
+  ecmChamberSliceReceipt?: string;
+  ecmChamberEffectiveHarmonyBars?: string[];
+  ecmChamberDeviceReceipts?: string[];
+  ecmChamberAntiElaborationGuards?: {
+    denseClusterReduced: number;
+    functionalDominantMuted: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

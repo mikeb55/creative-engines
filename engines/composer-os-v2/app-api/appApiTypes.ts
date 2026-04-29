@@ -382,4 +382,10 @@ export interface OutputEntry {
   donaldFagenSliceReceipt?: GenerationMetadata['donaldFagenSliceReceipt'];
   donaldFagenEffectiveHarmonyBars?: GenerationMetadata['donaldFagenEffectiveHarmonyBars'];
   donaldFagenAntiElaborationGuards?: GenerationMetadata['donaldFagenAntiElaborationGuards'];
+  /** ECM Chamber (sparse Nordic modal harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  ecmChamberDiagnostics?: GenerationMetadata['ecmChamberDiagnostics'];
+  ecmChamberDeviceReceipts?: GenerationMetadata['ecmChamberDeviceReceipts'];
+  ecmChamberSliceReceipt?: GenerationMetadata['ecmChamberSliceReceipt'];
+  ecmChamberEffectiveHarmonyBars?: GenerationMetadata['ecmChamberEffectiveHarmonyBars'];
+  ecmChamberAntiElaborationGuards?: GenerationMetadata['ecmChamberAntiElaborationGuards'];
 }

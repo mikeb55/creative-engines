@@ -853,6 +853,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const beLockedTruth = mdLockedTruth?.billEvansEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
+  const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -926,7 +927,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                               lockedHarmonyBarsAuthoritative &&
                               dfLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                             ? dfLockedTruth
-                            : lockedHarmonyBarsAuthoritative;
+                            : mdLockedTruth?.songwriterStyleId === 'ecm_chamber' &&
+                                Array.isArray(eccLockedTruth) &&
+                                eccLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                eccLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? eccLockedTruth
+                              : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1003,6 +1010,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const bhDisk = mdDisk?.barryHarrisEffectiveHarmonyBars;
     const baDisk = mdDisk?.bacharachEffectiveHarmonyBars;
     const dfDisk = mdDisk?.donaldFagenEffectiveHarmonyBars;
+    const eccDisk = mdDisk?.ecmChamberEffectiveHarmonyBars;
     const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
@@ -1071,13 +1079,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                               locked &&
                               dfDisk.length === locked.length
                             ? dfDisk
-                            : mdDisk?.songwriterStyleId === 'bill_evans' &&
-                                Array.isArray(beDisk) &&
-                                beDisk.length === gp.context.form.totalBars &&
+                            : mdDisk?.songwriterStyleId === 'ecm_chamber' &&
+                                Array.isArray(eccDisk) &&
+                                eccDisk.length === gp.context.form.totalBars &&
                                 locked &&
-                                beDisk.length === locked.length
-                              ? beDisk
-                              : locked;
+                                eccDisk.length === locked.length
+                              ? eccDisk
+                              : mdDisk?.songwriterStyleId === 'bill_evans' &&
+                                  Array.isArray(beDisk) &&
+                                  beDisk.length === gp.context.form.totalBars &&
+                                  locked &&
+                                  beDisk.length === locked.length
+                                ? beDisk
+                                : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1197,6 +1211,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       donaldFagenSliceReceipt: gp.context.generationMetadata.donaldFagenSliceReceipt,
       donaldFagenEffectiveHarmonyBars: gp.context.generationMetadata.donaldFagenEffectiveHarmonyBars,
       donaldFagenAntiElaborationGuards: gp.context.generationMetadata.donaldFagenAntiElaborationGuards,
+      ecmChamberDiagnostics: gp.context.generationMetadata.ecmChamberDiagnostics,
+      ecmChamberDeviceReceipts: gp.context.generationMetadata.ecmChamberDeviceReceipts,
+      ecmChamberSliceReceipt: gp.context.generationMetadata.ecmChamberSliceReceipt,
+      ecmChamberEffectiveHarmonyBars: gp.context.generationMetadata.ecmChamberEffectiveHarmonyBars,
+      ecmChamberAntiElaborationGuards: gp.context.generationMetadata.ecmChamberAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

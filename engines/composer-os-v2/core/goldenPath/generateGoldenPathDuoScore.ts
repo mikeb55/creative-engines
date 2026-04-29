@@ -129,6 +129,12 @@ import {
   finalizeDonaldFagenMetadata,
   precomputeDonaldFagenEffectiveHarmonyBars,
 } from './donaldFagenSlice';
+import {
+  accumulateEcmChamberHarmonyDiagnostics,
+  createEcmChamberHarmonyAccumulator,
+  finalizeEcmChamberMetadata,
+  precomputeEcmChamberEffectiveHarmonyBars,
+} from './ecmChamberSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2017,6 +2023,7 @@ function buildGuitarPart(
 
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
+  const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
   const fagenAlteredDominantBiasR =
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
@@ -2058,6 +2065,7 @@ function buildGuitarPart(
   const beAccum = createBillEvansHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
+  const eccAccum = createEcmChamberHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2094,6 +2102,9 @@ function buildGuitarPart(
   }
   if (isSongwriterFagen && isDuoGoldenPath) {
     precomputeDonaldFagenEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterEcmChamber && isDuoGoldenPath) {
+    precomputeEcmChamberEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2268,6 +2279,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         dfAccum
+      );
+    }
+    if (isSongwriterEcmChamber) {
+      accumulateEcmChamberHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        eccAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2745,6 +2763,10 @@ function buildGuitarPart(
 
   if (isSongwriterFagen && context.generationMetadata) {
     finalizeDonaldFagenMetadata(context.generationMetadata, dfAccum);
+  }
+
+  if (isSongwriterEcmChamber && context.generationMetadata) {
+    finalizeEcmChamberMetadata(context.generationMetadata, eccAccum);
   }
 
   return {

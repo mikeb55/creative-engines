@@ -222,6 +222,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return dfEff[barIndex - 1]!;
   }
 
+  /**
+   * ECM Chamber (Song Mode primary): `precomputeEcmChamberEffectiveHarmonyBars` applies sparse modal devices + receipts.
+   * After precompute, `ecmChamberEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const ecEff = meta?.ecmChamberEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'ecm_chamber' &&
+    Array.isArray(ecEff) &&
+    ecEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return ecEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;
