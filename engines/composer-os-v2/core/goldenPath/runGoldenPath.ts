@@ -2006,6 +2006,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const syLt = mdLt?.sonicYouthEffectiveHarmonyBars;
     const pmLt = mdLt?.patMethenyEffectiveHarmonyBars;
     const wsLt = mdLt?.wayneShorterEffectiveHarmonyBars;
+    const bhLt = mdLt?.barryHarrisEffectiveHarmonyBars;
     const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
         ? bwLt
@@ -2023,7 +2024,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                     ? pmLt
                     : mdLt?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsLt) && wsLt.length === tbLt
                       ? wsLt
-                      : lockedBars;
+                      : mdLt?.songwriterStyleId === 'barry_harris' && Array.isArray(bhLt) && bhLt.length === tbLt
+                        ? bhLt
+                        : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

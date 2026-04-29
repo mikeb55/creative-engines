@@ -849,6 +849,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const syLockedTruth = mdLockedTruth?.sonicYouthEffectiveHarmonyBars;
   const pmLockedTruth = mdLockedTruth?.patMethenyEffectiveHarmonyBars;
   const wsLockedTruth = mdLockedTruth?.wayneShorterEffectiveHarmonyBars;
+  const bhLockedTruth = mdLockedTruth?.barryHarrisEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -898,7 +899,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                       lockedHarmonyBarsAuthoritative &&
                       wsLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                     ? wsLockedTruth
-                    : lockedHarmonyBarsAuthoritative;
+                    : mdLockedTruth?.songwriterStyleId === 'barry_harris' &&
+                        Array.isArray(bhLockedTruth) &&
+                        bhLockedTruth.length === tbLockedTruth &&
+                        lockedHarmonyBarsAuthoritative &&
+                        bhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                      ? bhLockedTruth
+                      : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -971,6 +978,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const jmDisk = mdDisk?.joniMitchellEffectiveHarmonyBars;
     const syDisk = mdDisk?.sonicYouthEffectiveHarmonyBars;
     const pmDisk = mdDisk?.patMethenyEffectiveHarmonyBars;
+    const wsDisk = mdDisk?.wayneShorterEffectiveHarmonyBars;
+    const bhDisk = mdDisk?.barryHarrisEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -1014,7 +1023,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                       locked &&
                       pmDisk.length === locked.length
                     ? pmDisk
-                    : locked;
+                    : mdDisk?.songwriterStyleId === 'wayne_shorter' &&
+                        Array.isArray(wsDisk) &&
+                        wsDisk.length === gp.context.form.totalBars &&
+                        locked &&
+                        wsDisk.length === locked.length
+                      ? wsDisk
+                      : mdDisk?.songwriterStyleId === 'barry_harris' &&
+                          Array.isArray(bhDisk) &&
+                          bhDisk.length === gp.context.form.totalBars &&
+                          locked &&
+                          bhDisk.length === locked.length
+                        ? bhDisk
+                        : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1108,6 +1129,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       patMethenyAntiElaborationGuards: gp.context.generationMetadata.patMethenyAntiElaborationGuards,
       patMethenyPedalHoldMaxBars: gp.context.generationMetadata.patMethenyPedalHoldMaxBars,
       patMethenyEligibilityStats: gp.context.generationMetadata.patMethenyEligibilityStats,
+      wayneShorterDiagnostics: gp.context.generationMetadata.wayneShorterDiagnostics,
+      wayneShorterDeviceReceipts: gp.context.generationMetadata.wayneShorterDeviceReceipts,
+      wayneShorterSliceReceipt: gp.context.generationMetadata.wayneShorterSliceReceipt,
+      wayneShorterEffectiveHarmonyBars: gp.context.generationMetadata.wayneShorterEffectiveHarmonyBars,
+      wayneShorterAntiElaborationGuards: gp.context.generationMetadata.wayneShorterAntiElaborationGuards,
+      wayneShorterEligibilityStats: gp.context.generationMetadata.wayneShorterEligibilityStats,
+      barryHarrisDiagnostics: gp.context.generationMetadata.barryHarrisDiagnostics,
+      barryHarrisDeviceReceipts: gp.context.generationMetadata.barryHarrisDeviceReceipts,
+      barryHarrisSliceReceipt: gp.context.generationMetadata.barryHarrisSliceReceipt,
+      barryHarrisEffectiveHarmonyBars: gp.context.generationMetadata.barryHarrisEffectiveHarmonyBars,
+      barryHarrisAntiElaborationGuards: gp.context.generationMetadata.barryHarrisAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

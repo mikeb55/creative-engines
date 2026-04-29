@@ -158,6 +158,11 @@ export function writeOutputManifest(
     wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
     wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
     wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
+    barryHarrisDiagnostics?: GenerationMetadata['barryHarrisDiagnostics'];
+    barryHarrisDeviceReceipts?: GenerationMetadata['barryHarrisDeviceReceipts'];
+    barryHarrisSliceReceipt?: GenerationMetadata['barryHarrisSliceReceipt'];
+    barryHarrisEffectiveHarmonyBars?: GenerationMetadata['barryHarrisEffectiveHarmonyBars'];
+    barryHarrisAntiElaborationGuards?: GenerationMetadata['barryHarrisAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -275,6 +280,11 @@ export function writeOutputManifest(
     wayneShorterEffectiveHarmonyBars: meta.wayneShorterEffectiveHarmonyBars,
     wayneShorterAntiElaborationGuards: meta.wayneShorterAntiElaborationGuards,
     wayneShorterEligibilityStats: meta.wayneShorterEligibilityStats,
+    barryHarrisDiagnostics: meta.barryHarrisDiagnostics,
+    barryHarrisDeviceReceipts: meta.barryHarrisDeviceReceipts,
+    barryHarrisSliceReceipt: meta.barryHarrisSliceReceipt,
+    barryHarrisEffectiveHarmonyBars: meta.barryHarrisEffectiveHarmonyBars,
+    barryHarrisAntiElaborationGuards: meta.barryHarrisAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

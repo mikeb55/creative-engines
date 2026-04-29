@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Summary of work**
 
+- **Barry Harris Song Mode slice:** **`barryHarrisSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`barryHarrisEffectiveHarmonyBars`**, smoke **`barryHarrisSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **48**/0 (**15** suites). Shipped-writer list in **`docs/COMPOSER_OS_ROADMAP.md`** § **Shipped slices**.
 - **Registry / engine:** `bill_evans` is a first-class `SongwriterRuleId` (registry, style profile, comp profile, aliases). There is still no `billEvansSlice.ts` golden-path slice; generation uses the generic keys path until a slice exists.
 - **Generate UI:** Songwriter and Arranger dropdowns use `<optgroup>` groupings; Song Mode has helper copy for arranger/era pairing. **Accessibility:** `label` `htmlFor` ↔ control `id`, `aria-describedby` to visually hidden optgroup context (and Song Mode Era → existing pairing paragraph `id`). Implemented in **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** for Song Mode, Big Band, and String Quartet rows.
 - **Docs:** Roadmap (ECM sweep note, Bacharach/Fagen product note, smoke checklist); **`docs/USER_GUIDE.md`** + **`UserGuide.tsx`** describe grouped dropdowns; **`docs/CHANGELOG.md`** — Composer OS entry dated **2026-04-29** (empty **`[Unreleased]`** until the next drop).
@@ -22,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (47 rows / 14 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
+# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (48 rows / 15 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)
@@ -85,7 +86,7 @@ Key files:
 
 ### Songwriter slices (`core/song-mode/`)
 
-Each of the 7 writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny) follows the same pattern:
+Each of the **9** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris) follows the same pattern:
 - 5 harmonic devices (`d1–d5`), each with eligibility gates + anti-elaboration guards
 - `buildEffectiveHarmonyBars()` precomputes altered progressions
 - Results routed through `customLockedHarmonyRouting` into MusicXML

@@ -162,6 +162,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return wsEff[barIndex - 1]!;
   }
 
+  /**
+   * Barry Harris: `precomputeBarryHarrisEffectiveHarmonyBars` applies bebop / sixth–dim–family devices + guards.
+   * After precompute, `barryHarrisEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const bhEff = meta?.barryHarrisEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'barry_harris' &&
+    Array.isArray(bhEff) &&
+    bhEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bhEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

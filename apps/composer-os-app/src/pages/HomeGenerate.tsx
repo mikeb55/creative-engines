@@ -123,11 +123,11 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'sonic_youth',
   'pat_metheny',
   'wayne_shorter',
+  'barry_harris',
 ];
 
 const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [
   'bacharach',
-  'barry_harris',
   'bill_evans',
   'donald_fagen',
   'ecm_chamber',

@@ -415,6 +415,7 @@ export function runPipelineTruthGates(params: {
     const syT = mdT.sonicYouthEffectiveHarmonyBars;
     const pmT = mdT.patMethenyEffectiveHarmonyBars;
     const wsT = mdT.wayneShorterEffectiveHarmonyBars;
+    const bhT = mdT.barryHarrisEffectiveHarmonyBars;
     const expected =
       mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
         ? [...bwT]
@@ -432,7 +433,9 @@ export function runPipelineTruthGates(params: {
                     ? [...pmT]
                     : mdT.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsT) && wsT.length === 32
                       ? [...wsT]
-                      : [...parsedBars];
+                      : mdT.songwriterStyleId === 'barry_harris' && Array.isArray(bhT) && bhT.length === 32
+                        ? [...bhT]
+                        : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';

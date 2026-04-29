@@ -358,4 +358,10 @@ export interface OutputEntry {
   wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
   wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
   wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
+  /** Barry Harris (bebop / sixth–dim) slice — diagnostics / receipts (Song Mode manifest echo). */
+  barryHarrisDiagnostics?: GenerationMetadata['barryHarrisDiagnostics'];
+  barryHarrisDeviceReceipts?: GenerationMetadata['barryHarrisDeviceReceipts'];
+  barryHarrisSliceReceipt?: GenerationMetadata['barryHarrisSliceReceipt'];
+  barryHarrisEffectiveHarmonyBars?: GenerationMetadata['barryHarrisEffectiveHarmonyBars'];
+  barryHarrisAntiElaborationGuards?: GenerationMetadata['barryHarrisAntiElaborationGuards'];
 }

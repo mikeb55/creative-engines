@@ -587,6 +587,29 @@ export interface GenerationMetadata {
     targetMeanFiresD4: number;
     targetMeanFiresD5: number;
   };
+  /** Barry Harris (bebop / sixth–diminished) — slice diagnostics + effective harmony. */
+  barryHarrisDiagnostics?: {
+    songwriterId: 'barry_harris';
+    barsConsidered: number;
+    sixthChordTouches: number;
+    diminishedTouches: number;
+    dominantTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      clusterVoicingReduced: number;
+      slashFlattenedToRoot: number;
+      denseAlterationReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  barryHarrisSliceReceipt?: string;
+  barryHarrisEffectiveHarmonyBars?: string[];
+  barryHarrisDeviceReceipts?: string[];
+  barryHarrisAntiElaborationGuards?: {
+    clusterVoicingReduced: number;
+    slashFlattenedToRoot: number;
+    denseAlterationReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */
