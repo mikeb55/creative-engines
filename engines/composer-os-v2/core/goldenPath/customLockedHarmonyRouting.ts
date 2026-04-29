@@ -97,6 +97,11 @@ export function assertScoreMatchesLockedHarmonyWire(
   const jmEff = md?.joniMitchellEffectiveHarmonyBars;
   const syEff = md?.sonicYouthEffectiveHarmonyBars;
   const pmEff = md?.patMethenyEffectiveHarmonyBars;
+  const wsEff = md?.wayneShorterEffectiveHarmonyBars;
+  const bhEff = md?.barryHarrisEffectiveHarmonyBars;
+  const beEff = md?.billEvansEffectiveHarmonyBars;
+  const baEff = md?.bacharachEffectiveHarmonyBars;
+  const dfEff = md?.donaldFagenEffectiveHarmonyBars;
   const expectedWire =
     md?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEff) && bwEff.length === tb && bwEff.length === wire.length
       ? bwEff
@@ -130,7 +135,32 @@ export function assertScoreMatchesLockedHarmonyWire(
                     pmEff.length === tb &&
                     pmEff.length === wire.length
                   ? pmEff
-                  : wire;
+                  : md?.songwriterStyleId === 'wayne_shorter' &&
+                      Array.isArray(wsEff) &&
+                      wsEff.length === tb &&
+                      wsEff.length === wire.length
+                    ? wsEff
+                    : md?.songwriterStyleId === 'barry_harris' &&
+                        Array.isArray(bhEff) &&
+                        bhEff.length === tb &&
+                        bhEff.length === wire.length
+                      ? bhEff
+                      : md?.songwriterStyleId === 'bill_evans' &&
+                          Array.isArray(beEff) &&
+                          beEff.length === tb &&
+                          beEff.length === wire.length
+                        ? beEff
+                        : md?.songwriterStyleId === 'bacharach' &&
+                            Array.isArray(baEff) &&
+                            baEff.length === tb &&
+                            baEff.length === wire.length
+                          ? baEff
+                          : md?.songwriterStyleId === 'donald_fagen' &&
+                              Array.isArray(dfEff) &&
+                              dfEff.length === tb &&
+                              dfEff.length === wire.length
+                            ? dfEff
+                            : wire;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');

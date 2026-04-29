@@ -376,4 +376,10 @@ export interface OutputEntry {
   bacharachSliceReceipt?: GenerationMetadata['bacharachSliceReceipt'];
   bacharachEffectiveHarmonyBars?: GenerationMetadata['bacharachEffectiveHarmonyBars'];
   bacharachAntiElaborationGuards?: GenerationMetadata['bacharachAntiElaborationGuards'];
+  /** Donald Fagen (jazz-rock precision harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  donaldFagenDiagnostics?: GenerationMetadata['donaldFagenDiagnostics'];
+  donaldFagenDeviceReceipts?: GenerationMetadata['donaldFagenDeviceReceipts'];
+  donaldFagenSliceReceipt?: GenerationMetadata['donaldFagenSliceReceipt'];
+  donaldFagenEffectiveHarmonyBars?: GenerationMetadata['donaldFagenEffectiveHarmonyBars'];
+  donaldFagenAntiElaborationGuards?: GenerationMetadata['donaldFagenAntiElaborationGuards'];
 }

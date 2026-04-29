@@ -6,8 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Summary of work**
 
+- **Donald Fagen Song Mode slice (2026-04-29):** **`donaldFagenSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeDonaldFagenEffectiveHarmonyBars`**, smoke **`donaldFagenSliceSmoke.test.ts`** — jazz-rock precision harmony (`df:*` receipts). **`npm run test:composer-smoke`** aggregate **51**/0 (**18** suites).
+- **Locked harmony routing fix:** **`composerOsAppGeneration.ts`** (`harmonyBarsForLockedAssertions`) + **`customLockedHarmonyRouting.ts`** (`assertScoreMatchesLockedHarmonyWire`) — effective bars for **Wayne Shorter**, **Barry Harris**, **Bill Evans**, **Bacharach**, **Donald Fagen** so Song Mode / custom harmony assertions match **`getChordForBar`** after slice precompute.
 - **Bill Evans Song Mode slice:** **`billEvansSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBillEvansEffectiveHarmonyBars`**, smoke **`billEvansSliceSmoke.test.ts`** — listed under **Shipped slices** in **`docs/COMPOSER_OS_ROADMAP.md`**.
-- **Bacharach Song Mode slice:** **`bacharachSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBacharachEffectiveHarmonyBars`**, smoke **`bacharachSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **50**/0 (**17** suites). Theatre-pop harmony symbols (`ba:*` receipts); guitar chromatic nudges remain in **`applyBacharachGuitarBarPasses`**.
+- **Bacharach Song Mode slice:** **`bacharachSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBacharachEffectiveHarmonyBars`**, smoke **`bacharachSliceSmoke.test.ts`**. Theatre-pop harmony symbols (`ba:*` receipts); guitar chromatic nudges remain in **`applyBacharachGuitarBarPasses`**.
 - **Barry Harris:** **`barryHarrisSlice.ts`** + smoke; **fix:** **`barry_harris`** wired into **`barsForLockedExportTruth`** in **`runGoldenPath.ts`** (export-truth parity with other locked-harmony slices).
 - **Registry / engine:** `bill_evans` remains a first-class `SongwriterRuleId`; duo golden-path generation uses **`billEvansSlice`** when primary is **`bill_evans`**.
 - **Generate UI:** Songwriter and Arranger dropdowns use `<optgroup>` groupings; Song Mode has helper copy for arranger/era pairing. **Accessibility:** `label` `htmlFor` ↔ control `id`, `aria-describedby` to visually hidden optgroup context (and Song Mode Era → existing pairing paragraph `id`). Implemented in **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** for Song Mode, Big Band, and String Quartet rows.
@@ -25,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (50 rows / 17 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
+# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (51 rows / 18 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)
@@ -88,7 +90,7 @@ Key files:
 
 ### Songwriter slices (`core/song-mode/`)
 
-Each of the **11** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris, Bill Evans, Bacharach) follows the same pattern:
+Each of the **12** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris, Bill Evans, Bacharach, Donald Fagen) follows the same pattern:
 - 5 harmonic devices (`d1–d5`), each with eligibility gates + anti-elaboration guards
 - `buildEffectiveHarmonyBars()` precomputes altered progressions
 - Results routed through `customLockedHarmonyRouting` into MusicXML

@@ -207,6 +207,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return baEff[barIndex - 1]!;
   }
 
+  /**
+   * Donald Fagen: `precomputeDonaldFagenEffectiveHarmonyBars` applies jazz-rock precision harmony devices + receipts.
+   * After precompute, `donaldFagenEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const dfEff = meta?.donaldFagenEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'donald_fagen' &&
+    Array.isArray(dfEff) &&
+    dfEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return dfEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

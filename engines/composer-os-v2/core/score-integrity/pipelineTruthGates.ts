@@ -417,6 +417,7 @@ export function runPipelineTruthGates(params: {
     const wsT = mdT.wayneShorterEffectiveHarmonyBars;
     const bhT = mdT.barryHarrisEffectiveHarmonyBars;
     const baT = mdT.bacharachEffectiveHarmonyBars;
+    const dfT = mdT.donaldFagenEffectiveHarmonyBars;
     const beT = mdT.billEvansEffectiveHarmonyBars;
     const expected =
       mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
@@ -439,9 +440,11 @@ export function runPipelineTruthGates(params: {
                         ? [...bhT]
                         : mdT.songwriterStyleId === 'bacharach' && Array.isArray(baT) && baT.length === 32
                           ? [...baT]
-                          : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
-                            ? [...beT]
-                            : [...parsedBars];
+                          : mdT.songwriterStyleId === 'donald_fagen' && Array.isArray(dfT) && dfT.length === 32
+                            ? [...dfT]
+                            : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
+                              ? [...beT]
+                              : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';

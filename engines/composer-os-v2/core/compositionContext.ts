@@ -654,6 +654,28 @@ export interface GenerationMetadata {
     clusterVoicingReduced: number;
     denseAlterationReduced: number;
   };
+  /** Donald Fagen (jazz-rock / precision harmony) — slice diagnostics + effective harmony. */
+  donaldFagenDiagnostics?: {
+    songwriterId: 'donald_fagen';
+    barsConsidered: number;
+    lydianTonicTouches: number;
+    dominantEnrichTouches: number;
+    chromaticApproachTouches: number;
+    susBreathTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      clusterVoicingReduced: number;
+      denseAlterationReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  donaldFagenSliceReceipt?: string;
+  donaldFagenEffectiveHarmonyBars?: string[];
+  donaldFagenDeviceReceipts?: string[];
+  donaldFagenAntiElaborationGuards?: {
+    clusterVoicingReduced: number;
+    denseAlterationReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

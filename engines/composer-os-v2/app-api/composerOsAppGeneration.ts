@@ -850,6 +850,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const pmLockedTruth = mdLockedTruth?.patMethenyEffectiveHarmonyBars;
   const wsLockedTruth = mdLockedTruth?.wayneShorterEffectiveHarmonyBars;
   const bhLockedTruth = mdLockedTruth?.barryHarrisEffectiveHarmonyBars;
+  const beLockedTruth = mdLockedTruth?.billEvansEffectiveHarmonyBars;
+  const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
+  const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -905,7 +908,25 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                         lockedHarmonyBarsAuthoritative &&
                         bhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                       ? bhLockedTruth
-                      : lockedHarmonyBarsAuthoritative;
+                      : mdLockedTruth?.songwriterStyleId === 'bill_evans' &&
+                          Array.isArray(beLockedTruth) &&
+                          beLockedTruth.length === tbLockedTruth &&
+                          lockedHarmonyBarsAuthoritative &&
+                          beLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                        ? beLockedTruth
+                        : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
+                            Array.isArray(baLockedTruth) &&
+                            baLockedTruth.length === tbLockedTruth &&
+                            lockedHarmonyBarsAuthoritative &&
+                            baLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                          ? baLockedTruth
+                          : mdLockedTruth?.songwriterStyleId === 'donald_fagen' &&
+                              Array.isArray(dfLockedTruth) &&
+                              dfLockedTruth.length === tbLockedTruth &&
+                              lockedHarmonyBarsAuthoritative &&
+                              dfLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                            ? dfLockedTruth
+                            : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -981,6 +1002,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const wsDisk = mdDisk?.wayneShorterEffectiveHarmonyBars;
     const bhDisk = mdDisk?.barryHarrisEffectiveHarmonyBars;
     const baDisk = mdDisk?.bacharachEffectiveHarmonyBars;
+    const dfDisk = mdDisk?.donaldFagenEffectiveHarmonyBars;
     const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
@@ -1043,13 +1065,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                             locked &&
                             baDisk.length === locked.length
                           ? baDisk
-                          : mdDisk?.songwriterStyleId === 'bill_evans' &&
-                              Array.isArray(beDisk) &&
-                              beDisk.length === gp.context.form.totalBars &&
+                          : mdDisk?.songwriterStyleId === 'donald_fagen' &&
+                              Array.isArray(dfDisk) &&
+                              dfDisk.length === gp.context.form.totalBars &&
                               locked &&
-                              beDisk.length === locked.length
-                            ? beDisk
-                            : locked;
+                              dfDisk.length === locked.length
+                            ? dfDisk
+                            : mdDisk?.songwriterStyleId === 'bill_evans' &&
+                                Array.isArray(beDisk) &&
+                                beDisk.length === gp.context.form.totalBars &&
+                                locked &&
+                                beDisk.length === locked.length
+                              ? beDisk
+                              : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1164,6 +1192,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       bacharachSliceReceipt: gp.context.generationMetadata.bacharachSliceReceipt,
       bacharachEffectiveHarmonyBars: gp.context.generationMetadata.bacharachEffectiveHarmonyBars,
       bacharachAntiElaborationGuards: gp.context.generationMetadata.bacharachAntiElaborationGuards,
+      donaldFagenDiagnostics: gp.context.generationMetadata.donaldFagenDiagnostics,
+      donaldFagenDeviceReceipts: gp.context.generationMetadata.donaldFagenDeviceReceipts,
+      donaldFagenSliceReceipt: gp.context.generationMetadata.donaldFagenSliceReceipt,
+      donaldFagenEffectiveHarmonyBars: gp.context.generationMetadata.donaldFagenEffectiveHarmonyBars,
+      donaldFagenAntiElaborationGuards: gp.context.generationMetadata.donaldFagenAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

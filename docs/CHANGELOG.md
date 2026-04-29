@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Donald Fagen Song Mode slice — 51/51 smoke
+
+- **Engine (`engines/composer-os-v2`):** **`donaldFagenSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/donaldFagenSlice.ts`**) — **`precomputeDonaldFagenEffectiveHarmonyBars`**, **`df:*`** device receipts, **`donaldFagenEffectiveHarmonyBars`** + **`getChordForBar`**, metadata + manifest echo; **`donaldFagenSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **51** passed / **0** failed (**18** suites).
+
+## [2026-04-29] fix: locked harmony routing extended through Wayne Shorter, Barry Harris, Bill Evans, Bacharach, Donald Fagen
+
+- **`app-api/composerOsAppGeneration.ts`:** **`harmonyBarsForLockedAssertions`** — Song Mode locked score/XML checks use **effective** harmony bars for **`bill_evans`**, **`bacharach`**, **`donald_fagen`** (same pattern as earlier writers).
+- **`core/goldenPath/customLockedHarmonyRouting.ts`:** **`assertScoreMatchesLockedHarmonyWire`** — **`expectedWire`** includes **`wayne_shorter`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`** effective bars so golden-path guitar chords match slice output under **`custom`** / **`custom_locked`**.
+
 ## [2026-04-29] feat: Bill Evans Song Mode slice — 49/49 smoke
 
 - **Engine (`engines/composer-os-v2`):** **`billEvansSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/billEvansSlice.ts`**) — Bill Evans harmony devices + **`precomputeBillEvansEffectiveHarmonyBars`**, metadata + manifest echo; **`billEvansSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **49** passed / **0** failed (**16** suites).

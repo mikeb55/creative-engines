@@ -123,6 +123,12 @@ import {
   finalizeBacharachMetadata,
   precomputeBacharachEffectiveHarmonyBars,
 } from './bacharachSlice';
+import {
+  accumulateDonaldFagenHarmonyDiagnostics,
+  createDonaldFagenHarmonyAccumulator,
+  finalizeDonaldFagenMetadata,
+  precomputeDonaldFagenEffectiveHarmonyBars,
+} from './donaldFagenSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2051,6 +2057,7 @@ function buildGuitarPart(
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
+  const dfAccum = createDonaldFagenHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2084,6 +2091,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterFagen && isDuoGoldenPath) {
+    precomputeDonaldFagenEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2251,6 +2261,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         baAccum
+      );
+    }
+    if (isSongwriterFagen) {
+      accumulateDonaldFagenHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        dfAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2724,6 +2741,10 @@ function buildGuitarPart(
 
   if (isSongwriterBacharach && context.generationMetadata) {
     finalizeBacharachMetadata(context.generationMetadata, baAccum);
+  }
+
+  if (isSongwriterFagen && context.generationMetadata) {
+    finalizeDonaldFagenMetadata(context.generationMetadata, dfAccum);
   }
 
   return {
