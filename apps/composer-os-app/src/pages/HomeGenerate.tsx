@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
@@ -73,6 +74,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
+  { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
@@ -111,7 +113,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'xtc', label: 'XTC' },
 ];
 
-/** Primary ordering inside each optgroup; excludes Bill Evans until a `SongwriterRuleId` exists in core. */
+/** Primary ordering inside each optgroup (Shipped = full golden-path slice in core). */
 const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'brian_wilson',
   'stevie_wonder',
@@ -126,6 +128,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
 const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [
   'bacharach',
   'barry_harris',
+  'bill_evans',
   'donald_fagen',
   'ecm_chamber',
 ];
@@ -137,6 +140,24 @@ const SONGWRITER_GROUP_READY_IDS = new Set(SONGWRITER_GROUP_READY_ORDER);
 const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS.filter(
   (o) => !SONGWRITER_GROUP_SHIPPED_IDS.has(o.id) && !SONGWRITER_GROUP_READY_IDS.has(o.id)
 ).sort((a, b) => a.label.localeCompare(b.label));
+
+/** Visually hidden — referenced by `aria-describedby` on grouped songwriter/arranger selects (WCAG). */
+const VISUALLY_HIDDEN: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
+
+const ARIA_SONGWRITER_GROUPS_DESC =
+  'Songwriters are grouped into Shipped full slice, Ready to build, and In library.';
+const ARIA_ARRANGER_GROUPS_DESC =
+  'Arrangers are grouped into Big band core research-backed and Charts and studio voices.';
 
 function SongwriterSelectOptionGroups() {
   return (
@@ -252,6 +273,40 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'neal_hefti', label: 'Neal Hefti' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
 ];
+
+/** Matches engine `BigBandComposerId` / style-pairing “known” arrangers — grouped first like Style dropdowns. */
+const ARRANGER_GROUP_CORE_ORDER: readonly string[] = ['ellington', 'basie', 'thad', 'schneider'];
+
+const ARRANGER_OPTION_BY_ID = new Map(ARRANGER_OPTIONS.map((o) => [o.id, o]));
+const ARRANGER_GROUP_CORE_IDS = new Set(ARRANGER_GROUP_CORE_ORDER);
+
+const ARRANGER_EXTENDED_ORDERED = ARRANGER_OPTIONS.filter((o) => !ARRANGER_GROUP_CORE_IDS.has(o.id)).sort((a, b) =>
+  a.label.localeCompare(b.label)
+);
+
+function ArrangerSelectOptionGroups() {
+  return (
+    <>
+      <optgroup label="Big band core (research-backed)">
+        {ARRANGER_GROUP_CORE_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
+          const o = ARRANGER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={id} value={o.id}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label="Charts & studio voices">
+        {ARRANGER_EXTENDED_ORDERED.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </optgroup>
+    </>
+  );
+}
 
 const ERA_OPTIONS: { id: string; label: string }[] = [
   { id: 'swing', label: 'Swing' },
@@ -2712,10 +2767,15 @@ export function HomeGenerate({
             )}
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sm-primary-songwriter"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Songwriter
             </label>
             <select
+              id="co-sm-primary-songwriter"
+              aria-describedby="co-sm-primary-songwriter-desc"
               value={songwriterStyle}
               onChange={(e) => {
                 setSongwriterStyle(e.target.value);
@@ -2725,12 +2785,20 @@ export function HomeGenerate({
             >
               <SongwriterSelectOptionGroups />
             </select>
+            <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_SONGWRITER_GROUPS_DESC}
+            </span>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sm-arranger"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Arranger
             </label>
             <select
+              id="co-sm-arranger"
+              aria-describedby="co-sm-arranger-desc"
               value={arrangerStyle}
               onChange={(e) => {
                 setArrangerStyle(e.target.value);
@@ -2738,18 +2806,22 @@ export function HomeGenerate({
               }}
               disabled={loading}
             >
-              {ARRANGER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ArrangerSelectOptionGroups />
             </select>
+            <span id="co-sm-arranger-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_ARRANGER_GROUPS_DESC}
+            </span>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sm-era"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Era
             </label>
             <select
+              id="co-sm-era"
+              aria-describedby="co-sm-style-pairing-hint"
               value={era}
               onChange={(e) => {
                 setEra(e.target.value);
@@ -2764,11 +2836,23 @@ export function HomeGenerate({
               ))}
             </select>
           </div>
+          <p
+            id="co-sm-style-pairing-hint"
+            style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}
+          >
+            Arranger and era nudge style pairing and era-aware harmony colour in Song Mode planning—soft hints, not
+            hard ensemble switches.
+          </p>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sm-secondary-songwriter"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Secondary Songwriter (optional)
             </label>
             <select
+              id="co-sm-secondary-songwriter"
+              aria-describedby="co-sm-secondary-songwriter-desc"
               value={secondarySongwriterStyle}
               onChange={(e) => {
                 setSecondarySongwriterStyle(e.target.value);
@@ -2779,6 +2863,9 @@ export function HomeGenerate({
               <option value="">None</option>
               <SongwriterSelectOptionGroups />
             </select>
+            <span id="co-sm-secondary-songwriter-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_SONGWRITER_GROUPS_DESC} Optional secondary blend with primary.
+            </span>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -2846,38 +2933,58 @@ export function HomeGenerate({
             </p>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-bb-songwriter"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Songwriter
             </label>
             <select
+              id="co-bb-songwriter"
+              aria-describedby="co-bb-songwriter-desc"
               value={songwriterStyle}
               onChange={(e) => setSongwriterStyle(e.target.value)}
               disabled={loading}
             >
               <SongwriterSelectOptionGroups />
             </select>
+            <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_SONGWRITER_GROUPS_DESC}
+            </span>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-bb-arranger"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Arranger
             </label>
             <select
+              id="co-bb-arranger"
+              aria-describedby="co-bb-arranger-desc"
               value={arrangerStyle}
               onChange={(e) => setArrangerStyle(e.target.value)}
               disabled={loading}
             >
-              {ARRANGER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ArrangerSelectOptionGroups />
             </select>
+            <span id="co-bb-arranger-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_ARRANGER_GROUPS_DESC}
+            </span>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-bb-era"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Era
             </label>
-            <select value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
+            <select
+              id="co-bb-era"
+              value={era}
+              onChange={(e) => setEra(e.target.value)}
+              disabled={loading}
+            >
               {ERA_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}
@@ -2913,38 +3020,53 @@ export function HomeGenerate({
             Songwriter and arranger pair with era for planning colour; era selects the built-in chord cycle when chord progression is empty (same options as Big Band).
           </p>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sq-songwriter"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Songwriter
             </label>
             <select
+              id="co-sq-songwriter"
+              aria-describedby="co-sq-songwriter-desc"
               value={songwriterStyle}
               onChange={(e) => setSongwriterStyle(e.target.value)}
               disabled={loading}
             >
               <SongwriterSelectOptionGroups />
             </select>
+            <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_SONGWRITER_GROUPS_DESC}
+            </span>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sq-arranger"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Arranger
             </label>
             <select
+              id="co-sq-arranger"
+              aria-describedby="co-sq-arranger-desc"
               value={arrangerStyle}
               onChange={(e) => setArrangerStyle(e.target.value)}
               disabled={loading}
             >
-              {ARRANGER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ArrangerSelectOptionGroups />
             </select>
+            <span id="co-sq-arranger-desc" style={VISUALLY_HIDDEN}>
+              {ARIA_ARRANGER_GROUPS_DESC}
+            </span>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <label
+              htmlFor="co-sq-era"
+              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+            >
               Era
             </label>
-            <select value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
+            <select id="co-sq-era" value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
               {ERA_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}

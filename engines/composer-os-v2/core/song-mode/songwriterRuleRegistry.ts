@@ -490,6 +490,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('metheny.stepwise_melody', 'Stepwise lyrical melody (placeholder)', 'songwriter', 'melody', 7, 'global'),
     R('metheny.folk_jazz_color', 'Folk-jazz add9 colours (placeholder)', 'songwriter', 'harmony', 7, 'global'),
   ],
+  bill_evans: [
+    R('evans.singing_line', 'Singing melodic line over rich harmony (placeholder)', 'songwriter', 'melody', 8, 'verse'),
+    R('evans.rootless_colour', 'Rootless / shell voicing colour (placeholder)', 'songwriter', 'harmony', 8, 'global'),
+    R('evans.ballad_arc', 'Ballad narrative arc; bridge lift (placeholder)', 'songwriter', 'form', 7, 'form'),
+  ],
   andrew_hill: [
     R('hill.interval_cells', 'Interval-cell development and transposition', 'songwriter', 'melody', 8, 'global'),
     R('hill.asymmetric_phrase', 'Asymmetric phrase lengths vs grid', 'songwriter', 'form', 8, 'form'),

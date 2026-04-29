@@ -27,6 +27,7 @@ export type SongwriterRuleId =
   | 'norman_whitfield'
   | 'bach'
   | 'beethoven'
+  | 'bill_evans'
   | 'debussy'
   | 'stravinsky'
   | 'ravel'

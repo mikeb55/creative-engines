@@ -1,6 +1,10 @@
 /**
  * Composer OS V2 — smoke tier (~fast allowlist).
  * Runs a short fixed list of existing `run*Tests` entrypoints (no duplicate assertions).
+ *
+ * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
+ * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
+ * Current (see roadmap § **Smoke tier — maintenance checklist**).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -16,6 +20,7 @@ import { runJoniMitchellSliceSmokeTests } from './joniMitchellSliceSmoke.test';
 import { runSonicYouthSliceSmokeTests } from './sonicYouthSliceSmoke.test';
 import { runPatMethenySliceSmokeTests } from './patMethenySliceSmoke.test';
 import { runWayneShorterSliceSmokeTests } from './wayneShorterSliceSmoke.test';
+import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -33,6 +38,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Sonic Youth songwriter slice', run: runSonicYouthSliceSmokeTests },
   { label: 'Pat Metheny songwriter slice', run: runPatMethenySliceSmokeTests },
   { label: 'Wayne Shorter songwriter slice', run: runWayneShorterSliceSmokeTests },
+  { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

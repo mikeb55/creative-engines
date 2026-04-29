@@ -116,6 +116,14 @@ export function UserGuide() {
           Quartet can fall back to <strong>planning JSON</strong> if full score export fails — the receipt tells you
           which you got.
         </p>
+        <p style={{ ...p, marginTop: '0.75rem' }}>
+          <strong>Song Mode — grouped dropdowns:</strong> <strong>Songwriter</strong> is grouped into{' '}
+          <strong>Shipped (full slice)</strong>, <strong>Ready to build</strong>, and <strong>In library</strong>.
+          <strong> Arranger</strong> is grouped into <strong>Big band core (research-backed)</strong> and{' '}
+          <strong>Charts & studio voices</strong>. Under <strong>Arranger</strong> and <strong>Era</strong>, a short
+          line explains that together they <strong>nudge style pairing</strong> and era-aware harmony colour in
+          planning — hints only; they do not switch Big Band or String Quartet scoring rules by themselves.
+        </p>
       </section>
 
       <section style={section}>

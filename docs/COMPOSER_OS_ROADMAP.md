@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-28]
+# Composer OS Roadmap [2026-04-29]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -6,10 +6,29 @@
 
 ---
 
-## Known issues — engine (2026-04-19)
+## Known issues — engine (2026-04-29)
 
-- **`ecm_chamber` golden path — JavaScript heap OOM (deferred):** Unbounded retry behaviour in **`generateGoldenPathDuoScore.ts`** can exhaust heap at **32-bar** long-form generation. Not fixed in this snapshot. **Workaround:** **`GCE_SINGLE_PRESET`** (one preset per process) for GCE preset runs; omit **`ecm_chamber`** from single-process full eval until bounded. Detail: [CHANGELOG.md](CHANGELOG.md) § **Known issue — `ecm_chamber` golden path OOM**.
-- **GCE v2.0 preset benchmark (2026-04-19):** Non-ECM presets **7.8–8.1/10** overall (seed **50021**, 32 bars, 100 BPM); universal weakest pillar **Melodic Identity**; **`ecm_chamber`** eval **OOM** pending. Tables: [GCE_FRAMEWORK_V2.md](GCE_FRAMEWORK_V2.md), [CHANGELOG.md](CHANGELOG.md).
+- **`ecm_chamber` golden path — heap pressure (mitigated):** **`runGoldenPath.ts`** caps the duo-lock **variant seed sweep** for **`ecm_chamber`** via **`ecmChamberVariantSweepLimit(totalBars)`** — **≥32 bars → 1** candidate seed, **16–31 → 2**, **≤15 → 3** (missing/invalid bar count defaults as **32** → **1**). Non-ECM presets still use the full **6-offset** sweep (**`GOLDEN_PATH_VARIANT_SEED_OFFSETS`**). Very heavy single-process batches may still warrant **`GCE_SINGLE_PRESET`** as a safety valve. Code: **`engines/composer-os-v2/core/goldenPath/runGoldenPath.ts`**.
+- **GCE v2.0 preset benchmark (2026-04-19):** Non-ECM presets **7.8–8.1/10** overall (seed **50021**, 32 bars, 100 BPM); universal weakest pillar **Melodic Identity**. **`ecm_chamber`** long-form runs use the bounded sweep above; if heap exhaustion persists, batch presets (**`GCE_SINGLE_PRESET`**) or raise Node heap before assuming an unfixed engine bug. Tables: [GCE_FRAMEWORK_V2.md](GCE_FRAMEWORK_V2.md), [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Product notes — Bacharach & Donald Fagen: UI grouping vs implementation (2026-04-29)
+
+- **Generate UI** (`apps/composer-os-app` Songwriter dropdown) lists **Bacharach** and **Donald Fagen** under **Ready to build** with ids that do **not** yet use the newest **full golden-path slice** packaging (**dedicated `*Slice.ts`**, five named harmonic devices, **`*EffectiveHarmonyBars`** + export/disk truth, dedicated smoke test) used for **Shipped (full slice)** writers (e.g. Pat Metheny, Joni Mitchell).
+- **Engine status:** Both writers already ship **real** Song Mode behaviour — registry/rules, surfaces, harmony/guitar passes, **`eval:bacharach`** / **`eval:fagen`**, Bacharach harmony dressing & surfaces, Fagen keys-comp / rhythm overlays / sophisticated-pop hooks — i.e. **not** placeholder or compile-only rows.
+- **Gap:** **Architectural / marketing** alignment with the **newest slice template**, not absence of music pipeline behaviour.
+- **Parity refactor** (repackage to full **`\*Slice.ts`** pattern): **not a quick win** — budget **days+ per writer**; treat as **normal scheduled work**. **Optional** unless the goal is **one maintenance pattern** or **parity** with Pat Metheny–style receipts/tests.
+- **When to skip parity:** Current outputs meet product needs; prioritize **new writer territories** or other **Priority stack** items.
+- **When to schedule parity:** Team wants **one canonical slice pattern** and **regression** coverage aligned with the newest shipped slices.
+
+---
+
+## Songwriter — `bill_evans` registry parity (2026-04-29)
+
+- **`bill_evans`** is now a first-class **`SongwriterRuleId`** with **registry rules**, **`SONGWRITER_STYLE_PROFILES`** entry, **`songwriterCompProfile`** (**keys**), **`normalizeSongwriterStyleKey`** alias, and **`SONGWRITER_PRIMARY_INSTRUMENT`** — Song Mode **`resolveSongwritingStyles`** / compiled song planning resolve it like other catalogue ids ( **`songwritingResearchTypes.ts`**, **`songwriterRuleRegistry.ts`**, **`songwriterStyleProfiles.ts`**, **`songwriterCompProfile.ts`** ).
+- **Generate UI** already listed Bill Evans under **Ready to build**; selecting it no longer risks falling through to a missing-id path at resolution time.
+- **Not shipped:** dedicated **`billEvansSlice.ts`** golden-path slice / devices / smoke — same gap template as **Bacharach / Fagen** vs Pat Metheny–style packaging (**optional** future work).
 
 ---
 
@@ -270,13 +289,14 @@
 
 ---
 
-## Current (as of 2026-04-28 snapshot)
+## Current (as of 2026-04-29 snapshot)
 
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** allowlist **40** passed / **0** failed (2026-04-28 — includes **Pat Metheny** songwriter slice smoke, **T2.17**). Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-04-29):** **47** passed / **0** failed — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs occasional **`test:full`** suite-level failures (environment / heavy gates). **Runner stability** item (**chunked harness + 4096 MB heap on each chunk**) is **complete** (2026-04-28).
 - **`npm test` / `test:full`** — if **`FAIL:`** lines appear, treat as **known per-suite debt** or environment until triaged; **`test:fast`** remains the broader gate for day-to-day iteration.
+- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**47**).
 
 | Area | State |
 |------|--------|
@@ -285,21 +305,28 @@
 | **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
-| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Golden-path slices** today: **`STYLE_GROOVE_SOUL`**, **`donald_fagen`**, **`bacharach`**, **`STYLE_SOPHISTICATED_POP`**, Wayne / Barry / ECM-writer / Metheny hooks where wired — plus **section-aware descriptors + diagnostics**. **Next product push:** **Priority stack** — more **end-to-end primary writer profiles** + **Generate UI** discoverability (not registry-only ids). |
+| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **`bill_evans`** catalogue + profile **2026-04-29** (slice **not** shipped). **Golden-path slices** today: **`STYLE_GROOVE_SOUL`**, **`donald_fagen`**, **`bacharach`**, **`STYLE_SOPHISTICATED_POP`**, Wayne / Barry / ECM-writer / Metheny hooks where wired — plus **section-aware descriptors + diagnostics**. **Next product push:** **Priority stack** — more **end-to-end primary writer profiles** + polish **Generate UI** (grouped selects shipped **2026-04-29**). |
 | **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family. **2026-04-17:** Parity + **realized normalization review (first pass)** — `shouldApplyRealizedVoice2Normalization` centralizes when Phase 18.2B.3 runs; `injectPhaseAGuitarVoice2Probe` uses **`isStandardGuitarBassDuo`**; JSDoc on realized pass. Full unify of realized metrics with standard duo / phrase-first single-line still **deferred** (pick list #2). |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
 | **Python engines** (`engines/wayne-shorter-engine`, `shorter-form-engine`, etc.) | **Not** integrated into Composer OS TS Generate path |
 | **#19 / #16 / #17 (chord track)** | **Baseline complete** — unified semantics (#19), robustness baseline + export/receipt behaviour (#16), diagnostics in UI (#17). Aligned across [README.md](../README.md) and [docs/CHANGELOG.md](./CHANGELOG.md). |
 
+### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
+
+1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
+2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **14** suites as of 2026-04-29).
+3. **Update** this doc — **Current** harness bullet above (**47** / date) so assistants do not cite a stale total.
+4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
+
 ---
 
-## Priority stack (2026-04-28)
+## Priority stack (2026-04-29)
 
 Ordered for **product leverage** (what to schedule first). Adjust when ship goals change.
 
-1. **More Song Mode songwriter profiles (primary writer slices)** — Expand **working** profiles beyond the current deep slices (e.g. Fagen, Bacharach, Wayne, Barry Harris, ECM-as-writer): each profile should win **chord-row / planning bias + duo golden-path behaviour + receipts + diagnostics + smoke**, using the same bounded patterns as existing pilots. The **typed catalogue** (`SongwriterRuleId`, `songwriterRuleRegistry`) can list many ids; **user-visible value** is **end-to-end writer slices**, not registry-only rows. **Shipped (2026-04-28):** **`james_brown`** full slice (**T2.14**); **`joni_mitchell`** full slice (**T2.15**); **`sonic_youth`** (**T2.16**); **`pat_metheny`** full slice (**T2.17** — ECM/PMG devices, **`eval:pat_metheny`**, effective-bar export/disk truth); **`test:smoke`** **40**/0. **Next** picks from remaining thin / compile-only ids or new catalogue entries.
-2. **Generate UI / discoverability for writers** — Surface **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** so new profiles are choosable and A/B-able without spelunking the API (pairs with **Near term** item 1).
+1. **More Song Mode songwriter profiles (primary writer slices)** — Expand **full-slice-packaged** profiles using the newest template (**chord-row / planning bias + duo golden-path behaviour + receipts + diagnostics + smoke**). **`donald_fagen`** and **`bacharach`** already ship substantial Song Mode behaviour (surfaces, dressings, eval harnesses); **optional** repackage to **`\*Slice.ts`** parity is **not a quick win** — see **Product notes — Bacharach & Donald Fagen** above. The **typed catalogue** lists many ids; **user-visible value** is **end-to-end** behaviour, not registry-only rows. **Shipped full-slice template (2026-04-28):** **`james_brown`** (**T2.14**); **`joni_mitchell`** (**T2.15**); **`sonic_youth`** (**T2.16**); **`pat_metheny`** (**T2.17**). **`wayne_shorter`** slice + smoke **2026-04-29**. **`test:smoke`** aggregate **47**/0 (**`runSmokeTests.ts`**). **Next** picks from thin ids, **Barry / ECM-writer** depth, or **parity** work where justified.
+2. **Generate UI / discoverability for writers** — Surface **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** so new profiles are choosable and A/B-able without spelunking the API (pairs with **Near term** item 1). **2026-04-29:** grouped Songwriter + Arranger **`optgroup`**s + Song Mode Arranger/Era hint shipped — extend as needed (tooltips, presets wire-through).
 3. **Harness + composer stability** — Keep **`test:smoke`** / **`test:fast`** green; use chunked **`runAllTests`** for full matrix; triage **`TEST_DEBT_COMPOSER_OS_V2.md`** so refactors stay safe while profile count grows.
 4. **Lead-sheet MusicXML import** — Finish staged harmony import (ensemble presets, evals) where product needs **chart-in**; complements writers but is a **different axis** than “more profiles.”
 5. **Phrase Engine / riff material layer** — Shared motivic cells feeding duo / Song hooks / ensembles (**Phrase Engine / Riff Generator redesign**).
@@ -388,7 +415,8 @@ Not yet full **golden-path slices** in the sense of Pat Metheny / Joni / James B
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
 - **Done (2026-04-28):** **`james_brown`** — full duo golden-path slice (**`jamesBrownSlice.ts`**), **`SONGWRITER_CHORD_POOLS.james_brown`**, devices **`jb:`** d1–d5, anti-elaboration guards, **`npm run eval:james_brown`**, **`test:smoke`** row (**37**/0). See **T2.14**, [CHANGELOG.md](CHANGELOG.md) § **James Brown — full Song Mode slice**.
-- **Done (2026-04-28):** **`pat_metheny`** — full duo golden-path slice (**`patMethenySlice.ts`**), preserved **`SONGWRITER_CHORD_POOLS.pat_metheny`**, devices **`pm:`** d1–d5, anti-elaboration guards, effective-bar export + disk truth, **`npm run eval:pat_metheny`**, **`test:smoke`** **40**/0. See **T2.17**, [CHANGELOG.md](CHANGELOG.md) § **Pat Metheny — full Song Mode slice (`patMethenySlice.ts`)**.
+- **Done (2026-04-28):** **`pat_metheny`** — full duo golden-path slice (**`patMethenySlice.ts`**), preserved **`SONGWRITER_CHORD_POOLS.pat_metheny`**, devices **`pm:`** d1–d5, anti-elaboration guards, effective-bar export + disk truth, **`npm run eval:pat_metheny`**, **`test:smoke`** **40**/0 at ship. See **T2.17**, [CHANGELOG.md](CHANGELOG.md) § **Pat Metheny — full Song Mode slice (`patMethenySlice.ts`)**.
+- **Smoke tier vs bullets:** Row counts in **Past / T2.x** (**33**, **37**, **40**, …) record **aggregate PASS rows at ship**. **Current** smoke tier **aggregate** (**47** as of 2026-04-29) lives in **`runSmokeTests.ts`** — bump **`CLAUDE.md`** + **Current** whenever the allowlist changes.
 - **Goal:** **More primary songwriter profiles** that behave distinctly in Song Mode: section-aware **chord pools**, **golden-path** guitar/bass realisation hooks where appropriate, **surface receipts** / **`songModeStyleSurfaceNotes`**, **`songModeSectionShapingDiagnostics`** alignment, and **eval harness** rows where a script exists (`eval:fagen`, `eval:bacharach`, etc.).
 - **Implementation pattern:** Follow shipped slices — **registry + resolver** (`songwriterStyleResolver`, `songwriterRuleRegistry`) → **`songModeBuilder`** weighting / rows → **`generateGoldenPathDuoScore`** passes → manifests. Keep **pilot gating** (`motifAuthorityLevel`, motif summaries) until the slice is stable.
 - **Candidate directions (pick small batches):** elevate **thin or compile-only** writers to full slices; add **era- or scene-cluster** presets (e.g. singer-songwriter, classic rock book, modern alt) as **product bundles** mapping to existing or new ids; extend **hybrid** pairs (melody writer × harmony writer) with tests.

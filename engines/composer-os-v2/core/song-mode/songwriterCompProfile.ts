@@ -60,6 +60,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   norman_whitfield: 'keys',
   bach: 'keys',
   beethoven: 'keys',
+  bill_evans: 'keys',
   debussy: 'keys',
   stravinsky: 'keys',
   ravel: 'keys',

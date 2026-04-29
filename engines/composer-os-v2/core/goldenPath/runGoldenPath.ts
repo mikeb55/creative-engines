@@ -1141,6 +1141,20 @@ export function candidateSeedsForGoldenPath(requestedSeed: number): number[] {
   return GOLDEN_PATH_VARIANT_SEED_OFFSETS.map((o) => requestedSeed + o);
 }
 
+/**
+ * ECM chamber realisation allocates large per-attempt score graphs; long-form + multi-seed sweeps can exhaust Node heap.
+ * Bounds the duo-lock variant sweep by bar count (full 6-offset sweep remains for non-ECM presets).
+ */
+export function ecmChamberVariantSweepLimit(totalBars: number | undefined): number {
+  const tb =
+    typeof totalBars === 'number' && Number.isFinite(totalBars) && totalBars > 0
+      ? Math.floor(totalBars)
+      : 32;
+  if (tb >= 32) return 1;
+  if (tb >= 16) return 2;
+  return 3;
+}
+
 type ScoreSizeProbe = {
   totalParts: number;
   totalMeasures: number;
@@ -1352,11 +1366,13 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
     });
   }
   const allSeeds = candidateSeedsForGoldenPath(seed);
-  // ECM-specific OOM mitigation: keep a small candidate sweep budget at 32-bar chamber complexity.
+  // ECM-specific OOM mitigation: scale candidate sweep down as bar count grows (32-bar = single attempt).
   // Non-ECM presets preserve the full 6-seed sweep behavior.
+  const presetForSweep = resolved?.presetId ?? options?.presetId ?? 'guitar_bass_duo';
+  const totalBarsForSweep = resolved?.totalBars ?? options?.totalBars;
   const seeds =
-    (resolved?.presetId ?? options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber'
-      ? allSeeds.slice(0, 3)
+    presetForSweep === 'ecm_chamber'
+      ? allSeeds.slice(0, ecmChamberVariantSweepLimit(totalBarsForSweep))
       : allSeeds;
   const isEcmChamber =
     (resolved?.presetId ?? options?.presetId ?? 'guitar_bass_duo') === 'ecm_chamber' &&

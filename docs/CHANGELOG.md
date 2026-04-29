@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2026-04-29] Composer OS — Generate UI, `bill_evans` id, docs, smoke checklist & a11y (`HomeGenerate.tsx`)
+
+- **Engine (`engines/composer-os-v2`):** **`bill_evans`** added as canonical **`SongwriterRuleId`** — **`songwriterRuleRegistry`** placeholder rules, **`SONGWRITER_STYLE_PROFILES`**, **`songwriterCompProfile`** (**keys** / generic keys-comp path), **`normalizeSongwriterStyleKey`** alias (**`songwritingResearchTypes.ts`**, **`songwriterRuleRegistry.ts`**, **`songwriterStyleProfiles.ts`**, **`songwriterCompProfile.ts`**). No **`billEvansSlice.ts`** golden-path slice yet.
+- **Web (`apps/composer-os-app`):** Songwriter **`<optgroup>`** groups (**Shipped (full slice)** / **Ready to build** / **In library**); Arranger **`<optgroup>`** groups (**Big band core** / **Charts & studio**); Song Mode helper text under **Arranger + Era** (style pairing / soft planning hints). **`label htmlFor`**, **`aria-describedby`**, and visually hidden hints on Songwriter / Arranger / Era (Song Mode, Big Band, String Quartet). **`HomeGenerate.tsx`**.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`** — ECM **`ecm_chamber`** variant-seed sweep mitigation; **Bacharach / Fagen** UI-vs-engine product note; **`bill_evans`** registry parity; smoke-tier aggregate PASS definition (**47**) + **`CLAUDE.md`** cross-sync instruction; **Smoke tier — maintenance checklist** when **`runSmokeTests.ts`** changes; **`docs/COMPOSER_OS_BACHARACH_FAGEN_ROADMAP_NOTE.md`** (and Pandoc **`.docx`**) for editor handoff.
+- **User guide:** **`docs/USER_GUIDE.md`** — **Songwriter & Arranger dropdowns (Song Mode)** subsection; **`apps/composer-os-app/src/pages/UserGuide.tsx`** — grouped-dropdown paragraph mirroring the guide.
+- **Harness:** **`engines/composer-os-v2/tests/runSmokeTests.ts`** file-header reminder to sync **`CLAUDE.md`** + roadmap after allowlist edits; **`npm run test:composer-smoke`** aggregate **`Passed: 47`** (**Wayne Shorter** slice smoke + **ECM chamber variant sweep** among suites).
+
 ## [2026-04-29] Wayne Shorter — d1–d5 post-bop devices + structural fixes + eval pass (`wayneShorterSlice.ts`)
 
 - **Chord pool:** Post-bop chromatic harmony layered on locked progression via **`precomputeWayneShorterEffectiveHarmonyBars`** — draws from **`SONGWRITER_CHORD_POOLS.wayne_shorter`** (m9, maj7#11, m11, sus quartal, altered extensions, slash bass rows).

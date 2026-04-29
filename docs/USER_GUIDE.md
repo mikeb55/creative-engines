@@ -58,6 +58,12 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **fusion:** modal, sus colours
 - **contemporary:** most permissive palette
 
+### Songwriter & Arranger dropdowns (Song Mode)
+
+- **Songwriter** uses three groups: **Shipped (full slice)** (writers with full golden-path slice plumbing in the engine), **Ready to build** (strong Song Mode behaviour; not yet packaged like the newest slice template), and **In library** (catalogue ids for rules, pairing, and planning).
+- **Arranger** uses two groups: **Big band core (research-backed)** (Ellington, Basie, Thad Jones, Schneider — engine-aligned ids first) and **Charts & studio voices** (remaining arrangers, sorted by name).
+- **Arranger + Era:** A short caption under those fields explains that they **nudge style pairing** and era-aware harmony colour in **compiled song planning** — soft hints only; they do **not** retarget Big Band or String Quartet ensemble engines by themselves.
+
 ### Indie Art Pop alternate guitar tuning (Song Mode, optional)
 
 - Available in Song Mode when you choose **Indie Art Pop** style.
