@@ -855,6 +855,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
   const ajLockedTruth = mdLockedTruth?.jobimEffectiveHarmonyBars;
+  const hhLockedTruth = mdLockedTruth?.herbieHancockEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -940,7 +941,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                   lockedHarmonyBarsAuthoritative &&
                                   ajLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                 ? ajLockedTruth
-                                : lockedHarmonyBarsAuthoritative;
+                                : mdLockedTruth?.songwriterStyleId === 'herbie_hancock' &&
+                                    Array.isArray(hhLockedTruth) &&
+                                    hhLockedTruth.length === tbLockedTruth &&
+                                    lockedHarmonyBarsAuthoritative &&
+                                    hhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                  ? hhLockedTruth
+                                  : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1228,6 +1235,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       jobimSliceReceipt: gp.context.generationMetadata.jobimSliceReceipt,
       jobimEffectiveHarmonyBars: gp.context.generationMetadata.jobimEffectiveHarmonyBars,
       jobimAntiElaborationGuards: gp.context.generationMetadata.jobimAntiElaborationGuards,
+      herbieHancockDiagnostics: gp.context.generationMetadata.herbieHancockDiagnostics,
+      herbieHancockDeviceReceipts: gp.context.generationMetadata.herbieHancockDeviceReceipts,
+      herbieHancockSliceReceipt: gp.context.generationMetadata.herbieHancockSliceReceipt,
+      herbieHancockEffectiveHarmonyBars: gp.context.generationMetadata.herbieHancockEffectiveHarmonyBars,
+      herbieHancockAntiElaborationGuards: gp.context.generationMetadata.herbieHancockAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

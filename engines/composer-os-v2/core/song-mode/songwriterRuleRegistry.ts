@@ -506,6 +506,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('jobim.line_led_resolution', 'Voice-led cadences vs textbook ii–V packs (placeholder)', 'songwriter', 'harmony', 9, 'chorus'),
     R('jobim.soft_terminal', 'Terminal 6/9 / maj6 resting colours over blunt maj7 (placeholder)', 'songwriter', 'harmony', 8, 'form'),
   ],
+  herbie_hancock: [
+    R('hancock.sus_field', 'Suspended tonic/dominant ambiguity fields (placeholder)', 'songwriter', 'harmony', 9, 'global'),
+    R('hancock.altered_dom', 'Altered dominant colour regions vs literal V7 (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
+    R('hancock.pedal_upper', 'Pedal bass / upper-structure slash colours (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
+    R('hancock.form_reroute', 'Formal return blur vs orthodox turnaround (placeholder)', 'songwriter', 'harmony', 8, 'form'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

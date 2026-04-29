@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent update (2026-04-29)
 
-**Smoke tier (2026-04-29):** **`npm run test:composer-smoke`** aggregate **53**/0 (**20** suites). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier (2026-04-29):** **`npm run test:composer-smoke`** aggregate **54**/0 (**21** suites). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
 **Summary of work**
 
-- **Jobim Song Mode slice (2026-04-29):** **`jobimSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeJobimEffectiveHarmonyBars`**, smoke **`jobimSliceSmoke.test.ts`** — bossa / Brazilian jazz harmony (**`aj:*`** receipts; **`jb:*`** already owned by **James Brown**). Shipped **14** writer slices including **`antonio_carlos_jobim`**.
+- **Herbie Hancock Song Mode slice (2026-04-29):** **`herbieHancockSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeHerbieHancockEffectiveHarmonyBars`**, smoke **`herbieHancockSliceSmoke.test.ts`** — Blue Note post-bop harmony (**`hh:*`** receipts; **`bh:*`** Barry Harris). Shipped **15** writer slices including **`herbie_hancock`**.
+- **Jobim Song Mode slice (2026-04-29):** **`jobimSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeJobimEffectiveHarmonyBars`**, smoke **`jobimSliceSmoke.test.ts`** — bossa / Brazilian jazz harmony (**`aj:*`** receipts; **`jb:*`** already owned by **James Brown**). Shipped with **`antonio_carlos_jobim`** among the **15** slices.
 - **ECM Chamber Song Mode slice (2026-04-29):** **`ecmChamberSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeEcmChamberEffectiveHarmonyBars`**, smoke **`ecmChamberSliceSmoke.test.ts`** — sparse Nordic/modal harmony (`ec:*` receipts). **Pools ready to slice:** none (all previously queued pools shipped).
 - **Donald Fagen Song Mode slice (2026-04-29):** **`donaldFagenSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeDonaldFagenEffectiveHarmonyBars`**, smoke **`donaldFagenSliceSmoke.test.ts`** — jazz-rock precision harmony (`df:*` receipts).
-- **Locked harmony routing fix:** **`composerOsAppGeneration.ts`** (`harmonyBarsForLockedAssertions`) + **`customLockedHarmonyRouting.ts`** (`assertScoreMatchesLockedHarmonyWire`) — effective bars for **Wayne Shorter**, **Barry Harris**, **Bill Evans**, **Bacharach**, **Donald Fagen**, **ECM Chamber**, **Antônio Carlos Jobim** so Song Mode / custom harmony assertions match **`getChordForBar`** after slice precompute.
+- **Locked harmony routing fix:** **`composerOsAppGeneration.ts`** (`harmonyBarsForLockedAssertions`) + **`customLockedHarmonyRouting.ts`** (`assertScoreMatchesLockedHarmonyWire`) — effective bars for **Wayne Shorter**, **Barry Harris**, **Bill Evans**, **Bacharach**, **Donald Fagen**, **ECM Chamber**, **Antônio Carlos Jobim**, **Herbie Hancock** so Song Mode / custom harmony assertions match **`getChordForBar`** after slice precompute.
 - **Bill Evans Song Mode slice:** **`billEvansSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBillEvansEffectiveHarmonyBars`**, smoke **`billEvansSliceSmoke.test.ts`** — listed under **Shipped slices** in **`docs/COMPOSER_OS_ROADMAP.md`**.
 - **Bacharach Song Mode slice:** **`bacharachSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBacharachEffectiveHarmonyBars`**, smoke **`bacharachSliceSmoke.test.ts`**. Theatre-pop harmony symbols (`ba:*` receipts); guitar chromatic nudges remain in **`applyBacharachGuitarBarPasses`**.
 - **Barry Harris:** **`barryHarrisSlice.ts`** + smoke; **fix:** **`barry_harris`** wired into **`barsForLockedExportTruth`** in **`runGoldenPath.ts`** (export-truth parity with other locked-harmony slices).
@@ -31,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (53 rows / 20 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
+# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (54 rows / 21 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)
@@ -94,7 +95,7 @@ Key files:
 
 ### Songwriter slices (`core/song-mode/`)
 
-Each of the **14** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris, Bill Evans, Bacharach, Donald Fagen, ECM Chamber, Antônio Carlos Jobim) follows the same pattern:
+Each of the **15** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris, Bill Evans, Bacharach, Donald Fagen, ECM Chamber, Antônio Carlos Jobim, Herbie Hancock) follows the same pattern:
 - 5 harmonic devices (`d1–d5`), each with eligibility gates + anti-elaboration guards
 - `buildEffectiveHarmonyBars()` precomputes altered progressions
 - Results routed through `customLockedHarmonyRouting` into MusicXML

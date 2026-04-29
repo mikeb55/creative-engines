@@ -61,7 +61,8 @@ export type SongwriterRuleId =
   | 'wayne_shorter'
   | 'pat_metheny'
   | 'andrew_hill'
-  | 'antonio_carlos_jobim';
+  | 'antonio_carlos_jobim'
+  | 'herbie_hancock';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

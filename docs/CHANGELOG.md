@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Herbie Hancock Song Mode slice — 54/54 smoke
+
+- **feat:** **`herbieHancockSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/herbieHancockSlice.ts`**) — golden-path precompute, **`hh:*`** device receipts, **`herbieHancockEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`herbieHancockSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **54** passed / **0** failed (**21** suites). **15** shipped songwriter slices.
+- **note:** Blue Note era default — sus/quartal modal fields, engineered ambiguity, pedal constructions, anti-bebop-shell guards.
+- **note:** Harmonic research grounded in Perplexity deep research — Waters analysis, Maiden Voyage / Dolphin Dance / Speak Like a Child models, Evans vs Tyner influence mapping.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **54**/0 (**21** suites), **15** shipped slices, New territory (**Sondheim**, **Kate Bush**).
+
 ## [2026-04-29] feat: Jobim (antonio_carlos_jobim) Song Mode slice — 53/53 smoke
 
 - **feat:** **`jobimSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/jobimSlice.ts`**) — golden-path precompute, **`aj:*`** device receipts, **`jobimEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`jobimSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **53** passed / **0** failed (**20** suites). **14** shipped songwriter slices.

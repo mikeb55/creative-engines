@@ -188,6 +188,11 @@ export function writeOutputManifest(
     jobimSliceReceipt?: GenerationMetadata['jobimSliceReceipt'];
     jobimEffectiveHarmonyBars?: GenerationMetadata['jobimEffectiveHarmonyBars'];
     jobimAntiElaborationGuards?: GenerationMetadata['jobimAntiElaborationGuards'];
+    herbieHancockDiagnostics?: GenerationMetadata['herbieHancockDiagnostics'];
+    herbieHancockDeviceReceipts?: GenerationMetadata['herbieHancockDeviceReceipts'];
+    herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
+    herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
+    herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -335,6 +340,11 @@ export function writeOutputManifest(
     jobimSliceReceipt: meta.jobimSliceReceipt,
     jobimEffectiveHarmonyBars: meta.jobimEffectiveHarmonyBars,
     jobimAntiElaborationGuards: meta.jobimAntiElaborationGuards,
+    herbieHancockDiagnostics: meta.herbieHancockDiagnostics,
+    herbieHancockDeviceReceipts: meta.herbieHancockDeviceReceipts,
+    herbieHancockSliceReceipt: meta.herbieHancockSliceReceipt,
+    herbieHancockEffectiveHarmonyBars: meta.herbieHancockEffectiveHarmonyBars,
+    herbieHancockAntiElaborationGuards: meta.herbieHancockAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

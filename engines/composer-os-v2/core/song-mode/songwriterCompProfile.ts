@@ -95,6 +95,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   pat_metheny: 'keys',
   andrew_hill: 'keys',
   antonio_carlos_jobim: 'keys',
+  herbie_hancock: 'keys',
 };
 
 export function songWriterPrimaryInstrument(id: SongwriterRuleId): SongwriterPrimaryInstrumentKind {

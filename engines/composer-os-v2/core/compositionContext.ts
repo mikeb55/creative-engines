@@ -719,6 +719,28 @@ export interface GenerationMetadata {
     bluntMaj7Softened: number;
     alteredDominantReduced: number;
   };
+  /** Herbie Hancock (Blue Note post-bop / fusion harmony) — slice diagnostics + effective harmony. */
+  herbieHancockDiagnostics?: {
+    songwriterId: 'herbie_hancock';
+    barsConsidered: number;
+    susFieldTouches: number;
+    alteredDominantTouches: number;
+    colourTonicTouches: number;
+    subVColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      quartalThrottleHits: number;
+      orthodoxTurnaroundSoftened: number;
+    };
+    deviceReceipts?: string[];
+  };
+  herbieHancockSliceReceipt?: string;
+  herbieHancockEffectiveHarmonyBars?: string[];
+  herbieHancockDeviceReceipts?: string[];
+  herbieHancockAntiElaborationGuards?: {
+    quartalThrottleHits: number;
+    orthodoxTurnaroundSoftened: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

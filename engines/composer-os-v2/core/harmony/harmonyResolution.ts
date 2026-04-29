@@ -252,6 +252,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return ajEff[barIndex - 1]!;
   }
 
+  /**
+   * Herbie Hancock: `precomputeHerbieHancockEffectiveHarmonyBars` applies Blue Note post-bop harmony devices + receipts.
+   * After precompute, `herbieHancockEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const hhEff = meta?.herbieHancockEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'herbie_hancock' &&
+    Array.isArray(hhEff) &&
+    hhEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return hhEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

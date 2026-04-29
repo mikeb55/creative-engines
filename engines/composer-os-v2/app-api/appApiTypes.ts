@@ -394,4 +394,10 @@ export interface OutputEntry {
   jobimSliceReceipt?: GenerationMetadata['jobimSliceReceipt'];
   jobimEffectiveHarmonyBars?: GenerationMetadata['jobimEffectiveHarmonyBars'];
   jobimAntiElaborationGuards?: GenerationMetadata['jobimAntiElaborationGuards'];
+  /** Herbie Hancock (Blue Note post-bop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  herbieHancockDiagnostics?: GenerationMetadata['herbieHancockDiagnostics'];
+  herbieHancockDeviceReceipts?: GenerationMetadata['herbieHancockDeviceReceipts'];
+  herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
+  herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
+  herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
 }
