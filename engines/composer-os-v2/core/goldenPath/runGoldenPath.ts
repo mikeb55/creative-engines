@@ -1924,6 +1924,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const syEx = mdEx?.sonicYouthEffectiveHarmonyBars;
   const pmEx = mdEx?.patMethenyEffectiveHarmonyBars;
   const wsEx = mdEx?.wayneShorterEffectiveHarmonyBars;
+  const bhEx = mdEx?.barryHarrisEffectiveHarmonyBars;
+  const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
       ? bwEx
@@ -1939,7 +1941,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                 ? pmEx
                 : mdEx?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsEx) && wsEx.length === tbEx
                   ? wsEx
-                  : lockedForExport;
+                  : mdEx?.songwriterStyleId === 'barry_harris' && Array.isArray(bhEx) && bhEx.length === tbEx
+                    ? bhEx
+                    : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
+                      ? beEx
+                      : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -2007,6 +2013,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const pmLt = mdLt?.patMethenyEffectiveHarmonyBars;
     const wsLt = mdLt?.wayneShorterEffectiveHarmonyBars;
     const bhLt = mdLt?.barryHarrisEffectiveHarmonyBars;
+    const beLt = mdLt?.billEvansEffectiveHarmonyBars;
     const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
         ? bwLt
@@ -2026,7 +2033,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                       ? wsLt
                       : mdLt?.songwriterStyleId === 'barry_harris' && Array.isArray(bhLt) && bhLt.length === tbLt
                         ? bhLt
-                        : lockedBars;
+                        : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
+                          ? beLt
+                          : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

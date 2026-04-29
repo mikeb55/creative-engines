@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Bill Evans Song Mode slice — 49/49 smoke
+
+- **Engine (`engines/composer-os-v2`):** **`billEvansSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/billEvansSlice.ts`**) — Bill Evans harmony devices + **`precomputeBillEvansEffectiveHarmonyBars`**, metadata + manifest echo; **`billEvansSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **49** passed / **0** failed (**16** suites).
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`** — **`bill_evans`** under **Shipped slices** (**10** total); removed from **Pools ready to slice**. **`CLAUDE.md`** — ten shipped slices + smoke **49**/0.
+
+## [2026-04-29] fix: Barry Harris export-truth gap in runGoldenPath.ts
+
+- **`engines/composer-os-v2/core/goldenPath/runGoldenPath.ts`:** **`barry_harris`** included in **`barsForLockedExportTruth`** / locked-export chain so disk/MusicXML truth matches **`barryHarrisEffectiveHarmonyBars`** like other songwriter slices with precomputed effective harmony.
+
 ## [2026-04-29] feat: Barry Harris Song Mode slice (48/48 smoke)
 
 - **Engine (`engines/composer-os-v2`):** **`barryHarrisSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/barryHarrisSlice.ts`**) — bebop / sixth–diminished harmony passes, **`bh:*`** device receipts, **`barryHarrisEffectiveHarmonyBars`** + **`getChordForBar`**, metadata + app manifest echo. Post-score velocity / sixth–dim melody nudges remain **`style-modules/barry-harris/moduleApply.ts`**. **Smoke:** **`tests/barryHarrisSliceSmoke.test.ts`** + **`runSmokeTests.ts`** — aggregate **`npm run test:composer-smoke`:** **48** passed / **0** failed (**15** suites).

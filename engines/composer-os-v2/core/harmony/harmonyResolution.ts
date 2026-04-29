@@ -177,6 +177,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return bhEff[barIndex - 1]!;
   }
 
+  /**
+   * Bill Evans: `precomputeBillEvansEffectiveHarmonyBars` applies impressionist extension / sus / delayed cadence devices.
+   * After precompute, `billEvansEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const beEff = meta?.billEvansEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bill_evans' &&
+    Array.isArray(beEff) &&
+    beEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return beEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

@@ -6,8 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Summary of work**
 
-- **Barry Harris Song Mode slice:** **`barryHarrisSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`barryHarrisEffectiveHarmonyBars`**, smoke **`barryHarrisSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **48**/0 (**15** suites). Shipped-writer list in **`docs/COMPOSER_OS_ROADMAP.md`** § **Shipped slices**.
-- **Registry / engine:** `bill_evans` is a first-class `SongwriterRuleId` (registry, style profile, comp profile, aliases). There is still no `billEvansSlice.ts` golden-path slice; generation uses the generic keys path until a slice exists.
+- **Bill Evans Song Mode slice:** **`billEvansSlice.ts`** (`core/song-mode/`) + golden-path re-export, **`precomputeBillEvansEffectiveHarmonyBars`**, smoke **`billEvansSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **49**/0 (**16** suites). Listed under **Shipped slices** in **`docs/COMPOSER_OS_ROADMAP.md`**.
+- **Barry Harris:** **`barryHarrisSlice.ts`** + smoke; **fix:** **`barry_harris`** wired into **`barsForLockedExportTruth`** in **`runGoldenPath.ts`** (export-truth parity with other locked-harmony slices).
+- **Registry / engine:** `bill_evans` remains a first-class `SongwriterRuleId`; duo golden-path generation uses **`billEvansSlice`** when primary is **`bill_evans`**.
 - **Generate UI:** Songwriter and Arranger dropdowns use `<optgroup>` groupings; Song Mode has helper copy for arranger/era pairing. **Accessibility:** `label` `htmlFor` ↔ control `id`, `aria-describedby` to visually hidden optgroup context (and Song Mode Era → existing pairing paragraph `id`). Implemented in **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** for Song Mode, Big Band, and String Quartet rows.
 - **Docs:** Roadmap (ECM sweep note, Bacharach/Fagen product note, smoke checklist); **`docs/USER_GUIDE.md`** + **`UserGuide.tsx`** describe grouped dropdowns; **`docs/CHANGELOG.md`** — Composer OS entry dated **2026-04-29** (empty **`[Unreleased]`** until the next drop).
 
@@ -16,14 +17,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. After UI changes under **`apps/composer-os-app/`**, run **`npm run build`** in that package (or **`npm run dev`** for manual QA).
 2. Before merging engine/harness changes, run **`npm run test:composer-smoke`** and confirm the aggregate PASS count matches **`CLAUDE.md`** and **`docs/COMPOSER_OS_ROADMAP.md`** “Current” when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 3. New or moved songwriter rows in grouped dropdowns: keep **`SONGWRITER_GROUP_*` / `SONGWRITER_OPTIONS`** in sync and extend **a11y** copy in **`HomeGenerate.tsx`** if group labels or semantics change.
-4. For a full slice (e.g. future `billEvansSlice`), follow **`brianWilsonPetSoundsSlice.ts`**, add smoke + eval script pattern, and log in **`CHANGELOG.md`**.
+4. For a new full slice, follow **`brianWilsonPetSoundsSlice.ts`**, add smoke + eval script pattern, and log in **`CHANGELOG.md`**.
 
 ## Commands
 
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (48 rows / 15 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
+# Smoke tier (~5 min) — prints aggregate PASS count from engines/composer-os-v2/tests/runSmokeTests.ts (49 rows / 16 suites as of 2026-04-29; update CLAUDE + roadmap Current after allowlist edits)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)
@@ -86,7 +87,7 @@ Key files:
 
 ### Songwriter slices (`core/song-mode/`)
 
-Each of the **9** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris) follows the same pattern:
+Each of the **10** shipped writer slices (Brian Wilson, Stevie Wonder, Radiohead, James Brown, Joni Mitchell, Sonic Youth, Pat Metheny, Wayne Shorter, Barry Harris, Bill Evans) follows the same pattern:
 - 5 harmonic devices (`d1–d5`), each with eligibility gates + anti-elaboration guards
 - `buildEffectiveHarmonyBars()` precomputes altered progressions
 - Results routed through `customLockedHarmonyRouting` into MusicXML

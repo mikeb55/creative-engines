@@ -610,6 +610,28 @@ export interface GenerationMetadata {
     slashFlattenedToRoot: number;
     denseAlterationReduced: number;
   };
+  /** Bill Evans (impressionist / rootless-style extensions) — slice diagnostics + effective harmony. */
+  billEvansDiagnostics?: {
+    songwriterId: 'bill_evans';
+    barsConsidered: number;
+    extensionTouches: number;
+    susModalTouches: number;
+    quartalColourTouches: number;
+    delayedResolutionTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bareTriadRaised: number;
+      strongCadenceSoftened: number;
+    };
+    deviceReceipts?: string[];
+  };
+  billEvansSliceReceipt?: string;
+  billEvansEffectiveHarmonyBars?: string[];
+  billEvansDeviceReceipts?: string[];
+  billEvansAntiElaborationGuards?: {
+    bareTriadRaised: number;
+    strongCadenceSoftened: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */
