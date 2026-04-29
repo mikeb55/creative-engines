@@ -5,12 +5,15 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ChordEvent, MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { seededUnit } from './guitarBassDuoHarmony';
 import { snapAttackBeatToGrid, normalizeMeasureToEighthBeatGrid } from '../score-integrity/duoEighthBeatGrid';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isProtectedBar } from '../score-integrity/identityLock';
+import { getChordForBar } from '../harmony/harmonyResolution';
+import { SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9 } from '../motif/motifEngineTypes';
 
 const GRID_16TH = 0.25;
 
@@ -80,6 +83,102 @@ function snapDurationDuoFunk(d: number): number {
   const s16 = Math.round(d / GRID_16TH) * GRID_16TH;
   const s8 = Math.round(s16 * 2) / 2;
   return Math.max(0.5, Math.min(BEATS_PER_MEASURE, s8));
+}
+
+/** Timing edit window inside one bar (quarter-beat space). */
+interface OverlaySpan {
+  barIndex: number;
+  startBeat: number;
+  endBeat: number;
+}
+
+type FunkTemplateId = 'bias' | 'anticipation' | 'grooveHole';
+
+/** Full funk rhythm passes (anticipation extend + groove-hole shorten). */
+export const FULL_TEMPLATES: readonly FunkTemplateId[] = ['bias', 'anticipation', 'grooveHole'];
+/** Phrase-final / hook-adjacent: velocity/articulation only — no span mutations. */
+export const CONSERVATIVE_TEMPLATES: readonly FunkTemplateId[] = ['bias'];
+
+function parentChordShape(m: MeasureModel, context: CompositionContext): {
+  symbol: string;
+  isPhraseFinal: boolean;
+  isHookBar: boolean;
+} {
+  const symbol = (m.chord?.trim() && m.chord) || getChordForBar(m.index, context);
+  const isPhraseFinal = m.momentTag === 'cadence' || (m.index > 0 && m.index % 4 === 0);
+  const isHookBar =
+    isProtectedBar(m.index, context) ||
+    m.index === SONG_MODE_MOTIF_BAR_9 ||
+    m.index === SONG_MODE_MOTIF_BAR_17;
+  return { symbol, isPhraseFinal, isHookBar };
+}
+
+function selectFunkTemplates(m: MeasureModel, context: CompositionContext): readonly FunkTemplateId[] {
+  const parentChord = parentChordShape(m, context);
+  let templateSet: readonly FunkTemplateId[] = FULL_TEMPLATES;
+  if (parentChord.isPhraseFinal || parentChord.isHookBar) {
+    templateSet = CONSERVATIVE_TEMPLATES;
+  }
+  return templateSet;
+}
+
+function firstChordEventInMeasure(measure: MeasureModel): ChordEvent | undefined {
+  for (const e of measure.events) {
+    if (e.kind === 'chord') return e as ChordEvent;
+  }
+  return undefined;
+}
+
+/** Phrase / section boundary — uses `form.sections` start bars + 4-bar duo phrase grid. */
+function crossesPhraseBoundary(span: OverlaySpan, context: CompositionContext): boolean {
+  const sec = context.form?.sections;
+  if (sec?.length) {
+    const sectionStarts = new Set(sec.map((s) => s.startBar).filter((b) => b > 1));
+    if (sectionStarts.has(span.barIndex) && span.startBeat < 1.0) return true;
+  }
+  if ((span.barIndex - 1) % 4 === 0 && span.startBeat < 0.75) return true;
+  if (span.barIndex % 4 === 0 && span.endBeat > 3.5) return true;
+  return false;
+}
+
+/** Hook statement/return + motif landmark bars — no timing overlay mutations. */
+function touchesHookAnchorGuard(span: OverlaySpan, context: CompositionContext): boolean {
+  if (isProtectedBar(span.barIndex, context)) return true;
+  if (span.barIndex === SONG_MODE_MOTIF_BAR_9 || span.barIndex === SONG_MODE_MOTIF_BAR_17) return true;
+  return false;
+}
+
+function isInsideParentChord(span: OverlaySpan, chordEvent: ChordEvent | undefined): boolean {
+  if (!chordEvent) return true;
+  const c0 = chordEvent.startBeat;
+  const c1 = chordEvent.startBeat + chordEvent.duration;
+  return span.startBeat >= c0 - 1e-3 && span.endBeat <= c1 + 1e-3;
+}
+
+/** Cadence-tagged bars + phrase-end timing windows (last beat of phrase-final bar). */
+function isProtectedCadenceWindow(span: OverlaySpan, measure: MeasureModel): boolean {
+  if (measure.momentTag === 'cadence' || measure.momentTag === 'handoff') return true;
+  if (measure.momentTag === 'peak') return true;
+  if (span.barIndex % 4 === 0 && span.endBeat > 3.25) return true;
+  return false;
+}
+
+/**
+ * Commit a timing-affecting overlay span only if all structural guards pass.
+ * Does not mutate chord symbols or `ChordEvent` payloads — timing-only overlay.
+ */
+function commitOverlaySpan(
+  span: OverlaySpan,
+  context: CompositionContext,
+  measure: MeasureModel,
+  chordEvent: ChordEvent | undefined,
+  emit: () => void
+): void {
+  if (crossesPhraseBoundary(span, context)) return;
+  if (touchesHookAnchorGuard(span, context)) return;
+  if (!isInsideParentChord(span, chordEvent)) return;
+  if (isProtectedCadenceWindow(span, measure)) return;
+  emit();
 }
 
 /**
@@ -184,8 +283,11 @@ function applyJamesBrownFunkToMeasure(
   m: MeasureModel,
   barIndex: number,
   seed: number,
-  weights: JamesBrownFunkWeights
+  weights: JamesBrownFunkWeights,
+  context: CompositionContext
 ): void {
+  const templateSet = selectFunkTemplates(m, context);
+  const chordEvent = firstChordEventInMeasure(m);
   const snap = snapshotMeasureNotes(m);
   let salt = 0;
   const rng = () => seededUnit(seed, barIndex, 94200 + salt++);
@@ -200,39 +302,53 @@ function applyJamesBrownFunkToMeasure(
       applyJamesBrownFunkBias(n, n.startBeat, barStart, barEnd, weights, rng);
     }
 
-    for (const n of notes) {
-      const sb = n.startBeat;
-      const andOf1 = Math.abs(sb - 0.5) < 0.04;
-      const andOf3 = Math.abs(sb - 2.5) < 0.04;
-      if (andOf1 || andOf3) {
-        const targetBeat = andOf1 ? 1 : 3;
-        const headroom = targetBeat - sb;
-        const want = Math.min(GRID_16TH * 2, Math.max(0, headroom - n.duration + 0.02));
-        extendAnticipationIntoTarget(measure, n, want);
+    if (templateSet.includes('anticipation')) {
+      for (const n of notes) {
+        const sb = n.startBeat;
+        const andOf1 = Math.abs(sb - 0.5) < 0.04;
+        const andOf3 = Math.abs(sb - 2.5) < 0.04;
+        if (andOf1 || andOf3) {
+          const targetBeat = andOf1 ? 1 : 3;
+          const headroom = targetBeat - sb;
+          const want = Math.min(GRID_16TH * 2, Math.max(0, headroom - n.duration + 0.02));
+          const spanEnd = snapAttackBeatToGrid(n.startBeat + n.duration + want);
+          const span: OverlaySpan = { barIndex, startBeat: n.startBeat, endBeat: spanEnd };
+          commitOverlaySpan(span, context, measure, chordEvent, () => extendAnticipationIntoTarget(measure, n, want));
+        }
       }
     }
 
-    for (let gi = 0; gi < notes.length; gi++) {
-      const n = notes[gi]!;
-      const sb = n.startBeat;
-      const onBeat2 = Math.abs(sb - 1) < 0.04;
-      const onBeat4 = Math.abs(sb - 3) < 0.04;
-      const andOf1 = Math.abs(sb - 0.5) < 0.04;
-      const andOf3 = Math.abs(sb - 2.5) < 0.04;
-      if (onBeat2 || onBeat4 || andOf1 || andOf3) continue;
-      if (seededUnit(seed, barIndex, 94280 + gi) >= 0.38 || n.duration < 1.0 - 1e-3) continue;
-      const oldDur = n.duration;
-      const newDur = snapDurationDuoFunk(n.duration - 0.5);
-      if (newDur >= oldDur - 1e-4) continue;
-      n.duration = newDur;
-      balanceSpanAfterShorten(measure, n, oldDur, newDur);
+    if (templateSet.includes('grooveHole')) {
+      for (let gi = 0; gi < notes.length; gi++) {
+        const n = notes[gi]!;
+        const sb = n.startBeat;
+        const onBeat2 = Math.abs(sb - 1) < 0.04;
+        const onBeat4 = Math.abs(sb - 3) < 0.04;
+        const andOf1 = Math.abs(sb - 0.5) < 0.04;
+        const andOf3 = Math.abs(sb - 2.5) < 0.04;
+        if (onBeat2 || onBeat4 || andOf1 || andOf3) continue;
+        if (seededUnit(seed, barIndex, 94280 + gi) >= 0.38 || n.duration < 1.0 - 1e-3) continue;
+        const oldDur = n.duration;
+        const newDur = snapDurationDuoFunk(n.duration - 0.5);
+        if (newDur >= oldDur - 1e-4) continue;
+        const span: OverlaySpan = { barIndex, startBeat: n.startBeat, endBeat: snapAttackBeatToGrid(n.startBeat + newDur) };
+        commitOverlaySpan(span, context, measure, chordEvent, () => {
+          n.duration = newDur;
+          balanceSpanAfterShorten(measure, n, oldDur, newDur);
+        });
+      }
     }
   });
 }
 
-function applyJamesBrownFunkToPart(part: PartModel, seed: number, weights: JamesBrownFunkWeights): void {
+function applyJamesBrownFunkToPart(
+  part: PartModel,
+  seed: number,
+  weights: JamesBrownFunkWeights,
+  context: CompositionContext
+): void {
   for (const m of part.measures) {
-    applyJamesBrownFunkToMeasure(m, m.index, seed, weights);
+    applyJamesBrownFunkToMeasure(m, m.index, seed, weights, context);
   }
 }
 
@@ -249,8 +365,8 @@ export function applyJamesBrownFunkOverlay(score: ScoreModel, context: Compositi
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;
   const bass = score.parts.find((p) => p.id === 'bass') as PartModel | undefined;
-  if (guitar) applyJamesBrownFunkToPart(guitar, context.seed, weights);
-  if (bass) applyJamesBrownFunkToPart(bass, context.seed + 17, weights);
+  if (guitar) applyJamesBrownFunkToPart(guitar, context.seed, weights, context);
+  if (bass) applyJamesBrownFunkToPart(bass, context.seed + 17, weights, context);
 
   meta.songModeJamesBrownFunkApplied = true;
   meta.songModeJamesBrownFunkReceiptTag =

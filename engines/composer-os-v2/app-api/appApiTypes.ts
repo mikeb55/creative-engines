@@ -350,4 +350,12 @@ export interface OutputEntry {
   patMethenyEffectiveHarmonyBars?: GenerationMetadata['patMethenyEffectiveHarmonyBars'];
   patMethenyAntiElaborationGuards?: GenerationMetadata['patMethenyAntiElaborationGuards'];
   patMethenyPedalHoldMaxBars?: GenerationMetadata['patMethenyPedalHoldMaxBars'];
+  patMethenyEligibilityStats?: GenerationMetadata['patMethenyEligibilityStats'];
+  /** Wayne Shorter (post-bop) slice — diagnostics / receipts (Song Mode manifest echo). */
+  wayneShorterDiagnostics?: GenerationMetadata['wayneShorterDiagnostics'];
+  wayneShorterDeviceReceipts?: GenerationMetadata['wayneShorterDeviceReceipts'];
+  wayneShorterSliceReceipt?: GenerationMetadata['wayneShorterSliceReceipt'];
+  wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
+  wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
+  wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
 }

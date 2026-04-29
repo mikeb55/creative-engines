@@ -1907,6 +1907,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const jmEx = mdEx?.joniMitchellEffectiveHarmonyBars;
   const syEx = mdEx?.sonicYouthEffectiveHarmonyBars;
   const pmEx = mdEx?.patMethenyEffectiveHarmonyBars;
+  const wsEx = mdEx?.wayneShorterEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
       ? bwEx
@@ -1920,7 +1921,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
               ? syEx
               : mdEx?.songwriterStyleId === 'pat_metheny' && Array.isArray(pmEx) && pmEx.length === tbEx
                 ? pmEx
-                : lockedForExport;
+                : mdEx?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsEx) && wsEx.length === tbEx
+                  ? wsEx
+                  : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -1986,6 +1989,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const jmLt = mdLt?.joniMitchellEffectiveHarmonyBars;
     const syLt = mdLt?.sonicYouthEffectiveHarmonyBars;
     const pmLt = mdLt?.patMethenyEffectiveHarmonyBars;
+    const wsLt = mdLt?.wayneShorterEffectiveHarmonyBars;
     const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
         ? bwLt
@@ -2001,7 +2005,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                   ? syLt
                   : mdLt?.songwriterStyleId === 'pat_metheny' && Array.isArray(pmLt) && pmLt.length === tbLt
                     ? pmLt
-                    : lockedBars;
+                    : mdLt?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsLt) && wsLt.length === tbLt
+                      ? wsLt
+                      : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

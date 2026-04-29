@@ -70,6 +70,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
+  { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
@@ -79,6 +80,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'debussy', label: 'Debussy' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
+  { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
@@ -96,16 +98,79 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'prince', label: 'Prince' },
   { id: 'prokofiev', label: 'Prokofiev' },
   { id: 'randy_newman', label: 'Randy Newman' },
+  { id: 'radiohead', label: 'Radiohead' },
   { id: 'ravel', label: 'Ravel' },
   { id: 'richard_thompson', label: 'Richard Thompson' },
   { id: 'schubert', label: 'Schubert' },
   { id: 'shostakovich', label: 'Shostakovich' },
   { id: 'smokey_robinson', label: 'Smokey Robinson' },
+  { id: 'sonic_youth', label: 'Sonic Youth' },
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
+
+/** Primary ordering inside each optgroup; excludes Bill Evans until a `SongwriterRuleId` exists in core. */
+const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
+  'brian_wilson',
+  'stevie_wonder',
+  'radiohead',
+  'james_brown',
+  'joni_mitchell',
+  'sonic_youth',
+  'pat_metheny',
+  'wayne_shorter',
+];
+
+const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [
+  'bacharach',
+  'barry_harris',
+  'donald_fagen',
+  'ecm_chamber',
+];
+
+const SONGWRITER_OPTION_BY_ID = new Map(SONGWRITER_OPTIONS.map((o) => [o.id, o]));
+const SONGWRITER_GROUP_SHIPPED_IDS = new Set(SONGWRITER_GROUP_SHIPPED_ORDER);
+const SONGWRITER_GROUP_READY_IDS = new Set(SONGWRITER_GROUP_READY_ORDER);
+
+const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS.filter(
+  (o) => !SONGWRITER_GROUP_SHIPPED_IDS.has(o.id) && !SONGWRITER_GROUP_READY_IDS.has(o.id)
+).sort((a, b) => a.label.localeCompare(b.label));
+
+function SongwriterSelectOptionGroups() {
+  return (
+    <>
+      <optgroup label="Shipped (full slice)">
+        {SONGWRITER_GROUP_SHIPPED_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={id} value={o.id}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label="Ready to build">
+        {SONGWRITER_GROUP_READY_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={id} value={o.id}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label="In library">
+        {SONGWRITER_LIBRARY_ORDERED.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </optgroup>
+    </>
+  );
+}
 
 const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set(['donald_fagen', 'barry_harris']);
 type HarmonyDisplayModeUi = 'raw' | 'enriched' | 'compare';
@@ -2658,11 +2723,7 @@ export function HomeGenerate({
               }}
               disabled={loading}
             >
-              {SONGWRITER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <SongwriterSelectOptionGroups />
             </select>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
@@ -2716,11 +2777,7 @@ export function HomeGenerate({
               disabled={loading}
             >
               <option value="">None</option>
-              {SONGWRITER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <SongwriterSelectOptionGroups />
             </select>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
@@ -2797,11 +2854,7 @@ export function HomeGenerate({
               onChange={(e) => setSongwriterStyle(e.target.value)}
               disabled={loading}
             >
-              {SONGWRITER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <SongwriterSelectOptionGroups />
             </select>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
@@ -2868,11 +2921,7 @@ export function HomeGenerate({
               onChange={(e) => setSongwriterStyle(e.target.value)}
               disabled={loading}
             >
-              {SONGWRITER_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <SongwriterSelectOptionGroups />
             </select>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>

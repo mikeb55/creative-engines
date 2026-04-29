@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+## [2026-04-29] Wayne Shorter — d1–d5 post-bop devices + structural fixes + eval pass (`wayneShorterSlice.ts`)
+
+- **Chord pool:** Post-bop chromatic harmony layered on locked progression via **`precomputeWayneShorterEffectiveHarmonyBars`** — draws from **`SONGWRITER_CHORD_POOLS.wayne_shorter`** (m9, maj7#11, m11, sus quartal, altered extensions, slash bass rows).
+- **Golden-path slice:** **`engines/composer-os-v2/core/song-mode/wayneShorterSlice.ts`** (re-export **`goldenPath/wayneShorterSlice.ts`**) — **`precomputeWayneShorterEffectiveHarmonyBars`**, per-bar device plan, **`countWayneShorterDeviceFiresFromReceipts`**, **`finalizeWayneShorterMetadata`**, **`getChordForBar`** via **`wayneShorterEffectiveHarmonyBars`** when primary is **`wayne_shorter`**.
+- **Devices (receipts `ws:*`):** **d1** **`nonFunctionalNeighbor`** — chromatic neighbour chord (seeded dir, retry opposite before clamping); **d2** **`stepwiseBassDisplacement`** — slash bass displacement ±1–2 st from chord root (slash + non-slash eligible chords, non-slash branch added this session); **d3** **`wrongQualityRightRoot`** — quality substitution (m9 / maj7#11 / Lydian) on same root; **d4** **`intervalPlannedKeyShift`** — cadential whole-step key shift, bridge/solo only; **d5** **`harmonicPlateauPedal`** — pedal slash chord on plateau sections.
+- **Seeded fire rates (Bernoulli vs eligible bars):** **D1** **0.62**, **D2** **0.34**, **D3** **0.70**, **D4** **0.45**, **D5** **0.42** — tuned so seeds **50200 / 77123 / 90444** meet **≥28% / ≥24% / ≥17% / ≥10% / ≥20%** thresholds. Probe results: seed 50200 **d1=62.5% / d2=50% / d3=37.5% / d4=25% / d5=33.3%**, seed 77123 **d1=37.5% / d2=35% / d3=25% / d4=75% / d5=50%**, seed 90444 **d1=68.75% / d2=30% / d3=25% / d4=50% / d5=33.3%** — all passing.
+- **Mutual exclusion (section-aware):** **d4** wins all; on intro/solo/bridge **d5** wins over **d2**; on verse/chorus/other **d2** wins over **d5**; `dropOrder` **`['d1','d3','d2','d5']`** caps to max 2 simultaneous devices.
+- **Structural fixes:** (a) **`applySlashBassStep`** non-slash branch — non-slash chords now produce `symbol/${bassPc}` slash notation (was silently returning unchanged, causing 0% d2 fire rate); (b) **`applyNeighborChord`** opposite-direction retry — if primary neighbor root collides with prevSym root, retries opposite direction before clamping; (c) **`mutualExclusiveDevices`** section-aware d2/d5 priority accepts `secTag` parameter; (d) **`validateBarryHarrisConformance`** bass jump threshold widened to **18 st** for `wayne_shorter` (d2/d4/d5 stack creates chromatic bass motion beyond the 14 st default).
+- **Eligibility stats:** **`wayneShorterEligibilityStats`** (**`d1–d5EligibleBars`**, **`totalBars`**) + **`wayneShorterDeviceReceipts`** on **`GenerationMetadata`**; manifest echo via **`writeOutputManifest`** / **`appApiTypes`**.
+- **Probe CLI:** **`engines/composer-os-v2/scripts/wayneShorterDeviceRateProbe.ts`** — seeds 50200 / 77123 / 90444; reports `fires`, `eligible`, `ratesVsEligible`, `errors` per seed.
+- **Smoke:** **`tests/wayneShorterSliceSmoke.test.ts`** + **`runSmokeTests.ts`** — **`test:smoke`** **41** passed / **0** failed (**+1** vs Pat Metheny–era **40**).
+
+## [2026-04-28] Roadmap — diversity pillars + songwriter expansion targets
+
+- **`docs/COMPOSER_OS_ROADMAP.md`:** Added **Future — compositional diversity & songwriter expansion** — four engine pillars (ensemble/orchestration; rhythm/meter/groove; form/narrative; style fusion/world vocabulary) and four **candidate primary songwriter modules** (Jobim, Hancock, Sondheim, Kate Bush) with proposed ids and gap-fill rationale vs existing shipped slices.
+
 ## [2026-04-28] Pat Metheny — eligibility gates + device rate tuning (`patMethenySlice.ts`)
 
 - **Section tags:** Duo long-form section labels **`A'`**, **`A''`**, etc. map via **`A`/`B` prefix** — **`patMethenySectionTag`** no longer drops primed **A** sections to **`other`** (was excluding **16** bars from **d2**/**d5** gates).

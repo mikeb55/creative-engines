@@ -848,6 +848,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const jmLockedTruth = mdLockedTruth?.joniMitchellEffectiveHarmonyBars;
   const syLockedTruth = mdLockedTruth?.sonicYouthEffectiveHarmonyBars;
   const pmLockedTruth = mdLockedTruth?.patMethenyEffectiveHarmonyBars;
+  const wsLockedTruth = mdLockedTruth?.wayneShorterEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -891,7 +892,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                     lockedHarmonyBarsAuthoritative &&
                     pmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                   ? pmLockedTruth
-                  : lockedHarmonyBarsAuthoritative;
+                  : mdLockedTruth?.songwriterStyleId === 'wayne_shorter' &&
+                      Array.isArray(wsLockedTruth) &&
+                      wsLockedTruth.length === tbLockedTruth &&
+                      lockedHarmonyBarsAuthoritative &&
+                      wsLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                    ? wsLockedTruth
+                    : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1100,6 +1107,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       patMethenyEffectiveHarmonyBars: gp.context.generationMetadata.patMethenyEffectiveHarmonyBars,
       patMethenyAntiElaborationGuards: gp.context.generationMetadata.patMethenyAntiElaborationGuards,
       patMethenyPedalHoldMaxBars: gp.context.generationMetadata.patMethenyPedalHoldMaxBars,
+      patMethenyEligibilityStats: gp.context.generationMetadata.patMethenyEligibilityStats,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

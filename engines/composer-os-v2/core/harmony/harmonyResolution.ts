@@ -147,6 +147,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return pmEff[barIndex - 1]!;
   }
 
+  /**
+   * Wayne Shorter: `precomputeWayneShorterEffectiveHarmonyBars` applies post-bop devices + receipts.
+   * After precompute, `wayneShorterEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const wsEff = meta?.wayneShorterEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'wayne_shorter' &&
+    Array.isArray(wsEff) &&
+    wsEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return wsEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

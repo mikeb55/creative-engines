@@ -151,6 +151,13 @@ export function writeOutputManifest(
     patMethenyEffectiveHarmonyBars?: GenerationMetadata['patMethenyEffectiveHarmonyBars'];
     patMethenyAntiElaborationGuards?: GenerationMetadata['patMethenyAntiElaborationGuards'];
     patMethenyPedalHoldMaxBars?: GenerationMetadata['patMethenyPedalHoldMaxBars'];
+    patMethenyEligibilityStats?: GenerationMetadata['patMethenyEligibilityStats'];
+    wayneShorterDiagnostics?: GenerationMetadata['wayneShorterDiagnostics'];
+    wayneShorterDeviceReceipts?: GenerationMetadata['wayneShorterDeviceReceipts'];
+    wayneShorterSliceReceipt?: GenerationMetadata['wayneShorterSliceReceipt'];
+    wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
+    wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
+    wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -261,6 +268,13 @@ export function writeOutputManifest(
     patMethenyEffectiveHarmonyBars: meta.patMethenyEffectiveHarmonyBars,
     patMethenyAntiElaborationGuards: meta.patMethenyAntiElaborationGuards,
     patMethenyPedalHoldMaxBars: meta.patMethenyPedalHoldMaxBars,
+    patMethenyEligibilityStats: meta.patMethenyEligibilityStats,
+    wayneShorterDiagnostics: meta.wayneShorterDiagnostics,
+    wayneShorterDeviceReceipts: meta.wayneShorterDeviceReceipts,
+    wayneShorterSliceReceipt: meta.wayneShorterSliceReceipt,
+    wayneShorterEffectiveHarmonyBars: meta.wayneShorterEffectiveHarmonyBars,
+    wayneShorterAntiElaborationGuards: meta.wayneShorterAntiElaborationGuards,
+    wayneShorterEligibilityStats: meta.wayneShorterEligibilityStats,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

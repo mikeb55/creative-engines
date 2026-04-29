@@ -308,6 +308,32 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 
 ---
 
+## Future — compositional diversity & songwriter expansion (2026-04-28)
+
+These items raise **output diversity** without assuming a single engine rewrite: they are parallel product axes (some already partially present under ensembles / Song Mode / pairing).
+
+### Four engine pillars (diversity)
+
+1. **Ensemble & orchestration grammar** — configurable section/scoring defaults (woodwind colour, brass pads, rhythm-section roles), stem/beam templates, and arrangement receipts so pieces feel less “same orchestration, different chords.”
+2. **Rhythm, meter & groove intelligence** — meter feels (odd subdivisions, displacement, pocket vs float), Song Mode groove overlays that survive export, and clearer coupling between harmony rhythm and phrase rhythm.
+3. **Form & narrative** — multi-section arcs (beyond A/B tags), turnarounds / pivots as first-class planning objects, and lyric-adjacent phrase shaping hooks where Song Mode already carries structure.
+4. **Style fusion & world vocabulary** — explicit blend weights (e.g. ECM × Brazilian × theatre), region/mode libraries that stay bounded (not tourist exoticism), and pairing rules that explain *why* a fusion is chosen (manifest-friendly).
+
+### Candidate primary songwriter modules (highest impact next adds)
+
+Not yet full **golden-path slices** in the sense of Pat Metheny / Joni / James Brown; **typed ids would be new** (`SongwriterRuleId` + registry + slice work). Ordered by **gap-fill** vs the current roster (ECM/jazz, soul/funk, alt-rock, art-pop US/UK, etc.):
+
+| Target | Proposed id | Why it matters |
+|--------|-------------|----------------|
+| **Antônio Carlos Jobim** | `antonio_carlos_jobim` | **Bossa / Brazilian harmony** — voicing grammar, extensions, and rhythmic harmony distinct from American pop/jazz slices already shipped. |
+| **Herbie Hancock** | `herbie_hancock` | **Fusion / electric keyboards / R&B-adjacent groove** — bridges Wayne-era jazz literacy with clav/Rhodes-era vocabulary without duplicating Pat Metheny’s modal ECM lane. |
+| **Stephen Sondheim** | `stephen_sondheim` | **Theatre harmony & asymmetry** — large compositional territory vs songbook pop (`bacharach`) and vs `kurt_weill`; phrase rhythm tied to lyric stress patterns. |
+| **Kate Bush** | `kate_bush` | **Art pop & extended forms** — studio-forward narrative harmony; complements Radiohead/Joni without overlapping the same devices. |
+
+**Note:** The catalogue already lists many writers and arrangers (see **Past → Songwriters & arrangers**); *impact* here means **new musical neighbourhoods** for end users and eval diversity, not raw fame ranking.
+
+---
+
 ## MusicXML Harmony Import for Lead Sheets (staged rollout)
 
 ### Guardrails (must hold for every stage)

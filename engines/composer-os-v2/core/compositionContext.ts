@@ -541,6 +541,52 @@ export interface GenerationMetadata {
   };
   /** Longest same–slash-bass run after slice passes (inspectability). */
   patMethenyPedalHoldMaxBars?: number;
+  /** Pat Metheny slice — per-device eligibility pool sizes + mean expected fires at target Bernoulli rates. */
+  patMethenyEligibilityStats?: {
+    totalBars: number;
+    d2EligibleBars: number;
+    d4EligibleBars: number;
+    d5EligibleBars: number;
+    targetMeanFiresD2: number;
+    targetMeanFiresD4: number;
+    targetMeanFiresD5: number;
+  };
+  /** Wayne Shorter (post-bop) — per-bar harmony vocabulary scan + device receipts. */
+  wayneShorterDiagnostics?: {
+    songwriterId: 'wayne_shorter';
+    barsConsidered: number;
+    alteredDominantHitRate: number;
+    slashPedalHitRate: number;
+    quartalSusHitRate: number;
+    minorColourHitRate: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      neighborClamp: number;
+      plateauClamp: number;
+    };
+    deviceReceipts?: string[];
+  };
+  wayneShorterSliceReceipt?: string;
+  wayneShorterEffectiveHarmonyBars?: string[];
+  wayneShorterDeviceReceipts?: string[];
+  wayneShorterAntiElaborationGuards?: {
+    neighborClamp: number;
+    plateauClamp: number;
+  };
+  /** Wayne Shorter slice — per-device eligibility pool sizes + mean expected fires at target Bernoulli rates. */
+  wayneShorterEligibilityStats?: {
+    totalBars: number;
+    d1EligibleBars: number;
+    d2EligibleBars: number;
+    d3EligibleBars: number;
+    d4EligibleBars: number;
+    d5EligibleBars: number;
+    targetMeanFiresD1: number;
+    targetMeanFiresD2: number;
+    targetMeanFiresD3: number;
+    targetMeanFiresD4: number;
+    targetMeanFiresD5: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */
