@@ -412,4 +412,10 @@ export interface OutputEntry {
   kateBushSliceReceipt?: GenerationMetadata['kateBushSliceReceipt'];
   kateBushEffectiveHarmonyBars?: GenerationMetadata['kateBushEffectiveHarmonyBars'];
   kateBushAntiElaborationGuards?: GenerationMetadata['kateBushAntiElaborationGuards'];
+  /** Thelonious Monk (angular harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  theloniousMonkDiagnostics?: GenerationMetadata['theloniousMonkDiagnostics'];
+  theloniousMonkDeviceReceipts?: GenerationMetadata['theloniousMonkDeviceReceipts'];
+  theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
+  theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
+  theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
 }

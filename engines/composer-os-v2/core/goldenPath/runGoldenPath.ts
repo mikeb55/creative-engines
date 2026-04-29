@@ -1932,6 +1932,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const hhEx = mdEx?.herbieHancockEffectiveHarmonyBars;
   const shEx = mdEx?.sondheimEffectiveHarmonyBars;
   const kbEx = mdEx?.kateBushEffectiveHarmonyBars;
+  const tmEx = mdEx?.theloniousMonkEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
@@ -1964,9 +1965,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                 ? shEx
                                 : mdEx?.songwriterStyleId === 'kate_bush' && Array.isArray(kbEx) && kbEx.length === tbEx
                                   ? kbEx
-                                  : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
-                                    ? beEx
-                                    : lockedForExport;
+                                  : mdEx?.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmEx) && tmEx.length === tbEx
+                                    ? tmEx
+                                    : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
+                                      ? beEx
+                                      : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -2041,6 +2044,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const hhLt = mdLt?.herbieHancockEffectiveHarmonyBars;
   const shLt = mdLt?.sondheimEffectiveHarmonyBars;
   const kbLt = mdLt?.kateBushEffectiveHarmonyBars;
+  const tmLt = mdLt?.theloniousMonkEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
   const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
@@ -2075,9 +2079,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                     ? shLt
                                     : mdLt?.songwriterStyleId === 'kate_bush' && Array.isArray(kbLt) && kbLt.length === tbLt
                                       ? kbLt
-                                      : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
-                                        ? beLt
-                                        : lockedBars;
+                                      : mdLt?.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmLt) && tmLt.length === tbLt
+                                        ? tmLt
+                                        : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
+                                          ? beLt
+                                          : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

@@ -203,6 +203,11 @@ export function writeOutputManifest(
     kateBushSliceReceipt?: GenerationMetadata['kateBushSliceReceipt'];
     kateBushEffectiveHarmonyBars?: GenerationMetadata['kateBushEffectiveHarmonyBars'];
     kateBushAntiElaborationGuards?: GenerationMetadata['kateBushAntiElaborationGuards'];
+    theloniousMonkDiagnostics?: GenerationMetadata['theloniousMonkDiagnostics'];
+    theloniousMonkDeviceReceipts?: GenerationMetadata['theloniousMonkDeviceReceipts'];
+    theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
+    theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
+    theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -365,6 +370,11 @@ export function writeOutputManifest(
     kateBushSliceReceipt: meta.kateBushSliceReceipt,
     kateBushEffectiveHarmonyBars: meta.kateBushEffectiveHarmonyBars,
     kateBushAntiElaborationGuards: meta.kateBushAntiElaborationGuards,
+    theloniousMonkDiagnostics: meta.theloniousMonkDiagnostics,
+    theloniousMonkDeviceReceipts: meta.theloniousMonkDeviceReceipts,
+    theloniousMonkSliceReceipt: meta.theloniousMonkSliceReceipt,
+    theloniousMonkEffectiveHarmonyBars: meta.theloniousMonkEffectiveHarmonyBars,
+    theloniousMonkAntiElaborationGuards: meta.theloniousMonkAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

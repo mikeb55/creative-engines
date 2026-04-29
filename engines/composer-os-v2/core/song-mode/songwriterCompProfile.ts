@@ -98,6 +98,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   herbie_hancock: 'keys',
   stephen_sondheim: 'keys',
   kate_bush: 'keys',
+  thelonious_monk: 'keys',
 };
 
 export function songWriterPrimaryInstrument(id: SongwriterRuleId): SongwriterPrimaryInstrumentKind {

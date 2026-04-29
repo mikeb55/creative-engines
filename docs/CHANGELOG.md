@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Thelonious Monk Song Mode slice — 57/57 smoke
+
+- **feat:** **`theloniousMonkSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/theloniousMonkSlice.ts`**) — golden-path precompute, **`tm:*`** device receipts, **`theloniousMonkEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`theloniousMonkSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **57** passed / **0** failed (**24** suites). **18** shipped songwriter slices.
+- **note:** Angular harmony slice — **7b9** signature dominant, tritone sub, dim7 chromatic passing, stride palette, **`avoid_resolution=True`** posture, deferred cadence colour.
+- **note:** Harmonic rules extracted from **`engines/monk-engine`** Python internals — **no external research required** (no Perplexity pass needed for this slice).
+- **fix:** **`isDominantFunctionSymbol`** updated to handle **post-coloured `7b9` / `7alt`** after **`colourDominantMonk`** so phrase-final tritone-sub / deferred-cadence logic still matches dominants.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **57**/0 (**24** suites), **18** shipped slices; registry aliases **`monk`** / **`thelonious`**.
+
 ## [2026-04-29] feat: Kate Bush Song Mode slice — 56/56 smoke
 
 - **feat:** **`kateBushSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/kateBushSlice.ts`**) — golden-path precompute, **`kb:*`** device receipts, **`kateBushEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`kateBushSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **56** passed / **0** failed (**23** suites). **17** shipped songwriter slices.

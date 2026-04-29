@@ -297,6 +297,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return kbEff[barIndex - 1]!;
   }
 
+  /**
+   * Thelonious Monk: `precomputeTheloniousMonkEffectiveHarmonyBars` applies b9 dominants, tonic maj7/#11 colour, strip lush stacks — receipts **`tm:*`**.
+   * After precompute, `theloniousMonkEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const tmEff = meta?.theloniousMonkEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'thelonious_monk' &&
+    Array.isArray(tmEff) &&
+    tmEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return tmEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

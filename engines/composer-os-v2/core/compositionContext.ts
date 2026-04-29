@@ -783,6 +783,26 @@ export interface GenerationMetadata {
   kateBushAntiElaborationGuards?: {
     jazzStackReduced: number;
   };
+  /** Thelonious Monk (angular / b9-dominant harmony) — slice diagnostics + effective harmony. */
+  theloniousMonkDiagnostics?: {
+    songwriterId: 'thelonious_monk';
+    barsConsidered: number;
+    b9DominantTouches: number;
+    angularHarmonyTouches: number;
+    tonicColourTouches: number;
+    tritoneSubReceiptTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      lushExtensionStripped: number;
+    };
+    deviceReceipts?: string[];
+  };
+  theloniousMonkSliceReceipt?: string;
+  theloniousMonkEffectiveHarmonyBars?: string[];
+  theloniousMonkDeviceReceipts?: string[];
+  theloniousMonkAntiElaborationGuards?: {
+    lushExtensionStripped: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

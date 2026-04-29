@@ -524,6 +524,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('kate.add_sus_texture', 'Add2/add9/sus prolongations vs dense jazz tertian stacks (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
     R('kate.soft_dominant', 'Sus / modal dominant — rare structural V–I (placeholder)', 'songwriter', 'harmony', 8, 'chorus'),
   ],
+  thelonious_monk: [
+    R('monk.b9_dominant', '7b9 / altered dominant as primary V colour (placeholder)', 'songwriter', 'harmony', 9, 'global'),
+    R('monk.tritone_region', 'Tritone sub / deferred cadence vs smooth V–I (placeholder)', 'songwriter', 'harmony', 9, 'chorus'),
+    R('monk.strip_lush', 'Strip maj9/13 lush stacks — angular tertian only (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
+    R('monk.semitone_motion', 'Semitone / whole-step root motion bias vs circle-of-fifths default (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

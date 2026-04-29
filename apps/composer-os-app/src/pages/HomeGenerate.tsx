@@ -113,6 +113,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'stephen_sondheim', label: 'Stephen Sondheim' },
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
+  { id: 'thelonious_monk', label: 'Thelonious Monk' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
@@ -130,6 +131,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'barry_harris',
   'stephen_sondheim',
   'kate_bush',
+  'thelonious_monk',
   'bill_evans',
   'bacharach',
   'donald_fagen',
