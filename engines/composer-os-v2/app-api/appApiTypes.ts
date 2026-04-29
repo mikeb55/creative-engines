@@ -406,4 +406,10 @@ export interface OutputEntry {
   sondheimSliceReceipt?: GenerationMetadata['sondheimSliceReceipt'];
   sondheimEffectiveHarmonyBars?: GenerationMetadata['sondheimEffectiveHarmonyBars'];
   sondheimAntiElaborationGuards?: GenerationMetadata['sondheimAntiElaborationGuards'];
+  /** Kate Bush (tonal-modal texture) slice — diagnostics / receipts (Song Mode manifest echo). */
+  kateBushDiagnostics?: GenerationMetadata['kateBushDiagnostics'];
+  kateBushDeviceReceipts?: GenerationMetadata['kateBushDeviceReceipts'];
+  kateBushSliceReceipt?: GenerationMetadata['kateBushSliceReceipt'];
+  kateBushEffectiveHarmonyBars?: GenerationMetadata['kateBushEffectiveHarmonyBars'];
+  kateBushAntiElaborationGuards?: GenerationMetadata['kateBushAntiElaborationGuards'];
 }

@@ -153,6 +153,12 @@ import {
   finalizeSondheimMetadata,
   precomputeSondheimEffectiveHarmonyBars,
 } from './sondheimSlice';
+import {
+  accumulateKateBushHarmonyDiagnostics,
+  createKateBushHarmonyAccumulator,
+  finalizeKateBushMetadata,
+  precomputeKateBushEffectiveHarmonyBars,
+} from './kateBushSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2045,6 +2051,7 @@ function buildGuitarPart(
   const isSongwriterJobim = genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
   const isSongwriterHerbieHancock = genMeta?.songwriterStyleId === 'herbie_hancock';
   const isSongwriterSondheim = genMeta?.songwriterStyleId === 'stephen_sondheim';
+  const isSongwriterKateBush = genMeta?.songwriterStyleId === 'kate_bush';
   const fagenAlteredDominantBiasR =
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
@@ -2090,6 +2097,7 @@ function buildGuitarPart(
   const ajAccum = createJobimHarmonyAccumulator();
   const hhAccum = createHerbieHancockHarmonyAccumulator();
   const shAccum = createSondheimHarmonyAccumulator();
+  const kbAccum = createKateBushHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2138,6 +2146,9 @@ function buildGuitarPart(
   }
   if (isSongwriterSondheim && isDuoGoldenPath) {
     precomputeSondheimEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterKateBush && isDuoGoldenPath) {
+    precomputeKateBushEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2340,6 +2351,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         shAccum
+      );
+    }
+    if (isSongwriterKateBush) {
+      accumulateKateBushHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        kbAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2833,6 +2851,10 @@ function buildGuitarPart(
 
   if (isSongwriterSondheim && context.generationMetadata) {
     finalizeSondheimMetadata(context.generationMetadata, shAccum);
+  }
+
+  if (isSongwriterKateBush && context.generationMetadata) {
+    finalizeKateBushMetadata(context.generationMetadata, kbAccum);
   }
 
   return {

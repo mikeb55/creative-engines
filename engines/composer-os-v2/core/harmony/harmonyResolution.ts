@@ -282,6 +282,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return shEff[barIndex - 1]!;
   }
 
+  /**
+   * Kate Bush: `precomputeKateBushEffectiveHarmonyBars` applies modal texture / pedal / anti–dense-stack devices + receipts.
+   * After precompute, `kateBushEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const kbEff = meta?.kateBushEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'kate_bush' &&
+    Array.isArray(kbEff) &&
+    kbEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return kbEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

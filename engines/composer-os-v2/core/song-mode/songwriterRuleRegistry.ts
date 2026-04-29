@@ -518,6 +518,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('sondheim.pedal_stratify', 'Pedal bass vs shifting upper voices (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
     R('sondheim.dramatic_dominant', 'Dominant as trigger — delayed / weighted closure (placeholder)', 'songwriter', 'harmony', 9, 'chorus'),
   ],
+  kate_bush: [
+    R('kate.chromatic_mediant', 'Chromatic mediant / shared-tone colour moves (placeholder)', 'songwriter', 'harmony', 9, 'global'),
+    R('kate.modal_pedal', 'Pedal / drone with shifting upper harmony (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
+    R('kate.add_sus_texture', 'Add2/add9/sus prolongations vs dense jazz tertian stacks (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
+    R('kate.soft_dominant', 'Sus / modal dominant — rare structural V–I (placeholder)', 'songwriter', 'harmony', 8, 'chorus'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

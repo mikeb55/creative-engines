@@ -69,6 +69,7 @@ type ChordDxReceiptUi = {
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'andrew_hill', label: 'Andrew Hill' },
+  { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
   { id: 'barry_harris', label: 'Barry Harris' },
@@ -84,9 +85,11 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
+  { id: 'herbie_hancock', label: 'Herbie Hancock' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
   { id: 'jeff_tweedy', label: 'Jeff Tweedy' },
+  { id: 'kate_bush', label: 'Kate Bush' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
   { id: 'kendrick_lamar', label: 'Kendrick Lamar' },
   { id: 'kurt_weill', label: 'Kurt Weill' },
@@ -126,14 +129,16 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'wayne_shorter',
   'barry_harris',
   'stephen_sondheim',
-];
-
-const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [
-  'bacharach',
+  'kate_bush',
   'bill_evans',
+  'bacharach',
   'donald_fagen',
   'ecm_chamber',
+  'antonio_carlos_jobim',
+  'herbie_hancock',
 ];
+
+const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [];
 
 const SONGWRITER_OPTION_BY_ID = new Map(SONGWRITER_OPTIONS.map((o) => [o.id, o]));
 const SONGWRITER_GROUP_SHIPPED_IDS = new Set(SONGWRITER_GROUP_SHIPPED_ORDER);

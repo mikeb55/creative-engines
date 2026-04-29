@@ -763,6 +763,26 @@ export interface GenerationMetadata {
     goldenAgeChainBroken: number;
     lushJazzSweetReduced: number;
   };
+  /** Kate Bush (tonal-modal texture / drone-aware harmony) — slice diagnostics + effective harmony. */
+  kateBushDiagnostics?: {
+    songwriterId: 'kate_bush';
+    barsConsidered: number;
+    addOrSusTouches: number;
+    modalMixtureTouches: number;
+    pedalSlashTouches: number;
+    pedalReceiptTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      jazzStackReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  kateBushSliceReceipt?: string;
+  kateBushEffectiveHarmonyBars?: string[];
+  kateBushDeviceReceipts?: string[];
+  kateBushAntiElaborationGuards?: {
+    jazzStackReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

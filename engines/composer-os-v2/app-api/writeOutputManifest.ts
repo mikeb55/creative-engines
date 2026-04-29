@@ -198,6 +198,11 @@ export function writeOutputManifest(
     sondheimSliceReceipt?: GenerationMetadata['sondheimSliceReceipt'];
     sondheimEffectiveHarmonyBars?: GenerationMetadata['sondheimEffectiveHarmonyBars'];
     sondheimAntiElaborationGuards?: GenerationMetadata['sondheimAntiElaborationGuards'];
+    kateBushDiagnostics?: GenerationMetadata['kateBushDiagnostics'];
+    kateBushDeviceReceipts?: GenerationMetadata['kateBushDeviceReceipts'];
+    kateBushSliceReceipt?: GenerationMetadata['kateBushSliceReceipt'];
+    kateBushEffectiveHarmonyBars?: GenerationMetadata['kateBushEffectiveHarmonyBars'];
+    kateBushAntiElaborationGuards?: GenerationMetadata['kateBushAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -355,6 +360,11 @@ export function writeOutputManifest(
     sondheimSliceReceipt: meta.sondheimSliceReceipt,
     sondheimEffectiveHarmonyBars: meta.sondheimEffectiveHarmonyBars,
     sondheimAntiElaborationGuards: meta.sondheimAntiElaborationGuards,
+    kateBushDiagnostics: meta.kateBushDiagnostics,
+    kateBushDeviceReceipts: meta.kateBushDeviceReceipts,
+    kateBushSliceReceipt: meta.kateBushSliceReceipt,
+    kateBushEffectiveHarmonyBars: meta.kateBushEffectiveHarmonyBars,
+    kateBushAntiElaborationGuards: meta.kateBushAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

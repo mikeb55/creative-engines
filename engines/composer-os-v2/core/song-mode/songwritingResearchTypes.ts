@@ -63,7 +63,8 @@ export type SongwriterRuleId =
   | 'andrew_hill'
   | 'antonio_carlos_jobim'
   | 'herbie_hancock'
-  | 'stephen_sondheim';
+  | 'stephen_sondheim'
+  | 'kate_bush';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

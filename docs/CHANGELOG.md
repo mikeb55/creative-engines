@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Kate Bush Song Mode slice — 56/56 smoke
+
+- **feat:** **`kateBushSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/kateBushSlice.ts`**) — golden-path precompute, **`kb:*`** device receipts, **`kateBushEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`kateBushSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **56** passed / **0** failed (**23** suites). **17** shipped songwriter slices.
+- **note:** Tonal-modal, drone-aware, chromatic mediant grammar, modal prolongation, minimal cadential function.
+- **note:** Harmonic research grounded in Perplexity deep research — Hounds of Love / Ninth Wave / Running Up That Hill models.
+- **fix:** UI songwriter dropdown audit — all **17** shipped slices confirmed in **`HomeGenerate.tsx`** (**Shipped (full slice)**); added **`antonio_carlos_jobim`** + **`herbie_hancock`** option rows; moved **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`** from Ready → Shipped ordering.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **56**/0 (**23** suites), **17** shipped slices, New territory (planned slices shipped; next candidates open).
+
 ## [2026-04-29] feat: Stephen Sondheim Song Mode slice — 55/55 smoke
 
 - **feat:** **`sondheimSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/sondheimSlice.ts`**) — golden-path precompute, **`sh:*`** device receipts, **`sondheimEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`sondheimSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **55** passed / **0** failed (**22** suites). **16** shipped songwriter slices.

@@ -857,6 +857,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const ajLockedTruth = mdLockedTruth?.jobimEffectiveHarmonyBars;
   const hhLockedTruth = mdLockedTruth?.herbieHancockEffectiveHarmonyBars;
   const shLockedTruth = mdLockedTruth?.sondheimEffectiveHarmonyBars;
+  const kbLockedTruth = mdLockedTruth?.kateBushEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -954,7 +955,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                       lockedHarmonyBarsAuthoritative &&
                                       shLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                     ? shLockedTruth
-                                    : lockedHarmonyBarsAuthoritative;
+                                    : mdLockedTruth?.songwriterStyleId === 'kate_bush' &&
+                                        Array.isArray(kbLockedTruth) &&
+                                        kbLockedTruth.length === tbLockedTruth &&
+                                        lockedHarmonyBarsAuthoritative &&
+                                        kbLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                      ? kbLockedTruth
+                                      : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1252,6 +1259,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       sondheimSliceReceipt: gp.context.generationMetadata.sondheimSliceReceipt,
       sondheimEffectiveHarmonyBars: gp.context.generationMetadata.sondheimEffectiveHarmonyBars,
       sondheimAntiElaborationGuards: gp.context.generationMetadata.sondheimAntiElaborationGuards,
+      kateBushDiagnostics: gp.context.generationMetadata.kateBushDiagnostics,
+      kateBushDeviceReceipts: gp.context.generationMetadata.kateBushDeviceReceipts,
+      kateBushSliceReceipt: gp.context.generationMetadata.kateBushSliceReceipt,
+      kateBushEffectiveHarmonyBars: gp.context.generationMetadata.kateBushEffectiveHarmonyBars,
+      kateBushAntiElaborationGuards: gp.context.generationMetadata.kateBushAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,
