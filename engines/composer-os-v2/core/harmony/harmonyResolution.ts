@@ -267,6 +267,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return hhEff[barIndex - 1]!;
   }
 
+  /**
+   * Stephen Sondheim: `precomputeSondheimEffectiveHarmonyBars` applies dramatic theatre harmony devices + receipts.
+   * After precompute, `sondheimEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const shEff = meta?.sondheimEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'stephen_sondheim' &&
+    Array.isArray(shEff) &&
+    shEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return shEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

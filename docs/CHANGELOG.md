@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Stephen Sondheim Song Mode slice — 55/55 smoke
+
+- **feat:** **`sondheimSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/sondheimSlice.ts`**) — golden-path precompute, **`sh:*`** device receipts, **`sondheimEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`sondheimSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **55** passed / **0** failed (**22** suites). **16** shipped songwriter slices.
+- **note:** Dissonant tonality model — effect chords, diagonal dissonance, pedal cohesion, dramaturgical chromaticism, withheld closure.
+- **note:** Harmonic research grounded in Perplexity deep research — Purin dissertation, Company / Sweeney Todd / Sunday in the Park show models.
+- **feat:** **`stephen_sondheim`** added to UI songwriter dropdown (**`HomeGenerate.tsx`** — **Shipped (full slice)** group).
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **55**/0 (**22** suites), **16** shipped slices, New territory (**Kate Bush**).
+
 ## [2026-04-29] feat: Herbie Hancock Song Mode slice — 54/54 smoke
 
 - **feat:** **`herbieHancockSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/herbieHancockSlice.ts`**) — golden-path precompute, **`hh:*`** device receipts, **`herbieHancockEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`herbieHancockSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **54** passed / **0** failed (**21** suites). **15** shipped songwriter slices.

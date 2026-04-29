@@ -400,4 +400,10 @@ export interface OutputEntry {
   herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
   herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
   herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
+  /** Stephen Sondheim (dramatic theatre harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  sondheimDiagnostics?: GenerationMetadata['sondheimDiagnostics'];
+  sondheimDeviceReceipts?: GenerationMetadata['sondheimDeviceReceipts'];
+  sondheimSliceReceipt?: GenerationMetadata['sondheimSliceReceipt'];
+  sondheimEffectiveHarmonyBars?: GenerationMetadata['sondheimEffectiveHarmonyBars'];
+  sondheimAntiElaborationGuards?: GenerationMetadata['sondheimAntiElaborationGuards'];
 }

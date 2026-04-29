@@ -193,6 +193,11 @@ export function writeOutputManifest(
     herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
     herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
     herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
+    sondheimDiagnostics?: GenerationMetadata['sondheimDiagnostics'];
+    sondheimDeviceReceipts?: GenerationMetadata['sondheimDeviceReceipts'];
+    sondheimSliceReceipt?: GenerationMetadata['sondheimSliceReceipt'];
+    sondheimEffectiveHarmonyBars?: GenerationMetadata['sondheimEffectiveHarmonyBars'];
+    sondheimAntiElaborationGuards?: GenerationMetadata['sondheimAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -345,6 +350,11 @@ export function writeOutputManifest(
     herbieHancockSliceReceipt: meta.herbieHancockSliceReceipt,
     herbieHancockEffectiveHarmonyBars: meta.herbieHancockEffectiveHarmonyBars,
     herbieHancockAntiElaborationGuards: meta.herbieHancockAntiElaborationGuards,
+    sondheimDiagnostics: meta.sondheimDiagnostics,
+    sondheimDeviceReceipts: meta.sondheimDeviceReceipts,
+    sondheimSliceReceipt: meta.sondheimSliceReceipt,
+    sondheimEffectiveHarmonyBars: meta.sondheimEffectiveHarmonyBars,
+    sondheimAntiElaborationGuards: meta.sondheimAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

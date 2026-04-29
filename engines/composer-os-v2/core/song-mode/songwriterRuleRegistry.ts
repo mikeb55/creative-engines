@@ -512,6 +512,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('hancock.pedal_upper', 'Pedal bass / upper-structure slash colours (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
     R('hancock.form_reroute', 'Formal return blur vs orthodox turnaround (placeholder)', 'songwriter', 'harmony', 8, 'form'),
   ],
+  stephen_sondheim: [
+    R('sondheim.dissonant_tonality', 'Chromatic surface over retained tonal centre (placeholder)', 'songwriter', 'harmony', 9, 'global'),
+    R('sondheim.added_note_tertian', 'Non-resolving 2nds/4ths/6ths on tertian harmony (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
+    R('sondheim.pedal_stratify', 'Pedal bass vs shifting upper voices (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
+    R('sondheim.dramatic_dominant', 'Dominant as trigger — delayed / weighted closure (placeholder)', 'songwriter', 'harmony', 9, 'chorus'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

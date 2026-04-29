@@ -107,6 +107,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'shostakovich', label: 'Shostakovich' },
   { id: 'smokey_robinson', label: 'Smokey Robinson' },
   { id: 'sonic_youth', label: 'Sonic Youth' },
+  { id: 'stephen_sondheim', label: 'Stephen Sondheim' },
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
@@ -124,6 +125,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'pat_metheny',
   'wayne_shorter',
   'barry_harris',
+  'stephen_sondheim',
 ];
 
 const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [

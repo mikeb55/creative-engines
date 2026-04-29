@@ -741,6 +741,28 @@ export interface GenerationMetadata {
     quartalThrottleHits: number;
     orthodoxTurnaroundSoftened: number;
   };
+  /** Stephen Sondheim (dramatic musical theatre tonality) — slice diagnostics + effective harmony. */
+  sondheimDiagnostics?: {
+    songwriterId: 'stephen_sondheim';
+    barsConsidered: number;
+    addedNoteTouches: number;
+    chromaticSurfaceTouches: number;
+    pedalSlashTouches: number;
+    goldenAgeBreakTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      goldenAgeChainBroken: number;
+      lushJazzSweetReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  sondheimSliceReceipt?: string;
+  sondheimEffectiveHarmonyBars?: string[];
+  sondheimDeviceReceipts?: string[];
+  sondheimAntiElaborationGuards?: {
+    goldenAgeChainBroken: number;
+    lushJazzSweetReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

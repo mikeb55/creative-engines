@@ -856,6 +856,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
   const ajLockedTruth = mdLockedTruth?.jobimEffectiveHarmonyBars;
   const hhLockedTruth = mdLockedTruth?.herbieHancockEffectiveHarmonyBars;
+  const shLockedTruth = mdLockedTruth?.sondheimEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -947,7 +948,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                     lockedHarmonyBarsAuthoritative &&
                                     hhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                   ? hhLockedTruth
-                                  : lockedHarmonyBarsAuthoritative;
+                                  : mdLockedTruth?.songwriterStyleId === 'stephen_sondheim' &&
+                                      Array.isArray(shLockedTruth) &&
+                                      shLockedTruth.length === tbLockedTruth &&
+                                      lockedHarmonyBarsAuthoritative &&
+                                      shLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                    ? shLockedTruth
+                                    : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1240,6 +1247,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       herbieHancockSliceReceipt: gp.context.generationMetadata.herbieHancockSliceReceipt,
       herbieHancockEffectiveHarmonyBars: gp.context.generationMetadata.herbieHancockEffectiveHarmonyBars,
       herbieHancockAntiElaborationGuards: gp.context.generationMetadata.herbieHancockAntiElaborationGuards,
+      sondheimDiagnostics: gp.context.generationMetadata.sondheimDiagnostics,
+      sondheimDeviceReceipts: gp.context.generationMetadata.sondheimDeviceReceipts,
+      sondheimSliceReceipt: gp.context.generationMetadata.sondheimSliceReceipt,
+      sondheimEffectiveHarmonyBars: gp.context.generationMetadata.sondheimEffectiveHarmonyBars,
+      sondheimAntiElaborationGuards: gp.context.generationMetadata.sondheimAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,
