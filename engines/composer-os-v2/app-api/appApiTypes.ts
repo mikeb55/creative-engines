@@ -388,4 +388,10 @@ export interface OutputEntry {
   ecmChamberSliceReceipt?: GenerationMetadata['ecmChamberSliceReceipt'];
   ecmChamberEffectiveHarmonyBars?: GenerationMetadata['ecmChamberEffectiveHarmonyBars'];
   ecmChamberAntiElaborationGuards?: GenerationMetadata['ecmChamberAntiElaborationGuards'];
+  /** Antônio Carlos Jobim (bossa harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  jobimDiagnostics?: GenerationMetadata['jobimDiagnostics'];
+  jobimDeviceReceipts?: GenerationMetadata['jobimDeviceReceipts'];
+  jobimSliceReceipt?: GenerationMetadata['jobimSliceReceipt'];
+  jobimEffectiveHarmonyBars?: GenerationMetadata['jobimEffectiveHarmonyBars'];
+  jobimAntiElaborationGuards?: GenerationMetadata['jobimAntiElaborationGuards'];
 }

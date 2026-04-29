@@ -237,6 +237,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return ecEff[barIndex - 1]!;
   }
 
+  /**
+   * Jobim: `precomputeJobimEffectiveHarmonyBars` applies bossa / Brazilian jazz harmony devices + receipts.
+   * After precompute, `jobimEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const ajEff = meta?.jobimEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'antonio_carlos_jobim' &&
+    Array.isArray(ajEff) &&
+    ajEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return ajEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

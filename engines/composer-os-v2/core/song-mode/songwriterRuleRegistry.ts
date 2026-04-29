@@ -500,6 +500,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('hill.asymmetric_phrase', 'Asymmetric phrase lengths vs grid', 'songwriter', 'form', 8, 'form'),
     R('hill.ambiguous_field', 'Ambiguous tonal fields; delayed resolution', 'songwriter', 'harmony', 8, 'verse'),
   ],
+  antonio_carlos_jobim: [
+    R('jobim.bossa_extensions', 'Brazilian extended tonic / altered dominant colours (placeholder)', 'songwriter', 'harmony', 9, 'global'),
+    R('jobim.descending_bass', 'Descending bass-line grammar (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
+    R('jobim.line_led_resolution', 'Voice-led cadences vs textbook ii–V packs (placeholder)', 'songwriter', 'harmony', 9, 'chorus'),
+    R('jobim.soft_terminal', 'Terminal 6/9 / maj6 resting colours over blunt maj7 (placeholder)', 'songwriter', 'harmony', 8, 'form'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

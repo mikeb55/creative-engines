@@ -698,6 +698,27 @@ export interface GenerationMetadata {
     denseClusterReduced: number;
     functionalDominantMuted: number;
   };
+  /** Antônio Carlos Jobim (bossa / Brazilian jazz harmony) — slice diagnostics + effective harmony. */
+  jobimDiagnostics?: {
+    songwriterId: 'antonio_carlos_jobim';
+    barsConsidered: number;
+    bossaTonicTouches: number;
+    dominantColourTouches: number;
+    subVOrBackdoorTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bluntMaj7Softened: number;
+      alteredDominantReduced: number;
+    };
+    deviceReceipts?: string[];
+  };
+  jobimSliceReceipt?: string;
+  jobimEffectiveHarmonyBars?: string[];
+  jobimDeviceReceipts?: string[];
+  jobimAntiElaborationGuards?: {
+    bluntMaj7Softened: number;
+    alteredDominantReduced: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

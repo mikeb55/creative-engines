@@ -183,6 +183,11 @@ export function writeOutputManifest(
     ecmChamberSliceReceipt?: GenerationMetadata['ecmChamberSliceReceipt'];
     ecmChamberEffectiveHarmonyBars?: GenerationMetadata['ecmChamberEffectiveHarmonyBars'];
     ecmChamberAntiElaborationGuards?: GenerationMetadata['ecmChamberAntiElaborationGuards'];
+    jobimDiagnostics?: GenerationMetadata['jobimDiagnostics'];
+    jobimDeviceReceipts?: GenerationMetadata['jobimDeviceReceipts'];
+    jobimSliceReceipt?: GenerationMetadata['jobimSliceReceipt'];
+    jobimEffectiveHarmonyBars?: GenerationMetadata['jobimEffectiveHarmonyBars'];
+    jobimAntiElaborationGuards?: GenerationMetadata['jobimAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -325,6 +330,11 @@ export function writeOutputManifest(
     ecmChamberSliceReceipt: meta.ecmChamberSliceReceipt,
     ecmChamberEffectiveHarmonyBars: meta.ecmChamberEffectiveHarmonyBars,
     ecmChamberAntiElaborationGuards: meta.ecmChamberAntiElaborationGuards,
+    jobimDiagnostics: meta.jobimDiagnostics,
+    jobimDeviceReceipts: meta.jobimDeviceReceipts,
+    jobimSliceReceipt: meta.jobimSliceReceipt,
+    jobimEffectiveHarmonyBars: meta.jobimEffectiveHarmonyBars,
+    jobimAntiElaborationGuards: meta.jobimAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

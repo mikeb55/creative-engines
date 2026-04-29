@@ -854,6 +854,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
+  const ajLockedTruth = mdLockedTruth?.jobimEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -933,7 +934,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 eccLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? eccLockedTruth
-                              : lockedHarmonyBarsAuthoritative;
+                              : mdLockedTruth?.songwriterStyleId === 'antonio_carlos_jobim' &&
+                                  Array.isArray(ajLockedTruth) &&
+                                  ajLockedTruth.length === tbLockedTruth &&
+                                  lockedHarmonyBarsAuthoritative &&
+                                  ajLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                ? ajLockedTruth
+                                : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1216,6 +1223,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ecmChamberSliceReceipt: gp.context.generationMetadata.ecmChamberSliceReceipt,
       ecmChamberEffectiveHarmonyBars: gp.context.generationMetadata.ecmChamberEffectiveHarmonyBars,
       ecmChamberAntiElaborationGuards: gp.context.generationMetadata.ecmChamberAntiElaborationGuards,
+      jobimDiagnostics: gp.context.generationMetadata.jobimDiagnostics,
+      jobimDeviceReceipts: gp.context.generationMetadata.jobimDeviceReceipts,
+      jobimSliceReceipt: gp.context.generationMetadata.jobimSliceReceipt,
+      jobimEffectiveHarmonyBars: gp.context.generationMetadata.jobimEffectiveHarmonyBars,
+      jobimAntiElaborationGuards: gp.context.generationMetadata.jobimAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

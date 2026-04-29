@@ -135,6 +135,12 @@ import {
   finalizeEcmChamberMetadata,
   precomputeEcmChamberEffectiveHarmonyBars,
 } from './ecmChamberSlice';
+import {
+  accumulateJobimHarmonyDiagnostics,
+  createJobimHarmonyAccumulator,
+  finalizeJobimMetadata,
+  precomputeJobimEffectiveHarmonyBars,
+} from './jobimSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2024,6 +2030,7 @@ function buildGuitarPart(
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
   const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
+  const isSongwriterJobim = genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
   const fagenAlteredDominantBiasR =
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
@@ -2066,6 +2073,7 @@ function buildGuitarPart(
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
+  const ajAccum = createJobimHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2105,6 +2113,9 @@ function buildGuitarPart(
   }
   if (isSongwriterEcmChamber && isDuoGoldenPath) {
     precomputeEcmChamberEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJobim && isDuoGoldenPath) {
+    precomputeJobimEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2286,6 +2297,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         eccAccum
+      );
+    }
+    if (isSongwriterJobim) {
+      accumulateJobimHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        ajAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2767,6 +2785,10 @@ function buildGuitarPart(
 
   if (isSongwriterEcmChamber && context.generationMetadata) {
     finalizeEcmChamberMetadata(context.generationMetadata, eccAccum);
+  }
+
+  if (isSongwriterJobim && context.generationMetadata) {
+    finalizeJobimMetadata(context.generationMetadata, ajAccum);
   }
 
   return {

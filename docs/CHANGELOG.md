@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Jobim (antonio_carlos_jobim) Song Mode slice — 53/53 smoke
+
+- **feat:** **`jobimSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/jobimSlice.ts`**) — golden-path precompute, **`aj:*`** device receipts, **`jobimEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`jobimSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **53** passed / **0** failed (**20** suites). **14** shipped songwriter slices.
+- **note:** Harmonic research grounded in Perplexity deep research — bossa nova tonic colour, subV cadences, backdoor dominants, voice-led diminished, anti-quartal guards.
+- **fix:** Receipt prefix **`aj:*`** used (**`jb:*`** reserved for James Brown).
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **53**/0 (**20** suites), **14** shipped slices, New territory note (next candidates: hancock, sondheim, kate_bush).
+
 ## [2026-04-29] feat: ECM Chamber Song Mode slice — 52/52 smoke
 
 - **Engine (`engines/composer-os-v2`):** **`ecmChamberSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/ecmChamberSlice.ts`**) — **`precomputeEcmChamberEffectiveHarmonyBars`**, **`ec:*`** device receipts, **`ecmChamberEffectiveHarmonyBars`** + **`getChordForBar`**, metadata + manifest echo; **`ecmChamberSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **52** passed / **0** failed (**19** suites).

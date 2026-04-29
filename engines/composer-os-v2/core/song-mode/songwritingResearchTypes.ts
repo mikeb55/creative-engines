@@ -60,7 +60,8 @@ export type SongwriterRuleId =
   | 'sonic_youth'
   | 'wayne_shorter'
   | 'pat_metheny'
-  | 'andrew_hill';
+  | 'andrew_hill'
+  | 'antonio_carlos_jobim';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 
