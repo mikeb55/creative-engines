@@ -15,7 +15,7 @@
 
 ## Product notes — Bacharach & Donald Fagen: UI grouping vs implementation (2026-04-29)
 
-- **Generate UI** (`apps/composer-os-app` Songwriter dropdown): **all 18** golden-path **Shipped (full slice)** writers — including **Donald Fagen** and **Bacharach** — are listed under **Shipped (full slice)** (**`HomeGenerate.tsx`**, **2026-04-29** audit). **Engine** ships **full golden-path slice** packaging (**`donaldFagenSlice.ts`**, **`precomputeDonaldFagenEffectiveHarmonyBars`**, **`df:*` receipts**, export/disk truth, **`donaldFagenSliceSmoke.test.ts`**); **Bacharach** matches (**`bacharachSlice.ts`**, **2026-04-29**).
+- **Generate UI** (`apps/composer-os-app` Songwriter dropdown): **all 19** golden-path **Shipped (full slice)** writers — including **Donald Fagen** and **Bacharach** — are listed under **Shipped (full slice)** (**`HomeGenerate.tsx`**, **2026-04-29** audit). **Engine** ships **full golden-path slice** packaging (**`donaldFagenSlice.ts`**, **`precomputeDonaldFagenEffectiveHarmonyBars`**, **`df:*` receipts**, export/disk truth, **`donaldFagenSliceSmoke.test.ts`**); **Bacharach** matches (**`bacharachSlice.ts`**, **2026-04-29**).
 - **Engine status:** Both writers already ship **real** Song Mode behaviour — registry/rules, surfaces, harmony/guitar passes, **`eval:bacharach`** / **`eval:fagen`**, Bacharach harmony dressing & surfaces, Fagen keys-comp / rhythm overlays / sophisticated-pop hooks — i.e. **not** placeholder or compile-only rows.
 - **Gap:** **Architectural / marketing** alignment with the **newest slice template**, not absence of music pipeline behaviour.
 - **Parity refactor** (repackage to full **`\*Slice.ts`** pattern): **not a quick win** — budget **days+ per writer**; treat as **normal scheduled work**. **Optional** unless the goal is **one maintenance pattern** or **parity** with Pat Metheny–style receipts/tests.
@@ -27,7 +27,7 @@
 ## Songwriter — `bill_evans` registry + slice (2026-04-29)
 
 - **`bill_evans`** is a first-class **`SongwriterRuleId`** with **registry rules**, **`SONGWRITER_STYLE_PROFILES`** entry, **`songwriterCompProfile`** (**keys**), **`normalizeSongwriterStyleKey`** alias, and **`SONGWRITER_PRIMARY_INSTRUMENT`** — Song Mode **`resolveSongwritingStyles`** / compiled song planning resolve it like other catalogue ids ( **`songwritingResearchTypes.ts`**, **`songwriterRuleRegistry.ts`**, **`songwriterStyleProfiles.ts`**, **`songwriterCompProfile.ts`** ).
-- **Shipped:** **`billEvansSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/billEvansSlice.ts`**) + **`billEvansSliceSmoke.test.ts`** — see **Shipped slices** / **Current** for latest **`test:composer-smoke`** aggregate ( **57**/0 as of **Thelonious Monk** slice ship).
+- **Shipped:** **`billEvansSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/billEvansSlice.ts`**) + **`billEvansSliceSmoke.test.ts`** — see **Shipped slices** / **Current** for latest **`test:composer-smoke`** aggregate ( **58**/0 as of **Andrew Hill** slice ship).
 - **Generate UI:** Bill Evans remains grouped where product placed it; duo golden-path generation uses the slice + export/disk truth like other shipped writers.
 
 ---
@@ -291,12 +291,12 @@
 
 ## Current (as of 2026-04-29 snapshot)
 
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-04-29):** **57** passed / **0** failed (**24** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-04-29):** **58** passed / **0** failed (**25** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs occasional **`test:full`** suite-level failures (environment / heavy gates). **Runner stability** item (**chunked harness + 4096 MB heap on each chunk**) is **complete** (2026-04-28).
 - **`npm test` / `test:full`** — if **`FAIL:`** lines appear, treat as **known per-suite debt** or environment until triaged; **`test:fast`** remains the broader gate for day-to-day iteration.
-- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**57**). **Shipped (full slice)** lists **18** writers (**`HomeGenerate.tsx`**).
+- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**58**). **Shipped (full slice)** lists **19** writers (**`HomeGenerate.tsx`**).
 
 | Area | State |
 |------|--------|
@@ -305,7 +305,7 @@
 | **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
-| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Eighteen shipped golden-path slices** (`*Slice.ts` + smoke): see **Shipped slices** below — **`thelonious_monk`** ships **2026-04-29** (angular harmony slice; harmonic rules extracted from **`engines/monk-engine`** Python internals — **no Perplexity research needed**) alongside **`kate_bush`**, **`stephen_sondheim`**, **`herbie_hancock`**, **`antonio_carlos_jobim`**, **`ecm_chamber`**, **`donald_fagen`**, **`bacharach`**, **`bill_evans`**, etc. Substantial non-slice behaviour: **`STYLE_GROOVE_SOUL`**, **`STYLE_SOPHISTICATED_POP`**, ECM-writer hooks, etc. **Next product push:** **Priority stack** — new **workstreams**; **pools ready to slice** remain **empty**; **New territory** candidates are **open** (see **Future — compositional diversity**). Polish **Generate UI** (grouped selects; **18** shipped writers in dropdown **2026-04-29**). |
+| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Nineteen shipped golden-path slices** (`*Slice.ts` + smoke): see **Shipped slices** below — **`andrew_hill`** ships **2026-04-29** (angular non-functional slice; **`ah:*`** receipts, **`avoid_resolution=True`** posture) alongside **`thelonious_monk`** (angular harmony; rules from **`engines/monk-engine`**), **`kate_bush`**, **`stephen_sondheim`**, **`herbie_hancock`**, **`antonio_carlos_jobim`**, **`ecm_chamber`**, **`donald_fagen`**, **`bacharach`**, **`bill_evans`**, etc. Substantial non-slice behaviour: **`STYLE_GROOVE_SOUL`**, **`STYLE_SOPHISTICATED_POP`**, ECM-writer hooks, etc. **Next product push:** **Priority stack** — new **workstreams**; **pools ready to slice** remain **empty**; **New territory** candidates are **open** (see **Future — compositional diversity**). Polish **Generate UI** (grouped selects; **19** shipped writers in dropdown **2026-04-29**). |
 | **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family. **2026-04-17:** Parity + **realized normalization review (first pass)** — `shouldApplyRealizedVoice2Normalization` centralizes when Phase 18.2B.3 runs; `injectPhaseAGuitarVoice2Probe` uses **`isStandardGuitarBassDuo`**; JSDoc on realized pass. Full unify of realized metrics with standard duo / phrase-first single-line still **deferred** (pick list #2). |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
@@ -314,14 +314,14 @@
 
 ### Song Mode — shipped slices vs pools ready to slice (2026-04-29)
 
-- **Shipped slices** (**18** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **57**/0 (**24** suites). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
-- **Pools ready to slice:** **None** — chord pools / registry / UI rows that were queued for a dedicated duo golden-path slice are all **shipped** (**2026-04-29**). **New territory — planned slices:** prior queue **shipped** (Jobim, Hancock, Sondheim, Kate Bush, **Thelonious Monk** **done**). **Next candidates** are **open** — see **Priority stack** and **Future — compositional diversity**.
+- **Shipped slices** (**19** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`**, **`andrew_hill`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`andrewHillSlice.ts`** + **`andrewHillSliceSmoke.test.ts`** (**`ah:*`** receipts; angular non-functional, open cadence); **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **58**/0 (**25** suites). **Andrew Hill** research posture documented in [CHANGELOG.md](CHANGELOG.md) (Python ECM trio spec + **`engines/andrew-hill-engine`**). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`ah:*`** (Andrew Hill), **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
+- **Pools ready to slice:** **None** — chord pools / registry / UI rows that were queued for a dedicated duo golden-path slice are all **shipped** (**2026-04-29**). **New territory — planned slices:** prior queue **shipped** (Jobim, Hancock, Sondheim, Kate Bush, **Thelonious Monk**, **Andrew Hill** **done**). **Next candidates** are **open** — see **Priority stack** and **Future — compositional diversity**.
 
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
 
 1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
-2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **24** suites as of 2026-04-29).
-3. **Update** this doc — **Current** harness bullet above (**57** / date) so assistants do not cite a stale total.
+2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **25** suites as of 2026-04-29).
+3. **Update** this doc — **Current** harness bullet above (**58** / date) so assistants do not cite a stale total.
 4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
 
 ---
@@ -330,7 +330,7 @@
 
 Ordered for **product leverage** (what to schedule first). Adjust when ship goals change.
 
-1. **More Song Mode songwriter profiles (primary writer slices)** — Expand **full-slice-packaged** profiles using the newest template (**chord-row / planning bias + duo golden-path behaviour + receipts + diagnostics + smoke**). **`donald_fagen`** / **`ecm_chamber`** / **`antonio_carlos_jobim`** / **`herbie_hancock`** / **`stephen_sondheim`** / **`kate_bush`** / **`thelonious_monk`** ship **golden-path `*Slice.ts`** + smoke **2026-04-29** (plus existing surfaces, dressings, eval harnesses). The **typed catalogue** lists many ids; **user-visible value** is **end-to-end** behaviour, not registry-only rows. **Shipped full-slice template (2026-04-28):** **`james_brown`** (**T2.14**); **`joni_mitchell`** (**T2.15**); **`sonic_youth`** (**T2.16**); **`pat_metheny`** (**T2.17**). **`wayne_shorter`** / **`barry_harris`** / **`bill_evans`** / **`bacharach`** / **`donald_fagen`** / **`ecm_chamber`** / **`antonio_carlos_jobim`** / **`herbie_hancock`** / **`stephen_sondheim`** / **`kate_bush`** / **`thelonious_monk`** slices + smoke **2026-04-29**. **`test:smoke`** aggregate **57**/0, **24** suites (**`runSmokeTests.ts`**). **Pools ready to slice** list is **empty** — **planned New territory slices shipped** (Jobim, Hancock, Sondheim, Kate Bush, Monk); **next:** **new workstreams**, **ECM** arrangement depth, or **parity** work where justified.
+1. **More Song Mode songwriter profiles (primary writer slices)** — Expand **full-slice-packaged** profiles using the newest template (**chord-row / planning bias + duo golden-path behaviour + receipts + diagnostics + smoke**). **`donald_fagen`** / **`ecm_chamber`** / **`antonio_carlos_jobim`** / **`herbie_hancock`** / **`stephen_sondheim`** / **`kate_bush`** / **`thelonious_monk`** / **`andrew_hill`** ship **golden-path `*Slice.ts`** + smoke **2026-04-29** (plus existing surfaces, dressings, eval harnesses). The **typed catalogue** lists many ids; **user-visible value** is **end-to-end** behaviour, not registry-only rows. **Shipped full-slice template (2026-04-28):** **`james_brown`** (**T2.14**); **`joni_mitchell`** (**T2.15**); **`sonic_youth`** (**T2.16**); **`pat_metheny`** (**T2.17**). **`wayne_shorter`** / **`barry_harris`** / **`bill_evans`** / **`bacharach`** / **`donald_fagen`** / **`ecm_chamber`** / **`antonio_carlos_jobim`** / **`herbie_hancock`** / **`stephen_sondheim`** / **`kate_bush`** / **`thelonious_monk`** / **`andrew_hill`** slices + smoke **2026-04-29**. **`test:smoke`** aggregate **58**/0, **25** suites (**`runSmokeTests.ts`**). **Pools ready to slice** list is **empty** — **planned New territory slices shipped** (Jobim, Hancock, Sondheim, Kate Bush, Monk, Andrew Hill); **next:** **new workstreams**, **ECM** arrangement depth, or **parity** work where justified.
 2. **Generate UI / discoverability for writers** — Surface **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** so new profiles are choosable and A/B-able without spelunking the API (pairs with **Near term** item 1). **2026-04-29:** grouped Songwriter + Arranger **`optgroup`**s + Song Mode Arranger/Era hint shipped — extend as needed (tooltips, presets wire-through).
 3. **Harness + composer stability** — Keep **`test:smoke`** / **`test:fast`** green; use chunked **`runAllTests`** for full matrix; triage **`TEST_DEBT_COMPOSER_OS_V2.md`** so refactors stay safe while profile count grows.
 4. **Lead-sheet MusicXML import** — Finish staged harmony import (ensemble presets, evals) where product needs **chart-in**; complements writers but is a **different axis** than “more profiles.”
@@ -353,7 +353,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ### Candidate primary songwriter modules (highest impact next adds)
 
-**New territory (2026-04-29):** **All planned slices shipped** — **Hancock** (`herbie_hancock`): `herbieHancockSlice.ts`, **`hh:*`** receipts. **Jobim** (`antonio_carlos_jobim`): `jobimSlice.ts`, **`aj:*`** receipts. **Sondheim** (`stephen_sondheim`): `sondheimSlice.ts`, **`sh:*`** receipts. **Kate Bush** (`kate_bush`): **`kateBushSlice.ts`**, **`kb:*`** receipts. **Thelonious Monk** (`thelonious_monk`): **`theloniousMonkSlice.ts`**, **`tm:*`** receipts — rules extracted from **`engines/monk-engine`** Python internals (**no Perplexity research**). **Next candidates** for high-impact primary modules are **open** — use **gap-fill** vs the current roster (ECM/jazz, soul/funk, alt-rock, art-pop US/UK, theatre, etc.).
+**New territory (2026-04-29):** **All planned slices shipped** — **Hancock** (`herbie_hancock`): `herbieHancockSlice.ts`, **`hh:*`** receipts. **Jobim** (`antonio_carlos_jobim`): `jobimSlice.ts`, **`aj:*`** receipts. **Sondheim** (`stephen_sondheim`): `sondheimSlice.ts`, **`sh:*`** receipts. **Kate Bush** (`kate_bush`): **`kateBushSlice.ts`**, **`kb:*`** receipts. **Thelonious Monk** (`thelonious_monk`): **`theloniousMonkSlice.ts`**, **`tm:*`** receipts — rules extracted from **`engines/monk-engine`** Python internals (**no Perplexity research**). **Andrew Hill** (`andrew_hill`): **`andrewHillSlice.ts`**, **`ah:*`** receipts — angular non-functional slice (**avoid_resolution=True**, open cadence); see [CHANGELOG.md](CHANGELOG.md). **Next candidates** for high-impact primary modules are **open** — use **gap-fill** vs the current roster (ECM/jazz, soul/funk, alt-rock, art-pop US/UK, theatre, etc.).
 
 | Target | Proposed id | Why it matters |
 |--------|-------------|----------------|
@@ -362,6 +362,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | **Stephen Sondheim** | `stephen_sondheim` | **Shipped (2026-04-29)** — dramatic musical theatre tonality slice; **`precomputeSondheimEffectiveHarmonyBars`**, **`sh:*`** receipts, smoke **`sondheimSliceSmoke.test.ts`**; aliases **`sondheim`** / **`stephen_sondheim`** in **`songwriterStyleProfiles`**. |
 | **Kate Bush** | `kate_bush` | **Shipped (2026-04-29)** — tonal-modal / drone-aware texture harmony; **`precomputeKateBushEffectiveHarmonyBars`**, **`kb:*`** receipts, smoke **`kateBushSliceSmoke.test.ts`**; aliases **`kate_bush`** / **`kate`** / **`bush`** in **`songwriterStyleProfiles`**. |
 | **Thelonious Monk** | `thelonious_monk` | **Shipped (2026-04-29)** — angular harmony slice (**7b9** signature dominant, tritone sub, dim7 chromatic passing, stride palette, deferred cadence); **`precomputeTheloniousMonkEffectiveHarmonyBars`**, **`tm:*`** receipts, smoke **`theloniousMonkSliceSmoke.test.ts`**; aliases **`monk`** / **`thelonious`** / **`thelonious_monk`**; harmonic rules from **`engines/monk-engine`** — **no external research required**. |
+| **Andrew Hill** | `andrew_hill` | **Shipped (2026-04-29)** — angular non-functional post-bop slice; **`precomputeAndrewHillEffectiveHarmonyBars`**, **`ah:*`** receipts (**d1–d5**), smoke **`andrewHillSliceSmoke.test.ts`**; aliases **`andrew_hill`** / **`hill`** / **`andrew`**; **`avoid_resolution=True`**, open cadence strategy. |
 
 **Note:** The catalogue already lists many writers and arrangers (see **Past → Songwriters & arrangers**); *impact* here means **new musical neighbourhoods** for end users and eval diversity, not raw fame ranking.
 
@@ -431,14 +432,36 @@ These items raise **output diversity** without assuming a single engine rewrite:
 ### Altered Tuning Presets (workstream)
 
 - **Scope:** **Guitar-layer** feature — **independent** of Song Mode **harmony slices** (`*Slice.ts`); tuning selection colours **voicing maps** and fingering grammar, not the locked harmonic progression row by itself.
-- **Target:** **Six** named presets, each with **idiomatic chord voicing maps** (symbols + optional fret/string hints where the engine emits guitar-comp metadata).
-- **Presets (strings low → high):**
-  - **All Fourths** — **E A D G C F** — Pat Metheny–adjacent **linear jazz** voicings.
-  - **New Standard** — **C G D A E G** — Robert Fripp — wide range, open top.
-  - **CGDGCD** — Sonic Youth **“Confusion is Sex”** era — drone / noise vocabulary.
-  - **DGDFCE** — Joni Mitchell **“A Case of You”** — highly distinctive colour.
-  - **Open Cmaj7** — **C G E G B E** — impressionist palette; **Bill Evans**–adjacent voicing habits at the guitar.
-  - **Quartal** — **B E A D G C** — McCoy Tyner territory — **modal jazz** / stacked fourths.
+- **Target:** **Twenty-four** named presets (six per character zone below), each with **idiomatic chord voicing maps** (symbols + optional fret/string hints where the engine emits guitar-comp metadata).
+- **Presets (strings low → high), grouped by character zone:**
+  - **Jazz / Sophisticated**
+    - **All Fourths** (**E A D G C F**) — Pat Metheny, linear jazz voicings
+    - **All Fifths** (**C G D A E B**) — cello tuning, wide interval spread
+    - **New Standard** (**C G D A E G**) — Robert Fripp, wide range, open top
+    - **Minor Third Stack** (**C Eb F# A**) — diminished symmetry, Monk-adjacent
+    - **Augmented Stack** (**C E Ab C**) — symmetrical, Messiaen colour
+    - **Whole Tone** (**C D E F# Ab Bb**) — Debussy/impressionist, no leading tone
+  - **Sonic Youth / Noise / Experimental**
+    - **CGDGCD** — Sonic Youth “Confusion is Sex” era, drone/noise
+    - **CGDGBD** — drone-heavy, two open Gs
+    - **EBEBEB** — maximum drone, all strings ring together
+    - **FACGCE** — dissonant, cluster-friendly
+    - **CGCGCE** — open C with added tension
+    - **DGDGBD** — open G variant, darker character
+  - **Joni Mitchell Specifics**
+    - **DGDFCE** — “A Case of You”, highly distinctive
+    - **CGEFGE** — “Little Green”
+    - **CGDGBE** — “Both Sides Now”
+    - **DADGBE** — “Big Yellow Taxi” variant
+    - **DADF#AD** — open D minor variant, very dark
+    - **EEEEBE** — “The Last Time I Saw Richard” era
+  - **Hybrid / Harmonic**
+    - **Open Cmaj7** (**C G E G B E**) — impressionist, Bill Evans adjacent
+    - **Open Dm9** (**D A D F C E**) — dark, modal
+    - **Quartal** (**B E A D G C**) — McCoy Tyner territory, modal jazz
+    - **Overtone** (**C G C G C E**) — pure harmonic series, very resonant
+    - **Open Em11** (**E B D G B E**) — ECM-adjacent, very open
+    - **Sus2 Stack** (**D A D A D E**) — drone with suspended colour
 - **Creative target:** A named **Joni Mitchell × Sonic Youth** hybrid preset or style-bundle — deliberate blend of **open-tuning lyric colour** with **noise/drone** gesture space (product/marketing hook, not auto-fusion of slices).
 - **Theoretical reference:** **Tonality Vault** — document **`All_Chords_in_Tonality_Vault.docx`** (user-held reference) as the authority for **triad-pair** relationships and **per-tuning voicing maps** when presets are implemented.
 - **Hardware note:** User workflow uses **Line 6 Variax + Helix** — **any** tuning is available at **effectively zero** retuning cost in the physical rig, so **no tuning is off limits** for Composer OS preset design.

@@ -803,6 +803,28 @@ export interface GenerationMetadata {
   theloniousMonkAntiElaborationGuards?: {
     lushExtensionStripped: number;
   };
+  /** Andrew Hill (post-bop angular non-functional harmony) — slice diagnostics + effective harmony. */
+  andrewHillDiagnostics?: {
+    songwriterId: 'andrew_hill';
+    barsConsidered: number;
+    susClusterTouches: number;
+    tritoneFieldTouches: number;
+    nonfunctionalMinorTouches: number;
+    tritoneRootReceiptTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      lushExtensionStripped: number;
+      twoFiveChainMuted: number;
+    };
+    deviceReceipts?: string[];
+  };
+  andrewHillSliceReceipt?: string;
+  andrewHillEffectiveHarmonyBars?: string[];
+  andrewHillDeviceReceipts?: string[];
+  andrewHillAntiElaborationGuards?: {
+    lushExtensionStripped: number;
+    twoFiveChainMuted: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

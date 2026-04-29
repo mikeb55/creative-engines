@@ -312,6 +312,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return tmEff[barIndex - 1]!;
   }
 
+  /**
+   * Andrew Hill: `precomputeAndrewHillEffectiveHarmonyBars` applies angular non-functional devices — receipts **`ah:*`**.
+   * After precompute, `andrewHillEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const ahEff = meta?.andrewHillEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'andrew_hill' &&
+    Array.isArray(ahEff) &&
+    ahEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return ahEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

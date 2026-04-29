@@ -418,4 +418,10 @@ export interface OutputEntry {
   theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
   theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
   theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
+  /** Andrew Hill (angular non-functional harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  andrewHillDiagnostics?: GenerationMetadata['andrewHillDiagnostics'];
+  andrewHillDeviceReceipts?: GenerationMetadata['andrewHillDeviceReceipts'];
+  andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
+  andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
+  andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
 }

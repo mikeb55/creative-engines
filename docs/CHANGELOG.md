@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: Andrew Hill Song Mode slice — 58/58 smoke
+
+- **feat:** **`andrewHillSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/andrewHillSlice.ts`**) — golden-path precompute, **`ah:*`** device receipts (**d1–d5**), **`andrewHillEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring (**`runGoldenPath.ts`** MusicXML locked-truth chain includes **`andrew_hill`**); **`andrewHillSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **58** passed / **0** failed (**25** suites). **19** shipped songwriter slices.
+- **note:** Angular non-functional slice — tritone root motion, sus/cluster substitution, dominant suppression, pedal center, non-functional m7/m11, contrast ostinato lock; **`avoid_resolution=True`** posture, open cadence strategy.
+- **note:** Sourced from **`engines/andrew-hill-engine`** Python internals + **github.com/mikeb55/Andrew-Hill-Engine** ECM trio spec.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **58**/0 (**25** suites), **19** shipped slices; registry aliases **`andrew_hill`** / **`hill`** / **`andrew`**.
+
 ## [2026-04-29] feat: Thelonious Monk Song Mode slice — 57/57 smoke
 
 - **feat:** **`theloniousMonkSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/theloniousMonkSlice.ts`**) — golden-path precompute, **`tm:*`** device receipts, **`theloniousMonkEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring; **`theloniousMonkSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **57** passed / **0** failed (**24** suites). **18** shipped songwriter slices.

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **57** PASS rows, **24** suites (2026-04-29).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **58** PASS rows, **25** suites (2026-04-29).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -30,6 +30,7 @@ import { runHerbieHancockSliceSmokeTests } from './herbieHancockSliceSmoke.test'
 import { runSondheimSliceSmokeTests } from './sondheimSliceSmoke.test';
 import { runKateBushSliceSmokeTests } from './kateBushSliceSmoke.test';
 import { runTheloniousMonkSliceSmokeTests } from './theloniousMonkSliceSmoke.test';
+import { runAndrewHillSliceSmokeTests } from './andrewHillSliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 
 type Row = { name: string; ok: boolean };
@@ -58,6 +59,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Stephen Sondheim songwriter slice', run: runSondheimSliceSmokeTests },
   { label: 'Kate Bush songwriter slice', run: runKateBushSliceSmokeTests },
   { label: 'Thelonious Monk songwriter slice', run: runTheloniousMonkSliceSmokeTests },
+  { label: 'Andrew Hill songwriter slice', run: runAndrewHillSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
 ];
 

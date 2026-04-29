@@ -208,6 +208,11 @@ export function writeOutputManifest(
     theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
     theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
     theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
+    andrewHillDiagnostics?: GenerationMetadata['andrewHillDiagnostics'];
+    andrewHillDeviceReceipts?: GenerationMetadata['andrewHillDeviceReceipts'];
+    andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
+    andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
+    andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -375,6 +380,11 @@ export function writeOutputManifest(
     theloniousMonkSliceReceipt: meta.theloniousMonkSliceReceipt,
     theloniousMonkEffectiveHarmonyBars: meta.theloniousMonkEffectiveHarmonyBars,
     theloniousMonkAntiElaborationGuards: meta.theloniousMonkAntiElaborationGuards,
+    andrewHillDiagnostics: meta.andrewHillDiagnostics,
+    andrewHillDeviceReceipts: meta.andrewHillDeviceReceipts,
+    andrewHillSliceReceipt: meta.andrewHillSliceReceipt,
+    andrewHillEffectiveHarmonyBars: meta.andrewHillEffectiveHarmonyBars,
+    andrewHillAntiElaborationGuards: meta.andrewHillAntiElaborationGuards,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

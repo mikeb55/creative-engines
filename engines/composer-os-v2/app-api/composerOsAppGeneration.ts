@@ -859,6 +859,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const shLockedTruth = mdLockedTruth?.sondheimEffectiveHarmonyBars;
   const kbLockedTruth = mdLockedTruth?.kateBushEffectiveHarmonyBars;
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
+  const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -968,7 +969,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                           lockedHarmonyBarsAuthoritative &&
                                           tmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                         ? tmLockedTruth
-                                        : lockedHarmonyBarsAuthoritative;
+                                        : mdLockedTruth?.songwriterStyleId === 'andrew_hill' &&
+                                            Array.isArray(ahLockedTruth) &&
+                                            ahLockedTruth.length === tbLockedTruth &&
+                                            lockedHarmonyBarsAuthoritative &&
+                                            ahLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                          ? ahLockedTruth
+                                          : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&
@@ -1276,6 +1283,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       theloniousMonkSliceReceipt: gp.context.generationMetadata.theloniousMonkSliceReceipt,
       theloniousMonkEffectiveHarmonyBars: gp.context.generationMetadata.theloniousMonkEffectiveHarmonyBars,
       theloniousMonkAntiElaborationGuards: gp.context.generationMetadata.theloniousMonkAntiElaborationGuards,
+      andrewHillDiagnostics: gp.context.generationMetadata.andrewHillDiagnostics,
+      andrewHillDeviceReceipts: gp.context.generationMetadata.andrewHillDeviceReceipts,
+      andrewHillSliceReceipt: gp.context.generationMetadata.andrewHillSliceReceipt,
+      andrewHillEffectiveHarmonyBars: gp.context.generationMetadata.andrewHillEffectiveHarmonyBars,
+      andrewHillAntiElaborationGuards: gp.context.generationMetadata.andrewHillAntiElaborationGuards,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,

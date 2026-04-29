@@ -496,9 +496,30 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('evans.ballad_arc', 'Ballad narrative arc; bridge lift (placeholder)', 'songwriter', 'form', 7, 'form'),
   ],
   andrew_hill: [
-    R('hill.interval_cells', 'Interval-cell development and transposition', 'songwriter', 'melody', 8, 'global'),
-    R('hill.asymmetric_phrase', 'Asymmetric phrase lengths vs grid', 'songwriter', 'form', 8, 'form'),
-    R('hill.ambiguous_field', 'Ambiguous tonal fields; delayed resolution', 'songwriter', 'harmony', 8, 'verse'),
+    R(
+      'hill.interval_cells',
+      'Interval-cell / tritone harmonic field motion (slice d1 `ah:tritone_root` — angular root displacement on non-dominant chords)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'hill.asymmetric_phrase',
+      'Asymmetric phrase grid vs ostinato / pedal spans (slice d4 `ah:pedal_center` — 2–4 bar bass-axis locks)',
+      'songwriter',
+      'form',
+      8,
+      'form'
+    ),
+    R(
+      'hill.ambiguous_field',
+      'Ambiguous tonal fields — sus/cluster stripping, dominant suppression, non-functional m7/m11 (slice d2/d3/d5 `ah:sus_cluster`, `ah:dom_suppress`, `ah:nonfunctional_m7`)',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
   ],
   antonio_carlos_jobim: [
     R('jobim.bossa_extensions', 'Brazilian extended tonic / altered dominant colours (placeholder)', 'songwriter', 'harmony', 9, 'global'),

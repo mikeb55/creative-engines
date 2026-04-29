@@ -68,7 +68,6 @@ type ChordDxReceiptUi = {
 };
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
-  { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
@@ -114,6 +113,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'thelonious_monk', label: 'Thelonious Monk' },
+  { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
@@ -132,6 +132,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'stephen_sondheim',
   'kate_bush',
   'thelonious_monk',
+  'andrew_hill',
   'bill_evans',
   'bacharach',
   'donald_fagen',
