@@ -20,7 +20,7 @@ import {
   typeAndDotsXml,
   tickSpecForLength,
 } from './musicXmlTickEncoding';
-import { noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
+import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 
@@ -67,6 +67,24 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
+/** Short names for part-list / Sibelius score manager (part id → abbreviation). */
+const PART_ABBREV: Record<string, string> = {
+  bb_alto_sax: 'Alt.',
+  bb_tenor_sax: 'Ten.',
+  bb_trumpets: 'Tpt.',
+  bb_trombones: 'Tbn.',
+  bb_rhythm_section: 'Bas.',
+  bb_piano: 'Pno.',
+  bb_drums: 'Dr.',
+  sq_violin_1: 'Vln.I',
+  sq_violin_2: 'Vln.II',
+  sq_viola: 'Vla.',
+  sq_cello: 'Vc.',
+  sq_piano: 'Pno.',
+  guitar: 'Gtr.',
+  bass: 'Bas.',
+};
+
 /** Quarter-note BPM for MusicXML metronome / sound — export options override score model; default 120. */
 function resolveExportBpm(opts: MusicXmlExportOptions, score: ScoreModel): number {
   const raw = opts.bpm ?? score.tempo ?? 120;
@@ -98,27 +116,6 @@ function formatSectionRehearsalLabel(raw: string): string {
 /** V3.4e — stable bar order for export; MusicXML `number` is assigned 1..n separately (Sibelius-safe). */
 function measuresInExportOrder(part: PartModel): MeasureModel[] {
   return [...part.measures].sort((a, b) => a.index - b.index);
-}
-
-function midiToPitch(midi: number): { step: string; alter: number; octave: number } {
-  const stepMap: Record<number, { step: string; alter: number }> = {
-    0: { step: 'C', alter: 0 }, 1: { step: 'C', alter: 1 }, 2: { step: 'D', alter: 0 },
-    3: { step: 'D', alter: 1 }, 4: { step: 'E', alter: 0 }, 5: { step: 'F', alter: 0 },
-    6: { step: 'F', alter: 1 }, 7: { step: 'G', alter: 0 }, 8: { step: 'G', alter: 1 },
-    9: { step: 'A', alter: 0 }, 10: { step: 'A', alter: 1 }, 11: { step: 'B', alter: 0 },
-  };
-  if (!Number.isFinite(midi)) {
-    return { step: 'C', alter: 0, octave: 4 };
-  }
-  const rounded = Math.round(midi);
-  const semitones = ((rounded % 12) + 12) % 12;
-  const octave = Math.floor(rounded / 12) - 1;
-  const entry = stepMap[semitones];
-  if (!entry) {
-    return { step: 'C', alter: 0, octave };
-  }
-  const { step, alter } = entry;
-  return { step, alter, octave };
 }
 
 function tieXmlForSplitIndex(i: number, n: number): string {
@@ -417,6 +414,7 @@ function eventsToXml(
   part: PartModel,
   decompose: (ticks: number) => number[],
   opts: MusicXmlExportOptions,
+  preferFlats: boolean,
   /** When any measure in this part uses voice 2, emit voice 1 → backup → voice 2 in every measure (voice 2 rests if empty). Sibelius requires this; sparse duo bars often only had v1 in the score model. */
   forceDualVoiceSecondLayer: boolean
 ): string {
@@ -501,7 +499,7 @@ function eventsToXml(
         const staff = staffPolyphonyXml ?? '';
         for (let pi = 0; pi < chordEv.pitches.length; pi++) {
           const mid = chordEv.pitches[pi]!;
-          const { step, alter, octave } = midiToPitch(mid);
+          const { step, alter, octave } = midiToPitch(mid, preferFlats);
           const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           if (pi === 0) {
@@ -544,7 +542,7 @@ function eventsToXml(
         for (let gi = 0; gi < grouped.length; gi++) {
           const note = grouped[gi]!;
           const exportMidi = note.pitch;
-          const { step, alter, octave } = midiToPitch(exportMidi);
+          const { step, alter, octave } = midiToPitch(exportMidi, preferFlats);
           const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           const art = (note as { articulation?: string }).articulation;
@@ -570,7 +568,7 @@ function eventsToXml(
             const spec = tickSpecForLength(durTicks);
             const typeDots = typeAndDotsXml(spec);
             for (let pi = 1; pi < stack.length; pi++) {
-              const { step: s2, alter: a2, octave: o2 } = midiToPitch(stack[pi]!);
+              const { step: s2, alter: a2, octave: o2 } = midiToPitch(stack[pi]!, preferFlats);
               const alterEl2 = a2 !== 0 ? `<alter>${a2}</alter>` : '';
               const pitchXml2 = `<pitch><step>${s2}</step>${alterEl2}<octave>${o2}</octave></pitch>`;
               xml += noteXmlPitchedFragment({
@@ -621,6 +619,8 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
   try {
     logGuitarVoice2CheckpointFromScore('B-pre-export', score);
     const opts: MusicXmlExportOptions = options ?? {};
+    const USE_ENHARMONIC_SPELLING = true;
+    const preferFlats = USE_ENHARMONIC_SPELLING && (score.keySignature?.fifths ?? 0) < 0;
     const decompose = opts.minimizeNoteFragmentation ? decomposeTicksToMinimalParts : decomposeTicksToStandardParts;
     const dbg = score.keySignatureExportDebug;
     const ks0 = score.keySignature;
@@ -670,7 +670,8 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const soundEl = instrumentSoundXmlForPart(p);
-        const partAbbrevXml = '';
+        const abbrev = PART_ABBREV[p.id] ?? '';
+        const partAbbrevXml = abbrev ? `\n      <part-abbreviation>${escapeXml(abbrev)}</part-abbreviation>` : '';
         const midiInstrumentBody = `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
       <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
@@ -697,9 +698,18 @@ ${partList}
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
       const clefOctaveChangeXml = '';
-      const clefXml = isBigBandDrums
-        ? '<clef number="1"><sign>percussion</sign><line>2</line></clef>'
-        : `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;
+      let clefXml: string;
+      if (isBigBandDrums) {
+        clefXml = '<clef number="1"><sign>percussion</sign><line>2</line></clef>';
+      } else if (
+        part.instrumentIdentity === 'string_quartet_viola' ||
+        part.instrumentIdentity === 'viola' ||
+        part.id === 'sq_viola'
+      ) {
+        clefXml = '<clef><sign>C</sign><line>3</line></clef>';
+      } else {
+        clefXml = `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;
+      }
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
@@ -822,7 +832,7 @@ ${partList}
         xml +=
           part.instrumentIdentity === 'big_band_jazz_drums'
             ? bigBandDrumsEventsToXml(m, i, part, decompose, opts)
-            : eventsToXml(m, i, part, decompose, opts, forceDualVoiceSecondLayer);
+            : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer);
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;

@@ -11,6 +11,57 @@
  * Sibelius-safe: <type> must precede <staff> on every note; rest and pitched paths use the same ordering.
  */
 
+/** MIDI number → MusicXML pitch components (export spelling may favour flats when `preferFlats`). */
+export type MidiPitchParts = { step: string; alter: number; octave: number };
+
+/**
+ * Maps sharp spelling (step + alter +1) to flat spelling for flat-key scores (negative fifths).
+ * C#→Db, D#→Eb, F#→Gb, G#→Ab, A#→Bb at same octave.
+ */
+const ENHARM_SHARP_TO_FLAT: Record<string, { step: string; alter: number }> = {
+  C: { step: 'D', alter: -1 },
+  D: { step: 'E', alter: -1 },
+  F: { step: 'G', alter: -1 },
+  G: { step: 'A', alter: -1 },
+  A: { step: 'B', alter: -1 },
+};
+
+export function midiToPitch(midi: number, preferFlats = false): MidiPitchParts {
+  const stepMap: Record<number, { step: string; alter: number }> = {
+    0: { step: 'C', alter: 0 },
+    1: { step: 'C', alter: 1 },
+    2: { step: 'D', alter: 0 },
+    3: { step: 'D', alter: 1 },
+    4: { step: 'E', alter: 0 },
+    5: { step: 'F', alter: 0 },
+    6: { step: 'F', alter: 1 },
+    7: { step: 'G', alter: 0 },
+    8: { step: 'G', alter: 1 },
+    9: { step: 'A', alter: 0 },
+    10: { step: 'A', alter: 1 },
+    11: { step: 'B', alter: 0 },
+  };
+  if (!Number.isFinite(midi)) {
+    return { step: 'C', alter: 0, octave: 4 };
+  }
+  const rounded = Math.round(midi);
+  const semitones = ((rounded % 12) + 12) % 12;
+  const octave = Math.floor(rounded / 12) - 1;
+  const entry = stepMap[semitones];
+  if (!entry) {
+    return { step: 'C', alter: 0, octave };
+  }
+  let { step, alter } = entry;
+  if (preferFlats && alter === 1) {
+    const flat = ENHARM_SHARP_TO_FLAT[step];
+    if (flat) {
+      step = flat.step;
+      alter = flat.alter;
+    }
+  }
+  return { step, alter, octave };
+}
+
 /** Rest note: rest → duration → voice → type (+ dots) → staff? (must match pitched-note discipline). */
 export function noteXmlRestFragment(opts: {
   durationTicks: number;
