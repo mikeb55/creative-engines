@@ -27,12 +27,13 @@ function isStringQuartetWybleMap(layout: EnsembleWybleRoleMap): boolean {
 export function applyQuartetWybleChordToneStack(
   stack: QuartetChordToneStack,
   layout: EnsembleWybleRoleMap | undefined,
-  previousInner?: { violin2?: number; viola?: number }
+  previousInner?: { violin1?: number; violin2?: number; viola?: number }
 ): [number, number, number, number] {
+  const v1 = nearestOctaveToPrevious(stack[0]!, previousInner?.violin1 ?? null);
   if (!layout || !isStringQuartetWybleMap(layout)) {
-    return [stack[0]!, stack[1]!, stack[2]!, stack[3]!];
+    return [v1, stack[1]!, stack[2]!, stack[3]!];
   }
-  const raw = [stack[0]!, stack[2]!, stack[1]!, stack[3]!] as [number, number, number, number];
+  const raw = [v1, stack[2]!, stack[1]!, stack[3]!] as [number, number, number, number];
   const v2 = nearestOctaveToPrevious(raw[1], previousInner?.violin2 ?? null);
   const va = nearestOctavePreferContrary({
     targetMidi: raw[2],

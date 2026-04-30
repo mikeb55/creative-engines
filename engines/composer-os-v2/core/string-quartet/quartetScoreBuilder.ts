@@ -200,11 +200,26 @@ function barChord(bar: number, seed: number, era?: BigBandEraId): string {
   return barChordFromCycle(bar, seed, ERA_PROGRESSION_CYCLES[era]);
 }
 
+const USE_CHORD_QUALITY_VOICING_SQ = true;
+
+/** Minor / diminished surface matcher (exclude maj-bearing symbols via `maj` guard when classifying). */
+const SQ_MINOR_DIM_CHORD_RE = /m|min|dim|ø|°/;
+
 /** Order: v1, v2, va, vc (same as QUARTET_INSTRUMENTS). */
-function pitchesQuartetString(rootPc: number): [number, number, number, number] {
+function pitchesQuartetString(rootPc: number, sym: string): [number, number, number, number] {
   const r = rootPc;
+  let vaThirdOff = 3;
+  if (USE_CHORD_QUALITY_VOICING_SQ) {
+    const hasMajQuality = /maj|Δ|ma7/i.test(sym);
+    const minorOrDim = SQ_MINOR_DIM_CHORD_RE.test(sym) && !hasMajQuality;
+    const majOrDom =
+      hasMajQuality ||
+      (!minorOrDim &&
+        /(?:[a-g][#b]?(?:7|9|11|13)\b|7alt|7sus|7b9|7#9|7#11|7b13)/i.test(sym.trim()));
+    vaThirdOff = majOrDom && !minorOrDim ? 4 : 3;
+  }
   const vc = snapMidiToRange(48 + r, ...QUARTET_MIDI_BOUNDS[SQ_PART_VC]);
-  const va = snapMidiToRange(60 + r + 3, ...QUARTET_MIDI_BOUNDS[SQ_PART_VA]);
+  const va = snapMidiToRange(60 + r + vaThirdOff, ...QUARTET_MIDI_BOUNDS[SQ_PART_VA]);
   const v2 = snapMidiToRange(67 + r + 4, ...QUARTET_MIDI_BOUNDS[SQ_PART_V2]);
   const v1 = snapMidiToRange(72 + r + 7, ...QUARTET_MIDI_BOUNDS[SQ_PART_V1]);
   return [v1, v2, va, vc];
@@ -309,7 +324,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   });
 
   const wholeTracker = new WholeNoteDensityTracker();
-  let prevQuartetInner: { violin2?: number; viola?: number } = {};
+  let prevQuartetInner: { violin1?: number; violin2?: number; viola?: number } = {};
   /** Rolling 3-bar violin I windows for {@link applySlonimskyToMelodyLine}. */
   const slonimskyV1Acc: number[] = [];
 
@@ -322,8 +337,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc), wybleVoiceLayout, prevQuartetInner);
-    prevQuartetInner = { violin2: stack[1], viola: stack[2] };
+    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc, sym), wybleVoiceLayout, prevQuartetInner);
+    prevQuartetInner = { violin1: stack[0], violin2: stack[1], viola: stack[2] };
 
     let melodyPitchV1 = stack[0]!;
     if (USE_RETURN_OCTAVE_LIFT && slice?.phase === 'return') {

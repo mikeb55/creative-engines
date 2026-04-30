@@ -352,11 +352,31 @@ function addBigBandDrumPattern(
   legacySimple(hatMidi);
 }
 
-/** Horns + piano / bass — alto/tenor share the same sectional sax pitch. */
-function pitchesForBigBandBar(rootPc: number): [number, number, number, number, number, number] {
+const USE_CHORD_QUALITY_VOICING_BB = true;
+
+/** Minor / diminished surface matcher (exclude maj-bearing symbols via `maj` guard in caller). */
+const BB_MINOR_DIM_CHORD_RE = /m|min|dim|ø|°/;
+
+function pitchesForBigBandBar(rootPc: number, sym: string): [number, number, number, number, number, number] {
   const r = rootPc;
-  const sax = snapMidiToRange(55 + r + 4, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
-  const trp = snapMidiToRange(60 + r + 11, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
+  let saxThirdOff = 4;
+  let trpSeventhOff = 11;
+  if (USE_CHORD_QUALITY_VOICING_BB) {
+    const hasMajQuality = /maj|Δ|ma7/i.test(sym);
+    const minorOrDim = BB_MINOR_DIM_CHORD_RE.test(sym) && !hasMajQuality;
+    if (minorOrDim) {
+      saxThirdOff = 3;
+    }
+    if (
+      !hasMajQuality &&
+      !minorOrDim &&
+      /(?:[a-g][#b]?(?:7|9|11|13)\b|7alt|7sus|7b9|7#9|7#11|7b13)/i.test(sym.trim())
+    ) {
+      trpSeventhOff = 10;
+    }
+  }
+  const sax = snapMidiToRange(55 + r + saxThirdOff, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+  const trp = snapMidiToRange(60 + r + trpSeventhOff, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
   const bone = snapMidiToRange(48 + r + 7, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TROMBONES]);
   const piano = snapMidiToRange(60 + r, 55, 84);
   const bass = snapMidiToRange(36 + r, ...BIG_BAND_MIDI_BOUNDS[BB_PART_RHYTHM]);
@@ -385,7 +405,7 @@ export function computeBigBandHeadLeadOffsets(params: {
 
     const sym = chordSequence[bar - 1] ?? 'Cmaj7';
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = pitchesForBigBandBar(rpc);
+    const stack = pitchesForBigBandBar(rpc, sym);
     let altoMidi = stack[0];
     let tenorMidi = stack[1];
     let trumpetMidi = stack[2];
@@ -546,6 +566,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   const USE_PIANO_COMP = true;
   const USE_SLONIMSKY_BB = true;
   const USE_SPACE_EMPHASIS = true;
+  const USE_SHOUT_REGISTER_LIFT = true;
   const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout, enhancedPlanning } =
     input;
   const totalBars = formPlan.totalBars;
@@ -619,7 +640,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = pitchesForBigBandBar(rpc);
+    const stack = pitchesForBigBandBar(rpc, sym);
     let altoMidi = stack[0];
     let tenorMidi = stack[1];
     let trumpetMidi = stack[2];
@@ -794,6 +815,14 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
         let pitch =
           idx === 0 ? melodyPitchAlto : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
+        if (
+          USE_SHOUT_REGISTER_LIFT &&
+          idx === 2 &&
+          sectionTag === 'shout' &&
+          !(shoutBeats && shoutBeats.length > 0)
+        ) {
+          pitch = snapMidiToRange(pitch + 5, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
+        }
         const pid = BB_PART_IDS[idx];
         if ((idx === 2 || idx === 3) && shoutBeats && shoutBeats.length > 0) {
           /** V2: trumpet lift biased by bars 1–8 head theme average (deterministic). */
