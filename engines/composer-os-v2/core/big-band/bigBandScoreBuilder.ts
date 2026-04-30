@@ -439,7 +439,46 @@ function addPunchPattern(measure: MeasureModel, pitch: number, beats: number[], 
   if (cursor < 4) addEvent(measure, createRest(cursor, 4 - cursor, voice));
 }
 
+/** Piano comp register — matches {@link pitchesForBigBandBar} piano snap range. */
+function clampPianoMidi(midi: number): number {
+  return snapMidiToRange(midi, 55, 84);
+}
+
+/** Simple maj7 / minor7 / dominant shell intervals from chord symbol text. */
+function pianoShellHalfStepsFromSymbol(sym: string): { third: number; seventh: number } {
+  const t = sym.trim();
+  const low = t.toLowerCase();
+  if (/^[a-g][#b]?m(?!aj)/i.test(t)) {
+    return { third: 3, seventh: 10 };
+  }
+  if (low.includes('maj') || low.includes('Δ') || low.includes('ma7')) {
+    return { third: 4, seventh: 11 };
+  }
+  return { third: 4, seventh: 10 };
+}
+
+function wrapBeatInBar(beat: number): number {
+  let x = beat;
+  while (x >= 4) x -= 4;
+  while (x < 0) x += 4;
+  return x;
+}
+
+/** Nudge comp hits off brass punch beats (same grid as {@link addPunchPattern}). */
+function nudgePianoHitsOffBrass(hits: number[], brassBeats: readonly number[]): number[] {
+  return hits.map((hb) => {
+    let h = hb;
+    for (let iter = 0; iter < 8; iter++) {
+      const clash = brassBeats.some((bb) => Math.abs(bb - h) < 0.45);
+      if (!clash) break;
+      h = wrapBeatInBar(h + 0.5);
+    }
+    return h;
+  });
+}
+
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
+  const USE_PIANO_COMP = true;
   const USE_SLONIMSKY_BB = true;
   const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
@@ -596,7 +635,44 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         continue;
       }
       if (partId === 'bb_piano') {
-        addEvent(m, createRest(0, 4));
+        if (
+          !USE_PIANO_COMP ||
+          sectionTag === 'shout' ||
+          sectionTag === 'solo' ||
+          inDesignatedSaxSoliWindow(bar, totalBars)
+        ) {
+          addEvent(m, createRest(0, 4));
+          continue;
+        }
+
+        const pianoMidi = stack[4]!;
+        const brassHitBeats = brassPunches.get(bar) ?? [];
+        const { third: tHs, seventh: sHs } = pianoShellHalfStepsFromSymbol(sym);
+        const rootM = clampPianoMidi(pianoMidi);
+        const shell: number[] = [
+          rootM,
+          clampPianoMidi(pianoMidi + tHs),
+          clampPianoMidi(pianoMidi + sHs),
+        ];
+
+        const rotateForwardOneBeat = (bar + seed) % 3 === 0;
+        const rot = rotateForwardOneBeat ? 1 : 0;
+        const rotHit = (b: number) => wrapBeatInBar(b + rot);
+
+        let hitBeats: number[];
+        if (sectionTag === 'melody') {
+          hitBeats = [0, 1.5, 3].map(rotHit);
+        } else {
+          hitBeats = [0, 2.5].map(rotHit);
+        }
+        hitBeats = nudgePianoHitsOffBrass(hitBeats, brassHitBeats);
+
+        if (needRhythmSplit) {
+          addEvent(m, createNote(rootM, 0, 4, 1));
+        }
+        for (const hb of hitBeats) {
+          addEvent(m, createNote(rootM, hb, 0.5, 2, undefined, shell));
+        }
         continue;
       }
 

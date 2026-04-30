@@ -249,7 +249,33 @@ function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): voi
   }
 }
 
+/** Piano comp register (matches BB piano / treble comp band). */
+function clampPianoMidiSq(midi: number): number {
+  return snapMidiToRange(midi, 55, 84);
+}
+
+/** Minor / maj7 / dominant shell intervals from chord symbol (aligned with BB piano). */
+function pianoShellHalfStepsFromSymbolSq(sym: string): { third: number; seventh: number } {
+  const t = sym.trim();
+  const low = t.toLowerCase();
+  if (/^[a-g][#b]?m(?!aj)/i.test(t)) {
+    return { third: 3, seventh: 10 };
+  }
+  if (low.includes('maj') || low.includes('Δ') || low.includes('ma7')) {
+    return { third: 4, seventh: 11 };
+  }
+  return { third: 4, seventh: 10 };
+}
+
+function wrapBeatInBarSq(beat: number): number {
+  let x = beat;
+  while (x >= 4) x -= 4;
+  while (x < 0) x += 4;
+  return x;
+}
+
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
+  const USE_PIANO_COMP_SQ = true;
   const USE_SLONIMSKY_SQ = true;
   const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
@@ -373,8 +399,49 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     rehearsalForBar
   );
   for (let bar = 1; bar <= totalBars; bar++) {
-    const m = pianoPart.measures[bar - 1];
-    addEvent(m, createRest(0, 4));
+    const m = pianoPart.measures[bar - 1]!;
+    if (!USE_PIANO_COMP_SQ) {
+      addEvent(m, createRest(0, 4));
+      continue;
+    }
+
+    const sym = chordForBar(bar);
+    const rpc = chordSymbolRootPc(sym) ?? 0;
+    const pianoMidi = snapMidiToRange(60 + rpc, 55, 84);
+    const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
+    const sectionTag = (slice?.phase ?? 'other') as SectionTag;
+
+    /** Theme / solo tacet: quartet `statement` ≈ theme, `development` ≈ solo. */
+    if (sectionTag === 'statement' || sectionTag === 'development') {
+      addEvent(m, createRest(0, 4));
+      continue;
+    }
+
+    const { third: tHs, seventh: sHs } = pianoShellHalfStepsFromSymbolSq(sym);
+    const rootM = clampPianoMidiSq(pianoMidi);
+    const shell: number[] = [
+      rootM,
+      clampPianoMidiSq(pianoMidi + tHs),
+      clampPianoMidiSq(pianoMidi + sHs),
+    ];
+
+    const rotateForwardOneBeat = (bar + seed) % 3 === 0;
+    const rot = rotateForwardOneBeat ? 1 : 0;
+    const rotHit = (b: number) => wrapBeatInBarSq(b + rot);
+
+    let hitBeats: number[];
+    if (sectionTag === 'contrast') {
+      hitBeats = [0, 1.5, 3].map(rotHit);
+    } else {
+      hitBeats = [0, 2.5].map(rotHit);
+    }
+
+    if (bar % 4 === 0) {
+      addEvent(m, createNote(rootM, 0, 4, 1));
+    }
+    for (const hb of hitBeats) {
+      addEvent(m, createNote(rootM, hb, 0.5, 2, undefined, shell));
+    }
   }
 
   const score = createScore(title, [...stringParts, pianoPart], { tempo: 96 });
