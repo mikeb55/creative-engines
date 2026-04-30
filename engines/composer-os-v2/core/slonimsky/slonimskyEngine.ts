@@ -1,3 +1,7 @@
+import type { PhraseIntent } from '../goldenPath/phraseIntentTypes';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { SLONIMSKY_ENGINE_PATTERNS } from './thesaurusRegistry';
+
 export type IntervalPatternId = string;
 
 export interface IntervalPattern {
@@ -19,6 +23,21 @@ export interface SlonimskyContext {
   phraseIntent: 'build' | 'release' | 'float' | 'shock';
   basePitch: number;
   maxBeats: number;
+  /** When set, patterns whose {@link IntervalPattern.styleAffinity} matches rank earlier (soft sort). */
+  styleProfile?: string;
+  /** Bar chord symbol — snaps first generated pitch to nearest chord tone when set. */
+  chordSymbol?: string;
+  effectiveLow?: number;
+  effectiveHigh?: number;
+  /** When true, `applySlonimskyToMelodyLine` skips chromatic passing insertion (post-pass hook default). */
+  skipInterpolation?: boolean;
+  /**
+   * Semitones added to the melody cursor at each completed interval cycle (see {@link generateSlonimskyPattern}).
+   * Default: derived from {@link phraseIntent} when omitted (`build` +2, `shock` +1, `release` −2, `float` 0).
+   */
+  transpositionInterval?: number;
+  /** Steps per transposition cycle; default = `pattern.intervals.length`. */
+  cycleLength?: number;
 }
 
 export interface SlonimskyNote {
@@ -31,84 +50,8 @@ export interface SlonimskyNote {
 const GUITAR_MIDI_MIN = 48;
 const GUITAR_MIDI_MAX = 84;
 
-export const SLONIMSKY_PATTERNS: IntervalPattern[] = [
-  {
-    id: 'p_minorThirdCycle',
-    name: 'Minor 3rd Cycle',
-    intervals: [3, 3, 3],
-    symmetryType: 'equalDivision',
-    baseDivision: 4,
-    defaultLength: 4,
-    tensionLevel: 2,
-    styleAffinity: ['coltrane', 'shorter'],
-  },
-  {
-    id: 'p_majorThirdCycle',
-    name: 'Major 3rd Cycle',
-    intervals: [4, 4],
-    symmetryType: 'equalDivision',
-    baseDivision: 3,
-    defaultLength: 3,
-    tensionLevel: 2,
-    styleAffinity: ['coltrane'],
-  },
-  {
-    id: 'p_tritonePole',
-    name: 'Tritone Pole',
-    intervals: [6, -6],
-    symmetryType: 'equalDivision',
-    baseDivision: 2,
-    defaultLength: 4,
-    tensionLevel: 3,
-    styleAffinity: ['brecker', 'coltrane'],
-  },
-  {
-    id: 'p_wholeTone',
-    name: 'Whole Tone Segment',
-    intervals: [2, 2, 2],
-    symmetryType: 'equalDivision',
-    baseDivision: 6,
-    defaultLength: 4,
-    tensionLevel: 1,
-    styleAffinity: ['ecm', 'shorter'],
-  },
-  {
-    id: 'p_asymCell123',
-    name: '1-2-3 Asymmetric Cell',
-    intervals: [1, 2, 3],
-    symmetryType: 'asymmetric',
-    defaultLength: 4,
-    tensionLevel: 2,
-    styleAffinity: ['brecker', 'coltrane'],
-  },
-  {
-    id: 'p_chromaticInterp',
-    name: 'Chromatic Interpolation',
-    intervals: [1, 1, 1],
-    symmetryType: 'asymmetric',
-    defaultLength: 4,
-    tensionLevel: 2,
-    styleAffinity: ['brecker'],
-  },
-  {
-    id: 'p_expanding',
-    name: 'Expanding Cell 1-2-3-4',
-    intervals: [1, 2, 3, 4],
-    symmetryType: 'asymmetric',
-    defaultLength: 5,
-    tensionLevel: 3,
-    styleAffinity: ['brecker', 'coltrane'],
-  },
-  {
-    id: 'p_contracting',
-    name: 'Contracting Cell 4-3-2-1',
-    intervals: [4, 3, 2, 1],
-    symmetryType: 'asymmetric',
-    defaultLength: 5,
-    tensionLevel: 1,
-    styleAffinity: ['ecm', 'shorter'],
-  },
-];
+/** Canonical catalogue — patterns defined in `thesaurusRegistry.ts` as {@link SLONIMSKY_ENGINE_PATTERNS}. */
+export const SLONIMSKY_PATTERNS: readonly IntervalPattern[] = SLONIMSKY_ENGINE_PATTERNS;
 
 function seededUnit(seed: number): number {
   let s = seed >>> 0;
@@ -120,15 +63,134 @@ function clampMidi(midi: number): number {
   return Math.max(GUITAR_MIDI_MIN, Math.min(GUITAR_MIDI_MAX, midi));
 }
 
+/** Whole-tone / semitone cycle shift when {@link SlonimskyContext.transpositionInterval} is unset. */
+function transpositionIntervalFromPhraseIntent(ctx: SlonimskyContext): number {
+  if (ctx.transpositionInterval !== undefined) return ctx.transpositionInterval;
+  switch (ctx.phraseIntent) {
+    case 'build':
+      return 2;
+    case 'shock':
+      return 1;
+    case 'release':
+      return -2;
+    case 'float':
+    default:
+      return 0;
+  }
+}
+
+function liftIntoRange(pitch: number, low: number, high: number): number {
+  let p = pitch;
+  while (p < low) p += 12;
+  while (p > high) p -= 12;
+  return Math.max(low, Math.min(high, p));
+}
+
+/** Snap start pitch to nearest chord tone in range when `chordSymbol` is set; else raw `basePitch`. */
+export function snapFirstNoteMidi(ctx: SlonimskyContext): number {
+  const low = ctx.effectiveLow ?? GUITAR_MIDI_MIN;
+  const high = ctx.effectiveHigh ?? GUITAR_MIDI_MAX;
+  const raw = clampMidi(ctx.basePitch);
+  const sym = ctx.chordSymbol?.trim();
+  if (sym) {
+    const t = chordTonesForChordSymbol(sym);
+    const candidates = [t.root, t.third, t.fifth, t.seventh].map((x) => liftIntoRange(x, low, high));
+    let best = raw;
+    let bestD = 999;
+    for (const c of candidates) {
+      const d = Math.abs(c - raw);
+      if (d < bestD) {
+        bestD = d;
+        best = c;
+      }
+    }
+    return clampMidi(best);
+  }
+  return raw;
+}
+
+/** Heuristic chord category for Slonimsky selection bias (`chordType` substring checks). */
+export function inferSlonimskyChordTypeCategory(symbol: string): string {
+  const s = symbol.trim().toLowerCase();
+  if (!s) return 'other';
+  if (s.includes('alt') || s.includes('7alt')) return 'dominant_alt';
+  if (s.includes('maj') || s.includes('ma7') || s.includes('Δ') || s.includes('major')) return 'major';
+  if (s.includes('min') || s.includes('m7') || s.includes('m9') || /\bo7\b|ø/.test(s)) return 'minor';
+  if (s.includes('7') || s.includes('9') || s.includes('11') || s.includes('13')) return 'dominant';
+  return 'other';
+}
+
+function styleAffinityTagFromProfile(styleProfile: string | undefined): 'coltrane' | 'shorter' | 'brecker' | 'ecm' | null {
+  if (!styleProfile) return null;
+  const s = styleProfile.toLowerCase();
+  if (s.includes('coltrane')) return 'coltrane';
+  if (s.includes('shorter')) return 'shorter';
+  if (s.includes('brecker')) return 'brecker';
+  if (s.includes('ecm') || s.includes('metheny')) return 'ecm';
+  return null;
+}
+
+/** Lower rank = earlier after sort (preferred). */
+function chordTypeBiasRank(p: IntervalPattern, chordTypeRaw: string): number {
+  const c = chordTypeRaw.toLowerCase();
+  const id = p.id;
+  const maj = c === 'major' || c.includes('maj') || c.includes('Δ');
+  const isMin = c === 'minor';
+  const domFam = c === 'dominant' || c === 'dominant_alt' || c.includes('dominant') || c.includes('alt');
+
+  if (maj && !isMin) {
+    if (id === 'p_wholeTone') return 0;
+    if (id === 'p_asymCell123') return 1;
+    if (id === 'p_contracting') return 2;
+    if (id === 'p_chromaticInterp') return 3;
+    if (id === 'p_expanding') return 4;
+    if (id === 'p_tritonePole') return 5;
+    if (id === 'p_minorThirdCycle') return 6;
+    if (id === 'p_majorThirdCycle') return 7;
+  }
+  if (domFam || c.includes('7')) {
+    if (id === 'p_tritonePole') return 0;
+    if (id === 'p_minorThirdCycle') return 1;
+    if (id === 'p_majorThirdCycle') return 2;
+    if (id === 'p_expanding') return 3;
+    if (id === 'p_chromaticInterp') return 4;
+    if (id === 'p_wholeTone') return 5;
+    if (id === 'p_asymCell123') return 6;
+    if (id === 'p_contracting') return 7;
+  }
+  if (isMin) {
+    if (id === 'p_wholeTone') return 0;
+    if (id === 'p_contracting') return 1;
+    if (id === 'p_asymCell123') return 2;
+    if (id === 'p_chromaticInterp') return 3;
+    if (id === 'p_expanding') return 4;
+    if (id === 'p_tritonePole') return 5;
+    if (id === 'p_minorThirdCycle') return 6;
+    if (id === 'p_majorThirdCycle') return 7;
+  }
+  return 50;
+}
+
 export function generateSlonimskyPattern(
   pattern: IntervalPattern,
   ctx: SlonimskyContext,
   seed: number
 ): SlonimskyNote[] {
-  const notes: number[] = [clampMidi(ctx.basePitch)];
-  let cursor = clampMidi(ctx.basePitch);
+  const transpositionInterval = transpositionIntervalFromPhraseIntent(ctx);
+  const cycleLength = Math.max(1, ctx.cycleLength ?? pattern.intervals.length);
+
+  const startMidi =
+    ctx.chordSymbol?.trim() && (ctx.effectiveLow !== undefined || ctx.styleProfile)
+      ? snapFirstNoteMidi(ctx)
+      : clampMidi(ctx.basePitch);
+  const notes: number[] = [startMidi];
+  let cursor = startMidi;
   let rng = seed >>> 0;
   for (let i = 0; i < Math.max(1, pattern.defaultLength - 1); i++) {
+    // Transposition cycle: each full interval cycle shifts the pattern root by `transpositionInterval` semitones.
+    if (i > 0 && i % cycleLength === 0) {
+      cursor = clampMidi(cursor + transpositionInterval);
+    }
     const baseInterval = pattern.intervals[i % pattern.intervals.length] ?? 0;
     rng += 17;
     const jitterRoll = seededUnit(rng);
@@ -149,6 +211,23 @@ export function generateSlonimskyPattern(
     notes.push(clampMidi(notes[0]! + (pattern.intervals[0] ?? 1)));
   }
 
+  const lowBound = ctx.effectiveLow ?? GUITAR_MIDI_MIN;
+  const highBound = ctx.effectiveHigh ?? GUITAR_MIDI_MAX;
+  const firstIv = pattern.intervals[0] ?? 0;
+
+  if (
+    (ctx.phraseIntent === 'build' || ctx.phraseIntent === 'shock') &&
+    notes[0]! > lowBound + 4
+  ) {
+    notes.unshift(clampMidi(notes[0]! - firstIv));
+  }
+  if (
+    (ctx.phraseIntent === 'build' || ctx.phraseIntent === 'float') &&
+    notes[notes.length - 1]! < highBound - 4
+  ) {
+    notes.push(clampMidi(notes[notes.length - 1]! + firstIv));
+  }
+
   const slotDur = ctx.maxBeats / notes.length;
   let beatCursor = 0;
   return notes.map((midi, idx) => ({
@@ -162,28 +241,184 @@ export function generateSlonimskyPattern(
 export function selectSlonimskyPattern(ctx: SlonimskyContext, seed: number): IntervalPattern | null {
   if (ctx.allowedOutsideLevel === 0) return null;
   const maxTension = (ctx.allowedOutsideLevel + 1) as 1 | 2 | 3;
-  let filtered = SLONIMSKY_PATTERNS.filter((p) => p.tensionLevel <= maxTension);
+  let filtered = SLONIMSKY_ENGINE_PATTERNS.filter((p) => p.tensionLevel <= maxTension);
   if (ctx.functionalStrength === 'strong') {
     filtered = filtered.filter((p) => p.tensionLevel <= 1);
   }
   switch (ctx.phraseIntent) {
-    case 'build':
-      filtered = filtered.filter((p) => p.id === 'p_expanding' || p.symmetryType === 'asymmetric');
+    case 'shock':
+      filtered = filtered.filter(
+        (p) => p.id === 'p_minorThirdCycle' || p.id === 'p_majorThirdCycle' || p.id === 'p_tritonePole'
+      );
       break;
-    case 'release':
-      filtered = filtered.filter((p) => p.id === 'p_contracting' || p.id === 'p_wholeTone');
+    case 'build':
+      filtered = filtered.filter((p) => p.id === 'p_expanding' || p.id === 'p_chromaticInterp');
       break;
     case 'float':
-      filtered = filtered.filter((p) => p.id === 'p_wholeTone' || p.id === 'p_minorThirdCycle');
+      filtered = filtered.filter((p) => p.id === 'p_wholeTone' || p.id === 'p_asymCell123');
       break;
-    case 'shock':
-      filtered = filtered.filter((p) => p.id === 'p_tritonePole' || p.id === 'p_expanding');
+    case 'release':
+      filtered = filtered.filter((p) => p.id === 'p_contracting');
       break;
     default:
       break;
   }
   if (filtered.length === 0) return null;
-  return filtered[Math.abs(seed) % filtered.length] ?? null;
+  /** Song-mode hook post-pass uses bare `dominant` + no profile — keep legacy filtered-array order. */
+  const skipSoftRank =
+    !ctx.styleProfile && ctx.chordType === 'dominant' && !ctx.chordSymbol && !ctx.effectiveLow;
+  const affinityTag = styleAffinityTagFromProfile(ctx.styleProfile);
+  let ranked = [...filtered];
+  if (!skipSoftRank) {
+    ranked.sort((a, b) => {
+      const ma =
+        affinityTag && (a.styleAffinity as readonly string[]).includes(affinityTag) ? 0 : 1;
+      const mb =
+        affinityTag && (b.styleAffinity as readonly string[]).includes(affinityTag) ? 0 : 1;
+      if (ma !== mb) return ma - mb;
+      const ca = chordTypeBiasRank(a, ctx.chordType);
+      const cb = chordTypeBiasRank(b, ctx.chordType);
+      if (ca !== cb) return ca - cb;
+      return a.id.localeCompare(b.id);
+    });
+  }
+  return ranked[Math.abs(seed) % ranked.length] ?? null;
+}
+
+/**
+ * Optional chromatic passing tones between adjacent pattern pitches (deterministic).
+ */
+export function interpolateSlonimskyPattern(
+  notes: SlonimskyNote[],
+  ctx: SlonimskyContext,
+  _chord: string,
+  seed: number
+): SlonimskyNote[] {
+  if (ctx.allowedOutsideLevel < 1 || notes.length < 2) {
+    return notes.map((n) => ({ ...n }));
+  }
+  const sorted = [...notes].sort((a, b) => a.beat - b.beat);
+  const out: SlonimskyNote[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const cur = sorted[i]!;
+    out.push({ ...cur });
+    if (i >= sorted.length - 1) break;
+    const next = sorted[i + 1]!;
+    const iv = Math.abs(next.midi - cur.midi);
+    if (iv < 3) continue;
+    const roll = seededUnit(seed + i);
+    if (roll < 0.6) continue;
+    const lowerMidi = Math.min(cur.midi, next.midi);
+    const ascending = next.midi >= cur.midi;
+    const passingMidi = ascending ? lowerMidi + 1 : lowerMidi - 1;
+    const midBeat = (cur.beat + next.beat) / 2;
+    out.push({
+      midi: clampMidi(passingMidi),
+      durationBeats: 0.5,
+      beat: midBeat,
+      role: 'passing',
+    });
+  }
+  return out.sort((a, b) => a.beat - b.beat);
+}
+
+/**
+ * Maps duo golden-path {@link PhraseIntent} + 1–8 bar phase within the 8-bar cycle
+ * to Slonimsky semantic `phraseIntent` (V1 research spec wiring).
+ * Phase 7 + `guitar_lead` → `shock` (identity / peak bar).
+ */
+export function mapDuoPhraseIntentToSlonimskyPhraseIntent(
+  duoIntent: PhraseIntent,
+  phase: number,
+  _seed: number
+): 'build' | 'release' | 'float' | 'shock' {
+  if (duoIntent === 'cadence' || duoIntent === 'return') return 'release';
+  if (duoIntent === 'development') return 'build';
+  if (duoIntent === 'contrast') return 'shock';
+  if (duoIntent === 'answer_bass') return 'shock';
+  if (duoIntent === 'bass_lead' || duoIntent === 'answer_guitar') return 'float';
+  if (duoIntent === 'guitar_lead' && phase === 7) return 'shock';
+  if (duoIntent === 'guitar_lead') return 'build';
+  return 'float';
+}
+
+function resolveAllowedOutsideLevelForSlonimsky(songwriterId: string | undefined): 0 | 1 | 2 {
+  if (songwriterId === 'wayne_shorter' || songwriterId === 'barry_harris') return 2;
+  if (songwriterId === 'ecm_chamber' || songwriterId === 'pat_metheny') return 1;
+  return 1;
+}
+
+/**
+ * Builds {@link SlonimskyContext} for post-pass `applySlonimskyToMelodyLine` using duo phrase arc + songwriter allowance.
+ */
+export function mapDuoPhraseIntentToSlonimskyContext(params: {
+  duoIntent: PhraseIntent;
+  phase: number;
+  seed: number;
+  songwriterId?: string;
+  totalQuarterBeats: number;
+  styleProfile?: string;
+  keyPc?: number;
+  chordType?: string;
+  chordSymbol?: string;
+  effectiveLow?: number;
+  effectiveHigh?: number;
+}): SlonimskyContext {
+  const phraseIntent = mapDuoPhraseIntentToSlonimskyPhraseIntent(
+    params.duoIntent,
+    params.phase,
+    params.seed
+  );
+  const chordType = params.chordType ?? 'dominant';
+  return {
+    keyPc: params.keyPc ?? 0,
+    chordType,
+    functionalStrength: 'medium',
+    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(params.songwriterId),
+    phraseIntent,
+    basePitch: 62,
+    maxBeats: Math.max(4, params.totalQuarterBeats),
+    styleProfile: params.styleProfile,
+    chordSymbol: params.chordSymbol,
+    effectiveLow: params.effectiveLow,
+    effectiveHigh: params.effectiveHigh,
+  };
+}
+
+/** Per-bar duo guitar Slonimsky context (alternate-tuning pilot — inline emission). */
+export function buildDuoBarSlonimskyContext(params: {
+  duoIntent: PhraseIntent;
+  phase: number;
+  seed: number;
+  songwriterId?: string;
+  totalQuarterBeats: number;
+  styleProfile?: string | null;
+  chordSymbol: string;
+  keyPc: number;
+  effectiveLow: number;
+  effectiveHigh: number;
+}): SlonimskyContext {
+  const inferred = inferSlonimskyChordTypeCategory(params.chordSymbol);
+  const base = mapDuoPhraseIntentToSlonimskyContext({
+    duoIntent: params.duoIntent,
+    phase: params.phase,
+    seed: params.seed,
+    songwriterId: params.songwriterId,
+    totalQuarterBeats: params.totalQuarterBeats,
+    styleProfile: params.styleProfile ?? undefined,
+    keyPc: params.keyPc,
+    chordType: inferred,
+    chordSymbol: params.chordSymbol,
+    effectiveLow: params.effectiveLow,
+    effectiveHigh: params.effectiveHigh,
+  });
+  const t = chordTonesForChordSymbol(params.chordSymbol);
+  const third = liftIntoRange(t.third, params.effectiveLow, params.effectiveHigh);
+  return {
+    ...base,
+    basePitch: third,
+    maxBeats: 4,
+  };
 }
 
 function barIsEligible(chord: string | undefined, ctx: SlonimskyContext): boolean {
@@ -222,11 +457,18 @@ export function applySlonimskyToMelodyLine(
     const beatStart = targetBar * 4;
     const beatSpan = 1 + (Math.abs(seed + phrase) % 2);
     const beatEnd = beatStart + beatSpan;
-    const replacement = generateSlonimskyPattern(
-      pattern,
-      { ...ctx, maxBeats: beatSpan, basePitch: ctx.basePitch },
-      seed + phrase * 101
-    ).map((n) => ({
+    const chordSym = chords[targetBar] ?? '';
+    const spanCtx: SlonimskyContext = {
+      ...ctx,
+      maxBeats: beatSpan,
+      basePitch: ctx.basePitch,
+      chordSymbol: chordSym || ctx.chordSymbol,
+    };
+    let built = generateSlonimskyPattern(pattern, spanCtx, seed + phrase * 101);
+    if (!ctx.skipInterpolation) {
+      built = interpolateSlonimskyPattern(built, spanCtx, chordSym, seed + phrase * 101);
+    }
+    const replacement = built.map((n) => ({
       ...n,
       beat: beatStart + n.beat,
       role: n.role === 'passing' ? 'pickup' : n.role,

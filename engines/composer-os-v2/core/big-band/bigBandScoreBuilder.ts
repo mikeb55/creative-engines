@@ -33,6 +33,11 @@ import {
   generateSaxSoliPhrase,
   generateShoutChorus,
 } from '../arranging/bigBandPatterns';
+import {
+  applySlonimskyToMelodyLine,
+  buildBigBandSlonimskyContext,
+  type SlonimskyNote,
+} from '../slonimsky/slonimskyPatternService';
 
 const BB_ORDER: BigBandInstrumentSection[] = [
   'saxes',
@@ -435,6 +440,7 @@ function addPunchPattern(measure: MeasureModel, pitch: number, beats: number[], 
 }
 
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
+  const USE_SLONIMSKY_BB = true;
   const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
 
@@ -488,6 +494,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
   const wholeTracker = new WholeNoteDensityTracker();
   let hornStreak = initialHornCloneStreakState();
+  /** Rolling 3-bar alto lead windows for {@link applySlonimskyToMelodyLine} (needs ≥3 notes). */
+  const slonimskyAltoAcc: number[] = [];
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
@@ -525,6 +533,40 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     altoMidi = mit.altoMidi;
     tenorMidi = mit.tenorMidi;
     trumpetMidi = mit.trumpetMidi;
+
+    let melodyPitchAlto = altoMidi;
+    if (USE_SLONIMSKY_BB && !inDesignatedSaxSoliWindow(bar, totalBars)) {
+      slonimskyAltoAcc.push(altoMidi);
+      if (slonimskyAltoAcc.length > 3) slonimskyAltoAcc.shift();
+      if (slonimskyAltoAcc.length === 3) {
+        const ctx = buildBigBandSlonimskyContext({
+          duoIntent: 'guitar_lead',
+          phase: ((bar - 1) % 8) + 1,
+          seed: seed + bar * 31,
+          songwriterId: undefined,
+          totalQuarterBeats: 4,
+          styleProfile: null,
+          chordSymbol: sym,
+          keyPc: rpc,
+          effectiveLow: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][0]!,
+          effectiveHigh: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][1]!,
+          catalogueSection: 'intervallic_mirror_permutations',
+        });
+        const mel: SlonimskyNote[] = slonimskyAltoAcc.map((m, i) => ({
+          midi: m,
+          durationBeats: 1,
+          beat: i,
+          role: i === 0 || i === 2 ? 'target' : 'passing',
+        }));
+        const chords3 = [chordForBar(bar - 2), chordForBar(bar - 1), chordForBar(bar)];
+        const out = applySlonimskyToMelodyLine(mel, chords3, ctx, seed + bar * 17);
+        const sounding = out.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
+        if (sounding.length > 0) {
+          const pickMidi = sounding[Math.min(2, sounding.length - 1)]!.midi;
+          melodyPitchAlto = snapMidiToRange(pickMidi, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+        }
+      }
+    }
 
     const hornIn: HornCloningBarInput = {
       altoMidi,
@@ -594,7 +636,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       const shoutBeats = shoutFragment.get(bar);
 
       if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
-        let pitch = idx === 0 ? altoMidi : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
+        let pitch =
+          idx === 0 ? melodyPitchAlto : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
         const pid = BB_PART_IDS[idx];
         if ((idx === 2 || idx === 3) && shoutBeats && shoutBeats.length > 0) {
           /** V2: trumpet lift biased by bars 1–8 head theme average (deterministic). */

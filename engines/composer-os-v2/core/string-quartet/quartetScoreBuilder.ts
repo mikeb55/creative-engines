@@ -22,6 +22,11 @@ import { WholeNoteDensityTracker } from '../ensemble-scoring/ensembleLayoutHeuri
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyQuartetWybleChordToneStack } from './quartetWybleChordToneStack';
 import { wybleConsumptionReceiptForQuartet } from '../wyble/wybleConsumptionReceipt';
+import {
+  applySlonimskyToMelodyLine,
+  buildQuartetSlonimskyContext,
+  type SlonimskyNote,
+} from '../slonimsky/slonimskyPatternService';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
 
@@ -245,6 +250,7 @@ function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): voi
 }
 
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
+  const USE_SLONIMSKY_SQ = true;
   const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
 
@@ -277,6 +283,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
   const wholeTracker = new WholeNoteDensityTracker();
   let prevQuartetInner: { violin2?: number; viola?: number } = {};
+  /** Rolling 3-bar violin I windows for {@link applySlonimskyToMelodyLine}. */
+  const slonimskyV1Acc: number[] = [];
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
@@ -290,6 +298,41 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc), wybleVoiceLayout, prevQuartetInner);
     prevQuartetInner = { violin2: stack[1], viola: stack[2] };
 
+    let melodyPitchV1 = stack[0]!;
+    const v1Silent = texSlice?.rolesByInstrument.violin_1 === 'silence';
+    if (USE_SLONIMSKY_SQ && !v1Silent) {
+      slonimskyV1Acc.push(stack[0]!);
+      if (slonimskyV1Acc.length > 3) slonimskyV1Acc.shift();
+      if (slonimskyV1Acc.length === 3) {
+        const ctx = buildQuartetSlonimskyContext({
+          duoIntent: 'guitar_lead',
+          phase: ((bar - 1) % 8) + 1,
+          seed: seed + bar * 31,
+          songwriterId: undefined,
+          totalQuarterBeats: 4,
+          styleProfile: null,
+          chordSymbol: sym,
+          keyPc: rpc,
+          effectiveLow: QUARTET_MIDI_BOUNDS[SQ_PART_V1][0]!,
+          effectiveHigh: QUARTET_MIDI_BOUNDS[SQ_PART_V1][1]!,
+          catalogueSection: 'intervallic_mirror_permutations',
+        });
+        const mel: SlonimskyNote[] = slonimskyV1Acc.map((m, i) => ({
+          midi: m,
+          durationBeats: 1,
+          beat: i,
+          role: i === 0 || i === 2 ? 'target' : 'passing',
+        }));
+        const chords3 = [chordForBar(bar - 2), chordForBar(bar - 1), chordForBar(bar)];
+        const out = applySlonimskyToMelodyLine(mel, chords3, ctx, seed + bar * 17);
+        const sounding = out.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
+        if (sounding.length > 0) {
+          const pickMidi = sounding[Math.min(2, sounding.length - 1)]!.midi;
+          melodyPitchV1 = snapMidiToRange(pickMidi, ...QUARTET_MIDI_BOUNDS[SQ_PART_V1]);
+        }
+      }
+    }
+
     const barNotes: ScoredNote[] = [];
 
     for (let idx = 0; idx < 4; idx++) {
@@ -302,7 +345,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
         continue;
       }
       const splitHere = needSplit && idx === splitIdx;
-      const pitch = stack[idx]!;
+      const pitch = idx === 0 ? melodyPitchV1 : stack[idx]!;
       if (splitHere) {
         barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
         barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
