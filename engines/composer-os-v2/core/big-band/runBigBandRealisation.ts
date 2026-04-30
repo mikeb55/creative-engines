@@ -60,6 +60,8 @@ export function runBigBandRealisation(
     era: planning.era,
     chordBars,
     wybleVoiceLayout: wybleLayout,
+    orchestrationPlan: planning.orchestrationPlan,
+    enhancedPlanning: planning.enhancedPlanning,
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

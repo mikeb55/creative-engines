@@ -33,6 +33,11 @@ export function planDefaultQuartetForm(seed: number, opts?: PlanQuartetFormOpts)
     phase: t.phase,
     bars: Math.max(1, Math.floor((t.weight / wsum) * totalBars)),
   }));
+  const devIdx = base.findIndex((b) => b.phase === 'development');
+  if (devIdx >= 0) {
+    const nudge = (seed % 3) - 1;
+    base[devIdx].bars = Math.max(2, base[devIdx].bars + nudge);
+  }
   let sum = base.reduce((a, b) => a + b.bars, 0);
   if (sum < totalBars) base[base.length - 1].bars += totalBars - sum;
   else if (sum > totalBars) {
@@ -54,6 +59,5 @@ export function planDefaultQuartetForm(seed: number, opts?: PlanQuartetFormOpts)
     bar = end + 1;
   }
 
-  void seed;
   return { totalBars, slices };
 }

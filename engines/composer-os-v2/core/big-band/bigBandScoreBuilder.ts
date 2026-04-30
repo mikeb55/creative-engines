@@ -3,7 +3,13 @@
  * Behavioural voicing: section stacks + harmonic rhythm, not finished arranging.
  */
 
-import type { BigBandFormPhase, BigBandFormPlan, BigBandSectionPlan } from './bigBandPlanTypes';
+import type {
+  BigBandEnhancedPlanning,
+  BigBandFormPhase,
+  BigBandFormPlan,
+  BigBandSectionPlan,
+} from './bigBandPlanTypes';
+import type { OrchestrationPlan } from '../orchestration/orchestrationPlanTypes';
 import type { HornCloningBarInput, ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutHeuristics';
 import {
   WholeNoteDensityTracker,
@@ -461,6 +467,10 @@ export interface BuildBigBandScoreModelInput {
    * in sax register (`bigBandWybleHornVoicing`) before horn-clone mitigation.
    */
   wybleVoiceLayout?: EnsembleWybleRoleMap;
+  /** Optional planning handoff (e.g. from `runBigBandMode`); behaviour slices live on {@link enhancedPlanning}. */
+  orchestrationPlan?: OrchestrationPlan;
+  /** When set, per-slice behaviour such as `spaceEmphasis` can shape wind rhythm (see `USE_SPACE_EMPHASIS`). */
+  enhancedPlanning?: BigBandEnhancedPlanning;
 }
 
 function addWindOrBassNotes(
@@ -535,7 +545,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   const USE_DRUM_VARIATION = true;
   const USE_PIANO_COMP = true;
   const USE_SLONIMSKY_BB = true;
-  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
+  const USE_SPACE_EMPHASIS = true;
+  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout, enhancedPlanning } =
+    input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -595,6 +607,12 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
     const secSlice = slice ? sectionPlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
     const sectionTag = bigBandPhaseToSectionTag(slice?.phase);
+
+    let spaceEmphasisThisBar = false;
+    if (USE_SPACE_EMPHASIS && slice && enhancedPlanning?.behaviourSlices?.length) {
+      const beh = enhancedPlanning.behaviourSlices.find((b) => b.formSliceIndex === slice.index);
+      spaceEmphasisThisBar = beh?.spaceEmphasis === true;
+    }
 
     const needRhythmSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
     const splitWindSlot = (bar + seed) % 4;
@@ -768,6 +786,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       }
 
       const splitHere = needRhythmSplit && idx === splitWindSlot && idx >= 0 && idx <= 3;
+      const useHalfHalfWind =
+        (USE_SPACE_EMPHASIS && spaceEmphasisThisBar) || splitHere;
       const brassBeats = brassPunches.get(bar);
       const shoutBeats = shoutFragment.get(bar);
 
@@ -799,8 +819,14 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           !(shoutBeats && shoutBeats.length > 0);
         if (brassSaxSoloTexture) {
           if (idx === 0 || idx === 1) {
-            barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
-            addWindOrBassNotes(m, pitch, false);
+            const hh = USE_SPACE_EMPHASIS && spaceEmphasisThisBar;
+            if (hh) {
+              barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+              barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+            } else {
+              barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
+            }
+            addWindOrBassNotes(m, pitch, hh);
           } else {
             barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
             barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
@@ -809,13 +835,13 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           continue;
         }
 
-        if (splitHere) {
+        if (useHalfHalfWind) {
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
         } else {
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
         }
-        addWindOrBassNotes(m, pitch, splitHere);
+        addWindOrBassNotes(m, pitch, useHalfHalfWind);
         continue;
       }
       /** Upright bass (`bb_rhythm_section`) */

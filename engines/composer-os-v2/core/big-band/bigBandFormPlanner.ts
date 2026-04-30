@@ -75,6 +75,11 @@ export function planDefaultBigBandForm(seed: number, opts?: PlanBigBandFormOpts)
     phase: t.phase,
     bars: Math.max(1, Math.floor((t.weight / wsum) * totalBars)),
   }));
+  const soloIdx = base.findIndex((b) => b.phase === 'solo_section');
+  if (soloIdx >= 0) {
+    const nudge = (seed % 3) - 1;
+    base[soloIdx].bars = Math.max(2, base[soloIdx].bars + nudge);
+  }
   let sum = base.reduce((a, b) => a + b.bars, 0);
   if (sum < totalBars) {
     base[base.length - 1].bars += totalBars - sum;
@@ -98,6 +103,5 @@ export function planDefaultBigBandForm(seed: number, opts?: PlanBigBandFormOpts)
     bar = end + 1;
   }
 
-  void seed;
   return { totalBars, slices };
 }

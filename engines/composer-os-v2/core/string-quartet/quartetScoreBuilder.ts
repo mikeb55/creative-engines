@@ -277,6 +277,7 @@ function wrapBeatInBarSq(beat: number): number {
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
   const USE_PIANO_COMP_SQ = true;
   const USE_SLONIMSKY_SQ = true;
+  const USE_RETURN_OCTAVE_LIFT = true;
   const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout } = input;
   const totalBars = formPlan.totalBars;
 
@@ -325,9 +326,12 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     prevQuartetInner = { violin2: stack[1], viola: stack[2] };
 
     let melodyPitchV1 = stack[0]!;
+    if (USE_RETURN_OCTAVE_LIFT && slice?.phase === 'return') {
+      melodyPitchV1 = snapMidiToRange(stack[0]! + 12, ...QUARTET_MIDI_BOUNDS[SQ_PART_V1]);
+    }
     const v1Silent = texSlice?.rolesByInstrument.violin_1 === 'silence';
     if (USE_SLONIMSKY_SQ && !v1Silent) {
-      slonimskyV1Acc.push(stack[0]!);
+      slonimskyV1Acc.push(melodyPitchV1);
       if (slonimskyV1Acc.length > 3) slonimskyV1Acc.shift();
       if (slonimskyV1Acc.length === 3) {
         const ctx = buildQuartetSlonimskyContext({
