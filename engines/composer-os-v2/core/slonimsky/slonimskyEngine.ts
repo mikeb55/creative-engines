@@ -53,6 +53,89 @@ const GUITAR_MIDI_MAX = 84;
 /** Canonical catalogue — patterns defined in `thesaurusRegistry.ts` as {@link SLONIMSKY_ENGINE_PATTERNS}. */
 export const SLONIMSKY_PATTERNS: readonly IntervalPattern[] = SLONIMSKY_ENGINE_PATTERNS;
 
+/** Intent mixture for songwriter/style Slonimsky weighting (catalogue + phrase routing). */
+export type SlonimskyStyleIntentWeights = {
+  build: number;
+  float: number;
+  release: number;
+  shock: number;
+};
+
+/**
+ * Per–songwriter / style defaults for Slonimsky catalogue bias, outside allowance, and transposition cycle.
+ * `preferredSections` names align with research shorthand (may alias {@link ThesaurusSectionKey} at lookup time).
+ */
+export type SlonimskyStyleProfileSpec = {
+  outsideLevel: number;
+  preferredSections: readonly string[];
+  defaultProfile: string;
+  transpositionInterval: number;
+  intentWeights: SlonimskyStyleIntentWeights;
+  notes: string;
+};
+
+/**
+ * Songwriter & house-style Slonimsky profiles (tonality vault + duo / ensemble hooks).
+ */
+export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSpec> = {
+  BACHARACH: {
+    outsideLevel: 1,
+    preferredSections: ['tritone_substitutions', 'semitone_scales'],
+    defaultProfile: 'ECM',
+    transpositionInterval: 1,
+    intentWeights: { build: 0.2, float: 0.5, release: 0.3, shock: 0.0 },
+    notes: 'chromatic neighbour tones, stepwise, never jarring',
+  },
+  JOBIM: {
+    outsideLevel: 1,
+    preferredSections: ['pentatonic_scales', 'whole_tone_scales'],
+    defaultProfile: 'Metheny',
+    transpositionInterval: 0,
+    intentWeights: { build: 0.2, float: 0.6, release: 0.2, shock: 0.0 },
+    notes: 'bossa float, whole-tone colour, no shock',
+  },
+  HERBIE_HANCOCK: {
+    outsideLevel: 3,
+    preferredSections: ['heptatonic_scales', 'tritone_substitutions'],
+    defaultProfile: 'ECM',
+    transpositionInterval: 2,
+    intentWeights: { build: 0.4, float: 0.3, release: 0.1, shock: 0.2 },
+    notes: 'modal + pentatonic clusters, occasional shock',
+  },
+  BRIAN_WILSON: {
+    outsideLevel: 1,
+    preferredSections: ['semitone_scales', 'pentatonic_scales'],
+    defaultProfile: 'Indie',
+    transpositionInterval: 0,
+    intentWeights: { build: 0.3, float: 0.5, release: 0.2, shock: 0.0 },
+    notes: 'diatonic colour, voice-leading stepwise, no outside',
+  },
+  RADIOHEAD: {
+    outsideLevel: 4,
+    preferredSections: ['heptatonic_scales', 'intervallic'],
+    defaultProfile: 'Sonic Youth',
+    transpositionInterval: 1,
+    intentWeights: { build: 0.3, float: 0.2, release: 0.1, shock: 0.4 },
+    notes: 'high dissonance, irregular intervals, shock-weighted',
+  },
+  KATE_BUSH: {
+    outsideLevel: 3,
+    preferredSections: ['heptatonic_scales', 'semitone_scales'],
+    defaultProfile: 'ECM',
+    transpositionInterval: 1,
+    intentWeights: { build: 0.3, float: 0.4, release: 0.2, shock: 0.1 },
+    notes: 'dramatic contour, chromatic colour, occasional shock',
+  },
+  STEELY_DAN: {
+    outsideLevel: 2,
+    preferredSections: ['tritone_substitutions', 'heptatonic_scales'],
+    defaultProfile: 'Metheny',
+    transpositionInterval: 2,
+    intentWeights: { build: 0.4, float: 0.3, release: 0.2, shock: 0.1 },
+    notes: 'jazz chromatic, tritone approach, controlled outside',
+  },
+};
+
 function seededUnit(seed: number): number {
   let s = seed >>> 0;
   s = (s * 1664525 + 1013904223) >>> 0;
