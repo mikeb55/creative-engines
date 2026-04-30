@@ -271,27 +271,79 @@ function barChord(bar: number, seed: number, era?: BigBandEraId): string {
 /** GM drum kit MIDI key map (channel 10); exporter maps to unpitched staff positions. */
 const DRUM_BD = 36;
 const DRUM_HH = 42;
+const DRUM_RIDE = 51;
 
 /**
  * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = BD layer (composite snare via `bb_drum_bs` on hits).
  * Voice 2 must sum to exactly 4 beats — chord snare is encoded via motifRef on the bass-drum note (not a second event).
  *
  * V2: non–ensemble-hit bars keep time with HH + downbeat BD only; punch/shout bars use fuller kicks aligned with horns.
+ * Optional variation: section/form-aware sparse patterns and ride vs hi-hat (`useDrumVariation`).
  */
-function addBigBandDrumPattern(measure: MeasureModel, opts?: { ensembleHit?: boolean }): void {
-  const ensembleHit = opts?.ensembleHit === true;
-  for (let b = 0; b < 4; b++) {
-    addEvent(measure, createNote(DRUM_HH, b, 1, 1));
+function addBigBandDrumPattern(
+  measure: MeasureModel,
+  opts?: {
+    ensembleHit?: boolean;
+    sectionTag?: SectionTag;
+    formPhase?: BigBandFormPhase;
+    useDrumVariation?: boolean;
   }
-  if (!ensembleHit) {
+): void {
+  const ensembleHit = opts?.ensembleHit === true;
+  const useV = opts?.useDrumVariation === true;
+  const st = opts?.sectionTag;
+  const phase = opts?.formPhase;
+
+  const legacyFullEnsemble = () => {
+    for (let b = 0; b < 4; b++) {
+      addEvent(measure, createNote(DRUM_HH, b, 1, 1));
+    }
+    addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
+    addEvent(measure, createNote(DRUM_BD, 1, 1, 2, 'bb_drum_bs'));
+    addEvent(measure, createNote(DRUM_BD, 2, 1, 2));
+    addEvent(measure, createNote(DRUM_BD, 3, 1, 2, 'bb_drum_bs'));
+  };
+
+  const legacySimple = (hatMidi: number = DRUM_HH) => {
+    for (let b = 0; b < 4; b++) {
+      addEvent(measure, createNote(hatMidi, b, 1, 1));
+    }
     addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
     addEvent(measure, createRest(1, 3, 2));
+  };
+
+  if (!useV) {
+    if (!ensembleHit) {
+      legacySimple();
+    } else {
+      legacyFullEnsemble();
+    }
     return;
   }
-  addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
-  addEvent(measure, createNote(DRUM_BD, 1, 1, 2, 'bb_drum_bs'));
-  addEvent(measure, createNote(DRUM_BD, 2, 1, 2));
-  addEvent(measure, createNote(DRUM_BD, 3, 1, 2, 'bb_drum_bs'));
+
+  if (ensembleHit || st === 'shout') {
+    if (!ensembleHit) {
+      legacySimple();
+    } else {
+      legacyFullEnsemble();
+    }
+    return;
+  }
+
+  if (phase === 'intro' || phase === 'ending') {
+    addEvent(measure, createNote(DRUM_HH, 0, 1, 1));
+    addEvent(measure, createRest(1, 1, 1));
+    addEvent(measure, createNote(DRUM_HH, 2, 1, 1));
+    addEvent(measure, createRest(3, 1, 1));
+    addEvent(measure, createNote(DRUM_BD, 0, 1, 2));
+    addEvent(measure, createRest(1, 1, 2));
+    addEvent(measure, createNote(DRUM_BD, 2, 1, 2));
+    addEvent(measure, createRest(3, 1, 2));
+    return;
+  }
+
+  const hatMidi = st === 'solo' || phase === 'melody_head' ? DRUM_RIDE : DRUM_HH;
+  legacySimple(hatMidi);
 }
 
 /** Horns + piano / bass — alto/tenor share the same sectional sax pitch. */
@@ -478,6 +530,9 @@ function nudgePianoHitsOffBrass(hits: number[], brassBeats: readonly number[]): 
 }
 
 export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): ScoreModel {
+  const USE_BASS_WALK = true;
+  const USE_BRASS_SAX_SPLIT = true;
+  const USE_DRUM_VARIATION = true;
   const USE_PIANO_COMP = true;
   const USE_SLONIMSKY_BB = true;
   const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout } = input;
@@ -630,7 +685,12 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         } else {
           const ensembleHitBar =
             (brassPunches.get(bar)?.length ?? 0) > 0 || (shoutFragment.get(bar)?.length ?? 0) > 0;
-          addBigBandDrumPattern(m, { ensembleHit: ensembleHitBar });
+          addBigBandDrumPattern(m, {
+            ensembleHit: ensembleHitBar,
+            sectionTag,
+            formPhase: slice?.phase,
+            useDrumVariation: USE_DRUM_VARIATION,
+          });
         }
         continue;
       }
@@ -731,6 +791,24 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           for (const _ of brassBeats) barNotes.push({ partId: pid, midi: pitch, durationBeats: 0.5 });
           continue;
         }
+
+        const brassSaxSoloTexture =
+          USE_BRASS_SAX_SPLIT &&
+          (sectionTag === 'solo' || sectionTag === 'melody') &&
+          !(brassBeats && brassBeats.length > 0) &&
+          !(shoutBeats && shoutBeats.length > 0);
+        if (brassSaxSoloTexture) {
+          if (idx === 0 || idx === 1) {
+            barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
+            addWindOrBassNotes(m, pitch, false);
+          } else {
+            barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+            barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+            addWindOrBassNotes(m, pitch, true);
+          }
+          continue;
+        }
+
         if (splitHere) {
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
           barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
@@ -741,9 +819,22 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         continue;
       }
       /** Upright bass (`bb_rhythm_section`) */
-      const pitch = bassMidi + 12;
-      barNotes.push({ partId: BB_PART_RHYTHM, midi: pitch, durationBeats: 4 });
-      addWindOrBassNotes(m, pitch, false);
+      const rootWalk = snapMidiToRange(bassMidi + 12, 36, 60);
+      const fifthWalk = snapMidiToRange(bassMidi + 19, 36, 60);
+      if (USE_BASS_WALK) {
+        addEvent(m, createNote(rootWalk, 0, 1, 1));
+        addEvent(m, createNote(fifthWalk, 1, 1, 1));
+        addEvent(m, createNote(rootWalk, 2, 1, 1));
+        addEvent(m, createNote(fifthWalk, 3, 1, 1));
+        barNotes.push({ partId: BB_PART_RHYTHM, midi: rootWalk, durationBeats: 1 });
+        barNotes.push({ partId: BB_PART_RHYTHM, midi: fifthWalk, durationBeats: 1 });
+        barNotes.push({ partId: BB_PART_RHYTHM, midi: rootWalk, durationBeats: 1 });
+        barNotes.push({ partId: BB_PART_RHYTHM, midi: fifthWalk, durationBeats: 1 });
+      } else {
+        const pitch = bassMidi + 12;
+        barNotes.push({ partId: BB_PART_RHYTHM, midi: pitch, durationBeats: 4 });
+        addWindOrBassNotes(m, pitch, false);
+      }
     }
 
     wholeTracker.pushBarSlice(
