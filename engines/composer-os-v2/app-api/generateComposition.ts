@@ -135,6 +135,10 @@ export interface GenerateResult {
     importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];
     importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
     importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
+    /** Big Band / String Quartet — `blend_harmony` with 0–1 blend strength (merge gate echo). */
+    importHarmonyBlendActive?: boolean;
+    /** Present when `importHarmonyBlendActive`; raw blend weight sent by client. */
+    importHarmonyBlendEffective?: number;
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
     /** Ensemble reference-import hints (Big Band / String Quartet optional MusicXML). */
     referenceSourceKind?: string;

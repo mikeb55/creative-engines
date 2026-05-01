@@ -1630,9 +1630,15 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const eraFromPairing = parseBigBandEraFromPairing(req.stylePairing?.era);
-  const chordProgressionText =
+  let chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
       ? req.chordProgressionText.trim()
+      : undefined;
+  const ensembleTotalBarsResolved =
+    typeof req.totalBars === 'number' && Number.isFinite(req.totalBars) && req.totalBars >= 1
+      ? req.formId?.trim() === 'big_band_blues12'
+        ? 42
+        : req.totalBars
       : undefined;
   const bb = runBigBandMode({
     seed: req.seed,
@@ -1659,8 +1665,50 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const leadSheet = req.ensembleLeadSheetMusicXml
     ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
     : undefined;
+  const blendMergeActive =
+    normalizedImportHarmonyMode === 'blend_harmony' &&
+    harmonyBlendRaw !== undefined &&
+    harmonyBlendRaw > 0 &&
+    harmonyBlendRaw < 1 &&
+    !!leadSheet?.chordEvents?.length &&
+    ensembleTotalBarsResolved !== undefined;
+
+  let blendMergeApplied = false;
+  if (blendMergeActive && ensembleTotalBarsResolved !== undefined) {
+    const tb = ensembleTotalBarsResolved;
+    const genParsed = chordProgressionText
+      ? parseChordProgressionInputWithBarCount(chordProgressionText, tb)
+      : undefined;
+    const genBars = genParsed?.ok ? genParsed.bars : null;
+    const sorted = [...leadSheet!.chordEvents].sort(
+      (a, b) => a.bar - b.bar || a.beat - b.beat
+    );
+    const primaryByBar = new Map<number, string>();
+    for (const e of sorted) {
+      if (e.bar >= 1 && e.bar <= tb && !primaryByBar.has(e.bar)) {
+        primaryByBar.set(e.bar, e.symbol);
+      }
+    }
+    let carryImp = 'C';
+    const impBarArr: string[] = [];
+    for (let bar = 1; bar <= tb; bar++) {
+      const sym = primaryByBar.get(bar);
+      if (sym !== undefined) carryImp = sym;
+      impBarArr.push(carryImp);
+    }
+    if (genBars && genBars.length === tb && impBarArr.length === tb) {
+      const merged = mergeSongModeImportedAndGeneratedHarmonyBars(
+        genBars,
+        impBarArr,
+        harmonyBlendRaw
+      );
+      chordProgressionText = merged.join('|');
+      blendMergeApplied = true;
+    }
+  }
+
   const leadSheetForChordLock =
-    !freeHarmony && leadSheet?.chordEvents?.length ? leadSheet : undefined;
+    !freeHarmony && leadSheet?.chordEvents?.length && !blendMergeApplied ? leadSheet : undefined;
   const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
@@ -1780,6 +1828,8 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
       importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
       importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
+      importHarmonyBlendActive: blendMergeActive ? true : false,
+      importHarmonyBlendEffective: blendMergeActive ? harmonyBlendRaw : undefined,
       ...(realised.referenceInfluence
         ? {
             referenceSourceKind: 'musicxml',
@@ -1805,9 +1855,13 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
   const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
-  const chordProgressionText =
+  let chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
       ? req.chordProgressionText.trim()
+      : undefined;
+  const ensembleTotalBarsResolved =
+    typeof req.totalBars === 'number' && Number.isFinite(req.totalBars) && req.totalBars >= 1
+      ? req.totalBars
       : undefined;
   const effectiveSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
@@ -1818,8 +1872,50 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const leadSheet = req.ensembleLeadSheetMusicXml
     ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
     : undefined;
+  const blendMergeActive =
+    normalizedImportHarmonyMode === 'blend_harmony' &&
+    harmonyBlendRaw !== undefined &&
+    harmonyBlendRaw > 0 &&
+    harmonyBlendRaw < 1 &&
+    !!leadSheet?.chordEvents?.length &&
+    ensembleTotalBarsResolved !== undefined;
+
+  let blendMergeApplied = false;
+  if (blendMergeActive && ensembleTotalBarsResolved !== undefined) {
+    const tb = ensembleTotalBarsResolved;
+    const genParsed = chordProgressionText
+      ? parseChordProgressionInputWithBarCount(chordProgressionText, tb)
+      : undefined;
+    const genBars = genParsed?.ok ? genParsed.bars : null;
+    const sorted = [...leadSheet!.chordEvents].sort(
+      (a, b) => a.bar - b.bar || a.beat - b.beat
+    );
+    const primaryByBar = new Map<number, string>();
+    for (const e of sorted) {
+      if (e.bar >= 1 && e.bar <= tb && !primaryByBar.has(e.bar)) {
+        primaryByBar.set(e.bar, e.symbol);
+      }
+    }
+    let carryImp = 'C';
+    const impBarArr: string[] = [];
+    for (let bar = 1; bar <= tb; bar++) {
+      const sym = primaryByBar.get(bar);
+      if (sym !== undefined) carryImp = sym;
+      impBarArr.push(carryImp);
+    }
+    if (genBars && genBars.length === tb && impBarArr.length === tb) {
+      const merged = mergeSongModeImportedAndGeneratedHarmonyBars(
+        genBars,
+        impBarArr,
+        harmonyBlendRaw
+      );
+      chordProgressionText = merged.join('|');
+      blendMergeApplied = true;
+    }
+  }
+
   const leadSheetForChordLock =
-    !freeHarmony && leadSheet?.chordEvents?.length ? leadSheet : undefined;
+    !freeHarmony && leadSheet?.chordEvents?.length && !blendMergeApplied ? leadSheet : undefined;
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
@@ -1871,6 +1967,8 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
         importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
         importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
         importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
+        importHarmonyBlendActive: blendMergeActive ? true : false,
+        importHarmonyBlendEffective: blendMergeActive ? harmonyBlendRaw : undefined,
         ...(realised.referenceInfluence
           ? {
               referenceSourceKind: 'musicxml',
@@ -1934,6 +2032,8 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
       importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
       importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
+      importHarmonyBlendActive: blendMergeActive ? true : false,
+      importHarmonyBlendEffective: blendMergeActive ? harmonyBlendRaw : undefined,
       ...(realised.referenceInfluence
         ? {
             referenceSourceKind: 'musicxml',
