@@ -39,6 +39,13 @@ exports.COMPOSER_OS_V1_SUPPORTED_MODES = [
     honestNote: "Two-voice contrapuntal guitar etude as exported MusicXML (Jimmy Wyble engine).",
   },
   {
+    presetId: "slonimsky_etude",
+    displayName: "Slonimsky Etude",
+    capability: "musicxml_generation",
+    honestNote:
+      "Pattern-based chromatic etude from the Slonimsky catalogue as exported MusicXML (deterministic engine).",
+  },
+  {
     presetId: "big_band",
     displayName: "Big Band",
     capability: "musicxml_generation",

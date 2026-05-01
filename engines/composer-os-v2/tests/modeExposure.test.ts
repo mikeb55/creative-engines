@@ -17,19 +17,21 @@ export function runModeExposureTests(): { ok: boolean; name: string }[] {
       presets.some((p) => p.id === 'riff_generator' && p.supported) &&
       presets.some((p) => p.id === 'song_mode' && p.supported) &&
       presets.some((p) => p.id === 'big_band' && p.supported) &&
-      presets.some((p) => p.id === 'string_quartet' && p.supported),
+      presets.some((p) => p.id === 'string_quartet' && p.supported) &&
+      presets.some((p) => p.id === 'slonimsky_etude' && p.supported),
     name: 'getPresets exposes supported top-level modes including guitar_bass_duo_single_line',
   });
 
   out.push({
     ok:
-      COMPOSER_OS_V1_SUPPORTED_MODES.length === 7 &&
+      COMPOSER_OS_V1_SUPPORTED_MODES.length === 8 &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'big_band' && m.capability === 'musicxml_generation') &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some(
         (m) => m.presetId === 'string_quartet' && m.capability === 'musicxml_generation'
       ) &&
       COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'song_mode' && m.capability === 'musicxml_generation') &&
-      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'wyble_etude' && m.capability === 'musicxml_generation'),
+      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'wyble_etude' && m.capability === 'musicxml_generation') &&
+      COMPOSER_OS_V1_SUPPORTED_MODES.some((m) => m.presetId === 'slonimsky_etude' && m.capability === 'musicxml_generation'),
     name: 'release metadata labels planning vs musicxml_generation honestly',
   });
 

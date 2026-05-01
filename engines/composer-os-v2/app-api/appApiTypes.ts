@@ -16,6 +16,8 @@ export interface AppPreset {
   name: string;
   description: string;
   supported: boolean;
+  /** Optional UI grouping (e.g. study generators). */
+  category?: string;
 }
 
 export interface AppStyleModule {
@@ -175,6 +177,15 @@ export interface GenerateRequest {
   harmonyBlend?: number;
   /** Dev/tests: deterministic indie dual-guitar tuning fixture (passed through to `runGoldenPath`). */
   debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
+  /**
+   * Preset `slonimsky_etude`: Slonimsky catalogue interval pattern id (e.g. `p_wholeTone`).
+   * Clients may also send top-level `patternId`; dispatch accepts either.
+   */
+  slonimskyPatternId?: string;
+  /** Preset `slonimsky_etude`: tonic pitch class 0–11 (default 0). */
+  slonimskyKeyPc?: number;
+  /** Preset `slonimsky_etude`: repeat the progression through 12 transpositions. */
+  slonimskyCycleKeys?: boolean;
 }
 
 export interface ValidationSummary {

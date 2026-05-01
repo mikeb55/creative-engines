@@ -30,6 +30,13 @@ const PRESETS: AppPreset[] = [
     supported: true,
   },
   {
+    id: 'slonimsky_etude',
+    name: 'Slonimsky Etude',
+    description: 'Pattern-based chromatic etude generator',
+    category: 'study',
+    supported: true,
+  },
+  {
     id: ecmChamberPreset.id,
     name: ecmChamberPreset.name,
     description:

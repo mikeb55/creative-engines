@@ -61,6 +61,8 @@ import {
 import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
 import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
+import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
+import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -89,6 +91,7 @@ export const SUPPORTED_APP_PRESET_IDS = [
   'big_band',
   'string_quartet',
   'wyble_etude',
+  'slonimsky_etude',
 ] as const;
 
 export type SupportedAppPresetId = (typeof SUPPORTED_APP_PRESET_IDS)[number];
@@ -380,6 +383,145 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         wybleChordSource: resolved.source,
         wybleChordBarCount: chords.length,
         wybleChordsPerBar: chords,
+      } as GenerateResult['runManifest'],
+    };
+  }
+
+  if (id === 'slonimsky_etude') {
+    const reqAny = req as GenerateRequest & { parsedChordBars?: string[]; patternId?: string };
+    const resolved = resolveWybleChordBarsFromRequest(reqAny.parsedChordBars, reqAny.chordProgressionText);
+    if (!resolved.ok) {
+      return {
+        success: false,
+        error: resolved.error,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [resolved.error]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'slonimsky_etude',
+          activeModules: ['slonimsky_etude_generator'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+    const chords = resolved.bars;
+    const patternIdRaw =
+      (typeof req.slonimskyPatternId === 'string' && req.slonimskyPatternId.trim()) ||
+      (typeof reqAny.patternId === 'string' && reqAny.patternId.trim()) ||
+      '';
+    if (!patternIdRaw) {
+      const msg =
+        'Slonimsky Etude requires a pattern id (send slonimskyPatternId or patternId with a catalogue pattern such as p_wholeTone).';
+      return {
+        success: false,
+        error: msg,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'slonimsky_etude',
+          activeModules: ['slonimsky_etude_generator'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+    const keyPcRaw =
+      typeof req.slonimskyKeyPc === 'number' && Number.isFinite(req.slonimskyKeyPc)
+        ? Math.round(req.slonimskyKeyPc)
+        : 0;
+    const keyPc = ((keyPcRaw % 12) + 12) % 12;
+    const bpm =
+      typeof req.bpm === 'number' && Number.isFinite(req.bpm) && req.bpm > 0 ? req.bpm : 120;
+    const cycleKeys = req.slonimskyCycleKeys === true;
+    const outside =
+      chromaticStrengthToOutsideLevel(req.chromaticStrength) ?? (1 as const);
+    const allowedOutsideLevel = Math.max(0, Math.min(2, outside)) as 0 | 1 | 2;
+
+    console.log(
+      '[slonimsky-etude]',
+      JSON.stringify({
+        stage: 'composerOsAppGeneration',
+        patternId: patternIdRaw,
+        chordSource: resolved.source,
+        chordBarCount: chords.length,
+        keyPc,
+        bpm,
+        cycleKeys,
+      })
+    );
+
+    let xmlBody: string;
+    let exportErrors: string[];
+    try {
+      const gen = generateSlonimskyEtudeXml({
+        patternId: patternIdRaw as IntervalPatternId,
+        chordSymbols: chords,
+        keyPc,
+        bpm,
+        seed: req.seed,
+        cycleKeys,
+        allowedOutsideLevel,
+      });
+      xmlBody = gen.xml;
+      exportErrors = gen.errors;
+    } catch (e) {
+      console.warn('VALIDATION BYPASSED:', (e as Error)?.message);
+      return {
+        success: false,
+        error: (e as Error)?.message ?? String(e),
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [String((e as Error)?.message ?? e)]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'slonimsky_etude',
+          activeModules: ['slonimsky_etude_generator'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+
+    if (!xmlBody?.trim() || exportErrors.length > 0) {
+      const msg =
+        exportErrors.length > 0
+          ? exportErrors.join(' | ')
+          : 'Slonimsky Etude export produced empty MusicXML.';
+      return {
+        success: false,
+        error: msg,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'slonimsky_etude',
+          activeModules: ['slonimsky_etude_generator'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+
+    const xmlPath = path.join(outputDir, `slonimsky_etude_${req.seed ?? Date.now()}.musicxml`);
+    fs.writeFileSync(xmlPath, xmlBody, 'utf-8');
+    return {
+      success: true,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      productKind: 'musicxml',
+      filepath: xmlPath,
+      validation: validationForStructural(true, []),
+      runManifest: {
+        seed: req.seed,
+        presetId: 'slonimsky_etude',
+        activeModules: ['slonimsky_etude_generator'],
+        timestamp: new Date().toISOString(),
+        slonimskyPatternId: patternIdRaw,
+        slonimskyChordSource: resolved.source,
+        slonimskyChordBarCount: chords.length,
+        slonimskyChordsPerBar: chords,
+        slonimskyKeyPc: keyPc,
+        slonimskyCycleKeys: cycleKeys,
       } as GenerateResult['runManifest'],
     };
   }
