@@ -563,6 +563,64 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'chorus'
     ),
   ],
+  frank_zappa: [
+    R(
+      'zappa.polytonal_superimposition',
+      'Polytonal superimposition — layered centres / upper-structure clash (placeholder)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'zappa.metric_displacement',
+      'Metric displacement — melody vs underlying meter (placeholder)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'zappa.xenochrony_pitch_offset',
+      'Xenochrony pitch offset — composite timeline vocabulary (placeholder)',
+      'songwriter',
+      'melody',
+      7,
+      'verse'
+    ),
+    R(
+      'zappa.through_composed_form',
+      'Through-composed form — weak sectional repetition grids (placeholder)',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'zappa.style_juxtaposition',
+      'Style juxtaposition — abrupt sectional vocabulary shifts (placeholder)',
+      'songwriter',
+      'harmony',
+      8,
+      'chorus'
+    ),
+    R(
+      'zappa.angular_interval_preference',
+      'Angular interval preference — wide leaps + chromatic cells (placeholder)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'zappa.no_clean_cadential_resolution',
+      'No clean cadential resolution — avoid textbook tonic closures (placeholder)',
+      'songwriter',
+      'harmony',
+      7,
+      'global'
+    ),
+  ],
   antonio_carlos_jobim: [
     R('jobim.bossa_extensions', 'Brazilian extended tonic / altered dominant colours (placeholder)', 'songwriter', 'harmony', 9, 'global'),
     R('jobim.descending_bass', 'Descending bass-line grammar (placeholder)', 'songwriter', 'harmony', 8, 'verse'),

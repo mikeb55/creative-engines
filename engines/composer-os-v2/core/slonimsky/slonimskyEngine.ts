@@ -163,6 +163,17 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     maxInfraSteps: 1,
     maxUltraSteps: 2,
   },
+  FRANK_ZAPPA: {
+    outsideLevel: 2,
+    preferredSections: ['intervallic', 'tritone_substitutions', 'heptatonic_scales'],
+    defaultProfile: 'Sonic Youth',
+    transpositionInterval: 3,
+    intentWeights: { build: 0.2, float: 0.1, release: 0.1, shock: 0.6 },
+    notes: 'Shock-weighted angular ditone vocabulary; xenochrony-style juxtaposition.',
+    catalogueSection: 'ditone_progression',
+    maxInfraSteps: 2,
+    maxUltraSteps: 2,
+  },
 };
 
 function seededUnit(seed: number): number {
@@ -457,6 +468,7 @@ export function mapDuoPhraseIntentToSlonimskyPhraseIntent(
 
 const SLONIMSKY_SONGWRITER_ID_TO_MAP_KEY: Record<string, keyof typeof SLONIMSKY_STYLE_PROFILE_MAP> = {
   antonio_carlos_jobim: 'JOBIM',
+  frank_zappa: 'FRANK_ZAPPA',
 };
 
 function resolveSlonimskyProfileSpecForSongwriterId(

@@ -1103,6 +1103,24 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 4,
     intervalPreference: 'chromatic',
   },
+  frank_zappa: {
+    id: 'frank_zappa',
+    description:
+      'Compositional absurdism: xenochrony, polytonal juxtaposition, strict notation + improvisation, wide interval leaps.',
+    lineVsCellEmphasis: 0.78,
+    harmonyColourBias: 0.88,
+    formRegularity: 0.08,
+    prosodyInfluence: 0.25,
+    hookRepetitionBias: 0.28,
+    phraseRegularity: 0.1,
+    hookReturnVariation: 0.92,
+    harmonicSpeed: 0.62,
+    sectionContrast: 0.98,
+    syncopationBias: 0.85,
+    densityBias: 0.72,
+    motifCellSize: 3,
+    intervalPreference: 'angular',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -1223,6 +1241,9 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   bird: 'charlie_parker',
   parker: 'charlie_parker',
   charlie: 'charlie_parker',
+  frank_zappa: 'frank_zappa',
+  zappa: 'frank_zappa',
+  fz: 'frank_zappa',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
 };
