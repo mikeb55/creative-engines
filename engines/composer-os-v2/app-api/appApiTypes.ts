@@ -155,6 +155,8 @@ export interface GenerateRequest {
   includeVocalLeadSheet?: boolean;
   /** MusicXML lead-sheet input: Song Mode harmony+expression route, plus guarded phrase-expression pilot for selected non-Song presets. */
   songModeLeadSheetMusicXml?: string;
+  /** MusicXML lead-sheet input for `big_band` + `string_quartet` presets (ensemble realisation handoff). */
+  ensembleLeadSheetMusicXml?: string;
   /**
    * Song Mode LeadSheet import: how strongly to honour imported articulations/dynamics vs neutral defaults (0–1).
    * Omitted → engine default (~0.55).

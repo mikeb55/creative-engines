@@ -3,6 +3,7 @@
  */
 
 import { buildBigBandScoreModel } from './bigBandScoreBuilder';
+import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planBigBandVoicing } from './bigBandVoicingPlanner';
 import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from './runBigBandMode';
@@ -22,6 +23,7 @@ export interface BigBandRealisationResult {
 export function runBigBandRealisation(
   input: BigBandRunInput & {
     bpm?: number;
+    leadSheet?: LeadSheet;
     /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the BB score skips Wyble alto/tenor sax separation. */
     suppressWybleVoiceLayoutForTest?: boolean;
   }

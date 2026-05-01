@@ -3,6 +3,7 @@
  */
 
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
+import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import { buildQuartetScoreModel } from './quartetScoreBuilder';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
@@ -24,6 +25,7 @@ export function runQuartetRealisation(
   input: StringQuartetRunInput & {
     era?: BigBandEraId;
     bpm?: number;
+    leadSheet?: LeadSheet;
     /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the quartet score build skips the Wyble inner-line chord-tone swap. */
     suppressWybleVoiceLayoutForTest?: boolean;
   }

@@ -28,6 +28,7 @@ import {
   type AlternateGuitarTuningResolved,
 } from '../core/song-mode/alternateGuitarTunings';
 import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
+import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
@@ -1510,6 +1511,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
+  const leadSheet = req.ensembleLeadSheetMusicXml
+    ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
+    : undefined;
   const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
@@ -1534,6 +1538,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     req.chromaticStrength === 'prominent'
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
+    ...(leadSheet ? { leadSheet } : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
@@ -1641,6 +1646,9 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     creativeControlLevel: req.creativeControlLevel,
   });
   const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
+  const leadSheet = req.ensembleLeadSheetMusicXml
+    ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
+    : undefined;
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
@@ -1657,6 +1665,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     req.chromaticStrength === 'prominent'
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
+    ...(leadSheet ? { leadSheet } : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
