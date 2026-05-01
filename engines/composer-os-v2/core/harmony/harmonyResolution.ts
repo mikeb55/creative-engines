@@ -9,7 +9,8 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import { normalizeChordToken } from './chordProgressionParser';
+import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
+import { logHarmonyProvenance } from './harmonyContext';
 
 /** True when one authoritative chord per bar covers the entire form — no chordSymbolPlan fallback for those bars. */
 export function isAuthoritativeLockedHarmonyFullForm(context: CompositionContext): boolean {
@@ -23,7 +24,7 @@ function assertLockedMatchesParsedWhenBothFull(
   tb: number
 ): void {
   for (let i = 0; i < tb; i++) {
-    if (normalizeChordToken(locked[i] ?? '') !== normalizeChordToken(parsed[i] ?? '')) {
+    if (!lockedHarmonyChordSymbolsEquivalent(locked[i] ?? '', parsed[i] ?? '')) {
       throw new Error(
         `HARMONY AUTHORITY: lockedHarmonyBarsRaw !== parsedCustomProgressionBars at bar ${i + 1} ("${locked[i]}" vs "${parsed[i]}")`
       );
@@ -39,6 +40,17 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
 
   if (locked && locked.length === tb && parsed && parsed.length === tb && meta.harmonySource === 'custom') {
     assertLockedMatchesParsedWhenBothFull(locked, parsed, tb);
+  }
+
+  /** Immutable canonical timeline (Frank Zappa primary today): single snapshot for score + validators. */
+  const hcCanon = context.harmonyContext;
+  if (
+    hcCanon &&
+    hcCanon.bars.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return hcCanon.bars[barIndex - 1]!;
   }
 
   /**
@@ -342,6 +354,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return cpEff[barIndex - 1]!;
   }
 
+  /**
+   * Frank Zappa effective harmony is served only via `context.harmonyContext` (see `attachFrankZappaHarmonyContext`).
+   * If missing here, slice precompute did not run or HarmonyContext was not attached — fall through (tests only).
+   */
+  const fzEff = meta?.frankZappaEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'frank_zappa' &&
+    Array.isArray(fzEff) &&
+    fzEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return fzEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;
@@ -398,6 +425,16 @@ export function resolveChordForDuoPostPass(
   measureChord?: string
 ): string {
   const authoritative = getChordForBar(barIndex, context);
+  const hc = context.harmonyContext;
+  if (hc && typeof process !== 'undefined' && process.env?.COMPOSER_OS_HARMONY_PROVENANCE === '1') {
+    logHarmonyProvenance({
+      barIndex,
+      canonical: authoritative,
+      scoreChordWritten: measureChord?.trim(),
+      source: hc.source,
+      checksum: hc.checksum,
+    });
+  }
   if (measureChord && measureChord.trim()) {
     const t = measureChord.trim();
     if (t !== authoritative) {

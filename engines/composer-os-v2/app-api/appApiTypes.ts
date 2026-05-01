@@ -6,6 +6,7 @@ import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type { GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
+import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export type { StyleProfile };
 export type { ImportHarmonyMode };
@@ -186,6 +187,13 @@ export interface GenerateRequest {
   slonimskyKeyPc?: number;
   /** Preset `slonimsky_etude`: repeat the progression through 12 transpositions. */
   slonimskyCycleKeys?: boolean;
+  /** Frank Zappa Phase B — Zappa solo lead range (MIDI inclusive; default 40–84). */
+  zappaSoloMidiLow?: number;
+  zappaSoloMidiHigh?: number;
+  zappaSoloDensity?: 'low' | 'medium' | 'high';
+  zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
+  /** Song Mode / Frank Zappa: per-bar time signatures (1-based bar keys). Omitted → all 4/4. */
+  barMeterMap?: BarMeterMap;
 }
 
 export interface ValidationSummary {
@@ -441,4 +449,10 @@ export interface OutputEntry {
   andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
   andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
   andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
+  frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
+  frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
+  frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];
+  frankZappaEffectiveHarmonyBars?: GenerationMetadata['frankZappaEffectiveHarmonyBars'];
+  frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];
+  frankZappaEligibilityStats?: GenerationMetadata['frankZappaEligibilityStats'];
 }

@@ -1,0 +1,279 @@
+{
+  "source": "Little-Dots-On-Zappa.pdf",
+  "title": "Little Dots: A Study of the Melodies of the Guitarist/Composer Frank Zappa",
+  "author": "Brett Clement",
+  "institution": "Florida State University, School of Music",
+  "degree": "Master of Music",
+  "date": "2004",
+  "extractionMethod": "pdftotext (text layer present — 945 lines / ~114KB)",
+  "transcriptionSource": "The Frank Zappa Guitar Book, transcribed by Steve Vai (solos from 1979–1981)",
+  "worksAnalysed": ["Pink Napkins", "The Black Page #1", "Be-Bop Tango"],
+
+  "theoreticalFramework": {
+    "harmonicClimates": "Zappa's term for the static or two-chord accompaniment environment — the 'establishing shot' for a solo. Melody acts on the climate through consonance/dissonance tension and resolution.",
+    "factoryCyclePhrasing": "Rhythmic dissonance (rapid note clusters thwarting the quarter-note pulse) resolved by a long-held note that reestablishes the pulse. One burst + one resolution = one factory cycle.",
+    "rhythmicDissonance": "Zappa's term: patterns like 23/24 where note groupings rub against the factory pulse — analogous to harmonic dissonance. Effect is perceived as local acceleration or deceleration.",
+    "motiveZ": "Doubly articulated pitch in even note values (repeated-note motive). Never occurs 3+ consecutive repetitions. Functions as opening statement ([a]) and terminative signal ([f]).",
+    "mosaicProcess": "Factory cycle beats as tiles; motives can be (1) reused and metrically displaced, (2) transformed by rhythm/pitch, (3) both, or (4) abandoned. Continuous transformation rather than development-by-episode.",
+    "densities": "Zappa's term (via Steve Vai): large chords of 8–10 unrelated pitches with no repetitions. Also extended to melody: chromatic 8-note collections realised linearly."
+  },
+
+  "pinkNapkins": {
+    "album": "Shut Up 'n Play Yer Guitar (1981, from Winter 1977 performance)",
+    "meter": "6/8",
+    "totalBars": 76,
+    "accompaniment": {
+      "type": "two-chord alternating vamp, one chord per measure",
+      "chords": [
+        { "chord": "C#m7", "pitches": ["C#", "E", "G#", "B"], "collection": "C# Dorian (C# D# E F# G# A# B)" },
+        { "chord": "DM7", "pitches": ["D", "F#", "A", "C#"], "collection": "D Lydian (C# D E F# G# A B)" }
+      ],
+      "rootMotion": "semitone (C# → D), implies leading-tone to D but Zappa avoids tonal resolution"
+    },
+
+    "pitchInventory": {
+      "note": "Inventory of all articulated pitches across the full solo",
+      "data": [
+        { "pitch": "C#", "count": 153 }, { "pitch": "D", "count": 12 }, { "pitch": "D#", "count": 34 },
+        { "pitch": "E", "count": 131 }, { "pitch": "F#", "count": 172 }, { "pitch": "G#", "count": 159 },
+        { "pitch": "A", "count": 41 }, { "pitch": "A#", "count": 11 }, { "pitch": "B", "count": 180 }
+      ],
+      "interpretation": "Common tones between the two chord collections (C#, E, F#, G#, B) number 100+. D and A# (non-common dissonant pitches) used sparingly (12 and 11 times respectively).",
+      "dissonantPitches": ["D (over DM7 only — consonant arrival)", "A# (over C#m7 only — dissonant tension)", "D# (over C#m7 — naturally non-common)", "A (over C#m7 shifts to natural minor)"],
+      "dissonantCollection": "D#–F#–A#–C# (chain of thirds over C#m7 backdrop — completes C# extended tertian stack)"
+    },
+
+    "intervalPatterns": {
+      "a1Intervals": [7, -5, -2, 10, 3, -5, -3, 5, -3, 1],
+      "aPrime1Intervals": [-12, 5, -2, 2, 2, -2, -5, 2, -9, 1],
+      "a2Intervals": [5, -7, 4, -5, -2, 10, 0, -3, -2, -2, -3],
+      "aPrime2Intervals": [10, -5, 10, -2, -3, 2, 3, -7, 5, 5, -8],
+      "notes": "Positive = ascending semitones, negative = descending. Semitone link (+1) between 2nd and 3rd measure of both [a] and [a'] is identical — a structural hinge. Descending minor sixth (-8) appears at corresponding position in [a2] and [a'2], a salient identity marker across variation.",
+      "generalTendency": "First half of variant pairs (a1/a'1, a2/a'2) share more interval identity than second half, which becomes freer. Large intervals (major 7th +10/-12) alternate with small ones (semitones +1/-2) — characteristic jagged/smooth alternation."
+    },
+
+    "phraseLengths": {
+      "unit": "measures of 6/8",
+      "form": "20 / 36 / 20 (bars 1–20, 21–56, 57–76)",
+      "hypermetricUnit": "4 bars (from Black Napkins 8-bar theme, divided into 4-bar cells)",
+      "segments": [
+        { "id": "[1]", "bars": "1–4", "length": 4, "character": "block chords — solo opener" },
+        { "id": "[2]", "bars": "5–8", "length": 4 },
+        { "id": "T1", "bars": "9–12", "length": 4, "character": "transitional — no strong new motive" },
+        { "id": "[3]", "bars": "13–16", "length": 4 },
+        { "id": "[4a][4b]", "bars": "17–20", "length": "2+2" },
+        { "id": "T2", "bars": "21–26", "length": 6, "note": "6-bar; disrupts 4-bar hypermeter" },
+        { "id": "[5]", "bars": "27–32", "length": 6, "note": "highest register; 6th-note triplet motive sustained all 6 bars" },
+        { "id": "[6a][6b][6c]", "bars": "33–38", "length": "2+2+2" },
+        { "id": "T3", "bars": "39–42", "length": 4 },
+        { "id": "[7][8]", "bars": "43–50", "length": "4+4", "character": "arpeggiated chords — mirrors [1]" },
+        { "id": "T4", "bars": "51–56", "length": 6 },
+        { "id": "[9a][9b]", "bars": "57–64", "length": "2+2+4" },
+        { "id": "[10]", "bars": "65–68", "length": 4, "character": "lowest register; same rhythmic motive as [5]" },
+        { "id": "[11]", "bars": "69–72", "length": 4 },
+        { "id": "[12]", "bars": "73–76", "length": 4, "character": "F#m arpeggiation — consonance via natural minor" },
+        { "id": "[13]", "bars": "77–80", "length": 4, "character": "block chords — mirrors [1] — closes solo" }
+      ],
+      "hypermetricDeviation": "Middle 36 bars use 6-bar segments disrupting 4-bar grid; 4-bar hypermeter restored at m.57 for closing 20 bars."
+    },
+
+    "rhythmicGroupings": [
+      { "grouping": "eighth-note triplet / sixteenth-note triplet", "context": "[5] and [10] — sustained motivic material" },
+      { "grouping": "evenlySpacedNotesBursts", "description": "Notes compressed into smaller frame — 'rhythmic dissonance' 23/24-style", "context": "[8] and [9a]" }
+    ],
+
+    "scaleModeOverChordTypes": [
+      { "chord": "C#m7", "mode": "C# Dorian", "dissonantAdditions": ["A# (flat-7 of B# / bVI relationship)", "D# (chromatic tension)"] },
+      { "chord": "DM7", "mode": "D Lydian", "note": "Lydian #4 intensifies bright major-7 climate without dissonance" }
+    ]
+  },
+
+  "theBlackPage": {
+    "album": "Zappa in New York (1978, from Christmas 1976 recordings)",
+    "version": "The Black Page #1 (original; more complex than #2)",
+    "meter": "4/4",
+    "totalBars": 30,
+    "accompaniment": {
+      "type": "alternating two-chord vamp (mm.1–8, 19–23) and single held chords elsewhere",
+      "chordQuality": "all major-add9 (major chord + added major second/ninth)",
+      "chords": ["G2", "Bb2", "D2", "Gb2", "C2", "C#2", "B2", "Ab2"],
+      "harmonicLogic": "Chord roots outline rough dominant/subdominant relationships (G→D→C) but Zappa avoids resolution — semitone root motion at B and C sections thwarts tonality"
+    },
+
+    "scaleMode": {
+      "systemRule": "Lydian mode generated from root of each sounding chord throughout",
+      "effect": "No dissonant pitches — Lydian #4 over major-add9 reinforces and intensifies harmonic climate without tension/resolution. Dissonance relegated entirely to rhythm.",
+      "exception": "C natural grace note in m.1 is only non-Lydian pitch in piece",
+      "sectionB_D2": "D Lydian — sustained past [a'] entry to avoid resolution to G2",
+      "sectionC_C2": "C Lydian — final note B natural is major seventh of C2 (jazz tonic substitute)"
+    },
+
+    "intervalPatterns": {
+      "DFIntervals": [2, -2, 3, 3, -8, 1, 3],
+      "DFPrimeIntervals": [1, -3, 5, 1, -8, 2, -4],
+      "sharedFeature": "Descending minor sixth (-8) appears at position 5 in both [DF] and [DF'] — salient identity across variation",
+      "DFSextuplet": "Almost exclusively perfect fourths — commented as 'basic interval preference of the piece'",
+      "DFPrimeSextuplet": "Taken directly from last 6 pitches of septuplet in m.4 [b] — cross-cycle quotation",
+      "a1": [7, -5, -2, 10, 3, -5, -3, 5, -3, 1],
+      "aPrime1": [-12, 5, -2, 2, 2, -2, -5, 2, -9, 1],
+      "a2": [5, -7, 4, -5, -2, 10, 0, -3, -2, -2, -3],
+      "aPrime2": [10, -5, 10, -2, -3, 2, 3, -7, 5, 5, -8],
+      "contour_a3": "<0132>",
+      "contour_aPrime3": "<2130>",
+      "intervalSubstitution": "+10 substituted by +2 (inversional relationship 10/2) at the rhythmically marked tied-note position in both [a2] and [a'2]"
+    },
+
+    "rhythmicGroupings": {
+      "measure4": {
+        "beats12": "eighth notes subdivided into groups of 4 (32nd), 3 (32nd triplets), and 5 (32nd quintuplets)",
+        "beats34": "quarter notes subdivided into 7 (16th-note septuplets)",
+        "perceptualEffect": "32nd groups → slow; quintuplets → speed up; septuplets → slow again. Factory pulse thwarted."
+      },
+      "measure15": {
+        "structure": "Large triplet over 4 beats with internal subdivisions of 7 + 4 + 5",
+        "note": "Most rhythmically 'unhearable' measure in piece; retained in #1, simplified in #2"
+      },
+      "measures6to9": {
+        "structure": "Long-held notes each lasting 5 sixteenth notes — creates deceptive competing pulse",
+        "effect": "No note lands on any quarter-note factory pulse for 3+ measures"
+      },
+      "allGroupingsPresent": ["4 (32nd notes)", "3 (32nd-note triplets)", "5 (32nd-note quintuplets)", "7 (16th-note septuplets)", "large triplet containing 7+4+5 internally", "11-tuplet 32nd notes in [f] and [f']"]
+    },
+
+    "rhythmicDisplacement": {
+      "motiveZDisplacement": "Appears at beginning of rhythmic group in m.1 [a]; displaced by one 32nd note to within-group position in m.16 [a']",
+      "factoryCyclePhraseBoundaries": {
+        "[c]": "ends with whole note + quarter (strongest reestablishment)",
+        "[d][f']": "ends with whole note",
+        "[a]": "ends with dotted half note",
+        "[b][f]": "ends with half note",
+        "[e]": "ends with quarter note (weakest — insufficient to reestablish pulse, forcing extra D2 measure)"
+      }
+    },
+
+    "form": {
+      "sections": [
+        { "section": "A", "bars": "1–9", "chords": "G2/Bb2 alternation", "cycles": "[a][b][DF][c][DF']" },
+        { "section": "B", "bars": "10–18", "chords": "D2 (passing Gb2)", "cycles": "[d][e]" },
+        { "section": "A'", "bars": "19–24", "chords": "Bb2/G2 alternation", "cycles": "[a'][b][DF][c][DF']", "note": "Starts with [b] not [a] — a' truncated by 3 bars due to [e]'s weak cadence" },
+        { "section": "C (coda)", "bars": "25–30", "chords": "C2 (C#2–Ab2 passing)", "cycles": "[d'][f][f'']" }
+      ]
+    },
+
+    "motiveZ": {
+      "definition": "Two consecutive articulations of the same pitch in even note values (e.g., two 32nd notes of same pitch within a quintuplet)",
+      "occursIn": "At least once in every factory cycle phrase",
+      "neverOccurs": "Three or more consecutive repetitions of same pitch",
+      "functions": ["opening: m.1 start of rhythmic group [a]", "unifying thread across [e] and [f][f']", "terminative: m.28 — only occurrence in larger note values (triplet context)"],
+      "crossWorkOccurrences": ["Uncle Meat mm.7–10", "Be-Bop Tango mm.7–8"]
+    }
+  },
+
+  "beBopTango": {
+    "album": "Roxy and Elsewhere (1974, from Fall 1973 performance)",
+    "premiered": "Fall 1972 as 'Farther O'Blivion' middle section",
+    "meter": "variable (tango feel)",
+    "totalChords": 46,
+
+    "pitchLanguage": {
+      "type": "atonal",
+      "mainThemeCollection": "[01234567] — 8-note chromatic 'density'",
+      "introductionAllVoicesCollection": "[0123] — all five voices (SATB+M) move linearly in chromatic tetrachords",
+      "intervalClass1Dominance": "Interval class 1 (semitone / major seventh) is primary melodic interval in main theme (F→E, F#→G, G→Ab etc.)",
+      "disjunctSeptuplet": "Pointillistic texture — leaps of 7ths and 9ths within rapid septuplet grouping in m.5",
+      "noTwelveTone": "Repeated pitches present; no aggregate completion requirement — explicitly not twelve-tone"
+    },
+
+    "chordSets": {
+      "primaryTetrachords": ["[0236]", "[0137]"],
+      "counts": { "[0236]": "presented in 8 distinct pitch realizations, freely employed", "[0137]": "presented in 4 pitch realizations (2 from intro + 2 semitone transpositions), more stable" },
+      "proportions": "32 of 46 chords are [0236] or [0137]",
+      "relationship": "[0236] → [0137] by semitone voice-leading in all voices (established in introduction). [0137] = augmented 11th chord minus 7th (Zappa's 'bebop harmonic aroma')",
+      "consonanceDissonance": "[0137] = consonant (stable, home climate); [0236] = dissonant (tension chord)",
+      "sharedIntervals": "Both share ic2 and ic4; [0236] lacks perfect fifth present in [0137]. [0137] is an all-interval tetrachord.",
+      "splitTransformations": "Non-primary tetrachords derived by split transformation: 2 voices move by ic1, 2 others move in thirds",
+      "finalChord": "[01234568] — 8-note density combining melody notes A and C with accompaniment; related to main theme density [01234567]"
+    },
+
+    "intervalPatterns": {
+      "mainThemeIntervals": "Predominantly ic1 linear motion; septuplet introduces ic5 (P4/P5) and large disjunct leaps (minor 7th, major 7th, minor 9th)",
+      "introductionAllVoices": {
+        "M": ["Gb", "G", "Ab", "A"],
+        "S": ["Eb", "D", "F", "E"],
+        "A": ["Db", "C", "Eb", "D"],
+        "T": ["E", "Eb", "F#", "F"],
+        "B": ["G", "Ab", "A", "Bb"],
+        "setClass": "[0123] in each voice"
+      }
+    },
+
+    "phraseLengths": {
+      "factoryCycleSegments": [
+        { "id": "[1]", "bars": "4–6", "character": "main theme, first statement; 8-note chromatic density" },
+        { "id": "[2a]", "bars": "7–8.2", "character": "conjunct septuplet with motive z; appears on downbeat" },
+        { "id": "[2b]", "bars": "8.3–11" },
+        { "id": "[3]", "bars": "12–14", "character": "main theme variant 1 — reorders septuplet pitches" },
+        { "id": "[4]", "bars": "15–16", "character": "septuplet from [2a] metrically displaced to beat 3" },
+        { "id": "[5]", "bars": "17–19", "character": "large tuplets across 2 beats — only segment with this structure; near-aggregate completion (missing A)" },
+        { "id": "[6]", "bars": "23–27", "character": "interruption; main theme variant 2 with quasi-serial octave displacement; introduces two new motives" },
+        { "id": "[7]", "bars": "31–32", "character": "aggregate completion — A held; quintuplet from [6] beat 4 displaced by 16th note" },
+        { "id": "[8]", "bars": "33–34", "character": "A held (same as [7])" },
+        { "id": "[9]", "bars": "39–41.1", "character": "32nd-note septuplet with rests" },
+        { "id": "[10]", "bars": "41.2–44", "character": "final note C — fills missing chromatic degree; 32nd-note septuplet with rests" }
+      ]
+    },
+
+    "rhythmicGroupings": [
+      { "grouping": "septuplet (7:4)", "context": "primary melodic vehicle for main theme; disjunct intervals within" },
+      { "grouping": "sextuplet (6:4)", "context": "[3][4] — simplified from septuplet in variation process" },
+      { "grouping": "quintuplet (5:4)", "context": "[7] — further simplification of septuplet variant" },
+      { "grouping": "large triplet (3:2)", "context": "[5] — spans 2 full beats; contains 32nd-note subdivisions" },
+      { "grouping": "32nd-note streams", "context": "[e] and [f] of Black Page; [9][10] of Be-Bop Tango" },
+      { "grouping": "11-tuplet 32nd notes", "context": "[f][f''] — most complex rhythmic group in corpus" },
+      { "grouping": "septuplet with internal rests", "context": "[6][7][9][10] — rests at positions 2 and 4 within septuplet" }
+    ],
+
+    "rhythmicDisplacement": {
+      "mosaicProcess": "Each factory cycle beat = a 'tile'. Motives shift between beats across adjacent cycles.",
+      "examples": [
+        { "motive": "conjunct septuplet (motive z embedded)", "from": "[2a] beat 1", "to": "[4] beat 3", "displacement": "by 2 beats" },
+        { "motive": "quintuplet from [6] beat 4", "to": "[7] beat 1", "displacement": "by 16th note (metric displacement of 1 sixteenth)" },
+        { "motive": "32nd-note upbeat pattern from [4]", "to": "[5]", "displacement": "placed within large tuplets — beat-internal" }
+      ],
+      "systematicComplexityIncrease": "Rest-at-phrase-start motive evolves: 4 sixteenth notes [4] → quintuplet [7][8] → 32nd-note septuplet [9][10]",
+      "rhythmicTransformationOfMotive": "Disjunct septuplet [1] → sextuplet [3][4] → quintuplet [7] — consistent simplification of rhythmic grouping across piece"
+    },
+
+    "largescaleChromaticism": {
+      "longHeldNotes": ["C# (seg.[1])", "C# (seg.[2b], spelled Db)", "B (seg.[3])", "Bb (seg.[4])", "Bb (seg.[5])", "A (seg.[7])", "A (seg.[8])", "A (seg.[9])", "C (seg.[10])"],
+      "chromaticDescentC#toA": "Long-held notes descend chromatically C#→B→Bb→A across [1]–[7], with C natural 'missing'",
+      "projectedSetClass": "[01234] (adds one chromatic pitch beyond [0123] of introduction)",
+      "missingNote": "C natural — fills in at final note of piece [10] (bar 41.2–44)",
+      "aggregateCompletion": "Achieved at [7] (all 12 pitch classes present); heralded by long-held A — the pitch that expanded [0123] to [01234]"
+    },
+
+    "scaleModeOverChordTypes": {
+      "note": "Fully atonal — no conventional scale/mode. Chord types [0236] and [0137] function as dissonance/consonance markers.",
+      "7altEquivalent": "[0236] = closest analogue to 7alt in Zappa's system — tritone present, no perfect fifth, maximum dissonance",
+      "consonantResting": "[0137] = augmented 11th chord (sans 7th) = Zappa's 'bebop aroma' — used as resolution target and main theme accompaniment"
+    }
+  },
+
+  "crossWorkSummary": {
+    "universalDevices": [
+      "Static or two-chord harmonic climate — Zappa avoids ii–V–I 'chord changes'",
+      "Lydian mode over major/major-add9 chords — no dissonant scale degrees, climate reinforcement",
+      "Dorian mode over minor seventh chords — mild chromaticism via natural 6th",
+      "Factory-cycle phrasing: rapid note cluster → long-held note restoration",
+      "Motive z: doubly-articulated pitch in even values — present in all three works",
+      "Semitone voice-leading as key interval in harmonic shifts and melodic variation",
+      "Descending minor sixth (-8 semitones) as recurring intervallic identity marker",
+      "Large tuplets (5, 7, 11) as primary metric dissonance vehicle",
+      "Mosaic/metric displacement: same motive shifted by beat, 16th, or 32nd note across cycles",
+      "Lydian melody neutralises harmonic dissonance — rhythmic layer carries all tension"
+    ],
+    "speechInfluencedRhythm": "Zappa's own term: rhythmic ideas derived from the irregular metre of speech — naturally produces odd groupings (5, 7, 13) without mathematical calculation",
+    "polyScaleOriented": "Different mode for each chord in vamp — melody shifts collection on chord change rather than treating entire progression as one key",
+    "projectObject": "Zappa's term for conceptual continuity across works — 'The Black Page' described as 'missing link between Uncle Meat and Be-Bop Tango'; same motivic material confirmed analytically"
+  }
+}

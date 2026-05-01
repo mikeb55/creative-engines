@@ -2,6 +2,8 @@
  * Composer OS V2 — Export types
  */
 
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+
 /** MusicXML export result. */
 export interface MusicXmlExportResult {
   success: boolean;
@@ -26,6 +28,11 @@ export interface MusicXmlExportOptions {
   assertLockedHarmonyBars?: string[];
   /** Variant C: minimize number of tied fragments (DP) instead of greedy largest-first. */
   minimizeNoteFragmentation?: boolean;
+  /**
+   * Phase A — per-bar time signatures (1-based). When set, each measure uses matching divisions and
+   * MusicXML `<time>` changes at meter boundaries. Omit for legacy all–4/4 export.
+   */
+  barMeterMap?: BarMeterMap;
 }
 
 /** Schema validation result. */

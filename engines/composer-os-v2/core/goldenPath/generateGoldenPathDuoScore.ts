@@ -14,6 +14,7 @@ declare module '../compositionContext' {
   }
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import {
   parseChordSymbol,
@@ -106,6 +107,17 @@ import {
   finalizeWayneShorterMetadata,
   precomputeWayneShorterEffectiveHarmonyBars,
 } from './wayneShorterSlice';
+import {
+  accumulateFrankZappaHarmonyDiagnostics,
+  attachFrankZappaHarmonyContext,
+  createFrankZappaHarmonyAccumulator,
+  finalizeFrankZappaMetadata,
+} from './frankZappaSlice';
+import {
+  applyZappaSoloToMetadata,
+  generateZappaSolo,
+  mergeZappaSoloPart,
+} from '../solo/zappasoloEngine';
 import {
   accumulateBarryHarrisHarmonyDiagnostics,
   createBarryHarrisHarmonyAccumulator,
@@ -2166,6 +2178,7 @@ function buildGuitarPart(
   const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
   const isSongwriterPatMetheny = genMeta?.songwriterStyleId === 'pat_metheny';
   const isSongwriterWayneShorter = genMeta?.songwriterStyleId === 'wayne_shorter';
+  const isSongwriterFrankZappa = genMeta?.songwriterStyleId === 'frank_zappa';
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -2176,6 +2189,7 @@ function buildGuitarPart(
   const syAccum = createSonicYouthHarmonyAccumulator();
   const pmAccum = createPatMethenyHarmonyAccumulator();
   const wsAccum = createWayneShorterHarmonyAccumulator();
+  const fzAccum = createFrankZappaHarmonyAccumulator();
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
@@ -2212,6 +2226,9 @@ function buildGuitarPart(
   }
   if (isSongwriterWayneShorter && isDuoGoldenPath) {
     precomputeWayneShorterEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterFrankZappa && isDuoGoldenPath) {
+    attachFrankZappaHarmonyContext(context);
   }
   if (isSongwriterBarryHarris && isDuoGoldenPath) {
     precomputeBarryHarrisEffectiveHarmonyBars(context);
@@ -2394,6 +2411,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         wsAccum
+      );
+    }
+    if (isSongwriterFrankZappa) {
+      accumulateFrankZappaHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        fzAccum
       );
     }
     if (isSongwriterBarryHarris) {
@@ -2974,6 +2998,12 @@ function buildGuitarPart(
 
   if (isSongwriterWayneShorter && context.generationMetadata) {
     finalizeWayneShorterMetadata(context.generationMetadata, wsAccum);
+  }
+
+  if (isSongwriterFrankZappa && context.generationMetadata) {
+    finalizeFrankZappaMetadata(context.generationMetadata, fzAccum);
+    const solo = generateZappaSolo(context, context.generationMetadata.zappaSoloOptions);
+    applyZappaSoloToMetadata(context.generationMetadata, solo);
   }
 
   if (isSongwriterBarryHarris && context.generationMetadata) {
@@ -5042,7 +5072,7 @@ export function generateGoldenPathDuoScore(
   }
   logEcmInternalPhaseProbe(probeEcm, 'after_schneider_density', afterPerf);
   // Last non-finalize transforms: articulation / velocity / feel metadata only (no rhythm after seal).
-  const afterExpressive = applyExpressiveDuoFeel(afterPerf, {
+  let afterExpressive = applyExpressiveDuoFeel(afterPerf, {
     ecmEvenEighths: context.presetId === 'ecm_chamber',
   });
   if (opts?.variationEnabled === true) {
@@ -5064,6 +5094,9 @@ export function generateGoldenPathDuoScore(
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
+  }
+  if (context.harmonyContext) {
+    assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'after_applyDuoOrchestrationPass');
   }
   /** Song Mode: velocity-only style layer must run before `finalizeAndSealDuoScoreBarMath` freezes events. */
   if (
@@ -5154,6 +5187,9 @@ export function generateGoldenPathDuoScore(
       repairSlashBassHonourInDuoScore(context, bassForSlash, plans.bassMap, walkLow, bassCeiling);
     }
   }
+  if (context.harmonyContext) {
+    assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'after_repairSlashBassHonourInDuoScore');
+  }
   applyDuoWybleBassAnchorBar1Nudge(afterExpressive, context);
   if (shouldUseIndieArtPopDualGuitarRoute(context)) {
     const gIndie = afterExpressive.parts.find((p) => p.id === 'guitar');
@@ -5169,6 +5205,16 @@ export function generateGoldenPathDuoScore(
       for (const mm of g2PreSeal.measures) {
         mm.events = sortIndieGuitar2MeasureEventsForExport(mm.events);
       }
+    }
+  }
+  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa' && context.generationMetadata) {
+    const md = context.generationMetadata;
+    if (!md.soloLine) {
+      const solo = generateZappaSolo(context, md.zappaSoloOptions);
+      applyZappaSoloToMetadata(md, solo);
+    }
+    if (md.soloLine) {
+      afterExpressive = mergeZappaSoloPart(afterExpressive, md.soloLine);
     }
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
@@ -5233,5 +5279,8 @@ export function generateGoldenPathDuoScore(
     wybleConsumptionReceipt: wybleRec,
   };
   logEcmInternalPhaseProbe(probeEcm, 'before_return_score', afterExpressive);
+  if (context.harmonyContext) {
+    assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'before_return_generateGoldenPathDuoScore');
+  }
   return afterExpressive;
 }

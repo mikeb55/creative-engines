@@ -287,7 +287,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');
     const locked = result.context.lockedHarmonyBarsRaw;
-    if (locked && locked.length === result.context.form.totalBars) {
+    if (
+      result.context.generationMetadata.customHarmonyLocked === true &&
+      locked &&
+      locked.length === result.context.form.totalBars
+    ) {
       const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
       if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
     }

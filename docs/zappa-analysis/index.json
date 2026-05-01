@@ -1,0 +1,34 @@
+{
+  "generatedAtUtc": "2026-05-01T14:35:00Z",
+  "note": "Regenerate via: py -3 scripts/analyzeZappaPdfResources.py",
+  "sources": [
+    {
+      "pdf": "Zappa Resources/Frank-Zappa-The-Frank-Zappa-Guitar-Book.pdf",
+      "analysisJson": "docs/zappa-analysis/Frank-Zappa-The-Frank-Zappa-Guitar-Book.analysis.json",
+      "textLayer": false,
+      "pages": 303,
+      "summary": "Scanned Guitar Book — symbolic metrics unavailable without OCR/OMR."
+    },
+    {
+      "pdf": "Zappa Resources/FrankZappaFrankZappa-Over-NiteSensation-pdf.pdf",
+      "analysisJson": "docs/zappa-analysis/FrankZappaFrankZappa-Over-NiteSensation-pdf.analysis.json",
+      "textLayer": false,
+      "pages": 99,
+      "summary": "Scanned transcription — symbolic metrics unavailable without OCR/OMR."
+    },
+    {
+      "pdf": "Zappa Resources/Little-Dots-On-Zappa.pdf",
+      "analysisJson": "docs/zappa-analysis/Little-Dots-On-Zappa.analysis.json",
+      "textLayer": true,
+      "pages": 82,
+      "summary": "FSU thesis with extractable text — lexical/proxy stats only; staff examples still raster unless OCR."
+    },
+    {
+      "pdf": "Zappa Resources/Soloing-Strategies-Frank-Zappa-GW.pdf",
+      "analysisJson": "docs/zappa-analysis/Soloing-Strategies-Frank-Zappa-GW.analysis.json",
+      "textLayer": true,
+      "pages": 4,
+      "summary": "Guitar World article — short lexical analysis; no reliable melodic interval series from prose alone."
+    }
+  ]
+}

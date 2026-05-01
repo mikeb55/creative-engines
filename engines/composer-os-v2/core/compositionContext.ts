@@ -35,6 +35,9 @@ import type {
   MotifDevelopmentSummary,
   MotifFingerprint,
 } from './motif/motifAuthorityV1';
+import type { BarMeterMap } from './rhythm/barMeterTypes';
+import type { SoloLine, ZappasoloOptions } from './solo/soloTypes';
+import type { HarmonyContext } from './harmony/harmonyContext';
 
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
@@ -168,6 +171,17 @@ export interface GenerationMetadata {
   modulationPlanActive?: boolean;
   /** Explicit bar count when long-form or extended forms are used */
   totalBars?: number;
+  /**
+   * Phase A — optional per-bar time signatures (1-based bar indices).
+   * When absent, export + quantiser behave as all measures 4/4.
+   */
+  barMeterMap?: BarMeterMap;
+  /** Phase B — Zappa solo generator output (`generateZappaSolo`); optional melodic layer metadata. */
+  soloLine?: SoloLine;
+  /** Short manifest echo for Zappa solo receipt flags. */
+  zappaSoloDigest?: string;
+  /** Resolved numeric options for {@link generateZappaSolo} (UI tiers → engine; optional). */
+  zappaSoloOptions?: ZappasoloOptions;
   /** V3.4 — key signature inference / export metadata (additive). */
   keySignatureReceipt?: KeySignatureReceiptMetadata;
   /** Optional bar-by-bar contract: display + semantics for locked long-form / Song Mode. */
@@ -592,6 +606,48 @@ export interface GenerationMetadata {
     targetMeanFiresD4: number;
     targetMeanFiresD5: number;
   };
+  /** Frank Zappa — polytonal clash / xenochrony / juxtaposition slice diagnostics + receipts. */
+  frankZappaDiagnostics?: {
+    songwriterId: 'frank_zappa';
+    barsConsidered: number;
+    polytonalSlashHitRate: number;
+    alteredColourHitRate: number;
+    triadClashHitRate: number;
+    deviceFireCounts?: {
+      d1: number;
+      d2: number;
+      d3: number;
+      d4: number;
+      d5: number;
+    };
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      polytonalNoop: number;
+      xenochronyNoop: number;
+    };
+    deviceReceipts?: string[];
+  };
+  frankZappaSliceReceipt?: string;
+  frankZappaEffectiveHarmonyBars?: string[];
+  frankZappaDeviceReceipts?: string[];
+  frankZappaAntiElaborationGuards?: {
+    polytonalNoop: number;
+    xenochronyNoop: number;
+  };
+  /** Frank Zappa slice — per-device eligibility pools + mean expected fires at target Bernoulli rates. */
+  frankZappaEligibilityStats?: {
+    totalBars: number;
+    d1EligibleBars: number;
+    d2EligibleBars: number;
+    d3EligibleBars: number;
+    d4EligibleBars: number;
+    d5EligibleBars: number;
+    targetMeanFiresD1: number;
+    targetMeanFiresD2: number;
+    targetMeanFiresD3: number;
+    targetMeanFiresD4: number;
+    targetMeanFiresD5: number;
+  };
   /** Barry Harris (bebop / sixth–diminished) — slice diagnostics + effective harmony. */
   barryHarrisDiagnostics?: {
     songwriterId: 'barry_harris';
@@ -844,6 +900,35 @@ export interface GenerationMetadata {
   charlieParkerSliceReceipt?: string;
   charlieParkerEffectiveHarmonyBars?: string[];
   charlieParkerDeviceReceipts?: string[];
+  /** Frank Zappa (polytonal clash / metric displacement / xenochrony / style juxtaposition / through-composed) — slice diagnostics + effective harmony. */
+  frankZappaDiagnostics?: {
+    songwriterId: 'frank_zappa';
+    barsConsidered: number;
+    polytonalSlashHitRate: number;
+    alteredColourHitRate: number;
+    triadClashHitRate: number;
+    deviceFireCounts: { d1: number; d2: number; d3: number; d4: number; d5: number };
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards: { polytonalNoop: number; xenochronyNoop: number };
+    deviceReceipts?: string[];
+  };
+  frankZappaSliceReceipt?: string;
+  frankZappaEffectiveHarmonyBars?: string[];
+  frankZappaDeviceReceipts?: string[];
+  frankZappaAntiElaborationGuards?: { polytonalNoop: number; xenochronyNoop: number };
+  frankZappaEligibilityStats?: {
+    totalBars: number;
+    d1EligibleBars: number;
+    d2EligibleBars: number;
+    d3EligibleBars: number;
+    d4EligibleBars: number;
+    d5EligibleBars: number;
+    targetMeanFiresD1: number;
+    targetMeanFiresD2: number;
+    targetMeanFiresD3: number;
+    targetMeanFiresD4: number;
+    targetMeanFiresD5: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */
@@ -930,8 +1015,18 @@ export interface CompositionContext {
    * Locked Song Mode: one contract per bar (display + structured semantics). Generation and export must agree.
    */
   lockedHarmonyBarContracts?: HarmonyBarContract[];
+  /**
+   * Phase A — bar-level meter map (same semantics as `GenerationMetadata.barMeterMap`).
+   * Optional; defaults to common-time when omitted.
+   */
+  barMeterMap?: BarMeterMap;
 
   generationMetadata: GenerationMetadata;
+  /**
+   * When set (Frank Zappa duo Song Mode), immutable one chord per bar for the whole form — same snapshot for
+   * `getChordForBar`, score guitar measures, pipeline truth, and lock validation.
+   */
+  harmonyContext?: HarmonyContext;
   validation: ValidationResults;
   styleOverrides?: Record<string, unknown>;
   readiness: {

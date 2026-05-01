@@ -27,6 +27,7 @@ import {
   normalizeChordSymbolsForEra,
   type EraId,
 } from '../harmony/eraChordNormalizer';
+import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 declare module './songCompilationTypes' {
   interface SectionChordPlan {
@@ -61,8 +62,28 @@ export interface DonaldFagenChordPoolRow {
   tags: DonaldFagenRowTags;
 }
 
-/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen). */
-export type ChordPoolRow = string[] | WayneShorterChordPoolRow | DonaldFagenChordPoolRow;
+/** Row-level tags for Frank Zappa pools (same scaffolding as Fagen + named vocabulary buckets). */
+export interface FrankZappaRowTags {
+  tension: 'low' | 'medium' | 'high';
+  motion: 'chromatic' | 'stepwise' | 'functional' | 'slash';
+  cadential: boolean;
+  pedal: boolean;
+  pool: '7alt' | 'm7b5' | 'maj7#11' | 'tritone_rooted' | 'doo_wop_clash';
+  /** Row contract + runtime guard: no ii–V–I cadential chains in rolling triples. */
+  noIiVi: true;
+}
+
+export interface FrankZappaChordPoolRow {
+  chords: string[];
+  tags: FrankZappaRowTags;
+}
+
+/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen / Frank Zappa). */
+export type ChordPoolRow =
+  | string[]
+  | WayneShorterChordPoolRow
+  | DonaldFagenChordPoolRow
+  | FrankZappaChordPoolRow;
 
 function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
@@ -274,6 +295,12 @@ function chosenRowTagsFromPoolRow(row: ChordPoolRow | undefined): string[] {
   const out: string[] = [`tension:${t.tension}`, `motion:${t.motion}`];
   if (t.cadential) out.push('cadential');
   if (t.pedal) out.push('pedal');
+  if ('pool' in t && typeof (t as FrankZappaRowTags).pool === 'string') {
+    out.push(`pool:${(t as FrankZappaRowTags).pool}`);
+  }
+  if ('noIiVi' in t && (t as FrankZappaRowTags).noIiVi === true) {
+    out.push('no_ii_v_i');
+  }
   return out;
 }
 
@@ -331,6 +358,107 @@ function applyHarmonicRhythmToRow(
   const b = chords[1]!;
   const c = chords[3]!;
   return seed % 2 === 0 ? [a, b, b, c] : [a, a, b, c];
+}
+
+const ROOT_AT_START_POOL = /^([A-G](?:#|b)?)/i;
+
+const PC_TO_SHARP_POOL = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpNamePool(pc: number): string {
+  return PC_TO_SHARP_POOL[((pc % 12) + 12) % 12]!;
+}
+
+function harmonyHeadSymbol(sym: string): string {
+  const hp = parseChordSymbol(sym).harmonyPart;
+  return hp.includes('/') ? hp.slice(0, hp.indexOf('/')) : hp;
+}
+
+function harmonyRootPcPool(sym: string): number | undefined {
+  const head = harmonyHeadSymbol(sym);
+  const m = head.trim().match(ROOT_AT_START_POOL);
+  return m?.[1] ? noteNameToPitchClass(m[1]) : undefined;
+}
+
+function isIiMinorSeventhLike(sym: string): boolean {
+  const head = harmonyHeadSymbol(sym);
+  const tl = head.toLowerCase();
+  if (/maj|dim|ø|aug|sus|alt|quartal/.test(tl)) return false;
+  if (/m7b5|half\s*-?\s*dim/.test(tl)) return false;
+  return /\bm(?!aj)|min/.test(tl);
+}
+
+function isVDominantSeventhFamily(sym: string): boolean {
+  const head = harmonyHeadSymbol(sym);
+  const tl = head.toLowerCase();
+  if (/maj7|mmaj|dim|ø|aug/.test(tl)) return false;
+  if (/\bm(?!aj)/.test(tl)) return false;
+  return /\b7|9|11|13|alt/.test(tl) || /([^a-z]|^)7([^a-z0-9]|$)/.test(tl);
+}
+
+function isIMajorTonicLike(sym: string): boolean {
+  const head = harmonyHeadSymbol(sym);
+  const tl = head.toLowerCase();
+  if (/\bm(?!aj)|dim|ø/.test(tl)) return false;
+  if (/alt|sus/.test(tl)) return false;
+  return (
+    /^[a-g][#b]?$/i.test(head.trim()) ||
+    /\bmaj|Δ|6|add/.test(tl) ||
+    (!/\b7\b/.test(tl) && !/\bm/.test(tl))
+  );
+}
+
+function isMajorKeyIiViTriple(a: string, b: string, c: string): boolean {
+  const ra = harmonyRootPcPool(a);
+  const rb = harmonyRootPcPool(b);
+  const rc = harmonyRootPcPool(c);
+  if (ra === undefined || rb === undefined || rc === undefined) return false;
+  if ((rb - ra + 12) % 12 !== 5) return false;
+  if ((rc - rb + 12) % 12 !== 5) return false;
+  return isIiMinorSeventhLike(a) && isVDominantSeventhFamily(b) && isIMajorTonicLike(c);
+}
+
+/** Blocks rolling major-key ii–V–I cadences for Frank Zappa chord scaffolding (post rhythm shaping). */
+function breakFrankZappaIiViProgressions(chords: readonly string[], seed: number): string[] {
+  if (chords.length < 3) return [...chords];
+  const out = [...chords];
+  let salt = seed >>> 0;
+  let changed = true;
+  let guard = 0;
+  while (changed && guard++ < 10) {
+    changed = false;
+    for (let i = 0; i <= out.length - 3; i++) {
+      const a = out[i]!;
+      const b = out[i + 1]!;
+      const c = out[i + 2]!;
+      if (!isMajorKeyIiViTriple(a, b, c)) continue;
+      const rb = harmonyRootPcPool(b);
+      const rc = harmonyRootPcPool(c);
+      if (rb === undefined) continue;
+      salt = (salt * 1664525 + 1013904223) >>> 0;
+      const mode = salt % 3;
+      if (mode === 0) {
+        out[i + 1] = `${pitchClassToSharpNamePool((rb + 6) % 12)}7alt`;
+      } else if (mode === 1 && rc !== undefined) {
+        out[i + 2] = `${pitchClassToSharpNamePool(rc)}maj7#11`;
+      } else {
+        out[i + 1] = `${pitchClassToSharpNamePool(rb)}7sus4`;
+      }
+      changed = true;
+    }
+  }
+  return out;
+}
+
+/**
+ * True when any rolling three-bar window reads as a textbook major-key ii–V–I using the same classifier as
+ * {@link breakFrankZappaIiViProgressions} (Song Mode pool scaffolding guard).
+ */
+export function frankZappaIiViRollingTriplePresent(bars: readonly string[]): boolean {
+  if (bars.length < 3) return false;
+  for (let i = 0; i <= bars.length - 3; i++) {
+    if (isMajorKeyIiViTriple(bars[i]!, bars[i + 1]!, bars[i + 2]!)) return true;
+  }
+  return false;
 }
 
 function intensityForKind(kind: SongSectionKind): SectionChordPlan['intensity'] {
@@ -998,6 +1126,236 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Emadd9', 'Cadd9', 'Bbmaj7#11', 'Asus2'],
     ],
   },
+  frank_zappa: {
+    verse: [
+      {
+        chords: ['Db7alt', 'G7alt', 'C#7alt', 'F#7alt', 'B7alt', 'F7alt', 'Bb7alt', 'E7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: '7alt',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Bm7b5', 'Em7b5', 'Am7b5', 'Dm7b5', 'Gm7b5', 'Cm7b5', 'Fm7b5', 'Bbm7b5'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'm7b5',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Cmaj7#11', 'Gmaj7#11', 'Dmaj7#11', 'Amaj7#11', 'Emaj7#11', 'Bmaj7#11', 'F#maj7#11', 'Dbmaj7#11'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'maj7#11',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['G7alt/Db', 'Db7alt/G', 'Cmaj7#11/F#', 'F#7alt/C', 'Bb7alt/E', 'E7alt/Bb', 'Abmaj7#11/D', 'D7alt/Ab'],
+        tags: {
+          tension: 'high',
+          motion: 'slash',
+          cadential: false,
+          pedal: true,
+          pool: 'tritone_rooted',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['C', 'Db7alt', 'F', 'G7alt', 'Bb', 'E7alt', 'Eb', 'A7alt'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'doo_wop_clash',
+          noIiVi: true,
+        },
+      },
+    ],
+    chorus: [
+      {
+        chords: ['Ab7alt', 'D7alt', 'G7alt', 'C#7alt', 'F#7alt', 'B7alt', 'E7alt', 'A7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: '7alt',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['F#m7b5', 'Bm7b5', 'Em7b5', 'Am7b5', 'Dm7b5', 'Gm7b5', 'Cm7b5', 'F#m7b5'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'm7b5',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Ebmaj7#11', 'Abmaj7#11', 'Dbmaj7#11', 'Gbmaj7#11', 'Bmaj7#11', 'Emaj7#11', 'Amaj7#11', 'Dmaj7#11'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'maj7#11',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['A7alt/Eb', 'Eb7alt/A', 'Dmaj7#11/Ab', 'Ab7alt/D', 'G7alt/Db', 'Db7alt/G', 'F#maj7#11/C', 'C7alt/F#'],
+        tags: {
+          tension: 'high',
+          motion: 'slash',
+          cadential: false,
+          pedal: true,
+          pool: 'tritone_rooted',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['G', 'Ab7alt', 'C', 'D7alt', 'F', 'B7alt', 'Bb', 'F#7alt'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'doo_wop_clash',
+          noIiVi: true,
+        },
+      },
+    ],
+    bridge: [
+      {
+        chords: ['Gb7alt', 'Cb7alt', 'F7alt', 'Bb7alt', 'Eb7alt', 'Ab7alt', 'Db7alt', 'G7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: '7alt',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Ebm7b5', 'Abm7b5', 'Dbm7b5', 'Gbm7b5', 'Bm7b5', 'Em7b5', 'Am7b5', 'Dm7b5'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'm7b5',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Gbmaj7#11', 'Cbmaj7#11', 'Fbmaj7#11', 'Bmaj7#11', 'Fmaj7#11', 'Bbmaj7#11', 'Ebmaj7#11', 'Abmaj7#11'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'maj7#11',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Bb7alt/F', 'F7alt/Bb', 'Ebmaj7#11/A', 'A7alt/Eb', 'Abmaj7#11/D', 'D7alt/Ab', 'Gbmaj7#11/C', 'C7alt/Gb'],
+        tags: {
+          tension: 'high',
+          motion: 'slash',
+          cadential: false,
+          pedal: true,
+          pool: 'tritone_rooted',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Db', 'G7alt', 'Gb', 'C7alt', 'Bb', 'F#7alt', 'Ab', 'D7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'doo_wop_clash',
+          noIiVi: true,
+        },
+      },
+    ],
+    pre_chorus: [
+      {
+        chords: ['Gb7alt', 'C7alt', 'F#7alt', 'B7alt', 'E7alt', 'A7alt', 'D7alt', 'G7alt'],
+        tags: {
+          tension: 'high',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: '7alt',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Cm7b5', 'Fm7b5', 'Bbm7b5', 'Ebm7b5', 'Abm7b5', 'Dbm7b5', 'Gbm7b5', 'Bm7b5'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'm7b5',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Bbmaj7#11', 'Fmaj7#11', 'Cmaj7#11', 'Gmaj7#11', 'Dmaj7#11', 'Amaj7#11', 'Emaj7#11', 'Bmaj7#11'],
+        tags: {
+          tension: 'medium',
+          motion: 'stepwise',
+          cadential: false,
+          pedal: false,
+          pool: 'maj7#11',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['F7alt/B', 'B7alt/F', 'Ebmaj7#11/A', 'A7alt/Eb', 'Dmaj7#11/G', 'G7alt/D', 'Cbmaj7#11/F', 'F7alt/Cb'],
+        tags: {
+          tension: 'high',
+          motion: 'slash',
+          cadential: false,
+          pedal: true,
+          pool: 'tritone_rooted',
+          noIiVi: true,
+        },
+      },
+      {
+        chords: ['Eb', 'F#7alt', 'Ab', 'G7alt', 'Db', 'A7alt', 'Gb', 'B7alt'],
+        tags: {
+          tension: 'medium',
+          motion: 'chromatic',
+          cadential: false,
+          pedal: false,
+          pool: 'doo_wop_clash',
+          noIiVi: true,
+        },
+      },
+    ],
+  },
   bill_evans: {
     verse: [
       ['Cmaj9', 'Am9', 'Dm9', 'G13'],
@@ -1067,12 +1425,18 @@ function chordSymbolsForSection(
     const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile, songwriterId, kind);
     const raw = sectionPool[idx] ?? pool.verse[0];
     const chosenRowTags = chosenRowTagsFromPoolRow(raw);
-    return raw != null
-      ? {
-          chordSymbols: applyHarmonicRhythmToRow(chordSymbolsFromPoolRow(raw), profile.harmonicRhythm, seed),
-          chosenRowTags,
-        }
-      : { chordSymbols: ['Cmaj7', 'Am7', 'Fmaj7', 'G7'], chosenRowTags: [] };
+    if (raw == null) {
+      return { chordSymbols: ['Cmaj7', 'Am7', 'Fmaj7', 'G7'], chosenRowTags: [] };
+    }
+    let chordSymbols = applyHarmonicRhythmToRow(
+      chordSymbolsFromPoolRow(raw),
+      profile.harmonicRhythm,
+      seed
+    );
+    if (songwriterId === 'frank_zappa') {
+      chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
+    }
+    return { chordSymbols, chosenRowTags };
   }
 
   // Fallback: original hardcoded progressions

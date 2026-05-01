@@ -1,0 +1,25 @@
+{
+  "sourcePdf": "Zappa Resources/Frank-Zappa-The-Frank-Zappa-Guitar-Book.pdf",
+  "analysisGeneratedAtUtc": "2026-05-01T14:35:30.374349+00:00",
+  "pdfMetadata": {
+    "creator": "Adobe Acrobat 6.0",
+    "producer": "Adobe Acrobat 6.0 Image Conversion Plug-in"
+  },
+  "pageCount": 303,
+  "pagesWithExtractableText": 0,
+  "extractedCharacterCount": 0,
+  "extractionStatus": "image_only_or_empty_text_layer",
+  "intervalPatterns": null,
+  "phraseLengths": null,
+  "scaleModeSuggestionsOverChordTypes": null,
+  "rhythmicDisplacement": null,
+  "tupletsAndRhythmicGroupings": null,
+  "limitations": [
+    "No selectable text in PDF — likely scanned notation/transcriptions.",
+    "Automated interval/phrase/rest/tuplet extraction requires OCR + optical music recognition or manual MusicXML export."
+  ],
+  "recommendedNextSteps": [
+    "Run OCR (e.g. Adobe, ABBYY) or obtain publisher MusicXML.",
+    "For staff music: try Audiveris, Photoscore, or SmartScore to produce MusicXML; then parse with music21 or custom TS."
+  ]
+}

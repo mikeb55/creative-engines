@@ -11,16 +11,20 @@ export type TickNoteSpec = { ticks: number; type: string; dots: 0 | 1 | 2 };
 export const TICK_GRID = 15;
 
 /** Quantize beat-derived raw ticks to grid (straight; no swing). */
-export function quantizeBeatToTicks(beat: number): number {
+export function quantizeBeatToTicks(beat: number, measureCapacity: number = MEASURE_DIVISIONS): number {
   const raw = Math.round(beat * MUSIC_XML_DIVISIONS_PER_QUARTER);
   const q = Math.round(raw / TICK_GRID) * TICK_GRID;
-  return Math.min(MEASURE_DIVISIONS, Math.max(0, q));
+  return Math.min(measureCapacity, Math.max(0, q));
 }
 
 /** Map beat span to integer ticks (same quantization as export note/rest segments). */
-export function beatSpanToTicks(startBeat: number, endBeat: number): { start: number; end: number } {
-  const start = Math.min(MEASURE_DIVISIONS, Math.max(0, quantizeBeatToTicks(startBeat)));
-  const end = Math.min(MEASURE_DIVISIONS, Math.max(0, quantizeBeatToTicks(endBeat)));
+export function beatSpanToTicks(
+  startBeat: number,
+  endBeat: number,
+  measureCapacity: number = MEASURE_DIVISIONS
+): { start: number; end: number } {
+  const start = Math.min(measureCapacity, Math.max(0, quantizeBeatToTicks(startBeat, measureCapacity)));
+  const end = Math.min(measureCapacity, Math.max(0, quantizeBeatToTicks(endBeat, measureCapacity)));
   return { start, end: Math.max(start, end) };
 }
 
@@ -56,10 +60,10 @@ const STANDARD_SPECS_DESC = buildStandardSpecs();
 const STANDARD_TICKS_DESC = STANDARD_SPECS_DESC.map((s) => s.ticks);
 
 /** Greedy decomposition into standard tick lengths (all on 15-grid). */
-export function decomposeTicksToStandardParts(totalTicks: number): number[] {
+export function decomposeTicksToStandardParts(totalTicks: number, maxMeasureTicks: number = MEASURE_DIVISIONS): number[] {
   if (totalTicks === 0) return [];
-  if (totalTicks < 0 || totalTicks > MEASURE_DIVISIONS) {
-    throw new Error(`musicXmlTickEncoding: invalid segment ticks ${totalTicks}`);
+  if (totalTicks < 0 || totalTicks > maxMeasureTicks) {
+    throw new Error(`musicXmlTickEncoding: invalid segment ticks ${totalTicks} (max ${maxMeasureTicks})`);
   }
   if (totalTicks % TICK_GRID !== 0) {
     throw new Error(
@@ -91,10 +95,10 @@ const COINS_ASC = [...new Set(STANDARD_TICKS_DESC)].sort((a, b) => a - b);
  * Minimize the number of note/rest elements (fewer ties) while using only standard tick lengths.
  * Can differ from greedy decomposition when multiple coin combinations exist for the same total.
  */
-export function decomposeTicksToMinimalParts(totalTicks: number): number[] {
+export function decomposeTicksToMinimalParts(totalTicks: number, maxMeasureTicks: number = MEASURE_DIVISIONS): number[] {
   if (totalTicks === 0) return [];
-  if (totalTicks < 0 || totalTicks > MEASURE_DIVISIONS) {
-    throw new Error(`musicXmlTickEncoding: invalid segment ticks ${totalTicks}`);
+  if (totalTicks < 0 || totalTicks > maxMeasureTicks) {
+    throw new Error(`musicXmlTickEncoding: invalid segment ticks ${totalTicks} (max ${maxMeasureTicks})`);
   }
   if (totalTicks % TICK_GRID !== 0) {
     throw new Error(

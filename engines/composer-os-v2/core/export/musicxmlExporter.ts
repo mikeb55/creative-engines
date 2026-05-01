@@ -23,6 +23,11 @@ import {
 import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
+import {
+  adjacentBarsMeterDiffers,
+  resolveMeterForBar,
+  resolveMeasureDivisionsForBar,
+} from '../rhythm/oddMeterQuantiser';
 
 function isBigBandPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'big_band_piano' || p.id === 'bb_piano';
@@ -83,6 +88,7 @@ const PART_ABBREV: Record<string, string> = {
   sq_piano: 'Pno.',
   guitar: 'Gtr.',
   bass: 'Bas.',
+  zappa_solo: 'Z.Solo',
 };
 
 /** Quarter-note BPM for MusicXML metronome / sound — export options override score model; default 120. */
@@ -183,7 +189,11 @@ function stemXmlForMultiVoiceLayer(voice: number, multiVoice: boolean): string |
 /**
  * Same tick arithmetic as `eventsToXml` for one voice — parity with written XML.
  */
-export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: number): number {
+export function computeVoiceExportDivisionSum(
+  measure: MeasureModel,
+  voice: number,
+  measureCapacity: number = MEASURE_DIVISIONS
+): number {
   const voiceEvents = [...measure.events]
     .filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord')
     .filter((e) => (e.voice ?? 1) === voice)
@@ -193,7 +203,7 @@ export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: numb
   for (const e of voiceEvents) {
     const sb = e.startBeat;
     const eb = sb + e.duration;
-    const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
+    const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb, measureCapacity);
     const safeStart = Math.max(startDiv, cursor);
     if (endDiv <= safeStart) continue;
     if (safeStart > cursor) {
@@ -205,8 +215,8 @@ export function computeVoiceExportDivisionSum(measure: MeasureModel, voice: numb
     sum += durDiv;
     cursor = endDiv;
   }
-  if (cursor < MEASURE_DIVISIONS) {
-    sum += MEASURE_DIVISIONS - cursor;
+  if (cursor < measureCapacity) {
+    sum += measureCapacity - cursor;
   }
   return sum;
 }
@@ -243,7 +253,8 @@ function bigBandDrumsEventsToXml(
   measureIndex: number,
   part: PartModel,
   decompose: (ticks: number) => number[],
-  _opts: MusicXmlExportOptions
+  _opts: MusicXmlExportOptions,
+  measureCapacity: number
 ): string {
   const partId = part.id;
   const instId = `${part.id}-I1`;
@@ -262,7 +273,7 @@ function bigBandDrumsEventsToXml(
   for (let vi = 0; vi < voices.length; vi++) {
     const voice = voices[vi]!;
     if (vi > 0) {
-      xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
+      xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
     }
     let cursor = 0;
     const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
@@ -276,7 +287,7 @@ function bigBandDrumsEventsToXml(
       const e = voiceEvents[i]!;
       const sb = e.startBeat;
       const eb = sb + e.duration;
-      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
+      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb, measureCapacity);
       const safeStart = Math.max(startDiv, cursor);
       if (endDiv <= safeStart) {
         i++;
@@ -386,21 +397,21 @@ function bigBandDrumsEventsToXml(
       );
     }
 
-    if (cursor < MEASURE_DIVISIONS) {
-      const restDiv = MEASURE_DIVISIONS - cursor;
+    if (cursor < measureCapacity) {
+      const restDiv = measureCapacity - cursor;
       const parts = decompose(restDiv);
       xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       for (const p of parts) voiceTickSum += p;
     }
 
-    if (voiceTickSum !== MEASURE_DIVISIONS) {
+    if (voiceTickSum !== measureCapacity) {
       throw new Error(
-        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (bb drums)`
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${measureCapacity} (bb drums)`
       );
     }
     if (debugTicks) {
       console.log(
-        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${MEASURE_DIVISIONS}`
+        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${measureCapacity}`
       );
     }
   }
@@ -416,7 +427,8 @@ function eventsToXml(
   opts: MusicXmlExportOptions,
   preferFlats: boolean,
   /** When any measure in this part uses voice 2, emit voice 1 → backup → voice 2 in every measure (voice 2 rests if empty). Sibelius requires this; sparse duo bars often only had v1 in the score model. */
-  forceDualVoiceSecondLayer: boolean
+  forceDualVoiceSecondLayer: boolean,
+  measureCapacity: number
 ): string {
   const partId = part.id;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
@@ -444,7 +456,7 @@ function eventsToXml(
     const voice = voices[vi];
     if (vi > 0) {
       /** Full-measure rewind so voice 2+ starts at beat 0 in the notation stream (MusicXML multi-voice contract). */
-      xml += `        <backup><duration>${MEASURE_DIVISIONS}</duration></backup>\n`;
+      xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
     }
     let cursor = 0;
     const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
@@ -472,7 +484,7 @@ function eventsToXml(
       const e = voiceEvents[i]!;
       const sb = e.startBeat;
       const eb = sb + e.duration;
-      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb);
+      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb, measureCapacity);
       const safeStart = Math.max(startDiv, cursor);
       if (endDiv <= safeStart) {
         continue;
@@ -592,21 +604,21 @@ function eventsToXml(
       cursor = endDiv;
     }
 
-    if (cursor < MEASURE_DIVISIONS) {
-      const restDiv = MEASURE_DIVISIONS - cursor;
+    if (cursor < measureCapacity) {
+      const restDiv = measureCapacity - cursor;
       const parts = decompose(restDiv);
       xml += emitRestTicks(parts, voice, staffPolyphonyXml);
       for (const p of parts) voiceTickSum += p;
     }
 
-    if (voiceTickSum !== MEASURE_DIVISIONS) {
+    if (voiceTickSum !== measureCapacity) {
       throw new Error(
-        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${MEASURE_DIVISIONS} (divisions×beats=${DIVISIONS}×4)`
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${measureCapacity} (measure divisions)`
       );
     }
     if (debugTicks) {
       console.log(
-        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${MEASURE_DIVISIONS}`
+        `[MusicXML ticks] part=${partId} measure=${measureIndex + 1} voice=${voice} sum=${voiceTickSum} expected=${measureCapacity}`
       );
     }
   }
@@ -621,7 +633,6 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
     const opts: MusicXmlExportOptions = options ?? {};
     const USE_ENHARMONIC_SPELLING = true;
     const preferFlats = USE_ENHARMONIC_SPELLING && (score.keySignature?.fifths ?? 0) < 0;
-    const decompose = opts.minimizeNoteFragmentation ? decomposeTicksToMinimalParts : decomposeTicksToStandardParts;
     const dbg = score.keySignatureExportDebug;
     const ks0 = score.keySignature;
     if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_KEY_XML === '1') {
@@ -723,6 +734,10 @@ ${partList}
       for (let i = 0; i < orderedMeasures.length; i++) {
         const m = orderedMeasures[i];
         const measureNumber = i + 1;
+        const measureCapacity = resolveMeasureDivisionsForBar(measureNumber, opts.barMeterMap);
+        const decompose = opts.minimizeNoteFragmentation
+          ? (ticks: number) => decomposeTicksToMinimalParts(ticks, measureCapacity)
+          : (ticks: number) => decomposeTicksToStandardParts(ticks, measureCapacity);
         xml += `  <measure number="${measureNumber}">\n`;
 
         if (i === 0) {
@@ -731,12 +746,19 @@ ${partList}
           const keyMode = ks?.mode ?? 'major';
           const hideKey = ks?.hideKeySignature ?? false;
           const printAttr = hideKey ? ' print-object="no"' : '';
+          const meter0 = resolveMeterForBar(1, opts.barMeterMap);
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
-      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <time><beats>${meter0.numerator}</beats><beat-type>${meter0.denominator}</beat-type></time>
       <staves>1</staves>
       ${clefXml}
+    </attributes>
+`;
+        } else if (opts.barMeterMap && i >= 1 && adjacentBarsMeterDiffers(i, i + 1, opts.barMeterMap)) {
+          const mm = resolveMeterForBar(i + 1, opts.barMeterMap);
+          xml += `    <attributes>
+      <time><beats>${mm.numerator}</beats><beat-type>${mm.denominator}</beat-type></time>
     </attributes>
 `;
         }
@@ -831,8 +853,8 @@ ${partList}
 
         xml +=
           part.instrumentIdentity === 'big_band_jazz_drums'
-            ? bigBandDrumsEventsToXml(m, i, part, decompose, opts)
-            : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer);
+            ? bigBandDrumsEventsToXml(m, i, part, decompose, opts, measureCapacity)
+            : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **106** PASS rows, **28** suites (2026-05-01).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **111** PASS rows, **31** suites (2026-05-01).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -20,6 +20,9 @@ import { runJoniMitchellSliceSmokeTests } from './joniMitchellSliceSmoke.test';
 import { runSonicYouthSliceSmokeTests } from './sonicYouthSliceSmoke.test';
 import { runPatMethenySliceSmokeTests } from './patMethenySliceSmoke.test';
 import { runWayneShorterSliceSmokeTests } from './wayneShorterSliceSmoke.test';
+import { runFrankZappaSliceSmokeTests } from './frankZappaSliceSmoke.test';
+import { runOddMeterInfrastructureSmokeTests } from './oddMeterInfrastructureSmoke.test';
+import { runZappaSoloSmokeTests } from './zappasoloSmoke.test';
 import { runBarryHarrisSliceSmokeTests } from './barryHarrisSliceSmoke.test';
 import { runBillEvansSliceSmokeTests } from './billEvansSliceSmoke.test';
 import { runBacharachSliceSmokeTests } from './bacharachSliceSmoke.test';
@@ -53,6 +56,9 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Sonic Youth songwriter slice', run: runSonicYouthSliceSmokeTests },
   { label: 'Pat Metheny songwriter slice', run: runPatMethenySliceSmokeTests },
   { label: 'Wayne Shorter songwriter slice', run: runWayneShorterSliceSmokeTests },
+  { label: 'Odd meter infrastructure (Phase A)', run: runOddMeterInfrastructureSmokeTests },
+  { label: 'Zappa solo engine (Phase B)', run: runZappaSoloSmokeTests },
+  { label: 'Frank Zappa songwriter slice', run: runFrankZappaSliceSmokeTests },
   { label: 'Barry Harris songwriter slice', run: runBarryHarrisSliceSmokeTests },
   { label: 'Bill Evans songwriter slice', run: runBillEvansSliceSmokeTests },
   { label: 'Bacharach songwriter slice', run: runBacharachSliceSmokeTests },

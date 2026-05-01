@@ -427,9 +427,14 @@ export function runPipelineTruthGates(params: {
     const ahT = mdT.andrewHillEffectiveHarmonyBars;
     const cpT = mdT.charlieParkerEffectiveHarmonyBars;
     const beT = mdT.billEvansEffectiveHarmonyBars;
+    const hcTruth32 = context.harmonyContext;
     const expected =
-      mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
-        ? [...bwT]
+      hcTruth32 &&
+      hcTruth32.bars.length === 32 &&
+      mdT.songwriterStyleId === 'frank_zappa'
+        ? [...hcTruth32.bars]
+        : mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
+          ? [...bwT]
         : mdT.songwriterStyleId === 'stevie_wonder' && Array.isArray(swT) && swT.length === 32
           ? [...swT]
           : mdT.songwriterStyleId === 'radiohead' && Array.isArray(rhT) && rhT.length === 32

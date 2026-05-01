@@ -7,12 +7,14 @@
 
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ChordSegment, HarmonyPlan } from '../primitives/harmonyTypes';
+import { parseChordStructureFromNormalized } from '../../../core/chordSymbolRegistry';
 import {
   chordWithFallback,
   isValidChordShapeNormalized,
   normalizeChordSymbol,
   normalizeLeadSheetChordSpelling,
 } from '../../../core/leadSheetChordNormalize';
+import { noteNameToPitchClass } from './chordSymbolAnalysis';
 
 const DEFAULT_DUO_BAR_COUNT = 8;
 
@@ -55,6 +57,30 @@ export function normalizeChordProgressionSeparators(input: string): string {
 /** Canonical comparison for user chords vs score/XML (normalizeChordSymbol + collapse whitespace). */
 export function normalizeChordToken(raw: string): string {
   return normalizeChordSymbol(raw).trim().replace(/\s+/g, '');
+}
+
+/**
+ * Harmony-lock checks: same chord after mapping roots (and slash bass) to pitch class.
+ * Treats enharmonic spellings as equal (e.g. C#7b9 ≡ Db7b9, D/F# ≡ D/Gb).
+ */
+export function lockedHarmonyChordSymbolsEquivalent(a: string, b: string): boolean {
+  const na = normalizeChordToken(a);
+  const nb = normalizeChordToken(b);
+  if (na === nb) return true;
+  const pa = parseChordStructureFromNormalized(na);
+  const pb = parseChordStructureFromNormalized(nb);
+  if (!pa || !pb) return false;
+  const ra = noteNameToPitchClass(pa.root);
+  const rb = noteNameToPitchClass(pb.root);
+  if (ra === undefined || rb === undefined || ra !== rb) return false;
+  const sa = pa.suffix.trim().replace(/\s+/g, '');
+  const sb = pb.suffix.trim().replace(/\s+/g, '');
+  if (sa !== sb) return false;
+  if (pa.bass === null && pb.bass === null) return true;
+  if (pa.bass === null || pb.bass === null) return false;
+  const ba = noteNameToPitchClass(pa.bass);
+  const bb = noteNameToPitchClass(pb.bass);
+  return ba !== undefined && bb !== undefined && ba === bb;
 }
 
 function isValidChordShape(s: string): boolean {

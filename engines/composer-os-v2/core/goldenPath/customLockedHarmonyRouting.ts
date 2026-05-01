@@ -4,7 +4,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
-import { normalizeChordToken } from '../harmony/chordProgressionParser';
+import { lockedHarmonyChordSymbolsEquivalent } from '../harmony/chordProgressionParser';
 import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
@@ -47,7 +47,7 @@ export function assertCustomLockedRouting(
     }
     if (locked && locked.length === lockedLen) {
       for (let i = 0; i < lockedLen; i++) {
-        if ((locked[i] ?? '') !== (parsedBars[i] ?? '')) {
+        if (!lockedHarmonyChordSymbolsEquivalent(locked[i] ?? '', parsedBars[i] ?? '')) {
           throw new Error(
             `CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw[${i}] !== parsedChordBars[${i}].`
           );
@@ -62,7 +62,7 @@ export function assertCustomLockedRouting(
     if (!parsedBars) return;
     if (locked && locked.length === parsedBars.length) {
       for (let i = 0; i < locked.length; i++) {
-        if ((locked[i] ?? '') !== (parsedBars[i] ?? '')) {
+        if (!lockedHarmonyChordSymbolsEquivalent(locked[i] ?? '', parsedBars[i] ?? '')) {
           throw new Error(`CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw[${i}] !== parsedChordBars[${i}].`);
         }
       }
@@ -70,7 +70,7 @@ export function assertCustomLockedRouting(
   } else {
     return;
   }
-  if (opts?.requireFirstBar != null && parsedBars[0] !== opts.requireFirstBar) {
+  if (opts?.requireFirstBar != null && !lockedHarmonyChordSymbolsEquivalent(parsedBars[0] ?? '', opts.requireFirstBar)) {
     throw new Error(
       `CUSTOM HARMONY ROUTING FAILURE at ${layer}: expected first bar "${opts.requireFirstBar}", got "${parsedBars[0]}".`
     );
@@ -208,7 +208,17 @@ export function assertScoreMatchesLockedHarmonyWire(
                                               cpEff.length === tb &&
                                               cpEff.length === wire.length
                                             ? cpEff
-                                            : wire;
+                                            : md?.songwriterStyleId === 'frank_zappa' &&
+                                                context?.harmonyContext &&
+                                                context.harmonyContext.bars.length === tb &&
+                                                context.harmonyContext.bars.length === wire.length
+                                              ? [...context.harmonyContext.bars]
+                                              : md?.songwriterStyleId === 'frank_zappa' &&
+                                                  Array.isArray(md?.frankZappaEffectiveHarmonyBars) &&
+                                                  md.frankZappaEffectiveHarmonyBars.length === tb &&
+                                                  md.frankZappaEffectiveHarmonyBars.length === wire.length
+                                                ? md.frankZappaEffectiveHarmonyBars
+                                                : wire;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');
@@ -218,7 +228,7 @@ export function assertScoreMatchesLockedHarmonyWire(
     const m = g.measures.find((x) => x.index === i);
     const exp = expectedWire[i - 1];
     const got = m?.chord ?? '';
-    if (normalizeChordToken(got) !== normalizeChordToken(exp ?? '')) {
+    if (!lockedHarmonyChordSymbolsEquivalent(got, exp ?? '')) {
       throw new Error(
         `CUSTOM HARMONY NOT REACHING GOLDEN PATH: score bar ${i} chord "${got}" !== locked "${exp}"`
       );
@@ -240,7 +250,7 @@ export function assertCustomLockedBeforeScoreGeneration(
     );
   }
   for (let i = 0; i < n; i++) {
-    if ((locked[i] ?? '') !== (wire[i] ?? '')) {
+    if (!lockedHarmonyChordSymbolsEquivalent(locked[i] ?? '', wire[i] ?? '')) {
       throw new Error(`CUSTOM HARMONY NOT REACHING GOLDEN PATH: options vs context locked mismatch at bar ${i + 1}.`);
     }
   }
@@ -274,7 +284,7 @@ export function assertContextMatchesLocked32(
   const parsed = options?.parsedChordBars ?? options?.lockedHarmonyBarsRaw;
   if (parsed && parsed.length === tb) {
     for (let i = 0; i < tb; i++) {
-      if ((locked[i] ?? '') !== (parsed[i] ?? '')) {
+      if (!lockedHarmonyChordSymbolsEquivalent(locked[i] ?? '', parsed[i] ?? '')) {
         throw new Error(
           `CUSTOM HARMONY ROUTING FAILURE at ${layer}: lockedHarmonyBarsRaw diverges from parsedChordBars at bar ${i + 1}.`
         );

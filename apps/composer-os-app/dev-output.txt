@@ -1,0 +1,95 @@
+
+> composer-os-app@1.0.1 dev
+> concurrently "npm run dev:vite" "npm run dev:api"
+
+(node:16640) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1] 
+[1] > composer-os-app@1.0.1 dev:api
+[1] > cd ../.. && npx ts-node --project tsconfig.json scripts/startComposerOsAppApi.ts
+[1] 
+[0] 
+[0] > composer-os-app@1.0.1 dev:vite
+[0] > vite
+[0] 
+[0] 
+[0]   VITE v5.4.21  ready in 333 ms
+[0] 
+[0]   ➜  Local:   http://localhost:5173/
+[0]   ➜  Network: use --host to expose
+[1] Composer OS API on http://localhost:3001
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] VOICE 2 DIAGNOSTIC
+[1] Bars active: 32 / 32
+[1] Bar coverage: 1.00
+[1] Total notes: 64
+[1] Notes per active bar: 2.00
+[1] Longest rest gap: 0
+[1] Longest active run: 32
+[1] Strong-beat entries: 64
+[1] Offbeat entries: 0
+[1] [DualTuning] enforceVoice2BassRegisterSeparation18_2B_4 (Wyble-style V2/bass) running (dual-indie route false) {"presetId":"guitar_bass_duo","hasWybleLayout":true}
+[1] [DualTuning] route selected {"dualGuitarIndieRoute":false,"gate":{"songModeHook":true,"presetId":"guitar_bass_duo","styleProfile":"STYLE_ECM","metadataAltMode":null}}
+[1] [pipeline-truth] input=pass score=pass export=pass submitted=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt parsed=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt score=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt xml=G7alt/Db|Db7alt/G|Cmaj7#11/F#|F#7alt/C|Bb7alt/E|E7alt/Bb|Abmaj7#11/D|D7alt/Ab|A7alt/Eb|Eb7alt/A|Dmaj7#11/Ab|Ab7alt/D|G7alt/Db|Db7alt/G|F#maj7#11/C|C7alt/F#|Db7alt|G7alt|C#7alt|F#7alt|B7alt|F7alt|Bb7alt|E7alt|Ab7alt|D7alt|G7alt|C#7alt|F#7alt|B7alt|E7alt|A7alt
+[1] [LOCK_DEBUG] bar 4 score: F#7alt/C locked: F#/C
+[1] [LOCK_DEBUG] effectiveHarmonyBars: ["G7alt/Db","Db7alt/G","Cmaj7#11/F#","F#/C","Bb7alt/E"]
+[1] [LOCK_DEBUG] lockedHarmonyBarsRaw: ["G7alt/Db","Db7alt/G","Cmaj7#11/F#","F#7alt/C","Bb7alt/E"]

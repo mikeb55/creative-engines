@@ -1,0 +1,178 @@
+{
+  "sourcePdf": "Zappa Resources/Soloing-Strategies-Frank-Zappa-GW.pdf",
+  "analysisGeneratedAtUtc": "2026-05-01T14:35:31.314128+00:00",
+  "pdfMetadata": {
+    "creator": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36",
+    "producer": "Skia/PDF m65"
+  },
+  "pageCount": 4,
+  "pagesWithExtractableText": 4,
+  "extractedCharacterCount": 5932,
+  "symbolicMelodicIntervalsFromNotation": {
+    "computable": false,
+    "reason": "Requires symbolic notation (MusicXML/MIDI/tab OCR), not available from text layer alone."
+  },
+  "intervalPatterns": {
+    "method": "prose_keyword_and_lexical_hits_only",
+    "prose_interval_language_counts": {
+      "half step": 0,
+      "whole step": 0,
+      "semitone": 0,
+      "whole tone": 0,
+      "minor third": 0,
+      "major third": 0,
+      "perfect fourth": 0,
+      "tritone": 0,
+      "perfect fifth": 0,
+      "minor seventh": 0,
+      "major seventh": 0,
+      "octave": 0,
+      "chromatic": 1,
+      "diatonic": 0,
+      "melodic minor": 0,
+      "harmonic minor": 0,
+      "diminished": 0,
+      "whole tone scale": 0,
+      "diminished scale": 0,
+      "bebop": 0,
+      "lydian": 1,
+      "mixolydian": 1,
+      "dorian": 1,
+      "phrygian": 1,
+      "locrian": 0,
+      "altered scale": 0,
+      "super locrian": 0,
+      "melodic line": 0,
+      "motivic": 0
+    },
+    "noteLetterNoiseProbe": {
+      "isolated_note_letters_total": 26,
+      "letter_histogram_top": [
+        [
+          "A",
+          7
+        ],
+        [
+          "B",
+          7
+        ],
+        [
+          "F",
+          4
+        ],
+        [
+          "D",
+          3
+        ],
+        [
+          "E",
+          2
+        ],
+        [
+          "C",
+          2
+        ],
+        [
+          "G",
+          1
+        ]
+      ],
+      "note": "Not pitch spelling without octave; thesis prose produces many false positives."
+    }
+  },
+  "phraseLengths": {
+    "method": "text_layer_only_no_rest_encoding",
+    "phrase_language_counts": {
+      "phrase": 0,
+      "phrases": 0,
+      "motif": 6,
+      "motivic": 0,
+      "rest": 1,
+      "breath": 0,
+      "cadence": 1,
+      "antecedent": 0,
+      "consequent": 0,
+      "four-bar": 0,
+      "two-bar": 0,
+      "measure group": 0
+    },
+    "note": "Note-count-per-phrase grouped by rests requires symbolic score or OCR staff."
+  },
+  "scaleModeSuggestionsOverChordTypes": {
+    "method": "lexical_harmony_keywords_in_document_text",
+    "harmony_keyword_counts": {
+      "7alt": 0,
+      "altered": 0,
+      "dominant": 0,
+      "tritone substitution": 0,
+      "tritone sub": 0,
+      "tritone": 0,
+      "slash chord": 0,
+      "polytonal": 0,
+      "lydian dominant": 0,
+      "half-diminished": 0,
+      "m7b5": 0,
+      "maj7": 3,
+      "maj7#11": 0,
+      "#11": 0,
+      "sus4": 0,
+      "mixolydian": 1,
+      "bebop scale": 0,
+      "octatonic": 0,
+      "whole tone": 0
+    },
+    "emphasis": "Corpus mentions of altered / tritone / #11 / m7b5 etc. are proxies for analytical prose, not automated chord-scale pairing."
+  },
+  "rhythmicDisplacementLanguage": {
+    "pickup": 0,
+    "pick-up": 0,
+    "upbeat": 0,
+    "anacrusis": 0,
+    "syncopation": 0,
+    "syncopated": 0,
+    "displacement": 0,
+    "metric displacement": 0,
+    "cross rhythm": 0,
+    "cross-rhythm": 0,
+    "hemiola": 0,
+    "offbeat": 0,
+    "off-beat": 0,
+    "anticipation": 0,
+    "delayed": 0,
+    "backbeat": 0
+  },
+  "tupletsAndRhythmicGroupings": {
+    "tuplets_regex_counts": {
+      "triplet": 2,
+      "duplet": 0,
+      "quadruplet": 0,
+      "quintuplet": 0,
+      "sextuplet": 0,
+      "septuplet": 0,
+      "octuplet": 0,
+      "nonuplet": 0,
+      "decuplet": 0,
+      "tuplets_general": 0,
+      "polyrhythm": 0,
+      "hemiola": 0,
+      "rubato": 0
+    },
+    "meter_keywords": {
+      "meter": 0,
+      "metre": 0,
+      "time signature": 0,
+      "5/8": 0,
+      "7/8": 0,
+      "9/8": 0,
+      "11/8": 0,
+      "12/8": 0,
+      "4/4": 0,
+      "odd meter": 0,
+      "changing meter": 0
+    }
+  },
+  "limitations": [
+    "Embedded notation examples may appear as raster images — intervals/rests/tuplets on staff are not parsed.",
+    "Text search cannot recover precise beat/subdivision onset without OCR + music-specific parsing."
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "sourcePdf": "Zappa Resources/Little-Dots-On-Zappa.pdf",
+  "analysisGeneratedAtUtc": "2026-05-01T14:35:31.218488+00:00",
+  "pdfMetadata": {
+    "title": "Little Dots: A Study of the Melodies of the Guitarist/Composer Frank Zappa",
+    "author": "Brett Clement",
+    "creator": "Appligent APSetDocInfo 2.2.2",
+    "producer": "GPL Ghostscript 9.15"
+  },
+  "pageCount": 82,
+  "pagesWithExtractableText": 82,
+  "extractedCharacterCount": 123282,
+  "symbolicMelodicIntervalsFromNotation": {
+    "computable": false,
+    "reason": "Requires symbolic notation (MusicXML/MIDI/tab OCR), not available from text layer alone."
+  },
+  "intervalPatterns": {
+    "method": "prose_keyword_and_lexical_hits_only",
+    "prose_interval_language_counts": {
+      "half step": 1,
+      "whole step": 0,
+      "semitone": 13,
+      "whole tone": 1,
+      "minor third": 0,
+      "major third": 1,
+      "perfect fourth": 3,
+      "tritone": 2,
+      "perfect fifth": 3,
+      "minor seventh": 1,
+      "major seventh": 5,
+      "octave": 10,
+      "chromatic": 18,
+      "diatonic": 3,
+      "melodic minor": 0,
+      "harmonic minor": 0,
+      "diminished": 2,
+      "whole tone scale": 0,
+      "diminished scale": 0,
+      "bebop": 2,
+      "lydian": 16,
+      "mixolydian": 0,
+      "dorian": 2,
+      "phrygian": 0,
+      "locrian": 0,
+      "altered scale": 0,
+      "super locrian": 0,
+      "melodic line": 0,
+      "motivic": 6
+    },
+    "noteLetterNoiseProbe": {
+      "isolated_note_letters_total": 284,
+      "letter_histogram_top": [
+        [
+          "A",
+          99
+        ],
+        [
+          "C",
+          61
+        ],
+        [
+          "D",
+          48
+        ],
+        [
+          "B",
+          24
+        ],
+        [
+          "F",
+          24
+        ],
+        [
+          "G",
+          16
+        ],
+        [
+          "E",
+          12
+        ]
+      ],
+      "note": "Not pitch spelling without octave; thesis prose produces many false positives."
+    }
+  },
+  "phraseLengths": {
+    "method": "text_layer_only_no_rest_encoding",
+    "phrase_language_counts": {
+      "phrase": 16,
+      "phrases": 8,
+      "motif": 0,
+      "motivic": 6,
+      "rest": 21,
+      "breath": 0,
+      "cadence": 0,
+      "antecedent": 0,
+      "consequent": 1,
+      "four-bar": 4,
+      "two-bar": 0,
+      "measure group": 1
+    },
+    "note": "Note-count-per-phrase grouped by rests requires symbolic score or OCR staff."
+  },
+  "scaleModeSuggestionsOverChordTypes": {
+    "method": "lexical_harmony_keywords_in_document_text",
+    "harmony_keyword_counts": {
+      "7alt": 0,
+      "altered": 2,
+      "dominant": 2,
+      "tritone substitution": 0,
+      "tritone sub": 0,
+      "tritone": 2,
+      "slash chord": 0,
+      "polytonal": 0,
+      "lydian dominant": 0,
+      "half-diminished": 0,
+      "m7b5": 0,
+      "maj7": 0,
+      "maj7#11": 0,
+      "#11": 0,
+      "sus4": 0,
+      "mixolydian": 0,
+      "bebop scale": 0,
+      "octatonic": 0,
+      "whole tone": 1
+    },
+    "emphasis": "Corpus mentions of altered / tritone / #11 / m7b5 etc. are proxies for analytical prose, not automated chord-scale pairing."
+  },
+  "rhythmicDisplacementLanguage": {
+    "pickup": 0,
+    "pick-up": 0,
+    "upbeat": 2,
+    "anacrusis": 0,
+    "syncopation": 0,
+    "syncopated": 0,
+    "displacement": 0,
+    "metric displacement": 0,
+    "cross rhythm": 0,
+    "cross-rhythm": 0,
+    "hemiola": 0,
+    "offbeat": 0,
+    "off-beat": 0,
+    "anticipation": 0,
+    "delayed": 0,
+    "backbeat": 1
+  },
+  "tupletsAndRhythmicGroupings": {
+    "tuplets_regex_counts": {
+      "triplet": 7,
+      "duplet": 0,
+      "quadruplet": 0,
+      "quintuplet": 9,
+      "sextuplet": 9,
+      "septuplet": 14,
+      "octuplet": 0,
+      "nonuplet": 0,
+      "decuplet": 0,
+      "tuplets_general": 4,
+      "polyrhythm": 0,
+      "hemiola": 0,
+      "rubato": 0
+    },
+    "meter_keywords": {
+      "meter": 9,
+      "metre": 0,
+      "time signature": 0,
+      "5/8": 0,
+      "7/8": 0,
+      "9/8": 0,
+      "11/8": 0,
+      "12/8": 0,
+      "4/4": 2,
+      "odd meter": 0,
+      "changing meter": 0
+    }
+  },
+  "limitations": [
+    "Embedded notation examples may appear as raster images — intervals/rests/tuplets on staff are not parsed.",
+    "Text search cannot recover precise beat/subdivision onset without OCR + music-specific parsing."
+  ]
+}

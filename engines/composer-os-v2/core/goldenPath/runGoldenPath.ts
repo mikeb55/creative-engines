@@ -26,6 +26,7 @@ import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { validateLockedHarmonyMusicXmlTruth } from '../export/validateLockedHarmonyMusicXml';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
+import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
 import { validateExportIntegrity } from '../export/exportHardening';
@@ -107,10 +108,12 @@ import { applyEcmStyleHarmonyMotionPolicy } from '../song-mode/ecmStyleHarmonyPo
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
+import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
 import type { MotifAuthorityLevel } from '../motif/motifAuthorityV1';
 import { buildIndieDualGuitarTuningFixtureScore } from '../song-mode/indieDualGuitarTuningFixture';
+import { zappaSoloOptionsFromTiers } from '../solo/zappasoloEngine';
 
 function appendHarmonyPipelineTrace(ctx: CompositionContext, stage: HarmonyPipelineStage, detail: string): void {
   if (typeof process === 'undefined' || process.env?.COMPOSER_OS_HARMONY_TRACE !== '1') return;
@@ -985,6 +988,13 @@ export interface RunGoldenPathOptions {
   motifAuthorityLevel?: MotifAuthorityLevel;
   /** Diagnostic-only deterministic Song Mode Indie tuning proof fixture. */
   debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
+  /** Frank Zappa Phase B — solo instrument range (MIDI inclusive); default 40–84 (guitar). */
+  zappaSoloMidiLow?: number;
+  zappaSoloMidiHigh?: number;
+  zappaSoloDensity?: 'low' | 'medium' | 'high';
+  zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
+  /** Optional per-bar meters (1-based keys); copied to context + `generationMetadata.barMeterMap`. */
+  barMeterMap?: BarMeterMap;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1471,6 +1481,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  const barMeterFromRequest = sanitizeBarMeterMap(options?.barMeterMap);
+  if (barMeterFromRequest) {
+    context.barMeterMap = barMeterFromRequest;
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      barMeterMap: barMeterFromRequest,
+    };
+  }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
   const motifAuthorityEligible = isMotifAuthorityPilotPreset(
     options?.presetId ?? context.presetId,
@@ -1609,6 +1627,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           : {}),
       };
       appendSongModeStyleSurfaceNotes(context.generationMetadata, compProfile.receiptLines);
+    }
+    if (resolution.primaryId === 'frank_zappa') {
+      context.generationMetadata = {
+        ...context.generationMetadata,
+        zappaSoloOptions: zappaSoloOptionsFromTiers({
+          midiLow: options?.zappaSoloMidiLow,
+          midiHigh: options?.zappaSoloMidiHigh,
+          density: options?.zappaSoloDensity,
+          dissonance: options?.zappaSoloDissonance,
+        }),
+      };
     }
   }
   if (options?.songModeHookFirstIdentity) {
@@ -1839,6 +1868,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     tonalCenterOverride: options?.tonalCenterOverride,
     tonalCenter: options?.tonalCenter,
   });
+  if (appliedContext.harmonyContext) {
+    assertGuitarScoreMatchesHarmonyContext(score, appliedContext, 'after_applyKeySignatureToScoreAndContext');
+  }
 
   const slashBassWarnings = validateSlashBassHonoured(score);
   if (slashBassWarnings.length > 0) {
@@ -1961,6 +1993,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahEx = mdEx?.andrewHillEffectiveHarmonyBars;
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
+  const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
       ? bwEx
@@ -2000,7 +2033,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                         ? cpEx
                                         : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
                                           ? beEx
-                                          : lockedForExport;
+                                          : mdEx?.songwriterStyleId === 'frank_zappa' &&
+                                              appliedContext.harmonyContext?.styleId === 'frank_zappa' &&
+                                              appliedContext.harmonyContext.bars.length === tbEx
+                                            ? [...appliedContext.harmonyContext.bars]
+                                            : mdEx?.songwriterStyleId === 'frank_zappa' && Array.isArray(fzEx) && fzEx.length === tbEx
+                                              ? fzEx
+                                              : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -2079,6 +2118,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahLt = mdLt?.andrewHillEffectiveHarmonyBars;
   const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
+  const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
         ? bwLt
@@ -2120,7 +2160,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                             ? cpLt
                                             : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
                                               ? beLt
-                                              : lockedBars;
+                                              : mdLt?.songwriterStyleId === 'frank_zappa' &&
+                                                  appliedContext.harmonyContext?.styleId === 'frank_zappa' &&
+                                                  appliedContext.harmonyContext.bars.length === tbLt
+                                                ? [...appliedContext.harmonyContext.bars]
+                                                : mdLt?.songwriterStyleId === 'frank_zappa' && Array.isArray(fzLt) && fzLt.length === tbLt
+                                                  ? fzLt
+                                                  : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

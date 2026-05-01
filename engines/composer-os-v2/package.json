@@ -5,6 +5,7 @@
   "description": "V2.0 - Composer OS unified generative composition system",
   "main": "core/conductor/conductor.js",
   "scripts": {
+    "build": "node -e \"console.log('[composer-os-v2] No dist emit; API/dev loads .ts via root ts-node.');\"",
     "test:composer-os-regression": "jest --config jest.config.cjs tests/regression/phase191EnsembleRegression.test.ts --no-coverage",
     "test:jest:counterpoint": "jest --config jest.config.cjs voiceLeadingScorer --no-coverage",
     "test": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/runAllTests.ts full",

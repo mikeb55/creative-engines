@@ -213,6 +213,12 @@ export function writeOutputManifest(
     andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
     andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
     andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
+    frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
+    frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
+    frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];
+    frankZappaEffectiveHarmonyBars?: GenerationMetadata['frankZappaEffectiveHarmonyBars'];
+    frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];
+    frankZappaEligibilityStats?: GenerationMetadata['frankZappaEligibilityStats'];
     songModeFagenKeysCompV15Applied?: boolean;
     fagenKeysCompMusicalDiagnostics?: GenerationMetadata['fagenKeysCompMusicalDiagnostics'];
     sophisticatedPopHarmonyDiagnostics?: GenerationMetadata['sophisticatedPopHarmonyDiagnostics'];
@@ -385,6 +391,12 @@ export function writeOutputManifest(
     andrewHillSliceReceipt: meta.andrewHillSliceReceipt,
     andrewHillEffectiveHarmonyBars: meta.andrewHillEffectiveHarmonyBars,
     andrewHillAntiElaborationGuards: meta.andrewHillAntiElaborationGuards,
+    frankZappaDiagnostics: meta.frankZappaDiagnostics,
+    frankZappaDeviceReceipts: meta.frankZappaDeviceReceipts,
+    frankZappaSliceReceipt: meta.frankZappaSliceReceipt,
+    frankZappaEffectiveHarmonyBars: meta.frankZappaEffectiveHarmonyBars,
+    frankZappaAntiElaborationGuards: meta.frankZappaAntiElaborationGuards,
+    frankZappaEligibilityStats: meta.frankZappaEligibilityStats,
     songModeFagenKeysCompV15Applied: meta.songModeFagenKeysCompV15Applied,
     fagenKeysCompMusicalDiagnostics: meta.fagenKeysCompMusicalDiagnostics,
     sophisticatedPopHarmonyDiagnostics: meta.sophisticatedPopHarmonyDiagnostics,

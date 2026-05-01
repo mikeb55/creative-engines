@@ -1,0 +1,108 @@
+{
+  "source": "Soloing-Strategies-Frank-Zappa-GW.pdf",
+  "title": "Soloing Strategies: Frank Zappa",
+  "author": "Tom Kolb",
+  "publication": "Guitar World",
+  "date": "2007-04-02",
+  "extractionMethod": "pdftotext (text layer present)",
+  "notesOnTranscriptions": "Article contains notated examples (Figs 1–4) that are image-embedded; this analysis derives from the descriptive text only.",
+
+  "intervalPatterns": {
+    "primaryScale": "B minor pentatonic (B–D–E–F#–A)",
+    "secondaryScales": ["B blues scale (B–D–E–F–F#–A)", "natural minor", "harmonic minor", "Dorian", "Mixolydian", "Phrygian"],
+    "characteristicIntervals": [
+      { "interval": "minor third", "semitones": 3, "context": "pentatonic skip, primary melodic motion" },
+      { "interval": "whole step", "semitones": 2, "context": "step-wise inside pentatonic" },
+      { "interval": "semitone", "semitones": 1, "context": "chromatic approach, solo capper passages" },
+      { "interval": "3/4-step bend", "semitones": 0.75, "context": "Apostrophe opening motif — just shy of D#" }
+    ],
+    "techniqueNotes": [
+      "Pull-offs to open strings (Zappa hallmark) create descending intervals to open-string pitches",
+      "Double hammer/pull between 7th and 3rd degrees of chord (C# to F# over Dmaj7)",
+      "Low-register melodies on 6th and 5th strings emphasise wider intervals",
+      "Chromatic scalar run used as solo capper (m. 27)"
+    ]
+  },
+
+  "phraseLengths": {
+    "unit": "measures",
+    "observations": [
+      { "label": "open-string motif (Apostrophe pattern)", "notesPerPhrase": 4, "phraseLengthBars": 2, "repetitions": 3, "note": "same motif, varied rhythms and start points each repeat" },
+      { "label": "4-note cycled motif (A–C#–A–B)", "notesPerPhrase": 4, "phraseLengthBars": 2, "note": "measures 8–9, varied rhythm combinations including 5:4" },
+      { "label": "pentatonic 6th/5th-string melody", "phraseLengthBars": 2, "note": "lower-register; slide to G with 3/4 bend" },
+      { "label": "blues scale passage", "phraseLengthBars": 2, "bars": "11–12" },
+      { "label": "tremolo-picking passage", "phraseLengthBars": 2, "bars": "14–15" },
+      { "label": "call-and-response licks", "phraseLengthBars": 3, "bars": "16–18" },
+      { "label": "legato burst figures", "phraseLengthBars": 2, "bars": "19–20", "note": "1st and 4th fingers only" },
+      { "label": "chord-tone trill (Black Napkins motif)", "phraseLengthBars": 2, "bars": "21–22" },
+      { "label": "open-string legato sequence", "phraseLengthBars": 2, "bars": "23–24" }
+    ],
+    "generalPrinciple": "2-bar phrases dominate; motifs cycle 2–3 times before dissolution. 4-note cells are the recurring compositional unit."
+  },
+
+  "scaleModeOverChordTypes": [
+    {
+      "chordType": "i minor (Bm)",
+      "scaleMode": "B minor pentatonic / B natural minor / B Dorian",
+      "example": "Solo section of Nanook Rubs It (Bm–G7 vamp)"
+    },
+    {
+      "chordType": "bVI7 (G7)",
+      "scaleMode": "B minor pentatonic continues across chord change (outside approach)",
+      "example": "i–bVI7 vamp in Nanook Rubs It"
+    },
+    {
+      "chordType": "bIImaj7 (Cmaj7)",
+      "scaleMode": "B minor pentatonic / chromatic approach notes",
+      "example": "i–bIImaj7 cadence of Black Napkins (Bm7–Cmaj7)"
+    },
+    {
+      "chordType": "general Zappa vamp (static chord)",
+      "scaleMode": "poly-scale / modal — Dorian over minor, Lydian over major",
+      "source": "Little Dots thesis cross-reference"
+    }
+  ],
+
+  "rhythmicDisplacement": {
+    "primaryTechnique": "Motif restated from different beat positions within successive measures",
+    "examples": [
+      {
+        "phrase": "open-string Apostrophe motif",
+        "description": "played 3 times consecutively, each starting from a different point in the measure",
+        "bars": "1–2"
+      },
+      {
+        "phrase": "4-note cycled motif A–C#–A–B",
+        "description": "same pitch cell repeated with varied rhythmic placement; 5:4 groupings shift phrase starts",
+        "bars": "8–9"
+      }
+    ],
+    "generalNote": "Zappa shifts phrase entry points bar-to-bar — the same melodic cell begins on beat 1 in one measure, off-beat in the next"
+  },
+
+  "rhythmicGroupings": {
+    "primary": [
+      { "grouping": "5:4 (quintuplet in one beat)", "description": "5 sixteenth notes in space of 4; standard Zappa fare", "tempoContext": "one beat" },
+      { "grouping": "eighth-note triplets", "description": "triple feel against duple grid" },
+      { "grouping": "sixteenth-note triplets", "description": "faster triple subdivision" },
+      { "grouping": "straight eighth/sixteenth notes", "description": "duple feel baseline" },
+      { "grouping": "tremolo picking", "description": "unmeasured rapid alternation; indicated by three slanted lines in tab" }
+    ],
+    "philosophyQuoted": "Often jumping back and forth from duple feels (eighths and 16ths) to triple feels (shuffled rhythms and triplets), he would also disperse odd-numbered groups of notes into even spaces (for example, five 16th notes in the space of four)."
+  },
+
+  "harmonicProgressions": [
+    { "id": "black_napkins_cadence", "formula": "i–bIImaj7", "example": "Bm7–Cmaj7", "source": "Black Napkins (Zoot Allures)" },
+    { "id": "apostrophe_vamp", "formula": "i–bVI7", "example": "Bm–G7", "source": "Nanook Rubs It (Apostrophe)" }
+  ],
+
+  "characteristicDevices": [
+    "Open-string pull-offs as ornamental/structural elements",
+    "Legato (1st+4th finger) for rapid passages",
+    "3/4-step bend (microtonal — just below minor third)",
+    "Tremolo picking on sustained single pitches",
+    "Low-register pentatonic melody on E and A strings",
+    "Cycled 4-note motifs with rhythmic variation across repeats",
+    "Chromatic scalar run as section/solo capper"
+  ]
+}

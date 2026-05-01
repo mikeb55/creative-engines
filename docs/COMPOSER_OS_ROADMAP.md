@@ -291,12 +291,12 @@
 
 ## Current (as of 2026-05-01 snapshot)
 
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-01):** **106** passed / **0** failed (**28** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-01):** **111** passed / **0** failed (**31** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs occasional **`test:full`** suite-level failures (environment / heavy gates). **Runner stability** item (**chunked harness + 4096 MB heap on each chunk**) is **complete** (2026-04-28).
 - **`npm test` / `test:full`** — if **`FAIL:`** lines appear, treat as **known per-suite debt** or environment until triaged; **`test:fast`** remains the broader gate for day-to-day iteration.
-- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**106**). **Shipped (full slice)** lists **20** writers (**`HomeGenerate.tsx`**).
+- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**111**). **Shipped (full slice)** lists **21** writers (**`HomeGenerate.tsx`**).
 
 | Area | State |
 |------|--------|
@@ -305,7 +305,7 @@
 | **Phase 19** | **Complete** (UI ≤32 bars for duo/song) |
 | **Phase 19.1 (BB/SQ long forms)** | **Complete** (2026-04-15) — Big Band and String Quartet **16–64** bars in UI + API; duo/song **deferred** |
 | **Song Mode D-phase** | **D1** + C1–C7: **done** per architecture; **D2** (groove / space / expression / surprise → receipt): **done** per [CHANGELOG.md](CHANGELOG.md); **D3** reserved |
-| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Twenty shipped golden-path slices** (`*Slice.ts` + smoke): see **Shipped slices** below — **`charlie_parker`** ships **2026-04-29** (bebop ii–V–I slice; **`cp:*`** receipts) alongside **`andrew_hill`** (angular non-functional; **`ah:*`** receipts), **`thelonious_monk`** (rules from **`engines/monk-engine`**), **`kate_bush`**, **`stephen_sondheim`**, **`herbie_hancock`**, **`antonio_carlos_jobim`**, **`ecm_chamber`**, **`donald_fagen`**, **`bacharach`**, **`bill_evans`**, etc. Substantial non-slice behaviour: **`STYLE_GROOVE_SOUL`**, **`STYLE_SOPHISTICATED_POP`**, ECM-writer hooks, etc. **Next product push:** **Priority stack** — new **workstreams**; **pools ready to slice** remain **empty**; **New territory** candidates are **open** (see **Future — compositional diversity**). Polish **Generate UI** (grouped selects; **20** shipped writers in dropdown **2026-04-29**). |
+| **Songwriters & arrangers (Song Mode)** | **Core:** typed ids, **`songwriterRuleRegistry`**, **`resolveSongwritingStyles`**, **`stylePairingResolver`**, **`buildCompiledSong`** — **done**. **Twenty-one shipped golden-path slices** (`*Slice.ts` + smoke): see **Shipped slices** below — **`frank_zappa`** (**`fz:*`** receipts; ii–V–I break pass) alongside **`charlie_parker`** (**2026-04-29**, bebop ii–V–I slice; **`cp:*`** receipts), **`andrew_hill`** (angular non-functional; **`ah:*`** receipts), **`thelonious_monk`** (rules from **`engines/monk-engine`**), **`kate_bush`**, **`stephen_sondheim`**, **`herbie_hancock`**, **`antonio_carlos_jobim`**, **`ecm_chamber`**, **`donald_fagen`**, **`bacharach`**, **`bill_evans`**, etc. Substantial non-slice behaviour: **`STYLE_GROOVE_SOUL`**, **`STYLE_SOPHISTICATED_POP`**, ECM-writer hooks, etc. **Next product push:** **Future → Overall roadmap priorities** **Tier A** (golden-path slices — queue **Top 10 Song Mode songwriter targets**) + **Tier B** (UI discoverability); **pools ready to slice** remain **empty**. Polish **Generate UI** (grouped selects; **21** shipped writers in dropdown **2026-05-01**). |
 | **Vocal lead sheet (Song Mode)** | **VERIFIED (2026-04-17):** Packaged `release\win-unpacked\Composer OS Desktop.exe` — Song Mode + vocal + BPM 100; main + vocal `.musicxml` at 100 BPM; Sibelius OK. Dev: checkbox / API path, metronome + `<sound tempo>` in Python export, TS bridge narrowing; **`npm run test:vocal`** green. See [CHANGELOG.md](CHANGELOG.md). |
 | **Wyble Voice 2** | **Inject** extended to **single-line** duo family. **2026-04-17:** Parity + **realized normalization review (first pass)** — `shouldApplyRealizedVoice2Normalization` centralizes when Phase 18.2B.3 runs; `injectPhaseAGuitarVoice2Probe` uses **`isStandardGuitarBassDuo`**; JSDoc on realized pass. Full unify of realized metrics with standard duo / phrase-first single-line still **deferred** (pick list #2). |
 | **Big Band + String Quartet — follow-ups** | **Chord input** + **Song Form** + **bar-length select** (16 / 24 / 32 / 40 / 48 / 64) wired; **piano** export naming (Sibelius-friendly) — see [CHANGELOG.md](CHANGELOG.md) |
@@ -314,14 +314,14 @@
 
 ### Song Mode — shipped slices vs pools ready to slice (2026-04-29)
 
-- **Shipped slices** (**20** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`**, **`andrew_hill`**, **`charlie_parker`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`charlieParkerSlice.ts`** + **`charlieParkerSliceSmoke.test.ts`** (**`cp:*`** receipts; bebop ii–V–I, tritone sub, turnaround compression, Bird enclosure); **`andrewHillSlice.ts`** + **`andrewHillSliceSmoke.test.ts`** (**`ah:*`** receipts; angular non-functional, open cadence); **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **106**/0 (**28** suites). **Andrew Hill** research posture documented in [CHANGELOG.md](CHANGELOG.md) (Python ECM trio spec + **`engines/andrew-hill-engine`**). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`cp:*`** (Charlie Parker), **`ah:*`** (Andrew Hill), **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
+- **Shipped slices** (**21** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`frank_zappa`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`**, **`andrew_hill`**, **`charlie_parker`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`frankZappaSlice.ts`** + **`frankZappaSliceSmoke.test.ts`** (**`fz:*`** receipts; **`breakFrankZappaIiViProgressions`**); **`charlieParkerSlice.ts`** + **`charlieParkerSliceSmoke.test.ts`** (**`cp:*`** receipts; bebop ii–V–I, tritone sub, turnaround compression, Bird enclosure); **`andrewHillSlice.ts`** + **`andrewHillSliceSmoke.test.ts`** (**`ah:*`** receipts; angular non-functional, open cadence); **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **109**/0 (**31** suites). **Andrew Hill** research posture documented in [CHANGELOG.md](CHANGELOG.md) (Python ECM trio spec + **`engines/andrew-hill-engine`**). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`cp:*`** (Charlie Parker), **`ah:*`** (Andrew Hill), **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
 - **Pools ready to slice:** **None** — chord pools / registry / UI rows that were queued for a dedicated duo golden-path slice are all **shipped** (**2026-04-29**). **Charlie Parker** (`charlie_parker`) **complete** this session — **`charlieParkerSlice.ts`**, **`cp:*`** devices. **Next after this session:** **open** — gap-fill vs roster (bebop lineage extensions, ECM depth, soul/funk, alt-rock, theatre, etc.); see **Priority stack** and **Future — compositional diversity**.
 
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
 
 1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
-2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **28** suites as of 2026-05-01).
-3. **Update** this doc — **Current** harness bullet above (**106** / date) so assistants do not cite a stale total.
+2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **31** suites as of 2026-05-01).
+3. **Update** this doc — **Current** harness bullet above (**111** / date) so assistants do not cite a stale total.
 4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
 
 ---
@@ -340,6 +340,48 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 
 ---
 
+## HIGH PRIORITY — Odd Meters + Zappa Solo Engine (2026-05-01)
+
+**Status:** **HIGH PRIORITY** for **both** Phase **A** (infrastructure) and Phase **B** (melodic generator). **Phase A** is a **hard dependency** for **correct bar timing + MusicXML meter truth** before the solo generator can claim odd-meter realism; chord pools / songwriter slice work can proceed in parallel, but **export + quantiser** must land for end-to-end odd-meter Zappa output.
+
+### Phase A — Odd Meter Infrastructure (**HIGH PRIORITY**)
+
+- Bar-level **meter map** in **`compositionContext.ts`** (per-bar time signature).
+- **Rhythm quantiser** extended for non-4/4 grids (**5/8**, **7/16**, **19/16**, mixed meters).
+- **MusicXML export:** per-bar **time signature change** support.
+
+### Phase B — Zappa Solo / Melodic Generator (**HIGH PRIORITY**)
+
+- **Slonimsky** path traversal over **Zappa chord pools** (solo backbone).
+- **Xenochrony** device applied as **rhythmic displacement** of the melodic line (not only harmony-level offset).
+- **Odd meter grid awareness** in the solo generator (couples to Phase **A**).
+
+### Zappa PDF Analysis Findings (2026-05-01)
+
+Key inputs for Phase B solo engine:
+
+- Septuplet (7:4) and quintuplet (5:4) as primary Zappa tuplet signatures
+- Descending minor 6th (−8 semitones) as structural identity marker (d1/d3 signal)
+- Factory-cycle 32nd-note motive displacement = d2 metric displacement analogue
+- [0137] tetrachord = Zappa bebop harmonic aroma — maps to alt/tritone chord pools
+- Lydian confirmed system-wide over all major/add9 chords
+- Guitar Book + Over-Nite Sensation: OCR pending for score-level data
+
+### Where this sits vs existing planned work
+
+| Relationship | Notes |
+|--------------|--------|
+| **Future → Four engine pillars — #2** (*Rhythm, meter & groove intelligence*) | Odd meters upgrade this pillar from **overlay / feel** to **structural** meter maps + export fidelity. |
+| **Overall roadmap priorities — Tier A** (`frank_zappa` and related writers) | Harmony pools + slice + wiring can ship **without** Phase **B**; the **Zappa solo engine** narrative assumes **Phase B** after **Slonimsky** + pools exist. |
+| **Tier D / Standalone study — Slonimsky Etudes (#15)** | Shared **Slonimsky** traversal / pattern vocabulary; Phase **B** extends **Generate-facing** melody generation, not only the etude tab. |
+| **Phrase Engine / riff redesign (Tier G)** | Complementary: phrase-level rhythm lives in Phrase Engine; **quantiser + meter map** are the **score-clock** foundation odd meters need first. |
+| **Lead-sheet import (Stages 6–7)** | **Parallel** track — no dependency either way; prioritize odd meters when **rhythm + MusicXML** bandwidth is free. |
+| **Motif Phase 1** | **Parallel** — motif receipts remain useful; odd-meter solo lines may later feed motif summaries. |
+
+**Scheduling suggestion:** Treat **Phase A** as a **rhythm/export horizontal** (small dedicated PR chain: context → quantiser → MusicXML). Schedule **Phase B** immediately after **Phase A** smoke + at least one fixture export with **mixed meters**, reusing **`SONGWRITER_CHORD_POOLS.frank_zappa`** and **`frankZappaSlice.ts`** / **`precomputeFrankZappaEffectiveHarmonyBars`** for harmonic truth.
+
+---
+
 ## Future — compositional diversity & songwriter expansion (2026-04-28)
 
 These items raise **output diversity** without assuming a single engine rewrite: they are parallel product axes (some already partially present under ensembles / Song Mode / pairing).
@@ -347,7 +389,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 ### Four engine pillars (diversity)
 
 1. **Ensemble & orchestration grammar** — configurable section/scoring defaults (woodwind colour, brass pads, rhythm-section roles), stem/beam templates, and arrangement receipts so pieces feel less “same orchestration, different chords.”
-2. **Rhythm, meter & groove intelligence** — meter feels (odd subdivisions, displacement, pocket vs float), Song Mode groove overlays that survive export, and clearer coupling between harmony rhythm and phrase rhythm.
+2. **Rhythm, meter & groove intelligence** — meter feels (odd subdivisions, displacement, pocket vs float), Song Mode groove overlays that survive export, and clearer coupling between harmony rhythm and phrase rhythm. **HIGH PRIORITY elaboration:** **§ HIGH PRIORITY — Odd Meters + Zappa Solo Engine** (bar-level meter map, quantiser + MusicXML meter changes, then Zappa solo backbone).
 3. **Form & narrative** — multi-section arcs (beyond A/B tags), turnarounds / pivots as first-class planning objects, and lyric-adjacent phrase shaping hooks where Song Mode already carries structure.
 4. **Style fusion & world vocabulary** — explicit blend weights (e.g. ECM × Brazilian × theatre), region/mode libraries that stay bounded (not tourist exoticism), and pairing rules that explain *why* a fusion is chosen (manifest-friendly).
 
@@ -419,15 +461,51 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ## Future (prioritized directions)
 
+### Overall roadmap priorities (2026-05-01)
+
+**Ordered product-attention stack** — higher tiers get **default scheduling bias**; lower tiers stay **in motion** when capacity or dependencies allow (nothing here is “cancelled”).
+
+| Tier | Bundle | Summary | Where to read |
+|:----:|--------|---------|----------------|
+| **A** | **Song Mode — golden-path songwriter slices** | Primary lane for **depth / diversity / fun**. Concrete queue: **Top 10 Song Mode songwriter targets** (`frank_zappa` … `duke_ellington`) — pair each ship with smoke + receipts + optional eval. **`frank_zappa`:** odd-meter + **Zappa Solo Engine** tracked as **HIGH PRIORITY** cross-cutting work (**§ HIGH PRIORITY — Odd Meters + Zappa Solo Engine**); harmony slice/pools can ship ahead of Phase **B**. | **§ Songwriter profiles & Song Mode writer expansion — priority 1** · **§ Top 10 Song Mode songwriter targets** · **§ HIGH PRIORITY — Odd Meters + Zappa Solo Engine** |
+| **B** | **Generate UI — writer & style discoverability** | Makes Tier **A** testable without API-only workflows (grouped songwriter/arranger UI **shipped**; extend surfacing as needed). | **§ Next best development (top 3)** item **2** · **Current** |
+| **C** | **Lead-sheet import → ensemble chart-in** | **`LeadSheet`** + `leadSheetFromMusicXml` → **String Quartet / Big Band** realisers (staged PRs). | **§ Next best development (top 3)** item **3** · **Lead-sheet MusicXML import → String Quartet + Big Band** |
+| **D** | **Standalone study tools** | **#15 Slonimsky Etudes** (playback/PDF follow-ups as scheduled) → **#16 Wyble Etudes** (after brief). Outside Generate. | **§ Standalone study tools — Slonimsky Etudes & Wyble Etudes** · pick list **#15 / #16** |
+| **E** | **Altered tuning — Tonality Vault voicing maps** | Preset + UI **shipped**; **per-tuning idiomatic maps** follow-up. Synergy with Tier **A** targets **`nick_drake`**, **`frank_zappa`** (guitar colour). | **§ Altered Tuning Presets** |
+| **F** | **Motif Development Phase 1** | Pilot writers + inspectable motif receipts (`motifAuthorityLevel`). | **§ Motif Development Plan (Phase 1)** |
+| **G** | **Phrase Engine / Riff redesign** | Shared phrase abstraction + adapters (medium-term). | **§ Phrase Engine / Riff Generator redesign** |
+| **—** | **Near alternates** | **`TEST_DEBT`**, Wyble depth, ECM arrangement, Slonimsky engine-only backlog **#10**. | **§ Next best development** *Near alternates* · **§ Next possible devs (pick list)** |
+
+**Alignment:** **Next best development (top 3)** items **1 → 3** map **1:1** to **Tier A → Tier C** above.
+
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
 - **Done (2026-04-28):** **`james_brown`** — full duo golden-path slice (**`jamesBrownSlice.ts`**), **`SONGWRITER_CHORD_POOLS.james_brown`**, devices **`jb:`** d1–d5, anti-elaboration guards, **`npm run eval:james_brown`**, **`test:smoke`** row (**37**/0). See **T2.14**, [CHANGELOG.md](CHANGELOG.md) § **James Brown — full Song Mode slice**.
 - **Done (2026-04-28):** **`pat_metheny`** — full duo golden-path slice (**`patMethenySlice.ts`**), preserved **`SONGWRITER_CHORD_POOLS.pat_metheny`**, devices **`pm:`** d1–d5, anti-elaboration guards, effective-bar export + disk truth, **`npm run eval:pat_metheny`**, **`test:smoke`** **40**/0 at ship. See **T2.17**, [CHANGELOG.md](CHANGELOG.md) § **Pat Metheny — full Song Mode slice (`patMethenySlice.ts`)**.
-- **Smoke tier vs bullets:** Row counts in **Past / T2.x** (**33**, **37**, **40**, …) record **aggregate PASS rows at ship**. **Current** smoke tier **aggregate** (**106** as of 2026-05-01) lives in **`runSmokeTests.ts`** — bump **`CLAUDE.md`** + **Current** whenever the allowlist changes.
+- **Smoke tier vs bullets:** Row counts in **Past / T2.x** (**33**, **37**, **40**, …) record **aggregate PASS rows at ship**. **Current** smoke tier **aggregate** (**111** as of 2026-05-01) lives in **`runSmokeTests.ts`** — bump **`CLAUDE.md`** + **Current** whenever the allowlist changes.
 - **Goal:** **More primary songwriter profiles** that behave distinctly in Song Mode: section-aware **chord pools**, **golden-path** guitar/bass realisation hooks where appropriate, **surface receipts** / **`songModeStyleSurfaceNotes`**, **`songModeSectionShapingDiagnostics`** alignment, and **eval harness** rows where a script exists (`eval:fagen`, `eval:bacharach`, etc.).
 - **Implementation pattern:** Follow shipped slices — **registry + resolver** (`songwriterStyleResolver`, `songwriterRuleRegistry`) → **`songModeBuilder`** weighting / rows → **`generateGoldenPathDuoScore`** passes → manifests. Keep **pilot gating** (`motifAuthorityLevel`, motif summaries) until the slice is stable.
 - **Candidate directions (pick small batches):** elevate **thin or compile-only** writers to full slices; add **era- or scene-cluster** presets (e.g. singer-songwriter, classic rock book, modern alt) as **product bundles** mapping to existing or new ids; extend **hybrid** pairs (melody writer × harmony writer) with tests.
-- **Explicit dependency:** More profiles **increase** the need for **UI exposure** (priority stack item 2) and **test/eval** discipline (item 3).
+- **Explicit dependency:** More profiles **increase** the need for **UI exposure** (**Overall roadmap priorities** Tier **B**) and **test/eval** discipline (lead-sheet / ensemble Tier **C** and smoke hygiene).
+
+### Top 10 Song Mode songwriter targets — diversity / depth / fun (2026-05-01)
+
+**Purpose:** Product-facing **schedule bias** for the next golden-path **`*Slice.ts`** investments — **not** a commitment order. Mix of **new ids** (add to `SONGWRITER_OPTIONS` + registry) and **In library** rows in **`HomeGenerate.tsx`** (already in the dropdown but not in **Shipped (full slice)**).
+
+| Priority | Target | Status today | Why (diversity / depth / fun) |
+| :--- | :--- | :--- | :--- |
+| 1 | **`frank_zappa`** | **New id** | Harmonic range + sectional surprise + **fun**; Song Mode slice is **golden-path duo harmony + devices** — **not** a duplicate of the Python **`engines/zappa-disruption-engine`** (**`zappa_disruption`** IR composer used by **Composer Studio**; **not** wired to **`composer-os-v2`** Generate). Optional later: bounded **alternate tuning** presets where guitar stunt colours matter. |
+| 2 | **`astor_piazzolla`** | **New id** | **Nuevo tango** harmony / line grammar vs **`antonio_carlos_jobim`** Brazilian bossa lane — Latin diversity without overlap. |
+| 3 | **`nick_drake`** | **New id** | Intimate English folk harmony; **strong altered-tuning affinity** — pair with **`alternateGuitarTunings`** + future **Tonality Vault** voicing maps. |
+| 4 | **`carole_king`** | **In library** | Distinct **Tapestry-era** singer-songwriter pillar — fills gap vs shipped **Brian Wilson** / **Stevie Wonder** / **Radiohead** cluster. |
+| 5 | **`xtc`** | **In library** | **British art-pop** harmonic sophistication — elevate to **Shipped** slice without adding a dropdown row; complements **Radiohead** / **Kate Bush**. |
+| 6 | **`ennio_morricone`** | **New id** | **Cinematic modal** suspense / Italian colour — new **sound world** for duo lead-sheet grammar (not covered by jazz/pop shipped set). |
+| 7 | **`george_clinton`** *(or `parliament_funkadelic`)* | **New id** | **P-Funk** harmonic + riff **systems** vs **`james_brown`** — groove diversity + playful eccentricity. |
+| 8 | **`laura_nyro`** | **New id** | Extended-chord **jazz singer-songwriter** — bridges **Bacharach** / **Sondheim** complexity with pop vocal harmony. |
+| 9 | **`television`** | **New id** | **Tom Verlaine** lineage — lean **angular twin-guitar** art-punk; unique vs **Sonic Youth** (noise density) and **Radiohead** (later era). |
+| 10 | **`duke_ellington`** | **In library** | **Big-band jazz composer** harmonic voice — complements small-group shipped writers (**Monk**, **Charlie Parker**, **Jobim**, …). |
+
+**Near alternates (defer):** **`billy_strayhorn`** (pairs with Ellington), **`holland_dozier_holland`** / **`smokey_robinson`** / **`norman_whitfield`** (Motown cluster vs Brown), **`fela_kuti`** (Afrobeat architecture), **`philip_glass`** (minimal pattern lens), **`björk`** (art-pop experimental), **`beatles`** / **`paul_mccartney`** (high recognition, scope-heavy).
 
 ### Altered Tuning Presets (workstream)
 
@@ -533,7 +611,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 - **Concept:** User picks a **pattern family** from a menu (tritone, whole-tone, M3 cycle, etc.); **educational** taxonomy is appropriate here; user supplies **chord or short progression** + **key**; app emits a **short, playable etude** (notation + playback + **MusicXML** export). **Optional:** transposition cycle through **12 keys**. **PDF** — treat as **Phase 2** unless a PDF pipeline already ships in desktop.
 - **Engine readiness:** Core already has **Slonimsky pattern generation**, registry / sections, and **MusicXML export** via **`ScoreModel`**. **Gaps (real work):** thin **etude score shell** (parts, length, layout), **desktop UI + routing**, and **playback** wiring; **PDF** is a **dependency** if required in v1.
-- **Complexity / priority:** **Medium** — mostly **UI + packaging + export**, bounded if v1 stays **short** and **single-line or minimal staff count**. **Ranks after** the **Next best development (top 3)** songwriting / import lanes in **product attention**, but is the **clear first** among these two etude tools. **Relates to** pick list **#10** (pattern lines) — this row is the **user-facing product** expression; **#10** can stay as **engine / research** backlog or roll into **#15** when scheduled.
+- **Complexity / priority:** **Medium** — mostly **UI + packaging + export**, bounded if v1 stays **short** and **single-line or minimal staff count**. **Ranks after** **Overall roadmap priorities** **Tiers A–C** (songwriter slices, Generate UI, lead-sheet→ensemble) in **product attention**, but is **Tier D** — the **clear first** among the two etude tools. **Relates to** pick list **#10** (pattern lines) — this row is the **user-facing product** expression; **#10** can stay as **engine / research** backlog or roll into **#15** when scheduled.
 
 **16 — Wyble Etudes (standalone) — *ranked second* (lower priority than Slonimsky Etudes)**
 
@@ -546,9 +624,11 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ### Next best development (top 3 options — refreshed 2026-04-28)
 
-1. **Ship more Song Mode songwriter profiles (golden-path slices)** — Add or deepen **primary writer** behaviour using the **Songwriter profiles — priority 1** pattern above; pair each slice with **smoke** + **manifest receipts** + optional **eval** script row.
-2. **Generate UI: writer & style discoverability** — Make **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** easy to find so new profiles are testable without API-only workflows (**priority stack** item 2).
-3. **Lead-sheet import stages 6–7 + ensemble chart-in** — Extend **MusicXML harmony import** rollout (`importHarmonyPolicy`, blend modes) toward **String Quartet / Big Band** handoff when **`LeadSheet`** realisers land (**Lead-sheet MusicXML import** below).
+**Maps to Overall roadmap priorities Tier A → Tier C** (see **§ Overall roadmap priorities (2026-05-01)** above).
+
+1. **Ship more Song Mode songwriter profiles (golden-path slices)** — **Tier A.** Add or deepen **primary writer** behaviour using the **Songwriter profiles — priority 1** pattern above; pair each slice with **smoke** + **manifest receipts** + optional **eval** script row. **Concrete diversity queue:** **§ Top 10 Song Mode songwriter targets**.
+2. **Generate UI: writer & style discoverability** — **Tier B.** Make **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** easy to find so new profiles are testable without API-only workflows.
+3. **Lead-sheet import stages 6–7 + ensemble chart-in** — **Tier C.** Extend **MusicXML harmony import** rollout (`importHarmonyPolicy`, blend modes) toward **String Quartet / Big Band** handoff when **`LeadSheet`** realisers land (**Lead-sheet MusicXML import** below).
 
 *Near alternates:* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass.
 
@@ -618,7 +698,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ### Near term (high leverage)
 
-1. **Song Mode — more songwriter profiles + UI discovery:** Ship **additional primary-writer slices** (see **Future → Songwriter profiles — priority 1**) and expose **songwriter / arranger / overlay / styleStack / diversity presets** in Generate so profiles are **discoverable and A/B-able**. **D2** receipt path — **done**; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
+1. **Song Mode — more songwriter profiles + UI discovery:** **Tiers A + B** — ship **additional primary-writer slices** (see **Future → Overall roadmap priorities** · **Songwriter profiles — priority 1** · **Top 10 Song Mode songwriter targets**) and expose **songwriter / arranger / overlay / styleStack / diversity presets** in Generate so profiles are **discoverable and A/B-able**. **D2** receipt path — **done**; **vocal lead sheet** packaged path **VERIFIED (2026-04-17)** — see [CHANGELOG.md](CHANGELOG.md).
 2. ~~**Wayne Shorter “engine integration” (product meaning)**~~ **COMPLETE (2026-04-27)** — contextual harmony + motif binding + fingerprint/nudge upgrades + **rhythmic return duration snap** shipped; optional UI surfacing / Python bridge remains future. Duo golden-path **Phrase Engine Stage 4** shipped **2026-04-28**; shared **Phrase Engine Stage 1** neutral abstraction remains complementary.
 3. ~~**Big Band + String Quartet polish**~~ **COMPLETE** (2026-04-15) — Double Bass MusicXML export, **`big_band_blues12`** 42-bar form (UI + API validation), verify 14/14, SQ honestNote; further rehearsal copy / host smoke tests remain optional follow-ups.
 4. **Wyble parity + quality** — full single-line stack alignment; expressive/rhetorical refinement (rhythm, phrasing, lower voice). **Do this before** ensemble Wyble work below. **2026-04-28:** B-category **`isGuitarBassDuoFamily`** sweep **complete**; optional extra **`test:duo`** seeds.
@@ -626,7 +706,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ### Medium term
 
-- **Standalone study tools (#15 / #16)** — **Slonimsky Etudes** before **Wyble Etudes**; both outside Generate; see **Future → Standalone study tools — Slonimsky Etudes & Wyble Etudes**.
+- **Standalone study tools (#15 / #16)** — **Overall roadmap Tier D** — **Slonimsky Etudes** before **Wyble Etudes**; both outside Generate; see **Future → Standalone study tools — Slonimsky Etudes & Wyble Etudes**.
 - **ECM Chamber — Arrangement & Orchestration depth** — register separation, sparser bass vs guitar, silence/space enforcement; shares ideas with sectional Big Band work. (See **ECM Chamber — Arrangement & Orchestration depth** section below.)
 - **Big Band — V1 / V1.5 shipped (2026-04-20):** arranging scaffold in `bigBandPatterns.ts` + `bigBandScoreBuilder.ts` — deterministic **8-bar** sax soli **17–24** (when `totalBars >= 24`), brass tacet in-window, cadence punches + late shout fragment; **`npm run test:big-band-arranging`**.
 - **Big Band V2 (shipped 2026-04-20):** theme-anchored **soli** (head lead + root contour) and **shout** lift; **drum** tiering (stronger on ensemble-hit bars, lighter timekeeping off hits); tests + **`eval:big-band-chart`**. **Future polish:** sectional counterpoint and further drum/section colour beyond this pass.

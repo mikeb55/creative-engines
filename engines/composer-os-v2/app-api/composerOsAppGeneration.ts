@@ -45,6 +45,7 @@ import { mapAppStyleStackToEngine } from './mapStyleStack';
 import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
 import { resolveFormSections, type FormId } from '../core/form/formPlanner';
 import {
+  lockedHarmonyChordSymbolsEquivalent,
   normalizeChordProgressionSeparators,
   normalizeChordToken,
   parseChordProgressionInputWithBarCount,
@@ -550,6 +551,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
 
 const SONGWRITER_DISPLAY_TITLE_MAP: Record<string, string> = {
   donald_fagen: 'Donald Fagen',
+  frank_zappa: 'Frank Zappa',
   wayne_shorter: 'Wayne Shorter',
   bill_evans: 'Bill Evans',
   thelonious_monk: 'Thelonious Monk',
@@ -926,6 +928,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(indieDualGuitarTuningProofFixtureRequested(req)
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
+    ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'frank_zappa'
+      ? {
+          zappaSoloMidiLow: req.zappaSoloMidiLow,
+          zappaSoloMidiHigh: req.zappaSoloMidiHigh,
+          zappaSoloDensity: req.zappaSoloDensity,
+          zappaSoloDissonance: req.zappaSoloDissonance,
+          ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+        }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1043,6 +1054,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
   const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
+  const fzLockedTruth = mdLockedTruth?.frankZappaEffectiveHarmonyBars;
+  const fzHcTruth = gp.context.harmonyContext;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -1164,26 +1177,66 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                               lockedHarmonyBarsAuthoritative &&
                                               cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                             ? cpLockedTruth
-                                            : lockedHarmonyBarsAuthoritative;
+                                            : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
+                                                fzHcTruth &&
+                                                fzHcTruth.bars.length === tbLockedTruth &&
+                                                lockedHarmonyBarsAuthoritative &&
+                                                fzHcTruth.bars.length === lockedHarmonyBarsAuthoritative.length
+                                              ? [...fzHcTruth.bars]
+                                              : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
+                                                  Array.isArray(fzLockedTruth) &&
+                                                  fzLockedTruth.length === tbLockedTruth &&
+                                                  lockedHarmonyBarsAuthoritative &&
+                                                  fzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                ? fzLockedTruth
+                                                : lockedHarmonyBarsAuthoritative;
 
-  if (
+  /** Compare score/XML only when Song Mode actually ran `custom_locked` (engine metadata), not when local parse arrays exist without lock wiring. */
+  const songModeHarmonyLockAssertionsActive =
+    mdLockedTruth.customHarmonyLocked === true &&
     lockedHarmonyBarsAuthoritative &&
     lockedHarmonyBarsAuthoritative.length >= 8 &&
-    !indieDualGuitarTuningProofFixtureRequested(req)
-  ) {
+    lockedHarmonyBarsAuthoritative.length === tbLockedTruth &&
+    gp.context.lockedHarmonyBarsRaw &&
+    gp.context.lockedHarmonyBarsRaw.length === tbLockedTruth &&
+    !indieDualGuitarTuningProofFixtureRequested(req);
+
+  if (songModeHarmonyLockAssertionsActive) {
     try {
+      if (process.env.COMPOSER_OS_HARMONY_LOCK_COMPARE_DEBUG === '1') {
+        console.log(
+          '[SONG_MODE_HARMONY_LOCK_UPSTREAM]',
+          JSON.stringify(
+            {
+              songwriterStyleId: mdLockedTruth.songwriterStyleId,
+              lockedHarmonyBarsAuthoritative_from_runSongStructure:
+                lockedHarmonyBarsAuthoritative ?? null,
+              context_lockedHarmonyBarsRaw_same_as_options_wire:
+                gp.context.lockedHarmonyBarsRaw ?? null,
+              frankZappaEffectiveHarmonyBars_slice_post_compute:
+                mdLockedTruth?.frankZappaEffectiveHarmonyBars ?? null,
+              harmonyBarsForLockedAssertions_used_for_expected_side:
+                harmonyBarsForLockedAssertions ?? null,
+              note:
+                'When primarySongwriterStyle is frank_zappa and fz effective bars exist, expected side uses frankZappaEffectiveHarmonyBars (see composerOsAppGeneration ternary). Score measures often come from getChordForBar → lockedHarmonyBarsRaw until fz is wired as authoritative in harmonyResolution.',
+            },
+            null,
+            0
+          )
+        );
+      }
       if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
         for (let b = 1; b <= 4; b++) {
           const got = getChordForBar(b, gp.context);
           const exp = harmonyBarsForLockedAssertions![b - 1]!;
-          if (normalizeChordToken(got) !== normalizeChordToken(exp)) {
+          if (!lockedHarmonyChordSymbolsEquivalent(got, exp)) {
             throw new Error(
               `DESKTOP SONG MODE HARMONY: bar ${b} resolved "${got}" !== pasted "${exp}" (authority check bars 1–4)`
             );
           }
         }
       }
-      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, harmonyBarsForLockedAssertions!);
+      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, harmonyBarsForLockedAssertions!, gp.context);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return {
@@ -1238,6 +1291,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const syDisk = mdDisk?.sonicYouthEffectiveHarmonyBars;
     const pmDisk = mdDisk?.patMethenyEffectiveHarmonyBars;
     const wsDisk = mdDisk?.wayneShorterEffectiveHarmonyBars;
+    const fzDisk = mdDisk?.frankZappaEffectiveHarmonyBars;
     const bhDisk = mdDisk?.barryHarrisEffectiveHarmonyBars;
     const baDisk = mdDisk?.bacharachEffectiveHarmonyBars;
     const dfDisk = mdDisk?.donaldFagenEffectiveHarmonyBars;
@@ -1322,7 +1376,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                   locked &&
                                   beDisk.length === locked.length
                                 ? beDisk
-                                : locked;
+                                : mdDisk?.songwriterStyleId === 'frank_zappa' &&
+                                    Array.isArray(fzDisk) &&
+                                    fzDisk.length === gp.context.form.totalBars &&
+                                    locked &&
+                                    fzDisk.length === locked.length
+                                  ? fzDisk
+                                  : locked;
     if (
       barsForDiskHarmonyTruth &&
       barsForDiskHarmonyTruth.length === gp.context.form.totalBars &&
@@ -1477,6 +1537,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       andrewHillSliceReceipt: gp.context.generationMetadata.andrewHillSliceReceipt,
       andrewHillEffectiveHarmonyBars: gp.context.generationMetadata.andrewHillEffectiveHarmonyBars,
       andrewHillAntiElaborationGuards: gp.context.generationMetadata.andrewHillAntiElaborationGuards,
+      frankZappaDiagnostics: gp.context.generationMetadata.frankZappaDiagnostics,
+      frankZappaDeviceReceipts: gp.context.generationMetadata.frankZappaDeviceReceipts,
+      frankZappaSliceReceipt: gp.context.generationMetadata.frankZappaSliceReceipt,
+      frankZappaEffectiveHarmonyBars: gp.context.generationMetadata.frankZappaEffectiveHarmonyBars,
+      frankZappaAntiElaborationGuards: gp.context.generationMetadata.frankZappaAntiElaborationGuards,
+      frankZappaEligibilityStats: gp.context.generationMetadata.frankZappaEligibilityStats,
       songModeFagenKeysCompV15Applied: gp.context.generationMetadata.songModeFagenKeysCompV15Applied,
       fagenKeysCompMusicalDiagnostics: gp.context.generationMetadata.fagenKeysCompMusicalDiagnostics,
       sophisticatedPopHarmonyDiagnostics: gp.context.generationMetadata.sophisticatedPopHarmonyDiagnostics,
