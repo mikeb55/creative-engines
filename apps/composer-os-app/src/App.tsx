@@ -3,10 +3,11 @@ import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
+import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
 
-type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'guide';
+type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'slonimsky-etudes' | 'guide';
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
@@ -428,6 +429,13 @@ export default function App() {
             Composer Engines
           </button>
           <button
+            className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
+            onClick={() => setTab('slonimsky-etudes')}
+            type="button"
+          >
+            Slonimsky Etudes
+          </button>
+          <button
             className={tab === 'guide' ? '' : 'secondary'}
             onClick={() => setTab('guide')}
             type="button"
@@ -446,6 +454,7 @@ export default function App() {
       {tab === 'composer-engines' && (
         <ComposerEngines />
       )}
+      {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
       {tab === 'guide' && <UserGuide />}
     </div>
   );
