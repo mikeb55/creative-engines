@@ -167,6 +167,13 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
   } as NonNullable<GenerateResult['requestEcho']>;
 }
 
+/** Big band / string quartet Slonimsky: prefer style-pairing songwriter, then Song Mode primary. */
+function ensembleSlonimskySongwriterIdFromRequest(req: GenerateRequest): string | undefined {
+  const fromPairing = req.stylePairing?.songwriterStyle?.trim();
+  const fromPrimary = req.primarySongwriterStyle?.trim();
+  return fromPairing || fromPrimary || undefined;
+}
+
 function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {
   return input === 'lock_harmony' || input === 'blend_harmony' || input === 'free_harmony' ? input : 'free_harmony';
 }
@@ -1443,6 +1450,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `Big Band Plan ${req.seed}`;
+  const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const eraFromPairing = parseBigBandEraFromPairing(req.stylePairing?.era);
   const chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
@@ -1488,6 +1496,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
+    ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
@@ -1582,6 +1591,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `String Quartet Plan ${req.seed}`;
+  const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
       ? req.chordProgressionText.trim()
@@ -1602,6 +1612,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       ? { era: parseBigBandEraFromPairing(req.stylePairing?.era) }
       : {}),
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
+    ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {

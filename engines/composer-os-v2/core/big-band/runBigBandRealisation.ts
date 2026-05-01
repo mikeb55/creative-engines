@@ -62,6 +62,9 @@ export function runBigBandRealisation(
     wybleVoiceLayout: wybleLayout,
     orchestrationPlan: planning.orchestrationPlan,
     enhancedPlanning: planning.enhancedPlanning,
+    ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
+      ? { songwriterStyleId: input.songwriterStyleId.trim() }
+      : {}),
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

@@ -14,6 +14,8 @@ import {
   inferSlonimskyChordTypeCategory,
   mapDuoPhraseIntentToSlonimskyContext,
   selectSlonimskyPattern,
+  SLONIMSKY_STYLE_PROFILE_MAP,
+  type SlonimskyStyleProfileSpec,
 } from './slonimskyEngine';
 import { ENGINE_PATTERN_THESAURUS_MAP, getEnginePatternsForIntent, SLONIMSKY_ENGINE_PATTERNS } from './thesaurusRegistry';
 import type { ThesaurusSectionKey } from './thesaurusRegistry';
@@ -106,6 +108,53 @@ function liftIntoRange(pitch: number, low: number, high: number): number {
   return Math.max(low, Math.min(high, p));
 }
 
+/**
+ * When canonical songwriter ids differ from {@link SLONIMSKY_STYLE_PROFILE_MAP} keys
+ * (e.g. `antonio_carlos_jobim` → **JOBIM**).
+ */
+const SLONIMSKY_STYLE_PROFILE_MAP_KEY_BY_SONGWRITER_ID: Record<string, string> = {
+  antonio_carlos_jobim: 'JOBIM',
+};
+
+function resolveSlonimskyStyleProfileForSongwriterId(
+  songwriterId: string | undefined
+): SlonimskyStyleProfileSpec | undefined {
+  if (!songwriterId?.trim()) return undefined;
+  const t = songwriterId.trim();
+  const alias = SLONIMSKY_STYLE_PROFILE_MAP_KEY_BY_SONGWRITER_ID[t];
+  if (alias && SLONIMSKY_STYLE_PROFILE_MAP[alias]) {
+    return SLONIMSKY_STYLE_PROFILE_MAP[alias];
+  }
+  const upper = t.toUpperCase();
+  const row = SLONIMSKY_STYLE_PROFILE_MAP[upper];
+  return row;
+}
+
+function mergeEnsembleParamsWithSlonimskyStyleProfile(params: SlonimskyContextParams): SlonimskyContextParams {
+  const spec = resolveSlonimskyStyleProfileForSongwriterId(params.songwriterId);
+  if (!spec) return params;
+
+  let catalogueSection = params.catalogueSection;
+  let transpositionInterval = params.transpositionInterval;
+  let maxInfraSteps = params.maxInfraSteps;
+  let maxUltraSteps = params.maxUltraSteps;
+
+  if (spec.catalogueSection) catalogueSection = spec.catalogueSection;
+  if (params.transpositionInterval === undefined && spec.transpositionInterval !== undefined) {
+    transpositionInterval = spec.transpositionInterval;
+  }
+  if (spec.maxInfraSteps !== undefined) maxInfraSteps = spec.maxInfraSteps;
+  if (spec.maxUltraSteps !== undefined) maxUltraSteps = spec.maxUltraSteps;
+
+  return {
+    ...params,
+    catalogueSection,
+    transpositionInterval,
+    maxInfraSteps,
+    maxUltraSteps,
+  };
+}
+
 function resolveAllowedOutsideLevelForSlonimsky(songwriterId: string | undefined): 0 | 1 | 2 {
   if (songwriterId === 'wayne_shorter' || songwriterId === 'barry_harris') return 2;
   if (songwriterId === 'ecm_chamber' || songwriterId === 'pat_metheny') return 1;
@@ -188,44 +237,45 @@ function buildEnsembleBarSlonimskyContext(
   params: SlonimskyContextParams,
   defaults: { styleProfile: string; weights: SlonimskyIntentWeights }
 ): SlonimskyContext {
-  const styleProfile = params.styleProfile ?? defaults.styleProfile;
-  const chordForBar = resolveChordSymbolForEnsembleBar(params);
+  const merged = mergeEnsembleParamsWithSlonimskyStyleProfile(params);
+  const styleProfile = merged.styleProfile ?? defaults.styleProfile;
+  const chordForBar = resolveChordSymbolForEnsembleBar(merged);
   const inferred = inferSlonimskyChordTypeCategory(chordForBar);
-  const phraseIntent = params.phraseIntent ?? weightedIntent(params.seed, defaults.weights);
+  const phraseIntent = merged.phraseIntent ?? weightedIntent(merged.seed, defaults.weights);
 
-  const sectionPatterns = getPatternsBySection(params.catalogueSection as ThesaurusSection);
+  const sectionPatterns = getPatternsBySection(merged.catalogueSection as ThesaurusSection);
   selectPatternForIntent({
-    seed: params.seed,
+    seed: merged.seed,
     sectionPatterns,
     phraseIntent,
     styleProfile: styleProfile ?? undefined,
     chordType: inferred,
     functionalStrength: 'medium',
-    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(params.songwriterId),
+    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(merged.songwriterId),
   });
 
   const base: SlonimskyContext = {
-    keyPc: params.keyPc,
+    keyPc: merged.keyPc,
     chordType: inferred,
     functionalStrength: 'medium',
-    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(params.songwriterId),
+    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(merged.songwriterId),
     phraseIntent,
     basePitch: 62,
-    maxBeats: Math.max(4, params.totalQuarterBeats),
+    maxBeats: Math.max(4, merged.totalQuarterBeats),
     styleProfile: styleProfile ?? undefined,
     chordSymbol: chordForBar,
-    effectiveLow: params.effectiveLow,
-    effectiveHigh: params.effectiveHigh,
+    effectiveLow: merged.effectiveLow,
+    effectiveHigh: merged.effectiveHigh,
   };
   const t = chordTonesForChordSymbol(chordForBar);
-  const third = liftIntoRange(t.third, params.effectiveLow, params.effectiveHigh);
+  const third = liftIntoRange(t.third, merged.effectiveLow, merged.effectiveHigh);
   return {
     ...base,
     basePitch: third,
     maxBeats: 4,
-    ...(params.transpositionInterval !== undefined ? { transpositionInterval: params.transpositionInterval } : {}),
-    ...(params.maxInfraSteps !== undefined ? { maxInfraSteps: params.maxInfraSteps } : {}),
-    ...(params.maxUltraSteps !== undefined ? { maxUltraSteps: params.maxUltraSteps } : {}),
+    ...(merged.transpositionInterval !== undefined ? { transpositionInterval: merged.transpositionInterval } : {}),
+    ...(merged.maxInfraSteps !== undefined ? { maxInfraSteps: merged.maxInfraSteps } : {}),
+    ...(merged.maxUltraSteps !== undefined ? { maxUltraSteps: merged.maxUltraSteps } : {}),
   };
 }
 

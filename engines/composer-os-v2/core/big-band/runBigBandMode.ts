@@ -55,6 +55,8 @@ export interface BigBandRunInput {
   customEnsembleMask?: Omit<BigBandEnsembleSectionMask, 'rhythm_section'> | null;
   /** Optional `|`-separated chords — used by realisation / score only; ignored by planning. */
   chordProgressionText?: string;
+  /** Songwriter id from Generate (e.g. `radiohead`) — Slonimsky catalogue bias in score realisation only. */
+  songwriterStyleId?: string;
   /**
    * Named big-band form preset (e.g. `big_band_blues12` → 42-bar blues chart). Omitted → default weighted form.
    * Distinct from Generate UI `blues12` (12-bar duo/song option) in the app `formOptions` list.

@@ -62,6 +62,9 @@ export function runQuartetRealisation(
     era: input.era,
     chordBars,
     wybleVoiceLayout: wybleLayout,
+    ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
+      ? { songwriterStyleId: input.songwriterStyleId.trim() }
+      : {}),
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

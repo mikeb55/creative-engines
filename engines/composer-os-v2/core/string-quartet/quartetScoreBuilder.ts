@@ -253,6 +253,8 @@ export interface BuildQuartetScoreModelInput {
    * are cross-assigned from the default per-part stack (see `quartetWybleChordToneStack`).
    */
   wybleVoiceLayout?: EnsembleWybleRoleMap;
+  /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
+  songwriterStyleId?: string;
 }
 
 function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): void {
@@ -293,7 +295,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   const USE_PIANO_COMP_SQ = true;
   const USE_SLONIMSKY_SQ = true;
   const USE_RETURN_OCTAVE_LIFT = true;
-  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout } = input;
+  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout, songwriterStyleId } =
+    input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -355,7 +358,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: undefined,
+          songwriterId: songwriterStyleId,
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,
@@ -390,7 +393,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: undefined,
+          songwriterId: songwriterStyleId,
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,

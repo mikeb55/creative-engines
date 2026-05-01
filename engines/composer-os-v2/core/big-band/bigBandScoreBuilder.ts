@@ -491,6 +491,8 @@ export interface BuildBigBandScoreModelInput {
   orchestrationPlan?: OrchestrationPlan;
   /** When set, per-slice behaviour such as `spaceEmphasis` can shape wind rhythm (see `USE_SPACE_EMPHASIS`). */
   enhancedPlanning?: BigBandEnhancedPlanning;
+  /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
+  songwriterStyleId?: string;
 }
 
 function addWindOrBassNotes(
@@ -567,8 +569,18 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   const USE_SLONIMSKY_BB = true;
   const USE_SPACE_EMPHASIS = true;
   const USE_SHOUT_REGISTER_LIFT = true;
-  const { title, seed, formPlan, sectionPlan, chordBars, era, padSketch, wybleVoiceLayout, enhancedPlanning } =
-    input;
+  const {
+    title,
+    seed,
+    formPlan,
+    sectionPlan,
+    chordBars,
+    era,
+    padSketch,
+    wybleVoiceLayout,
+    enhancedPlanning,
+    songwriterStyleId,
+  } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -678,7 +690,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: undefined,
+          songwriterId: songwriterStyleId,
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,
@@ -713,7 +725,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: undefined,
+          songwriterId: songwriterStyleId,
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,

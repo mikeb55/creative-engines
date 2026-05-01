@@ -27,6 +27,8 @@ export interface StringQuartetRunInput {
   totalBars?: number;
   /** Optional `|`-separated chords — used by realisation / score only; ignored by planning. */
   chordProgressionText?: string;
+  /** Songwriter id from Generate (e.g. `donald_fagen`) — Slonimsky catalogue bias in score realisation only. */
+  songwriterStyleId?: string;
 }
 
 export interface StringQuartetRunManifestHints {
