@@ -58,6 +58,7 @@ import {
   applyBrianWilsonGuitarBarPasses,
   createBrianWilsonHarmonyAccumulator,
   finalizeBrianWilsonPetSoundsMetadata,
+  inferTonicPitchClassFromBar1,
   precomputeBrianWilsonEffectiveHarmonyBars,
 } from './brianWilsonPetSoundsSlice';
 import {
@@ -171,6 +172,12 @@ import {
   finalizeAndrewHillMetadata,
   precomputeAndrewHillEffectiveHarmonyBars,
 } from './andrewHillSlice';
+import {
+  accumulateCharlieParkerHarmonyDiagnostics,
+  createCharlieParkerHarmonyAccumulator,
+  finalizeCharlieParkerMetadata,
+  precomputeCharlieParkerEffectiveHarmonyBars,
+} from './charlieParkerSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -202,6 +209,7 @@ import {
   emitGuitarDuoIdentityBar7,
   emitGuitarPhraseBar,
   getDuoPhraseIntent,
+  applyTuningVoicingMapToChordTones,
   guitarChordTonesInRange,
   liftToneToRange,
   resolvePhraseEndForDuo,
@@ -255,8 +263,15 @@ import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
-import { formatAlternateGuitarTuningExportLine } from '../song-mode/alternateGuitarTunings';
-import { applySlonimskyToMelodyLine, SlonimskyContext, SlonimskyNote } from '../slonimsky/slonimskyEngine';
+import { formatAlternateGuitarTuningExportLine, styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
+import { buildResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
+import {
+  applySlonimskyToMelodyLine,
+  buildDuoBarSlonimskyContext,
+  mapDuoPhraseIntentToSlonimskyContext,
+  type SlonimskyContext,
+  type SlonimskyNote,
+} from '../slonimsky/slonimskyEngine';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
 import {
@@ -295,14 +310,40 @@ const DUO_DEFAULT_STYLE_STACK: StyleStack = {
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
+/** Optional alternate-tuning voicing map on top of `guitarChordTonesInRange` (pilot: `new_standard` only in registry). */
+function duoChordTonesWithOptionalTuningMap(
+  chord: string,
+  low: number,
+  high: number,
+  context: CompositionContext,
+  bar: number,
+  partRole: 'guitar' | 'guitar_2',
+  chordToneOpts: ChordTonesOptions | undefined,
+  salt: number
+) {
+  const base = guitarChordTonesInRange(chord, low, high, chordToneOpts);
+  const voicingCtx = buildResolvedTuningVoicingContext(context.generationMetadata?.alternateGuitarTuning, partRole);
+  return applyTuningVoicingMapToChordTones(base, chord, low, high, voicingCtx, context.seed, bar, salt);
+}
+
+/** Indie route name is historical; eligibility matches `styleProfileSupportsAlternateGuitarTuning` / `runGoldenPath` `isIndieArtPopDualGuitarRoute`. */
 function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
   const sp = normalizeStyleProfileId(context.generationMetadata?.styleProfile);
   return (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    sp === 'STYLE_INDIE_ART_POP' &&
+    styleProfileSupportsAlternateGuitarTuning(sp) &&
     context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
   );
+}
+
+/** Inline Slonimsky bar fill only when alternate-tuning metadata is actually active (not merely ECM-style profile). */
+function isAlternateGuitarTuningPilotActive(gen: GenerationMetadata | undefined): boolean {
+  const t = gen?.alternateGuitarTuning;
+  if (!t) return false;
+  if (t.mode === 'separate') return true;
+  if (t.mode === 'shared' && t.shared?.presetId !== undefined && t.shared.presetId !== 'standard') return true;
+  return false;
 }
 
 /** Time / voice / pitch ordering so same-beat voice-2 chord stacks sit adjacent for MusicXML `<chord/>` grouping. */
@@ -521,7 +562,16 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
     : undefined;
   for (const m of part.measures) {
     const chord = m.chord ?? getChordForBar(m.index, context);
-    const tones = guitarChordTonesInRange(chord, Math.max(low + 7, 47), high, chordToneOpts);
+    const tones = duoChordTonesWithOptionalTuningMap(
+      chord,
+      Math.max(low + 7, 47),
+      high,
+      context,
+      m.index,
+      'guitar_2',
+      chordToneOpts,
+      77130
+    );
     const voice1Anchors = m.events
       .filter((e): e is NoteEvent => e.kind === 'note')
       .filter((e) => (e.voice ?? 1) === 1)
@@ -632,11 +682,24 @@ function applyVoiceRole(
   context: CompositionContext,
   barNumber: number,
   role: DuoElectricVoiceRole,
-  chordBias: number
+  chordBias: number,
+  voicingPartRole: 'guitar' | 'guitar_2'
 ): ScoreEvent[] {
   const low = 40;
   const high = 76;
-  const tones = guitarChordTonesInRange(chordLabel, Math.max(low + 7, 47), high);
+  const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+    ? { lockedHarmony: true }
+    : undefined;
+  const tones = duoChordTonesWithOptionalTuningMap(
+    chordLabel,
+    Math.max(low + 7, 47),
+    high,
+    context,
+    barNumber,
+    voicingPartRole,
+    chordToneOpts,
+    64500
+  );
   const occupiedV2Starts = new Set(
     events
       .filter((e) => (e.kind === 'note' || e.kind === 'chord') && (e.voice ?? 1) === 2)
@@ -694,7 +757,15 @@ function applyVoiceRoleFromPartSpec(part: PartModel, context: CompositionContext
     ) {
       continue;
     }
-    m.events = applyVoiceRole(m.events, chord, context, m.index, role, bias);
+    m.events = applyVoiceRole(
+      m.events,
+      chord,
+      context,
+      m.index,
+      role,
+      bias,
+      part.id === 'guitar_2' ? 'guitar_2' : 'guitar'
+    );
   }
   return part;
 }
@@ -2066,6 +2137,7 @@ function buildGuitarPart(
   const isSongwriterKateBush = genMeta?.songwriterStyleId === 'kate_bush';
   const isSongwriterTheloniousMonk = genMeta?.songwriterStyleId === 'thelonious_monk';
   const isSongwriterAndrewHill = genMeta?.songwriterStyleId === 'andrew_hill';
+  const isSongwriterCharlieParker = genMeta?.songwriterStyleId === 'charlie_parker';
   const fagenAlteredDominantBiasR =
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
   const fagenRootAvoidanceMelodyR =
@@ -2114,6 +2186,7 @@ function buildGuitarPart(
   const kbAccum = createKateBushHarmonyAccumulator();
   const tmAccum = createTheloniousMonkHarmonyAccumulator();
   const ahAccum = createAndrewHillHarmonyAccumulator();
+  const cpAccum = createCharlieParkerHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -2171,6 +2244,9 @@ function buildGuitarPart(
   }
   if (isSongwriterAndrewHill && isDuoGoldenPath) {
     precomputeAndrewHillEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterCharlieParker && isDuoGoldenPath) {
+    precomputeCharlieParkerEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;
@@ -2394,6 +2470,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         ahAccum
+      );
+    }
+    if (isSongwriterCharlieParker) {
+      accumulateCharlieParkerHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        cpAccum
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
@@ -2620,7 +2703,16 @@ function buildGuitarPart(
       } else if (cursor < 4 - 1e-4) {
         const tail = 4 - cursor;
         const chord = getChordForBar(b, context);
-        const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
+        const tones = duoChordTonesWithOptionalTuningMap(
+          chord,
+          effectiveLow,
+          effectiveHigh,
+          context,
+          b,
+          'guitar',
+          chordToneOpts,
+          26410
+        );
         const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
         /** Voice 1: rest through bar end; phrase-resolution tail on voice 2 (Wyble counter-line). */
         addEvent(m, createRest(cursor, tail, 1));
@@ -2726,6 +2818,28 @@ function buildGuitarPart(
           densityLevel = d < 0.42 ? 'sparse' : d < 0.68 ? 'medium' : 'dense';
         }
 
+        let slonimskyBarCtx: SlonimskyContext | undefined;
+        if (
+          isDuoGolden &&
+          isAlternateGuitarTuningPilotActive(genMeta) &&
+          styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(genMeta?.styleProfile))
+        ) {
+          const chordStr = getChordForBar(b, context);
+          const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
+          slonimskyBarCtx = buildDuoBarSlonimskyContext({
+            duoIntent: phraseIntent,
+            phase,
+            seed,
+            songwriterId: genMeta?.songwriterStyleId as string | undefined,
+            totalQuarterBeats: tb * 4,
+            styleProfile: normalizeStyleProfileId(genMeta?.styleProfile),
+            chordSymbol: chordStr,
+            keyPc,
+            effectiveLow,
+            effectiveHigh,
+          });
+        }
+
         emitGuitarPhraseBar({
           m,
           bar: phraseShapeBar,
@@ -2743,6 +2857,7 @@ function buildGuitarPart(
           swingDuo: isDuoGolden,
           chordToneOpts,
           triadPairs: stackIds.includes('triad_pairs'),
+          slonimskyCtx: slonimskyBarCtx,
         });
       }
     }
@@ -2899,6 +3014,10 @@ function buildGuitarPart(
 
   if (isSongwriterAndrewHill && context.generationMetadata) {
     finalizeAndrewHillMetadata(context.generationMetadata, ahAccum);
+  }
+
+  if (isSongwriterCharlieParker && context.generationMetadata) {
+    finalizeCharlieParkerMetadata(context.generationMetadata, cpAccum);
   }
 
   return {
@@ -4528,7 +4647,31 @@ export function generateGoldenPathDuoScore(
         phraseIntent: 'build',
         basePitch: 62,
         maxBeats: 2,
+        skipInterpolation: true,
       };
+      const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
+      const chords = context.lockedHarmonyBarsRaw ?? [];
+      const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
+      applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
+    } else if (
+      styleProfileSupportsAlternateGuitarTuning(
+        normalizeStyleProfileId(context.generationMetadata?.styleProfile)
+      ) &&
+      isGuitarBassDuoFamily(context.presetId) &&
+      context.generationMetadata
+    ) {
+      const refBar = Math.min(8, Math.max(1, tb));
+      const duoIntent = duoGoldenPathPhraseIntentAtBar(context.seed, refBar);
+      const phase = ((refBar - 1) % 8) + 1;
+      const slonimskyCtx = mapDuoPhraseIntentToSlonimskyContext({
+        duoIntent,
+        phase,
+        seed: context.seed,
+        songwriterId: context.generationMetadata.songwriterStyleId,
+        totalQuarterBeats: tb * 4,
+        styleProfile: normalizeStyleProfileId(context.generationMetadata?.styleProfile),
+        keyPc: inferTonicPitchClassFromBar1(context) ?? 0,
+      });
       const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
       const chords = context.lockedHarmonyBarsRaw ?? [];
       const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
@@ -4969,7 +5112,7 @@ export function generateGoldenPathDuoScore(
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    normalizeStyleProfileId(context.generationMetadata.styleProfile ?? 'STYLE_ECM') === 'STYLE_INDIE_ART_POP'
+    styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(context.generationMetadata.styleProfile))
   ) {
     applyIndieArtPopPhaseADeepening(afterExpressive, context, plans.sections);
   }

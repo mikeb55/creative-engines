@@ -1,7 +1,14 @@
 /**
- * Song Mode — STYLE_INDIE_ART_POP Phase A deepening (texture / roles / phrase edges only).
+ * Song Mode — Phase A deepening (texture / roles / phrase edges only).
  * Runs after Song Mode space pass (C7), before melodic continuity / finalize.
  * Does not alter harmony, chord symbols, or MusicXML import paths.
+ *
+ * Eligibility (Option A): `styleProfileSupportsAlternateGuitarTuning` — same profile allowlist as
+ * `STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING` / `runGoldenPath` alternate-tuning policy and duo dual-guitar routing.
+ * Phase A only adjusts velocities / articulations from section roles + `resolveIndieArtPopTuningTexture`; it does not
+ * branch on writer or marketing profile beyond that gate. **STYLE_INDIE_ART_POP** therefore follows the exact same
+ * code path as before when selected; other alt-tuning profiles receive the same pass so Song Mode hook-first scores
+ * stay consistent when users pair ECM Chamber / Joni / Sonic Youth / Metheny with alternate tunings.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
@@ -11,6 +18,7 @@ import { isProtectedBar } from '../score-integrity/identityLock';
 import { appendSongModeStyleSurfaceNotes } from './songModeStyleSurface';
 import {
   resolveIndieArtPopTuningTexture,
+  styleProfileSupportsAlternateGuitarTuning,
   type AlternateGuitarTuningResolved,
   type IndieArtPopTuningTextureKind,
 } from './alternateGuitarTunings';
@@ -49,7 +57,8 @@ export function applyIndieArtPopPhaseADeepening(
   const meta = context.generationMetadata;
   if (!meta?.songModeHookFirstIdentity) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (normalizeStyleProfileId(meta.styleProfile) !== 'STYLE_INDIE_ART_POP') return;
+  const styleProfile = normalizeStyleProfileId(meta.styleProfile);
+  if (!styleProfileSupportsAlternateGuitarTuning(styleProfile)) return;
 
   const tuning = meta.alternateGuitarTuning as AlternateGuitarTuningResolved | undefined;
   const texture: IndieArtPopTuningTextureKind = resolveIndieArtPopTuningTexture(tuning);
@@ -162,7 +171,8 @@ export function applyIndieArtPopPhaseADeepening(
     indieArtPopStringsPlaceholderBars: uniqBars.length ? uniqBars.slice(0, 24) : undefined,
   } as GenerationMetadata;
 
+  const profileLabel = styleProfile ?? 'STYLE_INDIE_ART_POP';
   appendSongModeStyleSurfaceNotes(context.generationMetadata, [
-    `STYLE_INDIE_ART_POP Phase A: sectional contrast + tuning-aware roles (${texture}) + phrase-edge shaping; hook-safe bars unchanged.`,
+    `${profileLabel} Phase A: sectional contrast + tuning-aware roles (${texture}) + phrase-edge shaping; hook-safe bars unchanged.`,
   ]);
 }

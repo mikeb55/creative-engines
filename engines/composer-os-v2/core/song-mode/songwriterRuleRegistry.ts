@@ -521,6 +521,48 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'verse'
     ),
   ],
+  charlie_parker: [
+    R(
+      'parker.ii_v_clarify',
+      'ii–V spelling clarity — clean Xm7 + dominant colour (`cp:ii_v_clarify`)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'parker.tritone_sub',
+      'Isolated dominant tritone substitution (`cp:tritone_sub`)',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'parker.turnaround_compress',
+      'Turnaround tail compression — bVII7 / plain ii (`cp:turnaround_compress`)',
+      'songwriter',
+      'harmony',
+      8,
+      'form'
+    ),
+    R(
+      'parker.bebop_enrich',
+      'maj7(#11) / m9 bebop extensions (`cp:bebop_enrich`)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'parker.bird_enclosure',
+      'Leading-tone slash approach into tonic (`cp:bird_enclosure`)',
+      'songwriter',
+      'harmony',
+      8,
+      'chorus'
+    ),
+  ],
   antonio_carlos_jobim: [
     R('jobim.bossa_extensions', 'Brazilian extended tonic / altered dominant colours (placeholder)', 'songwriter', 'harmony', 9, 'global'),
     R('jobim.descending_bass', 'Descending bass-line grammar (placeholder)', 'songwriter', 'harmony', 8, 'verse'),

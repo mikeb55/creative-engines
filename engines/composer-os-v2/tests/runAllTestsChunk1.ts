@@ -29,6 +29,8 @@ import { runCorrectnessGatesTests } from './correctnessGates.test';
 import { runGceEvaluationTests } from './gceEvaluation.test';
 import { runBassIdentityTests } from './bassIdentity.test';
 import { runPhraseAuthorityTests } from './phraseAuthority.test';
+import { runSlonimskyEngineTests } from './slonimskyEngine.test';
+import { runAlternateGuitarTuningVoicingMapsTests } from './alternateGuitarTuningVoicingMaps.test';
 import { runJazzDuoBehaviourTests } from './jazzDuoBehaviour.test';
 import { runDuoLockQualityTests } from './duoLockQuality.test';
 import { runDuoInteractionV31Tests } from './duoInteractionV31.test';
@@ -66,6 +68,8 @@ const suites: SuiteEntry[] = [
   { name: 'GCE evaluation', run: runGceEvaluationTests },
   { name: 'Bass identity', run: runBassIdentityTests },
   { name: 'Phrase authority', run: runPhraseAuthorityTests },
+  { name: 'Slonimsky pattern engine (V1)', run: runSlonimskyEngineTests },
+  { name: 'Alternate tuning voicing maps (pilot registry)', run: runAlternateGuitarTuningVoicingMapsTests },
   { name: 'Jazz duo behaviour', run: runJazzDuoBehaviourTests },
   { name: 'Duo LOCK quality', run: runDuoLockQualityTests },
   { name: 'Duo interaction V3.1', run: runDuoInteractionV31Tests },

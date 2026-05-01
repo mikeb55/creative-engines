@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [2026-04-29] feat: altered tuning presets — 24 zones, grouped UI, 98/98 smoke
+
+- **feat:** **Altered Guitar Tuning Presets** — **24 roadmap zone presets** across **four zones** (`jazz_sophisticated`, `sonic_youth_noise`, `joni_mitchell`, `hybrid_harmonic`) in **`engines/composer-os-v2/core/song-mode/alternateGuitarTunings.ts`**, plus legacy absorbed ids (`standard`, `drop_d`, `dadgad`, `open_d`, `open_g`, drone clusters, open modals, Joni-style labels, `custom`); **`getPresetsByZone`**, **`ROADMAP_ZONE_TUNING_PRESET_IDS`**, **`styleProfileSupportsAlternateGuitarTuning`**, expanded **`resolveIndieArtPopTuningTexture`** drone/open_modal buckets; new **`StyleProfile`** ids **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**, **`STYLE_ECM_CHAMBER`**.
+- **feat:** **Generate** (`apps/composer-os-app/src/pages/HomeGenerate.tsx`) — zone **`optgroup`** tuning selects; alternate-tuning request assembly for Song Mode when style is Indie / Sonic Youth / Joni / Pat Metheny / ECM Chamber; **`AlternateTuningPresetSelect`**.
+- **feat:** Golden path + API — **`applyIndieArtPopAlternateTuningPolicy`**, dual-guitar route, and correlation logging use **`styleProfileSupportsAlternateGuitarTuning`** (not Indie-only).
+- **test:** **`alternateGuitarTunings.test.ts`** — roadmap preset resolve, zone counts, texture samples; wired into **`runSmokeTests.ts`**.
+- **note:** **Per-tuning voicing maps** (Tonality Vault) remain a **follow-up** workstream; **`docs/COMPOSER_OS_ROADMAP.md`** Altered Tuning section marked **SHIPPED** for preset/UI layer.
+- **Docs:** **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** — smoke **98** PASS rows / **27** suites.
+
+## [2026-04-29] feat: Charlie Parker Song Mode slice — 61/61 smoke
+
+- **feat:** **`charlieParkerSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/charlieParkerSlice.ts`**) — golden-path precompute, **`cp:*`** device receipts (**d1–d5**: ii–V clarify, tritone sub on isolated dominants, turnaround compression, bebop scale enrichment maj7(#11)/m9, Bird enclosure slash), **`charlieParkerEffectiveHarmonyBars`** + **`getChordForBar`**, locked export truth (**`runGoldenPath.ts`** **`barsForLockedExportTruth`**), truth / app manifest wiring; **`charlieParkerSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **61** passed / **0** failed (**26** suites). **20** shipped songwriter slices.
+- **note:** Bebop ii–V–I slice — clean tertian preprocessing, Bird harmonic devices aligned with internal `parker_vocabulary` posture.
+- **Docs:** **`COMPOSER_OS_ROADMAP.md`**, **`CLAUDE.md`** — smoke **61**/0 (**26** suites), **20** shipped slices; **`HomeGenerate.tsx`** Shipped group includes **`charlie_parker`**.
+
 ## [2026-04-29] feat: Andrew Hill Song Mode slice — 58/58 smoke
 
 - **feat:** **`andrewHillSlice.ts`** (`core/song-mode/`, re-export **`goldenPath/andrewHillSlice.ts`**) — golden-path precompute, **`ah:*`** device receipts (**d1–d5**), **`andrewHillEffectiveHarmonyBars`** + **`getChordForBar`**, truth / export / manifest wiring (**`runGoldenPath.ts`** MusicXML locked-truth chain includes **`andrew_hill`**); **`andrewHillSliceSmoke.test.ts`** + **`runSmokeTests.ts`**. **`npm run test:composer-smoke`:** **58** passed / **0** failed (**25** suites). **19** shipped songwriter slices.

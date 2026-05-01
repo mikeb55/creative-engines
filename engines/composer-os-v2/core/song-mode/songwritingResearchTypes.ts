@@ -65,7 +65,8 @@ export type SongwriterRuleId =
   | 'herbie_hancock'
   | 'stephen_sondheim'
   | 'kate_bush'
-  | 'thelonious_monk';
+  | 'thelonious_monk'
+  | 'charlie_parker';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

@@ -623,6 +623,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   let hornStreak = initialHornCloneStreakState();
   /** Rolling 3-bar alto lead windows for {@link applySlonimskyToMelodyLine} (needs ≥3 notes). */
   const slonimskyAltoAcc: number[] = [];
+  /** Rolling 3-bar tenor inner-line windows for {@link applySlonimskyToMelodyLine} (needs ≥3 notes). */
+  const slonimskyTenorAcc: number[] = [];
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
@@ -684,6 +686,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           effectiveLow: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][0]!,
           effectiveHigh: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][1]!,
           catalogueSection: 'intervallic_mirror_permutations',
+          transpositionInterval: bar % 12,
         });
         const mel: SlonimskyNote[] = slonimskyAltoAcc.map((m, i) => ({
           midi: m,
@@ -697,6 +700,40 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         if (sounding.length > 0) {
           const pickMidi = sounding[Math.min(2, sounding.length - 1)]!.midi;
           melodyPitchAlto = snapMidiToRange(pickMidi, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+        }
+      }
+    }
+
+    let melodyPitchTenor = tenorMidi;
+    if (USE_SLONIMSKY_BB && !inDesignatedSaxSoliWindow(bar, totalBars)) {
+      slonimskyTenorAcc.push(tenorMidi);
+      if (slonimskyTenorAcc.length > 3) slonimskyTenorAcc.shift();
+      if (slonimskyTenorAcc.length === 3) {
+        const ctx = buildBigBandSlonimskyContext({
+          duoIntent: 'guitar_lead',
+          phase: ((bar - 1) % 8) + 1,
+          seed: seed + bar * 31,
+          songwriterId: undefined,
+          totalQuarterBeats: 4,
+          styleProfile: null,
+          chordSymbol: sym,
+          keyPc: rpc,
+          effectiveLow: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][0]!,
+          effectiveHigh: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][1]!,
+          catalogueSection: 'tritone_progression',
+        });
+        const mel: SlonimskyNote[] = slonimskyTenorAcc.map((m, i) => ({
+          midi: m,
+          durationBeats: 1,
+          beat: i,
+          role: i === 0 || i === 2 ? 'target' : 'passing',
+        }));
+        const chords3 = [chordForBar(bar - 2), chordForBar(bar - 1), chordForBar(bar)];
+        const out = applySlonimskyToMelodyLine(mel, chords3, ctx, seed + bar * 17);
+        const sounding = out.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
+        if (sounding.length > 0) {
+          const pickMidi = sounding[Math.min(2, sounding.length - 1)]!.midi;
+          melodyPitchTenor = snapMidiToRange(pickMidi, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
         }
       }
     }
@@ -814,7 +851,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
       if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
         let pitch =
-          idx === 0 ? melodyPitchAlto : idx === 1 ? tenorMidi : idx === 2 ? trumpetMidi : boneMidi;
+          idx === 0 ? melodyPitchAlto : idx === 1 ? melodyPitchTenor : idx === 2 ? trumpetMidi : boneMidi;
         if (
           USE_SHOUT_REGISTER_LIFT &&
           idx === 2 &&

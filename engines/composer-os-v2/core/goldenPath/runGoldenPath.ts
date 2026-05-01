@@ -92,6 +92,7 @@ import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
 import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
+import { styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
 import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
@@ -577,6 +578,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     }
     const useLongFormLockedFromBars =
       n === 16 ||
+      n === 24 ||
       n === 32 ||
       (n % 8 === 0 && n >= 40 && n <= 64);
     if (useLongFormLockedFromBars) {
@@ -1009,10 +1011,10 @@ function applyIndieArtPopAlternateTuningPolicy(
     );
     return;
   }
-  if (normalizeStyleProfileId(context.generationMetadata?.styleProfile) !== 'STYLE_INDIE_ART_POP') {
+  if (!styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(context.generationMetadata?.styleProfile))) {
     console.log(
       '[DualTuning] applyIndieArtPopAlternateTuningPolicy skip',
-      JSON.stringify({ reason: 'styleProfile_not_indie', mode: tuning.mode, sp: context.generationMetadata?.styleProfile })
+      JSON.stringify({ reason: 'styleProfile_not_alt_tuning_eligible', mode: tuning.mode, sp: context.generationMetadata?.styleProfile })
     );
     return;
   }
@@ -1050,8 +1052,8 @@ function applyIndieArtPopAlternateTuningPolicy(
     appendSongModeStyleSurfaceNotes(
       context.generationMetadata,
       tuning.mode === 'separate'
-        ? ['Indie Art Pop alt tuning: separate guitar tunings enabled (light drone/register/split-role nudges).']
-        : ['Indie Art Pop alt tuning: shared alternate tuning enabled (light drone/register nudges).']
+        ? ['Alternate guitar tuning: separate guitar tunings enabled (light drone/register/split-role nudges).']
+        : ['Alternate guitar tuning: shared alternate tuning enabled (light drone/register nudges).']
     );
   }
 }
@@ -1060,7 +1062,7 @@ function isIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
   return (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    normalizeStyleProfileId(context.generationMetadata?.styleProfile) === 'STYLE_INDIE_ART_POP' &&
+    styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(context.generationMetadata?.styleProfile)) &&
     context.generationMetadata?.alternateGuitarTuning?.mode === 'separate'
   );
 }
@@ -1934,6 +1936,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const kbEx = mdEx?.kateBushEffectiveHarmonyBars;
   const tmEx = mdEx?.theloniousMonkEffectiveHarmonyBars;
   const ahEx = mdEx?.andrewHillEffectiveHarmonyBars;
+  const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
@@ -1970,9 +1973,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                     ? tmEx
                                     : mdEx?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahEx) && ahEx.length === tbEx
                                       ? ahEx
-                                      : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
-                                        ? beEx
-                                        : lockedForExport;
+                                      : mdEx?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpEx) && cpEx.length === tbEx
+                                        ? cpEx
+                                        : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
+                                          ? beEx
+                                          : lockedForExport;
   const assertLockedExport =
     barsForLockedExportTruth &&
     barsForLockedExportTruth.length === guitarMeasureCount &&
@@ -2049,6 +2054,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const kbLt = mdLt?.kateBushEffectiveHarmonyBars;
   const tmLt = mdLt?.theloniousMonkEffectiveHarmonyBars;
   const ahLt = mdLt?.andrewHillEffectiveHarmonyBars;
+  const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
   const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
@@ -2087,9 +2093,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                         ? tmLt
                                         : mdLt?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahLt) && ahLt.length === tbLt
                                           ? ahLt
-                                          : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
-                                            ? beLt
-                                            : lockedBars;
+                                          : mdLt?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpLt) && cpLt.length === tbLt
+                                            ? cpLt
+                                            : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
+                                              ? beLt
+                                              : lockedBars;
     if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
       const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
       appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;

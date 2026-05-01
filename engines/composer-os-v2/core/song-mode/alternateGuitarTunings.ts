@@ -1,3 +1,5 @@
+import type { StyleProfile } from './songModeStyleProfile';
+
 export type GuitarTuningMode = 'standard' | 'shared' | 'separate';
 
 export interface AlternateGuitarTuningSpec {
@@ -24,11 +26,20 @@ export interface AlternateGuitarTuningResolved {
   guitar2?: AlternateGuitarTuningResolvedSpec;
 }
 
+/** Roadmap § Altered Tuning Presets — four character zones (custom preset has no zone). */
+export type AlternateGuitarTuningZone =
+  | 'jazz_sophisticated'
+  | 'sonic_youth_noise'
+  | 'joni_mitchell'
+  | 'hybrid_harmonic';
+
 export interface AlternateGuitarTuningPreset {
   id: string;
   label: string;
   strings: [string, string, string, string, string, string];
   audibleDescription: string;
+  /** Omitted for `custom` only. */
+  zone?: AlternateGuitarTuningZone;
 }
 
 const STANDARD_STRINGS: [string, string, string, string, string, string] = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
@@ -53,24 +64,317 @@ const NOTE_TO_SEMITONE: Record<string, number> = {
   B: 11,
 };
 
+/**
+ * Full palette: roadmap 24 zone presets + legacy absorbed ids + `standard` / `custom`.
+ * Preset `id` values are stable for requests / manifests.
+ */
 export const ALTERNATE_GUITAR_TUNING_PRESETS: readonly AlternateGuitarTuningPreset[] = [
-  { id: 'standard', label: 'Standard', strings: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], audibleDescription: 'Balanced all-purpose range and familiar voicing behavior.' },
-  { id: 'drop_d', label: 'Drop D', strings: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'], audibleDescription: 'Heavier low-string anchor with tighter riff punch.' },
-  { id: 'dadgad', label: 'DADGAD', strings: ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'], audibleDescription: 'Open modal resonance with strong drone support.' },
-  { id: 'open_d', label: 'Open D', strings: ['D2', 'A2', 'D3', 'F#3', 'A3', 'D4'], audibleDescription: 'Wide ringing open-chord color with clear harmonic gravity.' },
-  { id: 'open_g', label: 'Open G', strings: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'], audibleDescription: 'Bright open-string shimmer and hook-friendly strum motion.' },
-  { id: 'drone_cluster_1', label: 'Drone Cluster 1', strings: ['C2', 'C3', 'G3', 'G3', 'C4', 'D4'], audibleDescription: 'Stacked repeated notes that favor drone beds and impact clusters.' },
-  { id: 'drone_cluster_2', label: 'Drone Cluster 2', strings: ['D2', 'D3', 'A3', 'A3', 'D4', 'F4'], audibleDescription: 'Dense repeated-string pressure with sharper top-end dissonance.' },
-  { id: 'open_modal_1', label: 'Open Modal 1', strings: ['C2', 'G2', 'D3', 'G3', 'C4', 'E4'], audibleDescription: 'Modal open-string bloom with relaxed center ambiguity.' },
-  { id: 'open_modal_2', label: 'Open Modal 2', strings: ['D2', 'A2', 'E3', 'A3', 'C4', 'E4'], audibleDescription: 'Suspended modal color that supports sparse lyrical motifs.' },
-  { id: 'joni_style_open_color', label: 'Joni-style open color', strings: ['C2', 'G2', 'D3', 'G3', 'C4', 'E4'], audibleDescription: 'Song-centered open voicings with soft harmonic color shifts.' },
-  { id: 'joni_style_hybrid_resonance', label: 'Joni-style hybrid resonance', strings: ['D2', 'G2', 'D3', 'F#3', 'B3', 'D4'], audibleDescription: 'Hybrid open resonance with clear melody-friendly upper strings.' },
-  { id: 'custom', label: 'Custom', strings: STANDARD_STRINGS, audibleDescription: 'User-defined six-string tuning.' },
+  // —— Jazz / Sophisticated
+  {
+    id: 'standard',
+    label: 'Standard',
+    zone: 'jazz_sophisticated',
+    strings: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'Balanced all-purpose range and familiar voicing behavior.',
+  },
+  {
+    id: 'all_fourths',
+    label: 'All Fourths',
+    zone: 'jazz_sophisticated',
+    strings: ['E2', 'A2', 'D3', 'G3', 'C4', 'F4'],
+    audibleDescription: 'Linear jazz spread — wide intervals, uniform fret geometry.',
+  },
+  {
+    id: 'all_fifths',
+    label: 'All Fifths',
+    zone: 'jazz_sophisticated',
+    strings: ['C2', 'G2', 'D3', 'A3', 'E4', 'B4'],
+    audibleDescription: 'Cello-like fifths stack — very wide range.',
+  },
+  {
+    id: 'new_standard',
+    label: 'New Standard (Fripp)',
+    zone: 'jazz_sophisticated',
+    strings: ['C2', 'G2', 'D3', 'A3', 'E4', 'G4'],
+    audibleDescription: 'Fripp New Standard — wide range with open high triad colour.',
+  },
+  {
+    id: 'minor_third_stack',
+    label: 'Minor Third Stack',
+    zone: 'jazz_sophisticated',
+    strings: ['C2', 'Eb2', 'F#2', 'A2', 'C3', 'Eb3'],
+    audibleDescription: 'Diminished symmetry — repeating minor thirds.',
+  },
+  {
+    id: 'augmented_stack',
+    label: 'Augmented Stack',
+    zone: 'jazz_sophisticated',
+    strings: ['C2', 'E2', 'Ab2', 'C3', 'E3', 'Ab3'],
+    audibleDescription: 'Augmented symmetry — Messiaen-adjacent colour.',
+  },
+  {
+    id: 'whole_tone',
+    label: 'Whole Tone',
+    zone: 'jazz_sophisticated',
+    strings: ['C2', 'D2', 'E2', 'F#2', 'Ab2', 'Bb2'],
+    audibleDescription: 'Whole-tone colour — no leading tone, impressionist blur.',
+  },
+  // —— Sonic Youth / Noise / Experimental
+  {
+    id: 'open_g',
+    label: 'Open G',
+    zone: 'sonic_youth_noise',
+    strings: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'],
+    audibleDescription: 'Bright open-string shimmer and hook-friendly strum motion.',
+  },
+  {
+    id: 'drone_cluster_1',
+    label: 'Drone Cluster 1',
+    zone: 'sonic_youth_noise',
+    strings: ['C2', 'C3', 'G3', 'G3', 'C4', 'D4'],
+    audibleDescription: 'Stacked repeated notes that favor drone beds and impact clusters.',
+  },
+  {
+    id: 'drone_cluster_2',
+    label: 'Drone Cluster 2',
+    zone: 'sonic_youth_noise',
+    strings: ['D2', 'D3', 'A3', 'A3', 'D4', 'F4'],
+    audibleDescription: 'Dense repeated-string pressure with sharper top-end dissonance.',
+  },
+  {
+    id: 'sy_cgdgcd',
+    label: 'CGDGCD',
+    zone: 'sonic_youth_noise',
+    strings: ['C2', 'G2', 'D3', 'G3', 'C4', 'D4'],
+    audibleDescription: 'Sonic Youth drone/noise bed — Confusion-era openness.',
+  },
+  {
+    id: 'sy_cgdgbd',
+    label: 'CGDGBD',
+    zone: 'sonic_youth_noise',
+    strings: ['C2', 'G2', 'D3', 'G3', 'B3', 'D4'],
+    audibleDescription: 'Drone-heavy with paired high G colour.',
+  },
+  {
+    id: 'sy_ebebeb',
+    label: 'EBEBEB',
+    zone: 'sonic_youth_noise',
+    strings: ['E2', 'B2', 'E3', 'B3', 'E4', 'B4'],
+    audibleDescription: 'Maximum unison-family drones across strings.',
+  },
+  {
+    id: 'sy_facgce',
+    label: 'FACGCE',
+    zone: 'sonic_youth_noise',
+    strings: ['F2', 'A2', 'C3', 'G3', 'C4', 'E4'],
+    audibleDescription: 'Cluster-friendly open voicing — noisy resonance.',
+  },
+  {
+    id: 'sy_cgcgce',
+    label: 'CGCGCE',
+    zone: 'sonic_youth_noise',
+    strings: ['C2', 'G2', 'C3', 'G3', 'C4', 'E4'],
+    audibleDescription: 'Open C family with tight upper tension.',
+  },
+  {
+    id: 'sy_dgdgbd',
+    label: 'DGDGBD',
+    zone: 'sonic_youth_noise',
+    strings: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'],
+    audibleDescription: 'Open G variant — darker, riff-led motion.',
+  },
+  // —— Joni Mitchell
+  {
+    id: 'dadgad',
+    label: 'DADGAD',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'],
+    audibleDescription: 'Open modal resonance with strong drone support.',
+  },
+  {
+    id: 'open_d',
+    label: 'Open D',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'A2', 'D3', 'F#3', 'A3', 'D4'],
+    audibleDescription: 'Wide ringing open-chord color with clear harmonic gravity.',
+  },
+  {
+    id: 'joni_style_open_color',
+    label: 'Joni-style open color',
+    zone: 'joni_mitchell',
+    strings: ['C2', 'G2', 'D3', 'G3', 'C4', 'E4'],
+    audibleDescription: 'Song-centered open voicings with soft harmonic color shifts.',
+  },
+  {
+    id: 'joni_style_hybrid_resonance',
+    label: 'Joni-style hybrid resonance',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'G2', 'D3', 'F#3', 'B3', 'D4'],
+    audibleDescription: 'Hybrid open resonance with clear melody-friendly upper strings.',
+  },
+  {
+    id: 'joni_dgdfce',
+    label: 'DGDFCE (A Case of You)',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'G2', 'D3', 'F3', 'C4', 'E4'],
+    audibleDescription: 'Highly distinctive Joni colour — lyrical suspension.',
+  },
+  {
+    id: 'joni_cgefge',
+    label: 'CGEFGE (Little Green)',
+    zone: 'joni_mitchell',
+    strings: ['C2', 'G2', 'E3', 'F3', 'G4', 'E4'],
+    audibleDescription: 'Little Green family — wide mid/high resonance.',
+  },
+  {
+    id: 'joni_cgdgbe',
+    label: 'CGDGBE (Both Sides Now)',
+    zone: 'joni_mitchell',
+    strings: ['C2', 'G2', 'D3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'Both Sides Now flavour — bright open triad top.',
+  },
+  {
+    id: 'joni_dadgbe',
+    label: 'DADGBE (Big Yellow Taxi)',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'Standard-ish lift on low strings — familiar song gravity.',
+  },
+  {
+    id: 'joni_dadfad',
+    label: 'DADf#AD (Open D minor)',
+    zone: 'joni_mitchell',
+    strings: ['D2', 'A2', 'D3', 'F#3', 'A3', 'D4'],
+    audibleDescription: 'Dark open D minor — modal folk shadow.',
+  },
+  {
+    id: 'joni_eeeebe',
+    label: 'EEEEBE',
+    zone: 'joni_mitchell',
+    strings: ['E2', 'E2', 'E3', 'E3', 'B3', 'E4'],
+    audibleDescription: 'Dense unison beds — Richard-era harmonic stillness.',
+  },
+  // —— Hybrid / Harmonic
+  {
+    id: 'drop_d',
+    label: 'Drop D',
+    zone: 'hybrid_harmonic',
+    strings: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'Heavier low-string anchor with tighter riff punch.',
+  },
+  {
+    id: 'open_modal_1',
+    label: 'Open Modal 1',
+    zone: 'hybrid_harmonic',
+    strings: ['C2', 'G2', 'D3', 'G3', 'C4', 'E4'],
+    audibleDescription: 'Modal open-string bloom with relaxed center ambiguity.',
+  },
+  {
+    id: 'open_modal_2',
+    label: 'Open Modal 2',
+    zone: 'hybrid_harmonic',
+    strings: ['D2', 'A2', 'E3', 'A3', 'C4', 'E4'],
+    audibleDescription: 'Suspended modal color that supports sparse lyrical motifs.',
+  },
+  {
+    id: 'open_cmaj7',
+    label: 'Open Cmaj7',
+    zone: 'hybrid_harmonic',
+    strings: ['C2', 'G2', 'E3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'Impressionist open maj7 resonance.',
+  },
+  {
+    id: 'open_dm9',
+    label: 'Open Dm9',
+    zone: 'hybrid_harmonic',
+    strings: ['D2', 'A2', 'D3', 'F3', 'C4', 'E4'],
+    audibleDescription: 'Dark ninth-friendly spread — modal gravity.',
+  },
+  {
+    id: 'quartal',
+    label: 'Quartal (McCoy Tyner)',
+    zone: 'hybrid_harmonic',
+    strings: ['B1', 'E2', 'A2', 'D3', 'G3', 'C4'],
+    audibleDescription: 'Low-quartal stack — pentatonic / fourth towers.',
+  },
+  {
+    id: 'overtone',
+    label: 'Overtone',
+    zone: 'hybrid_harmonic',
+    strings: ['C2', 'G2', 'C3', 'G3', 'C4', 'E4'],
+    audibleDescription: 'Harmonic-series flavour — pure bell-like resonance.',
+  },
+  {
+    id: 'open_em11',
+    label: 'Open Em11',
+    zone: 'hybrid_harmonic',
+    strings: ['E2', 'B2', 'D3', 'G3', 'B3', 'E4'],
+    audibleDescription: 'ECM-adjacent lush suspension — open eleventh colour.',
+  },
+  {
+    id: 'sus2_stack',
+    label: 'Sus2 Stack',
+    zone: 'hybrid_harmonic',
+    strings: ['D2', 'A2', 'D3', 'A3', 'D4', 'E4'],
+    audibleDescription: 'Drone-heavy sus2 ladder — suspended shimmer.',
+  },
+  {
+    id: 'custom',
+    label: 'Custom',
+    strings: STANDARD_STRINGS,
+    audibleDescription: 'User-defined six-string tuning.',
+  },
+];
+
+/** The 24 roadmap zone presets (excludes legacy absorbed ids `standard`, `drop_d`, `custom`, etc.). */
+export const ROADMAP_ZONE_TUNING_PRESET_IDS: readonly string[] = [
+  'all_fourths',
+  'all_fifths',
+  'new_standard',
+  'minor_third_stack',
+  'augmented_stack',
+  'whole_tone',
+  'sy_cgdgcd',
+  'sy_cgdgbd',
+  'sy_ebebeb',
+  'sy_facgce',
+  'sy_cgcgce',
+  'sy_dgdgbd',
+  'joni_dgdfce',
+  'joni_cgefge',
+  'joni_cgdgbe',
+  'joni_dadgbe',
+  'joni_dadfad',
+  'joni_eeeebe',
+  'open_cmaj7',
+  'open_dm9',
+  'quartal',
+  'overtone',
+  'open_em11',
+  'sus2_stack',
 ];
 
 export function getAlternateGuitarTuningPreset(id: string | null | undefined): AlternateGuitarTuningPreset | null {
   if (!id) return null;
   return ALTERNATE_GUITAR_TUNING_PRESETS.find((p) => p.id === id) ?? null;
+}
+
+export function getPresetsByZone(zone: AlternateGuitarTuningZone): AlternateGuitarTuningPreset[] {
+  return ALTERNATE_GUITAR_TUNING_PRESETS.filter((p) => p.zone === zone);
+}
+
+/** Style profiles that accept alternate-tuning request metadata + register / surface nudges (Song Mode hook-first routes). */
+export const STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING: readonly StyleProfile[] = [
+  'STYLE_INDIE_ART_POP',
+  'STYLE_SONIC_YOUTH',
+  'STYLE_JONI_MITCHELL',
+  'STYLE_PAT_METHENY',
+  'STYLE_ECM_CHAMBER',
+];
+
+export function styleProfileSupportsAlternateGuitarTuning(profile: StyleProfile | undefined): boolean {
+  if (!profile) return false;
+  return (STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING as readonly string[]).includes(profile);
 }
 
 /** One-line label for MusicXML export (from request `guitar1` / `guitar2` spec, not hardcoded tunings). */
@@ -132,22 +436,50 @@ function resolveSpec(spec: AlternateGuitarTuningSpec | undefined): AlternateGuit
  */
 export type IndieArtPopTuningTextureKind = 'standard' | 'drone_cluster' | 'open_modal' | 'separate_roles';
 
-const DRONE_CLUSTER_PRESETS = new Set(['drone_cluster_1', 'drone_cluster_2']);
-
-const OPEN_MODAL_FAMILY_PRESETS = new Set([
-  'open_modal_1',
-  'open_modal_2',
-  'joni_style_open_color',
-  'joni_style_hybrid_resonance',
-  'dadgad',
-  'open_d',
-  'open_g',
-  'drop_d',
+const DRONE_CLUSTER_PRESETS = new Set<string>([
+  'drone_cluster_1',
+  'drone_cluster_2',
+  'sy_cgdgcd',
+  'sy_cgdgbd',
+  'sy_ebebeb',
+  'sy_facgce',
+  'sy_cgcgce',
+  'sy_dgdgbd',
+  'open_em11',
+  'sus2_stack',
 ]);
 
-export function resolveIndieArtPopTuningTexture(
-  tuning: AlternateGuitarTuningResolved | undefined
-): IndieArtPopTuningTextureKind {
+const JONI_ZONE_PRESET_IDS: readonly string[] = [
+  'dadgad',
+  'open_d',
+  'joni_style_open_color',
+  'joni_style_hybrid_resonance',
+  'joni_dgdfce',
+  'joni_cgefge',
+  'joni_cgdgbe',
+  'joni_dadgbe',
+  'joni_dadfad',
+  'joni_eeeebe',
+];
+
+const JAZZ_SPEC_PRESET_IDS: readonly string[] = [
+  'all_fourths',
+  'all_fifths',
+  'new_standard',
+  'minor_third_stack',
+  'augmented_stack',
+  'whole_tone',
+];
+
+const HYBRID_OPEN_MODAL_EXTRA: readonly string[] = ['quartal', 'open_cmaj7', 'open_dm9', 'overtone', 'open_modal_1', 'open_modal_2'];
+
+const OPEN_MODAL_FAMILY_PRESETS = new Set<string>([
+  ...JONI_ZONE_PRESET_IDS,
+  ...JAZZ_SPEC_PRESET_IDS,
+  ...HYBRID_OPEN_MODAL_EXTRA,
+]);
+
+export function resolveIndieArtPopTuningTexture(tuning: AlternateGuitarTuningResolved | undefined): IndieArtPopTuningTextureKind {
   if (!tuning || tuning.mode === 'standard') return 'standard';
   if (tuning.mode === 'separate') return 'separate_roles';
   const pid = tuning.shared?.presetId ?? 'standard';
@@ -176,9 +508,7 @@ export function normalizeAlternateGuitarTuningRequest(
 }
 
 /** True when alternate tuning metadata implies two clean electrics (Indie Art Pop separate or non-standard shared). */
-export function indieArtPopAlternateTuningWantsDualElectricGuitars(
-  tuning: AlternateGuitarTuningResolved | undefined
-): boolean {
+export function indieArtPopAlternateTuningWantsDualElectricGuitars(tuning: AlternateGuitarTuningResolved | undefined): boolean {
   if (!tuning) return false;
   if (tuning.mode === 'separate') return true;
   if (tuning.mode === 'shared') {

@@ -327,6 +327,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     return ahEff[barIndex - 1]!;
   }
 
+  /**
+   * Charlie Parker: `precomputeCharlieParkerEffectiveHarmonyBars` applies bebop ii–V / tritone-sub devices — receipts **`cp:*`**.
+   * After precompute, `charlieParkerEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const cpEff = meta?.charlieParkerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'charlie_parker' &&
+    Array.isArray(cpEff) &&
+    cpEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return cpEff[barIndex - 1]!;
+  }
+
   if (locked && locked.length === tb) {
     if (barIndex >= 1 && barIndex <= tb) {
       return locked[barIndex - 1]!;

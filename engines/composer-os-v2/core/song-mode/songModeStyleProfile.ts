@@ -12,7 +12,12 @@ export type StyleProfile =
   | 'STYLE_GROOVE_SOUL'
   | 'STYLE_INDIE_ART_POP'
   | 'STYLE_FOLK_GUITAR_NARRATIVE'
-  | 'STYLE_CLASSICAL_INFLUENCE';
+  | 'STYLE_CLASSICAL_INFLUENCE'
+  /** Alternate-tuning–friendly Song Mode surfaces (see `alternateGuitarTunings.ts`). */
+  | 'STYLE_SONIC_YOUTH'
+  | 'STYLE_JONI_MITCHELL'
+  | 'STYLE_PAT_METHENY'
+  | 'STYLE_ECM_CHAMBER';
 
 const IDS: readonly StyleProfile[] = [
   'STYLE_ECM',
@@ -25,6 +30,10 @@ const IDS: readonly StyleProfile[] = [
   'STYLE_INDIE_ART_POP',
   'STYLE_FOLK_GUITAR_NARRATIVE',
   'STYLE_CLASSICAL_INFLUENCE',
+  'STYLE_SONIC_YOUTH',
+  'STYLE_JONI_MITCHELL',
+  'STYLE_PAT_METHENY',
+  'STYLE_ECM_CHAMBER',
 ];
 
 export function isStyleProfile(v: unknown): v is StyleProfile {

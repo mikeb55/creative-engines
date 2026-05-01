@@ -38,6 +38,10 @@ export interface SlonimskyContext {
   transpositionInterval?: number;
   /** Steps per transposition cycle; default = `pattern.intervals.length`. */
   cycleLength?: number;
+  /** Max infrapolation extensions in {@link generateSlonimskyPattern}; default **2** (multi-step cap). */
+  maxInfraSteps?: number;
+  /** Max ultrapolation extensions in {@link generateSlonimskyPattern}; default **2** (multi-step cap). */
+  maxUltraSteps?: number;
 }
 
 export interface SlonimskyNote {
@@ -72,6 +76,10 @@ export type SlonimskyStyleProfileSpec = {
   transpositionInterval: number;
   intentWeights: SlonimskyStyleIntentWeights;
   notes: string;
+  /** Preferred Slonimsky catalogue band — keys align with {@link import('./thesaurusRegistry').ThesaurusSectionKey}. */
+  catalogueSection?: string;
+  maxInfraSteps?: number;
+  maxUltraSteps?: number;
 };
 
 /**
@@ -85,6 +93,9 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     transpositionInterval: 1,
     intentWeights: { build: 0.2, float: 0.5, release: 0.3, shock: 0.0 },
     notes: 'chromatic neighbour tones, stepwise, never jarring',
+    catalogueSection: 'tritone_progression',
+    maxInfraSteps: 1,
+    maxUltraSteps: 2,
   },
   JOBIM: {
     outsideLevel: 1,
@@ -93,14 +104,20 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     transpositionInterval: 0,
     intentWeights: { build: 0.2, float: 0.6, release: 0.2, shock: 0.0 },
     notes: 'bossa float, whole-tone colour, no shock',
+    catalogueSection: 'whole_tone_progression',
+    maxInfraSteps: 1,
+    maxUltraSteps: 1,
   },
   HERBIE_HANCOCK: {
-    outsideLevel: 3,
+    outsideLevel: 2,
     preferredSections: ['heptatonic_scales', 'tritone_substitutions'],
     defaultProfile: 'ECM',
     transpositionInterval: 2,
     intentWeights: { build: 0.4, float: 0.3, release: 0.1, shock: 0.2 },
     notes: 'modal + pentatonic clusters, occasional shock',
+    catalogueSection: 'ditone_progression',
+    maxInfraSteps: 2,
+    maxUltraSteps: 2,
   },
   BRIAN_WILSON: {
     outsideLevel: 1,
@@ -109,22 +126,31 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     transpositionInterval: 0,
     intentWeights: { build: 0.3, float: 0.5, release: 0.2, shock: 0.0 },
     notes: 'diatonic colour, voice-leading stepwise, no outside',
+    catalogueSection: 'semitone_progression',
+    maxInfraSteps: 0,
+    maxUltraSteps: 1,
   },
   RADIOHEAD: {
-    outsideLevel: 4,
+    outsideLevel: 2,
     preferredSections: ['heptatonic_scales', 'intervallic'],
     defaultProfile: 'Sonic Youth',
     transpositionInterval: 1,
     intentWeights: { build: 0.3, float: 0.2, release: 0.1, shock: 0.4 },
     notes: 'high dissonance, irregular intervals, shock-weighted',
+    catalogueSection: 'sesquitone_progression',
+    maxInfraSteps: 1,
+    maxUltraSteps: 2,
   },
   KATE_BUSH: {
-    outsideLevel: 3,
+    outsideLevel: 2,
     preferredSections: ['heptatonic_scales', 'semitone_scales'],
     defaultProfile: 'ECM',
     transpositionInterval: 1,
     intentWeights: { build: 0.3, float: 0.4, release: 0.2, shock: 0.1 },
     notes: 'dramatic contour, chromatic colour, occasional shock',
+    catalogueSection: 'whole_tone_progression',
+    maxInfraSteps: 2,
+    maxUltraSteps: 1,
   },
   STEELY_DAN: {
     outsideLevel: 2,
@@ -133,6 +159,9 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     transpositionInterval: 2,
     intentWeights: { build: 0.4, float: 0.3, release: 0.2, shock: 0.1 },
     notes: 'jazz chromatic, tritone approach, controlled outside',
+    catalogueSection: 'intervallic_mirror_permutations',
+    maxInfraSteps: 1,
+    maxUltraSteps: 2,
   },
 };
 
@@ -298,17 +327,18 @@ export function generateSlonimskyPattern(
   const highBound = ctx.effectiveHigh ?? GUITAR_MIDI_MAX;
   const firstIv = pattern.intervals[0] ?? 0;
 
-  if (
-    (ctx.phraseIntent === 'build' || ctx.phraseIntent === 'shock') &&
-    notes[0]! > lowBound + 4
-  ) {
+  let infraSteps = 0;
+  const maxInfraSteps = ctx.maxInfraSteps ?? 2;
+  while (notes[0]! > lowBound + 4 && infraSteps < maxInfraSteps) {
     notes.unshift(clampMidi(notes[0]! - firstIv));
+    infraSteps++;
   }
-  if (
-    (ctx.phraseIntent === 'build' || ctx.phraseIntent === 'float') &&
-    notes[notes.length - 1]! < highBound - 4
-  ) {
+
+  let ultraSteps = 0;
+  const maxUltraSteps = ctx.maxUltraSteps ?? 2;
+  while (notes[notes.length - 1]! < highBound - 4 && ultraSteps < maxUltraSteps) {
     notes.push(clampMidi(notes[notes.length - 1]! + firstIv));
+    ultraSteps++;
   }
 
   const slotDur = ctx.maxBeats / notes.length;

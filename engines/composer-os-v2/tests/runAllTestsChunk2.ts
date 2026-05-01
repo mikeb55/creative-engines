@@ -36,6 +36,7 @@ import { runLeadMelodyPlannerTests } from './leadMelodyPlanner.test';
 import { runSingerRangeValidationTests } from './singerRangeValidation.test';
 import { runProsodyPlannerTests } from './prosodyPlanner.test';
 import { runSongModeCompletionTests } from './songModeCompletion.test';
+import { runIndieArtPopPhaseATests } from './indieArtPopPhaseA.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
 const suites: SuiteEntry[] = [
@@ -60,6 +61,7 @@ const suites: SuiteEntry[] = [
   { name: 'Song Mode integration', run: runSongModeIntegrationTests },
   { name: 'Song Mode MusicXML app', run: runSongModeMusicXmlTests },
   { name: 'Song Mode regression baseline (50021)', run: runSongModeHookIdentityTests },
+  { name: 'Song Mode Phase A (alt-tuning style profiles)', run: runIndieArtPopPhaseATests },
   { name: 'Song Mode LeadSheet input (Donald Fagen Phase 1)', run: runSongModeLeadSheetInputTests },
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
   { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },

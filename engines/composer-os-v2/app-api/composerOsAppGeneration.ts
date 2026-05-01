@@ -860,6 +860,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const kbLockedTruth = mdLockedTruth?.kateBushEffectiveHarmonyBars;
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
+  const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
   const harmonyBarsForLockedAssertions =
     mdLockedTruth?.songwriterStyleId === 'brian_wilson' &&
     Array.isArray(bwLockedTruth) &&
@@ -975,7 +976,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                             lockedHarmonyBarsAuthoritative &&
                                             ahLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                           ? ahLockedTruth
-                                          : lockedHarmonyBarsAuthoritative;
+                                          : mdLockedTruth?.songwriterStyleId === 'charlie_parker' &&
+                                              Array.isArray(cpLockedTruth) &&
+                                              cpLockedTruth.length === tbLockedTruth &&
+                                              lockedHarmonyBarsAuthoritative &&
+                                              cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                            ? cpLockedTruth
+                                            : lockedHarmonyBarsAuthoritative;
 
   if (
     lockedHarmonyBarsAuthoritative &&

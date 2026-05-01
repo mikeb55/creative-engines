@@ -7,16 +7,17 @@ import { createNote, createRest, addEvent } from '../score-model/scoreEventBuild
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import type { ResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
+import {
+  generateSlonimskyPattern,
+  inferSlonimskyChordTypeCategory,
+  interpolateSlonimskyPattern,
+  selectSlonimskyPattern,
+  type SlonimskyContext,
+} from '../slonimsky/slonimskyEngine';
 
-export type PhraseIntent =
-  | 'guitar_lead'
-  | 'bass_lead'
-  | 'answer_guitar'
-  | 'answer_bass'
-  | 'cadence'
-  | 'development'
-  | 'contrast'
-  | 'return';
+import type { PhraseIntent } from './phraseIntentTypes';
+export type { PhraseIntent } from './phraseIntentTypes';
 
 export function liftToneToRange(pitch: number, low: number, high: number): number {
   let p = pitch;
@@ -47,12 +48,19 @@ export function resolvePhraseEndForDuo(
 }
 
 /** Chord tones placed in the current guitar window (idiomatic register). */
+export type GuitarChordTonesInRangeResult = {
+  third: number;
+  seventh: number;
+  fifth: number;
+  root: number;
+};
+
 export function guitarChordTonesInRange(
   chord: string,
   low: number,
   high: number,
   chordToneOpts?: ChordTonesOptions
-): { third: number; seventh: number; fifth: number; root: number } {
+): GuitarChordTonesInRangeResult {
   const t = chordTonesForChordSymbol(chord, chordToneOpts);
   return {
     root: liftToneToRange(t.root, low, high),
@@ -60,6 +68,31 @@ export function guitarChordTonesInRange(
     fifth: liftToneToRange(t.fifth, low, high),
     seventh: liftToneToRange(t.seventh, low, high),
   };
+}
+
+/**
+ * Optional post-pass on `guitarChordTonesInRange` output for alternate-tuning pilot maps.
+ * When `context` is null or `context.map` is null, returns `base` unchanged (strict fallback).
+ */
+export function applyTuningVoicingMapToChordTones(
+  base: GuitarChordTonesInRangeResult,
+  _chord: string,
+  low: number,
+  high: number,
+  context: ResolvedTuningVoicingContext | null,
+  seed: number,
+  bar: number,
+  salt: number
+): GuitarChordTonesInRangeResult {
+  if (!context?.map) return base;
+  const map = context.map;
+  if (map.fifthHeavyCharacter || map.presetId === 'new_standard') {
+    const u = seededUnit(seed, bar, salt);
+    const fifth =
+      u < 0.55 ? liftToneToRange(base.fifth + 12, low, high) : base.fifth;
+    return { ...base, fifth };
+  }
+  return base;
 }
 
 /**
@@ -199,6 +232,8 @@ export function emitGuitarPhraseBar(params: {
   chordToneOpts?: ChordTonesOptions;
   /** Lippincott triad pairs: favour third/fifth over scalar runs. */
   triadPairs?: boolean;
+  /** Alternate-tuning duo: per-bar Slonimsky interior (1.5–3.5) when pattern resolves; sparse only. */
+  slonimskyCtx?: SlonimskyContext;
 }): void {
   const {
     m,
@@ -217,6 +252,7 @@ export function emitGuitarPhraseBar(params: {
     swingDuo,
     chordToneOpts,
     triadPairs,
+    slonimskyCtx,
   } = params;
 
   /** Duo: attacks only on eighth-beat grid; durations still use quarter-beat rounding where needed. */
@@ -289,6 +325,60 @@ export function emitGuitarPhraseBar(params: {
       addEvent(m, createRest(0, 2));
       addEvent(m, createNote(endStrong, 2, 2));
       return;
+    }
+    if (slonimskyCtx && intent !== 'cadence' && slonimskyCtx.allowedOutsideLevel > 0) {
+      const barChordCtx: SlonimskyContext = {
+        ...slonimskyCtx,
+        chordSymbol: chord,
+        chordType: inferSlonimskyChordTypeCategory(chord),
+        effectiveLow,
+        effectiveHigh,
+        basePitch: lo,
+        maxBeats: 2,
+      };
+      const pat = selectSlonimskyPattern(barChordCtx, seed + bar * 17);
+      if (pat) {
+        const raw = generateSlonimskyPattern(pat, barChordCtx, seed + bar * 101);
+        const interp = interpolateSlonimskyPattern(raw, barChordCtx, chord, seed + bar * 503);
+        if (interp.length > 0) {
+          const t0 = headRest;
+          const n1 = bar === 4 ? shorten(1) : shorten(1.25);
+          const gapAfter = bar === 4 ? 0.25 : 0.5;
+          const gapEnd = qBeat(t0 + n1 + gapAfter);
+          const lastStart = qBeat(t0 + n1 + gapAfter);
+          const innerLo = Math.max(1.5, gapEnd);
+          const innerHi = Math.min(3.5, lastStart - 0.25);
+          if (innerLo < innerHi - 1e-3) {
+            addEvent(m, createRest(0, headRest));
+            addEvent(m, createNote(lo, t0, n1));
+            let cursor = qBeat(t0 + n1);
+            if (innerLo > cursor + 1e-4) {
+              addEvent(m, createRest(cursor, innerLo - cursor));
+              cursor = innerLo;
+            }
+            const span = innerHi - innerLo;
+            const nIntr = interp.length;
+            for (let k = 0; k < nIntr; k++) {
+              const slice = span / nIntr;
+              const st = innerLo + k * slice;
+              const dur = qBeat(Math.min(slice, interp[k]!.durationBeats));
+              if (st > cursor + 1e-4) {
+                addEvent(m, createRest(cursor, st - cursor));
+              }
+              addEvent(m, createNote(interp[k]!.midi, pos(st), dur));
+              cursor = qBeat(st + dur);
+            }
+            const tailDur = qBeat(4 - lastStart);
+            if (lastStart > cursor + 1e-4) {
+              addEvent(m, createRest(cursor, lastStart - cursor));
+            }
+            addEvent(m, createNote(endStrong, lastStart, tailDur));
+            const v2Sparse = tones.third !== endStrong ? tones.third : tones.fifth;
+            addEvent(m, createNote(v2Sparse, pos(headRest), qBeat(4 - headRest), 2));
+            return;
+          }
+        }
+      }
     }
     addEvent(m, createRest(0, headRest));
     const t0 = headRest;

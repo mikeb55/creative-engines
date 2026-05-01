@@ -22,6 +22,12 @@ import type { ThesaurusSectionKey } from './thesaurusRegistry';
 export type ThesaurusSection = ThesaurusSectionKey;
 
 /**
+ * Lead-sheet chord symbols passed into ensemble Slonimsky (e.g. a 3-bar window aligned with rolling melody accumulators).
+ * Alias keeps call sites free of a separate harmony-domain `ChordSymbol` type.
+ */
+export type EnsembleSlonimskyChordSymbol = string;
+
+/**
  * Parameters for ensemble Slonimsky contexts — mirrors {@link buildDuoBarSlonimskyContext} plus a catalogue section
  * for {@link getPatternsBySection} / {@link selectPatternForIntent}.
  */
@@ -36,9 +42,22 @@ export type SlonimskyContextParams = {
   keyPc: number;
   effectiveLow: number;
   effectiveHigh: number;
-  catalogueSection: ThesaurusSection;
+  /** Slonimsky catalogue section id (see {@link ThesaurusSection} keys); widened to `string` for forward-compatible call sites. */
+  catalogueSection: string;
+  /**
+   * Optional harmonic window (e.g. three bars). When set, the **last** symbol is used with
+   * {@link inferSlonimskyChordTypeCategory} / {@link chordTonesForChordSymbol} for this bar’s context
+   * (matches typical “current bar = third of three” rolling windows). Omit to use `chordSymbol` only.
+   */
+  chords?: readonly EnsembleSlonimskyChordSymbol[];
   /** When set, used as {@link SlonimskyContext.phraseIntent} (transposition / infra-ultra in engine); else weighted from seed. */
   phraseIntent?: SlonimskyContext['phraseIntent'];
+  /** Passed through to {@link SlonimskyContext.transpositionInterval} (semitones per cycle); overrides phrase-intent default when set. */
+  transpositionInterval?: number;
+  /** Passed through to {@link SlonimskyContext.maxInfraSteps}. */
+  maxInfraSteps?: number;
+  /** Passed through to {@link SlonimskyContext.maxUltraSteps}. */
+  maxUltraSteps?: number;
 };
 
 /** Intent mixture for ensemble-weighted `phraseIntent` (build / float / release / shock). */
@@ -159,15 +178,22 @@ export function getPatternByNumber(no: number): IntervalPattern | undefined {
   return undefined;
 }
 
+function resolveChordSymbolForEnsembleBar(params: SlonimskyContextParams): string {
+  const w = params.chords;
+  if (w && w.length > 0) return w[w.length - 1]!;
+  return params.chordSymbol;
+}
+
 function buildEnsembleBarSlonimskyContext(
   params: SlonimskyContextParams,
   defaults: { styleProfile: string; weights: SlonimskyIntentWeights }
 ): SlonimskyContext {
   const styleProfile = params.styleProfile ?? defaults.styleProfile;
-  const inferred = inferSlonimskyChordTypeCategory(params.chordSymbol);
+  const chordForBar = resolveChordSymbolForEnsembleBar(params);
+  const inferred = inferSlonimskyChordTypeCategory(chordForBar);
   const phraseIntent = params.phraseIntent ?? weightedIntent(params.seed, defaults.weights);
 
-  const sectionPatterns = getPatternsBySection(params.catalogueSection);
+  const sectionPatterns = getPatternsBySection(params.catalogueSection as ThesaurusSection);
   selectPatternForIntent({
     seed: params.seed,
     sectionPatterns,
@@ -187,16 +213,19 @@ function buildEnsembleBarSlonimskyContext(
     basePitch: 62,
     maxBeats: Math.max(4, params.totalQuarterBeats),
     styleProfile: styleProfile ?? undefined,
-    chordSymbol: params.chordSymbol,
+    chordSymbol: chordForBar,
     effectiveLow: params.effectiveLow,
     effectiveHigh: params.effectiveHigh,
   };
-  const t = chordTonesForChordSymbol(params.chordSymbol);
+  const t = chordTonesForChordSymbol(chordForBar);
   const third = liftIntoRange(t.third, params.effectiveLow, params.effectiveHigh);
   return {
     ...base,
     basePitch: third,
     maxBeats: 4,
+    ...(params.transpositionInterval !== undefined ? { transpositionInterval: params.transpositionInterval } : {}),
+    ...(params.maxInfraSteps !== undefined ? { maxInfraSteps: params.maxInfraSteps } : {}),
+    ...(params.maxUltraSteps !== undefined ? { maxUltraSteps: params.maxUltraSteps } : {}),
   };
 }
 

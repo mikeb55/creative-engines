@@ -64,34 +64,36 @@ All **7** era values produce genuinely different **harmonic vocabulary** via pro
 - **Arranger** uses two groups: **Big band core (research-backed)** (Ellington, Basie, Thad Jones, Schneider — engine-aligned ids first) and **Charts & studio voices** (remaining arrangers, sorted by name).
 - **Arranger + Era:** A short caption under those fields explains that they **nudge style pairing** and era-aware harmony colour in **compiled song planning** — soft hints only; they do **not** retarget Big Band or String Quartet ensemble engines by themselves.
 
-### Indie Art Pop alternate guitar tuning (Song Mode, optional)
+### Alternate guitar tuning (Song Mode)
 
-- Available in Song Mode when you choose **Indie Art Pop** style.
-- Three modes: **Standard tuning**, **One tuning for both guitars**, and **Separate tunings for Guitar 1 and Guitar 2**.
-- Shared/separate paths include curated tuning presets plus a custom 6-string entry option.
-- In the **Separate tunings** path, Composer OS now keeps both guitar tunings through generation/export and presents that route as **two electric guitars** (not piano/upright-bass labels).
-- This is a bounded v1 surface: it adds light tuning-driven character (drone/register/split-role feel) without changing default behavior when unused.
+**Style profiles that accept alternate tuning**  
+Request metadata, register nudges, and the dual-guitar / Phase A paths apply only when the Song Mode **Style Engine profile** is one of: **`STYLE_INDIE_ART_POP`**, **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**, **`STYLE_ECM_CHAMBER`** (the engine’s `STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING` set). Other style profiles are unchanged for this workstream.
 
-### Altered Guitar Tuning — Song Mode
+**Preset palette (24 + “other”)**  
+The engine defines **24** roadmap zone tunings, organised into **four** internal zones: **jazz sophisticated**, **Sonic Youth / experimental noise**, **Joni Mitchell / open-folk colour**, and **hybrid harmonic** (see `ALTERNATE_GUITAR_TUNING_PRESETS` and `ROADMAP_ZONE_TUNING_PRESET_IDS`). The in-app labels for those groupings may differ; the source of truth is the engine tables.
 
-- Choose **Separate** tuning to get two electric guitars with altered tunings.
-- Choose **Shared** tuning to get guitar + upright bass (standard duo arrangement).
-- **Separate / guitar_2:** comp harmony is **dyadic** (two tones per anchor in typical MusicXML today); richer same-beat stacks are planned.
+**Outside the 24-count roadmap list**  
+**`standard`**, **`drop_d`**, and **`custom`** are always available in the palette. They are **not** part of the **24**-id roadmap set. **`custom`** is a user-defined six-string entry and does not carry a fixed zone label in metadata.
 
-### Indie Art Pop with Alternate Tunings
-To generate two electric guitars with alternate tunings:
-1. Select **Song Mode**
-2. Choose **Indie Art Pop** style
-3. In tuning options, select **"separate tunings"**
-4. Generated output will contain two electric guitars with dyadic comp voicing on **guitar_2**
+**Tuning request modes**  
+- **Standard** — no alternate tuning.  
+- **Shared** — one tuning for the guitar; the usual presentation is **guitar + upright bass** for the default duo.  
+- **Separate** — independent tunings for the two guitar parts; export keeps both specs and uses the **two electric guitars** / **`guitar_2`** comp route (not guitar + upright labels on the second staff).
 
-The system applies altered tunings to both guitars and adds dyadic comp harmony on **guitar_2** (not traditional guitar/bass counterpoint).
+**Separate path / `guitar_2` comp**  
+In typical MusicXML today, comp harmony on **`guitar_2`** is **dyadic** (two tones per anchor in many bars). Richer same-beat stacks are planned.
 
-### Indie Art Pop listening pass (Song Mode)
+**Song Mode Phase A (sectional velocity / texture)**  
+When **hook-first identity** is on and the run uses the **guitar–bass duo** realisation, a **Phase A** pass (sectional contrast, tuning-texture bias, phrase-edge velocity) runs for **every** style profile in the five-id list above — it is **not** limited to **Indie Art Pop**. You may hear **clearer melody vs inner-guitar roles**, a little more **section-to-section** contrast, and more **air at phrase ends**; **optional tunings** still steer **sustain / open / cluster** character, and **separate** tunings strengthen the **bed vs riff** split. Default behaviour is unchanged when alternate tuning is not used.
 
-- Applies automatically when you choose the **Indie Art Pop** style in Song Mode (no extra controls).
-- You should hear **clearer melody vs inner-guitar roles**, a touch more **section-to-section loud/soft contrast**, and a bit more **air at phrase ends** (including a small lift before the return). Optional **alternate tunings** steer that further: shared presets lean **sustain / open color** or **cluster punch** depending on the preset, and **separate tunings** strengthen the **bed vs riff** split.
-- **Other Song Mode styles are unchanged.**
+**Per-tuning voicing maps**  
+**Preset-specific voicing maps** are **not** implemented for the full palette. The engine has **end-to-end plumbing** for a **pilot** map on the **`new_standard`** (Fripp New Standard) tuning id only. Broader **Tonality Vault**–style voicing coverage for the remaining tunings is a **follow-up** workstream; until then, other tunings use the baseline chord-tone register behaviour (string labels and harmony rows are not a full per-preset voicing map).
+
+**Workflow: two electric guitars (separate path)**  
+1. Select **Song Mode**.  
+2. Set **Style Engine profile** to one of the five ids in the first bullet.  
+3. In alternate tuning options, choose **separate** tunings for **Guitar 1** and **Guitar 2** as needed.  
+4. Generated output includes two electric guitar parts; **`guitar_2`** carries the dyadic comp role (not the traditional guitar + upright counterpoint of the default duo without this route).
 
 ### Motif Development (Phase 1)
 
@@ -105,7 +107,7 @@ The system applies altered tunings to both guitars and adds dyadic comp harmony 
 On **standard duo** and **Song Mode** runs that resolve to the **golden-path guitar+bass** stack:
 
 - **Phrase Engine Stage 2:** 4-bar **phrase sequencing types** repeat with **inter-phrase contrast** (successive phrases avoid cloning the same sequencing pattern; phrase intent is shared between **guitar** and **bass** so lines align).
-- **Phrase Engine Stage 3:** **Controlled anticipation** — at most **one** lead-guitar onset per bar may arrive **one eighth-note early**; **cadence bars** (every **fourth** bar in the phrase window) skip anticipation so phrase endings stay clear. The **Indie Art Pop separate dual-electric** route skips Stage 3 so **guitar_2** chord-density smoke stays stable.
+- **Phrase Engine Stage 3:** **Controlled anticipation** — at most **one** lead-guitar onset per bar may arrive **one eighth-note early**; **cadence bars** (every **fourth** bar in the phrase window) skip anticipation so phrase endings stay clear. The **separate-tuning dual-electric** route (alt-tuning–eligible style profile + `alternateGuitarTuning.mode === 'separate'`) skips Stage 3 so **guitar_2** chord-density checks stay stable.
 - **Bar-4 cadence:** On **every** 4-bar boundary, the engine **lengthens** the phrase-ending lead note toward the bar end and **snaps** it to a **chord tone** so phrase closures read in the score.
 
 Details: **`docs/CHANGELOG.md`** → **[2026-04-28]**.

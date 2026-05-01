@@ -1087,6 +1087,22 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 4,
     intervalPreference: 'angular',
   },
+  charlie_parker: {
+    id: 'charlie_parker',
+    lineVsCellEmphasis: 0.82,
+    harmonyColourBias: 0.86,
+    formRegularity: 0.42,
+    prosodyInfluence: 0.12,
+    hookRepetitionBias: 0.35,
+    phraseRegularity: 0.38,
+    hookReturnVariation: 0.68,
+    harmonicSpeed: 0.55,
+    sectionContrast: 0.65,
+    syncopationBias: 0.78,
+    densityBias: 0.48,
+    motifCellSize: 4,
+    intervalPreference: 'chromatic',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -1203,6 +1219,10 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   andrew_hill: 'andrew_hill',
   hill: 'andrew_hill',
   andrew: 'andrew_hill',
+  charlie_parker: 'charlie_parker',
+  bird: 'charlie_parker',
+  parker: 'charlie_parker',
+  charlie: 'charlie_parker',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
 };

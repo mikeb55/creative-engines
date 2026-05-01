@@ -30,9 +30,11 @@ import {
   resolveSongModeDiversityPreset,
 } from '@composer-os/core/song-mode/songwriterStyleResolver';
 import {
-  ALTERNATE_GUITAR_TUNING_PRESETS,
+  getAlternateGuitarTuningPreset,
+  getPresetsByZone,
   normalizeAlternateGuitarTuningRequest,
   type AlternateGuitarTuningRequest,
+  type AlternateGuitarTuningZone,
   type GuitarTuningMode,
 } from '@composer-os/core/song-mode/alternateGuitarTunings';
 import { resolveSongModeDiversityStylePairing } from '@composer-os/core/style-pairing/stylePairingResolver';
@@ -114,6 +116,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'thelonious_monk', label: 'Thelonious Monk' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
+  { id: 'charlie_parker', label: 'Charlie Parker' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
@@ -133,6 +136,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'kate_bush',
   'thelonious_monk',
   'andrew_hill',
+  'charlie_parker',
   'bill_evans',
   'bacharach',
   'donald_fagen',
@@ -374,6 +378,11 @@ const SONG_MODE_STYLE_OPTIONS = [
   'STYLE_INDIE_ART_POP',
   'STYLE_FOLK_GUITAR_NARRATIVE',
   'STYLE_CLASSICAL_INFLUENCE',
+  /** Alternate-tuning affinity (see `alternateGuitarTunings` STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING). */
+  'STYLE_SONIC_YOUTH',
+  'STYLE_JONI_MITCHELL',
+  'STYLE_PAT_METHENY',
+  'STYLE_ECM_CHAMBER',
 ] as const;
 type SongModeStyleProfile = (typeof SONG_MODE_STYLE_OPTIONS)[number];
 const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
@@ -401,8 +410,69 @@ function songModeStyleProfileLabel(id: SongModeStyleProfile): string {
   if (id === 'STYLE_INDIE_ART_POP') return 'Indie Art Pop';
   if (id === 'STYLE_FOLK_GUITAR_NARRATIVE') return 'Folk Guitar Narrative';
   if (id === 'STYLE_CLASSICAL_INFLUENCE') return 'Classical Influence';
+  if (id === 'STYLE_SONIC_YOUTH') return 'Sonic Youth / Noise (alt tuning)';
+  if (id === 'STYLE_JONI_MITCHELL') return 'Joni Mitchell (alt tuning)';
+  if (id === 'STYLE_PAT_METHENY') return 'Pat Metheny (alt tuning)';
+  if (id === 'STYLE_ECM_CHAMBER') return 'ECM Chamber (alt tuning)';
   return id.replace(/^STYLE_/, '').replace(/_/g, ' ');
 }
+
+/** Presets listed under "Other" — excluded from zone optgroups to avoid duplicate options. */
+const ALT_TUNING_OTHER_GROUP_IDS = ['standard', 'drop_d', 'custom'] as const;
+
+const ALT_TUNING_ZONE_GROUPS: { zone: AlternateGuitarTuningZone; label: string }[] = [
+  { zone: 'jazz_sophisticated', label: 'Jazz / Sophisticated' },
+  { zone: 'sonic_youth_noise', label: 'Sonic Youth / Noise' },
+  { zone: 'joni_mitchell', label: 'Joni Mitchell' },
+  { zone: 'hybrid_harmonic', label: 'Hybrid / Harmonic' },
+];
+
+function AlternateTuningPresetSelect(props: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  optionKeyPrefix: string;
+}) {
+  const excluded = new Set<string>(ALT_TUNING_OTHER_GROUP_IDS);
+  return (
+    <select
+      value={props.value}
+      onChange={(e) => props.onChange(e.target.value)}
+      disabled={props.disabled}
+    >
+      {ALT_TUNING_ZONE_GROUPS.map(({ zone, label }) => (
+        <optgroup key={`${props.optionKeyPrefix}-zg-${zone}`} label={label}>
+          {getPresetsByZone(zone)
+            .filter((p) => !excluded.has(p.id))
+            .map((p) => (
+              <option key={`${props.optionKeyPrefix}-${p.id}`} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+        </optgroup>
+      ))}
+      <optgroup key={`${props.optionKeyPrefix}-other`} label="Other">
+        {ALT_TUNING_OTHER_GROUP_IDS.map((tid) => {
+          const p = getAlternateGuitarTuningPreset(tid);
+          return p ? (
+            <option key={`${props.optionKeyPrefix}-${tid}`} value={p.id}>
+              {p.label}
+            </option>
+          ) : null;
+        })}
+      </optgroup>
+    </select>
+  );
+}
+
+/** Song Mode style profiles that expose the alternate tuning control (aligned with engine policy). */
+const SONG_MODE_ALT_TUNING_STYLE_PROFILES = new Set<SongModeStyleProfile>([
+  'STYLE_INDIE_ART_POP',
+  'STYLE_SONIC_YOUTH',
+  'STYLE_JONI_MITCHELL',
+  'STYLE_PAT_METHENY',
+  'STYLE_ECM_CHAMBER',
+]);
 
 function ensembleLabel(id: string): string {
   return ENSEMBLE_OPTIONS.find((o) => o.id === id)?.label ?? id;
@@ -1039,7 +1109,11 @@ export function HomeGenerate({
           presetId === 'song_mode' ? `gen-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : undefined;
         const liveSongModeStyleProfile = songModeStyleProfileRef.current;
         const liveAlternateTuningEnabled = alternateTuningEnabledRef.current;
-        if (presetId === 'song_mode' && liveSongModeStyleProfile === 'STYLE_INDIE_ART_POP' && liveAlternateTuningEnabled) {
+        if (
+          presetId === 'song_mode' &&
+          liveAlternateTuningEnabled &&
+          SONG_MODE_ALT_TUNING_STYLE_PROFILES.has(liveSongModeStyleProfile as SongModeStyleProfile)
+        ) {
           const specFor = (
             presetIdLocal: string,
             customValues: string[]
@@ -1456,7 +1530,8 @@ export function HomeGenerate({
   const showLeadSheetStatusBlock =
     hadLeadSheetInputForRun &&
     isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
-  const indieArtPopAltTuningEligible = presetId === 'song_mode' && songModeStyleProfile === 'STYLE_INDIE_ART_POP';
+  const indieArtPopAltTuningEligible =
+    presetId === 'song_mode' && SONG_MODE_ALT_TUNING_STYLE_PROFILES.has(songModeStyleProfile);
 
   return (
     <section>
@@ -2563,7 +2638,8 @@ export function HomeGenerate({
                 Alternate Guitar Tuning (optional)
               </summary>
               <p style={{ margin: '0.5rem 0 0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                Indie Art Pop only (v1). Leave this off to keep standard Song Mode behavior.
+                Available when Song Mode style is Indie Art Pop, Sonic Youth, Joni Mitchell, Pat Metheny, or ECM Chamber
+                (alt-tuning profiles). Leave off to keep standard Song Mode behaviour.
               </p>
               <label
                 style={{
@@ -2603,17 +2679,12 @@ export function HomeGenerate({
                       <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                         Shared guitar tuning
                       </label>
-                      <select
+                      <AlternateTuningPresetSelect
                         value={sharedTuningPresetId}
-                        onChange={(e) => setSharedTuningPresetId(e.target.value)}
+                        onChange={setSharedTuningPresetId}
                         disabled={loading}
-                      >
-                        {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.label}
-                          </option>
-                        ))}
-                      </select>
+                        optionKeyPrefix="shared-tuning"
+                      />
                       {sharedTuningPresetId === 'custom' && (
                         <div style={{ marginTop: '0.35rem' }}>
                           <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -2645,17 +2716,12 @@ export function HomeGenerate({
                         <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                           Guitar 1 tuning
                         </label>
-                        <select
+                        <AlternateTuningPresetSelect
                           value={guitar1TuningPresetId}
-                          onChange={(e) => setGuitar1TuningPresetId(e.target.value)}
+                          onChange={setGuitar1TuningPresetId}
                           disabled={loading}
-                        >
-                          {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
-                            <option key={`g1-${p.id}`} value={p.id}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </select>
+                          optionKeyPrefix="g1-tuning"
+                        />
                         {guitar1TuningPresetId === 'custom' && (
                           <div style={{ marginTop: '0.35rem' }}>
                             <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -2684,17 +2750,12 @@ export function HomeGenerate({
                         <label style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                           Guitar 2 tuning
                         </label>
-                        <select
+                        <AlternateTuningPresetSelect
                           value={guitar2TuningPresetId}
-                          onChange={(e) => setGuitar2TuningPresetId(e.target.value)}
+                          onChange={setGuitar2TuningPresetId}
                           disabled={loading}
-                        >
-                          {ALTERNATE_GUITAR_TUNING_PRESETS.map((p) => (
-                            <option key={`g2-${p.id}`} value={p.id}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </select>
+                          optionKeyPrefix="g2-tuning"
+                        />
                         {guitar2TuningPresetId === 'custom' && (
                           <div style={{ marginTop: '0.35rem' }}>
                             <p style={{ margin: '0 0 0.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>

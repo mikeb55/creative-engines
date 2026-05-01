@@ -327,6 +327,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   let prevQuartetInner: { violin1?: number; violin2?: number; viola?: number } = {};
   /** Rolling 3-bar violin I windows for {@link applySlonimskyToMelodyLine}. */
   const slonimskyV1Acc: number[] = [];
+  /** Rolling 3-bar violin II windows for {@link applySlonimskyToMelodyLine}. */
+  const slonimskyV2Acc: number[] = [];
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
@@ -361,6 +363,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           effectiveLow: QUARTET_MIDI_BOUNDS[SQ_PART_V1][0]!,
           effectiveHigh: QUARTET_MIDI_BOUNDS[SQ_PART_V1][1]!,
           catalogueSection: 'intervallic_mirror_permutations',
+          transpositionInterval: bar % 12,
         });
         const mel: SlonimskyNote[] = slonimskyV1Acc.map((m, i) => ({
           midi: m,
@@ -378,6 +381,40 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
       }
     }
 
+    let melodyPitchV2 = stack[1]!;
+    if (USE_SLONIMSKY_SQ && !v1Silent) {
+      slonimskyV2Acc.push(melodyPitchV2);
+      if (slonimskyV2Acc.length > 3) slonimskyV2Acc.shift();
+      if (slonimskyV2Acc.length === 3) {
+        const ctx = buildQuartetSlonimskyContext({
+          duoIntent: 'guitar_lead',
+          phase: ((bar - 1) % 8) + 1,
+          seed: seed + bar * 31,
+          songwriterId: undefined,
+          totalQuarterBeats: 4,
+          styleProfile: null,
+          chordSymbol: sym,
+          keyPc: rpc,
+          effectiveLow: QUARTET_MIDI_BOUNDS[SQ_PART_V2][0]!,
+          effectiveHigh: QUARTET_MIDI_BOUNDS[SQ_PART_V2][1]!,
+          catalogueSection: 'tritone_progression',
+        });
+        const mel: SlonimskyNote[] = slonimskyV2Acc.map((m, i) => ({
+          midi: m,
+          durationBeats: 1,
+          beat: i,
+          role: i === 0 || i === 2 ? 'target' : 'passing',
+        }));
+        const chords3 = [chordForBar(bar - 2), chordForBar(bar - 1), chordForBar(bar)];
+        const out = applySlonimskyToMelodyLine(mel, chords3, ctx, seed + bar * 17);
+        const sounding = out.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
+        if (sounding.length > 0) {
+          const pickMidi = sounding[Math.min(2, sounding.length - 1)]!.midi;
+          melodyPitchV2 = snapMidiToRange(pickMidi, ...QUARTET_MIDI_BOUNDS[SQ_PART_V2]);
+        }
+      }
+    }
+
     const barNotes: ScoredNote[] = [];
 
     for (let idx = 0; idx < 4; idx++) {
@@ -390,7 +427,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
         continue;
       }
       const splitHere = needSplit && idx === splitIdx;
-      const pitch = idx === 0 ? melodyPitchV1 : stack[idx]!;
+      const pitch = idx === 0 ? melodyPitchV1 : idx === 1 ? melodyPitchV2 : stack[idx]!;
       if (splitHere) {
         barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
         barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });

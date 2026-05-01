@@ -19,6 +19,7 @@ import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
   indieArtPopAlternateTuningWantsDualElectricGuitars,
   normalizeAlternateGuitarTuningRequest,
+  styleProfileSupportsAlternateGuitarTuning,
 } from '../core/song-mode/alternateGuitarTunings';
 import {
   ensureOutputDirectoryForPreset,
@@ -304,7 +305,7 @@ export function apiGenerate(
         alternateGuitarTuningNormalized: normalizedAlt,
         indieDualElectric:
           req_.presetId === 'song_mode' &&
-          req_.styleProfile === 'STYLE_INDIE_ART_POP' &&
+          styleProfileSupportsAlternateGuitarTuning(req_.styleProfile) &&
           indieArtPopAlternateTuningWantsDualElectricGuitars(normalizedAlt ?? undefined),
       });
     }

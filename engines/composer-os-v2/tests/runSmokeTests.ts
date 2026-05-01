@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **58** PASS rows, **25** suites (2026-04-29).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **98** PASS rows, **27** suites (2026-04-29).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -31,7 +31,9 @@ import { runSondheimSliceSmokeTests } from './sondheimSliceSmoke.test';
 import { runKateBushSliceSmokeTests } from './kateBushSliceSmoke.test';
 import { runTheloniousMonkSliceSmokeTests } from './theloniousMonkSliceSmoke.test';
 import { runAndrewHillSliceSmokeTests } from './andrewHillSliceSmoke.test';
+import { runCharlieParkerSliceSmokeTests } from './charlieParkerSliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
+import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -40,6 +42,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Conductor', run: runConductorTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
+  { label: 'Alternate guitar tunings (zones + texture)', run: runAlternateGuitarTuningsTests },
   { label: 'Indie guitar_2 Song Mode comp (ChordEvent quality)', run: runIndieGuitar2SongModeChordEventQualityTests },
   { label: 'Brian Wilson Pet Sounds songwriter slice', run: runBrianWilsonPetSoundsSliceSmokeTests },
   { label: 'Stevie Wonder (1972–76) songwriter slice', run: runStevieWonderSliceSmokeTests },
@@ -60,6 +63,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Kate Bush songwriter slice', run: runKateBushSliceSmokeTests },
   { label: 'Thelonious Monk songwriter slice', run: runTheloniousMonkSliceSmokeTests },
   { label: 'Andrew Hill songwriter slice', run: runAndrewHillSliceSmokeTests },
+  { label: 'Charlie Parker songwriter slice', run: runCharlieParkerSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
 ];
 

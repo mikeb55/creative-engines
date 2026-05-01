@@ -109,6 +109,7 @@ export function assertScoreMatchesLockedHarmonyWire(
   const kbEff = md?.kateBushEffectiveHarmonyBars;
   const tmEff = md?.theloniousMonkEffectiveHarmonyBars;
   const ahEff = md?.andrewHillEffectiveHarmonyBars;
+  const cpEff = md?.charlieParkerEffectiveHarmonyBars;
   const expectedWire =
     md?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEff) && bwEff.length === tb && bwEff.length === wire.length
       ? bwEff
@@ -202,7 +203,12 @@ export function assertScoreMatchesLockedHarmonyWire(
                                             ahEff.length === tb &&
                                             ahEff.length === wire.length
                                           ? ahEff
-                                          : wire;
+                                          : md?.songwriterStyleId === 'charlie_parker' &&
+                                              Array.isArray(cpEff) &&
+                                              cpEff.length === tb &&
+                                              cpEff.length === wire.length
+                                            ? cpEff
+                                            : wire;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');

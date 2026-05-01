@@ -825,6 +825,20 @@ export interface GenerationMetadata {
     lushExtensionStripped: number;
     twoFiveChainMuted: number;
   };
+  /** Charlie Parker (bebop ii–V–I / tritone sub / turnaround) — slice diagnostics + effective harmony. */
+  charlieParkerDiagnostics?: {
+    songwriterId: 'charlie_parker';
+    barsConsidered: number;
+    iiVIClarified: number;
+    tritoneSubTouches: number;
+    turnaroundCompressed: number;
+    bebopEnrichTouches: number;
+    birdEnclosureTouches?: number;
+    deviceReceipts?: string[];
+  };
+  charlieParkerSliceReceipt?: string;
+  charlieParkerEffectiveHarmonyBars?: string[];
+  charlieParkerDeviceReceipts?: string[];
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

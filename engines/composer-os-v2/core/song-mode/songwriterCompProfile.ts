@@ -94,6 +94,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   wayne_shorter: 'keys',
   pat_metheny: 'keys',
   andrew_hill: 'keys',
+  charlie_parker: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',
   stephen_sondheim: 'keys',
