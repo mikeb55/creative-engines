@@ -1,6 +1,6 @@
 {
   "name": "composer-os-desktop",
-  "version": "1.0.37",
+  "version": "1.0.38",
   "description": "Composer OS Windows Desktop Application",
   "main": "dist/main.js",
   "author": "Creative Engines",
@@ -84,7 +84,11 @@
       {
         "from": "../../engines/songwriting_bridge",
         "to": "songwriting_bridge",
-        "filter": ["**/*.py", "**/*.txt", "**/*.json"]
+        "filter": [
+          "**/*.py",
+          "**/*.txt",
+          "**/*.json"
+        ]
       }
     ],
     "win": {
