@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-04-29]
+# Composer OS Roadmap [2026-05-01]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -525,6 +525,25 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
+### Standalone study tools — Slonimsky Etudes & Wyble Etudes (2026-05-01)
+
+**Positioning:** Both are **intentionally outside the Generate / golden-path pipeline** — separate **desktop** study surfaces (own tab or page), not another Song Mode control.
+
+**15 — Slonimsky Etudes (standalone) — *ranked first* among the two**
+
+- **Concept:** User picks a **pattern family** from a menu (tritone, whole-tone, M3 cycle, etc.); **educational** taxonomy is appropriate here; user supplies **chord or short progression** + **key**; app emits a **short, playable etude** (notation + playback + **MusicXML** export). **Optional:** transposition cycle through **12 keys**. **PDF** — treat as **Phase 2** unless a PDF pipeline already ships in desktop.
+- **Engine readiness:** Core already has **Slonimsky pattern generation**, registry / sections, and **MusicXML export** via **`ScoreModel`**. **Gaps (real work):** thin **etude score shell** (parts, length, layout), **desktop UI + routing**, and **playback** wiring; **PDF** is a **dependency** if required in v1.
+- **Complexity / priority:** **Medium** — mostly **UI + packaging + export**, bounded if v1 stays **short** and **single-line or minimal staff count**. **Ranks after** the **Next best development (top 3)** songwriting / import lanes in **product attention**, but is the **clear first** among these two etude tools. **Relates to** pick list **#10** (pattern lines) — this row is the **user-facing product** expression; **#10** can stay as **engine / research** backlog or roll into **#15** when scheduled.
+
+**16 — Wyble Etudes (standalone) — *ranked second* (lower priority than Slonimsky Etudes)**
+
+- **Concept:** **Voice-leading / inner-line** study: given harmony, show how **four parts** move in a **Wyble-idiom** exercise. **Not** the same as today’s **pre-passes** only (`applyBigBandWybleLeadInnerSaxMidis`, `applyQuartetWybleChordToneStack`) — a **pedagogical generator** needs **product spec** (audience, instrument model, what “Wyble” means for teaching) and likely **new** generation logic.
+- **Complexity / priority:** **Higher ambiguity, smaller addressable audience** (arrangers / advanced users) than **Slonimsky Etudes** — **schedule after #15** and after **design brief**. **Relates to** pick list **#3** (Wyble etude / product preset) — **#16** is the **standalone-study** framing; **#3** remains the **Generate-adjacent / preset** angle unless merged intentionally.
+
+**Confirmed ordering:** **#15 Slonimsky Etudes** → **#16 Wyble Etudes** (same order as advisory review).
+
+---
+
 ### Next best development (top 3 options — refreshed 2026-04-28)
 
 1. **Ship more Song Mode songwriter profiles (golden-path slices)** — Add or deepen **primary writer** behaviour using the **Songwriter profiles — priority 1** pattern above; pair each slice with **smoke** + **manifest receipts** + optional **eval** script row.
@@ -590,10 +609,12 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | 12 | **Vocal lead sheet — pipeline** | **VERIFIED packaged (2026-04-17)** — same as Current table; `release\win-unpacked\Composer OS Desktop.exe`; see [CHANGELOG.md](CHANGELOG.md). |
 | 8 | **18.2D / bass regression expansion** | More seeds, property tests, or CI hook for **`test:duo`** + **`test:bass`**. |
 | 9 | **ECM / Barry Harris / Bacharach** | Implement from **`ECM_Bacharach_BarryHarris_Research.md`** when extending chamber feel or style stacks. |
-| 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. |
+| 10 | **Slonimsky / pattern lines** | Melodic substitution or line tools from **`Slonimsky Engine.md`**. **Product umbrella (2026-05-01):** prefer scheduling **#15 Slonimsky Etudes (standalone)** when the goal is a **user-visible** study tool; keep **#10** for **engine-only** backlog if split is useful. |
 | 11 | **Chord UX polish** | Rarer symbols, help text, parse-error tests; does **not** reopen #16 baseline. |
 | 13 | **Lead-sheet MusicXML → SQ / BB (v1)** | **Planned** — shared **`LeadSheet`**, **`leadSheetFromMusicXml`**, **`realiseQuartetFromLeadSheet`** / **`realiseBigBandFromLeadSheet`**; staged PRs; see **Future → Lead-sheet MusicXML import**. |
 | 14 | **Phrase Engine / Riff redesign** | **Planned** — motivic phrase core + module adapters + later guitar idiom lane; **not** whole-song generation; see **Future → Phrase Engine / Riff Generator redesign**. |
+| 15 | **Slonimsky Etudes (standalone)** | **Planned** — desktop study tab: pattern family + harmony + key → short etude → notation / playback / MusicXML; optional **12-key** cycle; **PDF** Phase 2 unless pipeline exists. **Before #16.** See **Future → Standalone study tools**. |
+| 16 | **Wyble Etudes (standalone)** | **Planned — after #15** — voice-leading study tool; needs **design brief**; Wyble today is **ensemble pre-passes** only, not a pedagogy API. See **Future → Standalone study tools**; relates to **#3**. |
 
 ### Near term (high leverage)
 
@@ -605,6 +626,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ### Medium term
 
+- **Standalone study tools (#15 / #16)** — **Slonimsky Etudes** before **Wyble Etudes**; both outside Generate; see **Future → Standalone study tools — Slonimsky Etudes & Wyble Etudes**.
 - **ECM Chamber — Arrangement & Orchestration depth** — register separation, sparser bass vs guitar, silence/space enforcement; shares ideas with sectional Big Band work. (See **ECM Chamber — Arrangement & Orchestration depth** section below.)
 - **Big Band — V1 / V1.5 shipped (2026-04-20):** arranging scaffold in `bigBandPatterns.ts` + `bigBandScoreBuilder.ts` — deterministic **8-bar** sax soli **17–24** (when `totalBars >= 24`), brass tacet in-window, cadence punches + late shout fragment; **`npm run test:big-band-arranging`**.
 - **Big Band V2 (shipped 2026-04-20):** theme-anchored **soli** (head lead + root contour) and **shout** lift; **drum** tiering (stronger on ensemble-hit bars, lighter timekeeping off hits); tests + **`eval:big-band-chart`**. **Future polish:** sectional counterpoint and further drum/section colour beyond this pass.
@@ -675,6 +697,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-04-29].*
+*End of Composer OS Roadmap [2026-05-01].*
 
 

@@ -455,7 +455,30 @@ export function mapDuoPhraseIntentToSlonimskyPhraseIntent(
   return 'float';
 }
 
-function resolveAllowedOutsideLevelForSlonimsky(songwriterId: string | undefined): 0 | 1 | 2 {
+const SLONIMSKY_SONGWRITER_ID_TO_MAP_KEY: Record<string, keyof typeof SLONIMSKY_STYLE_PROFILE_MAP> = {
+  antonio_carlos_jobim: 'JOBIM',
+};
+
+function resolveSlonimskyProfileSpecForSongwriterId(
+  songwriterId: string | undefined
+): SlonimskyStyleProfileSpec | undefined {
+  if (!songwriterId?.trim()) return undefined;
+  const t = songwriterId.trim();
+  const aliasKey = SLONIMSKY_SONGWRITER_ID_TO_MAP_KEY[t];
+  if (aliasKey && SLONIMSKY_STYLE_PROFILE_MAP[aliasKey]) {
+    return SLONIMSKY_STYLE_PROFILE_MAP[aliasKey];
+  }
+  const upper = t.toUpperCase() as keyof typeof SLONIMSKY_STYLE_PROFILE_MAP;
+  return SLONIMSKY_STYLE_PROFILE_MAP[upper];
+}
+
+/** Profile-derived Slonimsky outside allowance; uses {@link SLONIMSKY_STYLE_PROFILE_MAP} when the songwriter resolves. */
+export function resolveAllowedOutsideLevelForSlonimsky(songwriterId: string | undefined): 0 | 1 | 2 {
+  const spec = resolveSlonimskyProfileSpecForSongwriterId(songwriterId);
+  if (spec && typeof spec.outsideLevel === 'number') {
+    const r = Math.round(spec.outsideLevel);
+    return Math.max(0, Math.min(2, r)) as 0 | 1 | 2;
+  }
   if (songwriterId === 'wayne_shorter' || songwriterId === 'barry_harris') return 2;
   if (songwriterId === 'ecm_chamber' || songwriterId === 'pat_metheny') return 1;
   return 1;
@@ -469,6 +492,8 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
   phase: number;
   seed: number;
   songwriterId?: string;
+  /** Caps profile allowance (User Chromatic Strength); `Math.min(override, profile)`. */
+  allowedOutsideOverride?: 0 | 1 | 2;
   totalQuarterBeats: number;
   styleProfile?: string;
   keyPc?: number;
@@ -483,11 +508,17 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
     params.seed
   );
   const chordType = params.chordType ?? 'dominant';
+  const profileLevel = resolveAllowedOutsideLevelForSlonimsky(params.songwriterId);
+  const allowedOutsideLevel = (
+    params.allowedOutsideOverride !== undefined
+      ? Math.min(params.allowedOutsideOverride, profileLevel)
+      : profileLevel
+  ) as 0 | 1 | 2;
   return {
     keyPc: params.keyPc ?? 0,
     chordType,
     functionalStrength: 'medium',
-    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(params.songwriterId),
+    allowedOutsideLevel,
     phraseIntent,
     basePitch: 62,
     maxBeats: Math.max(4, params.totalQuarterBeats),
@@ -504,6 +535,7 @@ export function buildDuoBarSlonimskyContext(params: {
   phase: number;
   seed: number;
   songwriterId?: string;
+  allowedOutsideOverride?: 0 | 1 | 2;
   totalQuarterBeats: number;
   styleProfile?: string | null;
   chordSymbol: string;
@@ -517,6 +549,7 @@ export function buildDuoBarSlonimskyContext(params: {
     phase: params.phase,
     seed: params.seed,
     songwriterId: params.songwriterId,
+    allowedOutsideOverride: params.allowedOutsideOverride,
     totalQuarterBeats: params.totalQuarterBeats,
     styleProfile: params.styleProfile ?? undefined,
     keyPc: params.keyPc,

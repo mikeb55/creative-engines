@@ -255,6 +255,8 @@ export interface BuildQuartetScoreModelInput {
   wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
+  allowedOutsideOverride?: 0 | 1 | 2;
 }
 
 function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): void {
@@ -295,8 +297,18 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   const USE_PIANO_COMP_SQ = true;
   const USE_SLONIMSKY_SQ = true;
   const USE_RETURN_OCTAVE_LIFT = true;
-  const { title, seed, formPlan, texturePlan, era, chordBars, padSketch, wybleVoiceLayout, songwriterStyleId } =
-    input;
+  const {
+    title,
+    seed,
+    formPlan,
+    texturePlan,
+    era,
+    chordBars,
+    padSketch,
+    wybleVoiceLayout,
+    songwriterStyleId,
+    allowedOutsideOverride,
+  } = input;
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -359,6 +371,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
+          ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,
@@ -394,6 +407,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
+          ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,

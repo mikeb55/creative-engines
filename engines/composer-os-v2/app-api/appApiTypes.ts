@@ -147,6 +147,8 @@ export interface GenerateRequest {
   songModeJamesBrownFunkOverlay?: boolean;
   /** Song Mode C5 blend strength; default medium in engine when omitted. */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Song Mode / Big Band / String Quartet: Slonimsky chromatic outside level. */
+  chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Phase 19: explicit musical form selection. */
   formId?: string;
   /** Song Mode: after duo MusicXML, run Python bridge for vocal lead sheet (optional). */
@@ -263,6 +265,8 @@ export interface OutputEntry {
   c4_bars_used?: number[];
   /** Song Mode: receipt lines when a style profile applies real metadata nudges (e.g. Groove/Soul). */
   songModeStyleSurfaceNotes?: string[];
+  /** Big Band / String Quartet: Chromatic Strength → Slonimsky receipt lines (when request set user control). */
+  ensembleSlonimskyReceipt?: string[];
   /** Song Mode — Donald Fagen primary: Phase C1 overlay receipt (when applicable). */
   songModeDonaldFagenC1Receipt?: string;
   /** Song Mode — resolved primary songwriter id (manifest echo). */

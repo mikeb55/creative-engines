@@ -286,6 +286,12 @@ export function apiGenerate(
         body.blendStrength === 'strong'
           ? body.blendStrength
           : undefined,
+      chromaticStrength:
+        body.chromaticStrength === 'off' ||
+        body.chromaticStrength === 'subtle' ||
+        body.chromaticStrength === 'prominent'
+          ? body.chromaticStrength
+          : undefined,
       formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
       includeVocalLeadSheet: body.includeVocalLeadSheet === true ? true : undefined,
       __generateCorrelationId:

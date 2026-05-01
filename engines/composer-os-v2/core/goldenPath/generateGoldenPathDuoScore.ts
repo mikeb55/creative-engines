@@ -2831,6 +2831,9 @@ function buildGuitarPart(
             phase,
             seed,
             songwriterId: genMeta?.songwriterStyleId as string | undefined,
+            ...(genMeta?.slonimskyAllowedOutsideOverride !== undefined
+              ? { allowedOutsideOverride: genMeta.slonimskyAllowedOutsideOverride }
+              : {}),
             totalQuarterBeats: tb * 4,
             styleProfile: normalizeStyleProfileId(genMeta?.styleProfile),
             chordSymbol: chordStr,

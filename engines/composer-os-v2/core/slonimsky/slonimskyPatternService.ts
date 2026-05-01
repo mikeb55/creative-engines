@@ -13,6 +13,7 @@ import {
   buildDuoBarSlonimskyContext,
   inferSlonimskyChordTypeCategory,
   mapDuoPhraseIntentToSlonimskyContext,
+  resolveAllowedOutsideLevelForSlonimsky,
   selectSlonimskyPattern,
   SLONIMSKY_STYLE_PROFILE_MAP,
   type SlonimskyStyleProfileSpec,
@@ -60,6 +61,8 @@ export type SlonimskyContextParams = {
   maxInfraSteps?: number;
   /** Passed through to {@link SlonimskyContext.maxUltraSteps}. */
   maxUltraSteps?: number;
+  /** Caps profile {@link SlonimskyContext.allowedOutsideLevel} (User Chromatic Strength). */
+  allowedOutsideOverride?: 0 | 1 | 2;
 };
 
 /** Intent mixture for ensemble-weighted `phraseIntent` (build / float / release / shock). */
@@ -155,10 +158,23 @@ function mergeEnsembleParamsWithSlonimskyStyleProfile(params: SlonimskyContextPa
   };
 }
 
-function resolveAllowedOutsideLevelForSlonimsky(songwriterId: string | undefined): 0 | 1 | 2 {
-  if (songwriterId === 'wayne_shorter' || songwriterId === 'barry_harris') return 2;
-  if (songwriterId === 'ecm_chamber' || songwriterId === 'pat_metheny') return 1;
-  return 1;
+export function chromaticStrengthToOutsideLevel(
+  s: 'off' | 'subtle' | 'prominent' | undefined
+): 0 | 1 | 2 | undefined {
+  if (s === 'off') return 0;
+  if (s === 'subtle') return 1;
+  if (s === 'prominent') return 2;
+  return undefined;
+}
+
+function resolveEffectiveEnsembleAllowedOutsideLevel(
+  songwriterId: string | undefined,
+  allowedOutsideOverride?: 0 | 1 | 2
+): 0 | 1 | 2 {
+  const profileLevel = resolveAllowedOutsideLevelForSlonimsky(songwriterId);
+  return (
+    allowedOutsideOverride !== undefined ? Math.min(allowedOutsideOverride, profileLevel) : profileLevel
+  ) as 0 | 1 | 2;
 }
 
 export {
@@ -167,6 +183,7 @@ export {
   selectSlonimskyPattern as getPatternForContext,
   buildDuoBarSlonimskyContext,
   mapDuoPhraseIntentToSlonimskyContext,
+  resolveAllowedOutsideLevelForSlonimsky,
   type SlonimskyContext,
   type SlonimskyNote,
 } from './slonimskyEngine';
@@ -244,6 +261,10 @@ function buildEnsembleBarSlonimskyContext(
   const phraseIntent = merged.phraseIntent ?? weightedIntent(merged.seed, defaults.weights);
 
   const sectionPatterns = getPatternsBySection(merged.catalogueSection as ThesaurusSection);
+  const allowedOutsideEffective = resolveEffectiveEnsembleAllowedOutsideLevel(
+    merged.songwriterId,
+    merged.allowedOutsideOverride
+  );
   selectPatternForIntent({
     seed: merged.seed,
     sectionPatterns,
@@ -251,14 +272,14 @@ function buildEnsembleBarSlonimskyContext(
     styleProfile: styleProfile ?? undefined,
     chordType: inferred,
     functionalStrength: 'medium',
-    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(merged.songwriterId),
+    allowedOutsideLevel: allowedOutsideEffective,
   });
 
   const base: SlonimskyContext = {
     keyPc: merged.keyPc,
     chordType: inferred,
     functionalStrength: 'medium',
-    allowedOutsideLevel: resolveAllowedOutsideLevelForSlonimsky(merged.songwriterId),
+    allowedOutsideLevel: allowedOutsideEffective,
     phraseIntent,
     basePitch: 62,
     maxBeats: Math.max(4, merged.totalQuarterBeats),

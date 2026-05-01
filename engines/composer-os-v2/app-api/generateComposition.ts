@@ -156,6 +156,8 @@ export interface GenerateResult {
     longFormEnabled?: boolean;
     styleProfile?: StyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
+    /** Echo when client sends Slonimsky Chromatic Strength (Song Mode / ensemble). */
+    chromaticStrength?: 'off' | 'subtle' | 'prominent';
     importHarmonyMode?: ImportHarmonyMode;
     harmonyBlend?: number;
     debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
@@ -179,6 +181,8 @@ export interface GenerateResult {
   gceScore?: number;
   /** Song Mode — true when `gceScore` meets the ship gate threshold (≥ 8.0). */
   gceGatePassed?: boolean;
+  /** Big Band / String Quartet — Slonimsky Chromatic Strength receipt lines (when set on request). */
+  ensembleSlonimskyReceipt?: string[];
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -223,6 +227,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    ...(req.chromaticStrength === 'off' ||
+    req.chromaticStrength === 'subtle' ||
+    req.chromaticStrength === 'prominent'
+      ? { chromaticStrength: req.chromaticStrength }
+      : {}),
     songModeLeadSheetMelodyAnchors: importedAnchors,
     leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
     importHarmonyMode: normalizedImportHarmonyMode,

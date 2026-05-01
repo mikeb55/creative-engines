@@ -65,6 +65,9 @@ export function runBigBandRealisation(
     ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
       ? { songwriterStyleId: input.songwriterStyleId.trim() }
       : {}),
+    ...(input.allowedOutsideOverride !== undefined
+      ? { allowedOutsideOverride: input.allowedOutsideOverride }
+      : {}),
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {

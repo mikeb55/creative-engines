@@ -250,6 +250,10 @@ export interface GenerationMetadata {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength from request (default medium when unset). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** User Chromatic Strength — echoed from request; caps Slonimsky profile allowance. */
+  chromaticStrength?: 'off' | 'subtle' | 'prominent';
+  /** Resolved cap passed into Slonimsky (`chromaticStrengthToOutsideLevel`); `Math.min` with profile. */
+  slonimskyAllowedOutsideOverride?: 0 | 1 | 2;
   /** Identity-locked bar indices — mutation modules must not alter these bars. */
   identityLockedBars?: number[];
   /** motifReusePlanner suggestions for downstream use. */

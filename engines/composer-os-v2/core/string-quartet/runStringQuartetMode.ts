@@ -29,6 +29,8 @@ export interface StringQuartetRunInput {
   chordProgressionText?: string;
   /** Songwriter id from Generate (e.g. `donald_fagen`) — Slonimsky catalogue bias in score realisation only. */
   songwriterStyleId?: string;
+  /** User Chromatic Strength cap (0/1/2) — passed to score realisation Slonimsky only. */
+  allowedOutsideOverride?: 0 | 1 | 2;
 }
 
 export interface StringQuartetRunManifestHints {

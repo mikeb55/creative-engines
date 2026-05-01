@@ -31,6 +31,7 @@ import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-shee
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
+import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
@@ -153,6 +154,11 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
+    ...(req.chromaticStrength === 'off' ||
+    req.chromaticStrength === 'subtle' ||
+    req.chromaticStrength === 'prominent'
+      ? { chromaticStrength: req.chromaticStrength }
+      : {}),
     ...(indieDualGuitarTuningProofFixtureRequested(req)
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
@@ -172,6 +178,27 @@ function ensembleSlonimskySongwriterIdFromRequest(req: GenerateRequest): string 
   const fromPairing = req.stylePairing?.songwriterStyle?.trim();
   const fromPrimary = req.primarySongwriterStyle?.trim();
   return fromPairing || fromPrimary || undefined;
+}
+
+function ensembleSlonimskyReceiptLines(
+  cs: 'off' | 'subtle' | 'prominent' | undefined
+): string[] | undefined {
+  if (cs === 'prominent') {
+    return [
+      'Chromatic Strength (prominent): Slonimsky allowedOutsideLevel capped at 2; intervallic patterns eligible on non-cadence bars.',
+    ];
+  }
+  if (cs === 'subtle') {
+    return [
+      'Chromatic Strength (subtle): Slonimsky allowedOutsideLevel capped at 1; light outside colour on phrase peaks only.',
+    ];
+  }
+  if (cs === 'off') {
+    return [
+      'Chromatic Strength (off): Slonimsky pattern generation suppressed; melodic lines use chord-tone anchors only.',
+    ];
+  }
+  return undefined;
 }
 
 function normalizeImportHarmonyMode(input: unknown): ImportHarmonyMode {
@@ -731,6 +758,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    ...(req.chromaticStrength === 'off' ||
+    req.chromaticStrength === 'subtle' ||
+    req.chromaticStrength === 'prominent'
+      ? { chromaticStrength: req.chromaticStrength }
+      : {}),
     primarySongwriterStyle: req.primarySongwriterStyle,
     songModeLeadSheetMelodyAnchors: leadSheetMelodyAnchors,
     leadSheetPerformanceBlend: perfBlendRaw,
@@ -1497,6 +1529,11 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
     ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
+    ...(req.chromaticStrength === 'off' ||
+    req.chromaticStrength === 'subtle' ||
+    req.chromaticStrength === 'prominent'
+      ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
+      : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
@@ -1559,6 +1596,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
         era: pairing.era,
       }
     : undefined;
+  const ensReceipt = ensembleSlonimskyReceiptLines(req.chromaticStrength);
   return {
     success: ok,
     productKind: 'planning',
@@ -1584,6 +1622,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     scoreTitle: title,
     requestEcho: requestEchoFromReq(req),
     stylePairingReceipt,
+    ...(ensReceipt ? { ensembleSlonimskyReceipt: ensReceipt } : {}),
   };
 }
 
@@ -1613,6 +1652,11 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       : {}),
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
     ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
+    ...(req.chromaticStrength === 'off' ||
+    req.chromaticStrength === 'subtle' ||
+    req.chromaticStrength === 'prominent'
+      ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
+      : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
@@ -1620,6 +1664,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
     fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
+    const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
     return {
       success: true,
       productKind: 'musicxml',
@@ -1639,6 +1684,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       },
       scoreTitle: title,
       requestEcho: requestEchoFromReq(req),
+      ...(ensReceiptXml ? { ensembleSlonimskyReceipt: ensReceiptXml } : {}),
     };
   }
   const ok = sq.validation.ok;
@@ -1663,6 +1709,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     orchestrationReady: sq.manifestHints.stringQuartetOrchestrationReady,
   };
   const { filepath } = writeArtifactJson(outputDir, filename, payload);
+  const ensReceiptSq = ensembleSlonimskyReceiptLines(req.chromaticStrength);
   return {
     success: ok,
     productKind: 'planning',
@@ -1684,5 +1731,6 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     },
     scoreTitle: title,
     requestEcho: requestEchoFromReq(req),
+    ...(ensReceiptSq ? { ensembleSlonimskyReceipt: ensReceiptSq } : {}),
   };
 }

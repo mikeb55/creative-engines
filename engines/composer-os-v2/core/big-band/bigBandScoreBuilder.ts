@@ -493,6 +493,8 @@ export interface BuildBigBandScoreModelInput {
   enhancedPlanning?: BigBandEnhancedPlanning;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
+  allowedOutsideOverride?: 0 | 1 | 2;
 }
 
 function addWindOrBassNotes(
@@ -580,6 +582,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     wybleVoiceLayout,
     enhancedPlanning,
     songwriterStyleId,
+    allowedOutsideOverride,
   } = input;
   const totalBars = formPlan.totalBars;
 
@@ -691,6 +694,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
+          ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,
@@ -726,6 +730,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
+          ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           totalQuarterBeats: 4,
           styleProfile: null,
           chordSymbol: sym,

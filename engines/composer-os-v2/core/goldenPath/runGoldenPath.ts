@@ -100,6 +100,7 @@ import {
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
+import { chromaticStrengthToOutsideLevel } from '../slonimsky/slonimskyPatternService';
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
 import { applyEcmStyleHarmonyMotionPolicy } from '../song-mode/ecmStyleHarmonyPolicy';
@@ -976,6 +977,8 @@ export interface RunGoldenPathOptions {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** User Chromatic Strength — caps Slonimsky `allowedOutsideLevel` vs songwriter profile. */
+  chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Feature flag: Motif Authority V1 (default off). */
   motifAuthorityV1?: boolean;
   /** Pilot motif policy level (default `soft` when V1 is requested). */
@@ -1672,6 +1675,26 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       blendStrength: options.blendStrength,
     };
+  }
+  if (
+    options?.chromaticStrength === 'off' ||
+    options?.chromaticStrength === 'subtle' ||
+    options?.chromaticStrength === 'prominent'
+  ) {
+    const ov = chromaticStrengthToOutsideLevel(options.chromaticStrength);
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      chromaticStrength: options.chromaticStrength,
+      ...(ov !== undefined ? { slonimskyAllowedOutsideOverride: ov } : {}),
+    };
+    const cs = options.chromaticStrength;
+    const line =
+      cs === 'prominent'
+        ? 'Chromatic Strength (prominent): Slonimsky allowedOutsideLevel capped at 2; intervallic patterns eligible on non-cadence bars.'
+        : cs === 'subtle'
+          ? 'Chromatic Strength (subtle): Slonimsky allowedOutsideLevel capped at 1; light outside colour on phrase peaks only.'
+          : 'Chromatic Strength (off): Slonimsky pattern generation suppressed; melodic lines use chord-tone anchors only.';
+    appendSongModeStyleSurfaceNotes(context.generationMetadata, [line]);
   }
 
   const eraForNormalization = normalizeEraId((options?.stylePairing?.era as string | undefined) ?? options?.era);

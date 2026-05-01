@@ -715,6 +715,7 @@ export function HomeGenerate({
   const songFormDropdownRef = useRef<HTMLDivElement>(null);
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
+  const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [funkGroove, setFunkGroove] = useState(false);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
@@ -1153,6 +1154,9 @@ export function HomeGenerate({
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
+            : {}),
+          ...(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet'
+            ? { chromaticStrength }
             : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
@@ -2122,6 +2126,44 @@ export function HomeGenerate({
             </label>
           </div>
         </>
+      )}
+
+      {(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') && (
+        <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
+          <label
+            htmlFor="composer-os-chromatic-strength"
+            style={{
+              display: 'block',
+              marginBottom: '0.35rem',
+              color: 'var(--text)',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+            }}
+          >
+            Chromatic Strength
+          </label>
+          <select
+            id="composer-os-chromatic-strength"
+            value={chromaticStrength}
+            onChange={(e) =>
+              setChromaticStrength(e.target.value as 'off' | 'subtle' | 'prominent')
+            }
+            disabled={loading}
+            style={{
+              width: '100%',
+              maxWidth: 260,
+              padding: '0.45rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-input, var(--bg))',
+              color: 'var(--text)',
+            }}
+          >
+            <option value="off">Off</option>
+            <option value="subtle">Subtle</option>
+            <option value="prominent">Prominent</option>
+          </select>
+        </div>
       )}
 
       <div style={{ marginBottom: '1rem' }}>
