@@ -152,7 +152,7 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     maxInfraSteps: 2,
     maxUltraSteps: 1,
   },
-  STEELY_DAN: {
+  DONALD_FAGEN: {
     outsideLevel: 2,
     preferredSections: ['tritone_substitutions', 'heptatonic_scales'],
     defaultProfile: 'Metheny',
