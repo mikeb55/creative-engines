@@ -1483,6 +1483,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `Big Band Plan ${req.seed}`;
+  const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
+  const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
+  const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const eraFromPairing = parseBigBandEraFromPairing(req.stylePairing?.era);
   const chordProgressionText =
@@ -1514,6 +1517,8 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const leadSheet = req.ensembleLeadSheetMusicXml
     ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
     : undefined;
+  const leadSheetForChordLock =
+    !freeHarmony && leadSheet?.chordEvents?.length ? leadSheet : undefined;
   const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
@@ -1538,7 +1543,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     req.chromaticStrength === 'prominent'
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
-    ...(leadSheet ? { leadSheet } : {}),
+    ...(leadSheetForChordLock ? { leadSheet: leadSheetForChordLock } : {}),
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
@@ -1626,6 +1631,13 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
       experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      importHarmonyMode: normalizedImportHarmonyMode,
+      importHarmonyModeSource: req.importHarmonyMode !== undefined ? 'explicit' : 'not_supplied',
+      harmonyBlendRaw,
+      importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
+      importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
+      importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
+      importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
       ...(realised.referenceInfluence
         ? {
             referenceSourceKind: 'musicxml',
@@ -1647,6 +1659,9 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
   const title = req.title?.trim() || `String Quartet Plan ${req.seed}`;
+  const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
+  const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
+  const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
@@ -1661,6 +1676,8 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const leadSheet = req.ensembleLeadSheetMusicXml
     ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
     : undefined;
+  const leadSheetForChordLock =
+    !freeHarmony && leadSheet?.chordEvents?.length ? leadSheet : undefined;
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
@@ -1677,7 +1694,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     req.chromaticStrength === 'prominent'
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
-    ...(leadSheet ? { leadSheet } : {}),
+    ...(leadSheetForChordLock ? { leadSheet: leadSheetForChordLock } : {}),
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
@@ -1705,6 +1722,13 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
         experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+        importHarmonyMode: normalizedImportHarmonyMode,
+        importHarmonyModeSource: req.importHarmonyMode !== undefined ? 'explicit' : 'not_supplied',
+        harmonyBlendRaw,
+        importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
+        importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
+        importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
+        importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
         ...(realised.referenceInfluence
           ? {
               referenceSourceKind: 'musicxml',
@@ -1761,6 +1785,13 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
       experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      importHarmonyMode: normalizedImportHarmonyMode,
+      importHarmonyModeSource: req.importHarmonyMode !== undefined ? 'explicit' : 'not_supplied',
+      harmonyBlendRaw,
+      importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
+      importHarmonyLockApplied: !freeHarmony && (leadSheet?.chordEvents?.length ?? 0) > 0,
+      importHarmonyLockFallbackReason: freeHarmony ? 'free_harmony_requested' : undefined,
+      importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
       ...(realised.referenceInfluence
         ? {
             referenceSourceKind: 'musicxml',

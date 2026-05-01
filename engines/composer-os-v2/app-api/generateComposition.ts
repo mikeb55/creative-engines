@@ -129,7 +129,7 @@ export interface GenerateResult {
     songModeLeadSheetAnchorStartApplied?: GenerationMetadata['songModeLeadSheetAnchorStartApplied'];
     songModeLeadSheetExpressionStrength?: GenerationMetadata['songModeLeadSheetExpressionStrength'];
     importHarmonyMode?: GenerationMetadata['importHarmonyMode'];
-    importHarmonyModeSource?: GenerationMetadata['importHarmonyModeSource'];
+    importHarmonyModeSource?: GenerationMetadata['importHarmonyModeSource'] | 'not_supplied';
     harmonyBlendRaw?: GenerationMetadata['harmonyBlendRaw'];
     importHarmonyPolicyVersion?: GenerationMetadata['importHarmonyPolicyVersion'];
     importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];

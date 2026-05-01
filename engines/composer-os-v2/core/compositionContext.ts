@@ -75,7 +75,8 @@ export type ImportHarmonyLockFallbackReason =
   | 'timeline_missing'
   | 'timeline_empty'
   | 'timeline_unusable'
-  | 'not_song_mode';
+  | 'not_song_mode'
+  | 'free_harmony_requested';
 
 /** LeadSheet MusicXML adapt pipeline position (Stage 1 telemetry; not a user-facing mode). */
 export type ImportHarmonyLeadSheetPipelineStage =
