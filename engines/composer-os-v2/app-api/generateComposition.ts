@@ -136,6 +136,12 @@ export interface GenerateResult {
     importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
     importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
+    /** Ensemble reference-import hints (Big Band / String Quartet optional MusicXML). */
+    referenceSourceKind?: string;
+    referenceBehaviourSummary?: string;
+    referenceInfluenceMode?: string;
+    referenceInfluenceStrength?: string;
+    referenceBehaviourHints?: string[];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;

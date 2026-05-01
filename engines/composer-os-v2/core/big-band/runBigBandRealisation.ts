@@ -4,6 +4,10 @@
 
 import { buildBigBandScoreModel } from './bigBandScoreBuilder';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
+import { applyReferenceInfluence } from '../reference-import/applyReferenceInfluence';
+import { extractReferenceBehaviour } from '../reference-import/extractReferenceBehaviour';
+import { parseMusicXmlReference } from '../reference-import/musicXmlReferenceParser';
+import type { ReferenceInfluenceEnvelope } from '../reference-import/referenceReuseTypes';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planBigBandVoicing } from './bigBandVoicingPlanner';
 import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from './runBigBandMode';
@@ -18,12 +22,16 @@ export interface BigBandRealisationResult {
   voicingValidation: ReturnType<typeof validateEnsembleVoicing>;
   score: ScoreModel | undefined;
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
+  /** Behaviour hints from optional ensemble MusicXML reference import (additive; no score cloning). */
+  referenceInfluence?: ReferenceInfluenceEnvelope;
 }
 
 export function runBigBandRealisation(
   input: BigBandRunInput & {
     bpm?: number;
     leadSheet?: LeadSheet;
+    /** Raw MusicXML for reference behaviour hints (same payload as app `ensembleLeadSheetMusicXml`). */
+    ensembleLeadSheetMusicXml?: string;
     /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the BB score skips Wyble alto/tenor sax separation. */
     suppressWybleVoiceLayoutForTest?: boolean;
   }
@@ -41,6 +49,16 @@ export function runBigBandRealisation(
       exportPipeline: { ok: false, errors: ['Planning validation failed — score not built'] },
     };
   }
+
+  const referenceInfluence =
+    typeof input.ensembleLeadSheetMusicXml === 'string' && input.ensembleLeadSheetMusicXml.trim().length > 0
+      ? (() => {
+          const refResult = parseMusicXmlReference(input.ensembleLeadSheetMusicXml);
+          if (!refResult.ok || !refResult.piece) return undefined;
+          const profile = extractReferenceBehaviour(refResult.piece);
+          return applyReferenceInfluence(profile, 'big_band', 'hint_only', 'subtle');
+        })()
+      : undefined;
 
   const tb = planning.formPlan.totalBars;
   let raw =
@@ -102,5 +120,6 @@ export function runBigBandRealisation(
     voicingValidation,
     score,
     exportPipeline,
+    ...(referenceInfluence ? { referenceInfluence } : {}),
   };
 }

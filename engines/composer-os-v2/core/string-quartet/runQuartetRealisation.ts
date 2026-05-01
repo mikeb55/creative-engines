@@ -4,6 +4,10 @@
 
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
+import { applyReferenceInfluence } from '../reference-import/applyReferenceInfluence';
+import { extractReferenceBehaviour } from '../reference-import/extractReferenceBehaviour';
+import { parseMusicXmlReference } from '../reference-import/musicXmlReferenceParser';
+import type { ReferenceInfluenceEnvelope } from '../reference-import/referenceReuseTypes';
 import { buildQuartetScoreModel } from './quartetScoreBuilder';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
@@ -19,6 +23,8 @@ export interface QuartetRealisationResult {
   voicingValidation: ReturnType<typeof validateEnsembleVoicing>;
   score: ScoreModel | undefined;
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
+  /** Behaviour hints from optional ensemble MusicXML reference import (additive; no score cloning). */
+  referenceInfluence?: ReferenceInfluenceEnvelope;
 }
 
 export function runQuartetRealisation(
@@ -26,6 +32,8 @@ export function runQuartetRealisation(
     era?: BigBandEraId;
     bpm?: number;
     leadSheet?: LeadSheet;
+    /** Raw MusicXML for reference behaviour hints (same payload as app `ensembleLeadSheetMusicXml`). */
+    ensembleLeadSheetMusicXml?: string;
     /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the quartet score build skips the Wyble inner-line chord-tone swap. */
     suppressWybleVoiceLayoutForTest?: boolean;
   }
@@ -43,6 +51,16 @@ export function runQuartetRealisation(
       exportPipeline: { ok: false, errors: ['Planning validation failed — score not built'] },
     };
   }
+
+  const referenceInfluence =
+    typeof input.ensembleLeadSheetMusicXml === 'string' && input.ensembleLeadSheetMusicXml.trim().length > 0
+      ? (() => {
+          const refResult = parseMusicXmlReference(input.ensembleLeadSheetMusicXml);
+          if (!refResult.ok || !refResult.piece) return undefined;
+          const profile = extractReferenceBehaviour(refResult.piece);
+          return applyReferenceInfluence(profile, 'string_quartet', 'hint_only', 'subtle');
+        })()
+      : undefined;
 
   const tb = planning.formPlan.totalBars;
   let raw =
@@ -102,5 +120,6 @@ export function runQuartetRealisation(
     voicingValidation,
     score,
     exportPipeline,
+    ...(referenceInfluence ? { referenceInfluence } : {}),
   };
 }

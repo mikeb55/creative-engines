@@ -1539,6 +1539,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
     ...(leadSheet ? { leadSheet } : {}),
+    ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
+      ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
+      : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
@@ -1623,6 +1626,15 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
       experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      ...(realised.referenceInfluence
+        ? {
+            referenceSourceKind: 'musicxml',
+            referenceBehaviourSummary: realised.referenceInfluence.hints.join(' · '),
+            referenceInfluenceMode: realised.referenceInfluence.mode,
+            referenceInfluenceStrength: realised.referenceInfluence.strength,
+            referenceBehaviourHints: realised.referenceInfluence.hints,
+          }
+        : {}),
     },
     scoreTitle: title,
     requestEcho: requestEchoFromReq(req),
@@ -1666,6 +1678,9 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
     ...(leadSheet ? { leadSheet } : {}),
+    ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
+      ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
+      : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
@@ -1690,6 +1705,15 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
         experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+        ...(realised.referenceInfluence
+          ? {
+              referenceSourceKind: 'musicxml',
+              referenceBehaviourSummary: realised.referenceInfluence.hints.join(' · '),
+              referenceInfluenceMode: realised.referenceInfluence.mode,
+              referenceInfluenceStrength: realised.referenceInfluence.strength,
+              referenceBehaviourHints: realised.referenceInfluence.hints,
+            }
+          : {}),
       },
       scoreTitle: title,
       requestEcho: requestEchoFromReq(req),
@@ -1737,6 +1761,15 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
       experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+      ...(realised.referenceInfluence
+        ? {
+            referenceSourceKind: 'musicxml',
+            referenceBehaviourSummary: realised.referenceInfluence.hints.join(' · '),
+            referenceInfluenceMode: realised.referenceInfluence.mode,
+            referenceInfluenceStrength: realised.referenceInfluence.strength,
+            referenceBehaviourHints: realised.referenceInfluence.hints,
+          }
+        : {}),
     },
     scoreTitle: title,
     requestEcho: requestEchoFromReq(req),
