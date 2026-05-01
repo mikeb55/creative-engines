@@ -269,6 +269,7 @@ import {
   applySlonimskyToMelodyLine,
   buildDuoBarSlonimskyContext,
   mapDuoPhraseIntentToSlonimskyContext,
+  resolveAllowedOutsideLevelForSlonimsky,
   type SlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyEngine';
@@ -4631,17 +4632,8 @@ export function generateGoldenPathDuoScore(
         context.seed
       );
 
-      const songwriterId = context.generationMetadata?.songwriterStyleId ?? 'default';
-      const outsideLevel: 0 | 1 | 2 =
-        songwriterId === 'wayne_shorter'
-          ? 2
-          : songwriterId === 'ecm_chamber'
-            ? 1
-            : songwriterId === 'barry_harris'
-              ? 2
-              : songwriterId === 'pat_metheny'
-                ? 1
-                : 1;
+      const songwriterId = context.generationMetadata?.songwriterStyleId;
+      const outsideLevel: 0 | 1 | 2 = resolveAllowedOutsideLevelForSlonimsky(songwriterId);
       const slonimskyCtx: SlonimskyContext = {
         keyPc: 0,
         chordType: 'dominant',
