@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+- **feat(duo):** route song-mode post-pass `outsideLevel` through `resolveAllowedOutsideLevelForSlonimsky` — all songwriter profiles now active in Duo pipeline for Slonimsky chromatic layer.
+- **feat(ensemble):** wire `ensembleLeadSheetMusicXml` through Big Band + String Quartet pipeline boundary.
+- **feat(ensemble):** map `leadSheet.chordEvents` into Big Band + String Quartet arranger chord inputs (bar-accurate, forward-fill).
+- **feat(ensemble):** wire reference-import behavioural hint layer into Big Band + String Quartet pipelines.
+- **feat(ensemble):** extend `importHarmonyMode` / `harmonyBlend` to Big Band + String Quartet pipelines — Stage 6.
+- **test(ensemble):** add import-harmony ensemble smoke suite — Stage 7 (106/28 baseline).
+- **feat(slonimsky):** add `slonimskyEtudeGenerator` — engine layer for Etudes #15.
+- **feat(slonimsky):** wire `slonimsky_etude` preset and app-api dispatch — Etudes #15 Session 2.
+- **feat(slonimsky):** add SlonimskyEtudes page and tab — Etudes #15 Session 3 (UI complete).
+- **Docs:** **`docs/USER_GUIDE.md`**, **`docs/SLONIMSKY_USER_GUIDE.md`**, **`apps/composer-os-app/src/pages/UserGuide.tsx`** — What's New May 2026 (Slonimsky Etudes tab, ensemble lead-sheet import, songwriter Slonimsky profiles); plain English, no code blocks in new USER_GUIDE section.
+- **Docs:** **`docs/COMPOSER_OS_ROADMAP.md`** — **Overall roadmap priorities (2026-05-01)** tier stack (**A–G** + near alternates) linking Song Mode slices, UI discoverability, lead-sheet→ensemble, study tools, altered tuning, motif pilot, phrase/riff redesign; **Top 10 Song Mode songwriter targets** table (**`frank_zappa`** … **`duke_ellington`**, **Zappa** vs Python **`zappa_disruption`** note).
+
 ## [2026-04-29] feat: altered tuning presets — 24 zones, grouped UI, 98/98 smoke
 
 - **feat:** **Altered Guitar Tuning Presets** — **24 roadmap zone presets** across **four zones** (`jazz_sophisticated`, `sonic_youth_noise`, `joni_mitchell`, `hybrid_harmonic`) in **`engines/composer-os-v2/core/song-mode/alternateGuitarTunings.ts`**, plus legacy absorbed ids (`standard`, `drop_d`, `dadgad`, `open_d`, `open_g`, drone clusters, open modals, Joni-style labels, `custom`); **`getPresetsByZone`**, **`ROADMAP_ZONE_TUNING_PRESET_IDS`**, **`styleProfileSupportsAlternateGuitarTuning`**, expanded **`resolveIndieArtPopTuningTexture`** drone/open_modal buckets; new **`StyleProfile`** ids **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**, **`STYLE_ECM_CHAMBER`**.

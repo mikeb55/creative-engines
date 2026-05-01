@@ -425,8 +425,21 @@ Until those features ship, Composer OS remains on the **eight-pattern** interval
 
 ---
 
+## Slonimsky Etudes (standalone study tool)
+
+The **Slonimsky Etudes** tab generates short, playable etudes from any pattern in the Thesaurus. It is designed for practice and ear training — not for use inside the main Generate pipeline.
+
+Pattern families available include tritone progression, sesquitone progression, whole-tone progression, major third cycle, minor third cycle, perfect fourth cycle, diatonic material, pentatonic scales, chromatic patterns, interpolation patterns, and more — **13 families** in total, covering the educational taxonomy of the Thesaurus.
+
+The **12-key cycle** option is particularly useful for practice: it generates the same etude transposed through all 12 keys, which matches the traditional Slonimsky study approach.
+
+Output is **MusicXML only** in v1. PDF export is planned for a future release.
+
+---
+
 ## Document history
 
+- Added **Slonimsky Etudes (standalone study tool)** — desktop tab, 13 families, 12-key cycle, MusicXML v1 — **2026-05-01**.
 - Converted from **`Slonimsky_User_Guide.docx`** (Slonominsky-Scales project) to Markdown for **`creative-engines/docs/`**, **2026-04-30**.  
 - Expanded **§13-section mapping** with pattern bands and edition-aware page guidance; added **Using this guide with the Thesaurus**; updated intro for **1947 source text**; extended **§10** with **V3 targetable pattern numbers**.
 

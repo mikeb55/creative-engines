@@ -54,6 +54,10 @@ export function UserGuide() {
             <strong>Outputs</strong> — list recent files and open the library folder (or a file’s folder).
           </li>
           <li>
+            <strong>Slonimsky Etudes</strong> — standalone study tab: pattern family, chords, key, generate short
+            MusicXML etudes (see <strong>What&apos;s new — May 2026</strong> below).
+          </li>
+          <li>
             <strong>Composer Engines</strong> — three extra generators (Wayne Shorter, Thelonious Monk, Charlie
             Parker). In the browser, “Open in folder” may not work; use the desktop app for that.
           </li>
@@ -181,6 +185,24 @@ export function UserGuide() {
             quartet_wyble_OFF_seed…
           </code>{' '}
           (and big-band names with <code style={codeStyle}>bigband_</code>).
+        </p>
+      </section>
+
+      <section style={section}>
+        <h3 style={h2}>What&apos;s new — May 2026</h3>
+        <p style={p}>
+          <strong>Slonimsky Etudes tab:</strong> Open <strong>Slonimsky Etudes</strong> from the nav bar for a{' '}
+          <strong>standalone practice tool</strong> — pick a pattern family and pattern, type your chord
+          progression, choose key and tempo, then generate a short etude as MusicXML. It does{' '}
+          <strong>not</strong> replace Song Mode or other Generate modes; it saves files to your library like other
+          runs. Use <strong>Open in folder</strong> after a successful generate to locate the file.
+        </p>
+        <p style={p}>
+          <strong>Big Band and String Quartet — MusicXML lead sheets:</strong> You can attach a lead-sheet MusicXML
+          file when arranging. The app can read chord symbols from your file and steer the arrangement&apos;s harmony.
+          Choose <strong>free harmony</strong> (engine picks harmony), <strong>lock harmony</strong> (follow your
+          chords bar for bar), or <strong>blend harmony</strong> (mix engine and imported chords using the blend
+          control). The receipt tells you which mode ran and how many bars followed your import.
         </p>
       </section>
 

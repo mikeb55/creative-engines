@@ -15,6 +15,7 @@ Composer OS is an application that **generates instrumental music** from your ch
 - **Generate** — Run any of the eight modes listed below; read the on-screen “About this mode” card for each.
 - **Presets** — See names and short descriptions for every mode (merged with live API data when available).
 - **Outputs** — Browse recent outputs and open your library folder or a specific file’s folder.
+- **Slonimsky Etudes** — Open the **Slonimsky Etudes** tab for a standalone pattern etude study tool (separate from Generate). See **What’s New — May 2026** at the end of this guide.
 - **Composer Engines** — Use three standalone engines (Wayne Shorter, Thelonious Monk, Charlie Parker). **Opening the output folder from the browser** may not work; the **desktop app** is better for “reveal in folder” behaviour.
 - **Diagnostics** — Check that the backend is reachable, see where files are written, and optionally run a **system check** (full checkout + `npm` required).
 
@@ -402,3 +403,42 @@ Details: **[TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md)**.
 - [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md) — past / current / future (clearly separated).
 - [TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md) — engine test baseline vs `npm test` debt.
 - [apps/composer-os-app/README.md](../apps/composer-os-app/README.md) — app-specific run and build notes.
+
+---
+
+## What's New — May 2026
+
+### Songwriter Style Profiles (Duo / Song Mode)
+
+The Slonimsky chromatic layer now reads from the songwriter style profile map for all three pipelines (Duo, Big Band, String Quartet). Previously the Duo pipeline used a hardcoded list of four songwriters — it now responds correctly to all profiles including Donald Fagen, Kate Bush, Herbie Hancock, Radiohead, Jobim, Bacharach, and Brian Wilson.
+
+### MusicXML Lead-Sheet Import — Big Band and String Quartet
+
+You can now supply a MusicXML lead sheet when generating Big Band or String Quartet arrangements. The app reads the chord symbols bar-by-bar from your file and uses them to drive the harmony of the generated arrangement.
+
+Three harmony modes are available:
+
+- **Free harmony** — ignores the imported chords; the engine generates its own harmony (default when no file is supplied).
+- **Lock harmony** — the imported chords are used exactly, bar for bar.
+- **Blend harmony** — imported chords and engine-generated chords are compared bar by bar; the imported chord wins on bars where it differs, weighted by the blend setting.
+
+The run receipt shows what harmony mode was applied, how many bars were locked, and the policy version used.
+
+The app also extracts behavioural hints from the imported file — density, register spread, and melodic contour — and attaches them to the run manifest as reference influence metadata. These are advisory only and do not override note generation.
+
+### Slonimsky Etudes (standalone tab)
+
+A new **Slonimsky Etudes** tab is available in the desktop app. This is a standalone study tool — it is separate from the Generate tab and does not affect your main compositions.
+
+How to use it:
+
+1. Open the **Slonimsky Etudes** tab from the nav bar.
+2. Choose a pattern family from the dropdown (13 families drawn from Slonimsky's *Thesaurus of Scales and Melodic Patterns*, 1947).
+3. Choose a specific pattern within that family.
+4. Enter a chord progression — for example one chord per bar separated by vertical bars (such as Cmaj7, Dm7, G7, Cmaj7 in order).
+5. Select a root key (C through B).
+6. Set BPM and Chromatic Strength (Off / Subtle / Prominent).
+7. Optionally enable **Cycle through 12 keys** — this generates the etude transposed through all 12 keys in sequence.
+8. Click **Generate**.
+
+The output is a MusicXML file you can open in Sibelius, Dorico, MuseScore, or any MusicXML-compatible notation app. Use **Open in folder** to find the file.
