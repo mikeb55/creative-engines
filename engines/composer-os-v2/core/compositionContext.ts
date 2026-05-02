@@ -658,6 +658,10 @@ export interface GenerationMetadata {
     targetMeanFiresD4: number;
     targetMeanFiresD5: number;
   };
+  /** String quartet — Frank Zappa SQ harmony slice (`fz:sq:` receipts); see `zappaStringQuartetSlice`. */
+  zappaSQHarmonySlice?: boolean;
+  zappaSQEffectiveHarmonyBars?: string[];
+  zappaSQDeviceReceipts?: string[];
   /** Barry Harris (bebop / sixth–diminished) — slice diagnostics + effective harmony. */
   barryHarrisDiagnostics?: {
     songwriterId: 'barry_harris';

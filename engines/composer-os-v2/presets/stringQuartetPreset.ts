@@ -4,14 +4,23 @@
  */
 
 import type { Preset } from './presetTypes';
-import { CLEAN_ELECTRIC_GUITAR } from '../core/instrument-profiles/guitarProfile';
-import { ACOUSTIC_UPRIGHT_BASS } from '../core/instrument-profiles/uprightBassProfile';
+import {
+  STRING_QUARTET_CELLO,
+  STRING_QUARTET_VIOLA,
+  STRING_QUARTET_VIOLIN_I,
+  STRING_QUARTET_VIOLIN_II,
+} from '../core/instrument-profiles/stringQuartetInstrumentProfiles';
 
 export const stringQuartetPreset: Preset = {
   id: 'string_quartet',
   name: 'String Quartet',
-  /** Representative profiles for manifests until dedicated string profiles land. */
-  instrumentProfiles: [CLEAN_ELECTRIC_GUITAR, ACOUSTIC_UPRIGHT_BASS],
+  /** Violin / viola / cello profiles — GM 40–42; ranges align with {@link QUARTET_MIDI_BOUNDS}. */
+  instrumentProfiles: [
+    STRING_QUARTET_VIOLIN_I,
+    STRING_QUARTET_VIOLIN_II,
+    STRING_QUARTET_VIOLA,
+    STRING_QUARTET_CELLO,
+  ],
   chordSymbolsEnabled: true,
   rehearsalMarksEnabled: true,
   defaultFeel: {

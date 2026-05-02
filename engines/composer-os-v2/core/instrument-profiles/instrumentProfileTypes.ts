@@ -53,5 +53,12 @@ export interface BassProfile extends InstrumentProfileBase {
   harmonicAnchorRequirements: BassHarmonicAnchorRequirement;
 }
 
+/** Bowed strings — string quartet preset / manifests (GM Violin / Viola / Cello). */
+export interface BowedStringProfile extends InstrumentProfileBase {
+  instrumentIdentity: 'violin_1' | 'violin_2' | 'viola' | 'cello';
+  /** Written clef hint for notation systems (score builder may still use part-specific clefs). */
+  notationClef: 'treble' | 'alto' | 'bass';
+}
+
 /** Union of all instrument profiles. */
-export type InstrumentProfile = GuitarProfile | BassProfile;
+export type InstrumentProfile = GuitarProfile | BassProfile | BowedStringProfile;

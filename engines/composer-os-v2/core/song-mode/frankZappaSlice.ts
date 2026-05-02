@@ -30,6 +30,15 @@ const D3_XENOCHRONY_RATE = 0.2;
 const D4_STYLE_JUXTAPOSITION_RATE = 0.5;
 const D5_THROUGH_COMPOSED_CUT_RATE = 0.22;
 
+/** Bernoulli targets per device (Song Mode Frank Zappa slice + string-quartet variant). */
+export const FRANK_ZAPPA_DEVICE_TARGET_RATES = {
+  d1: D1_POLYTONAL_RATE,
+  d2: D2_METRIC_DISPLACEMENT_RATE,
+  d3: D3_XENOCHRONY_RATE,
+  d4: D4_STYLE_JUXTAPOSITION_RATE,
+  d5: D5_THROUGH_COMPOSED_CUT_RATE,
+} as const;
+
 /** Plain maj7 / maj9 / Δ without altered extensions — counts against “enough colour” quotas. */
 function isVanillaMaj7Family(symbol: string): boolean {
   if (looksAlteredOrJazzDense(symbol)) return false;
@@ -53,7 +62,7 @@ function nudgeChordTowardAltered(symbol: string, seed: number, bar: number): str
 /**
  * At least 50% of bars must not be vanilla maj7-family; each form section must contain at least one altered/jazz-dense bar.
  */
-function enforceZappaHarmonyLanguageFloors(params: {
+export function enforceZappaHarmonyLanguageFloors(params: {
   out: string[];
   receipts: string[];
   context: CompositionContext;
@@ -174,7 +183,7 @@ function transposeChordRoot(symbol: string, deltaPc: number): string {
   return mergeSlashFromSourceIfLost(symbol, out);
 }
 
-function resolveFrankZappaSliceSourceChordForBar(bar: number, context: CompositionContext): string {
+export function resolveFrankZappaSliceSourceChordForBar(bar: number, context: CompositionContext): string {
   const tb = context.form.totalBars;
   const locked = context.lockedHarmonyBarsRaw;
   if (locked && locked.length === tb && bar >= 1 && bar <= tb) {
@@ -357,7 +366,7 @@ export function countFrankZappaDeviceFiresFromReceipts(receipts: readonly string
   return out;
 }
 
-type FrankZappaDevicePlan = 'd1' | 'd2' | 'd3' | 'd4' | 'd5';
+export type FrankZappaHarmonyDeviceId = 'd1' | 'd2' | 'd3' | 'd4' | 'd5';
 
 function pickDeviceForBar(
   b: number,
@@ -371,7 +380,7 @@ function pickDeviceForBar(
     d4: boolean;
     d5: boolean;
   }
-): FrankZappaDevicePlan | undefined {
+): FrankZappaHarmonyDeviceId | undefined {
   const secStart = isSectionStartBar(b, context);
   if (eligible.d5 && secStart && b > 1 && seededUnit(seed, b, 907501) < D5_THROUGH_COMPOSED_CUT_RATE) {
     return 'd5';
@@ -389,6 +398,55 @@ function pickDeviceForBar(
     return 'd2';
   }
   return undefined;
+}
+
+export interface ApplyFrankZappaHarmonyDeviceResult {
+  next: string;
+  noopGuard?: 'polytonalNoop' | 'xenochronyNoop';
+}
+
+/**
+ * Apply one Frank Zappa harmonic device transform (shared by duo precompute and string-quartet slice).
+ */
+export function applyFrankZappaHarmonyDevice(
+  symbol: string,
+  device: FrankZappaHarmonyDeviceId,
+  seed: number,
+  bar: number
+): ApplyFrankZappaHarmonyDeviceResult {
+  if (device === 'd5') {
+    return { next: applyThroughComposedCut(symbol, seed, bar) };
+  }
+  if (device === 'd3') {
+    const next = applyXenochronyOffset(symbol, seed, bar);
+    return next === symbol ? { next, noopGuard: 'xenochronyNoop' } : { next };
+  }
+  if (device === 'd1') {
+    const next = applyPolytonalSlash(symbol, seed, bar);
+    return next === symbol ? { next, noopGuard: 'polytonalNoop' } : { next };
+  }
+  if (device === 'd4') {
+    return { next: applyStyleJuxtaposition(symbol, seed, bar) };
+  }
+  if (device === 'd2') {
+    return { next: applyMetricDisplacement(symbol, seed, bar) };
+  }
+  return { next: symbol };
+}
+
+function frankZappaDeviceSpecLabel(device: FrankZappaHarmonyDeviceId): string {
+  switch (device) {
+    case 'd1':
+      return FRANK_ZAPPA_DEVICE_POLYTONAL_SUPERIMPOSITION;
+    case 'd2':
+      return FRANK_ZAPPA_DEVICE_METRIC_DISPLACEMENT;
+    case 'd3':
+      return FRANK_ZAPPA_DEVICE_XENOCHRONY_PITCH_OFFSET;
+    case 'd4':
+      return FRANK_ZAPPA_DEVICE_STYLE_JUXTAPOSITION;
+    case 'd5':
+      return FRANK_ZAPPA_DEVICE_THROUGH_COMPOSED_CUT;
+  }
 }
 
 export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionContext): void {
@@ -438,48 +496,12 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
     const device = pickDeviceForBar(b, seed, context, raw, eligible);
     if (!device) continue;
 
-    if (device === 'd5') {
-      const next = applyThroughComposedCut(sym0, seed, b);
-      if (next !== sym0) {
-        out[b - 1] = next;
-        receipts.push(fzReceipt('d5', FRANK_ZAPPA_DEVICE_THROUGH_COMPOSED_CUT, b));
-      }
-      continue;
-    }
-    if (device === 'd3') {
-      const next = applyXenochronyOffset(sym0, seed, b);
-      if (next !== sym0) {
-        out[b - 1] = next;
-        receipts.push(fzReceipt('d3', FRANK_ZAPPA_DEVICE_XENOCHRONY_PITCH_OFFSET, b));
-      } else {
-        guards.xenochronyNoop++;
-      }
-      continue;
-    }
-    if (device === 'd1') {
-      const next = applyPolytonalSlash(sym0, seed, b);
-      if (next !== sym0) {
-        out[b - 1] = next;
-        receipts.push(fzReceipt('d1', FRANK_ZAPPA_DEVICE_POLYTONAL_SUPERIMPOSITION, b));
-      } else {
-        guards.polytonalNoop++;
-      }
-      continue;
-    }
-    if (device === 'd4') {
-      const next = applyStyleJuxtaposition(sym0, seed, b);
-      if (next !== sym0) {
-        out[b - 1] = next;
-        receipts.push(fzReceipt('d4', FRANK_ZAPPA_DEVICE_STYLE_JUXTAPOSITION, b));
-      }
-      continue;
-    }
-    if (device === 'd2') {
-      const next = applyMetricDisplacement(sym0, seed, b);
-      if (next !== sym0) {
-        out[b - 1] = next;
-        receipts.push(fzReceipt('d2', FRANK_ZAPPA_DEVICE_METRIC_DISPLACEMENT, b));
-      }
+    const { next, noopGuard } = applyFrankZappaHarmonyDevice(sym0, device, seed, b);
+    if (noopGuard === 'polytonalNoop') guards.polytonalNoop++;
+    if (noopGuard === 'xenochronyNoop') guards.xenochronyNoop++;
+    if (next !== sym0) {
+      out[b - 1] = next;
+      receipts.push(fzReceipt(device, frankZappaDeviceSpecLabel(device), b));
     }
   }
 

@@ -194,6 +194,11 @@ export interface GenerateRequest {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Song Mode / Frank Zappa: per-bar time signatures (1-based bar keys). Omitted → all 4/4. */
   barMeterMap?: BarMeterMap;
+  /**
+   * String quartet + Frank Zappa: opt out of the SQ harmony slice (per-part device receipts).
+   * When omitted and songwriter is `frank_zappa`, the slice is enabled.
+   */
+  zappaSQHarmonySlice?: boolean;
 }
 
 export interface ValidationSummary {

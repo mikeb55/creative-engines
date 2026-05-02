@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { GenerateRequest, ImportHarmonyMode } from './appApiTypes';
+import type { GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
@@ -183,6 +184,37 @@ function ensembleSlonimskySongwriterIdFromRequest(req: GenerateRequest): string 
   const fromPairing = req.stylePairing?.songwriterStyle?.trim();
   const fromPrimary = req.primarySongwriterStyle?.trim();
   return fromPairing || fromPrimary || undefined;
+}
+
+/** Ensemble SQ realisation: songwriter echo + optional Frank Zappa string-quartet harmony slice + meter map. */
+function buildStringQuartetGenerationMetadata(
+  req: GenerateRequest,
+  totalBars: number,
+  chordProgressionText: string | undefined
+): GenerationMetadata | undefined {
+  const sw = ensembleSlonimskySongwriterIdFromRequest(req)?.trim().toLowerCase();
+  if (!sw) return undefined;
+  const meta: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    songwriterStyleId: sw,
+    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+  };
+  const frankSq =
+    sw === 'frank_zappa' && req.zappaSQHarmonySlice !== false;
+  if (frankSq) {
+    (meta as GenerationMetadata & { zappaSQHarmonySlice?: boolean }).zappaSQHarmonySlice = true;
+    const raw =
+      typeof chordProgressionText === 'string' && chordProgressionText.trim()
+        ? chordProgressionText.trim()
+        : '';
+    const parsed = raw ? parseChordProgressionInputWithBarCount(raw, totalBars) : undefined;
+    if (parsed?.ok && parsed.bars.length === totalBars) {
+      meta.frankZappaEffectiveHarmonyBars = [...parsed.bars];
+      meta.parsedCustomProgressionBars = [...parsed.bars];
+      meta.harmonySource = 'custom';
+    }
+  }
+  return meta;
 }
 
 function ensembleSlonimskyReceiptLines(
@@ -1982,6 +2014,11 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
 
   const leadSheetForChordLock =
     !freeHarmony && leadSheet?.chordEvents?.length && !blendMergeApplied ? leadSheet : undefined;
+  const stringQuartetGenerationMetadata = buildStringQuartetGenerationMetadata(
+    req,
+    sq.formPlan.totalBars,
+    chordProgressionText
+  );
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
@@ -2002,6 +2039,8 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
+    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+    ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {

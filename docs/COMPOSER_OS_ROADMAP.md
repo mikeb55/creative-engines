@@ -291,12 +291,12 @@
 
 ## Current (as of 2026-05-02 snapshot)
 
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-02):** **114** passed / **0** failed (**31** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-02):** **115** passed / **0** failed (**32** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
 - **Song Mode section diagnostics** — stable **`songModeSectionShapingDiagnostics`** on manifests / API for eval-friendly reads; receipt lines stack with existing songwriter/style bullets.
 - **Test-debt triage (begun 2026-04-17):** **`docs/TEST_DEBT_COMPOSER_OS_V2.md`** + **`scripts/test-baseline-composer-os-v2.ps1`** document a **must-stay-green** set (`test:jest:counterpoint`, `test:duo`, `test:bass`, `test:vocal`, `test:composer-os-regression`) vs occasional **`test:full`** suite-level failures (environment / heavy gates). **Runner stability** item (**chunked harness + 4096 MB heap on each chunk**) is **complete** (2026-04-28).
 - **`npm test` / `test:full`** — if **`FAIL:`** lines appear, treat as **known per-suite debt** or environment until triaged; **`test:fast`** remains the broader gate for day-to-day iteration.
-- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**114**). **Shipped (full slice)** lists **21** writers (**`HomeGenerate.tsx`**).
+- **Generate UI discoverability (2026-04-29):** Songwriter **`optgroup`**s (**Shipped / Ready to build / In library**), Arranger **`optgroup`**s (**Big band core / Charts & studio**), Song Mode **Arranger + Era** helper line (style pairing / soft hints only). **`CLAUDE.md`** smoke blurb aligned with **`runSmokeTests.ts`** aggregate PASS count (**115**). **Shipped (full slice)** lists **21** writers (**`HomeGenerate.tsx`**).
 
 | Area | State |
 |------|--------|
@@ -320,8 +320,8 @@
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
 
 1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
-2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **31** suites as of 2026-05-02).
-3. **Update** this doc — **Current** harness bullet above (**114** / date) so assistants do not cite a stale total.
+2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **32** suites as of 2026-05-02).
+3. **Update** this doc — **Current** harness bullet above (**115** / date) so assistants do not cite a stale total.
 4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
 
 ---

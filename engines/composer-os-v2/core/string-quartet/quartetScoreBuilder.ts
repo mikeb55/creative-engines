@@ -2,6 +2,7 @@
  * Build MusicXML-ready ScoreModel from string quartet planning (Prompt C/3).
  */
 
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import type { QuartetFormPhase, QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
 import {
@@ -27,6 +28,13 @@ import {
   buildQuartetSlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyPatternService';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import { resolveMeterForBar } from '../rhythm/oddMeterQuantiser';
+import type { SoloLine } from '../solo/soloTypes';
+import { generateZappaSolo } from '../solo/zappasoloEngine';
+import { stringQuartetPreset } from '../../presets/stringQuartetPreset';
+import { isSongwriterFrankZappaStringQuartet } from './zappaStringQuartetSlice';
+import { runQuartetParallelMotionPass } from './quartetVoiceLeadingGuard';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
 
@@ -257,14 +265,27 @@ export interface BuildQuartetScoreModelInput {
   songwriterStyleId?: string;
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
   allowedOutsideOverride?: 0 | 1 | 2;
+  /** Per-bar time signatures (1-based indices); omit for all 4/4 — matches MusicXML export `barMeterMap`. */
+  barMeterMap?: BarMeterMap;
+  /** When present with {@link isSongwriterFrankZappaStringQuartet}, selects Zappa solo + inner-voice / bass path. */
+  generationMetadata?: GenerationMetadata;
+  /** Full-form harmony after Zappa SQ precompute (d5 cuts, etc.) — authoritative for cello roots when supplied. */
+  zappaSQEffectiveHarmonyBars?: string[];
 }
 
-function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean): void {
+/** Quarter-note beat span for the measure (e.g. 3.5 for 7/8). Uses {@link resolveMeterForBar} — same defaults as exporter. */
+function barQuarterSpan(bar1Based: number, map: BarMeterMap | undefined): number {
+  const sig = resolveMeterForBar(bar1Based, map);
+  return (sig.numerator * 4) / sig.denominator;
+}
+
+function addStringBar(m: MeasureModel, pitch: number, useHalfHalf: boolean, spanQuarters: number): void {
   if (useHalfHalf) {
-    addEvent(m, createNote(pitch, 0, 2, 1));
-    addEvent(m, createNote(pitch, 2, 2, 1));
+    const h = spanQuarters / 2;
+    addEvent(m, createNote(pitch, 0, h, 1));
+    addEvent(m, createNote(pitch, h, h, 1));
   } else {
-    addEvent(m, createNote(pitch, 0, 4, 1));
+    addEvent(m, createNote(pitch, 0, spanQuarters, 1));
   }
 }
 
@@ -286,11 +307,69 @@ function pianoShellHalfStepsFromSymbolSq(sym: string): { third: number; seventh:
   return { third: 4, seventh: 10 };
 }
 
-function wrapBeatInBarSq(beat: number): number {
+function wrapBeatInBarSq(beat: number, spanQuarters: number): number {
+  if (spanQuarters <= 0) return 0;
   let x = beat;
-  while (x >= 4) x -= 4;
-  while (x < 0) x += 4;
+  while (x >= spanQuarters) x -= spanQuarters;
+  while (x < 0) x += spanQuarters;
   return x;
+}
+
+function zappaStringQuartetScorePath(input: BuildQuartetScoreModelInput): boolean {
+  const meta = input.generationMetadata;
+  return Boolean(meta && isSongwriterFrankZappaStringQuartet(meta));
+}
+
+function buildZappaQuartetHarmonyBars(input: BuildQuartetScoreModelInput, chordForBar: (b: number) => string): string[] {
+  const tb = input.formPlan.totalBars;
+  const z = input.zappaSQEffectiveHarmonyBars;
+  if (z && z.length === tb) return z.map((s) => String(s));
+  return Array.from({ length: tb }, (_, i) => chordForBar(i + 1));
+}
+
+function clampNoteDurationInMeasure(startBeat: number, durationBeats: number, span: number): number {
+  if (startBeat >= span - 1e-4) return 0.05;
+  return Math.max(0.05, Math.min(durationBeats, span - startBeat));
+}
+
+function buildZappaQuartetCompositionContext(input: BuildQuartetScoreModelInput, harmonyBars: string[]): CompositionContext {
+  const tb = input.formPlan.totalBars;
+  const sections = input.formPlan.slices.map((s) => ({
+    label: String(s.phase),
+    startBar: s.startBar,
+    length: s.endBar - s.startBar + 1,
+  }));
+  const baseMeta = input.generationMetadata;
+  const genMeta: GenerationMetadata = {
+    ...(baseMeta ?? {}),
+    generatedAt: baseMeta?.generatedAt ?? new Date().toISOString(),
+    songwriterStyleId: 'frank_zappa',
+    frankZappaEffectiveHarmonyBars: harmonyBars,
+    barMeterMap: input.barMeterMap ?? baseMeta?.barMeterMap,
+  };
+  const preset = stringQuartetPreset;
+  return {
+    systemVersion: '2.0.0',
+    presetId: 'string_quartet',
+    seed: input.seed,
+    form: { totalBars: tb, sections },
+    feel: preset.defaultFeel,
+    harmony: { segments: [], totalBars: tb },
+    motif: { activeMotifs: [], variants: {} },
+    phrase: { segments: [], totalBars: tb },
+    register: {},
+    density: { segments: [], totalBars: tb },
+    instrumentProfiles: preset.instrumentProfiles,
+    chordSymbolPlan: { segments: [], totalBars: tb },
+    rehearsalMarkPlan: { marks: [] },
+    generationMetadata: genMeta,
+    validation: { gates: [], passed: true },
+    readiness: {
+      release: { passed: true, overall: 1, categories: [] },
+      mx: { passed: true, overall: 1, categories: [] },
+    },
+    barMeterMap: input.barMeterMap,
+  } as unknown as CompositionContext;
 }
 
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
@@ -308,6 +387,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     wybleVoiceLayout,
     songwriterStyleId,
     allowedOutsideOverride,
+    barMeterMap,
   } = input;
   const totalBars = formPlan.totalBars;
 
@@ -345,10 +425,121 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   /** Rolling 3-bar violin II windows for {@link applySlonimskyToMelodyLine}. */
   const slonimskyV2Acc: number[] = [];
 
+  const harmonyBarsFull = buildZappaQuartetHarmonyBars(input, chordForBar);
+  const zappaSqActive = zappaStringQuartetScorePath(input);
+  let zappaSoloLine: SoloLine | undefined;
+  if (zappaSqActive) {
+    const zappaCtx = buildZappaQuartetCompositionContext(input, harmonyBarsFull);
+    zappaSoloLine = generateZappaSolo(zappaCtx, {
+      midiLow: QUARTET_MIDI_BOUNDS[SQ_PART_V1]![0]!,
+      midiHigh: QUARTET_MIDI_BOUNDS[SQ_PART_V1]![1]!,
+    });
+  }
+
   for (let bar = 1; bar <= totalBars; bar++) {
+    const span = barQuarterSpan(bar, barMeterMap);
+    for (let si = 0; si < stringParts.length; si++) {
+      stringParts[si]!.measures[bar - 1]!.measureBeatSpanQuarters = span;
+    }
+
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
     const texSlice = slice ? texturePlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
     const sectionTag = (slice?.phase ?? 'other') as SectionTag;
+
+    /** Odd-meter maps: Zappa solo fragments do not reliably fill `measureBeatSpanQuarters`; use standard quartet voicing + SQ harmony bars. */
+    if (zappaSqActive && zappaSoloLine && !barMeterMap) {
+      const harmSym = harmonyBarsFull[bar - 1] ?? chordForBar(bar);
+      const barNotes: ScoredNote[] = [];
+      const notesThisBar = zappaSoloLine.allNotes
+        .filter((n) => n.barIndex === bar)
+        .sort((a, b) => a.startBeat - b.startBeat);
+      const tpl = notesThisBar.filter((n) => !n.isRest);
+
+      for (let idx = 0; idx < 4; idx++) {
+        const inst = QUARTET_INSTRUMENTS[idx]!;
+        const m = stringParts[idx]!.measures[bar - 1]!;
+        const role = texSlice?.rolesByInstrument[inst];
+        const pid = QUARTET_PART_IDS[idx]!;
+        if (role === 'silence') {
+          addEvent(m, createRest(0, span));
+          continue;
+        }
+
+        if (idx === 0) {
+          const v1lo = QUARTET_MIDI_BOUNDS[SQ_PART_V1]![0]!;
+          const v1hi = QUARTET_MIDI_BOUNDS[SQ_PART_V1]![1]!;
+          if (notesThisBar.length === 0) {
+            addEvent(m, createRest(0, span));
+          } else {
+            for (const sn of notesThisBar) {
+              if (sn.isRest) {
+                addEvent(
+                  m,
+                  createRest(sn.startBeat, clampNoteDurationInMeasure(sn.startBeat, sn.durationBeats, span))
+                );
+              } else {
+                const midi = snapMidiToRange(Math.round(sn.midi), v1lo, v1hi);
+                const dur = clampNoteDurationInMeasure(sn.startBeat, sn.durationBeats, span);
+                addEvent(m, createNote(midi, sn.startBeat, dur, 1));
+                barNotes.push({ partId: pid, midi, durationBeats: dur });
+              }
+            }
+          }
+          continue;
+        }
+
+        if (idx === 1) {
+          const v2lo = QUARTET_MIDI_BOUNDS[SQ_PART_V2]![0]!;
+          const v2hi = QUARTET_MIDI_BOUNDS[SQ_PART_V2]![1]!;
+          const anchor = tpl[0]?.midi ?? 60;
+          if (tpl.length === 0) {
+            addEvent(m, createRest(0, span));
+          } else {
+            for (const t of tpl) {
+              const contour = t.midi - anchor;
+              const midi = snapMidiToRange(Math.round(anchor + contour * 0.9 - 4), v2lo, v2hi);
+              const dur = clampNoteDurationInMeasure(t.startBeat, t.durationBeats, span);
+              addEvent(m, createNote(midi, t.startBeat, dur, 1));
+              barNotes.push({ partId: pid, midi, durationBeats: dur });
+            }
+          }
+          continue;
+        }
+
+        if (idx === 2) {
+          const valo = QUARTET_MIDI_BOUNDS[SQ_PART_VA]![0]!;
+          const vahi = QUARTET_MIDI_BOUNDS[SQ_PART_VA]![1]!;
+          const skewRaw = span * (0.0625 + ((seed + bar * 17) % 7) * 0.004);
+          if (tpl.length === 0) {
+            addEvent(m, createRest(0, span));
+          } else {
+            for (const t of tpl) {
+              const sb = wrapBeatInBarSq(t.startBeat + skewRaw, span);
+              const midi = snapMidiToRange(Math.round(t.midi - 9), valo, vahi);
+              const dur = clampNoteDurationInMeasure(sb, t.durationBeats, span);
+              addEvent(m, createNote(midi, sb, dur, 1));
+              barNotes.push({ partId: pid, midi, durationBeats: dur });
+            }
+          }
+          continue;
+        }
+
+        const clo = QUARTET_MIDI_BOUNDS[SQ_PART_VC]![0]!;
+        const chi = QUARTET_MIDI_BOUNDS[SQ_PART_VC]![1]!;
+        const rpc = chordSymbolRootPc(harmSym) ?? 0;
+        let rootMidi = 36 + rpc;
+        rootMidi = snapMidiToRange(rootMidi, clo, chi);
+        addEvent(m, createNote(rootMidi, 0, span, 1));
+        barNotes.push({ partId: pid, midi: rootMidi, durationBeats: span });
+      }
+
+      wholeTracker.pushBarSlice(
+        { barIndex: bar, sectionTag, barBeats: span, notes: barNotes },
+        padSketch ?? false
+      );
+      continue;
+    }
+
     const needSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
     const splitIdx = (bar + seed) % 4;
 
@@ -372,7 +563,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
-          totalQuarterBeats: 4,
+          totalQuarterBeats: span,
           styleProfile: songwriterStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
@@ -408,7 +599,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
-          totalQuarterBeats: 4,
+          totalQuarterBeats: span,
           styleProfile: songwriterStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
@@ -440,25 +631,28 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
       const role = texSlice?.rolesByInstrument[inst];
       const pid = QUARTET_PART_IDS[idx]!;
       if (role === 'silence') {
-        addEvent(m, createRest(0, 4));
+        addEvent(m, createRest(0, span));
         continue;
       }
       const splitHere = needSplit && idx === splitIdx;
       const pitch = idx === 0 ? melodyPitchV1 : idx === 1 ? melodyPitchV2 : stack[idx]!;
+      const half = span / 2;
       if (splitHere) {
-        barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
-        barNotes.push({ partId: pid, midi: pitch, durationBeats: 2 });
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: half });
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: half });
       } else {
-        barNotes.push({ partId: pid, midi: pitch, durationBeats: 4 });
+        barNotes.push({ partId: pid, midi: pitch, durationBeats: span });
       }
-      addStringBar(m, pitch, splitHere);
+      addStringBar(m, pitch, splitHere, span);
     }
 
     wholeTracker.pushBarSlice(
-      { barIndex: bar, sectionTag, barBeats: 4, notes: barNotes },
+      { barIndex: bar, sectionTag, barBeats: span, notes: barNotes },
       padSketch ?? false
     );
   }
+
+  runQuartetParallelMotionPass(stringParts, totalBars);
 
   /** GM Acoustic Grand (0); exporter emits `<midi-program>1</midi-program>` + `<midi-channel>1</midi-channel>` for `sq_piano`. */
   const pianoPart = createPart(
@@ -472,9 +666,13 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     rehearsalForBar
   );
   for (let bar = 1; bar <= totalBars; bar++) {
+    const span = barQuarterSpan(bar, barMeterMap);
     const m = pianoPart.measures[bar - 1]!;
+    m.measureBeatSpanQuarters = span;
+
     if (!USE_PIANO_COMP_SQ) {
-      addEvent(m, createRest(0, 4));
+      addEvent(m, createRest(0, span, 1));
+      addEvent(m, createRest(0, span, 2));
       continue;
     }
 
@@ -486,7 +684,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     /** Theme / solo tacet: quartet `statement` ≈ theme, `development` ≈ solo. */
     if (sectionTag === 'statement' || sectionTag === 'development') {
-      addEvent(m, createRest(0, 4));
+      addEvent(m, createRest(0, span, 1));
+      addEvent(m, createRest(0, span, 2));
       continue;
     }
 
@@ -500,20 +699,33 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     const rotateForwardOneBeat = (bar + seed) % 3 === 0;
     const rot = rotateForwardOneBeat ? 1 : 0;
-    const rotHit = (b: number) => wrapBeatInBarSq(b + rot);
+    const beatScale = span / 4;
+    const rotHit = (b: number) => wrapBeatInBarSq(b * beatScale + rot, span);
 
-    let hitBeats: number[];
-    if (sectionTag === 'contrast') {
-      hitBeats = [0, 1.5, 3].map(rotHit);
-    } else {
-      hitBeats = [0, 2.5].map(rotHit);
-    }
+    const rawTemplate = sectionTag === 'contrast' ? [0, 1.5, 3] : [0, 2.5];
+    const hitBeats = [...new Set(rawTemplate.map((b) => rotHit(b)))].sort((a, b) => a - b);
+    const hitDur = 0.5;
 
+    /** Voice 1: chord roots on every 4th bar; otherwise explicit rest so strict bar math sees a full span per voice. */
     if (bar % 4 === 0) {
-      addEvent(m, createNote(rootM, 0, 4, 1));
+      addEvent(m, createNote(rootM, 0, span, 1));
+    } else {
+      addEvent(m, createRest(0, span, 1));
     }
+
+    /** Voice 2: shell hits + rests filling gaps (strict bar math sums event durations per voice). */
+    let v2Cursor = 0;
     for (const hb of hitBeats) {
-      addEvent(m, createNote(rootM, hb, 0.5, 2, undefined, shell));
+      const start = Math.min(Math.max(0, hb), Math.max(0, span - hitDur));
+      if (start > v2Cursor + 1e-4) {
+        addEvent(m, createRest(v2Cursor, start - v2Cursor, 2));
+      }
+      const d = clampNoteDurationInMeasure(start, hitDur, span);
+      addEvent(m, createNote(rootM, start, d, 2, undefined, shell));
+      v2Cursor = start + d;
+    }
+    if (v2Cursor < span - 1e-4) {
+      addEvent(m, createRest(v2Cursor, span - v2Cursor, 2));
     }
   }
 
