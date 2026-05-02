@@ -29,6 +29,9 @@ import {
   resolveMeasureDivisionsForBar,
 } from '../rhythm/oddMeterQuantiser';
 
+/** Part-list / instrument display name for GM Acoustic Grand Piano (Sibelius-friendly). */
+const ACOUSTIC_GRAND_PIANO_PART_NAME = 'Acoustic Grand Piano';
+
 function isBigBandPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'big_band_piano' || p.id === 'bb_piano';
 }
@@ -39,13 +42,13 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
 
 /**
  * Song Mode keyboard-centric primary, or **Frank Zappa** comp (duo `guitar` part): harmony staff exported as
- * **Piano** / GM 1 (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
+ * **Acoustic Grand Piano** / GM 1 (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
  */
 function isSongModeKeysCompPianoPart(p: PartModel): boolean {
   if (p.id !== 'guitar') return false;
   if (p.songModePresentAsPianoComp === true) return true;
-  /** Duo staff labelled Piano (e.g. Frank Zappa / phrase-first) must get `<part-name>Piano</part-name>` + GM 1. */
-  return p.name === 'Piano';
+  /** Duo staff labelled for piano comp (e.g. Frank Zappa / phrase-first) — part-list uses {@link ACOUSTIC_GRAND_PIANO_PART_NAME}. */
+  return p.name === 'Piano' || p.name === ACOUSTIC_GRAND_PIANO_PART_NAME;
 }
 
 function partDisplayNameForExport(p: PartModel): string {
@@ -56,7 +59,7 @@ function partDisplayNameForExport(p: PartModel): string {
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
-    return 'Piano';
+    return ACOUSTIC_GRAND_PIANO_PART_NAME;
   }
   return p.name;
 }
@@ -635,9 +638,9 @@ function eventsToXml(
 /** Export ScoreModel to MusicXML string. */
 export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXmlExportOptions): MusicXmlExportResult {
   try {
+    console.log('[METER-CHECK] barMeterMap received:', JSON.stringify(options?.barMeterMap));
     logGuitarVoice2CheckpointFromScore('B-pre-export', score);
     const opts: MusicXmlExportOptions = options ?? {};
-    console.log('[METER_DEBUG] barMeterMap:', opts.barMeterMap);
     const USE_ENHARMONIC_SPELLING = true;
     const preferFlats = USE_ENHARMONIC_SPELLING && (score.keySignature?.fifths ?? 0) < 0;
     const dbg = score.keySignatureExportDebug;
@@ -675,10 +678,10 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`): Sibelius-friendly piano part-list + GM Acoustic Grand (ch. 1, program 1). */
         if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
           return `    <score-part id="${p.id}">
-      <part-name>Piano</part-name>
+      <part-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</part-name>
       <part-abbreviation>Pno.</part-abbreviation>
       <score-instrument id="${p.id}-I1">
-        <instrument-name>Piano</instrument-name>
+        <instrument-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</instrument-name>
         <instrument-sound>keyboard.piano</instrument-sound>
       </score-instrument>
       <midi-instrument id="${p.id}-I1">

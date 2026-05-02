@@ -38,16 +38,16 @@ import {
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
-/** Default Zappa solo generation range (E3–C6). Written pitch uses +24 semitones in {@link soloLineToPartModel}. */
+/** Default Zappa solo generation range (E3–C6). Written pitch uses +12 semitones in {@link soloLineToPartModel}. */
 const ZAPPA_SOLO_DEFAULT_MIDI_LOW = 52;
 const ZAPPA_SOLO_DEFAULT_MIDI_HIGH = 84;
-const ZAPPA_SOLO_EXPORT_MIDI_SHIFT = 24;
+const ZAPPA_SOLO_EXPORT_MIDI_SHIFT = 12;
 /** Matches `medium` tier in {@link zappaSoloOptionsFromTiers} when options omit density. */
 const ZAPPA_SOLO_DEFAULT_DENSITY_NUMERIC = 0.72;
 const ZAPPA_SOLO_MIN_NOTES_PER_BAR = 2;
 
 /**
- * Written MIDI for Zappa solo export: +24 shift, then while &gt; 84 subtract 12, then hard clamp to 84.
+ * Written MIDI for Zappa solo export: +12 shift, then while &gt; 84 subtract 12, then hard clamp to [52, 84].
  * With {@link midiToPitch}, MusicXML &lt;octave&gt;7 appears for MIDI ≥ 96; cap 84 ⇒ octave ≤ 6 (no octave 7).
  */
 function zappaSoloExportWrittenMidi(snMidi: number): number {

@@ -191,7 +191,7 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
     if (rBo.success && rBo.score) {
       const res = exportScoreModelToMusicXml(rBo.score, { barMeterMap: map32 });
       const xml = res.success && res.xml !== undefined ? res.xml : '';
-      const pianoOk = xml.includes('<part-name>Piano</part-name>');
+      const pianoOk = xml.includes('<part-name>Acoustic Grand Piano</part-name>');
       const soloMatch = xml.match(/<part id="zappa_solo">[\s\S]*?<\/part>/);
       const soloBlock = soloMatch?.[0] ?? '';
       const soloNoOct7 = soloBlock.length > 0 && !/<octave>7<\/octave>/.test(soloBlock);
@@ -209,7 +209,7 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
   out.push({
     ok: zappaBuiltinOddMeterOk,
     name:
-      'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: success + MusicXML Piano + zappa_solo no octave 7 (seed 77777)',
+      'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: success + MusicXML Acoustic Grand Piano + zappa_solo no octave 7 (seed 77777)',
   });
 
   return out;

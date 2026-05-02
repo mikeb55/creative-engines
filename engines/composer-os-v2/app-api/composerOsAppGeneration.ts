@@ -928,13 +928,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(indieDualGuitarTuningProofFixtureRequested(req)
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
+    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
     ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'frank_zappa'
       ? {
           zappaSoloMidiLow: req.zappaSoloMidiLow,
           zappaSoloMidiHigh: req.zappaSoloMidiHigh,
           zappaSoloDensity: req.zappaSoloDensity,
           zappaSoloDissonance: req.zappaSoloDissonance,
-          ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
         }
       : {}),
   };

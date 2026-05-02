@@ -252,6 +252,17 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     zappaSoloMidiHigh: req.zappaSoloMidiHigh,
     zappaSoloDensity: req.zappaSoloDensity,
     zappaSoloDissonance: req.zappaSoloDissonance,
+    ...(typeof req.primarySongwriterStyle === 'string' &&
+    req.primarySongwriterStyle.trim().toLowerCase() === 'frank_zappa'
+      ? {
+          primarySongwriterStyle: req.primarySongwriterStyle.trim(),
+          songModeHookFirstIdentity: true,
+          styleProfile: req.styleProfile ?? 'STYLE_ECM',
+          ...(typeof req.secondarySongwriterStyle === 'string' && req.secondarySongwriterStyle.trim() !== ''
+            ? { secondarySongwriterStyle: req.secondarySongwriterStyle.trim() }
+            : {}),
+        }
+      : {}),
   });
   result.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   result.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
