@@ -608,6 +608,40 @@ These items raise **output diversity** without assuming a single engine rewrite:
 - **Intent:** Tracks ordering of **ensemble** depth (Big Band, String Quartet, ECM chamber) vs **duo / Song Mode** slice investment — see **Priority stack** and **Past → Big Band / String Quartet** for current ship state; this subsection only adds **resource links**, not a reschedule.
 - **Tonality Vault (string quartet):** When **string quartet voicing reference** work begins (distributed chord tones across **Vn I / II / Va / Vc** beyond today’s behavioural scoring), **Tonality Vault** should inform **SQ inner-line voicing grammar** alongside the existing Perplexity backlog **`string-quartet-parameters`** (see **Past → String Quartet** in this doc).
 
+### FUTURE — SD3 Drum Guide Export (Groove Search)
+
+**Goal:** Export a deterministic rhythm-reduced MIDI guide alongside MusicXML so Superior Drummer 3 / EZdrummer can match grooves to Composer OS output.
+
+**Not automatic drum composition** — groove search guide only.
+
+**Key design decisions (validated by Perplexity):**
+
+- Dual-lane default: **KickGuide (C1)** + **SnareGuide (D1)**
+- Bar-start anchor event in every bar (critical for odd meters)
+- Strip all harmony/pitch — rhythm skeleton only
+- Cap at **8th-note density maximum**
+- Deterministic: same **seed** = identical MIDI
+- Sidecar JSON with detected grouping metadata
+
+**10 phases:**
+
+1. Data extraction from score model  
+2. Meter-aware grouping detection  
+3. Onset reduction (core step)  
+4. Velocity encoding  
+5. Multi-lane output (single / dual / tri)  
+6. MIDI writer (480 PPQ)  
+7. Integration into export pipeline  
+8. SD3 workflow documentation  
+9. Test cases (odd meter, density, determinism)  
+10. Success criteria validation  
+
+**Priority:** After **Zappa String Quartet**, before **Zappa Big Band**
+
+**Dependency:** `barMeterMap` + odd-meter quantiser (already built)
+
+**Success criterion:** SD3 returns candidate grooves whose meter feel and accent map require only light editing.
+
 ### Lead-sheet MusicXML import → String Quartet + Big Band (planned — **not started**)
 
 **Next major capability under consideration:** a shared **`LeadSheet`** representation plus a **MusicXML → LeadSheet** importer that both **String Quartet** and **Big Band** realisers can consume. Today, ensemble paths are **export-centric** (no general MusicXML-as-input into `runQuartetRealisation` / `runBigBandRealisation`). This work is **staged in small PRs**, not one monolith.
