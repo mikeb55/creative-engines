@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-01]
+# Composer OS Roadmap [2026-05-02]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -289,7 +289,7 @@
 
 ---
 
-## Current (as of 2026-05-01 snapshot)
+## Current (as of 2026-05-02 snapshot)
 
 - **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-02):** **112** passed / **0** failed (**31** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Song Mode + vocal path** is in good product shape for tempo and bridge execution.
@@ -314,7 +314,7 @@
 
 ### Song Mode — shipped slices vs pools ready to slice (2026-04-29)
 
-- **Shipped slices** (**21** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`frank_zappa`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`**, **`andrew_hill`**, **`charlie_parker`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`frankZappaSlice.ts`** + **`frankZappaSliceSmoke.test.ts`** (**`fz:*`** receipts; **`breakFrankZappaIiViProgressions`**); **`charlieParkerSlice.ts`** + **`charlieParkerSliceSmoke.test.ts`** (**`cp:*`** receipts; bebop ii–V–I, tritone sub, turnaround compression, Bird enclosure); **`andrewHillSlice.ts`** + **`andrewHillSliceSmoke.test.ts`** (**`ah:*`** receipts; angular non-functional, open cadence); **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **109**/0 (**31** suites). **Andrew Hill** research posture documented in [CHANGELOG.md](CHANGELOG.md) (Python ECM trio spec + **`engines/andrew-hill-engine`**). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`cp:*`** (Charlie Parker), **`ah:*`** (Andrew Hill), **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
+- **Shipped slices** (**21** golden-path `*Slice.ts` + **`precompute*EffectiveHarmonyBars`** + smoke): **`brian_wilson`**, **`stevie_wonder`**, **`radiohead`**, **`james_brown`**, **`joni_mitchell`**, **`sonic_youth`**, **`pat_metheny`**, **`wayne_shorter`**, **`frank_zappa`**, **`barry_harris`**, **`bill_evans`**, **`bacharach`**, **`donald_fagen`**, **`ecm_chamber`**, **`antonio_carlos_jobim`**, **`herbie_hancock`**, **`stephen_sondheim`**, **`kate_bush`**, **`thelonious_monk`**, **`andrew_hill`**, **`charlie_parker`** — see **Past → T2.x** and [CHANGELOG.md](CHANGELOG.md). **`frankZappaSlice.ts`** + **`frankZappaSliceSmoke.test.ts`** (**`fz:*`** receipts; **`breakFrankZappaIiViProgressions`**); **`charlieParkerSlice.ts`** + **`charlieParkerSliceSmoke.test.ts`** (**`cp:*`** receipts; bebop ii–V–I, tritone sub, turnaround compression, Bird enclosure); **`andrewHillSlice.ts`** + **`andrewHillSliceSmoke.test.ts`** (**`ah:*`** receipts; angular non-functional, open cadence); **`theloniousMonkSlice.ts`** + **`theloniousMonkSliceSmoke.test.ts`** (**`tm:*`** receipts); **`kateBushSlice.ts`** + **`kateBushSliceSmoke.test.ts`**; **`sondheimSlice.ts`** + **`sondheimSliceSmoke.test.ts`**; **`herbieHancockSlice.ts`** + **`herbieHancockSliceSmoke.test.ts`**; **`jobimSlice.ts`** + **`jobimSliceSmoke.test.ts`** — **`npm run test:composer-smoke`** aggregate **112**/0 (**31** suites). **Andrew Hill** research posture documented in [CHANGELOG.md](CHANGELOG.md) (Python ECM trio spec + **`engines/andrew-hill-engine`**). **Thelonious Monk** harmonic grammar was **sourced from `engines/monk-engine` Python internals** (extracted rules in TS) — **no Perplexity research required**. Receipt prefixes **`cp:*`** (Charlie Parker), **`ah:*`** (Andrew Hill), **`kb:*`** (Kate Bush), **`tm:*`** (Monk), **`sh:*`** (Sondheim), **`hh:*`** (Hancock), **`aj:*`** Jobim ( **`jb:*`** reserved for James Brown). **`ecm_chamber`:** ensemble pivot point — string quartet spec begins after Phrase Engine is stable.
 - **Pools ready to slice:** **None** — chord pools / registry / UI rows that were queued for a dedicated duo golden-path slice are all **shipped** (**2026-04-29**). **Charlie Parker** (`charlie_parker`) **complete** this session — **`charlieParkerSlice.ts`**, **`cp:*`** devices. **Next after this session:** **open** — gap-fill vs roster (bebop lineage extensions, ECM depth, soul/funk, alt-rock, theatre, etc.); see **Priority stack** and **Future — compositional diversity**.
 
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
@@ -355,6 +355,12 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 - **Slonimsky** path traversal over **Zappa chord pools** (solo backbone).
 - **Xenochrony** device applied as **rhythmic displacement** of the melodic line (not only harmony-level offset).
 - **Odd meter grid awareness** in the solo generator (couples to Phase **A**).
+
+#### Zappa Musicality — Phase 1 + Phase 2 (**complete**, **LIVE** — 2026-05-02)
+
+- **Phase 1 — Rhythmic cell lock:** Section **A** = **3+3+2** (canonical 7/8 eighth groups **`[3,2,2]`**); section **B** = **3+2+2+2** (canonical **`[2,2,2,1]`**). ≥**50%** of four-bar phrase windows cell-locked (deterministic). Receipts: **`SoloLine.rhythmicCellLock`**, **`SoloPhrase.zappaRhythmicCell`**. Code: **`zappasoloEngine.ts`** (+ **`phraseBuilder.ts`** re-exports).
+- **Phase 2 — Motif ownership:** Anchor motif (**intervals + rhythm**) from **first two bars** of each **form section**; **≥0.7** similarity recurrence on **development** fragments; transforms **shift / augment / compress**; reject/repair phrases at **zero** or **&lt;0.7** similarity. Receipt: **`SoloLine.zappaMotifReceipt`**. Code: **`zappasoloEngine.ts`**.
+- **Docs:** [ZAPPA_CREATION_GUIDE.md](ZAPPA_CREATION_GUIDE.md) § **3**.
 
 ### Zappa PDF Analysis Findings (2026-05-01)
 

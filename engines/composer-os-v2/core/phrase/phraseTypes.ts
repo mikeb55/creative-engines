@@ -11,6 +11,13 @@ export type PhraseRange = {
   endBar: number;
 };
 
+/** Optional Frank Zappa 7/8 rhythmic cell reference (Musicality Phase 1; mirrors solo metadata). */
+export type PhraseZappaRhythmicCell = {
+  formSection: 'A' | 'B';
+  spec: string;
+  eighthSpans: readonly number[];
+};
+
 export type Phrase = {
   id: string;
   range: PhraseRange;
@@ -22,4 +29,6 @@ export type Phrase = {
   gaps: number; // count of silent beats
   repetitionOf?: string; // id of source phrase if this is a return
   rhythmFingerprint?: string[]; // duration-weighted grid-relative rhythm cells
+  /** Callback / engine: section rhythmic cell (7/8) when phrase is Zappa-scoped. */
+  zappaRhythmicCell?: PhraseZappaRhythmicCell;
 };

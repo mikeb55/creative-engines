@@ -12,6 +12,7 @@ import type {
   PhraseRange,
   PhraseRhythmComplexity,
   PhraseSequencingType,
+  PhraseZappaRhythmicCell,
 } from './phraseTypes';
 
 function clamp01(x: number): number {
@@ -69,7 +70,8 @@ export function buildPhrase(
   id: string,
   range: PhraseRange,
   notes: NoteEvent[],
-  harmonicRole: PhraseHarmonicRole
+  harmonicRole: PhraseHarmonicRole,
+  extras?: { zappaRhythmicCell?: PhraseZappaRhythmicCell }
 ): Phrase {
   const bars = range.endBar - range.startBar + 1;
   const totalQuarterSlots = bars * 4;
@@ -132,6 +134,7 @@ export function buildPhrase(
     gaps,
     repetitionOf: undefined,
     rhythmFingerprint,
+    zappaRhythmicCell: extras?.zappaRhythmicCell,
   };
 }
 
@@ -394,3 +397,14 @@ export function applyDuoGoldenPhraseEngineStage4MotifRhythm(m: MeasureModel, see
     resolveOverlapsVoice1(notes);
   }
 }
+
+/** Frank Zappa 7/8 rhythmic cells + section resolver (Musicality Phase 1; solo engine is canonical). */
+export {
+  ZAPPA_78_RHYTHMIC_CELL_A,
+  ZAPPA_78_RHYTHMIC_CELL_B,
+  resolveZappaFormSectionForBar,
+  zappaRhythmicCellForFormSection,
+  zappa78CellBoundaryBeatsQuarters,
+  snapStartBeatToZappa78Cell,
+  zappaRhythmicCellLockedPhraseCount,
+} from '../solo/zappasoloEngine';
