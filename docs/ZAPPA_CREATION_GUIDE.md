@@ -106,6 +106,74 @@ Product polish + export ergonomics (2026-05-02):
 
 ---
 
+## 5. String Quartet preset (Frank Zappa)
+
+Four-string ensemble + piano harmony staff (export path **`string_quartet`**), Zappa harmony **slice variant** with devices assigned **per instrument**, quartet voicing / voice-leading passes, and optional **`barMeterMap`** from the same meter UI as Song Mode. Implementation references: **`engines/composer-os-v2/core/string-quartet/zappaStringQuartetSlice.ts`**, **`quartetScoreBuilder.ts`**, **`runQuartetRealisation.ts`**, **`quartetVoiceLeadingGuard.ts`**, **`engines/composer-os-v2/core/rhythm/oddMeterQuantiser.ts`** (**`ZAPPA_METER_CYCLE_PRESET_DEFINITIONS`**), **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** (preset + **`frankZappaMeterMapBlock`**).
+
+### Overview
+
+- **What it does:** Plans and realises a **string quartet score** (Violin I / II, Viola, Violoncello) **plus piano comp / harmony staff**, with Frank Zappa **harmony language** applied through a **string-quartet-specific** device pipeline (**per-part receipts** **`fz:sq:*`**). When **`zappaSQHarmonySlice`** is active (default for **Frank Zappa** + string quartet unless opted out server-side), harmony bars are **precomputed** for the quartet path and echoed in metadata for export truth.
+- **Reference listening:** **The Perfect Stranger** — compact **chamber** ensemble writing, abrupt cuts, and rhythmic/harmonic juxtaposition (conceptual anchor for **texture + form**, not a transcription target).
+- **Vs duo / Song Mode Zappa:** Song Mode runs the **golden-path Guitar–Bass Duo** with **`frankZappaSlice.ts`** on the **single** harmony timeline, **Phase B** solo as **`zappa_solo`** electric guitar, piano comp, and upright bass. **String Quartet** keeps the **five Frank Zappa harmony devices (d1–d5)** but routes them through **`ZAPPA_SQ_INSTRUMENT_DEVICE_MAP`** so **each string part** contributes its devices **in score order** on the **same bar’s working chord**; scoring is **four voices + piano**, not duo + Phase 4 guitar↔bass imitation.
+
+### How to use it
+
+1. In **`HomeGenerate.tsx`**, set **Mode** → **String Quartet**.
+2. Under **String quartet harmony**, choose **Frank Zappa** as **Songwriter** (arranger + **Era** colour the plan; **Era** also picks the **built-in chord cycle** when **Chord progression** is left empty — same behaviour as Big Band).
+3. Open **Frank Zappa — meter map (mixed meters)** (same block for **Song Mode** and **String Quartet** when Zappa is selected): pick **one** meter preset. **Eleven** options are available — **three** built-ins plus **eight** named cycles from **`oddMeterQuantiser.ts`**:
+
+   | Preset | Brief description |
+   |--------|-------------------|
+   | **All 4/4** | Every bar **4/4** (default feel). |
+   | **Zappa Classic** | **7/8** and **4/4** alternate each bar (Zappa “odd/even” striping). |
+   | **Black Page** | **19/16** and **4/4** alternate each bar. |
+   | **Oh No (4/4 + 3/4)** | Two-bar cycle: **4/4** → **3/4**. |
+   | **Thirteen (4/4 + 5/8)** | Two-bar cycle: **4/4** → **5/8**. |
+   | **Five Five FIVE (5/8 + 5/8 + 5/4)** | Three-bar cycle; **5/8** as **3+2** eighth-note grouping. |
+   | **Outside Now (11/8)** | **11/8** every bar (**6+5** eighths grouping). |
+   | **Watermelon (9/4)** | **9/4** every bar (wide bar — **4+5** quarter-note feel). |
+   | **Toads (5/4 + 3/4 + 4/4)** | Three-bar cycle across meters. |
+   | **Factory (5/4)** | **5/4** every bar. |
+   | **Black Napkins (6/8)** | **6/8** every bar. |
+
+4. Set **Number of bars** and (optionally) **Chord progression** to match length (see **Tips**). Click **Generate**.
+
+### What the engine does
+
+- **Per-instrument harmony device map** (**`ZAPPA_SQ_INSTRUMENT_DEVICE_MAP`** in **`zappaStringQuartetSlice.ts`**), evaluated **in score order** each bar (sequential transforms on the working symbol):
+
+  | Part | Pipeline | Devices (order) |
+  |------|-----------|-----------------|
+  | **Violin I** | Xenochrony-like offset, then polytonal stack | **d3** → **d1** |
+  | **Violin II** | Metric displacement, then polytonal stack | **d2** → **d1** |
+  | **Viola** | Style juxtaposition, then metric displacement | **d4** → **d2** |
+  | **Violoncello** | Through-composed sectional cut (bass authority — **no** polytonal stack on this voice) | **d5** |
+
+  Same Bernoulli **target rates** as the duo slice (**`FRANK_ZAPPA_DEVICE_TARGET_RATES`**); eligibility gates suppress devices on **hook/protected** bars and where harmony is unusable (e.g. **d2** avoids slash chords).
+
+- **Violin I — melodic lead:** When **`barMeterMap`** is **omitted** and the Zappa quartet path is active, **`generateZappaSolo`** (**`zappasoloEngine.ts`**) runs in a quartet **`CompositionContext`** so Violin I can carry **Phase B**-style material (Slonimsky backbone, motif / cell / guide-tone behaviour subject to quartet MIDI bounds). **Violin II** and **Viola** derive **inner motion** from the Violin I template (contour offset, metric skew / displacement); **Cello** holds **harmonic foundation** with **chord root on beat 1** (whole-bar support in the fragment path).
+
+- **Odd meters:** **`barMeterMap`** is **fully supported** for **export** and **`resolveMeterForBar`** / measure spans. When a **non-empty** **`barMeterMap`** is present, the score builder **does not** thread the Zappa solo fragment path that fills bars from **`zappaSoloLine`** (those fragments do not reliably match mixed meter spans); it falls back to **standard quartet chord-tone voicing** + **Slonimsky** colouring on Violin I from the **Wyble** stack so **strict bar math** and MusicXML stay valid. **All eleven** meter presets above remain selectable; mixed meters use the **voicing** path, **4/4** can use the **solo-derived** quartet path when no map is sent.
+
+- **Parallel fifths / octaves:** **`quartetVoiceLeadingGuard`** / smoke (**`zappaStringQuartetSmoke.test.ts`**) assert **no parallel-motion violation** across extracted string bars where the guard applies.
+
+### Receipts
+
+- **Format:** **`fz:sq:d{N}:{device_label}@bar{N}#v1`**
+  - **`d{N}`** — device id **`d1`** … **`d5`** (same ids as duo **`fz:d*`**).
+  - **`device_label`** — stable snake_case label, e.g. **`polytonal_superimposition`**, **`metric_displacement`**, **`xenochrony_pitch_offset`**, **`style_juxtaposition`**, **`through_composed_cut`** (see **`FRANK_ZAPPA_DEVICE_*`** in **`frankZappaSlice.ts`**).
+  - **`bar{N}`** — 1-based bar where the device **fired** on the working chord for that part’s step in the pipeline.
+  - **`#v1`** — receipt schema version.
+- **Meaning:** Each line is a **harmony-slice event** for the **string quartet variant**: which **device** altered harmony at which **bar** during **per-part** application (not a per-note performance receipt).
+
+### Tips and creative suggestions
+
+- **Chamber-friendly meters:** **Oh No**, **Outside Now**, **Black Napkins**, and **Zappa Classic** give **strong narrative contrast** (mixed simple/compound and odd cardinalities) without the longest single-bar numerators of **Black Page** / **Watermelon** unless you want explicit **prog/challenge** texture.
+- **Chord progression:** Paste or type **one symbol per bar** for the chosen **total bars** (minimum **16** in ensemble messaging); leave empty to use the **Era** default cycle. Locked-length input feeds **`frankZappaEffectiveHarmonyBars`** / **`zappaSQEffectiveHarmonyBars`** when parsing succeeds — same discipline as other ensemble presets.
+- **Total bar counts:** Quartet UI aligns with **16 / 24 / 32 / 40 / 42 / 48 / 64** bar choices (ensemble song-form clamp). **16** and **32** are practical defaults for **smoke-level** parity and readable **section** arcs; longer forms benefit from **explicit** progressions.
+
+---
+
 ## Smoke / maintenance
 
 - **`npm run test:composer-smoke`** includes **`zappasoloSmoke.test.ts`** and Frank Zappa slice smoke; aggregate **113**/0 PASS rows, **31** labelled suites — sync **`engines/composer-os-v2/tests/runSmokeTests.ts`**, **`CLAUDE.md`**, and **`docs/COMPOSER_OS_ROADMAP.md`** when the allowlist changes.
