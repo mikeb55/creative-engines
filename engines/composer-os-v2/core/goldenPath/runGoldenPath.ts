@@ -742,8 +742,13 @@ function extractPitchByInstrument(score: ScoreModel): Array<{ instrument: string
 }
 
 /** Slash chords: if any bass note matches the slash pitch class in the bar → ok; else emit a non-blocking warning (does not fail render). */
-function validateSlashBassHonoured(score: ScoreModel): string[] {
+function validateSlashBassHonoured(
+  score: ScoreModel,
+  opts?: { frankZappaPolytonalBass?: boolean }
+): string[] {
   const out: string[] = [];
+  /** `frank_zappa` uses polytonal / metric displacement — bass may legitimately avoid literal slash pitch class. */
+  if (opts?.frankZappaPolytonalBass) return out;
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!bass) return out;
   for (const m of bass.measures) {
@@ -1872,7 +1877,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     assertGuitarScoreMatchesHarmonyContext(score, appliedContext, 'after_applyKeySignatureToScoreAndContext');
   }
 
-  const slashBassWarnings = validateSlashBassHonoured(score);
+  const slashBassWarnings = validateSlashBassHonoured(score, {
+    frankZappaPolytonalBass: appliedContext.generationMetadata?.songwriterStyleId === 'frank_zappa',
+  });
   if (slashBassWarnings.length > 0) {
     songModePhraseWarnings = [...songModePhraseWarnings, ...slashBassWarnings];
   }
@@ -2202,6 +2209,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       });
   errors.push(...truthReport.errors);
 
+  const zappaShareableRelax = appliedContext.generationMetadata?.songwriterStyleId === 'frank_zappa';
+  /** Frank Zappa intentionally breaks phrase/motif conventions; duo LOCK swing/polish heuristics are jazz-pop biased — do not penalize release readiness for stylistic warnings. Warnings still appear on the manifest. */
+  const phraseBehaviourWarningCountForGate = zappaShareableRelax ? 0 : songModePhraseWarnings.length;
+
   const readinessResult = runReleaseReadinessGate({
     validationPassed:
       integrityResult.passed &&
@@ -2224,7 +2235,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         rehearsalMarks.length >= 2),
     exportIntegrity: exportIntegrityPassed,
     exportRoundTrip: exportRoundTripPassed,
-    phraseBehaviourWarningCount: songModePhraseWarnings.length,
+    phraseBehaviourWarningCount: phraseBehaviourWarningCountForGate,
   });
 
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';

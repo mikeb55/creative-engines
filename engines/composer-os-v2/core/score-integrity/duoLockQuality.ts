@@ -554,7 +554,9 @@ export function validateDuoPolishV33Gate(
   if (!g) return finalizeDuoLock([], opts?.compositionContext);
   const issues: SongModeDuoIdentityIssue[] = [];
   const p = computeDuoPolishV33Score(score);
-  const minP = polishMinScore(opts?.effectiveFormBars);
+  const zappaSongwriter = opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'frank_zappa';
+  /** Jazz-pop polish thresholds penalise intentional angular / disrupted phrasing; Zappa uses sparse cells + displacement. */
+  const minP = zappaSongwriter ? 5.0 : polishMinScore(opts?.effectiveFormBars);
   if (p < minP) {
     issues.push({
       ruleId: 'lock_polish_score_low',
@@ -677,6 +679,8 @@ export function validateDuoSwingRhythm(
   const issues: SongModeDuoIdentityIssue[] = [];
   if (!guitar || !bass) return finalizeDuoLock([], opts?.compositionContext);
 
+  const zappaSongwriter = opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'frank_zappa';
+
   const rr = guitarRestRatio(guitar);
   if (rr < 0.15) {
     issues.push({
@@ -684,7 +688,7 @@ export function validateDuoSwingRhythm(
       message: 'Duo swing: guitar needs at least 15% rests (conversational space)',
     });
   }
-  if (rr > 0.45) {
+  if (!zappaSongwriter && rr > 0.45) {
     issues.push({
       ruleId: 'swing_guitar_rests_too_high',
       message: 'Duo swing: guitar rests exceed 45% (needs more melodic presence)',
