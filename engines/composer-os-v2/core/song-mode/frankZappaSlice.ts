@@ -23,12 +23,107 @@ const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
-/** Elevated vs baseline so polytonal + altered juxtaposition fire before xenochrony; aim ≥40% bars with altered/jazz-dense colour. */
-const D1_POLYTONAL_RATE = 0.48;
+/** Elevated vs baseline so polytonal + altered juxtaposition fire before xenochrony; floors enforce ≥50% non–vanilla-maj7 + per-section altered presence. */
+const D1_POLYTONAL_RATE = 0.55;
 const D2_METRIC_DISPLACEMENT_RATE = 0.32;
 const D3_XENOCHRONY_RATE = 0.2;
-const D4_STYLE_JUXTAPOSITION_RATE = 0.42;
+const D4_STYLE_JUXTAPOSITION_RATE = 0.5;
 const D5_THROUGH_COMPOSED_CUT_RATE = 0.22;
+
+/** Plain maj7 / maj9 / Δ without altered extensions — counts against “enough colour” quotas. */
+function isVanillaMaj7Family(symbol: string): boolean {
+  if (looksAlteredOrJazzDense(symbol)) return false;
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const tl = hp.toLowerCase().replace(/\s/g, '');
+  return /\bmaj7\b|maj9|maj11|mmaj|Δ/.test(tl);
+}
+
+function nudgeChordTowardAltered(symbol: string, seed: number, bar: number): string {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const m = hp.match(ROOT_AT_START);
+  const root = m?.[1];
+  const slash = slashTail(symbol);
+  if (!root) return symbol;
+  const u = seededUnit(seed, bar, 908401);
+  if (u < 0.45) return mergeSlashFromSourceIfLost(symbol, `${root}7alt${slash}`);
+  if (u < 0.78) return mergeSlashFromSourceIfLost(symbol, `${root}maj7#11${slash}`);
+  return mergeSlashFromSourceIfLost(symbol, `${root}m7b5${slash}`);
+}
+
+/**
+ * At least 50% of bars must not be vanilla maj7-family; each form section must contain at least one altered/jazz-dense bar.
+ */
+function enforceZappaHarmonyLanguageFloors(params: {
+  out: string[];
+  receipts: string[];
+  context: CompositionContext;
+  seed: number;
+}): void {
+  const { out, receipts, context, seed } = params;
+  const tb = out.length;
+  if (tb < 1) return;
+
+  const sectionsToScan =
+    context.form.sections.length > 0
+      ? context.form.sections
+      : [{ label: 'form', startBar: 1, length: tb }];
+
+  for (const sec of sectionsToScan) {
+    const lo = sec.startBar;
+    const hi = Math.min(tb, sec.startBar + sec.length - 1);
+    if (lo > hi) continue;
+    let hasAltered = false;
+    for (let b = lo; b <= hi; b++) {
+      const sym = out[b - 1];
+      if (sym && looksAlteredOrJazzDense(sym)) {
+        hasAltered = true;
+        break;
+      }
+    }
+    if (hasAltered) continue;
+    const candidates: number[] = [];
+    for (let b = lo; b <= hi; b++) {
+      if (!isFrankZappaHookBar(b, context)) candidates.push(b);
+    }
+    candidates.sort((a, bb) => seededUnit(seed, a * 991, 908202) - seededUnit(seed, bb * 991, 908202));
+    for (const pick of candidates) {
+      const before = out[pick - 1]!;
+      const nudged = nudgeChordTowardAltered(before, seed, pick);
+      if (nudged !== before) {
+        out[pick - 1] = nudged;
+        receipts.push(`fz:enforce:section_altered@bar${pick}#v1`);
+        break;
+      }
+    }
+  }
+
+  let vanilla = 0;
+  for (let b = 1; b <= tb; b++) {
+    const sym = out[b - 1];
+    if (sym && isVanillaMaj7Family(sym)) vanilla++;
+  }
+  const maxVanilla = Math.floor(tb * 0.5);
+  if (vanilla <= maxVanilla) return;
+
+  const toFix = vanilla - maxVanilla;
+  const candidates: number[] = [];
+  for (let b = 1; b <= tb; b++) {
+    const sym = out[b - 1];
+    if (sym && isVanillaMaj7Family(sym) && !isFrankZappaHookBar(b, context)) candidates.push(b);
+  }
+  candidates.sort((a, bb) => seededUnit(seed, a, 908301) - seededUnit(seed, bb, 908301));
+  let fixed = 0;
+  for (const bar of candidates) {
+    if (fixed >= toFix) break;
+    const before = out[bar - 1]!;
+    const nudged = nudgeChordTowardAltered(before, seed, bar + fixed * 17);
+    if (nudged !== before) {
+      out[bar - 1] = nudged;
+      receipts.push(`fz:enforce:non_maj7_floor@bar${bar}#v1`);
+      fixed++;
+    }
+  }
+}
 
 function pitchClassToSharpName(pc: number): string {
   return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
@@ -387,6 +482,8 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
       }
     }
   }
+
+  enforceZappaHarmonyLanguageFloors({ out, receipts, context, seed });
 
   genMeta.frankZappaEffectiveHarmonyBars = out;
   genMeta.frankZappaDeviceReceipts = receipts;

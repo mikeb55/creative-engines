@@ -421,6 +421,46 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
+## FUTURE — Zappa Ensemble Arrangements
+
+**Priority:** **HIGH** — both phases are **HIGH PRIORITY** for future dedicated sessions (product + engine bandwidth).
+
+### Phase A — Zappa String Quartet
+
+- Use existing string quartet preset as base
+- Wire Zappa chord pools (tritone-rooted, doo-wop clash, no ii–V–I) as harmonic source for all 4 parts
+- Apply odd meter infrastructure to all parts simultaneously
+- Xenochrony device (d2): rhythmic displacement per instrument independently
+- Violin 1: carries Slonimsky solo engine output
+- Viola/Cello: enforce rhythmic cell + bass authority
+- Reference: *The Perfect Stranger* (Zappa chamber writing)
+- Dependencies: `frankZappaSlice.ts`, `oddMeterQuantiser.ts`, `zappasoloEngine.ts`
+
+### Phase B — Zappa Big Band
+
+- Use existing big band preset as base
+- Brass section: polytonal superimposition (d1) — instruments in different keys
+- Saxophone soli: carry motif engine output
+- Rhythm section: enforce odd meter cell (piano/bass/drums)
+- Solo instrument (trumpet/alto): Slonimsky solo engine
+- Style juxtaposition (d4): sudden genre switches within piece
+- Reference: *The Grand Wazoo*, *Waka/Jawaka*
+- Dependencies: all Zappa slice devices, big band preset, drum generator (TBD)
+
+### Order
+
+- **Phase A (String Quartet) first** — simpler, existing preset
+- **Phase B (Big Band) second** — most ambitious, needs drum generator
+
+### New work required for both
+
+- Instrument-specific voice range enforcement per part
+- Arrangement layer (which device → which instrument)
+- Part-writing rules (no parallel fifths in strings etc)
+- **Big band only:** drum part generator
+
+---
+
 ## MusicXML Harmony Import for Lead Sheets (staged rollout)
 
 ### Guardrails (must hold for every stage)
@@ -788,6 +828,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-05-01].*
+*End of Composer OS Roadmap [2026-05-02].*
 
 

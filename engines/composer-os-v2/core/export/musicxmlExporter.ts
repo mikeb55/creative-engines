@@ -680,6 +680,9 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
           return `    <score-part id="${p.id}">
       <part-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</part-name>
       <part-abbreviation>Pno.</part-abbreviation>
+      <part-name-display>
+        <display-text>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</display-text>
+      </part-name-display>
       <score-instrument id="${p.id}-I1">
         <instrument-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</instrument-name>
         <instrument-sound>keyboard.piano</instrument-sound>
@@ -707,10 +710,19 @@ ${midiInstrumentBody}
       })
       .join('\n');
 
+    const sibeliusPianoCompCredit = score.parts.some((p) => isSongModeKeysCompPianoPart(p))
+      ? `
+  <credit page="1">
+    <credit-words default-x="56.6929" default-y="1584" font-size="10" justify="left" valign="bottom">${escapeXml(
+      ACOUSTIC_GRAND_PIANO_PART_NAME
+    )}</credit-words>
+  </credit>`
+        : '';
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.1">
-  <work><work-title>${escapeXml(score.title)}</work-title></work>
+  <work><work-title>${escapeXml(score.title)}</work-title></work>${sibeliusPianoCompCredit}
   <part-list>
 ${partList}
   </part-list>
@@ -768,6 +780,14 @@ ${partList}
       ${clefXml}
     </attributes>
 `;
+          if (isSongModeKeysCompPianoPart(part)) {
+            xml += `    <print>
+      <part-name-display>
+        <display-text>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</display-text>
+      </part-name-display>
+    </print>
+`;
+          }
         } else if (opts.barMeterMap && i >= 1 && adjacentBarsMeterDiffers(i, i + 1, opts.barMeterMap)) {
           const mm = resolveMeterForBar(i + 1, opts.barMeterMap);
           xml += `    <attributes>
