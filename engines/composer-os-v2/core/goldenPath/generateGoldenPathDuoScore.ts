@@ -303,6 +303,7 @@ import {
 import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
 import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
 import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
+import type { ZappaImitationReceipt } from '../solo/soloTypes';
 import {
   applyWayneShorterChorusBridgeMotifDevelopment,
   buildPhraseFingerprint,
@@ -4750,6 +4751,128 @@ function applyFrankZappaImpliedInnerVoicePass(score: ScoreModel, context: Compos
   }
 }
 
+/** Frank Zappa Phase 4 — guitar↔bass imitation (anchor echo) + one register-swap bar per section. */
+function applyFrankZappaPhase4GuitarBassAndRegister(
+  context: CompositionContext,
+  guitar: PartModel,
+  bass: PartModel,
+  tb: number,
+  walkLow: number,
+  bassCeiling: number
+): void {
+  const md = context.generationMetadata;
+  const form = context.form;
+  if (!md || md.songwriterStyleId !== 'frank_zappa' || !form?.sections?.length) return;
+  const seed = context.seed;
+  const sections: ZappaImitationReceipt['sections'] = [];
+
+  for (let si = 0; si < form.sections.length; si++) {
+    const sec = form.sections[si]!;
+    const lo = sec.startBar;
+    const hi = Math.min(tb, sec.startBar + sec.length - 1);
+    const delayBeats = seededUnit(seed, 961 + si) < 0.5 ? 1 : 2;
+    const bassLeads = seededUnit(seed, 962 + si) < 0.42;
+
+    const swapPick = lo + Math.floor(seededUnit(seed, 963 + si) * Math.max(1, hi - lo + 1));
+    const swapBarClamped = Math.min(hi, Math.max(lo, swapPick));
+    const gSwap = guitar.measures.find((m) => m.index === swapBarClamped);
+    const bSwap = bass.measures.find((m) => m.index === swapBarClamped);
+    if (gSwap && bSwap) {
+      for (const e of gSwap.events) {
+        if (e.kind === 'note' && isGuitarMelodyVoiceNote(e)) {
+          (e as NoteEvent).pitch = Math.max(40, Math.min(88, (e as NoteEvent).pitch - 12));
+        }
+      }
+      for (const e of bSwap.events) {
+        if (e.kind === 'note') {
+          (e as NoteEvent).pitch = clampPitch((e as NoteEvent).pitch + 12, walkLow, Math.min(72, bassCeiling + 12));
+        }
+      }
+      gSwap.events.sort(
+        (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
+      );
+      bSwap.events.sort(
+        (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
+      );
+    }
+
+    if (bassLeads) {
+      const bm0 = bass.measures.find((m) => m.index === lo);
+      if (!bm0) continue;
+      const bnotes = bm0.events
+        .filter((e) => e.kind === 'note')
+        .sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat) as NoteEvent[];
+      if (bnotes.length === 0) continue;
+      const echoBar = Math.min(hi, lo + 1);
+      const gm = guitar.measures.find((m) => m.index === echoBar);
+      if (!gm) continue;
+      const span = measureBeatSpanQuartersOf(gm);
+      let added = 0;
+      for (const bn of bnotes.slice(0, 4)) {
+        const st = bn.startBeat + delayBeats;
+        if (st >= span - 0.05) continue;
+        const pitch = Math.max(40, Math.min(88, bn.pitch + 12));
+        addEvent(
+          gm,
+          createNote(pitch, st, Math.min(bn.duration, span - st), 1, `zappa_imitation:${sec.label.trim()}`)
+        );
+        added++;
+      }
+      if (added > 0) {
+        gm.events.sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat);
+        sections.push({
+          sectionLabel: sec.label.trim(),
+          mode: 'guitar_echoes_bass',
+          anchorBars: [lo, Math.min(lo + 1, hi)],
+          delayBeats,
+          echoBar,
+        });
+      }
+    } else {
+      const collected: NoteEvent[] = [];
+      for (const bb of [lo, lo + 1]) {
+        if (bb > hi) continue;
+        const gm = guitar.measures.find((m) => m.index === bb);
+        if (!gm) continue;
+        for (const e of gm.events) {
+          if (e.kind === 'note' && isGuitarMelodyVoiceNote(e)) collected.push(e as NoteEvent);
+        }
+      }
+      collected.sort((a, b) => a.startBeat - b.startBeat);
+      if (collected.length === 0) continue;
+      const echoBar = Math.min(hi, lo + (seededUnit(seed, 964 + si) < 0.55 ? 1 : 2));
+      const bm = bass.measures.find((m) => m.index === echoBar);
+      if (!bm) continue;
+      const span = measureBeatSpanQuartersOf(bm);
+      let added = 0;
+      for (const gn of collected.slice(0, 5)) {
+        const st = gn.startBeat + delayBeats;
+        if (st >= span - 0.05) continue;
+        const pitch = clampPitch(gn.pitch - 12, walkLow, bassCeiling);
+        addEvent(bm, createNote(pitch, st, Math.min(gn.duration, span - st)));
+        added++;
+      }
+      if (added > 0) {
+        bm.events.sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat);
+        sections.push({
+          sectionLabel: sec.label.trim(),
+          mode: 'bass_echoes_guitar',
+          anchorBars: [lo, Math.min(lo + 1, hi)],
+          delayBeats,
+          echoBar,
+        });
+      }
+    }
+  }
+
+  if (sections.length > 0 && md.frankZappaDiagnostics) {
+    md.frankZappaDiagnostics = {
+      ...md.frankZappaDiagnostics,
+      zappaImitationReceipt: { sections },
+    };
+  }
+}
+
 /**
  * Generate golden path duo score. `context` must already include any `applyStyleStack` transforms.
  */
@@ -5050,6 +5173,9 @@ export function generateGoldenPathDuoScore(
   if (context.presetId !== 'ecm_chamber' && context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  }
+  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa') {
+    applyFrankZappaPhase4GuitarBassAndRegister(context, guitarPart, bassPart, tb, walkLow, bassCeiling);
   }
   const useIndieDualGuitar = shouldUseIndieArtPopDualGuitarRoute(context);
   if (

@@ -1,6 +1,7 @@
 /**
  * Frank Zappa Phase B — solo / melodic generator (Slonimsky backbone + Zappa PDF vocabulary).
  * Phase 1: 7/8 rhythmic cell lock. Phase 2: section anchor motif + ≥0.7 development similarity (shift / augment / compress).
+ * Phase 4: cross-bar callbacks (bar 1 → 5,9,13…), one controlled cell-disruption bar per section, callback receipt on motif metadata.
  */
 
 import type { CompositionContext, FormMap, GenerationMetadata } from '../compositionContext';
@@ -22,6 +23,7 @@ import type {
   SoloLine,
   SoloNote,
   SoloPhrase,
+  ZappaCrossBarCallbackReceipt,
   ZappaMotifAnchorReceipt,
   ZappaMotifOwnershipReceipt,
   ZappaMotifPhraseReceipt,
@@ -180,11 +182,14 @@ function applyZappa78RhythmicCellLockToAllNotes(params: {
   map: BarMeterMap | undefined;
   form: FormMap;
   lockedPhraseTopCount: number;
+  /** Bars where cell snap is skipped (Musicality Phase 4 — one controlled disruption per section). */
+  skipBars?: ReadonlySet<number>;
 }): void {
-  const { allNotes, tb, map, form, lockedPhraseTopCount } = params;
+  const { allNotes, tb, map, form, lockedPhraseTopCount, skipBars } = params;
   for (const n of allNotes) {
     const b = n.barIndex;
     if (b < 1 || b > tb) continue;
+    if (skipBars?.has(b)) continue;
     const sig = resolveMeterForBar(b, map);
     if (sig.numerator !== 7 || sig.denominator !== 8) continue;
     const pi = zappaPhraseIndexForFourBarWindow(b);
@@ -842,6 +847,97 @@ function barMeterMapFromContext(context: CompositionContext): BarMeterMap | unde
   return context.generationMetadata.barMeterMap ?? context.barMeterMap;
 }
 
+function isZappaCrossBarTemplateNote(n: SoloNote): boolean {
+  if (n.marker === 'descending_minor_sixth' || n.marker === 'tetrachord_0137') return false;
+  if (n.tupletRole && n.tupletRole !== 'plain') return false;
+  return true;
+}
+
+/** Musicality Phase 4 — one bar per form section skips 7/8 cell snap (controlled disruption). */
+function computeZappaSectionDisruptionBars(
+  form: FormMap | undefined,
+  tb: number,
+  map: BarMeterMap | undefined,
+  seed: number
+): { skipBars: Set<number>; sectionDisruptionBars: Record<string, number> } {
+  const skipBars = new Set<number>();
+  const sectionDisruptionBars: Record<string, number> = {};
+  if (!form?.sections?.length) return { skipBars, sectionDisruptionBars };
+  for (let si = 0; si < form.sections.length; si++) {
+    const sec = form.sections[si]!;
+    const lo = sec.startBar;
+    const hi = Math.min(tb, sec.startBar + sec.length - 1);
+    const cand: number[] = [];
+    for (let b = lo; b <= hi; b++) {
+      const sig = resolveMeterForBar(b, map);
+      if (sig.numerator === 7 && sig.denominator === 8) cand.push(b);
+    }
+    const pool = cand.length > 0 ? cand : Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+    const idx = Math.floor(seededUnit(seed, 860 + si) * pool.length);
+    const pick = pool[Math.min(pool.length - 1, Math.max(0, idx))]!;
+    skipBars.add(pick);
+    sectionDisruptionBars[sec.label.trim()] = pick;
+  }
+  return { skipBars, sectionDisruptionBars };
+}
+
+/**
+ * Musicality Phase 4 — reuse bar 1 rhythm + contour (transposed) at bars 5, 9, 13, … (+4k).
+ */
+function applyZappaCrossBarCallbacks(params: {
+  allNotes: SoloNote[];
+  tb: number;
+  map: BarMeterMap | undefined;
+  chords: string[];
+  low: number;
+  high: number;
+}): ZappaCrossBarCallbackReceipt | undefined {
+  const { allNotes, tb, map, chords, low, high } = params;
+  const template = allNotes
+    .filter((n) => n.barIndex === 1 && isZappaCrossBarTemplateNote(n))
+    .sort((a, b) => a.startBeat - b.startBeat);
+  if (template.length === 0) return undefined;
+
+  const callbackBars: number[] = [];
+  for (let b = 5; b <= tb; b += 4) {
+    callbackBars.push(b);
+    for (let i = allNotes.length - 1; i >= 0; i--) {
+      const n = allNotes[i]!;
+      if (n.barIndex === b && isZappaCrossBarTemplateNote(n)) allNotes.splice(i, 1);
+    }
+    const chord = chords[b - 1] ?? 'C7alt';
+    const t = chordTonesForChordSymbol(chord);
+    const span = measureQuarterSpanForBar(b, map);
+    let curMidi = liftIntoRange(t.third ?? t.root + 4, low, high);
+    for (let ti = 0; ti < template.length; ti++) {
+      const src = template[ti]!;
+      if (ti > 0) {
+        curMidi = liftIntoRange(curMidi + (template[ti]!.midi - template[ti - 1]!.midi), low, high);
+      }
+      if (src.startBeat >= span - 1e-4) continue;
+      const dur = Math.min(src.durationBeats, span - src.startBeat);
+      if (dur < 0.06) continue;
+      allNotes.push({
+        midi: Math.round(curMidi),
+        startBeat: src.startBeat,
+        durationBeats: dur,
+        barIndex: b,
+        tupletRole: 'plain',
+      });
+    }
+  }
+
+  const rhythmFingerprint = template.map((n) => `${n.startBeat.toFixed(3)}@${n.durationBeats.toFixed(3)}`).join('|');
+  const intervalFingerprint = template.map((n, i) => (i === 0 ? 0 : n.midi - template[i - 1]!.midi)).join(',');
+
+  return {
+    anchorBar: 1,
+    callbackBars,
+    rhythmFingerprint,
+    intervalFingerprint,
+  };
+}
+
 /**
  * Slonimsky-driven Zappa solo line: odd-meter aware, PDF tuplet vocabulary, structural m6 + [0137] + factory shifts.
  */
@@ -923,6 +1019,17 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     allNotes.push(...barNotes);
   }
 
+  const crossBarReceipt = applyZappaCrossBarCallbacks({
+    allNotes,
+    tb,
+    map,
+    chords,
+    low,
+    high,
+  });
+
+  const { skipBars, sectionDisruptionBars } = computeZappaSectionDisruptionBars(context.form, tb, map, seed);
+
   const totalPhrases = Math.max(1, Math.ceil(tb / 4));
   const lockedTopCount = zappaRhythmicCellLockedPhraseCount(totalPhrases);
   applyZappa78RhythmicCellLockToAllNotes({
@@ -931,12 +1038,13 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     map,
     form: context.form,
     lockedPhraseTopCount: lockedTopCount,
+    skipBars,
   });
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
   collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
 
-  const zappaMotifReceipt = applyZappaMotifOwnershipPhase2({
+  let zappaMotifReceipt = applyZappaMotifOwnershipPhase2({
     allNotes,
     tb,
     map,
@@ -947,6 +1055,9 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     seed,
     totalPhrases,
   });
+  if (crossBarReceipt) {
+    zappaMotifReceipt = { ...zappaMotifReceipt, crossBarCallbacks: crossBarReceipt };
+  }
 
   let zappaGuideToneReceipt = buildZappaSmoothedGuideToneReceipt(chords, tb, low, high);
   applyZappaGuideTonePitchNudges(allNotes, tb, zappaGuideToneReceipt, low, high);
@@ -989,6 +1100,8 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     phraseCount: totalPhrases,
     phrasesCellLocked: lockedTopCount,
     policyMet: lockedTopCount / totalPhrases >= 0.5 - 1e-9,
+    sectionDisruptionBars:
+      Object.keys(sectionDisruptionBars).length > 0 ? sectionDisruptionBars : undefined,
   };
 
   const receipt: SoloLine['receipt'] = {

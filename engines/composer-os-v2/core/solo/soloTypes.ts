@@ -62,6 +62,8 @@ export interface ZappaRhythmicCellLockSummary {
   phrasesCellLocked: number;
   /** True when `phrasesCellLocked / phraseCount >= threshold` (or no phrases). */
   policyMet: boolean;
+  /** Musicality Phase 4 — one bar per form section where 7/8 cell snap was skipped (controlled disruption). */
+  sectionDisruptionBars?: Record<string, number>;
 }
 
 /** Phase 2 — one extracted anchor per form section (intervals + rhythm ratios). */
@@ -116,6 +118,27 @@ export interface ZappaGuideToneReceipt {
   }>;
 }
 
+/** Musicality Phase 4 — guitar↔bass anchor echo (golden path diagnostics). */
+export interface ZappaImitationSectionEntry {
+  sectionLabel: string;
+  mode: 'bass_echoes_guitar' | 'guitar_echoes_bass';
+  anchorBars: [number, number];
+  delayBeats: number;
+  echoBar: number;
+}
+
+export interface ZappaImitationReceipt {
+  sections: ZappaImitationSectionEntry[];
+}
+
+/** Musicality Phase 4 — bar 1 rhythm + intervals recur at bars 5, 9, 13… (cross-bar callbacks). */
+export interface ZappaCrossBarCallbackReceipt {
+  anchorBar: number;
+  callbackBars: number[];
+  rhythmFingerprint: string;
+  intervalFingerprint: string;
+}
+
 /** Phase 2 — motif ownership policy + fingerprints for manifests / callback engines. */
 export interface ZappaMotifOwnershipReceipt {
   recurrenceThreshold: number;
@@ -126,6 +149,8 @@ export interface ZappaMotifOwnershipReceipt {
   /** Sections whose mean recurrence ≥ threshold after enforcement. */
   sectionsMeetingRecurrence: string[];
   phrasesRejectedOrRepaired: number;
+  /** Musicality Phase 4 — bar-1 rhythm/intervals echoed at +4k bars (metadata in `ZappaCrossBarCallbackReceipt`). */
+  crossBarCallbacks?: ZappaCrossBarCallbackReceipt;
 }
 
 /** Output of {@link generateZappaSolo}. */

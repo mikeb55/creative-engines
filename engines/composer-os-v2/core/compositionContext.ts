@@ -36,7 +36,7 @@ import type {
   MotifFingerprint,
 } from './motif/motifAuthorityV1';
 import type { BarMeterMap } from './rhythm/barMeterTypes';
-import type { SoloLine, ZappasoloOptions } from './solo/soloTypes';
+import type { SoloLine, ZappaImitationReceipt, ZappasoloOptions } from './solo/soloTypes';
 import type { HarmonyContext } from './harmony/harmonyContext';
 
 /** Form map: section labels and bar ranges. */
@@ -632,6 +632,8 @@ export interface GenerationMetadata {
     zappaInnerVoiceNudgeBars?: number[];
     /** Form sections that gained a deliberate contrary-motion moment (Phase 3). */
     zappaContraryMotionSections?: string[];
+    /** Musicality Phase 4 — guitar↔bass anchor imitation receipts. */
+    zappaImitationReceipt?: ZappaImitationReceipt;
   };
   /** True when any bar failed Frank Zappa bass beat-1 / beat-2 commitment (after repair attempt). */
   frankZappaBassBeatCommitmentViolated?: boolean;
@@ -922,6 +924,7 @@ export interface GenerationMetadata {
     zappaVoiceLeadingScore?: number;
     zappaInnerVoiceNudgeBars?: number[];
     zappaContraryMotionSections?: string[];
+    zappaImitationReceipt?: ZappaImitationReceipt;
   };
   frankZappaSliceReceipt?: string;
   frankZappaEffectiveHarmonyBars?: string[];

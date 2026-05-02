@@ -1,6 +1,6 @@
 # Frank Zappa — Creation Guide
 
-Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth, and the **Phase B** solo lead engine. Implementation references: `engines/composer-os-v2/core/song-mode/frankZappaSlice.ts`, `engines/composer-os-v2/core/solo/zappasoloEngine.ts`, `engines/composer-os-v2/core/solo/zappaVoiceLeading.ts`, `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`.
+Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth, and the **Phase B** solo lead engine. Implementation references: `engines/composer-os-v2/core/song-mode/frankZappaSlice.ts`, `engines/composer-os-v2/core/solo/zappasoloEngine.ts`, `engines/composer-os-v2/core/solo/zappaVoiceLeading.ts`, `engines/composer-os-v2/core/goldenPath/bassMelodicLines.ts` (bass commitment), `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts` (duo passes + Phase 4 interaction).
 
 ---
 
@@ -43,6 +43,13 @@ Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintupl
 - **Directional phrase targeting:** Each four-bar phrase targets a **goal tone** = guide tone at **bar N+2 or N+4** (seeded); closing pitch nudged when it does not improve distance to the goal vs the phrase opening.
 - **Implied inner voice:** **`applyFrankZappaImpliedInnerVoicePass`** — narrows **> octave** bass–melody spans under **parallel** motion; guarantees **≥1 contrary-motion moment per form section** when missing. Telemetry on **`frankZappaDiagnostics`** (`zappaInnerVoiceNudgeBars`, `zappaContraryMotionSections`).
 - **Voice-leading gate:** **`validateBarryHarrisConformance`** (when **`frank_zappa`**) computes **`zappaVoiceLeadingScore`** (0–10): rewards semitone motion, small-step fraction, **`zappaGuideToneReceipt.stepwiseContinuityRatio`**; penalizes large leaps and harsh chord-change melody resets. Written to **`frankZappaDiagnostics.zappaVoiceLeadingScore`** when slice diagnostics exist.
+
+### Phase 4 — Guitar↔bass interaction + cross-bar callbacks — **LIVE**
+
+- **Guitar↔bass imitation:** **`applyFrankZappaPhase4GuitarBassAndRegister`** in **`generateGoldenPathDuoScore.ts`** — per form section, either the **bass** states the anchor and **guitar** echoes **1–2 beats** later, or **guitar**’s first-two-bar anchor is **echoed in bass** with the same delay (**≥1** imitation event per section). Receipt: **`frankZappaDiagnostics.zappaImitationReceipt`** (when slice diagnostics already exist).
+- **Cross-bar callbacks (solo):** Bar **1** plain-note **rhythm + intervallic contour** is **reused (transposed)** at bars **5, 9, 13, …** via **`applyZappaCrossBarCallbacks`** in **`zappasoloEngine.ts`**. Metadata: **`SoloLine.zappaMotifReceipt.crossBarCallbacks`** (anchor bar, target bars, rhythm/interval digests).
+- **One controlled disruption per section:** **`computeZappaSectionDisruptionBars`** — exactly **one** bar per form section **skips** the 7/8 **cell snap** (prefers 7/8 measures when available) for tension/release, then the grid returns on surrounding bars. Logged on **`SoloLine.rhythmicCellLock.sectionDisruptionBars`**.
+- **Register swap (once per section):** One **deterministic** bar per section: **guitar** melody **−12** st, **bass** **+12** st (clamped) so the **bass** can sit **above** the guitar for a single bar of textural surprise.
 
 ---
 
