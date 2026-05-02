@@ -267,6 +267,14 @@ Choose **Wayne Shorter** as the **primary songwriter** when you want a **post-bo
 
 **Known limitation:** Rules in **`songwriterRuleRegistry`** and per-row **metadata tags** (**tension**, **motion**, **cadential**, **pedal**) **inform planning metadata** today. **Rule-to-chord wiring** is **metadata only** in the picker **until contextual selection** is implemented.
 
+### Song Mode — Odd-meter meter map (Dave Brubeck, Thelonious Monk, Wayne Shorter)
+
+When **Songwriter** is **Dave Brubeck**, **Thelonious Monk**, or **Wayne Shorter**, Generate shows **“{Composer} — meter map”** with **All 4/4** plus named presets (for example **Take Five (5/4)**, **Blue Rondo (9/8)**, Monk **4/4 + 3/4**, Shorter **6/4** / **7/4**, etc.). Choosing a preset sends a tiled **`barMeterMap`** so MusicXML carries per-bar time signatures; **All 4/4** omits **`barMeterMap`** and keeps default **4/4** behaviour. **Frank Zappa** uses the separate, fuller meter-map UI (pattern / per-bar tabs).
+
+### Song Mode — Dave Brubeck primary songwriter (`dave_brubeck`)
+
+**Dave Brubeck** appears under **Shipped (full slice)** with other Song Mode writers. The engine resolves **`dave_brubeck`** like other catalogue ids (**registry**, **style profile**, pairing metadata). Use the **meter map** block above for Brubeck-specific odd-meter tiles.
+
 ### Song Mode — Bacharach primary songwriter
 
 - **Sounds like:** *Walk On By*, *Alfie*, *Close to You*
@@ -410,7 +418,11 @@ Details: **[TEST_DEBT_COMPOSER_OS_V2.md](TEST_DEBT_COMPOSER_OS_V2.md)**.
 
 ### Songwriter Style Profiles (Duo / Song Mode)
 
-The Slonimsky chromatic layer now reads from the songwriter style profile map for all three pipelines (Duo, Big Band, String Quartet). Previously the Duo pipeline used a hardcoded list of four songwriters — it now responds correctly to all profiles including Donald Fagen, Kate Bush, Herbie Hancock, Radiohead, Jobim, Bacharach, and Brian Wilson.
+The Slonimsky chromatic layer now reads from the songwriter style profile map for all three pipelines (Duo, Big Band, String Quartet). Previously the Duo pipeline used a hardcoded list of four songwriters — it now responds correctly to all profiles including Donald Fagen, Kate Bush, Herbie Hancock, Radiohead, Jobim, Bacharach, Brian Wilson, and Dave Brubeck.
+
+### Odd-meter Song Mode (May 2026)
+
+**Dave Brubeck**, **Thelonious Monk**, and **Wayne Shorter** support optional **`barMeterMap`** meter presets in Song Mode (see **Song Mode — Odd-meter meter map** above). **`npm run test:composer-smoke`** aggregate tier is **115**/0 PASS rows (repo snapshot **2026-05-02**); sync **`docs/COMPOSER_OS_ROADMAP.md`** and **`CLAUDE.md`** when **`runSmokeTests.ts`** changes.
 
 ### MusicXML Lead-Sheet Import — Big Band and String Quartet
 
