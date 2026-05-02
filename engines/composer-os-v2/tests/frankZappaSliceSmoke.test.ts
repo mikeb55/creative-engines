@@ -212,5 +212,37 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
       'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: success + MusicXML Piano part-name + zappa_solo no octave 7 (seed 77777)',
   });
 
+  /** Musicality regression — Zappa Classic meter + builtin harmony; motif / cell lock / guide tones / VL / phrases. */
+  let zappaMusicalityInteractionOk = false;
+  try {
+    const rMus = runGoldenPathOnce(77777, {
+      presetId: 'guitar_bass_duo',
+      totalBars: 32,
+      longFormEnabled: true,
+      songModeHookFirstIdentity: true,
+      primarySongwriterStyle: 'frank_zappa',
+      barMeterMap: buildZappaClassicBarMeterMap32(),
+    });
+    const mdM = rMus.context?.generationMetadata;
+    const solo = mdM?.soloLine;
+    const motif = solo?.zappaMotifReceipt;
+    const rcl = solo?.rhythmicCellLock;
+    const gt = solo?.zappaGuideToneReceipt;
+    const vz = mdM?.frankZappaDiagnostics?.zappaVoiceLeadingScore;
+    zappaMusicalityInteractionOk =
+      rMus.success === true &&
+      (motif?.sectionsMeetingRecurrence?.length ?? 0) >= 1 &&
+      rcl?.policyMet === true &&
+      (gt?.stepwiseContinuityRatio ?? 0) >= 0.5 &&
+      (vz ?? 0) >= 7.0 &&
+      (solo?.phrases?.length ?? 0) >= 4;
+  } catch {
+    zappaMusicalityInteractionOk = false;
+  }
+  out.push({
+    ok: zappaMusicalityInteractionOk,
+    name: 'Frank Zappa motif stickiness + interaction',
+  });
+
   return out;
 }

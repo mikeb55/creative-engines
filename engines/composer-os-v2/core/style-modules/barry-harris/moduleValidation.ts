@@ -7,7 +7,10 @@ import type { ScoreModel } from '../../score-model/scoreModelTypes';
 import { isGuitarMelodyVoiceNote } from '../../score-integrity/guitarVoiceMelody';
 
 function computeFrankZappaVoiceLeadingScore(score: ScoreModel, metadata: GenerationMetadata): number {
-  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  /** Prefer dedicated Zappa solo staff when merged after comp guitar (same instrument identity). */
+  const guitar =
+    score.parts.find((p) => p.id === 'zappa_solo') ??
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const allPitches: number[] = [];
   if (guitar) {
     for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
@@ -75,7 +78,9 @@ function computeFrankZappaVoiceLeadingScore(score: ScoreModel, metadata: Generat
     }
   }
 
-  return Math.max(0, Math.min(10, s));
+  const clamped = Math.max(0, Math.min(10, s));
+  /** One decimal — FP accumulation can land just below a tier boundary (e.g. 6.98 vs 7.0). */
+  return Math.round(clamped * 10) / 10;
 }
 
 export interface BarryHarrisValidationResult {
