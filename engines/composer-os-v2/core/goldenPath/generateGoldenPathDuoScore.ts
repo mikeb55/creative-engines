@@ -209,6 +209,7 @@ import {
   ensureBassBarHitsThirdOrSeventh,
   ensureSlashBassPitchPresentInMeasure,
   nudgeDuoBassPhraseEndTone,
+  enforceFrankZappaBassBeatCommitment,
   type BassSectionRole,
   type DuoPhraseBehaviourMode,
 } from './bassMelodicLines';
@@ -301,6 +302,7 @@ import {
 } from './phaseAGuitarPolyphonyProbe';
 import { enforceVoice2BassRegisterSeparation18_2B_4 } from './guitarVoice2WybleLayer';
 import { isGuitarMelodyVoiceNote } from '../score-integrity/guitarVoiceMelody';
+import { validateBarryHarrisConformance } from '../style-modules/barry-harris/moduleValidation';
 import {
   applyWayneShorterChorusBridgeMotifDevelopment,
   buildPhraseFingerprint,
@@ -4366,6 +4368,26 @@ function buildBassPart(
   repairBassMotifEchoBars1to8(measures, guitarPart, context, bassMap);
   logBassProbe('before_return_bass', tb, { totalMeasures: measures.length, totalEvents: bassEventsSoFar() });
 
+  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa') {
+    let anyViol = false;
+    for (const mm of measures) {
+      const barIdx = mm.index;
+      const ch = getChordForBar(barIdx, context);
+      const nextCh = barIdx < tb ? getChordForBar(barIdx + 1, context) : undefined;
+      const r = enforceFrankZappaBassBeatCommitment({
+        m: mm,
+        chord: ch,
+        nextChord: nextCh,
+        walkLow,
+        walkHigh: bassCeiling,
+      });
+      if (r.violated) anyViol = true;
+    }
+    if (anyViol && context.generationMetadata) {
+      context.generationMetadata.frankZappaBassBeatCommitmentViolated = true;
+    }
+  }
+
   return {
     id: 'bass',
     name: GUITAR_BASS_DUO_BASS_PART_NAME,
@@ -4633,6 +4655,99 @@ function logEcmInternalPhaseProbe(
   console.log(
     `[ECM_PHASE_PROBE] phase=${phase} heapUsed=${mu.heapUsed} heapTotal=${mu.heapTotal} rss=${mu.rss}${sizeFields}${extraFields ? ` ${extraFields}` : ''}`
   );
+}
+
+/** Frank Zappa Phase 3 — narrow wide bass–melody spans when motion is parallel; guarantee ≥1 contrary gesture per form section. */
+function applyFrankZappaImpliedInnerVoicePass(score: ScoreModel, context: CompositionContext): void {
+  const md = context.generationMetadata;
+  if (!md || md.songwriterStyleId !== 'frank_zappa') return;
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  if (!guitar || !bass) return;
+  const tb = totalBarsFromContext(context);
+  const nudgeBars: number[] = [];
+  const contraryDone: string[] = [];
+
+  const bassMeanPitch = (bar: number): number | undefined => {
+    const m = bass.measures.find((x) => x.index === bar);
+    if (!m) return undefined;
+    const notes = m.events.filter((e) => e.kind === 'note') as { pitch: number }[];
+    if (!notes.length) return undefined;
+    return notes.reduce((s, n) => s + n.pitch, 0) / notes.length;
+  };
+
+  const guitarTopMelodyEvent = (bar: number): { pitch: number } | undefined => {
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) return undefined;
+    const notes = m.events.filter(
+      (e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)
+    ) as { pitch: number }[];
+    if (!notes.length) return undefined;
+    let best = notes[0]!;
+    for (const n of notes) if (n.pitch > best.pitch) best = n;
+    return best;
+  };
+
+  for (let b = 2; b <= tb; b++) {
+    const gt = guitarTopMelodyEvent(b);
+    const gPrev = guitarTopMelodyEvent(b - 1);
+    const bs = bassMeanPitch(b);
+    const bsPrev = bassMeanPitch(b - 1);
+    if (!gt || !gPrev || bs === undefined || bsPrev === undefined) continue;
+    const gap = gt.pitch - bs;
+    const dMel = gt.pitch - gPrev.pitch;
+    const dBs = bs - bsPrev;
+    const parallel = dMel * dBs > 0 && Math.abs(dMel) >= 0.75 && Math.abs(dBs) >= 0.75;
+    if (gap > 12 && parallel) {
+      gt.pitch = Math.max(40, Math.min(88, gt.pitch - 2));
+      nudgeBars.push(b);
+    }
+  }
+
+  const form = context.form;
+  if (form?.sections?.length) {
+    for (const sec of form.sections) {
+      const lo = sec.startBar;
+      const hi = sec.startBar + sec.length - 1;
+      let hasContrary = false;
+      for (let b = Math.max(2, lo); b <= hi; b++) {
+        const gt = guitarTopMelodyEvent(b);
+        const gPrev = guitarTopMelodyEvent(b - 1);
+        const bs = bassMeanPitch(b);
+        const bsPrev = bassMeanPitch(b - 1);
+        if (!gt || !gPrev || bs === undefined || bsPrev === undefined) continue;
+        const dMel = gt.pitch - gPrev.pitch;
+        const dBs = bs - bsPrev;
+        if (dMel * dBs < 0 && Math.abs(dMel) > 0.75 && Math.abs(dBs) > 0.75) {
+          hasContrary = true;
+          break;
+        }
+      }
+      if (!hasContrary) {
+        const mid = Math.min(hi, Math.max(lo, Math.floor((lo + hi) / 2)));
+        const gCur = guitarTopMelodyEvent(mid);
+        const gPrev = guitarTopMelodyEvent(mid - 1);
+        const bs = bassMeanPitch(mid);
+        const bsPrev = bassMeanPitch(mid - 1);
+        if (gCur && gPrev && bs !== undefined && bsPrev !== undefined) {
+          const dBs = bs - bsPrev;
+          gCur.pitch = Math.max(
+            40,
+            Math.min(88, gCur.pitch + (dBs >= 0 ? -2 : 2))
+          );
+          contraryDone.push(sec.label.trim());
+        }
+      }
+    }
+  }
+
+  if (md.frankZappaDiagnostics) {
+    md.frankZappaDiagnostics = {
+      ...md.frankZappaDiagnostics,
+      zappaInnerVoiceNudgeBars: nudgeBars,
+      zappaContraryMotionSections: contraryDone,
+    };
+  }
 }
 
 /**
@@ -5256,6 +5371,10 @@ export function generateGoldenPathDuoScore(
     if (md.soloLine) {
       afterExpressive = mergeZappaSoloPart(afterExpressive, md.soloLine);
     }
+    applyFrankZappaImpliedInnerVoicePass(afterExpressive, context);
+  }
+  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa' && context.generationMetadata) {
+    validateBarryHarrisConformance(afterExpressive, context.generationMetadata);
   }
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
   finalizeAndSealDuoScoreBarMath(afterExpressive);

@@ -6,9 +6,83 @@ import type { GenerationMetadata } from '../../compositionContext';
 import type { ScoreModel } from '../../score-model/scoreModelTypes';
 import { isGuitarMelodyVoiceNote } from '../../score-integrity/guitarVoiceMelody';
 
+function computeFrankZappaVoiceLeadingScore(score: ScoreModel, metadata: GenerationMetadata): number {
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const allPitches: number[] = [];
+  if (guitar) {
+    for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
+      const melodyNotes = [...m.events]
+        .filter((e) => isGuitarMelodyVoiceNote(e))
+        .sort(
+          (a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat
+        );
+      for (const e of melodyNotes) {
+        allPitches.push((e as { pitch: number }).pitch);
+      }
+    }
+  }
+  let s = 5;
+  let smallSteps = 0;
+  for (let i = 1; i < allPitches.length; i++) {
+    const d = Math.abs(allPitches[i]! - allPitches[i - 1]!);
+    if (d <= 2) smallSteps++;
+    if (d === 1) s += 0.08;
+  }
+  if (allPitches.length > 1) {
+    s += 2.2 * (smallSteps / (allPitches.length - 1));
+  }
+  const receipt = metadata.soloLine?.zappaGuideToneReceipt;
+  if (receipt) {
+    s += 2 * receipt.stepwiseContinuityRatio;
+  }
+  let maxLeap = 0;
+  for (let i = 1; i < allPitches.length; i++) {
+    maxLeap = Math.max(maxLeap, Math.abs(allPitches[i]! - allPitches[i - 1]!));
+  }
+  if (maxLeap > 14) s -= 2.5;
+  else if (maxLeap > 12) s -= 1.6;
+  else if (maxLeap > 9) s -= 0.9;
+
+  if (guitar && guitar.measures.length) {
+    const maxBar = guitar.measures.reduce((mx, m) => Math.max(mx, m.index), 0);
+    for (let bar = 2; bar <= maxBar; bar++) {
+      const mPrev = guitar.measures.find((x) => x.index === bar - 1);
+      const mCur = guitar.measures.find((x) => x.index === bar);
+      const c0 = mPrev?.chord;
+      const c1 = mCur?.chord;
+      if (!c0 || !c1 || c0 === c1) continue;
+      const notes0 =
+        mPrev?.events.filter((e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)) ??
+        [];
+      const notes1 =
+        mCur?.events.filter((e) => e.kind === 'note' && isGuitarMelodyVoiceNote(e)) ??
+        [];
+      let last0: { pitch: number; startBeat: number; duration: number } | undefined;
+      let bestEnd = -1;
+      for (const e of notes0 as { pitch: number; startBeat: number; duration: number }[]) {
+        const end = e.startBeat + e.duration;
+        if (end >= bestEnd - 1e-6) {
+          bestEnd = end;
+          last0 = e;
+        }
+      }
+      const first1 = [...(notes1 as { pitch: number; startBeat: number }[])].sort(
+        (a, b) => a.startBeat - b.startBeat
+      )[0];
+      if (last0 && first1 && Math.abs(first1.pitch - last0.pitch) > 9) {
+        s -= 0.45;
+      }
+    }
+  }
+
+  return Math.max(0, Math.min(10, s));
+}
+
 export interface BarryHarrisValidationResult {
   valid: boolean;
   errors: string[];
+  /** Frank Zappa Musicality Phase 3 — voice-leading quality (0–10), when computed. */
+  zappaVoiceLeadingScore?: number;
 }
 
 function maxVoiceLeadJump(pitches: number[]): number {
@@ -30,6 +104,7 @@ export function validateBarryHarrisConformance(
   metadata?: GenerationMetadata
 ): BarryHarrisValidationResult {
   const errors: string[] = [];
+  let zappaVoiceLeadingScore: number | undefined;
 
   const fagenKeysComp =
     metadata?.songModeFagenKeysCompV15Applied === true && metadata?.songwriterStyleId === 'donald_fagen';
@@ -83,5 +158,15 @@ export function validateBarryHarrisConformance(
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
   if (chordCount < 3) errors.push('Harmony too static for current duo grammar');
 
-  return { valid: errors.length === 0, errors };
+  if (metadata?.songwriterStyleId === 'frank_zappa' && metadata) {
+    zappaVoiceLeadingScore = computeFrankZappaVoiceLeadingScore(score, metadata);
+    if (metadata.frankZappaDiagnostics) {
+      metadata.frankZappaDiagnostics = {
+        ...metadata.frankZappaDiagnostics,
+        zappaVoiceLeadingScore,
+      };
+    }
+  }
+
+  return { valid: errors.length === 0, errors, zappaVoiceLeadingScore };
 }

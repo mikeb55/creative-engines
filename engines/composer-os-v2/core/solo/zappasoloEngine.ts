@@ -28,6 +28,11 @@ import type {
   ZappaRhythmicCellDefinition,
   ZappasoloOptions,
 } from './soloTypes';
+import {
+  applyZappaGuideTonePitchNudges,
+  applyZappaPhraseGoalTargeting,
+  buildZappaSmoothedGuideToneReceipt,
+} from './zappaVoiceLeading';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -943,6 +948,14 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     totalPhrases,
   });
 
+  let zappaGuideToneReceipt = buildZappaSmoothedGuideToneReceipt(chords, tb, low, high);
+  applyZappaGuideTonePitchNudges(allNotes, tb, zappaGuideToneReceipt, low, high);
+  const phraseTargets = applyZappaPhraseGoalTargeting(allNotes, tb, zappaGuideToneReceipt, seed, low, high);
+  zappaGuideToneReceipt = { ...zappaGuideToneReceipt, phraseTargets };
+  normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
+  collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
+  normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
+
   const phrases: SoloPhrase[] = [];
   for (let pi = 0; pi < totalPhrases; pi++) {
     const lo = pi * 4 + 1;
@@ -1001,6 +1014,7 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
     digest,
     rhythmicCellLock,
     zappaMotifReceipt,
+    zappaGuideToneReceipt,
   };
 }
 

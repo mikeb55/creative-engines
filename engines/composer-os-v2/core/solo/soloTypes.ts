@@ -89,6 +89,33 @@ export interface ZappaMotifPhraseReceipt {
   repaired: boolean;
 }
 
+/** Musicality Phase 3 — one bar of smoothed guide-tone (3rd/7th) line for receipts / gates. */
+export interface ZappaGuideToneBarReceipt {
+  barIndex: number;
+  chordSymbol: string;
+  role: 'third' | 'seventh';
+  guideMidi: number;
+  /** Semitone motion from previous bar’s guide (first bar: 0). */
+  semitoneMotionFromPrev: number;
+}
+
+/** Musicality Phase 3 — continuous guide-tone line + continuity telemetry. */
+export interface ZappaGuideToneReceipt {
+  bars: ZappaGuideToneBarReceipt[];
+  /** Share of adjacent pairs with |Δ| ≤ 2 semitones (best-effort voice-leading). */
+  stepwiseContinuityRatio: number;
+  /** True when every adjacent pair moves by at most 2 semitones. */
+  stepwiseChainMet: boolean;
+  /** Per four-bar phrase: goal bar (N+2 or N+4) and whether the phrase closed nearer the goal than it opened. */
+  phraseTargets?: Array<{
+    phraseIndex: number;
+    barRange: [number, number];
+    goalBar: number;
+    goalMidi: number;
+    movedTowardGoal: boolean;
+  }>;
+}
+
 /** Phase 2 — motif ownership policy + fingerprints for manifests / callback engines. */
 export interface ZappaMotifOwnershipReceipt {
   recurrenceThreshold: number;
@@ -113,6 +140,8 @@ export interface SoloLine {
   rhythmicCellLock?: ZappaRhythmicCellLockSummary;
   /** Phase 2 — motif anchors, transforms, section recurrence. */
   zappaMotifReceipt?: ZappaMotifOwnershipReceipt;
+  /** Phase 3 — guide-tone line tracking + phrase goal telemetry. */
+  zappaGuideToneReceipt?: ZappaGuideToneReceipt;
 }
 
 /** Options for Zappa solo generation. */

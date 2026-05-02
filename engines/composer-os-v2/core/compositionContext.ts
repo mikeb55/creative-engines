@@ -626,7 +626,15 @@ export interface GenerationMetadata {
       xenochronyNoop: number;
     };
     deviceReceipts?: string[];
+    /** Musicality Phase 3 — Barry Harris moduleValidation voice-leading gate (0–10). */
+    zappaVoiceLeadingScore?: number;
+    /** Bars where bass–melody gap > 12 st without contrary motion received a bounded nudge. */
+    zappaInnerVoiceNudgeBars?: number[];
+    /** Form sections that gained a deliberate contrary-motion moment (Phase 3). */
+    zappaContraryMotionSections?: string[];
   };
+  /** True when any bar failed Frank Zappa bass beat-1 / beat-2 commitment (after repair attempt). */
+  frankZappaBassBeatCommitmentViolated?: boolean;
   frankZappaSliceReceipt?: string;
   frankZappaEffectiveHarmonyBars?: string[];
   frankZappaDeviceReceipts?: string[];
@@ -911,6 +919,9 @@ export interface GenerationMetadata {
     antiElaborationGuardTriggers: number;
     antiElaborationGuards: { polytonalNoop: number; xenochronyNoop: number };
     deviceReceipts?: string[];
+    zappaVoiceLeadingScore?: number;
+    zappaInnerVoiceNudgeBars?: number[];
+    zappaContraryMotionSections?: string[];
   };
   frankZappaSliceReceipt?: string;
   frankZappaEffectiveHarmonyBars?: string[];

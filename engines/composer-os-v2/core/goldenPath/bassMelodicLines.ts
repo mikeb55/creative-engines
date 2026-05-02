@@ -5,6 +5,7 @@
 import type { MeasureModel } from '../score-model/scoreModelTypes';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
+import { chordTonesForChordSymbol, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { approachFromBelow, clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { contourFingerprint } from './bassLineFingerprints';
 
@@ -1111,4 +1112,98 @@ export function emitDuoBassIdentityBar7(params: {
       addEvent(m, createNote(clampPitch(rootClamped, walkLow, effectiveHigh), t0 + dA + dB, rem));
     }
   }
+}
+
+const PC = (midi: number) => ((midi % 12) + 12) % 12;
+
+/**
+ * Frank Zappa Musicality Phase 3 — bass defines harmony early: beat 1 lands root/3rd/7th (slash bass allowed),
+ * beat 2 is a chord tone or leading tone into the next harmony.
+ */
+export function enforceFrankZappaBassBeatCommitment(params: {
+  m: MeasureModel;
+  chord: string;
+  nextChord: string | undefined;
+  walkLow: number;
+  walkHigh: number;
+}): { violated: boolean } {
+  const { m, chord, nextChord, walkLow, walkHigh } = params;
+  const tones = chordTonesForChordSymbol(chord);
+  const parsed = parseChordSymbol(chord);
+  const beat1Pc = new Set<number>([PC(tones.root), PC(tones.third), PC(tones.seventh)]);
+  if (parsed.slashBassPc !== undefined) beat1Pc.add(((parsed.slashBassPc % 12) + 12) % 12);
+
+  const rawNotes = m.events.filter((e) => e.kind === 'note') as Array<{
+    pitch: number;
+    startBeat: number;
+    duration: number;
+  }>;
+  if (rawNotes.length === 0) return { violated: false };
+  const notes = [...rawNotes].sort((a, b) => a.startBeat - b.startBeat);
+
+  const beat1 =
+    notes.find((n) => n.startBeat < 1 - 1e-3) ?? notes[0]!;
+  let violated = false;
+  if (!beat1Pc.has(PC(beat1.pitch))) {
+    violated = true;
+    const candidates = [tones.root, tones.third, tones.seventh].filter(
+      (x) => typeof x === 'number' && !Number.isNaN(x)
+    ) as number[];
+    if (candidates.length === 0) {
+      return { violated: true };
+    }
+    let best = clampPitch(candidates[0]!, walkLow, walkHigh);
+    let bestD = Math.abs(best - beat1.pitch);
+    for (const c of candidates.slice(1)) {
+      const cl = clampPitch(c, walkLow, walkHigh);
+      const d = Math.abs(cl - beat1.pitch);
+      if (d < bestD - 1e-6) {
+        bestD = d;
+        best = cl;
+      }
+    }
+    beat1.pitch = best;
+  }
+
+  const beat2 =
+    notes.find((n) => n !== beat1 && n.startBeat >= 1 - 1e-3 && n.startBeat < 2 + 1e-3) ??
+    notes.find((n) => n !== beat1 && n.startBeat < 2 + 1e-3);
+  if (!beat2 || !nextChord) {
+    return { violated };
+  }
+
+  const nextTones = chordTonesForChordSymbol(nextChord);
+  const leadMidi = clampPitch(nextTones.root - 1, walkLow, walkHigh);
+  const beat2Pc = PC(beat2.pitch);
+  const chordPc = new Set([
+    PC(tones.root),
+    PC(tones.third),
+    PC(tones.fifth),
+    PC(tones.seventh),
+  ]);
+  const okChord = chordPc.has(beat2Pc);
+  const okLead = beat2Pc === PC(leadMidi);
+  if (okChord || okLead) {
+    return { violated };
+  }
+
+  violated = true;
+  const pool: number[] = [
+    clampPitch(tones.root, walkLow, walkHigh),
+    clampPitch(tones.third, walkLow, walkHigh),
+    clampPitch(tones.fifth, walkLow, walkHigh),
+    clampPitch(tones.seventh, walkLow, walkHigh),
+    leadMidi,
+  ];
+  let pick = pool[0]!;
+  let pickD = Math.abs(pick - beat2.pitch);
+  for (const p of pool.slice(1)) {
+    const d = Math.abs(p - beat2.pitch);
+    if (d < pickD - 1e-6) {
+      pickD = d;
+      pick = p;
+    }
+  }
+  beat2.pitch = pick;
+  return { violated };
 }

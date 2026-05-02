@@ -356,10 +356,11 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 - **Xenochrony** device applied as **rhythmic displacement** of the melodic line (not only harmony-level offset).
 - **Odd meter grid awareness** in the solo generator (couples to Phase **A**).
 
-#### Zappa Musicality — Phase 1 + Phase 2 (**complete**, **LIVE** — 2026-05-02)
+#### Zappa Musicality — Phase 1 + Phase 2 + Phase 3 (**complete**, **LIVE** — 2026-05-02)
 
 - **Phase 1 — Rhythmic cell lock:** Section **A** = **3+3+2** (canonical 7/8 eighth groups **`[3,2,2]`**); section **B** = **3+2+2+2** (canonical **`[2,2,2,1]`**). ≥**50%** of four-bar phrase windows cell-locked (deterministic). Receipts: **`SoloLine.rhythmicCellLock`**, **`SoloPhrase.zappaRhythmicCell`**. Code: **`zappasoloEngine.ts`** (+ **`phraseBuilder.ts`** re-exports).
 - **Phase 2 — Motif ownership:** Anchor motif (**intervals + rhythm**) from **first two bars** of each **form section**; **≥0.7** similarity recurrence on **development** fragments; transforms **shift / augment / compress**; reject/repair phrases at **zero** or **&lt;0.7** similarity. Receipt: **`SoloLine.zappaMotifReceipt`**. Code: **`zappasoloEngine.ts`**.
+- **Phase 3 — Voice-leading + bass authority (**complete**, **LIVE**):** Guide-tone line (**3rd/7th**, smoothed **≤2** semitone motion), **`SoloLine.zappaGuideToneReceipt`**; bass beat **1** root/3rd/7th + beat **2** chord tone or leading tone (**`enforceFrankZappaBassBeatCommitment`**); phrase goal tones **N+2**/**N+4**; implied inner voice + contrary motion per section (**`generateGoldenPathDuoScore.ts`**); **`zappaVoiceLeadingScore`** (0–10) on **`frankZappaDiagnostics`**. Code: **`zappaVoiceLeading.ts`**, **`zappasoloEngine.ts`**, **`bassMelodicLines.ts`**, **`moduleValidation.ts`** (Frank Zappa branch).
 - **Docs:** [ZAPPA_CREATION_GUIDE.md](ZAPPA_CREATION_GUIDE.md) § **3**.
 
 ### Zappa PDF Analysis Findings (2026-05-01)

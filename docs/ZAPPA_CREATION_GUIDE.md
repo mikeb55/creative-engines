@@ -1,6 +1,6 @@
 # Frank Zappa — Creation Guide
 
-Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth, and the **Phase B** solo lead engine. Implementation references: `engines/composer-os-v2/core/song-mode/frankZappaSlice.ts`, `engines/composer-os-v2/core/solo/zappasoloEngine.ts`, `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`.
+Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth, and the **Phase B** solo lead engine. Implementation references: `engines/composer-os-v2/core/song-mode/frankZappaSlice.ts`, `engines/composer-os-v2/core/solo/zappasoloEngine.ts`, `engines/composer-os-v2/core/solo/zappaVoiceLeading.ts`, `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts`.
 
 ---
 
@@ -35,6 +35,14 @@ Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintupl
 - **Transforms** used for scoring vs anchor: **shift** (transpose — contour via intervals), **augment** / **compress** (IOI shape scales **0.25–4×** vs anchor inter-onset ratios).
 - **Reject / repair:** phrases with **zero** or **&lt; 0.7** similarity to the section anchor after transforms get plain notes in the development window replaced by a deterministic anchor reinjection pass.
 - **Metadata:** **`SoloLine.zappaMotifReceipt`** (`anchors`, `phraseScores`, `sectionRecurrence`, `sectionsMeetingRecurrence`, `phrasesRejectedOrRepaired`).
+
+### Phase 3 — Voice-leading + bass authority — **LIVE**
+
+- **Guide-tone line tracking:** Smoothed **3rd / 7th** alternating line per bar with **≤2 semitone** bar-to-bar motion where chord tones allow (`buildZappaSmoothedGuideToneReceipt`, **`zappaVoiceLeading.ts`**); light nudge of the first non-structural solo attack per bar toward the guide. Receipt: **`SoloLine.zappaGuideToneReceipt`** (`bars`, `stepwiseContinuityRatio`, `stepwiseChainMet`, optional **`phraseTargets`**).
+- **Bass commitment (beats 1–2):** Beat **1** = **root / 3rd / 7th** of the current chord (slash-bass pitch class allowed); beat **2** = **chord tone** or **leading tone** into the next harmony. **`enforceFrankZappaBassBeatCommitment`** in **`bassMelodicLines.ts`**; applied from **`buildBassPart`** when **`songwriterStyleId === 'frank_zappa'`**. Diagnostic: **`generationMetadata.frankZappaBassBeatCommitmentViolated`** if any bar initially failed (after repair).
+- **Directional phrase targeting:** Each four-bar phrase targets a **goal tone** = guide tone at **bar N+2 or N+4** (seeded); closing pitch nudged when it does not improve distance to the goal vs the phrase opening.
+- **Implied inner voice:** **`applyFrankZappaImpliedInnerVoicePass`** — narrows **> octave** bass–melody spans under **parallel** motion; guarantees **≥1 contrary-motion moment per form section** when missing. Telemetry on **`frankZappaDiagnostics`** (`zappaInnerVoiceNudgeBars`, `zappaContraryMotionSections`).
+- **Voice-leading gate:** **`validateBarryHarrisConformance`** (when **`frank_zappa`**) computes **`zappaVoiceLeadingScore`** (0–10): rewards semitone motion, small-step fraction, **`zappaGuideToneReceipt.stepwiseContinuityRatio`**; penalizes large leaps and harsh chord-change melody resets. Written to **`frankZappaDiagnostics.zappaVoiceLeadingScore`** when slice diagnostics exist.
 
 ---
 
