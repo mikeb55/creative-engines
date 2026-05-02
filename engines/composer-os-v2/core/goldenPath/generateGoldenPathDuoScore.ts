@@ -3090,10 +3090,12 @@ function buildGuitarPart(
 
   return {
     id: 'guitar',
-    name: isSongwriterFrankZappa ? 'Frank Zappa (Comp)' : 'Clean Electric Guitar',
+    /** MusicXML export uses piano part-list / GM 1 when **`songModePresentAsPianoComp`** (Frank Zappa comp → Piano). */
+    name: isSongwriterFrankZappa ? 'Piano' : 'Clean Electric Guitar',
     instrumentIdentity: profile.instrumentIdentity,
     midiProgram: profile.midiProgram,
     clef: 'treble',
+    ...(isSongwriterFrankZappa ? { songModePresentAsPianoComp: true as const } : {}),
     measures,
   };
 }

@@ -37,7 +37,10 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'string_quartet_piano' || p.id === 'sq_piano';
 }
 
-/** Song Mode keyboard-centric primary: duo harmony staff exported as Piano (same part id `guitar`). */
+/**
+ * Song Mode keyboard-centric primary, or **Frank Zappa** comp (duo `guitar` part): harmony staff exported as
+ * **Piano** / GM 1 (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
+ */
 function isSongModeKeysCompPianoPart(p: PartModel): boolean {
   return p.songModePresentAsPianoComp === true && p.id === 'guitar';
 }

@@ -1164,9 +1164,10 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
 
   return {
     id: 'zappa_solo',
-    name: 'Zappa Solo (Gtr)',
-    instrumentIdentity: 'trumpet',
-    midiProgram: 56,
+    name: 'Zappa Solo (Elec. Gtr)',
+    instrumentIdentity: 'clean_electric_guitar',
+    /** GM Electric Guitar (clean): MusicXML `<midi-program>` = **27** (`midiProgram` is 0-based here → **26**). */
+    midiProgram: 26,
     clef: 'treble',
     measures,
   };
