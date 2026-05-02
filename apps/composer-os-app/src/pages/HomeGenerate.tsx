@@ -611,6 +611,8 @@ type GenResult = {
     mxValidationPassed?: boolean;
     strictBarMathPassed?: boolean;
     exportRoundTripPassed?: boolean;
+    /** When true, treat the run as export-valid even if readiness shareable is false. */
+    exportIntegrityPassed?: boolean;
     instrumentMetadataPassed?: boolean;
     readiness?: { release?: number; mx?: number; shareable?: boolean };
     errors?: string[];
@@ -1710,8 +1712,20 @@ export function HomeGenerate({
           !!result.success
     : false;
 
-  const receiptOk = result && !error && result.success && passed;
-  const receiptFail = result && (!result.success || !passed);
+  const exportIntegrityFlag = v?.exportIntegrityPassed;
+  /** Green receipt when export integrity passed, even if shareable is false; fallback to full `passed` when flag omitted. */
+  const receiptExportOk =
+    !!result &&
+    !error &&
+    !!result.success &&
+    (exportIntegrityFlag === true || (exportIntegrityFlag === undefined && passed));
+  /** Red on thrown/client error, failed success flag, explicit exportIntegrity false, or (legacy) full validation failure when integrity flag is omitted. */
+  const receiptHardFail =
+    !!error ||
+    (result != null && !result.success) ||
+    exportIntegrityFlag === false ||
+    (exportIntegrityFlag === undefined && !!result && !error && !!result.success && !passed);
+  const notShareableGenerated = receiptExportOk && v?.readiness?.shareable === false;
   const showBigReceipt = result || error;
 
   const modeUx = getModeUx(presetId);
@@ -3983,13 +3997,30 @@ export function HomeGenerate({
             padding: '1.25rem',
             borderRadius: 10,
             border: `3px solid ${
-              error || receiptFail ? 'var(--error)' : receiptOk ? 'var(--success)' : 'var(--border)'
+              receiptHardFail ? 'var(--error)' : receiptExportOk ? 'var(--success)' : 'var(--border)'
             }`,
-            background: error || receiptFail ? 'rgba(239,68,68,0.08)' : 'var(--bg-panel)',
+            background: receiptHardFail
+              ? 'rgba(239,68,68,0.08)'
+              : receiptExportOk
+                ? 'rgba(34,197,94,0.08)'
+                : 'var(--bg-panel)',
             boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
           }}
         >
           <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Generation receipt</h3>
+          {notShareableGenerated && (
+            <p
+              style={{
+                marginTop: '0.35rem',
+                marginBottom: 0,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: '#ca8a04',
+              }}
+            >
+              Generated (not shareable)
+            </p>
+          )}
 
           {(result as { planningNotice?: string })?.planningNotice && (
             <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 0 }}>
@@ -4483,8 +4514,8 @@ export function HomeGenerate({
           {result && (
             <>
               <p style={{ fontSize: '1rem', margin: '0.25rem 0' }}>
-                <strong>{receiptOk ? 'Passed' : 'Failed'}</strong>
-                {receiptOk ? ' — your files are ready below.' : ' — see validation details.'}
+                <strong>{receiptExportOk ? 'Passed' : 'Failed'}</strong>
+                {receiptExportOk ? ' — your files are ready below.' : ' — see validation details.'}
               </p>
               {result.filename && (
                 <p style={{ fontSize: '0.85rem', margin: '0.5rem 0 0', color: 'var(--text-muted)' }}>

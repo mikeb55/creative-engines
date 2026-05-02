@@ -4,19 +4,30 @@ Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth
 
 ---
 
-## 1. Harmony slice (`frank_zappa`)
+## 1. Status
+
+Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, **`zappasoloEngine.ts`** (`soloLineToPartModel` export shift), **`generateGoldenPathDuoScore.ts`** (guitar part name), **`musicxmlExporter.ts`** / **`guitarBassDuoExportNames.ts`** (bass label), **`frankZappaSliceSmoke.test.ts`** (odd meter rows).
+
+- **Green receipt:** When **`exportIntegrityPassed`** / export integrity is true, the generation receipt uses the success (green) styling even if **`readiness.shareable`** is false; amber label **Generated (not shareable)** in that case — **LIVE**.
+- **Solo staff octave fix:** Solo line written **`+24`** MIDI at MusicXML part build, clamped to **108**; default generator guitar range **52–84** (was 40–84) — **LIVE**.
+- **Staff labels:** Top staff **Frank Zappa (Comp)** (duo guitar when **`frank_zappa`**), bass **Upright Bass**, solo part **Zappa Solo (Gtr)** — **LIVE**.
+- **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** coverage in **`frankZappaSliceSmoke.test.ts`** (including builtin-harmony row + locked variant) — **LIVE**.
+
+---
+
+## 2. Harmony slice (`frank_zappa`)
 
 Polytonal clash, metric bass displacement, xenochrony-like pitch offset, style juxtaposition, through-composed sectional cuts — **`fz:d{1–5}:*`** receipts, **`HarmonyContext`** / **`attachFrankZappaHarmonyContext`**, **`breakFrankZappaIiViProgressions`** (no rolling ii–V–I chains). See slice source and roadmap § Frank Zappa.
 
 ---
 
-## 2. Odd meters + export
+## 3. Odd meters + export
 
 **Phase A** infrastructure: **`barMeterMap`**, **`oddMeterQuantiser`**, MusicXML per-bar **`<time>`** changes. Mixed-meter duo + Zappa solo smoke use **`resolveMeterForBar`** / **`measureQuarterSpanForBar`** so 7/8 (and other meters) stay bar-math–correct through finalize and export.
 
 ---
 
-## 3. Phase B — Solo engine (`zappasoloEngine.ts`)
+## 4. Phase B — Solo engine (`zappasoloEngine.ts`)
 
 Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintuplet), structural **descending minor 6th**, **[0137]** tetrachord on structural bars, factory-cycle displacement — merged as **`zappa_solo`** MusicXML part when generation requests it.
 
@@ -50,6 +61,15 @@ Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintupl
 - **Cross-bar callbacks (solo):** Bar **1** plain-note **rhythm + intervallic contour** is **reused (transposed)** at bars **5, 9, 13, …** via **`applyZappaCrossBarCallbacks`** in **`zappasoloEngine.ts`**. Metadata: **`SoloLine.zappaMotifReceipt.crossBarCallbacks`** (anchor bar, target bars, rhythm/interval digests).
 - **One controlled disruption per section:** **`computeZappaSectionDisruptionBars`** — exactly **one** bar per form section **skips** the 7/8 **cell snap** (prefers 7/8 measures when available) for tension/release, then the grid returns on surrounding bars. Logged on **`SoloLine.rhythmicCellLock.sectionDisruptionBars`**.
 - **Register swap (once per section):** One **deterministic** bar per section: **guitar** melody **−12** st, **bass** **+12** st (clamped) so the **bass** can sit **above** the guitar for a single bar of textural surprise.
+
+### Phase 5 — UI fixes — **LIVE**
+
+Product polish + export ergonomics (2026-05-02):
+
+- **Receipt:** Green border / success panel when **`exportIntegrityPassed`** is true (even when not shareable); red only on explicit integrity failure, **`success === false`**, or client error; amber **Generated (not shareable)** when integrity passes but **`readiness.shareable`** is false — **`HomeGenerate.tsx`**.
+- **Solo octave / range:** **`soloLineToPartModel`** raises written pitches **+24** semitones (cap **108**); **`zappaSoloOptionsFromTiers`** / solo defaults use **52–84** MIDI for generation.
+- **Staff labels:** Duo guitar **`Frank Zappa (Comp)`** when **`songwriterStyleId === 'frank_zappa'`**; bass **`Upright Bass`** (existing duo export path); solo **`Zappa Solo (Gtr)`**.
+- **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** cases (seed **50200** / export integrity / strict bar math).
 
 ---
 

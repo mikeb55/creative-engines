@@ -171,7 +171,7 @@ export interface SoloLine {
 
 /** Options for Zappa solo generation. */
 export interface ZappasoloOptions {
-  /** MIDI inclusive (default lead-guitar-ish). */
+  /** MIDI inclusive (defaults E3–C6 in engine). */
   midiLow?: number;
   midiHigh?: number;
   /** 0 = sparse … 1 = dense note fills per bar. */

@@ -38,6 +38,12 @@ import {
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
+/** Default Zappa solo generation range (E3–C6). Written pitch uses +24 semitones in {@link soloLineToPartModel}. */
+const ZAPPA_SOLO_DEFAULT_MIDI_LOW = 52;
+const ZAPPA_SOLO_DEFAULT_MIDI_HIGH = 84;
+const ZAPPA_SOLO_EXPORT_MIDI_SHIFT = 24;
+const ZAPPA_SOLO_EXPORT_MIDI_MAX = 108;
+
 function seededUnit(seed: number, salt = 0): number {
   let s = ((seed ^ salt * 1103515245) >>> 0) as number;
   s = (s * 1664525 + 1013904223) >>> 0;
@@ -672,15 +678,15 @@ function applyZappaMotifOwnershipPhase2(params: {
   };
 }
 
-/** UI / request tiers → engine {@link ZappasoloOptions} (defaults: guitar E2–C6, medium density, moderate dissonance). */
+/** UI / request tiers → engine {@link ZappasoloOptions} (defaults: guitar E3–C6, medium density, moderate dissonance). */
 export function zappaSoloOptionsFromTiers(tiers?: {
   midiLow?: number;
   midiHigh?: number;
   density?: 'low' | 'medium' | 'high';
   dissonance?: 'mild' | 'moderate' | 'extreme';
 }): ZappasoloOptions {
-  let midiLow = tiers?.midiLow ?? 40;
-  let midiHigh = tiers?.midiHigh ?? 84;
+  let midiLow = tiers?.midiLow ?? ZAPPA_SOLO_DEFAULT_MIDI_LOW;
+  let midiHigh = tiers?.midiHigh ?? ZAPPA_SOLO_DEFAULT_MIDI_HIGH;
   if (midiLow > midiHigh) {
     const t = midiLow;
     midiLow = midiHigh;
@@ -727,8 +733,8 @@ function buildZappaSlonimskyContext(params: {
   options: ZappasoloOptions | undefined;
 }): SlonimskyContext {
   const { bar, seed, chord, maxBeats, options } = params;
-  const low = options?.midiLow ?? 40;
-  const high = options?.midiHigh ?? 84;
+  const low = options?.midiLow ?? ZAPPA_SOLO_DEFAULT_MIDI_LOW;
+  const high = options?.midiHigh ?? ZAPPA_SOLO_DEFAULT_MIDI_HIGH;
   const cat = inferSlonimskyChordTypeCategory(chord);
   const t = chordTonesForChordSymbol(chord);
   const base = liftIntoRange(t.third ?? t.root + 4, low, high);
@@ -946,8 +952,8 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   const tb = context.form.totalBars;
   const chords = chordsForZappa(context);
   const map = barMeterMapFromContext(context);
-  const low = options?.midiLow ?? 40;
-  const high = options?.midiHigh ?? 84;
+  const low = options?.midiLow ?? ZAPPA_SOLO_DEFAULT_MIDI_LOW;
+  const high = options?.midiHigh ?? ZAPPA_SOLO_DEFAULT_MIDI_HIGH;
 
   const allNotes: SoloNote[] = [];
   const density = options?.density ?? 1;
@@ -1144,7 +1150,7 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
     const notes = (byBar.get(b) ?? []).sort((a, c) => a.startBeat - c.startBeat);
     const events: NoteEvent[] = notes.map((sn) => ({
       kind: 'note',
-      pitch: sn.midi,
+      pitch: Math.min(ZAPPA_SOLO_EXPORT_MIDI_MAX, sn.midi + ZAPPA_SOLO_EXPORT_MIDI_SHIFT),
       startBeat: sn.startBeat,
       duration: sn.durationBeats,
       voice: 1,
@@ -1158,7 +1164,7 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
 
   return {
     id: 'zappa_solo',
-    name: 'Zappa Solo (Lead)',
+    name: 'Zappa Solo (Gtr)',
     instrumentIdentity: 'trumpet',
     midiProgram: 56,
     clef: 'treble',

@@ -988,7 +988,7 @@ export interface RunGoldenPathOptions {
   motifAuthorityLevel?: MotifAuthorityLevel;
   /** Diagnostic-only deterministic Song Mode Indie tuning proof fixture. */
   debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
-  /** Frank Zappa Phase B — solo instrument range (MIDI inclusive); default 40–84 (guitar). */
+  /** Frank Zappa Phase B — solo instrument range (MIDI inclusive); default 52–84 (guitar). */
   zappaSoloMidiLow?: number;
   zappaSoloMidiHigh?: number;
   zappaSoloDensity?: 'low' | 'medium' | 'high';

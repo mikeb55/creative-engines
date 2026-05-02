@@ -174,5 +174,30 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
       'Frank Zappa + Zappa Classic (7/8 + 4/4 alternating): golden path + export truth + strict bar math + bass 7/8 span',
   });
 
+  /** Builtin Zappa harmony + alternating 7/8 / 4/4 (no custom_locked); seed/meter per Phase 5 UI parity. */
+  let zappaBuiltinOddMeterOk = false;
+  try {
+    const rBo = runGoldenPathOnce(50200, {
+      presetId: 'guitar_bass_duo',
+      totalBars: 32,
+      longFormEnabled: true,
+      songModeHookFirstIdentity: true,
+      primarySongwriterStyle: 'frank_zappa',
+      barMeterMap: buildZappaClassicBarMeterMap32(),
+    });
+    zappaBuiltinOddMeterOk =
+      rBo.success === true &&
+      rBo.exportIntegrityPassed === true &&
+      rBo.strictBarMathPassed === true &&
+      (rBo.errors?.length ?? 0) === 0;
+  } catch {
+    zappaBuiltinOddMeterOk = false;
+  }
+  out.push({
+    ok: zappaBuiltinOddMeterOk,
+    name:
+      'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: generation + exportIntegrity + strict bar math (seed 50200)',
+  });
+
   return out;
 }

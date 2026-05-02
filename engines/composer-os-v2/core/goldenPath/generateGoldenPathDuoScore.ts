@@ -3090,7 +3090,7 @@ function buildGuitarPart(
 
   return {
     id: 'guitar',
-    name: 'Clean Electric Guitar',
+    name: isSongwriterFrankZappa ? 'Frank Zappa (Comp)' : 'Clean Electric Guitar',
     instrumentIdentity: profile.instrumentIdentity,
     midiProgram: profile.midiProgram,
     clef: 'treble',
