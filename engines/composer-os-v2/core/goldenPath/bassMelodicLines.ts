@@ -3,6 +3,7 @@
  */
 
 import type { MeasureModel } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { approachFromBelow, clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { contourFingerprint } from './bassLineFingerprints';
@@ -81,12 +82,13 @@ export function emitDuoPhraseModeBar(params: {
   } = params;
   const slashClamped =
     slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : undefined;
+  const barCap = measureBeatSpanQuartersOf(m);
   /** Prefer slash on ~strong~ anchors, not every phrase — keeps lines directional vs. pedal on Y. */
   const r0 =
     slashClamped !== undefined && seededUnit(seed, bar, 918) < 0.58 ? slashClamped : rootClamped;
   const t = qBeat(t0);
   if (t > 0) addEvent(m, createRest(0, t));
-  const sp = qBeat(4 - t);
+  const sp = qBeat(Math.max(0, barCap - t));
   if (sp <= EPS) return;
   const rot = phraseRetryAttempt % 3;
 
@@ -124,16 +126,16 @@ export function emitDuoPhraseModeBar(params: {
       seededUnit(seed, bar, 941) < 0.5 ? clampPitch(third, walkLow, effectiveHigh) : clampPitch(seventh, walkLow, effectiveHigh);
     if (gap > 0.05) addEvent(m, createRest(t, gap));
     const tHit = qBeat(t + gap);
-    const rem = qBeat(4 - tHit);
+    const rem = qBeat(barCap - tHit);
     const dA = qBeat(Math.min(0.75, rem * 0.52));
     addEvent(m, createNote(hit1, tHit, dA));
     const t2 = qBeat(tHit + dA);
-    const rem2 = qBeat(4 - t2);
+    const rem2 = qBeat(barCap - t2);
     if (rem2 > 0.28) {
       const rest2 = qBeat(0.2 + seededUnit(seed, bar, 943) * 0.45);
       addEvent(m, createRest(t2, Math.min(rest2, rem2 - 0.25)));
       const t3 = qBeat(t2 + Math.min(rest2, rem2 - 0.25));
-      const rem3 = qBeat(4 - t3);
+      const rem3 = qBeat(barCap - t3);
       const pB =
         seededUnit(seed, bar, 944) < 0.5 ? clampPitch(fifth, walkLow, effectiveHigh) : clampPitch(guide, walkLow, effectiveHigh);
       if (rem3 > 0.22) addEvent(m, createNote(clampPitch(pB, walkLow, effectiveHigh), t3, rem3));
@@ -370,7 +372,8 @@ export function emitDuoSwingBassBar(params: {
     guitarPitchClassesInBar,
     melodyEchoPitches,
   } = params;
-  const span = 4 - firstStart;
+  const barCap = measureBeatSpanQuartersOf(m);
+  const span = barCap - firstStart;
   if (firstStart > 0) addEvent(m, createRest(0, firstStart));
   const t0 = firstStart;
   if (mode === 'hold') {
@@ -407,7 +410,7 @@ export function emitDuoSwingBassBar(params: {
     const restLen = qBeat(Math.max(0.5, Math.min(1, span - 0.5)));
     addEvent(m, createRest(t0, restLen));
     const hit = qBeat(t0 + restLen);
-    const rem = qBeat(4 - hit);
+    const rem = qBeat(barCap - hit);
     const target = seededUnit(seed, bar, 902) < 0.5 ? fifth : third;
     const pool: number[] = [];
     if (melodyEchoPitches && melodyEchoPitches.length > 0) {
@@ -455,7 +458,7 @@ export function emitDuoSwingBassBar(params: {
   }
   addEvent(m, createNote(clampPitch(n1, walkLow, effectiveHigh), t0 + 0.5, 1));
   addEvent(m, createNote(guide, t0 + 1.5, 1));
-  addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, 4 - t0 - 2.5))));
+  addEvent(m, createNote(fifth, t0 + 2.5, qBeat(Math.max(0.25, barCap - t0 - 2.5))));
 }
 
 export function qBeat(x: number): number {
@@ -772,7 +775,8 @@ export function emitMelodicBassBar(params: {
       ? base
       : [...base, { w: 1.34 + 0.42 * seededUnit(seed, bar, 8842), pitch: slashBassTarget }];
 
-  const span = 4 - firstStart;
+  const barCapMelodic = measureBeatSpanQuartersOf(m);
+  const span = barCapMelodic - firstStart;
   if (firstStart > 0) {
     addEvent(m, createRest(0, firstStart));
   }
@@ -858,14 +862,14 @@ export function emitMelodicBassBar(params: {
     if (echoShape === 0) {
       addEvent(m, createNote(echoPitch, t0, 1));
       addEvent(m, createNote(guide, t0 + 1, 0.75));
-      addEvent(m, createNote(landE, t0 + 1.75, qBeat(4 - t0 - 1.75)));
+      addEvent(m, createNote(landE, t0 + 1.75, qBeat(barCapMelodic - t0 - 1.75)));
       return;
     }
     if (echoShape === 1) {
       addEvent(m, createNote(third, t0, 0.5));
       addEvent(m, createNote(echoPitch, t0 + 0.5, 1.25));
       addEvent(m, createNote(seventh, t0 + 1.75, 0.75));
-      addEvent(m, createNote(landE, t0 + 2.5, qBeat(4 - t0 - 2.5)));
+      addEvent(m, createNote(landE, t0 + 2.5, qBeat(barCapMelodic - t0 - 2.5)));
       return;
     }
     const pat = (bar + echoSeed + rot) % 3;
@@ -1018,7 +1022,7 @@ export function emitDuoBassAuthorityMomentBar(params: {
     params;
   const t0 = qBeat(firstStart);
   if (t0 > 0) addEvent(m, createRest(0, t0));
-  const span = qBeat(4 - t0);
+  const span = qBeat(Math.max(0, measureBeatSpanQuartersOf(m) - t0));
   const slashCl =
     slashBassPitch !== undefined ? clampPitch(slashBassPitch, walkLow, effectiveHigh) : undefined;
   const p1 =
@@ -1086,7 +1090,7 @@ export function emitDuoBassIdentityBar7(params: {
       : rootClamped;
   const t0 = qBeat(firstStart);
   if (t0 > 0) addEvent(m, createRest(0, t0));
-  const span = qBeat(4 - t0);
+  const span = qBeat(Math.max(0, measureBeatSpanQuartersOf(m) - t0));
   if (supportMode) {
     const p1 = clampPitch(anchor, walkLow, effectiveHigh);
     const d1 = qBeat(Math.min(3, span * 0.7));

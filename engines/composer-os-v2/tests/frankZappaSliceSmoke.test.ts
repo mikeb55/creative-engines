@@ -5,7 +5,28 @@
 import { lockedHarmonyChordSymbolsEquivalent } from '../core/harmony/chordProgressionParser';
 import { computeHarmonyChecksum } from '../core/harmony/harmonyContext';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
+import type { ScoreEvent } from '../core/score-model/scoreModelTypes';
 import { frankZappaIiViRollingTriplePresent } from '../core/song-mode/songModeBuilder';
+
+function buildZappaClassicBarMeterMap32(): BarMeterMap {
+  const map: BarMeterMap = {};
+  for (let b = 1; b <= 32; b++) {
+    map[b] = b % 2 === 1 ? { numerator: 7, denominator: 8 } : { numerator: 4, denominator: 4 };
+  }
+  return map;
+}
+
+/** Voice 1 note + rest durations (monophonic bass line). */
+function bassVoice1RhythmSum(events: ScoreEvent[]): number {
+  let s = 0;
+  for (const e of events) {
+    if ((e.voice ?? 1) !== 1) continue;
+    if (e.kind !== 'note' && e.kind !== 'rest') continue;
+    s += e.duration;
+  }
+  return s;
+}
 
 export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] {
   const out: { name: string; ok: boolean }[] = [];
@@ -104,6 +125,53 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
   out.push({
     ok: bar5CanonicalOk,
     name: 'Frank Zappa HarmonyContext: effective bar 5 Bb7b9/E ⇒ score bar 5 matches (validator parity)',
+  });
+
+  const iiViOneCycleZm = ['Dm7', 'G7', 'Cmaj7', 'Cmaj7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
+  const iiVi32Zm = [...iiViOneCycleZm, ...iiViOneCycleZm, ...iiViOneCycleZm, ...iiViOneCycleZm];
+  let zappaClassicOddMeterOk = false;
+  try {
+    const rZm = runGoldenPathOnce(50200, {
+      presetId: 'guitar_bass_duo',
+      totalBars: 32,
+      longFormEnabled: true,
+      songModeHookFirstIdentity: true,
+      primarySongwriterStyle: 'frank_zappa',
+      harmonyMode: 'custom_locked',
+      chordProgressionText: iiVi32Zm.join('|'),
+      parsedChordBars: [...iiVi32Zm],
+      lockedHarmonyBarsRaw: [...iiVi32Zm],
+      barMeterMap: buildZappaClassicBarMeterMap32(),
+    });
+    const bassZm = rZm.score?.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+    let bassOdd78SpansOk = !!bassZm;
+    if (bassZm) {
+      for (let b = 1; b <= 31; b += 2) {
+        const m = bassZm.measures.find((x) => x.index === b);
+        if (!m) {
+          bassOdd78SpansOk = false;
+          break;
+        }
+        const sum = bassVoice1RhythmSum(m.events);
+        if (Math.abs(sum - 3.5) > 0.02) {
+          bassOdd78SpansOk = false;
+          break;
+        }
+      }
+    }
+    zappaClassicOddMeterOk =
+      rZm.success &&
+      rZm.runManifest.pipelineTruthExportStage === 'pass' &&
+      rZm.exportIntegrityPassed === true &&
+      rZm.strictBarMathPassed === true &&
+      bassOdd78SpansOk;
+  } catch {
+    zappaClassicOddMeterOk = false;
+  }
+  out.push({
+    ok: zappaClassicOddMeterOk,
+    name:
+      'Frank Zappa + Zappa Classic (7/8 + 4/4 alternating): golden path + export truth + strict bar math + bass 7/8 span',
   });
 
   return out;

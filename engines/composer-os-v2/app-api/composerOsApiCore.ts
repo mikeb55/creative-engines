@@ -30,6 +30,7 @@ import {
 } from './composerOsOutputPaths';
 import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmony/songFormBarCounts';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
+import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -298,6 +299,25 @@ export function apiGenerate(
         typeof (body as { __generateCorrelationId?: unknown }).__generateCorrelationId === 'string' &&
         (body as { __generateCorrelationId: string }).__generateCorrelationId.trim() !== ''
           ? (body as { __generateCorrelationId: string }).__generateCorrelationId.trim()
+          : undefined,
+      barMeterMap: sanitizeBarMeterMap(
+        typeof body.barMeterMap === 'object' && body.barMeterMap !== null && !Array.isArray(body.barMeterMap)
+          ? (body.barMeterMap as GenerateRequest['barMeterMap'])
+          : undefined
+      ),
+      zappaSoloMidiLow: coerceFiniteNumber(body.zappaSoloMidiLow),
+      zappaSoloMidiHigh: coerceFiniteNumber(body.zappaSoloMidiHigh),
+      zappaSoloDensity:
+        body.zappaSoloDensity === 'low' ||
+        body.zappaSoloDensity === 'medium' ||
+        body.zappaSoloDensity === 'high'
+          ? body.zappaSoloDensity
+          : undefined,
+      zappaSoloDissonance:
+        body.zappaSoloDissonance === 'mild' ||
+        body.zappaSoloDissonance === 'moderate' ||
+        body.zappaSoloDissonance === 'extreme'
+          ? body.zappaSoloDissonance
           : undefined,
     };
     const genCorr = req_.__generateCorrelationId;

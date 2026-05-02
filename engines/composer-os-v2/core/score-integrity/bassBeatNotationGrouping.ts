@@ -8,6 +8,7 @@
 
 import type { MeasureModel, NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
 const EPS = 1e-5;
 const VOICE = 1;
@@ -184,6 +185,8 @@ export function applyBassBeatNotationGrouping(score: ScoreModel): void {
   );
   if (!bass) return;
   for (const m of bass.measures) {
+    /** `rebuildBassMeasure` assumes an 8-slot 4/4 eighth grid; mixed meters (e.g. 7/8) must keep finalize output. */
+    if (Math.abs(measureBeatSpanQuartersOf(m) - BEATS_PER_MEASURE) > EPS) continue;
     rebuildBassMeasure(m);
   }
 }

@@ -1,8 +1,16 @@
 /**
- * Post-export: verify exported MusicXML measure duration sums (divisions) per voice match 4/4 expectations.
+ * Post-export: verify exported MusicXML measure duration sums (divisions) per voice match each measure's `<time>`.
  */
 
-import { BEATS_PER_MEASURE, DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
+import { DIVISIONS } from '../score-model/scoreModelTypes';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import {
+  measureDivisionsForMeter,
+  resolveMeasureDivisionsForBar,
+  resolveMeterForBar,
+} from '../rhythm/oddMeterQuantiser';
+
+console.log('[BARMATH] loaded, has barMeterMap support:', true);
 
 export interface MusicXmlBarMathResult {
   valid: boolean;
@@ -26,9 +34,11 @@ function sumDurationsPerVoice(measureInner: string): Map<number, number> {
 }
 
 /**
- * Validates each voice in each measure sums to MEASURE_DIVISIONS; first measure has divisions + 4/4 time.
+ * Validates each voice in each measure sums to divisions implied by the active `<time>`; measure 1 must include `<time>`.
+ * When `barMeterMap` is set (mixed meters), expected ticks per bar come from {@link resolveMeasureDivisionsForBar}
+ * so 7/8 bars use 1680 @ DIVISIONS=480, not 4/4’s 1920.
  */
-export function validateExportedMusicXmlBarMath(xml: string): MusicXmlBarMathResult {
+export function validateExportedMusicXmlBarMath(xml: string, barMeterMap?: BarMeterMap): MusicXmlBarMathResult {
   const errors: string[] = [];
   const sums: Record<string, Record<number, Record<number, number>>> = {};
 
@@ -48,17 +58,40 @@ export function validateExportedMusicXmlBarMath(xml: string): MusicXmlBarMathRes
 
     const measureBlocks = partBlock.match(/<measure[^>]*>[\s\S]*?<\/measure>/g) ?? [];
     let measureIdx = 0;
+    let meterNum = 4;
+    let meterDen = 4;
     for (const mb of measureBlocks) {
       const numMatch = mb.match(/<measure[^>]*number="(\d+)"/);
       const num = numMatch ? parseInt(numMatch[1], 10) : -1;
       const inner = mb.replace(/^<measure[^>]*>/, '').replace(/<\/measure>\s*$/, '');
 
+      const attrsBlocks = inner.match(/<attributes>[\s\S]*?<\/attributes>/g) ?? [];
+      for (const ab of attrsBlocks) {
+        const tm = ab.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)<\/beat-type>/);
+        if (tm) {
+          meterNum = parseInt(tm[1]!, 10);
+          meterDen = parseInt(tm[2]!, 10);
+        }
+      }
+      const expectedDivisions = barMeterMap
+        ? resolveMeasureDivisionsForBar(num, barMeterMap)
+        : measureDivisionsForMeter(meterNum, meterDen);
+
       if (measureIdx === 0) {
         if (!inner.includes(`<divisions>${DIVISIONS}</divisions>`)) {
           errors.push(`Part ${partId} measure ${num}: missing or wrong <divisions> (expected ${DIVISIONS})`);
         }
-        if (!inner.includes('<time>') || !inner.includes('<beats>4</beats>')) {
-          errors.push(`Part ${partId} measure ${num}: missing 4/4 time attributes`);
+        if (!/<time>[\s\S]*?<\/time>/.test(inner)) {
+          errors.push(`Part ${partId} measure ${num}: missing <time> element in first measure attributes`);
+        } else if (barMeterMap) {
+          const sig = resolveMeterForBar(1, barMeterMap);
+          const beatsOk = inner.includes(`<beats>${sig.numerator}</beats>`);
+          const typeOk = inner.includes(`<beat-type>${sig.denominator}</beat-type>`);
+          if (!beatsOk || !typeOk) {
+            errors.push(
+              `Part ${partId} measure ${num}: first-measure <time> must match barMeterMap (${sig.numerator}/${sig.denominator})`
+            );
+          }
         }
       }
       measureIdx++;
@@ -71,9 +104,10 @@ export function validateExportedMusicXmlBarMath(xml: string): MusicXmlBarMathRes
       }
       for (const [voice, total] of voiceSums) {
         sums[partId][num][voice] = total;
-        if (total !== MEASURE_DIVISIONS) {
+        if (total !== expectedDivisions) {
+          const sig = barMeterMap ? resolveMeterForBar(num, barMeterMap) : { numerator: meterNum, denominator: meterDen };
           errors.push(
-            `Part ${partId} measure ${num} voice ${voice}: exported duration sum ${total} ≠ ${MEASURE_DIVISIONS} (${BEATS_PER_MEASURE} beats × ${DIVISIONS} divisions)`
+            `Part ${partId} measure ${num} voice ${voice}: exported duration sum ${total} ≠ ${expectedDivisions} (${sig.numerator}/${sig.denominator} meter)`
           );
         }
       }

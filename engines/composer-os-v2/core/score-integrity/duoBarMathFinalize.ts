@@ -6,6 +6,7 @@
 
 import type { ChordEvent, MeasureModel, NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
 import { validateStrictBarMath, validateSibeliusUndottedBeatAtoms } from './strictBarMath';
 import { validateNotationSafeRhythm } from './notationSafeRhythm';
@@ -89,8 +90,9 @@ function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
 
 function expandUndottedPreferredInMeasure(m: MeasureModel): void {
   const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
+  const cap = measureBeatSpanQuartersOf(m);
   if (raw.length === 0) {
-    m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
+    m.events = [createRest(0, cap, 1)];
     return;
   }
   const byVoice = new Map<number, ScoreEvent[]>();
@@ -195,13 +197,18 @@ function trimOverlapsMonophonic(sorted: ScoreEvent[], mode: RhythmSnapMode): Sco
 
 /**
  * Build a single monophonic voice line: snap, remove overlaps (split/trim notes), gap-fill with rests,
- * trim anything past beat 4 (split long notes at bar end).
+ * trim anything past the measure span (split long notes at bar end).
  */
-function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: RhythmSnapMode): ScoreEvent[] {
+function rebuildMonophonicVoiceLine(
+  events: ScoreEvent[],
+  voice: number,
+  mode: RhythmSnapMode,
+  barBeats: number
+): ScoreEvent[] {
   const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
   for (const e of sorted) {
     if (mode === 'eighth') {
-      snapEventToEighthBeatGrid(e);
+      snapEventToEighthBeatGrid(e, barBeats);
     } else {
       (e as { startBeat: number }).startBeat = qBeat((e as { startBeat: number }).startBeat);
       (e as { duration: number }).duration = qBeat((e as { duration: number }).duration);
@@ -210,16 +217,16 @@ function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: R
   const trimmed = trimOverlapsMonophonic(sorted, mode);
   const filtered = trimmed.filter((e) => e.duration > EPS);
   if (filtered.length === 0) {
-    return [createRest(0, BEATS_PER_MEASURE, voice)];
+    return [createRest(0, barBeats, voice)];
   }
   const out: ScoreEvent[] = [];
   let cursor = 0;
   for (const e of filtered) {
     let sb = e.startBeat;
-    if (sb >= BEATS_PER_MEASURE - EPS) break;
+    if (sb >= barBeats - EPS) break;
     let dur = e.duration;
-    if (sb + dur > BEATS_PER_MEASURE + EPS) {
-      dur = snapBeat(BEATS_PER_MEASURE - sb, mode);
+    if (sb + dur > barBeats + EPS) {
+      dur = snapBeat(barBeats - sb, mode);
     }
     if (dur <= EPS) continue;
     if (sb > cursor + EPS) {
@@ -248,27 +255,29 @@ function rebuildMonophonicVoiceLine(events: ScoreEvent[], voice: number, mode: R
     }
     cursor = snapBeat(sb + dur, mode);
   }
-  if (cursor < BEATS_PER_MEASURE - EPS) {
-    out.push(createRest(cursor, snapBeat(BEATS_PER_MEASURE - cursor, mode), voice));
+  if (cursor < barBeats - EPS) {
+    out.push(createRest(cursor, snapBeat(barBeats - cursor, mode), voice));
   }
   return out;
 }
 
 /** One measure, one monophonic line (voice 1) — used for bass clarity. */
 function finalizeMeasureMonoVoice1(m: MeasureModel, mode: RhythmSnapMode): void {
+  const cap = measureBeatSpanQuartersOf(m);
   const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) {
-    m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
+    m.events = [createRest(0, cap, 1)];
     return;
   }
-  m.events = rebuildMonophonicVoiceLine(raw, 1, mode);
+  m.events = rebuildMonophonicVoiceLine(raw, 1, mode, cap);
 }
 
 /** One measure: each voice ID gets its own monophonic line (guitar may use multiple voices in theory). */
 function finalizeMeasurePerVoiceLines(m: MeasureModel, mode: RhythmSnapMode): void {
+  const cap = measureBeatSpanQuartersOf(m);
   const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
   if (raw.length === 0) {
-    m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
+    m.events = [createRest(0, cap, 1)];
     return;
   }
   const byVoice = new Map<number, ScoreEvent[]>();
@@ -279,15 +288,17 @@ function finalizeMeasurePerVoiceLines(m: MeasureModel, mode: RhythmSnapMode): vo
   }
   const out: ScoreEvent[] = [];
   for (const v of [...byVoice.keys()].sort((a, b) => a - b)) {
-    out.push(...rebuildMonophonicVoiceLine(byVoice.get(v)!, v, mode));
+    out.push(...rebuildMonophonicVoiceLine(byVoice.get(v)!, v, mode, cap));
   }
   m.events = out;
   for (const [v, evs] of byVoice) {
     const sum = evs.reduce((s, e) => s + e.duration, 0);
-    if (sum > 4.01) throw new Error(`[wyble-debug] PRE-rebuild voice ${v} overflow m.index=${m.index} sum=${sum} events=${evs.length}`);
+    if (sum > cap + 0.01)
+      throw new Error(`[wyble-debug] PRE-rebuild voice ${v} overflow m.index=${m.index} sum=${sum} events=${evs.length}`);
   }
   const postSum = out.filter((e) => (e.voice ?? 1) === 2).reduce((s, e) => s + e.duration, 0);
-  if (postSum > 4.01) throw new Error(`[wyble-debug] POST-rebuild voice2 overflow m.index=${m.index} sum=${postSum}`);
+  if (postSum > cap + 0.01)
+    throw new Error(`[wyble-debug] POST-rebuild voice2 overflow m.index=${m.index} sum=${postSum}`);
 }
 
 /** Mutates measure events to exact bar length per voice (4/4). Bass is forced to a single monophonic voice. */
@@ -387,9 +398,13 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
   }
   for (const p of score.parts) {
     for (const m of p.measures) {
+      const cap = measureBeatSpanQuartersOf(m);
       const v2 = m.events.filter((e) => (e.voice ?? 1) === 2);
       const v2sum = v2.reduce((s, e) => s + e.duration, 0);
-      if (v2sum > 4.01) throw new Error(`[v2-overflow] part=${p.id} measure=${m.index} sum=${v2sum} events=${v2.map(e=>e.kind+':'+e.startBeat+'+'+e.duration).join(',')}`);
+      if (v2sum > cap + 0.01)
+        throw new Error(
+          `[v2-overflow] part=${p.id} measure=${m.index} sum=${v2sum} cap=${cap} events=${v2.map((e) => e.kind + ':' + e.startBeat + '+' + e.duration).join(',')}`
+        );
     }
   }
   const hookBias = (score as any)._hookRepetitionBias ?? 0.5;

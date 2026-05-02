@@ -23,6 +23,14 @@ import {
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT]', err.message, err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED]', reason);
+});
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
@@ -40,6 +48,12 @@ app.use((err: unknown, _req: Request, res: Response, next: (e?: unknown) => void
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', app: 'composer-os' });
+});
+
+/** Dev-only: browser mirrors `[PAYLOAD]` to API stdout (e.g. Tee-Object dev-live.txt). */
+app.post('/api/log-payload', (req: Request, res: Response) => {
+  console.log('[PAYLOAD-RECEIVED]', JSON.stringify((req.body as { payload?: unknown })?.payload, null, 2));
+  res.json({ ok: true });
 });
 
 const OUTPUT_DIR = getComposerFilesRoot();
@@ -65,8 +79,17 @@ app.post('/api/generate', (req: Request, res: Response) => {
   try {
     const body = req.body as Partial<GenerateRequest> & { __generateCorrelationId?: string };
     if (typeof body.__generateCorrelationId === 'string') {
+      const b = body as Partial<GenerateRequest> & { barMeterMap?: Record<number, unknown> };
+      const barKeys = b.barMeterMap ? Object.keys(b.barMeterMap).length : 0;
       console.log('[GEN-CORR] http /api/generate body received', {
         corr: body.__generateCorrelationId,
+        presetId: b.presetId,
+        primarySongwriterStyle: b.primarySongwriterStyle,
+        barMeterBarCount: barKeys,
+        zappaSoloMidiLow: b.zappaSoloMidiLow,
+        zappaSoloMidiHigh: b.zappaSoloMidiHigh,
+        zappaSoloDensity: b.zappaSoloDensity,
+        zappaSoloDissonance: b.zappaSoloDissonance,
         alternateGuitarTuning: body.alternateGuitarTuning,
       });
     }
@@ -77,6 +100,8 @@ app.post('/api/generate', (req: Request, res: Response) => {
     }
     res.json(result);
   } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    console.error('[GENERATE-ERROR]', e.message, e.stack);
     res.status(500).json({
       success: false,
       error: String(err),

@@ -5,9 +5,12 @@
  */
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
-import { MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
+import { DIVISIONS } from '../score-model/scoreModelTypes';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { computeVoiceExportDivisionSum } from './musicxmlExporter';
 import { validateExportedMusicXmlBarMath } from './validateMusicXmlBarMath';
+import { measureDivisionsForMeter, resolveMeasureDivisionsForBar } from '../rhythm/oddMeterQuantiser';
 
 export interface MusicXmlWrittenStrictResult {
   valid: boolean;
@@ -27,7 +30,10 @@ function stripMeasureDecorations(measureInner: string): string {
 }
 
 /** Walk document order: note (skip chord-stacked notes for cursor), backup, forward. */
-function simulateMeasureLinearCursor(measureInner: string): { cursor: number; errors: string[] } {
+function simulateMeasureLinearCursor(
+  measureInner: string,
+  measureCapacityTicks: number
+): { cursor: number; errors: string[] } {
   const errors: string[] = [];
   const stripped = stripMeasureDecorations(measureInner);
   let cursor = 0;
@@ -62,9 +68,9 @@ function simulateMeasureLinearCursor(measureInner: string): { cursor: number; er
         continue;
       }
       cursor += d;
-      if (cursor > MEASURE_DIVISIONS + 1e-6) {
+      if (cursor > measureCapacityTicks + 1e-6) {
         errors.push(
-          `Linear timeline overflow: cursor ${cursor} > ${MEASURE_DIVISIONS} (missing <backup> between voices or bad durations)`
+          `Linear timeline overflow: cursor ${cursor} > ${measureCapacityTicks} (missing <backup> between voices or bad durations)`
         );
       }
       continue;
@@ -87,24 +93,24 @@ function simulateMeasureLinearCursor(measureInner: string): { cursor: number; er
     const dm = block.match(/<duration>(\d+)<\/duration>/);
     const d = dm ? parseInt(dm[1], 10) : 0;
     cursor += d;
-    if (cursor > MEASURE_DIVISIONS + 1e-6) {
-      errors.push(`Forward overflow: cursor ${cursor} > ${MEASURE_DIVISIONS}`);
+    if (cursor > measureCapacityTicks + 1e-6) {
+      errors.push(`Forward overflow: cursor ${cursor} > ${measureCapacityTicks}`);
     }
   }
-  if (cursor !== MEASURE_DIVISIONS) {
+  if (cursor !== measureCapacityTicks) {
     errors.push(
-      `Linear measure end cursor ${cursor} ≠ ${MEASURE_DIVISIONS} (MusicXML sequential duration / backup contract)`
+      `Linear measure end cursor ${cursor} ≠ ${measureCapacityTicks} (MusicXML sequential duration / backup contract)`
     );
   }
   return { cursor, errors };
 }
 
 /** Full strict pass on written XML string. */
-export function validateWrittenMusicXmlStrict(xml: string): MusicXmlWrittenStrictResult {
+export function validateWrittenMusicXmlStrict(xml: string, barMeterMap?: BarMeterMap): MusicXmlWrittenStrictResult {
   const errors: string[] = [];
   const linearTimeline: { partId: string; measureNumber: number; endCursor: number }[] = [];
 
-  const perVoice = validateExportedMusicXmlBarMath(xml);
+  const perVoice = validateExportedMusicXmlBarMath(xml, barMeterMap);
   errors.push(...perVoice.errors);
 
   const partBlocks = xml.match(/<part id="([^"]+)"[\s\S]*?<\/part>/g) ?? [];
@@ -112,11 +118,24 @@ export function validateWrittenMusicXmlStrict(xml: string): MusicXmlWrittenStric
     const idMatch = partBlock.match(/^<part id="([^"]+)"/);
     const partId = idMatch?.[1] ?? 'unknown';
     const measureBlocks = partBlock.match(/<measure[^>]*>[\s\S]*?<\/measure>/g) ?? [];
+    let meterNum = 4;
+    let meterDen = 4;
     for (const mb of measureBlocks) {
       const numMatch = mb.match(/<measure[^>]*number="(\d+)"/);
       const num = numMatch ? parseInt(numMatch[1], 10) : -1;
       const inner = mb.replace(/^<measure[^>]*>/, '').replace(/<\/measure>\s*$/, '');
-      const { cursor, errors: linErr } = simulateMeasureLinearCursor(inner);
+      const attrsBlocks = inner.match(/<attributes>[\s\S]*?<\/attributes>/g) ?? [];
+      for (const ab of attrsBlocks) {
+        const tm = ab.match(/<beats>(\d+)<\/beats>\s*<beat-type>(\d+)<\/beat-type>/);
+        if (tm) {
+          meterNum = parseInt(tm[1]!, 10);
+          meterDen = parseInt(tm[2]!, 10);
+        }
+      }
+      const measureCapacityTicks = barMeterMap
+        ? resolveMeasureDivisionsForBar(num, barMeterMap)
+        : measureDivisionsForMeter(meterNum, meterDen);
+      const { cursor, errors: linErr } = simulateMeasureLinearCursor(inner, measureCapacityTicks);
       linearTimeline.push({ partId, measureNumber: num, endCursor: cursor });
       for (const e of linErr) {
         errors.push(`Part ${partId} measure ${num}: ${e}`);
@@ -137,7 +156,11 @@ export function validateWrittenMusicXmlStrict(xml: string): MusicXmlWrittenStric
  * Compare export algorithm division totals per voice to parsed XML per-voice sums.
  * Detects drift between frozen score and serialized `<note>` durations.
  */
-export function validateScoreModelVsWrittenXmlParity(score: ScoreModel, xml: string): { valid: boolean; errors: string[] } {
+export function validateScoreModelVsWrittenXmlParity(
+  score: ScoreModel,
+  xml: string,
+  barMeterMap?: BarMeterMap
+): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   const partBlocks = xml.match(/<part id="([^"]+)"[\s\S]*?<\/part>/g) ?? [];
@@ -173,8 +196,11 @@ export function validateScoreModelVsWrittenXmlParity(score: ScoreModel, xml: str
 
       const voicesInScore = new Set(m.events.map((e) => e.voice ?? 1));
       const allVoices = new Set([...voicesInScore, ...voiceSums.keys()]);
+      const measureCapacityTicks = barMeterMap
+        ? resolveMeasureDivisionsForBar(xmlMeasureNum, barMeterMap)
+        : Math.round(measureBeatSpanQuartersOf(m) * DIVISIONS);
       for (const v of allVoices) {
-        const expected = computeVoiceExportDivisionSum(m, v);
+        const expected = computeVoiceExportDivisionSum(m, v, measureCapacityTicks);
         const written = voiceSums.get(v) ?? 0;
         if (expected !== written) {
           errors.push(
@@ -192,10 +218,11 @@ export function validateScoreModelVsWrittenXmlParity(score: ScoreModel, xml: str
 /** Bar math (per voice) + linear timeline + tie balance + score↔XML parity (same algorithm as export). */
 export function validateWrittenMusicXmlComplete(
   score: ScoreModel,
-  xml: string
+  xml: string,
+  barMeterMap?: BarMeterMap
 ): { valid: boolean; errors: string[] } {
-  const strict = validateWrittenMusicXmlStrict(xml);
-  const parity = validateScoreModelVsWrittenXmlParity(score, xml);
+  const strict = validateWrittenMusicXmlStrict(xml, barMeterMap);
+  const parity = validateScoreModelVsWrittenXmlParity(score, xml, barMeterMap);
   const errors = [...strict.errors, ...parity.errors];
   return { valid: errors.length === 0, errors };
 }

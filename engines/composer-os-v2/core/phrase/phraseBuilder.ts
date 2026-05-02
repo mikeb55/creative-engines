@@ -1,4 +1,5 @@
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { PhraseIntent } from '../goldenPath/guitarPhraseAuthority';
 import { getDuoPhraseIntentV31 } from '../goldenPath/guitarPhraseAuthority';
@@ -249,6 +250,8 @@ const STAGE3_EIGHTH = 0.5;
 export function applyDuoGoldenPhraseEngineStage3Anticipation(m: MeasureModel, seed: number, bar: number): void {
   if (bar % 4 === 0) return;
 
+  const cap = measureBeatSpanQuartersOf(m);
+
   const v1 = m.events.filter(
     (e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1
   );
@@ -261,7 +264,7 @@ export function applyDuoGoldenPhraseEngineStage3Anticipation(m: MeasureModel, se
     if (s < STAGE3_EIGHTH - STAGE3_ANT_EPS) continue;
     const newS = snapAttackBeatToGrid(s - STAGE3_EIGHTH);
     const newE = newS + n.duration;
-    if (newS < -STAGE3_ANT_EPS || newE > 4 + STAGE3_ANT_EPS) continue;
+    if (newS < -STAGE3_ANT_EPS || newE > cap + STAGE3_ANT_EPS) continue;
     let ok = true;
     for (let j = 0; j < spans.length && ok; j++) {
       if (j === i) continue;
@@ -306,11 +309,11 @@ function resolveOverlapsVoice1(notes: NoteEvent[]): void {
   }
 }
 
-function stage4AugmentationFits(notes: NoteEvent[]): boolean {
+function stage4AugmentationFits(notes: NoteEvent[], barCap: number): boolean {
   const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat);
   for (let i = 0; i < sorted.length; i++) {
     const n = sorted[i]!;
-    const nextS = i + 1 < sorted.length ? sorted[i + 1]!.startBeat : 4;
+    const nextS = i + 1 < sorted.length ? sorted[i + 1]!.startBeat : barCap;
     if (n.startBeat + 2 * n.duration > nextS + STAGE4_EPS) return false;
   }
   return true;
@@ -330,16 +333,16 @@ function applyStage4Augmentation(notes: NoteEvent[]): void {
   }
 }
 
-function applyStage4Displacement(m: MeasureModel, notes: NoteEvent[]): void {
+function applyStage4Displacement(m: MeasureModel, notes: NoteEvent[], barCap: number): void {
   const toRemove: NoteEvent[] = [];
   for (const n of notes) {
     const ns = snapAttackBeatToGrid(n.startBeat + 0.5);
-    if (ns >= 4 - STAGE4_EPS) {
+    if (ns >= barCap - STAGE4_EPS) {
       toRemove.push(n);
       continue;
     }
     n.startBeat = ns;
-    n.duration = qBeatPhraseStage4(Math.min(n.duration, 4 - n.startBeat));
+    n.duration = qBeatPhraseStage4(Math.min(n.duration, barCap - n.startBeat));
   }
   for (const n of toRemove) {
     m.events = m.events.filter((e) => e !== n);
@@ -356,6 +359,8 @@ function applyStage4Displacement(m: MeasureModel, notes: NoteEvent[]): void {
 export function applyDuoGoldenPhraseEngineStage4MotifRhythm(m: MeasureModel, seed: number, bar: number): void {
   const posInFourBarGroup = ((bar - 1) % 4) + 1;
   if (posInFourBarGroup === 1) return;
+
+  const barCap = measureBeatSpanQuartersOf(m);
 
   let notes = voice1NotesSorted(m);
   if (notes.length === 0) return;
@@ -376,7 +381,7 @@ export function applyDuoGoldenPhraseEngineStage4MotifRhythm(m: MeasureModel, see
   }
 
   if (posInFourBarGroup === 3) {
-    if (!stage4AugmentationFits(notes)) return;
+    if (!stage4AugmentationFits(notes, barCap)) return;
     applyStage4Augmentation(notes);
     notes = voice1NotesSorted(m);
     resolveOverlapsVoice1(notes);
@@ -384,7 +389,7 @@ export function applyDuoGoldenPhraseEngineStage4MotifRhythm(m: MeasureModel, see
   }
 
   if (posInFourBarGroup === 4) {
-    applyStage4Displacement(m, notes);
+    applyStage4Displacement(m, notes, barCap);
     notes = voice1NotesSorted(m);
     resolveOverlapsVoice1(notes);
   }

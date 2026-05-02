@@ -29,6 +29,11 @@ export function resolveMeasureDivisionsForBar(bar1Based: number, map: BarMeterMa
   return measureDivisionsForMeter(sig.numerator, sig.denominator);
 }
 
+/** Bar span in quarter-note beat units (score model), same as `resolveMeasureDivisionsForBar / DIVISIONS`. */
+export function resolveMeasureBeatSpanQuarters(bar1Based: number, map: BarMeterMap | undefined): number {
+  return resolveMeasureDivisionsForBar(bar1Based, map) / DIVISIONS;
+}
+
 export interface QuantisedBar {
   bar: number;
   numerator: number;

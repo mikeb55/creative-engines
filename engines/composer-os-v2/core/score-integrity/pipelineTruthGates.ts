@@ -5,6 +5,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 import type { ChordSymbolPlan } from '../compositionContext';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { chordSymbolsEqualForPipelineTruth, extractHarmoniesFromFirstPartXml } from '../export/chordSymbolMusicXml';
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
@@ -157,10 +158,19 @@ function validateScoreStage32(score: ScoreModel, expected: string[]): { ok: bool
   return { ok: errors.length === 0, errors, scoreBars };
 }
 
-function validateExportStage32(score: ScoreModel, xml: string, expected: string[]): { ok: boolean; errors: string[]; writtenXmlBars: string[] } {
+function barMeterMapFromContext(context: CompositionContext): BarMeterMap | undefined {
+  return context.generationMetadata.barMeterMap ?? context.barMeterMap;
+}
+
+function validateExportStage32(
+  score: ScoreModel,
+  xml: string,
+  expected: string[],
+  barMeterMap?: BarMeterMap
+): { ok: boolean; errors: string[]; writtenXmlBars: string[] } {
   const errors: string[] = [];
   const writtenXmlBars: string[] = [];
-  const complete = validateWrittenMusicXmlComplete(score, xml);
+  const complete = validateWrittenMusicXmlComplete(score, xml, barMeterMap);
   if (!complete.valid) {
     errors.push(...complete.errors.map((e) => `Export truth (32 locked) (written XML structure): ${e}`));
   }
@@ -338,12 +348,13 @@ function validateScoreStage(
 function validateExportStage(
   score: ScoreModel,
   xml: string,
-  expected: string[]
+  expected: string[],
+  barMeterMap?: BarMeterMap
 ): { ok: boolean; errors: string[]; writtenXmlBars: string[] } {
   const errors: string[] = [];
   const writtenXmlBars: string[] = [];
 
-  const complete = validateWrittenMusicXmlComplete(score, xml);
+  const complete = validateWrittenMusicXmlComplete(score, xml, barMeterMap);
   if (!complete.valid) {
     errors.push(...complete.errors.map((e) => `Export truth (written XML structure): ${e}`));
   }
@@ -403,6 +414,7 @@ export function runPipelineTruthGates(params: {
   const parsed32 = options?.parsedChordBars?.length === 32 ? [...options.parsedChordBars!] : null;
 
   if (shouldRunDuo32LockedPipelineTruth(context, options)) {
+    const barMeter = barMeterMapFromContext(context);
     const parsedBars = parsed32 ?? [];
     const inputResult = validateDuo32LockedInputStage(context, options);
     const inputStage: PipelineTruthStageResult = inputResult.ok ? 'pass' : 'fail';
@@ -427,13 +439,18 @@ export function runPipelineTruthGates(params: {
     const ahT = mdT.andrewHillEffectiveHarmonyBars;
     const cpT = mdT.charlieParkerEffectiveHarmonyBars;
     const beT = mdT.billEvansEffectiveHarmonyBars;
+    const fzT = mdT.frankZappaEffectiveHarmonyBars;
     const hcTruth32 = context.harmonyContext;
+    /** Mirror {@link runGoldenPath.ts} `expectedBarsForLockedTruth` — score/XML must match effective harmony, not raw submission text when Zappa rewrites chords. */
     const expected =
       hcTruth32 &&
       hcTruth32.bars.length === 32 &&
-      mdT.songwriterStyleId === 'frank_zappa'
+      mdT.songwriterStyleId === 'frank_zappa' &&
+      hcTruth32.styleId === 'frank_zappa'
         ? [...hcTruth32.bars]
-        : mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
+        : mdT.songwriterStyleId === 'frank_zappa' && Array.isArray(fzT) && fzT.length === 32
+          ? [...fzT]
+          : mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
           ? [...bwT]
         : mdT.songwriterStyleId === 'stevie_wonder' && Array.isArray(swT) && swT.length === 32
           ? [...swT]
@@ -473,7 +490,10 @@ export function runPipelineTruthGates(params: {
                                             ? [...cpT]
                                             : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
                                               ? [...beT]
-                                              : [...parsedBars];
+                                              : Array.isArray(context.lockedHarmonyBarsRaw) &&
+                                                  context.lockedHarmonyBarsRaw.length === 32
+                                                ? [...context.lockedHarmonyBarsRaw]
+                                                : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';
@@ -482,7 +502,7 @@ export function runPipelineTruthGates(params: {
     if (!xml) {
       exportErrors.push('Export truth (32 locked): no MusicXML string to verify.');
     } else {
-      const ex = validateExportStage32(score, xml, expected);
+      const ex = validateExportStage32(score, xml, expected, barMeter);
       writtenXmlBars = ex.writtenXmlBars;
       exportErrors.push(...ex.errors);
       exportStage = ex.ok ? 'pass' : 'fail';
@@ -542,6 +562,8 @@ export function runPipelineTruthGates(params: {
   const inputResult = validateInputStage(context, options);
   const inputStage: PipelineTruthStageResult = inputResult.ok ? 'pass' : 'fail';
 
+  const barMeter = barMeterMapFromContext(context);
+
   const scoreResult = validateScoreStage(score, expected);
   const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
 
@@ -551,7 +573,7 @@ export function runPipelineTruthGates(params: {
   if (!xml) {
     exportErrors.push('Export truth: no MusicXML string to verify.');
   } else {
-    const ex = validateExportStage(score, xml, expected);
+    const ex = validateExportStage(score, xml, expected, barMeter);
     writtenXmlBars = ex.writtenXmlBars;
     exportErrors.push(...ex.errors);
     exportStage = ex.ok ? 'pass' : 'fail';

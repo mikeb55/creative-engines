@@ -5,6 +5,7 @@
 
 import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 
 const EPS = 1e-5;
 
@@ -21,40 +22,55 @@ export function snapEighthBeat(x: number): number {
   return snapAttackBeatToGrid(x);
 }
 
-/** True iff value is exactly one of the eight attack slots (notes may not start at beat 4). */
-export function isStrictDuoNoteAttack(beats: number): boolean {
-  for (const g of DUO_ATTACK_GRID_BEATS) {
+/** Eighth-note attack slots from 0 up to (but not including) `barSpan` quarter-note beats. */
+export function duoEighthAttackSlots(barSpanQuarters: number): readonly number[] {
+  const n = Math.max(0, Math.round(barSpanQuarters * 2));
+  return Array.from({ length: n }, (_, i) => i * 0.5);
+}
+
+/** True iff value is on the eighth-note grid for this bar's span (notes may not start at the barline). */
+export function isStrictDuoNoteAttack(beats: number, barSpanQuarters: number = BEATS_PER_MEASURE): boolean {
+  for (const g of duoEighthAttackSlots(barSpanQuarters)) {
     if (Math.abs(beats - g) < EPS) return true;
   }
   return false;
 }
 
-/** Rests may start on the same grid; onset at beat 4 only if zero-length (padding). */
-export function isStrictDuoRestStart(beats: number, duration: number): boolean {
+/** Rests may start on the same grid; onset at barline only if zero-length (padding). */
+export function isStrictDuoRestStart(
+  beats: number,
+  duration: number,
+  barSpanQuarters: number = BEATS_PER_MEASURE
+): boolean {
   if (Math.abs(beats - snapAttackBeatToGrid(beats)) >= EPS) return false;
-  if (beats <= 3.5 + EPS) return true;
-  if (Math.abs(beats - BEATS_PER_MEASURE) < EPS && duration <= EPS) return true;
+  const lastSlot = barSpanQuarters - 0.5;
+  if (beats <= lastSlot + EPS) return true;
+  if (Math.abs(beats - barSpanQuarters) < EPS && duration <= EPS) return true;
   return false;
 }
 
-/** Snap one note/rest span to nearest eighth-beat boundaries; clamp last note onset to ≤ 3.5. */
-export function snapEventToEighthBeatGrid(e: ScoreEvent): void {
+/**
+ * Snap one note/rest span to nearest eighth-beat boundaries within `barSpanQuarters`.
+ * Last attack slot is one eighth before the barline when span aligns to the grid.
+ */
+export function snapEventToEighthBeatGrid(e: ScoreEvent, barSpanQuarters: number = BEATS_PER_MEASURE): void {
   if (e.kind !== 'note' && e.kind !== 'rest') return;
   const n = e as { startBeat: number; duration: number };
   let sb = snapAttackBeatToGrid(n.startBeat);
   let eb = snapAttackBeatToGrid(n.startBeat + n.duration);
-  if (eb > BEATS_PER_MEASURE) eb = BEATS_PER_MEASURE;
+  if (eb > barSpanQuarters) eb = barSpanQuarters;
   if (eb < sb) eb = sb;
-  if (e.kind === 'note' && sb >= BEATS_PER_MEASURE - EPS) {
-    sb = BEATS_PER_MEASURE - 0.5;
-    eb = BEATS_PER_MEASURE;
+  if (e.kind === 'note' && sb >= barSpanQuarters - EPS) {
+    sb = Math.max(0, barSpanQuarters - 0.5);
+    eb = barSpanQuarters;
   }
   n.startBeat = sb;
   n.duration = Math.max(0, eb - sb);
 }
 
 export function normalizeMeasureToEighthBeatGrid(m: MeasureModel): void {
-  for (const e of m.events) snapEventToEighthBeatGrid(e);
+  const span = measureBeatSpanQuartersOf(m);
+  for (const e of m.events) snapEventToEighthBeatGrid(e, span);
 }
 
 export interface DuoAttackGridValidationResult {
@@ -68,17 +84,18 @@ function checkMeasureAttacks(
   errors: string[]
 ): void {
   const num = m.index;
+  const span = measureBeatSpanQuartersOf(m);
+  const gridLabel =
+    span === BEATS_PER_MEASURE ? '{0,0.5,…,3.5}' : `eighth grid span ${span} beats`;
   for (const e of m.events) {
     if (e.kind !== 'note' && e.kind !== 'rest') continue;
     const sb = (e as { startBeat: number }).startBeat;
     const dur = (e as { duration: number }).duration;
     if (e.kind === 'note') {
-      if (!isStrictDuoNoteAttack(sb)) {
-        errors.push(
-          `Duo attack grid: ${partId} bar ${num} note start ${sb} not in {0,0.5,…,3.5}`
-        );
+      if (!isStrictDuoNoteAttack(sb, span)) {
+        errors.push(`Duo attack grid: ${partId} bar ${num} note start ${sb} not in ${gridLabel}`);
       }
-    } else if (!isStrictDuoRestStart(sb, dur)) {
+    } else if (!isStrictDuoRestStart(sb, dur, span)) {
       errors.push(`Duo attack grid: ${partId} bar ${num} rest start ${sb} (dur ${dur}) not on grid`);
     }
   }

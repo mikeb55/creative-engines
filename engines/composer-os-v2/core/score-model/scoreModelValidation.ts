@@ -3,7 +3,7 @@
  */
 
 import type { ScoreModel, MeasureModel } from './scoreModelTypes';
-import { BEATS_PER_MEASURE } from './scoreModelTypes';
+import { measureBeatSpanQuartersOf } from './measureBeatSpan';
 
 export interface ScoreModelValidationResult {
   valid: boolean;
@@ -17,7 +17,7 @@ export interface ValidateScoreModelOptions {
   requireAtLeastOneNote?: boolean;
 }
 
-/** Per-voice duration sums (multi-voice parts: each voice is its own 4/4 layer; summing all events would double-count). */
+/** Per-voice duration sums (multi-voice parts: each voice fills the measure span; summing all events would double-count). */
 function measureDurationByVoice(measure: MeasureModel): Map<number, number> {
   const byVoice = new Map<number, number>();
   for (const e of measure.events) {
@@ -47,15 +47,14 @@ export function validateScoreModel(score: ScoreModel, options?: ValidateScoreMod
         errors.push(`Part ${part.id} measure ${m.index}: too many events (${m.events.length} > ${maxEv})`);
       }
       const byVoice = measureDurationByVoice(m);
+      const barCap = measureBeatSpanQuartersOf(m);
       if (byVoice.size === 0) {
-        errors.push(`Part ${part.id} measure ${m.index}: duration 0 != ${BEATS_PER_MEASURE}`);
+        errors.push(`Part ${part.id} measure ${m.index}: duration 0 != ${barCap}`);
         continue;
       }
       for (const [voice, dur] of [...byVoice.entries()].sort((a, b) => a[0] - b[0])) {
-        if (Math.abs(dur - BEATS_PER_MEASURE) > 0.01) {
-          errors.push(
-            `Part ${part.id} measure ${m.index} voice ${voice}: duration ${dur} != ${BEATS_PER_MEASURE}`
-          );
+        if (Math.abs(dur - barCap) > 0.01) {
+          errors.push(`Part ${part.id} measure ${m.index} voice ${voice}: duration ${dur} != ${barCap}`);
         }
       }
       for (const e of m.events) {

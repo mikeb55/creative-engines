@@ -113,6 +113,11 @@ export interface MeasureModel {
   events: ScoreEvent[];
   chord?: string;
   rehearsalMark?: string;
+  /**
+   * Quarter-note beats in this measure (e.g. 3.5 for 7/8). When omitted, treated as {@link BEATS_PER_MEASURE}.
+   * Should match `resolveMeasureDivisionsForBar(index, barMeterMap) / DIVISIONS` when using mixed meters.
+   */
+  measureBeatSpanQuarters?: number;
   /** Optional duo narrative tag (peak bar, handoff, final cadence). */
   momentTag?: MomentTag;
 }

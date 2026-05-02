@@ -1317,6 +1317,20 @@ export function HomeGenerate({
             return;
           }
         }
+        /** Frank Zappa: ensure full-length meter rows even if UI state is one render behind `songFormBars`. */
+        const zappaBarMeterPayload =
+          presetId === 'song_mode' && songwriterStyle === 'frank_zappa'
+            ? (() => {
+                const n = songFormBars;
+                const rows =
+                  zappaMetersByBar.length === n
+                    ? zappaMetersByBar
+                    : buildZappaMetersForPreset(zappaMeterPresetId, n);
+                if (rows.length !== n || n <= 0) return undefined;
+                return zappaRowsToBarMeterMap(rows);
+              })()
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
@@ -1355,6 +1369,8 @@ export function HomeGenerate({
           ...(presetId === 'song_mode'
             ? {
                 ...(typeof __generateCorrelationId === 'string' ? { __generateCorrelationId } : {}),
+                /** Reinforces coreFields — visible in `[PAYLOAD]` and survives mapping edge cases. */
+                primarySongwriterStyle: songwriterStyle.trim(),
                 styleProfile: liveSongModeStyleProfile,
                 leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi,
                 intent: {
@@ -1375,9 +1391,7 @@ export function HomeGenerate({
                       zappaSoloMidiHigh,
                       zappaSoloDensity,
                       zappaSoloDissonance,
-                      ...(zappaMetersByBar.length > 0 && zappaMetersByBar.length === songFormBars
-                        ? { barMeterMap: zappaRowsToBarMeterMap(zappaMetersByBar) }
-                        : {}),
+                      ...(zappaBarMeterPayload ? { barMeterMap: zappaBarMeterPayload } : {}),
                     }
                   : {}),
                 ...(alternateGuitarTuningPayload ? { alternateGuitarTuning: alternateGuitarTuningPayload } : {}),
@@ -1415,7 +1429,12 @@ export function HomeGenerate({
         }
 
         if (presetId === 'song_mode') {
-          console.log('[UI][manual-generate] final request payload', JSON.stringify(generatePayload, null, 2));
+          console.log('[PAYLOAD]', JSON.stringify(generatePayload));
+          fetch('/api/log-payload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payload: generatePayload }),
+          }).catch(() => {});
         }
         if (typeof __generateCorrelationId === 'string') {
           const gp = generatePayload as { alternateGuitarTuning?: unknown };
@@ -1559,6 +1578,7 @@ export function HomeGenerate({
       bigBandFormId,
       songFormBarPreset,
       songFormBars,
+      zappaMeterPresetId,
       zappaMetersByBar,
       zappaSoloMidiLow,
       zappaSoloMidiHigh,

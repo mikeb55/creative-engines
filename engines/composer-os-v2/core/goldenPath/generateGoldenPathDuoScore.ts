@@ -32,6 +32,9 @@ import type {
   ChordEvent,
   DuoElectricVoiceRole,
 } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
@@ -1234,6 +1237,24 @@ function readStyleHints(context: CompositionContext): StyleHints {
   };
 }
 
+function effectiveBarMeterMapForDuo(context: CompositionContext): BarMeterMap | undefined {
+  return context.generationMetadata.barMeterMap ?? context.barMeterMap;
+}
+
+function stampMeasureBeatSpanQuarters(m: MeasureModel, context: CompositionContext): void {
+  m.measureBeatSpanQuarters = resolveMeasureBeatSpanQuarters(m.index, effectiveBarMeterMapForDuo(context));
+}
+
+/** Stamp every measure in the score from context (covers merged solo parts and ensures parity with export). */
+function stampAllMeasuresBeatSpansFromContext(score: ScoreModel, context: CompositionContext): void {
+  const map = effectiveBarMeterMapForDuo(context);
+  for (const p of score.parts) {
+    for (const m of p.measures) {
+      m.measureBeatSpanQuarters = resolveMeasureBeatSpanQuarters(m.index, map);
+    }
+  }
+}
+
 /** Quarter-beat grid — keeps MusicXML division sums stable. */
 function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
@@ -1258,9 +1279,10 @@ function duoAntiAdjacentDuplicateGuitarRhythm(m: MeasureModel, prev: MeasureMode
   next.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
   m.events = next;
   const v1 = m.events.filter((e) => (e.voice ?? 1) === 1 && (e.kind === 'note' || e.kind === 'rest'));
+  const cap = measureBeatSpanQuartersOf(m);
   const last = v1[v1.length - 1] as { startBeat: number; duration: number } | undefined;
-  if (last && last.startBeat + last.duration > 4 + 1e-4) {
-    last.duration = qBeat(Math.max(0, 4 - last.startBeat));
+  if (last && last.startBeat + last.duration > cap + 1e-4) {
+    last.duration = qBeat(Math.max(0, cap - last.startBeat));
   }
 }
 
@@ -1281,10 +1303,11 @@ function duoBassAntiDuplicateRhythmVsAdjacent(m: MeasureModel, prev: MeasureMode
   }
   next.sort((a, b) => (a as { startBeat: number }).startBeat - (b as { startBeat: number }).startBeat);
   m.events = next;
+  const cap = measureBeatSpanQuartersOf(m);
   const notes = m.events.filter((e) => e.kind === 'note') as { startBeat: number; duration: number }[];
   const lastN = notes[notes.length - 1];
-  if (lastN && lastN.startBeat + lastN.duration > 4 + 1e-4) {
-    lastN.duration = qBeat(Math.max(0, 4 - lastN.startBeat));
+  if (lastN && lastN.startBeat + lastN.duration > cap + 1e-4) {
+    lastN.duration = qBeat(Math.max(0, cap - lastN.startBeat));
   }
 }
 
@@ -1374,7 +1397,8 @@ function applyBassRhythmTripleFingerprintBreak(
   if (t0 > 0.01) {
     addEvent(m, createRest(0, t0));
   }
-  const span = 4 - t0;
+  const capBreak = measureBeatSpanQuartersOf(m);
+  const span = capBreak - t0;
   if (span <= 0.01) return;
   if (isWalkingQuartersPattern(ref)) {
     const dHalf = Math.min(2, span);
@@ -1388,7 +1412,8 @@ function applyBassRhythmTripleFingerprintBreak(
     }
   } else if (isHalfHalfPattern(ref)) {
     const pool = [opts.rootClamped, opts.fifth, opts.third, opts.guide];
-    for (let i = 0; i < 4; i++) {
+    const maxSteps = Math.min(4, Math.max(0, Math.floor(span + 1e-4)));
+    for (let i = 0; i < maxSteps; i++) {
       const p = clampPitch(pool[i % pool.length]!, opts.walkLow, opts.effectiveHigh);
       addEvent(m, createNote(p, t0 + i, 1));
     }
@@ -1542,7 +1567,8 @@ function duoBoostPhraseEndLanding(m: MeasureModel, bar: number, isDuo: boolean):
   for (const n of notes) {
     if (n.startBeat + n.duration >= last.startBeat + last.duration) last = n;
   }
-  const maxDur = qBeat(4 - last.startBeat);
+  const capLanding = measureBeatSpanQuartersOf(m);
+  const maxDur = qBeat(capLanding - last.startBeat);
   if (last.duration >= Math.min(0.5, maxDur)) return;
   const target = Math.min(0.5, maxDur);
   const need = target - last.duration;
@@ -1583,7 +1609,8 @@ function duoEnforcePhraseEndCadence(
   const finals = v1.filter((n) => Math.abs(n.startBeat + n.duration - maxEnd) < 1e-5);
   if (finals.length === 0) return;
 
-  let barrier = 4;
+  const barCap = measureBeatSpanQuartersOf(m);
+  let barrier = barCap;
   for (const n of v1) {
     if (n.startBeat > maxEnd + 1e-8 && n.startBeat < barrier) barrier = n.startBeat;
   }
@@ -1676,6 +1703,7 @@ function buildBacharachAnchorMeasure(
   context: CompositionContext
 ): MeasureModel {
   const m = createMeasure(barIndex, chord, rehearsal);
+  stampMeasureBeatSpanQuarters(m, context);
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const target = clampPitch(tones.third, low, high);
   const pass = target - 1;
@@ -2505,6 +2533,7 @@ function buildGuitarPart(
       );
     }
     const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
+    stampMeasureBeatSpanQuarters(m, context);
     const placements = getPlacementsForBar(motifState.placements, b);
     const ecmMode = context.generationMetadata?.ecmMode;
     const isEcmM = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET';
@@ -2575,6 +2604,7 @@ function buildGuitarPart(
 
     if (hookRuntime) {
       const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
+      stampMeasureBeatSpanQuarters(m, context);
       hookRuntime.emitScheduledBar(b, m);
       normalizeMeasureToEighthBeatGrid(m);
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
@@ -2681,11 +2711,12 @@ function buildGuitarPart(
         }
       }
       const raw: { pitch: number; start: number; dur: number }[] = [];
+      const barCapMotif = measureBeatSpanQuartersOf(m);
       for (const pl of placements) {
         for (const n of pl.notes) {
           let pitch = Math.max(effectiveLow, Math.min(effectiveHigh, n.pitch));
-          const dur = Math.min(n.duration, Math.max(0, 4 - n.startBeat));
-          if (dur > 0 && n.startBeat < 4) {
+          const dur = Math.min(n.duration, Math.max(0, barCapMotif - n.startBeat));
+          if (dur > 0 && n.startBeat < barCapMotif) {
             const rawStart = n.startBeat + staggerForMotif;
             raw.push({
               pitch,
@@ -2712,21 +2743,21 @@ function buildGuitarPart(
             addEvent(m, createRest(cursor, gap));
           }
         }
-        let dur = qBeat(Math.min(e.dur, 4 - start));
+        let dur = qBeat(Math.min(e.dur, barCapMotif - start));
         if (meth?.attackDensityReduced && dur > 0.5 && tex?.guitarRole !== 'sustain_pad') {
           dur = Math.min(dur, 1.25);
         }
-        dur = qBeat(Math.min(dur, 4 - start));
+        dur = qBeat(Math.min(dur, barCapMotif - start));
         if (dur <= 0) continue;
         addEvent(m, createNote(e.pitch, start, dur));
         cursor = start + dur;
-        if (cursor >= 4 - 1e-6) break;
+        if (cursor >= barCapMotif - 1e-6) break;
       }
 
-      if (reduceAttack && cursor < 3) {
-        addEvent(m, createRest(cursor, 4 - cursor));
-      } else if (cursor < 4 - 1e-4) {
-        const tail = 4 - cursor;
+      if (reduceAttack && cursor < barCapMotif - 1 + 1e-4) {
+        addEvent(m, createRest(cursor, barCapMotif - cursor));
+      } else if (cursor < barCapMotif - 1e-4) {
+        const tail = barCapMotif - cursor;
         const chord = getChordForBar(b, context);
         const tones = duoChordTonesWithOptionalTuningMap(
           chord,
@@ -2742,7 +2773,7 @@ function buildGuitarPart(
         /** Voice 1: rest through bar end; phrase-resolution tail on voice 2 (Wyble counter-line). */
         addEvent(m, createRest(cursor, tail, 1));
         const v2done = m.events.filter((e) => (e.voice ?? 1) === 2).reduce((s, e) => s + e.duration, 0);
-        if (Math.abs(v2done - 4) > 1e-4) {
+        if (Math.abs(v2done - barCapMotif) > 1e-4) {
           if (tail >= 1.5 && seededUnit(seed, b, 5) < 0.35) {
             addEvent(m, createRest(cursor, 0.5, 2));
             {
@@ -2786,7 +2817,7 @@ function buildGuitarPart(
         if (densityLevel === 'sparse') densityLevel = 'medium';
       }
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
-        addEvent(m, createRest(0, 4));
+        addEvent(m, createRest(0, measureBeatSpanQuartersOf(m)));
       } else if (
         (isEcmM || isEcmS) &&
         tex &&
@@ -3133,15 +3164,16 @@ function applyEcmMethenyMotifDevelopment(
     mTgt.events = [];
     let t = 0;
     let pitch = src[0].pitch + regShift;
-    for (let i = 0; i < src.length && t < 4 - 1e-4; i++) {
-      const rawDur = Math.min(rhythms[i % rhythms.length], 4 - t);
+    const capMethenyTgt = measureBeatSpanQuartersOf(mTgt);
+    for (let i = 0; i < src.length && t < capMethenyTgt - 1e-4; i++) {
+      const rawDur = Math.min(rhythms[i % rhythms.length], capMethenyTgt - t);
       const dur = qBeat(rawDur);
       if (dur <= 0) break;
       addEvent(mTgt, createNote(pitch, t, dur));
       t += dur;
       if (i < intervals.length) pitch += intervals[i];
     }
-    if (t < 4 - 1e-4) addEvent(mTgt, createRest(t, 4 - t));
+    if (t < capMethenyTgt - 1e-4) addEvent(mTgt, createRest(t, capMethenyTgt - t));
     normalizeMeasureQuarterGrid(mTgt);
     collapseRestsInsideNotes(mTgt);
     dropRestsSameStartAsNote(mTgt);
@@ -3248,9 +3280,11 @@ function simplifyBassAtPeakBar(
   const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
   const m = bassPart.measures.find((x) => x.index === bar);
   if (!m) return;
+  const cap = measureBeatSpanQuartersOf(m);
+  const half = qBeat(cap / 2);
   m.events = [];
-  addEvent(m, createNote(firstHalf, 0, 2));
-  addEvent(m, createNote(fifth, 2, 2));
+  addEvent(m, createNote(firstHalf, 0, half));
+  addEvent(m, createNote(fifth, half, qBeat(Math.max(0, cap - half))));
   normalizeMeasureToEighthBeatGrid(m);
 }
 
@@ -3286,17 +3320,21 @@ function resolveOverlapInDuoScore(
     const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
     const m = bassPart.measures.find((x) => x.index === b);
     if (!m) continue;
+    const cap = measureBeatSpanQuartersOf(m);
     m.events = [];
     const pat = (context.seed + b * 17) % 3;
     if (pat === 0) {
-      addEvent(m, createNote(firstHalf, 0, 2));
-      addEvent(m, createNote(fifth, 2, 2));
+      const h = qBeat(cap / 2);
+      addEvent(m, createNote(firstHalf, 0, h));
+      addEvent(m, createNote(fifth, h, qBeat(Math.max(0, cap - h))));
     } else if (pat === 1) {
-      addEvent(m, createNote(firstHalf, 0, 1.5));
-      addEvent(m, createNote(fifth, 1.5, 2.5));
+      const d0 = qBeat(cap * (1.5 / 4));
+      addEvent(m, createNote(firstHalf, 0, d0));
+      addEvent(m, createNote(fifth, d0, qBeat(Math.max(0, cap - d0))));
     } else {
-      addEvent(m, createNote(firstHalf, 0, 2.5));
-      addEvent(m, createNote(fifth, 2.5, 1.5));
+      const d0 = qBeat(cap * (2.5 / 4));
+      addEvent(m, createNote(firstHalf, 0, d0));
+      addEvent(m, createNote(fifth, d0, qBeat(Math.max(0, cap - d0))));
     }
     normalizeMeasureToEighthBeatGrid(m);
   }
@@ -3527,6 +3565,7 @@ function buildBassPart(
     const parsed = parseChordSymbol(chord);
     const root = tones.root;
     const m = createMeasure(b, chord, rehearsalForBar(b, context));
+    stampMeasureBeatSpanQuarters(m, context);
     const [low, high] = getBassRegisterForBar(bassMap, b, context);
     const phase = ((b - 1) % 8) + 1;
     const phraseNumber = Math.floor((b - 1) / 8) + 1;
@@ -3588,7 +3627,7 @@ function buildBassPart(
       const step = (seed + b) % 3 === 0 ? 1 : 2;
       const p2 = clampPitch(p1 + step, walkLow, effectiveHigh);
       if (tex?.bassRole === 'sustain_pad' && tex.guitarRole === 'lead') {
-        addEvent(m, createNote(p1, 0, 4));
+        addEvent(m, createNote(p1, 0, measureBeatSpanQuartersOf(m)));
         normalizeMeasureQuarterGrid(m);
         logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
         logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
@@ -3614,8 +3653,9 @@ function buildBassPart(
         continue;
       }
       const split = b % 2 === 0 ? 2 : 2.25;
+      const capSchneider = measureBeatSpanQuartersOf(m);
       addEvent(m, createNote(p1, 0, split));
-      addEvent(m, createNote(p2, split, 4 - split));
+      addEvent(m, createNote(p2, split, capSchneider - split));
       normalizeMeasureQuarterGrid(m);
       logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
       logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
@@ -4002,7 +4042,7 @@ function buildBassPart(
       if (t0 > 0) {
         addEvent(m, createRest(0, t0));
       }
-      const span = 4 - t0;
+      const span = measureBeatSpanQuartersOf(m) - t0;
       const firstNote =
         slashBassPitch === undefined
           ? rootClamped
@@ -5007,7 +5047,7 @@ export function generateGoldenPathDuoScore(
           sb = Math.abs(p - 2) <= Math.abs(p - 0) ? 2 : 0;
         }
         let dur = Math.max(n.duration, med * 1.25, 1.5);
-        dur = Math.min(dur, 4 - sb);
+        dur = Math.min(dur, measureBeatSpanQuartersOf(m) - sb);
         const pools = [tones.root, tones.third, tones.fifth, tones.seventh].filter((x) => Number.isFinite(x));
         let bestP = n.pitch;
         let bd = Infinity;
@@ -5217,6 +5257,7 @@ export function generateGoldenPathDuoScore(
       afterExpressive = mergeZappaSoloPart(afterExpressive, md.soloLine);
     }
   }
+  stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

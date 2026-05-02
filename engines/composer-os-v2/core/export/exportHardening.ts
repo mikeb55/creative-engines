@@ -2,13 +2,20 @@
  * Composer OS V2 — Export hardening validation
  */
 
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+
 export interface ExportIntegrityResult {
   valid: boolean;
   errors: string[];
 }
 
+export interface ValidateExportIntegrityOptions {
+  /** When set (mixed meters), repeated `<time>` across parts/measures is expected — do not flag “Excessive time signatures”. */
+  barMeterMap?: BarMeterMap;
+}
+
 /** Validate hardened MusicXML structure. */
-export function validateExportIntegrity(xml: string): ExportIntegrityResult {
+export function validateExportIntegrity(xml: string, opts?: ValidateExportIntegrityOptions): ExportIntegrityResult {
   const errors: string[] = [];
 
   if (!xml.includes('<score-partwise')) errors.push('Missing score-partwise root');
@@ -28,7 +35,11 @@ export function validateExportIntegrity(xml: string): ExportIntegrityResult {
 
   const timeSigCount = (xml.match(/<time>/g) || []).length;
   const partCountForTime = (xml.match(/<part id=/g) || []).length;
-  if (partCountForTime > 0 && timeSigCount > partCountForTime * 2) errors.push('Excessive time signatures');
+  const skipExcessiveTimeSigs =
+    opts?.barMeterMap != null && Object.keys(opts.barMeterMap).length > 0;
+  if (!skipExcessiveTimeSigs && partCountForTime > 0 && timeSigCount > partCountForTime * 2) {
+    errors.push('Excessive time signatures');
+  }
 
   if (!xml.includes('<clef')) errors.push('Missing clef in attributes');
   if (!xml.includes('<part-name')) errors.push('Missing instrument names');

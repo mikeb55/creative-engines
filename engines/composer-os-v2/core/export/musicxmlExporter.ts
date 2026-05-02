@@ -631,6 +631,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
   try {
     logGuitarVoice2CheckpointFromScore('B-pre-export', score);
     const opts: MusicXmlExportOptions = options ?? {};
+    console.log('[METER_DEBUG] barMeterMap:', opts.barMeterMap);
     const USE_ENHARMONIC_SPELLING = true;
     const preferFlats = USE_ENHARMONIC_SPELLING && (score.keySignature?.fifths ?? 0) < 0;
     const dbg = score.keySignatureExportDebug;

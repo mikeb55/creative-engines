@@ -247,6 +247,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     importHarmonyMode: normalizedImportHarmonyMode,
     harmonyBlend: harmonyBlendRaw,
     ...(req.formId ? { formId: req.formId as FormId } : {}),
+    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+    zappaSoloMidiLow: req.zappaSoloMidiLow,
+    zappaSoloMidiHigh: req.zappaSoloMidiHigh,
+    zappaSoloDensity: req.zappaSoloDensity,
+    zappaSoloDissonance: req.zappaSoloDissonance,
   });
   result.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   result.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;

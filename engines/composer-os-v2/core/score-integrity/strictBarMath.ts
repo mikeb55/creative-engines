@@ -3,8 +3,8 @@
  * Per-voice: event durations must sum to the time signature and not overlap.
  */
 
-import type { ScoreModel, ScoreEvent } from '../score-model/scoreModelTypes';
-import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import type { MeasureModel, ScoreModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 
 export interface StrictBarMathResult {
   valid: boolean;
@@ -36,18 +36,19 @@ function describeEventsForDebug(events: ScoreEvent[]): string {
 
 function validateOneVoice(
   part: { id: string; instrumentIdentity: string },
-  m: { index: number },
+  m: MeasureModel,
   voice: number,
   events: ScoreEvent[],
   errors: string[],
   details: BarMathFailDetail[] | undefined
 ): void {
+  const beatSpan = measureBeatSpanQuartersOf(m);
   const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
   let durSum = 0;
   for (const e of sorted) durSum += e.duration;
-  if (Math.abs(durSum - BEATS_PER_MEASURE) > EPS) {
+  if (Math.abs(durSum - beatSpan) > EPS) {
     const eventDetail = [...events].sort((a,b) => a.startBeat - b.startBeat).map(e => `${e.kind}(s=${e.startBeat},d=${e.duration},v=${e.voice??1})`).join(' | ');
-    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${BEATS_PER_MEASURE} -- ${eventDetail}`;
+    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: duration sum ${durSum} ≠ ${beatSpan} -- ${eventDetail}`;
     errors.push(msg);
     details?.push({
       partId: part.id,
@@ -83,8 +84,8 @@ function validateOneVoice(
       eventsJson: describeEventsForDebug(sorted),
     });
   }
-  if (cursor - BEATS_PER_MEASURE > EPS) {
-    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: content extends past bar (${cursor} > ${BEATS_PER_MEASURE})`;
+  if (cursor - beatSpan > EPS) {
+    const msg = `Part ${part.id} measure ${m.index} voice ${voice}: content extends past bar (${cursor} > ${beatSpan})`;
     errors.push(msg);
     if (details) {
       details.push({

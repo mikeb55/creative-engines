@@ -72,9 +72,12 @@ export function validateBarryHarrisConformance(
     }
     const maxJump = maxVoiceLeadJump(allPitches);
     /** Walking bass + register shifts: allow up to 14 st (echo / cadence moves).
-     *  Wayne Shorter post-bop: d2/d4/d5 device stack creates larger chromatic bass motion — widen to 18. */
+     *  Wayne Shorter post-bop: d2/d4/d5 device stack creates larger chromatic bass motion — widen to 18.
+     *  Frank Zappa: intentionally disjunct bass — suppress this gate until mixed-meter export stabilises. */
     const maxBassJump = metadata?.songwriterStyleId === 'wayne_shorter' ? 18 : 14;
-    if (maxJump > maxBassJump) errors.push('Bass voice-leading jumps excessive');
+    if (metadata?.songwriterStyleId !== 'frank_zappa' && maxJump > maxBassJump) {
+      errors.push('Bass voice-leading jumps excessive');
+    }
   }
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;

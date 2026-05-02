@@ -2051,11 +2051,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   logEcmPhaseProbe(probeEcm, 'before_export', score, {
     guitarMeasures: guitarMeasureCount,
   });
+  const barMeterForMusicXml =
+    appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;
   let exportResult: ReturnType<typeof exportScoreModelToMusicXml>;
   try {
     exportResult = exportScoreModelToMusicXml(score, {
       preserveChordKindLiterals: preserveLiterals,
       assertLockedHarmonyBars: assertLockedExport,
+      ...(barMeterForMusicXml ? { barMeterMap: barMeterForMusicXml } : {}),
     });
   } finally {
     logEcmPhaseProbe(probeEcm, 'after_export', score);
@@ -2074,13 +2077,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     if (isIndieTuningFixture) {
       exportIntegrityPassed = true;
     } else {
-      const exportIntegrity = validateExportIntegrity(xml);
+      const exportIntegrityOpts =
+        barMeterForMusicXml && Object.keys(barMeterForMusicXml).length > 0
+          ? { barMeterMap: barMeterForMusicXml }
+          : undefined;
+      const exportIntegrity = validateExportIntegrity(xml, exportIntegrityOpts);
       exportIntegrityPassed = exportIntegrity.valid;
       if (!exportIntegrity.valid) errors.push(...exportIntegrity.errors);
     }
 
-    const mxBar = validateExportedMusicXmlBarMath(xml);
-    const writtenComplete = validateWrittenMusicXmlComplete(score, xml);
+    const mxBar = validateExportedMusicXmlBarMath(xml, barMeterForMusicXml);
+    const writtenComplete = validateWrittenMusicXmlComplete(score, xml, barMeterForMusicXml);
     exportRoundTripPassed = mxBar.valid && writtenComplete.valid;
     if (!mxBar.valid) errors.push(...mxBar.errors);
     if (!writtenComplete.valid) errors.push(...writtenComplete.errors);

@@ -4,7 +4,7 @@
  */
 
 import type { MeasureModel, NoteEvent, PartModel, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
-import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
 
 const EPS = 1e-4;
@@ -83,8 +83,9 @@ function expandVoiceEvents(events: ScoreEvent[]): ScoreEvent[] {
 /** Split every note/rest into allowed duration atoms (same pitch across splits). */
 export function expandNotationSafeDurationsInMeasure(m: MeasureModel): void {
   const raw = m.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const cap = measureBeatSpanQuartersOf(m);
   if (raw.length === 0) {
-    m.events = [createRest(0, BEATS_PER_MEASURE, 1)];
+    m.events = [createRest(0, cap, 1)];
     return;
   }
   const byVoice = new Map<number, ScoreEvent[]>();
@@ -113,12 +114,13 @@ export interface NotationSafeRhythmResult {
   errors: string[];
 }
 
-/** Pre-export: every note/rest uses an allowed duration; starts on sixteenth grid; sums still 4 per voice. */
+/** Pre-export: every note/rest uses an allowed duration; starts on sixteenth grid; per-voice sum matches measure span. */
 export function validateNotationSafeRhythm(score: ScoreModel): NotationSafeRhythmResult {
   const errors: string[] = [];
 
   const checkPart = (p: PartModel): void => {
     for (const m of p.measures) {
+      const barCap = measureBeatSpanQuartersOf(m);
       const byVoice = new Map<number, ScoreEvent[]>();
       for (const e of m.events) {
         if (e.kind !== 'note' && e.kind !== 'rest' && e.kind !== 'chord') continue;
@@ -142,10 +144,8 @@ export function validateNotationSafeRhythm(score: ScoreModel): NotationSafeRhyth
           }
           sum += e.duration;
         }
-        if (sorted.length > 0 && Math.abs(sum - BEATS_PER_MEASURE) > EPS) {
-          errors.push(
-            `Notation-safe: part ${p.id} m${m.index} v${voice} sum ${sum} ≠ ${BEATS_PER_MEASURE}`
-          );
+        if (sorted.length > 0 && Math.abs(sum - barCap) > EPS) {
+          errors.push(`Notation-safe: part ${p.id} m${m.index} v${voice} sum ${sum} ≠ ${barCap}`);
         }
       }
     }
