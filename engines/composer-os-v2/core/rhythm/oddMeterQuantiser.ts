@@ -27,7 +27,7 @@ export interface ZappaMeterCyclePresetDefinition {
   readonly cycle: readonly BarMeterSignature[];
 }
 
-/** Seven extended UI/engine presets (cycles only; Classic / Black Page remain in-app defaults). */
+/** Extended UI/engine presets (cycles only; Classic / Black Page remain in-app defaults). */
 export const ZAPPA_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
   {
     id: 'zappa_oh_no',
@@ -77,6 +77,11 @@ export const ZAPPA_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePrese
     id: 'zappa_factory',
     label: 'Factory (5/4)',
     cycle: [{ numerator: 5, denominator: 4 }],
+  },
+  {
+    id: 'zappa_black_napkins',
+    label: 'Black Napkins (6/8)',
+    cycle: [{ numerator: 6, denominator: 8 }],
   },
 ];
 
