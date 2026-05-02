@@ -14,7 +14,7 @@ export interface SoloNote {
   /** Primary tuplet vocabulary pools (Zappa PDF research). */
   tupletRole?: 'septuplet' | 'quintuplet' | 'plain';
   /** Structural markers for receipts / analysis. */
-  marker?: 'descending_minor_sixth' | 'tetrachord_0137' | 'factory_32nd_shift';
+  marker?: 'descending_minor_sixth' | 'tetrachord_0137' | 'factory_32nd_shift' | 'density_minimum_pad';
 }
 
 /** One 7/8-bar rhythmic cell for Zappa Musicality Phase 1 (eighth-note groups sum to 7). */

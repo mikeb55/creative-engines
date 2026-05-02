@@ -23,10 +23,11 @@ const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
-const D1_POLYTONAL_RATE = 0.38;
+/** Elevated vs baseline so polytonal + altered juxtaposition fire before xenochrony; aim ≥40% bars with altered/jazz-dense colour. */
+const D1_POLYTONAL_RATE = 0.48;
 const D2_METRIC_DISPLACEMENT_RATE = 0.32;
-const D3_XENOCHRONY_RATE = 0.28;
-const D4_STYLE_JUXTAPOSITION_RATE = 0.26;
+const D3_XENOCHRONY_RATE = 0.2;
+const D4_STYLE_JUXTAPOSITION_RATE = 0.42;
 const D5_THROUGH_COMPOSED_CUT_RATE = 0.22;
 
 function pitchClassToSharpName(pc: number): string {
@@ -280,14 +281,14 @@ function pickDeviceForBar(
   if (eligible.d5 && secStart && b > 1 && seededUnit(seed, b, 907501) < D5_THROUGH_COMPOSED_CUT_RATE) {
     return 'd5';
   }
-  if (eligible.d3 && seededUnit(seed, b, 907301) < D3_XENOCHRONY_RATE) {
-    return 'd3';
-  }
   if (eligible.d1 && seededUnit(seed, b, 907101) < D1_POLYTONAL_RATE) {
     return 'd1';
   }
   if (eligible.d4 && seededUnit(seed, b, 907401) < D4_STYLE_JUXTAPOSITION_RATE) {
     return 'd4';
+  }
+  if (eligible.d3 && seededUnit(seed, b, 907301) < D3_XENOCHRONY_RATE) {
+    return 'd3';
   }
   if (eligible.d2 && seededUnit(seed, b, 907201) < D2_METRIC_DISPLACEMENT_RATE) {
     return 'd2';

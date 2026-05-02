@@ -94,7 +94,7 @@ const PART_ABBREV: Record<string, string> = {
   sq_piano: 'Pno.',
   guitar: 'Gtr.',
   bass: 'Bas.',
-  zappa_solo: 'Z.Solo',
+  zappa_solo: 'Elec.',
 };
 
 /** Quarter-note BPM for MusicXML metronome / sound — export options override score model; default 120. */
@@ -677,8 +677,10 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
           return `    <score-part id="${p.id}">
       <part-name>Piano</part-name>
       <part-abbreviation>Pno.</part-abbreviation>
-      <score-instrument id="${p.id}-I1"><instrument-name>Piano</instrument-name>
-        <instrument-sound>keyboard.piano</instrument-sound></score-instrument>
+      <score-instrument id="${p.id}-I1">
+        <instrument-name>Piano</instrument-name>
+        <instrument-sound>keyboard.piano</instrument-sound>
+      </score-instrument>
       <midi-instrument id="${p.id}-I1">
         <midi-channel>1</midi-channel>
         <midi-program>1</midi-program>
@@ -687,13 +689,14 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         }
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
+        const scoreInstName = p.scoreInstrumentName ?? display;
         const soundEl = instrumentSoundXmlForPart(p);
         const abbrev = PART_ABBREV[p.id] ?? '';
         const partAbbrevXml = abbrev ? `\n      <part-abbreviation>${escapeXml(abbrev)}</part-abbreviation>` : '';
         const midiInstrumentBody = `        <midi-program>${mxProg}</midi-program>`;
         return `    <score-part id="${p.id}">
       <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
-      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(display)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
+      <score-instrument id="${p.id}-I1"><instrument-name>${escapeXml(scoreInstName)}</instrument-name>${soundEl ? `\n        ${soundEl}` : ''}</score-instrument>
       <midi-instrument id="${p.id}-I1">
 ${midiInstrumentBody}
       </midi-instrument>
@@ -796,16 +799,14 @@ ${partList}
             ? assertLocked[i]
             : undefined;
         const chordForHarmony = lockedChord ?? m.chord;
-        const isLeadSheetGuitarPart = part.instrumentIdentity === 'clean_electric_guitar';
-        const isEnsembleHarmonyGuidePart =
-          isBigBandPianoPart(part) || isStringQuartetPianoPart(part);
-        if (
-          (isLeadSheetGuitarPart || isEnsembleHarmonyGuidePart) &&
+        /** Lead-sheet chord symbols: duo harmony staff only (`guitar` / ensemble piano), never bass or Zappa solo. */
+        const writesLeadSheetHarmony =
           chordForHarmony &&
-          !opts.omitChordSymbols
-        ) {
+          !opts.omitChordSymbols &&
+          (part.id === 'guitar' || isBigBandPianoPart(part) || isStringQuartetPianoPart(part));
+        if (writesLeadSheetHarmony) {
           if (
-            isLeadSheetGuitarPart &&
+            part.id === 'guitar' &&
             assertLocked &&
             assertLocked.length === orderedMeasures.length &&
             i < assertLocked.length

@@ -6,13 +6,17 @@ Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth
 
 ## 1. Status
 
-Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, **`zappasoloEngine.ts`** (`soloLineToPartModel` + **`mergeZappaSoloPart`**), **`generateGoldenPathDuoScore.ts`** (comp part + **`songModePresentAsPianoComp`**), **`musicxmlExporter.ts`** / **`guitarBassDuoExportNames.ts`** (bass label), **`frankZappaSliceSmoke.test.ts`** (odd meter rows).
+Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, **`zappasoloEngine.ts`** (`soloLineToPartModel` + **`mergeZappaSoloPart`**), **`generateGoldenPathDuoScore.ts`** (comp part + **`songModePresentAsPianoComp`**), **`musicxmlExporter.ts`** / **`guitarBassDuoExportNames.ts`** (bass label), **`frankZappaSlice.ts`** (device rates), **`frankZappaSliceSmoke.test.ts`** (odd meter rows).
 
-**MusicXML instruments (Frank Zappa trio):** **Piano** (comp / harmony staff, GM **1**); **Upright Bass** (unchanged); **Electric Guitar** solo staff **`Zappa Solo (Elec. Gtr)`** (GM **27**).
+**MusicXML instruments (Frank Zappa trio):** **Piano** (comp / harmony, GM **1**); **Upright Bass**; **Elec. Gtr** solo (**`<part-name>Elec. Gtr</part-name>`**, **`<instrument-name>Electric Guitar</instrument-name>`**, GM **27** / `midiProgram` **26**).
 
+- **Instrumentation (export):** **Piano** / **Upright Bass** / **Elec. Gtr** — **LIVE**.
+- **Solo density:** minimum **2** notes per bar enforced after solo passes (chord-tone pad where needed; default generation density **medium** / **0.72** when tiers omit density) — **LIVE**.
+- **Harmony devices:** **d1** (polytonal) / **d4** (style juxtaposition) stochastic rates **48%** / **42%** in **`precomputeFrankZappaEffectiveHarmonyBars`** (more **7alt** / m7b5 / altered colour) — **LIVE**.
+- **Chord symbols:** lead-sheet **`<harmony>`** on the **Piano** part only; **not** on the **Upright Bass** staff — **LIVE**.
 - **Green receipt:** When **`exportIntegrityPassed`** / export integrity is true, the generation receipt uses the success (green) styling even if **`readiness.shareable`** is false; amber label **Generated (not shareable)** in that case — **LIVE**.
 - **Solo pitch clamp (export):** After **`+24`** semitones, notes are dropped by octave until ≤ **84**, then hard-clamped to **MIDI 84** (default written range **52–84**); **no** MusicXML **`<octave>7</octave>`** on the **`zappa_solo`** part — **LIVE**.
-- **Staff labels / instruments / part-list:** **`<part-name>Piano</part-name>`** on the comp staff ( **`songModePresentAsPianoComp`**, **`generateGoldenPathDuoScore`** / phrase-first Zappa path, **`musicxmlExporter`** piano branch → GM **1**); bass **Upright Bass**; solo **Zappa Solo (Elec. Gtr)** (GM **27**) — **LIVE**.
+- **Staff labels / part-list / instruments:** **`<part-name>Piano</part-name>`** + **`<instrument-name>Piano</instrument-name>`** on the comp staff (**`songModePresentAsPianoComp`**, **`generateGoldenPathDuoScore`** / phrase-first Zappa, **`musicxmlExporter`** piano branch → GM **1**); bass **Upright Bass**; solo **Elec. Gtr** + **Electric Guitar** instrument name (GM **27**) — **LIVE**.
 - **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** in **`frankZappaSliceSmoke.test.ts`** (builtin + **`custom_locked`** rows) uses seed **77777** (phrase cadence / motif gates; replaces **50200**) — **LIVE**.
 - **GCE Quality 8.3/10** — green receipt confirmed **2026-05-02** (see **`docs/GCE_FRAMEWORK_V2.md`** / Generate receipts).
 - **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
@@ -74,7 +78,7 @@ Product polish + export ergonomics (2026-05-02):
 
 - **Receipt:** Green border / success panel when **`exportIntegrityPassed`** is true (even when not shareable); red only on explicit integrity failure, **`success === false`**, or client error; amber **Generated (not shareable)** when integrity passes but **`readiness.shareable`** is false — **`HomeGenerate.tsx`**.
 - **Solo octave / range:** **`soloLineToPartModel`** raises written pitches **+24** semitones with **hard ceiling MIDI 84** (no octave **7** in exported **`zappa_solo`** XML); **`zappaSoloOptionsFromTiers`** / solo defaults use **52–84** MIDI for generation.
-- **Staff labels:** Comp staff **`Piano`** (**`generateGoldenPathDuoScore`** + phrase-first Zappa + **`musicxmlExporter`** → **`<part-name>Piano</part-name>`** + GM **1**); bass **`Upright Bass`**; solo **`Zappa Solo (Elec. Gtr)`** (**`soloLineToPartModel`**, GM **27**).
+- **Staff labels:** Comp staff **`Piano`** (**`generateGoldenPathDuoScore`** + phrase-first Zappa + **`musicxmlExporter`** → **`<part-name>Piano</part-name>`** + GM **1**); bass **`Upright Bass`**; solo **`Elec. Gtr`** / **`Electric Guitar`** (**`soloLineToPartModel`** + **`scoreInstrumentName`**, GM **27**).
 - **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** (seed **77777**), export integrity, strict bar math, MusicXML checks (**Piano** part-name; **`zappa_solo`** without **`<octave>7</octave>`**).
 
 ---

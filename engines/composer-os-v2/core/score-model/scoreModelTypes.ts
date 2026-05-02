@@ -135,6 +135,8 @@ export interface PartModel {
   measures: MeasureModel[];
   /** Song Mode keyboard-centric writer: export harmony staff as Piano / keys comp (same event layout as duo guitar). */
   songModePresentAsPianoComp?: boolean;
+  /** MusicXML `<instrument-name>` inside `<score-instrument>` (defaults to part display name when omitted). */
+  scoreInstrumentName?: string;
   /** Optional voice role for dual-electric chord/melody shaping (future ArrangementIntent hook). */
   voiceRole?: DuoElectricVoiceRole;
   /** 0–1: probability roll for adding chord tones on voice 2 from voice-1 anchors (deterministic per bar). */

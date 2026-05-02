@@ -109,11 +109,12 @@ export function runZappaSoloSmokeTests(): { name: string; ok: boolean }[] {
 
   const xr = exportScoreModelToMusicXml(score, { barMeterMap: MIXED_MAP, omitChordSymbols: true });
   const xml = xr.xml ?? '';
+  const zappaPartList = xml.match(/<score-part id="zappa_solo">[\s\S]*?<\/score-part>/)?.[0] ?? '';
   const partOk =
     xr.success &&
-    xml.includes('id="zappa_solo"') &&
-    xml.includes('Zappa Solo') &&
-    /<score-part[^>]*id="zappa_solo"/.test(xml);
+    zappaPartList.includes('<part-name>Elec. Gtr</part-name>') &&
+    zappaPartList.includes('<instrument-name>Electric Guitar</instrument-name>') &&
+    /<part id="zappa_solo"/.test(xml);
 
   out.push({
     ok: receiptOk && m6Ok && t0137Ok && partOk,

@@ -42,6 +42,9 @@ const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const ZAPPA_SOLO_DEFAULT_MIDI_LOW = 52;
 const ZAPPA_SOLO_DEFAULT_MIDI_HIGH = 84;
 const ZAPPA_SOLO_EXPORT_MIDI_SHIFT = 24;
+/** Matches `medium` tier in {@link zappaSoloOptionsFromTiers} when options omit density. */
+const ZAPPA_SOLO_DEFAULT_DENSITY_NUMERIC = 0.72;
+const ZAPPA_SOLO_MIN_NOTES_PER_BAR = 2;
 
 /**
  * Written MIDI for Zappa solo export: +24 shift, then while &gt; 84 subtract 12, then hard clamp to 84.
@@ -79,6 +82,52 @@ function liftIntoRange(midi: number, low: number, high: number): number {
   while (p < low) p += 12;
   while (p > high) p -= 12;
   return Math.max(low, Math.min(high, p));
+}
+
+/**
+ * After motif / guide-tone / collapse passes, a bar can end with fewer than two attacks — pad with chord tones
+ * (odd-meter safe; does not run before phrase packaging).
+ */
+function enforceMinimumZappaSoloNotesPerBar(params: {
+  allNotes: SoloNote[];
+  tb: number;
+  chords: string[];
+  low: number;
+  high: number;
+  seed: number;
+  map: BarMeterMap | undefined;
+}): void {
+  const { allNotes, tb, chords, low, high, seed, map } = params;
+  for (let b = 1; b <= tb; b++) {
+    const inBar = allNotes.filter((n) => n.barIndex === b);
+    const count = inBar.length;
+    if (count >= ZAPPA_SOLO_MIN_NOTES_PER_BAR) continue;
+    const need = ZAPPA_SOLO_MIN_NOTES_PER_BAR - count;
+    const chord = chords[b - 1] ?? 'C7alt';
+    const t = chordTonesForChordSymbol(chord, { lockedHarmony: true });
+    const pool: number[] = [t.root, t.third, t.fifth, t.seventh].filter((x) => typeof x === 'number' && Number.isFinite(x));
+    if (pool.length < 2) {
+      pool.push(t.root, (t.third ?? t.root + 4) as number);
+    }
+    const span = measureQuarterSpanForBar(b, map);
+    for (let a = 0; a < need; a++) {
+      const salt = a + count * 7;
+      const midiRaw = pool[(seed + b * 131 + salt) % pool.length]!;
+      const midi = Math.round(liftIntoRange(midiRaw, low, high));
+      const t0 = ((seed + b * 17 + salt * 13) % 1000) / 1000;
+      const startBeat = Math.min(span * 0.88, t0 * Math.max(0.12, span * 0.65) + a * 0.22);
+      const dur = Math.min(0.45, Math.max(0.1, span * 0.2));
+      allNotes.push({
+        midi,
+        startBeat,
+        durationBeats: dur,
+        barIndex: b,
+        tupletRole: 'plain',
+        marker: 'density_minimum_pad',
+      });
+    }
+  }
+  allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
 }
 
 /** Quarter-note span of one measure for the given bar. */
@@ -972,7 +1021,7 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   const high = options?.midiHigh ?? ZAPPA_SOLO_DEFAULT_MIDI_HIGH;
 
   const allNotes: SoloNote[] = [];
-  const density = options?.density ?? 1;
+  const density = options?.density ?? ZAPPA_SOLO_DEFAULT_DENSITY_NUMERIC;
 
   for (let b = 1; b <= tb; b++) {
     const chord = chords[b - 1] ?? 'C7alt';
@@ -1015,13 +1064,25 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
       );
     }
     if (barNotes.length === 0 && density > 0.05) {
-      const t = chordTonesForChordSymbol(chord);
-      const m = liftIntoRange((t.third ?? t.root + 4), low, high);
+      const t = chordTonesForChordSymbol(chord, { lockedHarmony: true });
+      const m1 = liftIntoRange(t.third ?? t.root + 4, low, high);
+      const m2 = liftIntoRange(t.seventh ?? t.root + 10, low, high);
+      const d1 = Math.min(0.4, bodySpan * 0.32);
+      const d2 = Math.min(0.38, bodySpan * 0.3);
+      const s2 = reservedFront + Math.min(bodySpan - d2 - 0.06, bodySpan * 0.42);
       barNotes = [
         {
-          midi: m,
+          midi: m1,
           startBeat: reservedFront,
-          durationBeats: Math.min(0.45, bodySpan * 0.35),
+          durationBeats: d1,
+          barIndex: b,
+          tupletRole,
+          marker: undefined,
+        },
+        {
+          midi: m2,
+          startBeat: s2,
+          durationBeats: d2,
           barIndex: b,
           tupletRole,
           marker: undefined,
@@ -1085,6 +1146,11 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   applyZappaGuideTonePitchNudges(allNotes, tb, zappaGuideToneReceipt, low, high);
   const phraseTargets = applyZappaPhraseGoalTargeting(allNotes, tb, zappaGuideToneReceipt, seed, low, high);
   zappaGuideToneReceipt = { ...zappaGuideToneReceipt, phraseTargets };
+  normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
+  collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
+  normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
+
+  enforceMinimumZappaSoloNotesPerBar({ allNotes, tb, chords, low, high, seed, map });
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
   collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
@@ -1180,7 +1246,8 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
 
   return {
     id: 'zappa_solo',
-    name: 'Zappa Solo (Elec. Gtr)',
+    name: 'Elec. Gtr',
+    scoreInstrumentName: 'Electric Guitar',
     instrumentIdentity: 'clean_electric_guitar',
     /** GM Electric Guitar (clean): MusicXML `<midi-program>` = **27** (`midiProgram` is 0-based here → **26**). */
     midiProgram: 26,
