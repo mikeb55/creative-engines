@@ -18,7 +18,7 @@ import {
   type SlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyEngine';
-import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, PartModel, ScoreModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import type {
   SoloLine,
   SoloNote,
@@ -99,7 +99,7 @@ function enforceMinimumZappaSoloNotesPerBar(params: {
 }): void {
   const { allNotes, tb, chords, low, high, seed, map } = params;
   for (let b = 1; b <= tb; b++) {
-    const inBar = allNotes.filter((n) => n.barIndex === b);
+    const inBar = allNotes.filter((n) => n.barIndex === b && !n.isRest);
     const count = inBar.length;
     if (count >= ZAPPA_SOLO_MIN_NOTES_PER_BAR) continue;
     const need = ZAPPA_SOLO_MIN_NOTES_PER_BAR - count;
@@ -135,6 +135,7 @@ function enforceMinimumZappaSoloNotesPerBar(params: {
  * If every bar in the phrase has >2 notes, thin one bar (prefer dropping `density_minimum_pad`) to exactly 2.
  */
 function breathSpacingMayRemoveZappaNote(n: SoloNote): boolean {
+  if (n.isRest) return false;
   return !(
     n.marker === 'descending_minor_sixth' ||
     n.marker === 'tetrachord_0137' ||
@@ -143,20 +144,55 @@ function breathSpacingMayRemoveZappaNote(n: SoloNote): boolean {
   );
 }
 
-function enforceZappaPhraseBreathSpace(params: { allNotes: SoloNote[]; tb: number; seed: number }): void {
-  const { allNotes, tb, seed } = params;
+const MIN_BREATH_REST_BEATS = 0.5;
+
+function pitchedInBar(allNotes: SoloNote[], bar: number): SoloNote[] {
+  return allNotes.filter((n) => n.barIndex === bar && !n.isRest);
+}
+
+function barHasExplicitBreathRest(allNotes: SoloNote[], bar: number): boolean {
+  return allNotes.some(
+    (n) =>
+      n.barIndex === bar &&
+      n.isRest &&
+      n.durationBeats >= MIN_BREATH_REST_BEATS * 0.45 - 1e-4
+  );
+}
+
+function phraseHasBreathSpace(allNotes: SoloNote[], lo: number, hi: number): boolean {
+  for (let b = lo; b <= hi; b++) {
+    if (pitchedInBar(allNotes, b).length <= 2 && barHasExplicitBreathRest(allNotes, b)) return true;
+  }
+  return false;
+}
+
+function stripBreathRestsInBar(allNotes: SoloNote[], bar: number): void {
+  for (let i = allNotes.length - 1; i >= 0; i--) {
+    const n = allNotes[i]!;
+    if (n.barIndex === bar && n.isRest && n.marker === 'zappa_phrase_breath_rest') allNotes.splice(i, 1);
+  }
+}
+
+/**
+ * Each 4-bar phrase needs a breath bar: ≤2 pitched attacks **and** an explicit rest (audible silence).
+ */
+function enforceZappaPhraseBreathSpace(params: {
+  allNotes: SoloNote[];
+  tb: number;
+  seed: number;
+  map: BarMeterMap | undefined;
+}): void {
+  const { allNotes, tb, seed, map } = params;
   const totalPhrases = Math.max(1, Math.ceil(tb / 4));
   for (let pi = 0; pi < totalPhrases; pi++) {
     const lo = pi * 4 + 1;
     const hi = Math.min(tb, (pi + 1) * 4);
-    const perBar: number[] = [];
-    for (let b = lo; b <= hi; b++) {
-      perBar.push(allNotes.filter((n) => n.barIndex === b).length);
-    }
-    if (perBar.some((c) => c <= 2)) continue;
+    if (phraseHasBreathSpace(allNotes, lo, hi)) continue;
+
     const bPick = lo + ((seed + pi * 97) % (hi - lo + 1));
-    let toRemove = perBar[bPick - lo]! - 2;
-    const removable = allNotes
+    stripBreathRestsInBar(allNotes, bPick);
+
+    let removable = allNotes
       .filter((n) => n.barIndex === bPick && breathSpacingMayRemoveZappaNote(n))
       .sort((a, b) => {
         const pa = a.marker === 'density_minimum_pad' ? 0 : 1;
@@ -164,6 +200,7 @@ function enforceZappaPhraseBreathSpace(params: { allNotes: SoloNote[]; tb: numbe
         if (pa !== pb) return pa - pb;
         return b.startBeat - a.startBeat;
       });
+    let toRemove = Math.max(0, pitchedInBar(allNotes, bPick).length - 2);
     for (const n of removable) {
       if (toRemove <= 0) break;
       const j = allNotes.indexOf(n);
@@ -172,8 +209,65 @@ function enforceZappaPhraseBreathSpace(params: { allNotes: SoloNote[]; tb: numbe
         toRemove--;
       }
     }
+
+    const span = measureQuarterSpanForBar(bPick, map);
+    let pitched = pitchedInBar(allNotes, bPick).sort((a, b) => a.startBeat - b.startBeat);
+    while (pitched.length > 2) {
+      const victim = pitched.pop();
+      if (!victim || !breathSpacingMayRemoveZappaNote(victim)) break;
+      const j = allNotes.indexOf(victim);
+      if (j >= 0) allNotes.splice(j, 1);
+    }
+    pitched = pitchedInBar(allNotes, bPick).sort((a, b) => a.startBeat - b.startBeat);
+
+    if (pitched.length === 0) {
+      allNotes.push({
+        isRest: true,
+        midi: 0,
+        startBeat: 0,
+        durationBeats: Math.min(span, Math.max(MIN_BREATH_REST_BEATS, span * 0.35)),
+        barIndex: bPick,
+        tupletRole: 'plain',
+        marker: 'zappa_phrase_breath_rest',
+      });
+      allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
+      continue;
+    }
+
+    let last = pitched[pitched.length - 1]!;
+    let endLast = last.startBeat + last.durationBeats;
+    if (span - endLast < MIN_BREATH_REST_BEATS - 1e-4) {
+      last.durationBeats = Math.max(0.06, span - MIN_BREATH_REST_BEATS - last.startBeat);
+      endLast = last.startBeat + last.durationBeats;
+    }
+    if (span - endLast < MIN_BREATH_REST_BEATS * 0.45 && pitched.length > 1) {
+      const drop = pitched[0]!;
+      if (breathSpacingMayRemoveZappaNote(drop)) {
+        const j = allNotes.indexOf(drop);
+        if (j >= 0) allNotes.splice(j, 1);
+      }
+      pitched = pitchedInBar(allNotes, bPick).sort((a, b) => a.startBeat - b.startBeat);
+      last = pitched[pitched.length - 1]!;
+      endLast = last.startBeat + last.durationBeats;
+      last.durationBeats = Math.max(0.06, Math.min(last.durationBeats, span - MIN_BREATH_REST_BEATS - last.startBeat));
+      endLast = last.startBeat + last.durationBeats;
+    }
+
+    const restDur = Math.max(MIN_BREATH_REST_BEATS * 0.45, span - endLast);
+    if (restDur >= MIN_BREATH_REST_BEATS * 0.35 - 1e-4) {
+      allNotes.push({
+        isRest: true,
+        midi: 0,
+        startBeat: endLast,
+        durationBeats: Math.min(restDur, span - endLast),
+        barIndex: bPick,
+        tupletRole: 'plain',
+        marker: 'zappa_phrase_breath_rest',
+      });
+    }
+
+    allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
   }
-  allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
 }
 
 /** Quarter-note span of one measure for the given bar. */
@@ -304,6 +398,7 @@ function applyZappa78RhythmicCellLockToAllNotes(params: {
 }): void {
   const { allNotes, tb, map, form, lockedPhraseTopCount, skipBars } = params;
   for (const n of allNotes) {
+    if (n.isRest) continue;
     const b = n.barIndex;
     if (b < 1 || b > tb) continue;
     if (skipBars?.has(b)) continue;
@@ -333,18 +428,25 @@ function normalizeSoloNoteRhythmsPerBarForExport(allNotes: SoloNote[], tb: numbe
   for (let b = 1; b <= tb; b++) {
     const span = measureQuarterSpanForBar(b, map);
     const inBar = allNotes.filter((n) => n.barIndex === b).sort((a, c) => a.startBeat - c.startBeat);
-    if (inBar.length === 0) continue;
-    for (let i = 0; i < inBar.length - 1; i++) {
-      const a = inBar[i]!;
-      const nx = inBar[i + 1]!;
+    const pitched = inBar.filter((n) => !n.isRest);
+    if (pitched.length === 0) continue;
+    for (let i = 0; i < pitched.length - 1; i++) {
+      const a = pitched[i]!;
+      const nx = pitched[i + 1]!;
       const maxDur = nx.startBeat - a.startBeat - NORM_EPS;
       if (a.startBeat + a.durationBeats > nx.startBeat + NORM_EPS) {
         a.durationBeats = Math.max(0.06, maxDur);
       }
     }
-    const last = inBar[inBar.length - 1]!;
+    const last = pitched[pitched.length - 1]!;
+    const restAfter = inBar.find((r) => r.isRest && r.startBeat >= last.startBeat - NORM_EPS);
     const tail = last.startBeat + last.durationBeats;
-    if (tail < span - 1e-5) {
+    if (restAfter) {
+      last.durationBeats = Math.max(
+        0.06,
+        Math.min(last.durationBeats, restAfter.startBeat - last.startBeat - NORM_EPS)
+      );
+    } else if (tail < span - 1e-5) {
       last.durationBeats = Math.max(0.06, span - last.startBeat);
     }
   }
@@ -358,7 +460,7 @@ function collapseDuplicateOnsetsPerBarMonophonic(allNotes: SoloNote[], tb: numbe
   const roundK = (x: number) => Math.round(x * 1000) / 1000;
   const drop = new Set<SoloNote>();
   for (let b = 1; b <= tb; b++) {
-    const inBar = allNotes.filter((n) => n.barIndex === b);
+    const inBar = allNotes.filter((n) => n.barIndex === b && !n.isRest);
     const byStart = new Map<number, SoloNote[]>();
     for (const n of inBar) {
       const k = roundK(n.startBeat);
@@ -419,7 +521,7 @@ function normalizePositiveRatios(raw: number[]): number[] {
 
 function sortedMotifSliceNotes(allNotes: SoloNote[], barLo: number, barHi: number): SoloNote[] {
   return allNotes
-    .filter((n) => n.barIndex >= barLo && n.barIndex <= barHi && !isZappaMotifStructuralNote(n))
+    .filter((n) => n.barIndex >= barLo && n.barIndex <= barHi && !isZappaMotifStructuralNote(n) && !n.isRest)
     .sort((a, b) => a.barIndex - b.barIndex || a.startBeat - b.startBeat);
 }
 
@@ -464,7 +566,7 @@ function fragmentSortedNotes(
   devHi: number
 ): SoloNote[] {
   return allNotes
-    .filter((n) => n.barIndex >= devLo && n.barIndex <= devHi && !isZappaMotifStructuralNote(n))
+    .filter((n) => n.barIndex >= devLo && n.barIndex <= devHi && !isZappaMotifStructuralNote(n) && !n.isRest)
     .sort((a, b) => a.barIndex - b.barIndex || a.startBeat - b.startBeat);
 }
 
@@ -530,6 +632,59 @@ function hasZappaSignatureLeap(intervals: readonly number[]): boolean {
   return false;
 }
 
+const DUR_EPS = 1e-4;
+
+function allDurationsEqual(durs: readonly number[]): boolean {
+  if (durs.length <= 1) return true;
+  const r0 = durs[0]!;
+  return durs.every((d) => Math.abs(d - r0) < DUR_EPS);
+}
+
+function hasQuarterOrLong(durs: readonly number[]): boolean {
+  return durs.some((d) => d >= 1 - DUR_EPS);
+}
+
+/** Strong metric anchors: beat 1 (~0) or beat 3 (~2 quarters) in common-time-like spans. */
+function firstNoteStrongBeatRank(first: SoloNote, map: BarMeterMap | undefined): number {
+  const span = measureQuarterSpanForBar(first.barIndex, map);
+  const sb = first.startBeat;
+  if (sb <= 0.12) return 2;
+  if (span >= 2.25 && Math.abs(sb - 2) < 0.22) return 2;
+  if (span >= 1.75 && span < 2.25 && Math.abs(sb - 1.5) < 0.18) return 1;
+  return 0;
+}
+
+function stickyRhythmContrastScore(durs: readonly number[]): number {
+  if (durs.length < 2) return 0;
+  const mx = Math.max(...durs);
+  const mn = Math.min(...durs);
+  const ratio = mx / Math.max(mn, DUR_EPS);
+  const mean = durs.reduce((s, x) => s + x, 0) / durs.length;
+  const dev = durs.reduce((s, x) => s + Math.abs(x - mean), 0) / durs.length;
+  return ratio * 1.12 + dev * 2.5;
+}
+
+/** Ensure anchor has mixed durations + ≥1 quarter-note attack (memorable hook). */
+function enforceStickyAnchorRhythmShape(out: SoloNote[]): void {
+  const durs = out.map((n) => n.durationBeats);
+  if (!hasQuarterOrLong(durs) || allDurationsEqual(durs)) {
+    const n0 = out[0]!;
+    n0.startBeat = 0;
+    n0.durationBeats = Math.max(1.02, n0.durationBeats);
+    if (out.length > 1) {
+      const n1 = out[1]!;
+      n1.startBeat = n0.startBeat + n0.durationBeats + 0.04;
+      n1.durationBeats = Math.min(0.44, Math.max(0.14, 0.22));
+    }
+    if (out.length > 2) {
+      const n2 = out[2]!;
+      const n1 = out[1]!;
+      n2.startBeat = n1.startBeat + n1.durationBeats + 0.05;
+      n2.durationBeats = Math.min(0.5, Math.max(0.12, 0.28));
+    }
+  }
+}
+
 function applyForcedZappaLeap(
   notes: SoloNote[],
   chordSymbol: string,
@@ -545,27 +700,30 @@ function applyForcedZappaLeap(
     const sign = seededUnit(seed, 761) < 0.5 ? 1 : -1;
     let p1 = liftIntoRange(p0 + sign * leap, low, high);
     let p2 = liftIntoRange(p1 + (seededUnit(seed, 762) < 0.5 ? 2 : -2), low, high);
+    const q1 = 1.05;
+    const q2 = 0.24;
+    const q3 = 0.28;
     return [
       {
         midi: Math.round(p0),
         startBeat: 0,
-        durationBeats: 0.28,
+        durationBeats: q1,
         barIndex: defaultBar,
         tupletRole: 'plain',
         marker: undefined,
       },
       {
         midi: Math.round(p1),
-        startBeat: 0.32,
-        durationBeats: 0.28,
+        startBeat: q1 + 0.04,
+        durationBeats: q2,
         barIndex: defaultBar,
         tupletRole: 'plain',
         marker: undefined,
       },
       {
         midi: Math.round(p2),
-        startBeat: 0.64,
-        durationBeats: 0.28,
+        startBeat: q1 + 0.04 + q2 + 0.05,
+        durationBeats: q3,
         barIndex: defaultBar,
         tupletRole: 'plain',
         marker: undefined,
@@ -574,7 +732,10 @@ function applyForcedZappaLeap(
   }
   const out = notes.slice(0, MOTIF_STICKY_MAX_NOTES).map((n) => ({ ...n }));
   let ints = computeFragmentIntervals(out);
-  if (hasZappaSignatureLeap(ints)) return out;
+  if (hasZappaSignatureLeap(ints)) {
+    enforceStickyAnchorRhythmShape(out);
+    return out;
+  }
   const leap = seededUnit(seed, 763) < 0.5 ? 6 : 8;
   const dir = seededUnit(seed, 764) < 0.5 ? 1 : -1;
   if (out.length >= 2) {
@@ -588,6 +749,7 @@ function applyForcedZappaLeap(
   if (!hasZappaSignatureLeap(ints) && out.length >= 2) {
     out[1]!.midi = liftIntoRange(out[0]!.midi + (seededUnit(seed, 766) < 0.5 ? 6 : -6), low, high);
   }
+  enforceStickyAnchorRhythmShape(out);
   return out;
 }
 
@@ -598,7 +760,8 @@ function selectStickyMotifSlice(
   high: number,
   seed: number,
   salt: number,
-  defaultBar: number
+  defaultBar: number,
+  map: BarMeterMap | undefined
 ): SoloNote[] {
   if (raw.length === 0) return raw;
   type Cand = { notes: SoloNote[]; len: number; start: number };
@@ -608,18 +771,31 @@ function selectStickyMotifSlice(
       const window = raw.slice(start, start + len).map((n) => ({ ...n }));
       const ints = computeFragmentIntervals(window);
       if (!hasZappaSignatureLeap(ints)) continue;
+      const durs = window.map((n) => n.durationBeats);
+      if (allDurationsEqual(durs)) continue;
+      if (!hasQuarterOrLong(durs)) continue;
       candidates.push({ notes: window, len, start });
     }
   }
   if (candidates.length) {
     candidates.sort((a, b) => {
+      const fa = a.notes[0]!;
+      const fb = b.notes[0]!;
+      const sb = firstNoteStrongBeatRank(fa, map) - firstNoteStrongBeatRank(fb, map);
+      if (sb !== 0) return sb > 0 ? -1 : 1;
+      const da = a.notes.map((n) => n.durationBeats);
+      const db = b.notes.map((n) => n.durationBeats);
+      const ra = stickyRhythmContrastScore(da) - stickyRhythmContrastScore(db);
+      if (Math.abs(ra) > 1e-6) return ra > 0 ? -1 : 1;
       if (b.len !== a.len) return b.len - a.len;
       if (a.start !== b.start) return a.start - b.start;
       return (
         seededUnit(seed, salt + a.start * 17 + a.len) - seededUnit(seed, salt + b.start * 17 + b.len)
       );
     });
-    return candidates[0]!.notes;
+    const win = candidates[0]!.notes.map((n) => ({ ...n }));
+    enforceStickyAnchorRhythmShape(win);
+    return win;
   }
   const take = Math.min(MOTIF_STICKY_MAX_NOTES, Math.max(MOTIF_STICKY_MIN_NOTES, raw.length));
   const base = raw.slice(0, take).map((n) => ({ ...n }));
@@ -678,7 +854,7 @@ function thinBarToMaxAttackCount(allNotes: SoloNote[], bar: number, maxNotes: nu
   };
   let guard = 0;
   while (guard++ < 512) {
-    const count = allNotes.filter((n) => n.barIndex === bar).length;
+    const count = allNotes.filter((n) => n.barIndex === bar && !n.isRest).length;
     if (count <= maxNotes) break;
     const removable = allNotes
       .filter((n) => n.barIndex === bar && removableRank(n) >= 0)
@@ -784,6 +960,7 @@ function removeRepairableNotesInRange(allNotes: SoloNote[], devLo: number, devHi
   for (let i = allNotes.length - 1; i >= 0; i--) {
     const n = allNotes[i]!;
     if (n.barIndex < devLo || n.barIndex > devHi) continue;
+    if (n.isRest) continue;
     if (isZappaMotifStructuralNote(n)) continue;
     allNotes.splice(i, 1);
   }
@@ -859,7 +1036,7 @@ function applyZappaMotifOwnershipPhase2(params: {
     const barHi = Math.min(sec.startBar + (MOTIF_ANCHOR_BAR_SPAN - 1), endBar);
     const chordSym = chords[sec.startBar - 1] ?? 'C7alt';
     let slice = sortedMotifSliceNotes(allNotes, sec.startBar, barHi);
-    slice = selectStickyMotifSlice(slice, chordSym, low, high, seed, sec.startBar * 31 + sec.length, sec.startBar);
+    slice = selectStickyMotifSlice(slice, chordSym, low, high, seed, sec.startBar * 31 + sec.length, sec.startBar, map);
     const anchor = buildInternalAnchorFromNotes(sec.label.trim(), sec.startBar, barHi, endBar, map, slice);
     if (anchor) {
       anchorsInternal.push(anchor);
@@ -1436,7 +1613,7 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
 
   enforceMinimumZappaSoloNotesPerBar({ allNotes, tb, chords, low, high, seed, map });
-  enforceZappaPhraseBreathSpace({ allNotes, tb, seed });
+  enforceZappaPhraseBreathSpace({ allNotes, tb, seed, map });
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
   collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
@@ -1516,17 +1693,24 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
   const measures: MeasureModel[] = [];
   for (let b = 1; b <= totalBars; b++) {
     const notes = (byBar.get(b) ?? []).sort((a, c) => a.startBeat - c.startBeat);
-    const events: NoteEvent[] = notes.map((sn) => ({
-      kind: 'note',
-      pitch: zappaSoloExportWrittenMidi(sn.midi),
-      startBeat: sn.startBeat,
-      duration: sn.durationBeats,
-      voice: 1,
-      motifRef:
-        [sn.tupletRole && sn.tupletRole !== 'plain' ? `zappa_tuplet:${sn.tupletRole}` : '', sn.marker ? `zappa:${sn.marker}` : '']
-          .filter(Boolean)
-          .join('|') || undefined,
-    }));
+    const events: ScoreEvent[] = [];
+    for (const sn of notes) {
+      if (sn.isRest) {
+        events.push({ kind: 'rest', startBeat: sn.startBeat, duration: sn.durationBeats, voice: 1 });
+        continue;
+      }
+      events.push({
+        kind: 'note',
+        pitch: zappaSoloExportWrittenMidi(sn.midi),
+        startBeat: sn.startBeat,
+        duration: sn.durationBeats,
+        voice: 1,
+        motifRef:
+          [sn.tupletRole && sn.tupletRole !== 'plain' ? `zappa_tuplet:${sn.tupletRole}` : '', sn.marker ? `zappa:${sn.marker}` : '']
+            .filter(Boolean)
+            .join('|') || undefined,
+      });
+    }
     measures.push({ index: b, events });
   }
 

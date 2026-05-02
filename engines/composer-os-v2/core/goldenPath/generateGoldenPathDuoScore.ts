@@ -4712,10 +4712,8 @@ function applyFrankZappaImpliedInnerVoicePass(score: ScoreModel, context: Compos
 
   const form = context.form;
   if (form?.sections?.length) {
-    for (const sec of form.sections) {
-      const lo = sec.startBar;
-      const hi = sec.startBar + sec.length - 1;
-      let hasContrary = false;
+    const countContraryGestures = (lo: number, hi: number): number => {
+      let c = 0;
       for (let b = Math.max(2, lo); b <= hi; b++) {
         const gt = guitarTopMelodyEvent(b);
         const gPrev = guitarTopMelodyEvent(b - 1);
@@ -4724,25 +4722,35 @@ function applyFrankZappaImpliedInnerVoicePass(score: ScoreModel, context: Compos
         if (!gt || !gPrev || bs === undefined || bsPrev === undefined) continue;
         const dMel = gt.pitch - gPrev.pitch;
         const dBs = bs - bsPrev;
-        if (dMel * dBs < 0 && Math.abs(dMel) > 0.75 && Math.abs(dBs) > 0.75) {
-          hasContrary = true;
-          break;
-        }
+        if (dMel * dBs < 0 && Math.abs(dMel) > 0.75 && Math.abs(dBs) > 0.75) c++;
       }
-      if (!hasContrary) {
-        const mid = Math.min(hi, Math.max(lo, Math.floor((lo + hi) / 2)));
-        const gCur = guitarTopMelodyEvent(mid);
-        const gPrev = guitarTopMelodyEvent(mid - 1);
-        const bs = bassMeanPitch(mid);
-        const bsPrev = bassMeanPitch(mid - 1);
-        if (gCur && gPrev && bs !== undefined && bsPrev !== undefined) {
-          const dBs = bs - bsPrev;
-          gCur.pitch = Math.max(
-            40,
-            Math.min(88, gCur.pitch + (dBs >= 0 ? -2 : 2))
-          );
-          contraryDone.push(sec.label.trim());
-        }
+      return c;
+    };
+
+    const nudgeGuitarForContraryAt = (mid: number): boolean => {
+      const gCur = guitarTopMelodyEvent(mid);
+      const gPrev = guitarTopMelodyEvent(mid - 1);
+      const bs = bassMeanPitch(mid);
+      const bsPrev = bassMeanPitch(mid - 1);
+      if (!gCur || !gPrev || bs === undefined || bsPrev === undefined) return false;
+      const dBs = bs - bsPrev;
+      gCur.pitch = Math.max(40, Math.min(88, gCur.pitch + (dBs >= 0 ? -2 : 2)));
+      return true;
+    };
+
+    for (const sec of form.sections) {
+      const lo = sec.startBar;
+      const hi = sec.startBar + sec.length - 1;
+      const picks = [
+        Math.min(hi, Math.max(lo, Math.floor((lo + hi) / 2))),
+        Math.min(hi, lo + 1),
+        Math.min(hi, Math.max(lo, hi - 1)),
+      ];
+      let attempt = 0;
+      while (countContraryGestures(lo, hi) < 2 && attempt < picks.length) {
+        const mid = picks[attempt]!;
+        if (mid >= 2 && nudgeGuitarForContraryAt(mid)) contraryDone.push(sec.label.trim());
+        attempt++;
       }
     }
   }
@@ -4801,19 +4809,20 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
       );
     }
 
-    if (bassLeads) {
+    const bassAnticipatesGuitar = seededUnit(seed, 968 + si) < 0.38;
+
+    const emitGuitarEchoesBass = (echoBar: number, bnoteLimit: number): void => {
       const bm0 = bass.measures.find((m) => m.index === lo);
-      if (!bm0) continue;
+      if (!bm0) return;
       const bnotes = bm0.events
         .filter((e) => e.kind === 'note')
         .sort((a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat) as NoteEvent[];
-      if (bnotes.length === 0) continue;
-      const echoBar = Math.min(hi, lo + 1);
+      if (bnotes.length === 0) return;
       const gm = guitar.measures.find((m) => m.index === echoBar);
-      if (!gm) continue;
+      if (!gm) return;
       const span = measureBeatSpanQuartersOf(gm);
       let added = 0;
-      for (const bn of bnotes.slice(0, 4)) {
+      for (const bn of bnotes.slice(0, bnoteLimit)) {
         const st = bn.startBeat + delayBeats;
         if (st >= span - 0.05) continue;
         const pitch = Math.max(40, Math.min(88, bn.pitch + 12));
@@ -4833,7 +4842,9 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
           echoBar,
         });
       }
-    } else {
+    };
+
+    const emitBassEchoesGuitar = (echoBar: number, gnoteLimit: number, anticipate: boolean): void => {
       const collected: NoteEvent[] = [];
       for (const bb of [lo, lo + 1]) {
         if (bb > hi) continue;
@@ -4844,14 +4855,14 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
         }
       }
       collected.sort((a, b) => a.startBeat - b.startBeat);
-      if (collected.length === 0) continue;
-      const echoBar = Math.min(hi, lo + (seededUnit(seed, 964 + si) < 0.55 ? 1 : 2));
+      if (collected.length === 0) return;
       const bm = bass.measures.find((m) => m.index === echoBar);
-      if (!bm) continue;
+      if (!bm) return;
       const span = measureBeatSpanQuartersOf(bm);
       let added = 0;
-      for (const gn of collected.slice(0, 5)) {
-        const st = gn.startBeat + delayBeats;
+      const off = delayBeats + (anticipate ? -1 : 0);
+      for (const gn of collected.slice(0, gnoteLimit)) {
+        const st = Math.max(0, gn.startBeat + off);
         if (st >= span - 0.05) continue;
         const pitch = clampPitch(gn.pitch - 12, walkLow, bassCeiling);
         addEvent(bm, createNote(pitch, st, Math.min(gn.duration, span - st)));
@@ -4866,6 +4877,33 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
           delayBeats,
           echoBar,
         });
+      }
+    };
+
+    /** Primary + secondary imitation each section (more guitar↔bass dialogue). */
+    const echoPrimaryGuitar = Math.min(hi, lo + 1);
+    const echoPrimaryBass = Math.min(hi, lo + (seededUnit(seed, 964 + si) < 0.55 ? 1 : 2));
+
+    /** Avoid stacking both imitation passes in the same measure when the section is short. */
+    const distinctEchoBar = (primary: number, preferred: number): number | null => {
+      let b = Math.min(hi, Math.max(lo, preferred));
+      if (b !== primary) return b;
+      if (primary + 1 <= hi) return primary + 1;
+      if (primary - 1 >= lo) return primary - 1;
+      return null;
+    };
+
+    if (bassLeads) {
+      emitGuitarEchoesBass(echoPrimaryGuitar, 4);
+      const echoSecondaryBass = distinctEchoBar(echoPrimaryGuitar, Math.min(hi, lo + 2 + (si % 2)));
+      if (echoSecondaryBass !== null) {
+        emitBassEchoesGuitar(echoSecondaryBass, 2, bassAnticipatesGuitar);
+      }
+    } else {
+      emitBassEchoesGuitar(echoPrimaryBass, 5, bassAnticipatesGuitar);
+      const echoSecondaryGuitar = distinctEchoBar(echoPrimaryBass, Math.min(hi, lo + 1 + (si % 2)));
+      if (echoSecondaryGuitar !== null) {
+        emitGuitarEchoesBass(echoSecondaryGuitar, 2);
       }
     }
   }
