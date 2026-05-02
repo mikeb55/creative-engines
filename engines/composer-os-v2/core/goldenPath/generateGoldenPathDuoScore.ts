@@ -3092,7 +3092,7 @@ function buildGuitarPart(
 
   return {
     id: 'guitar',
-    /** MusicXML export uses acoustic-grand piano part-list / GM 1 when **`songModePresentAsPianoComp`** (internal label `Piano`; exporter writes Acoustic Grand Piano). */
+    /** MusicXML export uses piano part-list / GM 1 when **`songModePresentAsPianoComp`** (`<part-name>Piano</part-name>`, etc.). */
     name: isSongwriterFrankZappa ? 'Piano' : 'Clean Electric Guitar',
     instrumentIdentity: profile.instrumentIdentity,
     /** GM Acoustic Grand (0-based); MusicXML piano branch writes `<midi-program>1</midi-program>`. */

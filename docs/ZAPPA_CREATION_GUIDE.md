@@ -8,23 +8,24 @@ Composer OS Song Mode + duo golden path: harmony slice, odd meters, export truth
 
 Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, **`zappasoloEngine.ts`** (`soloLineToPartModel` + **`mergeZappaSoloPart`**), **`generateGoldenPathDuoScore.ts`** (comp part + **`songModePresentAsPianoComp`**), **`musicxmlExporter.ts`** / **`guitarBassDuoExportNames.ts`** (bass label), **`frankZappaSlice.ts`** (device rates), **`frankZappaSliceSmoke.test.ts`** (odd meter rows).
 
-**MusicXML instruments (Frank Zappa trio):** **Acoustic Grand Piano** (comp / harmony, GM **1** — **`<part-name>Acoustic Grand Piano</part-name>`**, **`<instrument-name>Acoustic Grand Piano</instrument-name>`**); **Upright Bass**; **Elec. Gtr** solo (**`<part-name>Elec. Gtr</part-name>`**, **`<instrument-name>Electric Guitar</instrument-name>`**, GM **27** / `midiProgram` **26**).
+**MusicXML instruments (Frank Zappa trio):** **Piano** (comp / harmony, GM **1** — **`<part-name>Piano</part-name>`**, **`<instrument-name>Piano</instrument-name>`** — matches Sibelius instrument-library matching); **Upright Bass**; **Elec. Gtr** solo (**`<part-name>Elec. Gtr</part-name>`**, **`<instrument-name>Electric Guitar</instrument-name>`**, GM **27** / `midiProgram` **26**).
+
+**Piano staff label in Sibelius:** MusicXML exports **`Piano`** only. Full/long names on the printed staff are a **Sibelius engraving preference**, not forced by this XML — set manually: **House Styles → Engraving Rules → Instruments → At start → Full names** (or equivalent).
 
 ### Product verification (2026-05-02)
 
-- **Sibelius schema error fixed** — measure-level **`<staff-details>`** / **`<staff-label>`** (non–schema-safe in this pipeline) **removed**; part-list names only — **LIVE**.
-- **Acoustic Grand Piano label in XML** — part-list **`<part-name>`** / **`<instrument-name>`** use **Acoustic Grand Piano**; **Sibelius on-score staff label** from that part-list may still need a product pass — **LIVE** (Sibelius display fix **pending**).
+- **Sibelius MusicXML errors resolved** — invalid **`<part-name-display>`** / score-header **`<credit>`** experiments **removed** (DTD scope errors); measure-level **`<staff-details>`** / **`<staff-label>`** remain **removed** — **LIVE**.
 - **Electric guitar solo +12 semitone written shift** — **`zappaSoloExportWrittenMidi`**: **+12** (one octave), clamp **\[52, 84\]**, **`while (pitch > 84) pitch -= 12`** — **LIVE**.
 - **Zappa Classic 7/8 + 4/4** — **`barMeterMap`** alternating meters confirmed in-app and smoke — **LIVE**.
 - **GCE improving (category scores):** motif **7.9**, voice-leading **8.3**, rhythm **8.7** (see **`docs/GCE_FRAMEWORK_V2.md`**; overall / other pillars vary by run).
 
-- **Instrumentation (export):** **Acoustic Grand Piano** / **Upright Bass** / **Elec. Gtr** — **LIVE**.
+- **Instrumentation (export):** **Piano** (GM **1**) / **Upright Bass** / **Elec. Gtr** — **LIVE**.
 - **Solo density:** minimum **2** notes per bar enforced after solo passes (chord-tone pad where needed; default generation density **medium** / **0.72** when tiers omit density) — **LIVE**.
-- **Harmony devices:** **d1** (polytonal) / **d4** (style juxtaposition) stochastic rates **48%** / **42%** in **`precomputeFrankZappaEffectiveHarmonyBars`** (more **7alt** / m7b5 / altered colour) — **LIVE**.
+- **Chord language improved — LIVE:** **d1** (polytonal) / **d4** (style juxtaposition) stochastic rates **55%** / **50%** in **`precomputeFrankZappaEffectiveHarmonyBars`**, plus **enforceZappaHarmonyLanguageFloors** (≥**50%** of bars not vanilla maj7-family; ≥**1** altered/jazz-dense bar per form section when needed; **`fz:enforce:*`** receipts).
 - **Chord symbols:** lead-sheet **`<harmony>`** on the **comp (piano) staff** only; **not** on the **Upright Bass** staff — **LIVE**.
 - **Green receipt:** When **`exportIntegrityPassed`** / export integrity is true, the generation receipt uses the success (green) styling even if **`readiness.shareable`** is false; amber label **Generated (not shareable)** in that case — **LIVE**.
 - **Solo pitch clamp (export):** After **`+12`** semitones, notes are dropped by octave until ≤ **84**, then hard-clamped to **MIDI 84** (default written range **52–84**); **no** MusicXML **`<octave>7</octave>`** on the **`zappa_solo`** part — **LIVE**.
-- **Part-list / instruments:** **Acoustic Grand Piano** + **Pno.** abbreviation + GM **1** on the comp staff (**`songModePresentAsPianoComp`**, **`musicxmlExporter`** piano branch); bass **Upright Bass**; solo **Elec. Gtr** + **Electric Guitar** (GM **27**) — **LIVE**.
+- **Part-list / instruments:** **Piano** + **Pno.** abbreviation + GM **1** on the comp staff (**`songModePresentAsPianoComp`**, **`musicxmlExporter`** piano branch); bass **Upright Bass**; solo **Elec. Gtr** + **Electric Guitar** (GM **27**) — **LIVE**.
 - **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** in **`frankZappaSliceSmoke.test.ts`** (builtin + **`custom_locked`** rows) uses seed **77777** (phrase cadence / motif gates; replaces **50200**) — **LIVE**.
 - **GCE overall** — green receipt confirmed on Generate (**2026-05-02**); category scores above tracked in receipts / eval (see **`docs/GCE_FRAMEWORK_V2.md`**).
 - **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
@@ -34,7 +35,7 @@ Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, *
 
 ## 2. Harmony slice (`frank_zappa`)
 
-Polytonal clash, metric bass displacement, xenochrony-like pitch offset, style juxtaposition, through-composed sectional cuts — **`fz:d{1–5}:*`** receipts, **`HarmonyContext`** / **`attachFrankZappaHarmonyContext`**, **`breakFrankZappaIiViProgressions`** (no rolling ii–V–I chains). See slice source and roadmap § Frank Zappa.
+Polytonal clash, metric bass displacement, xenochrony-like pitch offset, style juxtaposition, through-composed sectional cuts — **`fz:d{1–5}:*`** receipts, **`HarmonyContext`** / **`attachFrankZappaHarmonyContext`**, **`breakFrankZappaIiViProgressions`** (no rolling ii–V–I chains). Device rates **d1** **55%** / **d4** **50%** + **`enforceZappaHarmonyLanguageFloors`** for altered/colour density. See slice source and roadmap § Frank Zappa.
 
 ---
 
@@ -92,11 +93,11 @@ Product polish + export ergonomics (2026-05-02):
 
 - **Receipt:** Green border / success panel when **`exportIntegrityPassed`** is true (even when not shareable); red only on explicit integrity failure, **`success === false`**, or client error; amber **Generated (not shareable)** when integrity passes but **`readiness.shareable`** is false — **`HomeGenerate.tsx`**.
 - **Solo octave / range:** **`soloLineToPartModel`** raises written pitches **+12** semitones with **hard ceiling MIDI 84** (no octave **7** in exported **`zappa_solo`** XML); **`zappaSoloOptionsFromTiers`** / solo defaults use **52–84** MIDI for generation.
-- **Part-list names:** Comp staff **Acoustic Grand Piano** (**`musicxmlExporter`** → **`<part-name>Acoustic Grand Piano</part-name>`** + GM **1**); internal part **`name`** may remain **`Piano`** for routing; bass **`Upright Bass`**; solo **`Elec. Gtr`** / **`Electric Guitar`** (**`soloLineToPartModel`** + **`scoreInstrumentName`**, GM **27**).
-- **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** (seed **77777**), export integrity, strict bar math, MusicXML checks (**Acoustic Grand Piano** part-name; **`zappa_solo`** without **`<octave>7</octave>`**).
+- **Part-list names:** Comp staff **`Piano`** (**`musicxmlExporter`** → **`<part-name>Piano</part-name>`** / **`<instrument-name>Piano</instrument-name>`** + GM **1**); internal score part **`name`** stays **`Piano`** for routing; bass **`Upright Bass`**; solo **`Elec. Gtr`** / **`Electric Guitar`** (**`soloLineToPartModel`** + **`scoreInstrumentName`**, GM **27**).
+- **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** (seed **77777**), export integrity, strict bar math, MusicXML checks (**`Piano`** part-name; **`zappa_solo`** without **`<octave>7</octave>`**).
 
 ---
 
 ## Smoke / maintenance
 
-- **`npm run test:composer-smoke`** includes **`zappasoloSmoke.test.ts`** and Frank Zappa slice smoke; aggregate PASS total lives in **`engines/composer-os-v2/tests/runSmokeTests.ts`**, **`CLAUDE.md`**, and **`docs/COMPOSER_OS_ROADMAP.md`**.
+- **`npm run test:composer-smoke`** includes **`zappasoloSmoke.test.ts`** and Frank Zappa slice smoke; aggregate **113**/0 PASS rows, **31** labelled suites — sync **`engines/composer-os-v2/tests/runSmokeTests.ts`**, **`CLAUDE.md`**, and **`docs/COMPOSER_OS_ROADMAP.md`** when the allowlist changes.

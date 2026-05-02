@@ -29,8 +29,8 @@ import {
   resolveMeasureDivisionsForBar,
 } from '../rhythm/oddMeterQuantiser';
 
-/** Part-list / instrument display name for GM Acoustic Grand Piano (Sibelius-friendly). */
-const ACOUSTIC_GRAND_PIANO_PART_NAME = 'Acoustic Grand Piano';
+/** Part-list `<part-name>` / `<instrument-name>` for GM piano (program 1); short label matches Sibelius instrument library. */
+const PIANO_PART_LIST_NAME = 'Piano';
 
 function isBigBandPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'big_band_piano' || p.id === 'bb_piano';
@@ -41,14 +41,14 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
 }
 
 /**
- * Song Mode keyboard-centric primary, or **Frank Zappa** comp (duo `guitar` part): harmony staff exported as
- * **Acoustic Grand Piano** / GM 1 (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
+ * Song Mode keyboard-centric primary, or **Frank Zappa** comp (duo `guitar` part): harmony staff as piano / GM 1
+ * (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
  */
 function isSongModeKeysCompPianoPart(p: PartModel): boolean {
   if (p.id !== 'guitar') return false;
   if (p.songModePresentAsPianoComp === true) return true;
-  /** Duo staff labelled for piano comp (e.g. Frank Zappa / phrase-first) — part-list uses {@link ACOUSTIC_GRAND_PIANO_PART_NAME}. */
-  return p.name === 'Piano' || p.name === ACOUSTIC_GRAND_PIANO_PART_NAME;
+  /** Duo staff for piano comp — recognise legacy display names stored on the part model. */
+  return p.name === 'Piano' || p.name === 'Acoustic Grand Piano';
 }
 
 function partDisplayNameForExport(p: PartModel): string {
@@ -59,7 +59,7 @@ function partDisplayNameForExport(p: PartModel): string {
     return GUITAR_BASS_DUO_BASS_PART_NAME;
   }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
-    return ACOUSTIC_GRAND_PIANO_PART_NAME;
+    return PIANO_PART_LIST_NAME;
   }
   return p.name;
 }
@@ -675,16 +675,13 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
       <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
     </score-part>`;
         }
-        /** Big Band (`bb_piano`) + String Quartet (`sq_piano`): Sibelius-friendly piano part-list + GM Acoustic Grand (ch. 1, program 1). */
+        /** Big Band (`bb_piano`) + String Quartet (`sq_piano`) + Song Mode keys comp: piano part-list, GM ch. 1 program 1. */
         if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
           return `    <score-part id="${p.id}">
-      <part-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</part-name>
+      <part-name>${escapeXml(PIANO_PART_LIST_NAME)}</part-name>
       <part-abbreviation>Pno.</part-abbreviation>
-      <part-name-display>
-        <display-text>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</display-text>
-      </part-name-display>
       <score-instrument id="${p.id}-I1">
-        <instrument-name>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</instrument-name>
+        <instrument-name>${escapeXml(PIANO_PART_LIST_NAME)}</instrument-name>
         <instrument-sound>keyboard.piano</instrument-sound>
       </score-instrument>
       <midi-instrument id="${p.id}-I1">
@@ -710,19 +707,10 @@ ${midiInstrumentBody}
       })
       .join('\n');
 
-    const sibeliusPianoCompCredit = score.parts.some((p) => isSongModeKeysCompPianoPart(p))
-      ? `
-  <credit page="1">
-    <credit-words default-x="56.6929" default-y="1584" font-size="10" justify="left" valign="bottom">${escapeXml(
-      ACOUSTIC_GRAND_PIANO_PART_NAME
-    )}</credit-words>
-  </credit>`
-        : '';
-
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.1">
-  <work><work-title>${escapeXml(score.title)}</work-title></work>${sibeliusPianoCompCredit}
+  <work><work-title>${escapeXml(score.title)}</work-title></work>
   <part-list>
 ${partList}
   </part-list>
@@ -780,14 +768,6 @@ ${partList}
       ${clefXml}
     </attributes>
 `;
-          if (isSongModeKeysCompPianoPart(part)) {
-            xml += `    <print>
-      <part-name-display>
-        <display-text>${escapeXml(ACOUSTIC_GRAND_PIANO_PART_NAME)}</display-text>
-      </part-name-display>
-    </print>
-`;
-          }
         } else if (opts.barMeterMap && i >= 1 && adjacentBarsMeterDiffers(i, i + 1, opts.barMeterMap)) {
           const mm = resolveMeterForBar(i + 1, opts.barMeterMap);
           xml += `    <attributes>
