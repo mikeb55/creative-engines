@@ -6,6 +6,106 @@
 import { DIVISIONS } from '../score-model/scoreModelTypes';
 import type { BarMeterMap, BarMeterSignature } from './barMeterTypes';
 
+/** Reference 2-bar alternating cycles (same tiling as app `zappa_classic` / `black_page` meter presets). */
+export const ZAPPA_CLASSIC_METER_CYCLE: readonly BarMeterSignature[] = [
+  { numerator: 7, denominator: 8 },
+  { numerator: 4, denominator: 4 },
+];
+
+export const ZAPPA_BLACK_PAGE_METER_CYCLE: readonly BarMeterSignature[] = [
+  { numerator: 19, denominator: 16 },
+  { numerator: 4, denominator: 4 },
+];
+
+/**
+ * Named Zappa meter preset: one full cycle tiled bar-by-bar for `totalBars`
+ * (same semantics as HomeGenerate Pattern tab with `barsPerStep: 1`).
+ */
+export interface ZappaMeterCyclePresetDefinition {
+  readonly id: string;
+  readonly label: string;
+  readonly cycle: readonly BarMeterSignature[];
+}
+
+/** Seven extended UI/engine presets (cycles only; Classic / Black Page remain in-app defaults). */
+export const ZAPPA_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'zappa_oh_no',
+    label: 'Oh No (4/4 + 3/4)',
+    cycle: [
+      { numerator: 4, denominator: 4 },
+      { numerator: 3, denominator: 4 },
+    ],
+  },
+  {
+    id: 'zappa_thirteen',
+    label: 'Thirteen (4/4 + 5/8)',
+    cycle: [
+      { numerator: 4, denominator: 4 },
+      { numerator: 5, denominator: 8 },
+    ],
+  },
+  {
+    id: 'zappa_five_five_five',
+    label: 'Five Five FIVE (5/8 + 5/8 + 5/4)',
+    cycle: [
+      { numerator: 5, denominator: 8 },
+      { numerator: 5, denominator: 8 },
+      { numerator: 5, denominator: 4 },
+    ],
+  },
+  {
+    id: 'zappa_outside_now',
+    label: 'Outside Now (11/8)',
+    cycle: [{ numerator: 11, denominator: 8 }],
+  },
+  {
+    id: 'zappa_watermelon',
+    label: 'Watermelon (9/4)',
+    cycle: [{ numerator: 9, denominator: 4 }],
+  },
+  {
+    id: 'zappa_toads',
+    label: 'Toads (5/4 + 3/4 + 4/4)',
+    cycle: [
+      { numerator: 5, denominator: 4 },
+      { numerator: 3, denominator: 4 },
+      { numerator: 4, denominator: 4 },
+    ],
+  },
+  {
+    id: 'zappa_factory',
+    label: 'Factory (5/4)',
+    cycle: [{ numerator: 5, denominator: 4 }],
+  },
+];
+
+/** Tile `cycle` across `barCount` bars (1-based bar order). */
+export function tileZappaMeterCycle(
+  cycle: readonly BarMeterSignature[],
+  barCount: number
+): Array<{ numerator: number; denominator: number }> {
+  const n = Math.max(0, Math.floor(barCount));
+  if (cycle.length === 0 || n === 0) return [];
+  const out: Array<{ numerator: number; denominator: number }> = [];
+  for (let b = 1; b <= n; b++) {
+    const m = cycle[(b - 1) % cycle.length]!;
+    out.push({ numerator: m.numerator, denominator: m.denominator });
+  }
+  return out;
+}
+
+/** Pattern-tab seed: one step per bar in the cycle, `barsPerStep` 1. */
+export function zappaMeterCycleToPresetPattern(cycle: readonly BarMeterSignature[]): {
+  steps: Array<{ numerator: number; denominator: number }>;
+  barsPerStep: number;
+} {
+  return {
+    steps: cycle.map((c) => ({ numerator: c.numerator, denominator: c.denominator })),
+    barsPerStep: 1,
+  };
+}
+
 export const DEFAULT_BAR_METER: BarMeterSignature = { numerator: 4, denominator: 4 };
 
 /** Divisions (ticks) for one full measure at the given notated meter. */

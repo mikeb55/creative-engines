@@ -42,6 +42,11 @@ import {
   extractScoreMusicXmlFromString,
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
+import {
+  ZAPPA_METER_CYCLE_PRESET_DEFINITIONS,
+  tileZappaMeterCycle,
+  zappaMeterCycleToPresetPattern,
+} from '@composer-os/core/rhythm/oddMeterQuantiser';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -273,12 +278,22 @@ function isLeadSheetSongModeRoute(presetId?: string, primarySongwriterStyle?: st
   return writer === 'donald_fagen' || writer === 'barry_harris';
 }
 
-type ZappaMeterPresetId = 'all_4_4' | 'zappa_classic' | 'black_page';
+type ZappaMeterExtraPresetId = (typeof ZAPPA_METER_CYCLE_PRESET_DEFINITIONS)[number]['id'];
+type ZappaMeterPresetId = 'all_4_4' | 'zappa_classic' | 'black_page' | ZappaMeterExtraPresetId;
+
+const ZAPPA_METER_RADIO_OPTIONS: { id: ZappaMeterPresetId; label: string }[] = [
+  { id: 'all_4_4', label: 'All 4/4' },
+  { id: 'zappa_classic', label: 'Zappa Classic' },
+  { id: 'black_page', label: 'Black Page' },
+  ...ZAPPA_METER_CYCLE_PRESET_DEFINITIONS.map((d) => ({ id: d.id, label: d.label })),
+];
 
 function buildZappaMetersForPreset(
   preset: ZappaMeterPresetId,
   barCount: number
 ): Array<{ numerator: number; denominator: number }> {
+  const extra = ZAPPA_METER_CYCLE_PRESET_DEFINITIONS.find((p) => p.id === preset);
+  if (extra) return tileZappaMeterCycle(extra.cycle, barCount);
   const out: Array<{ numerator: number; denominator: number }> = [];
   const n = Math.max(0, Math.floor(barCount));
   for (let b = 1; b <= n; b++) {
@@ -311,6 +326,8 @@ type ZappaMeterStep = { numerator: number; denominator: number };
 
 /** Canonical repeating unit + stride for each meter preset (Pattern tab). */
 function zappaPresetPattern(preset: ZappaMeterPresetId): { steps: ZappaMeterStep[]; barsPerStep: number } {
+  const extra = ZAPPA_METER_CYCLE_PRESET_DEFINITIONS.find((p) => p.id === preset);
+  if (extra) return zappaMeterCycleToPresetPattern(extra.cycle);
   if (preset === 'all_4_4') {
     return { steps: [{ numerator: 4, denominator: 4 }], barsPerStep: 1 };
   }
@@ -999,7 +1016,8 @@ export function HomeGenerate({
   }, [songFormBars, songFormBarPreset]);
 
   useEffect(() => {
-    if (songwriterStyle !== 'frank_zappa' || presetId !== 'song_mode') return;
+    if (songwriterStyle !== 'frank_zappa') return;
+    if (presetId !== 'song_mode' && presetId !== 'string_quartet') return;
     const n = songFormBars;
 
     if (zappaMeterUiMode === 'pattern') {
@@ -1321,7 +1339,7 @@ export function HomeGenerate({
         }
         /** Frank Zappa: ensure full-length meter rows even if UI state is one render behind `songFormBars`. */
         const zappaBarMeterPayload =
-          presetId === 'song_mode' && songwriterStyle === 'frank_zappa'
+          (presetId === 'song_mode' || presetId === 'string_quartet') && songwriterStyle === 'frank_zappa'
             ? (() => {
                 const n = songFormBars;
                 const rows =
@@ -1407,6 +1425,9 @@ export function HomeGenerate({
                     }
                   : {}),
               }
+            : {}),
+          ...(presetId === 'string_quartet' && songwriterStyle === 'frank_zappa' && zappaBarMeterPayload
+            ? { barMeterMap: zappaBarMeterPayload }
             : {}),
         };
 
@@ -1757,6 +1778,359 @@ export function HomeGenerate({
     isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
   const indieArtPopAltTuningEligible =
     presetId === 'song_mode' && SONG_MODE_ALT_TUNING_STYLE_PROFILES.has(songModeStyleProfile);
+
+  const frankZappaMeterMapBlock = (
+    <div
+      style={{
+        marginBottom: '0.65rem',
+        padding: '0.5rem 0.65rem',
+        border: '1px solid var(--border-subtle, rgba(128,128,128,0.25))',
+        borderRadius: 6,
+        maxWidth: 520,
+      }}
+    >
+      <span
+        style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+      >
+        Frank Zappa — meter map (mixed meters)
+      </span>
+      <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+        Time signatures for export and odd-meter planning ({songFormBars} bars). Uses{' '}
+        <code style={{ fontSize: '0.75rem' }}>oddMeterQuantiser</code> semantics; absent bars default to 4/4.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.55rem' }}>
+        {ZAPPA_METER_RADIO_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            role="radio"
+            aria-checked={zappaMeterPresetId === opt.id}
+            onClick={() => {
+              const spec = zappaPresetPattern(opt.id);
+              setZappaMeterPresetId(opt.id);
+              setZappaMeterPatternSteps(spec.steps);
+              setZappaMeterBarsPerStep(spec.barsPerStep);
+            }}
+            disabled={loading}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.8rem',
+              borderRadius: 4,
+              border:
+                zappaMeterPresetId === opt.id
+                  ? '1px solid var(--accent, #6ae)'
+                  : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+              background: zappaMeterPresetId === opt.id ? 'rgba(100,160,255,0.12)' : 'transparent',
+              cursor: loading ? 'default' : 'pointer',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        Zappa Classic: 7/8 then 4/4 each bar. Black Page: 19/16 then 4/4 each bar. Oh No–Factory: repeating cycles tile
+        across your bar count.
+      </p>
+      <div
+        role="tablist"
+        aria-label="Meter map editing mode"
+        style={{
+          display: 'flex',
+          gap: '0.35rem',
+          marginBottom: '0.45rem',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="co-zappa-meter-tab-pattern"
+          aria-selected={zappaMeterUiMode === 'pattern'}
+          aria-controls="co-zappa-meter-pattern-panel"
+          tabIndex={zappaMeterUiMode === 'pattern' ? 0 : -1}
+          onClick={switchZappaMeterUiToPatternTab}
+          disabled={loading}
+          style={{
+            padding: '0.3rem 0.65rem',
+            fontSize: '0.8rem',
+            borderRadius: 4,
+            border:
+              zappaMeterUiMode === 'pattern'
+                ? '1px solid var(--accent, #6ae)'
+                : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+            background: zappaMeterUiMode === 'pattern' ? 'rgba(100,160,255,0.12)' : 'transparent',
+            cursor: loading ? 'default' : 'pointer',
+          }}
+        >
+          Pattern
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="co-zappa-meter-tab-per-bar"
+          aria-selected={zappaMeterUiMode === 'per_bar'}
+          aria-controls="co-zappa-meter-per-bar-panel"
+          tabIndex={zappaMeterUiMode === 'per_bar' ? 0 : -1}
+          onClick={switchZappaMeterUiToPerBarTab}
+          disabled={loading}
+          style={{
+            padding: '0.3rem 0.65rem',
+            fontSize: '0.8rem',
+            borderRadius: 4,
+            border:
+              zappaMeterUiMode === 'per_bar'
+                ? '1px solid var(--accent, #6ae)'
+                : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+            background: zappaMeterUiMode === 'per_bar' ? 'rgba(100,160,255,0.12)' : 'transparent',
+            cursor: loading ? 'default' : 'pointer',
+          }}
+        >
+          Per-bar <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>(advanced)</span>
+        </button>
+      </div>
+      {zappaMeterUiMode === 'pattern' ? (
+        <div
+          id="co-zappa-meter-pattern-panel"
+          role="tabpanel"
+          aria-labelledby="co-zappa-meter-tab-pattern"
+          style={{ marginBottom: '0.45rem' }}
+        >
+          <p
+            style={{
+              margin: '0 0 0.45rem',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              lineHeight: 1.45,
+            }}
+          >
+            Define a repeating meter sequence, then repeat for all {songFormBars} bars. Each pattern step can
+            span multiple bars (cycle length).
+          </p>
+          <div style={{ marginBottom: '0.45rem' }}>
+            <label
+              htmlFor="co-zappa-meter-bars-per-step"
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: '0.78rem',
+                color: 'var(--text-muted)',
+              }}
+            >
+              Bars per pattern step (cycle length)
+            </label>
+            <input
+              id="co-zappa-meter-bars-per-step"
+              type="number"
+              min={1}
+              max={64}
+              value={zappaMeterBarsPerStep}
+              onChange={(e) => {
+                const raw = Math.round(parseFloat(e.target.value));
+                const v =
+                  !Number.isFinite(raw) || raw < 1 ? 1 : raw > 64 ? 64 : raw;
+                setZappaMeterBarsPerStep(v);
+              }}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 88, padding: '0.2rem 0.35rem', fontSize: '0.85rem' }}
+            />
+            <span
+              style={{
+                display: 'block',
+                marginTop: 4,
+                fontSize: '0.7rem',
+                color: 'var(--text-muted)',
+              }}
+            >
+              Hold each step for this many bars before advancing (1 = new meter every bar).
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.35rem' }}>
+            <button
+              type="button"
+              onClick={() =>
+                setZappaMeterPatternSteps((prev) => [...prev, { numerator: 4, denominator: 4 }])
+              }
+              disabled={loading}
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.75rem',
+                borderRadius: 4,
+                border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+                background: 'transparent',
+                cursor: loading ? 'default' : 'pointer',
+              }}
+            >
+              Add step
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setZappaMeterPatternSteps((prev) =>
+                  prev.length <= 1 ? prev : prev.slice(0, -1)
+                )
+              }
+              disabled={loading || zappaMeterPatternSteps.length <= 1}
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.75rem',
+                borderRadius: 4,
+                border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+                background: 'transparent',
+                cursor: loading || zappaMeterPatternSteps.length <= 1 ? 'default' : 'pointer',
+              }}
+            >
+              Remove last step
+            </button>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem',
+              marginBottom: '0.35rem',
+            }}
+          >
+            {zappaMeterPatternSteps.map((step, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.78rem',
+                }}
+              >
+                <span style={{ minWidth: '4.5rem', color: 'var(--text-muted)' }}>
+                  Step {idx + 1}
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={128}
+                  aria-label={`Pattern step ${idx + 1} numerator`}
+                  value={step.numerator}
+                  onChange={(e) => {
+                    const v = clampMeterPart(e.target.value, step.numerator);
+                    setZappaMeterPatternSteps((prev) => {
+                      const next = [...prev];
+                      next[idx] = { ...next[idx]!, numerator: v };
+                      return next;
+                    });
+                  }}
+                  disabled={loading}
+                  style={{ width: 72, maxWidth: '100%' }}
+                />
+                <span>/</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={128}
+                  aria-label={`Pattern step ${idx + 1} denominator`}
+                  value={step.denominator}
+                  onChange={(e) => {
+                    const v = clampMeterPart(e.target.value, step.denominator);
+                    setZappaMeterPatternSteps((prev) => {
+                      const next = [...prev];
+                      next[idx] = { ...next[idx]!, denominator: v };
+                      return next;
+                    });
+                  }}
+                  disabled={loading}
+                  style={{ width: 72, maxWidth: '100%' }}
+                />
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+            Live preview fills <strong style={{ fontWeight: 600 }}>barMeterMap</strong> below (same payload as
+            Generate).
+          </p>
+        </div>
+      ) : (
+        <div
+          id="co-zappa-meter-per-bar-panel"
+          role="tabpanel"
+          aria-labelledby="co-zappa-meter-tab-per-bar"
+          style={{ marginBottom: '0.45rem' }}
+        >
+          <p
+            style={{
+              margin: '0 0 0.35rem',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              lineHeight: 1.45,
+            }}
+          >
+            Edit each bar directly (through-composed). Switch back to Pattern for repeating cycles.
+          </p>
+        </div>
+      )}
+      <div
+        style={{
+          maxHeight: 220,
+          overflowY: 'auto',
+          border: '1px solid var(--border-subtle, rgba(128,128,128,0.2))',
+          borderRadius: 4,
+          padding: '0.35rem',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(2.5rem,auto) minmax(3rem,1fr) auto minmax(3rem,1fr)',
+            gap: '0.25rem 0.35rem',
+            alignItems: 'center',
+            fontSize: '0.78rem',
+          }}
+        >
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Bar</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Num</span>
+          <span />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Den</span>
+          {zappaMetersByBar.map((row, idx) => (
+            <Fragment key={idx}>
+              <span style={{ color: 'var(--text-muted)' }}>{idx + 1}</span>
+              <input
+                type="number"
+                min={1}
+                max={128}
+                value={row.numerator}
+                onChange={(e) => {
+                  const v = clampMeterPart(e.target.value, row.numerator);
+                  setZappaMetersByBar((prev) => {
+                    const next = [...prev];
+                    next[idx] = { ...next[idx]!, numerator: v };
+                    return next;
+                  });
+                }}
+                disabled={loading || zappaMeterUiMode === 'pattern'}
+                style={{ width: '100%', maxWidth: 72 }}
+              />
+              <span style={{ textAlign: 'center' }}>/</span>
+              <input
+                type="number"
+                min={1}
+                max={128}
+                value={row.denominator}
+                onChange={(e) => {
+                  const v = clampMeterPart(e.target.value, row.denominator);
+                  setZappaMetersByBar((prev) => {
+                    const next = [...prev];
+                    next[idx] = { ...next[idx]!, denominator: v };
+                    return next;
+                  });
+                }}
+                disabled={loading || zappaMeterUiMode === 'pattern'}
+                style={{ width: '100%', maxWidth: 72 }}
+              />
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section>
@@ -3306,361 +3680,7 @@ export function HomeGenerate({
                 </select>
               </div>
             </div>
-            <div
-              style={{
-                marginBottom: '0.65rem',
-                padding: '0.5rem 0.65rem',
-                border: '1px solid var(--border-subtle, rgba(128,128,128,0.25))',
-                borderRadius: 6,
-                maxWidth: 520,
-              }}
-            >
-              <span
-                style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Frank Zappa — meter map (mixed meters)
-              </span>
-              <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-                Time signatures for export and odd-meter planning ({songFormBars} bars). Uses{' '}
-                <code style={{ fontSize: '0.75rem' }}>oddMeterQuantiser</code> semantics; absent bars default to 4/4.
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.55rem' }}>
-                {(
-                  [
-                    { id: 'all_4_4' as const, label: 'All 4/4' },
-                    { id: 'zappa_classic' as const, label: 'Zappa Classic' },
-                    { id: 'black_page' as const, label: 'Black Page' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={zappaMeterPresetId === opt.id}
-                    onClick={() => {
-                      const spec = zappaPresetPattern(opt.id);
-                      setZappaMeterPresetId(opt.id);
-                      setZappaMeterPatternSteps(spec.steps);
-                      setZappaMeterBarsPerStep(spec.barsPerStep);
-                    }}
-                    disabled={loading}
-                    style={{
-                      padding: '0.25rem 0.55rem',
-                      fontSize: '0.8rem',
-                      borderRadius: 4,
-                      border:
-                        zappaMeterPresetId === opt.id
-                          ? '1px solid var(--accent, #6ae)'
-                          : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
-                      background: zappaMeterPresetId === opt.id ? 'rgba(100,160,255,0.12)' : 'transparent',
-                      cursor: loading ? 'default' : 'pointer',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Zappa Classic: 7/8 then 4/4 each bar. Black Page: 19/16 then 4/4 each bar.
-              </p>
-              <div
-                role="tablist"
-                aria-label="Meter map editing mode"
-                style={{
-                  display: 'flex',
-                  gap: '0.35rem',
-                  marginBottom: '0.45rem',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  id="co-zappa-meter-tab-pattern"
-                  aria-selected={zappaMeterUiMode === 'pattern'}
-                  aria-controls="co-zappa-meter-pattern-panel"
-                  tabIndex={zappaMeterUiMode === 'pattern' ? 0 : -1}
-                  onClick={switchZappaMeterUiToPatternTab}
-                  disabled={loading}
-                  style={{
-                    padding: '0.3rem 0.65rem',
-                    fontSize: '0.8rem',
-                    borderRadius: 4,
-                    border:
-                      zappaMeterUiMode === 'pattern'
-                        ? '1px solid var(--accent, #6ae)'
-                        : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
-                    background: zappaMeterUiMode === 'pattern' ? 'rgba(100,160,255,0.12)' : 'transparent',
-                    cursor: loading ? 'default' : 'pointer',
-                  }}
-                >
-                  Pattern
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  id="co-zappa-meter-tab-per-bar"
-                  aria-selected={zappaMeterUiMode === 'per_bar'}
-                  aria-controls="co-zappa-meter-per-bar-panel"
-                  tabIndex={zappaMeterUiMode === 'per_bar' ? 0 : -1}
-                  onClick={switchZappaMeterUiToPerBarTab}
-                  disabled={loading}
-                  style={{
-                    padding: '0.3rem 0.65rem',
-                    fontSize: '0.8rem',
-                    borderRadius: 4,
-                    border:
-                      zappaMeterUiMode === 'per_bar'
-                        ? '1px solid var(--accent, #6ae)'
-                        : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
-                    background: zappaMeterUiMode === 'per_bar' ? 'rgba(100,160,255,0.12)' : 'transparent',
-                    cursor: loading ? 'default' : 'pointer',
-                  }}
-                >
-                  Per-bar <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>(advanced)</span>
-                </button>
-              </div>
-              {zappaMeterUiMode === 'pattern' ? (
-                <div
-                  id="co-zappa-meter-pattern-panel"
-                  role="tabpanel"
-                  aria-labelledby="co-zappa-meter-tab-pattern"
-                  style={{ marginBottom: '0.45rem' }}
-                >
-                  <p
-                    style={{
-                      margin: '0 0 0.45rem',
-                      fontSize: '0.72rem',
-                      color: 'var(--text-muted)',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Define a repeating meter sequence, then repeat for all {songFormBars} bars. Each pattern step can
-                    span multiple bars (cycle length).
-                  </p>
-                  <div style={{ marginBottom: '0.45rem' }}>
-                    <label
-                      htmlFor="co-zappa-meter-bars-per-step"
-                      style={{
-                        display: 'block',
-                        marginBottom: 4,
-                        fontSize: '0.78rem',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      Bars per pattern step (cycle length)
-                    </label>
-                    <input
-                      id="co-zappa-meter-bars-per-step"
-                      type="number"
-                      min={1}
-                      max={64}
-                      value={zappaMeterBarsPerStep}
-                      onChange={(e) => {
-                        const raw = Math.round(parseFloat(e.target.value));
-                        const v =
-                          !Number.isFinite(raw) || raw < 1 ? 1 : raw > 64 ? 64 : raw;
-                        setZappaMeterBarsPerStep(v);
-                      }}
-                      disabled={loading}
-                      style={{ width: '100%', maxWidth: 88, padding: '0.2rem 0.35rem', fontSize: '0.85rem' }}
-                    />
-                    <span
-                      style={{
-                        display: 'block',
-                        marginTop: 4,
-                        fontSize: '0.7rem',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      Hold each step for this many bars before advancing (1 = new meter every bar).
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.35rem' }}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setZappaMeterPatternSteps((prev) => [...prev, { numerator: 4, denominator: 4 }])
-                      }
-                      disabled={loading}
-                      style={{
-                        padding: '0.2rem 0.45rem',
-                        fontSize: '0.75rem',
-                        borderRadius: 4,
-                        border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
-                        background: 'transparent',
-                        cursor: loading ? 'default' : 'pointer',
-                      }}
-                    >
-                      Add step
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setZappaMeterPatternSteps((prev) =>
-                          prev.length <= 1 ? prev : prev.slice(0, -1)
-                        )
-                      }
-                      disabled={loading || zappaMeterPatternSteps.length <= 1}
-                      style={{
-                        padding: '0.2rem 0.45rem',
-                        fontSize: '0.75rem',
-                        borderRadius: 4,
-                        border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
-                        background: 'transparent',
-                        cursor: loading || zappaMeterPatternSteps.length <= 1 ? 'default' : 'pointer',
-                      }}
-                    >
-                      Remove last step
-                    </button>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.35rem',
-                      marginBottom: '0.35rem',
-                    }}
-                  >
-                    {zappaMeterPatternSteps.map((step, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          fontSize: '0.78rem',
-                        }}
-                      >
-                        <span style={{ minWidth: '4.5rem', color: 'var(--text-muted)' }}>
-                          Step {idx + 1}
-                        </span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={128}
-                          aria-label={`Pattern step ${idx + 1} numerator`}
-                          value={step.numerator}
-                          onChange={(e) => {
-                            const v = clampMeterPart(e.target.value, step.numerator);
-                            setZappaMeterPatternSteps((prev) => {
-                              const next = [...prev];
-                              next[idx] = { ...next[idx]!, numerator: v };
-                              return next;
-                            });
-                          }}
-                          disabled={loading}
-                          style={{ width: 72, maxWidth: '100%' }}
-                        />
-                        <span>/</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={128}
-                          aria-label={`Pattern step ${idx + 1} denominator`}
-                          value={step.denominator}
-                          onChange={(e) => {
-                            const v = clampMeterPart(e.target.value, step.denominator);
-                            setZappaMeterPatternSteps((prev) => {
-                              const next = [...prev];
-                              next[idx] = { ...next[idx]!, denominator: v };
-                              return next;
-                            });
-                          }}
-                          disabled={loading}
-                          style={{ width: 72, maxWidth: '100%' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-                    Live preview fills <strong style={{ fontWeight: 600 }}>barMeterMap</strong> below (same payload as
-                    Generate).
-                  </p>
-                </div>
-              ) : (
-                <div
-                  id="co-zappa-meter-per-bar-panel"
-                  role="tabpanel"
-                  aria-labelledby="co-zappa-meter-tab-per-bar"
-                  style={{ marginBottom: '0.45rem' }}
-                >
-                  <p
-                    style={{
-                      margin: '0 0 0.35rem',
-                      fontSize: '0.72rem',
-                      color: 'var(--text-muted)',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Edit each bar directly (through-composed). Switch back to Pattern for repeating cycles.
-                  </p>
-                </div>
-              )}
-              <div
-                style={{
-                  maxHeight: 220,
-                  overflowY: 'auto',
-                  border: '1px solid var(--border-subtle, rgba(128,128,128,0.2))',
-                  borderRadius: 4,
-                  padding: '0.35rem',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(2.5rem,auto) minmax(3rem,1fr) auto minmax(3rem,1fr)',
-                    gap: '0.25rem 0.35rem',
-                    alignItems: 'center',
-                    fontSize: '0.78rem',
-                  }}
-                >
-                  <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Bar</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Num</span>
-                  <span />
-                  <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Den</span>
-                  {zappaMetersByBar.map((row, idx) => (
-                    <Fragment key={idx}>
-                      <span style={{ color: 'var(--text-muted)' }}>{idx + 1}</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={128}
-                        value={row.numerator}
-                        onChange={(e) => {
-                          const v = clampMeterPart(e.target.value, row.numerator);
-                          setZappaMetersByBar((prev) => {
-                            const next = [...prev];
-                            next[idx] = { ...next[idx]!, numerator: v };
-                            return next;
-                          });
-                        }}
-                        disabled={loading || zappaMeterUiMode === 'pattern'}
-                        style={{ width: '100%', maxWidth: 72 }}
-                      />
-                      <span style={{ textAlign: 'center' }}>/</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={128}
-                        value={row.denominator}
-                        onChange={(e) => {
-                          const v = clampMeterPart(e.target.value, row.denominator);
-                          setZappaMetersByBar((prev) => {
-                            const next = [...prev];
-                            next[idx] = { ...next[idx]!, denominator: v };
-                            return next;
-                          });
-                        }}
-                        disabled={loading || zappaMeterUiMode === 'pattern'}
-                        style={{ width: '100%', maxWidth: 72 }}
-                      />
-                    </Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {frankZappaMeterMapBlock}
             </>
           )}
           <div style={{ marginBottom: '0.65rem' }}>
@@ -3948,6 +3968,7 @@ export function HomeGenerate({
               ))}
             </select>
           </div>
+          {songwriterStyle === 'frank_zappa' && frankZappaMeterMapBlock}
         </div>
       )}
 
