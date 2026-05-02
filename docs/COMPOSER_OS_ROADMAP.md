@@ -356,7 +356,9 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 - **Xenochrony** device applied as **rhythmic displacement** of the melodic line (not only harmony-level offset).
 - **Odd meter grid awareness** in the solo generator (couples to Phase **A**).
 
-#### Zappa Musicality — Phases 1–5 (**complete**, **LIVE** — 2026-05-02)
+#### Zappa Musicality — Phases 1–5 (**all complete**, **LIVE** — 2026-05-02)
+
+**Product status:** **Phases 1–5** (rhythmic cell, motif, voice-leading + bass, interaction + callbacks, UI) are **shipped and live**; **smoke** aggregate **113**/0 (**31** suites). **Follow-up scheduled:** **motif similarity tuning pass** — close the gap between observed development similarity (**~0.39** in recent diagnostics) and the design target (**≥0.7**); track in **`zappasoloEngine`** Phase 2 + receipts.
 
 - **Phase 1 — Rhythmic cell lock:** Section **A** = **3+3+2** (canonical 7/8 eighth groups **`[3,2,2]`**); section **B** = **3+2+2+2** (canonical **`[2,2,2,1]`**). ≥**50%** of four-bar phrase windows cell-locked (deterministic). Receipts: **`SoloLine.rhythmicCellLock`**, **`SoloPhrase.zappaRhythmicCell`**. Code: **`zappasoloEngine.ts`** (+ **`phraseBuilder.ts`** re-exports).
 - **Phase 2 — Motif ownership:** Anchor motif (**intervals + rhythm**) from **first two bars** of each **form section**; **≥0.7** similarity recurrence on **development** fragments; transforms **shift / augment / compress**; reject/repair phrases at **zero** or **&lt;0.7** similarity. Receipt: **`SoloLine.zappaMotifReceipt`**. Code: **`zappasoloEngine.ts`**.

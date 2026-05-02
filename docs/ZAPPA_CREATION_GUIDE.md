@@ -12,6 +12,10 @@ Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, *
 - **Solo staff octave fix:** Solo line written **`+24`** MIDI at MusicXML part build, clamped to **108**; default generator guitar range **52–84** (was 40–84) — **LIVE**.
 - **Staff labels:** Top staff **Frank Zappa (Comp)** (duo guitar when **`frank_zappa`**), bass **Upright Bass**, solo part **Zappa Solo (Gtr)** — **LIVE**.
 - **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** coverage in **`frankZappaSliceSmoke.test.ts`** (including builtin-harmony row + locked variant) — **LIVE**.
+- **GCE Quality 8.3/10** — green receipt confirmed **2026-05-02** (see **`docs/GCE_FRAMEWORK_V2.md`** / Generate receipts).
+- **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
+- **Odd meter (7/8 + 4/4) Zappa Classic** — alternating-meter **`barMeterMap`** path confirmed working in-app and smoke **2026-05-02**.
+- **Known tuning issue:** motif **similarity** observed **~0.39** vs design target **≥0.70** — **fix / tuning pass in progress** (`zappasoloEngine` Phase 2).
 
 ---
 

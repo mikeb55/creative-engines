@@ -40,7 +40,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent update (2026-04-29)
 
-**Smoke tier (2026-05-02):** **`npm run test:composer-smoke`** aggregate **113**/0 (**31** labelled suites in **`runSmokeTests.ts`**). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier (2026-05-02):** **`npm run test:composer-smoke`** — snapshot **113/0**, **31** suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+
+**Frank Zappa Musicality (2026-05-02):** Manual QA — **GCE Quality 8.3/10**, **green receipt** ( **`exportIntegrityPassed`** ) confirmed on Generate; **motif similarity tuning pass pending** (diagnostics **~0.39** vs target **≥0.70**).
 
 **Altered Tuning Presets (2026-04-29):** Expanded to **24 roadmap zone presets** across **four zones** (**`jazz_sophisticated`**, **`sonic_youth_noise`**, **`joni_mitchell`**, **`hybrid_harmonic`**) in **`alternateGuitarTunings.ts`**, plus **`getPresetsByZone`**, **`ROADMAP_ZONE_TUNING_PRESET_IDS`**, **`styleProfileSupportsAlternateGuitarTuning`** (optional **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**, **`STYLE_ECM_CHAMBER`** on **`songModeStyleProfile.ts`**). **Generate** zone **`optgroup`** UI (**`HomeGenerate.tsx`**). **Follow-up:** per-tuning voicing maps (Tonality Vault) remain a separate workstream.
 
