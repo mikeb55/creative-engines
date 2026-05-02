@@ -167,6 +167,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('beethoven.metric_shift', 'Metric/hypermetric surprises', 'songwriter', 'rhythm', 7, 'verse'),
     R('beethoven.climax_arc', 'Climax arc toward recap', 'songwriter', 'form', 8, 'form'),
   ],
+  dave_brubeck: [
+    R(
+      'brubeck.odd_meter_groove',
+      'Odd-meter groove clarity — metric emphasis on subdivisions (placeholder)',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'brubeck.block_chord_pockets',
+      'Block-chord piano pockets vs linear fills (placeholder)',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
+    R(
+      'brubeck.cool_school_colour',
+      'Cool-school tertian colours vs dense altered stacks (placeholder)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+  ],
   debussy: [
     R('debussy.parallel_chords', 'Parallel chord streams / planing', 'songwriter', 'harmony', 8, 'verse'),
     R('debussy.whole_tone', 'Whole-tone / colour shifts', 'songwriter', 'harmony', 7, 'bridge'),

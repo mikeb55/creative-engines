@@ -43,6 +43,7 @@ import {
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 import {
+  COMPOSER_METER_PRESET_MAP,
   ZAPPA_METER_CYCLE_PRESET_DEFINITIONS,
   tileZappaMeterCycle,
   zappaMeterCycleToPresetPattern,
@@ -121,6 +122,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'thelonious_monk', label: 'Thelonious Monk' },
+  { id: 'dave_brubeck', label: 'Dave Brubeck' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'charlie_parker', label: 'Charlie Parker' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
@@ -141,6 +143,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'stephen_sondheim',
   'kate_bush',
   'thelonious_monk',
+  'dave_brubeck',
   'andrew_hill',
   'charlie_parker',
   'bill_evans',
@@ -361,6 +364,27 @@ function expandZappaPatternToRows(steps: ZappaMeterStep[], barsPerStep: number, 
     out.push({ numerator: src.numerator, denominator: src.denominator });
   }
   return out;
+}
+
+type ComposerOddMeterSongwriterId = keyof typeof COMPOSER_METER_PRESET_MAP;
+
+function isComposerOddMeterSongwriter(id: string): id is ComposerOddMeterSongwriterId {
+  return Object.prototype.hasOwnProperty.call(COMPOSER_METER_PRESET_MAP, id);
+}
+
+function buildComposerOddMeterRows(
+  songwriterId: ComposerOddMeterSongwriterId,
+  presetId: string,
+  barCount: number
+): Array<{ numerator: number; denominator: number }> {
+  const n = Math.max(0, Math.floor(barCount));
+  if (presetId === 'all_4_4' || n === 0) {
+    return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
+  }
+  const defs = COMPOSER_METER_PRESET_MAP[songwriterId];
+  const extra = defs.find((p) => p.id === presetId);
+  if (!extra) return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
+  return tileZappaMeterCycle(extra.cycle, n);
 }
 
 /** Frank Zappa Song Mode — discrete lengths aligned with engine song-form counts. */
@@ -808,6 +832,7 @@ export function HomeGenerate({
   const [zappaSoloDensity, setZappaSoloDensity] = useState<'low' | 'medium' | 'high'>('medium');
   const [zappaSoloDissonance, setZappaSoloDissonance] = useState<'mild' | 'moderate' | 'extreme'>('moderate');
   const [zappaMeterPresetId, setZappaMeterPresetId] = useState<ZappaMeterPresetId>('all_4_4');
+  const [composerMeterPresetId, setComposerMeterPresetId] = useState<string>('all_4_4');
   const [zappaMetersByBar, setZappaMetersByBar] = useState<Array<{ numerator: number; denominator: number }>>([]);
   const [zappaMeterUiMode, setZappaMeterUiMode] = useState<'pattern' | 'per_bar'>('pattern');
   const [zappaMeterPatternSteps, setZappaMeterPatternSteps] = useState<ZappaMeterStep[]>([
@@ -987,6 +1012,10 @@ export function HomeGenerate({
     if (presetId !== 'song_mode' || songwriterStyle !== 'frank_zappa') return;
     setTotalBars(zappaSongBars);
   }, [zappaSongBars, songwriterStyle, presetId]);
+
+  useEffect(() => {
+    setComposerMeterPresetId('all_4_4');
+  }, [songwriterStyle]);
   const customHarmonyPlaceholder =
     presetId === 'big_band' || presetId === 'string_quartet'
       ? (ERA_CUSTOM_HARMONY_PLACEHOLDERS[era] ?? DEFAULT_CUSTOM_HARMONY_PLACEHOLDER)
@@ -1351,6 +1380,18 @@ export function HomeGenerate({
               })()
             : undefined;
 
+        const composerBarMeterPayload =
+          presetId === 'song_mode' &&
+          isComposerOddMeterSongwriter(songwriterStyle) &&
+          composerMeterPresetId !== 'all_4_4'
+            ? (() => {
+                const n = songFormBars;
+                const rows = buildComposerOddMeterRows(songwriterStyle, composerMeterPresetId, n);
+                if (rows.length !== n || n <= 0) return undefined;
+                return zappaRowsToBarMeterMap(rows);
+              })()
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
           variationEnabled: variationEnabled,
@@ -1414,6 +1455,7 @@ export function HomeGenerate({
                       ...(zappaBarMeterPayload ? { barMeterMap: zappaBarMeterPayload } : {}),
                     }
                   : {}),
+                ...(composerBarMeterPayload ? { barMeterMap: composerBarMeterPayload } : {}),
                 ...(alternateGuitarTuningPayload ? { alternateGuitarTuning: alternateGuitarTuningPayload } : {}),
                 ...(isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0
                   ? { songModeLeadSheetMusicXml: songModeLeadSheetTrim }
@@ -1602,6 +1644,7 @@ export function HomeGenerate({
       songFormBarPreset,
       songFormBars,
       zappaMeterPresetId,
+      composerMeterPresetId,
       zappaMetersByBar,
       zappaSoloMidiLow,
       zappaSoloMidiHigh,
@@ -2131,6 +2174,61 @@ export function HomeGenerate({
       </div>
     </div>
   );
+
+  const composerOddMeterSongwriterLabel = primarySongwriterDisplayLabel(songwriterStyle) ?? 'Composer';
+  const composerOddMeterMapBlock = isComposerOddMeterSongwriter(songwriterStyle) ? (
+    <div
+      style={{
+        marginBottom: '0.65rem',
+        padding: '0.5rem 0.65rem',
+        border: '1px solid var(--border-subtle, rgba(128,128,128,0.25))',
+        borderRadius: 6,
+        maxWidth: 520,
+      }}
+    >
+      <span
+        style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+      >
+        {composerOddMeterSongwriterLabel} — meter map
+      </span>
+      <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+        Time signatures for export and odd-meter planning ({songFormBars} bars). Uses{' '}
+        <code style={{ fontSize: '0.75rem' }}>oddMeterQuantiser</code> semantics; choose <strong>All 4/4</strong> to omit{' '}
+        <code style={{ fontSize: '0.75rem' }}>barMeterMap</code> (default engine path).
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.35rem' }}>
+        {[
+          { id: 'all_4_4', label: 'All 4/4' },
+          ...COMPOSER_METER_PRESET_MAP[songwriterStyle as ComposerOddMeterSongwriterId].map((d) => ({
+            id: d.id,
+            label: d.label,
+          })),
+        ].map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            role="radio"
+            aria-checked={composerMeterPresetId === opt.id}
+            onClick={() => setComposerMeterPresetId(opt.id)}
+            disabled={loading}
+            style={{
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.8rem',
+              borderRadius: 4,
+              border:
+                composerMeterPresetId === opt.id
+                  ? '1px solid var(--accent, #6ae)'
+                  : '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+              background: composerMeterPresetId === opt.id ? 'rgba(100,160,255,0.12)' : 'transparent',
+              cursor: loading ? 'default' : 'pointer',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <section>
@@ -3512,6 +3610,7 @@ export function HomeGenerate({
               {ARIA_SONGWRITER_GROUPS_DESC}
             </span>
           </div>
+          {composerOddMeterMapBlock}
           {songwriterStyle === 'frank_zappa' && (
             <>
             <div

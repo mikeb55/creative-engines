@@ -25,6 +25,8 @@ export interface ZappaMeterCyclePresetDefinition {
   readonly id: string;
   readonly label: string;
   readonly cycle: readonly BarMeterSignature[];
+  /** Optional beat subdivision grouping for notation/UI (e.g. 9/8 as 2+2+2+3). */
+  readonly beatGrouping?: readonly number[];
 }
 
 /** Extended UI/engine presets (cycles only; Classic / Black Page remain in-app defaults). */
@@ -84,6 +86,72 @@ export const ZAPPA_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePrese
     cycle: [{ numerator: 6, denominator: 8 }],
   },
 ];
+
+/** Dave Brubeck–style meter cycles (tiled across bar count like Zappa presets). */
+export const BRUBECK_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'brubeck_take_five',
+    label: 'Take Five (5/4)',
+    cycle: [{ numerator: 5, denominator: 4 }],
+  },
+  {
+    id: 'brubeck_blue_rondo',
+    label: 'Blue Rondo (9/8 — 2+2+2+3)',
+    cycle: [{ numerator: 9, denominator: 8 }],
+    beatGrouping: [2, 2, 2, 3],
+  },
+  {
+    id: 'brubeck_unsquare',
+    label: 'Unsquare Dance (7/4)',
+    cycle: [{ numerator: 7, denominator: 4 }],
+  },
+];
+
+/** Thelonious Monk–style meter cycles. */
+export const MONK_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'monk_interrupted',
+    label: 'Monk Interrupted (4/4 + 3/4)',
+    cycle: [
+      { numerator: 4, denominator: 4 },
+      { numerator: 3, denominator: 4 },
+    ],
+  },
+  {
+    id: 'monk_five',
+    label: 'Monk Five (5/4)',
+    cycle: [{ numerator: 5, denominator: 4 }],
+  },
+];
+
+/** Wayne Shorter–style meter cycles. */
+export const SHORTER_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'shorter_six',
+    label: 'Shorter Six (6/4)',
+    cycle: [{ numerator: 6, denominator: 4 }],
+  },
+  {
+    id: 'shorter_seven',
+    label: 'Shorter Seven (7/4)',
+    cycle: [{ numerator: 7, denominator: 4 }],
+  },
+  {
+    id: 'shorter_three_four',
+    label: 'Shorter (3/4 + 4/4)',
+    cycle: [
+      { numerator: 3, denominator: 4 },
+      { numerator: 4, denominator: 4 },
+    ],
+  },
+];
+
+/** Composer-keyed odd-meter presets for Song Mode UI + `barMeterMap` tiling. */
+export const COMPOSER_METER_PRESET_MAP = {
+  dave_brubeck: BRUBECK_METER_CYCLE_PRESET_DEFINITIONS,
+  thelonious_monk: MONK_METER_CYCLE_PRESET_DEFINITIONS,
+  wayne_shorter: SHORTER_METER_CYCLE_PRESET_DEFINITIONS,
+} as const;
 
 /** Tile `cycle` across `barCount` bars (1-based bar order). */
 export function tileZappaMeterCycle(

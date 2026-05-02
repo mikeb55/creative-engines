@@ -1103,6 +1103,24 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 4,
     intervalPreference: 'chromatic',
   },
+  dave_brubeck: {
+    id: 'dave_brubeck',
+    description:
+      'Cool-school jazz piano — rhythmic clarity, odd-meter bias, block-chord pockets (baseline profile until a dedicated slice ships).',
+    lineVsCellEmphasis: 0.62,
+    harmonyColourBias: 0.72,
+    formRegularity: 0.46,
+    prosodyInfluence: 0.22,
+    hookRepetitionBias: 0.42,
+    phraseRegularity: 0.36,
+    hookReturnVariation: 0.58,
+    harmonicSpeed: 0.48,
+    sectionContrast: 0.58,
+    syncopationBias: 0.62,
+    densityBias: 0.44,
+    motifCellSize: 4,
+    intervalPreference: 'triadic',
+  },
   frank_zappa: {
     id: 'frank_zappa',
     description:
@@ -1145,6 +1163,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   thelonious_monk: 'thelonious_monk',
   monk: 'thelonious_monk',
   thelonious: 'thelonious_monk',
+  dave_brubeck: 'dave_brubeck',
+  brubeck: 'dave_brubeck',
   stevie: 'stevie_wonder',
   stevie_wonder: 'stevie_wonder',
   beatles: 'beatles',
