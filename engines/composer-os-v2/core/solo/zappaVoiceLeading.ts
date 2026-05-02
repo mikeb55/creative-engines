@@ -20,6 +20,54 @@ function isStructuralZappaSoloNote(n: SoloNote): boolean {
   );
 }
 
+/** Lower is better; favours semitone motion and penalises leaps larger than a major third. */
+function guideToneStepCost(deltaSemitones: number): number {
+  const a = Math.abs(deltaSemitones);
+  if (a <= 1) return a * 0.35;
+  if (a <= 2) return a;
+  if (a <= 4) return a + 2;
+  return a + 10;
+}
+
+/**
+ * When three consecutive bar-to-bar guide motions are all non-stepwise (|Δ|>2), re-pick third/seventh on the
+ * interior bars to break the streak (Phase 3 continuity tuning).
+ */
+function repairZappaGuideToneLongBreakStreaks(
+  bars: ZappaGuideToneBarReceipt[],
+  chords: string[],
+  low: number,
+  high: number
+): void {
+  const n = bars.length;
+  if (n < 4) return;
+  for (let i = 1; i <= n - 3; i++) {
+    const d1 = Math.abs(bars[i]!.guideMidi - bars[i - 1]!.guideMidi);
+    const d2 = Math.abs(bars[i + 1]!.guideMidi - bars[i]!.guideMidi);
+    const d3 = Math.abs(bars[i + 2]!.guideMidi - bars[i + 1]!.guideMidi);
+    if (d1 <= 2 || d2 <= 2 || d3 <= 2) continue;
+    for (const off of [0, 1] as const) {
+      const bi = i + off;
+      const sym = chords[bi] ?? 'C7';
+      const t = chordTonesForChordSymbol(sym);
+      const third = liftIntoRange(t.third ?? t.root + 4, low, high);
+      const seventh = liftIntoRange(t.seventh ?? t.root + 10, low, high);
+      const prev = bars[bi - 1]!.guideMidi;
+      let best = bars[bi]!.guideMidi;
+      let bestCost = guideToneStepCost(best - prev);
+      for (const c of [third, seventh]) {
+        const cst = guideToneStepCost(c - prev);
+        if (cst < bestCost - 1e-6) {
+          bestCost = cst;
+          best = c;
+        }
+      }
+      bars[bi]!.guideMidi = best;
+      bars[bi]!.role = Math.abs(best - third) <= Math.abs(best - seventh) ? 'third' : 'seventh';
+    }
+  }
+}
+
 /**
  * Build per-bar third/seventh guide choices, preferring stepwise motion (≤2 semitones) bar-to-bar.
  */
@@ -40,32 +88,25 @@ export function buildZappaSmoothedGuideToneReceipt(
     let role: 'third' | 'seventh' = preferredRole;
     if (b > 1) {
       const prev = bars[b - 2]!.guideMidi;
-      const dPref = Math.abs(guideMidi - prev);
-      const altMidi = guideMidi === third ? seventh : third;
-      const dAlt = Math.abs(altMidi - prev);
-      if (dAlt + 1e-6 < dPref) {
-        guideMidi = altMidi;
-        role = guideMidi === third ? 'third' : 'seventh';
-      }
-      if (Math.abs(guideMidi - prev) > 2) {
-        const cands = [
-          { midi: third, r: 'third' as const },
-          { midi: seventh, r: 'seventh' as const },
-        ];
-        let best = guideMidi;
-        let bestR = role;
-        let bestD = Math.abs(guideMidi - prev);
-        for (const c of cands) {
-          const d = Math.abs(c.midi - prev);
-          if (d < bestD - 1e-6) {
-            bestD = d;
-            best = c.midi;
-            bestR = c.r;
-          }
+      const cands = [
+        { midi: third, r: 'third' as const },
+        { midi: seventh, r: 'seventh' as const },
+      ];
+      let bestM = cands[0]!.midi;
+      let bestR = cands[0]!.r;
+      let bestCost =
+        guideToneStepCost(cands[0]!.midi - prev) - (cands[0]!.r === preferredRole ? 0.02 : 0);
+      for (const c of cands) {
+        let cost = guideToneStepCost(c.midi - prev);
+        if (c.r === preferredRole) cost -= 0.02;
+        if (cost < bestCost - 1e-6) {
+          bestCost = cost;
+          bestM = c.midi;
+          bestR = c.r;
         }
-        guideMidi = best;
-        role = bestR;
       }
+      guideMidi = bestM;
+      role = bestR;
     }
     const prevMidi = b > 1 ? bars[b - 2]!.guideMidi : guideMidi;
     const semitoneMotionFromPrev = b === 1 ? 0 : guideMidi - prevMidi;
@@ -76,6 +117,12 @@ export function buildZappaSmoothedGuideToneReceipt(
       guideMidi,
       semitoneMotionFromPrev,
     });
+  }
+
+  repairZappaGuideToneLongBreakStreaks(bars, chords, low, high);
+  for (let b = 1; b <= tb; b++) {
+    const row = bars[b - 1]!;
+    row.semitoneMotionFromPrev = b === 1 ? 0 : row.guideMidi - bars[b - 2]!.guideMidi;
   }
   let okPairs = 0;
   let totalPairs = 0;

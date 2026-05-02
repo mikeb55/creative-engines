@@ -130,13 +130,59 @@ function enforceMinimumZappaSoloNotesPerBar(params: {
   allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
 }
 
+/**
+ * Each 4-bar phrase must include at least one bar with ≤2 attacks (breathing room vs continuous motion).
+ * If every bar in the phrase has >2 notes, thin one bar (prefer dropping `density_minimum_pad`) to exactly 2.
+ */
+function breathSpacingMayRemoveZappaNote(n: SoloNote): boolean {
+  return !(
+    n.marker === 'descending_minor_sixth' ||
+    n.marker === 'tetrachord_0137' ||
+    n.marker === 'factory_32nd_shift' ||
+    (n.tupletRole !== undefined && n.tupletRole !== 'plain')
+  );
+}
+
+function enforceZappaPhraseBreathSpace(params: { allNotes: SoloNote[]; tb: number; seed: number }): void {
+  const { allNotes, tb, seed } = params;
+  const totalPhrases = Math.max(1, Math.ceil(tb / 4));
+  for (let pi = 0; pi < totalPhrases; pi++) {
+    const lo = pi * 4 + 1;
+    const hi = Math.min(tb, (pi + 1) * 4);
+    const perBar: number[] = [];
+    for (let b = lo; b <= hi; b++) {
+      perBar.push(allNotes.filter((n) => n.barIndex === b).length);
+    }
+    if (perBar.some((c) => c <= 2)) continue;
+    const bPick = lo + ((seed + pi * 97) % (hi - lo + 1));
+    let toRemove = perBar[bPick - lo]! - 2;
+    const removable = allNotes
+      .filter((n) => n.barIndex === bPick && breathSpacingMayRemoveZappaNote(n))
+      .sort((a, b) => {
+        const pa = a.marker === 'density_minimum_pad' ? 0 : 1;
+        const pb = b.marker === 'density_minimum_pad' ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return b.startBeat - a.startBeat;
+      });
+    for (const n of removable) {
+      if (toRemove <= 0) break;
+      const j = allNotes.indexOf(n);
+      if (j >= 0) {
+        allNotes.splice(j, 1);
+        toRemove--;
+      }
+    }
+  }
+  allNotes.sort((a, c) => (a.barIndex !== c.barIndex ? a.barIndex - c.barIndex : a.startBeat - c.startBeat));
+}
+
 /** Quarter-note span of one measure for the given bar. */
 export function measureQuarterSpanForBar(bar1Based: number, map: BarMeterMap | undefined): number {
   const sig = resolveMeterForBar(bar1Based, map);
   return (sig.numerator * 4) / sig.denominator;
 }
 
-// ---- Musicality Phase 1 — 7/8 rhythmic cell lock (section A vs B, ≥50% phrases) ----
+// ---- Musicality Phase 1 — 7/8 rhythmic cell lock (section A vs B, ≥60% phrases) ----
 
 /**
  * Section A: product label `3+3+2` — canonical eighth-note groups for one 7/8 bar **sum to 7** (`3+2+2`).
@@ -216,10 +262,10 @@ function zappaPhraseIndexForFourBarWindow(bar1Based: number): number {
   return Math.floor((bar1Based - 1) / 4);
 }
 
-/** First `ceil(n * 0.5)` four-bar phrase indices use the cell lock (deterministic, ≥50%). */
+/** First `ceil(n * 0.6)` four-bar phrase indices use the cell lock (deterministic, ≥60%). */
 export function zappaRhythmicCellLockedPhraseCount(totalPhrases: number): number {
   if (totalPhrases <= 0) return 0;
-  return Math.ceil(totalPhrases * 0.5);
+  return Math.ceil(totalPhrases * 0.6);
 }
 
 function phraseIndexUsesRhythmicCellLock(phraseIndex: number, lockedTopCount: number): boolean {
@@ -333,6 +379,10 @@ function collapseDuplicateOnsetsPerBarMonophonic(allNotes: SoloNote[], tb: numbe
 // ---- Musicality Phase 2 — motif ownership (anchor per section, recurrence ≥0.7, transforms) ----
 
 const MOTIF_RECURRENCE_THRESHOLD = 0.7;
+/** Below this, strip and reinject the whole 4-bar phrase (not only the post-anchor development window). */
+const MOTIF_FULL_PHRASE_REPLACE_THRESHOLD = 0.5;
+/** First N bars of each form section used for anchor fingerprint (was 2). */
+const MOTIF_ANCHOR_BAR_SPAN = 4;
 const IOI_SCALES = [0.25, 0.5, 1, 2, 4] as const;
 
 function isZappaMotifStructuralNote(n: SoloNote): boolean {
@@ -533,9 +583,15 @@ function developmentBarRangeForPhraseInSection(
   anchor: InternalMotifAnchor
 ): { devLo: number; devHi: number } | undefined {
   const anchorEnd = anchor.anchorEndBar;
-  const devLo = Math.max(phraseLo, anchorEnd + 1);
+  let devLo = Math.max(phraseLo, anchorEnd + 1);
   const devHi = phraseHi;
-  if (devLo > devHi) return undefined;
+  if (devLo > devHi) {
+    /** Four-bar anchor can cover an entire first phrase — score development on the phrase tail vs anchor. */
+    const phraseLen = phraseHi - phraseLo + 1;
+    const tailBars = Math.min(2, Math.max(1, phraseLen - 1));
+    devLo = Math.max(phraseLo, phraseHi - tailBars + 1);
+    if (devLo > devHi) return undefined;
+  }
   if (devLo > anchor.sectionEndBar) return undefined;
   return { devLo: Math.min(devLo, anchor.sectionEndBar), devHi: Math.min(devHi, anchor.sectionEndBar) };
 }
@@ -560,17 +616,20 @@ function injectMotifFromAnchorSimple(
   high: number,
   map: BarMeterMap | undefined,
   seed: number,
-  salt: number
+  salt: number,
+  aggressive = false
 ): void {
   const N = anchor.intervals.length + 1;
   if (N <= 0) return;
   const t = chordTonesForChordSymbol(chords[devLo - 1] ?? 'C7alt');
   let pitch = liftIntoRange(t.third ?? t.root + 4, low, high);
   let noteIdx = 0;
+  const durCap = aggressive ? 0.55 : 0.42;
+  const onsetJitter = aggressive ? 0.04 : 0.08;
   for (let bar = devLo; bar <= devHi && noteIdx < N; bar++) {
     const span = measureQuarterSpanForBar(bar, map);
-    const dur = Math.max(0.1, Math.min(span * 0.42, (anchor.durationRatios[noteIdx] ?? 1 / N) * span));
-    const st = Math.min(span - dur, seededUnit(seed, salt + bar * 31 + noteIdx) * 0.08);
+    const dur = Math.max(0.1, Math.min(span * durCap, (anchor.durationRatios[noteIdx] ?? 1 / N) * span));
+    const st = Math.min(span - dur, seededUnit(seed, salt + bar * 31 + noteIdx) * onsetJitter);
     allNotes.push({
       midi: Math.round(pitch),
       startBeat: st,
@@ -613,7 +672,7 @@ function applyZappaMotifOwnershipPhase2(params: {
 
   for (const sec of form.sections) {
     const endBar = sec.startBar + sec.length - 1;
-    const barHi = Math.min(sec.startBar + 1, endBar);
+    const barHi = Math.min(sec.startBar + (MOTIF_ANCHOR_BAR_SPAN - 1), endBar);
     const slice = sortedMotifSliceNotes(allNotes, sec.startBar, barHi);
     const anchor = buildInternalAnchorFromNotes(sec.label.trim(), sec.startBar, barHi, endBar, map, slice);
     if (anchor) {
@@ -671,9 +730,31 @@ function applyZappaMotifOwnershipPhase2(params: {
     let { score, transform } = combinedMotifSimilarity(anchor, frag, map);
     let repaired = false;
 
-    if (score === 0 || score < MOTIF_RECURRENCE_THRESHOLD) {
+    if (score < MOTIF_FULL_PHRASE_REPLACE_THRESHOLD) {
+      removeRepairableNotesInRange(allNotes, lo, hi);
+      injectMotifFromAnchorSimple(allNotes, lo, hi, anchor, chords, low, high, map, seed, 91800 + pi, true);
+      repaired = true;
+      repairedCount++;
+      frag = fragmentSortedNotes(allNotes, dev.devLo, dev.devHi);
+      const again = combinedMotifSimilarity(anchor, frag, map);
+      score = again.score;
+      transform = again.transform;
+    } else if (score < MOTIF_RECURRENCE_THRESHOLD) {
       removeRepairableNotesInRange(allNotes, dev.devLo, dev.devHi);
-      injectMotifFromAnchorSimple(allNotes, dev.devLo, dev.devHi, anchor, chords, low, high, map, seed, 91800 + pi);
+      const aggressiveMid = score < 0.62;
+      injectMotifFromAnchorSimple(
+        allNotes,
+        dev.devLo,
+        dev.devHi,
+        anchor,
+        chords,
+        low,
+        high,
+        map,
+        seed,
+        91800 + pi,
+        aggressiveMid
+      );
       repaired = true;
       repairedCount++;
       frag = fragmentSortedNotes(allNotes, dev.devLo, dev.devHi);
@@ -1151,6 +1232,7 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
 
   enforceMinimumZappaSoloNotesPerBar({ allNotes, tb, chords, low, high, seed, map });
+  enforceZappaPhraseBreathSpace({ allNotes, tb, seed });
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
   collapseDuplicateOnsetsPerBarMonophonic(allNotes, tb);
   normalizeSoloNoteRhythmsPerBarForExport(allNotes, tb, map);
@@ -1184,10 +1266,10 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   }
 
   const rhythmicCellLock = {
-    threshold: 0.5,
+    threshold: 0.6,
     phraseCount: totalPhrases,
     phrasesCellLocked: lockedTopCount,
-    policyMet: lockedTopCount / totalPhrases >= 0.5 - 1e-9,
+    policyMet: lockedTopCount / totalPhrases >= 0.6 - 1e-9,
     sectionDisruptionBars:
       Object.keys(sectionDisruptionBars).length > 0 ? sectionDisruptionBars : undefined,
   };

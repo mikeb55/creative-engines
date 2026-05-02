@@ -21,7 +21,7 @@ Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, *
 - **GCE Quality 8.3/10** — green receipt confirmed **2026-05-02** (see **`docs/GCE_FRAMEWORK_V2.md`** / Generate receipts).
 - **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
 - **Odd meter (7/8 + 4/4) Zappa Classic** — alternating-meter **`barMeterMap`** path confirmed working in-app and smoke **2026-05-02**.
-- **Known tuning issue:** motif **similarity** observed **~0.39** vs design target **≥0.70** — **fix / tuning pass in progress** (`zappasoloEngine` Phase 2).
+- **Motif similarity:** musicality **tuning pass (2026-05-02)** raises recurrence fidelity (4-bar anchor, full-phrase repair below **0.5**, **`frankZappaSliceSmoke`** / **`zappasoloSmoke`** green); target **≥0.70** remains the design north star for diagnostics.
 
 ---
 
@@ -41,20 +41,27 @@ Polytonal clash, metric bass displacement, xenochrony-like pitch offset, style j
 
 Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintuplet), structural **descending minor 6th**, **[0137]** tetrachord on structural bars, factory-cycle displacement — merged as **`zappa_solo`** MusicXML part when generation requests it.
 
+### Tuning Pass (2026-05-02) — **LIVE**
+
+- **Motif:** anchor fingerprint window **4 bars** per form section; **full 4-bar phrase** replace + aggressive injection when phrase–anchor similarity **&lt; 0.5** (development-window repair for **0.5–0.7**); phrase tail fallback when the anchor spans an entire phrase.
+- **Rhythmic cell lock:** **60%** of four-bar phrase indices (**`ceil(phraseCount × 0.6)`**); receipt **`rhythmicCellLock.threshold`** **0.6**.
+- **Breath space:** each 4-bar phrase keeps **at least one bar** with **≤2** attacks (thins one bar when every bar would exceed that — **`enforceZappaPhraseBreathSpace`** after minimum-density pad).
+- **Guide-tone line (`zappaVoiceLeading.ts`):** step-cost favours semitone motion and penalises leaps **&gt; M3**; **three consecutive** non-stepwise bar-to-bar motions (**|Δ| &gt; 2**) trigger **automatic third/seventh re-pick** on interior bars (**`repairZappaGuideToneLongBreakStreaks`**).
+
 ### Phase 1 — Rhythmic cell lock — **LIVE**
 
 - **Section A (form):** product label **3+3+2** for 7/8; canonical eighth grouping **`[3, 2, 2]`** (sum **7** per measure).
 - **Section B (form):** product label **3+2+2+2** for 7/8; canonical grouping **`[2, 2, 2, 1]`** (sum **7**).
-- **Constraint:** at least **50%** of four-bar phrase windows use the cell lock pass (**`ceil(phraseCount/2)`** first phrases, deterministic).
+- **Constraint:** at least **60%** of four-bar phrase windows use the cell lock pass (**`ceil(phraseCount × 0.6)`** first phrases, deterministic).
 - **Mechanism:** snap eligible plain-note onsets in **7/8** bars to the section cell grid; tuplets and structural markers (**m6**, **[0137]**) stay off the grid; monophonic collapse + rhythm normalization keep MusicXML tick sums valid.
 - **Metadata:** **`SoloLine.rhythmicCellLock`**, per-phrase **`zappaRhythmicCell`** on **`SoloPhrase`**.
 
 ### Phase 2 — Motif ownership — **LIVE**
 
-- **Anchor:** one motif per **form section** — intervals + duration ratios extracted from the **first two bars** of that section (structural/tuplets excluded from the anchor slice).
-- **Recurrence:** mean similarity **≥ 0.7** within section on **development** fragments (bars after the two-bar anchor window, clamped to the section).
+- **Anchor:** one motif per **form section** — intervals + duration ratios extracted from the **first four bars** of that section (or fewer if the section is shorter; structural/tuplets excluded from the anchor slice).
+- **Recurrence:** mean similarity **≥ 0.7** within section on **development** fragments (bars after the anchor window, or phrase tail when the anchor fills the phrase — clamped to the section).
 - **Transforms** used for scoring vs anchor: **shift** (transpose — contour via intervals), **augment** / **compress** (IOI shape scales **0.25–4×** vs anchor inter-onset ratios).
-- **Reject / repair:** phrases with **zero** or **&lt; 0.7** similarity to the section anchor after transforms get plain notes in the development window replaced by a deterministic anchor reinjection pass.
+- **Reject / repair:** similarity **&lt; 0.5** → strip repairable notes in the **whole phrase** and reinject; **0.5–0.7** → development-window reinjection (aggressive when **&lt; 0.62**).
 - **Metadata:** **`SoloLine.zappaMotifReceipt`** (`anchors`, `phraseScores`, `sectionRecurrence`, `sectionsMeetingRecurrence`, `phrasesRejectedOrRepaired`).
 
 ### Phase 3 — Voice-leading + bass authority — **LIVE**
