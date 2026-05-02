@@ -15,6 +15,7 @@ import { GUITAR_BASS_DUO_BASS_PART_NAME } from '../instrument-profiles/guitarBas
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
 import type { MotifTrackerState } from '../motif/motifTypes';
+import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
 
 const MAX_CANDIDATES_PER_PHRASE = 24;
 const BEATS = 4;
@@ -756,13 +757,16 @@ export function buildPhraseFirstDuoScore(context: CompositionContext): PhraseFir
     seg++;
   }
 
+  const isFrankZappa =
+    normalizeSongwriterStyleKey(String(context.generationMetadata?.songwriterStyleId ?? '')) === 'frank_zappa';
   const guitarPart: PartModel = {
     id: 'guitar',
-    name: 'Clean Electric Guitar',
+    name: isFrankZappa ? 'Piano' : 'Clean Electric Guitar',
     instrumentIdentity: guitarProfile.instrumentIdentity,
-    midiProgram: guitarProfile.midiProgram,
+    midiProgram: isFrankZappa ? 0 : guitarProfile.midiProgram,
     clef: 'treble',
     measures: guitarMeasures,
+    ...(isFrankZappa ? { songModePresentAsPianoComp: true as const } : {}),
   };
   const bassPart: PartModel = {
     id: 'bass',

@@ -42,7 +42,23 @@ const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const ZAPPA_SOLO_DEFAULT_MIDI_LOW = 52;
 const ZAPPA_SOLO_DEFAULT_MIDI_HIGH = 84;
 const ZAPPA_SOLO_EXPORT_MIDI_SHIFT = 24;
-const ZAPPA_SOLO_EXPORT_MIDI_MAX = 108;
+
+/**
+ * Written MIDI for Zappa solo export: +24 shift, then while &gt; 84 subtract 12, then hard clamp to 84.
+ * With {@link midiToPitch}, MusicXML &lt;octave&gt;7 appears for MIDI ≥ 96; cap 84 ⇒ octave ≤ 6 (no octave 7).
+ */
+function zappaSoloExportWrittenMidi(snMidi: number): number {
+  const maxWritten = ZAPPA_SOLO_DEFAULT_MIDI_HIGH;
+  const minWritten = ZAPPA_SOLO_DEFAULT_MIDI_LOW;
+  let pitch = Math.round(Number(snMidi));
+  if (!Number.isFinite(pitch)) pitch = minWritten;
+  pitch += ZAPPA_SOLO_EXPORT_MIDI_SHIFT;
+  while (pitch > maxWritten) {
+    pitch -= 12;
+  }
+  pitch = Math.min(pitch, maxWritten);
+  return Math.max(minWritten, pitch);
+}
 
 function seededUnit(seed: number, salt = 0): number {
   let s = ((seed ^ salt * 1103515245) >>> 0) as number;
@@ -1150,7 +1166,7 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
     const notes = (byBar.get(b) ?? []).sort((a, c) => a.startBeat - c.startBeat);
     const events: NoteEvent[] = notes.map((sn) => ({
       kind: 'note',
-      pitch: Math.min(ZAPPA_SOLO_EXPORT_MIDI_MAX, sn.midi + ZAPPA_SOLO_EXPORT_MIDI_SHIFT),
+      pitch: zappaSoloExportWrittenMidi(sn.midi),
       startBeat: sn.startBeat,
       duration: sn.durationBeats,
       voice: 1,

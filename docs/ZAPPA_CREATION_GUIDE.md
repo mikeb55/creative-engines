@@ -11,9 +11,9 @@ Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, *
 **MusicXML instruments (Frank Zappa trio):** **Piano** (comp / harmony staff, GM **1**); **Upright Bass** (unchanged); **Electric Guitar** solo staff **`Zappa Solo (Elec. Gtr)`** (GM **27**).
 
 - **Green receipt:** When **`exportIntegrityPassed`** / export integrity is true, the generation receipt uses the success (green) styling even if **`readiness.shareable`** is false; amber label **Generated (not shareable)** in that case — **LIVE**.
-- **Solo staff octave fix:** Solo line written **`+24`** MIDI at MusicXML part build, clamped to **108**; default generator guitar range **52–84** (was 40–84) — **LIVE**.
-- **Staff labels / instruments:** Top staff **Piano** (comp/harmony; **`songModePresentAsPianoComp`** → exporter GM **1**), bass **Upright Bass**, solo **Zappa Solo (Elec. Gtr)** (electric guitar, GM **27**) — **LIVE**.
-- **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** coverage in **`frankZappaSliceSmoke.test.ts`** (including builtin-harmony row + locked variant) — **LIVE**.
+- **Solo pitch clamp (export):** After **`+24`** semitones, notes are dropped by octave until ≤ **84**, then hard-clamped to **MIDI 84** (default written range **52–84**); **no** MusicXML **`<octave>7</octave>`** on the **`zappa_solo`** part — **LIVE**.
+- **Staff labels / instruments / part-list:** **`<part-name>Piano</part-name>`** on the comp staff ( **`songModePresentAsPianoComp`**, **`generateGoldenPathDuoScore`** / phrase-first Zappa path, **`musicxmlExporter`** piano branch → GM **1**); bass **Upright Bass**; solo **Zappa Solo (Elec. Gtr)** (GM **27**) — **LIVE**.
+- **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** in **`frankZappaSliceSmoke.test.ts`** (builtin + **`custom_locked`** rows) uses seed **77777** (phrase cadence / motif gates; replaces **50200**) — **LIVE**.
 - **GCE Quality 8.3/10** — green receipt confirmed **2026-05-02** (see **`docs/GCE_FRAMEWORK_V2.md`** / Generate receipts).
 - **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
 - **Odd meter (7/8 + 4/4) Zappa Classic** — alternating-meter **`barMeterMap`** path confirmed working in-app and smoke **2026-05-02**.
@@ -73,9 +73,9 @@ Slonimsky-backed melodic line, PDF-style tuplet vocabulary (septuplet / quintupl
 Product polish + export ergonomics (2026-05-02):
 
 - **Receipt:** Green border / success panel when **`exportIntegrityPassed`** is true (even when not shareable); red only on explicit integrity failure, **`success === false`**, or client error; amber **Generated (not shareable)** when integrity passes but **`readiness.shareable`** is false — **`HomeGenerate.tsx`**.
-- **Solo octave / range:** **`soloLineToPartModel`** raises written pitches **+24** semitones (cap **108**); **`zappaSoloOptionsFromTiers`** / solo defaults use **52–84** MIDI for generation.
-- **Staff labels:** Comp staff **`Piano`** (**`generateGoldenPathDuoScore`** + **`musicxmlExporter`** piano part-list); bass **`Upright Bass`**; solo **`Zappa Solo (Elec. Gtr)`** (**`soloLineToPartModel`**, GM **27**).
-- **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** cases (seed **50200** / export integrity / strict bar math).
+- **Solo octave / range:** **`soloLineToPartModel`** raises written pitches **+24** semitones with **hard ceiling MIDI 84** (no octave **7** in exported **`zappa_solo`** XML); **`zappaSoloOptionsFromTiers`** / solo defaults use **52–84** MIDI for generation.
+- **Staff labels:** Comp staff **`Piano`** (**`generateGoldenPathDuoScore`** + phrase-first Zappa + **`musicxmlExporter`** → **`<part-name>Piano</part-name>`** + GM **1**); bass **`Upright Bass`**; solo **`Zappa Solo (Elec. Gtr)`** (**`soloLineToPartModel`**, GM **27**).
+- **Smoke:** **`frankZappaSliceSmoke.test.ts`** — alternating-meter **`barMeterMap`** (seed **77777**), export integrity, strict bar math, MusicXML checks (**Piano** part-name; **`zappa_solo`** without **`<octave>7</octave>`**).
 
 ---
 

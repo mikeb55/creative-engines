@@ -279,6 +279,7 @@ import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
+import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
 import { formatAlternateGuitarTuningExportLine, styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
 import { buildResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
 import {
@@ -2209,7 +2210,8 @@ function buildGuitarPart(
   const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
   const isSongwriterPatMetheny = genMeta?.songwriterStyleId === 'pat_metheny';
   const isSongwriterWayneShorter = genMeta?.songwriterStyleId === 'wayne_shorter';
-  const isSongwriterFrankZappa = genMeta?.songwriterStyleId === 'frank_zappa';
+  const isSongwriterFrankZappa =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'frank_zappa';
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -3093,7 +3095,8 @@ function buildGuitarPart(
     /** MusicXML export uses piano part-list / GM 1 when **`songModePresentAsPianoComp`** (Frank Zappa comp → Piano). */
     name: isSongwriterFrankZappa ? 'Piano' : 'Clean Electric Guitar',
     instrumentIdentity: profile.instrumentIdentity,
-    midiProgram: profile.midiProgram,
+    /** GM Acoustic Grand (0-based); MusicXML piano branch writes `<midi-program>1</midi-program>`. */
+    midiProgram: isSongwriterFrankZappa ? 0 : profile.midiProgram,
     clef: 'treble',
     ...(isSongwriterFrankZappa ? { songModePresentAsPianoComp: true as const } : {}),
     measures,

@@ -4,6 +4,7 @@
 
 import { lockedHarmonyChordSymbolsEquivalent } from '../core/harmony/chordProgressionParser';
 import { computeHarmonyChecksum } from '../core/harmony/harmonyContext';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { ScoreEvent } from '../core/score-model/scoreModelTypes';
@@ -131,7 +132,7 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
   const iiVi32Zm = [...iiViOneCycleZm, ...iiViOneCycleZm, ...iiViOneCycleZm, ...iiViOneCycleZm];
   let zappaClassicOddMeterOk = false;
   try {
-    const rZm = runGoldenPathOnce(50200, {
+    const rZm = runGoldenPathOnce(77777, {
       presetId: 'guitar_bass_duo',
       totalBars: 32,
       longFormEnabled: true,
@@ -177,7 +178,7 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
   /** Builtin Zappa harmony + alternating 7/8 / 4/4 (no custom_locked); seed/meter per Phase 5 UI parity. */
   let zappaBuiltinOddMeterOk = false;
   try {
-    const rBo = runGoldenPathOnce(50200, {
+    const rBo = runGoldenPathOnce(77777, {
       presetId: 'guitar_bass_duo',
       totalBars: 32,
       longFormEnabled: true,
@@ -185,18 +186,30 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
       primarySongwriterStyle: 'frank_zappa',
       barMeterMap: buildZappaClassicBarMeterMap32(),
     });
+    const map32 = buildZappaClassicBarMeterMap32();
+    let xmlAutoOk = false;
+    if (rBo.success && rBo.score) {
+      const res = exportScoreModelToMusicXml(rBo.score, { barMeterMap: map32 });
+      const xml = res.success && res.xml !== undefined ? res.xml : '';
+      const pianoOk = xml.includes('<part-name>Piano</part-name>');
+      const soloMatch = xml.match(/<part id="zappa_solo">[\s\S]*?<\/part>/);
+      const soloBlock = soloMatch?.[0] ?? '';
+      const soloNoOct7 = soloBlock.length > 0 && !/<octave>7<\/octave>/.test(soloBlock);
+      xmlAutoOk = res.success && pianoOk && soloNoOct7;
+    }
     zappaBuiltinOddMeterOk =
       rBo.success === true &&
       rBo.exportIntegrityPassed === true &&
       rBo.strictBarMathPassed === true &&
-      (rBo.errors?.length ?? 0) === 0;
+      (rBo.errors?.length ?? 0) === 0 &&
+      xmlAutoOk;
   } catch {
     zappaBuiltinOddMeterOk = false;
   }
   out.push({
     ok: zappaBuiltinOddMeterOk,
     name:
-      'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: generation + exportIntegrity + strict bar math (seed 50200)',
+      'Frank Zappa + Zappa Classic (7/8+4/4) builtin harmony: success + MusicXML Piano + zappa_solo no octave 7 (seed 77777)',
   });
 
   return out;

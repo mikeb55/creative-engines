@@ -42,7 +42,10 @@ function isStringQuartetPianoPart(p: PartModel): boolean {
  * **Piano** / GM 1 (same part id `guitar`, `songModePresentAsPianoComp` on the part model).
  */
 function isSongModeKeysCompPianoPart(p: PartModel): boolean {
-  return p.songModePresentAsPianoComp === true && p.id === 'guitar';
+  if (p.id !== 'guitar') return false;
+  if (p.songModePresentAsPianoComp === true) return true;
+  /** Duo staff labelled Piano (e.g. Frank Zappa / phrase-first) must get `<part-name>Piano</part-name>` + GM 1. */
+  return p.name === 'Piano';
 }
 
 function partDisplayNameForExport(p: PartModel): string {
