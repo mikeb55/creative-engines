@@ -43,7 +43,10 @@ import {
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 import {
+  buildComposerOddMeterRows,
   COMPOSER_METER_PRESET_MAP,
+  isComposerOddMeterSongwriter,
+  type ComposerOddMeterSongwriterId,
   ZAPPA_METER_CYCLE_PRESET_DEFINITIONS,
   tileZappaMeterCycle,
   zappaMeterCycleToPresetPattern,
@@ -379,27 +382,6 @@ function expandZappaPatternToRows(steps: ZappaMeterStep[], barsPerStep: number, 
     out.push({ numerator: src.numerator, denominator: src.denominator });
   }
   return out;
-}
-
-type ComposerOddMeterSongwriterId = keyof typeof COMPOSER_METER_PRESET_MAP;
-
-function isComposerOddMeterSongwriter(id: string): id is ComposerOddMeterSongwriterId {
-  return Object.prototype.hasOwnProperty.call(COMPOSER_METER_PRESET_MAP, id);
-}
-
-function buildComposerOddMeterRows(
-  songwriterId: ComposerOddMeterSongwriterId,
-  presetId: string,
-  barCount: number
-): Array<{ numerator: number; denominator: number }> {
-  const n = Math.max(0, Math.floor(barCount));
-  if (presetId === 'all_4_4' || n === 0) {
-    return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
-  }
-  const defs = COMPOSER_METER_PRESET_MAP[songwriterId];
-  const extra = defs.find((p) => p.id === presetId);
-  if (!extra) return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
-  return tileZappaMeterCycle(extra.cycle, n);
 }
 
 /** Frank Zappa Song Mode — discrete lengths aligned with engine song-form counts. */
@@ -3573,7 +3555,7 @@ export function HomeGenerate({
               onChange={(e) => setIncludeVocalLeadSheet(e.target.checked)}
               disabled={loading}
             />
-            Include vocal lead sheet (separate MusicXML for singers)
+            Include vocal lead sheet (planned vocal melody — separate MusicXML for singers)
           </label>
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing

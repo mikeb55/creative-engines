@@ -6,7 +6,7 @@ import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { CompiledSong } from './songCompilationTypes';
 import { buildHarmonyXmlLine } from '../../../core/chordSemantics';
 import { buildLeadSheetContractFromCompiled } from './songModeBuilder';
@@ -140,8 +140,10 @@ export function exportVocalLeadSheetMusicXmlViaPython(
   opts: VocalLeadSheetPythonOpts
 ): string | null {
   const contract = buildLeadSheetContractFromCompiled(compiled);
-  const guitar = realisedScore.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
-  const melodyByMeasure = new Map<number, Array<{ beat_position: number; duration: number; pitch: number }>>();
+  /**
+   * Source: vocalMelody.events from LeadSheetContract (not guitar transcription).
+   * Matches {@link buildSongwritingBridgePayloadFromLeadSheetContract} melody mapping.
+   */
   const harmonyByMeasure = new Map<number, Array<{ harmonyXml: string; bar_position: number }>>();
 
   let measureBase = 1;
@@ -155,34 +157,17 @@ export function exportVocalLeadSheetMusicXmlViaPython(
     measureBase = m;
   }
 
-  if (guitar) {
-    for (const m of guitar.measures) {
-      const evs = m.events
-        .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice === undefined || e.voice === 1))
-        .map((e) => ({
-          beat_position: e.startBeat,
-          duration: e.duration,
-          pitch: e.pitch,
-        }));
-      if (evs.length > 0) {
-        melodyByMeasure.set(m.index, evs);
-      }
-    }
-  }
-
   const sections = contract.formSummary.sections.map((sec) => {
-    const melody_events: Array<{ measure: number; beat_position: number; duration: number; pitch: number }> = [];
+    const melody_events = contract.vocalMelody.events
+      .filter((e) => e.measure >= sec.barStart && e.measure <= sec.barEnd)
+      .map((e) => ({
+        measure: e.measure - 1,
+        beat_position: e.beat,
+        duration: e.duration,
+        pitch: e.pitch ?? 60,
+      }));
     const harmony: Array<{ harmonyXml: string; measure: number; bar_position: number }> = [];
     for (let bar = sec.barStart; bar <= sec.barEnd; bar++) {
-      const barMelody = melodyByMeasure.get(bar) ?? [];
-      for (const e of barMelody) {
-        melody_events.push({
-          measure: bar - 1,
-          beat_position: e.beat_position,
-          duration: e.duration,
-          pitch: e.pitch,
-        });
-      }
       const barHarmony = harmonyByMeasure.get(bar) ?? [];
       for (const h of barHarmony) {
         harmony.push({

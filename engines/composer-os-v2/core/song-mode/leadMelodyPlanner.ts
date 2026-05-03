@@ -14,7 +14,32 @@ import { contourForPhrase, overallContourArc } from './melodyContourPlanner';
 import { buildPhraseEntriesFromChordPlan } from './melodyPhrasePlanner';
 import type { LeadMelodyPlan, MelodyContourKind, MelodyNoteEvent } from './leadMelodyTypes';
 import { getSingerRangeProfile } from './singerRangeProfiles';
-import type { MelodyBehaviourPlan, MelodyRhythmicSubdivision } from './melodyBehaviourPlanner';
+import type {
+  MelodyBehaviourPlan,
+  MelodyContourProfileId,
+  MelodyRhythmicSubdivision,
+} from './melodyBehaviourPlanner';
+
+/** Map research contour profile to phrase-level contour used in pitch picking. */
+export function melodyContourProfileToPhraseKind(profile: MelodyContourProfileId): MelodyContourKind {
+  switch (profile) {
+    case 'arch':
+    case 'wide_arc':
+    case 'bebop_arc':
+    case 'groove_arc':
+    case 'cabaret_arc':
+      return 'arch';
+    case 'ascending':
+    case 'rising':
+    case 'sequence':
+      return 'ascending';
+    case 'dissolving':
+    case 'recitation':
+      return 'descending';
+    default:
+      return 'wave';
+  }
+}
 
 function seededUnit(seed: number, bar: number, salt = 0): number {
   let s = (seed * 7919 + bar * 104729 + salt * 503) >>> 0;
@@ -226,8 +251,9 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
 
   for (const ph of phrases) {
     cadenceMeasures.push(ph.cadenceMeasure);
+    const contourFromProfile = melodyContourProfileToPhraseKind(melodyBehaviour.contourProfile);
     const contour =
-      hook.contourHint === 'ascending' && ph.sectionKind === 'chorus' ? 'ascending' : ph.contour;
+      hook.contourHint === 'ascending' && ph.sectionKind === 'chorus' ? 'ascending' : contourFromProfile;
 
     for (let m = ph.startMeasure; m <= ph.endMeasure; m++) {
       const chordSym = harmonyForBar(m);
@@ -274,7 +300,7 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
       } else {
         for (let ci = 0; ci < cells.length; ci++) {
           const cell = cells[ci]!;
-          const intervalSalt = ci * 17 + m * 31;
+          const intervalSalt = ci * 17 + m * 31 + melodyBehaviour.phraseLength * 3;
           const prevForPick = ci === 0 ? prevGlobal : prevInBar ?? prevGlobal;
           const midi = pickMidiFromCandidates(
             candidates,

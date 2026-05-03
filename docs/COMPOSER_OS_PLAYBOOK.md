@@ -49,7 +49,9 @@ Regression pattern: **import** → **`buildUniversalLeadSheetFromImportedLeadShe
 
 ## Vocal melody engine (Song Mode lead melody)
 
-Song Mode builds a **planning-layer** vocal sketch before the golden-path score: **`planMelodyBehaviour`** (per shipped songwriter id) produces **`MelodyBehaviourPlan`** scalars stored on **`SongwritingPlanningBundle`**; **`buildCompiledSong`** passes that bundle into **`planLeadMelody`** (`engines/composer-os-v2/core/song-mode/leadMelodyPlanner.ts`). Output is **`LeadMelodyPlan`** (measure / beat / duration / MIDI events), folded into **`LeadSheetContract.vocalMelody`** — not the same part as duo guitar **`NoteEvent`** rows unless separately bridged.
+Song Mode builds a **planning-layer** vocal sketch before the golden-path score: **`planMelodyBehaviour`** (per **`SongwriterRuleId`**) produces **`MelodyBehaviourPlan`** stored on **`SongwritingPlanningBundle`**; **`buildCompiledSong`** passes it into **`planLeadMelody`** (`engines/composer-os-v2/core/song-mode/leadMelodyPlanner.ts`). Output is **`LeadMelodyPlan`** (measure / beat / duration / MIDI), folded into **`LeadSheetContract.vocalMelody`**.
+
+**Optional vocal lead sheet:** When Generate’s **Include vocal lead sheet** is on, the app writes **`*_vocal_lead_sheet.musicxml`** via **`exportVocalLeadSheetMusicXmlViaPython`** (`songwritingBridgeLeadSheet.ts`). That file uses **`LeadSheetContract.vocalMelody.events`** — the **planned lead melody**, not a transcription of duo guitar comp (**`clean_electric_guitar`**).
 
 ### melodyBehaviour scalars
 
@@ -59,9 +61,51 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 | **`intervalTendency`** | **`stepwise`** / **`mixed`** / **`angular`** — biases chord-tone picks toward small steps vs wider leaps. |
 | **`phraseAsymmetryTendency`** (0–1) | Planning asymmetry hint (paired with hook/chorus planners elsewhere). |
 | **`cadenceFrequency`** | **`low`** / **`medium`** / **`high`** — cadence density hint for downstream lyrics/phrasing. |
-| **`rhythmicSubdivision`** | **`whole_bar`**, **`half_quarter`**, **`eighth_patterns`**, or **`mixed`** (bar-local roll between densities). Drives quarter/eighth **cells** inside each bar (still on the 4/4 scaffold). |
+| **`rhythmicSubdivision`** | **`whole_bar`**, **`half_quarter`**, **`eighth_patterns`**, or **`mixed`** — drives quarter/eighth **cells** per bar (4/4 scaffold). |
+| **`phraseLength`** | Target phrase length hint (**bars**). |
+| **`contourProfile`** | Research contour label (mapped inside **`planLeadMelody`** to phrase contour bias). |
+| **`devices`** | Named vocabulary hooks for manifests/pedagogy (slice-aligned strings). |
 
-Shipped writers each receive a distinct profile in **`melodyBehaviourPlanner.ts`**; unlisted ids use seed-tinted defaults.
+Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
+
+### Per-composer profile table (34 research rows)
+
+| Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
+|-----------|----------|----------|---------------|------------|-----------------|----------------------|
+| `brian_wilson` | stepwise | mixed | 8 | 0.5 | arch | sequential_expansion; appoggiatura; suspension |
+| `stevie_wonder` | stepwise | eighth_patterns | 4 | 0.4 | ascending | melisma; syncopated_anticipation; blues_note; gospel_lift |
+| `radiohead` | stepwise | mixed | 5 | 0.8 | flat_with_terminal_climax | cell_repetition; modal_unease; metric_dislocation |
+| `james_brown` | stepwise | eighth_patterns | 2 | 0.9 | riff | on_the_one; blues_note; call_response; sparse_density |
+| `sonic_youth` | angular | mixed | 2 | 0.7 | flat | drone_melody; dissonant_dyad; shape_melody; narrow_range |
+| `pat_metheny` | mixed | mixed | 8 | 0.3 | arch | destination_tone; inside_outside_arc; guitaristic_leap; lyrical_jazz |
+| `wayne_shorter` | angular | mixed | 3 | 0.3 | irregular | tritone; 4th_5th_leap; enigmatic_cadence; motivic_fragmentation |
+| `barry_harris` | stepwise | eighth_patterns | 4 | 0.4 | bebop_arc | chromatic_enclosure; approach_tone; bebop_scale; ii_V_outline |
+| `stephen_sondheim` | stepwise | mixed | 5 | 0.3 | speech_contour | word_painting; chromatic_tension; asymmetric_phrase |
+| `kate_bush` | angular | mixed | 6 | 0.3 | dramatic_leap | wide_leap; melisma; modal_color; dramaturgical_phrase |
+| `thelonious_monk` | angular | mixed | 2 | 0.6 | irregular | tritone; whole_tone_fragment; chromatic_enclosure; deliberate_silence |
+| `dave_brubeck` | stepwise | mixed | 4 | 0.5 | arch | odd_meter_alignment; quartal_shape; additive_cell; blues_modal_mixture |
+| `andrew_hill` | angular | mixed | 5 | 0.4 | irregular | motivic_fragmentation; interval_expansion; chromatic_sideslip; pedal_ambiguity |
+| `charlie_parker` | angular | eighth_patterns | 4 | 0.2 | bebop_arc | chromatic_enclosure; upper_structure_arpeggio; ii_V_outline; bebop_scale |
+| `bill_evans` | stepwise | mixed | 8 | 0.4 | arch | inner_voice_melody; modal_interchange; delayed_resolution; impressionistic_voicing |
+| `bacharach` | mixed | eighth_patterns | 5 | 0.3 | irregular | metric_shift; phrase_extension; suspended_appoggiatura; chromatic_bass |
+| `donald_fagen` | mixed | eighth_patterns | 4 | 0.5 | conversational | guide_tone_melody; blues_over_jazz_harmony; syncopated_hook; static_pitch_over_moving_chords |
+| `frank_zappa` | angular | eighth_patterns | 3 | 0.2 | irregular | polyrhythmic_unison; chromatic_sideslip; interval_expansion; synthetic_scale; sudden_meter_change |
+| `joni_mitchell` | angular | mixed | 6 | 0.3 | wide_arc | open_tuning_pitch_field; unresolved_suspension; wide_leap_stepwise_descent; modal_drone |
+| `antonio_carlos_jobim` | stepwise | eighth_patterns | 8 | 0.5 | arch | bossa_anticipation; lydian_dominant; chromatic_approach; sigh_figure |
+| `herbie_hancock` | mixed | eighth_patterns | 4 | 0.4 | groove_arc | quartal_melody; pentatonic_sideslip; suspended_dominant; funk_ostinato |
+| `bach` | stepwise | eighth_patterns | 2 | 0.4 | sequence | imitation; sequence; suspension_chain; invertible_counterpoint; circle_of_fifths |
+| `beatles` | mixed | mixed | 4 | 0.5 | arch | 3_note_cell; blue_note; middle_eight_shift; parallel_harmony; chromatic_hook |
+| `beethoven` | mixed | mixed | 4 | 0.5 | motivic_development | motivic_fragmentation; sequence; liquidation; sforzando_displacement; registral_expansion |
+| `billy_strayhorn` | stepwise | mixed | 8 | 0.4 | arch | chromatic_descent; dominant_chain; lush_extensions; delayed_cadence; sequence_through_remote_keys |
+| `bob_dylan` | stepwise | mixed | 8 | 0.8 | recitation | strophic_variation; repeated_note_recitation; modal_pentatonic; line_ending_fall; folk_drone |
+| `carole_king` | stepwise | mixed | 4 | 0.5 | rising | gospel_suspension; repeated_note_hook; stepwise_verse_build; rising_chorus_sequence |
+| `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
+| `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
+| `holland_dozier_holland` | stepwise | eighth_patterns | 2 | 0.7 | rising | call_response_hook; repeated_title_phrase; tambourine_anticipation; backing_vocal_echo |
+| `jeff_lynne` | stepwise | mixed | 4 | 0.6 | arch | stacked_harmony_hook; octave_doubled_melody; string_countermelody; descending_bass_hook |
+| `jeff_tweedy` | stepwise | mixed | 4 | 0.7 | flat | deadpan_repeated_note; modal_bVII; unresolved_suspension; folk_drone; understated_chorus |
+| `kendrick_lamar` | stepwise | eighth_patterns | 2 | 0.5 | speech_contour | flow_modulation; syllabic_ostinato; pitch_zone_contrast; barline_displacement; triplet_switch |
+| `kurt_weill` | stepwise | mixed | 4 | 0.6 | cabaret_arc | descending_minor_3rd; tritone_bitterness; chant_repeated_tone; major_minor_irony; mechanical_ostinato |
 
 ### Chord-tone awareness
 
