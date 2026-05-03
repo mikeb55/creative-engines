@@ -590,6 +590,29 @@ If using **SD3** or other drum workflows, cross-read **drum guide docs** in-repo
 
 Recent exporters avoid **invalid credit/part-name-display** patterns—if your older file fails, **re-export** from current Composer OS before blaming the host.
 
+### Big Band arranger profiles (wired tuning receipts)
+
+For **Big Band**, **`composerOsAppGeneration.ts`** maps **`stylePairing.arrangerStyle`** → **`composerStyle`** only for **`basie`**, **`ellington`**, **`schneider`**, and **`quincy_jones`**. **`resolveBigBandEraRules`** then merges **registry composer rules** with **scalar tuning** (`riffVsLine`, `spaceEmphasis`, `smoothTransitions`, …) and attaches optional **`BigBandArrangerProfileReceiptV1`** blobs on **`resolvedRules.tuning`** — **planning receipts** for manifests / diagnostics; score behaviour still flows through existing **`applyBigBandRules`** + orchestration paths.
+
+**Wired arranger parameter profiles** (exact strings stored on the receipt):
+
+| Field | Duke Ellington (`ellington`) | Maria Schneider (`schneider`) | Quincy Jones (`quincy_jones`) |
+|-------|-------------------------------|------------------------------|-------------------------------|
+| Chord density | 4 | 5 | 3 |
+| Extensions | 9ths, 11ths, 13ths, altered, polytonal | 9ths, 11ths, 13ths, altered, upper structure triads, polytonal | 9ths, 11ths, 13ths, altered, upper structure triads |
+| Functional harmony | 60% | 40% | 80% |
+| Harmonic rhythm | medium | slow | medium |
+| Overall density | 4 | 4 | 3 |
+| Texture arc | conversational, gradual build | gradual build, mosaic | cinematic, gradual build |
+| Section blending | blurred, unusual combos | blurred, unusual combos | mostly clean, some blends |
+| Rhythm section weight | 3 | 3 | 5 |
+| Time feel | elastic / floating | floating / groove-first | groove-first / locked grid |
+| Horn relationship | equal dialogue | equal dialogue | rhythm leads / equal dialogue |
+| Build strategy | chorus-based, narrative arc | narrative arc | chorus-based, cinematic |
+| Space usage | continuous flow with pockets of space | space then explosion / continuous flow | space then explosion |
+
+**Count Basie (`basie`)** remains wired with **`basieProofOfConcept`** (lower chord/overall density, **90%** functional harmony, **locked grid**, **clean separation**, riff-forward receipt — see **`bigBandEraResolver.ts`**).
+
 ---
 
 ## 11. Guitar tunings and instrumental edges
@@ -638,15 +661,15 @@ Pair **ECM-style modal sparsity** with **long seeds** to avoid **phrase repetiti
 
 Documented limitations—do not mistake UI labels for fully wired engine behaviour until addressed.
 
-### ARRANGER STYLES — KNOWN GAP
+### ARRANGER STYLES — partial wiring
 
-The arranger dropdown in **Big Band** mode does not currently affect the generated music. The **`arrangerStyle`** value from the UI is never mapped to **`composerStyle`** before reaching the Big Band engine, so all arrangers produce identical output regardless of selection.
+**Mapped to `composerStyle` (registry rules + tuning):** **`basie`**, **`ellington`**, **`schneider`**, **`quincy_jones`** via **`composerStyleFromArrangerStyle`** in **`composerOsAppGeneration.ts`** before **`runBigBandMode`** / **`runBigBandRealisation`**.
 
-Partial wiring exists for **four** arrangers in **Song Mode pairing** only (confidence scores, contrast nudges): **Ellington**, **Basie**, **Thad Jones**, **Maria Schneider**. The remaining **six** studio arrangers are UI labels only.
+**Structured profile receipts (`BigBandArrangerProfileReceiptV1` on `resolvedRules.tuning`):** **Count Basie**, **Duke Ellington**, **Maria Schneider**, and **Quincy Jones** — see **section 10 — Big Band arranger profiles (wired tuning receipts)**.
 
-When returning to this: the fix requires **(1)** a structural mapping of **`arrangerStyle` → `composerStyle`** in **`composerOsAppGeneration.ts`** before **`runBigBandMode`** is called, and **(2)** per-arranger research to define genuine musical distinctions for each one.
+**Still UI-only for Big Band engine merge:** other **`arrangerStyle`** ids (e.g. **Thad Jones**, Gil Evans, Nelson Riddle, …) do **not** set **`composerStyle`**; they receive **era + foundational + functional** rules only. Song Mode **style pairing** may still reference those names for confidence / contrast metadata independently of Big Band **`composerStyle`**.
 
-**Priority:** low. Do not attempt until Big Band pipeline restructure is scoped as a dedicated workstream.
+**Follow-up:** deeper per-arranger **scoring** differentiation (beyond receipts + existing **`applyBigBandRules`** hooks) remains roadmap scope when the Big Band pipeline is extended.
 
 ---
 

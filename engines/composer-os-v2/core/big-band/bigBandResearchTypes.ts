@@ -83,14 +83,14 @@ export interface BigBandRuleRegistryShape {
 }
 
 /**
- * Basie arranger proof-of-concept — structured receipt for planning/export evolution.
- * Score generation still consumes legacy `BigBandRuleTuning` scalar fields + rule ids.
+ * Structured arranger profile receipt for Big Band planning (`resolvedRules.tuning`).
+ * Score generation still consumes legacy scalar `BigBandRuleTuning` fields + composer rule ids.
  */
-export interface BasieArrangerProofOfConceptV1 {
+export interface BigBandArrangerProfileReceiptV1 {
   chordDensity: number;
   extensionsPolicy: string;
   functionalHarmonyPercent: number;
-  harmonicRhythm: 'low' | 'medium' | 'high';
+  harmonicRhythm: string;
   overallDensity: number;
   textureArc: string;
   sectionBlending: string;
@@ -98,7 +98,11 @@ export interface BasieArrangerProofOfConceptV1 {
   timeFeel: string;
   hornRelationship: string;
   buildStrategy: string;
+  spaceUsage?: string;
 }
+
+/** @deprecated Use `BigBandArrangerProfileReceiptV1` */
+export type BasieArrangerProofOfConceptV1 = BigBandArrangerProfileReceiptV1;
 
 /** Tuning derived from era + optional composer (planning hints only). */
 export interface BigBandRuleTuning {
@@ -107,8 +111,10 @@ export interface BigBandRuleTuning {
   densityArc: boolean;
   smoothTransitions: boolean;
   shoutMotivicClimax: boolean;
-  /** Populated when `composerStyle === 'basie'` — first wired arranger flavour block. */
-  basieProofOfConcept?: BasieArrangerProofOfConceptV1;
+  basieProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  ellingtonProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  schneiderProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  quincyJonesProofOfConcept?: BigBandArrangerProfileReceiptV1;
 }
 
 export interface ResolvedBigBandRuleSet {

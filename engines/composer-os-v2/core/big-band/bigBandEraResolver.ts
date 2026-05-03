@@ -4,7 +4,7 @@
 
 import { BIG_BAND_RULE_REGISTRY } from './bigBandRuleRegistry';
 import type {
-  BasieArrangerProofOfConceptV1,
+  BigBandArrangerProfileReceiptV1,
   BigBandComposerId,
   BigBandEraId,
   BigBandRuleTuning,
@@ -51,9 +51,13 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     shoutMotivicClimax = true;
   }
 
-  let basieProofOfConcept: BasieArrangerProofOfConceptV1 | undefined;
+  let basieProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let ellingtonProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let schneiderProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let quincyJonesProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+
   if (composer === 'basie') {
-    /** Proof-of-concept Basie flavour receipt — paired with existing riff/sparse tuning hooks. */
+    /** Paired with existing riff/sparse `applyBigBandRules` hooks. */
     smoothTransitions = false;
     densityArc = true;
     shoutMotivicClimax = true;
@@ -73,6 +77,64 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     };
   }
 
+  if (composer === 'ellington') {
+    smoothTransitions = true;
+    densityArc = true;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.42);
+    ellingtonProofOfConcept = {
+      chordDensity: 4,
+      extensionsPolicy: '9ths, 11ths, 13ths, altered, polytonal',
+      functionalHarmonyPercent: 60,
+      harmonicRhythm: 'medium',
+      overallDensity: 4,
+      textureArc: 'conversational, gradual build',
+      sectionBlending: 'blurred, unusual combos',
+      rhythmSectionWeight: 3,
+      timeFeel: 'elastic / floating',
+      hornRelationship: 'equal dialogue',
+      buildStrategy: 'chorus-based, narrative arc',
+      spaceUsage: 'continuous flow with pockets of space',
+    };
+  }
+
+  if (composer === 'schneider') {
+    schneiderProofOfConcept = {
+      chordDensity: 5,
+      extensionsPolicy: '9ths, 11ths, 13ths, altered, upper structure triads, polytonal',
+      functionalHarmonyPercent: 40,
+      harmonicRhythm: 'slow',
+      overallDensity: 4,
+      textureArc: 'gradual build, mosaic',
+      sectionBlending: 'blurred, unusual combos',
+      rhythmSectionWeight: 3,
+      timeFeel: 'floating / groove-first',
+      hornRelationship: 'equal dialogue',
+      buildStrategy: 'narrative arc',
+      spaceUsage: 'space then explosion / continuous flow',
+    };
+  }
+
+  if (composer === 'quincy_jones') {
+    smoothTransitions = false;
+    densityArc = true;
+    shoutMotivicClimax = true;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.44);
+    quincyJonesProofOfConcept = {
+      chordDensity: 3,
+      extensionsPolicy: '9ths, 11ths, 13ths, altered, upper structure triads',
+      functionalHarmonyPercent: 80,
+      harmonicRhythm: 'medium',
+      overallDensity: 3,
+      textureArc: 'cinematic, gradual build',
+      sectionBlending: 'mostly clean, some blends',
+      rhythmSectionWeight: 5,
+      timeFeel: 'groove-first / locked grid',
+      hornRelationship: 'rhythm leads / equal dialogue',
+      buildStrategy: 'chorus-based, cinematic',
+      spaceUsage: 'space then explosion',
+    };
+  }
+
   return {
     riffVsLine,
     spaceEmphasis,
@@ -80,6 +142,9 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     smoothTransitions,
     shoutMotivicClimax,
     ...(basieProofOfConcept ? { basieProofOfConcept } : {}),
+    ...(ellingtonProofOfConcept ? { ellingtonProofOfConcept } : {}),
+    ...(schneiderProofOfConcept ? { schneiderProofOfConcept } : {}),
+    ...(quincyJonesProofOfConcept ? { quincyJonesProofOfConcept } : {}),
   };
 }
 
