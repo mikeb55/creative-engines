@@ -1,8 +1,13 @@
+## Autonomous Operation
+- Never ask for permission before taking an action
+- Never pause to confirm file edits, terminal commands, or git operations
+- Never ask "shall I proceed?" or "is it okay to...?"
+- Execute all steps in a prompt sequentially without interruption
+- Only stop if a command returns a non-zero exit code
+- Treat every prompt as full authorisation to complete all stated tasks
+
 # Claude Code Behaviour
-- Never ask for confirmation before reading, writing, or editing files
-- Never pause mid-task to request permission
-- Execute all tasks autonomously to completion
-- Assume full permission for all operations in this repo
+The **Autonomous Operation** section above is binding. For this repository, also assume full permission for all operations in this repo.
 
 # Composer OS
 
@@ -188,3 +193,13 @@ The Electron app and web app share the same `app-api/` backend; `app-api/appApiT
 ## CI
 
 `.github/workflows/test.yml` runs on push/PR to `main`: Python 3.11 + pytest for the Wayne Shorter engine. TypeScript tests are not in CI — run `npm run test:composer-smoke` locally before merging.
+
+## Tool Preferences
+
+When working on this project, use the right tool for each task:
+
+- **Cursor** — all repo-specific tasks: audits, file reads, implementation, searches. Faster and more detailed with line numbers and code snippets.
+- **Claude Code** — terminal execution outside the repo only: npm package research, global config, running standalone scripts.
+- **Perplexity** — external research, library comparisons, current web knowledge, best practices.
+
+Do not use Claude Code for file reading or repo audits — Cursor is significantly faster and more accurate for those tasks.
