@@ -4154,6 +4154,11 @@ export function HomeGenerate({
             <span id="co-bb-arranger-desc" style={VISUALLY_HIDDEN}>
               {ARIA_ARRANGER_GROUPS_DESC}
             </span>
+            <p
+              style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}
+            >
+              Coming soon: full per-arranger Big Band styles.
+            </p>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label
