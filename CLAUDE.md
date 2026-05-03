@@ -43,6 +43,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   dependent Cursor prompt is written
 - Never give the same task to both tools
 
+## Documentation
+
+- **`docs/COMPOSER_OS_PLAYBOOK.md`** is the primary user-facing playbook (workflows, presets, scenarios, export notes).
+- Update it whenever new composers (songwriter slices), presets, or meter presets are added or materially changed.
+- After any playbook edit, regenerate the Word export: **`node scripts/generateComposerOsPlaybookDocx.mjs`**
+- Commit **`docs/COMPOSER_OS_PLAYBOOK.md`** and **`docs/COMPOSER_OS_PLAYBOOK.docx`** together so Markdown and DOCX stay in sync.
+
 ## Recent update (2026-04-29)
 
 **Smoke tier (2026-05-03):** **`npm run test:composer-smoke`** — **117**/0 PASS rows, **34** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
