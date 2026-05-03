@@ -28,7 +28,8 @@ const root = path.join(__dirname, '..');
 const mdPath = path.join(root, 'docs', 'COMPOSER_OS_PLAYBOOK.md');
 const outPath = path.join(root, 'docs', 'COMPOSER_OS_PLAYBOOK.docx');
 
-const BODY_MARKER = '\n## 1. Introduction and scope';
+/** Body starts at first major workflow section (TOC / Word body); preamble is title + living-doc blockquote only. */
+const BODY_MARKER = '\n## Real Book MusicXML import';
 
 /** @param {string} text */
 function inlineRuns(text) {

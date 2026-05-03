@@ -6,6 +6,50 @@
 
 ---
 
+## Real Book MusicXML import
+
+Charts saved as **MusicXML** (Finale / MuseScore / Sibelius **partwise** export) can be fed through the **lead-sheet importer** for harmony timelines, keys, repeats, and (limited) melody extraction. This section matches what the engine’s **Real Book stress** regression exercises (`engines/composer-os-v2/tests/realBookStressTest.test.ts`, smoke suite **Real Book MusicXML stress**).
+
+### What the stress test validates
+
+- **Repeat navigation** — `<barline>` forward/back repeats, **volta** (`<ending>` start/stop), **segno** / **D.S.** / **To Coda** / **coda** directions and `<sound>` jumps (`expandMeasureVisits` in **`leadSheetMusicXmlImport.ts`** produces a deterministic visit order).
+- **Key changes** — mid-score `<attributes><key><fifths>…</fifths></key>` blocks populate **`LeadSheet.keyChanges`** (bar index aligns with the importer’s logical bar mapping).
+- **Complex rhythm / chords** — high `<divisions>` grids and multiple `<harmony>` elements per measure, including **`<offset>`** (divisions from measure start) → beat-accurate **`importedHarmonyTimeline`** entries.
+- **Multiple voices** — `<voice>1</voice>` vs `<voice>2</voice>`: chord symbols still parse; **voice 1** drives **`melodyEvents`**; extra voices log a warning (see limitations below).
+
+### How to import a Real Book chart
+
+1. Provide **score-partwise** XML (not timewise). The importer reads the **first `<part>`** as the lead line.
+2. Entry points:
+   - **`importLeadSheetFromMusicXml`** — **`leadSheetMusicXmlImport.ts`** (measures, chords, melody, repeats, keys).
+   - **`parseImportedHarmonyEvent`** — **`importedHarmonyTimeline.ts`** — storage-only parse of each `<harmony>` chunk (root/kind/bass/degrees, time via divisions + offset).
+   - **`sortImportedHarmonyTimeline`** — stable ordering by bar, beat, event index.
+3. Display chord strings for the lead sheet come from **`parseHarmonySymbol`** on the same `<harmony>` blocks; they are merged into **`LeadSheet.chordEvents`** and deduped.
+
+### repeatMarkers (UniversalLeadSheet)
+
+**`parseRepeatMarkers`** scans each measure for barline **repeat forward/back** and **`<ending>`** volta tags. **`buildUniversalLeadSheetFromImportedLeadSheet`** maps **`LeadSheet.repeatMarkers`** onto **`UniversalRepeatMarker`**: **`repeat_start`**, **`repeat_end`**, **`ending_start`**, **`ending_stop`** (optional **`endingNumber`**). Jump semantics (**D.C.**, **D.S.**, **coda**) affect **how many logical bars** are visited, not a separate MusicXML “marker kind” in this contract—expect repeat/volta markers where the exporter emitted barlines.
+
+### Key changes
+
+When the importer records attributes for a measure (`emitKeyChangesAndSection`), each **`<key>`** inside that measure appends **`{ bar, fifths, mode? }`** to **`LeadSheet.keyChanges`**. The first key also seeds **`keySignature`** when present.
+
+### Chord timeline (beats, offsets, collisions)
+
+- Timeline events sort by **bar**, **beat** (offset ÷ divisions), then **harmony index** in the measure.
+- **`dedupeChordEvents`** removes redundant duplicates and beat-0 carries from the prior bar; the stress test asserts **no conflicting chord symbols** assigned to the same **(bar, beat)** slot after processing.
+
+### Round-trip sanity check
+
+Regression pattern: **import** → **`buildUniversalLeadSheetFromImportedLeadSheet`** → minimal **`ScoreModel`** (**`createPart`** + measure-level **`chord`** + whole-bar rests) → **`exportScoreModelToMusicXml`**. This validates **exporter robustness** on representative imported harmony—not bit-identical round-trip to arbitrary publisher XML.
+
+### Known limitations
+
+- **Voices / staves:** Melody capture is **voice 1**, **staff 1** only; other voices and staves are skipped with warnings (**Phase 1** lead-sheet scope).
+- **Publisher quirks:** Nested repeats and rare jump combinations may diverge from another tool’s playback; importer **`warnings`** describe caps and fallbacks.
+
+---
+
 ## 1. Introduction and scope
 
 Composer OS is a **deterministic**, **seeded** composition pipeline: the same request + seed yields the same score, receipts, and MusicXML. This playbook orients you to **Generate**, **Song Mode**, **presets**, **diagnostics**, and **export**—and gives **40 repeatable scenarios** you can step through for QA or teaching.
@@ -69,6 +113,12 @@ Song Mode applies **writer slices**: each slice owns **harmonic devices (d1–d5
 
 **Aliases:** Many writers register shortcuts (`monk`, `bird`, `fz`, …)—try them in quick experiments.
 
+### Joni Mitchell (Song Mode — open tunings, modal harmony)
+
+**Joni Mitchell** is a **shipped golden-path slice**: **`joniMitchellSlice.ts`**, **`jm:*`** device receipts, **`joniMitchellEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth (same pattern as Radiohead / James Brown). Pools emphasize **modal**, **pedal**, and **open-tuning-friendly** colours (**add9**, **sus2/sus4**, **slash** pedals, **maj(add9)** rows — see **`SONGWRITER_CHORD_POOLS.joni_mitchell`**).
+
+**Alternate tuning:** Style **`STYLE_JONI_MITCHELL`** surfaces the **`joni_mitchell`** **zone** in **Generate**’s alternate-tuning selector (`alternateGuitarTunings.ts`). Voicing maps vs every preset remain a **follow-up** where the Tonality Vault is thin—if comp feels disconnected, compare **standard** vs labelled open preset on the same **seed**.
+
 ### Scenario 7: Picking a writer for a lesson plan
 
 Match **pedagogical goal** to slice: e.g. **ii–V devices** (bebop), **angular harmony** (Monk/Hill), **theatre harmony** (Sondheim/Bacharach), **modal ECM** sparsity.
@@ -83,7 +133,16 @@ Turn **d1–d5 hit rates** and **guard receipts** into a **checklist** for stude
 
 ### Sonic Youth (dual guitar, noise harmony, and texture)
 
+**Still current (engine + docs alignment):** **`sonicYouthSlice.ts`**, **`sy:*`** receipts, **`sonicYouthEffectiveHarmonyBars`**, **`ChordEvent.sonicYouth`** + **`SYTextureState`** (**`sonicYouthTextureEngine.ts`** / **`sonicYouthChordGuards.ts`**), MusicXML texture ornament mapping on comp chords (**`musicxmlExporter.ts`**), smoke **`sonicYouthSliceSmoke.test.ts`** + **`sonicYouthTexture.test.ts`**.
+
 **Sonic Youth** is a **duo / dual-electric** slice: harmony uses **`sy:*`** device receipts and **`sonicYouthEffectiveHarmonyBars`** (same **getChordForBar** truth pattern as other locked-harmony writers). On comp **`ChordEvent`s**, optional metadata lives on **`ChordEvent.sonicYouth`** (`SonicYouthExtension` in **`sonicYouthChordTypes.ts`**).
+
+**Alternate tunings workflow (noise-rock zones)**
+
+1. Set **primary writer** to **Sonic Youth** (aliases resolve via registry).
+2. In **Generate**, open **alternate tuning** controls and choose zone **`sonic_youth_noise`** (`getPresetsByZone('sonic_youth_noise')` in **`alternateGuitarTunings.ts`**) — presets label **drone / slack / prepared** colours aligned with the slice.
+3. Lock a **seed**, generate, inspect **`sy:*`** receipts + **`sonicYouthDiagnostics`** on the manifest.
+4. Export MusicXML: **fixed-offset** tunings that change concert pitch (**Drop D**, **Eb standard**) also emit **`<transpose><chromatic>`** in **measure 1** attributes (**`exportPartTransposeSemitones`**); **scordatura-only** labels stay text (**exportMeasure1TuningWordsByPartId**).
 
 **Two-guitar architecture**
 
@@ -137,6 +196,12 @@ Presets bundle **instrumentation**, **notation defaults**, and **orchestration h
 ### Scenario 10: Auditioning a zone before committing
 
 Select zone **before** locking seed—changing zone may shift **tuning preset lists** and UI copy; re-seed if you need apples-to-apples comparisons.
+
+### Donald Fagen and Bill Evans — odd-meter presets (`barMeterMap`)
+
+**Song Mode** exposes optional **composer meter presets** for **Donald Fagen** and **Bill Evans** (same UI affordance as **Dave Brubeck**, **Thelonious Monk**, **Wayne Shorter**, **Frank Zappa**): tiled **`barMeterMap`** rows drive per-bar **`<time>`** in MusicXML and phrase quantisation (**`oddMeterQuantiser.ts`**, **`COMPOSER_METER_PRESET_MAP`**). Choosing **All 4/4** omits **`barMeterMap`**.
+
+**Workflow:** Select writer → expand **meter preset** radio block in **Generate** → pick a cycle (e.g. Fagen **7+5**, Evans alternating metres) → lock **seed** → verify **per-bar time signatures** in XML if the host collapses display.
 
 ### Scenario 11: Big Band vs String Quartet expectations
 
@@ -286,6 +351,20 @@ Recent exporters avoid **invalid credit/part-name-display** patterns—if your o
 ## 11. Guitar tunings and instrumental edges
 
 **Alternate tuning presets** group by **roadmap zones**—support flags on certain style profiles gate UI surfacing. **Voicing maps** may lag tunings; audition **standard tuning** when maps are absent.
+
+### Alternate tunings workflow (standalone)
+
+Use this checklist **for any writer** where **`styleProfileSupportsAlternateGuitarTuning`** allows the UI (**Indie**, **Sonic Youth**, **Joni Mitchell**, **Pat Metheny**, **ECM Chamber**, etc.):
+
+| Step | Action |
+|------|--------|
+| 1 | Choose **Song Mode** + **writer** + optional **arranger/era** pairing. |
+| 2 | Open **alternate tuning** — presets are grouped into **zones**: **`jazz_sophisticated`**, **`sonic_youth_noise`**, **`joni_mitchell`**, **`hybrid_harmonic`** (`getPresetsByZone`). |
+| 3 | Pick **shared** vs **separate** dual-guitar tuning mode when using duo / Indie routes. |
+| 4 | Generate and verify **manifest** tuning resolution + **`alternateGuitarTunings`** receipts where emitted. |
+| 5 | Export **MusicXML**: **Drop D** (−2 semitones) and **Eb standard** (−1) write **`<transpose><chromatic>`** under **measure 1** `<attributes>`; other presets remain **direction text** unless they carry a fixed chromatic offset in the model. |
+
+Regression: **`alternateGuitarTunings.test.ts`** + smoke tier row **Alternate guitar tunings (zones + texture)**.
 
 ### Scenario 31: Teaching Joni or Sonic Youth zones
 
