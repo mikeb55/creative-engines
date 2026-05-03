@@ -657,6 +657,42 @@ Pair **ECM-style modal sparsity** with **long seeds** to avoid **phrase repetiti
 
 ---
 
+## Future Workstreams
+
+### Afro-Cuban Big Band
+
+This is a dedicated future workstream, not an arranger profile addition. Requires new engine infrastructure: clave-driven rhythm layer, tumbao bass patterns, montuno piano logic, percussion section, and Cuban-specific horn phrasing. Do not attempt until evaluation system is fully wired and first four arrangers are auto-scoring.
+
+**Reference resource:** *Latin Arranging: Cuban Styles — Toshi Clinch Productions*
+
+**Research prompt** (saved for when this workstream opens):
+
+```
+Use "Latin Arranging: Cuban Styles — Toshi Clinch Productions" as your sole reference for modeling Cuban big-band language in a composition engine.
+
+1. Identify the core arranging parameters that distinguish the following Cuban/Latin styles when orchestrated for big band: danzón, son, son montuno, mambo, cha-cha-chá, rumba (yambú, guaguancó, columbia), salsa, songo/timba.
+
+2. For each style, translate the course descriptions into specific numeric or categorical engine settings across these dimensions (tables only, no prose):
+- Rhythmic grid: subdivision, tempo bands, straight vs swung, clave type, anticipated vs on-beat phrasing
+- Percussion roles: mandatory instruments, default pattern families, ostinati vs variation tolerance
+- Bass/tumbao: contour, syncopation slots, clave relationship, fill frequency
+- Piano/montuno: density 1-5, pattern length, harmony type, repetition vs variation
+- Horn phrasing: clave alignment, phrase lengths in clave cycles, riff vs melodic line balance
+- Harmony: extension level, functional vs modal %, reharmonization tolerance
+
+3. From the development arc (contradanza → danzón → son → mambo → salsa → songo/timba), give:
+- Interpolation ranges for adjacent style pairs
+- Hard constraints where changing a parameter instantly breaks authenticity
+
+4. Output as one summary table per style and one morphing matrix table. No history, no performance advice — generative rules only.
+```
+
+### Odd-Meter / Rock-Inflected Big Band
+
+Distinct musical language covering meter systems fundamentally different from classic swing. Reference arrangers: Don Ellis, Darcy James Argue, John Hollenbeck. Do not attempt until Cuban workstream is scoped. Requires new metric grid logic and rock-inflected rhythm section behaviour.
+
+---
+
 ## Known Architectural Gaps
 
 Documented limitations—do not mistake UI labels for fully wired engine behaviour until addressed.
@@ -667,7 +703,16 @@ Documented limitations—do not mistake UI labels for fully wired engine behavio
 
 **Structured profile receipts (`BigBandArrangerProfileReceiptV1` on `resolvedRules.tuning`):** **Count Basie**, **Duke Ellington**, **Maria Schneider**, and **Quincy Jones** — see **section 10 — Big Band arranger profiles (wired tuning receipts)**.
 
-**Still UI-only for Big Band engine merge:** other **`arrangerStyle`** ids (e.g. **Thad Jones**, Gil Evans, Nelson Riddle, …) do **not** set **`composerStyle`**; they receive **era + foundational + functional** rules only. Song Mode **style pairing** may still reference those names for confidence / contrast metadata independently of Big Band **`composerStyle`**.
+**Still UI-only for Big Band engine merge:** other **`arrangerStyle`** ids do **not** set **`composerStyle`**; they receive **era + foundational + functional** rules only. **Planned arranger wiring priority** (when the pipeline extends):
+
+1. Thad Jones  
+2. Gil Evans  
+3. Bob Brookmeyer  
+4. Clare Fischer  
+5. Oliver Nelson  
+6. Sammy Nestico  
+
+Song Mode **style pairing** may still reference those names for confidence / contrast metadata independently of Big Band **`composerStyle`**.
 
 **Follow-up:** deeper per-arranger **scoring** differentiation (beyond receipts + existing **`applyBigBandRules`** hooks) remains roadmap scope when the Big Band pipeline is extended.
 
