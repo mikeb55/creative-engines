@@ -12,7 +12,7 @@ import { generateComposition, type GenerateResult } from './generateComposition'
 import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode, type BigBandRunInput } from '../core/big-band/runBigBandMode';
 import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
-import type { BigBandEraId } from '../core/big-band/bigBandResearchTypes';
+import type { BigBandComposerId, BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode, type StringQuartetRunInput } from '../core/string-quartet/runStringQuartetMode';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
 import { runSongMode } from '../core/song-mode/runSongMode';
@@ -1733,6 +1733,20 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   };
 }
 
+/**
+ * Maps Generate **Arranger** dropdown ids to `BigBandComposerId` for research rule merge + tuning.
+ * Only ids that participate in `BIG_BAND_RULE_REGISTRY.composerRules` should appear here.
+ */
+function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null): BigBandComposerId | undefined {
+  if (arrangerStyle == null || typeof arrangerStyle !== 'string') return undefined;
+  const a = arrangerStyle.trim().toLowerCase();
+  if (a === 'basie') return 'basie';
+  if (a === 'ellington') return 'ellington';
+  if (a === 'schneider') return 'schneider';
+  if (a === 'quincy_jones') return 'quincy_jones';
+  return undefined;
+}
+
 function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateResult {
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
@@ -1742,6 +1756,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
   const eraFromPairing = parseBigBandEraFromPairing(req.stylePairing?.era);
+  const composerStyleFromArranger = composerStyleFromArrangerStyle(req.stylePairing?.arrangerStyle);
   let chordProgressionText =
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
       ? req.chordProgressionText.trim()
@@ -1767,6 +1782,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
         }
       : undefined,
     era: eraFromPairing,
+    ...(composerStyleFromArranger ? { composerStyle: composerStyleFromArranger } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
   });
   const runSeed = resolveEffectiveGenerationSeed({
@@ -1836,6 +1852,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
         }
       : undefined,
     era: eraFromPairing,
+    ...(composerStyleFromArranger ? { composerStyle: composerStyleFromArranger } : {}),
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
     ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),

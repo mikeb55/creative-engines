@@ -49,6 +49,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('schneider.groove_switch', 'Groove type may change mid-piece', 'composer', 'rhythm', 73),
     R('schneider.climax_counterpoint', 'Climax: layered counter-lines over riff-shout', 'composer', 'orchestration', 84),
   ],
+  /** Placeholder until Quincy Jones research rules are authored (arranger id maps from UI). */
+  quincy_jones: [],
 };
 
 const eraRules: Record<BigBandEraId, BigBandRule[]> = {

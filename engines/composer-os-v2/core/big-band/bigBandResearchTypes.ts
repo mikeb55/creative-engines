@@ -3,7 +3,7 @@
  * Prose lives in data/BigBandResearch.md; code stores rule shapes only.
  */
 
-export type BigBandComposerId = 'ellington' | 'basie' | 'thad' | 'schneider';
+export type BigBandComposerId = 'ellington' | 'basie' | 'thad' | 'schneider' | 'quincy_jones';
 
 export type BigBandEraId =
   | 'swing'
@@ -82,6 +82,24 @@ export interface BigBandRuleRegistryShape {
   };
 }
 
+/**
+ * Basie arranger proof-of-concept — structured receipt for planning/export evolution.
+ * Score generation still consumes legacy `BigBandRuleTuning` scalar fields + rule ids.
+ */
+export interface BasieArrangerProofOfConceptV1 {
+  chordDensity: number;
+  extensionsPolicy: string;
+  functionalHarmonyPercent: number;
+  harmonicRhythm: 'low' | 'medium' | 'high';
+  overallDensity: number;
+  textureArc: string;
+  sectionBlending: string;
+  rhythmSectionWeight: number;
+  timeFeel: string;
+  hornRelationship: string;
+  buildStrategy: string;
+}
+
 /** Tuning derived from era + optional composer (planning hints only). */
 export interface BigBandRuleTuning {
   riffVsLine: 'riff_primary' | 'line_primary' | 'balanced';
@@ -89,6 +107,8 @@ export interface BigBandRuleTuning {
   densityArc: boolean;
   smoothTransitions: boolean;
   shoutMotivicClimax: boolean;
+  /** Populated when `composerStyle === 'basie'` — first wired arranger flavour block. */
+  basieProofOfConcept?: BasieArrangerProofOfConceptV1;
 }
 
 export interface ResolvedBigBandRuleSet {

@@ -4,6 +4,7 @@
 
 import { BIG_BAND_RULE_REGISTRY } from './bigBandRuleRegistry';
 import type {
+  BasieArrangerProofOfConceptV1,
   BigBandComposerId,
   BigBandEraId,
   BigBandRuleTuning,
@@ -50,12 +51,35 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     shoutMotivicClimax = true;
   }
 
+  let basieProofOfConcept: BasieArrangerProofOfConceptV1 | undefined;
+  if (composer === 'basie') {
+    /** Proof-of-concept Basie flavour receipt — paired with existing riff/sparse tuning hooks. */
+    smoothTransitions = false;
+    densityArc = true;
+    shoutMotivicClimax = true;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.48);
+    basieProofOfConcept = {
+      chordDensity: 2,
+      extensionsPolicy: '9ths and 13ths only; no altered extensions',
+      functionalHarmonyPercent: 90,
+      harmonicRhythm: 'medium',
+      overallDensity: 2,
+      textureArc: 'gradual build; space then explosion',
+      sectionBlending: 'clean separation',
+      rhythmSectionWeight: 4,
+      timeFeel: 'locked grid',
+      hornRelationship: 'rhythm leads',
+      buildStrategy: 'chorus-based; riff-based',
+    };
+  }
+
   return {
     riffVsLine,
     spaceEmphasis,
     densityArc,
     smoothTransitions,
     shoutMotivicClimax,
+    ...(basieProofOfConcept ? { basieProofOfConcept } : {}),
   };
 }
 
