@@ -52,7 +52,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent update (2026-04-29)
 
-**Smoke tier (2026-05-05):** **`npm run test:composer-smoke`** — **134**/0 PASS rows, **36** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier (2026-05-03):** **`npm run test:composer-smoke`** — **138**/0 PASS rows, **37** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
 **Confirmed working (2026-05-02 — Zappa / export):** **Sibelius** MusicXML import **clean** (no invalid **`<part-name-display>`** / **`<credit>`**; schema-invalid per-measure **`<staff-details>`** removed); comp staff **`Piano`** in XML — **full printed instrument names** in Sibelius are a host preference (**House Styles → Engraving Rules → Instruments**). **Zappa Classic** **7/8 + 4/4** **`barMeterMap`** path; **solo electric guitar** written pitch **+12** semitone shift (see **`docs/ZAPPA_CREATION_GUIDE.md`** §1).
 

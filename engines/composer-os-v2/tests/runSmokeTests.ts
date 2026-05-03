@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **134** PASS rows, **36** suites (2026-05-05).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **138** PASS rows, **37** suites (2026-05-03).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -42,6 +42,7 @@ import { runZappaStringQuartetSmokeTests } from './zappaStringQuartetSmoke.test'
 import { runDrumGuideExportSmokeTests } from './drumGuideExportSmoke.test';
 import { runZappaBigBandSmokeTests } from './zappaBigBandSmoke.test';
 import { runUniversalLeadSheetRepeatSmokeTests } from './universalLeadSheetBuilder.test';
+import { runRealBookStressTests } from './realBookStressTest.test';
 import { runSonicYouthTextureTests } from '../core/score-model/__tests__/sonicYouthTexture.test';
 
 type Row = { name: string; ok: boolean };
@@ -52,6 +53,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { label: 'Universal lead sheet — repeatMarkers (import → parity)', run: runUniversalLeadSheetRepeatSmokeTests },
+  { label: 'Real Book MusicXML stress (import timeline + universal + export)', run: runRealBookStressTests },
   { label: 'Alternate guitar tunings (zones + texture)', run: runAlternateGuitarTuningsTests },
   { label: 'Indie guitar_2 Song Mode comp (ChordEvent quality)', run: runIndieGuitar2SongModeChordEventQualityTests },
   { label: 'Brian Wilson Pet Sounds songwriter slice', run: runBrianWilsonPetSoundsSliceSmokeTests },
