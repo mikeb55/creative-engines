@@ -2,3 +2,8 @@ export * from './evaluationTypes';
 export * from './basieStyleProfile';
 export * from './gceEvaluator';
 export * from './lockGates';
+export * from './dcrProtocol';
+export * from './combinedEvaluator';
+export * from './ellingtonStyleProfile';
+export * from './schneiderStyleProfile';
+export * from './quincyStyleProfile';

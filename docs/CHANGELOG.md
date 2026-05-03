@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+- **feat(evaluation):** Combined evaluator wired into Big Band pipeline (**`combinedEvaluator.ts`**, **`composerOsAppGeneration.ts`**).
+- **feat(evaluation):** Ellington, Schneider, Quincy Jones style profiles (**`ellingtonStyleProfile.ts`**, **`schneiderStyleProfile.ts`**, **`quincyStyleProfile.ts`**).
+- **Docs:** Evaluation System documented in **`COMPOSER_OS_PLAYBOOK.md`**; regenerated **`COMPOSER_OS_PLAYBOOK.docx`**.
 - **feat(evaluation):** GCE evaluator — 10-category scoring engine with default weights (**`engines/composer-os-v2/core/evaluation/gceEvaluator.ts`**). **`npm run test:composer-smoke`:** **146**/0.
 - **feat(evaluation):** LOCK gates — 6 hard validation gates (**`lockGates.ts`**); smoke **`evaluation.smoke.test.ts`**.
 - **feat(big_band):** **`ellington`**, **`schneider`**, **`quincy_jones`** — **`ellingtonProofOfConcept`**, **`schneiderProofOfConcept`**, **`quincyJonesProofOfConcept`** on **`BigBandRuleTuning`** (**`bigBandEraResolver.ts`**, **`bigBandResearchTypes.ts`**) using the same **`BigBandArrangerProfileReceiptV1`** pattern as **`basieProofOfConcept`** (chord density, extensions policy, functional harmony %, harmonic rhythm, overall density, texture arc, section blending, rhythm section weight, time feel, horn relationship, build strategy, space usage) plus scalar tuning nudges per arranger. **`npm run test:composer-smoke`:** **142**/0.

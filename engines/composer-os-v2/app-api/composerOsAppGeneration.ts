@@ -43,6 +43,15 @@ import {
 } from '../core/export/validateLockedHarmonyMusicXml';
 import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
+import type { CombinedEvaluationResult } from '../core/evaluation/evaluationTypes';
+import { createCombinedEvaluator } from '../core/evaluation/combinedEvaluator';
+import { basieStyleProfile } from '../core/evaluation/basieStyleProfile';
+import { ellingtonStyleProfile } from '../core/evaluation/ellingtonStyleProfile';
+import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile';
+import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
+import { scoreModelFeatureExtractor } from '../core/evaluation/featureExtractor';
+import { defaultGceWeights } from '../core/evaluation/gceEvaluator';
+import { defaultLockGates } from '../core/evaluation/lockGates';
 import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
 import { resolveFormSections, type FormId } from '../core/form/formPlanner';
 import {
@@ -1902,6 +1911,40 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       }
     }
   }
+
+  /** Observational evaluation (GCE + style + LOCK); requires realised score — runs after realisation, not planning-only. */
+  let evaluationResult: CombinedEvaluationResult | undefined;
+  try {
+    if (realised.score) {
+      const cs = bb.composerStyle;
+      const styleProfile =
+        cs === 'ellington'
+          ? ellingtonStyleProfile
+          : cs === 'schneider'
+            ? schneiderStyleProfile
+            : cs === 'quincy_jones'
+              ? quincyStyleProfile
+              : basieStyleProfile;
+      const evaluator = createCombinedEvaluator({ lockRequired: false });
+      evaluationResult = evaluator.evaluate({
+        output: realised.score,
+        sourceFormat: 'scoreModel',
+        styleProfile,
+        featureExtractor: scoreModelFeatureExtractor,
+        gceWeights: defaultGceWeights,
+        lockGates: defaultLockGates,
+        config: {
+          gceWeight: 0.6,
+          styleWeight: 0.4,
+          lockRequired: false,
+          passThreshold: 7.0,
+        },
+      });
+    }
+  } catch (e) {
+    console.warn('[composer-os][big_band] evaluation pass failed:', (e as Error)?.message ?? e);
+  }
+
   const ok = bb.validation.ok;
   const filename = `big_band_plan_${tsSafe}_${runSeed}.json`;
   const payload = {
@@ -1929,6 +1972,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     bebopLineMetadata: bb.bebopLineMetadata,
     enhancedPlanning: bb.enhancedPlanning,
     stylePairingResolution: bb.stylePairingResolution ?? null,
+    ...(evaluationResult !== undefined ? { evaluationResult } : {}),
     ...(ensembleMusicXmlFilename && ensembleMusicXmlFilepath
       ? {
           ensembleMusicXmlFilename,
@@ -1998,7 +2042,8 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     requestEcho: requestEchoFromReq(req),
     stylePairingReceipt,
     ...(ensReceipt ? { ensembleSlonimskyReceipt: ensReceipt } : {}),
-  };
+    ...(evaluationResult !== undefined ? { evaluationResult } : {}),
+  } as GenerateResult;
 }
 
 function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): GenerateResult {

@@ -1,15 +1,127 @@
 /**
- * Evaluation module — Basie style profile + feature extraction + GCE + LOCK (smoke).
+ * Evaluation module — Basie style profile + feature extraction + GCE + LOCK + DCR (smoke).
  */
 
-import type { ExtractedStyleFeatures } from './evaluationTypes';
+import type {
+  CandidateGenerationInput,
+  CandidateGenerator,
+  CandidateRefiner,
+  CombinedEvaluationInput,
+  CombinedEvaluationResult,
+  CombinedEvaluator,
+  DcrProtocolConfig,
+  ExtractedStyleFeatures,
+} from './evaluationTypes';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { basieStyleProfile } from './basieStyleProfile';
+import { createCombinedEvaluator } from './combinedEvaluator';
+import { ellingtonStyleProfile } from './ellingtonStyleProfile';
+import { schneiderStyleProfile } from './schneiderStyleProfile';
+import { quincyStyleProfile } from './quincyStyleProfile';
 import { defaultGceWeights, evaluateGce } from './gceEvaluator';
 import { defaultLockGates, evaluateLock } from './lockGates';
+import { runDcrProtocol } from './dcrProtocol';
 import { scoreModelFeatureExtractor } from './featureExtractor';
 
 const emptyScoreStub = (): ScoreModel => ({ title: '', parts: [] });
+
+/** Minimal 2-bar piano score for combined-evaluator smoke (scoreModel extract path). */
+function smokeScoreModel(): ScoreModel {
+  return {
+    title: 'eval-smoke',
+    parts: [
+      {
+        id: 'piano',
+        name: 'Piano',
+        instrumentIdentity: 'piano',
+        midiProgram: 0,
+        clef: 'treble',
+        songModePresentAsPianoComp: true,
+        measures: [
+          { index: 1, events: [{ kind: 'note', pitch: 60, startBeat: 0, duration: 2 }] },
+          { index: 2, events: [{ kind: 'note', pitch: 64, startBeat: 0, duration: 2 }] },
+        ],
+      },
+    ],
+  };
+}
+
+function testProfileRegistrySmoke(): boolean {
+  for (const p of [ellingtonStyleProfile, schneiderStyleProfile, quincyStyleProfile]) {
+    if (p.dimensions.length !== 4) return false;
+    const w = p.dimensions.reduce((a, d) => a + d.weight, 0);
+    if (Math.abs(w - 1.0) > 1e-9) return false;
+    if (p.threshold !== 7.0) return false;
+  }
+  return true;
+}
+
+function testCombinedEvaluatorBasieSmoke(): boolean {
+  const ce = createCombinedEvaluator({ lockRequired: false });
+  const r = ce.evaluate({
+    output: smokeScoreModel(),
+    sourceFormat: 'scoreModel',
+    styleProfile: basieStyleProfile,
+    featureExtractor: scoreModelFeatureExtractor,
+    gceWeights: defaultGceWeights,
+    lockGates: defaultLockGates,
+    config: {
+      gceWeight: 0.6,
+      styleWeight: 0.4,
+      lockRequired: false,
+      passThreshold: 7.0,
+    },
+  });
+  return (
+    typeof r.finalScore === 'number' &&
+    r.finalScore >= 0 &&
+    r.finalScore <= 10 &&
+    typeof r.pass === 'boolean'
+  );
+}
+
+const LOCK_PASS_FEATURES: ExtractedStyleFeatures = {
+  formal: { barCount: 32, riffRepetitionRatio: 0.55 },
+  harmonic: { chordTimelinePresent: true },
+  rhythmic: { swingGridAlignment: 0.72 },
+  orchestration: { avgVoicingSize: 5 },
+};
+
+function mkStubCombinedResult(finalScore: number): CombinedEvaluationResult {
+  const gce = evaluateGce({
+    output: {},
+    features: LOCK_PASS_FEATURES,
+    weights: defaultGceWeights,
+  });
+  const style = basieStyleProfile.score({
+    output: {},
+    features: LOCK_PASS_FEATURES,
+    profile: basieStyleProfile,
+  });
+  const lock = evaluateLock({}, LOCK_PASS_FEATURES);
+  return {
+    features: LOCK_PASS_FEATURES,
+    gce,
+    style,
+    lock,
+    finalScore,
+    weakestDimension: gce.weakestCategory,
+    pass: finalScore >= 7,
+    reasons: [],
+  };
+}
+
+function stubCombinedEvaluatorFromOutput(): CombinedEvaluator<number> {
+  return {
+    evaluate(input: CombinedEvaluationInput<number>): CombinedEvaluationResult {
+      const fs =
+        typeof input.output === 'number' && Number.isFinite(input.output)
+          ? input.output
+          : 5;
+      return mkStubCombinedResult(fs);
+    },
+  };
+}
 
 function testBasieProfileStructure(): boolean {
   const okLoads = basieStyleProfile != null && typeof basieStyleProfile.id === 'string';
@@ -65,7 +177,7 @@ function testNonScoreModelExtractorReturnsNulls(): boolean {
   );
 }
 
-function testGceEvaluatorSmoke(): boolean {
+function testGceEvaluatorOnly(): boolean {
   const gceCategories = [
     'cadentialClarity',
     'melodicIdentity',
@@ -94,20 +206,17 @@ function testGceEvaluatorSmoke(): boolean {
   return weightsOk && allPresent && scoreOk;
 }
 
+function testGceCombinedAndProfilesSmoke(): boolean {
+  return testGceEvaluatorOnly() && testCombinedEvaluatorBasieSmoke() && testProfileRegistrySmoke();
+}
+
 function testLockGatesSmoke(): boolean {
   const idsOk =
     defaultLockGates.length === 6 &&
     defaultLockGates.map((g) => g.id).join(',') ===
       'xmlValidity,barDurationIntegrity,chordMelodyAlignment,sectionContrast,rhythmAntiLoop,registerIntegrity';
 
-  const validFeatures: ExtractedStyleFeatures = {
-    formal: { barCount: 32, riffRepetitionRatio: 0.55 },
-    harmonic: { chordTimelinePresent: true },
-    rhythmic: { swingGridAlignment: 0.72 },
-    orchestration: { avgVoicingSize: 5 },
-  };
-
-  const failNull = evaluateLock(null, validFeatures);
+  const failNull = evaluateLock(null, LOCK_PASS_FEATURES);
   const xmlFail = failNull.failedGates.find((g) => g.gateId === 'xmlValidity');
   const nullCaseOk =
     !failNull.pass &&
@@ -115,17 +224,83 @@ function testLockGatesSmoke(): boolean {
     xmlFail.severity === 'critical' &&
     xmlFail.status === 'fail';
 
-  const passAll = evaluateLock({}, validFeatures);
+  const passAll = evaluateLock({}, LOCK_PASS_FEATURES);
   const passOk = passAll.pass && passAll.failedGates.length === 0;
 
   return idsOk && nullCaseOk && passOk;
+}
+
+function testDcrProtocolSmoke(): boolean {
+  const baseConfig = (): DcrProtocolConfig => ({
+    candidateCount: 3,
+    allowSingleRefinementPass: true,
+    targetScore: 9.0,
+    minimumGceScore: 0,
+    minimumStyleScore: 0,
+    requireLockPass: false,
+  });
+
+  const stubGen: CandidateGenerator<number> = {
+    generate(_inp: CandidateGenerationInput) {
+      return [
+        { id: 'c1', output: 9 },
+        { id: 'c2', output: 5 },
+        { id: 'c3', output: 4 },
+      ];
+    },
+  };
+
+  const stubRef: CandidateRefiner<number> = {
+    refine(c) {
+      return { ...c, output: (c.output as number) + 100 };
+    },
+  };
+
+  const genIn: CandidateGenerationInput = { seed: 1 };
+
+  const highTarget = runDcrProtocol({
+    generationInput: genIn,
+    generator: stubGen,
+    refiner: stubRef,
+    evaluator: stubCombinedEvaluatorFromOutput(),
+    config: { ...baseConfig(), targetScore: 8 },
+  });
+
+  const commitOk =
+    highTarget.finalCandidate != null &&
+    typeof highTarget.refinementApplied === 'boolean' &&
+    highTarget.refinementApplied === false &&
+    highTarget.refinedCandidate === undefined;
+
+  const lowTarget = runDcrProtocol({
+    generationInput: genIn,
+    generator: stubGen,
+    refiner: stubRef,
+    evaluator: stubCombinedEvaluatorFromOutput(),
+    config: { ...baseConfig(), targetScore: 100 },
+  });
+
+  const refineOk =
+    typeof lowTarget.refinementApplied === 'boolean' &&
+    lowTarget.refinementApplied === true &&
+    lowTarget.refinedCandidate !== undefined &&
+    lowTarget.finalCandidate !== undefined;
+
+  return commitOk && refineOk;
+}
+
+function testLockAndDcrSmoke(): boolean {
+  return testLockGatesSmoke() && testDcrProtocolSmoke();
 }
 
 export function runEvaluationSmokeTests(): { name: string; ok: boolean }[] {
   return [
     ['Evaluation: Basie profile + ideal/anti scoring', testBasieProfileIdealAndAnti],
     ['Evaluation: non-scoreModel extraction yields null metrics', testNonScoreModelExtractorReturnsNulls],
-    ['Evaluation: GCE evaluator (10 categories, weights, score range)', testGceEvaluatorSmoke],
-    ['Evaluation: LOCK gates (defaults, xml fail, mock pass)', testLockGatesSmoke],
+    [
+      'Evaluation: GCE + combined evaluator + Ellington/Schneider/Quincy profiles',
+      testGceCombinedAndProfilesSmoke,
+    ],
+    ['Evaluation: LOCK gates + DCR protocol (smoke)', testLockAndDcrSmoke],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

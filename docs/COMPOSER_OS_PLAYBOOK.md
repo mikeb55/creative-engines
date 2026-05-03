@@ -657,6 +657,80 @@ Pair **ECM-style modal sparsity** with **long seeds** to avoid **phrase repetiti
 
 ---
 
+## Evaluation System
+
+Composer OS embeds a layered **evaluation** stack used for **observational receipts** (especially Big Band): extract features from a **`ScoreModel`**, score **GCE** (10 categories), score a **style profile** (Basie / Ellington / Schneider / Quincy), run **LOCK** gates, optionally combine into a single **`CombinedEvaluationResult`**. **DCR** (Design → Commit → Refine) is available for candidate workflows; it is separate from the golden-path Generate pipeline unless wired explicitly.
+
+### Overview
+
+| Layer | Role |
+|-------|------|
+| **Feature extraction** | `scoreModelFeatureExtractor` — `orchestration`, `formal`, `rhythmic` metrics from **`sourceFormat: scoreModel`** |
+| **GCE** | `evaluateGce` — 0–10 category scores × weights → **`gce.finalScore`** |
+| **Style profile** | `StyleProfile.score` — dimension scores × weights → **`style.finalStyleScore`** |
+| **LOCK** | `evaluateLock` — hard gates on XML presence, bar count, harmony presence, repetition / swing extremes, register |
+| **Combined** | `createCombinedEvaluator().evaluate` — blends GCE + style; respects **`lockRequired`** |
+| **DCR** | `runDcrProtocol` — multi-candidate design, optional **single** refinement pass |
+
+### GCE (10 categories + default weights)
+
+Default weights (**`defaultGceWeights`** in **`gceEvaluator.ts`**) — must sum to **1.0**:
+
+| Category | Weight |
+|----------|--------|
+| cadentialClarity | 0.10 |
+| melodicIdentity | 0.12 |
+| phraseGrammar | 0.10 |
+| harmonyAndLanguage | 0.12 |
+| rhythmicIdentity | 0.12 |
+| structureAndForm | 0.10 |
+| arrangementAndOrchestration | 0.10 |
+| economyAndFocus | 0.08 |
+| tensionAndRelease | 0.08 |
+| thematicRecallPotential | 0.08 |
+
+Placeholder scoring is still **5.0** per category until feature-linked GCE logic lands.
+
+### LOCK (6 gates)
+
+| Gate id | Severity | Check |
+|---------|----------|--------|
+| **xmlValidity** | critical | Output is not **null** / **undefined** |
+| **barDurationIntegrity** | error | **`features.formal.barCount`** is a positive number |
+| **chordMelodyAlignment** | error | **`features.harmonic`** exists and is non-empty |
+| **sectionContrast** | warning | **`formal.riffRepetitionRatio`** ≠ **1.0** |
+| **rhythmAntiLoop** | warning | **`rhythmic.swingGridAlignment`** ≠ **1.0** |
+| **registerIntegrity** | error | **`orchestration.avgVoicingSize`** between **1** and **12** |
+
+Big Band **combined** evaluation uses **`lockRequired: false`** in the app so incomplete extract fields do not block observational **`pass`** while extraction catches up.
+
+### DCR protocol
+
+**`runDcrProtocol`** — **Design**: generate **`candidateCount`** candidates, score with **`CombinedEvaluator`**, pick highest **`combinedScore`**. **Commit**: if best ≥ **`targetScore`**, return (no refine). **Refine** (at most **once**): refine weakest dimension via **`refiner.refine`**, re-score, keep whichever candidate scores higher — **never** regenerate all candidates; **never** loop refinement.
+
+### Style Profile Registry (Big Band arrangers)
+
+| Profile id | Name | Threshold | Dimensions (ids × weight) |
+|------------|------|-----------|----------------------------|
+| **`basie`** | Count Basie | 7.0 | densityScore **0.25**, riffRepetitionScore **0.25**, swingClarityScore **0.25**, compSparsityScore **0.25** |
+| **`ellington`** | Duke Ellington | 7.0 | voicingUniqueness **0.30**, harmonicDensity **0.30**, textureFluidity **0.20**, orchestrationColor **0.20** |
+| **`schneider`** | Maria Schneider | 7.0 | harmonicComplexity **0.35**, textureMosaic **0.30**, narrativeArc **0.20**, rhythmicFloat **0.15** |
+| **`quincy_jones`** | Quincy Jones | 7.0 | grooveStrength **0.35**, cinematicDensity **0.25**, functionalHarmony **0.25**, rhythmLeads **0.15** |
+
+### How to add a new style profile (5 steps)
+
+1. Add **`yourStyleProfile.ts`** under **`engines/composer-os-v2/core/evaluation/`** implementing **`StyleProfile`** (`dimensions`, **`threshold`**, **`score`** reading **`ExtractedStyleFeatures`**).
+2. Export from **`index.ts`**.
+3. Extend **`featureExtractor`** (or downstream enrichers) if new **`featureKeys`** are required.
+4. Wire Big Band **`composerStyle`** → profile in **`composerOsAppGeneration.ts`** (same pattern as Basie / Ellington / Schneider / Quincy).
+5. Add **smoke** coverage in **`evaluation.smoke.test.ts`** and run **`npm run test:composer-smoke`**.
+
+### Smoke baseline
+
+**`npm run test:composer-smoke`** — aggregate **146** PASS rows, **39** suites (**`runSmokeTests.ts`** allowlist).
+
+---
+
 ## Future Workstreams
 
 ### Afro-Cuban Big Band
