@@ -515,11 +515,46 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('slonimsky.non_functional_logic', 'Slonimsky non-functional melodic logic (placeholder)', 'songwriter', 'harmony', 9, 'global'),
   ],
   pat_metheny: [
-    R('metheny.open_voicing', 'Open voicings (placeholder)', 'songwriter', 'harmony', 7, 'global'),
-    R('metheny.pedal_point', 'Pedal point (placeholder)', 'songwriter', 'harmony', 7, 'global'),
-    R('metheny.lydian_color', 'Lydian maj7#11 colour (placeholder)', 'songwriter', 'harmony', 7, 'global'),
-    R('metheny.stepwise_melody', 'Stepwise lyrical melody (placeholder)', 'songwriter', 'melody', 7, 'global'),
-    R('metheny.folk_jazz_color', 'Folk-jazz add9 colours (placeholder)', 'songwriter', 'harmony', 7, 'global'),
+    R(
+      'metheny.open_voicing',
+      'Open harmony spacing via diatonic planing between maj-extension chords (`pm:diatonic_planing`) plus quartal/sus/add9 surfaces eligible for sus-float; stacked functional chains are reduced by ii–V–I flattening (`flattenTwoFiveOnePass`) and consecutive-dominant stripping (`stripDominantChainPass`).',
+      'songwriter',
+      'harmony',
+      7,
+      'global'
+    ),
+    R(
+      'metheny.pedal_point',
+      'Pedal rhythm and slash bass: motion-gated `pm:pedal_shimmer` (d2) when harmony changes across barlines; `enforceMethenyTwoBarHold` prolongs chord pairs unless slash-bass matches; harsh blues-colour dominants can strip toward maj9 (`stripBluesDominantColour`).',
+      'songwriter',
+      'harmony',
+      7,
+      'global'
+    ),
+    R(
+      'metheny.lydian_color',
+      'Tonic Lydian / home colour: `pm:lydian_home` when major-tonic bars carry maj9, maj7#11, or 6/9 after the modal and guard passes (`emitLydianHomeReceipts`).',
+      'songwriter',
+      'harmony',
+      7,
+      'global'
+    ),
+    R(
+      'metheny.stepwise_melody',
+      'Melodic anchor stability: identity / motif / hook bars skip modal side-slip and device eligibility so lyrical lines are not destabilised on structural bars (`isPatMethenyHookBar`); duo path pairs with flowing, stepwise phrase intent.',
+      'songwriter',
+      'melody',
+      7,
+      'global'
+    ),
+    R(
+      'metheny.folk_jazz_color',
+      'Folk-jazz ECM palette: seeded modal side-slip (d5, `pm:modal_sideSlip`) toward bII/bIII maj9 with paired tonic colour; `pm:sus_float` (d4) on sus/add9/maj families; maj/add9 rows from `SONGWRITER_CHORD_POOLS.pat_metheny` feed the floating harmony arc.',
+      'songwriter',
+      'harmony',
+      7,
+      'global'
+    ),
   ],
   bill_evans: [
     R('evans.singing_line', 'Singing melodic line over rich harmony (placeholder)', 'songwriter', 'melody', 8, 'verse'),

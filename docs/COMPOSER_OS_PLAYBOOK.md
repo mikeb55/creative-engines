@@ -247,6 +247,32 @@ Regression: smoke **`Sonic Youth texture + MusicXML augmentation`** (`core/score
 
 After import, **dynamics** and **tremolo** are host-dependent for playback—use this mapping to **teach** texture **intent** (wall vs clearing), not guaranteed studio distortion.
 
+### Pat Metheny (ECM / PMG — harmony-centric slice)
+
+**Still current:** **`patMethenySlice.ts`** (re-export **`goldenPath/patMethenySlice.ts`**), **`patMethenyEffectiveHarmonyBars`**, **`precomputePatMethenyEffectiveHarmonyBars`**, **`getChordForBar`**, smoke **`patMethenySliceSmoke.test.ts`**, eval **`npm run eval:pat_metheny`**.
+
+Pat Metheny is **harmony- and metadata-centric** on the duo golden path: there is **no** dedicated guitar-bar pass or `ChordEvent` extension layer (by design—contrast **Sonic Youth** **`applySonicYouthGuitarBarPasses`**). Export truth and assertions use the same **precomputed effective harmony** pattern as other locked slices.
+
+**`pm:*` device families** (prefix **`pm:`** on **`patMethenyDeviceReceipts`**)
+
+| Family | Role |
+|--------|------|
+| **`lydian_home`** | Tonic major with Lydian/home colour (**`pm:lydian_home@bar…`**). |
+| **`pedal_shimmer`** | Motion-gated shimmer (**d2**, **`pm:pedal_shimmer@bar…`**). |
+| **`sus_float`** | Suspension float on eligible sus/add9/maj surfaces (**d4**, **`pm:sus_float@bar…`**). |
+| **`modal_sideSlip`** | Modal side-slip toward bII/bIII (**d5**, **`pm:modal_sideSlip@bar…`**). |
+| **`diatonic_planing`** | Diatonic planing between maj-extension chords (**`pm:diatonic_planing@bar…`**). |
+
+**Eligibility pipeline**
+
+1. **`buildPatMethenyHarmonyPipelineSnapshot`** — resolve source chords → **flatten** textbook ii–V–I (`flattenTwoFiveOnePass`) → **strip** three-bar dominant chains (`stripDominantChainPass`) → **applyModalSideSlipDevice** (d5) → **enforceMethenyTwoBarHold**.
+2. **`precomputePatMethenyEffectiveHarmonyBars`** — attach **Lydian-home**, **pedal-shimmer / sus-float** receipts (seeded d2/d4), **diatonic planing** receipts, **`patMethenyEffectiveHarmonyBars`**, **`patMethenyEligibilityStats`** (d2/d4/d5 eligible bar counts vs target rates).
+3. Optional bar-by-bar audit: **`formatPatMethenyEligibilityDiagnostics`**; CLI **`npm run probe:pat-metheny-eligibility`** in **`engines/composer-os-v2`**.
+
+**ECM floating harmony arc:** Hook / identity / motif bars skip disruptive devices where gated; blues-heavy dominant colours can **strip** toward maj9 (`stripBluesDominantColour`). **Song Mode** chord pools **`SONGWRITER_CHORD_POOLS.pat_metheny`** feed add9/maj9 pastoral rows.
+
+**Alternate tunings:** **`STYLE_PAT_METHENY`** is listed in **`STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING`** (**`alternateGuitarTunings.ts`**). See **§11 Alternate tunings workflow**.
+
 ---
 
 ## 4. Presets, ensembles, and zones
