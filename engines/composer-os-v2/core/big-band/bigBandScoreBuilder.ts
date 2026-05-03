@@ -1042,5 +1042,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
   const score = createScore(title, parts, { tempo: 140 });
   score.wybleConsumptionReceipt = wybleConsumptionReceiptForBigBand(wybleVoiceLayout);
+  if (barMeterMap && Object.keys(barMeterMap).length > 0) {
+    score.barMeterMap = barMeterMap;
+  }
   return score;
 }

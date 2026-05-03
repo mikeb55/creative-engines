@@ -4,6 +4,7 @@
  */
 
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { SonicYouthExtension } from './sonicYouthChordTypes';
 
 /**
@@ -157,6 +158,8 @@ export type DuoRhythmSnapMode = 'quarter' | 'eighth_beats';
 /** Full score model. */
 export interface ScoreModel {
   title: string;
+  /** When set, MusicXML export + written validation use the same per-bar meters as score construction. */
+  barMeterMap?: BarMeterMap;
   tempo?: number;
   timeSignature?: { beats: number; beatType: number };
   /** Optional duo feel hint (export as direction text; no structural change). */

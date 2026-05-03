@@ -1,6 +1,7 @@
 ## [Unreleased]
 
-- **feat(string-quartet):** Zappa SQ — app dispatch metadata into **`runQuartetRealisation`**, **`zappaSQHarmonySlice`** on **`GenerationMetadata`**, odd-meter score path skips fragile solo fragments when **`barMeterMap`** is set; piano dual-voice bar fill + smoke **`zappaStringQuartetSmoke.test.ts`** (**115**/0 aggregate smoke).
+- **feat(big_band):** Zappa Big Band — **`frank_zappa`** + Big Band realisation, **`zappaBigBandSmoke.test.ts`** (seed **1673965981**, Zappa Classic **`barMeterMap`**, **`fz:`** receipts, large MusicXML). **Ensemble export:** **`ScoreModel.barMeterMap`** + **`runEnsembleExportPipeline`** / **`exportScoreModelToMusicXml`** so mixed meters validate; Big Band drum layer voice **1** allows GM **42** (hi-hat) and **51** (ride). Docs: **`docs/ZAPPA_CREATION_GUIDE.md`** §6, **`docs/HANDOVER_2026-05-03.md`**, roadmap smoke **117**/0 (**34** suites).
+- **feat(string-quartet):** Zappa SQ — app dispatch metadata into **`runQuartetRealisation`**, **`zappaSQHarmonySlice`** on **`GenerationMetadata`**, odd-meter score path skips fragile solo fragments when **`barMeterMap`** is set; piano dual-voice bar fill + smoke **`zappaStringQuartetSmoke.test.ts`** (**117**/0 aggregate smoke).
 - **feat(duo):** route song-mode post-pass `outsideLevel` through `resolveAllowedOutsideLevelForSlonimsky` — all songwriter profiles now active in Duo pipeline for Slonimsky chromatic layer.
 - **feat(ensemble):** wire `ensembleLeadSheetMusicXml` through Big Band + String Quartet pipeline boundary.
 - **feat(ensemble):** map `leadSheet.chordEvents` into Big Band + String Quartet arranger chord inputs (bar-accurate, forward-fill).

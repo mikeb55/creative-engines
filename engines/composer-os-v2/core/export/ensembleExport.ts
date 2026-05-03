@@ -27,7 +27,11 @@ export function runEnsembleExportPipeline(score: ScoreModel, exportOptions?: Mus
   const v2 = validateStrictBarMath(score);
   if (!v2.valid) errors.push(...v2.errors);
 
-  const ex = exportScoreModelToMusicXml(score, exportOptions);
+  const barMeterMap = exportOptions?.barMeterMap ?? score.barMeterMap;
+  const ex = exportScoreModelToMusicXml(
+    score,
+    barMeterMap ? { ...exportOptions, barMeterMap } : exportOptions
+  );
   if (!ex.success || !ex.xml) {
     errors.push(...(ex.errors.length ? ex.errors : ['MusicXML export failed']));
     return { ok: false, errors };
@@ -36,10 +40,10 @@ export function runEnsembleExportPipeline(score: ScoreModel, exportOptions?: Mus
   const schema = validateMusicXmlSchema(ex.xml);
   if (!schema.valid) errors.push(...schema.errors);
 
-  const rt = validateExportedMusicXmlBarMath(ex.xml);
+  const rt = validateExportedMusicXmlBarMath(ex.xml, barMeterMap);
   if (!rt.valid) errors.push(...rt.errors);
 
-  const written = validateWrittenMusicXmlComplete(score, ex.xml);
+  const written = validateWrittenMusicXmlComplete(score, ex.xml, barMeterMap);
   if (!written.valid) errors.push(...written.errors);
 
   return { ok: errors.length === 0, xml: ex.xml, errors };

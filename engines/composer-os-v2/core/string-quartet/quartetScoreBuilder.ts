@@ -731,5 +731,8 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
   const score = createScore(title, [...stringParts, pianoPart], { tempo: 96 });
   score.wybleConsumptionReceipt = wybleConsumptionReceiptForQuartet(wybleVoiceLayout);
+  if (input.barMeterMap && Object.keys(input.barMeterMap).length > 0) {
+    score.barMeterMap = input.barMeterMap;
+  }
   return score;
 }

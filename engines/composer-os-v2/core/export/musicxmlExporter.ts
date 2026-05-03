@@ -231,6 +231,7 @@ export function computeVoiceExportDivisionSum(
 }
 
 const DRUM_GM_HH = 42;
+const DRUM_GM_RIDE = 51;
 const DRUM_GM_BD = 36;
 const DRUM_GM_SN = 38;
 
@@ -323,23 +324,27 @@ function bigBandDrumsEventsToXml(
       }
 
       if (voice === 1) {
-        if (e.kind !== 'note' || e.pitch !== DRUM_GM_HH) {
+        if (
+          e.kind !== 'note' ||
+          (e.pitch !== DRUM_GM_HH && e.pitch !== DRUM_GM_RIDE)
+        ) {
           const eMsg = e as ScoreEvent;
           throw new Error(
-            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), got ${
+            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}) or ride (GM ${DRUM_GM_RIDE}), got ${
               eMsg.kind === 'note' ? `pitch ${eMsg.pitch}` : eMsg.kind
             }`
           );
         }
+        const rideLayer = e.pitch === DRUM_GM_RIDE;
         for (const t of parts) {
           xml += drumKitNoteXml({
             chord: false,
-            step: 'F',
+            step: rideLayer ? 'G' : 'F',
             octave: 5,
             ticks480: t,
             voice: 1,
             stem: 'up',
-            notehead: 'x',
+            notehead: rideLayer ? 'normal' : 'x',
             instrumentId: instId,
           });
           voiceTickSum += t;
@@ -641,9 +646,11 @@ function eventsToXml(
 /** Export ScoreModel to MusicXML string. */
 export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXmlExportOptions): MusicXmlExportResult {
   try {
-    console.log('[METER-CHECK] barMeterMap received:', JSON.stringify(options?.barMeterMap));
     logGuitarVoice2CheckpointFromScore('B-pre-export', score);
-    const opts: MusicXmlExportOptions = options ?? {};
+    const opts: MusicXmlExportOptions = {
+      ...(options ?? {}),
+      barMeterMap: options?.barMeterMap ?? score.barMeterMap,
+    };
     const USE_ENHARMONIC_SPELLING = true;
     const preferFlats = USE_ENHARMONIC_SPELLING && (score.keySignature?.fifths ?? 0) < 0;
     const dbg = score.keySignatureExportDebug;
