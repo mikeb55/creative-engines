@@ -13,3 +13,6 @@ export * from './bobBrookmeyerStyleProfile';
 export * from './clareFischerStyleProfile';
 export * from './oliverNelsonStyleProfile';
 export * from './sammyNesticoStyleProfile';
+export * from './folkStyleProfile';
+export * from './classicalStyleProfile';
+export * from './bebopStyleProfile';

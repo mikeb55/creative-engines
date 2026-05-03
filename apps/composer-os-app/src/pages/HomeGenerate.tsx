@@ -425,7 +425,16 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
 ];
 
 /** Matches engine `BigBandComposerId` / style-pairing “known” arrangers — grouped first like Style dropdowns. */
-const ARRANGER_GROUP_CORE_ORDER: readonly string[] = ['ellington', 'basie', 'thad', 'schneider'];
+const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
+  'ellington',
+  'basie',
+  'thad',
+  'schneider',
+  'quincy_jones',
+  'gil_evans',
+  'bob_brookmeyer',
+  'clare_fischer',
+];
 
 const ARRANGER_OPTION_BY_ID = new Map(ARRANGER_OPTIONS.map((o) => [o.id, o]));
 const ARRANGER_GROUP_CORE_IDS = new Set(ARRANGER_GROUP_CORE_ORDER);

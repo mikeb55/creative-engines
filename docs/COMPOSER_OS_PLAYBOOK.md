@@ -27,6 +27,8 @@ Charts saved as **MusicXML** (Finale / MuseScore / Sibelius **partwise** export)
 
 **`parseRepeatMarkers`** scans each measure for barline **repeat forward/back** and **`<ending>`** volta tags. **`buildUniversalLeadSheetFromImportedLeadSheet`** maps **`LeadSheet.repeatMarkers`** onto **`UniversalRepeatMarker`**: **`repeat_start`**, **`repeat_end`**, **`ending_start`**, **`ending_stop`** (optional **`endingNumber`**). Jump semantics (**D.C.**, **D.S.**, **coda**) affect **how many logical bars** are visited, not a separate MusicXML “marker kind” in this contract—expect repeat/volta markers where the exporter emitted barlines.
 
+For **total bar count**, **`computeTotalBarsWithRepeats`**, Song Mode / golden-path wiring, and **optional `ScoreModel.repeatMarkers`** MusicXML emission, see **Repeat truth — chart length + MusicXML barlines** above.
+
 ### Key changes
 
 When the importer records attributes for a measure (`emitKeyChangesAndSection`), each **`<key>`** inside that measure appends **`{ bar, fifths, mode? }`** to **`LeadSheet.keyChanges`**. The first key also seeds **`keySignature`** when present.
@@ -44,6 +46,52 @@ Regression pattern: **import** → **`buildUniversalLeadSheetFromImportedLeadShe
 
 - **Voices / staves:** Melody capture is **voice 1**, **staff 1** only; **voice 1** melody is **retained**; **voice > 1** (and non–staff-1) notes log **warnings** and are skipped for the melody track (**Phase 1** lead-sheet scope).
 - **Publisher quirks:** Nested repeats and rare jump combinations may diverge from another tool’s playback; importer **`warnings`** describe caps and fallbacks.
+
+---
+
+## Phrase Engine V2 (golden-path duo, pre–C1)
+
+Song Mode **hook-first** runs an optional motif-development pass **after** expressive/orchestration passes and **before** the Song Mode rhythm overlay stack (**C1–C7**). Implementation: **`engines/composer-os-v2/core/goldenPath/phraseEngineV2.ts`**, wired from **`generateGoldenPathDuoScore`** immediately above **`applySongModeRhythmOverlayC1`**.
+
+### When it runs (all required)
+
+- Preset is **guitar–bass duo family** (`isGuitarBassDuoFamily`).
+- **`generationMetadata.songModeHookFirstIdentity === true`** (hook-first Song Mode path).
+- **Total bars === 32** for the duo score build (**`tb === 32`**).
+
+### Pipeline order (four steps)
+
+1. **`buildMotifPool(score, context)`** — Mechanical pool from the guitar part: first **four** **4-bar** phrases, cells from phrase onsets (pitch + duration snippets).
+2. **`seedPoolFromHookIdentity(pool, songModeHookIdentity)`** — Optional; when hook identity exists on metadata, nudges/seeds the pool toward the hook’s rhythmic/pitch fingerprint.
+3. **`applyPhraseEngineV2(guitarPart, pool)`** — Adjusts guitar **bars 17–32** (development window) toward pool material (duration windows + stepwise pitch nudge toward cells).
+4. **`applyBassMotifEcho(bassPart, pool)`** — Bass echoes weighted pool **durations** in the same window when a bass onset’s duration matches a cell duration (pitch nudge toward cell floor).
+
+If any gate fails, this block is skipped entirely; the rest of the golden-path duo pipeline is unchanged.
+
+---
+
+## Repeat truth — chart length + MusicXML barlines
+
+End-to-end behaviour for **imported** lead sheets and optional **export** of repeat barlines.
+
+### Universal lead sheet + bar count
+
+- **`computeTotalBarsWithRepeats(formSections, repeatMarkers)`** (**`universalLeadSheetBuilder.ts`**) — Walks form sections in order; each section contributes **`barEnd − barStart + 1`** bars. If any **`repeat_end`** marker falls **inside** that section’s bar range, that section’s span is counted **twice** (one repeat pass).
+- **`buildUniversalLeadSheetFromImportedLeadSheet`** sets **`UniversalLeadSheet.totalBars`** from that helper and carries **`repeatMarkers`** from **`LeadSheet`**.
+- **`applyRepeatTruthToScoreModel(score, sheet)`** — If **`sheet.totalBars`** is set and differs from per-part measure counts, **deep-clones** the score and **pads** (clone last measure) or **trims** each part’s measures to match; syncs optional score-level length fields when present.
+
+### Song Mode generation (`composerOsAppGeneration` → `runSongMode` → `runGoldenPath`)
+
+- When the universal sheet is **`imported_musicxml`** and **`totalBars`** is a positive integer, **`RunGoldenPathOptions.totalBars`** is set from **`floor(totalBars)`** so the first score build targets the repeated chart length (no separate “second pass” solely for bar math).
+- After the golden-path run (including GCE retries), **`applyRepeatTruthToScoreModel`** is applied again on the final **`ScoreModel`** so the delivered score matches the sheet; **`context.form.totalBars`** is aligned when the measure count changes.
+
+### MusicXML export
+
+- Optional **`ScoreModel.repeatMarkers`**: array of **`{ bar, kind }`** with **`kind`** **`repeat_start`** | **`repeat_end`** (1-based bar index = exported measure number).
+- When present, **`musicxmlExporter`** emits:
+  - **`repeat_start`** — `<barline location="left">` with **`heavy-light`** + **`<repeat direction="forward"/>`**
+  - **`repeat_end`** — `<barline location="right">` with **`light-heavy`** + **`<repeat direction="backward"/>`**
+- Scores without **`repeatMarkers`** behave exactly as before (no barline emission from this path).
 
 ---
 
