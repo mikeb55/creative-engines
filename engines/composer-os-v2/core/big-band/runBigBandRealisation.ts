@@ -147,28 +147,35 @@ export function runBigBandRealisation(
   const wybleLayout =
     input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
 
-  const score = buildBigBandScoreModel({
-    title: planning.title,
-    seed: input.seed,
-    formPlan: planning.formPlan,
-    sectionPlan: planning.sectionPlan,
-    era: planning.era,
-    chordBars,
-    wybleVoiceLayout: wybleLayout,
-    orchestrationPlan: planning.orchestrationPlan,
-    enhancedPlanning: planning.enhancedPlanning,
-    ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
-      ? { songwriterStyleId: input.songwriterStyleId.trim() }
-      : {}),
-    ...(input.allowedOutsideOverride !== undefined
-      ? { allowedOutsideOverride: input.allowedOutsideOverride }
-      : {}),
-    ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
-  });
+  let score: ScoreModel;
+  let exportPipeline: BigBandRealisationResult['exportPipeline'];
+  try {
+    score = buildBigBandScoreModel({
+      title: planning.title,
+      seed: input.seed,
+      formPlan: planning.formPlan,
+      sectionPlan: planning.sectionPlan,
+      era: planning.era,
+      chordBars,
+      wybleVoiceLayout: wybleLayout,
+      orchestrationPlan: planning.orchestrationPlan,
+      enhancedPlanning: planning.enhancedPlanning,
+      ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
+        ? { songwriterStyleId: input.songwriterStyleId.trim() }
+        : {}),
+      ...(input.allowedOutsideOverride !== undefined
+        ? { allowedOutsideOverride: input.allowedOutsideOverride }
+        : {}),
+      ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
+    });
 
-  const exportPipeline = runEnsembleExportPipeline(score, {
-    ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),
-  });
+    exportPipeline = runEnsembleExportPipeline(score, {
+      ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),
+    });
+  } catch (err) {
+    console.error('[runBigBandRealisation] score build or ensemble export pipeline threw:', err);
+    throw err;
+  }
 
   return {
     planning,

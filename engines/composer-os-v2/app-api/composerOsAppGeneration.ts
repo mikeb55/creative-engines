@@ -1848,7 +1848,21 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       : {}),
     ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
   };
-  const realised = runBigBandRealisation(bigBandRealisationInput);
+  let realised: ReturnType<typeof runBigBandRealisation>;
+  try {
+    realised = runBigBandRealisation(bigBandRealisationInput);
+  } catch (err) {
+    console.error('[composer-os][big_band] runBigBandRealisation threw:', err);
+    throw err;
+  }
+  if (!realised.exportPipeline.ok) {
+    console.error(
+      '[composer-os][big_band] ensemble MusicXML export pipeline failed:',
+      realised.exportPipeline.errors.length > 0
+        ? realised.exportPipeline.errors.join('\n')
+        : '(exportPipeline.ok false but no error strings)'
+    );
+  }
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
   let ensembleMusicXmlFilename: string | undefined;
   let ensembleMusicXmlFilepath: string | undefined;

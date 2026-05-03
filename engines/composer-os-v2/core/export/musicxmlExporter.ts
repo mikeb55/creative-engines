@@ -451,13 +451,16 @@ function eventsToXml(
     if (!byVoice.has(v)) byVoice.set(v, []);
     byVoice.get(v)!.push(e);
   }
-  if (forceDualVoiceSecondLayer && part.instrumentIdentity === 'clean_electric_guitar' && !byVoice.has(2)) {
-    byVoice.set(2, []);
+  const dualLayerInstrument =
+    part.instrumentIdentity === 'clean_electric_guitar' || isBigBandPianoPart(part);
+  if (forceDualVoiceSecondLayer && dualLayerInstrument) {
+    if (!byVoice.has(2)) byVoice.set(2, []);
+    if (!byVoice.has(1)) byVoice.set(1, []);
   }
   const voices = [...byVoice.keys()].sort((a, b) => a - b);
   const multiVoice = voices.length > 1;
   const staffPolyphonyXml =
-    multiVoice && part.instrumentIdentity === 'clean_electric_guitar' ? STAFF_1_XML : undefined;
+    multiVoice && dualLayerInstrument ? STAFF_1_XML : undefined;
   const debugTicks = typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_MUSICXML_TICKS === '1';
 
   let xml = '';
@@ -737,13 +740,14 @@ ${partList}
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
+      const partUsesVoice2Somewhere = orderedMeasures.some((mm) =>
+        mm.events.some(
+          (e) => (e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord') && (e.voice ?? 1) === 2
+        )
+      );
       const forceDualVoiceSecondLayer =
-        part.instrumentIdentity === 'clean_electric_guitar' &&
-        orderedMeasures.some((mm) =>
-          mm.events.some(
-            (e) => (e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord') && (e.voice ?? 1) === 2
-          )
-        );
+        (part.instrumentIdentity === 'clean_electric_guitar' || isBigBandPianoPart(part)) &&
+        partUsesVoice2Somewhere;
       for (let i = 0; i < orderedMeasures.length; i++) {
         const m = orderedMeasures[i];
         const measureNumber = i + 1;

@@ -871,8 +871,17 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           addEvent(m, createNote(rootM, 0, effectiveBeats, 1));
         }
         const compDur = 0.5 * beatScale;
-        for (const hb of hitBeats) {
+        const orderedHits = [...hitBeats].sort((a, b) => a - b);
+        let compCursor = 0;
+        for (const hb of orderedHits) {
+          if (hb > compCursor) {
+            addEvent(m, createRest(compCursor, hb - compCursor, 2));
+          }
           addEvent(m, createNote(rootM, hb, compDur, 2, undefined, shell));
+          compCursor = hb + compDur;
+        }
+        if (compCursor < effectiveBeats) {
+          addEvent(m, createRest(compCursor, effectiveBeats - compCursor, 2));
         }
         continue;
       }
@@ -888,7 +897,6 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           if (zappaBbActive) {
             const qScale = effectiveBeats / 4;
             const beatStarts = [0, 1, 2.5, 3].map((x) => x * qScale);
-            const nd = Math.min(0.42, effectiveBeats / 9);
             const tet = [0, 1, 3, 7];
             const anchor = snapMidiToRange(59 + rpc, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
             const altoLine = tet.map((s) => snapMidiToRange(anchor + s, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]));
@@ -896,9 +904,13 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
               .reverse()
               .map((s) => snapMidiToRange(anchor + s - 3, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]));
             const seq = idx === 0 ? altoLine : tenorLine;
+            /** Four attack points on a 4/4 grid; each note sustains to the next attack (or bar end) so voice 1 sums to `effectiveBeats`. */
             for (let ki = 0; ki < 4; ki++) {
-              addEvent(m, createNote(seq[ki]!, beatStarts[ki]!, nd, 1));
-              barNotes.push({ partId: pid, midi: seq[ki]!, durationBeats: nd });
+              const st = beatStarts[ki]!;
+              const end = ki < 3 ? beatStarts[ki + 1]! : effectiveBeats;
+              const dur = Math.max(1 / 64, end - st);
+              addEvent(m, createNote(seq[ki]!, st, dur, 1));
+              barNotes.push({ partId: pid, midi: seq[ki]!, durationBeats: dur });
             }
           } else {
             const soliPattern = saxSoli.get(bar) ?? { leadOffsetSemitones: 0 };
