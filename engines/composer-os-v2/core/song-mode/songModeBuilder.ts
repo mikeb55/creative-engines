@@ -6,7 +6,7 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
-import { planLeadMelody } from './leadMelodyPlanner';
+import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
@@ -1701,6 +1701,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     stylePairingResolution,
   });
 
+  const melodyBehaviourForLead =
+    withRules.songwriting?.melodyBehaviour ?? planMelodyBehaviour(params.seed, resolution.primaryId);
   const leadMelodyPlan = planLeadMelody({
     seed: params.seed,
     sections: params.sections,
@@ -1709,6 +1711,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     chorusPlan,
     hook: withRules.hook,
     voiceType,
+    melodyBehaviour: melodyBehaviourForLead,
+    harmonyBars: flattenChordPlanToHarmonyBars(withRules.chordPlan),
   });
 
   const singerProfile = getSingerRangeProfile(voiceType);

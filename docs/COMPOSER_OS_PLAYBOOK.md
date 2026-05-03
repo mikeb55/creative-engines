@@ -47,6 +47,36 @@ Regression pattern: **import** → **`buildUniversalLeadSheetFromImportedLeadShe
 
 ---
 
+## Vocal melody engine (Song Mode lead melody)
+
+Song Mode builds a **planning-layer** vocal sketch before the golden-path score: **`planMelodyBehaviour`** (per shipped songwriter id) produces **`MelodyBehaviourPlan`** scalars stored on **`SongwritingPlanningBundle`**; **`buildCompiledSong`** passes that bundle into **`planLeadMelody`** (`engines/composer-os-v2/core/song-mode/leadMelodyPlanner.ts`). Output is **`LeadMelodyPlan`** (measure / beat / duration / MIDI events), folded into **`LeadSheetContract.vocalMelody`** — not the same part as duo guitar **`NoteEvent`** rows unless separately bridged.
+
+### melodyBehaviour scalars
+
+| Field | Role |
+|-------|------|
+| **`repetitionVsVariationBias`** (0–1) | High → reuse phrase motif shape on later bars (rhythm + relative contour); low → fresher bar-level picks. |
+| **`intervalTendency`** | **`stepwise`** / **`mixed`** / **`angular`** — biases chord-tone picks toward small steps vs wider leaps. |
+| **`phraseAsymmetryTendency`** (0–1) | Planning asymmetry hint (paired with hook/chorus planners elsewhere). |
+| **`cadenceFrequency`** | **`low`** / **`medium`** / **`high`** — cadence density hint for downstream lyrics/phrasing. |
+| **`rhythmicSubdivision`** | **`whole_bar`**, **`half_quarter`**, **`eighth_patterns`**, or **`mixed`** (bar-local roll between densities). Drives quarter/eighth **cells** inside each bar (still on the 4/4 scaffold). |
+
+Shipped writers each receive a distinct profile in **`melodyBehaviourPlanner.ts`**; unlisted ids use seed-tinted defaults.
+
+### Chord-tone awareness
+
+Per bar, symbols come from **`flattenChordPlanToHarmonyBars`** (scaffold after era normalization — aligned with Song Mode harmony planning). Optional **`harmonyBars`** override on **`planLeadMelody`** is reserved for future authoritative timelines (e.g. locked bars). **`chordTonesForChordSymbol(symbol, { lockedHarmony: true })`** yields tertian reference tones; pitches are mapped into the singer **comfort range** before the absolute-range clamp.
+
+### Rhythmic subdivision
+
+Lead melody uses **multiple events per bar** when **`half_quarter`** or **`eighth_patterns`** is active (half notes, quarter streams, or sparse eighth grids). **`whole_bar`** keeps a single anchor per bar. **`mixed`** picks a density per bar deterministically from the seed.
+
+### Singer range
+
+**`getSingerRangeProfile`** supplies comfort and absolute MIDI bounds; **`planLeadMelody`** clamps after **chorus lift** semitones so peaks stay singable.
+
+---
+
 ## 1. Introduction and scope
 
 Composer OS is a **deterministic**, **seeded** composition pipeline: the same request + seed yields the same score, receipts, and MusicXML. This playbook orients you to **Generate**, **Song Mode**, **presets**, **diagnostics**, and **export**—and gives **40 repeatable scenarios** you can step through for QA or teaching.

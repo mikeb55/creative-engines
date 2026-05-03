@@ -3,6 +3,7 @@
  */
 
 import { planLeadMelody } from '../core/song-mode/leadMelodyPlanner';
+import { planMelodyBehaviour } from '../core/song-mode/melodyBehaviourPlanner';
 import { validateHookReturnConsistency, validateLeadMelodyPlan } from '../core/song-mode/melodyValidation';
 import { planChorusMetadata } from '../core/song-mode/chorusPlanner';
 import { planHookMetadata } from '../core/song-mode/hookPlanner';
@@ -24,6 +25,7 @@ export function runLeadMelodyPlannerTests(): { ok: boolean; name: string }[] {
     chorusPlan,
     hook,
     voiceType: 'male_tenor',
+    melodyBehaviour: planMelodyBehaviour(11, 'max_martin'),
   });
 
   out.push({

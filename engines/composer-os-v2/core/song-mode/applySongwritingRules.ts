@@ -78,6 +78,7 @@ export function applySongwritingRules(params: {
         rhythm: Math.min(0.95, baseContrast.rhythm + 0.03 * conf),
       }
     : baseContrast;
+  /** `melodyBehaviour` is passed through `buildCompiledSong` into `planLeadMelody` (Song Mode vocal sketch). */
   const songwriting: SongwritingPlanningBundle = {
     researchParseOk: research.ok,
     researchErrors: [...research.errors],
