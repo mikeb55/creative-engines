@@ -57,9 +57,14 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('beatles.singable_range', 'Default ~octave vocal window', 'songwriter', 'melody', 7, 'global'),
   ],
   joni_mitchell: [
-    R('joni.shape_harmony', 'Shape-based voicings (add2/add4)', 'songwriter', 'harmony', 8, 'verse'),
+    R('joni.modal_bias', 'Modal bias — Dorian, Aeolian, Mixolydian fields', 'songwriter', 'harmony', 8, 'global'),
+    R('joni.pedal_bass_preference', 'Pedal bass preference — stepwise or static bass', 'songwriter', 'harmony', 8, 'verse'),
+    R('joni.avoid_dominant_resolution', 'Avoid strong V–I — weak / suspended cadence', 'songwriter', 'harmony', 9, 'global'),
+    R('joni.suspended_arrivals', 'Suspended / add9 arrivals — hanging colour', 'songwriter', 'harmony', 8, 'chorus'),
+    R('joni.phrase_irregularity', 'Phrase irregularity occasional — ±1 bar at transitions', 'songwriter', 'form', 7, 'form'),
+    R('joni.no_ii_v_i', 'No rolling ii–V–I chains (pool + runtime guard)', 'songwriter', 'harmony', 9, 'global'),
+    R('joni.shape_harmony', 'Shape-based voicings (add2/add4/sus)', 'songwriter', 'harmony', 8, 'verse'),
     R('joni.prosody_drive', 'Lyric prosody drives phrase edges', 'songwriter', 'lyric', 9, 'verse'),
-    R('joni.weak_cadence', 'De-emphasise V–I loops', 'songwriter', 'harmony', 7, 'global'),
     R('joni.partial_refrain', 'Partial refrains vs big chorus', 'songwriter', 'form', 7, 'chorus'),
   ],
   donald_fagen: [

@@ -78,12 +78,27 @@ export interface FrankZappaChordPoolRow {
   tags: FrankZappaRowTags;
 }
 
-/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen / Frank Zappa). */
+/** Joni Mitchell — open-tuning modal rows (drone colour + harmonic family bucket). */
+export interface JoniMitchellRowTags {
+  /** Open-string / pedal resonance emphasis (annotation + row biasing). */
+  drone: boolean;
+  pool: 'tonic' | 'subdominant' | 'dominant_sus' | 'polymodal';
+  /** Row contract + runtime guard: no ii–V–I cadential chains in rolling triples. */
+  noIiVi: true;
+}
+
+export interface JoniMitchellChordPoolRow {
+  chords: string[];
+  tags: JoniMitchellRowTags;
+}
+
+/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen / Frank Zappa / Joni Mitchell). */
 export type ChordPoolRow =
   | string[]
   | WayneShorterChordPoolRow
   | DonaldFagenChordPoolRow
-  | FrankZappaChordPoolRow;
+  | FrankZappaChordPoolRow
+  | JoniMitchellChordPoolRow;
 
 function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
@@ -291,14 +306,27 @@ function wayneChordPoolBiasMultiplier(
 
 function chosenRowTagsFromPoolRow(row: ChordPoolRow | undefined): string[] {
   if (row == null || Array.isArray(row) || !('tags' in row)) return [];
-  const t = row.tags;
-  const out: string[] = [`tension:${t.tension}`, `motion:${t.motion}`];
-  if (t.cadential) out.push('cadential');
-  if (t.pedal) out.push('pedal');
-  if ('pool' in t && typeof (t as FrankZappaRowTags).pool === 'string') {
-    out.push(`pool:${(t as FrankZappaRowTags).pool}`);
+  const t = row.tags as
+    | WayneShorterRowTags
+    | DonaldFagenRowTags
+    | FrankZappaRowTags
+    | JoniMitchellRowTags;
+  const out: string[] = [];
+  if ('tension' in t && (t as WayneShorterRowTags).tension) {
+    out.push(`tension:${(t as WayneShorterRowTags).tension}`);
   }
-  if ('noIiVi' in t && (t as FrankZappaRowTags).noIiVi === true) {
+  if ('motion' in t && (t as WayneShorterRowTags).motion) {
+    out.push(`motion:${(t as WayneShorterRowTags).motion}`);
+  }
+  if ('cadential' in t && t.cadential) out.push('cadential');
+  if ('pedal' in t && t.pedal) out.push('pedal');
+  if ('drone' in t && typeof (t as JoniMitchellRowTags).drone === 'boolean') {
+    out.push(`drone:${(t as JoniMitchellRowTags).drone ? 'true' : 'false'}`);
+  }
+  if ('pool' in t && typeof (t as { pool?: string }).pool === 'string') {
+    out.push(`pool:${(t as { pool: string }).pool}`);
+  }
+  if ('noIiVi' in t && (t as { noIiVi?: boolean }).noIiVi === true) {
     out.push('no_ii_v_i');
   }
   return out;
@@ -1022,28 +1050,99 @@ const SONGWRITER_CHORD_POOLS: Record<
     ],
   },
   /**
-   * Joni Mitchell — modal / sus / add9 pools (max three distinct symbols per row; non-functional).
+   * Joni Mitchell — modal sus/add9/6(9) pools (Dorian / Aeolian / Mixolydian bias; non-functional).
+   * TONIC / SUBDOMINANT / DOMINANT(sus) / POLYMODAL families; `drone` marks open-string pedal character.
+   * Rolling ii–V–I triples broken in {@link chordSymbolsForSection} (same guard as Frank Zappa).
    * Numeric tuning fingerings live in slice metadata (`joniMitchellTuningPatternByBar`), not here.
    */
   joni_mitchell: {
     verse: [
-      ['Dadd9', 'Dadd9', 'Gsus2', 'Gsus2'],
-      ['Asus4', 'Asus4', 'Fadd9', 'Fadd9'],
-      ['Cadd9', 'Cadd9', 'Dadd9/F#', 'Dadd9/F#'],
+      {
+        chords: ['Dsus2', 'Dadd9', 'G6', 'Em7'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['D6/9', 'Dmaj7add9', 'Gsus2', 'Em9'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Gadd9', 'Cadd9', 'Cmaj7add9', 'Am(sus2)'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Gadd9', 'Gsus4', 'Fmaj7add9', 'Dmadd9'],
+        tags: { drone: false, pool: 'subdominant', noIiVi: true },
+      },
+      {
+        chords: ['Bbmaj7', 'Bbsus2', 'Em7', 'Cadd9'],
+        tags: { drone: false, pool: 'subdominant', noIiVi: true },
+      },
+      {
+        chords: ['Asus4', 'E7sus4', 'G7sus4', 'A9sus4'],
+        tags: { drone: false, pool: 'dominant_sus', noIiVi: true },
+      },
+      {
+        chords: ['Dsus4add9', 'Gadd4add9', 'C6/9', 'Bm7'],
+        tags: { drone: true, pool: 'polymodal', noIiVi: true },
+      },
     ],
     chorus: [
-      ['G6/9', 'G6/9', 'Dadd9/F#', 'Dadd9/F#'],
-      ['Fadd9', 'Fadd9', 'G6/9', 'G6/9'],
-      ['Dadd9', 'Dadd9', 'Fadd9', 'Fadd9'],
+      {
+        chords: ['Dadd9', 'G6/9', 'Cmaj7add9', 'Em9'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Gsus2', 'Gadd9', 'Am7', 'Em7'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Fadd2', 'Bbmaj7', 'Dmadd9', 'Gadd9'],
+        tags: { drone: false, pool: 'subdominant', noIiVi: true },
+      },
+      {
+        chords: ['Asus4', 'A7sus4', 'Esus4', 'B7sus4'],
+        tags: { drone: false, pool: 'dominant_sus', noIiVi: true },
+      },
+      {
+        chords: ['F/G', 'D/C', 'Bm9', 'C6/9'],
+        tags: { drone: false, pool: 'polymodal', noIiVi: true },
+      },
     ],
     bridge: [
-      ['Bm11', 'Bm11', 'Emadd9', 'Emadd9'],
-      ['Emadd9', 'Emadd9', 'Gsus2', 'Gsus2'],
+      {
+        chords: ['Bm7', 'Em7', 'Dsus2', 'Gsus2'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Cmaj7sus2', 'Fmaj7add9', 'Bbsus2', 'Em9'],
+        tags: { drone: false, pool: 'subdominant', noIiVi: true },
+      },
+      {
+        chords: ['A5add9', 'Dsus4add9', 'Gadd4add9', 'Bm9'],
+        tags: { drone: true, pool: 'polymodal', noIiVi: true },
+      },
+      {
+        chords: ['E7sus4', 'A9sus4', 'G7sus4', 'Dadd9'],
+        tags: { drone: false, pool: 'dominant_sus', noIiVi: true },
+      },
     ],
     pre_chorus: [
-      ['Gsus2', 'Gsus2', 'Asus4', 'Asus4'],
-      ['Asus4', 'Asus4', 'Dadd9', 'Dadd9'],
-      ['Cadd9/E', 'Cadd9/E', 'Gsus2', 'Gsus2'],
+      {
+        chords: ['Gsus2', 'Cadd9', 'D6/9', 'Em7'],
+        tags: { drone: true, pool: 'tonic', noIiVi: true },
+      },
+      {
+        chords: ['Asus4', 'Esus4', 'Dmadd9', 'Gadd9'],
+        tags: { drone: false, pool: 'subdominant', noIiVi: true },
+      },
+      {
+        chords: ['F/G', 'C6/9', 'Am(sus2)', 'Dsus2'],
+        tags: { drone: true, pool: 'polymodal', noIiVi: true },
+      },
+      {
+        chords: ['B7sus4', 'E7sus4', 'A7sus4', 'G7sus4'],
+        tags: { drone: false, pool: 'dominant_sus', noIiVi: true },
+      },
     ],
   },
   james_brown: {
@@ -1433,7 +1532,7 @@ function chordSymbolsForSection(
       profile.harmonicRhythm,
       seed
     );
-    if (songwriterId === 'frank_zappa') {
+    if (songwriterId === 'frank_zappa' || songwriterId === 'joni_mitchell') {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }
     return { chordSymbols, chosenRowTags };

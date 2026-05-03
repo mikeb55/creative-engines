@@ -30,6 +30,7 @@ export interface SongwriterCompProfile {
 /** Guitar-forward primary in Song Mode — keep duo guitar/bass lead path without keys-comp overlay. */
 export const GUITAR_CENTRIC_SONGWRITER_IDS: ReadonlySet<SongwriterRuleId> = new Set([
   'beatles',
+  'joni_mitchell',
   'richard_thompson',
   'paul_simon',
 ]);
@@ -41,7 +42,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   ecm_chamber: 'keys',
   stevie_wonder: 'keys',
   beatles: 'guitar',
-  joni_mitchell: 'keys',
+  joni_mitchell: 'guitar',
   donald_fagen: 'keys',
   bob_dylan: 'keys',
   paul_simon: 'guitar',
@@ -150,6 +151,26 @@ const BACHARACH_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const JONI_ACOUSTIC_COMP: SongwriterCompProfile = {
+  id: 'joni_mitchell',
+  primaryCompInstrument: 'guitar',
+  voicingBias: [
+    'acoustic_guitar_primary',
+    'open_string_drone_high',
+    'sus_add9_six_nine_colour',
+    'omit_third_where_possible',
+  ],
+  registerBias: 'mid',
+  rhythmicFeel: ['fingerpicked_arpeggiated', 'sparse_strum_windows'],
+  smallMovementRules: [
+    'pedal_bass_stepwise_or_static',
+    'tuning_family_open_d_open_e_open_g_annotation_only',
+  ],
+  receiptLines: [
+    'Song Mode Joni Mitchell slice: acoustic guitar–led texture — fingerpicked / arpeggiated, high drone tendency; open D / open E / open G tuning families remain annotation-only in export metadata. Not an imitation of any artist.',
+  ],
+};
+
 function genericKeysCompProfile(id: SongwriterRuleId): SongwriterCompProfile {
   return {
     id,
@@ -171,6 +192,7 @@ function genericKeysCompProfile(id: SongwriterRuleId): SongwriterCompProfile {
 export function getSongwriterCompProfile(raw: string | undefined | null): SongwriterCompProfile | null {
   const id = normalizeSongwriterStyleKey(raw ?? '');
   if (!id) return null;
+  if (id === 'joni_mitchell') return JONI_ACOUSTIC_COMP;
   if (!isKeyboardCentricSongwriter(id)) return null;
   switch (id) {
     case 'donald_fagen':

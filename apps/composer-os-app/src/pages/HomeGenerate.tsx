@@ -135,7 +135,6 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'stevie_wonder',
   'radiohead',
   'james_brown',
-  'joni_mitchell',
   'sonic_youth',
   'pat_metheny',
   'wayne_shorter',
@@ -155,10 +154,16 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'herbie_hancock',
 ];
 
+/** Shipped writers shown under the Singer-Songwriter subgroup (full slice; separate optgroup label). */
+const SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER: readonly string[] = ['joni_mitchell'];
+
 const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [];
 
 const SONGWRITER_OPTION_BY_ID = new Map(SONGWRITER_OPTIONS.map((o) => [o.id, o]));
-const SONGWRITER_GROUP_SHIPPED_IDS = new Set(SONGWRITER_GROUP_SHIPPED_ORDER);
+const SONGWRITER_GROUP_SHIPPED_IDS = new Set<string>([
+  ...SONGWRITER_GROUP_SHIPPED_ORDER,
+  ...SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER,
+]);
 const SONGWRITER_GROUP_READY_IDS = new Set(SONGWRITER_GROUP_READY_ORDER);
 
 const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS.filter(
@@ -179,7 +184,7 @@ const VISUALLY_HIDDEN: CSSProperties = {
 };
 
 const ARIA_SONGWRITER_GROUPS_DESC =
-  'Songwriters are grouped into Shipped full slice, Ready to build, and In library.';
+  'Songwriters are grouped into Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
   'Arrangers are grouped into Big band core research-backed and Charts and studio voices.';
 
@@ -188,6 +193,16 @@ function SongwriterSelectOptionGroups() {
     <>
       <optgroup label="Shipped (full slice)">
         {SONGWRITER_GROUP_SHIPPED_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={id} value={o.id}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label="Shipped — Singer-Songwriter">
+        {SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={id} value={o.id}>

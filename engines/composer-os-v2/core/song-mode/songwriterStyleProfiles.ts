@@ -57,6 +57,10 @@ export interface SongwriterStyleProfile {
   bacharachCadentialAmbiguity?: number;
   /** Bacharach: probability of pedal point (static bass) */
   bacharachPedalUsage?: number;
+  /** Human-readable label for UI / pairing hints (optional). */
+  displayName?: string;
+  /** Broad era bucket (e.g. singer-songwriter) for docs / pairing. */
+  songwriterEraTag?: string;
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -231,19 +235,24 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   joni_mitchell: {
     id: 'joni_mitchell',
+    displayName: 'Joni Mitchell',
+    songwriterEraTag: 'singer_songwriter',
+    description:
+      'Joni Mitchell — moderate harmonic density, low–moderate chromatic strength; modal sus/add9 fields. Reference albums: Blue, Court and Spark, Hejira.',
     lineVsCellEmphasis: 0.72,
-    harmonyColourBias: 0.78,
+    harmonyColourBias: 0.62,
     formRegularity: 0.35,
     prosodyInfluence: 0.9,
     hookRepetitionBias: 0.38,
-    phraseRegularity: 0.3,
+    phraseRegularity: 0.28,
     hookReturnVariation: 0.65,
-    harmonicSpeed: 0.5,
+    harmonicSpeed: 0.48,
     sectionContrast: 0.8,
     syncopationBias: 0.35,
     densityBias: 0.4,
     motifCellSize: 4,
     intervalPreference: 'modal',
+    guitarModalPreference: 'dorian_aeolian_mixolydian',
   },
   donald_fagen: {
     id: 'donald_fagen',
@@ -1170,6 +1179,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   beatles: 'beatles',
   joni: 'joni_mitchell',
   joni_mitchell: 'joni_mitchell',
+  mitchell: 'joni_mitchell',
+  jm: 'joni_mitchell',
   fagen: 'donald_fagen',
   donald_fagen: 'donald_fagen',
   /** UI / API enum-style id — same canonical profile as `donald_fagen`. */
