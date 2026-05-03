@@ -50,13 +50,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - After any playbook edit, regenerate the Word export: **`node scripts/generateComposerOsPlaybookDocx.mjs`**
 - Commit **`docs/COMPOSER_OS_PLAYBOOK.md`** and **`docs/COMPOSER_OS_PLAYBOOK.docx`** together so Markdown and DOCX stay in sync.
 
-## Recent update (2026-05-05)
+## Recent update (2026-05-04)
 
 **Smoke tier:** **`npm run test:composer-smoke`** — **157**/0 PASS rows, **41** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
-**Session handover — completed:** GCE / LOCK / DCR / Style Profile evaluation system; Basie, Ellington, Schneider, and Quincy Jones arranger profiles wired for auto-scoring; evaluation wired into Big Band generation pipeline (observational **`evaluationResult`**); **Future Workstreams** subsection added to **`docs/COMPOSER_OS_PLAYBOOK.md`** (Afro-Cuban, Odd-Meter).
+**Session handover — completed:** GCE / LOCK / DCR / Style Profile evaluation system; Basie, Ellington, Schneider, and Quincy Jones arranger profiles wired for auto-scoring; evaluation wired into Big Band generation pipeline (observational **`evaluationResult`**); **Future Workstreams** subsection added to **`docs/COMPOSER_OS_PLAYBOOK.md`** (Afro-Cuban, Odd-Meter); **Light Touch** **`StyleProfile`** modules — **Folk**, **Classical**, **Bebop** (`folkStyleProfile.ts`, `classicalStyleProfile.ts`, `bebopStyleProfile.ts`, **`threshold` 7.0**) exported from **`engines/composer-os-v2/core/evaluation/index.ts`** and documented under **Evaluation System** in **`docs/COMPOSER_OS_PLAYBOOK.md`**; **classical song overlays** (**Schubert** / **Schumann** / **Fauré**) — differentiated **`SongwriterStyleProfile`** deltas in **`songwriterStyleResolver.ts`** (`applyClassicalSongOverlay`), **`GenerateRequest.classicalOverlay`**, **Classical song influence** dropdown on **`HomeGenerate.tsx`** (documented in playbook **Classical song overlay** section).
 
-**Next priorities (ordered):** (1) Wire six queued arrangers — Thad Jones, Gil Evans, Brookmeyer, Fischer, Nelson, Nestico (parameter table ready); (2) Light Touch styles — Folk Guitar Narrative, Classical Influence, Bebop variants (Perplexity research); (3) MIDI import; (4) Unmeasured cadenza sections; (5) Nutritional Information melody V2.
+**Next priorities (ordered):** (1) Wire six queued arrangers — Thad Jones, Gil Evans, Brookmeyer, Fischer, Nelson, Nestico (parameter table ready); (2) MIDI import; (3) Unmeasured cadenza sections; (4) Nutritional Information melody V2.
 
 **Confirmed working (2026-05-02 — Zappa / export):** **Sibelius** MusicXML import **clean** (no invalid **`<part-name-display>`** / **`<credit>`**; schema-invalid per-measure **`<staff-details>`** removed); comp staff **`Piano`** in XML — **full printed instrument names** in Sibelius are a host preference (**House Styles → Engraving Rules → Instruments**). **Zappa Classic** **7/8 + 4/4** **`barMeterMap`** path; **solo electric guitar** written pitch **+12** semitone shift (see **`docs/ZAPPA_CREATION_GUIDE.md`** §1).
 
@@ -82,6 +82,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Barry Harris:** **`barryHarrisSlice.ts`** + smoke; **fix:** **`barry_harris`** wired into **`barsForLockedExportTruth`** in **`runGoldenPath.ts`** (export-truth parity with other locked-harmony slices).
 - **Registry / engine:** `bill_evans` remains a first-class `SongwriterRuleId`; duo golden-path generation uses **`billEvansSlice`** when primary is **`bill_evans`**.
 - **Generate UI:** Songwriter and Arranger dropdowns use `<optgroup>` groupings; Song Mode has helper copy for arranger/era pairing. **Accessibility:** `label` `htmlFor` ↔ control `id`, `aria-describedby` to visually hidden optgroup context (and Song Mode Era → existing pairing paragraph `id`). Implemented in **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** for Song Mode, Big Band, and String Quartet rows.
+- **Classical song overlays (2026-05-04):** **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts`** — per-composer blended scalar nudges; **`classicalOverlay`** on generate payload; **Classical song influence** UI beside lyric author; playbook section **Classical song overlay (Song Mode)**.
 - **Docs:** Roadmap (ECM sweep note, Bacharach/Fagen product note, smoke checklist); **`docs/USER_GUIDE.md`** + **`UserGuide.tsx`** describe grouped dropdowns; **`docs/CHANGELOG.md`** — Composer OS entry dated **2026-04-29** (empty **`[Unreleased]`** until the next drop).
 
 **Suggestions for developers today**
@@ -96,7 +97,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — 146/0 PASS rows, 39 labelled suites (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
+# Smoke tier (~5 min) — 157/0 PASS rows, 41 labelled suites (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)

@@ -856,6 +856,7 @@ export function HomeGenerate({
   const [secondarySongwriterStyle, setSecondarySongwriterStyle] = useState('');
   const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
   const [authorOverlay, setAuthorOverlay] = useState('');
+  const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
   const [zappaSoloMidiHigh, setZappaSoloMidiHigh] = useState(84);
   const [zappaSoloDensity, setZappaSoloDensity] = useState<'low' | 'medium' | 'high'>('medium');
@@ -1528,6 +1529,7 @@ export function HomeGenerate({
                   ? { secondarySongwriterStyle: secondarySongwriterStyle.trim() }
                   : {}),
                 ...(authorOverlay.trim() ? { authorOverlay: authorOverlay.trim() } : {}),
+                ...(classicalOverlay.trim() ? { classicalOverlay: classicalOverlay.trim() } : {}),
                 ...(songwriterStyle === 'frank_zappa'
                   ? {
                       zappaSoloMidiLow,
@@ -4074,6 +4076,21 @@ export function HomeGenerate({
               <option value="jack_perricone">Jack Perricone</option>
             </select>
           </div>
+          <div style={{ marginBottom: '0.65rem' }}>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Classical song influence (optional)
+            </label>
+            <select
+              value={classicalOverlay}
+              onChange={(e) => setClassicalOverlay(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">None</option>
+              <option value="schubert">Schubert</option>
+              <option value="schumann">Schumann</option>
+              <option value="faure">Fauré</option>
+            </select>
+          </div>
         </div>
       )}
 
@@ -4163,11 +4180,6 @@ export function HomeGenerate({
             <span id="co-bb-arranger-desc" style={VISUALLY_HIDDEN}>
               {ARIA_ARRANGER_GROUPS_DESC}
             </span>
-            <p
-              style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}
-            >
-              Coming soon: full per-arranger Big Band styles.
-            </p>
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label

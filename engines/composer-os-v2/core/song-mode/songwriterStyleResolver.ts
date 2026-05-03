@@ -69,6 +69,48 @@ function blendProfiles(a: SongwriterStyleProfile, b: SongwriterStyleProfile, wei
   };
 }
 
+/**
+ * Classical overlays — registry rules + per-composer blended scalar deltas (clamp01).
+ * Schubert: syllabic prosody, periodic/strophic form, diatonic-functional harmony.
+ * Schumann: strongest text-prosody drive, chromatic harmony, irregular/through-composed phrasing.
+ * Fauré: arching line, floating/modal colour, continuous flow, lighter cadential closure.
+ */
+function applyClassicalSongOverlay(
+  blendedProfile: SongwriterStyleProfile,
+  classicalOverlayId: ClassicalSongRuleId
+): void {
+  switch (classicalOverlayId) {
+    case 'schubert':
+      blendedProfile.prosodyInfluence = clamp01(blendedProfile.prosodyInfluence + 0.1);
+      blendedProfile.lineVsCellEmphasis = clamp01(blendedProfile.lineVsCellEmphasis + 0.06);
+      blendedProfile.harmonyColourBias = clamp01(blendedProfile.harmonyColourBias - 0.05);
+      blendedProfile.formRegularity = clamp01(blendedProfile.formRegularity + 0.08);
+      blendedProfile.phraseRegularity = clamp01(blendedProfile.phraseRegularity + 0.07);
+      break;
+    case 'schumann':
+      blendedProfile.prosodyInfluence = clamp01(blendedProfile.prosodyInfluence + 0.13);
+      blendedProfile.harmonyColourBias = clamp01(blendedProfile.harmonyColourBias + 0.1);
+      blendedProfile.lineVsCellEmphasis = clamp01(blendedProfile.lineVsCellEmphasis + 0.05);
+      blendedProfile.phraseRegularity = clamp01(blendedProfile.phraseRegularity - 0.09);
+      blendedProfile.hookReturnVariation = clamp01(blendedProfile.hookReturnVariation + 0.06);
+      blendedProfile.harmonicSpeed = clamp01(blendedProfile.harmonicSpeed + 0.05);
+      break;
+    case 'faure':
+      blendedProfile.prosodyInfluence = clamp01(blendedProfile.prosodyInfluence + 0.06);
+      blendedProfile.lineVsCellEmphasis = clamp01(blendedProfile.lineVsCellEmphasis + 0.12);
+      blendedProfile.harmonyColourBias = clamp01(blendedProfile.harmonyColourBias + 0.04);
+      blendedProfile.hookRepetitionBias = clamp01(blendedProfile.hookRepetitionBias - 0.07);
+      blendedProfile.phraseRegularity = clamp01(blendedProfile.phraseRegularity - 0.05);
+      blendedProfile.sectionContrast = clamp01(blendedProfile.sectionContrast - 0.06);
+      blendedProfile.syncopationBias = clamp01(blendedProfile.syncopationBias + 0.04);
+      break;
+    default: {
+      const _exhaustive: never = classicalOverlayId;
+      void _exhaustive;
+    }
+  }
+}
+
 function collectRuleIds(
   primary: SongwriterRuleId,
   secondary: SongwriterRuleId | null,
@@ -120,8 +162,7 @@ export function resolveSongwritingStyles(input: SongwriterStyleResolutionInput):
   }
 
   if (classicalOverlayId) {
-    blendedProfile.prosodyInfluence = clamp01(blendedProfile.prosodyInfluence + 0.05);
-    blendedProfile.lineVsCellEmphasis = clamp01(blendedProfile.lineVsCellEmphasis + 0.04);
+    applyClassicalSongOverlay(blendedProfile, classicalOverlayId);
   }
 
   const resolvedRuleIds = collectRuleIds(primaryId, secondaryId, authorOverlayId, classicalOverlayId);

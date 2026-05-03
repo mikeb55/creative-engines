@@ -127,6 +127,8 @@ export interface GenerateRequest {
   secondarySongwriterStyle?: string;
   /** Song Mode: lyric author overlay (`AuthorRuleId`), e.g. `jimmy_webb`. */
   authorOverlay?: string;
+  /** Song Mode: classical song / lieder overlay (`ClassicalSongRuleId`), e.g. `schubert`. */
+  classicalOverlay?: string;
   /** Song Mode v1 (Indie Art Pop): optional alternate guitar tuning controls. */
   alternateGuitarTuning?: AlternateGuitarTuningRequest;
   /**

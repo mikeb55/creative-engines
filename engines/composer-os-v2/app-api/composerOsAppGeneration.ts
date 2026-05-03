@@ -643,6 +643,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       : undefined;
   const authorOv =
     typeof req.authorOverlay === 'string' && req.authorOverlay.trim() !== '' ? req.authorOverlay.trim() : undefined;
+  const classicalOv =
+    typeof req.classicalOverlay === 'string' && req.classicalOverlay.trim() !== ''
+      ? req.classicalOverlay.trim()
+      : undefined;
   const barTarget = clampSongFormBarCount(req.totalBars, 32);
   const primarySongwriterNormalized =
     typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
@@ -980,6 +984,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv,
+    classicalOverlay: classicalOv,
     alternateGuitarTuning: alternateGuitarTuningForGoldenPath,
     era: req.stylePairing?.era ?? undefined,
     stylePairing: req.stylePairing

@@ -173,6 +173,22 @@ Lead melody uses **multiple events per bar** when **`half_quarter`** or **`eight
 
 ---
 
+## Classical song overlay (Song Mode)
+
+Optional **Classical song influence** on Generate (default **None**): **Schubert**, **Schumann**, or **Fauré**. The payload carries **`classicalOverlay`** (`schubert` | `schumann` | `faure`). This is independent of **Lyric author influence** (`authorOverlay`). **`resolveSongwritingStyles`** (`engines/composer-os-v2/core/song-mode/songwriterStyleResolver.ts`) loads extra **registry rules** for the chosen composer and applies **additive** nudges to the blended **`SongwriterStyleProfile`** (each scalar clamped to **0–1** after the overlay).
+
+### Per-composer emphasis and parameter deltas
+
+| Overlay id | Emphasis | Blended profile adjustments (additive, then clamped) |
+|------------|----------|------------------------------------------------------|
+| **`schubert`** | Syllabic prosody, periodic/strophic form, diatonic-functional harmony | **`prosodyInfluence`** +0.10; **`lineVsCellEmphasis`** +0.06; **`harmonyColourBias`** −0.05; **`formRegularity`** +0.08; **`phraseRegularity`** +0.07 |
+| **`schumann`** | Strong text–music prosody, chromatic harmony, irregular / through-composed phrasing | **`prosodyInfluence`** +0.13; **`harmonyColourBias`** +0.10; **`lineVsCellEmphasis`** +0.05; **`phraseRegularity`** −0.09; **`hookReturnVariation`** +0.06; **`harmonicSpeed`** +0.05 |
+| **`faure`** | Long arching lines, floating / modal colour, continuous flow, lighter cadential closure | **`prosodyInfluence`** +0.06; **`lineVsCellEmphasis`** +0.12; **`harmonyColourBias`** +0.04; **`hookRepetitionBias`** −0.07; **`phraseRegularity`** −0.05; **`sectionContrast`** −0.06; **`syncopationBias`** +0.04 |
+
+Implementation: **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts`**.
+
+---
+
 ## 1. Introduction and scope
 
 Composer OS is a **deterministic**, **seeded** composition pipeline: the same request + seed yields the same score, receipts, and MusicXML. This playbook orients you to **Generate**, **Song Mode**, **presets**, **diagnostics**, and **export**—and gives **40 repeatable scenarios** you can step through for QA or teaching.
@@ -707,7 +723,7 @@ Pair **ECM-style modal sparsity** with **long seeds** to avoid **phrase repetiti
 
 ## Evaluation System
 
-Composer OS embeds a layered **evaluation** stack used for **observational receipts** (especially Big Band): extract features from a **`ScoreModel`**, score **GCE** (10 categories), score a **style profile** (Basie / Ellington / Schneider / Quincy), run **LOCK** gates, optionally combine into a single **`CombinedEvaluationResult`**. **DCR** (Design → Commit → Refine) is available for candidate workflows; it is separate from the golden-path Generate pipeline unless wired explicitly.
+Composer OS embeds a layered **evaluation** stack used for **observational receipts** (especially Big Band): extract features from a **`ScoreModel`**, score **GCE** (10 categories), score a **style profile** (Big Band arrangers and optional **Light Touch** genre profiles), run **LOCK** gates, optionally combine into a single **`CombinedEvaluationResult`**. **DCR** (Design → Commit → Refine) is available for candidate workflows; it is separate from the golden-path Generate pipeline unless wired explicitly.
 
 ### Overview
 
@@ -771,6 +787,16 @@ Big Band **combined** evaluation uses **`lockRequired: false`** in the app so in
 | **`oliver_nelson`** | Oliver Nelson | 7.0 | bluesFunctional **0.35**, sectionalContrast **0.30**, swingAuthority **0.20**, chartOrchestration **0.15** |
 | **`sammy_nestico`** | Sammy Nestico | 7.0 | punchEconomy **0.30**, riffHits **0.30**, lockedGroove **0.25**, kickAlignment **0.15** |
 
+### Light Touch style profiles (Folk, Classical, Bebop)
+
+Three **`StyleProfile`** modules ship under **`engines/composer-os-v2/core/evaluation/`** for **genre-level** Light Touch targets (same **`threshold`** **7.0** and **`ExtractedStyleFeatures`** contract as arranger profiles). They score **`harmonic.functionalRatio`** when harmonic enrichment is present alongside **`scoreModel`** extraction (`orchestration`, `formal`, `rhythmic`).
+
+| Profile id | Name | Threshold | Dimensions (ids × weight) |
+|------------|------|-----------|----------------------------|
+| **`folk`** | Folk (Light Touch) | **7.0** | functionalSimplicity **0.25**, chordSparsity **0.25**, steadyPulse **0.25**, intimateEnsemble **0.25** |
+| **`classical`** | Classical (Light Touch) | **7.0** | functionalModulation **0.30**, orchestralBreadth **0.30**, periodicPhrasing **0.20**, metricDefinition **0.20** |
+| **`bebop`** | Bebop (Light Touch) | **7.0** | extendedHarmony **0.30**, sparseComping **0.25**, syncopationDrive **0.25**, comboLinearWeight **0.20** |
+
 ### How to add a new style profile (5 steps)
 
 1. Add **`yourStyleProfile.ts`** under **`engines/composer-os-v2/core/evaluation/`** implementing **`StyleProfile`** (`dimensions`, **`threshold`**, **`score`** reading **`ExtractedStyleFeatures`**).
@@ -781,7 +807,7 @@ Big Band **combined** evaluation uses **`lockRequired: false`** in the app so in
 
 ### Smoke baseline
 
-**`npm run test:composer-smoke`** — aggregate **146** PASS rows, **39** suites (**`runSmokeTests.ts`** allowlist).
+**`npm run test:composer-smoke`** — aggregate **157** PASS rows, **41** suites (**`runSmokeTests.ts`** allowlist).
 
 ---
 
