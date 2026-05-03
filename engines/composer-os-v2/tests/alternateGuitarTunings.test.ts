@@ -1,4 +1,7 @@
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import { addEvent, createPart, createRest, createScore } from '../core/score-model/scoreEventBuilder';
 import {
+  buildExportPartTransposeSemitonesFromResolvedAlternateTuning,
   getPresetsByZone,
   normalizeAlternateGuitarTuningRequest,
   resolveIndieArtPopTuningTexture,
@@ -125,6 +128,52 @@ export function runAlternateGuitarTuningsTests(): { ok: boolean; name: string }[
   out.push({
     ok: resolveIndieArtPopTuningTexture(texJazz) === 'open_modal',
     name: 'texture: all_fourths → open_modal',
+  });
+
+  /** Minimal duo-style guitar score with one bar rest — MusicXML transpose smoke (measure 1 `<attributes>`). */
+  const minimalGuitarRestScore = (exportPartTransposeSemitones?: Record<string, number>) => {
+    const g = createPart('guitar', 'Elec. Gtr', 'clean_electric_guitar', 27, 'treble', 1, () => 'C', () => undefined);
+    addEvent(g.measures[0]!, createRest(0, 4));
+    const s = createScore('Transpose smoke', [g], { tempo: 120 });
+    if (exportPartTransposeSemitones && Object.keys(exportPartTransposeSemitones).length > 0) {
+      s.exportPartTransposeSemitones = exportPartTransposeSemitones;
+    }
+    return s;
+  };
+
+  const dropDResolved = normalizeAlternateGuitarTuningRequest({ mode: 'shared', shared: { presetId: 'drop_d' } });
+  const dropDTranspose = buildExportPartTransposeSemitonesFromResolvedAlternateTuning(dropDResolved ?? undefined);
+  const xmlDropD = exportScoreModelToMusicXml(minimalGuitarRestScore(dropDTranspose ?? undefined));
+  out.push({
+    ok:
+      xmlDropD.success === true &&
+      (xmlDropD.xml ?? '').includes('<transpose><chromatic>-2</chromatic></transpose>'),
+    name: 'MusicXML: shared Drop D emits `<transpose><chromatic>-2</chromatic></transpose>` in measure 1 attributes',
+  });
+
+  const ebResolved = normalizeAlternateGuitarTuningRequest({ mode: 'shared', shared: { presetId: 'eb_standard' } });
+  out.push({
+    ok:
+      ebResolved?.mode === 'shared' &&
+      ebResolved.shared?.strings?.[0] === 'Eb2' &&
+      ebResolved.shared?.strings?.[5] === 'Eb4',
+    name: 'eb_standard preset resolves to six-string Eb tuning',
+  });
+  const ebTranspose = buildExportPartTransposeSemitonesFromResolvedAlternateTuning(ebResolved ?? undefined);
+  const xmlEb = exportScoreModelToMusicXml(minimalGuitarRestScore(ebTranspose ?? undefined));
+  out.push({
+    ok:
+      xmlEb.success === true &&
+      (xmlEb.xml ?? '').includes('<transpose><chromatic>-1</chromatic></transpose>'),
+    name: 'MusicXML: shared Eb standard emits `<transpose><chromatic>-1</chromatic></transpose>` in measure 1 attributes',
+  });
+
+  const dadgadResolved = normalizeAlternateGuitarTuningRequest({ mode: 'shared', shared: { presetId: 'dadgad' } });
+  const dadTranspose = buildExportPartTransposeSemitonesFromResolvedAlternateTuning(dadgadResolved ?? undefined);
+  const xmlDad = exportScoreModelToMusicXml(minimalGuitarRestScore(dadTranspose ?? undefined));
+  out.push({
+    ok: xmlDad.success === true && !(xmlDad.xml ?? '').includes('<transpose'),
+    name: 'MusicXML: DADGAD (non-fixed-offset) emits no `<transpose>` element',
   });
 
   return out;

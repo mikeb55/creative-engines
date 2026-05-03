@@ -179,5 +179,10 @@ export interface ScoreModel {
    * Keys are part ids (`guitar`, `guitar_2`).
    */
   exportMeasure1TuningWordsByPartId?: Record<string, string>;
+  /**
+   * Measure-1 `<attributes>` only: chromatic transposition for fixed-offset guitar presets (e.g. Drop D, Eb standard).
+   * Keys are part ids; values are semitone offsets (negative = written pitch sounds lower).
+   */
+  exportPartTransposeSemitones?: Record<string, number>;
   parts: PartModel[];
 }

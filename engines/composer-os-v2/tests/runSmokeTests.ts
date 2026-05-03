@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **142** PASS rows, **38** suites (2026-05-03).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **146** PASS rows, **39** suites (2026-05-03).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -45,11 +45,13 @@ import { runUniversalLeadSheetRepeatSmokeTests } from './universalLeadSheetBuild
 import { runVocalMelodySmokeTests } from './vocalMelodySmoke.test';
 import { runRealBookStressTests } from './realBookStressTest.test';
 import { runSonicYouthTextureTests } from '../core/score-model/__tests__/sonicYouthTexture.test';
+import { runEvaluationSmokeTests } from '../core/evaluation/evaluation.smoke.test';
 
 type Row = { name: string; ok: boolean };
 
 const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Readiness', run: runReadinessTests },
+  { label: 'Evaluation — Basie style profile structure', run: runEvaluationSmokeTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },

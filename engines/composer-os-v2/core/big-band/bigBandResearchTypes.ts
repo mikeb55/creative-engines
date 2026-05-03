@@ -3,7 +3,17 @@
  * Prose lives in data/BigBandResearch.md; code stores rule shapes only.
  */
 
-export type BigBandComposerId = 'ellington' | 'basie' | 'thad' | 'schneider' | 'quincy_jones';
+export type BigBandComposerId =
+  | 'ellington'
+  | 'basie'
+  | 'thad'
+  | 'schneider'
+  | 'quincy_jones'
+  | 'gil_evans'
+  | 'bob_brookmeyer'
+  | 'clare_fischer'
+  | 'oliver_nelson'
+  | 'sammy_nestico';
 
 export type BigBandEraId =
   | 'swing'
@@ -115,6 +125,12 @@ export interface BigBandRuleTuning {
   ellingtonProofOfConcept?: BigBandArrangerProfileReceiptV1;
   schneiderProofOfConcept?: BigBandArrangerProfileReceiptV1;
   quincyJonesProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  thadProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  gilEvansProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  bobBrookmeyerProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  clareFischerProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  oliverNelsonProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  sammyNesticoProofOfConcept?: BigBandArrangerProfileReceiptV1;
 }
 
 export interface ResolvedBigBandRuleSet {

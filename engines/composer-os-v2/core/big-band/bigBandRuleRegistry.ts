@@ -51,6 +51,41 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ],
   /** Placeholder until Quincy Jones research rules are authored (arranger id maps from UI). */
   quincy_jones: [],
+  gil_evans: [
+    R('gil_evans.colour_field', 'Harmonic colour fields over sparse rhythm hooks', 'composer', 'harmony', 83),
+    R('gil_evans.mid_register_blend', 'Mid-register blends; avoid shout-default brass peaks', 'composer', 'orchestration', 80),
+    R('gil_evans.intro_small_group', 'Small-group intros / instrumental subset colours', 'composer', 'form', 77),
+    R('gil_evans.elastic_time', 'Flexible phrase placement vs strict riff grid', 'composer', 'rhythm', 78),
+    R('gil_evans.modal_side_slip', 'Modal prolongation with occasional side-step colour', 'composer', 'harmony', 79),
+  ],
+  bob_brookmeyer: [
+    R('brookmeyer.counter_lines', 'Multiple simultaneous independent lines when dense', 'composer', 'orchestration', 84),
+    R('brookmeyer.quartal_colour', 'Quartal/quintal harmonic stacks as structural colour', 'composer', 'harmony', 82),
+    R('brookmeyer.section_takeover', 'Section-to-section line handoffs (linear narrative)', 'composer', 'form', 79),
+    R('brookmeyer.metric_shift', 'Metric displacement near peaks (controlled)', 'composer', 'rhythm', 76),
+    R('brookmeyer.balance_dense_clear', 'Dense voicings with registral clarity', 'composer', 'density', 81),
+  ],
+  clare_fischer: [
+    R('fischer.dense_voicing', 'Dense tertian/cluster voicing vocabulary', 'composer', 'harmony', 85),
+    R('fischer.latin_groove_coupling', 'Rhythm-section groove couples to harmonic rhythm', 'composer', 'rhythm', 80),
+    R('fischer.inner_voice_lead', 'Active inner-voice motion under sustained tops', 'composer', 'orchestration', 83),
+    R('fischer.section_colour_turn', 'Harmonic colour turns at section boundaries', 'composer', 'form', 78),
+    R('fischer.controlled_density', 'Orchestral density via harmony weight not player spam', 'composer', 'density', 82),
+  ],
+  oliver_nelson: [
+    R('nelson.blues_functional', 'Blues-functional backbone with arranged extensions', 'composer', 'harmony', 81),
+    R('nelson.section_contrast', 'Contrasting sections via orchestration register', 'composer', 'orchestration', 80),
+    R('nelson.chart_economy', 'Economical fills; intentional punches vs wallpaper', 'composer', 'density', 79),
+    R('nelson.swing_authority', 'Swing authority on primary phrases', 'composer', 'rhythm', 77),
+    R('nelson.head_soli_shout', 'Classic head–solos–shout dramaturgy', 'composer', 'form', 78),
+  ],
+  sammy_nestico: [
+    R('nestico.chart_tight', 'Reading-chart clarity; tidy phrase corners', 'composer', 'form', 84),
+    R('nestico.kick_figure', 'Rhythm-section kicks aligned to brass hits', 'composer', 'rhythm', 83),
+    R('nestico.riff_punch', 'Short riff punches vs sustained pads', 'composer', 'density', 82),
+    R('nestico.functional_clarity', 'Strong functional harmony with Basie-era clarity', 'composer', 'harmony', 80),
+    R('nestico.section_purity', 'Clean sectional roles (reeds vs brass responsibilities)', 'composer', 'orchestration', 81),
+  ],
 };
 
 const eraRules: Record<BigBandEraId, BigBandRule[]> = {

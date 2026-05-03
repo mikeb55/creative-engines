@@ -18,6 +18,12 @@ import { createCombinedEvaluator } from './combinedEvaluator';
 import { ellingtonStyleProfile } from './ellingtonStyleProfile';
 import { schneiderStyleProfile } from './schneiderStyleProfile';
 import { quincyStyleProfile } from './quincyStyleProfile';
+import { thadJonesStyleProfile } from './thadJonesStyleProfile';
+import { gilEvansStyleProfile } from './gilEvansStyleProfile';
+import { bobBrookmeyerStyleProfile } from './bobBrookmeyerStyleProfile';
+import { clareFischerStyleProfile } from './clareFischerStyleProfile';
+import { oliverNelsonStyleProfile } from './oliverNelsonStyleProfile';
+import { sammyNesticoStyleProfile } from './sammyNesticoStyleProfile';
 import { defaultGceWeights, evaluateGce } from './gceEvaluator';
 import { defaultLockGates, evaluateLock } from './lockGates';
 import { runDcrProtocol } from './dcrProtocol';
@@ -47,7 +53,18 @@ function smokeScoreModel(): ScoreModel {
 }
 
 function testProfileRegistrySmoke(): boolean {
-  for (const p of [ellingtonStyleProfile, schneiderStyleProfile, quincyStyleProfile]) {
+  const profiles = [
+    ellingtonStyleProfile,
+    schneiderStyleProfile,
+    quincyStyleProfile,
+    thadJonesStyleProfile,
+    gilEvansStyleProfile,
+    bobBrookmeyerStyleProfile,
+    clareFischerStyleProfile,
+    oliverNelsonStyleProfile,
+    sammyNesticoStyleProfile,
+  ];
+  for (const p of profiles) {
     if (p.dimensions.length !== 4) return false;
     const w = p.dimensions.reduce((a, d) => a + d.weight, 0);
     if (Math.abs(w - 1.0) > 1e-9) return false;
@@ -298,7 +315,7 @@ export function runEvaluationSmokeTests(): { name: string; ok: boolean }[] {
     ['Evaluation: Basie profile + ideal/anti scoring', testBasieProfileIdealAndAnti],
     ['Evaluation: non-scoreModel extraction yields null metrics', testNonScoreModelExtractorReturnsNulls],
     [
-      'Evaluation: GCE + combined evaluator + Ellington/Schneider/Quincy profiles',
+      'Evaluation: GCE + combined evaluator + Big Band arranger style profiles (10)',
       testGceCombinedAndProfilesSmoke,
     ],
     ['Evaluation: LOCK gates + DCR protocol (smoke)', testLockAndDcrSmoke],

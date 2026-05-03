@@ -36,7 +36,7 @@ Shipped items reference **`apps/composer-os-app/src/pages/HomeGenerate.tsx`**, *
 - **Odd meter smoke test:** Alternating **7/8 + 4/4** **`barMeterMap`** in **`frankZappaSliceSmoke.test.ts`** (builtin + **`custom_locked`** rows) uses seed **77777** (phrase cadence / motif gates; replaces **50200**) — **LIVE**.
 - **GCE overall** — green receipt + **9.1** milestone on Generate (**2026-05-02**); see **`docs/GCE_FRAMEWORK_V2.md`** for category breakdowns by run.
 - **All five musicality phases live:** rhythmic cell (Phase 1), motif ownership (Phase 2), voice-leading + bass authority (Phase 3), guitar↔bass interaction + callbacks (Phase 4), UI fixes (Phase 5).
-- **Motif similarity & structural recall (2026-05-02)** — sticky **3–4 note** anchor (**tritone / m6** leap), section recurrence **≥0.75**, structural bars **1 / 5 / 9 / 13** vs anchor **≥0.75**, breath bars (**≤3** attacks) after those motif bars; full-phrase repair still below **0.5**; **`frankZappaSliceSmoke`** / **`zappasoloSmoke`** green (**117**/0 smoke tier).
+- **Motif similarity & structural recall (2026-05-02)** — sticky **3–4 note** anchor (**tritone / m6** leap), section recurrence **≥0.75**, structural bars **1 / 5 / 9 / 13** vs anchor **≥0.75**, breath bars (**≤3** attacks) after those motif bars; full-phrase repair still below **0.5**; **`frankZappaSliceSmoke`** / **`zappasoloSmoke`** green (**122**/0 smoke tier).
 
 ---
 
@@ -210,4 +210,4 @@ Strong narrative contrast without extreme single-bar numerators: **Toads** (**5/
 
 ## Smoke / maintenance
 
-- **`npm run test:composer-smoke`** includes **`zappasoloSmoke.test.ts`**, Frank Zappa slice smoke, **Zappa String Quartet**, and **Zappa Big Band**; aggregate **117**/0 PASS rows, **34** labelled suites — sync **`engines/composer-os-v2/tests/runSmokeTests.ts`**, **`CLAUDE.md`**, and **`docs/COMPOSER_OS_ROADMAP.md`** when the allowlist changes.
+- **`npm run test:composer-smoke`** includes **`zappasoloSmoke.test.ts`**, Frank Zappa slice smoke, **Zappa String Quartet**, and **Zappa Big Band**; aggregate **122**/0 PASS rows, **35** labelled suites — sync **`engines/composer-os-v2/tests/runSmokeTests.ts`**, **`CLAUDE.md`**, and **`docs/COMPOSER_OS_ROADMAP.md`** when the allowlist changes.

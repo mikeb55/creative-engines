@@ -716,6 +716,12 @@ Big Band **combined** evaluation uses **`lockRequired: false`** in the app so in
 | **`ellington`** | Duke Ellington | 7.0 | voicingUniqueness **0.30**, harmonicDensity **0.30**, textureFluidity **0.20**, orchestrationColor **0.20** |
 | **`schneider`** | Maria Schneider | 7.0 | harmonicComplexity **0.35**, textureMosaic **0.30**, narrativeArc **0.20**, rhythmicFloat **0.15** |
 | **`quincy_jones`** | Quincy Jones | 7.0 | grooveStrength **0.35**, cinematicDensity **0.25**, functionalHarmony **0.25**, rhythmLeads **0.15** |
+| **`thad`** | Thad Jones | 7.0 | waveDensity **0.30**, polyHarmonicMotion **0.30**, swingDrive **0.25**, extendedFormLine **0.15** |
+| **`gil_evans`** | Gil Evans | 7.0 | colourWash **0.30**, modalOpenness **0.35**, elasticPulse **0.25**, horizonBlend **0.10** |
+| **`bob_brookmeyer`** | Bob Brookmeyer | 7.0 | linearCounterpoint **0.35**, quartalHarmonyField **0.25**, modernPocket **0.25**, sectionalVariety **0.15** |
+| **`clare_fischer`** | Clare Fischer | 7.0 | harmonicMass **0.35**, chromaticLattice **0.30**, grooveLattice **0.20**, pianoColour **0.15** |
+| **`oliver_nelson`** | Oliver Nelson | 7.0 | bluesFunctional **0.35**, sectionalContrast **0.30**, swingAuthority **0.20**, chartOrchestration **0.15** |
+| **`sammy_nestico`** | Sammy Nestico | 7.0 | punchEconomy **0.30**, riffHits **0.30**, lockedGroove **0.25**, kickAlignment **0.15** |
 
 ### How to add a new style profile (5 steps)
 
@@ -735,7 +741,7 @@ Big Band **combined** evaluation uses **`lockRequired: false`** in the app so in
 
 ### Afro-Cuban Big Band
 
-This is a dedicated future workstream, not an arranger profile addition. Requires new engine infrastructure: clave-driven rhythm layer, tumbao bass patterns, montuno piano logic, percussion section, and Cuban-specific horn phrasing. Do not attempt until evaluation system is fully wired and first four arrangers are auto-scoring.
+This is a dedicated future workstream, not an arranger profile addition. Requires new engine infrastructure: clave-driven rhythm layer, tumbao bass patterns, montuno piano logic, percussion section, and Cuban-specific horn phrasing. Do not attempt until prerequisite Cuban rhythm-grid research is scoped (Big Band evaluation registry is already wired for existing jazz arranger ids).
 
 **Reference resource:** *Latin Arranging: Cuban Styles — Toshi Clinch Productions*
 
@@ -771,22 +777,13 @@ Distinct musical language covering meter systems fundamentally different from cl
 
 Documented limitations—do not mistake UI labels for fully wired engine behaviour until addressed.
 
-### ARRANGER STYLES — partial wiring
+### ARRANGER STYLES — engine wiring
 
-**Mapped to `composerStyle` (registry rules + tuning):** **`basie`**, **`ellington`**, **`schneider`**, **`quincy_jones`** via **`composerStyleFromArrangerStyle`** in **`composerOsAppGeneration.ts`** before **`runBigBandMode`** / **`runBigBandRealisation`**.
+**Mapped to `composerStyle` (registry rules + tuning receipts):** all Generate **Arranger** ids that correspond to **`BIG_BAND_RULE_REGISTRY.composerRules`** — **`basie`**, **`ellington`**, **`thad`**, **`schneider`**, **`quincy_jones`**, **`gil_evans`**, **`bob_brookmeyer`**, **`clare_fischer`**, **`oliver_nelson`**, **`sammy_nestico`** — via **`composerStyleFromArrangerStyle`** in **`composerOsAppGeneration.ts`** before **`runBigBandMode`** / **`runBigBandRealisation`**.
 
-**Structured profile receipts (`BigBandArrangerProfileReceiptV1` on `resolvedRules.tuning`):** **Count Basie**, **Duke Ellington**, **Maria Schneider**, and **Quincy Jones** — see **section 10 — Big Band arranger profiles (wired tuning receipts)**.
+**Structured profile receipts (`BigBandArrangerProfileReceiptV1` on `resolvedRules.tuning`):** each of the above composers has a research-aligned parameter receipt in **`bigBandEraResolver.ts`** (see **section 10 — Big Band arranger profiles**). **Combined evaluation** selects the matching **`StyleProfile`** by **`composerStyle`** (**Evaluation System** § Style Profile Registry).
 
-**Still UI-only for Big Band engine merge:** other **`arrangerStyle`** ids do **not** set **`composerStyle`**; they receive **era + foundational + functional** rules only. **Planned arranger wiring priority** (when the pipeline extends):
-
-1. Thad Jones  
-2. Gil Evans  
-3. Bob Brookmeyer  
-4. Clare Fischer  
-5. Oliver Nelson  
-6. Sammy Nestico  
-
-Song Mode **style pairing** may still reference those names for confidence / contrast metadata independently of Big Band **`composerStyle`**.
+Song Mode **style pairing** uses the same **`arrangerStyle`** strings for confidence / contrast metadata (**`stylePairingResolver.ts`** **`ARRANGERS`** set includes these ids).
 
 **Follow-up:** deeper per-arranger **scoring** differentiation (beyond receipts + existing **`applyBigBandRules`** hooks) remains roadmap scope when the Big Band pipeline is extended.
 

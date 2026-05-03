@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+- **feat(big_band):** Six queued arranger profiles (**Thad Jones**, **Gil Evans**, **Bob Brookmeyer**, **Clare Fischer**, **Oliver Nelson**, **Sammy Nestico**) — **`BigBandComposerId`** extension, **`BIG_BAND_RULE_REGISTRY`** composer rules, **`bigBandEraResolver`** tuning + **`BigBandArrangerProfileReceiptV1`** receipts (research comparison table), **`StyleProfile`** modules + **`composerOsAppGeneration`** evaluation routing; **`composerStyleFromArrangerStyle`** maps **`thad`** and **`gil_evans`** / **`bob_brookmeyer`** / **`clare_fischer`** / **`oliver_nelson`** / **`sammy_nestico`** UI ids.
 - **feat(evaluation):** Combined evaluator wired into Big Band pipeline (**`combinedEvaluator.ts`**, **`composerOsAppGeneration.ts`**).
 - **feat(evaluation):** Ellington, Schneider, Quincy Jones style profiles (**`ellingtonStyleProfile.ts`**, **`schneiderStyleProfile.ts`**, **`quincyStyleProfile.ts`**).
 - **Docs:** Evaluation System documented in **`COMPOSER_OS_PLAYBOOK.md`**; regenerated **`COMPOSER_OS_PLAYBOOK.docx`**.

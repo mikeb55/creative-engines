@@ -146,12 +146,103 @@ export const SHORTER_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePre
   },
 ];
 
+/** Donald Fagen–style meter cycles (Song Mode odd-meter UI + `barMeterMap` tiling). */
+export const FAGEN_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'fagen_seven_four',
+    label: 'Fagen 7/4',
+    cycle: [{ numerator: 7, denominator: 4 }],
+  },
+  {
+    id: 'fagen_five_four',
+    label: 'Fagen 5/4',
+    cycle: [{ numerator: 5, denominator: 4 }],
+  },
+  {
+    id: 'fagen_seven_five',
+    label: 'Fagen 7+5',
+    cycle: [
+      { numerator: 7, denominator: 4 },
+      { numerator: 5, denominator: 4 },
+    ],
+  },
+  {
+    id: 'fagen_igy_feel',
+    label: 'IGY Feel',
+    cycle: [
+      { numerator: 4, denominator: 4 },
+      { numerator: 4, denominator: 4 },
+      { numerator: 3, denominator: 4 },
+    ],
+  },
+];
+
+/** Bill Evans–style meter cycles (Song Mode odd-meter UI + `barMeterMap` tiling). */
+export const EVANS_METER_CYCLE_PRESET_DEFINITIONS: readonly ZappaMeterCyclePresetDefinition[] = [
+  {
+    id: 'evans_three_four',
+    label: 'Evans 3/4',
+    cycle: [{ numerator: 3, denominator: 4 }],
+  },
+  {
+    id: 'evans_five_four',
+    label: 'Evans 5/4',
+    cycle: [{ numerator: 5, denominator: 4 }],
+  },
+  {
+    id: 'evans_five_three',
+    label: 'Evans 5+3',
+    cycle: [
+      { numerator: 5, denominator: 4 },
+      { numerator: 3, denominator: 4 },
+    ],
+  },
+  {
+    id: 'evans_nine_eight',
+    label: 'Evans 9/8',
+    cycle: [{ numerator: 9, denominator: 8 }],
+  },
+  {
+    id: 'evans_peace_piece',
+    label: 'Peace Piece',
+    cycle: [{ numerator: 4, denominator: 4 }],
+    beatGrouping: [3, 3, 2],
+  },
+];
+
 /** Composer-keyed odd-meter presets for Song Mode UI + `barMeterMap` tiling. */
 export const COMPOSER_METER_PRESET_MAP = {
   dave_brubeck: BRUBECK_METER_CYCLE_PRESET_DEFINITIONS,
   thelonious_monk: MONK_METER_CYCLE_PRESET_DEFINITIONS,
   wayne_shorter: SHORTER_METER_CYCLE_PRESET_DEFINITIONS,
+  donald_fagen: FAGEN_METER_CYCLE_PRESET_DEFINITIONS,
+  bill_evans: EVANS_METER_CYCLE_PRESET_DEFINITIONS,
 } as const;
+
+export type ComposerOddMeterSongwriterId = keyof typeof COMPOSER_METER_PRESET_MAP;
+
+export function isComposerOddMeterSongwriter(id: string): id is ComposerOddMeterSongwriterId {
+  return Object.prototype.hasOwnProperty.call(COMPOSER_METER_PRESET_MAP, id);
+}
+
+/**
+ * Build per-bar numerators/denominators for Generate UI (matches `HomeGenerate` Song Mode payload).
+ * `all_4_4` or unknown preset id → all 4/4 rows.
+ */
+export function buildComposerOddMeterRows(
+  songwriterId: ComposerOddMeterSongwriterId,
+  presetId: string,
+  barCount: number
+): Array<{ numerator: number; denominator: number }> {
+  const n = Math.max(0, Math.floor(barCount));
+  if (presetId === 'all_4_4' || n === 0) {
+    return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
+  }
+  const defs = COMPOSER_METER_PRESET_MAP[songwriterId];
+  const extra = defs.find((p) => p.id === presetId);
+  if (!extra) return Array.from({ length: n }, () => ({ numerator: 4, denominator: 4 }));
+  return tileZappaMeterCycle(extra.cycle, n);
+}
 
 /** Tile `cycle` across `barCount` bars (1-based bar order). */
 export function tileZappaMeterCycle(

@@ -50,11 +50,44 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     densityArc = true;
     shoutMotivicClimax = true;
   }
+  if (composer === 'gil_evans') {
+    smoothTransitions = true;
+    shoutMotivicClimax = false;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.44);
+    riffVsLine = 'balanced';
+  }
+  if (composer === 'bob_brookmeyer') {
+    smoothTransitions = false;
+    riffVsLine = 'line_primary';
+    densityArc = true;
+  }
+  if (composer === 'clare_fischer') {
+    smoothTransitions = true;
+    densityArc = true;
+    shoutMotivicClimax = false;
+  }
+  if (composer === 'oliver_nelson') {
+    densityArc = true;
+    shoutMotivicClimax = true;
+    smoothTransitions = false;
+  }
+  if (composer === 'sammy_nestico') {
+    riffVsLine = 'riff_primary';
+    smoothTransitions = false;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.49);
+    shoutMotivicClimax = true;
+  }
 
   let basieProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let ellingtonProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let schneiderProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let quincyJonesProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let thadProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let gilEvansProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let bobBrookmeyerProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let clareFischerProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let oliverNelsonProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let sammyNesticoProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
 
   if (composer === 'basie') {
     /** Paired with existing riff/sparse `applyBigBandRules` hooks. */
@@ -135,6 +168,108 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     };
   }
 
+  if (composer === 'thad') {
+    thadProofOfConcept = {
+      chordDensity: 4,
+      extensionsPolicy: '9ths–13ths, altered dominants, poly-chords, side-step shifts',
+      functionalHarmonyPercent: 72,
+      harmonicRhythm: 'medium',
+      overallDensity: 4,
+      textureArc: 'planned waves; solo backgrounds arc toward shout',
+      sectionBlending: 'cross-section voicing; dense yet clear',
+      rhythmSectionWeight: 4,
+      timeFeel: 'tight swing; metric tension at cadences',
+      hornRelationship: 'motive-led dialogue',
+      buildStrategy: 'extended forms; interludes and shout sequences',
+      spaceUsage: 'continuous motion with arranged peaks',
+    };
+  }
+
+  if (composer === 'gil_evans') {
+    gilEvansProofOfConcept = {
+      chordDensity: 3,
+      extensionsPolicy: '9ths, 11ths, altered sparingly; modal washes',
+      functionalHarmonyPercent: 48,
+      harmonicRhythm: 'slow',
+      overallDensity: 2,
+      textureArc: 'colour wash; gradual orchestral swell',
+      sectionBlending: 'atmospheric blended registers',
+      rhythmSectionWeight: 3,
+      timeFeel: 'elastic / floating',
+      hornRelationship: 'equal dialogue',
+      buildStrategy: 'narrative arc; colour over groove',
+      spaceUsage: 'wide phrase space; sparse punches',
+    };
+  }
+
+  if (composer === 'bob_brookmeyer') {
+    bobBrookmeyerProofOfConcept = {
+      chordDensity: 4,
+      extensionsPolicy: 'quartal/quintal clusters; altered upper structures',
+      functionalHarmonyPercent: 58,
+      harmonicRhythm: 'medium',
+      overallDensity: 4,
+      textureArc: 'contrapuntal wave build',
+      sectionBlending: 'cross-section linear stacks',
+      rhythmSectionWeight: 3,
+      timeFeel: 'modern swing pocket',
+      hornRelationship: 'contrapuntal dialogue',
+      buildStrategy: 'through-section development',
+      spaceUsage: 'alternating dense lines and light grooves',
+    };
+  }
+
+  if (composer === 'clare_fischer') {
+    clareFischerProofOfConcept = {
+      chordDensity: 5,
+      extensionsPolicy: 'dense alterations; clusters; Latin colour extensions',
+      functionalHarmonyPercent: 52,
+      harmonicRhythm: 'slow',
+      overallDensity: 5,
+      textureArc: 'harmonic density waves',
+      sectionBlending: 'brass/reed colour stacks',
+      rhythmSectionWeight: 4,
+      timeFeel: 'groove-first with elastic overlays',
+      hornRelationship: 'rhythm section drives voicing pads',
+      buildStrategy: 'sectional contrast + harmonic escalation',
+      spaceUsage: 'tight punches between lush spreads',
+    };
+  }
+
+  if (composer === 'oliver_nelson') {
+    oliverNelsonProofOfConcept = {
+      chordDensity: 3,
+      extensionsPolicy: 'functional extensions; blues colour',
+      functionalHarmonyPercent: 82,
+      harmonicRhythm: 'medium',
+      overallDensity: 3,
+      textureArc: 'sectional contrast; blues arcs',
+      sectionBlending: 'clean sectional hits',
+      rhythmSectionWeight: 4,
+      timeFeel: 'locked swing grid',
+      hornRelationship: 'section leaders alternate',
+      buildStrategy: 'head–solos–shout economy',
+      spaceUsage: 'chart-clear punches',
+    };
+  }
+
+  if (composer === 'sammy_nestico') {
+    sammyNesticoProofOfConcept = {
+      chordDensity: 2,
+      extensionsPolicy: '9ths and 13ths; limited altered colour',
+      functionalHarmonyPercent: 90,
+      harmonicRhythm: 'medium',
+      overallDensity: 2,
+      textureArc: 'riff punches; Basie-style lifts',
+      sectionBlending: 'clean separation',
+      rhythmSectionWeight: 5,
+      timeFeel: 'locked grid',
+      hornRelationship: 'rhythm section drives kicks',
+      buildStrategy: 'chart-efficient hits',
+      spaceUsage: 'economical space between punches',
+    };
+  }
+
   return {
     riffVsLine,
     spaceEmphasis,
@@ -145,6 +280,12 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     ...(ellingtonProofOfConcept ? { ellingtonProofOfConcept } : {}),
     ...(schneiderProofOfConcept ? { schneiderProofOfConcept } : {}),
     ...(quincyJonesProofOfConcept ? { quincyJonesProofOfConcept } : {}),
+    ...(thadProofOfConcept ? { thadProofOfConcept } : {}),
+    ...(gilEvansProofOfConcept ? { gilEvansProofOfConcept } : {}),
+    ...(bobBrookmeyerProofOfConcept ? { bobBrookmeyerProofOfConcept } : {}),
+    ...(clareFischerProofOfConcept ? { clareFischerProofOfConcept } : {}),
+    ...(oliverNelsonProofOfConcept ? { oliverNelsonProofOfConcept } : {}),
+    ...(sammyNesticoProofOfConcept ? { sammyNesticoProofOfConcept } : {}),
   };
 }
 

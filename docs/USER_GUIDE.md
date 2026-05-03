@@ -435,7 +435,7 @@ The Slonimsky chromatic layer now reads from the songwriter style profile map fo
 
 ### Odd-meter Song Mode (May 2026)
 
-**Dave Brubeck**, **Thelonious Monk**, and **Wayne Shorter** support optional **`barMeterMap`** meter presets in Song Mode (see **Song Mode — Odd-meter meter map** above). **`npm run test:composer-smoke`** aggregate tier is **117**/0 PASS rows (repo snapshot **2026-05-03**); sync **`docs/COMPOSER_OS_ROADMAP.md`** and **`CLAUDE.md`** when **`runSmokeTests.ts`** changes.
+**Dave Brubeck**, **Thelonious Monk**, and **Wayne Shorter** support optional **`barMeterMap`** meter presets in Song Mode (see **Song Mode — Odd-meter meter map** above). **`npm run test:composer-smoke`** aggregate tier is **122**/0 PASS rows (repo snapshot **2026-05-04**); sync **`docs/COMPOSER_OS_ROADMAP.md`** and **`CLAUDE.md`** when **`runSmokeTests.ts`** changes.
 
 ### MusicXML Lead-Sheet Import — Big Band and String Quartet
 

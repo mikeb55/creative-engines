@@ -26,6 +26,17 @@ export const bigBandPreset: Preset = {
     sectionPlanReady: true,
     defaultEra: 'post_bop',
     supportedEras: ['swing', 'bebop', 'post_bop', 'contemporary'],
-    supportedComposerStyles: ['ellington', 'basie', 'thad', 'schneider'],
+    supportedComposerStyles: [
+      'ellington',
+      'basie',
+      'thad',
+      'schneider',
+      'quincy_jones',
+      'gil_evans',
+      'bob_brookmeyer',
+      'clare_fischer',
+      'oliver_nelson',
+      'sammy_nestico',
+    ],
   },
 };

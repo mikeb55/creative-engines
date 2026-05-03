@@ -318,6 +318,13 @@ export const ALTERNATE_GUITAR_TUNING_PRESETS: readonly AlternateGuitarTuningPres
     strings: ['D2', 'A2', 'D3', 'A3', 'D4', 'E4'],
     audibleDescription: 'Drone-heavy sus2 ladder — suspended shimmer.',
   },
+  /** Uniform half-step down from standard — MusicXML export uses chromatic transpose only (no zone; list via Other / API). */
+  {
+    id: 'eb_standard',
+    label: 'Eb standard',
+    strings: ['Eb2', 'Ab2', 'Db3', 'Gb3', 'Bb3', 'Eb4'],
+    audibleDescription: 'Eb standard tuning — uniform −1 semitone from concert pitch for notation.',
+  },
   {
     id: 'custom',
     label: 'Custom',
@@ -486,6 +493,37 @@ export function resolveIndieArtPopTuningTexture(tuning: AlternateGuitarTuningRes
   if (DRONE_CLUSTER_PRESETS.has(pid)) return 'drone_cluster';
   if (OPEN_MODAL_FAMILY_PRESETS.has(pid)) return 'open_modal';
   return 'standard';
+}
+
+/**
+ * Fixed chromatic offsets for MusicXML `<transpose><chromatic>` (Sibelius-safe); scordatura / non-uniform tunings omit.
+ * `custom` never emits transpose — treat as text / engine-only.
+ */
+export function exportTransposeSemitonesForAlternatePresetId(presetId: string | null | undefined): number | undefined {
+  if (!presetId || presetId === 'custom') return undefined;
+  if (presetId === 'drop_d') return -2;
+  if (presetId === 'eb_standard') return -1;
+  return undefined;
+}
+
+/**
+ * Maps resolved alternate tuning to per-part transpose keys (`guitar`, `guitar_2`) for `ScoreModel.exportPartTransposeSemitones`.
+ */
+export function buildExportPartTransposeSemitonesFromResolvedAlternateTuning(
+  tuning: AlternateGuitarTuningResolved | null | undefined
+): Record<string, number> | undefined {
+  if (!tuning || tuning.mode === 'standard') return undefined;
+  const out: Record<string, number> = {};
+  if (tuning.mode === 'shared') {
+    const n = exportTransposeSemitonesForAlternatePresetId(tuning.shared?.presetId);
+    if (n !== undefined) out.guitar = n;
+  } else if (tuning.mode === 'separate') {
+    const n1 = exportTransposeSemitonesForAlternatePresetId(tuning.guitar1?.presetId);
+    const n2 = exportTransposeSemitonesForAlternatePresetId(tuning.guitar2?.presetId);
+    if (n1 !== undefined) out.guitar = n1;
+    if (n2 !== undefined) out.guitar_2 = n2;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 export function normalizeAlternateGuitarTuningRequest(

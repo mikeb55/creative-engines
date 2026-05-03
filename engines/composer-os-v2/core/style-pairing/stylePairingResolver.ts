@@ -11,7 +11,18 @@ function clamp01(n: number): number {
 }
 
 /** Known arranger ids for era alignment heuristics. */
-const ARRANGERS = new Set<string>(['ellington', 'basie', 'thad', 'schneider']);
+const ARRANGERS = new Set<string>([
+  'ellington',
+  'basie',
+  'thad',
+  'schneider',
+  'quincy_jones',
+  'gil_evans',
+  'bob_brookmeyer',
+  'clare_fischer',
+  'oliver_nelson',
+  'sammy_nestico',
+]);
 
 function eraComposerAlignment(era: BigBandEraId | string | null | undefined, arranger: string): number {
   if (!era) return 0;

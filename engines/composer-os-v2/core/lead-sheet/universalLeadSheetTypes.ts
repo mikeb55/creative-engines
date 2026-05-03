@@ -23,6 +23,13 @@ export interface UniversalRehearsalMark {
   label: string;
 }
 
+/** Imported / engine repeat barlines (parallel to `LeadSheet.repeatMarkers`, numeric volta index). */
+export interface UniversalRepeatMarker {
+  bar: number;
+  kind: 'repeat_start' | 'repeat_end' | 'ending_start' | 'ending_stop';
+  endingNumber?: number;
+}
+
 /** Top-line placeholder — not final engraving. */
 export interface UniversalTopLinePlaceholder {
   hasEvents: boolean;
@@ -36,6 +43,7 @@ export interface UniversalLeadSheet {
   chordSymbols: UniversalChordEntry[];
   formSections: UniversalFormSection[];
   rehearsalMarks: UniversalRehearsalMark[];
+  repeatMarkers: UniversalRepeatMarker[];
   topLine: UniversalTopLinePlaceholder;
   /** Section phase labels (parallel to form slices when available). */
   sectionLabels?: string[];
@@ -44,5 +52,6 @@ export interface UniversalLeadSheet {
     | 'song_lead_sheet'
     | 'manual'
     | 'big_band_plan'
-    | 'quartet_plan';
+    | 'quartet_plan'
+    | 'imported_musicxml';
 }

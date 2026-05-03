@@ -43,12 +43,22 @@ import {
 } from '../core/export/validateLockedHarmonyMusicXml';
 import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
-import type { CombinedEvaluationResult } from '../core/evaluation/evaluationTypes';
+import type {
+  CombinedEvaluationResult,
+  ExtractedStyleFeatures,
+  StyleProfile,
+} from '../core/evaluation/evaluationTypes';
 import { createCombinedEvaluator } from '../core/evaluation/combinedEvaluator';
 import { basieStyleProfile } from '../core/evaluation/basieStyleProfile';
 import { ellingtonStyleProfile } from '../core/evaluation/ellingtonStyleProfile';
 import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
+import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
+import { gilEvansStyleProfile } from '../core/evaluation/gilEvansStyleProfile';
+import { bobBrookmeyerStyleProfile } from '../core/evaluation/bobBrookmeyerStyleProfile';
+import { clareFischerStyleProfile } from '../core/evaluation/clareFischerStyleProfile';
+import { oliverNelsonStyleProfile } from '../core/evaluation/oliverNelsonStyleProfile';
+import { sammyNesticoStyleProfile } from '../core/evaluation/sammyNesticoStyleProfile';
 import { scoreModelFeatureExtractor } from '../core/evaluation/featureExtractor';
 import { defaultGceWeights } from '../core/evaluation/gceEvaluator';
 import { defaultLockGates } from '../core/evaluation/lockGates';
@@ -1751,9 +1761,43 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   const a = arrangerStyle.trim().toLowerCase();
   if (a === 'basie') return 'basie';
   if (a === 'ellington') return 'ellington';
+  if (a === 'thad') return 'thad';
   if (a === 'schneider') return 'schneider';
   if (a === 'quincy_jones') return 'quincy_jones';
+  if (a === 'gil_evans') return 'gil_evans';
+  if (a === 'bob_brookmeyer') return 'bob_brookmeyer';
+  if (a === 'clare_fischer') return 'clare_fischer';
+  if (a === 'oliver_nelson') return 'oliver_nelson';
+  if (a === 'sammy_nestico') return 'sammy_nestico';
   return undefined;
+}
+
+function bigBandEvaluationStyleProfile(
+  cs: BigBandComposerId | null | undefined
+): StyleProfile<unknown, ExtractedStyleFeatures> {
+  switch (cs) {
+    case 'ellington':
+      return ellingtonStyleProfile;
+    case 'schneider':
+      return schneiderStyleProfile;
+    case 'quincy_jones':
+      return quincyStyleProfile;
+    case 'thad':
+      return thadJonesStyleProfile;
+    case 'gil_evans':
+      return gilEvansStyleProfile;
+    case 'bob_brookmeyer':
+      return bobBrookmeyerStyleProfile;
+    case 'clare_fischer':
+      return clareFischerStyleProfile;
+    case 'oliver_nelson':
+      return oliverNelsonStyleProfile;
+    case 'sammy_nestico':
+      return sammyNesticoStyleProfile;
+    case 'basie':
+    default:
+      return basieStyleProfile;
+  }
 }
 
 function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -1917,14 +1961,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   try {
     if (realised.score) {
       const cs = bb.composerStyle;
-      const styleProfile =
-        cs === 'ellington'
-          ? ellingtonStyleProfile
-          : cs === 'schneider'
-            ? schneiderStyleProfile
-            : cs === 'quincy_jones'
-              ? quincyStyleProfile
-              : basieStyleProfile;
+      const styleProfile = bigBandEvaluationStyleProfile(cs);
       const evaluator = createCombinedEvaluator({ lockRequired: false });
       evaluationResult = evaluator.evaluate({
         output: realised.score,
