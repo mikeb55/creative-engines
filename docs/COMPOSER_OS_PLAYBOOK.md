@@ -72,7 +72,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
-| `brian_wilson` | stepwise | mixed | 8 | 0.5 | arch | sequential_expansion; appoggiatura; suspension |
+| `brian_wilson` | stepwise | mixed | 7 | 0.5 | arch | sequential_expansion; appoggiatura; suspension |
 | `stevie_wonder` | stepwise | eighth_patterns | 4 | 0.4 | ascending | melisma; syncopated_anticipation; blues_note; gospel_lift |
 | `radiohead` | stepwise | mixed | 5 | 0.8 | flat_with_terminal_climax | cell_repetition; modal_unease; metric_dislocation |
 | `james_brown` | stepwise | eighth_patterns | 2 | 0.9 | riff | on_the_one; blues_note; call_response; sparse_density |
@@ -104,8 +104,12 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `holland_dozier_holland` | stepwise | eighth_patterns | 2 | 0.7 | rising | call_response_hook; repeated_title_phrase; tambourine_anticipation; backing_vocal_echo |
 | `jeff_lynne` | stepwise | mixed | 4 | 0.6 | arch | stacked_harmony_hook; octave_doubled_melody; string_countermelody; descending_bass_hook |
 | `jeff_tweedy` | stepwise | mixed | 4 | 0.7 | flat | deadpan_repeated_note; modal_bVII; unresolved_suspension; folk_drone; understated_chorus |
-| `kendrick_lamar` | stepwise | eighth_patterns | 2 | 0.5 | speech_contour | flow_modulation; syllabic_ostinato; pitch_zone_contrast; barline_displacement; triplet_switch |
+| `kendrick_lamar` | stepwise | eighth_patterns | 3 | 0.5 | speech_contour | flow_modulation; syllabic_ostinato; pitch_zone_contrast; barline_displacement; triplet_switch |
 | `kurt_weill` | stepwise | mixed | 4 | 0.6 | cabaret_arc | descending_minor_3rd; tritone_bitterness; chant_repeated_tone; major_minor_irony; mechanical_ostinato |
+
+### Smoke coverage
+
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥34 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 

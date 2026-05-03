@@ -68,12 +68,12 @@ function defaultMelodyBehaviour(seed: number): MelodyBehaviourPlan {
  * Research-derived profiles for SongwriterRuleId.
  * Cadence / phrase-asymmetry extras align with harmonic rhythm where not specified in research bullets.
  */
-const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPlan>> = {
+export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPlan>> = {
   brian_wilson: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'mixed',
     repetitionVsVariationBias: 0.5,
-    phraseLength: 8,
+    phraseLength: 7,
     contourProfile: 'arch',
     phraseAsymmetryTendency: 0.72,
     cadenceFrequency: 'medium',
@@ -393,7 +393,7 @@ const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPlan>> = 
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',
     repetitionVsVariationBias: 0.5,
-    phraseLength: 2,
+    phraseLength: 3,
     contourProfile: 'speech_contour',
     phraseAsymmetryTendency: 0.52,
     cadenceFrequency: 'medium',
