@@ -86,6 +86,8 @@ export interface LeadSheet {
   tempoBpm?: number;
   timeSignature?: LeadSheetTimeSignature;
   keySignature?: LeadSheetKeySignature;
+  /** Every `<key>` change in score order (first entry matches `keySignature` when present). */
+  keyChanges?: Array<{ bar: number; fifths: number; mode?: string }>;
   totalBars: number;
   sections: LeadSheetSection[];
   chordEvents: LeadSheetChordEvent[];

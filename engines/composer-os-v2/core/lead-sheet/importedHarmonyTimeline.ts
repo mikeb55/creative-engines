@@ -165,7 +165,10 @@ export function parseImportedHarmonyEvent(input: ParseImportedHarmonyEventInput)
     time: {
       bar: input.bar,
       beat,
-      absoluteBeat: (input.bar - 1) * Math.max(1, input.beatsPerBar) + beat,
+      absoluteBeat:
+        input.bar < 1
+          ? beat
+          : (input.bar - 1) * Math.max(1, input.beatsPerBar) + beat,
       offsetDivisions,
       divisionsAtEvent: input.divisions,
       eventIndexInBar: input.eventIndexInBar,

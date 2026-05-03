@@ -12,6 +12,7 @@ import {
 import type {
   LeadSheet,
   LeadSheetArticulationKind,
+  LeadSheetChordEvent,
   LeadSheetDynamicSpan,
   LeadSheetImportResult,
   LeadSheetRepeatMarker,
@@ -47,11 +48,144 @@ function readTextCredit(xml: string, creditType: string): string | undefined {
   return m?.[1]?.trim();
 }
 
-function parseMeasureNumber(measureXml: string, fallback: number): number {
-  const m = measureXml.match(/<measure[^>]*number="([^"]+)"/i);
-  if (!m) return fallback;
-  const parsed = parseInt(m[1], 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+/** True when the opening `<measure>` tag has `implicit="yes"` (pickup / anacrusis). */
+function measureHasImplicitPickup(measureXml: string): boolean {
+  const open = measureXml.match(/^<measure\b[^>]*/i)?.[0] ?? '';
+  return /\bimplicit\s*=\s*"yes"/i.test(open);
+}
+
+function computeMeasureBarMapping(measures: string[]): {
+  barPerMeasure: number[];
+  totalFullBars: number;
+} {
+  const barPerMeasure: number[] = [];
+  let logicalBar = 0;
+  for (let i = 0; i < measures.length; i++) {
+    if (measureHasImplicitPickup(measures[i]!)) {
+      barPerMeasure.push(0);
+    } else {
+      logicalBar += 1;
+      barPerMeasure.push(logicalBar);
+    }
+  }
+  return { barPerMeasure, totalFullBars: logicalBar };
+}
+
+/** Strip inner XML tags from `<words>` body for chord detection. */
+function stripInnerXmlTags(s: string): string {
+  return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Best-effort chord symbol from `<words>` (Sibelius-style lead sheet).
+ * Root A–G, optional #/b/♯/♭, optional suffix, optional slash bass.
+ */
+function tryExtractChordSymbolFromWordsText(raw: string): string | null {
+  const cleaned = stripInnerXmlTags(raw);
+  if (!cleaned) return null;
+  if (/^(rit|rall|accel|a\s*tempo|metronome|mf\b|mp\b|ff\b|pp\b|fff|ppp)/i.test(cleaned)) return null;
+  const first = (cleaned.split(/\s+/)[0] ?? '').trim();
+  if (!first) return null;
+  const m = first.match(/^([A-G])([#♯b♭]?)([^/\s]*)(\/[A-G][#♯b♭]?)?$/i);
+  if (!m) return null;
+  const root = m[1]!.toUpperCase();
+  let acc = (m[2] ?? '').replace(/♯/g, '#').replace(/♭/g, 'b');
+  const suf = m[3] ?? '';
+  let slash = m[4] ?? '';
+  if (slash) slash = slash.replace(/♯/g, '#').replace(/♭/g, 'b');
+  return `${root}${acc}${suf}${slash}`;
+}
+
+function extractChordEventsFromWordsDirections(input: {
+  measures: string[];
+  barPerMeasure: number[];
+  leadSheet: LeadSheet;
+  warnings: string[];
+}): boolean {
+  let divisions = 1;
+  let any = false;
+  for (let idx = 0; idx < input.measures.length; idx++) {
+    const measureXml = input.measures[idx]!;
+    const bar = input.barPerMeasure[idx]!;
+    const divM = measureXml.match(/<divisions>(\d+)<\/divisions>/i);
+    if (divM) {
+      const d = parseInt(divM[1], 10);
+      if (Number.isFinite(d) && d > 0) divisions = d;
+    }
+    const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
+    for (const dir of directionBlocks) {
+      if (parseTempoWordKind(dir)) continue;
+      const wordsMatch = dir.match(/<words[^>]*>([\s\S]*?)<\/words>/i);
+      if (!wordsMatch) continue;
+      const sym = tryExtractChordSymbolFromWordsText(wordsMatch[1] ?? '');
+      if (!sym) continue;
+      const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, divisions));
+      input.leadSheet.chordEvents.push({ bar, beat: atBeat, symbol: sym });
+      any = true;
+    }
+  }
+  if (any) {
+    input.warnings.push(
+      'No <harmony> elements found; chord symbols extracted from <words> text (Sibelius export mode).'
+    );
+  }
+  return any;
+}
+
+function dedupeChordEvents(events: LeadSheetChordEvent[]): LeadSheetChordEvent[] {
+  if (events.length === 0) return [];
+  const sorted = [...events].sort(
+    (a, b) => a.bar - b.bar || a.beat - b.beat || a.symbol.localeCompare(b.symbol)
+  );
+  const tailByBar = new Map<number, LeadSheetChordEvent>();
+  for (const e of sorted) {
+    const t = tailByBar.get(e.bar);
+    if (!t || e.beat >= t.beat) tailByBar.set(e.bar, e);
+  }
+  const out: LeadSheetChordEvent[] = [];
+  for (const cur of sorted) {
+    const prev = out[out.length - 1];
+    if (prev && prev.bar === cur.bar && prev.beat === cur.beat && prev.symbol === cur.symbol) {
+      continue;
+    }
+    if (cur.beat === 0 && cur.bar > 0) {
+      const tailPrev = tailByBar.get(cur.bar - 1);
+      if (tailPrev && tailPrev.symbol === cur.symbol) {
+        continue;
+      }
+    }
+    out.push(cur);
+  }
+  return out;
+}
+
+/** Reconstruct display suffix for MusicXML `kind` body `other` using `<degree>` elements. */
+function reconstructOtherKindSuffixFromDegrees(harmonyXml: string): string {
+  const blocks = harmonyXml.match(/<degree[^>]*>[\s\S]*?<\/degree>/gi) ?? [];
+  const parts: string[] = [];
+  for (const b of blocks) {
+    const type = (firstTagValue(b, 'degree-type') ?? '').trim().toLowerCase();
+    const valueRaw = firstTagValue(b, 'degree-value');
+    const alterRaw = firstTagValue(b, 'degree-alter');
+    const value = valueRaw ? parseInt(valueRaw, 10) : NaN;
+    const alter =
+      alterRaw !== undefined && alterRaw !== '' && Number.isFinite(parseInt(alterRaw, 10))
+        ? parseInt(alterRaw, 10)
+        : 0;
+    if (type === 'subtract') continue;
+    if (!Number.isFinite(value)) continue;
+    if (type === 'add' && value === 9 && alter === 0) parts.push('add9');
+    else if (type === 'alter' && value === 11 && alter === 1) parts.push('#11');
+    else if (type === 'alter' && value === 5 && alter === -1) parts.push('b5');
+    else if (type === 'add') parts.push(`add${value}`);
+    else if (type === 'alter') {
+      if (alter === 1) parts.push(`#${value}`);
+      else if (alter === -1) parts.push(`b${value}`);
+      else if (alter !== 0) parts.push(`${alter > 0 ? '#' : 'b'}${value}`);
+      else parts.push(String(value));
+    }
+  }
+  return parts.join('');
 }
 
 function parseHarmonySymbol(harmonyXml: string): string | null {
@@ -65,18 +199,22 @@ function parseHarmonySymbol(harmonyXml: string): string | null {
   const kindTextM = harmonyXml.match(/<kind[^>]*text="([^"]+)"/i);
   const kindBody = firstTagValue(harmonyXml, 'kind') ?? '';
   const kindText = kindTextM?.[1]?.trim();
+  const kindBodyNorm = kindBody.trim().toLowerCase();
 
-  // Prefer explicit display text when present; fall back to compact mapping.
   let suffix = '';
-  if (kindText && kindText.length > 0) {
+  if (kindBodyNorm === 'other') {
+    const degSuffix = reconstructOtherKindSuffixFromDegrees(harmonyXml);
+    suffix = `${kindText && kindText.length > 0 ? kindText : ''}${degSuffix}`;
+    if (!suffix) suffix = musicXmlKindContentFromKindText(kindBody);
+  } else if (kindText && kindText.length > 0) {
     suffix = kindText;
-  } else if (kindBody.length > 0 && kindBody !== 'major') {
-    if (kindBody === 'minor') suffix = 'm';
-    else if (kindBody === 'dominant') suffix = '7';
-    else if (kindBody === 'major-seventh') suffix = 'maj7';
-    else if (kindBody === 'minor-seventh') suffix = 'm7';
-    else if (kindBody === 'dominant-ninth') suffix = '9';
-    else if (kindBody === 'half-diminished') suffix = 'm7b5';
+  } else if (kindBody.length > 0 && kindBodyNorm !== 'major') {
+    if (kindBodyNorm === 'minor') suffix = 'm';
+    else if (kindBodyNorm === 'dominant') suffix = '7';
+    else if (kindBodyNorm === 'major-seventh') suffix = 'maj7';
+    else if (kindBodyNorm === 'minor-seventh') suffix = 'm7';
+    else if (kindBodyNorm === 'dominant-ninth') suffix = '9';
+    else if (kindBodyNorm === 'half-diminished') suffix = 'm7b5';
     else suffix = musicXmlKindContentFromKindText(kindBody);
   }
 
@@ -269,11 +407,14 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     return { ok: false, errors: ['No measures found in first part.'], warnings };
   }
 
+  const { barPerMeasure, totalFullBars } = computeMeasureBarMapping(measures);
+
   const leadSheet: LeadSheet = {
     sourceFormat: 'musicxml',
     title: firstTagValue(trimmed, 'work-title') ?? readTextCredit(trimmed, 'title'),
     composer: firstTagValue(trimmed, 'creator'),
-    totalBars: measures.length,
+    totalBars: 0,
+    keyChanges: [],
     sections: [],
     chordEvents: [],
     melodyEvents: [],
@@ -293,8 +434,8 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   const openDynamicStack: Array<{ kind: 'crescendo' | 'decrescendo'; startBar: number; startBeat: number }> = [];
 
   for (let idx = 0; idx < measures.length; idx++) {
-    const measureXml = measures[idx];
-    const bar = parseMeasureNumber(measureXml, idx + 1);
+    const measureXml = measures[idx]!;
+    const bar = barPerMeasure[idx]!;
 
     const divM = measureXml.match(/<divisions>(\d+)<\/divisions>/i);
     if (divM) {
@@ -311,12 +452,17 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
       }
     }
 
-    const keyM = measureXml.match(/<key>[\s\S]*?<fifths>(-?\d+)<\/fifths>(?:[\s\S]*?<mode>([^<]+)<\/mode>)?[\s\S]*?<\/key>/i);
-    if (keyM && !leadSheet.keySignature) {
-      leadSheet.keySignature = {
-        fifths: parseInt(keyM[1], 10),
-        mode: keyM[2]?.trim(),
-      };
+    const keyBlocksInMeasure = measureXml.match(/<key>[\s\S]*?<\/key>/gi) ?? [];
+    for (const kb of keyBlocksInMeasure) {
+      const fifthsM = kb.match(/<fifths>(-?\d+)<\/fifths>/i);
+      if (!fifthsM) continue;
+      const modeM = kb.match(/<mode>([^<]+)<\/mode>/i);
+      const fifths = parseInt(fifthsM[1], 10);
+      const mode = modeM?.[1]?.trim();
+      leadSheet.keyChanges!.push({ bar, fifths, ...(mode ? { mode } : {}) });
+      if (!leadSheet.keySignature) {
+        leadSheet.keySignature = { fifths, ...(mode ? { mode } : {}) };
+      }
     }
 
     if (leadSheet.tempoBpm === undefined) {
@@ -463,6 +609,8 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     }
   }
 
+  leadSheet.totalBars = totalFullBars > 0 ? totalFullBars : measures.length > 0 ? 1 : 0;
+
   if (openDynamicStack.length > 0) {
     for (const open of openDynamicStack) {
       (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
@@ -482,7 +630,13 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
   if (sawMultiVoice) warnings.push('Ignored non-voice-1 notes; Phase 1 supports single melody voice.');
   if (sawMultiNoteChords) warnings.push('Ignored stacked chord notes in melody; kept top-level note events only.');
   if (sawLyrics) warnings.push('Lyrics are currently ignored in LeadSheet import Phase 1.');
-  if (leadSheet.chordEvents.length === 0) warnings.push('No harmony annotations found; imported melody-only LeadSheet.');
+  if (leadSheet.chordEvents.length === 0) {
+    extractChordEventsFromWordsDirections({ measures, barPerMeasure, leadSheet, warnings });
+  }
+  leadSheet.chordEvents = dedupeChordEvents(leadSheet.chordEvents);
+  if (leadSheet.chordEvents.length === 0) {
+    warnings.push('No harmony annotations found; imported melody-only LeadSheet.');
+  }
 
   // Stable deterministic ordering.
   leadSheet.chordEvents.sort((a, b) => (a.bar - b.bar) || (a.beat - b.beat) || a.symbol.localeCompare(b.symbol));
