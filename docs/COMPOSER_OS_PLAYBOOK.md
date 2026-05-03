@@ -195,6 +195,20 @@ The Generate **Style Engine** dropdown lists **`StyleProfile`** ids (`songModeSt
 - **Advanced:** Profiles that apply **harmony/rhythm metadata surfaces**, **builtin chord-plan policies**, or **golden-path slice wiring** (effective harmony bars, guitar bar passes, receipts) beyond velocity-only contouring. Examples: **Post-Bop (Shorter)**, **Modern Jazz**, **Sophisticated Pop**, **Groove / Soul**, and — as of the style-to-slice wiring — **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**.
 - **Light touch:** Primarily **velocity shaping** on the finished duo score (`applySongModeStyleEngineToScore`); may stack with era/style-pairing biases but does not alone run a full writer slice.
 
+#### Light touch styles — research backlog
+
+**Folk Guitar Narrative** (`STYLE_FOLK_GUITAR_NARRATIVE`) — **needs Perplexity research before build** — no composer anchor identified yet.
+
+RESEARCH NEEDED: composer anchors, musical distinctives, pipeline approach — run Perplexity session before building
+
+**Classical Influence** (`STYLE_CLASSICAL_INFLUENCE`) — **needs Perplexity research before build** — no composer anchor identified yet.
+
+RESEARCH NEEDED: composer anchors, musical distinctives, pipeline approach — run Perplexity session before building
+
+**Bebop variants** — **`STYLE_BEBOP_LITE`**, **`STYLE_BEBOP_POST_BOP`**, and **`STYLE_SHORTER_POST_BOP`** overlap in naming and velocity contours; product distinction between variants is not yet settled — **needs Perplexity research before build**.
+
+RESEARCH NEEDED: composer anchors, musical distinctives, pipeline approach — run Perplexity session before building
+
 **Wiring summary (Sonic Youth / Joni / Pat style ids)**
 
 | `StyleProfile` | Velocity layer | Engine wiring |
@@ -202,6 +216,28 @@ The Generate **Style Engine** dropdown lists **`StyleProfile`** ids (`songModeSt
 | **`STYLE_SONIC_YOUTH`** | Aggressive offbeat emphasis; **`noise_wall`** macro texture → large positive deltas; **`clearing`** → deep reduction; reads **`ChordEvent.sonicYouth.textureState`** when present, else **`getSonicYouthTextureStateAtBar`** (`sonicYouthSlice.ts`). | When primary songwriter **or** this style: **`precomputeSonicYouthEffectiveHarmonyBars`**, **`applySonicYouthGuitarBarPasses`**, **`getChordForBar`** / locked-truth paths accept **`sonicYouthEffectiveHarmonyBars`** (`harmonyResolution.ts`, **`customLockedHarmonyRouting.ts`**, **`runGoldenPath.ts`** export truth). |
 | **`STYLE_JONI_MITCHELL`** | Wide dynamic range; phrase-soft attack, peak toward bar midpoint (`startBeat` sine), gentle phrase tail. | **`applyJoniStyleFolkModalHarmonyPolicy`** (`joniStyleHarmonyPolicy.ts`) on **builtin** chord plans — lighter cadential gravity, suspended-colour preference. When songwriter **or** style: **`precomputeJoniMitchellEffectiveHarmonyBars`**, **`joniMitchellEffectiveHarmonyBars`** authority in **`getChordForBar`**. Alternate tuning gate unchanged (`alternateGuitarTunings.ts`). |
 | **`STYLE_PAT_METHENY`** | Lyrical swell (mid-bar peak), soft downbeats, phrase-end decay — avoids hard accents. | When songwriter **or** style: **`precomputePatMethenyEffectiveHarmonyBars`**, **`patMethenyEffectiveHarmonyBars`** in **`getChordForBar`** + locked export truth. |
+
+### Diversity presets (Song Mode)
+
+**What they are:** Optional **shortcut recipes** in **Generate** (Song Mode) that pick a **primary + secondary songwriter** pair and a **human label**, defined in **`SONG_MODE_DIVERSITY_PRESETS`** (`engines/composer-os-v2/core/song-mode/songwriterStyleResolver.ts`). Each entry has an **`id`**, **`label`**, **`primarySongwriterStyle`**, **`secondarySongwriterStyle`**, and an **`audibleDescription`** string for UI copy.
+
+**How they interact with style pairing:** Choosing a preset runs client-side logic (`HomeGenerate.tsx`): **`resolveSongModeDiversityPreset`** loads the row, then **`setSongwriterStyle` / `setSecondarySongwriterStyle`** are updated from the preset. **`resolveSongModeDiversityStylePairing`** (`stylePairingResolver.ts`) maps that preset **`id`** to a suggested **`arrangerStyle`** and **`era`** (e.g. Thad + contemporary, Schneider + post_bop), and the UI updates **Arranger** and **Era** to match. On generate, the wire carries **`primarySongwriterStyle`**, optional **`secondarySongwriterStyle`**, and **`stylePairing`** (`songwriterStyle`, `arrangerStyle`, `era`) like any manual selection — **`buildCompiledSong`** calls **`resolveStylePairing`** so **confidence / experimental flags / section-contrast nudges** apply the same way. The diversity **`preset` id itself is not sent on `GenerateRequest`**; only the resolved controls matter downstream.
+
+**Which combinations are wired:** All **nine** presets are defined and listed in the **Diversity preset (optional)** dropdown:
+
+| `id` | UI label | Primary | Secondary | Suggested pairing (`resolveSongModeDiversityStylePairing`) |
+|------|----------|---------|-----------|------------------------------------------------------------|
+| `fagen_wonder_pocket` | Jazz-Pop Pocket | donald_fagen | stevie_wonder | `thad` · contemporary |
+| `shorter_bacharach_arc` | Angular Lyric Arc | wayne_shorter | bacharach | `schneider` · post_bop |
+| `beatles_bach_counterline` | Hook + Counterline | beatles | bach | `ellington` · swing |
+| `kendrick_debussy_space` | Motif + Colour Space | kendrick_lamar | debussy | `gil_evans` · cool_jazz |
+| `maxmartin_stravinsky_angles` | Hook Grid + Asymmetry | max_martin | stravinsky | `basie` · bebop |
+| `dylan_messiaen_literate_vs_sublime` | Literate Folk vs Sublime Colour | bob_dylan | messiaen | `schneider` · post_bop |
+| `james_brown_joni_groove_vs_line` | Groove Cell vs Shifting Line | james_brown | joni_mitchell | `ellington` · contemporary |
+| `barry_harris_max_martin_bebop_vs_charts` | Bebop Line vs Chart Template | barry_harris | max_martin | `basie` · bebop |
+| `ecm_chamber_prince_space_vs_pocket` | Chamber Space vs Pocket Funk | ecm_chamber | prince | `gil_evans` · cool_jazz |
+
+**Which are not covered:** Any songwriter combination **outside** these nine rows — there is **no** diversity preset until one is added to **`SONG_MODE_DIVERSITY_PRESETS`** and (if needed) **`resolveSongModeDiversityStylePairing`**. Other modes (**Big Band**, **ECM Chamber**, etc.) do **not** expose this control; it is **Song Mode only**.
 
 ### Joni Mitchell (Song Mode — open tunings, modal harmony)
 
