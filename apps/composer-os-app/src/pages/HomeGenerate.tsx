@@ -634,6 +634,25 @@ function validateLeadSheetMusicXmlForPhase1(trimmed: string): string | null {
   return r.ok ? null : r.errors[0] ?? 'LeadSheet MusicXML could not be validated.';
 }
 
+const MUSICXML_IMPORT_INVALID_MESSAGE =
+  'File does not appear to be valid MusicXML — please check and try again';
+
+/** Optional lead-sheet file upload: well-formed XML with MusicXML score root (partwise or timewise). */
+function validateMusicXmlScoreDocument(xml: string): boolean {
+  const t = xml.trim();
+  if (!t) return false;
+  try {
+    const doc = new DOMParser().parseFromString(t, 'application/xml');
+    if (doc.querySelector('parsererror')) return false;
+    const root = doc.documentElement;
+    if (!root) return false;
+    const ln = root.localName?.toLowerCase() ?? '';
+    return ln === 'score-partwise' || ln === 'score-timewise';
+  } catch {
+    return false;
+  }
+}
+
 type GenResult = {
   success?: boolean;
   error?: string;
@@ -863,6 +882,11 @@ export function HomeGenerate({
   );
   const [leadSheetHarmonyDisplayModeUi, setLeadSheetHarmonyDisplayModeUi] = useState<HarmonyDisplayModeUi>('raw');
   const [harmonyBlendUi, setHarmonyBlendUi] = useState(0.5);
+  /** Optional MusicXML lead sheet for Song Mode / Big Band / String Quartet (`ensembleLeadSheetMusicXml`). */
+  const [leadSheetFile, setLeadSheetFile] = useState<File | null>(null);
+  const [leadSheetXml, setLeadSheetXml] = useState<string | null>(null);
+  const [leadSheetImportError, setLeadSheetImportError] = useState<string | null>(null);
+  const ensembleLeadSheetFileInputRef = useRef<HTMLInputElement | null>(null);
   const [formId, setFormId] = useState<string>('');
   /** Big Band only: '' = standard (no formId); `big_band_blues12` = 42-bar blues chart. */
   const [bigBandFormId, setBigBandFormId] = useState('');
@@ -948,6 +972,13 @@ export function HomeGenerate({
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setLeadSheetFile(null);
+    setLeadSheetXml(null);
+    setLeadSheetImportError(null);
+    if (ensembleLeadSheetFileInputRef.current) ensembleLeadSheetFileInputRef.current.value = '';
+  }, [presetId]);
 
   useEffect(() => {
     api
@@ -1103,6 +1134,43 @@ export function HomeGenerate({
     setChordProgressionText((prev) => alignChordProgressionToSongFormBars(prev, songFormBars));
   }
 
+  async function onEnsembleLeadSheetFileChange(list: FileList | null) {
+    const file = list?.[0];
+    if (!file) return;
+    const nameLower = file.name.toLowerCase();
+    const isMxl = nameLower.endsWith('.mxl');
+    setLeadSheetImportError(null);
+    try {
+      let xml: string;
+      if (isMxl) {
+        const buf = await file.arrayBuffer();
+        const extracted = extractScoreMusicXmlFromUint8Array(new Uint8Array(buf));
+        if (!extracted.ok || !extracted.xml) {
+          setLeadSheetFile(null);
+          setLeadSheetXml(null);
+          setLeadSheetImportError(MUSICXML_IMPORT_INVALID_MESSAGE);
+          return;
+        }
+        xml = extracted.xml;
+      } else {
+        xml = await file.text();
+      }
+      if (!validateMusicXmlScoreDocument(xml)) {
+        setLeadSheetFile(null);
+        setLeadSheetXml(null);
+        setLeadSheetImportError(MUSICXML_IMPORT_INVALID_MESSAGE);
+        return;
+      }
+      setLeadSheetFile(file);
+      setLeadSheetXml(xml);
+      setLeadSheetImportError(null);
+    } catch {
+      setLeadSheetFile(null);
+      setLeadSheetXml(null);
+      setLeadSheetImportError(MUSICXML_IMPORT_INVALID_MESSAGE);
+    }
+  }
+
   const isScorePreset =
     presetId === 'guitar_bass_duo' ||
     presetId === 'guitar_bass_duo_single_line' ||
@@ -1141,6 +1209,7 @@ export function HomeGenerate({
         const tonalTrim = tonalCenter.trim();
         const chordTrim = chordProgressionText.trim();
         const songModeLeadSheetTrim = songModeLeadSheetMusicXml.trim();
+        const leadSheetXmlTrim = (leadSheetXml ?? '').trim();
         const hadLeadSheetInputForRun = songModeLeadSheetTrim.length > 0;
         const uiLeadSheetPreflightErrorForRun = leadSheetPreflightError;
         const uiLeadSheetInputSourceForRun: 'file' | 'paste' | undefined = hadLeadSheetInputForRun
@@ -1471,6 +1540,10 @@ export function HomeGenerate({
           ...(presetId === 'string_quartet' && songwriterStyle === 'frank_zappa' && zappaBarMeterPayload
             ? { barMeterMap: zappaBarMeterPayload }
             : {}),
+          ...((presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') &&
+          leadSheetXmlTrim.length > 0
+            ? { ensembleLeadSheetMusicXml: leadSheetXmlTrim }
+            : {}),
         };
 
         if (presetId === 'song_mode' && songChordLine.length > 0) {
@@ -1630,6 +1703,7 @@ export function HomeGenerate({
       guitar1CustomTuning,
       guitar2CustomTuning,
       songModeLeadSheetMusicXml,
+      leadSheetXml,
       leadSheetPreflightError,
       showHarmonyImportDebugDev,
       importHarmonyModeUi,
@@ -2321,6 +2395,115 @@ export function HomeGenerate({
               Quartet planning focuses on texture, form, and four-voice roles. <strong style={{ color: 'var(--text)' }}>Era</strong>{' '}
               selects the default lead-sheet chord cycle when you leave <strong style={{ color: 'var(--text)' }}>Chord progression</strong> empty (same
               vocabulary as Big Band).
+            </p>
+          )}
+        </div>
+      )}
+
+      {(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') && (
+        <div style={{ marginBottom: '1rem', maxWidth: 560 }}>
+          <span
+            id="composer-os-import-lead-sheet-heading"
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              color: 'var(--text)',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+            }}
+          >
+            Import lead sheet (optional)
+          </span>
+          <p style={{ margin: '0 0 0.55rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+            MusicXML from Sibelius, Finale, or MuseScore
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.65rem',
+              minHeight: 44,
+            }}
+          >
+            <input
+              ref={ensembleLeadSheetFileInputRef}
+              id="composer-os-import-lead-sheet-file"
+              type="file"
+              accept=".musicxml,.xml,.mxl"
+              disabled={loading}
+              aria-labelledby="composer-os-import-lead-sheet-heading"
+              aria-invalid={leadSheetImportError ? true : undefined}
+              onChange={(e) => void onEnsembleLeadSheetFileChange(e.target.files)}
+              style={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                padding: 0,
+                margin: -1,
+                overflow: 'hidden',
+                clip: 'rect(0,0,0,0)',
+                whiteSpace: 'nowrap',
+                border: 0,
+              }}
+            />
+            <label
+              htmlFor="composer-os-import-lead-sheet-file"
+              style={{
+                minHeight: 44,
+                minWidth: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 1rem',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input, var(--bg))',
+                color: 'var(--text)',
+                fontSize: '0.9rem',
+                cursor: loading ? 'default' : 'pointer',
+              }}
+            >
+              Choose file
+            </label>
+            {leadSheetFile && leadSheetXml && !leadSheetImportError && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  minHeight: 44,
+                  fontSize: '0.88rem',
+                  color: 'var(--text)',
+                }}
+                aria-live="polite"
+              >
+                <span style={{ color: 'var(--success, #22c55e)', fontWeight: 700 }} aria-hidden>
+                  ✓
+                </span>
+                <span style={{ wordBreak: 'break-word' }}>{leadSheetFile.name}</span>
+              </span>
+            )}
+            {leadSheetFile && (
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setLeadSheetFile(null);
+                  setLeadSheetXml(null);
+                  setLeadSheetImportError(null);
+                  if (ensembleLeadSheetFileInputRef.current) ensembleLeadSheetFileInputRef.current.value = '';
+                }}
+                disabled={loading}
+                style={{ minHeight: 44, minWidth: 44, padding: '0 0.85rem' }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {leadSheetImportError && (
+            <p style={{ margin: '0.45rem 0 0', fontSize: '0.82rem', color: 'var(--error)' }} role="alert">
+              {leadSheetImportError}
             </p>
           )}
         </div>
