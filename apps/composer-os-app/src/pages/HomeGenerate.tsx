@@ -896,6 +896,7 @@ export function HomeGenerate({
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [funkGroove, setFunkGroove] = useState(false);
+  const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
   const [riffGrid, setRiffGrid] = useState<'eighth' | 'sixteenth'>('eighth');
@@ -1077,7 +1078,7 @@ export function HomeGenerate({
 
   useEffect(() => {
     if (songwriterStyle !== 'frank_zappa') return;
-    if (presetId !== 'song_mode' && presetId !== 'string_quartet') return;
+    if (presetId !== 'song_mode' && presetId !== 'string_quartet' && presetId !== 'big_band') return;
     const n = songFormBars;
 
     if (zappaMeterUiMode === 'pattern') {
@@ -1437,7 +1438,8 @@ export function HomeGenerate({
         }
         /** Frank Zappa: ensure full-length meter rows even if UI state is one render behind `songFormBars`. */
         const zappaBarMeterPayload =
-          (presetId === 'song_mode' || presetId === 'string_quartet') && songwriterStyle === 'frank_zappa'
+          (presetId === 'song_mode' || presetId === 'string_quartet' || presetId === 'big_band') &&
+          songwriterStyle === 'frank_zappa'
             ? (() => {
                 const n = songFormBars;
                 const rows =
@@ -1463,6 +1465,7 @@ export function HomeGenerate({
 
         const generatePayload = {
           ...coreFields,
+          ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
@@ -1537,7 +1540,9 @@ export function HomeGenerate({
                   : {}),
               }
             : {}),
-          ...(presetId === 'string_quartet' && songwriterStyle === 'frank_zappa' && zappaBarMeterPayload
+          ...((presetId === 'string_quartet' || presetId === 'big_band') &&
+          songwriterStyle === 'frank_zappa' &&
+          zappaBarMeterPayload
             ? { barMeterMap: zappaBarMeterPayload }
             : {}),
           ...((presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') &&
@@ -1713,6 +1718,7 @@ export function HomeGenerate({
       c4Strength,
       blendStrength,
       funkGroove,
+      generateDrumGuide,
       formId,
       bigBandFormId,
       songFormBarPreset,
@@ -4184,6 +4190,7 @@ export function HomeGenerate({
               ))}
             </select>
           </div>
+          {songwriterStyle === 'frank_zappa' && frankZappaMeterMapBlock}
         </div>
       )}
 
@@ -4258,6 +4265,31 @@ export function HomeGenerate({
         <strong style={{ color: 'var(--text)' }}>New Variation</strong> picks a fresh id;{' '}
         <strong style={{ color: 'var(--text)' }}>Next Variation</strong> steps the id (then Generate).
       </p>
+
+      <div style={{ marginBottom: '0.85rem' }}>
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            fontSize: '0.88rem',
+            color: 'var(--text)',
+            cursor: loading ? 'default' : 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={generateDrumGuide}
+            onChange={(e) => setGenerateDrumGuide(e.target.checked)}
+            disabled={loading}
+            aria-label="Generate drum guide (SD3)"
+          />
+          Generate drum guide (SD3)
+        </label>
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+          Exports a kick/snare MIDI guide and JSON sidecar next to the score when enabled.
+        </p>
+      </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <button onClick={() => void generate()} disabled={loading}>

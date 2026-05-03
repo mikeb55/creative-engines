@@ -195,6 +195,10 @@ export interface GenerateRequest {
   /** Song Mode / Frank Zappa: per-bar time signatures (1-based bar keys). Omitted → all 4/4. */
   barMeterMap?: BarMeterMap;
   /**
+   * When `true`, skip writing SD3-style drum guide MIDI/JSON next to the score. Omitted → guides are written.
+   */
+  skipDrumGuide?: boolean;
+  /**
    * String quartet + Frank Zappa: opt out of the SQ harmony slice (per-part device receipts).
    * When omitted and songwriter is `frank_zappa`, the slice is enabled.
    */

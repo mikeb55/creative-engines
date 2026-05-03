@@ -1302,13 +1302,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
-    try {
-      const barMeterForDrums =
-        gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
-      const baseName = path.basename(filepath, path.extname(filepath));
-      writeDrumGuide(gp.score, outputDir, baseName, barMeterForDrums, req.bpm);
-    } catch (e) {
-      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    if (!req.skipDrumGuide) {
+      try {
+        const barMeterForDrums =
+          gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
+        const baseName = path.basename(filepath, path.extname(filepath));
+        writeDrumGuide(gp.score, outputDir, baseName, barMeterForDrums, req.bpm);
+      } catch (e) {
+        console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+      }
     }
     if (req.includeVocalLeadSheet) {
       const bridgeScriptPath = resolveSongwritingBridgeExportScriptPath();
@@ -1855,13 +1857,15 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     fs.mkdirSync(outputDir, { recursive: true });
     ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
     fs.writeFileSync(ensembleMusicXmlFilepath, realised.exportPipeline.xml, 'utf-8');
-    try {
-      if (realised.score) {
-        const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
-        writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+    if (!req.skipDrumGuide) {
+      try {
+        if (realised.score) {
+          const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
+          writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+        }
+      } catch (e) {
+        console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
-    } catch (e) {
-      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
     }
   }
   const ok = bb.validation.ok;
@@ -2066,13 +2070,15 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
     fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
-    try {
-      if (realised.score) {
-        const baseName = path.basename(xmlFilepath, '.musicxml');
-        writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+    if (!req.skipDrumGuide) {
+      try {
+        if (realised.score) {
+          const baseName = path.basename(xmlFilepath, '.musicxml');
+          writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+        }
+      } catch (e) {
+        console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
-    } catch (e) {
-      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
     }
     const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
     return {

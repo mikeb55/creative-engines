@@ -303,13 +303,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');
-    try {
-      const barMeterForDrums =
-        result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
-      const baseName = path.basename(filepath, path.extname(filepath));
-      writeDrumGuide(result.score, outputDir, baseName, barMeterForDrums, req.bpm);
-    } catch (e) {
-      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    if (!req.skipDrumGuide) {
+      try {
+        const barMeterForDrums =
+          result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
+        const baseName = path.basename(filepath, path.extname(filepath));
+        writeDrumGuide(result.score, outputDir, baseName, barMeterForDrums, req.bpm);
+      } catch (e) {
+        console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+      }
     }
     const locked = result.context.lockedHarmonyBarsRaw;
     if (
