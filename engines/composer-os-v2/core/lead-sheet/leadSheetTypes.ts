@@ -24,6 +24,8 @@ export interface LeadSheetChordEvent {
   bar: number;
   beat: number;
   symbol: string;
+  /** Original 1-based measure index in source MusicXML when repeat unrolling ran (debug). */
+  sourceMeasure?: number;
 }
 
 /** Imported MusicXML articulations we preserve for the performance shaping pass. */
@@ -32,6 +34,8 @@ export type LeadSheetArticulationKind = 'staccato' | 'tenuto' | 'accent' | 'marc
 export interface LeadSheetMelodyNoteEvent {
   bar: number;
   beat: number;
+  /** Original 1-based measure index in source MusicXML when repeat unrolling ran (debug). */
+  sourceMeasure?: number;
   durationBeats: number;
   midi: number;
   step: string;
@@ -77,6 +81,8 @@ export interface LeadSheetRepeatMarker {
   bar: number;
   kind: LeadSheetRepeatMarkerKind;
   endingNumber?: string;
+  /** Original 1-based measure index in source MusicXML when repeat unrolling ran (debug). */
+  sourceMeasure?: number;
 }
 
 export interface LeadSheet {

@@ -132,6 +132,51 @@ function extractChordEventsFromWordsDirections(input: {
   return any;
 }
 
+/** Words-based chord fallback when measures are visited in repeat-unrolled order. */
+function extractChordEventsFromWordsVisitSequence(input: {
+  measures: string[];
+  visitOrder: number[];
+  leadSheet: LeadSheet;
+  warnings: string[];
+  attachSourceMeasure: boolean;
+}): boolean {
+  let divisions = 1;
+  let any = false;
+  for (let visitIdx = 0; visitIdx < input.visitOrder.length; visitIdx++) {
+    const srcIdx = input.visitOrder[visitIdx]!;
+    const measureXml = input.measures[srcIdx]!;
+    const bar = visitIdx + 1;
+    const sourceMeasure = srcIdx + 1;
+    const divM = measureXml.match(/<divisions>(\d+)<\/divisions>/i);
+    if (divM) {
+      const d = parseInt(divM[1], 10);
+      if (Number.isFinite(d) && d > 0) divisions = d;
+    }
+    const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
+    for (const dir of directionBlocks) {
+      if (parseTempoWordKind(dir)) continue;
+      const wordsMatch = dir.match(/<words[^>]*>([\s\S]*?)<\/words>/i);
+      if (!wordsMatch) continue;
+      const sym = tryExtractChordSymbolFromWordsText(wordsMatch[1] ?? '');
+      if (!sym) continue;
+      const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, divisions));
+      input.leadSheet.chordEvents.push({
+        bar,
+        beat: atBeat,
+        symbol: sym,
+        ...(input.attachSourceMeasure ? { sourceMeasure } : {}),
+      });
+      any = true;
+    }
+  }
+  if (any) {
+    input.warnings.push(
+      'No <harmony> elements found; chord symbols extracted from <words> text (Sibelius export mode).'
+    );
+  }
+  return any;
+}
+
 function dedupeChordEvents(events: LeadSheetChordEvent[]): LeadSheetChordEvent[] {
   if (events.length === 0) return [];
   const sorted = [...events].sort(
@@ -359,20 +404,509 @@ function parseNoteVelocityMidi(noteXml: string): number | undefined {
   return Number.isFinite(v) ? clampMidiVel(v) : undefined;
 }
 
-function parseRepeatMarkers(measureXml: string, bar: number): LeadSheetRepeatMarker[] {
+function parseRepeatMarkers(
+  measureXml: string,
+  bar: number,
+  sourceMeasure?: number
+): LeadSheetRepeatMarker[] {
   const out: LeadSheetRepeatMarker[] = [];
   if (/<barline[^>]*location="left"[\s\S]*?<repeat[^>]*direction="forward"/i.test(measureXml)) {
-    out.push({ bar, kind: 'repeat_start' });
+    out.push({
+      bar,
+      kind: 'repeat_start',
+      ...(sourceMeasure !== undefined ? { sourceMeasure } : {}),
+    });
   }
   if (/<barline[^>]*location="right"[\s\S]*?<repeat[^>]*direction="backward"/i.test(measureXml)) {
-    out.push({ bar, kind: 'repeat_end' });
+    out.push({
+      bar,
+      kind: 'repeat_end',
+      ...(sourceMeasure !== undefined ? { sourceMeasure } : {}),
+    });
   }
   const endingM = measureXml.match(/<ending[^>]*number="([^"]+)"[^>]*type="(start|stop|discontinue)"/i);
   if (endingM) {
     const kind = endingM[2] === 'start' ? 'ending_start' : 'ending_stop';
-    out.push({ bar, kind, endingNumber: endingM[1].trim() });
+    out.push({
+      bar,
+      kind,
+      endingNumber: endingM[1].trim(),
+      ...(sourceMeasure !== undefined ? { sourceMeasure } : {}),
+    });
   }
   return out;
+}
+
+/** Pre-scan control flags per source measure for repeat / volta / navigation (Step 1). */
+interface MeasureControl {
+  sourceMeasure: number;
+  repeatStart: boolean;
+  repeatEnd: boolean;
+  repeatTimes: number;
+  endingNumbers: number[];
+  endingType: 'start' | 'stop' | 'discontinue' | null;
+  endingVariant: number;
+  segno: boolean;
+  coda: boolean;
+  fine: boolean;
+  toCoda: boolean;
+  dacapo: boolean;
+  dalsegno: boolean;
+  soundJump: string | null;
+}
+
+function collectMeasureWordsFlattened(measureXml: string): string {
+  const dirs = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
+  const chunks: string[] = [];
+  for (const d of dirs) {
+    const wm = d.match(/<words[^>]*>([\s\S]*?)<\/words>/gi);
+    if (wm) {
+      for (const w of wm) {
+        const inner = w.replace(/<[^>]+>/g, ' ');
+        chunks.push(inner);
+      }
+    }
+  }
+  return chunks.join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function parseSoundTags(measureXml: string): string[] {
+  const sounds = measureXml.match(/<sound\b[^>]*\/?>/gi) ?? [];
+  return sounds.map((s) => s.toLowerCase());
+}
+
+function buildMeasureControlTable(measures: string[]): MeasureControl[] {
+  const out: MeasureControl[] = [];
+  let endingVoltaBucket = 0;
+  for (let i = 0; i < measures.length; i++) {
+    const measureXml = measures[i]!;
+    const wordsFlat = collectMeasureWordsFlattened(measureXml);
+    const sounds = parseSoundTags(measureXml);
+
+    const repeatStart =
+      /<barline[^>]*location="left"[\s\S]*?<repeat[^>]*direction="forward"/i.test(measureXml);
+    const repeatEnd =
+      /<barline[^>]*location="right"[\s\S]*?<repeat[^>]*direction="backward"/i.test(measureXml);
+    let repeatTimes = 2;
+    if (repeatEnd) {
+      const backwardRepeatTag = measureXml.match(
+        /<repeat[^>]*direction="backward"[^>]*(?:times="(\d+)")?[^>]*>/i
+      );
+      const repeatTimesRaw = backwardRepeatTag?.[1];
+      repeatTimes =
+        repeatTimesRaw !== undefined ? Math.max(1, parseInt(repeatTimesRaw, 10) || 2) : 2;
+    }
+
+    const endingNumbers: number[] = [];
+    let endingType: MeasureControl['endingType'] = null;
+    const endingBlocks = measureXml.match(/<ending[^>]*>/gi) ?? [];
+    for (const eb of endingBlocks) {
+      const numM = eb.match(/number="([^"]+)"/i);
+      const typM = eb.match(/type="(start|stop|discontinue)"/i);
+      if (numM) {
+        const parts = numM[1].split(/[\s,]+/).map((x) => parseInt(x.trim(), 10)).filter(Number.isFinite);
+        for (const p of parts) if (!endingNumbers.includes(p)) endingNumbers.push(p);
+      }
+      if (typM) endingType = typM[1]!.toLowerCase() as MeasureControl['endingType'];
+      const numOne = numM ? parseInt(numM[1].split(/[\s,]+/)[0]!, 10) : NaN;
+      if (typM?.[1] === 'start' && Number.isFinite(numOne)) endingVoltaBucket = numOne;
+      if (typM?.[1] === 'stop' || typM?.[1] === 'discontinue') endingVoltaBucket = 0;
+    }
+
+    let soundJump: string | null = null;
+    const sj = measureXml.match(/<sound\b([^>]*)\/?>/gi);
+    if (sj && sj.length > 0) soundJump = sj.join(';');
+
+    let dacapo = sounds.some((s) => /\bdacapo\s*=\s*"yes"/i.test(s));
+    let dalsegno = sounds.some((s) => /\bdalsegno\b/i.test(s) || /\bcoda\s*=\s*"[^"]*segno/i.test(s));
+    let toCoda = sounds.some((s) => /\btocoda\b/i.test(s));
+    if (!dacapo && /d\.?\s*c\.?(\s|$|al|\.)/i.test(wordsFlat)) dacapo = true;
+    if (!dalsegno && /\bd\.?\s*s\.?\b/i.test(wordsFlat)) dalsegno = true;
+    if (!toCoda && /\b(to\s*coda|al\s*coda)\b/i.test(wordsFlat)) toCoda = true;
+
+    const segno =
+      /<segno\b/i.test(measureXml) ||
+      /<words[^>]*>[\s\S]*segno[\s\S]*<\/words>/i.test(measureXml) ||
+      /\bsegno\b/i.test(wordsFlat);
+    const coda =
+      /<coda\b/i.test(measureXml) ||
+      /<words[^>]*>[\s\S]*\bcoda\b[\s\S]*<\/words>/i.test(measureXml) ||
+      /\bcoda\b/i.test(wordsFlat);
+    const fine =
+      sounds.some((s) => /\bfine\b/i.test(s)) || /\bfine\b/i.test(wordsFlat);
+
+    out.push({
+      sourceMeasure: i + 1,
+      repeatStart,
+      repeatEnd,
+      repeatTimes,
+      endingNumbers,
+      endingType,
+      endingVariant: endingVoltaBucket,
+      segno,
+      coda,
+      fine,
+      toCoda,
+      dacapo,
+      dalsegno,
+      soundJump,
+    });
+  }
+  return out;
+}
+
+function needsRepeatUnroll(ctrl: MeasureControl[]): boolean {
+  return ctrl.some(
+    (c) =>
+      c.repeatStart ||
+      c.repeatEnd ||
+      c.endingType !== null ||
+      c.endingNumbers.length > 0 ||
+      c.endingVariant !== 0 ||
+      c.segno ||
+      c.coda ||
+      c.fine ||
+      c.toCoda ||
+      c.dacapo ||
+      c.dalsegno ||
+      (c.soundJump !== null && /dacapo|dalsegno|tocoda|fine/i.test(c.soundJump))
+  );
+}
+
+function includeVoltaMeasure(c: MeasureControl, repeatVoltaPass: number): boolean {
+  if (c.endingVariant === 0) return true;
+  return c.endingVariant === repeatVoltaPass + 1;
+}
+
+/**
+ * Deterministic traversal producing source measure indices (0-based) to visit in order.
+ * Returns null to fall back to legacy linear walk (no repeat markers).
+ */
+function expandMeasureVisits(ctrl: MeasureControl[], warnings: string[]): number[] | null {
+  const n = ctrl.length;
+  if (n === 0) return [];
+
+  if (!needsRepeatUnroll(ctrl)) return null;
+
+  const stack: number[] = [];
+  const backToForward = new Map<number, number>();
+  let nestedDepth = 0;
+  for (let i = 0; i < n; i++) {
+    if (ctrl[i].repeatStart) {
+      nestedDepth++;
+      if (nestedDepth > 1) {
+        warnings.push(
+          'Nested repeats detected — inner repeat regions use standard MusicXML stack pairing (may differ from some engraving tools).'
+        );
+      }
+      stack.push(i);
+    }
+    if (ctrl[i].repeatEnd) {
+      if (stack.length === 0) {
+        warnings.push('Missing forward repeat before a backward repeat.');
+      } else {
+        backToForward.set(i, stack.pop()!);
+        nestedDepth = Math.max(0, nestedDepth - 1);
+      }
+    }
+  }
+
+  const segnoIndices = ctrl.map((c, i) => (c.segno ? i : -1)).filter((i) => i >= 0);
+  const codaIndices = ctrl.map((c, i) => (c.coda ? i : -1)).filter((i) => i >= 0);
+  if (segnoIndices.length > 1) warnings.push('Duplicate segno markers — using the first for D.S. navigation.');
+  if (codaIndices.length > 1) warnings.push('Duplicate coda markers — using the first for coda jump.');
+
+  const firstSegno = segnoIndices[0] ?? -1;
+  const firstCoda = codaIndices[0] ?? -1;
+
+  const visits: number[] = [];
+  const visitCount = new Map<number, number>();
+  const MAX_STEPS = Math.max(5000, n * 64);
+
+  let pc = 0;
+  let repeatVoltaPass = 0;
+  let repeatFrame: { fw: number; eb: number; playsCompleted: number; maxPlays: number } | null = null;
+  let dcConsumed = false;
+  let dsConsumed = false;
+  let steps = 0;
+
+  while (pc >= 0 && pc < n && steps++ < MAX_STEPS) {
+    const bump = (visitCount.get(pc) ?? 0) + 1;
+    visitCount.set(pc, bump);
+    if (bump > 8) {
+      warnings.push(
+        'LeadSheet repeat traversal capped at 8 visits per source measure; stopping expansion.'
+      );
+      break;
+    }
+
+    if (!includeVoltaMeasure(ctrl[pc], repeatVoltaPass)) {
+      pc++;
+      continue;
+    }
+
+    visits.push(pc);
+
+    if (ctrl[pc].fine && (dcConsumed || dsConsumed)) {
+      break;
+    }
+
+    if (ctrl[pc].dacapo && !dcConsumed) {
+      dcConsumed = true;
+      pc = 0;
+      repeatFrame = null;
+      repeatVoltaPass = 0;
+      continue;
+    }
+
+    if (ctrl[pc].dalsegno && !dsConsumed && firstSegno >= 0) {
+      dsConsumed = true;
+      pc = firstSegno;
+      repeatFrame = null;
+      continue;
+    }
+
+    if (ctrl[pc].toCoda && firstCoda >= 0) {
+      pc = firstCoda;
+      continue;
+    }
+
+    if (ctrl[pc].repeatEnd && backToForward.has(pc)) {
+      const fw = backToForward.get(pc)!;
+      const eb = pc;
+      const maxPlays = Math.max(1, ctrl[eb].repeatTimes || 2);
+      if (!repeatFrame || repeatFrame.eb !== eb) {
+        repeatFrame = { fw, eb, playsCompleted: 0, maxPlays };
+      }
+      repeatFrame.playsCompleted++;
+      repeatVoltaPass++;
+      if (repeatFrame.playsCompleted < repeatFrame.maxPlays) {
+        pc = fw;
+        continue;
+      }
+      repeatFrame = null;
+      pc++;
+      continue;
+    }
+
+    pc++;
+  }
+
+  if (steps >= MAX_STEPS) {
+    warnings.push('LeadSheet repeat traversal exceeded step budget; output may be truncated.');
+  }
+
+  return visits;
+}
+
+type LeadSheetImportScanState = {
+  divisions: number;
+  activeBeatsPerBar: number;
+  activeBeatType: number;
+  sawMultiVoice: boolean;
+  sawMultiNoteChords: boolean;
+  sawMultiStaff: boolean;
+  sawLyrics: boolean;
+  openDynamicStack: Array<{
+    kind: 'crescendo' | 'decrescendo';
+    startBar: number;
+    startBeat: number;
+  }>;
+};
+
+function appendOneMeasureToLeadSheet(args: {
+  measureXml: string;
+  bar: number;
+  leadSheet: LeadSheet;
+  warnings: string[];
+  state: LeadSheetImportScanState;
+  sourceMeasure?: number;
+  emitKeyChangesAndSection: boolean;
+}): void {
+  const { measureXml, bar, leadSheet, warnings, state } = args;
+  const srcOpt =
+    args.sourceMeasure !== undefined ? { sourceMeasure: args.sourceMeasure } : {};
+
+  const divM = measureXml.match(/<divisions>(\d+)<\/divisions>/i);
+  if (divM) {
+    const d = parseInt(divM[1], 10);
+    if (Number.isFinite(d) && d > 0) state.divisions = d;
+  }
+
+  const beatsM = measureXml.match(
+    /<time>[\s\S]*?<beats>(\d+)<\/beats>[\s\S]*?<beat-type>(\d+)<\/beat-type>[\s\S]*?<\/time>/i
+  );
+  if (beatsM) {
+    state.activeBeatsPerBar = parseInt(beatsM[1], 10);
+    state.activeBeatType = parseInt(beatsM[2], 10);
+    if (!leadSheet.timeSignature) {
+      leadSheet.timeSignature = {
+        beats: state.activeBeatsPerBar,
+        beatType: state.activeBeatType,
+      };
+    }
+  }
+
+  if (args.emitKeyChangesAndSection) {
+    const keyBlocksInMeasure = measureXml.match(/<key>[\s\S]*?<\/key>/gi) ?? [];
+    for (const kb of keyBlocksInMeasure) {
+      const fifthsM = kb.match(/<fifths>(-?\d+)<\/fifths>/i);
+      if (!fifthsM) continue;
+      const modeM = kb.match(/<mode>([^<]+)<\/mode>/i);
+      const fifths = parseInt(fifthsM[1], 10);
+      const mode = modeM?.[1]?.trim();
+      leadSheet.keyChanges!.push({ bar, fifths, ...(mode ? { mode } : {}) });
+      if (!leadSheet.keySignature) {
+        leadSheet.keySignature = { fifths, ...(mode ? { mode } : {}) };
+      }
+    }
+  }
+
+  if (leadSheet.tempoBpm === undefined) {
+    const tempoM = measureXml.match(/<sound[^>]*tempo="([\d.]+)"/i);
+    if (tempoM) {
+      const bpm = Number(tempoM[1]);
+      if (Number.isFinite(bpm) && bpm > 0) leadSheet.tempoBpm = bpm;
+    }
+  }
+  const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
+  for (const dir of directionBlocks) {
+    const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, state.divisions));
+    const tempoWordKind = parseTempoWordKind(dir);
+    const tempoBpm = parseDirectionTempoBpm(dir);
+    if (tempoWordKind) {
+      (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
+        kind: tempoWordKind,
+        bar,
+        beat: atBeat,
+      });
+    }
+    if (tempoBpm !== undefined) {
+      (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
+        kind: 'tempo_mark',
+        bar,
+        beat: atBeat,
+        bpm: tempoBpm,
+      });
+    }
+
+    if (/<wedge[^>]*type="crescendo"/i.test(dir)) {
+      state.openDynamicStack.push({ kind: 'crescendo', startBar: bar, startBeat: atBeat });
+    } else if (/<wedge[^>]*type="diminuendo"/i.test(dir)) {
+      state.openDynamicStack.push({ kind: 'decrescendo', startBar: bar, startBeat: atBeat });
+    } else if (/<wedge[^>]*type="stop"/i.test(dir)) {
+      const open = state.openDynamicStack.pop();
+      if (open) {
+        (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
+          kind: open.kind,
+          startBar: open.startBar,
+          startBeat: open.startBeat,
+          endBar: bar,
+          endBeat: atBeat,
+        });
+      }
+    }
+  }
+
+  if (args.emitKeyChangesAndSection) {
+    const rehearsalM = measureXml.match(/<rehearsal[^>]*>([^<]+)<\/rehearsal>/i);
+    if (rehearsalM) {
+      leadSheet.sections.push({ label: rehearsalM[1].trim(), startBar: bar });
+    }
+  }
+
+  const harmonyBlocks = measureXml.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/gi) ?? [];
+  for (let harmonyIdx = 0; harmonyIdx < harmonyBlocks.length; harmonyIdx++) {
+    const hb = harmonyBlocks[harmonyIdx]!;
+    const timelineParsed = parseImportedHarmonyEvent({
+      harmonyXml: hb,
+      bar,
+      divisions: state.divisions,
+      beatsPerBar: state.activeBeatsPerBar,
+      eventIndexInBar: harmonyIdx,
+    });
+    if (timelineParsed.warnings.length > 0) {
+      warnings.push(...timelineParsed.warnings);
+    }
+    if (timelineParsed.event) {
+      (leadSheet.importedHarmonyTimeline as ImportedHarmonyTimeline).events.push(timelineParsed.event);
+    }
+    const symbol = parseHarmonySymbol(hb);
+    if (!symbol) continue;
+    const offM = hb.match(/<offset>(-?\d+)<\/offset>/i);
+    const offsetDivs = offM ? parseInt(offM[1], 10) : 0;
+    const beat = Math.max(0, offsetDivs / state.divisions);
+    leadSheet.chordEvents.push({ bar, beat, symbol, ...srcOpt });
+  }
+
+  leadSheet.repeatMarkers.push(...parseRepeatMarkers(measureXml, bar, args.sourceMeasure));
+
+  const measureDynVel = parseLastDynamicsMidiFromMeasure(measureXml);
+
+  const noteBlocks = measureXml.match(/<note[^>]*>[\s\S]*?<\/note>/gi) ?? [];
+  let cursorDivs = 0;
+  for (const noteXml of noteBlocks) {
+    const backupM = noteXml.match(/<backup>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/backup>/i);
+    if (backupM) {
+      cursorDivs = Math.max(0, cursorDivs - parseInt(backupM[1], 10));
+      continue;
+    }
+    const forwardM = noteXml.match(/<forward>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/forward>/i);
+    if (forwardM) {
+      cursorDivs += parseInt(forwardM[1], 10);
+      continue;
+    }
+    if (/<rest\b/i.test(noteXml)) continue;
+    if (/<chord\s*\/>/i.test(noteXml)) {
+      state.sawMultiNoteChords = true;
+      continue;
+    }
+    if (/<lyric\b/i.test(noteXml)) state.sawLyrics = true;
+
+    const voiceM = noteXml.match(/<voice>(\d+)<\/voice>/i);
+    const voice = voiceM ? parseInt(voiceM[1], 10) : 1;
+    if (voice !== 1) {
+      state.sawMultiVoice = true;
+      continue;
+    }
+
+    const stepM = noteXml.match(/<step>([A-G])<\/step>/i);
+    const octM = noteXml.match(/<octave>(\d+)<\/octave>/i);
+    if (!stepM || !octM) continue;
+    const alterM = noteXml.match(/<alter>(-?\d+)<\/alter>/i);
+    const durM = noteXml.match(/<duration>(\d+)<\/duration>/i);
+    const staffM = noteXml.match(/<staff>(\d+)<\/staff>/i);
+    if (staffM && staffM[1] !== '1') {
+      state.sawMultiStaff = true;
+      continue;
+    }
+    const alter = alterM ? parseInt(alterM[1], 10) : 0;
+    const octave = parseInt(octM[1], 10);
+    const durationDivs = durM ? parseInt(durM[1], 10) : state.divisions;
+    const durBeats = durationDivs / state.divisions;
+    const noteVel = parseNoteVelocityMidi(noteXml);
+    const articulationKind = parseArticulationKind(noteXml);
+    const tieFlags = parseTieFlags(noteXml);
+    const slurFlags = parseSlurFlags(noteXml);
+    const fermata = parseFermata(noteXml);
+    const velocityMidi = noteVel ?? measureDynVel;
+    leadSheet.melodyEvents.push({
+      bar,
+      beat: cursorDivs / Math.max(1, state.divisions),
+      durationBeats: durBeats,
+      midi: pitchToMidi(stepM[1], octave, alter),
+      step: stepM[1].toUpperCase(),
+      alter,
+      octave,
+      ...srcOpt,
+      ...(velocityMidi !== undefined ? { velocityMidi } : {}),
+      ...(articulationKind ? { articulationKind } : {}),
+      ...tieFlags,
+      ...slurFlags,
+      ...(fermata ? { fermata: true } : {}),
+    });
+    cursorDivs += durationDivs;
+  }
 }
 
 export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult {
@@ -424,201 +958,72 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     importedHarmonyTimeline: { events: [] },
   };
 
-  let divisions = 1;
-  let activeBeatsPerBar = 4;
-  let activeBeatType = 4;
-  let sawMultiVoice = false;
-  let sawMultiPart = (trimmed.match(/<part\s+id="/gi) ?? []).length > 1;
-  let sawMultiNoteChords = false;
-  let sawLyrics = false;
-  const openDynamicStack: Array<{ kind: 'crescendo' | 'decrescendo'; startBar: number; startBeat: number }> = [];
+  const controlTable = buildMeasureControlTable(measures);
+  const expandedVisitOrder = expandMeasureVisits(controlTable, warnings);
+  const shouldUnrollRepeats =
+    expandedVisitOrder !== null && expandedVisitOrder.length > 0;
 
-  for (let idx = 0; idx < measures.length; idx++) {
-    const measureXml = measures[idx]!;
-    const bar = barPerMeasure[idx]!;
-
-    const divM = measureXml.match(/<divisions>(\d+)<\/divisions>/i);
-    if (divM) {
-      const d = parseInt(divM[1], 10);
-      if (Number.isFinite(d) && d > 0) divisions = d;
-    }
-
-    const beatsM = measureXml.match(/<time>[\s\S]*?<beats>(\d+)<\/beats>[\s\S]*?<beat-type>(\d+)<\/beat-type>[\s\S]*?<\/time>/i);
-    if (beatsM) {
-      activeBeatsPerBar = parseInt(beatsM[1], 10);
-      activeBeatType = parseInt(beatsM[2], 10);
-      if (!leadSheet.timeSignature) {
-        leadSheet.timeSignature = { beats: activeBeatsPerBar, beatType: activeBeatType };
-      }
-    }
-
-    const keyBlocksInMeasure = measureXml.match(/<key>[\s\S]*?<\/key>/gi) ?? [];
-    for (const kb of keyBlocksInMeasure) {
-      const fifthsM = kb.match(/<fifths>(-?\d+)<\/fifths>/i);
-      if (!fifthsM) continue;
-      const modeM = kb.match(/<mode>([^<]+)<\/mode>/i);
-      const fifths = parseInt(fifthsM[1], 10);
-      const mode = modeM?.[1]?.trim();
-      leadSheet.keyChanges!.push({ bar, fifths, ...(mode ? { mode } : {}) });
-      if (!leadSheet.keySignature) {
-        leadSheet.keySignature = { fifths, ...(mode ? { mode } : {}) };
-      }
-    }
-
-    if (leadSheet.tempoBpm === undefined) {
-      const tempoM = measureXml.match(/<sound[^>]*tempo="([\d.]+)"/i);
-      if (tempoM) {
-        const bpm = Number(tempoM[1]);
-        if (Number.isFinite(bpm) && bpm > 0) leadSheet.tempoBpm = bpm;
-      }
-    }
-    const directionBlocks = measureXml.match(/<direction[^>]*>[\s\S]*?<\/direction>/gi) ?? [];
-    for (const dir of directionBlocks) {
-      const atBeat = Math.max(0, parseDirectionOffsetBeats(dir, divisions));
-      const tempoWordKind = parseTempoWordKind(dir);
-      const tempoBpm = parseDirectionTempoBpm(dir);
-      if (tempoWordKind) {
-        (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
-          kind: tempoWordKind,
-          bar,
-          beat: atBeat,
-        });
-      }
-      if (tempoBpm !== undefined) {
-        (leadSheet.tempoDirections as LeadSheetTempoDirectionEvent[]).push({
-          kind: 'tempo_mark',
-          bar,
-          beat: atBeat,
-          bpm: tempoBpm,
-        });
-      }
-
-      if (/<wedge[^>]*type="crescendo"/i.test(dir)) {
-        openDynamicStack.push({ kind: 'crescendo', startBar: bar, startBeat: atBeat });
-      } else if (/<wedge[^>]*type="diminuendo"/i.test(dir)) {
-        openDynamicStack.push({ kind: 'decrescendo', startBar: bar, startBeat: atBeat });
-      } else if (/<wedge[^>]*type="stop"/i.test(dir)) {
-        const open = openDynamicStack.pop();
-        if (open) {
-          (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
-            kind: open.kind,
-            startBar: open.startBar,
-            startBeat: open.startBeat,
-            endBar: bar,
-            endBeat: atBeat,
-          });
-        }
-      }
-    }
-
-    const rehearsalM = measureXml.match(/<rehearsal[^>]*>([^<]+)<\/rehearsal>/i);
-    if (rehearsalM) {
-      leadSheet.sections.push({ label: rehearsalM[1].trim(), startBar: bar });
-    }
-
-    const harmonyBlocks = measureXml.match(/<harmony[^>]*>[\s\S]*?<\/harmony>/gi) ?? [];
-    for (let harmonyIdx = 0; harmonyIdx < harmonyBlocks.length; harmonyIdx++) {
-      const hb = harmonyBlocks[harmonyIdx]!;
-      const timelineParsed = parseImportedHarmonyEvent({
-        harmonyXml: hb,
-        bar,
-        divisions,
-        beatsPerBar: activeBeatsPerBar,
-        eventIndexInBar: harmonyIdx,
-      });
-      if (timelineParsed.warnings.length > 0) {
-        warnings.push(...timelineParsed.warnings);
-      }
-      if (timelineParsed.event) {
-        (leadSheet.importedHarmonyTimeline as ImportedHarmonyTimeline).events.push(timelineParsed.event);
-      }
-      const symbol = parseHarmonySymbol(hb);
-      if (!symbol) continue;
-      const offM = hb.match(/<offset>(-?\d+)<\/offset>/i);
-      const offsetDivs = offM ? parseInt(offM[1], 10) : 0;
-      const beat = Math.max(0, offsetDivs / divisions);
-      leadSheet.chordEvents.push({ bar, beat, symbol });
-    }
-
-    leadSheet.repeatMarkers.push(...parseRepeatMarkers(measureXml, bar));
-
-    const measureDynVel = parseLastDynamicsMidiFromMeasure(measureXml);
-
-    const noteBlocks = measureXml.match(/<note[^>]*>[\s\S]*?<\/note>/gi) ?? [];
-    let cursorDivs = 0;
-    for (const noteXml of noteBlocks) {
-      const backupM = noteXml.match(/<backup>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/backup>/i);
-      if (backupM) {
-        cursorDivs = Math.max(0, cursorDivs - parseInt(backupM[1], 10));
-        continue;
-      }
-      const forwardM = noteXml.match(/<forward>[\s\S]*?<duration>(\d+)<\/duration>[\s\S]*?<\/forward>/i);
-      if (forwardM) {
-        cursorDivs += parseInt(forwardM[1], 10);
-        continue;
-      }
-      if (/<rest\b/i.test(noteXml)) continue;
-      if (/<chord\s*\/>/i.test(noteXml)) {
-        sawMultiNoteChords = true;
-        continue;
-      }
-      if (/<lyric\b/i.test(noteXml)) sawLyrics = true;
-
-      const voiceM = noteXml.match(/<voice>(\d+)<\/voice>/i);
-      const voice = voiceM ? parseInt(voiceM[1], 10) : 1;
-      if (voice !== 1) {
-        sawMultiVoice = true;
-        continue;
-      }
-
-      const stepM = noteXml.match(/<step>([A-G])<\/step>/i);
-      const octM = noteXml.match(/<octave>(\d+)<\/octave>/i);
-      if (!stepM || !octM) continue;
-      const alterM = noteXml.match(/<alter>(-?\d+)<\/alter>/i);
-      const durM = noteXml.match(/<duration>(\d+)<\/duration>/i);
-      const staffM = noteXml.match(/<staff>(\d+)<\/staff>/i);
-      if (staffM && staffM[1] !== '1') {
-        sawMultiPart = true;
-        continue;
-      }
-      const alter = alterM ? parseInt(alterM[1], 10) : 0;
-      const octave = parseInt(octM[1], 10);
-      const durationDivs = durM ? parseInt(durM[1], 10) : divisions;
-      const durBeats = durationDivs / divisions;
-      const noteVel = parseNoteVelocityMidi(noteXml);
-      const articulationKind = parseArticulationKind(noteXml);
-      const tieFlags = parseTieFlags(noteXml);
-      const slurFlags = parseSlurFlags(noteXml);
-      const fermata = parseFermata(noteXml);
-      const velocityMidi = noteVel ?? measureDynVel;
-      leadSheet.melodyEvents.push({
-        bar,
-        beat: cursorDivs / Math.max(1, divisions),
-        durationBeats: durBeats,
-        midi: pitchToMidi(stepM[1], octave, alter),
-        step: stepM[1].toUpperCase(),
-        alter,
-        octave,
-        ...(velocityMidi !== undefined ? { velocityMidi } : {}),
-        ...(articulationKind ? { articulationKind } : {}),
-        ...tieFlags,
-        ...slurFlags,
-        ...(fermata ? { fermata: true } : {}),
-      });
-      cursorDivs += durationDivs;
-    }
+  if (expandedVisitOrder !== null && expandedVisitOrder.length === 0) {
+    warnings.push('Repeat expansion produced no visits; falling back to linear measure walk.');
   }
 
-  leadSheet.totalBars = totalFullBars > 0 ? totalFullBars : measures.length > 0 ? 1 : 0;
+  const scanState: LeadSheetImportScanState = {
+    divisions: 1,
+    activeBeatsPerBar: 4,
+    activeBeatType: 4,
+    sawMultiVoice: false,
+    sawMultiNoteChords: false,
+    sawMultiStaff: false,
+    sawLyrics: false,
+    openDynamicStack: [],
+  };
 
-  if (openDynamicStack.length > 0) {
-    for (const open of openDynamicStack) {
+  let sawMultiPart = (trimmed.match(/<part\s+id="/gi) ?? []).length > 1;
+
+  if (shouldUnrollRepeats) {
+    const seenSourceForStructure = new Set<number>();
+    for (let visitIdx = 0; visitIdx < expandedVisitOrder!.length; visitIdx++) {
+      const srcIdx = expandedVisitOrder![visitIdx]!;
+      const measureXml = measures[srcIdx]!;
+      const outputBar = visitIdx + 1;
+      const sourceMeasure = srcIdx + 1;
+      const emitStructure = !seenSourceForStructure.has(srcIdx);
+      seenSourceForStructure.add(srcIdx);
+      appendOneMeasureToLeadSheet({
+        measureXml,
+        bar: outputBar,
+        leadSheet,
+        warnings,
+        state: scanState,
+        sourceMeasure,
+        emitKeyChangesAndSection: emitStructure,
+      });
+    }
+    if (scanState.sawMultiStaff) sawMultiPart = true;
+    leadSheet.totalBars = expandedVisitOrder!.length;
+  } else {
+    for (let idx = 0; idx < measures.length; idx++) {
+      appendOneMeasureToLeadSheet({
+        measureXml: measures[idx]!,
+        bar: barPerMeasure[idx]!,
+        leadSheet,
+        warnings,
+        state: scanState,
+        emitKeyChangesAndSection: true,
+      });
+    }
+    if (scanState.sawMultiStaff) sawMultiPart = true;
+    leadSheet.totalBars = totalFullBars > 0 ? totalFullBars : measures.length > 0 ? 1 : 0;
+  }
+
+  if (scanState.openDynamicStack.length > 0) {
+    for (const open of scanState.openDynamicStack) {
       (leadSheet.dynamicSpans as LeadSheetDynamicSpan[]).push({
         kind: open.kind,
         startBar: open.startBar,
         startBeat: open.startBeat,
         endBar: leadSheet.totalBars,
-        endBeat: activeBeatsPerBar,
+        endBeat: scanState.activeBeatsPerBar,
       });
     }
   }
@@ -627,11 +1032,21 @@ export function importLeadSheetFromMusicXml(xml: string): LeadSheetImportResult 
     leadSheet.sections = [{ label: 'A', startBar: 1 }];
   }
   if (sawMultiPart) warnings.push('Ignored extra parts/staves; imported first-part lead line only.');
-  if (sawMultiVoice) warnings.push('Ignored non-voice-1 notes; Phase 1 supports single melody voice.');
-  if (sawMultiNoteChords) warnings.push('Ignored stacked chord notes in melody; kept top-level note events only.');
-  if (sawLyrics) warnings.push('Lyrics are currently ignored in LeadSheet import Phase 1.');
+  if (scanState.sawMultiVoice) warnings.push('Ignored non-voice-1 notes; Phase 1 supports single melody voice.');
+  if (scanState.sawMultiNoteChords) warnings.push('Ignored stacked chord notes in melody; kept top-level note events only.');
+  if (scanState.sawLyrics) warnings.push('Lyrics are currently ignored in LeadSheet import Phase 1.');
   if (leadSheet.chordEvents.length === 0) {
-    extractChordEventsFromWordsDirections({ measures, barPerMeasure, leadSheet, warnings });
+    if (shouldUnrollRepeats && expandedVisitOrder) {
+      extractChordEventsFromWordsVisitSequence({
+        measures,
+        visitOrder: expandedVisitOrder,
+        leadSheet,
+        warnings,
+        attachSourceMeasure: true,
+      });
+    } else {
+      extractChordEventsFromWordsDirections({ measures, barPerMeasure, leadSheet, warnings });
+    }
   }
   leadSheet.chordEvents = dedupeChordEvents(leadSheet.chordEvents);
   if (leadSheet.chordEvents.length === 0) {
