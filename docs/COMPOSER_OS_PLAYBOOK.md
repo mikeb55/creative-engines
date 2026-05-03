@@ -10,21 +10,18 @@
 
 Charts saved as **MusicXML** (Finale / MuseScore / Sibelius **partwise** export) can be fed through the **lead-sheet importer** for harmony timelines, keys, repeats, and (limited) melody extraction. This section matches what the engine’s **Real Book stress** regression exercises (`engines/composer-os-v2/tests/realBookStressTest.test.ts`, smoke suite **Real Book MusicXML stress**).
 
+### Entry point (harmony timeline)
+
+- **`leadSheetMusicXmlImport.ts`** — **`importLeadSheetFromMusicXml`** walks measures and, for each `<harmony>` block, calls **`parseImportedHarmonyEvent`** (**`importedHarmonyTimeline.ts`**) to append **`ImportedHarmonyEvent`** rows (root/kind/bass/degrees, beat from **`<offset>`** ÷ divisions).
+- **`sortImportedHarmonyTimeline`** runs at end — stable order: **bar**, **beat**, **harmony index in bar**.
+- Display chord **symbols** for teaching (`LeadSheet.chordEvents`) come from **`parseHarmonySymbol`** on the same XML; they are merged and **`dedupeChordEvents`**’d separately from the storage-only timeline.
+
 ### What the stress test validates
 
 - **Repeat navigation** — `<barline>` forward/back repeats, **volta** (`<ending>` start/stop), **segno** / **D.S.** / **To Coda** / **coda** directions and `<sound>` jumps (`expandMeasureVisits` in **`leadSheetMusicXmlImport.ts`** produces a deterministic visit order).
 - **Key changes** — mid-score `<attributes><key><fifths>…</fifths></key>` blocks populate **`LeadSheet.keyChanges`** (bar index aligns with the importer’s logical bar mapping).
 - **Complex rhythm / chords** — high `<divisions>` grids and multiple `<harmony>` elements per measure, including **`<offset>`** (divisions from measure start) → beat-accurate **`importedHarmonyTimeline`** entries.
-- **Multiple voices** — `<voice>1</voice>` vs `<voice>2</voice>`: chord symbols still parse; **voice 1** drives **`melodyEvents`**; extra voices log a warning (see limitations below).
-
-### How to import a Real Book chart
-
-1. Provide **score-partwise** XML (not timewise). The importer reads the **first `<part>`** as the lead line.
-2. Entry points:
-   - **`importLeadSheetFromMusicXml`** — **`leadSheetMusicXmlImport.ts`** (measures, chords, melody, repeats, keys).
-   - **`parseImportedHarmonyEvent`** — **`importedHarmonyTimeline.ts`** — storage-only parse of each `<harmony>` chunk (root/kind/bass/degrees, time via divisions + offset).
-   - **`sortImportedHarmonyTimeline`** — stable ordering by bar, beat, event index.
-3. Display chord strings for the lead sheet come from **`parseHarmonySymbol`** on the same `<harmony>` blocks; they are merged into **`LeadSheet.chordEvents`** and deduped.
+- **Multiple voices** — `<voice>1</voice>` vs `<voice>2</voice>`: chord symbols still parse; **voice 1** retains **`melodyEvents`**; extra voices trigger a warning (see limitations).
 
 ### repeatMarkers (UniversalLeadSheet)
 
@@ -37,7 +34,7 @@ When the importer records attributes for a measure (`emitKeyChangesAndSection`),
 ### Chord timeline (beats, offsets, collisions)
 
 - Timeline events sort by **bar**, **beat** (offset ÷ divisions), then **harmony index** in the measure.
-- **`dedupeChordEvents`** removes redundant duplicates and beat-0 carries from the prior bar; the stress test asserts **no conflicting chord symbols** assigned to the same **(bar, beat)** slot after processing.
+- **`dedupeChordEvents`** removes redundant duplicates and beat-0 carries from the prior bar; the stress test asserts **no conflicting chord symbols** assigned to the same **(bar, beat)** slot after processing (**no-collision guarantee** for conflicting symbols at the same slot).
 
 ### Round-trip sanity check
 
@@ -45,7 +42,7 @@ Regression pattern: **import** → **`buildUniversalLeadSheetFromImportedLeadShe
 
 ### Known limitations
 
-- **Voices / staves:** Melody capture is **voice 1**, **staff 1** only; other voices and staves are skipped with warnings (**Phase 1** lead-sheet scope).
+- **Voices / staves:** Melody capture is **voice 1**, **staff 1** only; **voice 1** melody is **retained**; **voice > 1** (and non–staff-1) notes log **warnings** and are skipped for the melody track (**Phase 1** lead-sheet scope).
 - **Publisher quirks:** Nested repeats and rare jump combinations may diverge from another tool’s playback; importer **`warnings`** describe caps and fallbacks.
 
 ---
@@ -117,7 +114,17 @@ Song Mode applies **writer slices**: each slice owns **harmonic devices (d1–d5
 
 **Joni Mitchell** is a **shipped golden-path slice**: **`joniMitchellSlice.ts`**, **`jm:*`** device receipts, **`joniMitchellEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth (same pattern as Radiohead / James Brown). Pools emphasize **modal**, **pedal**, and **open-tuning-friendly** colours (**add9**, **sus2/sus4**, **slash** pedals, **maj(add9)** rows — see **`SONGWRITER_CHORD_POOLS.joni_mitchell`**).
 
-**Alternate tuning:** Style **`STYLE_JONI_MITCHELL`** surfaces the **`joni_mitchell`** **zone** in **Generate**’s alternate-tuning selector (`alternateGuitarTunings.ts`). Voicing maps vs every preset remain a **follow-up** where the Tonality Vault is thin—if comp feels disconnected, compare **standard** vs labelled open preset on the same **seed**.
+**Open-tuning philosophy (pedagogy, not a transcription engine)**
+
+- Real-world Joni repertoire is tied to **non-standard tunings** (e.g. **DADGAD**, **CGDGCD**, **DADDAD**, drop/add variants). The engine represents tunings through **`alternateGuitarTunings.ts`** zone **`joni_mitchell`** — presets carry **six string pitches** (`AlternateGuitarTuningPreset.strings`) for UI + metadata.
+- **`GuitarTuningState`** (**`sonicYouthChordTypes.ts`**, shared shape name) encodes **open-string MIDI grid**, **fret pattern**, **drone string mask**, and **noise level** per guitar when a profile attaches tuning-aware comp metadata. **Sonic Youth** uses **`GuitarTuningState`** on **`ChordEvent.sonicYouth`** for dual-guitar noise harmony; **Joni** slice harmony generation reads **resolved alternate tuning** from the duo / Song Mode pipeline so **voicing and fingered shapes** bias toward **strings that can ring open**—exact fretmaps remain **bounded** by the golden-path guitar passes, not a full tablature solver.
+
+**How alternate tunings affect chord voicing**
+
+- Selecting a **Joni zone preset** changes **resolved string pitches** used by layout/comp passes (same seed → different **vertical spacing** vs standard tuning when the pipeline applies tuning-aware behaviour).
+- Where **Tonality Vault / per-preset voicing maps** are incomplete, prefer **A/B the same seed** with **standard** vs **named open preset** rather than expecting perfect folk authenticity on every bar.
+
+**Alternate tuning in Generate:** Style **`STYLE_JONI_MITCHELL`** surfaces the **`joni_mitchell`** **zone** in **Generate**’s alternate-tuning selector (`getPresetsByZone('joni_mitchell')`).
 
 ### Scenario 7: Picking a writer for a lesson plan
 
@@ -133,49 +140,108 @@ Turn **d1–d5 hit rates** and **guard receipts** into a **checklist** for stude
 
 ### Sonic Youth (dual guitar, noise harmony, and texture)
 
-**Still current (engine + docs alignment):** **`sonicYouthSlice.ts`**, **`sy:*`** receipts, **`sonicYouthEffectiveHarmonyBars`**, **`ChordEvent.sonicYouth`** + **`SYTextureState`** (**`sonicYouthTextureEngine.ts`** / **`sonicYouthChordGuards.ts`**), MusicXML texture ornament mapping on comp chords (**`musicxmlExporter.ts`**), smoke **`sonicYouthSliceSmoke.test.ts`** + **`sonicYouthTexture.test.ts`**.
+**Still current:** **`sonicYouthSlice.ts`**, **`sy:*`** receipts, **`sonicYouthEffectiveHarmonyBars`**, **`ChordEvent.sonicYouth`** + **`SYTextureState`**, **`sonicYouthTextureEngine.ts`**, **`sonicYouthChordGuards.ts`**, **`musicxmlExporter.ts`** texture augmentation, smoke **`sonicYouthSliceSmoke.test.ts`** + **`sonicYouthTexture.test.ts`**.
 
 **Sonic Youth** is a **duo / dual-electric** slice: harmony uses **`sy:*`** device receipts and **`sonicYouthEffectiveHarmonyBars`** (same **getChordForBar** truth pattern as other locked-harmony writers). On comp **`ChordEvent`s**, optional metadata lives on **`ChordEvent.sonicYouth`** (`SonicYouthExtension` in **`sonicYouthChordTypes.ts`**).
 
-**Alternate tunings workflow (noise-rock zones)**
+**Profile gating (critical)**
 
-1. Set **primary writer** to **Sonic Youth** (aliases resolve via registry).
-2. In **Generate**, open **alternate tuning** controls and choose zone **`sonic_youth_noise`** (`getPresetsByZone('sonic_youth_noise')` in **`alternateGuitarTunings.ts`**) — presets label **drone / slack / prepared** colours aligned with the slice.
-3. Lock a **seed**, generate, inspect **`sy:*`** receipts + **`sonicYouthDiagnostics`** on the manifest.
-4. Export MusicXML: **fixed-offset** tunings that change concert pitch (**Drop D**, **Eb standard**) also emit **`<transpose><chromatic>`** in **measure 1** attributes (**`exportPartTransposeSemitones`**); **scordatura-only** labels stay text (**exportMeasure1TuningWordsByPartId**).
+- **`sonicYouth`** metadata is **only meaningful** when the **primary songwriter** is the **Sonic Youth** slice (`sonic_youth` / aliases). **`isSonicYouthEvent`** only checks **`event.sonicYouth != null`**; export and duo passes should branch on **`sonicYouth`** **only when** the active profile/songwriter is Sonic Youth — otherwise **`sonicYouth`** must not leak into default paths (**`sonicYouthChordTypes.ts`** / **`sonicYouthChordGuards.ts`** pipeline notes).
+
+**`SYTextureState` (four macro phases)**
+
+| State | Role |
+|-------|------|
+| **`riff`** | Cellular, repeating material. |
+| **`shimmer`** | Sustained, beating layer. |
+| **`noise_wall`** | High-density / feedback-leaning wall. |
+| **`clearing`** | Drop in weight (reset / space). |
+
+**`getNextTextureState(current, noiseLevel, dissonance)`** (`sonicYouthTextureEngine.ts`)
+
+- **`NoiseLevel`:** **`clean`**, **`crunchy`**, **`feedback`**, **`prepared`** (`sonicYouthChordTypes.ts`).
+- **`SYDissonancePreset`:** **`low_friction`**, **`medium_friction`**, **`high_friction`** (from **`interGuitarDissonance.preset`** / **`getSYDissonancePreset(score)`**).
+- **Prepared shortcut:** any **`noiseLevel === 'prepared'`** → next state is always **`clearing`**.
+- **Unbiased cycle** ( **`crunchy`** noise + **`medium_friction`** ): **riff → shimmer → noise_wall → clearing → riff**.
+- **Bias rules:** **`noiseWallBias`** = **`feedback`** OR **`high_friction`**; **`riffShimmerBias`** = **`clean`** OR **`low_friction`**. When both biases fire, **`high_friction`** wins ties toward **`noise_wall`**; **`low_friction`** pulls **`noise_wall` → shimmer** on exit; **`feedback`** / **`clean`** mirror noise-wall entry/exit similarly (see source).
+
+**Full transition table (next state)**
+
+| Current | noise | dissonance | Next |
+|---------|-------|------------|------|
+| riff | clean | low_friction | shimmer |
+| riff | clean | medium_friction | shimmer |
+| riff | clean | high_friction | noise_wall |
+| riff | crunchy | low_friction | shimmer |
+| riff | crunchy | medium_friction | shimmer |
+| riff | crunchy | high_friction | noise_wall |
+| riff | feedback | low_friction | shimmer |
+| riff | feedback | medium_friction | noise_wall |
+| riff | feedback | high_friction | noise_wall |
+| riff | prepared | low_friction | clearing |
+| riff | prepared | medium_friction | clearing |
+| riff | prepared | high_friction | clearing |
+| shimmer | clean | low_friction | noise_wall |
+| shimmer | clean | medium_friction | noise_wall |
+| shimmer | clean | high_friction | noise_wall |
+| shimmer | crunchy | low_friction | noise_wall |
+| shimmer | crunchy | medium_friction | noise_wall |
+| shimmer | crunchy | high_friction | noise_wall |
+| shimmer | feedback | low_friction | noise_wall |
+| shimmer | feedback | medium_friction | noise_wall |
+| shimmer | feedback | high_friction | noise_wall |
+| shimmer | prepared | low_friction | clearing |
+| shimmer | prepared | medium_friction | clearing |
+| shimmer | prepared | high_friction | clearing |
+| noise_wall | clean | low_friction | shimmer |
+| noise_wall | clean | medium_friction | shimmer |
+| noise_wall | clean | high_friction | clearing |
+| noise_wall | crunchy | low_friction | shimmer |
+| noise_wall | crunchy | medium_friction | clearing |
+| noise_wall | crunchy | high_friction | clearing |
+| noise_wall | feedback | low_friction | shimmer |
+| noise_wall | feedback | medium_friction | clearing |
+| noise_wall | feedback | high_friction | clearing |
+| noise_wall | prepared | low_friction | clearing |
+| noise_wall | prepared | medium_friction | clearing |
+| noise_wall | prepared | high_friction | clearing |
+| clearing | clean | low_friction | riff |
+| clearing | clean | medium_friction | riff |
+| clearing | clean | high_friction | noise_wall |
+| clearing | crunchy | low_friction | riff |
+| clearing | crunchy | medium_friction | riff |
+| clearing | crunchy | high_friction | noise_wall |
+| clearing | feedback | low_friction | riff |
+| clearing | feedback | medium_friction | noise_wall |
+| clearing | feedback | high_friction | noise_wall |
+| clearing | prepared | low_friction | clearing |
+| clearing | prepared | medium_friction | clearing |
+| clearing | prepared | high_friction | clearing |
 
 **Two-guitar architecture**
 
-- **`guitar1` / `guitar2`:** each holds a **`GuitarTuningState`** (tuning id, open string MIDI grid, shape id, fret pattern, string mask, **drone** string mask, **noise** level). This models **separate tunings** and **prepared / feedback** colour per instrument.
-- **`interGuitarDissonance`:** compact cross-guitar friction (**score** 0–1, interval tallies, **`SYDissonancePreset`**: low / medium / high friction). It pairs with the texture engine’s **dissonance** input.
+- **`guitar1`** / **`guitar2`**: each **`SonicYouthExtension`** carries a **`GuitarTuningState`**: **`tuningId`**, **`openPitches`** (six-string MIDI), **`shapeId`**, **`fretPattern`**, **`stringMask`**, **`droneStrings`**, **`noiseLevel`** (`clean` / `crunchy` / `feedback` / `prepared`).
+- **`interGuitarDissonance`**: **`score`** (0–1), interval tallies (**minor2**, **major2**, **tritone**, **unison** counts), **`preset`** ∈ **`SYDissonancePreset`** — feeds **`getNextTextureState`** as **`dissonance`**.
 
-**`SYTextureState` (macro phase, four values)**
+**Alternate tunings workflow (`guitar1` / `guitar2`)**
 
-1. **`riff`** — cellular, repeating material.  
-2. **`shimmer`** — sustained, beating layer.  
-3. **`noise_wall`** — high-density / feedback-leaning wall.  
-4. **`clearing`** — drop in weight (reset / space).
+1. Set **primary writer** to **Sonic Youth** (registry aliases).
+2. In **Generate**, use **alternate tuning** zone **`sonic_youth_noise`** (`getPresetsByZone('sonic_youth_noise')`).
+3. Prefer **separate-tuning mode** (dual-electric) when you want **different `GuitarTuningState` rows** per guitar; **shared** mode keeps one resolved spec for both where the UI allows.
+4. **Drop D** / **Eb standard**: see **§11 Alternate tunings workflow** — **`exportPartTransposeSemitones`** drives **`<transpose><chromatic>`** on **measure 1** `<attributes>`; **label-only** scordatura stays **`exportMeasure1TuningWordsByPartId`** text.
 
-**`textureState`** on **`SonicYouthExtension`** is the **current** phase for that bar (derived from a deterministic chain from bar 1). **`getNextTextureState(current, noiseLevel, dissonance)`** (`sonicYouthTextureEngine.ts`) advances the cycle:
+**Guards:** **`isSonicYouthEvent`** (narrow **`ChordEvent & { sonicYouth: SonicYouthExtension }`**), **`getSYTextureState`** (reads **`textureState`**).
 
-- Default edge order: **riff → shimmer → noise_wall → clearing → riff**.  
-- **`clean`** noise and/or **`low_friction`** bias back toward the **riff / shimmer** side (e.g. from **noise_wall**, the next step may be **shimmer** instead of **clearing**).  
-- **`feedback`** noise and/or **`high_friction`** bias toward **noise_wall** (e.g. from **riff** / **shimmer** / **clearing**, the next step may jump to **noise_wall**).  
-- **`prepared`** (prepared-piano / prepared-guitar style noise) forces the next state to **`clearing`**.  
-- Combined biases use **dissonance** first, then **noise level**, when both pull.
+**MusicXML mapping** (`sonicYouthChordExportAugmentation` / **`musicxmlExporter.ts`**) — first chord notehead only (stacks unchanged):
 
-**Guards:** **`isSonicYouthEvent`**, **`getSYTextureState`** (`sonicYouthChordGuards.ts`).
+| **`textureState`** | XML |
+|---------------------|-----|
+| **riff** | No extra dynamics or articulation. |
+| **shimmer** | `<tremolo type="single">3</tremolo>` (*v1 — no wavy-line.*) |
+| **noise_wall** | Note **`dynamics="127"`** (fff-class) + **`<stress/>`** articulation. |
+| **clearing** | Note **`dynamics="24"`** (ppp-class); no extra articulation. |
 
-**MusicXML (comp `ChordEvent` with `sonicYouth` only)** — **`musicxmlExporter.ts`** maps texture to the **first notehead** of the chord (stacked tones unchanged):
-
-| Texture      | Notation / dynamics |
-|-------------|---------------------|
-| **riff**    | No extra dynamics or articulation XML. |
-| **shimmer** | **Tremolo** ornament (`<tremolo type="single">3</tremolo>`) — *v1 uses tremolo; wavy-line is not emitted.* |
-| **noise_wall** | **Note** `dynamics="127"` (loud / **fff**-class) + **`<stress/>`** articulation. |
-| **clearing**   | **Note** `dynamics="24"` (soft / **ppp**-class); no extra articulation. |
-
-Regression: smoke suite **`Sonic Youth texture + MusicXML augmentation`** (`core/score-model/__tests__/sonicYouthTexture.test.ts`).
+Regression: smoke **`Sonic Youth texture + MusicXML augmentation`** (`core/score-model/__tests__/sonicYouthTexture.test.ts`).
 
 ### Scenario 9b: Sonic Youth texture in the host
 
@@ -199,9 +265,32 @@ Select zone **before** locking seed—changing zone may shift **tuning preset li
 
 ### Donald Fagen and Bill Evans — odd-meter presets (`barMeterMap`)
 
-**Song Mode** exposes optional **composer meter presets** for **Donald Fagen** and **Bill Evans** (same UI affordance as **Dave Brubeck**, **Thelonious Monk**, **Wayne Shorter**, **Frank Zappa**): tiled **`barMeterMap`** rows drive per-bar **`<time>`** in MusicXML and phrase quantisation (**`oddMeterQuantiser.ts`**, **`COMPOSER_METER_PRESET_MAP`**). Choosing **All 4/4** omits **`barMeterMap`**.
+Odd-meter **Song Mode** tiles **`barMeterMap`** from named cycles (**`tileZappaMeterCycle`** in **`oddMeterQuantiser.ts`**). UI preset lists are keyed by **composer id** on **`COMPOSER_METER_PRESET_MAP`** (**`HomeGenerate.tsx`** iterates this map — adding a composer here surfaces presets automatically).
 
-**Workflow:** Select writer → expand **meter preset** radio block in **Generate** → pick a cycle (e.g. Fagen **7+5**, Evans alternating metres) → lock **seed** → verify **per-bar time signatures** in XML if the host collapses display.
+**`ComposerOddMeterSongwriterId`** (`keyof typeof COMPOSER_METER_PRESET_MAP`) — **`core`** types include **`donald_fagen`** and **`bill_evans`** alongside **`dave_brubeck`**, **`thelonious_monk`**, **`wayne_shorter`**.
+
+**`FAGEN_METER_CYCLE_PRESET_DEFINITIONS`**
+
+| Preset id | Label | Cycle (repeats across bars) |
+|-----------|-------|-------------------------------|
+| `fagen_seven_four` | Fagen 7/4 | 7/4 |
+| `fagen_five_four` | Fagen 5/4 | 5/4 |
+| `fagen_seven_five` | Fagen 7+5 | 7/4 then 5/4 (2-bar cycle) |
+| `fagen_igy_feel` | IGY Feel | 4/4, 4/4, 3/4 |
+
+**`EVANS_METER_CYCLE_PRESET_DEFINITIONS`**
+
+| Preset id | Label | Cycle |
+|-----------|-------|-------|
+| `evans_three_four` | Evans 3/4 | 3/4 |
+| `evans_five_four` | Evans 5/4 | 5/4 |
+| `evans_five_three` | Evans 5+3 | 5/4 then 3/4 |
+| `evans_nine_eight` | Evans 9/8 | 9/8 |
+| `evans_peace_piece` | Peace Piece | 4/4 (beat grouping 3+3+2) |
+
+**Helpers:** **`isComposerOddMeterSongwriter(id)`**, **`buildComposerOddMeterRows(songwriterId, presetId, barCount)`** — **`all_4_4`** or unknown id → all **4/4** rows.
+
+**Workflow:** Select **Donald Fagen** or **Bill Evans** → **meter preset** radio block in **Generate** → pick cycle → lock **seed** → verify **per-bar `<time>`** in MusicXML vs host display collapse.
 
 ### Scenario 11: Big Band vs String Quartet expectations
 
@@ -362,7 +451,17 @@ Use this checklist **for any writer** where **`styleProfileSupportsAlternateGuit
 | 2 | Open **alternate tuning** — presets are grouped into **zones**: **`jazz_sophisticated`**, **`sonic_youth_noise`**, **`joni_mitchell`**, **`hybrid_harmonic`** (`getPresetsByZone`). |
 | 3 | Pick **shared** vs **separate** dual-guitar tuning mode when using duo / Indie routes. |
 | 4 | Generate and verify **manifest** tuning resolution + **`alternateGuitarTunings`** receipts where emitted. |
-| 5 | Export **MusicXML**: **Drop D** (−2 semitones) and **Eb standard** (−1) write **`<transpose><chromatic>`** under **measure 1** `<attributes>`; other presets remain **direction text** unless they carry a fixed chromatic offset in the model. |
+| 5 | Export **MusicXML** (see below). |
+
+**Transpose vs text-only scordatura**
+
+| Preset class | `ScoreModel.exportPartTransposeSemitones` | MusicXML |
+|--------------|-------------------------------------------|----------|
+| **Drop D** | **−2** semitones (concert pitch vs written) | **`<transpose><chromatic>-2</chromatic></transpose>`** in **measure 1** `<attributes>` (plus tuning words when set). |
+| **Eb standard** | **−1** semitone | **`<transpose><chromatic>-1</chromatic></transpose>`** same placement. |
+| **Pure scordatura / label-only tunings** | No chromatic offset in model | **No `<transpose>` block** — **`exportMeasure1TuningWordsByPartId`** direction text only (host-dependent engraving). |
+
+**Sibelius-safe constraints:** **`musicxmlExporter.ts`** emits **`<transpose>`** only inside **measure 1 `<attributes>`** on the written staff — **not** nested under **`<score-instrument>`** (avoids schema/host quirks).
 
 Regression: **`alternateGuitarTunings.test.ts`** + smoke tier row **Alternate guitar tunings (zones + texture)**.
 
