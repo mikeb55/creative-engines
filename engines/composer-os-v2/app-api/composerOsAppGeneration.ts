@@ -1844,6 +1844,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
+    ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
   };
   const realised = runBigBandRealisation(bigBandRealisationInput);
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */

@@ -33,6 +33,7 @@ import {
 } from '../orchestration/orchestrationValidation';
 import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
 
 export interface BigBandRunInput {
   seed: number;
@@ -64,6 +65,8 @@ export interface BigBandRunInput {
    * Distinct from Generate UI `blues12` (12-bar duo/song option) in the app `formOptions` list.
    */
   formId?: string;
+  /** Optional per-bar meter map — passed through to score realisation (`buildBigBandScoreModel`). */
+  barMeterMap?: BarMeterMap;
 }
 
 export interface BigBandRunManifestHints {

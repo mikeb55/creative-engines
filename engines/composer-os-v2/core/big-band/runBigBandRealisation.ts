@@ -3,7 +3,11 @@
  */
 
 import { buildBigBandScoreModel } from './bigBandScoreBuilder';
+import type { BigBandFormPlan } from './bigBandPlanTypes';
+import type { CompositionContext } from '../compositionContext';
+import type { GenerationMetadata } from '../compositionContext';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
+import { precomputeFrankZappaEffectiveHarmonyBars } from '../song-mode/frankZappaSlice';
 import { applyReferenceInfluence } from '../reference-import/applyReferenceInfluence';
 import { extractReferenceBehaviour } from '../reference-import/extractReferenceBehaviour';
 import { parseMusicXmlReference } from '../reference-import/musicXmlReferenceParser';
@@ -24,6 +28,36 @@ export interface BigBandRealisationResult {
   exportPipeline: ReturnType<typeof runEnsembleExportPipeline>;
   /** Behaviour hints from optional ensemble MusicXML reference import (additive; no score cloning). */
   referenceInfluence?: ReferenceInfluenceEnvelope;
+  /** Populated when `songwriterStyleId === 'frank_zappa'` and harmony precompute ran. */
+  frankZappaDeviceReceipts?: string[];
+}
+
+/** Minimal `CompositionContext` for `precomputeFrankZappaEffectiveHarmonyBars` (locked bars + form sections). */
+function buildFrankZappaBigBandCompositionContext(args: {
+  seed: number;
+  chordBars: string[];
+  formPlan: BigBandFormPlan;
+}): CompositionContext {
+  const tb = args.chordBars.length;
+  const sections = args.formPlan.slices.map((sl) => ({
+    label: String(sl.phase ?? `slice_${sl.index}`),
+    startBar: sl.startBar,
+    length: Math.max(1, sl.endBar - sl.startBar + 1),
+  }));
+
+  const generationMetadata: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    songwriterStyleId: 'frank_zappa',
+  };
+
+  return {
+    systemVersion: '2.0.0',
+    presetId: 'big_band',
+    seed: args.seed,
+    form: { totalBars: tb, sections },
+    lockedHarmonyBarsRaw: [...args.chordBars],
+    generationMetadata,
+  } as unknown as CompositionContext;
 }
 
 export function runBigBandRealisation(
@@ -89,6 +123,27 @@ export function runBigBandRealisation(
     chordBars = p.ok ? p.bars : undefined;
   }
 
+  let frankZappaDeviceReceipts: string[] | undefined;
+  const sw = typeof input.songwriterStyleId === 'string' ? input.songwriterStyleId.trim().toLowerCase() : '';
+  if (sw === 'frank_zappa' && chordBars && chordBars.length === tb && tb > 0) {
+    const fzCtx = buildFrankZappaBigBandCompositionContext({
+      seed: input.seed,
+      chordBars,
+      formPlan: planning.formPlan,
+    });
+    precomputeFrankZappaEffectiveHarmonyBars(fzCtx);
+    const meta = fzCtx.generationMetadata as GenerationMetadata & {
+      frankZappaEffectiveHarmonyBars?: string[];
+      frankZappaDeviceReceipts?: string[];
+    };
+    if (Array.isArray(meta.frankZappaEffectiveHarmonyBars) && meta.frankZappaEffectiveHarmonyBars.length === tb) {
+      chordBars = [...meta.frankZappaEffectiveHarmonyBars];
+    }
+    if (meta.frankZappaDeviceReceipts?.length) {
+      frankZappaDeviceReceipts = [...meta.frankZappaDeviceReceipts];
+    }
+  }
+
   const wybleLayout =
     input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
 
@@ -108,6 +163,7 @@ export function runBigBandRealisation(
     ...(input.allowedOutsideOverride !== undefined
       ? { allowedOutsideOverride: input.allowedOutsideOverride }
       : {}),
+    ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
   });
 
   const exportPipeline = runEnsembleExportPipeline(score, {
@@ -121,5 +177,6 @@ export function runBigBandRealisation(
     score,
     exportPipeline,
     ...(referenceInfluence ? { referenceInfluence } : {}),
+    ...(frankZappaDeviceReceipts ? { frankZappaDeviceReceipts } : {}),
   };
 }
