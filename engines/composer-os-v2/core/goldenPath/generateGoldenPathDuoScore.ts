@@ -278,9 +278,14 @@ import { applySongModeExpressionC6 } from './songModeExpressionC6';
 import { applySongModeSpaceC7 } from './songModeSpaceC7';
 import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA';
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
+import { getSonicYouthTextureStateAtBar } from '../song-mode/sonicYouthSlice';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
-import { formatAlternateGuitarTuningExportLine, styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
+import {
+  buildExportPartTransposeSemitonesFromResolvedAlternateTuning,
+  formatAlternateGuitarTuningExportLine,
+  styleProfileSupportsAlternateGuitarTuning,
+} from '../song-mode/alternateGuitarTunings';
 import { buildResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
 import {
   applySlonimskyToMelodyLine,
@@ -2209,6 +2214,10 @@ function buildGuitarPart(
   const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
   const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
   const isSongwriterPatMetheny = genMeta?.songwriterStyleId === 'pat_metheny';
+  const styleProf = normalizeStyleProfileId(genMeta?.styleProfile);
+  const styleSonicYouthSurface = styleProf === 'STYLE_SONIC_YOUTH';
+  const styleJoniMitchellSurface = styleProf === 'STYLE_JONI_MITCHELL';
+  const stylePatMethenySurface = styleProf === 'STYLE_PAT_METHENY';
   const isSongwriterWayneShorter = genMeta?.songwriterStyleId === 'wayne_shorter';
   const isSongwriterFrankZappa =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'frank_zappa';
@@ -2248,13 +2257,13 @@ function buildGuitarPart(
   if (isSongwriterJamesBrown && isDuoGoldenPath) {
     precomputeJamesBrownEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJoniMitchell && isDuoGoldenPath) {
+  if ((isSongwriterJoniMitchell || styleJoniMitchellSurface) && isDuoGoldenPath) {
     precomputeJoniMitchellEffectiveHarmonyBars(context);
   }
-  if (isSongwriterSonicYouth && isDuoGoldenPath) {
+  if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGoldenPath) {
     precomputeSonicYouthEffectiveHarmonyBars(context);
   }
-  if (isSongwriterPatMetheny && isDuoGoldenPath) {
+  if ((isSongwriterPatMetheny || stylePatMethenySurface) && isDuoGoldenPath) {
     precomputePatMethenyEffectiveHarmonyBars(context);
   }
   if (isSongwriterWayneShorter && isDuoGoldenPath) {
@@ -2418,21 +2427,21 @@ function buildGuitarPart(
         jbAccum
       );
     }
-    if (isSongwriterJoniMitchell) {
+    if (isSongwriterJoniMitchell || styleJoniMitchellSurface) {
       accumulateJoniMitchellHarmonyDiagnostics(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         jmAccum
       );
     }
-    if (isSongwriterSonicYouth) {
+    if (isSongwriterSonicYouth || styleSonicYouthSurface) {
       accumulateSonicYouthHarmonyDiagnostics(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         syAccum
       );
     }
-    if (isSongwriterPatMetheny) {
+    if (isSongwriterPatMetheny || stylePatMethenySurface) {
       accumulatePatMethenyHarmonyDiagnostics(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
@@ -2661,7 +2670,7 @@ function buildGuitarPart(
         applyJamesBrownGuitarBarPasses(m, b, context);
         normalizeMeasureToEighthBeatGrid(m);
       }
-      if (isSongwriterSonicYouth && isDuoGolden) {
+      if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGolden) {
         applySonicYouthGuitarBarPasses(m, b, context);
         normalizeMeasureToEighthBeatGrid(m);
       }
@@ -2976,7 +2985,7 @@ function buildGuitarPart(
         applyStevieWonderGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh);
         normalizeMeasureToEighthBeatGrid(m);
       }
-      if (isSongwriterSonicYouth && isDuoGolden) {
+      if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGolden) {
         applySonicYouthGuitarBarPasses(m, b, context);
         normalizeMeasureToEighthBeatGrid(m);
       }
@@ -3020,15 +3029,15 @@ function buildGuitarPart(
     finalizeJamesBrownMetadata(context.generationMetadata, jbAccum);
   }
 
-  if (isSongwriterJoniMitchell && context.generationMetadata) {
+  if ((isSongwriterJoniMitchell || styleJoniMitchellSurface) && context.generationMetadata) {
     finalizeJoniMitchellMetadata(context.generationMetadata, jmAccum);
   }
 
-  if (isSongwriterSonicYouth && context.generationMetadata) {
+  if ((isSongwriterSonicYouth || styleSonicYouthSurface) && context.generationMetadata) {
     finalizeSonicYouthMetadata(context.generationMetadata, syAccum);
   }
 
-  if (isSongwriterPatMetheny && context.generationMetadata) {
+  if ((isSongwriterPatMetheny || stylePatMethenySurface) && context.generationMetadata) {
     finalizePatMethenyMetadata(context.generationMetadata, pmAccum);
   }
 
@@ -5382,6 +5391,14 @@ export function generateGoldenPathDuoScore(
       if (Object.keys(byId).length > 0) rawScore.exportMeasure1TuningWordsByPartId = byId;
     }
   }
+  {
+    const transposeByPart = buildExportPartTransposeSemitonesFromResolvedAlternateTuning(
+      context.generationMetadata?.alternateGuitarTuning
+    );
+    if (transposeByPart && Object.keys(transposeByPart).length > 0) {
+      rawScore.exportPartTransposeSemitones = transposeByPart;
+    }
+  }
   logEcmInternalPhaseProbe(probeEcm, 'after_initial_score_setup', rawScore);
   if (isGuitarBassDuoFamily(context.presetId)) {
     rawScore.duoRhythmSnap = 'eighth_beats';
@@ -5428,7 +5445,11 @@ export function generateGoldenPathDuoScore(
     isGuitarBassDuoFamily(context.presetId)
   ) {
     const sp = context.generationMetadata.styleProfile ?? 'STYLE_ECM';
-    applySongModeStyleEngineToScore(afterExpressive, context.seed, sp);
+    const spNorm = normalizeStyleProfileId(sp);
+    applySongModeStyleEngineToScore(afterExpressive, context.seed, sp, {
+      sonicYouthTextureAtBar:
+        spNorm === 'STYLE_SONIC_YOUTH' ? (bar) => getSonicYouthTextureStateAtBar(context, bar) : undefined,
+    });
   }
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&

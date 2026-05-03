@@ -128,17 +128,17 @@ export function assertScoreMatchesLockedHarmonyWire(
               jbEff.length === tb &&
               jbEff.length === wire.length
             ? jbEff
-            : md?.songwriterStyleId === 'joni_mitchell' &&
+            : (md?.songwriterStyleId === 'joni_mitchell' || md?.styleProfile === 'STYLE_JONI_MITCHELL') &&
                 Array.isArray(jmEff) &&
                 jmEff.length === tb &&
                 jmEff.length === wire.length
               ? jmEff
-              : md?.songwriterStyleId === 'sonic_youth' &&
+              : (md?.songwriterStyleId === 'sonic_youth' || md?.styleProfile === 'STYLE_SONIC_YOUTH') &&
                   Array.isArray(syEff) &&
                   syEff.length === tb &&
                   syEff.length === wire.length
                 ? syEff
-                : md?.songwriterStyleId === 'pat_metheny' &&
+                : (md?.songwriterStyleId === 'pat_metheny' || md?.styleProfile === 'STYLE_PAT_METHENY') &&
                     Array.isArray(pmEff) &&
                     pmEff.length === tb &&
                     pmEff.length === wire.length

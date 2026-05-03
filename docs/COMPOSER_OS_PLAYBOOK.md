@@ -188,6 +188,21 @@ Song Mode applies **writer slices**: each slice owns **harmonic devices (d1–d5
 
 **Aliases:** Many writers register shortcuts (`monk`, `bird`, `fz`, …)—try them in quick experiments.
 
+### Song Mode Style Engine (`StyleProfile`)
+
+The Generate **Style Engine** dropdown lists **`StyleProfile`** ids (`songModeStyleProfile.ts`). Options are grouped into **Advanced styles** vs **Light touch styles** (`SONG_MODE_ADVANCED_STYLE_SET` in **`HomeGenerate.tsx`**).
+
+- **Advanced:** Profiles that apply **harmony/rhythm metadata surfaces**, **builtin chord-plan policies**, or **golden-path slice wiring** (effective harmony bars, guitar bar passes, receipts) beyond velocity-only contouring. Examples: **Post-Bop (Shorter)**, **Modern Jazz**, **Sophisticated Pop**, **Groove / Soul**, and — as of the style-to-slice wiring — **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**.
+- **Light touch:** Primarily **velocity shaping** on the finished duo score (`applySongModeStyleEngineToScore`); may stack with era/style-pairing biases but does not alone run a full writer slice.
+
+**Wiring summary (Sonic Youth / Joni / Pat style ids)**
+
+| `StyleProfile` | Velocity layer | Engine wiring |
+|----------------|----------------|---------------|
+| **`STYLE_SONIC_YOUTH`** | Aggressive offbeat emphasis; **`noise_wall`** macro texture → large positive deltas; **`clearing`** → deep reduction; reads **`ChordEvent.sonicYouth.textureState`** when present, else **`getSonicYouthTextureStateAtBar`** (`sonicYouthSlice.ts`). | When primary songwriter **or** this style: **`precomputeSonicYouthEffectiveHarmonyBars`**, **`applySonicYouthGuitarBarPasses`**, **`getChordForBar`** / locked-truth paths accept **`sonicYouthEffectiveHarmonyBars`** (`harmonyResolution.ts`, **`customLockedHarmonyRouting.ts`**, **`runGoldenPath.ts`** export truth). |
+| **`STYLE_JONI_MITCHELL`** | Wide dynamic range; phrase-soft attack, peak toward bar midpoint (`startBeat` sine), gentle phrase tail. | **`applyJoniStyleFolkModalHarmonyPolicy`** (`joniStyleHarmonyPolicy.ts`) on **builtin** chord plans — lighter cadential gravity, suspended-colour preference. When songwriter **or** style: **`precomputeJoniMitchellEffectiveHarmonyBars`**, **`joniMitchellEffectiveHarmonyBars`** authority in **`getChordForBar`**. Alternate tuning gate unchanged (`alternateGuitarTunings.ts`). |
+| **`STYLE_PAT_METHENY`** | Lyrical swell (mid-bar peak), soft downbeats, phrase-end decay — avoids hard accents. | When songwriter **or** style: **`precomputePatMethenyEffectiveHarmonyBars`**, **`patMethenyEffectiveHarmonyBars`** in **`getChordForBar`** + locked export truth. |
+
 ### Joni Mitchell (Song Mode — open tunings, modal harmony)
 
 **Joni Mitchell** is a **shipped golden-path slice**: **`joniMitchellSlice.ts`**, **`jm:*`** device receipts, **`joniMitchellEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth (same pattern as Radiohead / James Brown). Pools emphasize **modal**, **pedal**, and **open-tuning-friendly** colours (**add9**, **sus2/sus4**, **slash** pedals, **maj(add9)** rows — see **`SONGWRITER_CHORD_POOLS.joni_mitchell`**).
@@ -224,7 +239,7 @@ Turn **d1–d5 hit rates** and **guard receipts** into a **checklist** for stude
 
 **Profile gating (critical)**
 
-- **`sonicYouth`** metadata is **only meaningful** when the **primary songwriter** is the **Sonic Youth** slice (`sonic_youth` / aliases). **`isSonicYouthEvent`** only checks **`event.sonicYouth != null`**; export and duo passes should branch on **`sonicYouth`** **only when** the active profile/songwriter is Sonic Youth — otherwise **`sonicYouth`** must not leak into default paths (**`sonicYouthChordTypes.ts`** / **`sonicYouthChordGuards.ts`** pipeline notes).
+- **`sonicYouth`** metadata is written when the **primary songwriter** is the Sonic Youth slice **or** the Song Mode style profile is **`STYLE_SONIC_YOUTH`** (`applySonicYouthGuitarBarPasses`). **`isSonicYouthEvent`** only checks **`event.sonicYouth != null`**; export and duo passes should branch on **`sonicYouth`** **only when** the active profile/songwriter indicates Sonic Youth behaviour — otherwise **`sonicYouth`** must not leak into default paths (**`sonicYouthChordTypes.ts`** / **`sonicYouthChordGuards.ts`** pipeline notes).
 
 **`SYTextureState` (four macro phases)**
 

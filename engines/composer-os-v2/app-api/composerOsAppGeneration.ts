@@ -1114,19 +1114,22 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
               lockedHarmonyBarsAuthoritative &&
               jbLockedTruth.length === lockedHarmonyBarsAuthoritative.length
             ? jbLockedTruth
-            : mdLockedTruth?.songwriterStyleId === 'joni_mitchell' &&
+            : (mdLockedTruth?.songwriterStyleId === 'joni_mitchell' ||
+                  mdLockedTruth?.styleProfile === 'STYLE_JONI_MITCHELL') &&
                 Array.isArray(jmLockedTruth) &&
                 jmLockedTruth.length === tbLockedTruth &&
                 lockedHarmonyBarsAuthoritative &&
                 jmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
               ? jmLockedTruth
-              : mdLockedTruth?.songwriterStyleId === 'sonic_youth' &&
+              : (mdLockedTruth?.songwriterStyleId === 'sonic_youth' ||
+                    mdLockedTruth?.styleProfile === 'STYLE_SONIC_YOUTH') &&
                   Array.isArray(syLockedTruth) &&
                   syLockedTruth.length === tbLockedTruth &&
                   lockedHarmonyBarsAuthoritative &&
                   syLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                 ? syLockedTruth
-                : mdLockedTruth?.songwriterStyleId === 'pat_metheny' &&
+                : (mdLockedTruth?.songwriterStyleId === 'pat_metheny' ||
+                      mdLockedTruth?.styleProfile === 'STYLE_PAT_METHENY') &&
                     Array.isArray(pmLockedTruth) &&
                     pmLockedTruth.length === tbLockedTruth &&
                     lockedHarmonyBarsAuthoritative &&

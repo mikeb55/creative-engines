@@ -526,6 +526,10 @@ const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
   'STYLE_MODERN_JAZZ',
   'STYLE_SOPHISTICATED_POP',
   'STYLE_GROOVE_SOUL',
+  /** Wired to songwriter slice logic (harmony precompute + passes / velocity); see playbook. */
+  'STYLE_SONIC_YOUTH',
+  'STYLE_JONI_MITCHELL',
+  'STYLE_PAT_METHENY',
 ]);
 
 function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {

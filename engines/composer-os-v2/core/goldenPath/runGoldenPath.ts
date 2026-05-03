@@ -105,6 +105,7 @@ import { chromaticStrengthToOutsideLevel } from '../slonimsky/slonimskyPatternSe
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
 import { applyEcmStyleHarmonyMotionPolicy } from '../song-mode/ecmStyleHarmonyPolicy';
+import { applyJoniStyleFolkModalHarmonyPolicy } from '../song-mode/joniStyleHarmonyPolicy';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
@@ -1754,6 +1755,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity) {
     applyEcmStyleHarmonyMotionPolicy(context);
   }
+  if (options?.songModeHookFirstIdentity) {
+    applyJoniStyleFolkModalHarmonyPolicy(context);
+  }
 
   appendHarmonyPipelineTrace(context, 'composition_context', [
     `totalBars=${context.form.totalBars}`,
@@ -2008,11 +2012,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ? swEx
         : mdEx?.songwriterStyleId === 'radiohead' && Array.isArray(rhEx) && rhEx.length === tbEx
           ? rhEx
-          : mdEx?.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmEx) && jmEx.length === tbEx
+          : (mdEx?.songwriterStyleId === 'joni_mitchell' || mdEx?.styleProfile === 'STYLE_JONI_MITCHELL') &&
+              Array.isArray(jmEx) &&
+              jmEx.length === tbEx
             ? jmEx
-            : mdEx?.songwriterStyleId === 'sonic_youth' && Array.isArray(syEx) && syEx.length === tbEx
+            : (mdEx?.songwriterStyleId === 'sonic_youth' || mdEx?.styleProfile === 'STYLE_SONIC_YOUTH') &&
+                Array.isArray(syEx) &&
+                syEx.length === tbEx
               ? syEx
-              : mdEx?.songwriterStyleId === 'pat_metheny' && Array.isArray(pmEx) && pmEx.length === tbEx
+              : (mdEx?.songwriterStyleId === 'pat_metheny' || mdEx?.styleProfile === 'STYLE_PAT_METHENY') &&
+                  Array.isArray(pmEx) &&
+                  pmEx.length === tbEx
                 ? pmEx
                 : mdEx?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsEx) && wsEx.length === tbEx
                   ? wsEx
@@ -2142,11 +2152,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
             ? rhLt
             : mdLt?.songwriterStyleId === 'james_brown' && Array.isArray(jbLt) && jbLt.length === tbLt
               ? jbLt
-              : mdLt?.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmLt) && jmLt.length === tbLt
+              : (mdLt?.songwriterStyleId === 'joni_mitchell' || mdLt?.styleProfile === 'STYLE_JONI_MITCHELL') &&
+                  Array.isArray(jmLt) &&
+                  jmLt.length === tbLt
                 ? jmLt
-                : mdLt?.songwriterStyleId === 'sonic_youth' && Array.isArray(syLt) && syLt.length === tbLt
+                : (mdLt?.songwriterStyleId === 'sonic_youth' || mdLt?.styleProfile === 'STYLE_SONIC_YOUTH') &&
+                    Array.isArray(syLt) &&
+                    syLt.length === tbLt
                   ? syLt
-                  : mdLt?.songwriterStyleId === 'pat_metheny' && Array.isArray(pmLt) && pmLt.length === tbLt
+                  : (mdLt?.songwriterStyleId === 'pat_metheny' || mdLt?.styleProfile === 'STYLE_PAT_METHENY') &&
+                      Array.isArray(pmLt) &&
+                      pmLt.length === tbLt
                     ? pmLt
                     : mdLt?.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsLt) && wsLt.length === tbLt
                       ? wsLt

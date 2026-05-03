@@ -11,8 +11,17 @@
  */
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
+import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
+import type { SYTextureState } from '../score-model/sonicYouthChordTypes';
 import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import type { StyleProfile } from './songModeStyleProfile';
+
+/** Optional hooks for profile-specific score context (velocity layer only). */
+export interface SongModeStyleEngineOpts {
+  /** When `STYLE_SONIC_YOUTH`, per-bar macro texture from `sonicYouthTextureEngine` (fallback if chord stubs omit `sonicYouth`). */
+  sonicYouthTextureAtBar?: (barIndex: number) => SYTextureState | undefined;
+}
 
 /** Song Mode long-form phrase length (bars); matches phrase engine segmentation. */
 const PHRASE_BARS = 4;
@@ -36,6 +45,15 @@ function positionInPhraseBar(barIndex: number): number {
   return (barIndex - 1) % PHRASE_BARS;
 }
 
+function inferSonicYouthTextureFromMeasure(m: MeasureModel): SYTextureState | undefined {
+  for (const e of m.events) {
+    if (e.kind !== 'chord') continue;
+    const tex = (e as ChordEvent).sonicYouth?.textureState;
+    if (tex) return tex;
+  }
+  return undefined;
+}
+
 /**
  * Per-note velocity delta from style + phrase + beat + register.
  * `micro` is seededUnit-based texture; phrase contour uses sin(phrase phase) only.
@@ -46,7 +64,8 @@ function velocityDeltaForNote(
   profileBand: number,
   barIndex: number,
   pitch: number,
-  startBeat: number
+  startBeat: number,
+  syTexture: SYTextureState | undefined
 ): number {
   const posInPhrase = positionInPhraseBar(barIndex);
   const phrasePhase = (posInPhrase + 0.5) / PHRASE_BARS;
@@ -129,13 +148,44 @@ function velocityDeltaForNote(
     return d;
   }
 
+  if (profile === 'STYLE_SONIC_YOUTH') {
+    let d = 6;
+    if (off) d += 14;
+    else if (strong) d += 5;
+    const tex = syTexture;
+    if (tex === 'noise_wall') d += 18;
+    else if (tex === 'clearing') d -= 16;
+    else if (tex === 'shimmer') d += 8;
+    else if (tex === 'riff') d += 3;
+    d += Math.round(micro * 0.55);
+    return d;
+  }
+
+  if (profile === 'STYLE_JONI_MITCHELL') {
+    const beatNorm = Math.min(1, Math.max(0, startBeat / BEATS_PER_MEASURE));
+    const midPeak = Math.sin(beatNorm * Math.PI);
+    let d = -14 + Math.round(midPeak * 28);
+    if (posInPhrase === 0) d -= 5;
+    if (posInPhrase === PHRASE_BARS - 1) d -= 4;
+    if (strong) d -= 3;
+    if (off) d += 7;
+    d += Math.round(micro * 0.85);
+    return d;
+  }
+
+  if (profile === 'STYLE_PAT_METHENY') {
+    const beatNorm = Math.min(1, Math.max(0, startBeat / BEATS_PER_MEASURE));
+    const swell = Math.sin(beatNorm * Math.PI);
+    let d = -8 + Math.round(swell * 14);
+    if (strong) d += 1;
+    else if (off) d += 3;
+    if (posInPhrase === PHRASE_BARS - 1) d -= 5;
+    if (posInPhrase === 0) d -= 2;
+    d += Math.round(micro * 0.45);
+    return d;
+  }
+
   if (profile === 'STYLE_SHORTER_POST_BOP') {
-    // STYLE_SHORTER_POST_BOP: velocity shaping applied here.
-    // Upper-extension chord tone bias is applied upstream
-    // in harmonyChordTonePolicy.ts via shorterMode flag.
-    // These two mechanisms together form the complete
-    // Wayne Shorter / Post-Bop style surface.
-    /** Phrase-edge push + stronger downbeats; wider contrast via full micro range. */
     let d = -3;
     if (posInPhrase === 0) d += 8;
     if (posInPhrase === PHRASE_BARS - 1) d += 6;
@@ -154,7 +204,12 @@ function velocityDeltaForNote(
   return d;
 }
 
-export function applySongModeStyleEngineToScore(score: ScoreModel, seed: number, profile: StyleProfile): void {
+export function applySongModeStyleEngineToScore(
+  score: ScoreModel,
+  seed: number,
+  profile: StyleProfile,
+  opts?: SongModeStyleEngineOpts
+): void {
   const profileBand =
     profile === 'STYLE_ECM' ? 0 :
     profile === 'STYLE_SHORTER_POST_BOP' ? 1 :
@@ -164,10 +219,19 @@ export function applySongModeStyleEngineToScore(score: ScoreModel, seed: number,
     profile === 'STYLE_SOPHISTICATED_POP' ? 5 :
     profile === 'STYLE_GROOVE_SOUL' ? 6 :
     profile === 'STYLE_INDIE_ART_POP' ? 7 :
-    profile === 'STYLE_FOLK_GUITAR_NARRATIVE' ? 8 : 9;
+    profile === 'STYLE_FOLK_GUITAR_NARRATIVE' ? 8 :
+    profile === 'STYLE_CLASSICAL_INFLUENCE' ? 9 :
+    profile === 'STYLE_SONIC_YOUTH' ? 10 :
+    profile === 'STYLE_JONI_MITCHELL' ? 11 :
+    profile === 'STYLE_PAT_METHENY' ? 12 :
+    profile === 'STYLE_ECM_CHAMBER' ? 13 : 14;
 
   for (const part of score.parts) {
     for (const m of part.measures) {
+      const syTexResolved =
+        profile === 'STYLE_SONIC_YOUTH'
+          ? opts?.sonicYouthTextureAtBar?.(m.index) ?? inferSonicYouthTextureFromMeasure(m)
+          : undefined;
       for (const e of m.events) {
         if (e.kind !== 'note') continue;
         const n = e as { velocity?: number; pitch: number; startBeat: number };
@@ -178,7 +242,8 @@ export function applySongModeStyleEngineToScore(score: ScoreModel, seed: number,
           profileBand,
           m.index,
           n.pitch,
-          n.startBeat
+          n.startBeat,
+          syTexResolved
         );
         n.velocity = Math.max(1, Math.min(127, v0 + delta));
       }

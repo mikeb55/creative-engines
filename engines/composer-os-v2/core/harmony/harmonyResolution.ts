@@ -120,7 +120,7 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
    */
   const jmEff = meta?.joniMitchellEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'joni_mitchell' &&
+    (meta?.songwriterStyleId === 'joni_mitchell' || meta?.styleProfile === 'STYLE_JONI_MITCHELL') &&
     Array.isArray(jmEff) &&
     jmEff.length === tb &&
     barIndex >= 1 &&
@@ -135,7 +135,7 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
    */
   const syEff = meta?.sonicYouthEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'sonic_youth' &&
+    (meta?.songwriterStyleId === 'sonic_youth' || meta?.styleProfile === 'STYLE_SONIC_YOUTH') &&
     Array.isArray(syEff) &&
     syEff.length === tb &&
     barIndex >= 1 &&
@@ -150,7 +150,7 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
    */
   const pmEff = meta?.patMethenyEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'pat_metheny' &&
+    (meta?.songwriterStyleId === 'pat_metheny' || meta?.styleProfile === 'STYLE_PAT_METHENY') &&
     Array.isArray(pmEff) &&
     pmEff.length === tb &&
     barIndex >= 1 &&

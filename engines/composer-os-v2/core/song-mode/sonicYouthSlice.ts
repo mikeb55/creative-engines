@@ -75,8 +75,8 @@ function frictionFromSymbol(symbol: string): number {
   return Math.min(1, x + seededUnit(symbol.length, 41, 88901) * 0.1);
 }
 
-/** Texture phase at this bar after deterministic transitions from bar 1 (`riff`). */
-function textureStateAtBar(context: CompositionContext, bar: number): SYTextureState {
+/** Texture phase at this bar after deterministic transitions from bar 1 (`riff`). Exported for Style Engine velocity + tests. */
+export function getSonicYouthTextureStateAtBar(context: CompositionContext, bar: number): SYTextureState {
   let s: SYTextureState = 'riff';
   for (let b = 1; b < bar; b++) {
     const sym = getChordForBar(b, context);
@@ -140,7 +140,7 @@ export function buildSonicYouthExtension(
       unisonCount: 0,
       preset,
     },
-    textureState: textureStateAtBar(context, bar) ?? 'riff',
+    textureState: getSonicYouthTextureStateAtBar(context, bar),
   };
 }
 
@@ -148,7 +148,8 @@ export function buildSonicYouthExtension(
  * Annotate comp chord stacks with compact `sonicYouth` metadata (does not alter pitches or export grid).
  */
 export function applySonicYouthGuitarBarPasses(m: MeasureModel, bar: number, context: CompositionContext): void {
-  if (!isSongwriterSonicYouth(context.generationMetadata)) return;
+  const sp = context.generationMetadata?.styleProfile;
+  if (!isSongwriterSonicYouth(context.generationMetadata) && sp !== 'STYLE_SONIC_YOUTH') return;
   const sym = m.chord ?? getChordForBar(bar, context);
   const seed = context.seed;
   for (const e of m.events) {
