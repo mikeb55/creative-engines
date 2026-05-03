@@ -598,6 +598,22 @@ Pair **ECM-style modal sparsity** with **long seeds** to avoid **phrase repetiti
 
 ---
 
+## Known Architectural Gaps
+
+Documented limitations—do not mistake UI labels for fully wired engine behaviour until addressed.
+
+### ARRANGER STYLES — KNOWN GAP
+
+The arranger dropdown in **Big Band** mode does not currently affect the generated music. The **`arrangerStyle`** value from the UI is never mapped to **`composerStyle`** before reaching the Big Band engine, so all arrangers produce identical output regardless of selection.
+
+Partial wiring exists for **four** arrangers in **Song Mode pairing** only (confidence scores, contrast nudges): **Ellington**, **Basie**, **Thad Jones**, **Maria Schneider**. The remaining **six** studio arrangers are UI labels only.
+
+When returning to this: the fix requires **(1)** a structural mapping of **`arrangerStyle` → `composerStyle`** in **`composerOsAppGeneration.ts`** before **`runBigBandMode`** is called, and **(2)** per-arranger research to define genuine musical distinctions for each one.
+
+**Priority:** low. Do not attempt until Big Band pipeline restructure is scoped as a dedicated workstream.
+
+---
+
 ## 12. Workflow recipes
 
 ### Scenario 34: One-hour workshop (lead sheet)

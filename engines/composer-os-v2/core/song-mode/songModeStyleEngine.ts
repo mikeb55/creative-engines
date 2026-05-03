@@ -77,7 +77,7 @@ function velocityDeltaForNote(
   const u = seededUnit(seed, profileBand + 80, salt);
   const micro = Math.round((u - 0.5) * 10);
 
-  if (profile === 'STYLE_ECM') {
+  if (profile === 'STYLE_ECM' || profile === 'STYLE_ECM_CHAMBER') {
     /** Softer overall; gentle mid-phrase swell; less downbeat-vs-offbeat contrast. */
     const gentleSwell = Math.round(sinContour * 5);
     let d = -7 + gentleSwell;

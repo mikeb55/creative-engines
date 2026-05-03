@@ -102,7 +102,7 @@ function maybeApplyPedal(chord: string, pedalRoot: string | null, band: EcmGravi
 }
 
 /**
- * Song Mode STYLE_ECM harmonic policy:
+ * Song Mode STYLE_ECM / STYLE_ECM_CHAMBER harmonic policy:
  * - opening bars stay open / non-cadential
  * - middle bars drift by colour + occasional pedal anchoring
  * - return bars avoid hard dominant gravity
@@ -110,7 +110,8 @@ function maybeApplyPedal(chord: string, pedalRoot: string | null, band: EcmGravi
 export function applyEcmStyleHarmonyMotionPolicy(context: CompositionContext): void {
   if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
-  if (context.generationMetadata?.styleProfile !== 'STYLE_ECM') return;
+  const sp = context.generationMetadata?.styleProfile;
+  if (sp !== 'STYLE_ECM' && sp !== 'STYLE_ECM_CHAMBER') return;
   if (context.generationMetadata?.harmonySource !== 'builtin') return;
   if (context.generationMetadata?.customHarmonyLocked === true) return;
 
@@ -133,6 +134,6 @@ export function applyEcmStyleHarmonyMotionPolicy(context: CompositionContext): v
 
   context.generationMetadata.songModeStyleSurfaceNotes = [
     ...(context.generationMetadata.songModeStyleSurfaceNotes ?? []),
-    'STYLE_ECM: harmonic motion policy v1 applied (modal colour drift, restrained cadence gravity, occasional bass pedal anchoring).',
+    `${sp}: harmonic motion policy v1 applied (modal colour drift, restrained cadence gravity, occasional bass pedal anchoring).`,
   ];
 }

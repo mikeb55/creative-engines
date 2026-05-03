@@ -46,11 +46,3 @@ export function runPatMethenySliceSmokeTests(): { name: string; ok: boolean }[] 
 
   return out;
 }
-
-describe('Pat Metheny slice smoke', () => {
-  it('runPatMethenySliceSmokeTests rows pass', () => {
-    for (const row of runPatMethenySliceSmokeTests()) {
-      expect(row.ok).toBe(true);
-    }
-  });
-});

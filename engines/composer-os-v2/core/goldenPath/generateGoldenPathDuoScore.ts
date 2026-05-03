@@ -4936,7 +4936,8 @@ export function generateGoldenPathDuoScore(
   const tb = totalBarsFromContext(context);
   const probeEcm = context.presetId === 'ecm_chamber' && process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
   logEcmInternalPhaseProbe(probeEcm, 'enter_generateGoldenPathDuoScore', undefined, { tb });
-  const isEcmStyle = context.generationMetadata?.styleProfile === 'STYLE_ECM';
+  const sp = context.generationMetadata?.styleProfile;
+  const isEcmStyle = sp === 'STYLE_ECM' || sp === 'STYLE_ECM_CHAMBER';
   let texturePlan: EcmBarTexture[] | undefined =
     (context.presetId === 'ecm_chamber' && context.generationMetadata?.ecmMode)
       ? planEcmTextureBars(tb, context.generationMetadata.ecmMode, context.seed)
