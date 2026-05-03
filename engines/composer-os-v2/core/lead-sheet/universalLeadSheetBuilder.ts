@@ -12,6 +12,69 @@ import type {
   UniversalRehearsalMark,
   UniversalRepeatMarker,
 } from './universalLeadSheetTypes';
+import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
+
+/**
+ * Sum section bar lengths; any section that contains a `repeat_end` marker counts double.
+ */
+export function computeTotalBarsWithRepeats(
+  formSections: UniversalFormSection[],
+  repeatMarkers: UniversalRepeatMarker[]
+): number {
+  let total = 0;
+  for (const s of formSections) {
+    const span = Math.max(0, s.barEnd - s.barStart + 1);
+    const hasRepeatEndInSection = repeatMarkers.some(
+      (m) => m.kind === 'repeat_end' && m.bar >= s.barStart && m.bar <= s.barEnd
+    );
+    total += hasRepeatEndInSection ? span * 2 : span;
+  }
+  return total;
+}
+
+/**
+ * Align each part’s measure list to `sheet.totalBars` by trimming or padding (last measure cloned).
+ * No-op when `totalBars` is unset or every part already has that many measures.
+ */
+export function applyRepeatTruthToScoreModel(
+  score: ScoreModel,
+  sheet: UniversalLeadSheet
+): ScoreModel {
+  const target = sheet.totalBars;
+  if (target === undefined || !Number.isFinite(target) || target < 0) return score;
+  const n = Math.max(0, Math.floor(target));
+
+  if (score.parts.length === 0) return score;
+
+  if (score.parts.every((p) => p.measures.length === n)) {
+    return score;
+  }
+
+  const out = structuredClone(score) as ScoreModel;
+  const meta = out as ScoreModel & { totalBars?: number; length?: number };
+
+  for (const part of out.parts) {
+    let ms = part.measures.map((m) => structuredClone(m) as MeasureModel);
+    if (ms.length > n) {
+      ms = ms.slice(0, n);
+    } else if (ms.length < n && ms.length > 0) {
+      const template = ms[ms.length - 1]!;
+      while (ms.length < n) {
+        ms.push(structuredClone(template) as MeasureModel);
+      }
+    }
+    part.measures = ms.map((m, i) => ({ ...m, index: i + 1 }));
+  }
+
+  if ('totalBars' in meta && typeof meta.totalBars === 'number') {
+    meta.totalBars = n;
+  }
+  if ('length' in meta && typeof meta.length === 'number') {
+    meta.length = n;
+  }
+
+  return out;
+}
 
 function parseEndingNumberFromMarker(raw: string | undefined): number | undefined {
   if (raw === undefined || raw.trim() === '') return undefined;
@@ -214,12 +277,15 @@ export function buildUniversalLeadSheetFromSongContract(contract: LeadSheetContr
  * Full universal contract from a MusicXML-imported {@link LeadSheet} (repeat markers, chords, sections).
  */
 export function buildUniversalLeadSheetFromImportedLeadSheet(lead: LeadSheet): UniversalLeadSheet {
+  const formSections = formSectionsFromImportedLeadSheet(lead);
   const repeatMarkers = universalRepeatMarkersFromLeadSheet(lead);
+  const totalBars = computeTotalBarsWithRepeats(formSections, repeatMarkers);
   return {
     mode: 'song',
     title: lead.title?.trim() ? lead.title : 'Imported lead sheet',
+    totalBars,
     chordSymbols: chordEntriesFromImportedLeadSheet(lead),
-    formSections: formSectionsFromImportedLeadSheet(lead),
+    formSections,
     rehearsalMarks: rehearsalMarksFromImportedLeadSheet(lead),
     repeatMarkers,
     topLine: {

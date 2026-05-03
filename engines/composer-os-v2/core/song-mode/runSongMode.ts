@@ -19,7 +19,10 @@ import {
   type SongModeValidationResult,
 } from './songModeValidation';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
-import { buildUniversalLeadSheetFromSongContract } from '../lead-sheet/universalLeadSheetBuilder';
+import {
+  buildUniversalLeadSheetFromImportedLeadSheet,
+  buildUniversalLeadSheetFromSongContract,
+} from '../lead-sheet/universalLeadSheetBuilder';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
@@ -128,11 +131,15 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     songwritingFingerprint: sw?.resolvedStyle.styleFingerprint ?? '',
   };
 
+  const universalLeadSheet: UniversalLeadSheet = input.leadSheet
+    ? buildUniversalLeadSheetFromImportedLeadSheet(input.leadSheet)
+    : buildUniversalLeadSheetFromSongContract(lead);
+
   return {
     compiledSong: compiled,
     leadSheetContract: lead,
     validation,
     manifestHints,
-    universalLeadSheet: buildUniversalLeadSheetFromSongContract(lead),
+    universalLeadSheet,
   };
 }

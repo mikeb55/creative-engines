@@ -6,8 +6,10 @@
 
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import {
+  applyRepeatTruthToScoreModel,
   buildUniversalLeadSheetFromImportedLeadSheet,
 } from '../core/lead-sheet/universalLeadSheetBuilder';
+import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import type { LeadSheet } from '../core/lead-sheet/leadSheetTypes';
 import { createPart, createRest, createScore } from '../core/score-model/scoreEventBuilder';
@@ -262,6 +264,46 @@ function complexRhythmChordsStressOk(): boolean {
   return uni.chordSymbols.length >= 2 && roundTripExportSucceeds(lead, uni.title);
 }
 
+/** 8-bar A section with repeat_end → totalBars 16; pad score, attach export markers, assert backward repeat in XML. */
+function repeatEightBarSectionExportStressOk(): boolean {
+  const sheet: UniversalLeadSheet = {
+    mode: 'song',
+    title: 'RB Repeat 8+8',
+    chordSymbols: [],
+    formSections: [{ label: 'A', barStart: 1, barEnd: 8, role: 'A' }],
+    rehearsalMarks: [],
+    repeatMarkers: [{ bar: 8, kind: 'repeat_end' }],
+    topLine: { hasEvents: false },
+    source: 'imported_musicxml',
+    totalBars: 16,
+  };
+  const guitar = createPart(
+    'guitar',
+    'Guitar',
+    'clean_electric_guitar',
+    27,
+    'treble',
+    8,
+    () => 'C',
+    () => undefined
+  );
+  for (const m of guitar.measures) {
+    if (m.events.length === 0) {
+      m.events.push(createRest(0, 4, 1));
+    }
+  }
+  let score: ScoreModel = createScore('RB Repeat 8+8', [guitar], { tempo: 120 });
+  score = applyRepeatTruthToScoreModel(score, sheet);
+  if (score.parts[0]!.measures.length !== 16) return false;
+  score.repeatMarkers = [
+    { bar: 1, kind: 'repeat_start' },
+    { bar: 8, kind: 'repeat_end' },
+  ];
+  const xr = exportScoreModelToMusicXml(score);
+  if (!xr.success || !xr.xml) return false;
+  return xr.xml.includes('direction="backward"');
+}
+
 function multiVoiceStressOk(): boolean {
   const imp = importLeadSheetFromMusicXml(REAL_BOOK_MULTI_VOICE_XML);
   if (!imp.ok || !imp.leadSheet) return false;
@@ -282,6 +324,10 @@ function multiVoiceStressOk(): boolean {
 
 export function runRealBookStressTests(): { ok: boolean; name: string }[] {
   return [
+    {
+      ok: repeatEightBarSectionExportStressOk(),
+      name: 'Real Book stress: 8-bar A×2 → applyRepeatTruth 16 bars + ScoreModel.repeatMarkers → backward repeat in MusicXML',
+    },
     {
       ok: repeatNavigationStressOk(),
       name: 'Real Book stress: repeat/volta + segno / D.S. / coda — timeline + repeatMarkers + export',

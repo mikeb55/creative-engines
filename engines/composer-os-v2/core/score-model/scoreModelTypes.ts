@@ -155,6 +155,14 @@ export interface KeySignatureLine {
 /** Golden-path duo: how bar math seal snaps rhythm (ECM chamber keeps quarter-beat grid). */
 export type DuoRhythmSnapMode = 'quarter' | 'eighth_beats';
 
+/** MusicXML repeat barline hints for export only (1-based bar index = exported measure number). */
+export type ScoreRepeatMarkerKind = 'repeat_start' | 'repeat_end';
+
+export interface ScoreRepeatMarker {
+  bar: number;
+  kind: ScoreRepeatMarkerKind;
+}
+
 /** Full score model. */
 export interface ScoreModel {
   title: string;
@@ -184,5 +192,10 @@ export interface ScoreModel {
    * Keys are part ids; values are semitone offsets (negative = written pitch sounds lower).
    */
   exportPartTransposeSemitones?: Record<string, number>;
+  /**
+   * When set, MusicXML export emits repeat barlines at the given measures (see `musicxmlExporter`).
+   * Generators may omit; pipeline/tests attach for repeat truth.
+   */
+  repeatMarkers?: ScoreRepeatMarker[];
   parts: PartModel[];
 }

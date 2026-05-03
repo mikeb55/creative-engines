@@ -19,6 +19,15 @@ export interface SongModeHookIdentityCell {
   intervalReturnScale: 1 | 2;
 }
 
+/**
+ * Hook-first seed inputs for phrase-engine V2 motif pool (narrow surface).
+ * Rhythmic atoms use the same quarter-beat convention as {@link SongModeHookIdentityCell.statementRhythm}.
+ */
+export interface SongModeHookIdentity {
+  rootPitch: number;
+  rhythmicProfile: { start: number; dur: number }[];
+}
+
 /** Harmonic/behavioural roles (guide-tone, chromatic approach, etc.). */
 export type MotifRoleTag = 'guide-tone' | 'chromatic' | 'chord-tone' | 'passing' | 'neighbor';
 

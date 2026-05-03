@@ -6,7 +6,14 @@
 
 import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
-import type { ScoreModel, PartModel, MeasureModel, ScoreEvent, ChordEvent } from '../score-model/scoreModelTypes';
+import type {
+  ScoreModel,
+  PartModel,
+  MeasureModel,
+  ScoreEvent,
+  ChordEvent,
+  ScoreRepeatMarkerKind,
+} from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 import {
@@ -33,6 +40,10 @@ import type { SonicYouthExtension } from '../score-model/sonicYouthChordTypes';
 
 /** Part-list `<part-name>` / `<instrument-name>` for GM piano (program 1); short label matches Sibelius instrument library. */
 const PIANO_PART_LIST_NAME = 'Piano';
+
+function scoreHasRepeatMarker(score: ScoreModel, measureNumber: number, kind: ScoreRepeatMarkerKind): boolean {
+  return (score.repeatMarkers ?? []).some((r) => r.bar === measureNumber && r.kind === kind);
+}
 
 function isBigBandPianoPart(p: PartModel): boolean {
   return p.instrumentIdentity === 'big_band_piano' || p.id === 'bb_piano';
@@ -805,6 +816,10 @@ ${partList}
           : (ticks: number) => decomposeTicksToStandardParts(ticks, measureCapacity);
         xml += `  <measure number="${measureNumber}">\n`;
 
+        if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_start')) {
+          xml += `    <barline location="left"><bar-style>heavy-light</bar-style><repeat direction="forward"/></barline>\n`;
+        }
+
         if (i === 0) {
           const ks = score.keySignature;
           const fifths = ks?.fifths ?? 0;
@@ -923,6 +938,9 @@ ${transposeXml}    </attributes>
           part.instrumentIdentity === 'big_band_jazz_drums'
             ? bigBandDrumsEventsToXml(m, i, part, decompose, opts, measureCapacity)
             : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
+        if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_end')) {
+          xml += `    <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
+        }
         xml += `  </measure>\n`;
       }
       xml += `  </part>\n`;

@@ -42,6 +42,10 @@ These labels are used in product and handoff docs; boundaries are conceptual, no
 
 Order for the duo **32-bar** Song Mode golden path (after core duo build, before final bar-math seal):
 
+### Phrase Engine V2 (pre-C1 pass)
+
+On the **guitar–bass duo** golden path, when **`songModeHookFirstIdentity`** is on and the preset is in the **guitar–bass duo family** with **32 bars**, **`generateGoldenPathDuoScore`** runs **Phrase Engine V2** immediately **before C1**: **`buildMotifPool`** on the working score, optional **`seedPoolFromHookIdentity`** when **`songModeHookIdentity`** is present on metadata, then **`applyPhraseEngineV2`** on the guitar part and **`applyBassMotifEcho`** on the bass part (same motif pool), replacing those parts on the score before the C1–C7 overlay chain.
+
 1. **C1** — `songModeRhythmOverlayC1`: soft rhythm overlay on guitar (phrase-level overlays + note-level bias); preserves structure.
 2. **C2** — Phrase rhythm intent is *derived inside C1/C2 layer* (phrase intent summaries, mode-scaled strength). Documented with C1 in code as the phrase-intent layer.
 3. **C3** — `jamesBrownFunkOverlay` (optional James Brown funk overlay when enabled).

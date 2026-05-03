@@ -28,7 +28,10 @@ import {
   normalizeAlternateGuitarTuningRequest,
   type AlternateGuitarTuningResolved,
 } from '../core/song-mode/alternateGuitarTunings';
-import { buildUniversalLeadSheetFromCompositionContext } from '../core/lead-sheet/universalLeadSheetBuilder';
+import {
+  applyRepeatTruthToScoreModel,
+  buildUniversalLeadSheetFromCompositionContext,
+} from '../core/lead-sheet/universalLeadSheetBuilder';
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
@@ -740,11 +743,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const tag = lockHarmonyRequested ? 'lock_harmony' : blendHarmonyRequested ? 'blend_harmony' : 'import_harmony';
     console.warn(`[Song Mode ${tag}] Imported timeline warnings:`, timelineLock.warnings.join(' | '));
   }
+  const importedLeadSheetForSongMode =
+    leadSheetAdapted?.ok === true && leadSheetAdapted.leadSheet ? leadSheetAdapted.leadSheet : undefined;
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
     totalBars: barTarget,
-    leadSheet: useLeadSheetHarmony ? leadSheetAdapted?.leadSheet : undefined,
+    leadSheet: importedLeadSheetForSongMode,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv as AuthorRuleId | undefined,
@@ -929,6 +934,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     totalBars: clampSongFormBarCount(req.totalBars, 32),
     longFormEnabled: req.longFormEnabled ?? true,
   });
+  const universalRepeatTruthBars =
+    sm.universalLeadSheet.source === 'imported_musicxml' &&
+    typeof sm.universalLeadSheet.totalBars === 'number' &&
+    Number.isFinite(sm.universalLeadSheet.totalBars) &&
+    sm.universalLeadSheet.totalBars >= 1
+      ? Math.floor(sm.universalLeadSheet.totalBars)
+      : undefined;
+  const resolvedSongModeTotalBars = universalRepeatTruthBars ?? clampSongFormBarCount(req.totalBars, 32);
   const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
@@ -944,7 +957,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           parsedChordBars: lockedHarmonyBarsAuthoritative,
         }
       : {}),
-    totalBars: clampSongFormBarCount(req.totalBars, 32),
+    totalBars: resolvedSongModeTotalBars,
     longFormEnabled: req.longFormEnabled ?? true,
     keySignatureMode: req.keySignatureMode,
     tonalCenterOverride: req.tonalCenterOverride,
@@ -1061,6 +1074,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           if (retryGce.passed) break;
         }
       }
+    }
+  }
+  if (gp.score) {
+    const adjusted = applyRepeatTruthToScoreModel(gp.score, sm.universalLeadSheet);
+    gp.score = adjusted;
+    const mb = adjusted.parts[0]?.measures.length;
+    if (mb !== undefined && gp.context.form) {
+      gp.context.form.totalBars = mb;
     }
   }
   const runIdForTruth = `${tsSafe}_${effectiveSeed}`;

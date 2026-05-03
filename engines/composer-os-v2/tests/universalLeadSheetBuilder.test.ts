@@ -5,12 +5,16 @@
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { runBigBandMode } from '../core/big-band/runBigBandMode';
 import type { StyleStack } from '../core/style-modules/styleModuleTypes';
+import type { UniversalLeadSheet } from '../core/lead-sheet/universalLeadSheetTypes';
 import {
+  applyRepeatTruthToScoreModel,
   buildUniversalLeadSheetFromCompositionContext,
   buildUniversalLeadSheetFromImportedLeadSheet,
   buildUniversalLeadSheetFromSongContract,
+  computeTotalBarsWithRepeats,
 } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
+import { createPart, createScore } from '../core/score-model/scoreEventBuilder';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import { runStringQuartetMode } from '../core/string-quartet/runStringQuartetMode';
 
@@ -70,12 +74,108 @@ function importedUniversalRepeatMarkersSmokeOk(): boolean {
   );
 }
 
-/** Single-row smoke tier — keep in sync with `runSmokeTests.ts` allowlist. */
+function computeTotalBarsNoRepeatsSmokeOk(): boolean {
+  const form = [
+    { label: 'A', barStart: 1, barEnd: 2, role: 'A' },
+    { label: 'B', barStart: 3, barEnd: 4, role: 'B' },
+  ];
+  return computeTotalBarsWithRepeats(form, []) === 4;
+}
+
+function computeTotalBarsOneRepeatSectionSmokeOk(): boolean {
+  const form = [
+    { label: 'A', barStart: 1, barEnd: 2, role: 'A' },
+    { label: 'B', barStart: 3, barEnd: 4, role: 'B' },
+  ];
+  const markers = [{ bar: 2, kind: 'repeat_end' as const }];
+  return computeTotalBarsWithRepeats(form, markers) === 6;
+}
+
+function baseLeadSheet(overrides: Partial<UniversalLeadSheet> & { totalBars: number }): UniversalLeadSheet {
+  return {
+    mode: 'song',
+    title: 'smoke',
+    chordSymbols: [],
+    formSections: [],
+    rehearsalMarks: [],
+    repeatMarkers: [],
+    topLine: { hasEvents: false },
+    source: 'song_lead_sheet',
+    ...overrides,
+  };
+}
+
+function applyRepeatTruthExpandMeasuresSmokeOk(): boolean {
+  const score = createScore('x', [
+    createPart('g', 'Guitar', 'clean_electric_guitar', 27, 'treble', 2, () => undefined, () => undefined),
+  ]);
+  const next = applyRepeatTruthToScoreModel(score, baseLeadSheet({ totalBars: 4 }));
+  return (
+    next.parts[0]!.measures.length === 4 &&
+    score.parts[0]!.measures.length === 2 &&
+    next !== score
+  );
+}
+
+function applyRepeatTruthTrimMeasuresSmokeOk(): boolean {
+  const score = createScore('y', [
+    createPart('g', 'Guitar', 'clean_electric_guitar', 27, 'treble', 4, () => undefined, () => undefined),
+  ]);
+  const next = applyRepeatTruthToScoreModel(score, baseLeadSheet({ totalBars: 2 }));
+  return (
+    next.parts[0]!.measures.length === 2 &&
+    score.parts[0]!.measures.length === 4 &&
+    next !== score
+  );
+}
+
+/** Imported-shape sheet: repeat markers present; pad 2-bar score to totalBars 4 with contiguous indices 1..4. */
+function applyRepeatTruthTotalBarsFourIndexingSmokeOk(): boolean {
+  const sheet: UniversalLeadSheet = {
+    mode: 'song',
+    title: 'idx',
+    chordSymbols: [],
+    formSections: [],
+    rehearsalMarks: [],
+    repeatMarkers: [{ bar: 2, kind: 'repeat_end' }],
+    topLine: { hasEvents: false },
+    source: 'imported_musicxml',
+    totalBars: 4,
+  };
+  const score = createScore('z', [
+    createPart('g', 'Guitar', 'clean_electric_guitar', 27, 'treble', 2, () => undefined, () => undefined),
+  ]);
+  const out = applyRepeatTruthToScoreModel(score, sheet);
+  const ms = out.parts[0]!.measures;
+  return ms.length === 4 && ms.every((m, i) => m.index === i + 1);
+}
+
+/** Smoke tier — keep row count in sync with `runSmokeTests.ts` allowlist + CLAUDE / roadmap. */
 export function runUniversalLeadSheetRepeatSmokeTests(): { ok: boolean; name: string }[] {
   return [
     {
       ok: importedUniversalRepeatMarkersSmokeOk(),
       name: 'UniversalLeadSheet: MusicXML repeatMarkers → repeat_start/repeat_end + LeadSheet bar/kind parity',
+    },
+    {
+      ok: computeTotalBarsNoRepeatsSmokeOk(),
+      name: 'computeTotalBarsWithRepeats: no repeat_end → sum of section bar spans',
+    },
+    {
+      ok: computeTotalBarsOneRepeatSectionSmokeOk(),
+      name: 'computeTotalBarsWithRepeats: repeat_end inside section → that section counted twice',
+    },
+    {
+      ok: applyRepeatTruthExpandMeasuresSmokeOk(),
+      name: 'applyRepeatTruthToScoreModel: totalBars 4 + score 2 bars → 4 measures (pad via last measure)',
+    },
+    {
+      ok: applyRepeatTruthTrimMeasuresSmokeOk(),
+      name: 'applyRepeatTruthToScoreModel: totalBars 2 + score 4 bars → 2 measures',
+    },
+    {
+      ok: applyRepeatTruthTotalBarsFourIndexingSmokeOk(),
+      name: 'applyRepeatTruthToScoreModel: imported-shape sheet totalBars 4 + 2 measures → indices 1–4',
     },
   ];
 }

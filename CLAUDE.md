@@ -52,7 +52,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent update (2026-05-05)
 
-**Smoke tier:** **`npm run test:composer-smoke`** — **146**/0 PASS rows, **39** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier:** **`npm run test:composer-smoke`** — **157**/0 PASS rows, **41** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
 **Session handover — completed:** GCE / LOCK / DCR / Style Profile evaluation system; Basie, Ellington, Schneider, and Quincy Jones arranger profiles wired for auto-scoring; evaluation wired into Big Band generation pipeline (observational **`evaluationResult`**); **Future Workstreams** subsection added to **`docs/COMPOSER_OS_PLAYBOOK.md`** (Afro-Cuban, Odd-Meter).
 
@@ -141,7 +141,7 @@ app-api/generateComposition
   → runGoldenPath              # preset-specific path selection
   → buildScore                 # songwriter slice, duo, ECM, Big Band, String Quartet
   → C1–C7 Rhythm Overlays      # Song Mode only (soft rhythm → funk → ostinato → expression → space)
-  → Phrase Engine (Stages 2–4) # sequencing → anticipation → motif rhythm → cadences
+  → Phrase Engine V2 (buildMotifPool → seedPoolFromHookIdentity → applyPhraseEngineV2 → applyBassMotifEcho)
   → finalizeAndSeal            # bar math validation
   → exportMusicXML             # Sibelius-safe polyphonic MusicXML
   → readiness gates            # integrity checks

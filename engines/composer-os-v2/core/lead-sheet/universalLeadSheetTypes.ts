@@ -40,6 +40,8 @@ export interface UniversalLeadSheet {
   mode: UniversalLeadSheetMode;
   title: string;
   presetId?: string;
+  /** Optional chart length from form + repeat markers (import path sets via `computeTotalBarsWithRepeats`). */
+  totalBars?: number;
   chordSymbols: UniversalChordEntry[];
   formSections: UniversalFormSection[];
   rehearsalMarks: UniversalRehearsalMark[];
