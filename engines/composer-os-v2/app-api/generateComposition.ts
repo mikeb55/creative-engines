@@ -25,6 +25,7 @@ import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
+import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -302,6 +303,14 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, result.xml, 'utf-8');
+    try {
+      const barMeterForDrums =
+        result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
+      const baseName = path.basename(filepath, path.extname(filepath));
+      writeDrumGuide(result.score, outputDir, baseName, barMeterForDrums, req.bpm);
+    } catch (e) {
+      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    }
     const locked = result.context.lockedHarmonyBarsRaw;
     if (
       result.context.generationMetadata.customHarmonyLocked === true &&

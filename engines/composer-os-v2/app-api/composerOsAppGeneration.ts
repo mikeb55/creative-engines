@@ -65,6 +65,7 @@ import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
+import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -1845,6 +1846,14 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     fs.mkdirSync(outputDir, { recursive: true });
     ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
     fs.writeFileSync(ensembleMusicXmlFilepath, realised.exportPipeline.xml, 'utf-8');
+    try {
+      if (realised.score) {
+        const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
+        writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+      }
+    } catch (e) {
+      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    }
   }
   const ok = bb.validation.ok;
   const filename = `big_band_plan_${tsSafe}_${runSeed}.json`;
@@ -2048,6 +2057,14 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
     fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
+    try {
+      if (realised.score) {
+        const baseName = path.basename(xmlFilepath, '.musicxml');
+        writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+      }
+    } catch (e) {
+      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    }
     const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
     return {
       success: true,
