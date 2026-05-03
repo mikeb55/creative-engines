@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **115** PASS rows, **32** suites (2026-05-02).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **116** PASS rows, **33** suites (2026-05-03).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -39,6 +39,7 @@ import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
 import { runImportHarmonyEnsembleSmokeTests } from './importHarmonyEnsembleSmoke.test';
 import { runZappaStringQuartetSmokeTests } from './zappaStringQuartetSmoke.test';
+import { runDrumGuideExportSmokeTests } from './drumGuideExportSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -75,6 +76,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
   { label: 'Import harmony ensemble (Big Band / String Quartet)', run: runImportHarmonyEnsembleSmokeTests },
   { label: 'Zappa String Quartet (SQ slice + odd meter)', run: runZappaStringQuartetSmokeTests },
+  { label: 'SD3 drum guide export (MIDI + JSON sidecar)', run: runDrumGuideExportSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

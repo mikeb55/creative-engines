@@ -208,6 +208,19 @@ The launcher **does not open the browser** for you. A **terminal window stays op
 
 **After generation:** Open the `.musicxml` file in your notation program (File → Open). If you received **planning JSON** (Big Band / String Quartet fallback), that file is for inspection or tooling — not a full printed score.
 
+### SD3 Drum Guide Export (companion MIDI + JSON)
+
+Whenever Composer OS writes a **MusicXML** score to your library, it also drops two companion files next to it, using the same base filename:
+
+- **`<basename>_drum_guide.mid`** — a short **Type-1 MIDI** drum map with **kick** on **MIDI 36 (C1)** and **snare** on **MIDI 38 (D1)** (General MIDI drum channel **10**). The file uses **480 PPQ** (pulses per quarter), matching the engine’s MusicXML divisions grid.
+- **`<basename>_drum_guide.json`** — a small **sidecar** (version **1**) listing **`ppq`**, **`bpm`**, **`totalBars`**, and a **`bars`** array. Each bar records the **meter**, **beat grouping**, and **`kickTicks` / `snareTicks`** arrays (absolute tick offsets from the start of that bar).
+
+**Odd meters:** If your generation used a **`barMeterMap`** (Song Mode meter presets, Frank Zappa meter UI, Brubeck / Monk / Shorter tiles, etc.), the drum guide follows those bars — all **18** internal composer meter presets are reflected in grouping and tick placement.
+
+**Superior Drummer 3:** Drag **`_drum_guide.mid`** into **Tap2Find** or onto the **Song Track** to align or sketch drums against the same rhythmic grid as the score.
+
+There is **no separate toggle** in Generate: the drum guide is emitted **automatically** whenever a MusicXML export is produced.
+
 ### Song Mode — Groove / Soul (first real “style surface” slice)
 
 As of **2026-04-17**, choosing **Style Engine profile → Groove / Soul** in Song Mode does more than a label:

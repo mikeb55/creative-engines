@@ -269,13 +269,30 @@ export function buildSongModeHookRuntime(
   return buildSongModeMotifV2Runtime(params);
 }
 
-export function validateSongModeHookIdentity(guitar: PartModel, _context: CompositionContext): string[] {
+/**
+ * Structural return bar for hook checks — bar **25** on 32-bar long-form; folds down for shorter scores so
+ * validators stay within `form.totalBars`.
+ */
+function resolvedSongModeHookReturnBar(context: CompositionContext): number | null {
+  const tb = context.form?.totalBars ?? 0;
+  if (tb < 2) return null;
+  const candidates = [SONG_MODE_HOOK_RETURN_BAR, SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9, 5];
+  for (const b of candidates) {
+    if (b <= tb && b > 1) return b;
+  }
+  return tb > 1 ? tb : null;
+}
+
+export function validateSongModeHookIdentity(guitar: PartModel, context: CompositionContext): string[] {
   const errs: string[] = [];
   const warns: string[] = [];
+  const retBar = resolvedSongModeHookReturnBar(context);
+  if (retBar === null) return errs;
+
   const m1 = guitar.measures.find((x) => x.index === 1);
-  const m25 = guitar.measures.find((x) => x.index === SONG_MODE_HOOK_RETURN_BAR);
-  if (!m1 || !m25) {
-    errs.push('Song Mode hook: missing guitar bar 1 or bar 25.');
+  const mRet = guitar.measures.find((x) => x.index === retBar);
+  if (!m1 || !mRet) {
+    errs.push(`Song Mode hook: missing guitar bar 1 or bar ${retBar}.`);
     return errs;
   }
 
@@ -283,20 +300,20 @@ export function validateSongModeHookIdentity(guitar: PartModel, _context: Compos
     .filter((e) => e.kind === 'note')
     .map((e) => e as { pitch: number; startBeat: number; duration: number })
     .sort((a, b) => a.startBeat - b.startBeat);
-  const raw25 = m25.events
+  const rawRet = mRet.events
     .filter((e) => e.kind === 'note')
     .map((e) => e as { pitch: number; startBeat: number; duration: number })
     .sort((a, b) => a.startBeat - b.startBeat);
   const notes1 = mergeTouchingSamePitchNotesForValidator(raw1);
-  const notes25 = mergeTouchingSamePitchNotesForValidator(raw25);
+  const notesRet = mergeTouchingSamePitchNotesForValidator(rawRet);
 
-  if (notes25.length < 2) {
+  if (notesRet.length < 2) {
     errs.push('Song Mode hook: return bar has too few notes (hook not reused).');
   }
 
   const c1 = contourDirSignatureFromPitches(notes1.map((n) => n.pitch));
-  const c25 = contourDirSignatureFromPitches(notes25.map((n) => n.pitch));
-  if (c1.length < 2 || c1 !== c25) {
+  const cRet = contourDirSignatureFromPitches(notesRet.map((n) => n.pitch));
+  if (c1.length < 2 || c1 !== cRet) {
     warns.push('Song Mode hook: return lost contour identity (unrecognisable).');
   }
 
@@ -311,14 +328,14 @@ export function validateSongModeHookIdentity(guitar: PartModel, _context: Compos
     })),
   });
   const r1 = rhythmFingerprint(mergedMeasureForFingerprint(notes1));
-  const r25 = rhythmFingerprint(mergedMeasureForFingerprint(notes25));
+  const rRet = rhythmFingerprint(mergedMeasureForFingerprint(notesRet));
   const fp1 = contourFingerprint(mergedMeasureForFingerprint(notes1));
-  const fp25 = contourFingerprint(mergedMeasureForFingerprint(notes25));
+  const fpRet = contourFingerprint(mergedMeasureForFingerprint(notesRet));
   /** Same rhythm + interval contour as bar 1 is expected for a transposed return; literal only if same MIDI. */
   const sameAbsoluteMidi =
-    notes1.length === notes25.length &&
-    notes1.every((n, i) => notes25[i] !== undefined && n.pitch === notes25[i]!.pitch);
-  if (r1 === r25 && fp1 === fp25 && sameAbsoluteMidi) {
+    notes1.length === notesRet.length &&
+    notes1.every((n, i) => notesRet[i] !== undefined && n.pitch === notesRet[i]!.pitch);
+  if (r1 === rRet && fp1 === fpRet && sameAbsoluteMidi) {
     errs.push('Song Mode hook: return is a literal repetition (variation required).');
   }
 
@@ -484,10 +501,13 @@ function extractIntervalsAndRhythmFromBar(
 
 function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionContext): string[] {
   const md = context.generationMetadata;
-  /** Hook-first: compare final-score MotifShapes (bar 1 vs bar 25), not template-reconstructed expected return. */
+  const retBar = resolvedSongModeHookReturnBar(context);
+  if (retBar === null) return [];
+
+  /** Hook-first: compare final-score MotifShapes (bar 1 vs structural return bar), not template-reconstructed expected return. */
   if (md?.songModeHookFirstIdentity === true) {
     const stmt = extractMotifShapeFromGuitarBarContext(guitar, 1, context);
-    const ret = extractMotifShapeFromGuitarBarContext(guitar, SONG_MODE_HOOK_RETURN_BAR, context);
+    const ret = extractMotifShapeFromGuitarBarContext(guitar, retBar, context);
     if (!stmt || !ret) {
       return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
     }
@@ -499,7 +519,7 @@ function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionCo
   }
   const exp = md?.songModeReturnMotifShapeExpected;
   if (exp) {
-    const ex = extractMotifShapeFromGuitarBarContext(guitar, SONG_MODE_HOOK_RETURN_BAR, context);
+    const ex = extractMotifShapeFromGuitarBarContext(guitar, retBar, context);
     if (!ex) {
       return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
     }
@@ -511,7 +531,7 @@ function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionCo
   }
   const primary = context.generationMetadata?.songModePrimaryMotif;
   if (!primary) return [];
-  const ex = extractIntervalsAndRhythmFromBar(guitar, SONG_MODE_HOOK_RETURN_BAR);
+  const ex = extractIntervalsAndRhythmFromBar(guitar, retBar);
   if (!ex || ex.intervals.length < 1) {
     return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
   }

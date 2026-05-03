@@ -1302,6 +1302,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
+    try {
+      const barMeterForDrums =
+        gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
+      const baseName = path.basename(filepath, path.extname(filepath));
+      writeDrumGuide(gp.score, outputDir, baseName, barMeterForDrums, req.bpm);
+    } catch (e) {
+      console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+    }
     if (req.includeVocalLeadSheet) {
       const bridgeScriptPath = resolveSongwritingBridgeExportScriptPath();
       const vocalXml = exportVocalLeadSheetMusicXmlViaPython(sm.compiledSong, gp.score, {
