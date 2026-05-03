@@ -10,8 +10,9 @@ import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar } from './brianWilsonPetSoundsSlice';
-import type { SonicYouthExtension } from '../score-model/sonicYouthChordTypes';
+import type { SonicYouthExtension, SYTextureState } from '../score-model/sonicYouthChordTypes';
 import { getSYDissonancePreset } from '../score-model/sonicYouthChordGuards';
+import { getNextTextureState } from '../score-model/sonicYouthTextureEngine';
 
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
@@ -74,7 +75,33 @@ function frictionFromSymbol(symbol: string): number {
   return Math.min(1, x + seededUnit(symbol.length, 41, 88901) * 0.1);
 }
 
-function buildSonicYouthExtension(symbol: string, bar: number, seed: number): SonicYouthExtension {
+/** Texture phase at this bar after deterministic transitions from bar 1 (`riff`). */
+function textureStateAtBar(context: CompositionContext, bar: number): SYTextureState {
+  let s: SYTextureState = 'riff';
+  for (let b = 1; b < bar; b++) {
+    const sym = getChordForBar(b, context);
+    const friction = frictionFromSymbol(sym);
+    const preset = getSYDissonancePreset(friction);
+    const noiseLevel =
+      preset === 'high_friction'
+        ? 'prepared'
+        : friction > 0.66
+          ? 'feedback'
+          : friction > 0.4
+            ? 'crunchy'
+            : 'clean';
+    s = getNextTextureState(s, noiseLevel, preset);
+  }
+  return s;
+}
+
+/** Exported for texture / MusicXML regression tests (`score-model/__tests__/sonicYouthTexture.test.ts`). */
+export function buildSonicYouthExtension(
+  symbol: string,
+  bar: number,
+  seed: number,
+  context: CompositionContext
+): SonicYouthExtension {
   const friction = frictionFromSymbol(symbol);
   const preset = getSYDissonancePreset(friction);
   const maskG1: readonly [boolean, boolean, boolean, boolean, boolean, boolean] =
@@ -113,6 +140,7 @@ function buildSonicYouthExtension(symbol: string, bar: number, seed: number): So
       unisonCount: 0,
       preset,
     },
+    textureState: textureStateAtBar(context, bar) ?? 'riff',
   };
 }
 
@@ -126,7 +154,7 @@ export function applySonicYouthGuitarBarPasses(m: MeasureModel, bar: number, con
   for (const e of m.events) {
     if (e.kind !== 'chord') continue;
     const c = e as ChordEvent;
-    c.sonicYouth = buildSonicYouthExtension(sym, bar, seed);
+    c.sonicYouth = buildSonicYouthExtension(sym, bar, seed, context);
   }
 }
 

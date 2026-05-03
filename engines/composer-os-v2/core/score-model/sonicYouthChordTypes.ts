@@ -17,6 +17,9 @@ export type NoiseLevel = 'clean' | 'crunchy' | 'feedback' | 'prepared';
 
 export type SYDissonancePreset = 'low_friction' | 'medium_friction' | 'high_friction';
 
+/** Macro texture phase for Sonic Youth dual-guitar material (v1). */
+export type SYTextureState = 'riff' | 'shimmer' | 'noise_wall' | 'clearing';
+
 /** Per-guitar compact state for alternate tunings / prepared noise (v1). */
 export interface GuitarTuningState {
   tuningId: string;
@@ -46,4 +49,5 @@ export interface SonicYouthExtension {
   guitar1: GuitarTuningState;
   guitar2: GuitarTuningState;
   interGuitarDissonance: InterGuitarDissonance;
+  textureState: SYTextureState;
 }

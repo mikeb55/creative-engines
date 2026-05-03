@@ -6,12 +6,16 @@
  */
 
 import type { ChordEvent } from './scoreModelTypes';
-import type { SonicYouthExtension, SYDissonancePreset } from './sonicYouthChordTypes';
+import type { SonicYouthExtension, SYDissonancePreset, SYTextureState } from './sonicYouthChordTypes';
 
 export function isSonicYouthEvent(
   event: ChordEvent
 ): event is ChordEvent & { sonicYouth: SonicYouthExtension } {
   return event.sonicYouth !== undefined && event.sonicYouth !== null;
+}
+
+export function getSYTextureState(event: ChordEvent): SYTextureState | undefined {
+  return event.sonicYouth?.textureState;
 }
 
 /**

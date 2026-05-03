@@ -6,7 +6,7 @@
 
 import type { MusicXmlExportResult, MusicXmlExportOptions } from './exportTypes';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
-import type { ScoreModel, PartModel, MeasureModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, MeasureModel, ScoreEvent, ChordEvent } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 import {
@@ -28,6 +28,8 @@ import {
   resolveMeterForBar,
   resolveMeasureDivisionsForBar,
 } from '../rhythm/oddMeterQuantiser';
+import { getSYTextureState, isSonicYouthEvent } from '../score-model/sonicYouthChordGuards';
+import type { SonicYouthExtension } from '../score-model/sonicYouthChordTypes';
 
 /** Part-list `<part-name>` / `<instrument-name>` for GM piano (program 1); short label matches Sibelius instrument library. */
 const PIANO_PART_LIST_NAME = 'Piano';
@@ -142,6 +144,32 @@ function tieXmlForSplitIndex(i: number, n: number): string {
 
 /** Explicit staff 1 on each event — required by some importers for single-staff multi-voice (Sibelius, GP8). */
 const STAFF_1_XML = '<staff>1</staff>';
+
+/**
+ * Sonic Youth comp chord: texture-dependent dynamics + notations (first notehead only).
+ * Call only after `isSonicYouthEvent(chordEv)` is true.
+ */
+function sonicYouthChordExportAugmentation(
+  chordEv: ChordEvent & { sonicYouth: SonicYouthExtension }
+): { dynamicsAttr: string; notationsXml: string } {
+  const tex = getSYTextureState(chordEv) ?? 'riff';
+  switch (tex) {
+    case 'riff':
+      return { dynamicsAttr: '', notationsXml: '' };
+    case 'shimmer':
+      return {
+        dynamicsAttr: '',
+        notationsXml: '<notations><ornaments><tremolo type="single">3</tremolo></ornaments></notations>',
+      };
+    case 'noise_wall':
+      return {
+        dynamicsAttr: ' dynamics="127"',
+        notationsXml: '<notations><articulations><stress/></articulations></notations>',
+      };
+    case 'clearing':
+      return { dynamicsAttr: ' dynamics="24"', notationsXml: '' };
+  }
+}
 
 function emitRestTicks(parts: number[], voice: number, staffXml?: string): string {
   let xml = '';
@@ -521,6 +549,10 @@ function eventsToXml(
       const parts = decompose(durDiv);
       if (e.kind === 'chord') {
         const chordEv = e;
+        let syAug = { dynamicsAttr: '', notationsXml: '' };
+        if (isSonicYouthEvent(chordEv)) {
+          syAug = sonicYouthChordExportAugmentation(chordEv);
+        }
         const firstTicks = parts[0]!;
         const spec = tickSpecForLength(firstTicks);
         const typeDots = typeAndDotsXml(spec);
@@ -532,7 +564,16 @@ function eventsToXml(
           const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           if (pi === 0) {
-            xml += emitPitchedTicks(parts, voice, pitchXml, '', '', '', stemXml, staffPolyphonyXml);
+            xml += emitPitchedTicks(
+              parts,
+              voice,
+              pitchXml,
+              syAug.notationsXml,
+              syAug.dynamicsAttr,
+              '',
+              stemXml,
+              staffPolyphonyXml
+            );
           } else {
             /**
              * Stacked chord tones: same onset/duration as the first notehead (`firstTicks`), regardless of tie decomposition length on pitch 0.
@@ -771,13 +812,18 @@ ${partList}
           const hideKey = ks?.hideKeySignature ?? false;
           const printAttr = hideKey ? ' print-object="no"' : '';
           const meter0 = resolveMeterForBar(1, opts.barMeterMap);
+          const transposeSemi = score.exportPartTransposeSemitones?.[part.id];
+          const transposeXml =
+            transposeSemi !== undefined
+              ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
+              : '';
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>${meter0.numerator}</beats><beat-type>${meter0.denominator}</beat-type></time>
       <staves>1</staves>
       ${clefXml}
-    </attributes>
+${transposeXml}    </attributes>
 `;
         } else if (opts.barMeterMap && i >= 1 && adjacentBarsMeterDiffers(i, i + 1, opts.barMeterMap)) {
           const mm = resolveMeterForBar(i + 1, opts.barMeterMap);

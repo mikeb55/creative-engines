@@ -81,6 +81,47 @@ Duo paths emphasize **guitar/bass** interplay; confirm **instrument names** and 
 
 Turn **d1–d5 hit rates** and **guard receipts** into a **checklist** for student arrangements—did their manual reharmonization respect similar constraints?
 
+### Sonic Youth (dual guitar, noise harmony, and texture)
+
+**Sonic Youth** is a **duo / dual-electric** slice: harmony uses **`sy:*`** device receipts and **`sonicYouthEffectiveHarmonyBars`** (same **getChordForBar** truth pattern as other locked-harmony writers). On comp **`ChordEvent`s**, optional metadata lives on **`ChordEvent.sonicYouth`** (`SonicYouthExtension` in **`sonicYouthChordTypes.ts`**).
+
+**Two-guitar architecture**
+
+- **`guitar1` / `guitar2`:** each holds a **`GuitarTuningState`** (tuning id, open string MIDI grid, shape id, fret pattern, string mask, **drone** string mask, **noise** level). This models **separate tunings** and **prepared / feedback** colour per instrument.
+- **`interGuitarDissonance`:** compact cross-guitar friction (**score** 0–1, interval tallies, **`SYDissonancePreset`**: low / medium / high friction). It pairs with the texture engine’s **dissonance** input.
+
+**`SYTextureState` (macro phase, four values)**
+
+1. **`riff`** — cellular, repeating material.  
+2. **`shimmer`** — sustained, beating layer.  
+3. **`noise_wall`** — high-density / feedback-leaning wall.  
+4. **`clearing`** — drop in weight (reset / space).
+
+**`textureState`** on **`SonicYouthExtension`** is the **current** phase for that bar (derived from a deterministic chain from bar 1). **`getNextTextureState(current, noiseLevel, dissonance)`** (`sonicYouthTextureEngine.ts`) advances the cycle:
+
+- Default edge order: **riff → shimmer → noise_wall → clearing → riff**.  
+- **`clean`** noise and/or **`low_friction`** bias back toward the **riff / shimmer** side (e.g. from **noise_wall**, the next step may be **shimmer** instead of **clearing**).  
+- **`feedback`** noise and/or **`high_friction`** bias toward **noise_wall** (e.g. from **riff** / **shimmer** / **clearing**, the next step may jump to **noise_wall**).  
+- **`prepared`** (prepared-piano / prepared-guitar style noise) forces the next state to **`clearing`**.  
+- Combined biases use **dissonance** first, then **noise level**, when both pull.
+
+**Guards:** **`isSonicYouthEvent`**, **`getSYTextureState`** (`sonicYouthChordGuards.ts`).
+
+**MusicXML (comp `ChordEvent` with `sonicYouth` only)** — **`musicxmlExporter.ts`** maps texture to the **first notehead** of the chord (stacked tones unchanged):
+
+| Texture      | Notation / dynamics |
+|-------------|---------------------|
+| **riff**    | No extra dynamics or articulation XML. |
+| **shimmer** | **Tremolo** ornament (`<tremolo type="single">3</tremolo>`) — *v1 uses tremolo; wavy-line is not emitted.* |
+| **noise_wall** | **Note** `dynamics="127"` (loud / **fff**-class) + **`<stress/>`** articulation. |
+| **clearing**   | **Note** `dynamics="24"` (soft / **ppp**-class); no extra articulation. |
+
+Regression: smoke suite **`Sonic Youth texture + MusicXML augmentation`** (`core/score-model/__tests__/sonicYouthTexture.test.ts`).
+
+### Scenario 9b: Sonic Youth texture in the host
+
+After import, **dynamics** and **tremolo** are host-dependent for playback—use this mapping to **teach** texture **intent** (wall vs clearing), not guaranteed studio distortion.
+
 ---
 
 ## 4. Presets, ensembles, and zones
