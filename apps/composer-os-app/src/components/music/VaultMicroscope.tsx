@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Tone from 'tone';
 import { buildBeatContextLegalityMap } from '@composer-os/core/harmony/beatContextLegalityMap';
 import {
   LayerStateMachine,
@@ -82,12 +83,8 @@ function toFretboardNote(n: ScoreNote, legality: Map<number, NoteTag>): Fretboar
   };
 }
 
-/** Matches scrubber: 0.5 beat every 500ms → 1 quarter = 1s at this clock. */
-const SECONDS_PER_QUARTER_NOTE = 1;
-
-function midiToHz(midi: number): number {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
+/** Matches scrubber + Tone.Transport: 0.5 beat every 500ms → 60 BPM → 1 quarter = 1s. */
+const PLAYBACK_BPM = 60;
 
 export function VaultMicroscope({
   scoreNotes,
@@ -130,53 +127,67 @@ export function VaultMicroscope({
   );
 
   const lsmRef = useRef(new LayerStateMachine());
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const synthRef = useRef<Tone.PolySynth<Tone.Synth> | null>(null);
   const [currentBeat, setCurrentBeat] = useState(0);
   const [tensionState, setTensionState] = useState<TensionState>('primary');
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const stopWebAudio = useCallback(() => {
-    const ctx = audioCtxRef.current;
-    if (ctx && ctx.state !== 'closed') {
-      void ctx.close();
-    }
-    audioCtxRef.current = null;
+  const disposeSynth = useCallback(() => {
+    synthRef.current?.dispose();
+    synthRef.current = null;
   }, []);
 
-  const startWebAudio = useCallback(() => {
-    stopWebAudio();
-    const ctx = new AudioContext();
-    audioCtxRef.current = ctx;
-    const base = ctx.currentTime + 0.08;
+  const stopTonePlayback = useCallback(() => {
+    const transport = Tone.getTransport();
+    transport.stop();
+    transport.cancel();
+    transport.position = 0;
+    disposeSynth();
+  }, [disposeSynth]);
+
+  const startTonePlayback = useCallback(async () => {
+    await Tone.start();
+    disposeSynth();
+    const transport = Tone.getTransport();
+    transport.stop();
+    transport.cancel();
+    transport.position = 0;
+    transport.bpm.value = PLAYBACK_BPM;
+
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.015, decay: 0.12, sustain: 0.25, release: 0.08 },
+    }).toDestination();
+    synth.volume.value = -14;
+    synthRef.current = synth;
+
+    const secondsPerQuarter = 60 / transport.bpm.value;
+
     for (const n of scoreNotes) {
       if (typeof n.pitch !== 'number' || n.pitch <= 0) continue;
-      const t0 = base + globalQuarterStart(n) * SECONDS_PER_QUARTER_NOTE;
-      const dur = Math.max(0.04, n.duration * SECONDS_PER_QUARTER_NOTE);
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(midiToHz(n.pitch), t0);
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.linearRampToValueAtTime(0.11, t0 + 0.015);
-      g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.03);
+      const startSec = globalQuarterStart(n) * secondsPerQuarter;
+      const durSec = Math.max(0.04, n.duration * secondsPerQuarter);
+      const noteName = new Tone.Midi(n.pitch).toNote();
+
+      transport.schedule((time) => {
+        synth.triggerAttackRelease(noteName, durSec, time);
+      }, startSec);
     }
-  }, [scoreNotes, stopWebAudio]);
+
+    transport.start();
+  }, [scoreNotes, disposeSynth]);
 
   useEffect(() => {
-    stopWebAudio();
+    stopTonePlayback();
     setIsPlaying(false);
     setCurrentBeat(0);
-  }, [scoreNotesScheduleKey, stopWebAudio]);
+  }, [scoreNotesScheduleKey, stopTonePlayback]);
 
   useEffect(() => {
     return () => {
-      stopWebAudio();
+      stopTonePlayback();
     };
-  }, [stopWebAudio]);
+  }, [stopTonePlayback]);
 
   const beatStrengthNow = beatStrengthAtQuarter(currentBeat);
   const allowedLayers = LayerStateMachine.getAllowedLayers(tensionState);
@@ -210,26 +221,27 @@ export function VaultMicroscope({
 
   const handleStop = useCallback(() => {
     setIsPlaying(false);
-    stopWebAudio();
+    stopTonePlayback();
     setCurrentBeat(0);
     lsmRef.current = new LayerStateMachine();
     setTensionState('primary');
-  }, [stopWebAudio]);
+  }, [stopTonePlayback]);
 
   const handlePlayPauseClick = useCallback(async () => {
+    const transport = Tone.getTransport();
     if (isPlaying) {
-      await audioCtxRef.current?.suspend();
+      transport.pause();
       setIsPlaying(false);
       return;
     }
-    if (audioCtxRef.current?.state === 'suspended') {
-      await audioCtxRef.current.resume();
+    if (transport.state === 'paused') {
+      transport.start();
       setIsPlaying(true);
       return;
     }
-    startWebAudio();
+    await startTonePlayback();
     setIsPlaying(true);
-  }, [isPlaying, startWebAudio]);
+  }, [isPlaying, startTonePlayback]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -294,7 +306,7 @@ export function VaultMicroscope({
         </span>
       </div>
       <p style={{ margin: '0 0 0.65rem', fontSize: '0.76rem', color: 'var(--text-muted, #888)' }}>
-        Audio preview: triangle oscillator, same beat clock as the scrubber (~60 BPM quarter pulse).
+        Audio preview: Tone.js PolySynth (triangle), Transport at {PLAYBACK_BPM} BPM — same beat clock as the scrubber.
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
