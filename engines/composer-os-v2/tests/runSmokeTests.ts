@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **157** PASS rows, **41** suites (2026-05-03).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **163** PASS rows, **42** suites (2026-05-03).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -48,6 +48,7 @@ import { runSonicYouthTextureTests } from '../core/score-model/__tests__/sonicYo
 import { runEvaluationSmokeTests } from '../core/evaluation/evaluation.smoke.test';
 import { runPhraseEngineV2SmokeTests } from './phraseEngineV2Smoke.test';
 import { runPhraseEngineV2IntegrationTests } from './phraseEngineV2Integration.test';
+import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -93,6 +94,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Zappa String Quartet (SQ slice + odd meter)', run: runZappaStringQuartetSmokeTests },
   { label: 'SD3 drum guide export (MIDI + JSON sidecar)', run: runDrumGuideExportSmokeTests },
   { label: 'Zappa Big Band (FZ harmony + Zappa Classic meter)', run: runZappaBigBandSmokeTests },
+  { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {
