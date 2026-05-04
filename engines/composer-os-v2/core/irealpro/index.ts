@@ -8,6 +8,6 @@ export {
   parseChordProgressionText,
 } from './chordSymbolMapper';
 export type { ChordInspectorResult } from './chordSymbolMapper';
-export type { GenerateFromIRealOptions, IRealVaultOutput } from './irealVaultPipeline';
-export { generateFromIReal, generateVaultFromParsedChart } from './irealVaultPipeline';
+export type { GenerateFromIRealOptions, IRealVaultOutput, VaultGenerationOptions } from './irealVaultPipeline';
+export { generateFromIReal, generateVaultFromParsedChart, TRIAD_PAIR_CHORUS_ROTATION } from './irealVaultPipeline';
 export type { EmotionalDrift } from '../harmony/reharmCandidateEngine';

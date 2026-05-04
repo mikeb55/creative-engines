@@ -16,6 +16,21 @@ const MELODY_MOTIF_TENSION_CYCLE: readonly TensionState[] = [
   'resolve',
 ];
 
+/** Solo vault riff style per chorus when base style is triad-pair-pendulum or omitted (aligned with tension cycle length). */
+export const TRIAD_PAIR_CHORUS_ROTATION: readonly [
+  'triad-pair-pendulum',
+  'bebop-placement',
+  'triad-pair-pendulum',
+  'quadratonic',
+  'triad-pair-pendulum',
+] = [
+  'triad-pair-pendulum',
+  'bebop-placement',
+  'triad-pair-pendulum',
+  'quadratonic',
+  'triad-pair-pendulum',
+];
+
 function groupScoreNotesByBar(notes: ScoreNote[]): Map<number, ScoreNote[]> {
   const byBar = new Map<number, ScoreNote[]>();
   for (const n of notes) {
@@ -63,8 +78,10 @@ function applyMelodyMotifReuseAcrossBars(params: {
   chordMappings: IRealVaultOutput['chordMappings'];
   quarterSpan: number;
   barCount: number;
+  /** Shifts which {@link TensionState} applies to the first bar after the seed (one step per repeated chorus). */
+  tensionCycleRotation?: number;
 }): ScoreNote[] {
-  const { generatedNotes, chordMappings, quarterSpan, barCount } = params;
+  const { generatedNotes, chordMappings, quarterSpan, barCount, tensionCycleRotation = 0 } = params;
   if (barCount < 2 || chordMappings.length === 0) return generatedNotes;
 
   const byBar = groupScoreNotesByBar(generatedNotes);
@@ -94,7 +111,9 @@ function applyMelodyMotifReuseAcrossBars(params: {
 
     const ch = chordByBar.get(b)!;
     const layers = transformMotifThroughLayers(motif, ch.vaultChordTypeId, ch.rootPc);
-    const state = MELODY_MOTIF_TENSION_CYCLE[(b - seedBar - 1) % MELODY_MOTIF_TENSION_CYCLE.length]!;
+    const L = MELODY_MOTIF_TENSION_CYCLE.length;
+    const cycleIdx = ((b - seedBar - 1 + tensionCycleRotation) % L + L) % L;
+    const state = MELODY_MOTIF_TENSION_CYCLE[cycleIdx]!;
     const variant = layers[state];
     if (!variant.length) {
       out.push(...orig);
@@ -144,30 +163,51 @@ export type IRealVaultOutput = {
   mode: GenerationMode;
 };
 
-export type GenerateFromIRealOptions = {
+/** Options for {@link generateVaultFromParsedChart} / iReal / paste / PDF vault pipelines. */
+export type VaultGenerationOptions = {
   riffStyle?: 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string' | 'bebop-placement';
   tuningId?: string;
   /** Reserved for future reharm / candidate bias; not applied in this pipeline yet. */
   drift?: EmotionalDrift;
   /** Build I — solo (dense / bar-reactive) vs melody (sparse / phrase-oriented). */
   mode?: GenerationMode;
+  /** Repeat the full chart this many times; bar indices and beats continue sequentially. Default 1. */
+  chorusCount?: number;
+  /**
+   * When set to `sonic_youth`, repeated choruses do **not** advance the melody motif tension-cycle phase
+   * (SY slice owns texture state elsewhere).
+   */
+  songwriterStyleId?: string;
 };
 
-/**
- * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs using the chart’s time signature (Build I).
- */
-export function generateVaultFromParsedChart(chart: ParsedChart, options?: GenerateFromIRealOptions): IRealVaultOutput {
-  void options?.drift;
-  const measures = chart.measures ?? [];
-  const bars = measures.length;
-  const mode: GenerationMode = options?.mode ?? 'solo';
-  const profile = getProfileForMode(mode);
-  const riffStyleSolo = options?.riffStyle ?? 'bebop-placement';
-  const effectiveRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
-  const tuningId = options?.tuningId ?? 'standard';
-  const quarterSpan = quarterNoteSpanPerMeasure(chart);
-  const eighthsPerBar = eighthsPerMeasureFromChart(chart);
+/** @deprecated Use {@link VaultGenerationOptions}; kept for existing imports. */
+export type GenerateFromIRealOptions = VaultGenerationOptions;
 
+function resolveChorusCount(raw: unknown): number {
+  const n = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(64, Math.floor(n));
+}
+
+function generateVaultBarsSinglePass(params: {
+  measures: NonNullable<ParsedChart['measures']>;
+  mode: GenerationMode;
+  profile: ReturnType<typeof getProfileForMode>;
+  effectiveRiffStyle:
+    | 'quadratonic'
+    | 'dyad-seesaw'
+    | 'triad-pair-pendulum'
+    | 'pedal-string'
+    | 'bebop-placement';
+  tuningId: string;
+  quarterSpan: number;
+  eighthsPerBar: number;
+}): {
+  generatedNotes: ScoreNote[];
+  chordMappings: IRealVaultOutput['chordMappings'];
+  unmappedChords: IRealVaultOutput['unmappedChords'];
+} {
+  const { measures, mode, profile, effectiveRiffStyle, tuningId, quarterSpan, eighthsPerBar } = params;
   const generatedNotes: ScoreNote[] = [];
   const chordMappings: IRealVaultOutput['chordMappings'] = [];
   const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
@@ -226,23 +266,91 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
     }
   }
 
-  const notesOut =
-    mode === 'melody'
-      ? applyMelodyMotifReuseAcrossBars({
-          generatedNotes,
-          chordMappings,
-          quarterSpan,
-          barCount: bars,
-        })
-      : generatedNotes;
+  return { generatedNotes, chordMappings, unmappedChords };
+}
+
+/**
+ * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs using the chart’s time signature (Build I).
+ */
+export function generateVaultFromParsedChart(chart: ParsedChart, options?: VaultGenerationOptions): IRealVaultOutput {
+  void options?.drift;
+  const measures = chart.measures ?? [];
+  const barsPerChorus = measures.length;
+  const mode: GenerationMode = options?.mode ?? 'solo';
+  const profile = getProfileForMode(mode);
+  const riffStyleSolo = options?.riffStyle ?? 'bebop-placement';
+  const baselineVaultRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
+  const tuningId = options?.tuningId ?? 'standard';
+  const quarterSpan = quarterNoteSpanPerMeasure(chart);
+  const eighthsPerBar = eighthsPerMeasureFromChart(chart);
+  const chorusCount = resolveChorusCount(options?.chorusCount);
+  const skipChorusTensionAdvance = options?.songwriterStyleId === 'sonic_youth';
+  const rawRiffOpt = options?.riffStyle;
+  const triadPairStyleRotationEligible =
+    rawRiffOpt === undefined || rawRiffOpt === 'triad-pair-pendulum';
+
+  const allGeneratedNotes: ScoreNote[] = [];
+  const allChordMappings: IRealVaultOutput['chordMappings'] = [];
+  const allUnmappedChords: IRealVaultOutput['unmappedChords'] = [];
+
+  for (let chorusIndex = 0; chorusIndex < chorusCount; chorusIndex++) {
+    let effectiveRiffStyleForPass = baselineVaultRiffStyle;
+    if (
+      mode === 'solo' &&
+      triadPairStyleRotationEligible &&
+      !skipChorusTensionAdvance
+    ) {
+      effectiveRiffStyleForPass = TRIAD_PAIR_CHORUS_ROTATION[chorusIndex % TRIAD_PAIR_CHORUS_ROTATION.length]!;
+    }
+
+    const { generatedNotes, chordMappings, unmappedChords } = generateVaultBarsSinglePass({
+      measures,
+      mode,
+      profile,
+      effectiveRiffStyle: effectiveRiffStyleForPass,
+      tuningId,
+      quarterSpan,
+      eighthsPerBar,
+    });
+
+    const tensionCycleRotation = skipChorusTensionAdvance ? 0 : chorusIndex;
+
+    const chunkNotes =
+      mode === 'melody'
+        ? applyMelodyMotifReuseAcrossBars({
+            generatedNotes,
+            chordMappings,
+            quarterSpan,
+            barCount: barsPerChorus,
+            tensionCycleRotation,
+          })
+        : generatedNotes;
+
+    const barOffset = chorusIndex * barsPerChorus;
+    const beatOffsetGlobal = chorusIndex * barsPerChorus * quarterSpan;
+
+    for (const n of chunkNotes) {
+      allGeneratedNotes.push({
+        ...n,
+        barIndex: n.barIndex + barOffset,
+        startBeat: n.startBeat + beatOffsetGlobal,
+      });
+    }
+    for (const m of chordMappings) {
+      allChordMappings.push({ ...m, barIndex: m.barIndex + barOffset });
+    }
+    for (const u of unmappedChords) {
+      allUnmappedChords.push({ ...u, barIndex: u.barIndex + barOffset });
+    }
+  }
 
   return {
     title: chart.title,
     key: chart.key,
-    bars,
-    generatedNotes: notesOut,
-    chordMappings,
-    unmappedChords,
+    bars: barsPerChorus * chorusCount,
+    generatedNotes: allGeneratedNotes,
+    chordMappings: allChordMappings,
+    unmappedChords: allUnmappedChords,
     mode,
   };
 }
@@ -250,7 +358,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
 /**
  * Parse iReal input, map each bar’s first chord to the Vault, and concatenate **1-bar** riffs using the chart’s meter.
  */
-export function generateFromIReal(input: string, options?: GenerateFromIRealOptions): IRealVaultOutput {
+export function generateFromIReal(input: string, options?: VaultGenerationOptions): IRealVaultOutput {
   const chart = parseIRealProInput(input);
   return generateVaultFromParsedChart(chart, options);
 }
