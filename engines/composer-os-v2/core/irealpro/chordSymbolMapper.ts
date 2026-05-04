@@ -49,6 +49,11 @@ export function normalizeChordQualityForMapping(raw: string): string {
   s = s.replace(/^maj#11$/, 'maj7#11');
   /* Unambiguous major-seven sharp-five (avoid min7#5 collision after lowercasing). */
   s = s.replace(/^m7#5$/i, 'maj7#5');
+  /* Slash bass: `Ab6/Eb` → `6/eb` — map using upper structure only. */
+  {
+    const bass = /^(.+)\/([A-Ga-g][#b]?)$/.exec(s);
+    if (bass) s = bass[1]!;
+  }
   return s;
 }
 
@@ -73,6 +78,8 @@ const QUALITY_RULES: Rule[] = [
   /** `^7#5`, `maj7#5`, `M7#5` (via normalize); `m7#5` rewritten to `maj7#5` above. */
   { match: (s) => s === 'maj7#5', vaultId: 'Maj7#5' },
   { match: (s) => s === 'maj9', vaultId: 'Maj9' },
+  /** iReal / Real Book `6`, `C6` (major sixth, no seventh). */
+  { match: (s) => s === 'maj6' || s === '6', vaultId: 'Maj6' },
   { match: (s) => s === 'maj7' || s === 'maj', vaultId: 'Maj7' },
   { match: (s) => s === 'major', vaultId: 'Maj7' },
   { match: (s) => s === 'minmaj9', vaultId: 'minMaj9' },
@@ -92,6 +99,7 @@ const QUALITY_RULES: Rule[] = [
   { match: (s) => s === 'dom7' || s === '7', vaultId: '13#11#9' },
   { match: (s) => s === 'dim' || s === 'dim7' || s === 'o' || s === 'o7', vaultId: 'dim7b13' },
   { match: (s) => s === 'susb9' || s === '7susb9', vaultId: 'sus-b9' },
+  { match: (s) => s === '9sus' || s === '7sus9', vaultId: 'sus9' },
   { match: (s) => s === 'sus' || s === 'sus4' || s === 'sus2', vaultId: 'sus9' },
 ];
 

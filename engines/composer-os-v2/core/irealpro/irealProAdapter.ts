@@ -1,5 +1,11 @@
+/// <reference path="./ireal-reader.d.ts" />
+import iRealReader from 'ireal-reader';
 import type { ParsedChart, ParsedChord, ParsedSection } from './parsedChart';
-import { buildBarMeterMapFromUnscrambledMusic, extractUnscrambledMusicFromIrealInput } from './irealProBarMeterScan';
+import {
+  buildBarMeterMapFromUnscrambledMusic,
+  extractUnscrambledMusicFromIrealInput,
+  repeatsFieldFromParsedRepeatMarkers,
+} from './irealProBarMeterScan';
 import { buildRepeatMarkersFromUnscrambledMusic } from './irealProRepeatMarkersScan';
 import { parseIrealTimeSignatureDigits } from './irealProTimeSignature';
 
@@ -25,8 +31,6 @@ type IRealPlaylist = {
   name?: string;
   songs: IRealSong[];
 };
-
-const iRealReader = require('ireal-reader') as (data: string) => IRealPlaylist;
 
 /** ireal-reader only matches `irealb://`; iReal Pro also emits `ireal://`. */
 function normalizeForIRealLib(input: string): string {
@@ -146,7 +150,7 @@ export function parseIRealProInput(input: string): ParsedChart {
     style: typeof song.style === 'string' && song.style !== '' ? song.style : null,
     sections: defaultSections(totalBars),
     measures,
-    repeats: [],
+    repeats: repeatsFieldFromParsedRepeatMarkers(repeatMarkers),
   };
 }
 

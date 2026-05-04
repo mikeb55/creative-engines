@@ -43,6 +43,7 @@ const DEGREE_PC_FROM_ROOT: Record<string, Partial<Record<number, VaultPitchClass
   sus9: { 1: 0, 4: 5, 9: 2, 7: 10, 11: 6, 13: 9 },
   min9: { 1: 0, 3: 3, 5: 7, 7: 10, 9: 2, 11: 5, 13: 9 },
   Maj7: { 1: 0, 3: 4, 5: 7, 7: 11, 9: 2, 11: 6, 13: 9 },
+  Maj6: { 1: 0, 3: 4, 5: 7, 6: 9, 9: 2, 11: 6, 13: 9 },
   dim7b13: { 1: 0, 3: 3, 5: 6, 7: 9, 9: 2, 11: 5, 13: 8 },
   '13#11#9': { 1: 0, 3: 4, 5: 7, 7: 10, 9: 3, 11: 6, 13: 9 },
   'Maj7#11': { 1: 0, 3: 4, 5: 7, 7: 11, 9: 2, 11: 6, 13: 9 },
@@ -66,6 +67,8 @@ function melodicTriadDegrees(row: TonalityVaultChordRow): [number, number, numbe
     case '7#9#5':
     case '13b9':
       return [3, 5, 7];
+    case 'Maj6':
+      return [3, 5, 6];
     case 'sus-b9':
       return [4, 13, 1];
     case 'sus9':

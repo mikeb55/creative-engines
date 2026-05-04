@@ -82,6 +82,15 @@ export const TONALITY_VAULT_DATABASE: readonly TonalityVaultChordRow[] = [
     tensionHierarchy: [3, 7, 5, 1],
   },
   {
+    chordType: 'Maj6',
+    displayName: 'Major sixth',
+    leftHandShell: [1, 3, 6],
+    melodicTriadRoot: 'T3',
+    melodicTriadQuality: 'major',
+    primaryTensionNote: 9,
+    tensionHierarchy: [3, 6, 5, 9, 1],
+  },
+  {
     chordType: 'dim7b13',
     displayName: 'Diminished seventh flat thirteen',
     leftHandShell: [1, 3, 5, 7],

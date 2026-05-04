@@ -1,3 +1,4 @@
+/// <reference path="./ireal-reader.d.ts" />
 /**
  * iReal Pro encodes time-signature changes as `T` + digit run (see `ireal-reader` Parser).
  * The stock reader only keeps the *last* `T` in `music.timeSignature`.
@@ -5,10 +6,8 @@
  * (at its first chord or `n` / null slot) and build a sparse {@link ParsedChart} `barMeterMap`.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const unscramble = require('ireal-reader/unscramble') as { ireal: (s: string) => string };
-
-import type { ParsedChart } from './parsedChart';
+import * as unscramble from 'ireal-reader/unscramble';
+import type { ParsedChart, ParsedRepeatMarker } from './parsedChart';
 import { parseIrealTimeSignatureDigits } from './irealProTimeSignature';
 
 const musicPrefix = '1r34LbKcu7';
@@ -271,4 +270,16 @@ export function buildBarMeterMapFromUnscrambledMusic(
     }
   }
   return map;
+}
+
+/**
+ * Maps compact repeat / segno / coda markers (same bar indices as {@link ParsedChart.repeatMarkers},
+ * derived from the unscrambled stream where `{` `}` `S` `Q` align with
+ * `startRepeatLocation` / `endRepeatLocation` / `segnoLocation` / `codaLocation` in the instrumented parse)
+ * onto {@link ParsedChart.repeats}.
+ */
+export function repeatsFieldFromParsedRepeatMarkers(
+  markers: ParsedRepeatMarker[]
+): { type: string; barIndex: number }[] {
+  return markers.map((m) => ({ type: m.type, barIndex: m.barIndex }));
 }

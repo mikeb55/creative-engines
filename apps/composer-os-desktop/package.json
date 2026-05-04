@@ -82,6 +82,14 @@
         "to": "ui"
       },
       {
+        "from": "resources/node_modules",
+        "to": "node_modules"
+      },
+      {
+        "from": "../../node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node",
+        "to": "skia.win32-x64-msvc.node"
+      },
+      {
         "from": "../../engines/songwriting_bridge",
         "to": "songwriting_bridge",
         "filter": [

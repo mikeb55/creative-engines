@@ -4,6 +4,7 @@
 const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
+const { copyNapiCanvasToResources } = require('./copy-napi-canvas-resources');
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const entry = path.join(repoRoot, 'apps', 'composer-os-desktop', 'electron', 'ipcEntry.ts');
@@ -21,7 +22,10 @@ esbuild
     format: 'cjs',
     external: ['electron', '@napi-rs/canvas'],
   })
-  .then(() => console.log('desktop-ipc bundle built:', outFile))
+  .then(() => {
+    console.log('desktop-ipc bundle built:', outFile);
+    copyNapiCanvasToResources();
+  })
   .catch((err) => {
     console.error(err);
     process.exit(1);

@@ -157,7 +157,6 @@ function testRouteBigBandMaj7Sharp11(): boolean {
 function testBuildAllVaultChordRuleSetsGceAlignment(): boolean {
   const sets = buildAllVaultChordRuleSets();
   if (sets.length !== TONALITY_VAULT_DATABASE.length) return false;
-  if (sets.length !== 16) return false;
   for (const rs of sets) {
     if (rs.phraseTemplates.length === 0) return false;
     if (rs.recommendedTensionStates.length === 0) return false;
