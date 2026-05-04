@@ -899,9 +899,35 @@ The following GitHub repos were checked via **public API / raw README only** (no
 
 **Takeaway:** Prior to building **VaultRiffGenerator**, mine **[riffbank](https://github.com/mikeb55/riffbank)** (JSON snippets + schema) and **[infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine)** (**riff.schema.json**, section/variation intent). Treat **grand-criteria-of-excellence-jazz** as **research/diagnostic** adjacent to GCE, not a guitar engine.
 
+### Build A — Note tagging + beat context (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/harmony/` — **`noteTag.ts`**, **`beatContextLegalityMap.ts`** (re-exported from **`harmony/index.ts`**).
+
+**`NoteTag`** — per–pitch-class metadata for melody / guitar layers:
+
+| Field | Purpose |
+|-------|--------|
+| **`tonalRole`** | `triadRoot` \| `triadThird` \| `triadFifth` \| `primaryTension` \| `secondaryTension` \| `triadPairTension` \| `bebopPassing` \| `chaos` (last two reserved for later engines). |
+| **`layer`** | `0` \| `1` \| `2` \| `3` — depth of harmonic intent (triad surface → chaos). |
+| **`beatLegality`** | `strong` \| `weak` \| `syncopated` \| `approachOnly` — where an attack on this pitch class is rhythmically valid. |
+| **`resolveTargets`** | Absolute **pitch classes (0–11)** preferred continuations / resolutions. |
+| **`voicingCompatibility`** | Optional string tags for voicing rules (scaffold: empty until voicing hooks land). |
+| **`guitarTechniques`** | Optional string tags (e.g. pick / slide); scaffold until **VaultRiffGenerator** wiring. |
+
+**`buildBeatContextLegalityMap(chordTypeId, rootPc)`** (`beatContextLegalityMap.ts`) — uses **`tonalityVaultDatabase`** and **`selectQuadratonicMelodySpec`**. Returns a **`Map<number, NoteTag>`** keyed by **absolute pitch class 0–11** for the given chord **root PC**.
+
+| Class | Layer | `beatLegality` | Role assignment |
+|-------|-------|----------------|------------------|
+| Vault **melodic triad** (three T-stack tones) | **0** | **`strong`** | Slots map to **`triadRoot`**, **`triadThird`**, **`triadFifth`**; `resolveTargets` = other two triad absolute PCs. |
+| **Primary tension** (vault `primaryTensionNote`, if not already a triad slot) | **1** | **`weak`** | **`primaryTension`**; `resolveTargets` from quadratonic **resolve-toward** triad degrees → absolute PCs. |
+| Other **`tensionHierarchy`** degrees (not triad, not primary) with a vault spelling | **2** | **`approachOnly`** | **`secondaryTension`**; `resolveTargets` = triad absolute PCs. |
+| All remaining pitch classes | **3** | **`syncopated`** | **`chaos`** (outside the vault spelling set for that chord). |
+
+Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension is resolved **in favour of the triad** (layer 0).
+
 ### Planned builds (engine)
 
-- **Build A — Note tagging + beat context:** **`BeatContextLegalityMap`** and **`NoteTag`** schema. Every note carries **tonal role**, **layer**, **beat legality**, **resolve targets**, **voicing compatibility**, **guitar techniques** (pick/finger/slide tags as applicable).
+- **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
 
 - **Build B — Layer state machine + liquid harmony:** **`LayerStateMachine`** (Resolve → Primary → Tension → Chaos → Recover) driving **`LiquidHarmonyPlanner`**. Phrase-level intention from the state machine; **liquid harmony** shapes internal voicing motion per subdivision.
 
