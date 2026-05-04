@@ -46,6 +46,7 @@ import {
 } from '../core/export/validateLockedHarmonyMusicXml';
 import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
+import { defaultStyleProfileForPrimarySongwriter } from '../core/song-mode/songModeStyleProfileDefaults';
 import type {
   CombinedEvaluationResult,
   ExtractedStyleFeatures,
@@ -952,7 +953,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     scoreTitle: title,
     songModeHookFirstIdentity: true,
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
-    styleProfile: req.styleProfile ?? 'STYLE_ECM',
+    styleProfile:
+      req.styleProfile ??
+      defaultStyleProfileForPrimarySongwriter(req.primarySongwriterStyle) ??
+      'STYLE_ECM',
     harmonyMode: harmonyModeForRun,
     chordProgressionText,
     ...(lockedHarmonyBarsAuthoritative
@@ -1797,6 +1801,9 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   if (a === 'sammy_nestico') return 'sammy_nestico';
   return undefined;
 }
+
+/** Song Mode analogue of {@link composerStyleFromArrangerStyle} — primary songwriter → engine `StyleProfile` when request omits `styleProfile`. */
+export { defaultStyleProfileForPrimarySongwriter } from '../core/song-mode/songModeStyleProfileDefaults';
 
 function bigBandEvaluationStyleProfile(
   cs: BigBandComposerId | null | undefined

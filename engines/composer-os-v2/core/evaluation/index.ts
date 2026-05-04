@@ -18,3 +18,7 @@ export * from './classicalStyleProfile';
 export * from './bebopStyleProfile';
 export * from './quadratonicAlignmentEvaluator';
 export * from './gceTargetedGenerator';
+export * from './songModePatMethenyStyleProfile';
+export * from './songModeBurtBacharachStyleProfile';
+export * from './songModeEcmEnsembleStyleProfile';
+export * from './songModeEvaluationProfiles';

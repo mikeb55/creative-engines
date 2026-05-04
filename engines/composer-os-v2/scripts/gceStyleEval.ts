@@ -20,6 +20,7 @@ import {
 } from '../core/gce/gceAutoScorers';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
+import { defaultStyleProfileForPrimarySongwriter } from '../core/song-mode/songModeStyleProfileDefaults';
 
 /**
  * Raw preset runs — seed 50021, 32 bars, 100 bpm; no songwriter / Song Mode hook flags.
@@ -42,6 +43,7 @@ const GCE_EVAL_PRESETS = [
 const SONG_MODE_GCE_RUNS = [
   { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'donald_fagen', label: 'song_mode_fagen' },
   { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'wayne_shorter', label: 'song_mode_shorter' },
+  { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'pat_metheny', label: 'song_mode_pat_metheny' },
   { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'bacharach', label: 'song_mode_bacharach' },
   { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'barry_harris', label: 'song_mode_barry_harris' },
   { presetId: 'guitar_bass_duo' as const, primarySongwriterStyle: 'ecm_chamber', label: 'song_mode_ecm' },
@@ -52,24 +54,9 @@ const CAT_PAD = 34;
 /** Harmonic length aligned with **`runGoldenPath`** options in this harness (`totalBars: 32`). Shorter-score presets (ensemble / 8-bar brick) repeat their harmonic cycle to this length for chord-based GCE pillars. */
 const GCE_HARMONIC_BAR_TARGET = 32;
 
-/** Align Style Engine profile with primary songwriter — default STYLE_ECM triggers Metheny-density gates unrelated to several writers. */
+/** Align Style Engine profile with primary songwriter — uses shared defaults (Pat Metheny → STYLE_PAT_METHENY, ECM chamber → STYLE_ECM_CHAMBER). */
 function styleProfileForSongwriter(style: string): StyleProfile {
-  switch (style) {
-    case 'wayne_shorter':
-      return 'STYLE_SHORTER_POST_BOP';
-    case 'pat_metheny':
-      return 'STYLE_ECM';
-    case 'ecm_chamber':
-      return 'STYLE_ECM';
-    case 'bacharach':
-      return 'STYLE_SOPHISTICATED_POP';
-    case 'barry_harris':
-      return 'STYLE_BEBOP_LITE';
-    case 'donald_fagen':
-      return 'STYLE_MODERN_JAZZ';
-    default:
-      return 'STYLE_MODERN_JAZZ';
-  }
+  return defaultStyleProfileForPrimarySongwriter(style) ?? 'STYLE_MODERN_JAZZ';
 }
 
 function maxMeasureIndexAcrossParts(score: ScoreModel): number {

@@ -90,6 +90,7 @@ import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
 import type { StyleProfile } from '../song-mode/songModeStyleProfile';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
+import { defaultStyleProfileForPrimarySongwriter } from '../song-mode/songModeStyleProfileDefaults';
 import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
 import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
@@ -1546,7 +1547,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     /** Song Mode: explicit STYLE_ECM default when `styleProfile` omitted (legacy callers). */
-    const styleProfileResolved: StyleProfile = normalizeStyleProfileId(options.styleProfile) ?? 'STYLE_ECM';
+    const styleProfileResolved: StyleProfile =
+      normalizeStyleProfileId(options.styleProfile) ??
+      defaultStyleProfileForPrimarySongwriter(options.primarySongwriterStyle) ??
+      'STYLE_ECM';
     const isLeadSheetPhase1Writer =
       options.primarySongwriterStyle === 'donald_fagen' || options.primarySongwriterStyle === 'barry_harris';
     context.generationMetadata = {
