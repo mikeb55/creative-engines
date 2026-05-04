@@ -5,6 +5,20 @@ import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
 import type { ParsedChart } from './parsedChart';
 
+/** Quarter-note span per measure (startBeat uses quarter-note units; eighth = 0.5). */
+export function quarterNoteSpanPerMeasure(chart: ParsedChart): number {
+  const ts = chart.timeSignature;
+  if (!ts || ts.den <= 0) return 4;
+  return (ts.num * 4) / ts.den;
+}
+
+/** Eighth-note subdivisions per measure (4/4 ⇒ 8, 3/4 ⇒ 6). */
+export function eighthsPerMeasureFromChart(chart: ParsedChart): number {
+  const ts = chart.timeSignature;
+  if (!ts || ts.den <= 0) return 8;
+  return Math.max(1, Math.round((ts.num * 8) / ts.den));
+}
+
 export type IRealVaultOutput = {
   title: string;
   key: string | null;
@@ -25,7 +39,7 @@ export type GenerateFromIRealOptions = {
 };
 
 /**
- * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs on a **4/4** timeline (Build I).
+ * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs using the chart’s time signature (Build I).
  */
 export function generateVaultFromParsedChart(chart: ParsedChart, options?: GenerateFromIRealOptions): IRealVaultOutput {
   void options?.drift;
@@ -36,6 +50,8 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
   const riffStyleSolo = options?.riffStyle ?? 'bebop-placement';
   const effectiveRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
   const tuningId = options?.tuningId ?? 'standard';
+  const quarterSpan = quarterNoteSpanPerMeasure(chart);
+  const eighthsPerBar = eighthsPerMeasureFromChart(chart);
 
   const generatedNotes: ScoreNote[] = [];
   const chordMappings: IRealVaultOutput['chordMappings'] = [];
@@ -64,12 +80,13 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
     const barNotes = generateVaultRiff({
       chordTypeId: mapped.vaultChordTypeId,
       rootPc: mapped.rootPc,
-      bars: phrasePlan.bars,
+      bars: phrasePlan.bars as 1 | 2 | 4 | 8,
       style: effectiveRiffStyle,
       tuningId,
+      eighthsPerBar,
     });
 
-    const beatOffset = barIndex * 4;
+    const beatOffset = barIndex * quarterSpan;
     for (const n of barNotes) {
       generatedNotes.push({
         ...n,
@@ -85,7 +102,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
     ) {
       generatedNotes.push({
         pitch: 0,
-        startBeat: (barIndex + 1) * 4,
+        startBeat: (barIndex + 1) * quarterSpan,
         duration: 0.5,
         guitarString: 0,
         guitarFret: 0,
@@ -106,7 +123,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Gener
 }
 
 /**
- * Parse iReal input, map each bar’s first chord to the Vault, and concatenate **1-bar** riffs on a **4/4** timeline.
+ * Parse iReal input, map each bar’s first chord to the Vault, and concatenate **1-bar** riffs using the chart’s meter.
  */
 export function generateFromIReal(input: string, options?: GenerateFromIRealOptions): IRealVaultOutput {
   const chart = parseIRealProInput(input);

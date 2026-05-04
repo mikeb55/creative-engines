@@ -82,6 +82,13 @@ function toFretboardNote(n: ScoreNote, legality: Map<number, NoteTag>): Fretboar
   };
 }
 
+/** Matches scrubber: 0.5 beat every 500ms → 1 quarter = 1s at this clock. */
+const SECONDS_PER_QUARTER_NOTE = 1;
+
+function midiToHz(midi: number): number {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
 export function VaultMicroscope({
   scoreNotes,
   totalBars,
@@ -116,10 +123,60 @@ export function VaultMicroscope({
     [scoreNotes, legalityMap]
   );
 
+  const scoreNotesScheduleKey = useMemo(
+    () =>
+      scoreNotes.map((n) => `${n.barIndex}|${n.startBeat}|${n.pitch}|${n.duration}`).join(';'),
+    [scoreNotes]
+  );
+
   const lsmRef = useRef(new LayerStateMachine());
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const [currentBeat, setCurrentBeat] = useState(0);
   const [tensionState, setTensionState] = useState<TensionState>('primary');
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const stopWebAudio = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state !== 'closed') {
+      void ctx.close();
+    }
+    audioCtxRef.current = null;
+  }, []);
+
+  const startWebAudio = useCallback(() => {
+    stopWebAudio();
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    const base = ctx.currentTime + 0.08;
+    for (const n of scoreNotes) {
+      if (typeof n.pitch !== 'number' || n.pitch <= 0) continue;
+      const t0 = base + globalQuarterStart(n) * SECONDS_PER_QUARTER_NOTE;
+      const dur = Math.max(0.04, n.duration * SECONDS_PER_QUARTER_NOTE);
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(midiToHz(n.pitch), t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.11, t0 + 0.015);
+      g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.03);
+    }
+  }, [scoreNotes, stopWebAudio]);
+
+  useEffect(() => {
+    stopWebAudio();
+    setIsPlaying(false);
+    setCurrentBeat(0);
+  }, [scoreNotesScheduleKey, stopWebAudio]);
+
+  useEffect(() => {
+    return () => {
+      stopWebAudio();
+    };
+  }, [stopWebAudio]);
 
   const beatStrengthNow = beatStrengthAtQuarter(currentBeat);
   const allowedLayers = LayerStateMachine.getAllowedLayers(tensionState);
@@ -153,10 +210,26 @@ export function VaultMicroscope({
 
   const handleStop = useCallback(() => {
     setIsPlaying(false);
+    stopWebAudio();
     setCurrentBeat(0);
     lsmRef.current = new LayerStateMachine();
     setTensionState('primary');
-  }, []);
+  }, [stopWebAudio]);
+
+  const handlePlayPauseClick = useCallback(async () => {
+    if (isPlaying) {
+      await audioCtxRef.current?.suspend();
+      setIsPlaying(false);
+      return;
+    }
+    if (audioCtxRef.current?.state === 'suspended') {
+      await audioCtxRef.current.resume();
+      setIsPlaying(true);
+      return;
+    }
+    startWebAudio();
+    setIsPlaying(true);
+  }, [isPlaying, startWebAudio]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -207,7 +280,7 @@ export function VaultMicroscope({
           />
         </label>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button type="button" onClick={() => setIsPlaying((p) => !p)}>
+          <button type="button" onClick={() => void handlePlayPauseClick()}>
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <button type="button" className="secondary" onClick={handleStop}>
@@ -220,6 +293,9 @@ export function VaultMicroscope({
           {mode != null ? ` · mode ${mode}` : null}
         </span>
       </div>
+      <p style={{ margin: '0 0 0.65rem', fontSize: '0.76rem', color: 'var(--text-muted, #888)' }}>
+        Audio preview: triangle oscillator, same beat clock as the scrubber (~60 BPM quarter pulse).
+      </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
         <div

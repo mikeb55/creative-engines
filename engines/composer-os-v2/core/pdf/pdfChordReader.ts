@@ -8,10 +8,14 @@ import { createCanvas } from '@napi-rs/canvas';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { getProfileForMode, planPhrase, type GenerationMode } from '../generation';
-import { generateVaultRiff, type ScoreNote, type VaultRiffStyle } from '../guitar/vaultRiffGenerator';
-import { mapChordToVaultType } from '../irealpro/chordSymbolMapper';
-import type { IRealVaultOutput } from '../irealpro/irealVaultPipeline';
+import { type GenerationMode } from '../generation';
+import { type VaultRiffStyle } from '../guitar/vaultRiffGenerator';
+import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
+import {
+  generateVaultFromParsedChart,
+  type IRealVaultOutput,
+  type GenerateFromIRealOptions,
+} from '../irealpro/irealVaultPipeline';
 import type { ParsedChart, ParsedChord, ParsedSection } from '../irealpro/parsedChart';
 
 const DEFAULT_RENDER_SCALE = 2.5;
@@ -261,97 +265,28 @@ function coerceRiffStyle(style: string | undefined): VaultRiffStyle {
   return 'bebop-placement';
 }
 
-/**
- * Same note-generation contract as {@link generateFromIReal} (Build I pipeline).
- */
-function generateFromParsedChart(
-  chart: ParsedChart,
-  options?: {
-    mode?: GenerationMode;
-    riffStyle?: string;
-    tuningId?: string;
-  }
-): IRealVaultOutput {
-  const measures = chart.measures ?? [];
-  const bars = measures.length;
-  const mode: GenerationMode = options?.mode ?? 'solo';
-  const profile = getProfileForMode(mode);
-  const riffStyleSolo = coerceRiffStyle(options?.riffStyle);
-  const effectiveRiffStyle: VaultRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
-  const tuningId = options?.tuningId ?? 'standard';
-
-  const generatedNotes: ScoreNote[] = [];
-  const chordMappings: IRealVaultOutput['chordMappings'] = [];
-  const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
-
-  for (let barIndex = 0; barIndex < measures.length; barIndex++) {
-    const phrasePlan = planPhrase(1, mode);
-
-    const measure = measures[barIndex];
-    const first = measure?.[0];
-    if (!first) continue;
-
-    const mapped = mapChordToVaultType(first);
-    if (!mapped) {
-      unmappedChords.push({ barIndex, symbol: first.symbol });
-      continue;
-    }
-
-    chordMappings.push({
-      barIndex,
-      symbol: first.symbol,
-      vaultChordTypeId: mapped.vaultChordTypeId,
-      rootPc: mapped.rootPc,
-    });
-
-    const barNotes = generateVaultRiff({
-      chordTypeId: mapped.vaultChordTypeId,
-      rootPc: mapped.rootPc,
-      bars: phrasePlan.bars as 1 | 2 | 4 | 8,
-      style: effectiveRiffStyle,
-      tuningId,
-    });
-
-    const beatOffset = barIndex * 4;
-    for (const n of barNotes) {
-      generatedNotes.push({
-        ...n,
-        startBeat: n.startBeat + beatOffset,
-        barIndex,
-      });
-    }
-
-    if (
-      mode === 'melody' &&
-      barIndex % 2 === 1 &&
-      Math.random() < profile.postCadenceRestProbability
-    ) {
-      generatedNotes.push({
-        pitch: 0,
-        startBeat: (barIndex + 1) * 4,
-        duration: 0.5,
-        guitarString: 0,
-        guitarFret: 0,
-        barIndex,
-      });
-    }
-  }
-
-  return {
-    title: chart.title,
-    key: chart.key,
-    bars,
-    generatedNotes,
-    chordMappings,
-    unmappedChords,
-    mode,
+function pdfOptionsToVaultOptions(options?: {
+  mode?: GenerationMode;
+  riffStyle?: string;
+  tuningId?: string;
+  drift?: EmotionalDrift;
+}): GenerateFromIRealOptions | undefined {
+  if (!options) return undefined;
+  const out: GenerateFromIRealOptions = {
+    mode: options.mode,
+    tuningId: options.tuningId,
+    riffStyle: coerceRiffStyle(options.riffStyle),
   };
+  if (options.drift !== undefined) out.drift = options.drift;
+  return out;
 }
 
 export type GenerateFromPdfOptions = {
   mode?: GenerationMode;
   riffStyle?: string;
   tuningId?: string;
+  /** Same semantics as iReal Build I (`generateVaultFromParsedChart`); not yet applied musically in-engine. */
+  drift?: EmotionalDrift;
   /** 1-based page index. Default 1. */
   pageNumber?: number;
   /** Render scale; default 2.5 */
@@ -380,9 +315,17 @@ export async function generateFromPdf(
     return null;
   }
 
-  return generateFromParsedChart(chart, {
-    mode: options?.mode,
-    riffStyle: options?.riffStyle,
-    tuningId: options?.tuningId,
-  });
+  return generateVaultFromParsedChart(
+    chart,
+    pdfOptionsToVaultOptions(
+      options
+        ? {
+            mode: options.mode,
+            riffStyle: options.riffStyle,
+            tuningId: options.tuningId,
+            drift: options.drift,
+          }
+        : undefined
+    )
+  );
 }

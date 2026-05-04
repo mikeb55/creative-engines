@@ -10,3 +10,4 @@ export {
 export type { ChordInspectorResult } from './chordSymbolMapper';
 export type { GenerateFromIRealOptions, IRealVaultOutput } from './irealVaultPipeline';
 export { generateFromIReal, generateVaultFromParsedChart } from './irealVaultPipeline';
+export type { EmotionalDrift } from '../harmony/reharmCandidateEngine';

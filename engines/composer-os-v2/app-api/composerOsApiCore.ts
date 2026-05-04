@@ -32,6 +32,7 @@ import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmon
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
+import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
 import { generateFromPdf } from '../core/pdf';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
@@ -460,6 +461,8 @@ export type PdfGenerateFromPdfRequest = {
   pageNumber?: number;
   mode?: 'solo' | 'melody';
   tuningId?: string;
+  riffStyle?: string;
+  drift?: EmotionalDrift;
 };
 
 export type PdfGenerateFromPdfResponse = {
@@ -489,6 +492,8 @@ export async function apiPdfGenerateFromPdf(
       pageNumber: pageNum !== undefined ? Math.max(1, Math.floor(pageNum)) : 1,
       mode: body.mode,
       tuningId: body.tuningId,
+      riffStyle: body.riffStyle,
+      drift: body.drift,
     });
     if (!out) {
       return {

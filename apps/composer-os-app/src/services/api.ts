@@ -220,6 +220,14 @@ export const api = {
     pageNumber?: number;
     mode?: 'solo' | 'melody';
     tuningId?: string;
+    riffStyle?: string;
+    drift?:
+      | 'neutral'
+      | 'darker'
+      | 'brighter'
+      | 'more-suspended'
+      | 'more-unstable'
+      | 'more-cinematic';
   }) =>
     post<{ success: true; output: IRealVaultOutput | null; error?: string }>('/pdf/generate-from-pdf', body),
 };

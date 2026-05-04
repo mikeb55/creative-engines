@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
@@ -42,6 +42,7 @@ import {
   extractScoreMusicXmlFromString,
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
+import { generateReharmCandidates } from '@composer-os/core/harmony/reharmCandidateEngine';
 import {
   buildComposerOddMeterRows,
   COMPOSER_METER_PRESET_MAP,
@@ -55,11 +56,14 @@ import {
   generateFromIReal,
   generateVaultFromParsedChart,
   parseChordProgressionText,
+  parseIRealProInput,
   inspectChordSymbol,
   inspectChordToMusicXml,
   vaultRiffScoreNotesToMusicXml,
   type ChordInspectorResult,
+  type EmotionalDrift,
   type IRealVaultOutput,
+  type ParsedChart,
 } from '@composer-os/core/irealpro';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
@@ -78,6 +82,75 @@ function chordPasteTimeSigFromUi(id: '4-4' | '3-4' | '6-8'): { num: number; den:
   if (id === '3-4') return { num: 3, den: 4 };
   if (id === '6-8') return { num: 6, den: 8 };
   return { num: 4, den: 4 };
+}
+
+const VAULT_EMOTIONAL_DRIFT_OPTIONS: { value: EmotionalDrift; label: string }[] = [
+  { value: 'neutral', label: 'neutral' },
+  { value: 'darker', label: 'darker' },
+  { value: 'brighter', label: 'brighter' },
+  { value: 'more-suspended', label: 'more-suspended' },
+  { value: 'more-unstable', label: 'more-unstable' },
+  { value: 'more-cinematic', label: 'more-cinematic' },
+];
+
+const VAULT_GENERATION_OPTIONS_HINT =
+  'Mode, tuning, riff style, and emotional drift are sent on the request. Drift is reserved for reharm bias in the engine and does not change output yet.';
+
+function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
+  const ts = chart.timeSignature;
+  const tsStr = ts ? `${ts.num}/${ts.den}` : '—';
+  const tempo =
+    chart.tempo != null && Number.isFinite(chart.tempo) && chart.tempo > 0
+      ? `${Math.round(chart.tempo)} BPM`
+      : '—';
+  const bars = chart.measures?.length ?? 0;
+  const style = chart.style?.trim() ? chart.style : '—';
+  const composer = chart.composer?.trim() ? chart.composer : null;
+  const title = chart.title?.trim() ? chart.title : '—';
+  return (
+    <div
+      role="region"
+      aria-label="Parsed chart summary"
+      style={{
+        marginTop: '0.65rem',
+        marginBottom: '0.35rem',
+        padding: '0.5rem 0.65rem',
+        borderRadius: 6,
+        border: '1px solid var(--border)',
+        background: 'var(--bg-elevated, rgba(0,0,0,0.04))',
+        fontSize: '0.82rem',
+        color: 'var(--text-muted)',
+        lineHeight: 1.45,
+      }}
+    >
+      <p style={{ margin: '0 0 0.35rem', fontWeight: 600, color: 'var(--text)', fontSize: '0.85rem' }}>
+        Chart preview
+      </p>
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Title:</strong> {title}
+      </p>
+      {composer ? (
+        <p style={{ margin: '0.2rem 0' }}>
+          <strong>Composer:</strong> {composer}
+        </p>
+      ) : null}
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Key:</strong> {chart.key ?? '—'}
+      </p>
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Time signature:</strong> {tsStr}
+      </p>
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Tempo:</strong> {tempo}
+      </p>
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Style:</strong> {style}
+      </p>
+      <p style={{ margin: '0.2rem 0' }}>
+        <strong>Bars:</strong> {bars}
+      </p>
+    </div>
+  );
 }
 
 /** Client-side chord preflight failures (before generate). */
@@ -949,6 +1022,8 @@ export function HomeGenerate({
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
   const [iRealVaultTuningId, setIRealVaultTuningId] = useState('standard');
+  const [iRealVaultMode, setIRealVaultMode] = useState<'solo' | 'melody'>('solo');
+  const [iRealVaultDrift, setIRealVaultDrift] = useState<EmotionalDrift>('neutral');
   const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
   const [chordPasteText, setChordPasteText] = useState('');
@@ -960,6 +1035,7 @@ export function HomeGenerate({
   const [chordPasteRiffStyle, setChordPasteRiffStyle] = useState<
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
+  const [chordPasteDrift, setChordPasteDrift] = useState<EmotionalDrift>('neutral');
   const [chordPasteOutput, setChordPasteOutput] = useState<IRealVaultOutput | null>(null);
   const [chordPasteBusy, setChordPasteBusy] = useState(false);
   const [chordPasteError, setChordPasteError] = useState<string | null>(null);
@@ -971,6 +1047,7 @@ export function HomeGenerate({
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
   const [chordInspectorTuningId, setChordInspectorTuningId] = useState('standard');
+  const [chordInspectorReharmDrift, setChordInspectorReharmDrift] = useState<EmotionalDrift>('neutral');
   const [chordInspectorResult, setChordInspectorResult] = useState<ChordInspectorResult | null>(null);
   const [chordInspectorParseError, setChordInspectorParseError] = useState<string | null>(null);
   const [chordInspectorExportError, setChordInspectorExportError] = useState<string | null>(null);
@@ -978,6 +1055,10 @@ export function HomeGenerate({
   const [pdfPageNumber, setPdfPageNumber] = useState(1);
   const [pdfVaultMode, setPdfVaultMode] = useState<'solo' | 'melody'>('solo');
   const [pdfVaultTuningId, setPdfVaultTuningId] = useState('standard');
+  const [pdfVaultRiffStyle, setPdfVaultRiffStyle] = useState<
+    'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
+  >('bebop-placement');
+  const [pdfVaultDrift, setPdfVaultDrift] = useState<EmotionalDrift>('neutral');
   const [pdfVaultOutput, setPdfVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [pdfVaultBusy, setPdfVaultBusy] = useState(false);
   const [pdfVaultError, setPdfVaultError] = useState<string | null>(null);
@@ -992,6 +1073,39 @@ export function HomeGenerate({
   /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
   const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
   const desktopTruthDumpEnabled = useRef(false);
+
+  const iRealParsedChart = useMemo((): ParsedChart | null => {
+    const t = iRealPaste.trim();
+    if (t.length < 8) return null;
+    const c = parseIRealProInput(t);
+    if (!c.measures?.length && !c.title?.trim()) return null;
+    return c;
+  }, [iRealPaste]);
+
+  const chordPastePreviewChart = useMemo((): ParsedChart | null => {
+    try {
+      if (!chordPasteText.trim()) return null;
+      return parseChordProgressionText(
+        chordPasteText,
+        chordPasteKey,
+        chordPasteTimeSigFromUi(chordPasteTimeSigId),
+        chordPasteTempo
+      );
+    } catch {
+      return null;
+    }
+  }, [chordPasteText, chordPasteKey, chordPasteTimeSigId, chordPasteTempo]);
+
+  const chordInspectorReharmCandidates = useMemo(() => {
+    if (!chordInspectorResult) return [];
+    return generateReharmCandidates(
+      chordInspectorResult.vaultChordTypeId,
+      chordInspectorResult.rootPc,
+      null,
+      chordInspectorReharmDrift
+    ).slice(0, 16);
+  }, [chordInspectorResult, chordInspectorReharmDrift]);
+
   const songModeStyleProfileRef = useRef<SongModeStyleProfile>(songModeStyleProfile);
   const alternateTuningEnabledRef = useRef(alternateTuningEnabled);
   const alternateTuningModeRef = useRef<GuitarTuningMode>(alternateTuningMode);
@@ -4619,7 +4733,35 @@ export function HomeGenerate({
                 <option value="pedal-string">pedal-string</option>
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-chord-paste-drift"
+                value={chordPasteDrift}
+                onChange={(e) => setChordPasteDrift(e.target.value as EmotionalDrift)}
+                disabled={chordPasteBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+          {chordPastePreviewChart &&
+            (chordPastePreviewChart.measures?.some((m) => m.length > 0) ||
+              !!chordPastePreviewChart.title?.trim()) && (
+              <VaultImportChartSummary chart={chordPastePreviewChart} />
+            )}
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
           <div style={{ marginTop: '0.65rem' }}>
             <button
               type="button"
@@ -4645,6 +4787,7 @@ export function HomeGenerate({
                     mode: chordPasteMode,
                     tuningId: chordPasteTuningId,
                     riffStyle: chordPasteRiffStyle,
+                    drift: chordPasteDrift,
                   });
                   setChordPasteOutput(out);
                 } catch (e) {
@@ -4680,6 +4823,14 @@ export function HomeGenerate({
                 <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
               </p>
               <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
+              <p style={{ margin: '0.25rem 0' }}>
+                Time signature:{' '}
+                {(() => {
+                  const ts = chordPastePreviewChart?.timeSignature ?? chordPasteTimeSigFromUi(chordPasteTimeSigId);
+                  return `${ts.num}/${ts.den}`;
+                })()}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Tempo: {chordPasteTempo} BPM</p>
               <p style={{ margin: '0.25rem 0' }}>Total bars: {chordPasteOutput.bars}</p>
               <p style={{ margin: '0.25rem 0' }}>
                 Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
@@ -4821,6 +4972,10 @@ export function HomeGenerate({
               color: 'var(--text)',
             }}
           />
+          {iRealParsedChart &&
+            (iRealParsedChart.measures?.length > 0 || !!iRealParsedChart.title?.trim()) && (
+              <VaultImportChartSummary chart={iRealParsedChart} />
+            )}
           <div
             style={{
               display: 'flex',
@@ -4830,6 +4985,33 @@ export function HomeGenerate({
               alignItems: 'flex-end',
             }}
           >
+            <div role="group" aria-label="iReal vault mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={iRealVaultMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setIRealVaultMode('solo')}
+                  disabled={iRealVaultBusy}
+                  aria-pressed={iRealVaultMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={iRealVaultMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setIRealVaultMode('melody')}
+                  disabled={iRealVaultBusy}
+                  aria-pressed={iRealVaultMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
             <div>
               <label
                 htmlFor="co-ireal-riff-style"
@@ -4879,7 +5061,30 @@ export function HomeGenerate({
                 <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-ireal-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-ireal-drift"
+                value={iRealVaultDrift}
+                onChange={(e) => setIRealVaultDrift(e.target.value as EmotionalDrift)}
+                disabled={iRealVaultBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
           <div style={{ marginTop: '0.65rem' }}>
             <button
               type="button"
@@ -4888,8 +5093,10 @@ export function HomeGenerate({
                 setIRealVaultBusy(true);
                 try {
                   const out = generateFromIReal(iRealPaste, {
+                    mode: iRealVaultMode,
                     riffStyle: iRealVaultRiffStyle,
                     tuningId: iRealVaultTuningId,
+                    drift: iRealVaultDrift,
                   });
                   setIRealVaultOutput(out);
                 } finally {
@@ -4906,6 +5113,17 @@ export function HomeGenerate({
                 <strong>{iRealVaultOutput.title.trim() ? iRealVaultOutput.title : '(untitled)'}</strong>
               </p>
               <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
+              {iRealParsedChart?.timeSignature ? (
+                <p style={{ margin: '0.25rem 0' }}>
+                  Time signature: {iRealParsedChart.timeSignature.num}/{iRealParsedChart.timeSignature.den}
+                </p>
+              ) : null}
+              {iRealParsedChart != null &&
+              iRealParsedChart.tempo != null &&
+              Number.isFinite(iRealParsedChart.tempo) &&
+              iRealParsedChart.tempo > 0 ? (
+                <p style={{ margin: '0.25rem 0' }}>Tempo: {Math.round(iRealParsedChart.tempo)} BPM</p>
+              ) : null}
               <p style={{ margin: '0.25rem 0' }}>Total bars: {iRealVaultOutput.bars}</p>
               <p style={{ margin: '0.25rem 0' }}>
                 Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
@@ -5092,6 +5310,25 @@ export function HomeGenerate({
                 <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-reharm-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Reharm drift (ranking)
+              </label>
+              <select
+                id="co-chord-inspector-reharm-drift"
+                value={chordInspectorReharmDrift}
+                onChange={(e) => setChordInspectorReharmDrift(e.target.value as EmotionalDrift)}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
@@ -5208,6 +5445,88 @@ export function HomeGenerate({
               <p style={{ margin: '0.25rem 0' }}>
                 <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
               </p>
+              <p
+                style={{
+                  margin: '0.75rem 0 0.35rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--text)',
+                  fontWeight: 600,
+                }}
+              >
+                Reharm candidates (Tonality Vault, top 16)
+              </p>
+              <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Same-root substitutions ranked for the selected emotional drift. Read-only preview.
+              </p>
+              {chordInspectorReharmCandidates.length === 0 ? (
+                <p style={{ margin: 0, fontSize: '0.82rem' }}>No candidates (empty vault row or parse edge case).</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table
+                    style={{
+                      fontSize: '0.8rem',
+                      borderCollapse: 'collapse',
+                      width: '100%',
+                      maxWidth: 520,
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          #
+                        </th>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          Substitute type
+                        </th>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          Strategy
+                        </th>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          Bass smooth
+                        </th>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          Triad kept
+                        </th>
+                        <th
+                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
+                        >
+                          Guitar-friendly
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chordInspectorReharmCandidates.map((c, i) => (
+                        <tr key={`${c.substituteChordTypeId}-${c.strategy}-${i}`}>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>{i + 1}</td>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
+                            {c.substituteChordTypeId}
+                          </td>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>{c.strategy}</td>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
+                            {c.bassSmoothnessScore.toFixed(2)}
+                          </td>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
+                            {c.melodicTriadPreserved ? 'yes' : 'no'}
+                          </td>
+                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
+                            {c.guitarFriendly ? 'yes' : 'no'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -5330,7 +5649,59 @@ export function HomeGenerate({
                 <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-pdf-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-pdf-riff-style"
+                value={pdfVaultRiffStyle}
+                onChange={(e) =>
+                  setPdfVaultRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={pdfVaultBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-pdf-drift"
+                value={pdfVaultDrift}
+                onChange={(e) => setPdfVaultDrift(e.target.value as EmotionalDrift)}
+                disabled={pdfVaultBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
           <div style={{ marginTop: '0.65rem' }}>
             <button
               type="button"
@@ -5354,6 +5725,8 @@ export function HomeGenerate({
                       pageNumber: pdfPageNumber,
                       mode: pdfVaultMode,
                       tuningId: pdfVaultTuningId,
+                      riffStyle: pdfVaultRiffStyle,
+                      drift: pdfVaultDrift,
                     });
                     if (!res.output) {
                       setPdfVaultError(

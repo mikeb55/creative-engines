@@ -82,28 +82,49 @@ export type GenerateVaultRiffOptions = {
   bars: 1 | 2 | 4 | 8;
   style: VaultRiffStyle;
   tuningId?: string;
+  /**
+   * Eighth-note subdivisions per measure (4/4 ⇒ 8). Derived from time signature
+   * as `num * 8 / den` (e.g. 3/4 ⇒ 6).
+   */
+  eighthsPerBar?: number;
 };
 
+function isStrongPillar(posInBar: number, eighthsPerBar: number): boolean {
+  if (posInBar === 0) return true;
+  const half = eighthsPerBar / 2;
+  return Number.isInteger(half) && half > 0 && posInBar === half;
+}
+
+/** Even eighth positions that are not the two primary pillars (4/4: 2 and 6). */
+function isWeakStructuralEven(posInBar: number, eighthsPerBar: number): boolean {
+  if (posInBar % 2 !== 0) return false;
+  if (posInBar === 0) return false;
+  const half = eighthsPerBar / 2;
+  if (Number.isInteger(half) && posInBar === half) return false;
+  return true;
+}
+
 /**
- * Strong = downbeats 1 and 3; weak = 2 and 4; offbeats = eighths between.
- * @param posInBar 0..7 eighths
+ * Strong = bar pillars (4/4: 1 and 3); weak = other structural beats; offbeats = remaining eighths.
+ * @param posInBar 0..eighthsPerBar-1
  */
 function targetPcForEighth(
   posInBar: number,
+  eighthsPerBar: number,
   triadPcs: number[],
   tensionPc: number,
   legality: Map<number, NoteTag>,
   nextStrongTarget: number
 ): number {
-  if (posInBar === 0 || posInBar === 4) {
-    return triadPcs[(posInBar / 4) % triadPcs.length]!;
+  if (isStrongPillar(posInBar, eighthsPerBar)) {
+    const idx = posInBar === 0 ? 0 : 1;
+    return triadPcs[idx % triadPcs.length]!;
   }
-  if (posInBar === 2 || posInBar === 6) {
+  if (isWeakStructuralEven(posInBar, eighthsPerBar)) {
     const tTag = legality.get(tensionPc);
     if (tTag?.beatLegality === 'weak') return tensionPc;
     return triadPcs[1] ?? triadPcs[0]!;
   }
-  // offbeat: prefer chromatic approach to next strong (bebop) or secondary
   const approach = normalizePc(nextStrongTarget - 1);
   if (legality.get(approach)) return approach;
   return tensionPc;
@@ -135,11 +156,13 @@ function findPlacement(
 }
 
 /**
- * Produces a deterministic eighth-note line (4/4) with vault legality and string/fret metadata.
+ * Produces a deterministic eighth-note line with vault legality and string/fret metadata.
+ * Default 8 eighths per bar (4/4); pass `eighthsPerBar` for other meters.
  */
 export function generateVaultRiff(options: GenerateVaultRiffOptions): ScoreNote[] {
   const { chordTypeId, rootPc, bars, style } = options;
   const tuningId = options.tuningId ?? 'standard';
+  const eighthsPerBar = Math.max(1, Math.floor(options.eighthsPerBar ?? 8));
   const legality = buildBeatContextLegalityMap(chordTypeId, rootPc);
   const spec = selectQuadratonicMelodySpec(chordTypeId);
   if (!spec || legality.size === 0) return [];
@@ -154,7 +177,7 @@ export function generateVaultRiff(options: GenerateVaultRiffOptions): ScoreNote[
     ...new Set([...triadPcs.map(normalizePc), normalizePc(tensionPc)]),
   ].sort((a, b) => a - b);
 
-  const totalEighths = bars * 8;
+  const totalEighths = bars * eighthsPerBar;
   const out: ScoreNote[] = [];
 
   const dyadGrips = grips.filter(
@@ -163,23 +186,25 @@ export function generateVaultRiff(options: GenerateVaultRiffOptions): ScoreNote[
   const firstDyad = dyadGrips[0] ?? null;
 
   for (let i = 0; i < totalEighths; i++) {
-    const barIndex = Math.floor(i / 8) + 1;
-    const posInBar = i % 8;
+    const barIndex = Math.floor(i / eighthsPerBar) + 1;
+    const posInBar = i % eighthsPerBar;
     const startBeat = posInBar * 0.5;
     const nextI = i + 1;
-    const nextPos = nextI < totalEighths ? nextI % 8 : 0;
-    const nextStrongPc =
-      nextPos === 0 || nextPos === 4
-        ? triadPcs[nextPos === 0 ? 0 : 1]!
-        : triadPcs[0]!;
+    const nextPos = nextI < totalEighths ? nextI % eighthsPerBar : 0;
+    const half = eighthsPerBar / 2;
+    const nextOnPillar =
+      nextPos === 0 || (Number.isInteger(half) && half > 0 && nextPos === half);
+    const nextStrongPc = nextOnPillar
+      ? triadPcs[nextPos === 0 ? 0 : 1]!
+      : triadPcs[0]!;
 
     let targetPc = triadPcs[0]!;
 
     switch (style) {
       case 'quadratonic':
-        if (posInBar === 0 || posInBar === 4) {
+        if (isStrongPillar(posInBar, eighthsPerBar)) {
           targetPc = triadPcs[posInBar === 0 ? 0 : 1] ?? triadPcs[0]!;
-        } else if (posInBar === 2 || posInBar === 6) {
+        } else if (isWeakStructuralEven(posInBar, eighthsPerBar)) {
           targetPc = tensionPc;
         } else {
           targetPc = quad[(i + 1) % Math.max(1, quad.length)]!;
@@ -198,20 +223,20 @@ export function generateVaultRiff(options: GenerateVaultRiffOptions): ScoreNote[
         break;
       }
       case 'pedal-string':
-        if (posInBar === 0 || posInBar === 4) {
+        if (isStrongPillar(posInBar, eighthsPerBar)) {
           targetPc = root;
         } else {
-          targetPc = targetPcForEighth(posInBar, triadPcs, tensionPc, legality, nextStrongPc);
+          targetPc = targetPcForEighth(posInBar, eighthsPerBar, triadPcs, tensionPc, legality, nextStrongPc);
         }
         break;
       case 'bebop-placement':
-        targetPc = targetPcForEighth(posInBar, triadPcs, tensionPc, legality, nextStrongPc);
+        targetPc = targetPcForEighth(posInBar, eighthsPerBar, triadPcs, tensionPc, legality, nextStrongPc);
         break;
       default:
-        targetPc = targetPcForEighth(posInBar, triadPcs, tensionPc, legality, nextStrongPc);
+        targetPc = targetPcForEighth(posInBar, eighthsPerBar, triadPcs, tensionPc, legality, nextStrongPc);
     }
 
-    if (style === 'pedal-string' && (posInBar === 0 || posInBar === 4)) {
+    if (style === 'pedal-string' && isStrongPillar(posInBar, eighthsPerBar)) {
       let fretHi = -1;
       for (let f = 0; f <= 15; f++) {
         if (normalizePc(openMidis[5]! + f) === root) {
