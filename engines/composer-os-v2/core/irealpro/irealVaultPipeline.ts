@@ -3,6 +3,7 @@ import { generateVaultRiff, type ScoreNote } from '../guitar/vaultRiffGenerator'
 import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
 import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
+import type { ParsedChart } from './parsedChart';
 
 export type IRealVaultOutput = {
   title: string;
@@ -24,11 +25,10 @@ export type GenerateFromIRealOptions = {
 };
 
 /**
- * Parse iReal input, map each bar’s first chord to the Vault, and concatenate **1-bar** riffs on a **4/4** timeline.
+ * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs on a **4/4** timeline (Build I).
  */
-export function generateFromIReal(input: string, options?: GenerateFromIRealOptions): IRealVaultOutput {
+export function generateVaultFromParsedChart(chart: ParsedChart, options?: GenerateFromIRealOptions): IRealVaultOutput {
   void options?.drift;
-  const chart = parseIRealProInput(input);
   const measures = chart.measures ?? [];
   const bars = measures.length;
   const mode: GenerationMode = options?.mode ?? 'solo';
@@ -103,4 +103,12 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
     unmappedChords,
     mode,
   };
+}
+
+/**
+ * Parse iReal input, map each bar’s first chord to the Vault, and concatenate **1-bar** riffs on a **4/4** timeline.
+ */
+export function generateFromIReal(input: string, options?: GenerateFromIRealOptions): IRealVaultOutput {
+  const chart = parseIRealProInput(input);
+  return generateVaultFromParsedChart(chart, options);
 }

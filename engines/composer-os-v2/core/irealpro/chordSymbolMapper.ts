@@ -2,7 +2,7 @@ import type { FretboardRealization } from '../guitar/fretboardRealization';
 import { buildGuitarGripLibrary } from '../guitar/guitarGripLibrary';
 import { selectQuadratonicMelodySpec } from '../harmony/quadratonicMelodySelector';
 import { TONALITY_VAULT_DATABASE } from '../harmony/tonalityVaultDatabase';
-import type { ParsedChord } from './parsedChart';
+import type { ParsedChord, ParsedChart, ParsedSection } from './parsedChart';
 
 const VAULT_TYPE_IDS = new Set(TONALITY_VAULT_DATABASE.map((row) => row.chordType));
 
@@ -196,5 +196,77 @@ export function inspectChordSymbol(input: string, tuningId?: string): ChordInspe
     primaryTensionNote,
     quadratonicPitchClasses,
     guitarGrips,
+  };
+}
+
+/**
+ * Plain-text lead sheet: **`|`** barlines, chords in a bar separated by spaces (e.g. `Cmaj7 Dm7 | G7 | Cmaj7`).
+ */
+export function parseChordProgressionText(
+  text: string,
+  key: string,
+  timeSignature: { num: number; den: number },
+  tempo: number
+): ParsedChart {
+  const rawBars = text.split('|');
+  const measures: ParsedChord[][] = [];
+
+  for (let barIndex = 0; barIndex < rawBars.length; barIndex++) {
+    const seg = rawBars[barIndex] ?? '';
+    const tokens = seg.trim().split(/\s+/).filter((t) => t.length > 0);
+    const row: ParsedChord[] = [];
+
+    for (let beatIndex = 0; beatIndex < tokens.length; beatIndex++) {
+      const symbol = tokens[beatIndex]!.trim();
+      if (/^n\.?c\.?$/i.test(symbol)) {
+        row.push({
+          symbol: 'N.C.',
+          rootNote: '',
+          chordQuality: '',
+          duration: 1,
+          barIndex,
+          beatIndex,
+        });
+        continue;
+      }
+      const parsed = parseChordSymbolComponents(symbol);
+      if (parsed) {
+        row.push({
+          symbol,
+          rootNote: parsed.rootNote,
+          chordQuality: parsed.chordQuality,
+          duration: 1,
+          barIndex,
+          beatIndex,
+        });
+      } else {
+        row.push({
+          symbol,
+          rootNote: '',
+          chordQuality: '',
+          duration: 1,
+          barIndex,
+          beatIndex,
+        });
+      }
+    }
+    measures.push(row);
+  }
+
+  const barCount = measures.length;
+  const sections: ParsedSection[] =
+    barCount <= 0 ? [] : [{ label: 'A', startBar: 0, endBar: barCount - 1 }];
+
+  const t = Number(tempo);
+  return {
+    title: '',
+    composer: '',
+    key: key.trim() !== '' ? key.trim() : null,
+    timeSignature,
+    tempo: Number.isFinite(t) ? t : null,
+    style: null,
+    sections,
+    measures,
+    repeats: [],
   };
 }

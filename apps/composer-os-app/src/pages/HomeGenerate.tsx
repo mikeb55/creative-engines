@@ -53,8 +53,11 @@ import {
 } from '@composer-os/core/rhythm/oddMeterQuantiser';
 import {
   generateFromIReal,
+  generateVaultFromParsedChart,
+  parseChordProgressionText,
   inspectChordSymbol,
   inspectChordToMusicXml,
+  vaultRiffScoreNotesToMusicXml,
   type ChordInspectorResult,
   type IRealVaultOutput,
 } from '@composer-os/core/irealpro';
@@ -68,6 +71,14 @@ const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
 ]);
 
 const FORM_OPTIONS_UI = FORM_OPTIONS.filter((f) => !FORM_OPTION_IDS_EXCLUDED_FROM_UI.has(f.id));
+
+const PASTE_CHORD_KEY_OPTIONS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
+
+function chordPasteTimeSigFromUi(id: '4-4' | '3-4' | '6-8'): { num: number; den: number } {
+  if (id === '3-4') return { num: 3, den: 4 };
+  if (id === '6-8') return { num: 6, den: 8 };
+  return { num: 4, den: 4 };
+}
 
 /** Client-side chord preflight failures (before generate). */
 const CHORD_PROGRESSION_PARSE_ERROR_MESSAGE =
@@ -197,6 +208,16 @@ const ARIA_SONGWRITER_GROUPS_DESC =
   'Songwriters are grouped into Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
   'Arrangers are grouped into Big band core research-backed and Charts and studio voices.';
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  const chunk = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < bytes.length; i += chunk) {
+    const sub = bytes.subarray(i, i + chunk);
+    parts.push(String.fromCharCode.apply(null, sub as unknown as number[]));
+  }
+  return btoa(parts.join(''));
+}
 
 function SongwriterSelectOptionGroups() {
   return (
@@ -930,6 +951,19 @@ export function HomeGenerate({
   const [iRealVaultTuningId, setIRealVaultTuningId] = useState('standard');
   const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
+  const [chordPasteText, setChordPasteText] = useState('');
+  const [chordPasteKey, setChordPasteKey] = useState('C');
+  const [chordPasteTimeSigId, setChordPasteTimeSigId] = useState<'4-4' | '3-4' | '6-8'>('4-4');
+  const [chordPasteTempo, setChordPasteTempo] = useState(120);
+  const [chordPasteMode, setChordPasteMode] = useState<'solo' | 'melody'>('solo');
+  const [chordPasteTuningId, setChordPasteTuningId] = useState('standard');
+  const [chordPasteRiffStyle, setChordPasteRiffStyle] = useState<
+    'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
+  >('bebop-placement');
+  const [chordPasteOutput, setChordPasteOutput] = useState<IRealVaultOutput | null>(null);
+  const [chordPasteBusy, setChordPasteBusy] = useState(false);
+  const [chordPasteError, setChordPasteError] = useState<string | null>(null);
+  const [chordPasteMusicXmlError, setChordPasteMusicXmlError] = useState<string | null>(null);
   const [chordInspectorInput, setChordInspectorInput] = useState('');
   const [chordInspectorMode, setChordInspectorMode] = useState<'solo' | 'melody'>('solo');
   const [chordInspectorBars, setChordInspectorBars] = useState<1 | 2 | 4>(2);
@@ -940,6 +974,15 @@ export function HomeGenerate({
   const [chordInspectorResult, setChordInspectorResult] = useState<ChordInspectorResult | null>(null);
   const [chordInspectorParseError, setChordInspectorParseError] = useState<string | null>(null);
   const [chordInspectorExportError, setChordInspectorExportError] = useState<string | null>(null);
+  const [pdfLeadSheetFile, setPdfLeadSheetFile] = useState<File | null>(null);
+  const [pdfPageNumber, setPdfPageNumber] = useState(1);
+  const [pdfVaultMode, setPdfVaultMode] = useState<'solo' | 'melody'>('solo');
+  const [pdfVaultTuningId, setPdfVaultTuningId] = useState('standard');
+  const [pdfVaultOutput, setPdfVaultOutput] = useState<IRealVaultOutput | null>(null);
+  const [pdfVaultBusy, setPdfVaultBusy] = useState(false);
+  const [pdfVaultError, setPdfVaultError] = useState<string | null>(null);
+  const [pdfMusicXmlExportError, setPdfMusicXmlExportError] = useState<string | null>(null);
+  const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
@@ -4395,6 +4438,359 @@ export function HomeGenerate({
             listStylePosition: 'outside',
           }}
         >
+          Paste Chord Progression
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-chord-paste-text"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Chords — bars separated by <code style={{ fontSize: '0.8rem' }}>|</code>, chords in a bar separated by
+            spaces (e.g. Cmaj7 Dm7 | G7 | Cmaj7)
+          </label>
+          <textarea
+            id="co-chord-paste-text"
+            value={chordPasteText}
+            onChange={(e) => setChordPasteText(e.target.value)}
+            rows={5}
+            wrap="soft"
+            spellCheck={false}
+            disabled={chordPasteBusy}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.82rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                htmlFor="co-chord-paste-key"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Key
+              </label>
+              <select
+                id="co-chord-paste-key"
+                value={chordPasteKey}
+                onChange={(e) => setChordPasteKey(e.target.value)}
+                disabled={chordPasteBusy}
+              >
+                {PASTE_CHORD_KEY_OPTIONS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-timesig"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Time signature
+              </label>
+              <select
+                id="co-chord-paste-timesig"
+                value={chordPasteTimeSigId}
+                onChange={(e) => setChordPasteTimeSigId(e.target.value as '4-4' | '3-4' | '6-8')}
+                disabled={chordPasteBusy}
+              >
+                <option value="4-4">4/4</option>
+                <option value="3-4">3/4</option>
+                <option value="6-8">6/8</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-tempo"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tempo (BPM)
+              </label>
+              <input
+                id="co-chord-paste-tempo"
+                type="number"
+                min={20}
+                max={400}
+                value={chordPasteTempo}
+                onChange={(e) =>
+                  setChordPasteTempo(Math.min(400, Math.max(20, Math.floor(Number(e.target.value) || 120))))
+                }
+                disabled={chordPasteBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+            <div role="group" aria-label="Paste chord progression mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={chordPasteMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setChordPasteMode('solo')}
+                  disabled={chordPasteBusy}
+                  aria-pressed={chordPasteMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={chordPasteMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setChordPasteMode('melody')}
+                  disabled={chordPasteBusy}
+                  aria-pressed={chordPasteMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-chord-paste-tuning"
+                value={chordPasteTuningId}
+                onChange={(e) => setChordPasteTuningId(e.target.value)}
+                disabled={chordPasteBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-chord-paste-riff-style"
+                value={chordPasteRiffStyle}
+                onChange={(e) =>
+                  setChordPasteRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={chordPasteBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={chordPasteBusy}
+              onClick={() => {
+                setChordPasteBusy(true);
+                setChordPasteError(null);
+                setChordPasteMusicXmlError(null);
+                try {
+                  const chart = parseChordProgressionText(
+                    chordPasteText,
+                    chordPasteKey,
+                    chordPasteTimeSigFromUi(chordPasteTimeSigId),
+                    chordPasteTempo
+                  );
+                  const anyChord = chart.measures.some((m) => m.length > 0);
+                  if (!anyChord) {
+                    setChordPasteOutput(null);
+                    setChordPasteError('Add at least one chord symbol (use | between bars).');
+                    return;
+                  }
+                  const out = generateVaultFromParsedChart(chart, {
+                    mode: chordPasteMode,
+                    tuningId: chordPasteTuningId,
+                    riffStyle: chordPasteRiffStyle,
+                  });
+                  setChordPasteOutput(out);
+                } catch (e) {
+                  setChordPasteOutput(null);
+                  setChordPasteError(e instanceof Error ? e.message : String(e));
+                } finally {
+                  setChordPasteBusy(false);
+                }
+              }}
+            >
+              {chordPasteBusy ? 'Working…' : 'Generate from Chords'}
+            </button>
+          </div>
+          {chordPasteError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordPasteError}
+            </div>
+          )}
+          {chordPasteOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Total bars: {chordPasteOutput.bars}</p>
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
+                {chordPasteOutput.unmappedChords.length}
+              </p>
+              {chordPasteOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {chordPasteOutput.unmappedChords.map((u, i) => (
+                      <li key={`chord-paste-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div style={{ marginTop: '0.65rem' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    setChordPasteMusicXmlError(null);
+                    if (!chordPasteOutput.generatedNotes.length) {
+                      setChordPasteMusicXmlError('No generated notes to export (all chords may be unmapped).');
+                      return;
+                    }
+                    const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                    const xml = vaultRiffScoreNotesToMusicXml(
+                      chordPasteOutput.generatedNotes,
+                      chordPasteOutput.bars,
+                      titleRaw
+                    );
+                    const base =
+                      titleRaw
+                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                        .replace(/\s+/g, '_')
+                        .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${base}.xml`;
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download MusicXML
+                </button>
+              </div>
+              {chordPasteMusicXmlError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    fontSize: '0.85rem',
+                    color: 'var(--error, #ef4444)',
+                  }}
+                >
+                  {chordPasteMusicXmlError}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
           iReal Pro Import (Beta)
         </summary>
         <div style={{ marginTop: '0.85rem' }}>
@@ -4812,6 +5208,283 @@ export function HomeGenerate({
               <p style={{ margin: '0.25rem 0' }}>
                 <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
               </p>
+            </div>
+          )}
+        </div>
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          PDF Lead Sheet Import (Beta)
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <input
+            ref={pdfFileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            aria-label="PDF lead sheet file"
+            disabled={pdfVaultBusy}
+            style={{ display: 'block', marginBottom: '0.65rem', fontSize: '0.85rem' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setPdfLeadSheetFile(f);
+              setPdfVaultOutput(null);
+              setPdfVaultError(null);
+              setPdfMusicXmlExportError(null);
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginBottom: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                htmlFor="co-pdf-page"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Page
+              </label>
+              <input
+                id="co-pdf-page"
+                type="number"
+                min={1}
+                value={pdfPageNumber}
+                onChange={(e) => setPdfPageNumber(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                disabled={pdfVaultBusy}
+                style={{
+                  width: '4.5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+            <div role="group" aria-label="PDF vault mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={pdfVaultMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setPdfVaultMode('solo')}
+                  disabled={pdfVaultBusy}
+                  aria-pressed={pdfVaultMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={pdfVaultMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setPdfVaultMode('melody')}
+                  disabled={pdfVaultBusy}
+                  aria-pressed={pdfVaultMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-pdf-tuning"
+                value={pdfVaultTuningId}
+                onChange={(e) => setPdfVaultTuningId(e.target.value)}
+                disabled={pdfVaultBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={pdfVaultBusy}
+              onClick={() => {
+                void (async () => {
+                  setPdfVaultError(null);
+                  setPdfMusicXmlExportError(null);
+                  if (!pdfLeadSheetFile) {
+                    setPdfVaultError('Choose a PDF file first.');
+                    return;
+                  }
+                  setPdfVaultBusy(true);
+                  setPdfVaultOutput(null);
+                  try {
+                    const ab = await pdfLeadSheetFile.arrayBuffer();
+                    const u8 = new Uint8Array(ab);
+                    const pdfBase64 = uint8ArrayToBase64(u8);
+                    const res = await api.generateFromPdf({
+                      pdfBase64,
+                      pageNumber: pdfPageNumber,
+                      mode: pdfVaultMode,
+                      tuningId: pdfVaultTuningId,
+                    });
+                    if (!res.output) {
+                      setPdfVaultError(
+                        res.error ??
+                          'PDF extraction failed or returned no chart. Check ANTHROPIC_API_KEY on the API server, page number, and lead sheet legibility.'
+                      );
+                      return;
+                    }
+                    setPdfVaultOutput(res.output);
+                  } catch (e) {
+                    setPdfVaultError(
+                      e instanceof Error ? e.message : 'PDF import failed. Is the Composer OS API running?'
+                    );
+                  } finally {
+                    setPdfVaultBusy(false);
+                  }
+                })();
+              }}
+            >
+              {pdfVaultBusy ? 'Working…' : 'Extract & Generate'}
+            </button>
+          </div>
+          {pdfVaultError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {pdfVaultError}
+            </div>
+          )}
+          {pdfVaultOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{pdfVaultOutput.title.trim() ? pdfVaultOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {pdfVaultOutput.key ?? '—'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Total bars: {pdfVaultOutput.bars}</p>
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {pdfVaultOutput.chordMappings.length} · Unmapped:{' '}
+                {pdfVaultOutput.unmappedChords.length}
+              </p>
+              {pdfVaultOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {pdfVaultOutput.unmappedChords.map((u, i) => (
+                      <li key={`pdf-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div style={{ marginTop: '0.65rem' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    setPdfMusicXmlExportError(null);
+                    if (!pdfVaultOutput.generatedNotes.length) {
+                      setPdfMusicXmlExportError('No generated notes to export (all chords may be unmapped).');
+                      return;
+                    }
+                    const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                    const xml = vaultRiffScoreNotesToMusicXml(
+                      pdfVaultOutput.generatedNotes,
+                      pdfVaultOutput.bars,
+                      titleRaw
+                    );
+                    const base =
+                      titleRaw
+                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                        .replace(/\s+/g, '_')
+                        .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${base}.xml`;
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download MusicXML
+                </button>
+              </div>
+              {pdfMusicXmlExportError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    fontSize: '0.85rem',
+                    color: 'var(--error, #ef4444)',
+                  }}
+                >
+                  {pdfMusicXmlExportError}
+                </div>
+              )}
             </div>
           )}
         </div>

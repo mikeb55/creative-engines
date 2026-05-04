@@ -1,4 +1,5 @@
 import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
+import type { IRealVaultOutput } from '@composer-os/core/irealpro';
 
 const BASE = '/api';
 
@@ -95,6 +96,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     }
     if (path === '/system-check') {
       return ipcInvoke<T>('composer-os-api:run-system-check', body ?? {});
+    }
+    if (path === '/pdf/generate-from-pdf') {
+      return ipcInvoke<T>('composer-os-api:pdf-generate-from-pdf', body ?? {});
     }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
@@ -211,6 +215,13 @@ export const api = {
   openOutputFolder: (opts?: { path?: string }) =>
     post<OpenOutputFolderResponse>('/open-output-folder', opts ?? {}),
   runSystemCheck: () => post<SystemCheckResponse>('/system-check', {}),
+  generateFromPdf: (body: {
+    pdfBase64: string;
+    pageNumber?: number;
+    mode?: 'solo' | 'melody';
+    tuningId?: string;
+  }) =>
+    post<{ success: true; output: IRealVaultOutput | null; error?: string }>('/pdf/generate-from-pdf', body),
 };
 
 /** Shape checks for generation receipts (tests). */

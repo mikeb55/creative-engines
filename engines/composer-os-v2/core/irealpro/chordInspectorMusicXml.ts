@@ -130,7 +130,7 @@ ${lines.join('\n')}
     </measure>`;
 }
 
-function scoreNotesToMusicXml(notes: ScoreNote[], barCount: number): string {
+function scoreNotesToMusicXml(notes: ScoreNote[], barCount: number, title: string): string {
   const byBar = new Map<number, ScoreNote[]>();
   for (const n of notes) {
     const list = byBar.get(n.barIndex) ?? [];
@@ -143,7 +143,6 @@ function scoreNotesToMusicXml(notes: ScoreNote[], barCount: number): string {
     measures.push(measureNotesXml(m, byBar.get(m) ?? [], m === 1));
   }
 
-  const title = 'Chord inspector riff';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="3.1">
   <work>
@@ -182,5 +181,10 @@ export function inspectChordToMusicXml(input: string, options?: InspectChordToMu
 
   if (notes.length === 0) return null;
 
-  return scoreNotesToMusicXml(notes, bars);
+  return scoreNotesToMusicXml(notes, bars, 'Chord inspector riff');
+}
+
+/** Minimal partwise MusicXML for an arbitrary vault riff ({@link ScoreNote}) timeline (e.g. iReal / PDF import). */
+export function vaultRiffScoreNotesToMusicXml(notes: ScoreNote[], barCount: number, title: string): string {
+  return scoreNotesToMusicXml(notes, barCount, title);
 }

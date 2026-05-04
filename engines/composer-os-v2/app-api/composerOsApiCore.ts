@@ -31,6 +31,8 @@ import {
 import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmony/songFormBarCounts';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
+import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
+import { generateFromPdf } from '../core/pdf';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -451,4 +453,57 @@ export async function apiSystemCheck(): Promise<
     };
   }
   return runSystemCheck();
+}
+
+export type PdfGenerateFromPdfRequest = {
+  pdfBase64: string;
+  pageNumber?: number;
+  mode?: 'solo' | 'melody';
+  tuningId?: string;
+};
+
+export type PdfGenerateFromPdfResponse = {
+  success: true;
+  output: IRealVaultOutput | null;
+  error?: string;
+};
+
+/**
+ * Node-only: render PDF page → vision → vault riff (same as {@link generateFromPdf}).
+ * Call from HTTP or Electron IPC; not for browser bundles.
+ */
+export async function apiPdfGenerateFromPdf(
+  body: PdfGenerateFromPdfRequest
+): Promise<PdfGenerateFromPdfResponse> {
+  if (typeof body?.pdfBase64 !== 'string' || body.pdfBase64.length === 0) {
+    return { success: true, output: null, error: 'Missing pdfBase64.' };
+  }
+  try {
+    const buf = Buffer.from(body.pdfBase64, 'base64');
+    if (buf.length === 0) {
+      return { success: true, output: null, error: 'Could not decode PDF (empty buffer).' };
+    }
+    const uint = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    const pageNum = coerceFiniteNumber(body.pageNumber);
+    const out = await generateFromPdf(uint, {
+      pageNumber: pageNum !== undefined ? Math.max(1, Math.floor(pageNum)) : 1,
+      mode: body.mode,
+      tuningId: body.tuningId,
+    });
+    if (!out) {
+      return {
+        success: true,
+        output: null,
+        error:
+          'PDF extraction failed. Set ANTHROPIC_API_KEY on the Composer OS API, use a valid page number, or try a clearer lead sheet.',
+      };
+    }
+    return { success: true, output: out };
+  } catch (e) {
+    return {
+      success: true,
+      output: null,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

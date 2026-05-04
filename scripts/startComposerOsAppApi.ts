@@ -20,6 +20,7 @@ import {
   apiGetDiagnostics,
   apiOpenOutputFolder,
   apiSystemCheck,
+  apiPdfGenerateFromPdf,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -33,7 +34,7 @@ process.on('unhandledRejection', (reason) => {
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '12mb' }));
 app.use((err: unknown, _req: Request, res: Response, next: (e?: unknown) => void) => {
   const e = err as { status?: number; type?: string };
   if (e?.status === 413 || e?.type === 'entity.too.large') {
@@ -149,6 +150,17 @@ app.post('/api/system-check', async (_req: Request, res: Response) => {
     res.json(r);
   } catch (err) {
     res.status(500).json({ error: String(err) });
+  }
+});
+
+app.post('/api/pdf/generate-from-pdf', async (req: Request, res: Response) => {
+  try {
+    const r = await apiPdfGenerateFromPdf(
+      req.body as Parameters<typeof apiPdfGenerateFromPdf>[0]
+    );
+    res.json(r);
+  } catch (err) {
+    res.status(500).json({ success: true, output: null, error: String(err) });
   }
 });
 
