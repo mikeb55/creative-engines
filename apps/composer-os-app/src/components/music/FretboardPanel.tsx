@@ -1,6 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { MutableRefObject, Ref, RefObject } from 'react';
+
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (ref == null) return;
+  if (typeof ref === 'function') {
+    ref(value);
+  } else {
+    (ref as MutableRefObject<T | null>).current = value;
+  }
+}
 
 export type NoteLayer = 0 | 1 | 2 | 3;
 
@@ -39,6 +49,10 @@ export type FretboardPanelProps = {
   trailNotes?: FretboardNote[];
   /** When true, show a lock marker and disable fretboard auto-crop (stable viewport). */
   positionLock?: boolean;
+  /** Attach to the outer fretboard container for PNG export (`exportFretboardToPng`). */
+  exportRef?: RefObject<HTMLDivElement>;
+  /** Dark fretboard chrome (#1a1a2e background; string/fret lines #8888aa). Role dot colours unchanged. */
+  darkMode?: boolean;
 };
 
 const DEFAULT_TUNING: string[] = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
@@ -127,6 +141,9 @@ type DotDatum = {
 
 type FretboardApi = import('@moonwave99/fretboard.js').Fretboard;
 
+const DARK_BG = '#1a1a2e';
+const DARK_LINE = '#8888aa';
+
 export function FretboardPanel({
   tuning = DEFAULT_TUNING,
   frets,
@@ -139,10 +156,19 @@ export function FretboardPanel({
   playbackNotes,
   trailNotes,
   positionLock = false,
+  exportRef,
+  darkMode = false,
 }: FretboardPanelProps) {
   const boardMountRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<{ removeEventListeners: () => unknown } | null>(null);
   const fretboardApiRef = useRef<FretboardApi | null>(null);
+
+  const setExportContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      assignRef(exportRef, node);
+    },
+    [exportRef]
+  );
 
   const rangeFrom = frets?.from ?? DEFAULT_FRETS.from;
   const rangeTo = frets?.to ?? DEFAULT_FRETS.to;
@@ -213,6 +239,16 @@ export function FretboardPanel({
         width: 960,
         height: 320,
         ...(positionLock ? { crop: false } : {}),
+        ...(darkMode
+          ? {
+              stringColor: DARK_LINE,
+              fretColor: DARK_LINE,
+              nutColor: DARK_LINE,
+              middleFretColor: DARK_LINE,
+              fretNumbersColor: DARK_LINE,
+              dotStrokeColor: DARK_LINE,
+            }
+          : {}),
       });
       if (cancelled) return;
       boardRef.current = board;
@@ -221,6 +257,14 @@ export function FretboardPanel({
       const dots: DotDatum[] = mergedDots.map((d) => ({ ...d }));
 
       board.setDots(dots as import('@moonwave99/fretboard.js').Position[]).render();
+
+      const svgResponsive = boardMountRef.current?.querySelector('.fretboard-html-wrapper svg');
+      if (svgResponsive instanceof SVGSVGElement) {
+        svgResponsive.style.width = '100%';
+        svgResponsive.style.height = 'auto';
+        svgResponsive.style.maxHeight = '100%';
+        svgResponsive.style.display = 'block';
+      }
 
       (Object.keys(ROLE_COLORS) as FretboardNote['role'][]).forEach((role) => {
         board.style({ filter: { role }, fill: ROLE_COLORS[role] });
@@ -300,6 +344,7 @@ export function FretboardPanel({
     playbackNotes,
     visibleNotes,
     positionLock,
+    darkMode,
   ]);
 
   useEffect(() => {
@@ -417,8 +462,22 @@ export function FretboardPanel({
   ]);
 
   return (
-    <div className={className} style={{ position: 'relative', width: '100%' }}>
-      <div ref={boardMountRef} />
+    <div
+      ref={setExportContainerRef}
+      className={className}
+      style={{
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '16 / 9',
+        minHeight: 120,
+        backgroundColor: darkMode ? DARK_BG : undefined,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        ref={boardMountRef}
+        style={{ width: '100%', height: '100%', minHeight: 0, overflow: 'hidden' }}
+      />
       {positionLock ? (
         <div
           role="status"

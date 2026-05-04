@@ -1,4 +1,8 @@
 export {
+  exportFretboardToPng,
+  type ExportFretboardPngOptions,
+} from './FretboardExporter';
+export {
   FretboardPanel,
   roleToLayer,
   type FretboardNote,
