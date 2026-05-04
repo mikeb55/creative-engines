@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-05]
+# Composer OS Roadmap [2026-05-04]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap. **Latest sequencing hint:** section **Next 3 development sessions** below — **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03: optional **`ScoreModel.repeatMarkers`**, **`musicxmlExporter`** forward/backward **`barline`**); next → Fagen/Evans odd meter → import stress or SD3 Big Band validation. **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04).
 
@@ -295,10 +295,11 @@
 
 ---
 
-## Current (as of 2026-05-05 snapshot)
+## Current (as of 2026-05-04 snapshot)
 
 - **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-05):** **163** passed / **0** failed (**42** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Tonality Vault — iReal / paste / PDF multi-chorus variation (2026-05-05) — SHIPPED:** **`VaultGenerationOptions.chorusCount`** (default **1**, max **64**) runs **`generateVaultFromParsedChart`** once per chorus and concatenates output with continuous **`barIndex`** / global **`startBeat`**; return **`bars`** = chart length × **`chorusCount`**. **Melody** mode: per-chorus **`tensionCycleRotation`** steps the **Build F** **`transformMotifThroughLayers`** pick through **primary → tension → chaos → recover → resolve** (length **5**), unless **`songwriterStyleId === 'sonic_youth'`** (no per-chorus tension advance). **Solo** mode: no motif pass; when **`riffStyle`** is omitted or **`triad-pair-pendulum`**, **`TRIAD_PAIR_CHORUS_ROTATION`** varies effective vault **`generateVaultRiff`** **style** per chorus (also suppressed for **SY**). See **`engines/composer-os-v2/core/irealpro/irealVaultPipeline.ts`**, playbook **Multi-Chorus Variation**.
+- **Generate — Chord Inspector — Reharm UI (2026-05-04) — SHIPPED:** **`HomeGenerate.tsx`** collapsible **Chord Inspector** — **Reharmonise** runs **`generateReharmCandidates`**; **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) remaps to a target emotional drift and **reorders** substitutes; **top 8** list with substitute symbol, dominant drift label, **Use this chord** (fills inspector input); reharm panel **clears on new Inspect Chord**. See **`reharmCandidateEngine.ts`**, **`CHANGELOG.md`**, **`CLAUDE.md`**.
 - **Evaluation system (2026-05-05) — SHIPPED:** Combined **GCE + LOCK + style profiles** evaluation path; **Basie**, **Ellington**, **Schneider**, **Quincy Jones** arranger **`StyleProfile`** scoring; **`createCombinedEvaluator`** invoked after Big Band realisation in **`composerOsAppGeneration.ts`** (observational **`evaluationResult`**, non-blocking). Playbook **Evaluation System** + **Future Workstreams** (Afro-Cuban, Odd-Meter).
 
 ### Next priorities (ordered — 2026-05-05)
@@ -338,8 +339,8 @@
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
 
 1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
-2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **41** suites as of 2026-05-05).
-3. **Update** this doc — **Current** harness bullet above (**157** / date) so assistants do not cite a stale total.
+2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **42** suites as of 2026-05-04).
+3. **Update** this doc — **Current** harness bullet above (**163** / date) so assistants do not cite a stale total.
 4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
 
 ### SD3 Drum Guide Export
