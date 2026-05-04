@@ -189,6 +189,17 @@ Implementation: **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts
 
 ---
 
+## Chord Inspector
+
+**API** (`engines/composer-os-v2/core/irealpro/`):
+
+- **`inspectChordSymbol(input, tuningId?)`** — Parses any chord symbol string (e.g. **Cmaj7**, **F#min9**, **Bb7#11**), maps it to the Tonality Vault, and returns a **`ChordInspectorResult`**: vault chord type id, **melodic triad** pitch classes, **primary tension** note (pitch class), **quadratonic** pitch classes, and **guitar grips** (`FretboardRealization[]`) for the chosen tuning (`tuningId` optional; default **standard**).
+- **`inspectChordToMusicXml(input, options?)`** — Chains the inspector to **`generateVaultRiff`** (`vaultRiffGenerator.ts`) and emits a minimal valid **MusicXML** string (4/4, treble clef): **`ScoreNote`** rows become written pitches with **`<notations><technical><string/><fret/></technical></notations>`** where string/fret are present. Options include **`bars`** (1, 2, or 4), **`mode`** (solo / melody; steers default riff style), **`tuningId`**, and **`riffStyle`**.
+
+**UI** (`apps/composer-os-app/src/pages/HomeGenerate.tsx`): Collapsible **Chord Inspector** block — chord symbol text input, **Solo** / **Melody** mode toggle, **bars** selector (1 / 2 / 4), **riff style** dropdown, **tuning** dropdown. **Inspect Chord** shows the Vault breakdown. **Generate + Export MusicXML** triggers a browser download of a **`.xml`** file ready for **Sibelius** and **Guitar Pro 8** (GP8).
+
+---
+
 ## 1. Introduction and scope
 
 Composer OS is a **deterministic**, **seeded** composition pipeline: the same request + seed yields the same score, receipts, and MusicXML. This playbook orients you to **Generate**, **Song Mode**, **presets**, **diagnostics**, and **export**—and gives **40 repeatable scenarios** you can step through for QA or teaching.
