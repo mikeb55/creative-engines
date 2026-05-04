@@ -925,6 +925,22 @@ The following GitHub repos were checked via **public API / raw README only** (no
 
 Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension is resolved **in favour of the triad** (layer 0).
 
+### Build B — Layer state machine + liquid harmony (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/harmony/` — **`layerStateMachine.ts`**, **`liquidHarmonyPlanner.ts`** (re-exported from **`harmony/index.ts`**).
+
+**`TensionState`** — phrase arc label: **`resolve`** \| **`primary`** \| **`tension`** \| **`chaos`** \| **`recover`**.
+
+**`LayerStateMachine`**
+
+- **`currentState`** starts at **`primary`**.
+- **`advance(beatStrength)`** with **`'strong'`** \| **`'weak'`** \| **`'offbeat'`** — returns the new state. Contract: **tension** is only entered from **primary** (on a **weak** beat); **chaos** accumulates a **16-subdivision** budget (two 4/4 bars of eighths); on **strong** with budget exceeded, **chaos** is forced to **resolve**; **chaos** may **escape** to **recover** with ~**0.15** probability (deterministic gate, no `Math.random`); if the budget is hit off a **strong** beat, **recover**; **recover** holds until the **next strong** beat, then **resolve**; **resolve** is one step, then back to **primary**; **strong** from **primary** or **tension** can hit **resolve** (cadential / release).
+- **`getAllowedLayers(state)`** (static) — maps each **`TensionState`** to allowed **`NoteLayer`** values from **`noteTag.ts`** (`0`–`3`): **resolve** `[0]`; **primary** `[0,1]`; **tension** `[1,2]`; **chaos** `[2,3]`; **recover** `[0,1]`.
+
+**`LiquidHarmonyPlan`** — `{ melodyPitchClass, voicingPitchClasses, tensionResolvesOnBeat, chordTypeId }`.
+
+**`planLiquidHarmony(chordTypeId, rootPc, state)`** — pulls the **quadratonic** set from **`selectQuadratonicMelodySpec`**. **Melody** pitch class: prefers **primary tension** when **`state`** is **`tension`** or **`chaos`**; prefers **melodic triad** tones when **`resolve`** or **`recover`**; **`primary`** uses a default triad slot. Remaining quadratonic PCs go to **`voicingPitchClasses`**. **`tensionResolvesOnBeat`**: **`0.5`** when the melody is the primary tension (resolution scheduled on the **next subdivision** in quarter-based 4/4), else **`0`**. Use **`nearestResolvePitchClassToTriad`** (exported from **`liquidHarmonyPlanner.ts`**) for the **nearest triad** resolution target PC.
+
 ### Build C — Guitar riff engine (**complete**)
 
 **Shipped** in `engines/composer-os-v2/core/guitar/` — **`fretboardRealization.ts`**, **`guitarGripLibrary.ts`**, **`vaultRiffGenerator.ts`**, barrel **`index.ts`**.
@@ -951,9 +967,9 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 - **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
 
-- **Build C — Guitar riff engine:** **Complete** (see **Build C** subsection above).
+- **Build B — Layer state machine + liquid harmony:** **Complete** (see **Build B** subsection above).
 
-- **Build B — Layer state machine + liquid harmony:** **`LayerStateMachine`** (Resolve → Primary → Tension → Chaos → Recover) driving **`LiquidHarmonyPlanner`**. Phrase-level intention from the state machine; **liquid harmony** shapes internal voicing motion per subdivision.
+- **Build C — Guitar riff engine:** **Complete** (see **Build C** subsection above).
 
 - **Build D — Reharmonisation engine:** **`ReharmCandidateEngine`**. **Emotional drift** control (slider / profile) to bias reharm toward darker, brighter, or more suspended language; output stays **guitar-friendly** (register + grip-aware targets). Shared **melodic-triad** substitutions, **tension-layer** swaps, **shell** rewrites; targets **jazz standards** and **user originals** on the same API.
 
@@ -967,11 +983,26 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 - **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
 
-- **Build IMG — iReal image import:** See **iReal Image Import** below (vision + vault pipeline).
+- **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path).
 
-### iReal Image Import — planned feature
+### Build IMG — iReal Pro import (planned)
 
-**Not shipped.** Target flow: user uploads a **JPEG** or **screenshot** of an **iReal Pro** (or similar) lead sheet; **Claude vision API** (or equivalent vision model) reads **chord symbols** and **bar structure**; normalised symbols map to **Tonality Vault** rows via **`tonalityVaultDatabase`**; for each bar / chord, the engine generates **quadratonic** melodic lines and **bebop-style** riffs using **Build C**; output is **MusicXML** for **Guitar Pro 8** and **Sibelius** (notation + tab when the tab/staff path is enabled). **Dependencies:** **Build C** (grip + riff), **Build D** (optional reharm pass), and a dedicated **image input + OCR review** layer.
+**Not shipped.** Primary path is **structured data**, not raw **`.irealb` binary**.
+
+**Recommended JS libraries (wrap in TypeScript adapters):**
+
+| Role | Library | Notes |
+|------|---------|--------|
+| **Primary parser** | **[pianosnake/ireal-reader](https://github.com/pianosnake/ireal-reader)** | Expanded measures, **repeats**, **codas**, **segnos** — good match for roadmaps that need visit-expanded charts. |
+| **Secondary / cross-check** | **[daumling/ireal-renderer](https://github.com/daumling/ireal-renderer)** | Preserves **section markers** and **form structure** — useful for pedagogy and arrangement lanes. |
+
+**Input contract:** **iReal Pro HTML export** or **`ireal://` URL** — **not** the opaque **`.irealb`** file alone (binary format is not the ingestion surface for this roadmap).
+
+**Target schema:** normalise both parsers toward a shared **`ParsedChart`** contract (**title**, **key**, **timeSignature**, **tempo**, **sections**, **measures**, **repeats**, **jumps**). Both libraries are **JavaScript** — ship thin **TypeScript** facades + typed **`ParsedChart`** in-repo.
+
+**Downstream:** map chord symbols to **`tonalityVaultDatabase`** chord types, then **`generateVaultRiff`** (and quadratonic planners) **per chord / bar** for guitar lines.
+
+**Optional later:** **JPEG / screenshot** of an iReal-style chart via **Claude vision API** for users without HTML export — same **`ParsedChart`** target after OCR normalisation. **Dependencies:** **Build C** (riffs), **Build D** (optional reharm), **`ParsedChart`** adapter layer.
 
 ### How Composer OS helps composition
 
@@ -984,13 +1015,13 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 ### Planned UI additions (cross-cutting)
 
-**Tension dial**, **chord-to-triad inspector**, **fretboard overlay** (**Build UI**), **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**, **iReal image upload** (**Build IMG**).
+**Tension dial**, **chord-to-triad inspector**, **fretboard overlay** (**Build UI**), **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**, **iReal Pro import UI** (**Build IMG** — HTML / `ireal://`, optional screenshot OCR).
 
 ### Build order (remaining)
 
-**A** and **C** are **complete**. Planned sequencing for **remaining** builds:
+**A**, **B**, and **C** are **complete**. **Next:** **Build D** (reharmonisation). Planned sequencing for **remaining** work:
 
-**B → D → E → F → G → C2 → UI → IMG**
+**D → E+F → G → C2 → UI → IMG** (**E** and **F** may ship as one milestone depending on routing vs motif scope.)
 
 ---
 

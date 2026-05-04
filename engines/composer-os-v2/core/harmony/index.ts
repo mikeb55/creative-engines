@@ -3,3 +3,5 @@ export * from './quadratonicMelodySelector';
 export * from './topDownVoicingBuilder';
 export * from './noteTag';
 export * from './beatContextLegalityMap';
+export * from './layerStateMachine';
+export * from './liquidHarmonyPlanner';
