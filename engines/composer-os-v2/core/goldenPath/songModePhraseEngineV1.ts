@@ -18,6 +18,7 @@ import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
+import { isSongwriterSonicYouth } from '../song-mode/sonicYouthSlice';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 export type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
 
@@ -1214,7 +1215,7 @@ function validatePhraseDirectionality(
     });
   }
 
-  if (maxBarDirectionChanges(guitar, startBar, endBar) > 3) {
+  if (maxBarDirectionChanges(guitar, startBar, endBar) > 3 && !isSongwriterSonicYouth(context.generationMetadata)) {
     issues.push({
       ruleId: 'phrase_bar_zigzag',
       message: `Song Mode phrase v1: ${phraseLabel} has >3 contour direction changes in a bar (zigzag).`,
