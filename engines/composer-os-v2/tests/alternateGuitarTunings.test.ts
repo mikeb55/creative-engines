@@ -99,8 +99,8 @@ export function runAlternateGuitarTuningsTests(): { ok: boolean; name: string }[
     name: 'getPresetsByZone joni_mitchell has 10 presets',
   });
   out.push({
-    ok: getPresetsByZone('hybrid_harmonic').length === 9,
-    name: 'getPresetsByZone hybrid_harmonic has 9 presets',
+    ok: getPresetsByZone('hybrid_harmonic').length === 11,
+    name: 'getPresetsByZone hybrid_harmonic has 11 presets',
   });
 
   const texSy: AlternateGuitarTuningResolved = {

@@ -49,5 +49,17 @@ export interface SonicYouthExtension {
   guitar1: GuitarTuningState;
   guitar2: GuitarTuningState;
   interGuitarDissonance: InterGuitarDissonance;
+  /** Macro phrase texture — pairs with `sonicYouthTextureEngine` / MusicXML augmentation when profile allows. */
   textureState: SYTextureState;
+}
+
+/**
+ * Maps normalized inter-guitar friction (0–1) to tier presets (v1 — equal thirds).
+ * PIPELINE: optional helper when building `InterGuitarDissonance` from a raw score; profile may override buckets.
+ */
+export function getSYDissonancePreset(score: number): SYDissonancePreset {
+  const s = Number.isFinite(score) ? Math.max(0, Math.min(1, score)) : 0;
+  if (s < 1 / 3) return 'low_friction';
+  if (s < 2 / 3) return 'medium_friction';
+  return 'high_friction';
 }

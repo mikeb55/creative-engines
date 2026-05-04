@@ -50,6 +50,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - After any playbook edit, regenerate the Word export: **`node scripts/generateComposerOsPlaybookDocx.mjs`**
 - Commit **`docs/COMPOSER_OS_PLAYBOOK.md`** and **`docs/COMPOSER_OS_PLAYBOOK.docx`** together so Markdown and DOCX stay in sync.
 
+## Sonic Youth & non-conventional guitar (beyond tuning presets)
+
+**`alternateGuitarTunings.ts`** is only the **open-string catalog** (zones, grip library inputs). It does **not** encode dual-guitar drones, prepared noise, or inter-guitar clash — do not treat “pick `sy_*` from dropdown” as the full Sonic Youth story.
+
+**Score-level truth** for noise-rock / SY-style material lives on **`ChordEvent.sonicYouth`** (**`core/score-model/sonicYouthChordTypes.ts`**): two **`GuitarTuningState`** (per-guitar `tuningId`, **`openPitches`**, `shapeId`, `fretPattern`, `stringMask`, **`droneStrings`**, **`noiseLevel`**: `clean` | `crunchy` | `feedback` | `prepared`), **`InterGuitarDissonance`** (score + interval tallies + **`preset`**), and **`textureState`** (**`SYTextureState`**) for macro phase / exporter hints. **`chordSymbol`** may be **`null`** (explicit no symbol) — guard string ops.
+
+**Guards / helpers:** **`sonicYouthChordGuards.ts`** — **`isSonicYouthEvent`**, **`getSYTextureState`**, re-export **`getSYDissonancePreset`** (0–1 score → friction tier). **Pipeline:** narrow + **profile-gate** before reading SY fields or augmenting MusicXML (**`musicxmlExporter.ts`**, **`sonicYouthSlice.ts`**, **`sonicYouthTextureEngine.ts`**).
+
+**Research / Perplexity prompts** (v1 interface sketch): see **`c:\Users\mike\Documents\Perplexity Research\000 Sonic Youth template.txt`** on this machine when extending the schema.
+
 ## Recent update (2026-05-04)
 
 **Smoke tier:** **`npm run test:composer-smoke`** — **163**/0 PASS rows, **42** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.

@@ -263,6 +263,20 @@ export const ALTERNATE_GUITAR_TUNING_PRESETS: readonly AlternateGuitarTuningPres
     audibleDescription: 'Heavier low-string anchor with tighter riff punch.',
   },
   {
+    id: 'open_e',
+    label: 'Open E',
+    zone: 'hybrid_harmonic',
+    strings: ['E2', 'B2', 'E3', 'G#3', 'B3', 'E4'],
+    audibleDescription: 'Classic slide and blues-rock open voicing — ringing major triad on open strings.',
+  },
+  {
+    id: 'baritone_standard',
+    label: 'Baritone standard',
+    zone: 'hybrid_harmonic',
+    strings: ['B1', 'E2', 'A2', 'D3', 'F#3', 'A3'],
+    audibleDescription: 'Long-scale B tuning — extended low register with familiar chord shapes shifted down.',
+  },
+  {
     id: 'open_modal_1',
     label: 'Open Modal 1',
     zone: 'hybrid_harmonic',
