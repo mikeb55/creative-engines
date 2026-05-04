@@ -141,4 +141,5 @@ export const folkStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = {
   threshold: 7.0,
   dimensions: folkDimensions,
   score: scoreFolk,
+  quadratonicAlignmentWeight: 0.05,
 };

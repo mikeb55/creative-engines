@@ -144,4 +144,5 @@ export const classicalStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures
   threshold: 7.0,
   dimensions: classicalDimensions,
   score: scoreClassical,
+  quadratonicAlignmentWeight: 0.15,
 };

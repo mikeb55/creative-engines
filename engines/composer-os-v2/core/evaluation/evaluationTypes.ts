@@ -139,6 +139,8 @@ export interface StyleProfile<
   score: (
     input: StyleProfileEvaluationInput<TGeneratedOutput, TFeatures>
   ) => StyleProfileEvaluationResult;
+  /** Blended weight in `combinedEvaluator` (default 0.1). Bebop / Modern Jazz / classical / folk override. */
+  quadratonicAlignmentWeight?: number;
 }
 export interface StyleDimensionDefinition {
   id: string;
@@ -221,7 +223,7 @@ export interface CandidateScore {
 }
 export interface RefinementTarget {
   dimensionId: string;
-  dimensionType: 'gce' | 'style' | 'lock' | 'combined';
+  dimensionType: 'gce' | 'style' | 'lock' | 'combined' | 'quadratonic';
   reason: string;
   suggestedAction?: string;
   severity?: Severity;
@@ -269,6 +271,8 @@ export interface CombinedEvaluatorConfig {
   styleWeight: number;
   lockRequired: boolean;
   passThreshold: Score10;
+  /** When set, overrides profile/metadata quadratonic blend weight. */
+  quadratonicAlignmentWeight?: number;
 }
 export interface CombinedEvaluationInput<TGeneratedOutput = unknown> {
   output: TGeneratedOutput;
@@ -296,6 +300,8 @@ export interface CombinedEvaluationResult {
   refinementTarget?: RefinementTarget;
   pass: boolean;
   reasons: string[];
+  /** Tonality Vault quadratonic melody vs chord alignment (0–10), blended lightly into {@link finalScore}. */
+  quadratonicAlignment?: { score: Score10; weight: number };
 }
 export interface CombinedEvaluator<TGeneratedOutput = unknown> {
   evaluate(

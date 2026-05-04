@@ -1,5 +1,9 @@
 import { evaluateGce } from './gceEvaluator';
 import { evaluateLock } from './lockGates';
+import {
+  evaluateQuadratonicAlignmentScore,
+  resolveQuadratonicAlignmentWeight,
+} from './quadratonicAlignmentEvaluator';
 import type {
   CombinedEvaluationInput,
   CombinedEvaluationResult,
@@ -51,8 +55,15 @@ export function createCombinedEvaluator(
 
       const lock = evaluateLock(input.output, features);
 
-      const finalScore =
-        cfg.gceWeight * gce.finalScore + cfg.styleWeight * style.finalStyleScore;
+      const wqRaw =
+        typeof cfg.quadratonicAlignmentWeight === 'number' && Number.isFinite(cfg.quadratonicAlignmentWeight)
+          ? cfg.quadratonicAlignmentWeight
+          : resolveQuadratonicAlignmentWeight(input.styleProfile, input.metadata);
+      const wq = Math.max(0, Math.min(1, wqRaw));
+
+      const quadScore = evaluateQuadratonicAlignmentScore(input.output);
+      const baseBlend = cfg.gceWeight * gce.finalScore + cfg.styleWeight * style.finalStyleScore;
+      const finalScore = (1 - wq) * baseBlend + wq * quadScore;
 
       let pass = finalScore >= cfg.passThreshold;
       if (cfg.lockRequired && lock.pass === false) {
@@ -63,27 +74,46 @@ export function createCombinedEvaluator(
       const styleWeakDim = style.dimensions.find((d) => d.id === style.weakestDimensionId);
       const styleWeakScore = styleWeakDim?.score ?? 0;
 
-      let weakestDimension: string;
-      let refinementTarget: RefinementTarget | undefined;
+      const triple: Array<{
+        id: string;
+        type: RefinementTarget['dimensionType'];
+        score: number;
+        reason: string;
+      }> = [
+        {
+          id: gce.weakestCategory,
+          type: 'gce',
+          score: gceWeakScore,
+          reason: 'Combined evaluator: GCE weakest category',
+        },
+        {
+          id: style.weakestDimensionId,
+          type: 'style',
+          score: styleWeakScore,
+          reason: 'Combined evaluator: style weakest dimension',
+        },
+        {
+          id: 'quadratonicAlignment',
+          type: 'quadratonic',
+          score: quadScore,
+          reason: 'Combined evaluator: quadratonic melody vs chord alignment',
+        },
+      ];
 
-      if (gceWeakScore <= styleWeakScore) {
-        weakestDimension = gce.weakestCategory;
-        refinementTarget = {
-          dimensionId: gce.weakestCategory,
-          dimensionType: 'gce',
-          reason: 'Combined evaluator: lowest score in GCE weakest category vs style weakest dimension',
-        };
-      } else {
-        weakestDimension = style.weakestDimensionId;
-        refinementTarget = {
-          dimensionId: style.weakestDimensionId,
-          dimensionType: 'style',
-          reason: 'Combined evaluator: lowest score in style weakest dimension vs GCE weakest category',
-        };
+      let pick = triple[0]!;
+      for (const t of triple.slice(1)) {
+        if (t.score < pick.score) pick = t;
       }
 
+      const weakestDimension = pick.id;
+      const refinementTarget: RefinementTarget | undefined = {
+        dimensionId: pick.id,
+        dimensionType: pick.type,
+        reason: pick.reason,
+      };
+
       const reasons: string[] = [
-        `weighted: ${cfg.gceWeight}×GCE(${gce.finalScore.toFixed(2)}) + ${cfg.styleWeight}×Style(${style.finalStyleScore.toFixed(2)}) = ${finalScore.toFixed(2)}`,
+        `weighted: (1−${wq.toFixed(2)})×(${cfg.gceWeight}×GCE(${gce.finalScore.toFixed(2)})+${cfg.styleWeight}×Style(${style.finalStyleScore.toFixed(2)})) + ${wq.toFixed(2)}×Quadratonic(${quadScore.toFixed(2)}) = ${finalScore.toFixed(2)}`,
       ];
       if (cfg.lockRequired && !lock.pass) {
         reasons.push('LOCK required but lock evaluation did not pass');
@@ -99,6 +129,7 @@ export function createCombinedEvaluator(
         refinementTarget,
         pass,
         reasons,
+        quadratonicAlignment: { score: quadScore, weight: wq },
       };
     },
   };

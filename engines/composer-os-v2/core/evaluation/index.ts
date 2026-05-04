@@ -16,3 +16,4 @@ export * from './sammyNesticoStyleProfile';
 export * from './folkStyleProfile';
 export * from './classicalStyleProfile';
 export * from './bebopStyleProfile';
+export * from './quadratonicAlignmentEvaluator';

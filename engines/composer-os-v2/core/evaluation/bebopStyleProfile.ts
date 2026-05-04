@@ -141,4 +141,5 @@ export const bebopStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = 
   threshold: 7.0,
   dimensions: bebopDimensions,
   score: scoreBebop,
+  quadratonicAlignmentWeight: 0.25,
 };

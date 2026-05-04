@@ -879,6 +879,52 @@ Generate **two writers** on same **macro harmony sketch** (manual lock) → comp
 
 ---
 
+## Tonality Vault — Expanded Roadmap
+
+Composer OS is extending **Tonality Vault** into guitar-forward generation, **liquid harmony**, **reharmonisation**, and arrangement routing. This section is the **product/engine roadmap** for that expansion (implementation spans `engines/composer-os-v2/core/harmony/` and related pipelines). Cross-link: **`docs/GCE_FRAMEWORK_V2.md`** for evaluation philosophy; engine chord-type reference continues from **`tonalityVaultDatabase`** / **`quadratonicMelodySelector`**.
+
+### External riff ecosystem audit (read-only, no clone)
+
+The following GitHub repos were checked via **public API / raw README only** (no clone, no local files). Use them as **hints for data shapes and ecosystem wiring**, not as drop-in dependencies until reviewed.
+
+| Repository | What it is (public metadata) | Stack | Guitar / fretboard | Riff data / banks | Notes for Composer OS TS |
+|------------|-----------------------------|-------|--------------------|-------------------|---------------------------|
+| [mikeb55/riffgen](https://github.com/mikeb55/riffgen) | HTML/JS quartet + guitar engine. **`generateRiff()`** uses named profiles + scale rows | HTML / JS | No fretboard logic | Data-driven scale/profile rows (starter **`web/riffgen.js`**) | Data-driven architecture portable to TS — swap harmony-library imports for **`tonalityVaultDatabase`**. **MIT** |
+| [mikeb55/riffgen2](https://github.com/mikeb55/riffgen2) | Browser guitar riff generator with **Tone.js**. **16-slot binary rhythm masks** per style (rock / blues / metal / jazz / funk), named scale pools, **`noteToFret()`** simplified E-standard fret mapper | HTML + JS (Tone.js) | **`noteToFret()`** simplified E-standard mapper (tab UI) | Rhythm masks + scale pools (`standalone_riffgen.html`) | Port rhythm masks and fret mapping ideas to **VaultRiffGenerator** — replace random scale walks with quadratonic / grip rules. License unclear |
+| [mikeb55/riffgen3](https://github.com/mikeb55/riffgen3) | Placeholder / minimal (**Shell** only; tiny footprint) | Shell | Not evidenced | No | No reusable engine logic visible publicly |
+| [mikeb55/RiffgenPro](https://github.com/mikeb55/RiffgenPro) | Stub (“Made in Claude”; empty language stats) | — | Not evidenced | No | Treat as placeholder |
+| [mikeb55/riffbank](https://github.com/mikeb55/riffbank) | Shared **riff/motif** library (**MIT**): JSON + optional MIDI; `data/riffs.json` with MIDI pitch + duration rows | Docs say JSON/MIDI; **languages** unset at API | README: **no fretboard**—abstract pitch/duration | **Yes** — starter bank + `riffbank_v1.zip`; **schema/** + **types/** dirs | **Portable:** trivial mapping from `{ pitch, dur }` to score-model notes; copy **schema/types** after license review |
+| [mikeb55/infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine) | **IRM**: riff variation + section chaining; integrates **riffbank**, **mrprofiles**, **harmony-library** (**MIT**) | **JavaScript**; **web/** demo, **schema/riff.schema.json**, **types/** | README: **not guitar-specific** | Variation engine + zip bundle | **Portable:** JSON Schema + TS-adjacent **types/** useful as contract reference; JS web code → rewrite in TS |
+| [mikeb55/grand-criteria-of-excellence-jazz](https://github.com/mikeb55/grand-criteria-of-excellence-jazz) | Large mixed repo: **HTML**, **Python**, **LilyPond**, etc.; folders e.g. **BarryEngine**, **Bebop Language**, **Composition Rules** | Multi-language | Not confirmed from README alone | Rules/text more than MIDI riff bank | **Alignment** with **GCE**-style jazz criteria; **direct TS port** unlikely without case-by-case extraction |
+
+**Takeaway:** Prior to building **VaultRiffGenerator**, mine **[riffbank](https://github.com/mikeb55/riffbank)** (JSON snippets + schema) and **[infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine)** (**riff.schema.json**, section/variation intent). Treat **grand-criteria-of-excellence-jazz** as **research/diagnostic** adjacent to GCE, not a guitar engine.
+
+### Planned builds (engine)
+
+- **Build A — Note tagging + beat context:** **`BeatContextLegalityMap`** and **`NoteTag`** schema. Every note carries **tonal role**, **layer**, **beat legality**, **resolve targets**, **voicing compatibility**, **guitar techniques** (pick/finger/slide tags as applicable).
+
+- **Build B — Layer state machine + liquid harmony:** **`LayerStateMachine`** (Resolve → Primary → Tension → Chaos → Recover) driving **`LiquidHarmonyPlanner`**. Phrase-level intention from the state machine; **liquid harmony** shapes internal voicing motion per subdivision.
+
+- **Build C — Guitar riff engine:** **`VaultRiffGenerator`**, **`FretboardRealization`**, **guitar grip library**. Position-aware riffs using **quadratonic grips**, **dyad seesaws**, **triad-pair pendulum**, **pedal-string patterns**, **pick-attack** tags. **Audit riffbank / infinite-riff-machine** (above) before greenfield.
+
+- **Build D — Reharmonisation engine:** **`ReharmCandidateEngine`**. Shared **melodic-triad** substitutions, **tension-layer** substitutions, **shell-swap** substitutions; **emotional drift** (darker / brighter / more suspended). Targets **standards** and **user originals**.
+
+- **Build E — Arrangement layer router:** **`ArrangementLayerRouter`**. **Bass** on shell, **inner voices** on melodic triad, **upper voices** on quadratonic / triad-pair; **string quartet** and **big band** mappings.
+
+- **Build F — Motif transformation:** Restate motifs through successive layers — **triad → quadratonic → triad pair → liquid voicings → resolve**.
+
+- **Build G — Full 16-tonality per-chord rulesets:** Complete behaviour pack per chord: melodic triad, quadratonic, tension hierarchy, phrase templates, beat affinity, guitar grips, reharm candidates.
+
+### Planned UI additions
+
+**Tension dial**, **chord-to-triad inspector**, **fretboard overlay**, **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**.
+
+### Build order
+
+**A → C → B → D → E → F → G** (guitar riff engine **C** prioritised immediately after tagging/context **A**).
+
+---
+
 ## 13. Roadmap awareness and maintenance
 
 Composer OS evolves—**roadmap** and **changelog** track slices and smoke tiers. When you add **writers**, **presets**, or **meter maps**, update **this playbook** and regenerate **DOCX**.
