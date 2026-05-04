@@ -963,6 +963,16 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 **Export / tab:** Engine output is **not** yet merged into the main MusicXML exporter—**ScoreNote** carries tab-ready **string/fret** for a future pipe. **Product workflow:** MusicXML (when wired from generated lines) → **Guitar Pro 8** / **Sibelius** import for **notation + TAB** the same way other guitar scores are brought into GP8 today.
 
+#### Future Tunings (guitar)
+
+To register a new tuning for Vault **grip** math (and any caller that passes the same **`tuningId`**):
+
+1. Add a preset row to **`alternateGuitarTunings.ts`**: stable **`id`**, **`label`**, **`audibleDescription`**, **`zone`** (if applicable), and **`strings`**: six **scientific-pitch** open strings **low → high** (repo convention, e.g. **`E2`**…**`E4`**). **`openStringMidisForTuning`** converts those to MIDI for fret candidates.
+2. **Optional / UI:** add the **`id`** to the relevant zone list (e.g. **`ROADMAP_ZONE_TUNING_PRESET_IDS`** or zone-specific arrays) if the preset should appear in grouped Generate UI.
+3. Pass that **`tuningId`** into **`buildGuitarGripLibrary(chordTypeId, rootPc, tuningId)`** — grips **recompute** from the six open-string midis; **no edits** to **`guitarGripLibrary.ts`**, **`vaultRiffGenerator.ts`**, or the core Vault engine are required for a new preset **id**.
+
+**Ideas backlog (not yet shipped as presets):** **Drop D** open midis **[38, 45, 50, 55, 59, 64]** (see existing **`drop_d`** preset), **Open E**, **DADGAD** variants beyond **`dadgad`**, **Nashville** high-stringing, **baritone** standard **[23, 28, 33, 38, 42, 47]**, **7-string** standard.
+
 ### Build E+F — Arrangement layer router + motif transformation (**complete**)
 
 **Shipped** in `engines/composer-os-v2/core/arrangement/` — **`arrangementLayerRouter.ts`**, **`motifTransformer.ts`**, barrel **`index.ts`**.
@@ -1020,7 +1030,7 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 
 - **Build G — Full 16-tonality per-chord rulesets:** **Complete** — see **Build G** subsection above; **`VaultChordRuleSet`** + **`buildAllVaultChordRuleSets()`**.
 
-- **Build C2 — Alt tuning extension:** **Sonic Youth** and **Joni Mitchell** (and related) **altered-tuning presets** already live in **`alternateGuitarTunings.ts`**; this build **recomputes fret positions** from each preset’s **six string pitches** so **`buildGuitarGripLibrary` / `generateVaultRiff`** match the user’s tuning in the field, not E-standard only.
+- **Build C2 — Alt tuning extension:** **Complete.** **`guitarGripLibrary.ts`** resolves open-string MIDI via **`openStringMidisForTuning`**: **`standard`** → fixed E-standard **[40, 45, 50, 55, 59, 64]**; otherwise **`getAlternateGuitarTuningPreset(tuningId)`** supplies six **scientific-pitch** strings → MIDI for all fret math. **Preset groups (ids):** **Sonic Youth** — **`sy_cgdgcd`**, **`sy_cgdgbd`**, **`sy_ebebeb`**, **`sy_facgce`**, **`sy_cgcgce`**, **`sy_dgdgbd`**, **`open_g`**, **`drone_cluster_1`**, **`drone_cluster_2`**; **Joni Mitchell** — **`dadgad`**, **`open_d`**, **`joni_style_open_color`**, **`joni_style_hybrid_resonance`**, **`joni_dgdfce`**, **`joni_cgefge`**, **`joni_cgdgbe`**, **`joni_dadgbe`**, **`joni_dadfad`**, **`joni_eeeebe`**. Unrecognised **`tuningId`** falls back to standard E. New tunings: add **`alternateGuitarTunings.ts`** row only — **no** grip-library / riff-generator / Vault-engine changes (see **Future Tunings (guitar)** under **Build C**).
 
 - **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
 
@@ -1062,9 +1072,9 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 
 ### Build order (remaining)
 
-**A** through **G** are **complete**. **Next:** **Build C2** (alt tuning extension). Planned sequencing for **remaining** work:
+**A** through **G** and **C2** are **complete**. **Next:** **Build H** (GCE-targeted generation). Planned sequencing for **remaining** work:
 
-**C2 → H → UI → IMG**
+**H → UI → IMG**
 
 ---
 
