@@ -31,6 +31,14 @@ export type FretboardPanelProps = {
   /** When true, vary marker appearance by `beatLegality` on each note. */
   showBeatLegality?: boolean;
   onNoteClick?: (note: FretboardNote) => void;
+  /** Current beat index during playback (0-based). Undefined = no playback overlay. */
+  playbackBeat?: number;
+  /** Notes currently sounding — always drawn on top with glow; ignores `activeLayers`. */
+  playbackNotes?: FretboardNote[];
+  /** Recently played notes — dimmed trail layer under active dots. */
+  trailNotes?: FretboardNote[];
+  /** When true, show a lock marker and disable fretboard auto-crop (stable viewport). */
+  positionLock?: boolean;
 };
 
 const DEFAULT_TUNING: string[] = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
@@ -50,6 +58,42 @@ const ROLE_COLORS: Record<FretboardNote['role'], string> = {
 
 function toLibraryString(stringIndex: number): number {
   return 6 - stringIndex;
+}
+
+function noteKey(n: Pick<FretboardNote, 'stringIndex' | 'fret'>): string {
+  return `${n.stringIndex}:${n.fret}`;
+}
+
+function inNoteRange(
+  n: FretboardNote,
+  tuningLen: number,
+  rangeFrom: number,
+  rangeTo: number
+): boolean {
+  return (
+    n.stringIndex >= 0 && n.stringIndex < tuningLen && n.fret >= rangeFrom && n.fret <= rangeTo
+  );
+}
+
+/** Same semantics as `@moonwave99/fretboard.js` getBounds (not exported from package root). */
+function boundsFromPositions(positions: { string: number; fret: number }[]): {
+  bottomLeft: { string: number; fret: number };
+  bottomRight: { string: number; fret: number };
+  topRight: { string: number; fret: number };
+  topLeft: { string: number; fret: number };
+} {
+  const getMinMax = (what: 'string' | 'fret'): [number, number] => [
+    Math.min(...positions.map((x) => x[what])),
+    Math.max(...positions.map((x) => x[what])),
+  ];
+  const [minString, maxString] = getMinMax('string');
+  const [minFret, maxFret] = getMinMax('fret');
+  return {
+    bottomLeft: { string: maxString, fret: minFret },
+    bottomRight: { string: maxString, fret: maxFret },
+    topRight: { string: minString, fret: maxFret },
+    topLeft: { string: minString, fret: minFret },
+  };
 }
 
 export function roleToLayer(role: FretboardNote['role']): NoteLayer {
@@ -77,7 +121,11 @@ type DotDatum = {
   role: FretboardNote['role'];
   disabled?: boolean;
   beatLegality?: 'strong' | 'weak' | 'syncopated' | 'approachOnly';
+  trail?: boolean;
+  playback?: boolean;
 };
+
+type FretboardApi = import('@moonwave99/fretboard.js').Fretboard;
 
 export function FretboardPanel({
   tuning = DEFAULT_TUNING,
@@ -87,9 +135,15 @@ export function FretboardPanel({
   activeLayers = ALL_LAYERS,
   showBeatLegality = false,
   onNoteClick,
+  playbackBeat,
+  playbackNotes,
+  trailNotes,
+  positionLock = false,
 }: FretboardPanelProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const boardMountRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<{ removeEventListeners: () => unknown } | null>(null);
+  const fretboardApiRef = useRef<FretboardApi | null>(null);
+
   const rangeFrom = frets?.from ?? DEFAULT_FRETS.from;
   const rangeTo = frets?.to ?? DEFAULT_FRETS.to;
 
@@ -97,45 +151,74 @@ export function FretboardPanel({
     const layerSet = new Set(activeLayers);
     return notes.filter((n) => {
       if (!layerSet.has(roleToLayer(n.role))) return false;
-      return (
-        n.stringIndex >= 0 &&
-        n.stringIndex < tuning.length &&
-        n.fret >= rangeFrom &&
-        n.fret <= rangeTo
-      );
+      return inNoteRange(n, tuning.length, rangeFrom, rangeTo);
     });
   }, [notes, activeLayers, tuning.length, rangeFrom, rangeTo]);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+  const mergedDots = useMemo(() => {
+    const pb = playbackNotes ?? [];
+    const tr = trailNotes ?? [];
+    const pbKeys = new Set(pb.map(noteKey));
+    const out: DotDatum[] = [];
 
-    let cancelled = false;
-    el.innerHTML = '';
-    boardRef.current = null;
-
-    void (async () => {
-      const { Fretboard } = await import('@moonwave99/fretboard.js');
-      if (cancelled || !containerRef.current) return;
-
-      const board = new Fretboard({
-        el: containerRef.current,
-        tuning,
-        stringCount: tuning.length,
-        fretCount: rangeTo,
-        width: 960,
-        height: 320,
+    for (const n of tr) {
+      if (!inNoteRange(n, tuning.length, rangeFrom, rangeTo)) continue;
+      out.push({
+        string: toLibraryString(n.stringIndex),
+        fret: n.fret,
+        role: n.role,
+        trail: true,
       });
-      if (cancelled) return;
-      boardRef.current = board;
-
-      const dots: DotDatum[] = visibleNotes.map((n) => ({
+    }
+    for (const n of visibleNotes) {
+      if (pbKeys.has(noteKey(n))) continue;
+      out.push({
         string: toLibraryString(n.stringIndex),
         fret: n.fret,
         role: n.role,
         disabled: n.isActive === false,
         ...(showBeatLegality ? { beatLegality: n.beatLegality ?? 'strong' } : {}),
-      }));
+      });
+    }
+    for (const n of pb) {
+      if (!inNoteRange(n, tuning.length, rangeFrom, rangeTo)) continue;
+      out.push({
+        string: toLibraryString(n.stringIndex),
+        fret: n.fret,
+        role: n.role,
+        playback: true,
+      });
+    }
+    return out;
+  }, [visibleNotes, playbackNotes, trailNotes, tuning.length, rangeFrom, rangeTo, showBeatLegality]);
+
+  useEffect(() => {
+    const el = boardMountRef.current;
+    if (!el) return;
+
+    let cancelled = false;
+    el.innerHTML = '';
+    boardRef.current = null;
+    fretboardApiRef.current = null;
+
+    void (async () => {
+      const { Fretboard } = await import('@moonwave99/fretboard.js');
+      if (cancelled || !boardMountRef.current) return;
+
+      const board = new Fretboard({
+        el: boardMountRef.current,
+        tuning,
+        stringCount: tuning.length,
+        fretCount: rangeTo,
+        width: 960,
+        height: 320,
+        ...(positionLock ? { crop: false } : {}),
+      });
+      if (cancelled) return;
+      boardRef.current = board;
+      fretboardApiRef.current = board;
+
+      const dots: DotDatum[] = mergedDots.map((d) => ({ ...d }));
 
       board.setDots(dots as import('@moonwave99/fretboard.js').Position[]).render();
 
@@ -143,34 +226,56 @@ export function FretboardPanel({
         board.style({ filter: { role }, fill: ROLE_COLORS[role] });
       });
 
+      board.style({
+        filter: (d: DotDatum) => d.trail === true,
+        opacity: 0.3,
+      });
+
+      board.style({
+        filter: (d: DotDatum) => d.playback === true,
+        opacity: 1,
+        stroke: '#fef9c3',
+        'stroke-width': 5,
+      });
+
       if (showBeatLegality) {
         board.style({
-          filter: (d: DotDatum) => d.beatLegality === 'weak',
+          filter: (d: DotDatum) =>
+            !d.playback && !d.trail && d.beatLegality === 'weak',
           opacity: 0.5,
         });
         board.style({
-          filter: (d: DotDatum) => d.beatLegality === 'syncopated',
+          filter: (d: DotDatum) =>
+            !d.playback && !d.trail && d.beatLegality === 'syncopated',
           'stroke-dasharray': '5 4',
           stroke: (d: DotDatum) => ROLE_COLORS[d.role],
         });
         board.style({
-          filter: (d: DotDatum) => d.beatLegality === 'approachOnly',
+          filter: (d: DotDatum) =>
+            !d.playback && !d.trail && d.beatLegality === 'approachOnly',
           fill: 'none',
           stroke: (d: DotDatum) => ROLE_COLORS[d.role],
         });
       }
 
       if (onNoteClick) {
-        const svgWrap = containerRef.current.querySelector('.fretboard-html-wrapper');
+        const svgWrap = boardMountRef.current.querySelector('.fretboard-html-wrapper');
         if (svgWrap instanceof HTMLElement) {
           svgWrap.style.cursor = 'pointer';
+        }
+        const clickPool = [...visibleNotes, ...(playbackNotes ?? [])];
+        const poolKeys = new Map<string, FretboardNote>();
+        for (const n of clickPool) {
+          const k = noteKey(n);
+          if (!poolKeys.has(k)) poolKeys.set(k, n);
         }
         board.on('click', (pos) => {
           const libString = pos.string;
           const fret = pos.fret;
           if (libString == null || fret == null) return;
           const stringIndex = 6 - libString;
-          const hit = visibleNotes.find((n) => n.stringIndex === stringIndex && n.fret === fret);
+          const k = `${stringIndex}:${fret}`;
+          const hit = poolKeys.get(k);
           if (hit) onNoteClick(hit);
         });
       }
@@ -180,11 +285,159 @@ export function FretboardPanel({
       cancelled = true;
       boardRef.current?.removeEventListeners();
       boardRef.current = null;
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      fretboardApiRef.current = null;
+      if (boardMountRef.current) {
+        boardMountRef.current.innerHTML = '';
       }
     };
-  }, [tuning, rangeFrom, rangeTo, visibleNotes, showBeatLegality, onNoteClick]);
+  }, [
+    tuning,
+    rangeFrom,
+    rangeTo,
+    mergedDots,
+    showBeatLegality,
+    onNoteClick,
+    playbackNotes,
+    visibleNotes,
+    positionLock,
+  ]);
 
-  return <div ref={containerRef} className={className} />;
+  useEffect(() => {
+    let raf = 0;
+    let cancelled = false;
+    let tries = 0;
+
+    const paintBand = () => {
+      if (cancelled) return;
+      tries += 1;
+      if (tries > 240) return;
+
+      const board = fretboardApiRef.current;
+      const mount = boardMountRef.current;
+      if (!board || !mount) {
+        raf = requestAnimationFrame(paintBand);
+        return;
+      }
+
+      const wrapper = mount.querySelector('.fretboard-wrapper');
+      if (!wrapper) {
+        raf = requestAnimationFrame(paintBand);
+        return;
+      }
+
+      wrapper.querySelector('.co-playback-position-band')?.remove();
+
+      if (playbackBeat === undefined || !(playbackNotes?.length ?? 0)) {
+        return;
+      }
+
+      const pbIn = (playbackNotes ?? []).filter((n) =>
+        inNoteRange(n, tuning.length, rangeFrom, rangeTo)
+      );
+      if (!pbIn.length) return;
+
+      const libPositions = pbIn.map((n) => ({
+        string: toLibraryString(n.stringIndex),
+        fret: n.fret,
+      }));
+
+      const bounds = boundsFromPositions(libPositions);
+      const dotOffset = (board as unknown as { getDotOffset(): number }).getDotOffset();
+      const positions = board.positions as { x: number; y: number }[][];
+      const opts = board.options as {
+        width: number;
+        dotSize: number;
+        highlightPadding: number;
+        highlightRadius: number;
+      };
+      const boardWidth = opts.width ?? 960;
+      const dotSize = opts.dotSize ?? 15;
+      const highlightPadding = opts.highlightPadding ?? 7.5;
+      const highlightRadius = opts.highlightRadius ?? 7.5;
+
+      const dotPercentSize = (dotSize / boardWidth) * 100;
+      const highlightPaddingPercentSize = (highlightPadding / boardWidth) * 100;
+
+      const { topLeft, topRight, bottomLeft } = bounds;
+      const fi = (fret: number) => Math.max(0, fret - dotOffset);
+
+      const cxLeft = positions[topLeft.string - 1][fi(topLeft.fret)].x;
+      const cxRight = positions[topRight.string - 1][fi(topRight.fret)].x;
+      const xAttr = `${cxLeft - dotPercentSize / 2 - highlightPaddingPercentSize}%`;
+      const widthAttr = `${cxRight - cxLeft + dotPercentSize + 2 * highlightPaddingPercentSize}%`;
+
+      const yTop = positions[topLeft.string - 1][fi(topLeft.fret)].y;
+      const yBot = positions[bottomLeft.string - 1][fi(bottomLeft.fret)].y;
+      const heightPx = yBot - yTop + dotSize + 2 * highlightPadding;
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const group = document.createElementNS(ns, 'g');
+      group.setAttribute('class', 'co-playback-position-band');
+      group.setAttribute(
+        'style',
+        'pointer-events: none; transition: opacity 0.35s ease; mix-blend-mode: multiply;'
+      );
+
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('class', 'co-playback-band-rect');
+      rect.setAttribute('x', xAttr);
+      rect.setAttribute('width', widthAttr);
+      rect.setAttribute('y', String(yTop - dotSize * 0.5 - highlightPadding));
+      rect.setAttribute('height', String(heightPx));
+      rect.setAttribute('rx', String(highlightRadius));
+      rect.setAttribute('fill', 'rgba(59, 130, 246, 0.14)');
+      rect.setAttribute('stroke', 'rgba(59, 130, 246, 0.35)');
+      rect.setAttribute('stroke-width', '1');
+      rect.style.opacity = '0';
+      group.appendChild(rect);
+      wrapper.appendChild(group);
+
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        rect.style.transition = 'opacity 0.35s ease';
+        rect.style.opacity = '1';
+      });
+    };
+
+    raf = requestAnimationFrame(paintBand);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      boardMountRef.current?.querySelector('.co-playback-position-band')?.remove();
+    };
+  }, [
+    playbackBeat,
+    playbackNotes,
+    tuning.length,
+    rangeFrom,
+    rangeTo,
+    mergedDots,
+    positionLock,
+  ]);
+
+  return (
+    <div className={className} style={{ position: 'relative', width: '100%' }}>
+      <div ref={boardMountRef} />
+      {positionLock ? (
+        <div
+          role="status"
+          aria-label="Position locked"
+          title="Position locked — viewport does not auto-shift"
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            fontSize: '1.1rem',
+            lineHeight: 1,
+            userSelect: 'none',
+            pointerEvents: 'none',
+            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.45))',
+          }}
+        >
+          🔒
+        </div>
+      ) : null}
+    </div>
+  );
 }
