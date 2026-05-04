@@ -1052,9 +1052,9 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 - **Build H — GCE-targeted generation:** **Complete** — see **Build H** subsection above; **`gceTargetedGenerator.ts`** (**`runWithGCETarget`**, **`GCEGenerationTarget`**, **`DEFAULT_GCE_TARGET`**).
 
-- **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
+- **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path). **Estimated effort: 3–4 iterations** — install **[pianosnake/ireal-reader](https://github.com/pianosnake/ireal-reader)**; **`ParsedChart`** TypeScript adapter; chord symbol → **`tonalityVaultDatabase`** mapping; **`generateVaultRiff`** per bar → **MusicXML** output; UI input for **`ireal://`** URL.
 
-- **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path).
+- **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Estimated effort: 6–8 iterations** — **FretboardPanel** (**fretboard.js**); note **role** colours; **layer** toggles; **TabPanel** (**VexFlow**); **playback** trail; **`svgToPng`** export; responsive layout / **dark mode**; **Vault microscope** scrubber. Schedule as a **dedicated focused session** — largest remaining surface area.
 
 ### Build IMG — iReal Pro import (planned)
 
@@ -1091,9 +1091,13 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 ### Build order (remaining)
 
-**A** through **G**, **C2**, and **H** are **complete**. **Next:** **Build UI** (visual fretboard). Planned sequencing for **remaining** work:
+**A** through **G**, **C2**, and **H** are **complete**. **Remaining sequencing: IMG → UI.**
 
-**UI → IMG**
+**Why IMG before UI:** **Build IMG** is **lower risk**, needs **fewer iterations** (**3–4** vs **6–8**), and ships **immediately useful** output — paste an **`ireal://`** URL → chord timeline → **Vault** **`generateVaultRiff`** → **MusicXML**. **Build UI** is the **largest** remaining build (fretboard + tab + microscope + layout); treat it as a **dedicated focused session** after IMG lands.
+
+**Next:** **Build IMG** (iReal pipeline). Then **Build UI** (visual fretboard).
+
+**IMG → UI**
 
 ---
 
