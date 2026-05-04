@@ -51,6 +51,7 @@ import {
   tileZappaMeterCycle,
   zappaMeterCycleToPresetPattern,
 } from '@composer-os/core/rhythm/oddMeterQuantiser';
+import { generateFromIReal, type IRealVaultOutput } from '@composer-os/core/irealpro';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -916,6 +917,13 @@ export function HomeGenerate({
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [iRealPaste, setIRealPaste] = useState('');
+  const [iRealVaultRiffStyle, setIRealVaultRiffStyle] = useState<
+    'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
+  >('bebop-placement');
+  const [iRealVaultTuningId, setIRealVaultTuningId] = useState('standard');
+  const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
+  const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
   const [result, setResult] = useState<GenResult | null>(null);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
@@ -4351,6 +4359,179 @@ export function HomeGenerate({
           Open library folder
         </button>
       </div>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          iReal Pro Import (Beta)
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-ireal-paste"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Paste an <code style={{ fontSize: '0.8rem' }}>ireal://</code> URL or iReal Pro HTML export
+          </label>
+          <textarea
+            id="co-ireal-paste"
+            value={iRealPaste}
+            onChange={(e) => setIRealPaste(e.target.value)}
+            rows={5}
+            wrap="soft"
+            spellCheck={false}
+            disabled={iRealVaultBusy}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.82rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                htmlFor="co-ireal-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-ireal-riff-style"
+                value={iRealVaultRiffStyle}
+                onChange={(e) =>
+                  setIRealVaultRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={iRealVaultBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-ireal-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-ireal-tuning"
+                value={iRealVaultTuningId}
+                onChange={(e) => setIRealVaultTuningId(e.target.value)}
+                disabled={iRealVaultBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={iRealVaultBusy}
+              onClick={() => {
+                setIRealVaultBusy(true);
+                try {
+                  const out = generateFromIReal(iRealPaste, {
+                    riffStyle: iRealVaultRiffStyle,
+                    tuningId: iRealVaultTuningId,
+                  });
+                  setIRealVaultOutput(out);
+                } finally {
+                  setIRealVaultBusy(false);
+                }
+              }}
+            >
+              {iRealVaultBusy ? 'Working…' : 'Generate from iReal'}
+            </button>
+          </div>
+          {iRealVaultOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{iRealVaultOutput.title.trim() ? iRealVaultOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Total bars: {iRealVaultOutput.bars}</p>
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
+                {iRealVaultOutput.unmappedChords.length}
+              </p>
+              {iRealVaultOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {iRealVaultOutput.unmappedChords.map((u, i) => (
+                      <li key={`ireal-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </details>
 
       {showBigReceipt && (
         <div
