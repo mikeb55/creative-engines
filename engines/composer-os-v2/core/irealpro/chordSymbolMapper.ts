@@ -47,6 +47,8 @@ export function normalizeChordQualityForMapping(raw: string): string {
   }
   s = s.replace(/^maj#11#9$/, 'maj7#11#9');
   s = s.replace(/^maj#11$/, 'maj7#11');
+  /* Unambiguous major-seven sharp-five (avoid min7#5 collision after lowercasing). */
+  s = s.replace(/^m7#5$/i, 'maj7#5');
   return s;
 }
 
@@ -65,7 +67,10 @@ type Rule = { match: (s: string) => boolean; vaultId: string };
 const QUALITY_RULES: Rule[] = [
   { match: (s) => s === 'maj7#11#9', vaultId: 'Maj7#11#9' },
   { match: (s) => s === 'minmaj13#11#9', vaultId: 'minMaj13#11#9' },
+  /** iReal `^7b5` → `maj7b5`; vault has no maj7b5 — treat as lydian major (`Maj7#11`). */
+  { match: (s) => s === 'maj7b5', vaultId: 'Maj7#11' },
   { match: (s) => s === 'maj7#11', vaultId: 'Maj7#11' },
+  /** `^7#5`, `maj7#5`, `M7#5` (via normalize); `m7#5` rewritten to `maj7#5` above. */
   { match: (s) => s === 'maj7#5', vaultId: 'Maj7#5' },
   { match: (s) => s === 'maj9', vaultId: 'Maj9' },
   { match: (s) => s === 'maj7' || s === 'maj', vaultId: 'Maj7' },
@@ -73,7 +78,10 @@ const QUALITY_RULES: Rule[] = [
   { match: (s) => s === 'minmaj9', vaultId: 'minMaj9' },
   { match: (s) => s === 'minmaj7', vaultId: 'minMaj9' },
   { match: (s) => s === 'min11' || s === 'm11', vaultId: 'min11' },
-  { match: (s) => s === 'm7b5' || s === 'ø' || s === 'ø7', vaultId: 'min7b5' },
+  {
+    match: (s) => s === 'm7b5' || s === 'ø' || s === 'ø7' || s === 'h7',
+    vaultId: 'min7b5',
+  },
   { match: (s) => s === 'min9' || s === 'm9', vaultId: 'min9' },
   { match: (s) => s === 'min7' || s === 'm7', vaultId: 'min9' },
   { match: (s) => s === 'min' || s === 'm', vaultId: 'min9' },

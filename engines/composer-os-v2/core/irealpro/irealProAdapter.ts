@@ -131,12 +131,18 @@ export function parseIRealProInput(input: string): ParsedChart {
   const measures = buildMeasures(music?.measures);
   const totalBars = measures.length;
 
+  let tempo: number | null =
+    typeof song.bpm === 'number' && Number.isFinite(song.bpm) ? song.bpm : null;
+  if (tempo === null || tempo === 0) {
+    tempo = 120;
+  }
+
   return {
     title: typeof song.title === 'string' ? song.title : '',
     composer: typeof song.composer === 'string' ? song.composer : '',
     key: typeof song.key === 'string' && song.key !== '' ? song.key : null,
     timeSignature: parseTimeSignature(music?.timeSignature ?? null),
-    tempo: typeof song.bpm === 'number' && Number.isFinite(song.bpm) ? song.bpm : null,
+    tempo,
     style: typeof song.style === 'string' && song.style !== '' ? song.style : null,
     sections: defaultSections(totalBars),
     measures,
