@@ -45,7 +45,15 @@ function parseScientificToMidi(note: string): number | null {
   return (oct + 1) * 12 + semi;
 }
 
+/**
+ * Open-string MIDI per string (low → high). `standard` uses fixed E standard;
+ * any other `tuningId` loads {@link getAlternateGuitarTuningPreset} (Sonic Youth,
+ * Joni, etc.); unknown id or parse failure → standard E open midis.
+ */
 function openStringMidisForTuning(tuningId: string): number[] {
+  if (tuningId === 'standard') {
+    return [...STANDARD_OPEN_MIDIS];
+  }
   const preset = getAlternateGuitarTuningPreset(tuningId);
   if (!preset || preset.id === 'custom') {
     return [...STANDARD_OPEN_MIDIS];
@@ -215,6 +223,8 @@ const MAX_GRIPS_PER_GROUP = 36;
 /**
  * Enumerates playable grips for Tonality Vault chord types on six strings.
  * Uses {@link buildBeatContextLegalityMap} so only vault-derived pitch classes appear.
+ * **Alt tuning (Build C2):** when `tuningId` is not `standard`, open-string midis come from
+ * {@link getAlternateGuitarTuningPreset}; all fret candidates use those six pitches.
  */
 export function buildGuitarGripLibrary(
   chordTypeId: string,
