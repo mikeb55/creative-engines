@@ -1,3 +1,4 @@
+import { getProfileForMode, planPhrase, type GenerationMode } from '../generation';
 import { generateVaultRiff, type ScoreNote } from '../guitar/vaultRiffGenerator';
 import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
 import { mapChordToVaultType } from './chordSymbolMapper';
@@ -10,6 +11,7 @@ export type IRealVaultOutput = {
   generatedNotes: ScoreNote[];
   chordMappings: { barIndex: number; symbol: string; vaultChordTypeId: string; rootPc: number }[];
   unmappedChords: { barIndex: number; symbol: string }[];
+  mode: GenerationMode;
 };
 
 export type GenerateFromIRealOptions = {
@@ -17,6 +19,8 @@ export type GenerateFromIRealOptions = {
   tuningId?: string;
   /** Reserved for future reharm / candidate bias; not applied in this pipeline yet. */
   drift?: EmotionalDrift;
+  /** Build I — solo (dense / bar-reactive) vs melody (sparse / phrase-oriented). */
+  mode?: GenerationMode;
 };
 
 /**
@@ -27,7 +31,10 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
   const chart = parseIRealProInput(input);
   const measures = chart.measures ?? [];
   const bars = measures.length;
-  const riffStyle = options?.riffStyle ?? 'bebop-placement';
+  const mode: GenerationMode = options?.mode ?? 'solo';
+  const profile = getProfileForMode(mode);
+  const riffStyleSolo = options?.riffStyle ?? 'bebop-placement';
+  const effectiveRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
   const tuningId = options?.tuningId ?? 'standard';
 
   const generatedNotes: ScoreNote[] = [];
@@ -35,6 +42,8 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
   const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
 
   for (let barIndex = 0; barIndex < measures.length; barIndex++) {
+    const phrasePlan = planPhrase(1, mode);
+
     const measure = measures[barIndex];
     const first = measure?.[0];
     if (!first) continue;
@@ -55,8 +64,8 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
     const barNotes = generateVaultRiff({
       chordTypeId: mapped.vaultChordTypeId,
       rootPc: mapped.rootPc,
-      bars: 1,
-      style: riffStyle,
+      bars: phrasePlan.bars,
+      style: effectiveRiffStyle,
       tuningId,
     });
 
@@ -65,6 +74,21 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
       generatedNotes.push({
         ...n,
         startBeat: n.startBeat + beatOffset,
+        barIndex,
+      });
+    }
+
+    if (
+      mode === 'melody' &&
+      barIndex % 2 === 1 &&
+      Math.random() < profile.postCadenceRestProbability
+    ) {
+      generatedNotes.push({
+        pitch: 0,
+        startBeat: (barIndex + 1) * 4,
+        duration: 0.5,
+        guitarString: 0,
+        guitarFret: 0,
         barIndex,
       });
     }
@@ -77,5 +101,6 @@ export function generateFromIReal(input: string, options?: GenerateFromIRealOpti
     generatedNotes,
     chordMappings,
     unmappedChords,
+    mode,
   };
 }
