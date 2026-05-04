@@ -21,6 +21,7 @@ esbuild
     outfile: outFile,
     target: 'node18',
     format: 'cjs',
+    external: ['@napi-rs/canvas'],
   })
   .then(() => console.log('API bundle built:', outFile))
   .catch((err) => {

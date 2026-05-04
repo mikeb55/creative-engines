@@ -19,7 +19,7 @@ esbuild
     outfile: outFile,
     target: 'node18',
     format: 'cjs',
-    external: ['electron'],
+    external: ['electron', '@napi-rs/canvas'],
   })
   .then(() => console.log('desktop-ipc bundle built:', outFile))
   .catch((err) => {
