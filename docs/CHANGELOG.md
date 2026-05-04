@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+- **ui(generate):** **Chord Inspector** — **Reharm** section: **Reharmonise** + **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) reordering **`generateReharmCandidates`** output by drift affinity; **top 8** substitutes with emotional-drift label and **Use this chord**; reharm UI **resets on new Inspect Chord** (**`HomeGenerate.tsx`**).
 - **ui(generate):** **Choruses** control (**1–64**, default **1**) on **iReal Pro Import (Beta)** and **Paste Chord Progression** (**`HomeGenerate.tsx`**) — wires **`chorusCount`** into **`generateFromIReal`** / **`generateVaultFromParsedChart`**; result summary shows total bars as **bars/chorus × choruses**.
 - **fix(desktop):** Esbuild **`external: ['@napi-rs/canvas']`** in **`apps/composer-os-desktop/scripts/build-api-bundle.js`** and **`build-desktop-ipc-bundle.js`** (with existing **`electron`** on IPC) so **`@napi-rs/canvas`** **`.node`** native bindings are resolved at runtime, not bundled.
 - **chore(desktop):** Rebuilt Windows desktop artifacts — **`release/Composer-OS.exe`** (portable) + **`release/Composer-OS-Setup.exe`** (NSIS) via **`npm run desktop:package-no-bump`** after the canvas external fix.
