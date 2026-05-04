@@ -897,7 +897,7 @@ The following GitHub repos were checked via **public API / raw README only** (no
 | [mikeb55/infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine) | **IRM**: riff variation + section chaining; integrates **riffbank**, **mrprofiles**, **harmony-library** (**MIT**) | **JavaScript**; **web/** demo, **schema/riff.schema.json**, **types/** | README: **not guitar-specific** | Variation engine + zip bundle | **Portable:** JSON Schema + TS-adjacent **types/** useful as contract reference; JS web code → rewrite in TS |
 | [mikeb55/grand-criteria-of-excellence-jazz](https://github.com/mikeb55/grand-criteria-of-excellence-jazz) | Large mixed repo: **HTML**, **Python**, **LilyPond**, etc.; folders e.g. **BarryEngine**, **Bebop Language**, **Composition Rules** | Multi-language | Not confirmed from README alone | Rules/text more than MIDI riff bank | **Alignment** with **GCE**-style jazz criteria; **direct TS port** unlikely without case-by-case extraction |
 
-**Takeaway:** Prior to building **VaultRiffGenerator**, mine **[riffbank](https://github.com/mikeb55/riffbank)** (JSON snippets + schema) and **[infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine)** (**riff.schema.json**, section/variation intent). Treat **grand-criteria-of-excellence-jazz** as **research/diagnostic** adjacent to GCE, not a guitar engine.
+**Takeaway:** **Build C** ships **`core/guitar/`** (`generateVaultRiff`, `buildGuitarGripLibrary`, `FretboardRealization`)—still useful to mine **[riffbank](https://github.com/mikeb55/riffbank)** and **[infinite-riff-machine](https://github.com/mikeb55/infinite-riff-machine)** for variation/section contracts. Treat **grand-criteria-of-excellence-jazz** as **research/diagnostic** adjacent to GCE, not a drop-in engine.
 
 ### Build A — Note tagging + beat context (**complete**)
 
@@ -912,7 +912,7 @@ The following GitHub repos were checked via **public API / raw README only** (no
 | **`beatLegality`** | `strong` \| `weak` \| `syncopated` \| `approachOnly` — where an attack on this pitch class is rhythmically valid. |
 | **`resolveTargets`** | Absolute **pitch classes (0–11)** preferred continuations / resolutions. |
 | **`voicingCompatibility`** | Optional string tags for voicing rules (scaffold: empty until voicing hooks land). |
-| **`guitarTechniques`** | Optional string tags (e.g. pick / slide); scaffold until **VaultRiffGenerator** wiring. |
+| **`guitarTechniques`** | Optional string tags; **Build C** can populate via **`FretboardRealization.techniqueTags`** when a score path consumes grip metadata. |
 
 **`buildBeatContextLegalityMap(chordTypeId, rootPc)`** (`beatContextLegalityMap.ts`) — uses **`tonalityVaultDatabase`** and **`selectQuadratonicMelodySpec`**. Returns a **`Map<number, NoteTag>`** keyed by **absolute pitch class 0–11** for the given chord **root PC**.
 
@@ -925,29 +925,72 @@ The following GitHub repos were checked via **public API / raw README only** (no
 
 Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension is resolved **in favour of the triad** (layer 0).
 
+### Build C — Guitar riff engine (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/guitar/` — **`fretboardRealization.ts`**, **`guitarGripLibrary.ts`**, **`vaultRiffGenerator.ts`**, barrel **`index.ts`**.
+
+**`FretboardRealization`** — one voicing snapshot:
+
+| Field | Purpose |
+|-------|--------|
+| **`pitchClasses`** | Absolute **0–11** pitch classes (aligned with `strings` / `frets`). |
+| **`strings`** | `0` = low E through `5` = high e. |
+| **`frets`** | Parallel frets; `0` = open. |
+| **`positionCenter`** | Mean fret (register / “where on the neck”). |
+| **`techniqueTags`** | e.g. `alternate`, `economy`, `sweep`, `legato`, `slide`, `bend`, `double-stop` (grip-level hints). |
+| **`tonalRole`** | `triad` \| `primaryQuadratonic` \| `tensionQuadratonic` \| `triadPair` — which vault recipe the shape came from. |
+| **`tuningId`** | Preset id (see **`alternateGuitarTunings.ts`**) for open-string resolution; **`standard`** uses E-standard midis **40 / 45 / 50 / 55 / 59 / 64**. |
+
+**`buildGuitarGripLibrary(chordTypeId, rootPc, tuningId)`** — returns **`FretboardRealization[]`**. Uses **`buildBeatContextLegalityMap`**, **`tonalityVaultDatabase`**, and **`selectQuadratonicMelodySpec`**. Fret rule: **target MIDI = open-string MIDI + fret**; only **0–15**; keep each shape within a **4-fret** window. Categories emitted: **melodic triad** (3 notes), **primary quadratonic** (4 notes: triad + primary tension), **dyad** pairs (triad pairs and triad+tension), **triad-pair** (four pitch classes from the quadratonic set, split and voiced).
+
+**`generateVaultRiff({ chordTypeId, rootPc, bars, style, tuningId? })`** — returns **`ScoreNote[]`**: each note has **`pitch`** (MIDI), **`startBeat`**, **`duration`**, **`guitarString`**, **`guitarFret`**, **`barIndex`**. Rhythmic rule: **triad** class on **strong** beats, **tension** on **weak** beats, **passing / approach** on **offbeats** (see **`buildBeatContextLegalityMap`**). **Styles:** `quadratonic`, `dyad-seesaw`, `triad-pair-pendulum`, `pedal-string`, `bebop-placement`.
+
+**Export / tab:** Engine output is **not** yet merged into the main MusicXML exporter—**ScoreNote** carries tab-ready **string/fret** for a future pipe. **Product workflow:** MusicXML (when wired from generated lines) → **Guitar Pro 8** / **Sibelius** import for **notation + TAB** the same way other guitar scores are brought into GP8 today.
+
 ### Planned builds (engine)
 
 - **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
 
+- **Build C — Guitar riff engine:** **Complete** (see **Build C** subsection above).
+
 - **Build B — Layer state machine + liquid harmony:** **`LayerStateMachine`** (Resolve → Primary → Tension → Chaos → Recover) driving **`LiquidHarmonyPlanner`**. Phrase-level intention from the state machine; **liquid harmony** shapes internal voicing motion per subdivision.
 
-- **Build C — Guitar riff engine:** **`VaultRiffGenerator`**, **`FretboardRealization`**, **guitar grip library**. Position-aware riffs using **quadratonic grips**, **dyad seesaws**, **triad-pair pendulum**, **pedal-string patterns**, **pick-attack** tags. **Audit riffbank / infinite-riff-machine** (above) before greenfield.
+- **Build D — Reharmonisation engine:** **`ReharmCandidateEngine`**. **Emotional drift** control (slider / profile) to bias reharm toward darker, brighter, or more suspended language; output stays **guitar-friendly** (register + grip-aware targets). Shared **melodic-triad** substitutions, **tension-layer** swaps, **shell** rewrites; targets **jazz standards** and **user originals** on the same API.
 
-- **Build D — Reharmonisation engine:** **`ReharmCandidateEngine`**. Shared **melodic-triad** substitutions, **tension-layer** substitutions, **shell-swap** substitutions; **emotional drift** (darker / brighter / more suspended). Targets **standards** and **user originals**.
+- **Build E — Arrangement layer router:** **`ArrangementLayerRouter`** maps vault roles to ensemble parts. **String quartet:** **cello** = shell / foundation; **viola** = **quadratonic anchor**; **violin 2** = **melodic triad** line; **violin 1** = **tension** melody. **Big band:** **saxes** = **triad-pair** runs; **trombones** = **shell + liquid** inner motion; **trumpets** = **tension punctures**; **guitar / piano** = compact **3-note quadratonic** voicings (guitar-friendly).
 
-- **Build E — Arrangement layer router:** **`ArrangementLayerRouter`**. **Bass** on shell, **inner voices** on melodic triad, **upper voices** on quadratonic / triad-pair; **string quartet** and **big band** mappings.
+- **Build F — Motif transformation:** Restate motifs through **successive layers** — **triad → quadratonic → triad pair → liquid voicings → resolve** — with deterministic transforms for teaching and recall.
 
-- **Build F — Motif transformation:** Restate motifs through successive layers — **triad → quadratonic → triad pair → liquid voicings → resolve**.
+- **Build G — Full 16-tonality per-chord rulesets:** One complete behaviour pack per Tonality Vault chord type: **melodic triad**, **quadratonic**, **tension hierarchy**, phrase templates, **beat affinity**, **guitar grips**, **reharm** candidates.
 
-- **Build G — Full 16-tonality per-chord rulesets:** Complete behaviour pack per chord: melodic triad, quadratonic, tension hierarchy, phrase templates, beat affinity, guitar grips, reharm candidates.
+- **Build C2 — Alt tuning extension:** **Sonic Youth** and **Joni Mitchell** (and related) **altered-tuning presets** already live in **`alternateGuitarTunings.ts`**; this build **recomputes fret positions** from each preset’s **six string pitches** so **`buildGuitarGripLibrary` / `generateVaultRiff`** match the user’s tuning in the field, not E-standard only.
 
-### Planned UI additions
+- **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
 
-**Tension dial**, **chord-to-triad inspector**, **fretboard overlay**, **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**.
+- **Build IMG — iReal image import:** See **iReal Image Import** below (vision + vault pipeline).
 
-### Build order
+### iReal Image Import — planned feature
 
-**A → C → B → D → E → F → G** (guitar riff engine **C** prioritised immediately after tagging/context **A**).
+**Not shipped.** Target flow: user uploads a **JPEG** or **screenshot** of an **iReal Pro** (or similar) lead sheet; **Claude vision API** (or equivalent vision model) reads **chord symbols** and **bar structure**; normalised symbols map to **Tonality Vault** rows via **`tonalityVaultDatabase`**; for each bar / chord, the engine generates **quadratonic** melodic lines and **bebop-style** riffs using **Build C**; output is **MusicXML** for **Guitar Pro 8** and **Sibelius** (notation + tab when the tab/staff path is enabled). **Dependencies:** **Build C** (grip + riff), **Build D** (optional reharm pass), and a dedicated **image input + OCR review** layer.
+
+### How Composer OS helps composition
+
+- **Melodic material** is anchored to **quadratonic / melodic-triad** logic **per chord**—not generic **scale** runs.
+- **Reharmonisation** (when **Build D** lands) is designed to **preserve melodic-triad identity** while modernising **shells** and colour.
+- **String quartet** sketches: each **voice** can be assigned a different **tension layer** so the ensemble moves as a **coherent** harmonic unit.
+- **Big band:** **arranger style profiles** + **Vault layer routing** together are a **differentiated** capability—style governs phrasing and weight; vault governs **who plays which harmonic role**.
+- **Guitar:** **position-aware**, **idiomatic** riffs from **Build C**; **MusicXML → GP8** import path yields **tab** in Guitar Pro the same way other exported guitar scores do once the line is on the score.
+- **Vault microscope UI** (planned) will surface **why** the engine chose a note or grip—**teachable**, **transparent** decisions for classrooms and creators.
+
+### Planned UI additions (cross-cutting)
+
+**Tension dial**, **chord-to-triad inspector**, **fretboard overlay** (**Build UI**), **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**, **iReal image upload** (**Build IMG**).
+
+### Build order (remaining)
+
+**A** and **C** are **complete**. Planned sequencing for **remaining** builds:
+
+**B → D → E → F → G → C2 → UI → IMG**
 
 ---
 
