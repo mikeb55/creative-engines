@@ -119,6 +119,7 @@ function visionJsonToParsedChart(v: VisionChordChartJson): ParsedChart | null {
     key: typeof v.key === 'string' && v.key !== '' ? v.key : null,
     timeSignature,
     barMeterMap: {},
+    repeatMarkers: [],
     tempo: typeof v.tempo === 'number' && Number.isFinite(v.tempo) ? v.tempo : null,
     style: null,
     sections: defaultSections(measures.length),

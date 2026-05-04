@@ -264,6 +264,7 @@ export function parseChordProgressionText(
     key: key.trim() !== '' ? key.trim() : null,
     timeSignature,
     barMeterMap: {},
+    repeatMarkers: [],
     tempo: Number.isFinite(t) ? t : null,
     style: null,
     sections,

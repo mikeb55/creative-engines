@@ -1,5 +1,6 @@
 import type { ParsedChart, ParsedChord, ParsedSection } from './parsedChart';
 import { buildBarMeterMapFromUnscrambledMusic, extractUnscrambledMusicFromIrealInput } from './irealProBarMeterScan';
+import { buildRepeatMarkersFromUnscrambledMusic } from './irealProRepeatMarkersScan';
 import { parseIrealTimeSignatureDigits } from './irealProTimeSignature';
 
 type IRealMusic = {
@@ -91,6 +92,7 @@ function emptyChart(): ParsedChart {
     key: null,
     timeSignature: null,
     barMeterMap: {},
+    repeatMarkers: [],
     tempo: null,
     style: null,
     sections: [],
@@ -124,6 +126,8 @@ export function parseIRealProInput(input: string): ParsedChart {
   const unscrambled = extractUnscrambledMusicFromIrealInput(normalized);
   const barMeterMap =
     unscrambled && totalBars > 0 ? buildBarMeterMapFromUnscrambledMusic(unscrambled, globalTs) : {};
+  const repeatMarkers =
+    unscrambled && totalBars > 0 ? buildRepeatMarkersFromUnscrambledMusic(unscrambled) : [];
 
   let tempo: number | null =
     typeof song.bpm === 'number' && Number.isFinite(song.bpm) ? song.bpm : null;
@@ -137,6 +141,7 @@ export function parseIRealProInput(input: string): ParsedChart {
     key: typeof song.key === 'string' && song.key !== '' ? song.key : null,
     timeSignature: globalTs,
     barMeterMap,
+    repeatMarkers,
     tempo,
     style: typeof song.style === 'string' && song.style !== '' ? song.style : null,
     sections: defaultSections(totalBars),

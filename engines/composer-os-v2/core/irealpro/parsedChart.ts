@@ -13,6 +13,12 @@ export type ParsedSection = {
   endBar: number;
 };
 
+/** iReal `{` `}` `S` `Q` after compacting to non-empty bars (0-based). */
+export type ParsedRepeatMarker = {
+  type: 'start' | 'end' | 'segno' | 'coda';
+  barIndex: number;
+};
+
 export type ParsedChart = {
   title: string;
   composer: string;
@@ -20,6 +26,8 @@ export type ParsedChart = {
   timeSignature: { num: number; den: number } | null;
   /** Sparse: bar index → meter when it differs from carry (iReal `T` markers). */
   barMeterMap: Record<number, { num: number; den: number }>;
+  /** From iReal repeat / segno / coda symbols; not used by generation yet. */
+  repeatMarkers: ParsedRepeatMarker[];
   tempo: number | null;
   style: string | null;
   sections: ParsedSection[];

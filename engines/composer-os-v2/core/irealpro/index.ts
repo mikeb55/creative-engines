@@ -1,4 +1,4 @@
-export type { ParsedChord, ParsedChart, ParsedSection } from './parsedChart';
+export type { ParsedChord, ParsedChart, ParsedRepeatMarker, ParsedSection } from './parsedChart';
 export { parseIRealProInput } from './irealProAdapter';
 export { inspectChordToMusicXml, vaultRiffScoreNotesToMusicXml } from './chordInspectorMusicXml';
 export type { InspectChordToMusicXmlOptions } from './chordInspectorMusicXml';
