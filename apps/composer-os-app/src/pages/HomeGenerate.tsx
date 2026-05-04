@@ -1024,6 +1024,7 @@ export function HomeGenerate({
   const [iRealVaultTuningId, setIRealVaultTuningId] = useState('standard');
   const [iRealVaultMode, setIRealVaultMode] = useState<'solo' | 'melody'>('solo');
   const [iRealVaultDrift, setIRealVaultDrift] = useState<EmotionalDrift>('neutral');
+  const [iRealVaultChorusCount, setIRealVaultChorusCount] = useState(1);
   const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
   const [chordPasteText, setChordPasteText] = useState('');
@@ -1036,6 +1037,7 @@ export function HomeGenerate({
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
   const [chordPasteDrift, setChordPasteDrift] = useState<EmotionalDrift>('neutral');
+  const [chordPasteChorusCount, setChordPasteChorusCount] = useState(1);
   const [chordPasteOutput, setChordPasteOutput] = useState<IRealVaultOutput | null>(null);
   const [chordPasteBusy, setChordPasteBusy] = useState(false);
   const [chordPasteError, setChordPasteError] = useState<string | null>(null);
@@ -4753,6 +4755,36 @@ export function HomeGenerate({
                 ))}
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-chord-paste-choruses"
+                type="number"
+                min={1}
+                max={64}
+                step={1}
+                value={chordPasteChorusCount}
+                onChange={(e) =>
+                  setChordPasteChorusCount(
+                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
+                  )
+                }
+                disabled={chordPasteBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
           </div>
           {chordPastePreviewChart &&
             (chordPastePreviewChart.measures?.some((m) => m.length > 0) ||
@@ -4788,6 +4820,7 @@ export function HomeGenerate({
                     tuningId: chordPasteTuningId,
                     riffStyle: chordPasteRiffStyle,
                     drift: chordPasteDrift,
+                    chorusCount: chordPasteChorusCount,
                   });
                   setChordPasteOutput(out);
                 } catch (e) {
@@ -4831,7 +4864,19 @@ export function HomeGenerate({
                 })()}
               </p>
               <p style={{ margin: '0.25rem 0' }}>Tempo: {chordPasteTempo} BPM</p>
-              <p style={{ margin: '0.25rem 0' }}>Total bars: {chordPasteOutput.bars}</p>
+              {(() => {
+                const barsPerChorus =
+                  chordPastePreviewChart?.measures?.length ??
+                  (chordPasteChorusCount > 0
+                    ? Math.round(chordPasteOutput.bars / chordPasteChorusCount)
+                    : chordPasteOutput.bars);
+                const totalBars = barsPerChorus * chordPasteChorusCount;
+                return (
+                  <p style={{ margin: '0.25rem 0' }}>
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {chordPasteChorusCount} choruses)
+                  </p>
+                );
+              })()}
               <p style={{ margin: '0.25rem 0' }}>
                 Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
                 {chordPasteOutput.unmappedChords.length}
@@ -5081,6 +5126,36 @@ export function HomeGenerate({
                 ))}
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-ireal-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-ireal-choruses"
+                type="number"
+                min={1}
+                max={64}
+                step={1}
+                value={iRealVaultChorusCount}
+                onChange={(e) =>
+                  setIRealVaultChorusCount(
+                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
+                  )
+                }
+                disabled={iRealVaultBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
           </div>
           <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
             {VAULT_GENERATION_OPTIONS_HINT}
@@ -5097,6 +5172,7 @@ export function HomeGenerate({
                     riffStyle: iRealVaultRiffStyle,
                     tuningId: iRealVaultTuningId,
                     drift: iRealVaultDrift,
+                    chorusCount: iRealVaultChorusCount,
                   });
                   setIRealVaultOutput(out);
                 } finally {
@@ -5124,7 +5200,19 @@ export function HomeGenerate({
               iRealParsedChart.tempo > 0 ? (
                 <p style={{ margin: '0.25rem 0' }}>Tempo: {Math.round(iRealParsedChart.tempo)} BPM</p>
               ) : null}
-              <p style={{ margin: '0.25rem 0' }}>Total bars: {iRealVaultOutput.bars}</p>
+              {(() => {
+                const barsPerChorus =
+                  iRealParsedChart?.measures?.length ??
+                  (iRealVaultChorusCount > 0
+                    ? Math.round(iRealVaultOutput.bars / iRealVaultChorusCount)
+                    : iRealVaultOutput.bars);
+                const totalBars = barsPerChorus * iRealVaultChorusCount;
+                return (
+                  <p style={{ margin: '0.25rem 0' }}>
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {iRealVaultChorusCount} choruses)
+                  </p>
+                );
+              })()}
               <p style={{ margin: '0.25rem 0' }}>
                 Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
                 {iRealVaultOutput.unmappedChords.length}
