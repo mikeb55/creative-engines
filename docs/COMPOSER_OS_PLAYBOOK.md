@@ -963,6 +963,26 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 **Export / tab:** Engine output is **not** yet merged into the main MusicXML exporter—**ScoreNote** carries tab-ready **string/fret** for a future pipe. **Product workflow:** MusicXML (when wired from generated lines) → **Guitar Pro 8** / **Sibelius** import for **notation + TAB** the same way other guitar scores are brought into GP8 today.
 
+### Build E+F — Arrangement layer router + motif transformation (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/arrangement/` — **`arrangementLayerRouter.ts`**, **`motifTransformer.ts`**, barrel **`index.ts`**.
+
+**`ArrangementLayerRouter`** — **`routeStringQuartet(chordTypeId, rootPc)`** and **`routeBigBand(chordTypeId, rootPc)`** return **`ArrangementLayer[]`**: each row has **`instrumentFamily`**, **`assignedTensionLayer`**, **`allowedRoles`** (from **`buildBeatContextLegalityMap`** + **`NoteLayer`** filters), and **`description`**. **`TONALITY_VAULT_DATABASE`** gates unknown **`chordTypeId`** (empty list).
+
+| Ensemble | Part | Vault layers | Role |
+|----------|------|--------------|------|
+| **String quartet** | Cello (`bass` family) | **0** | Shell / root motion |
+| | Viola (`inner-strings`) | **1** | Quadratonic anchor |
+| | Violin 2 (`upper-strings`) | **0–1** | Melodic triad / dyad fragments |
+| | Violin 1 (`upper-strings`) | **2** | Tension-layer melody / liquid-harmony colour |
+| **Big band** | Bass | **0** | Shell |
+| | Trombone | **0–1** | Shell + liquid inner movement |
+| | Saxophone | **1–2** | Triad-pair runs / quadratonic counterlines |
+| | Trumpet | **2** | Tension-quadratonic punctures (strong-beat weight) |
+| | Guitar / Piano | **1** | Three-note quadratonic voicings / comp cells |
+
+**`MotifTransformer`** — **`transformMotifThroughLayers(motif, chordTypeId, rootPc)`** returns **`Record<TensionState, MotifNote[]>`** (`TensionState` from **`layerStateMachine`**). **Rhythm preserved** (`beatPosition`, **`duration`**) for every state; only **pitch classes** re-quantise: **`resolve`** → **melodic triad** PCs · **`primary`** → **quadratonic** set · **`tension`** → **secondary tension** PCs (fallback: quadratonic) · **`chaos`** → **triad-pair / quadratonic** pool · **`recover`** → **melodic triad** with **chromatic lead-in** on alternating indices (`triad` vs `triad − 1` semitone).
+
 ### Planned builds (engine)
 
 - **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
@@ -973,9 +993,7 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 - **Build D — Reharmonisation engine:** **Complete** — see **Revolutionary Reharmonisation Engine** below; shipped as **`reharmCandidateEngine.ts`** (**`generateReharmCandidates`**, **`ReharmCandidate`**, **`EmotionalDrift`**, **`ReharmStrategy`**).
 
-- **Build E — Arrangement layer router:** **`ArrangementLayerRouter`** maps vault roles to ensemble parts. **String quartet:** **cello** = shell / foundation; **viola** = **quadratonic anchor**; **violin 2** = **melodic triad** line; **violin 1** = **tension** melody. **Big band:** **saxes** = **triad-pair** runs; **trombones** = **shell + liquid** inner motion; **trumpets** = **tension punctures**; **guitar / piano** = compact **3-note quadratonic** voicings (guitar-friendly).
-
-- **Build F — Motif transformation:** Restate motifs through **successive layers** — **triad → quadratonic → triad pair → liquid voicings → resolve** — with deterministic transforms for teaching and recall.
+- **Build E + F — Arrangement layer router + motif transformation:** **Complete** (see **Build E+F** subsection above).
 
 - **Build G — Full 16-tonality per-chord rulesets:** One complete behaviour pack per Tonality Vault chord type: **melodic triad**, **quadratonic**, **tension hierarchy**, phrase templates, **beat affinity**, **guitar grips**, **reharm** candidates.
 
@@ -984,6 +1002,8 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 - **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
 
 - **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path).
+
+- **Build H — GCE-targeted generation (planned):** After generation, evaluate against **GCE** + **LOCK** + **Style Profile** + **Quadratonic Alignment**. If below **`minScore`** (default **8.5**), run **one** refinement pass and re-evaluate. **Maximum one** refinement loop per **DCR** protocol — output is **quality-gated**, not infinitely regenerated. Aim: **GCE 9+**-grade material by **examining before shipping**.
 
 ### Build IMG — iReal Pro import (planned)
 
@@ -1019,9 +1039,9 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 ### Build order (remaining)
 
-**A**, **B**, **C**, and **D** are **complete**. **Next:** **Build E + F** (arrangement router + motif transformation). Planned sequencing for **remaining** work:
+**A** through **F** are **complete** (including **E+F**). **Next:** **Build G** (full 16-tonality rulesets). Planned sequencing for **remaining** work:
 
-**E+F → G → C2 → UI → IMG** (**E** and **F** may ship as one milestone depending on routing vs motif scope.)
+**G → C2 → H → UI → IMG**
 
 ---
 
