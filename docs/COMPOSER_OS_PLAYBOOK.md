@@ -971,7 +971,7 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 - **Build C — Guitar riff engine:** **Complete** (see **Build C** subsection above).
 
-- **Build D — Reharmonisation engine:** **`ReharmCandidateEngine`**. **Emotional drift** control (slider / profile) to bias reharm toward darker, brighter, or more suspended language; output stays **guitar-friendly** (register + grip-aware targets). Shared **melodic-triad** substitutions, **tension-layer** swaps, **shell** rewrites; targets **jazz standards** and **user originals** on the same API.
+- **Build D — Reharmonisation engine:** **Complete** — see **Revolutionary Reharmonisation Engine** below; shipped as **`reharmCandidateEngine.ts`** (**`generateReharmCandidates`**, **`ReharmCandidate`**, **`EmotionalDrift`**, **`ReharmStrategy`**).
 
 - **Build E — Arrangement layer router:** **`ArrangementLayerRouter`** maps vault roles to ensemble parts. **String quartet:** **cello** = shell / foundation; **viola** = **quadratonic anchor**; **violin 2** = **melodic triad** line; **violin 1** = **tension** melody. **Big band:** **saxes** = **triad-pair** runs; **trombones** = **shell + liquid** inner motion; **trumpets** = **tension punctures**; **guitar / piano** = compact **3-note quadratonic** voicings (guitar-friendly).
 
@@ -1002,12 +1002,12 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 **Downstream:** map chord symbols to **`tonalityVaultDatabase`** chord types, then **`generateVaultRiff`** (and quadratonic planners) **per chord / bar** for guitar lines.
 
-**Optional later:** **JPEG / screenshot** of an iReal-style chart via **Claude vision API** for users without HTML export — same **`ParsedChart`** target after OCR normalisation. **Dependencies:** **Build C** (riffs), **Build D** (optional reharm), **`ParsedChart`** adapter layer.
+**Optional later:** **JPEG / screenshot** of an iReal-style chart via **Claude vision API** for users without HTML export — same **`ParsedChart`** target after OCR normalisation. **Dependencies:** **Build C** (riffs), **Build D** (optional **`generateReharmCandidates`** pass), **`ParsedChart`** adapter layer.
 
 ### How Composer OS helps composition
 
 - **Melodic material** is anchored to **quadratonic / melodic-triad** logic **per chord**—not generic **scale** runs.
-- **Reharmonisation** (when **Build D** lands) is designed to **preserve melodic-triad identity** while modernising **shells** and colour.
+- **Reharmonisation** (**Build D**, **`reharmCandidateEngine`**) **preserves or reinterprets melodic-triad identity** while modernising **shells** and colour — see **Revolutionary Reharmonisation Engine**.
 - **String quartet** sketches: each **voice** can be assigned a different **tension layer** so the ensemble moves as a **coherent** harmonic unit.
 - **Big band:** **arranger style profiles** + **Vault layer routing** together are a **differentiated** capability—style governs phrasing and weight; vault governs **who plays which harmonic role**.
 - **Guitar:** **position-aware**, **idiomatic** riffs from **Build C**; **MusicXML → GP8** import path yields **tab** in Guitar Pro the same way other exported guitar scores do once the line is on the score.
@@ -1019,9 +1019,31 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 ### Build order (remaining)
 
-**A**, **B**, and **C** are **complete**. **Next:** **Build D** (reharmonisation). Planned sequencing for **remaining** work:
+**A**, **B**, **C**, and **D** are **complete**. **Next:** **Build E + F** (arrangement router + motif transformation). Planned sequencing for **remaining** work:
 
-**D → E+F → G → C2 → UI → IMG** (**E** and **F** may ship as one milestone depending on routing vs motif scope.)
+**E+F → G → C2 → UI → IMG** (**E** and **F** may ship as one milestone depending on routing vs motif scope.)
+
+---
+
+## Revolutionary Reharmonisation Engine
+
+This is the **only** music generation engine in the product lineup that performs **reharmonisation at the melodic-triad level** rather than at the **chord-symbol** level. Every substitution **preserves** or **purposefully reinterprets** the **upper-structure melodic triad** that the melody is already expressing — the same object the Tonality Vault uses for quadratonic melody, grips, and tension hierarchy.
+
+**No existing general-purpose tool** in this category — **Band-in-a-Box**, **Sibelius**, **Finale**, **iReal Pro**, or typical **DAW** harmony plugins — implements that contract. **Band-in-a-Box** reharmonisation is **functional harmony** and style presets over chord roots and scales; it has **no melodic-triad awareness**. Notation hosts swap chord symbols and extensions on the page without a vault-level triad stack tied to your line.
+
+Composer OS uses **`generateReharmCandidates`** (**`reharmCandidateEngine.ts`**) with **three** substitution strategies:
+
+| Strategy | Role |
+|----------|------|
+| **`shared-melodic-triad`** | Strongest family — same vault **melodic triad root** anchor (`T3` / `T4` / `T7` line); **`melodicTriadPreserved: true`**. |
+| **`tension-layer-swap`** | Harmonic reinterpretation — substitute type whose **primary tension degree** matches the original melodic-triad anchor degree; **`melodicTriadPreserved: false`** (expressive tension role shift). |
+| **`shell-swap`** | **Melodic triad degrees fixed**, **shell / chord quality** varied beneath (same triad degree triple, different chord type). **`melodicTriadPreserved: true`**. |
+
+The **`EmotionalDrift`** parameter (**`darker`**, **`brighter`**, **`more-suspended`**, **`more-unstable`**, **`more-cinematic`**, **`neutral`**) biases ranking toward substitutions that match compositional intent — e.g. **darker** favours minor / diminished colour, **brighter** favours major / Lydian-leaning types, **more-suspended** favours **sus** families, **more-unstable** favours altered / outside harmony, **more-cinematic** favours rich **maj7** / **maj9** colours.
+
+The **`guitarFriendly`** flag uses **standard-tuning** fret reach so suggested bass / root positions stay **playable in position**. Every substitute chord type already has its own **quadratonic**, **grip library**, and **tension hierarchy** in the Vault — nothing is a naked symbol swap.
+
+Combined with **Build C** guitar grip output and **MusicXML** export paths, this stack is a **serious creative tool** for **jazz guitarists** and **composers** who work from **line-first** and **teaching-grade** harmonic logic.
 
 ---
 
