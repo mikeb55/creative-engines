@@ -1,4 +1,6 @@
 import type { ParsedChart, ParsedChord, ParsedSection } from './parsedChart';
+import { buildBarMeterMapFromUnscrambledMusic, extractUnscrambledMusicFromIrealInput } from './irealProBarMeterScan';
+import { parseIrealTimeSignatureDigits } from './irealProTimeSignature';
 
 type IRealMusic = {
   timeSignature: string | null;
@@ -35,20 +37,7 @@ function normalizeForIRealLib(input: string): string {
 }
 
 function parseTimeSignature(ts: string | null | undefined): { num: number; den: number } | null {
-  if (ts == null || ts === '') return null;
-  const d = String(ts).replace(/\D/g, '');
-  if (d.length < 2) return null;
-  if (d === '128') return { num: 12, den: 8 };
-  if (d.length === 2) {
-    const num = parseInt(d[0]!, 10);
-    const den = parseInt(d[1]!, 10);
-    if (!Number.isFinite(num) || !Number.isFinite(den) || den <= 0) return null;
-    return { num, den };
-  }
-  const den = parseInt(d.slice(-1), 10);
-  const num = parseInt(d.slice(0, -1), 10);
-  if (!Number.isFinite(num) || !Number.isFinite(den) || den <= 0) return null;
-  return { num, den };
+  return parseIrealTimeSignatureDigits(ts);
 }
 
 function splitChordSymbol(symbol: string): { rootNote: string; chordQuality: string } {
@@ -101,6 +90,7 @@ function emptyChart(): ParsedChart {
     composer: '',
     key: null,
     timeSignature: null,
+    barMeterMap: {},
     tempo: null,
     style: null,
     sections: [],
@@ -130,6 +120,10 @@ export function parseIRealProInput(input: string): ParsedChart {
   const music = song.music;
   const measures = buildMeasures(music?.measures);
   const totalBars = measures.length;
+  const globalTs = parseTimeSignature(music?.timeSignature ?? null);
+  const unscrambled = extractUnscrambledMusicFromIrealInput(normalized);
+  const barMeterMap =
+    unscrambled && totalBars > 0 ? buildBarMeterMapFromUnscrambledMusic(unscrambled, globalTs) : {};
 
   let tempo: number | null =
     typeof song.bpm === 'number' && Number.isFinite(song.bpm) ? song.bpm : null;
@@ -141,7 +135,8 @@ export function parseIRealProInput(input: string): ParsedChart {
     title: typeof song.title === 'string' ? song.title : '',
     composer: typeof song.composer === 'string' ? song.composer : '',
     key: typeof song.key === 'string' && song.key !== '' ? song.key : null,
-    timeSignature: parseTimeSignature(music?.timeSignature ?? null),
+    timeSignature: globalTs,
+    barMeterMap,
     tempo,
     style: typeof song.style === 'string' && song.style !== '' ? song.style : null,
     sections: defaultSections(totalBars),
@@ -149,3 +144,5 @@ export function parseIRealProInput(input: string): ParsedChart {
     repeats: [],
   };
 }
+
+export { parseIrealTimeSignatureDigits } from './irealProTimeSignature';

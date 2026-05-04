@@ -44,17 +44,48 @@ function groupScoreNotesByBar(notes: ScoreNote[]): Map<number, ScoreNote[]> {
   return byBar;
 }
 
-function scoreNotesToMotifNotes(
-  notes: ScoreNote[],
-  barIndex: number,
-  quarterSpan: number
-): MotifNote[] {
+function cumulativeQuarterBeatsThroughBar(chart: ParsedChart, barIndexExclusive: number): number {
+  let sum = 0;
+  for (let b = 0; b < barIndexExclusive; b++) sum += quarterSpanForBar(chart, b);
+  return sum;
+}
+
+function totalQuarterLengthForBars(chart: ParsedChart, barCount: number): number {
+  let sum = 0;
+  for (let b = 0; b < barCount; b++) sum += quarterSpanForBar(chart, b);
+  return sum;
+}
+
+/** Carry-forward: {@link ParsedChart.barMeterMap} entries override `timeSignature` for subsequent bars. */
+export function effectiveMeterForBar(chart: ParsedChart, barIndex: number): { num: number; den: number } {
+  let running =
+    chart.timeSignature && chart.timeSignature.den > 0 ? chart.timeSignature : { num: 4, den: 4 };
+  const map = chart.barMeterMap ?? {};
+  for (let b = 0; b <= barIndex; b++) {
+    const o = map[b];
+    if (o && o.den > 0) running = o;
+  }
+  return running;
+}
+
+function quarterSpanForBar(chart: ParsedChart, barIndex: number): number {
+  const ts = effectiveMeterForBar(chart, barIndex);
+  return (ts.num * 4) / ts.den;
+}
+
+function eighthsForBar(chart: ParsedChart, barIndex: number): number {
+  const ts = effectiveMeterForBar(chart, barIndex);
+  return Math.max(1, Math.round((ts.num * 8) / ts.den));
+}
+
+function scoreNotesToMotifNotes(notes: ScoreNote[], barIndex: number, chart: ParsedChart): MotifNote[] {
+  const barStart = cumulativeQuarterBeatsThroughBar(chart, barIndex);
   return [...notes]
     .filter((n) => n.pitch > 0)
     .sort((a, b) => a.startBeat - b.startBeat)
     .map((n) => ({
       pitchClass: ((n.pitch % 12) + 12) % 12,
-      beatPosition: n.startBeat - barIndex * quarterSpan,
+      beatPosition: n.startBeat - barStart,
       duration: n.duration,
     }));
 }
@@ -74,14 +105,14 @@ function mapMidiKeepingContour(refMidi: number, newPc: number): number {
  * Melody mode: restate bar-1 rhythmic motif on later bars via {@link transformMotifThroughLayers} (vault pools per chord).
  */
 function applyMelodyMotifReuseAcrossBars(params: {
+  chart: ParsedChart;
   generatedNotes: ScoreNote[];
   chordMappings: IRealVaultOutput['chordMappings'];
-  quarterSpan: number;
   barCount: number;
   /** Shifts which {@link TensionState} applies to the first bar after the seed (one step per repeated chorus). */
   tensionCycleRotation?: number;
 }): ScoreNote[] {
-  const { generatedNotes, chordMappings, quarterSpan, barCount, tensionCycleRotation = 0 } = params;
+  const { chart, generatedNotes, chordMappings, barCount, tensionCycleRotation = 0 } = params;
   if (barCount < 2 || chordMappings.length === 0) return generatedNotes;
 
   const byBar = groupScoreNotesByBar(generatedNotes);
@@ -98,7 +129,7 @@ function applyMelodyMotifReuseAcrossBars(params: {
   if (seedBar < 0) return generatedNotes;
 
   const seedScore = byBar.get(seedBar)!.filter((n) => n.pitch > 0).sort((a, b) => a.startBeat - b.startBeat);
-  const motif = scoreNotesToMotifNotes(seedScore, seedBar, quarterSpan);
+  const motif = scoreNotesToMotifNotes(seedScore, seedBar, chart);
   if (motif.length === 0) return generatedNotes;
 
   const out: ScoreNote[] = [];
@@ -120,7 +151,7 @@ function applyMelodyMotifReuseAcrossBars(params: {
       continue;
     }
 
-    const beatOffset = b * quarterSpan;
+    const beatOffset = cumulativeQuarterBeatsThroughBar(chart, b);
     for (let i = 0; i < variant.length; i++) {
       const v = variant[i]!;
       const ref = seedScore[i];
@@ -190,6 +221,7 @@ function resolveChorusCount(raw: unknown): number {
 }
 
 function generateVaultBarsSinglePass(params: {
+  chart: ParsedChart;
   measures: NonNullable<ParsedChart['measures']>;
   mode: GenerationMode;
   profile: ReturnType<typeof getProfileForMode>;
@@ -200,14 +232,12 @@ function generateVaultBarsSinglePass(params: {
     | 'pedal-string'
     | 'bebop-placement';
   tuningId: string;
-  quarterSpan: number;
-  eighthsPerBar: number;
 }): {
   generatedNotes: ScoreNote[];
   chordMappings: IRealVaultOutput['chordMappings'];
   unmappedChords: IRealVaultOutput['unmappedChords'];
 } {
-  const { measures, mode, profile, effectiveRiffStyle, tuningId, quarterSpan, eighthsPerBar } = params;
+  const { chart, measures, mode, profile, effectiveRiffStyle, tuningId } = params;
   const generatedNotes: ScoreNote[] = [];
   const chordMappings: IRealVaultOutput['chordMappings'] = [];
   const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
@@ -232,6 +262,7 @@ function generateVaultBarsSinglePass(params: {
       rootPc: mapped.rootPc,
     });
 
+    const eighthsPerBar = eighthsForBar(chart, barIndex);
     const barNotes = generateVaultRiff({
       chordTypeId: mapped.vaultChordTypeId,
       rootPc: mapped.rootPc,
@@ -241,7 +272,7 @@ function generateVaultBarsSinglePass(params: {
       eighthsPerBar,
     });
 
-    const beatOffset = barIndex * quarterSpan;
+    const beatOffset = cumulativeQuarterBeatsThroughBar(chart, barIndex);
     for (const n of barNotes) {
       generatedNotes.push({
         ...n,
@@ -257,7 +288,7 @@ function generateVaultBarsSinglePass(params: {
     ) {
       generatedNotes.push({
         pitch: 0,
-        startBeat: (barIndex + 1) * quarterSpan,
+        startBeat: cumulativeQuarterBeatsThroughBar(chart, barIndex + 1),
         duration: 0.5,
         guitarString: 0,
         guitarFret: 0,
@@ -281,9 +312,8 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
   const riffStyleSolo = options?.riffStyle ?? 'bebop-placement';
   const baselineVaultRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
   const tuningId = options?.tuningId ?? 'standard';
-  const quarterSpan = quarterNoteSpanPerMeasure(chart);
-  const eighthsPerBar = eighthsPerMeasureFromChart(chart);
   const chorusCount = resolveChorusCount(options?.chorusCount);
+  const chorusQuarterWidth = totalQuarterLengthForBars(chart, barsPerChorus);
   const skipChorusTensionAdvance = options?.songwriterStyleId === 'sonic_youth';
   const rawRiffOpt = options?.riffStyle;
   const triadPairStyleRotationEligible =
@@ -304,13 +334,12 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     }
 
     const { generatedNotes, chordMappings, unmappedChords } = generateVaultBarsSinglePass({
+      chart,
       measures,
       mode,
       profile,
       effectiveRiffStyle: effectiveRiffStyleForPass,
       tuningId,
-      quarterSpan,
-      eighthsPerBar,
     });
 
     const tensionCycleRotation = skipChorusTensionAdvance ? 0 : chorusIndex;
@@ -318,16 +347,16 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     const chunkNotes =
       mode === 'melody'
         ? applyMelodyMotifReuseAcrossBars({
+            chart,
             generatedNotes,
             chordMappings,
-            quarterSpan,
             barCount: barsPerChorus,
             tensionCycleRotation,
           })
         : generatedNotes;
 
     const barOffset = chorusIndex * barsPerChorus;
-    const beatOffsetGlobal = chorusIndex * barsPerChorus * quarterSpan;
+    const beatOffsetGlobal = chorusIndex * chorusQuarterWidth;
 
     for (const n of chunkNotes) {
       allGeneratedNotes.push({

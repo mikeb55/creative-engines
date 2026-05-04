@@ -9,5 +9,10 @@ export {
 } from './chordSymbolMapper';
 export type { ChordInspectorResult } from './chordSymbolMapper';
 export type { GenerateFromIRealOptions, IRealVaultOutput, VaultGenerationOptions } from './irealVaultPipeline';
-export { generateFromIReal, generateVaultFromParsedChart, TRIAD_PAIR_CHORUS_ROTATION } from './irealVaultPipeline';
+export {
+  effectiveMeterForBar,
+  generateFromIReal,
+  generateVaultFromParsedChart,
+  TRIAD_PAIR_CHORUS_ROTATION,
+} from './irealVaultPipeline';
 export type { EmotionalDrift } from '../harmony/reharmCandidateEngine';

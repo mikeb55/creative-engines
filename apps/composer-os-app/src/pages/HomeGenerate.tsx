@@ -241,6 +241,25 @@ function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
       <p style={{ margin: '0.2rem 0' }}>
         <strong>Time signature:</strong> {tsStr}
       </p>
+      {(() => {
+        const bmm = chart.barMeterMap;
+        const keys = Object.keys(bmm);
+        if (keys.length === 0) return null;
+        const line = keys
+          .map((k) => Number(k))
+          .filter((k) => Number.isFinite(k))
+          .sort((a, b) => a - b)
+          .map((k) => {
+            const m = bmm[k]!;
+            return `bar ${k + 1}: ${m.num}/${m.den}`;
+          })
+          .join(' · ');
+        return (
+          <p style={{ margin: '0.2rem 0' }}>
+            <strong>Per-bar meter (iReal T):</strong> {line}
+          </p>
+        );
+      })()}
       <p style={{ margin: '0.2rem 0' }}>
         <strong>Tempo:</strong> {tempo}
       </p>
