@@ -200,6 +200,20 @@ Implementation: **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts
 
 ---
 
+## Tonality Vault — Build UI (complete)
+
+**Summary:** All Tonality Vault builds **A** through **I** plus **C2**, **IMG**, and **UI** are now complete. The full Tonality Vault roadmap is shipped.
+
+### UI iterations (1–5)
+
+1. **Iteration 1 — Fretboard + tab scaffold:** **`FretboardPanel`** (fretboard.js) and **`TabPanel`** (VexFlow) with **role colour encoding** — **`triadRoot`** green, **`primaryTension`** amber, **`secondaryTension`** orange, **`triadPairTension`** red, **`bebopPassing`** purple, **`chaos`** pink.
+2. **Iteration 2 — Layers + legality chrome:** **`LayerToggleBar`** — four buttons **L0–L3**; **beat legality** visual indicators (**strong** = solid, **weak** = half opacity, **syncopated** = dashed, **approachOnly** = hollow); **note click** handler.
+3. **Iteration 3 — Playback trail:** **`playbackNotes`** with glow, **`trailNotes`** at **30%** opacity, **position band** overlay with CSS transition, **`positionLock`** indicator.
+4. **Iteration 4 — Export + layout:** **`FretboardExporter`** PNG (**SVG → Canvas → PNG** download), **dark mode** (**#1a1a2e** background), responsive **16:9** layout.
+5. **Iteration 5 — Vault Microscope:** **`VaultMicroscope`** — scrubber **0 … totalBars×4** (beats), **Play / Pause / Stop** (advance **0.5** beat / **500ms**); **`TensionState`** badge (**resolve** green, **primary** blue, **tension** amber, **chaos** red, **recover** purple); active note highlighting per beat via **`LayerStateMachine`**; **layer** row from **`getAllowedLayers()`**; **beat legality** table from **`buildBeatContextLegalityMap`**; embedded **`FretboardPanel`** (**`darkMode={true}`**).
+
+---
+
 ## 1. Introduction and scope
 
 Composer OS is a **deterministic**, **seeded** composition pipeline: the same request + seed yields the same score, receipts, and MusicXML. This playbook orients you to **Generate**, **Song Mode**, **presets**, **diagnostics**, and **export**—and gives **40 repeatable scenarios** you can step through for QA or teaching.
