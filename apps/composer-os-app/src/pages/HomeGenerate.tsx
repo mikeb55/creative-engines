@@ -51,7 +51,13 @@ import {
   tileZappaMeterCycle,
   zappaMeterCycleToPresetPattern,
 } from '@composer-os/core/rhythm/oddMeterQuantiser';
-import { generateFromIReal, type IRealVaultOutput } from '@composer-os/core/irealpro';
+import {
+  generateFromIReal,
+  inspectChordSymbol,
+  inspectChordToMusicXml,
+  type ChordInspectorResult,
+  type IRealVaultOutput,
+} from '@composer-os/core/irealpro';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -924,6 +930,16 @@ export function HomeGenerate({
   const [iRealVaultTuningId, setIRealVaultTuningId] = useState('standard');
   const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
+  const [chordInspectorInput, setChordInspectorInput] = useState('');
+  const [chordInspectorMode, setChordInspectorMode] = useState<'solo' | 'melody'>('solo');
+  const [chordInspectorBars, setChordInspectorBars] = useState<1 | 2 | 4>(2);
+  const [chordInspectorRiffStyle, setChordInspectorRiffStyle] = useState<
+    'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
+  >('bebop-placement');
+  const [chordInspectorTuningId, setChordInspectorTuningId] = useState('standard');
+  const [chordInspectorResult, setChordInspectorResult] = useState<ChordInspectorResult | null>(null);
+  const [chordInspectorParseError, setChordInspectorParseError] = useState<string | null>(null);
+  const [chordInspectorExportError, setChordInspectorExportError] = useState<string | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
@@ -4528,6 +4544,274 @@ export function HomeGenerate({
                   </ul>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Chord Inspector
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-chord-inspector-input"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Chord symbol
+          </label>
+          <input
+            id="co-chord-inspector-input"
+            type="text"
+            value={chordInspectorInput}
+            onChange={(e) => setChordInspectorInput(e.target.value)}
+            placeholder="e.g. Cmaj7, F#min9, Bb7#11"
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div role="group" aria-label="Chord inspector mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={chordInspectorMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setChordInspectorMode('solo')}
+                  aria-pressed={chordInspectorMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={chordInspectorMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setChordInspectorMode('melody')}
+                  aria-pressed={chordInspectorMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-bars"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Bars
+              </label>
+              <select
+                id="co-chord-inspector-bars"
+                value={chordInspectorBars}
+                onChange={(e) => setChordInspectorBars(Number(e.target.value) as 1 | 2 | 4)}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={4}>4</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-chord-inspector-riff-style"
+                value={chordInspectorRiffStyle}
+                onChange={(e) =>
+                  setChordInspectorRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-chord-inspector-tuning"
+                value={chordInspectorTuningId}
+                onChange={(e) => setChordInspectorTuningId(e.target.value)}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setChordInspectorExportError(null);
+                const r = inspectChordSymbol(chordInspectorInput, chordInspectorTuningId);
+                if (!r) {
+                  setChordInspectorResult(null);
+                  setChordInspectorParseError(
+                    'Could not parse chord or map it to the Tonality Vault. Check the symbol (e.g. Cmaj7, F#m9, Bb7#11).'
+                  );
+                  return;
+                }
+                setChordInspectorParseError(null);
+                setChordInspectorResult(r);
+              }}
+            >
+              Inspect Chord
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setChordInspectorExportError(null);
+                const xml = inspectChordToMusicXml(chordInspectorInput, {
+                  bars: chordInspectorBars,
+                  mode: chordInspectorMode,
+                  tuningId: chordInspectorTuningId,
+                  riffStyle: chordInspectorRiffStyle,
+                });
+                if (!xml) {
+                  setChordInspectorExportError(
+                    'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                  );
+                  return;
+                }
+                const base =
+                  chordInspectorInput
+                    .trim()
+                    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                    .replace(/\s+/g, '_')
+                    .replace(/^\.+|\.+$/g, '') || 'chord';
+                const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${base}.xml`;
+                a.rel = 'noopener';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Generate + Export MusicXML
+            </button>
+          </div>
+          {chordInspectorParseError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorParseError}
+            </div>
+          )}
+          {chordInspectorExportError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorExportError}
+            </div>
+          )}
+          {chordInspectorResult && !chordInspectorParseError && (
+            <div
+              style={{
+                marginTop: '0.85rem',
+                fontSize: '0.88rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.45,
+              }}
+            >
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>Vault chord type id:</strong> {chordInspectorResult.vaultChordTypeId}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Melodic triad (pitch classes):</strong>{' '}
+                {chordInspectorResult.melodicTriad.join(', ')}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Primary tension note (PC):</strong> {chordInspectorResult.primaryTensionNote}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Quadratonic pitch classes:</strong>{' '}
+                {chordInspectorResult.quadratonicPitchClasses.join(', ')}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
+              </p>
             </div>
           )}
         </div>
