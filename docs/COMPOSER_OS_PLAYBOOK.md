@@ -1054,7 +1054,51 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 - **Build IMG — iReal Pro import:** **Complete** — see **Build IMG — iReal Pro import** below (**four iterations**).
 
-- **Build UI — Visual fretboard (remaining):** **Only** remaining Tonality Vault roadmap build. **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Estimated effort: 6–8 iterations** — **dedicated focused session** — **FretboardPanel** (**fretboard.js**); note **role** colours; **layer** toggles; **TabPanel** (**VexFlow**); **playback** trail; **`svgToPng`** export; responsive layout / **dark mode**; **Vault microscope** scrubber.
+- **Build I — Generation Mode Profiles (Solo vs Melody):** **Roadmap / not shipped** — expression-level differentiation between **solo** (dense, bar-reactive, bebop-weighted) and **melody** (sparse, motif-driven, phrase-reactive). See **Build I — Generation Mode Profiles** below.
+
+- **Build UI — Visual fretboard (remaining):** **Next** after **Build I**. **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Estimated effort: 6–8 iterations** — **dedicated focused session** — **FretboardPanel** (**fretboard.js**); note **role** colours; **layer** toggles; **TabPanel** (**VexFlow**); **playback** trail; **`svgToPng`** export; responsive layout / **dark mode**; **Vault microscope** scrubber.
+
+### Build I — Generation Mode Profiles (Solo vs Melody) (roadmap)
+
+**Goal:** Two generation **modes**—**solo** vs **song melody**—with explicit tunable profiles so Vault melody output does not default to one density.
+
+**`GenerationModeProfile`** (planned type — fields drive phrase + bar fill):
+
+| Field | Role |
+| --- | --- |
+| **`notesPerBarRange`** | Allowed **min/max** notes per bar for the mode. |
+| **`longNoteRatio`** | Target fraction of **longer** durations (half / dotted / tied feel). |
+| **`restRatio`** | Target fraction of **rest** or **breath** vs sounded notes. |
+| **`motifReuseProbability`** | Chance to **reuse** or **call back** material vs fresh cells. |
+| **`exactMotifRepeatProbability`** | Chance of **literal** repeat vs varied sequence. |
+| **`contourPlanningStrength`** | How strongly phrase **shape** (ascend / descend / apex) constrains pitches. |
+| **`harmonyProofPerBar`** | Whether **harmonic proof** (chord-tone / vault legality check) runs **every bar**. |
+| **`harmonyProofPerPhrase`** | Whether proof applies at **phrase** anchors instead of or in addition to per-bar. |
+| **`maxPhraseSpanSemitones`** | **Register span** cap within a phrase window. |
+| **`stepwiseMotionRatio`** | Target **step** vs **leap** balance. |
+| **`leapProbability`** | Probability of **allowed leaps** (bounded by vault / voice-leading elsewhere). |
+| **`maxTensionLayerDefault`** | Default **tension layer** ceiling unless phrase overrides. |
+| **`postCadenceRestProbability`** | **Space after cadences** — rest/breath after resolution. |
+| **`barCrossingContinuationProbability`** | **Carry** melodic figure across barline vs respell on downbeat. |
+| **`rhythmicCellReuseProbability`** | Reuse **rhythmic cell family** vs new subdivision pattern. |
+| **`melodicOverrideVsLocalHarmony`** | How much **contour/motif** may override **local** grip harmony hints. |
+
+**Presets (planned):**
+
+- **`SOLO_PROFILE`** — **`notesPerBarRange`** **5–10**; **dense** activity; **bebop**-leaning placement; **bar-reactive** (harmony proof and density respond **per bar**).
+- **`MELODY_PROFILE`** — **`notesPerBarRange`** **2–6**; **sparse**; **motif-driven**; **phrase-reactive** (phrase planner leads; fewer notes per bar).
+
+**`MelodyModePlanner`** (planned) **wraps** the existing **quadratonic** / Vault melody path — it **does not replace** the quadratonic engine. It sits **above** fill: selects phrase-level **contour**, **rhythmic cell family**, **motif**, **cadence target**, and **max tension layer** **before** bar-level note placement.
+
+**Phrase planner responsibilities (planned):** choose **contour**, **rhythmic cell family**, **motif**, **cadence target**, **`maxTensionLayer`** **before** filling individual notes.
+
+**Fastest wins (five):**
+
+1. **Reduce** melody **notes per bar** in melody mode (enforce **`notesPerBarRange`** / breath).
+2. **Add** phrase **contours** and **apex** targets so lines arc instead of filling evenly.
+3. **Add** **motif reuse** across **2–4** bars (development windows).
+4. **Require** **rests** and **post-cadence** space (**`restRatio`**, **`postCadenceRestProbability`**).
+5. **Shift** harmonic **proof** from **every bar** to **phrase start / climax / cadence** only (**`harmonyProofPerBar`** vs **`harmonyProofPerPhrase`**).
 
 ### Build IMG — iReal Pro import (**complete**)
 
@@ -1085,9 +1129,9 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 ### Build order (remaining)
 
-**A** through **G**, **C2**, **H**, and **IMG** are **complete**. **Only** remaining Tonality Vault build: **Build UI** (visual fretboard).
+**A** through **G**, **C2**, **H**, and **IMG** are **complete**. Remaining Tonality Vault build order: **I → UI** only (**IMG** is done — do not sequence **IMG** ahead of **I** or **UI**).
 
-**Next:** **Build UI** — **6–8** iteration **dedicated session** (**fretboard.js** + **VexFlow**; **FretboardPanel**, **TabPanel**, **Vault microscope**, layout / dark mode). No other Vault roadmap builds ahead of it.
+**Next:** **Build I** — **Generation Mode Profiles** (**Solo** vs **Melody**). **Then:** **Build UI** — **6–8** iteration **dedicated session** (**fretboard.js** + **VexFlow**; **FretboardPanel**, **TabPanel**, **Vault microscope**, layout / dark mode).
 
 ---
 
