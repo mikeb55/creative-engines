@@ -1016,6 +1016,24 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 
 **`buildAllVaultChordRuleSets()`** — walks **`TONALITY_VAULT_DATABASE`**, builds **`VaultChordRuleSet[]`**. **Mechanics:** **`melodicTriadDegrees`** / **`tensionHierarchy`** from the DB; **`primaryQuadratonic`** from **`selectQuadratonicMelodySpec`**; **phrase templates** by chord character (**sus** vs **altered/tense** vs **stable** defaults); **beat affinity** from **`buildBeatContextLegalityMap`** layer buckets; **grip count** via **`buildGuitarGripLibrary`**; **reharm** strategies from **`generateReharmCandidates`**; **`recommendedTensionStates`** from stability heuristics (**stable** → **`resolve` / `primary`** bias; **altered** → **`tension` / `chaos`** bias; etc.).
 
+### Build H — GCE-targeted generation (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/evaluation/` — **`gceTargetedGenerator.ts`** (re-exported from **`evaluation/index.ts`**).
+
+This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate before you ship** — not infinite regeneration. Wire **`evaluate`** to your **GCE** / **LOCK** / **Style Profile** / **quadratonic alignment** scores (three numeric inputs below).
+
+**`GCEGenerationTarget`**
+
+| Field | Purpose |
+|-------|--------|
+| **`minScore`** | Weighted score threshold (default **8.5**). |
+| **`maxRefinementPasses`** | Hard cap on refinement iterations (**DCR:** default **1** — at most **one** pass). |
+| **`weights`** | **`gce`**, **`style`**, **`quadratonicAlignment`** — blend the three sub-scores into **`finalScore`**. |
+
+**`DEFAULT_GCE_TARGET`** — **`minScore` 8.5**, **`maxRefinementPasses` 1**, **`weights`:** **`gce` 0.5**, **`style` 0.3**, **`quadratonicAlignment` 0.2**.
+
+**`runWithGCETarget<T>(generate, evaluate, refine, target)`** — calls **`generate()`** once for the initial candidate; **`evaluate(output)`** returns **`{ gce, style, quadratonicAlignment }`**; **`finalScore`** = weighted sum using **`target.weights`**. If **`finalScore < minScore`** and **`refinementPasses < maxRefinementPasses`**, calls **`refine(output, breakdown)`** once (per pass), re-runs **`evaluate`**, recomputes **`finalScore`**. **Never** loops more than **`maxRefinementPasses`** times. Returns **`GCEGenerationResult`**: **`output`**, **`finalScore`**, **`passedTarget`** (**`finalScore >= minScore`**), **`refinementPasses`**, **`evaluationBreakdown`** (final **gce / style / quadratonicAlignment**).
+
 ### Planned builds (engine)
 
 - **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
@@ -1032,11 +1050,11 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 
 - **Build C2 — Alt tuning extension:** **Complete.** **`guitarGripLibrary.ts`** resolves open-string MIDI via **`openStringMidisForTuning`**: **`standard`** → fixed E-standard **[40, 45, 50, 55, 59, 64]**; otherwise **`getAlternateGuitarTuningPreset(tuningId)`** supplies six **scientific-pitch** strings → MIDI for all fret math. **Preset groups (ids):** **Sonic Youth** — **`sy_cgdgcd`**, **`sy_cgdgbd`**, **`sy_ebebeb`**, **`sy_facgce`**, **`sy_cgcgce`**, **`sy_dgdgbd`**, **`open_g`**, **`drone_cluster_1`**, **`drone_cluster_2`**; **Joni Mitchell** — **`dadgad`**, **`open_d`**, **`joni_style_open_color`**, **`joni_style_hybrid_resonance`**, **`joni_dgdfce`**, **`joni_cgefge`**, **`joni_cgdgbe`**, **`joni_dadgbe`**, **`joni_dadfad`**, **`joni_eeeebe`**. Unrecognised **`tuningId`** falls back to standard E. New tunings: add **`alternateGuitarTunings.ts`** row only — **no** grip-library / riff-generator / Vault-engine changes (see **Future Tunings (guitar)** under **Build C**).
 
+- **Build H — GCE-targeted generation:** **Complete** — see **Build H** subsection above; **`gceTargetedGenerator.ts`** (**`runWithGCETarget`**, **`GCEGenerationTarget`**, **`DEFAULT_GCE_TARGET`**).
+
 - **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Deferred** until the **engine** paths above are stable in production.
 
 - **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path).
-
-- **Build H — GCE-targeted generation (planned):** After generation, evaluate against **GCE** + **LOCK** + **Style Profile** + **Quadratonic Alignment**. If below **`minScore`** (default **8.5**), run **one** refinement pass and re-evaluate. **Maximum one** refinement loop per **DCR** protocol — output is **quality-gated**, not infinitely regenerated. Aim: **GCE 9+**-grade material by **examining before shipping**.
 
 ### Build IMG — iReal Pro import (planned)
 
@@ -1060,6 +1078,7 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 ### How Composer OS helps composition
 
 - **Melodic material** is anchored to **quadratonic / melodic-triad** logic **per chord**—not generic **scale** runs. **Build G** exposes a single **`VaultChordRuleSet`** per type so riffs, reharms, beat maps, and phrase templates stay **consistent** across the stack.
+- **Build H** (**`runWithGCETarget`**) is the **weighted quality gate** (**GCE + style + quadratonic alignment**) with **at most one** refinement pass — aim **GCE 9+** by **scoring before release**.
 - **Reharmonisation** (**Build D**, **`reharmCandidateEngine`**) **preserves or reinterprets melodic-triad identity** while modernising **shells** and colour — see **Revolutionary Reharmonisation Engine**.
 - **String quartet** sketches: each **voice** can be assigned a different **tension layer** so the ensemble moves as a **coherent** harmonic unit.
 - **Big band:** **arranger style profiles** + **Vault layer routing** together are a **differentiated** capability—style governs phrasing and weight; vault governs **who plays which harmonic role**.
@@ -1072,9 +1091,9 @@ This is the **unified per-chord ruleset** that Vault subsystems can query: one t
 
 ### Build order (remaining)
 
-**A** through **G** and **C2** are **complete**. **Next:** **Build H** (GCE-targeted generation). Planned sequencing for **remaining** work:
+**A** through **G**, **C2**, and **H** are **complete**. **Next:** **Build UI** (visual fretboard). Planned sequencing for **remaining** work:
 
-**H → UI → IMG**
+**UI → IMG**
 
 ---
 
