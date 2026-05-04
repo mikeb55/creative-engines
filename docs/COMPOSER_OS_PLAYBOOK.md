@@ -983,6 +983,29 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 **`MotifTransformer`** — **`transformMotifThroughLayers(motif, chordTypeId, rootPc)`** returns **`Record<TensionState, MotifNote[]>`** (`TensionState` from **`layerStateMachine`**). **Rhythm preserved** (`beatPosition`, **`duration`**) for every state; only **pitch classes** re-quantise: **`resolve`** → **melodic triad** PCs · **`primary`** → **quadratonic** set · **`tension`** → **secondary tension** PCs (fallback: quadratonic) · **`chaos`** → **triad-pair / quadratonic** pool · **`recover`** → **melodic triad** with **chromatic lead-in** on alternating indices (`triad` vs `triad − 1` semitone).
 
+### Build G — Full 16-tonality per-chord rulesets (**complete**)
+
+**Shipped** in `engines/composer-os-v2/core/harmony/` — **`vaultChordRuleSet.ts`** (re-exported from **`harmony/index.ts`**).
+
+This is the **unified per-chord ruleset** that Vault subsystems can query: one typed snapshot per **`TONALITY_VAULT_DATABASE`** chord type (**16** rows).
+
+**`VaultChordRuleSet`**
+
+| Field | Purpose |
+|-------|--------|
+| **`chordTypeId`** | Vault **`chordType`** string |
+| **`displayName`** | Human-readable row title |
+| **`melodicTriadDegrees`** | Three melodic triad **degrees** (`1`–`13`) |
+| **`primaryQuadratonic`** | Quadratonic degree set (**triad ∪ primary tension**) |
+| **`tensionHierarchy`** | Ordered tension preference list from the DB row |
+| **`phraseTemplates`** | Allowed phrase archetypes: **`triad-sweep`**, **`quadratonic-enclosure`**, **`dyad-bounce`**, **`bebop-insertion`**, **`tension-climb`**, **`liquid-resolution`** |
+| **`beatAffinityProfile`** | **`strong`** / **`weak`** / **`offbeat`** → pitch classes (reference **`rootPc = 0`**) grouped by **`NoteLayer`** from **`buildBeatContextLegalityMap`** |
+| **`guitarGripCount`** | Count from **`buildGuitarGripLibrary`** (standard tuning lookup) |
+| **`reharmStrategies`** | Top **three** **`ReharmStrategy`** frequencies from **`generateReharmCandidates`** (**neutral** drift) |
+| **`recommendedTensionStates`** | Suggested **`TensionState`** arc from chord stability heuristics |
+
+**`buildAllVaultChordRuleSets()`** — walks **`TONALITY_VAULT_DATABASE`**, builds **`VaultChordRuleSet[]`**. **Mechanics:** **`melodicTriadDegrees`** / **`tensionHierarchy`** from the DB; **`primaryQuadratonic`** from **`selectQuadratonicMelodySpec`**; **phrase templates** by chord character (**sus** vs **altered/tense** vs **stable** defaults); **beat affinity** from **`buildBeatContextLegalityMap`** layer buckets; **grip count** via **`buildGuitarGripLibrary`**; **reharm** strategies from **`generateReharmCandidates`**; **`recommendedTensionStates`** from stability heuristics (**stable** → **`resolve` / `primary`** bias; **altered** → **`tension` / `chaos`** bias; etc.).
+
 ### Planned builds (engine)
 
 - **Build A — Note tagging + beat context:** **Complete** (see **Build A** subsection above).
@@ -995,7 +1018,7 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 - **Build E + F — Arrangement layer router + motif transformation:** **Complete** (see **Build E+F** subsection above).
 
-- **Build G — Full 16-tonality per-chord rulesets:** One complete behaviour pack per Tonality Vault chord type: **melodic triad**, **quadratonic**, **tension hierarchy**, phrase templates, **beat affinity**, **guitar grips**, **reharm** candidates.
+- **Build G — Full 16-tonality per-chord rulesets:** **Complete** — see **Build G** subsection above; **`VaultChordRuleSet`** + **`buildAllVaultChordRuleSets()`**.
 
 - **Build C2 — Alt tuning extension:** **Sonic Youth** and **Joni Mitchell** (and related) **altered-tuning presets** already live in **`alternateGuitarTunings.ts`**; this build **recomputes fret positions** from each preset’s **six string pitches** so **`buildGuitarGripLibrary` / `generateVaultRiff`** match the user’s tuning in the field, not E-standard only.
 
@@ -1026,7 +1049,7 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 ### How Composer OS helps composition
 
-- **Melodic material** is anchored to **quadratonic / melodic-triad** logic **per chord**—not generic **scale** runs.
+- **Melodic material** is anchored to **quadratonic / melodic-triad** logic **per chord**—not generic **scale** runs. **Build G** exposes a single **`VaultChordRuleSet`** per type so riffs, reharms, beat maps, and phrase templates stay **consistent** across the stack.
 - **Reharmonisation** (**Build D**, **`reharmCandidateEngine`**) **preserves or reinterprets melodic-triad identity** while modernising **shells** and colour — see **Revolutionary Reharmonisation Engine**.
 - **String quartet** sketches: each **voice** can be assigned a different **tension layer** so the ensemble moves as a **coherent** harmonic unit.
 - **Big band:** **arranger style profiles** + **Vault layer routing** together are a **differentiated** capability—style governs phrasing and weight; vault governs **who plays which harmonic role**.
@@ -1039,9 +1062,9 @@ Unknown **`chordTypeId`**: empty map. Overlap between triad and primary tension 
 
 ### Build order (remaining)
 
-**A** through **F** are **complete** (including **E+F**). **Next:** **Build G** (full 16-tonality rulesets). Planned sequencing for **remaining** work:
+**A** through **G** are **complete**. **Next:** **Build C2** (alt tuning extension). Planned sequencing for **remaining** work:
 
-**G → C2 → H → UI → IMG**
+**C2 → H → UI → IMG**
 
 ---
 
