@@ -1052,28 +1052,22 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 - **Build H — GCE-targeted generation:** **Complete** — see **Build H** subsection above; **`gceTargetedGenerator.ts`** (**`runWithGCETarget`**, **`GCEGenerationTarget`**, **`DEFAULT_GCE_TARGET`**).
 
-- **Build IMG — iReal Pro import + optional vision:** See **Build IMG — iReal Pro import** below (data pipeline + optional screenshot path). **Estimated effort: 3–4 iterations** — install **[pianosnake/ireal-reader](https://github.com/pianosnake/ireal-reader)**; **`ParsedChart`** TypeScript adapter; chord symbol → **`tonalityVaultDatabase`** mapping; **`generateVaultRiff`** per bar → **MusicXML** output; UI input for **`ireal://`** URL.
+- **Build IMG — iReal Pro import:** **Complete** — see **Build IMG — iReal Pro import** below (**four iterations**).
 
-- **Build UI — Visual fretboard (deferred):** **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Estimated effort: 6–8 iterations** — **FretboardPanel** (**fretboard.js**); note **role** colours; **layer** toggles; **TabPanel** (**VexFlow**); **playback** trail; **`svgToPng`** export; responsive layout / **dark mode**; **Vault microscope** scrubber. Schedule as a **dedicated focused session** — largest remaining surface area.
+- **Build UI — Visual fretboard (remaining):** **Only** remaining Tonality Vault roadmap build. **fretboard.js** + **VexFlow**, **three SVG layers** (grid, active grip, legality heat). **Estimated effort: 6–8 iterations** — **dedicated focused session** — **FretboardPanel** (**fretboard.js**); note **role** colours; **layer** toggles; **TabPanel** (**VexFlow**); **playback** trail; **`svgToPng`** export; responsive layout / **dark mode**; **Vault microscope** scrubber.
 
-### Build IMG — iReal Pro import (planned)
+### Build IMG — iReal Pro import (**complete**)
 
-**Not shipped.** Primary path is **structured data**, not raw **`.irealb` binary**.
+**Shipped** in `engines/composer-os-v2/core/irealpro/` (barrel **`irealpro/index.ts`**) and **`apps/composer-os-app/src/pages/HomeGenerate.tsx`** (beta UI). Primary path is **structured** parsing via npm **`ireal-reader`** ([pianosnake/ireal-reader](https://github.com/pianosnake/ireal-reader)), not raw **`.irealb` binary** as the ingest surface. **Optional later:** **JPEG / screenshot** OCR for users without HTML export (same **`ParsedChart`** target) — not in v1.
 
-**Recommended JS libraries (wrap in TypeScript adapters):**
+| Iteration | What shipped |
+|-----------|----------------|
+| **1** | **`parsedChart.ts`** — **`ParsedChord`**, **`ParsedSection`**, **`ParsedChart`** (`title`, `composer`, `key`, `timeSignature`, `tempo`, `style`, `sections`, `measures`, `repeats`). **`irealProAdapter.ts`** — **`parseIRealProInput(input)`** uses **`ireal-reader`** on **`ireal://`** / **`irealb://`** URL or **HTML** export; **`ireal://`** normalised for the library; first playlist song → **`ParsedChart`**. |
+| **2** | **`chordSymbolMapper.ts`** — **`mapChordToVaultType(ParsedChord)`** maps **`rootNote`** → **`rootPc`** (**C = 0 … B = 11**) and **`chordQuality`** → **`vaultChordTypeId`** for all **16** **`TONALITY_VAULT_DATABASE`** types (synonyms: maj/**^**/Δ, minor, dom, sus, altered, etc.); unrecognised quality → **`null`**. |
+| **3** | **`irealVaultPipeline.ts`** — **`generateFromIReal(input, options?)`** walks **`ParsedChart.measures`** (first chord per bar), **`mapChordToVaultType`**, **`generateVaultRiff`** per bar (**`bars: 1`**), offsets **`ScoreNote.startBeat`** by **`barIndex * 4`** (4/4 quarters); returns **`IRealVaultOutput`** — **`generatedNotes`**, **`chordMappings`**, **`unmappedChords`**. MusicXML export from this pipeline remains a **follow-up** wire to the main exporter. |
+| **4** | **iReal Pro Import (Beta)** in **`HomeGenerate.tsx`** — collapsible **`details`**; **textarea** for **`ireal://`** / HTML paste; **riff style** dropdown (**bebop-placement**, **quadratonic**, **dyad-seesaw**, **triad-pair-pendulum**, **pedal-string**); **tuning** dropdown (**standard**, **dadgad**, **open_d**, **open_g**, **sy_cgdgcd**); **Generate from iReal** calls **`generateFromIReal`**; results show **title**, **key**, **bars**, **mapped vs unmapped** counts; **amber** list for unmapped chords. |
 
-| Role | Library | Notes |
-|------|---------|--------|
-| **Primary parser** | **[pianosnake/ireal-reader](https://github.com/pianosnake/ireal-reader)** | Expanded measures, **repeats**, **codas**, **segnos** — good match for roadmaps that need visit-expanded charts. |
-| **Secondary / cross-check** | **[daumling/ireal-renderer](https://github.com/daumling/ireal-renderer)** | Preserves **section markers** and **form structure** — useful for pedagogy and arrangement lanes. |
-
-**Input contract:** **iReal Pro HTML export** or **`ireal://` URL** — **not** the opaque **`.irealb`** file alone (binary format is not the ingestion surface for this roadmap).
-
-**Target schema:** normalise both parsers toward a shared **`ParsedChart`** contract (**title**, **key**, **timeSignature**, **tempo**, **sections**, **measures**, **repeats**, **jumps**). Both libraries are **JavaScript** — ship thin **TypeScript** facades + typed **`ParsedChart`** in-repo.
-
-**Downstream:** map chord symbols to **`tonalityVaultDatabase`** chord types, then **`generateVaultRiff`** (and quadratonic planners) **per chord / bar** for guitar lines.
-
-**Optional later:** **JPEG / screenshot** of an iReal-style chart via **Claude vision API** for users without HTML export — same **`ParsedChart`** target after OCR normalisation. **Dependencies:** **Build C** (riffs), **Build D** (optional **`generateReharmCandidates`** pass), **`ParsedChart`** adapter layer.
+**Cross-check library (not bundled):** **[daumling/ireal-renderer](https://github.com/daumling/ireal-renderer)** — optional future cross-check for section markers / form structure.
 
 ### How Composer OS helps composition
 
@@ -1087,17 +1081,13 @@ This is the **quality gate** for aiming at **GCE 9+**-grade output: **evaluate b
 
 ### Planned UI additions (cross-cutting)
 
-**Tension dial**, **chord-to-triad inspector**, **fretboard overlay** (**Build UI**), **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode**, **iReal Pro import UI** (**Build IMG** — HTML / `ireal://`, optional screenshot OCR).
+**Tension dial**, **chord-to-triad inspector**, **fretboard overlay** (**Build UI**), **beat-legality heatmap**, **Vault microscope**, **liquid harmony preview**, **arrangement lane map**, **reharm mode**, **guitar riff mode** — plus **iReal Pro Import (Beta)** on **Generate** (**`ireal://`** / HTML paste → Vault riffs; shipped **Build IMG** iter **4**).
 
 ### Build order (remaining)
 
-**A** through **G**, **C2**, and **H** are **complete**. **Remaining sequencing: IMG → UI.**
+**A** through **G**, **C2**, **H**, and **IMG** are **complete**. **Only** remaining Tonality Vault build: **Build UI** (visual fretboard).
 
-**Why IMG before UI:** **Build IMG** is **lower risk**, needs **fewer iterations** (**3–4** vs **6–8**), and ships **immediately useful** output — paste an **`ireal://`** URL → chord timeline → **Vault** **`generateVaultRiff`** → **MusicXML**. **Build UI** is the **largest** remaining build (fretboard + tab + microscope + layout); treat it as a **dedicated focused session** after IMG lands.
-
-**Next:** **Build IMG** (iReal pipeline). Then **Build UI** (visual fretboard).
-
-**IMG → UI**
+**Next:** **Build UI** — **6–8** iteration **dedicated session** (**fretboard.js** + **VexFlow**; **FretboardPanel**, **TabPanel**, **Vault microscope**, layout / dark mode). No other Vault roadmap builds ahead of it.
 
 ---
 
