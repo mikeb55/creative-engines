@@ -1,3 +1,6 @@
+import type { FretboardRealization } from '../guitar/fretboardRealization';
+import { buildGuitarGripLibrary } from '../guitar/guitarGripLibrary';
+import { selectQuadratonicMelodySpec } from '../harmony/quadratonicMelodySelector';
 import { TONALITY_VAULT_DATABASE } from '../harmony/tonalityVaultDatabase';
 import type { ParsedChord } from './parsedChart';
 
@@ -110,4 +113,80 @@ export function mapChordToVaultType(chord: ParsedChord): { vaultChordTypeId: str
     return null;
   }
   return { vaultChordTypeId, rootPc };
+}
+
+function normalizeRootForDisplay(rootLower: string): string {
+  if (rootLower.length <= 1) return rootLower.toUpperCase();
+  return rootLower[0]!.toUpperCase() + rootLower.slice(1);
+}
+
+/**
+ * Split a single chord symbol into **`rootNote`** (Vault **`parseRootNoteToPc`** form, lowercase) + **`chordQuality`** (remainder).
+ */
+function parseChordSymbolComponents(symbol: string): { rootNote: string; chordQuality: string } | null {
+  const s = symbol.trim();
+  if (!s) return null;
+  const m = /^([A-Ga-g])([#b]?)(.*)$/.exec(s);
+  if (!m) return null;
+  const rootNote = (m[1]! + (m[2] ?? '')).toLowerCase();
+  const chordQuality = (m[3] ?? '').trim();
+  if (parseRootNoteToPc(rootNote) === null) return null;
+  return { rootNote, chordQuality };
+}
+
+function absPc(rootPc: number, rel: number): number {
+  return ((rootPc + rel) % 12 + 12) % 12;
+}
+
+export type ChordInspectorResult = {
+  inputSymbol: string;
+  rootNote: string;
+  rootPc: number;
+  vaultChordTypeId: string;
+  melodicTriad: number[];
+  primaryTensionNote: number;
+  quadratonicPitchClasses: number[];
+  guitarGrips: FretboardRealization[];
+};
+
+/**
+ * Parse **`rootNote` + `chordQuality`** (e.g. `Cmaj7`, `F#min9`, `Bb7#11`), map to the Vault, then expose
+ * quadratonic spec + guitar grips. Returns **`null`** if the symbol cannot be split, is not a valid root, or does not map.
+ */
+export function inspectChordSymbol(input: string, tuningId?: string): ChordInspectorResult | null {
+  const parsed = parseChordSymbolComponents(input);
+  if (!parsed) return null;
+
+  const chord: ParsedChord = {
+    symbol: input.trim(),
+    rootNote: parsed.rootNote,
+    chordQuality: parsed.chordQuality,
+    duration: 1,
+    barIndex: 0,
+    beatIndex: 0,
+  };
+
+  const mapped = mapChordToVaultType(chord);
+  if (!mapped) return null;
+
+  const spec = selectQuadratonicMelodySpec(mapped.vaultChordTypeId);
+  if (!spec) return null;
+
+  const { vaultChordTypeId, rootPc } = mapped;
+  const melodicTriad = spec.melodicTriad.map((t) => absPc(rootPc, t.pitchClassFromRoot));
+  const primaryTensionNote = absPc(rootPc, spec.primaryTension.pitchClassFromRoot);
+  const quadratonicPitchClasses = spec.quadratonicPitchClassesFromRoot.map((pc) => absPc(rootPc, pc));
+
+  const guitarGrips = buildGuitarGripLibrary(vaultChordTypeId, rootPc, tuningId ?? 'standard');
+
+  return {
+    inputSymbol: input.trim(),
+    rootNote: normalizeRootForDisplay(parsed.rootNote),
+    rootPc,
+    vaultChordTypeId,
+    melodicTriad,
+    primaryTensionNote,
+    quadratonicPitchClasses,
+    guitarGrips,
+  };
 }
