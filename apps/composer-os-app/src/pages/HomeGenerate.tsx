@@ -42,7 +42,10 @@ import {
   extractScoreMusicXmlFromString,
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
-import { generateReharmCandidates } from '@composer-os/core/harmony/reharmCandidateEngine';
+import {
+  generateReharmCandidates,
+  type ReharmCandidate,
+} from '@composer-os/core/harmony/reharmCandidateEngine';
 import {
   buildComposerOddMeterRows,
   COMPOSER_METER_PRESET_MAP,
@@ -92,6 +95,104 @@ const VAULT_EMOTIONAL_DRIFT_OPTIONS: { value: EmotionalDrift; label: string }[] 
   { value: 'more-unstable', label: 'more-unstable' },
   { value: 'more-cinematic', label: 'more-cinematic' },
 ];
+
+/** Mirrors `driftAffinity` in `reharmCandidateEngine` — UI-only scoring / labels (no engine edits). */
+function reharmDriftAffinityScore(chordTypeId: string, drift: EmotionalDrift): number {
+  const id = chordTypeId;
+  const lower = id.toLowerCase();
+
+  switch (drift) {
+    case 'darker': {
+      if (id.startsWith('min') || id.includes('min9') || id.includes('min11') || id.includes('minMaj')) return 0.95;
+      if (lower.includes('dim') || lower.includes('b13') || lower.includes('b9')) return 0.92;
+      if (lower.includes('min7b5')) return 0.9;
+      if (lower.startsWith('maj') || lower.includes('#11#9')) return 0.35;
+      return 0.5;
+    }
+    case 'brighter': {
+      if (
+        id === 'Maj7' ||
+        id === 'Maj9' ||
+        id === 'Maj7#11' ||
+        id.includes('Maj9') ||
+        (lower.includes('maj') && !id.startsWith('min'))
+      )
+        return 0.92;
+      if (lower.includes('#11') && !id.startsWith('min')) return 0.88;
+      if (lower.includes('sus9')) return 0.78;
+      if (id.startsWith('min')) return 0.32;
+      return 0.48;
+    }
+    case 'more-suspended': {
+      return lower.includes('sus') ? 0.95 : 0.42;
+    }
+    case 'more-unstable': {
+      if (lower.includes('#9') || lower.includes('7#9') || lower.includes('#11#9')) return 0.95;
+      if (lower.includes('13#11') || lower.includes('13b9')) return 0.88;
+      if (lower.includes('b9')) return 0.72;
+      return 0.45;
+    }
+    case 'more-cinematic': {
+      if (lower.includes('maj7') || lower.includes('minmaj') || lower.includes('sus9')) return 0.88;
+      if (lower.includes('m11') || lower.includes('maj9')) return 0.82;
+      return 0.52;
+    }
+    case 'neutral':
+    default:
+      return 0.55;
+  }
+}
+
+function sliderToTargetReharmDrift(slider: number): EmotionalDrift {
+  const order: EmotionalDrift[] = [
+    'neutral',
+    'darker',
+    'brighter',
+    'more-suspended',
+    'more-unstable',
+    'more-cinematic',
+  ];
+  const t = Math.min(1, Math.max(0, slider));
+  const idx = Math.round(t * (order.length - 1));
+  return order[idx]!;
+}
+
+function dominantEmotionalDriftForChordType(chordTypeId: string): EmotionalDrift {
+  let best: EmotionalDrift = 'neutral';
+  let bestScore = -1;
+  for (const o of VAULT_EMOTIONAL_DRIFT_OPTIONS) {
+    const s = reharmDriftAffinityScore(chordTypeId, o.value);
+    if (s > bestScore) {
+      bestScore = s;
+      best = o.value;
+    }
+  }
+  return best;
+}
+
+const CHORD_INSPECTOR_PC_TO_SHARP_ROOT: readonly string[] = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+];
+
+function formatChordInspectorSubstituteSymbol(rootPc: number, vaultChordTypeId: string): string {
+  const r = CHORD_INSPECTOR_PC_TO_SHARP_ROOT[((rootPc % 12) + 12) % 12] ?? 'C';
+  return `${r}${vaultChordTypeId}`;
+}
+
+function emotionalDriftOptionLabel(drift: EmotionalDrift): string {
+  return VAULT_EMOTIONAL_DRIFT_OPTIONS.find((o) => o.value === drift)?.label ?? drift;
+}
 
 const VAULT_GENERATION_OPTIONS_HINT =
   'Mode, tuning, riff style, and emotional drift are sent on the request. Drift is reserved for reharm bias in the engine and does not change output yet.';
@@ -1049,7 +1150,8 @@ export function HomeGenerate({
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
   const [chordInspectorTuningId, setChordInspectorTuningId] = useState('standard');
-  const [chordInspectorReharmDrift, setChordInspectorReharmDrift] = useState<EmotionalDrift>('neutral');
+  const [chordInspectorReharmDriftSlider, setChordInspectorReharmDriftSlider] = useState(0.5);
+  const [chordInspectorReharmPanelOpen, setChordInspectorReharmPanelOpen] = useState(false);
   const [chordInspectorResult, setChordInspectorResult] = useState<ChordInspectorResult | null>(null);
   const [chordInspectorParseError, setChordInspectorParseError] = useState<string | null>(null);
   const [chordInspectorExportError, setChordInspectorExportError] = useState<string | null>(null);
@@ -1098,15 +1200,26 @@ export function HomeGenerate({
     }
   }, [chordPasteText, chordPasteKey, chordPasteTimeSigId, chordPasteTempo]);
 
-  const chordInspectorReharmCandidates = useMemo(() => {
-    if (!chordInspectorResult) return [];
-    return generateReharmCandidates(
+  const chordInspectorReharmTopEight = useMemo((): ReharmCandidate[] => {
+    if (!chordInspectorResult || !chordInspectorReharmPanelOpen) return [];
+    const target = sliderToTargetReharmDrift(chordInspectorReharmDriftSlider);
+    const pool = generateReharmCandidates(
       chordInspectorResult.vaultChordTypeId,
       chordInspectorResult.rootPc,
       null,
-      chordInspectorReharmDrift
-    ).slice(0, 16);
-  }, [chordInspectorResult, chordInspectorReharmDrift]);
+      'neutral'
+    );
+    const scored = pool.map((c) => ({
+      c,
+      proximity: reharmDriftAffinityScore(c.substituteChordTypeId, target),
+    }));
+    scored.sort((a, b) => {
+      const d = b.proximity - a.proximity;
+      if (d !== 0) return d;
+      return b.c.bassSmoothnessScore - a.c.bassSmoothnessScore;
+    });
+    return scored.slice(0, 8).map((s) => s.c);
+  }, [chordInspectorResult, chordInspectorReharmPanelOpen, chordInspectorReharmDriftSlider]);
 
   const songModeStyleProfileRef = useRef<SongModeStyleProfile>(songModeStyleProfile);
   const alternateTuningEnabledRef = useRef(alternateTuningEnabled);
@@ -5398,25 +5511,6 @@ export function HomeGenerate({
                 <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
               </select>
             </div>
-            <div>
-              <label
-                htmlFor="co-chord-inspector-reharm-drift"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Reharm drift (ranking)
-              </label>
-              <select
-                id="co-chord-inspector-reharm-drift"
-                value={chordInspectorReharmDrift}
-                onChange={(e) => setChordInspectorReharmDrift(e.target.value as EmotionalDrift)}
-              >
-                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
           <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
@@ -5426,6 +5520,7 @@ export function HomeGenerate({
                 const r = inspectChordSymbol(chordInspectorInput, chordInspectorTuningId);
                 if (!r) {
                   setChordInspectorResult(null);
+                  setChordInspectorReharmPanelOpen(false);
                   setChordInspectorParseError(
                     'Could not parse chord or map it to the Tonality Vault. Check the symbol (e.g. Cmaj7, F#m9, Bb7#11).'
                   );
@@ -5433,6 +5528,7 @@ export function HomeGenerate({
                 }
                 setChordInspectorParseError(null);
                 setChordInspectorResult(r);
+                setChordInspectorReharmPanelOpen(false);
               }}
             >
               Inspect Chord
@@ -5533,88 +5629,98 @@ export function HomeGenerate({
               <p style={{ margin: '0.25rem 0' }}>
                 <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
               </p>
-              <p
+              <div
                 style={{
-                  margin: '0.75rem 0 0.35rem',
-                  fontSize: '0.8rem',
-                  color: 'var(--text)',
-                  fontWeight: 600,
+                  marginTop: '0.85rem',
+                  padding: '0.65rem 0.75rem',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-elevated, rgba(0,0,0,0.04))',
                 }}
+                role="region"
+                aria-label="Reharmonisation"
               >
-                Reharm candidates (Tonality Vault, top 16)
-              </p>
-              <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                Same-root substitutions ranked for the selected emotional drift. Read-only preview.
-              </p>
-              {chordInspectorReharmCandidates.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '0.82rem' }}>No candidates (empty vault row or parse edge case).</p>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table
-                    style={{
-                      fontSize: '0.8rem',
-                      borderCollapse: 'collapse',
-                      width: '100%',
-                      maxWidth: 520,
-                    }}
-                  >
-                    <thead>
-                      <tr>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          #
-                        </th>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          Substitute type
-                        </th>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          Strategy
-                        </th>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          Bass smooth
-                        </th>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          Triad kept
-                        </th>
-                        <th
-                          style={{ textAlign: 'left', padding: '0.3rem', borderBottom: '1px solid var(--border)' }}
-                        >
-                          Guitar-friendly
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {chordInspectorReharmCandidates.map((c, i) => (
-                        <tr key={`${c.substituteChordTypeId}-${c.strategy}-${i}`}>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>{i + 1}</td>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
-                            {c.substituteChordTypeId}
-                          </td>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>{c.strategy}</td>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
-                            {c.bassSmoothnessScore.toFixed(2)}
-                          </td>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
-                            {c.melodicTriadPreserved ? 'yes' : 'no'}
-                          </td>
-                          <td style={{ padding: '0.3rem', borderBottom: '1px solid var(--border)' }}>
-                            {c.guitarFriendly ? 'yes' : 'no'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                <p
+                  style={{
+                    margin: '0 0 0.5rem',
+                    fontSize: '0.8rem',
+                    color: 'var(--text)',
+                    fontWeight: 600,
+                  }}
+                >
+                  Reharm (Tonality Vault)
+                </p>
+                <button
+                  type="button"
+                  style={{ marginBottom: '0.65rem' }}
+                  onClick={() => {
+                    setChordInspectorReharmPanelOpen(true);
+                  }}
+                >
+                  Reharmonise
+                </button>
+                {chordInspectorReharmPanelOpen ? (
+                  <>
+                    <div style={{ marginBottom: '0.65rem' }}>
+                      <label
+                        htmlFor="co-chord-inspector-reharm-drift-slider"
+                        style={{ display: 'block', marginBottom: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                      >
+                        Drift proximity (targets {emotionalDriftOptionLabel(sliderToTargetReharmDrift(chordInspectorReharmDriftSlider))})
+                      </label>
+                      <input
+                        id="co-chord-inspector-reharm-drift-slider"
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={chordInspectorReharmDriftSlider}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          const v = Math.min(1, Math.max(0, Math.round(raw * 10) / 10));
+                          setChordInspectorReharmDriftSlider(v);
+                        }}
+                        style={{ width: '100%', maxWidth: 360 }}
+                      />
+                      <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {chordInspectorReharmDriftSlider.toFixed(1)} · reorder by affinity to selected drift
+                      </p>
+                    </div>
+                    {chordInspectorReharmTopEight.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: '0.82rem' }}>No candidates (empty vault row or parse edge case).</p>
+                    ) : (
+                      <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem' }}>
+                        {chordInspectorReharmTopEight.map((c, i) => {
+                          const sym = formatChordInspectorSubstituteSymbol(c.substituteRootPc, c.substituteChordTypeId);
+                          const dom = dominantEmotionalDriftForChordType(c.substituteChordTypeId);
+                          return (
+                            <li
+                              key={`reharm-${c.substituteChordTypeId}-${c.strategy}-${i}`}
+                              style={{ marginBottom: '0.55rem' }}
+                            >
+                              <span style={{ color: 'var(--text)' }}>
+                                <strong>{sym}</strong>
+                              </span>
+                              <span style={{ marginLeft: '0.45rem', color: 'var(--text-muted)' }}>
+                                drift: {emotionalDriftOptionLabel(dom)}
+                              </span>
+                              <div style={{ marginTop: '0.35rem' }}>
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  onClick={() => setChordInspectorInput(sym)}
+                                >
+                                  Use this chord
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </>
+                ) : null}
+              </div>
             </div>
           )}
         </div>
