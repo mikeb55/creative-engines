@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-08]
+# Composer OS Roadmap [2026-05-09]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -15,7 +15,20 @@
 
 **Full slice bar:** deliver **harmonic devices (d1–d5)**, **voice leading**, **phrase contour logic**, **formal behaviour**, **arrangement defaults** — output must read **audibly** distinct from generic baseline on **at least 3 of 5** dimensions.
 
-**Missing writers to add eventually:** Miles Davis, Coltrane, Cole Porter, Gershwin, Ornette Coleman.
+### Missing Writers to Add
+
+**Priority list** — compositional vocabulary targets only; **no** production, mixing, or timbre assumptions.
+
+1. **Miles Davis** — modal jazz — **Kind of Blue** harmonic space.
+2. **John Coltrane** — harmonic cycles, sheets of sound, spiritual arc.
+3. **Bartók** — folk-derived asymmetric rhythm, polymodal chromaticism.
+4. **Cole Porter** — American songbook, chromatic wit, jazz-song sophistication.
+5. **Ornette Coleman** — free melody logic; **no equivalent** in current library.
+6. **Prince** — groove-led pop-funk harmony; **uncovered lane** in catalogue.
+7. **Arvo Pärt** — tintinnabuli, sparse triadic stasis — distinct from **ECM Chamber** and **Debussy**.
+8. **Satie** — static minimal modal planes, deliberate non-development.
+9. **Björk** — modern art-pop, chamber-electronic blend — **no equivalent** in library.
+10. **Gershwin** — jazz / classical / pop bridge; **major songbook gap**.
 
 **Platform:** **Mobile deployment** is a **separate platform milestone** (packaging, stores, UX), **not** a ranked feature line item next to Song Mode / engine tickets.
 
