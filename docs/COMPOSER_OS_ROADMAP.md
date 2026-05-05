@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-07]
+# Composer OS Roadmap [2026-05-08]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -11,7 +11,7 @@
 
 ### Writer Slice Roadmap — priority order for full slice development
 
-**Priority order:** 1 **Beatles** (`beatles`) · 2 **Bill Evans** (`bill_evans`) · 3 **Frank Zappa** (`frank_zappa`) · 4 **ECM Chamber** (`ecm_chamber`) · 5 **Bacharach** (`bacharach`) · 6 **Wayne Shorter** (`wayne_shorter`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · 9 **Jobim** (`antonio_carlos_jobim`) · 10 **Debussy** (`debussy`).
+**Priority order (11):** 1 **Beatles** (`beatles`) · 2 **Bill Evans** (`bill_evans`) · 3 **Frank Zappa** (`frank_zappa`) · 4 **ECM Chamber** (`ecm_chamber`) · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · 9 **Jobim** (`antonio_carlos_jobim`) · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
 
 **Full slice bar:** deliver **harmonic devices (d1–d5)**, **voice leading**, **phrase contour logic**, **formal behaviour**, **arrangement defaults** — output must read **audibly** distinct from generic baseline on **at least 3 of 5** dimensions.
 
