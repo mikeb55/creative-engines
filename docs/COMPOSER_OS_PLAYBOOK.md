@@ -536,6 +536,58 @@ The slice **only rewrites chord symbols** on the duo golden path (Bill Evans–f
 5. **Seed A/B** — Asymmetric phrase boundaries change which passes fire; **lock seed** when demoing a specific **`be:dim_delayed_res`** or **`be:minor_detour`** outcome.
 6. **Duo guitar–bass + arranger Gil Evans** — Use Evans **slice** for **symbols** on the lead-sheet path while ensemble pairing handles **orchestration** receipts separately.
 
+### Frank Zappa (Song Mode — polytonal clash / sectional harmonic slice)
+
+**Still current:** **`frankZappaSlice.ts`**, **`precomputeFrankZappaEffectiveHarmonyBars`**, **`frankZappaEffectiveHarmonyBars`** → **`getChordForBar`** / **`attachFrankZappaHarmonyContext`** / locked export truth; receipts **`fz:d1–d5:…@bar{N}#v1`** plus additive **`fz:lyd_dominant`**, **`fz:bitonal_triad`**, **`fz:motif_recycle_*`**, **`fz:hard_cut_trigger`**.
+
+The slice **rewrites chord symbols** on the duo golden path (devices **d1–d5**: polytonal slash, metric displacement, xenochrony offset, style juxtaposition, through-composed cut). Additive passes stack **after** the primary device loop; **slash-bass symbols are left untouched** on those passes so slash spelling stays aligned with locked harmony assertions.
+
+#### Three context modes (`frankZappaContext`)
+
+API / **`GenerateRequest`** / **`RunGoldenPathOptions`** → **`GenerationMetadata.frankZappaContext`**. Default when omitted: **`avant_rock`**.
+
+| Mode | Role |
+|------|------|
+| **`avant_rock`** | Default **studio-rock / collage** bias — synthetic bucket includes **`synthetic`** weight in scale-bias metadata. |
+| **`big_band`** | **Lydian / Mixolydian / Dorian** only (three-way split in **`frankZappaSyntheticScaleBias`**). |
+| **`futuristic_jazz`** | Adds **Lydian dominant**, **diminished**, **whole-tone**, **`custom`** alongside core **Lydian** weights. |
+
+#### Density arc — six zones
+
+**`computeZappaDensityArc(totalBars)`** maps each bar to **`songwriterDensityBias`-lane values** along **intro → build1 → peak1 → drop → peak2 → outro** with time shares **12% / 22% / 12% / 18% / 28% / 8%** and zone densities **0.30 / 0.55 / 0.85 / 0.25 / 0.95 / 0.35**. **`precomputeFrankZappaEffectiveHarmonyBars`** stores **`frankZappaDensityBiasByBar`** and refreshes it after **hard-cut** triggers (tail segment **re-zoned** from the cut bar).
+
+#### Synthetic scale bias (metadata)
+
+**`resolveFrankZappaSyntheticScaleBias(mode)`** fills **`frankZappaSyntheticScaleBias`** on **`GenerationMetadata`** — manifest/teaching weights only, not a separate scale engine:
+
+- **avant_rock:** Lydian **40%** · Dorian **30%** · Mixolydian **20%** · synthetic **10%**
+- **big_band:** Lydian **50%** · Mixolydian **25%** · Dorian **25%**
+- **futuristic_jazz:** Lydian **35%** · Lydian dominant **20%** · diminished **15%** · whole-tone **10%** · custom **20%**
+
+#### Additive harmony passes (post–d1–d5 loop)
+
+| Pass | Receipt | Notes |
+|------|---------|--------|
+| **Lydian dominant field** | **`fz:lyd_dominant@bar{N}#v1`** | **Non-hook** bars, seeded rate **32%** when the bar reads as **Lydian-field** (symbol hints + context odds); appends **`(#11)`** to eligible **dominant / major** spellings. **Skips** symbols with **`/`** (slash bass unchanged). |
+| **Bitonal triads** | **`fz:bitonal_triad@bar{N}#v1`** | **Non-hook**, rate **24%** — two **major triad** roots **+4 or +6** semitones apart, spelled **`Rootmaj+Root2maj`** (not tritone **slash** polytonality). **Skips** slash chords. |
+| **Motif recycling** | **`fz:motif_recycle_{transform}@bar{N}#v1`** | Per **form section**, detects a repeating **4-bar** harmonic cell; one weighted transform on the repeat (**transposition**, **rhythmic_displacement**, **exact_repeat**, **augmentation_diminution**, **inversion**, **combined**, **retrograde**). **Skips** slash chords at the edit bar. |
+| **Hard-cut trigger system** | **`fz:hard_cut_trigger@bar{N}#v1`** + **`fz:d5:through_composed_cut@bar{N}#v1`** | Monitors **long sections**, **long ostinato-like chord runs**, and **peak-density streaks**; fires **through-composed cut** (same transform family as **d5**) and **resets** the density arc tail from that bar. **Skips** slash chords for the cut. |
+
+#### Zappa style surface (primary songwriter)
+
+When **`normalizeSongwriterStyleKey(primary) === 'frank_zappa'`**, **`applyFrankZappaStyleSurface`** (`songModeStyleSurface.ts`) runs from **`runGoldenPath`** (no Style Engine profile gate): sets **`frankZappaSyntheticScaleBias`**, **`frankZappaDensityBiasByBar`** from **`computeZappaDensityArc`**, mean **`songwriterDensityBias`**, **`songwriterSyncopationBias +0.22`**, **`songwriterSpaceBias −0.15`** (Zappa pocket = **dense**, not ECM-sparse).
+
+Optional **`frankZappaContext`** on the generate request selects the three modes above; defaults **`avant_rock`**.
+
+#### Example applications (by context)
+
+1. **`avant_rock`** — **Studio collage / rock orchestra** lesson planning: default **`frankZappaContext`**, density arc + **synthetic** weight in metadata; use when demonstrating **d1–d5** receipts alongside **hard-cut** drama without insisting on big-band spelling habits.
+2. **`big_band`** — **Sectional brass–rhythm** orientation: three-way **Lydian / Mix / Dorian** bias table only; pair with **long-form** or **high bar count** to exercise **hard-cut** on **long sections**.
+3. **`futuristic_jazz`** — **Colour-stack / whole-tone / altered-palette** teaching: metadata stresses **Lydian dominant**, **diminished**, **whole-tone**, **custom** bucket; compare **`fz:lyd_dominant`** receipts against **bitonal triad** **`maj+maj`** spellings on **non-slash** bars.
+4. **Density arc teaching** — Read **`frankZappaDensityBiasByBar`** after Generate to show **intro → peaks → drop** narrative; after a **hard cut**, tail bars **recompute** — demo **reset** with seeds that fire **`fz:hard_cut_trigger`**.
+5. **Locked chart + Zappa** — Custom **`|`** progression still runs the slice; **slash chords** are preserved through additive passes so **HarmonyContext** / export parity stays stable.
+6. **Seed A/B** — Same **`frankZappaContext`** with different **seeds** changes which **d1–d5** bar wins vs **additive** passes (rates are seeded); lock seed when demoing a specific **`fz:motif_recycle_transposition`** or **`fz:bitonal_triad`** outcome.
+
 ### Antônio Carlos Jobim (Song Mode — Brazilian jazz / bossa harmony slice)
 
 **Still current:** **`jobimSlice.ts`**, **`precomputeJobimEffectiveHarmonyBars`**, **`jobimEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth, smoke **`jobimSliceSmoke.test.ts`**. Harmony receipts use **`aj:*`** (**Antônio Jobim**) — **not** **`jb:*`** (James Brown).
