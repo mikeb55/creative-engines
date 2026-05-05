@@ -116,7 +116,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (34 research rows)
+### Per-composer profile table (35 research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -149,6 +149,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `carole_king` | stepwise | mixed | 4 | 0.5 | rising | gospel_suspension; repeated_note_hook; stepwise_verse_build; rising_chorus_sequence |
 | `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
 | `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
+| `maria_schneider` | stepwise | mixed | 7 | 0.85 | arch | sparse_phrase; modal_field; breath_space; nature_arc; chamber_texture |
 | `holland_dozier_holland` | stepwise | eighth_patterns | 2 | 0.7 | rising | call_response_hook; repeated_title_phrase; tambourine_anticipation; backing_vocal_echo |
 | `jeff_lynne` | stepwise | mixed | 4 | 0.6 | arch | stacked_harmony_hook; octave_doubled_melody; string_countermelody; descending_bass_hook |
 | `jeff_tweedy` | stepwise | mixed | 4 | 0.7 | flat | deadpan_repeated_note; modal_bVII; unresolved_suspension; folk_drone; understated_chorus |
@@ -157,7 +158,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 
 ### Smoke coverage
 
-**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥34 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥35 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 
@@ -186,6 +187,51 @@ Optional **Classical song influence** on Generate (default **None**): **Schubert
 | **`faure`** | Long arching lines, floating / modal colour, continuous flow, lighter cadential closure | **`prosodyInfluence`** +0.06; **`lineVsCellEmphasis`** +0.12; **`harmonyColourBias`** +0.04; **`hookRepetitionBias`** −0.07; **`phraseRegularity`** −0.05; **`sectionContrast`** −0.06; **`syncopationBias`** +0.04 |
 
 Implementation: **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts`**.
+
+---
+
+## Maria Schneider (`maria_schneider`) — Song Mode harmony slice
+
+Primary songwriter **`maria_schneider`** runs **`mariaSchneiderSlice.ts`** on the golden-path duo harmony timeline (same locked-export authority pattern as other full slices): **`precomputeMariaSchneiderEffectiveHarmonyBars`** → **`mariaSchneiderEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** disk/export truth, **`composerOsAppGeneration`**. Receipts are prefixed **`ms:`**.
+
+### Phrase grid
+
+**`computeSchneiderPhrasePositions`** assigns each bar **`phraseStart` | `phraseMiddle` | `phraseFinal`** from rolling phrase lengths **4 / 6 / 8 / 5 / 7 / 9** bars at weights **28% / 22% / 22% / 14% / 9% / 5%**. Device **d5** (`planing`) keys off **`phraseMiddle`**; **d4** (`color_stack`) keys off **`phraseFinal`** (lead-sheet “tutti weight” on phrase cadences, not a literal ensemble flag).
+
+### Stage 1 — bare-symbol enrichment (no receipts)
+
+Applied before the **`ms:*`** passes:
+
+- **Tonic (bare major on the inferred tonic PC):** **maj9(#11)** 45%, **maj13(#11)** 25%, **maj7(#11)** 20%, **6/9(#11)** 10%.
+- **Dominant (plain dom7 family):** **7(b9,#11,13)** (Lydian dominant colour) 45%, **7alt** 30%, **9(#11)** 25%.
+- **Minor (bare minor triad / bare m7):** **m(maj7)** 30%, **m7(b6)** 25%, **m9** 25%, **m11** 20%.
+
+### Stage 2 — harmonic devices (receipts)
+
+| Id | Pass | Rate / gate | Receipt | Metadata |
+|----|------|-------------|---------|----------|
+| **d1** | **`applyLydianModalCenterPass`** | **35%** of eligible bars (`1 − 0.65`); all bars; maj7/maj9/maj13 tonic colours get **#11** if absent | **`ms:lyd_center@bar{N}`** | — |
+| **d2** | **`applyPedalOstinatoPass`** | **60%** attempt rate on runs where the **harmonic root stays fixed ≥4 consecutive bars**; slash bass cycles chord tones | **`ms:pedal@bar{N}`** | **`schneiderPedalBars`** |
+| **d3** | **`applyNatureArcTexturePass`** | **15%** on **intro** (first ≤4 bars) and **outro** (last ≤4 bars); sets **`maj7(add9)`** as a narrow pastoral colour | **`ms:nature_arc@bar{N}`** | — |
+| **d4** | **`applyColorStackPass`** | **45%** on **`phraseFinal`**; ensures altered/colour extensions (e.g. **`add9`**) for semitone-adjacent tension in the symbol | **`ms:color_stack@bar{N}`** | **`schneiderColorStackBars`** |
+| **d5** | **`applyNonFunctionalPlaningPass`** | **35%** on **`phraseMiddle`** where a **major-key ii–V–I** is detected; roots shift by **±2 or ±3** semitones with **quality preserved** | **`ms:planing@bar{N}`** | — |
+
+### Style surface (floating rhythm bias)
+
+**`applyMariaSchneiderStyleSurface`** (primary **`maria_schneider`**, hook-first Song Mode): **`songwriterDensityBias` +0.05**, **`songwriterSyncopationBias` −0.20**, **`songwriterSpaceBias` +0.25**, **`songwriterCadenceSoftness` +0.28** — less swing-era pocket, more air and softened cadences (generative bias only; not an imitation claim).
+
+### Melody planner row
+
+**`MELODY_PROFILES['maria_schneider']`** — **`intervalTendency`**: stepwise · **`rhythmicSubdivision`**: mixed · **`repetitionVsVariationBias`**: **0.85** · **`phraseLength`**: **7** · **`contourProfile`**: arch · **`phraseAsymmetryTendency`**: **0.75** · **`cadenceFrequency`**: low · **`devices`**: **`sparse_phrase`**, **`modal_field`**, **`breath_space`**, **`nature_arc`**, **`chamber_texture`**.
+
+### Six example applications (nature arc vs chamber texture vs long-form arc)
+
+1. **Nature arc only (paint intro/outro)** — Short chart (**16 bars**), slow tempo, primary **Maria Schneider**. Expect **`ms:nature_arc`** only at the **first ≤4** and **last ≤4** bars; middle stays driven by **d1/d4/d5** and stage‑1 colours. Use when you want **bookend wash**, not a middle-register pedalled wedge.
+2. **Chamber texture (devices, not ECM preset)** — Same primary; pair with **guitar–bass duo** and a **non-shout** arranger if you want **breath + sparse phrase** without invoking **`STYLE_ECM`** / **`ecm_chamber`** writer. **Chamber texture** here is the **melody device list + high repetition bias**; **ECM Chamber** is a **different writer slice** with its own harmony pipeline and **`ecm_chamber`** profiles.
+3. **Long-form arc (phrase grid + planing)** — **48–64 bars**, same primary. Asymmetric phrase lengths (**4/6/8/5/7/9**) stagger phrase endings; **`ms:planing`** hits **phrase middles** and removes textbook **ii–V–I** loops in favour of **parallel shifts**. Use when the chart needs **sectional unevenness** and **less functional turnaround**.
+4. **Pedal vs nature arc (orthogonal)** — **`ms:pedal`** needs **≥4 bars** of the **same harmonic root** anywhere in the form (slash-bass ostinato). **`ms:nature_arc`** is **intro/outro-only**. Mid-piece **static harmony** → pedal receipts; **opening/closing pastoral colour** → nature arc — they answer different prompts.
+5. **Colour stack phrase endings** — **`ms:color_stack`** on **`phraseFinal`** bars: use when you want **dense altered symbols at phrase borders** (lead-sheet “full ensemble hit”) while keeping **middle bars** lighter via **space/cadence softness** surface.
+6. **Lydian modal center hold** — **`ms:lyd_center`** ensures **#11** on **maj7/maj9/maj13** tonic colours for a **single modal pole**; combine with **long-form** runs so tonic returns **read as colour**, not **bebop ii–V setup**.
 
 ---
 

@@ -1,12 +1,12 @@
-# Composer OS Roadmap [2026-05-07]
+# Composer OS Roadmap [2026-05-05]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
-**V31 — status (2026-05-07):**
+**V31 — status (2026-05-05):**
 
-- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`**.
+- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`** · (5) **Maria Schneider** full Song Mode harmony slice + handbook — **`3b68085`**.
 - **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
 
 ### Writer Slice Roadmap — priority order for full slice development
@@ -42,6 +42,12 @@
 | Ship | Commit | Scope |
 |------|--------|--------|
 | Full Song Mode harmony slice + surface + authority chain | **`21b06fb`** | **`computeEllingtonPhrasePositions`** **4/8/2/6** (**60/22/13/5**); stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`de:*`** (**jungle growl**, **chromatic diminished**, **call/response** map + receipts, **parallel planing**, **shout chorus** + **`ellingtonShoutBars`**); **`ellingtonCallResponseMap`**; **`applyDukeEllingtonStyleSurface`** after **`applyMonkStyleSurface`** (density +0.15, sync +0.22, space −0.10, cadence softness +0.08); **`dukeEllingtonEffectiveHarmonyBars`** wired through **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked truth, **`composerOsAppGeneration`**; handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Duke Ellington. |
+
+**11 — Maria Schneider (`maria_schneider`) — complete (2026-05-05)**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Full Song Mode harmony slice + surface + authority chain | **`3b68085`** | **`computeSchneiderPhrasePositions`** **4/6/8/5/7/9** (**28/22/22/14/9/5**); stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`ms:*`** (**Lydian modal center**, **pedal ostinato** + **`schneiderPedalBars`**, **nature arc** intro/outro, **color stack** + **`schneiderColorStackBars`**, **non-functional planing**); **`applyMariaSchneiderStyleSurface`** after **`applyDukeEllingtonStyleSurface`** (density +0.05, sync −0.20, space +0.25, cadence softness +0.28); **`mariaSchneiderEffectiveHarmonyBars`** wired through **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked truth, **`composerOsAppGeneration`**; **`MELODY_PROFILES`** row + handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Maria Schneider. |
 
 **4 — ECM Chamber (`ecm_chamber`) — complete**
 
