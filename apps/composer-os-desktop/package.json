@@ -9,6 +9,7 @@
     "desktop:build": "npm run build:icon && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts",
+    "dist": "npm run desktop:package-no-bump",
     "refresh:desktop": "tsx install/refreshDesktopCli.ts",
     "desktop:install-icon": "tsx install/installDesktopIconCli.ts",
     "desktop:create-shortcut": "tsx install/installDesktopIconCli.ts",
@@ -32,6 +33,7 @@
     "start": "electron ."
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "electron-store": "^8.1.0"
   },
   "devDependencies": {
