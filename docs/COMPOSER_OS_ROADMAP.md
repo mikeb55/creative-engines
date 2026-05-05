@@ -6,7 +6,7 @@
 
 **V31 — status (2026-05-05):**
 
-- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`** · (5) **Maria Schneider** full Song Mode harmony slice + handbook — **`3b68085`**.
+- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`** · (5) **Maria Schneider** full Song Mode harmony slice + handbook — **`3b68085`** · (6) **Miles Davis** full Song Mode harmony slice (three period contexts) + handbook — **`263b4e9`**.
 - **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
 
 ### Writer Slice Roadmap — priority order for full slice development
@@ -49,6 +49,12 @@
 |------|--------|--------|
 | Full Song Mode harmony slice + surface + authority chain | **`3b68085`** | **`computeSchneiderPhrasePositions`** **4/6/8/5/7/9** (**28/22/22/14/9/5**); stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`ms:*`** (**Lydian modal center**, **pedal ostinato** + **`schneiderPedalBars`**, **nature arc** intro/outro, **color stack** + **`schneiderColorStackBars`**, **non-functional planing**); **`applyMariaSchneiderStyleSurface`** after **`applyDukeEllingtonStyleSurface`** (density +0.05, sync −0.20, space +0.25, cadence softness +0.28); **`mariaSchneiderEffectiveHarmonyBars`** wired through **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked truth, **`composerOsAppGeneration`**; **`MELODY_PROFILES`** row + handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Maria Schneider. |
 
+**12 — Miles Davis (`miles_davis`) — complete (2026-05-05)**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Three contexts + slice + surface + authority chain | **`263b4e9`** | **`milesDavisContext`** **`modal_1959`** / **`quintet_1965`** / **`electric_1970`** (default modal); **`computeMilesDavisPhrasePositions`** period-specific grids; stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`md:*`** (**modal center**, **time no changes**, **groove vamp**, **cool phrasing**, **harmon mute colour**); **`milesDavisEffectiveHarmonyBars`** + metadata maps (**`milesDavisModalCenterBars`**, **`milesDavisTimeNoChangesBars`**, **`milesDavisVampBars`**); **`applyMilesDavisStyleSurface`** per context; **`SONGWRITER_CHORD_POOLS`** keys **`miles_davis_modal_1959`**, **`miles_davis_quintet_1965`**, **`miles_davis_electric_1970`** via **`chordSymbolsForSection`**; **`MELODY_PROFILES`** row; handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Miles Davis. |
+
 **4 — ECM Chamber (`ecm_chamber`) — complete**
 
 | Ship | Commit | Scope |
@@ -63,16 +69,15 @@
 
 **Priority list** — compositional vocabulary targets only; **no** production, mixing, or timbre assumptions.
 
-1. **Miles Davis** — modal jazz — **Kind of Blue** harmonic space.
-2. **John Coltrane** — harmonic cycles, sheets of sound, spiritual arc.
-3. **Bartók** — folk-derived asymmetric rhythm, polymodal chromaticism.
-4. **Cole Porter** — American songbook, chromatic wit, jazz-song sophistication.
-5. **Ornette Coleman** — free melody logic; **no equivalent** in current library.
-6. **Prince** — groove-led pop-funk harmony; **uncovered lane** in catalogue.
-7. **Arvo Pärt** — tintinnabuli, sparse triadic stasis — distinct from **ECM Chamber** and **Debussy**.
-8. **Satie** — static minimal modal planes, deliberate non-development.
-9. **Björk** — modern art-pop, chamber-electronic blend — **no equivalent** in library.
-10. **Gershwin** — jazz / classical / pop bridge; **major songbook gap**.
+1. **John Coltrane** — harmonic cycles, sheets of sound, spiritual arc.
+2. **Bartók** — folk-derived asymmetric rhythm, polymodal chromaticism.
+3. **Cole Porter** — American songbook, chromatic wit, jazz-song sophistication.
+4. **Ornette Coleman** — free melody logic; **no equivalent** in current library.
+5. **Prince** — groove-led pop-funk harmony; **uncovered lane** in catalogue.
+6. **Arvo Pärt** — tintinnabuli, sparse triadic stasis — distinct from **ECM Chamber** and **Debussy**.
+7. **Satie** — static minimal modal planes, deliberate non-development.
+8. **Björk** — modern art-pop, chamber-electronic blend — **no equivalent** in library.
+9. **Gershwin** — jazz / classical / pop bridge; **major songbook gap**.
 
 **Platform:** **Mobile deployment** is a **separate platform milestone** (packaging, stores, UX), **not** a ranked feature line item next to Song Mode / engine tickets.
 

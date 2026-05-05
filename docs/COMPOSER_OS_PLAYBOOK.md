@@ -116,7 +116,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (35 research rows)
+### Per-composer profile table (36 research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -150,6 +150,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
 | `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
 | `maria_schneider` | stepwise | mixed | 7 | 0.85 | arch | sparse_phrase; modal_field; breath_space; nature_arc; chamber_texture |
+| `miles_davis` | stepwise | mixed | 4 | 0.72 | arch | modal_field; breath_space; deliberate_silence; cool_phrasing; motivic_cell |
 | `holland_dozier_holland` | stepwise | eighth_patterns | 2 | 0.7 | rising | call_response_hook; repeated_title_phrase; tambourine_anticipation; backing_vocal_echo |
 | `jeff_lynne` | stepwise | mixed | 4 | 0.6 | arch | stacked_harmony_hook; octave_doubled_melody; string_countermelody; descending_bass_hook |
 | `jeff_tweedy` | stepwise | mixed | 4 | 0.7 | flat | deadpan_repeated_note; modal_bVII; unresolved_suspension; folk_drone; understated_chorus |
@@ -158,7 +159,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 
 ### Smoke coverage
 
-**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥35 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥36 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 
@@ -232,6 +233,53 @@ Applied before the **`ms:*`** passes:
 4. **Pedal vs nature arc (orthogonal)** — **`ms:pedal`** needs **≥4 bars** of the **same harmonic root** anywhere in the form (slash-bass ostinato). **`ms:nature_arc`** is **intro/outro-only**. Mid-piece **static harmony** → pedal receipts; **opening/closing pastoral colour** → nature arc — they answer different prompts.
 5. **Colour stack phrase endings** — **`ms:color_stack`** on **`phraseFinal`** bars: use when you want **dense altered symbols at phrase borders** (lead-sheet “full ensemble hit”) while keeping **middle bars** lighter via **space/cadence softness** surface.
 6. **Lydian modal center hold** — **`ms:lyd_center`** ensures **#11** on **maj7/maj9/maj13** tonic colours for a **single modal pole**; combine with **long-form** runs so tonic returns **read as colour**, not **bebop ii–V setup**.
+
+---
+
+## Miles Davis (`miles_davis`) — Song Mode harmony slice (three period contexts)
+
+Primary songwriter **`miles_davis`** runs **`milesDavisSlice.ts`** on the golden-path duo timeline (**`precomputeMilesDavisEffectiveHarmonyBars`** → **`milesDavisEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.milesDavisContext`** selects the period (**default `modal_1959`**): **`modal_1959`** · **`quintet_1965`** · **`electric_1970`**. API contract: **`GenerateRequest.milesDavisContext`** (echoed on manifests). Receipts use prefix **`md:`**. Alias **`miles`** → **`miles_davis`** via **`normalizeSongwriterStyleKey`**.
+
+### Period contexts (harmonic bias)
+
+| Context | Role |
+|---------|------|
+| **`modal_1959`** | Stage‑1 enrichments favour **Dorian / Lydian–Mixolydian** colours; **d1** **`applyModalCenterPass`** (85% attempt) tags **`md:modal_center@bar{N}`** and fills **`milesDavisModalCenterBars`** with per-bar modal labels. Phrase lengths weighted **4 / 2 / 6 / 8** bars (**55% / 28% / 12% / 5%**). |
+| **`quintet_1965`** | More chromatic **tonic/dominant** dressing; **d2** **`applyTimeNoChangesPass`** (45%) rewrites bars toward **sus / 7sus4** ambiguity — **`md:time_no_changes@bar{N}`**, **`milesDavisTimeNoChangesBars`**. Phrase grid **4 / 2 / 6 / 8** (**45% / 35% / 15% / 5%**). |
+| **`electric_1970`** | Shell chords skew **7sus4 / m7sus / 7(#9)**; **d3** **`applyGrooveVampPass`** (75% attempt, chart ≥16 bars) locks **16–32** consecutive bars to a vamp centre — **`md:groove_vamp@bar{N}`**, **`milesDavisVampBars`**. Phrase grid favours longer spans: **4 / 8 / 16 / 2** (**40% / 35% / 20% / 5%**). |
+
+### Stage 1 — bare-symbol enrichment (no receipts)
+
+- **Tonic / electric shells:** period-specific splits for bare **major** / **minor** / **triads** (see **`enrichMilesDavisTonic`** — electric era pushes **dom7sus4**, **m7sus**, **7(#9)** families).
+- **Dominant:** **`modal_1959`** → **7(9,#11,13)** / **7(b9)** / **9**; **`quintet_1965`** → **7alt** / **tritone sub** / **13**; **`electric_1970`** → **7sus4** / **7(#9)** / **13**.
+- **Minor (all contexts):** bare minor → **m7** / **m9** / **m11** mix (**`enrichMilesDavisMinor`**).
+
+### Stage 2 — harmonic devices (receipts)
+
+| Id | Pass | Gate | Receipt | Metadata |
+|----|------|------|---------|----------|
+| **d1** | Modal centre | **`modal_1959` only** | **`md:modal_center@bar{N}`** | **`milesDavisModalCenterBars`** |
+| **d2** | Time no changes | **`quintet_1965` only** | **`md:time_no_changes@bar{N}`** | **`milesDavisTimeNoChangesBars`** |
+| **d3** | Groove vamp | **`electric_1970`**, **tb ≥ 16** | **`md:groove_vamp@bar{N}`** | **`milesDavisVampBars`** |
+| **d4** | Cool phrasing | all contexts | **`md:cool_phrase@bar{N}`** | **`milesDavisCoolMode`** when any fire |
+| **d5** | Harmon-mute colour | phrase endings + slow-pass gate (**35%**) | **`md:harmon_color@bar{N}`** | extends **maj9(#11)**, **m9/m11**, **7(9,13)** |
+
+### Style surface (period nudges)
+
+**`applyMilesDavisStyleSurface`** runs for primary **`miles_davis`** (after Monk / Zappa surfaces in the stack): **`modal_1959`** → density **−0.25**, syncopation **−0.05**, space **+0.35**, cadence softness **+0.30**; **`quintet_1965`** → **−0.12** / **+0.10** / **+0.25** / **+0.20**; **`electric_1970`** → **+0.08** / **+0.22** / **+0.10** / **+0.15**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['miles_davis']`** — stepwise · mixed rhythm · **repetitionVsVariationBias 0.72** · phrase **4** · arch contour · cadence **low** · devices **`modal_field`**, **`breath_space`**, **`deliberate_silence`**, **`cool_phrasing`**, **`motivic_cell`**.
+
+### Six example applications (pick context before locking harmony)
+
+1. **Modal plate (`modal_1959`)** — **32-bar** chart, moderate tempo, **custom_locked** or built-in progression with clear **tonic minor / Mixolydian dominant** poles. Expect **`md:modal_center`** receipts + **long 4-bar phrases** weighting; use when the lesson is **static modality**, not turnaround velocity.
+2. **Quintet ambiguity (`quintet_1965`)** — Same chart length; flip **`milesDavisContext`** to **`quintet_1965`**. Watch **`md:time_no_changes`** on bars rewritten to **sus** families — good for **harmonic float** and **fewer iii–VI–ii–V clichés** on the lead sheet.
+3. **Electric vamp (`electric_1970`)** — **≥16 bars**, slower groove preset if available; **`md:groove_vamp`** spans **16–32** bars of **one harmonic centre**. Pair with **electric-era surface** (density/sync lifts) when you need **repetition as composition**, not small-form bebop motion.
+4. **Cool vs electric contrast** — Same **seed + locked chords**, run **Generate twice**: **`modal_1959`** vs **`electric_1970`**. Compare **`md:cool_phrase`** density + **`milesDavisCoolMode`** vs **`milesDavisVampBars`** — documents how **period metadata** steers **space vs ostinato** without changing your pasted symbols.
+5. **Harmon colour on ballad sections** — Slow tempo + **phrase-final** weighting: **`md:harmon_color`** stacks **maj9(#11)**, **m9/m11**, **7(9,13)** on cadential bars **without** forcing a faster harmonic rhythm.
+6. **Chord pools per era** — **`songModeBuilder`** exposes **`miles_davis_modal_1959`**, **`miles_davis_quintet_1965`**, **`miles_davis_electric_1970`** pools when **`primarySongwriterStyle === miles_davis`** (deterministic pick). Use when teaching **one writer id** but **three harmonic dialects**.
 
 ---
 
