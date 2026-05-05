@@ -536,6 +536,47 @@ The slice **only rewrites chord symbols** on the duo golden path (Bill Evans–f
 5. **Seed A/B** — Asymmetric phrase boundaries change which passes fire; **lock seed** when demoing a specific **`be:dim_delayed_res`** or **`be:minor_detour`** outcome.
 6. **Duo guitar–bass + arranger Gil Evans** — Use Evans **slice** for **symbols** on the lead-sheet path while ensemble pairing handles **orchestration** receipts separately.
 
+### Duke Ellington (Song Mode — orchestral / jungle timbre lead-sheet slice)
+
+**Still current:** **`dukeEllingtonSlice.ts`**, **`precomputeDukeEllingtonEffectiveHarmonyBars`**, **`dukeEllingtonEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML / export / disk truth, receipts **`de:*`** on **`dukeEllingtonDeviceReceipts`**, re-export **`goldenPath/dukeEllingtonSlice.ts`**.
+
+The slice **only rewrites chord symbols** on the duo golden path (extension-rich **tonic / dominant / minor** pass, then five **d1–d5** devices). **Metadata** also carries **`ellingtonCallResponseMap`** (per-bar **call** / **response** roles) and **`ellingtonShoutBars`** (1-based bar indices in the shout window).
+
+#### Variable phrase grid
+
+**`computeEllingtonPhrasePositions(totalBars, seed)`** assigns **phraseStart** / **phraseMiddle** / **phraseFinal** using variable phrase lengths **4, 8, 2, or 6 bars** weighted **60% / 22% / 13% / 5%** (same rolling-bar layout pattern as Bill Evans / Jobim / Monk variable grids). Phrase roles drive **jungle growl** (phrase-start only), **chromatic diminished** (approach to phrase-final cadence), and contrast with the **shout** window (final **8–16** bars of the form, span rule in slice).
+
+#### Stage 1 — per-bar enrichment (before d1–d5)
+
+| Family | Input (lead-sheet proxy) | Weighted outputs |
+|--------|--------------------------|-------------------|
+| **Tonic major** (bare / maj / maj7 on tonic) | **maj9(#11)** **35%**, **maj13(#11)** **25%**, **maj6** **25%**, **maj9** **15%** |
+| **Dominant** (plain **dom7** family) | **dom9** **40%**, **dom13** **25%**, **dom7(b9)** **20%**, **dom7(#9,b13)** **15%** |
+| **Bare minor** | **m6(9)** **35%**, **m9** **30%**, **m7** **25%**, **m6** **10%** |
+
+#### Stage 2 — passes (receipts **`de:*`**)
+
+| Pass | Rate / scope | Role | Receipt |
+|------|----------------|------|---------|
+| **d1 Jungle growl** | **22%**, **phraseStart** only, **minor or dominant** context | Dark colours: **dominant** → **7(b9#5)** / **7(b9b5)**; **minor phrase-start** → **m6(9)** | **`de:jungle_growl@bar{N}`** |
+| **d2 Chromatic diminished** | **25%**, bar **before** a **phraseFinal** cadence target | **CT°7** spelling **one semitone above** the resolution chord root | **`de:chrom_dim@bar{N}`** |
+| **d3 Call / response** | **60%** receipt rate, **all bars** | Deterministic **odd bars = call**, **even bars = response** on **`ellingtonCallResponseMap`**; receipt only when the Bernoulli gate fires | **`de:call@bar{N}`** / **`de:response@bar{N}`** |
+| **d4 Parallel planing** | **20%**, **two consecutive tonic-centre** bars | Upper structure **±1 semitone** vs sustained tonic root → **`upperChord/tonicBass`** slash | **`de:planing@bar{N}`** |
+| **d5 Shout chorus** | **100%** of bars in the **final section** (last **8–16** bars per form rule) | Forces **maj9(#11)** or **dom13** (tonic minor colour → **m9**); fills **`ellingtonShoutBars`** | **`de:shout@bar{N}`** |
+
+#### Ellington style surface (primary songwriter)
+
+When **`normalizeSongwriterStyleKey(primary) === 'duke_ellington'`**, **`applyDukeEllingtonStyleSurface`** (`songModeStyleSurface.ts`) runs from **`runGoldenPath`** **immediately after** **`applyMonkStyleSurface`**: **`songwriterDensityBias +0.15`**, **`songwriterSyncopationBias +0.22`**, **`songwriterSpaceBias −0.10`**, **`songwriterCadenceSoftness +0.08`** (clamped **0–1**). Stacks with groove / ECM / sophisticated-pop surfaces when those profiles also apply.
+
+#### Example applications (jungle vs shout vs call/response)
+
+1. **Jungle growl only** — Short form (**8 bars**); lock **seed** until **`de:jungle_growl`** appears on a **phraseStart** bar; contrast with **adjacent** phrase-start bars that stay **ungrowled** when the **22%** gate misses — teaches **phrase-entry** colour vs middle-weight **extensions** from stage 1 alone.
+2. **Shout chorus only** — **32-bar** custom_locked or built-in long form; inspect **`ellingtonShoutBars`** + **`de:shout@bar{N}`** on the **last 8–16** bars — **harmonic density** spikes there (**maj9(#11)** / **dom13** / tonic-minor **m9**) while **earlier** bars keep normal **de:** mix — distinct from **jungle**, which fires on **phrase boundaries**, not **finale span**.
+3. **Call / response narrative** — Same seed: read **`ellingtonCallResponseMap`** + **`de:call`** / **`de:response`** receipts (**60%** of bars tagged in receipts); **odd/even** structure is **always** in the map even when a bar has **no** receipt — use for **arrangement** (answer fills, horn kicks) **without** implying a different harmony row than **`dukeEllingtonEffectiveHarmonyBars`**.
+4. **Jungle vs shout on one chart** — **Phrase-start** **`de:jungle_growl`** can appear in **bars 1–24**; **`de:shout`** clusters only in **`ellingtonShoutBars`** — compare manifest: growl = **entry colour**; shout = **terminal orchestration** lift (different **musical jobs**).
+5. **Chromatic diminished bridge** — Watch **`de:chrom_dim`** on the bar **before** **`phraseFinal`** tonic (**CT°7** approach); pair with **custom_locked** bridge bars to hear **dim → tonic** vs **Evans** **`be:dim_delayed_res`** (different phrase logic).
+6. **Parallel planing sustain** — Hold **tonic** across **two** bars, then check **`de:planing`** (**slash** upper stack vs pedal bass) — teaches **half-step deck** colour distinct from **shout** (no requirement for **maj9(#11)**) and from **call/response** (purely horizontal register motion).
+
 ### Thelonious Monk (Song Mode — angular dominant / whole-tone fragment slice)
 
 **Still current:** **`theloniousMonkSlice.ts`**, **`precomputeTheloniousMonkEffectiveHarmonyBars`**, **`theloniousMonkEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth, receipts **`tm:*`** on **`theloniousMonkDeviceReceipts`**, smoke **`theloniousMonkSliceSmoke.test.ts`**.

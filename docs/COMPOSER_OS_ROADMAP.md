@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-05]
+# Composer OS Roadmap [2026-05-07]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -6,7 +6,7 @@
 
 **V31 — status (2026-05-07):**
 
-- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`**.
+- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`**.
 - **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
 
 ### Writer Slice Roadmap — priority order for full slice development
@@ -36,6 +36,12 @@
 | Ship | Commit | Scope |
 |------|--------|--------|
 | Asymmetric phrase grid + harmony passes + surface + bass gate | **`2ed5aa0`** | **`computeMonkPhrasePositions`** **4/5/7/9/6** (**58/14/14/11/3**); **`tm:asym_phrase@bar{N}`**; **whole-tone** dominant fragments **`tm:whole_tone@bar{N}`** (V / bII / II-of-V); **chromatic enclosure** slash hints **`tm:chrom_enclosure@bar{N}`**; **deliberate silence** **`monkSilenceBars`** / **`monkPartialRestBars`** + **`tm:deliberate_silence@bar{N}`**; **`applyMonkStyleSurface`** (density −0.12, sync +0.30, space +0.35, cadence softness +0.10) after **`applyFrankZappaStyleSurface`**; **BH** bass leap budget **18 st** for angular slash harmony (parity with Wayne Shorter gate). |
+
+**10 — Duke Ellington (`duke_ellington`) — complete (2026-05-07)**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Full Song Mode harmony slice + surface + authority chain | **`21b06fb`** | **`computeEllingtonPhrasePositions`** **4/8/2/6** (**60/22/13/5**); stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`de:*`** (**jungle growl**, **chromatic diminished**, **call/response** map + receipts, **parallel planing**, **shout chorus** + **`ellingtonShoutBars`**); **`ellingtonCallResponseMap`**; **`applyDukeEllingtonStyleSurface`** after **`applyMonkStyleSurface`** (density +0.15, sync +0.22, space −0.10, cadence softness +0.08); **`dukeEllingtonEffectiveHarmonyBars`** wired through **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked truth, **`composerOsAppGeneration`**; handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Duke Ellington. |
 
 **4 — ECM Chamber (`ecm_chamber`) — complete**
 
