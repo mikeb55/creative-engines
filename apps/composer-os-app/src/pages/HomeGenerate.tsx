@@ -88,6 +88,54 @@ function chordPasteTimeSigFromUi(id: '4-4' | '3-4' | '6-8'): { num: number; den:
   return { num: 4, den: 4 };
 }
 
+/** Resolved meters across chart bars: global `timeSignature` + sparse `barMeterMap` carry. */
+function parsedChartHasMixedMeter(chart: ParsedChart): boolean {
+  const n = chart.measures?.length ?? 0;
+  if (n <= 1) return false;
+  const base = chart.timeSignature ?? { num: 4, den: 4 };
+  const bmm = chart.barMeterMap ?? {};
+  let carry = base;
+  const distinct = new Set<string>();
+  for (let i = 0; i < n; i++) {
+    const at = bmm[i];
+    if (
+      at != null &&
+      Number.isFinite(at.num) &&
+      Number.isFinite(at.den) &&
+      at.den > 0 &&
+      at.num > 0
+    ) {
+      carry = { num: Math.floor(at.num), den: Math.floor(at.den) };
+    }
+    distinct.add(`${carry.num}/${carry.den}`);
+    if (distinct.size > 1) return true;
+  }
+  return false;
+}
+
+function MixedMeterBadge() {
+  return (
+    <span
+      title="Multiple time signatures in this chart"
+      style={{
+        marginLeft: '0.35rem',
+        fontSize: '0.68rem',
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        padding: '0.1rem 0.4rem',
+        borderRadius: 4,
+        border: '1px solid var(--border)',
+        background: 'rgba(99, 102, 241, 0.12)',
+        color: 'var(--text-muted)',
+        verticalAlign: 'middle',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      mixed meter
+    </span>
+  );
+}
+
 /** Trim/pad a boolean array to length `n` (chorus lock rows). */
 function boolArrayToLength(source: boolean[], n: number): boolean[] {
   const len = Math.max(0, Math.floor(n));
@@ -247,8 +295,19 @@ function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
       <p style={{ margin: '0.2rem 0' }}>
         <strong>Key:</strong> {chart.key ?? '—'}
       </p>
-      <p style={{ margin: '0.2rem 0' }}>
-        <strong>Time signature:</strong> {tsStr}
+      <p
+        style={{
+          margin: '0.2rem 0',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.25rem',
+        }}
+      >
+        <span>
+          <strong>Time signature:</strong> {tsStr}
+        </span>
+        {parsedChartHasMixedMeter(chart) ? <MixedMeterBadge /> : null}
       </p>
       {(() => {
         const bmm = chart.barMeterMap;
@@ -5022,12 +5081,26 @@ export function HomeGenerate({
                 <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
               </p>
               <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
-              <p style={{ margin: '0.25rem 0' }}>
-                Time signature:{' '}
-                {(() => {
-                  const ts = chordPastePreviewChart?.timeSignature ?? chordPasteTimeSigFromUi(chordPasteTimeSigId);
-                  return `${ts.num}/${ts.den}`;
-                })()}
+              <p
+                style={{
+                  margin: '0.25rem 0',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+              >
+                <span>
+                  Time signature:{' '}
+                  {(() => {
+                    const ts =
+                      chordPastePreviewChart?.timeSignature ?? chordPasteTimeSigFromUi(chordPasteTimeSigId);
+                    return `${ts.num}/${ts.den}`;
+                  })()}
+                </span>
+                {chordPastePreviewChart && parsedChartHasMixedMeter(chordPastePreviewChart) ? (
+                  <MixedMeterBadge />
+                ) : null}
               </p>
               <p style={{ margin: '0.25rem 0' }}>Tempo: {chordPasteTempo} BPM</p>
               {(() => {
@@ -5371,8 +5444,19 @@ export function HomeGenerate({
               </p>
               <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
               {iRealParsedChart?.timeSignature ? (
-                <p style={{ margin: '0.25rem 0' }}>
-                  Time signature: {iRealParsedChart.timeSignature.num}/{iRealParsedChart.timeSignature.den}
+                <p
+                  style={{
+                    margin: '0.25rem 0',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                >
+                  <span>
+                    Time signature: {iRealParsedChart.timeSignature.num}/{iRealParsedChart.timeSignature.den}
+                  </span>
+                  {parsedChartHasMixedMeter(iRealParsedChart) ? <MixedMeterBadge /> : null}
                 </p>
               ) : null}
               {iRealParsedChart != null &&
