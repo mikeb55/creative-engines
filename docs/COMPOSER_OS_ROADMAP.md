@@ -1,6 +1,12 @@
 # Composer OS Roadmap [2026-05-05]
 
-**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap. **V30 next priorities (sequencing):** (1) **Odd meter UI parity** → (2) **MusicXML import Phase 1** → (3) **Duo expansion** — preset pairing + ECM diagnostics. **Duo expansion scope:** preset wiring + motif pilots — **not** a slice rebuild. **Earlier sequencing:** **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03). **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04). Detail: **§ Next best development** below.
+**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+
+**V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
+
+**V31 next priorities (sequencing):** (1) **MusicXML Phase 2** → (2) **Duo intent wiring** → (3) **ChorusArcStrip Phase 2** → (4) **ChorusArcStrip Phase 3**.
+
+**Earlier sequencing:** **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03). **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04). Detail: **§ Next best development** below.
 
 **Convention:** Whenever the user asks for a “roadmap,” use the title **`Composer OS Roadmap [YYYY-MM-DD]`** (snapshot date, typically today) and align content with this file or replace sections intentionally.
 
@@ -295,8 +301,9 @@
 
 ---
 
-## Current (as of 2026-05-04 snapshot)
+## Current (as of 2026-05-05 snapshot)
 
+- **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** · **MusicXML import Phase 1** · **Duo expansion** (pairing cards, duo intent selector, Duo Health readout, ECM safe sweep badge + Advanced checkbox) — detail under **§ Next best development — V30 complete · V31 sequencing**.
 - **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-04):** **163** passed / **0** failed (**42** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Tonality Vault — iReal / paste / PDF multi-chorus variation (2026-05-05) — SHIPPED:** **`VaultGenerationOptions.chorusCount`** (default **1**, max **64**) runs **`generateVaultFromParsedChart`** once per chorus and concatenates output with continuous **`barIndex`** / global **`startBeat`**; return **`bars`** = chart length × **`chorusCount`**. **Melody** mode: per-chorus **`tensionCycleRotation`** steps the **Build F** **`transformMotifThroughLayers`** pick through **primary → tension → chaos → recover → resolve** (length **5**), unless **`songwriterStyleId === 'sonic_youth'`** (no per-chorus tension advance). **Solo** mode: no motif pass; when **`riffStyle`** is omitted or **`triad-pair-pendulum`**, **`TRIAD_PAIR_CHORUS_ROTATION`** varies effective vault **`generateVaultRiff`** **style** per chorus (also suppressed for **SY**). See **`engines/composer-os-v2/core/irealpro/irealVaultPipeline.ts`**, playbook **Multi-Chorus Variation**.
 - **Generate — Chord Inspector — Reharm UI (2026-05-04) — SHIPPED:** **`HomeGenerate.tsx`** collapsible **Chord Inspector** — **Reharmonise** runs **`generateReharmCandidates`**; **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) remaps to a target emotional drift and **reorders** substitutes; **top 8** list with substitute symbol, dominant drift label, **Use this chord** (fills inspector input); reharm panel **clears on new Inspect Chord**. See **`reharmCandidateEngine.ts`**, **`CHANGELOG.md`**, **`CLAUDE.md`**.
@@ -575,7 +582,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | **G** | **Phrase Engine / Riff redesign** | Shared phrase abstraction + adapters (medium-term). | **§ Phrase Engine / Riff Generator redesign** |
 | **—** | **Near alternates** | **`TEST_DEBT`**, Wyble depth, ECM arrangement, Slonimsky engine-only backlog **#10**. | **§ Next best development** *Near alternates* · **§ Next possible devs (pick list)** |
 
-**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30 default sequencing** is defined in **§ Next best development** (2026-05-05) and **does not** map 1:1 to those tiers.
+**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30** shipped per **§ Next best development** (2026-05-05); **V31** default order is listed there. Neither maps 1:1 to those tiers.
 
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
@@ -755,17 +762,24 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
-### Next best development — **V30 sequencing** (refreshed 2026-05-05)
+### Next best development — **V30 complete · V31 sequencing** (refreshed 2026-05-05)
 
-**Default order** for the next development stretch (parallel work still allowed where dependencies permit):
+#### V30 — **COMPLETE** (2026-05-05)
 
-1. **Odd meter UI parity** — surface odd-meter / **`barMeterMap`** style controls in Generate so engine odd-meter paths match discoverable UI (parity with Zappa-class meter intelligence elsewhere in the stack).
-2. **MusicXML import Phase 1** — continue staged **lead-sheet / Song Mode** import work (see **§ MusicXML Harmony Import for Lead Sheets** and **`LeadSheet`** paths); Phase 1 here means the next approved importer slice + gates, not ensemble-only polish in isolation.
-3. **Duo expansion — preset pairing + ECM diagnostics** — deepen duo **songwriter × arranger** pairing wiring and **ECM chamber** diagnostics surfaces so duo runs are easier to read and A/B. **Scope note:** duo expansion here means **preset wiring + motif pilots** — **not** a full duo golden-path slice rebuild.
+1. **Odd meter UI parity** — **mixed meter** badge when resolved meters (global time signature + sparse **`barMeterMap`**) show **≥2** distinct signatures — **Chart preview**, **Paste chord progression** block, **iReal Pro Import** result block (`HomeGenerate.tsx` + `parsedChartHasMixedMeter`).
+2. **MusicXML import Phase 1** — core **`parseMusicXml`** / **`musicXmlImport.ts`** → **`ParsedChart`** (title, composer, key, meter, harmonies); DOM-backed, deterministic; pairs with Song Mode / eval workflows as landed.
+3. **Duo expansion** — **pairing cards** + **swap** for **`pat_metheny`** / **`bacharach`** / **`ecm_chamber`**; **Duo intent** radios (**Conversational** / **Supportive**); **Duo Health** pill on Song Mode success (vault echo / spacing heuristics); **ECM Chamber** **Safe sweep profile** badge + amber long-form / mixed-meter escalation + **Advanced → Try full sweep anyway** (override **UI-only**).
 
 *Near alternates (unchanged bias):* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass; additional **Tier A** songwriter slices when capacity returns (**§ Overall roadmap priorities**).
 
-**Scope note — songwriting engine, profiles, ensembles, arrangers:** V30 sequencing above prioritises **meter UX**, **import**, and **duo pairing/diagnostics**; songwriter slice expansion and **Tier B** UI discovery remain active in **Overall roadmap priorities** and **pick list** below.
+#### V31 — **next default order**
+
+1. **MusicXML Phase 2** — extend import beyond Phase 1 (deeper part/voice handling, additional MusicXML constructs, ensemble chart-in or Song Mode consumption — scope per approved slice).
+2. **Duo intent wiring** — wire **Duo intent** UI through **`GenerateRequest`** / **`compositionContext`** / manifests so **Conversational** vs **Supportive** affects behaviour (replace stub).
+3. **ChorusArcStrip Phase 2** — next interaction / data-binding pass on **`ChorusArcStrip`** (vault chorus tension UI).
+4. **ChorusArcStrip Phase 3** — polish, optional export/host parity, or advanced multi-chorus tooling as scoped.
+
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** V31 sequencing prioritises **import depth**, **duo intent truth**, and **chorus arc UI**; songwriter slice expansion and **Tier B** UI discovery remain active in **Overall roadmap priorities** and **pick list** below.
 
 | Thread | Where it lives in this doc |
 |--------|----------------------------|
