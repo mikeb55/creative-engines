@@ -341,6 +341,18 @@ export function apiGenerate(
         body.milesDavisContext === 'electric_1970'
           ? body.milesDavisContext
           : undefined,
+      bartokContext:
+        body.bartokContext === 'mikrokosmos' ||
+        body.bartokContext === 'string_quartet' ||
+        body.bartokContext === 'music_for_strings'
+          ? body.bartokContext
+          : undefined,
+      gershwinContext:
+        body.gershwinContext === 'song_aaba' ||
+        body.gershwinContext === 'rhapsody' ||
+        body.gershwinContext === 'rhythm_changes'
+          ? body.gershwinContext
+          : undefined,
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

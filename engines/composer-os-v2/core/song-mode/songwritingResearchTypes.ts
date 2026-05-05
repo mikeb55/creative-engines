@@ -71,6 +71,7 @@ export type SongwriterRuleId =
   | 'dave_brubeck'
   | 'miles_davis'
   | 'bartok'
+  | 'gershwin'
   | 'frank_zappa';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';

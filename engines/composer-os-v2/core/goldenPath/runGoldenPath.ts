@@ -8,6 +8,7 @@ import type {
   CompositionContext,
   FrankZappaContextMode,
   GenerationMetadata,
+  GershwinContextMode,
   HarmonyPipelineStage,
   ImportHarmonyMode,
   MilesDavisContextMode,
@@ -117,6 +118,7 @@ import {
   applyDonaldFagenSongwriterSurface,
   applyMilesDavisStyleSurface,
   applyBartokStyleSurface,
+  applyGershwinStyleSurface,
   applyColePorterStyleSurface,
   applyDebussyStyleSurface,
   applyEcmChamberStyleSurface,
@@ -1031,6 +1033,8 @@ export interface RunGoldenPathOptions {
   milesDavisContext?: MilesDavisContextMode;
   /** Song Mode / Bartók: Mikrókosmos vs quartet vs orchestral strings (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted. */
   bartokContext?: BartokContextMode;
+  /** Song Mode / Gershwin: Songbook AABA vs rhapsody arc vs rhythm grid (`gershwinSlice.ts`). Default **`song_aaba`** when omitted. */
+  gershwinContext?: GershwinContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1616,6 +1620,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'bartok'
         ? { bartokContext: options.bartokContext ?? 'mikrokosmos' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'gershwin'
+        ? { gershwinContext: options.gershwinContext ?? 'song_aaba' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1715,6 +1722,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyBartokStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyGershwinStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyColePorterStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2099,6 +2109,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
+  const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
   const cpPorterEx = mdEx?.colePorterEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
@@ -2159,6 +2170,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                   Array.isArray(bkEx) &&
                                                   bkEx.length === tbEx
                                                 ? bkEx
+                                              : mdEx?.songwriterStyleId === 'gershwin' &&
+                                                  Array.isArray(ggEx) &&
+                                                  ggEx.length === tbEx
+                                                ? ggEx
                                               : mdEx?.songwriterStyleId === 'cole_porter' &&
                                                   Array.isArray(cpPorterEx) &&
                                                   cpPorterEx.length === tbEx

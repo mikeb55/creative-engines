@@ -736,6 +736,13 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('bk.interval_cell', 'Interval-cell transposition (`bk:interval_cell_transform`)', 'songwriter', 'harmony', 8, 'verse'),
     R('bk.arch_mirror', 'Arch-form mirrored swap (`bk:arch_form_mirror`)', 'songwriter', 'form', 7, 'bridge'),
   ],
+  gershwin: [
+    R('gg.aaba_form', 'AABA / rhapsody section anchors (`gg:d1_aaba_form`)', 'songwriter', 'form', 8, 'form'),
+    R('gg.blue_note_color', 'Blue-note harmonic tint on cadential colours (`gg:d2_blue_note_color`)', 'songwriter', 'harmony', 8, 'global'),
+    R('gg.syncopated_anticipation', 'Secondary dominant anticipation (`gg:d3_syncopated_anticipation`)', 'songwriter', 'harmony', 8, 'verse'),
+    R('gg.chromatic_passing', 'Diminished passing connectors (`gg:d4_chromatic_passing`)', 'songwriter', 'harmony', 8, 'global'),
+    R('gg.minor_third_modulation', 'Brief minor-third axis shift (`gg:d5_minor_third_modulation`)', 'songwriter', 'harmony', 7, 'bridge'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

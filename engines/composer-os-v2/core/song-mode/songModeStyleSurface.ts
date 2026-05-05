@@ -7,6 +7,7 @@ import type {
   BartokContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
+  GershwinContextMode,
   MilesDavisContextMode,
 } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
@@ -235,6 +236,27 @@ export function applyBartokStyleSurface(metadata: GenerationMetadata, primarySon
 
   appendStyleSurfaceNotes(metadata, [
     `Bartók surface (${ctx}): space +0.28, sync +0.18, cadence softness +0.22; density delta ${dDens >= 0 ? '+' : ''}${dDens} — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`gershwin`** — theatre-song sync + Songbook density (`gershwinSlice.ts` harmony receipts separate).
+ */
+export function applyGershwinStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'gershwin') return;
+
+  const ctx: GershwinContextMode = metadata.gershwinContext ?? 'song_aaba';
+  metadata.gershwinContext = ctx;
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.26);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.12);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.14);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.18);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Gershwin surface (${ctx}): sync +0.26, density +0.12, space +0.14, cadence softness +0.18 — generative metadata only.`,
   ]);
 }
 

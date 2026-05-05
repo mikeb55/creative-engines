@@ -48,6 +48,9 @@ export type MilesDavisContextMode = 'modal_1959' | 'quintet_1965' | 'electric_19
 /** Béla Bartók Song Mode slice — Mikrókosmos vs quartet vs orchestral strings posture (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted. */
 export type BartokContextMode = 'mikrokosmos' | 'string_quartet' | 'music_for_strings';
 
+/** George Gershwin Song Mode slice — Songbook AABA vs concert rhapsody vs rhythm-changes posture (`gershwinSlice.ts`). Default **`song_aaba`** when omitted. */
+export type GershwinContextMode = 'song_aaba' | 'rhapsody' | 'rhythm_changes';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -853,6 +856,30 @@ export interface GenerationMetadata {
    * Bartók Song Mode slice mode (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted.
    */
   bartokContext?: BartokContextMode;
+  /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
+  gershwinDiagnostics?: {
+    songwriterId: 'gershwin';
+    barsConsidered: number;
+    functionalTouches: number;
+    jazzExtensionTouches: number;
+    chromaticTouches: number;
+    modulationTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopEnrich: number;
+    };
+    deviceReceipts?: string[];
+  };
+  gershwinSliceReceipt?: string;
+  gershwinEffectiveHarmonyBars?: string[];
+  gershwinDeviceReceipts?: string[];
+  gershwinAntiElaborationGuards?: {
+    noopEnrich: number;
+  };
+  /**
+   * Gershwin Song Mode slice mode (`gershwinSlice.ts`). Default **`song_aaba`** when omitted.
+   */
+  gershwinContext?: GershwinContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

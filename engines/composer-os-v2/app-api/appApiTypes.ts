@@ -7,6 +7,7 @@ import type {
   BartokContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
+  GershwinContextMode,
   ImportHarmonyMode,
   MilesDavisContextMode,
 } from '../core/compositionContext';
@@ -17,6 +18,7 @@ import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 export type { StyleProfile };
 export type { BartokContextMode };
 export type { FrankZappaContextMode };
+export type { GershwinContextMode };
 export type { MilesDavisContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
@@ -234,6 +236,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`mikrokosmos`** when primary songwriter is **`bartok`**.
    */
   bartokContext?: BartokContextMode;
+  /**
+   * Song Mode / Gershwin: Songbook AABA vs concert rhapsody vs rhythm-changes posture (`gershwinSlice.ts`).
+   * Omitted → engine default **`song_aaba`** when primary songwriter is **`gershwin`**.
+   */
+  gershwinContext?: GershwinContextMode;
 }
 
 export interface ValidationSummary {

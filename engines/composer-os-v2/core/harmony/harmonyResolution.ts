@@ -263,6 +263,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
+   */
+  const ggEff = meta?.gershwinEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'gershwin' &&
+    Array.isArray(ggEff) &&
+    ggEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return ggEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;

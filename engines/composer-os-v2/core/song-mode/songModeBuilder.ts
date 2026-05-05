@@ -1564,6 +1564,57 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Am11', 'Dm11', 'Gquartal', 'Cmaj7#11'],
     ],
   },
+  gershwin_song_aaba: {
+    verse: [
+      ['Cmaj7', 'Dm7', 'G7(9)', 'C6/9'],
+      ['Am7', 'D7b9', 'Gaug', 'G7#5#9'],
+    ],
+    chorus: [
+      ['Fmaj7', 'Fm6', 'Em7b5', 'A7b9'],
+      ['Bb6/9', 'Bdim7', 'C6', 'Cmaj7'],
+    ],
+    bridge: [
+      ['E7', 'E7b9', 'Am7', 'Am6'],
+      ['Abdim7', 'G13', 'Cmaj7', 'Gaug'],
+    ],
+    pre_chorus: [
+      ['Dm7', 'G13', 'Em7b5', 'A7#5#9'],
+    ],
+  },
+  gershwin_rhapsody: {
+    verse: [
+      ['Ebmaj7', 'Edim7', 'Fm7', 'Bb7(9)'],
+      ['Abmaj7', 'Ao7', 'Bb7b9', 'Eb6'],
+    ],
+    chorus: [
+      ['Gm7', 'C7#5#9', 'Fm7', 'Bb7b9'],
+      ['Ebmaj7', 'C7alt', 'Fm9', 'Bb13'],
+    ],
+    bridge: [
+      ['Am7b5', 'D7b9', 'Gm7', 'C7alt'],
+      ['F#dim7', 'B7', 'Em7', 'A7'],
+    ],
+    pre_chorus: [
+      ['Cm7', 'F9', 'Bbmaj7', 'Bb7#11'],
+    ],
+  },
+  gershwin_rhythm_changes: {
+    verse: [
+      ['Bbmaj7', 'G7', 'Cm7', 'F7'],
+      ['Bbmaj7', 'Bb7', 'Ebmaj7', 'Eo7'],
+    ],
+    chorus: [
+      ['Bbmaj7', 'Bo7', 'Cm7', 'F7'],
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Ab7'],
+    ],
+    bridge: [
+      ['Dm7', 'G7', 'Cm7', 'F7'],
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Edim7'],
+    ],
+    pre_chorus: [
+      ['Cm7', 'F7', 'Bbmaj7', 'G7'],
+    ],
+  },
   miles_davis_modal_1959: {
     verse: [
       ['Dm7', 'Dm7', 'Ebmaj7', 'Dm7'],
@@ -1704,6 +1755,11 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'bartok_mikrokosmos' : tier === 1 ? 'bartok_string_quartet' : 'bartok_music_for_strings';
   }
+  if (songwriterId === 'gershwin') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'gershwin_song_aaba' : tier === 1 ? 'gershwin_rhapsody' : 'gershwin_rhythm_changes';
+  }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {
     const sectionPool = sectionChordPoolRows(kind, resolvedPoolId)!;
@@ -1719,7 +1775,12 @@ function chordSymbolsForSection(
       profile.harmonicRhythm,
       seed
     );
-    if (songwriterId === 'frank_zappa' || songwriterId === 'joni_mitchell' || songwriterId === 'bartok') {
+    if (
+      songwriterId === 'frank_zappa' ||
+      songwriterId === 'joni_mitchell' ||
+      songwriterId === 'bartok' ||
+      songwriterId === 'gershwin'
+    ) {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }
     return { chordSymbols, chosenRowTags };

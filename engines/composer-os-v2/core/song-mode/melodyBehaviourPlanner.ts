@@ -204,6 +204,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'low',
     devices: ['folk_pentatonic_cell', 'axis_motion', 'bulgarian_cell', 'mirror_fragment', 'cluster_passing'],
   },
+  gershwin: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.38,
+    phraseLength: 8,
+    contourProfile: 'cabaret_arc',
+    phraseAsymmetryTendency: 0.58,
+    cadenceFrequency: 'high',
+    devices: ['aaba_form', 'blue_note_color', 'syncopated_anticipation', 'chromatic_passing', 'minor_third_modulation'],
+  },
   andrew_hill: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'mixed',
