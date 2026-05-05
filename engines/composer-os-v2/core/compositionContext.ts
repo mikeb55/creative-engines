@@ -815,6 +815,12 @@ export interface GenerationMetadata {
     bluntMaj7Softened: number;
     alteredDominantReduced: number;
   };
+  /** Bars (1-based) where bossa comp should anticipate the next harmony (& of 4 prior bar); Jobim slice only. */
+  jobimBossaAnticipationBars?: number[];
+  /**
+   * Song Mode: primary is Jobim — use with `STYLE_MODERN_JAZZ` so {@link applyJobimStyleSurface} runs instead of Bill Evans surface nudges.
+   */
+  jobimMode?: boolean;
   /** Herbie Hancock (Blue Note post-bop / fusion harmony) — slice diagnostics + effective harmony. */
   herbieHancockDiagnostics?: {
     songwriterId: 'herbie_hancock';

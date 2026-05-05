@@ -141,6 +141,7 @@ export function applyBacharachStyleSurface(metadata: GenerationMetadata, stylePr
 export function applyBillEvansStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;
   if (styleProfile !== 'STYLE_MODERN_JAZZ') return;
+  if (metadata.jobimMode === true) return;
 
   metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.05);
   metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.22);
@@ -148,6 +149,23 @@ export function applyBillEvansStyleSurface(metadata: GenerationMetadata, stylePr
 
   appendStyleSurfaceNotes(metadata, [
     'STYLE_MODERN_JAZZ (Bill Evans surface): density −0.05, cadence softness +0.22, space bias +0.12 — impressionist colour metadata (generative bias only).',
+  ]);
+}
+
+/**
+ * **STYLE_MODERN_JAZZ** + **`jobimMode`** — bossa-aligned metadata nudges when primary songwriter is Jobim (does not stack with {@link applyBillEvansStyleSurface}).
+ */
+export function applyJobimStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (styleProfile !== 'STYLE_MODERN_JAZZ') return;
+  if (metadata.jobimMode !== true) return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.08);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.18);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.15);
+
+  appendStyleSurfaceNotes(metadata, [
+    'STYLE_MODERN_JAZZ (Jobim surface): density −0.08, syncopation +0.18, cadence softness +0.15 — bossa rhythm metadata (generative bias only).',
   ]);
 }
 

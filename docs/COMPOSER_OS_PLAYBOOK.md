@@ -536,6 +536,39 @@ The slice **only rewrites chord symbols** on the duo golden path (Bill Evans–f
 5. **Seed A/B** — Asymmetric phrase boundaries change which passes fire; **lock seed** when demoing a specific **`be:dim_delayed_res`** or **`be:minor_detour`** outcome.
 6. **Duo guitar–bass + arranger Gil Evans** — Use Evans **slice** for **symbols** on the lead-sheet path while ensemble pairing handles **orchestration** receipts separately.
 
+### Antônio Carlos Jobim (Song Mode — Brazilian jazz / bossa harmony slice)
+
+**Still current:** **`jobimSlice.ts`**, **`precomputeJobimEffectiveHarmonyBars`**, **`jobimEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth, smoke **`jobimSliceSmoke.test.ts`**. Harmony receipts use **`aj:*`** (**Antônio Jobim**) — **not** **`jb:*`** (James Brown).
+
+The slice **rewrites chord symbols** on the duo golden path (bossa tonic colours, altered dominants, tritone subs, backdoor, passing diminished, etc.) and writes **rhythm-hint metadata** for anticipation bars only — no parallel **`ChordEvent`** extension layer beyond standard export.
+
+#### Asymmetric phrase grid
+
+**`computeJobimPhrasePositions(totalBars, seed)`** assigns **phraseStart** / **phraseMiddle** / **phraseFinal** using variable phrase lengths **4, 8, or 2 bars** weighted **65% / 20% / 15%** (mostly regular four-bar organisation with occasional eight-bar spans or two-bar turns). Same rolling-bar layout pattern as Bill Evans / ECM Chamber / Bacharach variable grids.
+
+#### Additive passes (2026 refresh)
+
+| Pass | Phrase roles | Target rate | Receipt / metadata |
+|------|----------------|------------|---------------------|
+| **Lydian dominant colour** | **phraseMiddle** only | **26%** of eligible dominant bars | **`aj:lyd_dom@bar{N}`** — dominant gains **`(#11)`** (e.g. `G7` → `G7(#11)`) when not already present |
+| **bVI minor-six alternate** | **phraseFinal** only | **18%** when **dominant → tonic** | **`aj:bvi_m6@bar{N}`** — dominant bar may become **bVI m6** (flattened-sixth minor-six colour toward tonic, e.g. **Cm6** in **Eb** major context) |
+| **Bossa anticipation bias** | **all** roles | **55%** per eligible bar | **`aj:bossa_anticipation@bar{N}`** — appends bar index to **`jobimBossaAnticipationBars`** (1-based): accompaniment should **anticipate** the next harmony at **& of 4** in the **previous** bar for downstream **C1** rhythm overlay consumption |
+
+Existing Jobim devices (tritone sub, backdoor, phrase-final 6/9, bright **II7**, passing diminished, anti-elaboration guards) continue to apply as before; new passes run in the **symbol post-pass** chain after the base per-bar enrich pass.
+
+#### STYLE_MODERN_JAZZ — Jobim surface vs Bill Evans surface
+
+When the resolved primary songwriter is **`antonio_carlos_jobim`**, **`runGoldenPath`** sets **`jobimMode: true`** on **`GenerationMetadata`**. **`applyBillEvansStyleSurface`** **returns early** (no Evans density/cadence/space nudges). **`applyJobimStyleSurface`** runs **immediately after** (wired after **`applyBillEvansStyleSurface`**): **`songwriterDensityBias`** **−0.08**, **`songwriterSyncopationBias`** **+0.18**, **`songwriterCadenceSoftness`** **+0.15** (clamped **0–1**) — bossa-weighted sync and softer cadence metadata, honest generative bias only.
+
+#### Example applications
+
+1. **Primary Jobim + Modern Jazz** — Full **`aj:*`** harmony slice **plus** Jobim **`STYLE_MODERN_JAZZ`** surface (lower density, higher syncopation bias, softer cadences) for **lead-sheet bossa** lessons.
+2. **Jobim harmony without Modern Jazz** — Pick **Jobim** as primary and a **different** Style Engine profile to study **symbol** devices (**`aj:lyd_dom`**, **`aj:bvi_m6`**) without the Jobim surface nudges.
+3. **Locked custom chart + Jobim** — Paste or lock a progression; phrase grid still drives **phraseMiddle** vs **phraseFinal** gates so **Lydian dominant** vs **bVI m6** fire on different seeds.
+4. **`jobimBossaAnticipationBars` teaching** — Read **`GenerationMetadata.jobimBossaAnticipationBars`** after Generate to show which bars expect **anticipatory** comp rhythm (pair with **Phase C1** overlays when consuming metadata).
+5. **Seed A/B** — **4/8/2** phrase lengths change boundary positions; **lock seed** to demo a stable **`aj:lyd_dom`** or **`aj:bvi_m6`** outcome for scoring examples.
+6. **Pair with Latin / sophisticated-pop era** — Use **Song Mode** era pairing copy as usual; Jobim **slice** stays harmony-first — arrangement pairing does not replace **`aj:*`** symbol logic.
+
 ### ECM Style vs ECM Chamber songwriter — how the controls differ
 
 Composer OS splits **ECM-flavoured harmony** (what chords are chosen and how they move) from **ECM-flavoured surface behaviour** (how sparse the guitar comp feels, where phrases attack, how soft cadences land, how independent the bass rhythm is). You can use either alone or both together.

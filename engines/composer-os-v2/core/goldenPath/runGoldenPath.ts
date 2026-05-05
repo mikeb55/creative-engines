@@ -100,6 +100,7 @@ import {
   applyBacharachSongModeSurfaceV1,
   applyBacharachStyleSurface,
   applyBillEvansStyleSurface,
+  applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyEcmChamberStyleSurface,
   applyGrooveSoulStyleSurface,
@@ -1630,6 +1631,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         styleFingerprint: resolution.styleFingerprint,
         resolvedRuleIds: resolution.resolvedRuleIds,
       },
+      jobimMode: resolution.primaryId === 'antonio_carlos_jobim',
     };
     const compProfile = getSongwriterCompProfile(resolution.primaryId);
     if (compProfile?.primaryCompInstrument === 'keys') {
@@ -1674,6 +1676,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyBillEvansStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyJobimStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
   }
   if (options?.songModeHookFirstIdentity) {
     applySophisticatedPopStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);

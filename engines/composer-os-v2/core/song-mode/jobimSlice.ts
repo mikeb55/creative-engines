@@ -35,11 +35,54 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function phrasePositionFromBar(bar: number): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
-  const k = (bar - 1) % 4;
-  if (k === 0) return 'phraseStart';
-  if (k === 3) return 'phraseFinal';
-  return 'phraseMiddle';
+/** Phrase lengths: 4-bar 65%, 8-bar 20%, 2-bar 15% (Jobim — mostly regular grid). */
+function jobimPhraseLength(seed: number, phraseIndex: number): number {
+  const u = seededUnit(seed, phraseIndex, 882900);
+  if (u < 0.65) return 4;
+  if (u < 0.85) return 8;
+  return 2;
+}
+
+/**
+ * Phrase role per bar — weighted phrase lengths (seeded). Same layout pattern as Bill Evans / ECM / Bacharach.
+ */
+export function computeJobimPhrasePositions(
+  totalBars: number,
+  seed: number
+): readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] {
+  const out: ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = jobimPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    for (let i = 0; i < span; i++) {
+      const globalBar = bar + i;
+      if (span <= 1) {
+        out.push('phraseFinal');
+      } else if (globalBar === bar) {
+        out.push('phraseStart');
+      } else if (globalBar === end) {
+        out.push('phraseFinal');
+      } else {
+        out.push('phraseMiddle');
+      }
+    }
+    bar = end + 1;
+    phraseIdx++;
+  }
+  while (out.length < totalBars) out.push('phraseMiddle');
+  return out.slice(0, totalBars);
+}
+
+function phraseRoleAtBar(
+  bar: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
+  const idx = bar - 1;
+  if (idx < 0 || idx >= positions.length) return 'phraseMiddle';
+  return positions[idx]!;
 }
 
 function slashTail(symbol: string): string {
@@ -192,12 +235,13 @@ function phraseFinalSoftenHardMaj7(
   tonicPc: number | undefined,
   seed: number,
   bar: number,
-  guards: JobimAntiElaborationGuards
+  guards: JobimAntiElaborationGuards,
+  role: 'phraseStart' | 'phraseMiddle' | 'phraseFinal'
 ): string {
   if (!isTonicMajorFamily(symbol, tonicPc)) return symbol;
   const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
   if (!/\bmaj7\b|Δ/.test(tl)) return symbol;
-  if (phrasePositionFromBar(bar) !== 'phraseFinal') return symbol;
+  if (role !== 'phraseFinal') return symbol;
   guards.bluntMaj7Softened++;
   const slash = slashTail(symbol);
   const root = parseChordSymbol(symbol).harmonyPart.match(ROOT_AT_START)?.[1];
@@ -245,13 +289,14 @@ function applyBackdoorPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   if (tonicPc === undefined) return;
   const bViiPc = (tonicPc + 10) % 12;
   for (let b = 2; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseStart') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseStart') continue;
     if (seededUnit(seed, b, 882201) >= 0.28) continue;
     const prev = out[b - 2]!;
     const cur = out[b - 1]!;
@@ -269,11 +314,12 @@ function applyPhraseFinalSixNineOnTonic(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseFinal') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
     let sym = out[b - 1]!;
     if (!isTonicMajorFamily(sym, tonicPc)) continue;
     const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
@@ -315,6 +361,70 @@ function applyPassingDiminishedPass(
     out[b - 2] = `${dimRoot}dim7${slash}`;
     receipts.push(`aj:pass_dim@bar${b - 1}`);
   }
+}
+
+function applyLydianDominantPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 882801) >= 0.26) continue;
+    const sym = out[b - 1]!;
+    if (!looksStrongDominant(sym)) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    if (/#11|\(#11\)/i.test(hp)) continue;
+    const slash = slashTail(sym);
+    out[b - 1] = `${hp}(#11)${slash}`;
+    receipts.push(`aj:lyd_dom@bar${b}`);
+  }
+}
+
+function applyBVIMinorSixPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  if (tonicPc === undefined) return;
+  for (let b = 1; b < tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
+    if (seededUnit(seed, b, 882802) >= 0.18) continue;
+    const v = out[b - 1]!;
+    const i = out[b]!;
+    if (!looksStrongDominant(v)) continue;
+    if (!isTonicMajorFamily(i, tonicPc) && !isTonicMinorFamily(i, tonicPc)) continue;
+    const slash = slashTail(v);
+    const bviRootPc = (tonicPc + 8) % 12;
+    out[b - 1] = `${pitchClassToSharpName(bviRootPc)}m6${slash}`;
+    receipts.push(`aj:bvi_m6@bar${b}`);
+  }
+}
+
+function applyBossaAnticipationBias(
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  genMeta: GenerationMetadata & Record<string, unknown>
+): void {
+  const bars: number[] = [];
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (seededUnit(seed, b, 882803) >= 0.55) continue;
+    bars.push(b);
+    receipts.push(`aj:bossa_anticipation@bar${b}`);
+  }
+  genMeta.jobimBossaAnticipationBars = bars;
 }
 
 function applyBrightII7HintPass(
@@ -359,6 +469,7 @@ export function precomputeJobimEffectiveHarmonyBars(context: CompositionContext)
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
   const seed = context.seed;
+  const phrasePositions = computeJobimPhrasePositions(tb, seed);
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const receipts: string[] = [];
   const guards: JobimAntiElaborationGuards = {
@@ -368,11 +479,12 @@ export function precomputeJobimEffectiveHarmonyBars(context: CompositionContext)
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
+    const role = phraseRoleAtBar(b, phrasePositions);
     let sym = getChordForBar(b, context);
     sym = enrichMajorTonicBare(sym, seed, b);
     sym = enrichMinorTonicBare(sym, seed, b);
     sym = enrichDominantJobim(sym, seed, b);
-    sym = phraseFinalSoftenHardMaj7(sym, tonicPc, seed, b, guards);
+    sym = phraseFinalSoftenHardMaj7(sym, tonicPc, seed, b, guards, role);
     sym = maybeReduceRelentlessAlt(sym, guards);
     sym = avoidQuartalAsDefault(sym, seed, b);
     raw.push(sym);
@@ -381,10 +493,13 @@ export function precomputeJobimEffectiveHarmonyBars(context: CompositionContext)
   const out = [...raw];
 
   applyCadentialSubVPass(out, tonicPc, seed, receipts, tb, context);
-  applyBackdoorPass(out, tonicPc, seed, receipts, tb, context);
-  applyPhraseFinalSixNineOnTonic(out, tonicPc, seed, receipts, tb, context);
+  applyBackdoorPass(out, tonicPc, seed, receipts, tb, context, phrasePositions);
+  applyPhraseFinalSixNineOnTonic(out, tonicPc, seed, receipts, tb, context, phrasePositions);
   applyBrightII7HintPass(out, tonicPc, seed, receipts, tb, context);
   applyPassingDiminishedPass(out, tonicPc, seed, receipts, tb, context);
+  applyLydianDominantPass(out, seed, receipts, tb, context, phrasePositions);
+  applyBVIMinorSixPass(out, tonicPc, seed, receipts, tb, context, phrasePositions);
+  applyBossaAnticipationBias(seed, receipts, tb, context, genMeta);
 
   genMeta.jobimEffectiveHarmonyBars = out;
   genMeta.jobimDeviceReceipts = receipts;
