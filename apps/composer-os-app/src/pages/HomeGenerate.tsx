@@ -68,6 +68,7 @@ import {
   type IRealVaultOutput,
   type ParsedChart,
 } from '@composer-os/core/irealpro';
+import { ChorusArcStrip } from '../components/ChorusArcStrip';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -85,6 +86,14 @@ function chordPasteTimeSigFromUi(id: '4-4' | '3-4' | '6-8'): { num: number; den:
   if (id === '3-4') return { num: 3, den: 4 };
   if (id === '6-8') return { num: 6, den: 8 };
   return { num: 4, den: 4 };
+}
+
+/** Trim/pad a boolean array to length `n` (chorus lock rows). */
+function boolArrayToLength(source: boolean[], n: number): boolean[] {
+  const len = Math.max(0, Math.floor(n));
+  const out = source.slice(0, len);
+  while (out.length < len) out.push(false);
+  return out;
 }
 
 const VAULT_EMOTIONAL_DRIFT_OPTIONS: { value: EmotionalDrift; label: string }[] = [
@@ -1145,6 +1154,7 @@ export function HomeGenerate({
   const [iRealVaultMode, setIRealVaultMode] = useState<'solo' | 'melody'>('solo');
   const [iRealVaultDrift, setIRealVaultDrift] = useState<EmotionalDrift>('neutral');
   const [iRealVaultChorusCount, setIRealVaultChorusCount] = useState(1);
+  const [iRealVaultChorusLocks, setIRealVaultChorusLocks] = useState<boolean[]>([]);
   const [iRealVaultOutput, setIRealVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [iRealVaultBusy, setIRealVaultBusy] = useState(false);
   const [chordPasteText, setChordPasteText] = useState('');
@@ -1158,6 +1168,7 @@ export function HomeGenerate({
   >('bebop-placement');
   const [chordPasteDrift, setChordPasteDrift] = useState<EmotionalDrift>('neutral');
   const [chordPasteChorusCount, setChordPasteChorusCount] = useState(1);
+  const [chordPasteChorusLocks, setChordPasteChorusLocks] = useState<boolean[]>([]);
   const [chordPasteOutput, setChordPasteOutput] = useState<IRealVaultOutput | null>(null);
   const [chordPasteBusy, setChordPasteBusy] = useState(false);
   const [chordPasteError, setChordPasteError] = useState<string | null>(null);
@@ -1299,6 +1310,14 @@ export function HomeGenerate({
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setIRealVaultChorusLocks((prev) => boolArrayToLength(prev, iRealVaultChorusCount));
+  }, [iRealVaultChorusCount]);
+
+  useEffect(() => {
+    setChordPasteChorusLocks((prev) => boolArrayToLength(prev, chordPasteChorusCount));
+  }, [chordPasteChorusCount]);
 
   useEffect(() => {
     setLeadSheetFile(null);
@@ -4918,6 +4937,21 @@ export function HomeGenerate({
               />
             </div>
           </div>
+          {chordPasteOutput && chordPastePreviewChart?.measures?.length ? (
+            <ChorusArcStrip
+              chorusCount={chordPasteChorusCount}
+              barsPerChorus={chordPastePreviewChart.measures.length}
+              output={chordPasteOutput}
+              locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
+              onToggleLock={(chorusIndex) => {
+                setChordPasteChorusLocks((prev) => {
+                  const next = boolArrayToLength(prev, chordPasteChorusCount);
+                  next[chorusIndex] = !next[chorusIndex];
+                  return next;
+                });
+              }}
+            />
+          ) : null}
           {chordPastePreviewChart &&
             (chordPastePreviewChart.measures?.some((m) => m.length > 0) ||
               !!chordPastePreviewChart.title?.trim()) && (
@@ -5289,6 +5323,21 @@ export function HomeGenerate({
               />
             </div>
           </div>
+          {iRealVaultOutput && iRealParsedChart?.measures?.length ? (
+            <ChorusArcStrip
+              chorusCount={iRealVaultChorusCount}
+              barsPerChorus={iRealParsedChart.measures.length}
+              output={iRealVaultOutput}
+              locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
+              onToggleLock={(chorusIndex) => {
+                setIRealVaultChorusLocks((prev) => {
+                  const next = boolArrayToLength(prev, iRealVaultChorusCount);
+                  next[chorusIndex] = !next[chorusIndex];
+                  return next;
+                });
+              }}
+            />
+          ) : null}
           <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
             {VAULT_GENERATION_OPTIONS_HINT}
           </p>

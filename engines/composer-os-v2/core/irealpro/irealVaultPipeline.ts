@@ -1,11 +1,26 @@
 import { transformMotifThroughLayers, type MotifNote } from '../arrangement/motifTransformer';
-import { getProfileForMode, planPhrase, type GenerationMode } from '../generation';
+import {
+  getProfileForMode,
+  planPhrase,
+  type GenerationMode,
+  type MelodicContourHint,
+} from '../generation';
 import { generateVaultRiff, type ScoreNote } from '../guitar/vaultRiffGenerator';
 import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
 import type { TensionState } from '../harmony/layerStateMachine';
 import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
 import type { ParsedChart } from './parsedChart';
+import {
+  buildHookIdentityTracker,
+  buildPhraseContoursForBars,
+  buildTensionProgression,
+  phraseContourForBar,
+  type ChorusTensionProgression,
+  type PhraseContourTag,
+  type VaultHookIdentity,
+} from './vaultChorusPhraseDiagnostics';
+import { applyVaultTensionProgressionShaping } from './vaultTensionShaping';
 
 /** Per-bar layer choice when restating the seed motif (Build F → iReal melody reuse). */
 const MELODY_MOTIF_TENSION_CYCLE: readonly TensionState[] = [
@@ -192,6 +207,12 @@ export type IRealVaultOutput = {
   chordMappings: { barIndex: number; symbol: string; vaultChordTypeId: string; rootPc: number }[];
   unmappedChords: { barIndex: number; symbol: string }[];
   mode: GenerationMode;
+  /** Per global bar: melodic step bias within the bar (`rise` / `fall` / `stable`). */
+  phraseContours?: PhraseContourTag[];
+  /** Chorus 1 bar 1 hook vs bar-1 recurrences in later choruses (multi-chorus only). */
+  hookIdentity?: VaultHookIdentity;
+  /** Per-chorus macro tension [0, 1] from contours + hook + position. */
+  tensionProgression?: ChorusTensionProgression;
 };
 
 /** Options for {@link generateVaultFromParsedChart} / iReal / paste / PDF vault pipelines. */
@@ -232,18 +253,23 @@ function generateVaultBarsSinglePass(params: {
     | 'pedal-string'
     | 'bebop-placement';
   tuningId: string;
+  /** From prior chorus bar contours — guides {@link planPhrase} per local bar (multi-chorus only). */
+  contourHintsPerBar?: readonly PhraseContourTag[];
 }): {
   generatedNotes: ScoreNote[];
   chordMappings: IRealVaultOutput['chordMappings'];
   unmappedChords: IRealVaultOutput['unmappedChords'];
 } {
-  const { chart, measures, mode, profile, effectiveRiffStyle, tuningId } = params;
+  const { chart, measures, mode, profile, effectiveRiffStyle, tuningId, contourHintsPerBar } = params;
   const generatedNotes: ScoreNote[] = [];
   const chordMappings: IRealVaultOutput['chordMappings'] = [];
   const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
 
   for (let barIndex = 0; barIndex < measures.length; barIndex++) {
-    const phrasePlan = planPhrase(1, mode);
+    const rawContour = contourHintsPerBar?.[barIndex];
+    const melodicHint: MelodicContourHint | undefined =
+      rawContour === 'rise' || rawContour === 'fall' ? rawContour : undefined;
+    const phrasePlan = planPhrase(1, mode, melodicHint);
 
     const measure = measures[barIndex];
     const first = measure?.[0];
@@ -323,6 +349,9 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
   const allChordMappings: IRealVaultOutput['chordMappings'] = [];
   const allUnmappedChords: IRealVaultOutput['unmappedChords'] = [];
 
+  /** Prior chorus’s per-bar melodic contours — seed phrase planner on repeats (chorus ≥ 1). */
+  let contourHintsForNextChorus: PhraseContourTag[] | undefined;
+
   for (let chorusIndex = 0; chorusIndex < chorusCount; chorusIndex++) {
     let effectiveRiffStyleForPass = baselineVaultRiffStyle;
     if (
@@ -340,6 +369,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
       profile,
       effectiveRiffStyle: effectiveRiffStyleForPass,
       tuningId,
+      contourHintsPerBar: contourHintsForNextChorus,
     });
 
     const tensionCycleRotation = skipChorusTensionAdvance ? 0 : chorusIndex;
@@ -354,6 +384,13 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
             tensionCycleRotation,
           })
         : generatedNotes;
+
+    if (chorusIndex + 1 < chorusCount) {
+      contourHintsForNextChorus = [];
+      for (let b = 0; b < barsPerChorus; b++) {
+        contourHintsForNextChorus.push(phraseContourForBar(chunkNotes, b));
+      }
+    }
 
     const barOffset = chorusIndex * barsPerChorus;
     const beatOffsetGlobal = chorusIndex * chorusQuarterWidth;
@@ -373,14 +410,36 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     }
   }
 
+  const totalBars = barsPerChorus * chorusCount;
+  const phraseContours = buildPhraseContoursForBars(allGeneratedNotes, totalBars);
+  const hookIdentity = buildHookIdentityTracker(allGeneratedNotes, barsPerChorus, chorusCount);
+  const tensionProgression = buildTensionProgression({
+    phraseContours,
+    hookIdentity,
+    barsPerChorus,
+    chorusCount,
+  });
+
+  const shaped = applyVaultTensionProgressionShaping({
+    notes: allGeneratedNotes,
+    chordMappings: allChordMappings,
+    tensionProgression,
+    barsPerChorus,
+    chorusCount,
+    chart,
+  });
+
   return {
     title: chart.title,
     key: chart.key,
-    bars: barsPerChorus * chorusCount,
-    generatedNotes: allGeneratedNotes,
-    chordMappings: allChordMappings,
+    bars: totalBars,
+    generatedNotes: shaped.notes,
+    chordMappings: shaped.chordMappings,
     unmappedChords: allUnmappedChords,
     mode,
+    phraseContours,
+    hookIdentity,
+    tensionProgression,
   };
 }
 

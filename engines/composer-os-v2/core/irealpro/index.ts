@@ -9,6 +9,7 @@ export {
 } from './chordSymbolMapper';
 export type { ChordInspectorResult } from './chordSymbolMapper';
 export type { GenerateFromIRealOptions, IRealVaultOutput, VaultGenerationOptions } from './irealVaultPipeline';
+export type { ChorusTensionProgression, PhraseContourTag, VaultHookIdentity } from './vaultChorusPhraseDiagnostics';
 export {
   effectiveMeterForBar,
   generateFromIReal,

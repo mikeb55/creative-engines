@@ -92,6 +92,9 @@ export const MELODY_PROFILE: GenerationModeProfile = {
 
 export type GenerationMode = 'solo' | 'melody';
 
+/** Optional vault / Build I hint — bias toward phrase contours with matching melodic direction. */
+export type MelodicContourHint = 'rise' | 'fall';
+
 const ALL_CONTOURS: PhraseContour[] = [
   'arch',
   'descending',
@@ -103,6 +106,13 @@ const ALL_CONTOURS: PhraseContour[] = [
 
 /** Higher contourPlanningStrength biases toward melodic arcs (arch / wave / question / answer). */
 const STRUCTURED_CONTOURS: PhraseContour[] = ['arch', 'wave', 'question', 'answer'];
+
+/** Light preference pools — used only when {@link MelodicContourHint} is set (multi-chorus vault). */
+const ASCENDING_INTERVAL_PHRASE_CONTOURS: PhraseContour[] = ['arch', 'flat-then-lift', 'wave', 'question'];
+const DESCENDING_INTERVAL_PHRASE_CONTOURS: PhraseContour[] = ['descending', 'answer'];
+
+/** Probability of applying contour hint vs keeping the base draw (keeps defaults dominant). */
+const MELODIC_CONTOUR_HINT_WEIGHT = 0.24;
 
 const RHYTHM_POOL: RhythmCell[] = [
   ['8', '8', 'q'],
@@ -190,8 +200,14 @@ export function getProfileForMode(mode: GenerationMode): GenerationModeProfile {
 
 /**
  * Builds a phrase blueprint from profile weights and deterministic RNG(seed bars+mode).
+ * Optional `melodicContourHint` (vault Build I) lightly biases {@link PhrasePlan.contour} toward
+ * ascending- or descending-interval phrase shapes without changing rhythm / cadence logic.
  */
-export function planPhrase(bars: number, mode: GenerationMode): PhrasePlan {
+export function planPhrase(
+  bars: number,
+  mode: GenerationMode,
+  melodicContourHint?: MelodicContourHint,
+): PhrasePlan {
   const b = clampBars(bars);
   const profile = getProfileForMode(mode);
   const rand = mulberry32(seedFromBarsMode(b, mode));
@@ -202,6 +218,18 @@ export function planPhrase(bars: number, mode: GenerationMode): PhrasePlan {
     contour = STRUCTURED_CONTOURS[Math.floor(rand() * STRUCTURED_CONTOURS.length)];
   } else {
     contour = ALL_CONTOURS[Math.floor(rand() * ALL_CONTOURS.length)];
+  }
+
+  if (melodicContourHint === 'rise' && rand() < MELODIC_CONTOUR_HINT_WEIGHT) {
+    contour =
+      ASCENDING_INTERVAL_PHRASE_CONTOURS[
+        Math.floor(rand() * ASCENDING_INTERVAL_PHRASE_CONTOURS.length)
+      ]!;
+  } else if (melodicContourHint === 'fall' && rand() < MELODIC_CONTOUR_HINT_WEIGHT) {
+    contour =
+      DESCENDING_INTERVAL_PHRASE_CONTOURS[
+        Math.floor(rand() * DESCENDING_INTERVAL_PHRASE_CONTOURS.length)
+      ]!;
   }
 
   const apexBar = Math.min(b - 1, Math.floor(rand() * b));

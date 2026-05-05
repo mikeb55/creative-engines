@@ -4,6 +4,7 @@ export {
   type PhrasePlan,
   type GenerationModeProfile,
   type GenerationMode,
+  type MelodicContourHint,
   SOLO_PROFILE,
   MELODY_PROFILE,
   getProfileForMode,
