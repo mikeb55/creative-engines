@@ -99,6 +99,7 @@ import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
   applyBacharachStyleSurface,
+  applyBillEvansStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyEcmChamberStyleSurface,
   applyGrooveSoulStyleSurface,
@@ -1670,6 +1671,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyBacharachStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyBillEvansStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
   }
   if (options?.songModeHookFirstIdentity) {
     applySophisticatedPopStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);

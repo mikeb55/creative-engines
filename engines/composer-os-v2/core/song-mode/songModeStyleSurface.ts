@@ -136,6 +136,22 @@ export function applyBacharachStyleSurface(metadata: GenerationMetadata, stylePr
 }
 
 /**
+ * **STYLE_MODERN_JAZZ** — Bill Evans–aligned metadata nudges (closest style match). Runs before generic sophisticated-pop hooks when both apply.
+ */
+export function applyBillEvansStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (styleProfile !== 'STYLE_MODERN_JAZZ') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.05);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.22);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.12);
+
+  appendStyleSurfaceNotes(metadata, [
+    'STYLE_MODERN_JAZZ (Bill Evans surface): density −0.05, cadence softness +0.22, space bias +0.12 — impressionist colour metadata (generative bias only).',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

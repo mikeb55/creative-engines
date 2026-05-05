@@ -34,11 +34,93 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function phrasePositionFromBar(bar: number): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
-  const k = (bar - 1) % 4;
-  if (k === 0) return 'phraseStart';
-  if (k === 3) return 'phraseFinal';
-  return 'phraseMiddle';
+/** Phrase lengths 3 / 4 / 5 bars at 22% / 56% / 22% (Bill Evans asymmetry grid). */
+function billEvansPhraseLength(seed: number, phraseIndex: number): number {
+  const u = seededUnit(seed, phraseIndex, 883011);
+  if (u < 0.22) return 3;
+  if (u < 0.78) return 4;
+  return 5;
+}
+
+/**
+ * Variable phrase roles — same layout pattern as {@link computeEcmPhrasePositions} / Bacharach.
+ */
+export function computeBillEvansPhrasePositions(
+  totalBars: number,
+  seed: number
+): readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] {
+  const out: ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = billEvansPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    for (let i = 0; i < span; i++) {
+      const globalBar = bar + i;
+      if (span <= 1) {
+        out.push('phraseFinal');
+      } else if (globalBar === bar) {
+        out.push('phraseStart');
+      } else if (globalBar === end) {
+        out.push('phraseFinal');
+      } else {
+        out.push('phraseMiddle');
+      }
+    }
+    bar = end + 1;
+    phraseIdx++;
+  }
+  while (out.length < totalBars) out.push('phraseMiddle');
+  return out.slice(0, totalBars);
+}
+
+function phraseRoleAtBar(
+  bar: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
+  const idx = bar - 1;
+  if (idx < 0 || idx >= positions.length) return 'phraseMiddle';
+  return positions[idx]!;
+}
+
+function nextPhraseFinalBarAfter(
+  fromBar: number,
+  tb: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): number | undefined {
+  for (let b = fromBar + 1; b <= tb; b++) {
+    if (phraseRoleAtBar(b, positions) === 'phraseFinal') return b;
+  }
+  return undefined;
+}
+
+function isMinorishChord(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (/maj|Δ|sus|dim|ø|aug/.test(tl)) return false;
+  return /\bm(?!aj)|min|m7|m9|m11/.test(tl) || /^[a-g][#b]?m([^a]|$)/i.test(parseChordSymbol(symbol).harmonyPart.replace(/\s/g, ''));
+}
+
+function inferMajorKeyFromOpening(symbolAtBar1: string, tonicPc: number | undefined): boolean {
+  if (tonicPc === undefined) return true;
+  const r = harmonyRootPc(symbolAtBar1);
+  if (r !== tonicPc) return true;
+  return !isMinorishChord(symbolAtBar1);
+}
+
+function slashTail(symbol: string): string {
+  return symbol.includes('/') ? symbol.slice(symbol.indexOf('/')) : '';
+}
+
+function symbolLooksDenseForLockedHands(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  return /\balt\b|dim|ø|mmaj7/.test(tl) || /13.*b9|b9.*#11|#9/.test(tl);
+}
+
+/** Rich tertian symbol — proxy for “voicing has ≥3 chord tones” at lead-sheet level. */
+function symbolLooksRichVoicing(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  return /\bmaj9\b|\bmaj7\b|maj\(9\)|\bm9\b|\bm11\b|\b13\b|add9|6\/9/.test(tl);
 }
 
 export function isSongwriterBillEvans(
@@ -145,7 +227,7 @@ function applyRichHarmonyExtensionPass(
     let sym = out[b - 1]!;
     const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
     if (looksPlainDominantSeventh(sym) && !/b9|#11|alt|13/.test(tl)) {
-      if (seededUnit(seed, b, 884101) < 0.4) {
+      if (seededUnit(seed, b, 884101) < 0.34) {
         const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
         if (root) {
           const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
@@ -157,7 +239,7 @@ function applyRichHarmonyExtensionPass(
     sym = out[b - 1]!;
     const tl2 = parseChordSymbol(sym).harmonyPart.toLowerCase();
     if (/\bmaj7\b|maj9|\bΔ\b/.test(tl2) && !/maj9|maj7\(9\)/.test(tl2)) {
-      if (seededUnit(seed, b, 884102) < 0.32) {
+      if (seededUnit(seed, b, 884102) < 0.42) {
         const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
         if (root) {
           const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
@@ -175,15 +257,16 @@ function applyQuartalModalPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseMiddle') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
     const sym = out[b - 1]!;
     const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
     if (!/\bm7\b|min7|m\(7\)/.test(tl)) continue;
-    if (seededUnit(seed, b, 884201) >= 0.28) continue;
+    if (seededUnit(seed, b, 884201) >= 0.24) continue;
     const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
     const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
@@ -198,14 +281,15 @@ function applySusDominantPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
     const sym = out[b - 1]!;
     if (!looksPlainDominantSeventh(sym)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseMiddle') continue;
-    if (seededUnit(seed, b, 884301) >= 0.22) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 884301) >= 0.18) continue;
     const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
     const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
@@ -222,15 +306,16 @@ function applyDelayedTonicColourPass(
   receipts: string[],
   tb: number,
   context: CompositionContext,
-  guards: BillEvansAntiElaborationGuards
+  guards: BillEvansAntiElaborationGuards,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   if (tonicPc === undefined) return;
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseFinal') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
     const sym = out[b - 1]!;
     if (!looksMajorTonicColour(sym, tonicPc)) continue;
-    if (seededUnit(seed, b, 884401) >= 0.35) continue;
+    if (seededUnit(seed, b, 884401) >= 0.44) continue;
     const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
     const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
@@ -263,9 +348,152 @@ function applyGentleTwoFivePrepPass(
     if (harmonyRootPc(a) !== tonicPc) continue;
     const aHp = parseChordSymbol(a).harmonyPart.toLowerCase();
     if (/\bm7\b|min7|m9|m11/.test(aHp) && harmonyRootPc(a) === iiPc) continue;
-    if (seededUnit(seed, b, 884501) >= 0.38) continue;
+    if (seededUnit(seed, b, 884501) >= 0.31) continue;
     out[b - 3] = `${pitchClassToSharpName(iiPc)}m9`;
     receipts.push(`be:gentle_ii_V@bar${b - 2}`);
+  }
+}
+
+/** Diminished passing chord replacing dominant immediately before major tonic phrase-final bar. */
+function applyDimDelayedResolutionPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[],
+  dimCadenceBars: Set<number>
+): void {
+  if (tonicPc === undefined) return;
+  for (let b = 2; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
+    if (!looksMajorTonicColour(out[b - 1], tonicPc)) continue;
+    const domBar = b - 1;
+    if (isProtectedBar(domBar, context)) continue;
+    const domSym = out[domBar - 1]!;
+    if (!looksPlainDominantSeventh(domSym)) continue;
+    const domTl = parseChordSymbol(domSym).harmonyPart.toLowerCase();
+    if (/sus/.test(domTl)) continue;
+    if (seededUnit(seed, b, 884601) >= 0.24) continue;
+    const useSharpIi = seededUnit(seed, b, 884602) < 0.5;
+    const dimPc = useSharpIi ? (tonicPc + 3 + 12) % 12 : (tonicPc + 11 + 12) % 12;
+    out[domBar - 1] = `${pitchClassToSharpName(dimPc)}dim7`;
+    receipts.push(`be:dim_delayed_res@bar${b}`);
+    dimCadenceBars.add(b);
+  }
+}
+
+function applyIvMinorBorrowPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[],
+  majorMode: boolean
+): void {
+  if (tonicPc === undefined || !majorMode) return;
+  const ivPc = (tonicPc + 5) % 12;
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 884701) >= 0.18) continue;
+    const sym = out[b - 1]!;
+    if (harmonyRootPc(sym) !== ivPc) continue;
+    if (isMinorishChord(sym)) continue;
+    const slash = slashTail(sym);
+    out[b - 1] = `${pitchClassToSharpName(ivPc)}m9${slash}`;
+    receipts.push(`be:iv_minor_borrow@bar${b}`);
+  }
+}
+
+function applyMinorDetourPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[],
+  majorMode: boolean,
+  dimCadenceBars: Set<number>
+): void {
+  if (tonicPc === undefined || !majorMode) return;
+  const iiPc = (tonicPc + 2) % 12;
+  const vPc = (tonicPc + 7) % 12;
+  const tn = pitchClassToSharpName(tonicPc);
+  const iin = pitchClassToSharpName(iiPc);
+  const vn = pitchClassToSharpName(vPc);
+  for (let b = 1; b <= tb - 2; b++) {
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    const nf = nextPhraseFinalBarAfter(b, tb, positions);
+    if (nf === undefined || nf < b + 3) continue;
+    if (dimCadenceBars.has(nf)) continue;
+    if (isProtectedBar(b, context) || isProtectedBar(b + 1, context) || isProtectedBar(b + 2, context)) continue;
+    if (seededUnit(seed, b, 884801) >= 0.11) continue;
+    out[b - 1] = `${iin}m7b5`;
+    out[b] = `${vn}7`;
+    out[b + 1] = `${tn}m9`;
+    receipts.push(`be:minor_detour@bar${b}`);
+    b += 2;
+  }
+}
+
+
+/** Slash bass implying chromatic inner motion under sustained tertian symbols (lead-sheet proxy). */
+function applyInnerVoiceMelodyPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 884901) >= 0.34) continue;
+    const sym = out[b - 1]!;
+    if (!symbolLooksRichVoicing(sym)) continue;
+    if (sym.includes('/')) continue;
+    const rootPc = harmonyRootPc(sym);
+    if (rootPc === undefined) continue;
+    const thirdPc = (rootPc + 4) % 12;
+    const dir = seededUnit(seed, b, 884902) < 0.5 ? 1 : -1;
+    const bassPc = (thirdPc + dir + 12) % 12;
+    const stem = sym.includes('/') ? sym.slice(0, sym.indexOf('/')).trim() : sym.trim();
+    out[b - 1] = `${stem}/${pitchClassToSharpName(bassPc)}`;
+    receipts.push(`be:inner_voice@bar${b}`);
+  }
+}
+
+/** First-inversion / locked-hand bass hint via slash (phrase-start colour). */
+function applyLockedHandsApproxPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseStart') continue;
+    if (seededUnit(seed, b, 885001) >= 0.14) continue;
+    const sym = out[b - 1]!;
+    if (sym.includes('/')) continue;
+    if (symbolLooksDenseForLockedHands(sym)) continue;
+    const rootPc = harmonyRootPc(sym);
+    if (rootPc === undefined) continue;
+    const slot = Math.floor(seededUnit(seed, b, 885002) * 3) % 3;
+    const slashPc =
+      slot === 0 ? (rootPc + 4) % 12 : slot === 1 ? (rootPc + 8) % 12 : (rootPc + 9) % 12;
+    const stem = sym.trim();
+    out[b - 1] = `${stem}/${pitchClassToSharpName(slashPc)}`;
+    receipts.push(`be:locked_hands_approx@bar${b}`);
   }
 }
 
@@ -283,19 +511,36 @@ export function precomputeBillEvansEffectiveHarmonyBars(context: CompositionCont
     strongCadenceSoftened: 0,
   };
 
+  const positions = computeBillEvansPhrasePositions(tb, seed);
+
+  for (let b = 1; b <= tb; b++) {
+    if (phraseRoleAtBar(b, positions) === 'phraseStart') {
+      receipts.push(`be:asym_phrase@bar${b}`);
+    }
+  }
+
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
     let sym = sanitizeBareTriads(getChordForBar(b, context), guards);
     raw.push(sym);
   }
 
+  const majorMode = inferMajorKeyFromOpening(raw[0]!, tonicPc);
+
   const out = [...raw];
 
   applyRichHarmonyExtensionPass(out, seed, receipts, tb, context);
-  applyQuartalModalPass(out, seed, receipts, tb, context);
-  applySusDominantPass(out, seed, receipts, tb, context);
-  applyDelayedTonicColourPass(out, tonicPc, seed, receipts, tb, context, guards);
+  applyQuartalModalPass(out, seed, receipts, tb, context, positions);
+  applySusDominantPass(out, seed, receipts, tb, context, positions);
+  applyDelayedTonicColourPass(out, tonicPc, seed, receipts, tb, context, guards, positions);
   applyGentleTwoFivePrepPass(out, tonicPc, seed, receipts, tb, context);
+
+  const dimCadenceBars = new Set<number>();
+  applyDimDelayedResolutionPass(out, tonicPc, seed, receipts, tb, context, positions, dimCadenceBars);
+  applyIvMinorBorrowPass(out, tonicPc, seed, receipts, tb, context, positions, majorMode);
+  applyMinorDetourPass(out, tonicPc, seed, receipts, tb, context, positions, majorMode, dimCadenceBars);
+  applyInnerVoiceMelodyPass(out, seed, receipts, tb, context, positions);
+  applyLockedHandsApproxPass(out, seed, receipts, tb, context, positions);
 
   genMeta.billEvansEffectiveHarmonyBars = out;
   genMeta.billEvansDeviceReceipts = receipts;
