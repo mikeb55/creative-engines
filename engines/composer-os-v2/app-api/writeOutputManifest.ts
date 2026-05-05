@@ -168,6 +168,13 @@ export function writeOutputManifest(
     billEvansSliceReceipt?: GenerationMetadata['billEvansSliceReceipt'];
     billEvansEffectiveHarmonyBars?: GenerationMetadata['billEvansEffectiveHarmonyBars'];
     billEvansAntiElaborationGuards?: GenerationMetadata['billEvansAntiElaborationGuards'];
+    debussyDiagnostics?: GenerationMetadata['debussyDiagnostics'];
+    debussyDeviceReceipts?: GenerationMetadata['debussyDeviceReceipts'];
+    debussySliceReceipt?: GenerationMetadata['debussySliceReceipt'];
+    debussyEffectiveHarmonyBars?: GenerationMetadata['debussyEffectiveHarmonyBars'];
+    debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
+    debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
+    debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
     bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
     bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];
     bacharachSliceReceipt?: GenerationMetadata['bacharachSliceReceipt'];
@@ -346,6 +353,13 @@ export function writeOutputManifest(
     billEvansSliceReceipt: meta.billEvansSliceReceipt,
     billEvansEffectiveHarmonyBars: meta.billEvansEffectiveHarmonyBars,
     billEvansAntiElaborationGuards: meta.billEvansAntiElaborationGuards,
+    debussyDiagnostics: meta.debussyDiagnostics,
+    debussyDeviceReceipts: meta.debussyDeviceReceipts,
+    debussySliceReceipt: meta.debussySliceReceipt,
+    debussyEffectiveHarmonyBars: meta.debussyEffectiveHarmonyBars,
+    debussyAntiElaborationGuards: meta.debussyAntiElaborationGuards,
+    debussyArabesqueBars: meta.debussyArabesqueBars,
+    debussyArabesqueMotifByBar: meta.debussyArabesqueMotifByBar,
     bacharachDiagnostics: meta.bacharachDiagnostics,
     bacharachDeviceReceipts: meta.bacharachDeviceReceipts,
     bacharachSliceReceipt: meta.bacharachSliceReceipt,

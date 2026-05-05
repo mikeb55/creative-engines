@@ -445,6 +445,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     wideLeapPeakPerPhrase: false,
     devices: ['modal_field', 'breath_space', 'deliberate_silence', 'cool_phrasing', 'motivic_cell'],
   },
+  cole_porter: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.75,
+    phraseLength: 4,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.28,
+    cadenceFrequency: 'high',
+    devices: ['chromatic_descent', 'hook_identity', 'bvi_color', 'diatonic_density', 'beguine_feel'],
+  },
   ecm_chamber: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'whole_bar',

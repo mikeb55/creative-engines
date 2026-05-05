@@ -205,6 +205,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Debussy: `precomputeDebussyEffectiveHarmonyBars` applies parallel planing / whole-tone colour / pentatonic contrast — receipts **`db:*`**.
+   */
+  const dbEff = meta?.debussyEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'debussy' &&
+    Array.isArray(dbEff) &&
+    dbEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return dbEff[barIndex - 1]!;
+  }
+
+  /**
    * Duke Ellington: `precomputeDukeEllingtonEffectiveHarmonyBars` applies orchestral extension / jungle / shout devices.
    * After precompute, `dukeEllingtonEffectiveHarmonyBars` is full-form and authoritative.
    */
@@ -232,6 +246,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     barIndex <= tb
   ) {
     return mdEff[barIndex - 1]!;
+  }
+
+  /**
+   * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
+   */
+  const colePorterEff = meta?.colePorterEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'cole_porter' &&
+    Array.isArray(colePorterEff) &&
+    colePorterEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return colePorterEff[barIndex - 1]!;
   }
 
   /**

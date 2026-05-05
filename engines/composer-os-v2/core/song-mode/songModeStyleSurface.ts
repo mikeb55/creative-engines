@@ -238,6 +238,42 @@ export function applyMilesDavisStyleSurface(metadata: GenerationMetadata, primar
 }
 
 /**
+ * Primary **`cole_porter`** — theatre-jazz standard harmony: slightly denser syncopation, cleaner cadential resolution metadata.
+ */
+export function applyColePorterStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'cole_porter') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.05);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.08);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.05);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) - 0.1);
+
+  appendStyleSurfaceNotes(metadata, [
+    'Cole Porter surface: density +0.05, syncopation +0.08, space −0.05, cadence softness −0.10 — clean cadential theatre-jazz metadata (generative bias only).',
+  ]);
+}
+
+/**
+ * Primary **`debussy`** — impressionist wash: slightly denser syncopation, generous space + cadence softness (`debussySlice.ts` harmony receipts separate).
+ */
+export function applyDebussyStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'debussy') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.14);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.09);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.31);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.34);
+
+  appendStyleSurfaceNotes(metadata, [
+    'debussy surface: density +0.14, syncopation +0.09, space +0.31, cadence softness +0.34 — generative bias only (harmony slice emits db:* device receipts).',
+  ]);
+}
+
+/**
  * Primary **`thelonious_monk`** — angular pocket: lower mean density, raised syncopation + space, softer cadence metadata.
  */
 export function applyMonkStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {

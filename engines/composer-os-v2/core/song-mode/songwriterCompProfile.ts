@@ -96,6 +96,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   pat_metheny: 'keys',
   andrew_hill: 'keys',
   charlie_parker: 'keys',
+  cole_porter: 'keys',
   dave_brubeck: 'keys',
   miles_davis: 'keys',
   frank_zappa: 'keys',

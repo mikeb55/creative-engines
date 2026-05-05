@@ -1473,6 +1473,46 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G9sus', 'Cmaj9', 'Am9'],
     ],
   },
+  debussy: {
+    verse: [
+      ['Cmaj9', 'F#aug', 'G9', 'C6/9'],
+      ['Dm7', 'G13', 'Cmaj7#5', 'A7sus4'],
+      ['Bbmaj7', 'E7(b5#5)', 'Am9', 'D9(no11)'],
+    ],
+    chorus: [
+      ['Ebmaj7', 'Gbaug', 'Fm7', 'Bb13'],
+      ['Gmaj9', 'E7sus4', 'Am6', 'D7(#5)'],
+    ],
+    bridge: [
+      ['Fmaj7#11', 'B7alt', 'Em9', 'A13'],
+      ['Gm11', 'C9(no11)', 'F6/9', 'Dbmaj7(#5)'],
+    ],
+    pre_chorus: [
+      ['Em7', 'A9', 'Dm(add2)', 'G7sus4'],
+    ],
+  },
+  cole_porter: {
+    verse: [
+      ['Cmaj9', 'C#dim7', 'Dm7', 'G7'],
+      ['Fmaj7', 'Fm7', 'Bb7', 'Ebmaj7'],
+      ['Am7', 'Adim7', 'Dm7', 'G7'],
+      ['Em7', 'Ebdim7', 'Dm7', 'G7'],
+    ],
+    chorus: [
+      ['C6', 'Cm7', 'F7', 'Fm6'],
+      ['Abmaj7', 'Gm7', 'C7', 'Fmaj7'],
+      ['Dm7', 'G7', 'Em7', 'A7'],
+    ],
+    bridge: [
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Edim7'],
+      ['Dm7b5', 'G7', 'Cmaj7', 'C7'],
+      ['Gmaj7', 'G#dim7', 'Am7', 'D7'],
+    ],
+    pre_chorus: [
+      ['Em7', 'A7', 'Dm7', 'G7'],
+      ['Bm7b5', 'E7', 'Am7', 'D7'],
+    ],
+  },
   miles_davis_modal_1959: {
     verse: [
       ['Dm7', 'Dm7', 'Ebmaj7', 'Dm7'],

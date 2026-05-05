@@ -717,6 +717,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('monk.strip_lush', 'Strip maj9/13 lush stacks — angular tertian only (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
     R('monk.semitone_motion', 'Semitone / whole-step root motion bias vs circle-of-fifths default (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
   ],
+  cole_porter: [
+    R('cp.chromatic_descent', 'Pre-cadential chromatic descending bass (`cp:chrom_descent`)', 'songwriter', 'harmony', 9, 'global'),
+    R('cp.diatonic_density', 'Secondary dominant / passing chord density (`cp:diatonic_density`)', 'songwriter', 'harmony', 8, 'verse'),
+    R('cp.bvi_color', 'bVI colour before cadence (`cp:bvi_color`)', 'songwriter', 'harmony', 7, 'chorus'),
+    R('cp.beguine_feel', 'Beguine-aligned eighth-syncopation bass pocket (`cp:beguine`)', 'songwriter', 'rhythm', 7, 'global'),
+  ],
   miles_davis: [
     R('md.modal_center', 'Modal centre spans — Dorian / Mixolydian field locks (`md:modal_center`)', 'songwriter', 'harmony', 9, 'global'),
     R('md.space_silence', 'Breath space vs fill — cool phrasing bias (`md:cool_phrase`)', 'songwriter', 'rhythm', 9, 'global'),

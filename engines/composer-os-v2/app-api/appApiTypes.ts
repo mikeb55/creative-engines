@@ -428,6 +428,14 @@ export interface OutputEntry {
   billEvansSliceReceipt?: GenerationMetadata['billEvansSliceReceipt'];
   billEvansEffectiveHarmonyBars?: GenerationMetadata['billEvansEffectiveHarmonyBars'];
   billEvansAntiElaborationGuards?: GenerationMetadata['billEvansAntiElaborationGuards'];
+  /** Debussy (impressionist harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  debussyDiagnostics?: GenerationMetadata['debussyDiagnostics'];
+  debussyDeviceReceipts?: GenerationMetadata['debussyDeviceReceipts'];
+  debussySliceReceipt?: GenerationMetadata['debussySliceReceipt'];
+  debussyEffectiveHarmonyBars?: GenerationMetadata['debussyEffectiveHarmonyBars'];
+  debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
+  debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
+  debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
   /** Duke Ellington (orchestral harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   dukeEllingtonDiagnostics?: GenerationMetadata['dukeEllingtonDiagnostics'];
   dukeEllingtonDeviceReceipts?: GenerationMetadata['dukeEllingtonDeviceReceipts'];

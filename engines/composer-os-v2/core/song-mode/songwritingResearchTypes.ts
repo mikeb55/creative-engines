@@ -67,6 +67,7 @@ export type SongwriterRuleId =
   | 'kate_bush'
   | 'thelonious_monk'
   | 'charlie_parker'
+  | 'cole_porter'
   | 'dave_brubeck'
   | 'miles_davis'
   | 'frank_zappa';

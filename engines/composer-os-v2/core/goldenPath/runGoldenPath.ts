@@ -115,6 +115,8 @@ import {
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyMilesDavisStyleSurface,
+  applyColePorterStyleSurface,
+  applyDebussyStyleSurface,
   applyEcmChamberStyleSurface,
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
@@ -1705,6 +1707,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     applyMilesDavisStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
+    applyColePorterStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyDebussyStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
     applyMariaSchneiderStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
@@ -2077,8 +2085,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahEx = mdEx?.andrewHillEffectiveHarmonyBars;
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
+  const dbEx = mdEx?.debussyEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
+  const cpPorterEx = mdEx?.colePorterEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
   const barsForLockedExportTruth =
@@ -2126,12 +2136,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                         ? cpEx
                                         : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
                                           ? beEx
+                                          : mdEx?.songwriterStyleId === 'debussy' && Array.isArray(dbEx) && dbEx.length === tbEx
+                                            ? dbEx
                                           : mdEx?.songwriterStyleId === 'duke_ellington' && Array.isArray(deEx) && deEx.length === tbEx
                                             ? deEx
                                             : mdEx?.songwriterStyleId === 'miles_davis' &&
                                                 Array.isArray(mdMilesEx) &&
                                                 mdMilesEx.length === tbEx
                                               ? mdMilesEx
+                                              : mdEx?.songwriterStyleId === 'cole_porter' &&
+                                                  Array.isArray(cpPorterEx) &&
+                                                  cpPorterEx.length === tbEx
+                                                ? cpPorterEx
                                               : mdEx?.songwriterStyleId === 'maria_schneider' && Array.isArray(msEx) && msEx.length === tbEx
                                                 ? msEx
                                               : mdEx?.songwriterStyleId === 'frank_zappa' &&
@@ -2226,6 +2242,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahLt = mdLt?.andrewHillEffectiveHarmonyBars;
   const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
+  const dbLt = mdLt?.debussyEffectiveHarmonyBars;
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
   const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
@@ -2276,6 +2293,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                             ? cpLt
                                             : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
                                               ? beLt
+                                              : mdLt?.songwriterStyleId === 'debussy' && Array.isArray(dbLt) && dbLt.length === tbLt
+                                                ? dbLt
                                               : mdLt?.songwriterStyleId === 'duke_ellington' && Array.isArray(deLt) && deLt.length === tbLt
                                                 ? deLt
                                                 : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt

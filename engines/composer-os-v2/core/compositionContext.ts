@@ -742,6 +742,36 @@ export interface GenerationMetadata {
     bareTriadRaised: number;
     strongCadenceSoftened: number;
   };
+  /** Debussy (impressionist parallel colour / whole-tone fields) — slice diagnostics + effective harmony (`debussySlice.ts`). */
+  debussyDiagnostics?: {
+    songwriterId: 'debussy';
+    barsConsidered: number;
+    wholeToneTouches: number;
+    planingTouches: number;
+    pentatonicTouches: number;
+    appoggiaturaTouches: number;
+    arabesqueTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopEnrich: number;
+      resolutionSuppressed: number;
+    };
+    deviceReceipts?: string[];
+  };
+  debussySliceReceipt?: string;
+  debussyEffectiveHarmonyBars?: string[];
+  debussyDeviceReceipts?: string[];
+  debussyAntiElaborationGuards?: {
+    noopEnrich: number;
+    resolutionSuppressed: number;
+  };
+  /** Bars flagged as arabesque texture (1-based). */
+  debussyArabesqueBars?: number[];
+  /** Optional motif-development tag per arabesque bar (metadata / manifests). */
+  debussyArabesqueMotifByBar?: Record<
+    number,
+    'sequence_by_step' | 'rhythmic_augmentation' | 'fragment_extension' | 'register_shift' | 'ornamental'
+  >;
   /** Duke Ellington (orchestral / jungle colour) — slice diagnostics + effective harmony. */
   dukeEllingtonDiagnostics?: {
     songwriterId: 'duke_ellington';
@@ -796,6 +826,31 @@ export interface GenerationMetadata {
    * Miles Davis Song Mode slice mode (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted.
    */
   milesDavisContext?: MilesDavisContextMode;
+  /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
+  colePorterDiagnostics?: {
+    songwriterId: 'cole_porter';
+    barsConsidered: number;
+    chromaticTouches: number;
+    secondaryDominantTouches: number;
+    majColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopEnrich: number;
+    };
+    deviceReceipts?: string[];
+  };
+  colePorterSliceReceipt?: string;
+  colePorterEffectiveHarmonyBars?: string[];
+  colePorterDeviceReceipts?: string[];
+  colePorterAntiElaborationGuards?: {
+    noopEnrich: number;
+  };
+  /** Distinct chord-symbol tally after Porter passes when **`totalBars` === 32** (planning receipt). */
+  colePorterDistinctChordCount32?: number;
+  /** Beguine-feel pocket active for this generation (slice metadata). */
+  porterBeguineFeelActive?: boolean;
+  /** 1-based bars flagged for beguine bass rhythmic hint (`cp:beguine`). */
+  porterBeguineBars?: number[];
   /** Maria Schneider (modal / pastoral orchestral) — slice diagnostics + effective harmony. */
   mariaSchneiderDiagnostics?: {
     songwriterId: 'maria_schneider';
