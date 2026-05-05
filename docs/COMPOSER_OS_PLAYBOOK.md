@@ -281,7 +281,7 @@ Song Mode applies **writer slices**: each slice owns **harmonic devices (d1–d5
 
 The Generate **Style Engine** dropdown lists **`StyleProfile`** ids (`songModeStyleProfile.ts`). Options are grouped into **Advanced styles** vs **Light touch styles** (`SONG_MODE_ADVANCED_STYLE_SET` in **`HomeGenerate.tsx`**).
 
-- **Advanced:** Profiles that apply **harmony/rhythm metadata surfaces**, **builtin chord-plan policies**, or **golden-path slice wiring** (effective harmony bars, guitar bar passes, receipts) beyond velocity-only contouring. Examples: **Post-Bop (Shorter)**, **Modern Jazz**, **Sophisticated Pop**, **Groove / Soul**, and — as of the style-to-slice wiring — **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**.
+- **Advanced:** Profiles that apply **harmony/rhythm metadata surfaces**, **builtin chord-plan policies**, or **golden-path slice wiring** (effective harmony bars, guitar bar passes, receipts) beyond velocity-only contouring. Examples: **Post-Bop (Shorter)**, **Modern Jazz**, **Sophisticated Pop**, **Groove / Soul**, **`STYLE_ECM`**, **`STYLE_ECM_CHAMBER`**, and — as of the style-to-slice wiring — **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**.
 - **Light touch:** Primarily **velocity shaping** on the finished duo score (`applySongModeStyleEngineToScore`); may stack with era/style-pairing biases but does not alone run a full writer slice.
 
 #### Light touch styles — research backlog
@@ -490,6 +490,52 @@ Pat Metheny is **harmony- and metadata-centric** on the duo golden path: there i
 **ECM floating harmony arc:** Hook / identity / motif bars skip disruptive devices where gated; blues-heavy dominant colours can **strip** toward maj9 (`stripBluesDominantColour`). **Song Mode** chord pools **`SONGWRITER_CHORD_POOLS.pat_metheny`** feed add9/maj9 pastoral rows.
 
 **Alternate tunings:** **`STYLE_PAT_METHENY`** is listed in **`STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING`** (**`alternateGuitarTunings.ts`**). See **§11 Alternate tunings workflow**.
+
+### ECM Style vs ECM Chamber songwriter — how the controls differ
+
+Composer OS splits **ECM-flavoured harmony** (what chords are chosen and how they move) from **ECM-flavoured surface behaviour** (how sparse the guitar comp feels, where phrases attack, how soft cadences land, how independent the bass rhythm is). You can use either alone or both together.
+
+| Control | What it is | What it drives |
+|---------|------------|----------------|
+| **ECM Style** | **Style Engine** dropdown: **`STYLE_ECM`** or **`STYLE_ECM_CHAMBER`** | **Surface metadata** consumed by Song Mode passes: **density**, **space**, **syncopation**, **phrase-start looseness**, **bass independence**, **cadence softness**, plus **Style Engine** velocity contouring. **`STYLE_ECM_CHAMBER`** also participates in the **alternate tuning** gate like other “alt tuning” styles. Implementation: **`applyEcmChamberStyleSurface`** (`songModeStyleSurface.ts`) nudges **`GenerationMetadata`** before **C1/C7** rhythm overlays and harmony policies. |
+| **ECM Chamber** | **Primary songwriter** **`ecm_chamber`** (`SongwriterRuleId`) | **Harmonic slice** — precomputed chord symbols and devices (**Lydian** lean on primaries, **m11no3**-style colours, **m7b5** destinations, asymmetric phrase grid, wide leap peaks in melody planning). Implementation: **`ecmChamberSlice.ts`** / **`precomputeEcmChamberEffectiveHarmonyBars`**, same locked-export pattern as other writers. |
+
+**Stacking:** If you pick **ECM Chamber** as songwriter **and** **ECM** or **ECM Chamber** as Style Engine, both layers apply — you get ECM harmony vocabulary **and** ECM surface spacing/cadence behaviour (full-stack ECM).
+
+**Independence:** You can choose **ECM Chamber** with a **non-ECM** style to get the harmonic language without the ECM surface recipe, or **ECM Style** with a **different** primary songwriter to get ECM spacing and cadence behaviour without the ECM Chamber chord slice.
+
+### ECM Chamber surface — three presets (Chamber ↔ Flow)
+
+When **Style Engine** is **`STYLE_ECM`** or **`STYLE_ECM_CHAMBER`**, Generate maps the **Chamber ↔ Flow** slider (0–1) to a discrete **`ecmChamberMode`** sent on the request (`GenerateRequest.ecmChamberMode`): **`angel_song`**, **`balanced`**, or **`metheny_scofield`**. Each mode applies additive nudges (clamped 0–1) to **density**, **syncopation**, **space**, **phrase-start looseness**, **bass independence**, and **cadence softness** — see **`applyEcmChamberStyleSurface`**.
+
+| Resolved mode | Musical intent (product framing) | Reference listening (orientation, not imitation) |
+|---------------|-----------------------------------|---------------------------------------------------|
+| **Angel Song** | **Maximum space** — floating phrases, softer cadential landing preference, more off-beat phrase entries, bass leaning **independent / co-melodic** vs doubling guitar rhythm. | *Angel Song* — Kenny Wheeler |
+| **Balanced ECM Duo** | **Default blend** — lyrical and spacious, still grounded; good first stop for ECM-influenced duo writing. | General ECM chamber-jazz orientation |
+| **Metheny·Scofield** | **Clearer pulse**, stronger sense of **key centre**, more continuous motion, light **folk/blues** inflection in the surface recipe. | *Memories of Home*, *Bright Size Life* |
+
+### Chamber ↔ Flow slider — plain English
+
+The slider does **not** blend infinitely between styles. It picks **one of three** ECM surface recipes:
+
+- **Toward Chamber (left):** Values in the **lower third** select **Angel Song** — sparser, floatier, softer cadences, more deferred phrase onsets, bass more its own voice.
+- **Middle third:** **Balanced ECM Duo**.
+- **Toward Flow (right):** **Upper third** selects **Metheny·Scofield** — relatively denser motion, a steadier pocket, less extreme space and cadence softening than Angel Song.
+
+Internally: `t < 1/3` → **`angel_song`**; `1/3 ≤ t < 2/3` → **`balanced`**; `t ≥ 2/3` → **`metheny_scofield`** (`HomeGenerate.tsx`: **`ecmChamberFlow01ToMode`**).
+
+### Six example applications
+
+1. **Guitar + upright bass duo, Angel Song** — Sparse, floating, bittersweet chamber mood; orientation toward Wheeler / Frisell / Holland-style **space and countermelody**, not a transcription.
+2. **Guitar + upright bass duo, Metheny·Scofield** — Conversational **folk-jazz**, clearer time feel, stronger tonal centre; orientation toward *Memories of Home*-style clarity.
+3. **Guitar + upright bass duo, Balanced** — General **ECM-influenced** duo writing when you want neither extreme.
+4. **ECM Chamber songwriter only** (no **ECM** / **ECM Chamber** style) — **Harmonic colour** (Lydian primary, m11 colours, m7b5 targets, phrase grid, leap peaks) **without** the ECM style surface nudges. Use when you want ECM harmony language under a different Style Engine profile.
+5. **ECM Style only** (e.g. **STYLE_ECM** + **James Brown** or another writer) — **Surface spacing, phrase looseness, bass independence, cadence softness** without **ECM Chamber** chord-symbol machinery. Use when you want ECM **feel** on non-ECM harmony.
+6. **Full stack** — Primary **`ecm_chamber`** + **`STYLE_ECM_CHAMBER`** + **Angel Song** mode — **Maximum** alignment of ECM Chamber harmony slice + ECM Chamber style surface + sparsest preset; suited to **chamber** textures (e.g. flugelhorn–guitar–bass orientation in lesson framing).
+
+### GCE note — ECM Chamber melodic identity
+
+**ECM Chamber** shipped around **7.8/10** overall on the **GCE** rubric; the recurring weakness was **Melodic Identity**. Recent slice work targeted that lane (**wide leap peaks**, **asymmetric phrase grid**) so melodic character reads more intentional in sparse textures — re-score exports after major engine updates if you rely on GCE numbers for teaching.
 
 ---
 
