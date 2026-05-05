@@ -116,7 +116,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (37 research rows)
+### Per-composer profile table (38 research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -149,6 +149,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `bob_dylan` | stepwise | mixed | 8 | 0.8 | recitation | strophic_variation; repeated_note_recitation; modal_pentatonic; line_ending_fall; folk_drone |
 | `carole_king` | stepwise | mixed | 4 | 0.5 | rising | gospel_suspension; repeated_note_hook; stepwise_verse_build; rising_chorus_sequence |
 | `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
+| `ornette_coleman` | angular | whole_bar | 5 | 0.42 | irregular | melody_over_harmony; asymmetric_contour; minor_third_departure; tritone_sidestep; low_syncopation; breath_space |
 | `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
 | `maria_schneider` | stepwise | mixed | 7 | 0.85 | arch | sparse_phrase; modal_field; breath_space; nature_arc; chamber_texture |
 | `miles_davis` | stepwise | mixed | 4 | 0.72 | arch | modal_field; breath_space; deliberate_silence; cool_phrasing; motivic_cell |
@@ -543,6 +544,51 @@ Impressionist parallel colour: **whole-tone / augmented** touches, **parallel pl
 2. **Arabesque lesson** — **`debussyArabesqueMotifByBar`** kinds (**sequence_by_step**, **register_shift**, …) for motif taxonomy demos.
 3. **Locked harmony** — **`debussy`** locked truth parity same as Bill Evans / Bacharach QA checklist.
 4. **Contrast Cole Porter** — Theatre **`cp:*`** cadential clarity vs **`db:*`** blurred cadence — same classroom chart, two writers.
+
+---
+
+## Ornette Coleman (`ornette_coleman`) — Song Mode harmony slice
+
+### Period contexts (`ornetteColemanContext`)
+
+**API / metadata** — **`GenerateRequest.ornetteColemanContext`** → **`generationMetadata.ornetteColemanContext`**: **`shape_1959`** \| **`free_1961`** \| **`science_1971`** (default **`shape_1959`** when omitted).
+
+- **`shape_1959`** — Loose changes with song-form phrase windows; harmolodic centre labels without forcing cadential closure.
+- **`free_1961`** — Longer asymmetric phrases and wide collective-density spans (phrase grid reads “collective,” not bar-clock funk).
+- **`science_1971`** — Short ostinato-feel phrase cells (2–4 bars) and tighter alternating density windows for groove-forward harmolodic spelling.
+
+### Harmolodic chord pools
+
+Built-in **`SONGWRITER_CHORD_POOLS`** in **`songModeBuilder.ts`** resolve from primary **`ornette_coleman`** via **`seed % 3`**: **`ornette_coleman_shape_1959`**, **`ornette_coleman_free_1961`**, **`ornette_coleman_science_1971`**. Rows emphasize **loose tonal axes** (root / fifth / ninth / minor-third relationships), **non-resolving** minor-seventh cycles (e.g. **Cm7 → Ebm7 → F#m7 → Am7**), tagged **`no_ii_v_i`**, optional **`centre:`** / **`looseAxes:`** / **`rogueChromatics:`** on **`chosenRowTags`**. Built-in harmony also runs **`breakFrankZappaIiViProgressions`** so rolling ii–V–I triples do not survive unchanged.
+
+### How Composer OS implements it
+
+**`ornetteColemanSlice.ts`** (re-export **`engines/composer-os-v2/core/goldenPath/ornetteColemanSlice.ts`**). **`precomputeOrnetteColemanEffectiveHarmonyBars`** → **`ornetteColemanEffectiveHarmonyBars`**, device receipts **`oc:*`**:
+
+| Device | Receipt prefix | Role |
+|--------|------------------|------|
+| d1 | **`oc:d1_harmolodic_center`** | Floating / harmolodic centre fields (`ornetteColemanHarmolodicCentreLabels` when present). |
+| d2 | **`oc:d2_asymmetric_phrase_grid`** | Phrase-start ticks on the asymmetric phrase grid. |
+| d3 | **`oc:d3_non_resolving_turnaround`** | Break functional ii–V–I chains + soften phrase-final dominants so turns do not cadence. |
+| d4 | **`oc:d4_chromatic_departure`** | Chromatic root moves (minor-third / tritone bias in the departure pool). |
+| d5 | **`oc:d5_collective_density_shift`** | Alternating dense / sparse harmonic spelling bands (span scales by context). |
+
+**Diagnostics** — **`ornetteColemanDiagnostics`**, **`ornetteColemanSliceReceipt`**, **`ornetteColemanAntiElaborationGuards`** (`iiViChainsBroken`).
+
+### Style surface
+
+**`applyOrnetteColemanStyleSurface`** — space **+0.35**, density **−0.12**, syncopation **+0.04**, cadence softness **+0.28** (melody-forward metadata; separate from **`oc:*`** harmony passes).
+
+### Melody planner row
+
+**`MELODY_PROFILES['ornette_coleman']`** — angular · **`whole_bar`** · **repetitionVsVariationBias 0.42** · phrase **5** · **`irregular`** contour · devices **`melody_over_harmony`**, **`asymmetric_contour`**, **`minor_third_departure`**, **`tritone_sidestep`**, **`low_syncopation`**, **`breath_space`**.
+
+### Four example applications
+
+1. **Context A/B** — Fix seed; switch **`ornetteColemanContext`** **`shape_1959`** ↔ **`science_1971`** and compare **`ornetteColemanDeviceReceipts`** / phrase receipts (**`oc:d2_*`** vs **`oc:d5_*`** density bands).
+2. **Locked harmony QA** — **`ornette_coleman`** participates in locked export truth (**`customLockedHarmonyRouting`**, **`composerOsAppGeneration`**) like other slice primaries.
+3. **Pool pedagogy** — Inspect manifest **`chosenRowTags`** for **`centre:`**, **`looseAxes:`**, **`rogueChromatics:`** on harmolodic rows.
+4. **Contrast Miles** — **`md:*`** modal / cool pocket vs **`oc:*`** harmolodic non-resolution — same Song Mode form, different grammar.
 
 ---
 

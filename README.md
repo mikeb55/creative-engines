@@ -109,6 +109,17 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`db:*`** — parallel planing / whole-tone colour / pentatonic contrast / appoggiatura / arabesque flags (`debussyEffectiveHarmonyBars`, optional **`debussyArabesqueMotifByBar`**). |
 | **Style surface** | **`applyDebussyStyleSurface`** — raised density, sync, space, cadence softness. |
 
+### Ornette Coleman (3 period contexts)
+
+| | |
+|--|--|
+| **Slice** | `engines/composer-os-v2/core/song-mode/ornetteColemanSlice.ts` |
+| **Primary id** | `ornette_coleman` |
+| **Contexts** | **`ornetteColemanContext`** / **`GenerateRequest.ornetteColemanContext`**: **`shape_1959`** \| **`free_1961`** \| **`science_1971`** (default **`shape_1959`**). |
+| **Devices / receipts** | **`oc:*`** — harmolodic centre (**d1**), asymmetric phrase grid (**d2**), non-resolving turnaround (**d3**), chromatic departure (**d4**), collective density shift (**d5**); see **`ornetteColemanEffectiveHarmonyBars`**. |
+| **Chord pools** | **`ornette_coleman_shape_1959`**, **`ornette_coleman_free_1961`**, **`ornette_coleman_science_1971`** in **`songModeBuilder`** when primary is Ornette (**`seed % 3`**). |
+| **Style surface** | **`applyOrnetteColemanStyleSurface`** — space **+0.35**, density **−0.12**, syncopation **+0.04**, cadence softness **+0.28**. |
+
 ### Donald Fagen
 
 | | |
