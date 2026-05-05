@@ -4,7 +4,7 @@
  */
 
 require('dotenv').config({
-  path: require('path').resolve(__dirname, '../../../.env'),
+  path: require('path').resolve(__dirname, '../../../../.env'),
 });
 
 import { app, BrowserWindow, ipcMain } from 'electron';
