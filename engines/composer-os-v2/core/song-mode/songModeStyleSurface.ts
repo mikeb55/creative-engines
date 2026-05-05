@@ -119,6 +119,23 @@ export function applyEcmChamberStyleSurface(metadata: GenerationMetadata, styleP
 }
 
 /**
+ * **STYLE_SOPHISTICATED_POP** — Bacharach-aligned surface nudges (closest style match). Intended to run immediately before
+ * {@link applySophisticatedPopStyleSurface} in `runGoldenPath` so both stack on the same profile.
+ */
+export function applyBacharachStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (styleProfile !== 'STYLE_SOPHISTICATED_POP') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.08);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.05);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.2);
+
+  appendStyleSurfaceNotes(metadata, [
+    'STYLE_SOPHISTICATED_POP (Bacharach surface): density −0.08, syncopation +0.05, cadence softness +0.20 — light Latin/bossa-aligned rhythm metadata (generative bias only).',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

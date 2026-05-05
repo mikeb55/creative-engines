@@ -34,11 +34,57 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function phrasePositionFromBar(bar: number): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
-  const k = (bar - 1) % 4;
-  if (k === 0) return 'phraseStart';
-  if (k === 3) return 'phraseFinal';
-  return 'phraseMiddle';
+/** Weighted phrase lengths: 3-bar 25%, 4-bar 20%, 5-bar 25%, 7-bar 20%, 10-bar 8%, 14-bar 2%. */
+function bacharachPhraseLength(seed: number, phraseIndex: number): number {
+  const u = seededUnit(seed, phraseIndex, 991011);
+  if (u < 0.25) return 3;
+  if (u < 0.45) return 4;
+  if (u < 0.7) return 5;
+  if (u < 0.9) return 7;
+  if (u < 0.98) return 10;
+  return 14;
+}
+
+/**
+ * Phrase role per bar using variable-length phrases (seeded). Same layout pattern as {@link computeEcmPhrasePositions}.
+ */
+export function computeBacharachPhrasePositions(
+  totalBars: number,
+  seed: number
+): readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] {
+  const out: ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = bacharachPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    for (let i = 0; i < span; i++) {
+      const globalBar = bar + i;
+      if (span <= 1) {
+        out.push('phraseFinal');
+      } else if (globalBar === bar) {
+        out.push('phraseStart');
+      } else if (globalBar === end) {
+        out.push('phraseFinal');
+      } else {
+        out.push('phraseMiddle');
+      }
+    }
+    bar = end + 1;
+    phraseIdx++;
+  }
+  while (out.length < totalBars) out.push('phraseMiddle');
+  return out.slice(0, totalBars);
+}
+
+function phraseRoleAtBar(
+  bar: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
+  const idx = bar - 1;
+  if (idx < 0 || idx >= positions.length) return 'phraseMiddle';
+  return positions[idx]!;
 }
 
 export function isSongwriterBacharach(
@@ -132,6 +178,15 @@ function looksPlainDominantSeventh(symbol: string): boolean {
   return /^7([^a-z]|$)|^7\(/.test(rest) || /^9([^a-z]|$)/.test(rest) || /^13([^a-z]|$)/.test(rest);
 }
 
+/** Dominant or broad major triad / maj colour (for bVII9 connector eligibility). */
+function isBvii9EligibleChord(symbol: string): boolean {
+  if (looksPlainDominantSeventh(symbol)) return true;
+  if (isMinorishSymbol(symbol)) return false;
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (/dim|ø|aug|sus/.test(tl)) return false;
+  return true;
+}
+
 function isMinorishSymbol(symbol: string): boolean {
   const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
   if (/maj|Δ|sus|dim|ø|aug/.test(tl)) return false;
@@ -158,17 +213,73 @@ function enrichBareTertian(symbol: string, guards: BacharachAntiElaborationGuard
   return sanitizeLushClean(s, guards);
 }
 
+/** bVII9 chromatic connector (e.g. Bb9 in C major) — phrase-middle bars. */
+function applyBvii9ConnectorPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  if (tonicPc === undefined) return;
+  const bviiPc = (tonicPc + 10 + 12) % 12;
+  const bviiName = pitchClassToSharpName(bviiPc);
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 991095) >= 0.28) continue;
+    const sym = out[b - 1]!;
+    if (sym.includes('/')) continue;
+    if (!isBvii9EligibleChord(sym)) continue;
+    out[b - 1] = `${bviiName}9`;
+    receipts.push(`ba:bvii9_connector@bar${b}`);
+  }
+}
+
+/** Phrase-final tonic major → maj9 or 6/9 (upper-structure landing colour). */
+function applySoftExtensionLandingPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  if (tonicPc === undefined) return;
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
+    const sym = out[b - 1]!;
+    const r = harmonyRootPc(sym);
+    if (r !== tonicPc) continue;
+    if (isMinorishSymbol(sym)) continue;
+    const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
+    if (/sus/.test(tl)) continue;
+    if (/maj9|6\/9/.test(tl)) continue;
+    const slash = slashTail(sym);
+    const rootName = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
+    if (!rootName) continue;
+    const use69 = seededUnit(seed, b, 991096) < 0.42;
+    out[b - 1] = use69 ? `${rootName}6/9${slash}` : `${rootName}maj9${slash}`;
+    receipts.push(`ba:soft_ext_landing@bar${b}`);
+  }
+}
+
 /** Mid-phrase chromatic side-door: neighbour root with tertian spelling. */
 function applyChromaticSideDoorPass(
   out: string[],
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseMiddle') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
     if (seededUnit(seed, b, 991101) >= 0.22) continue;
     const sym = out[b - 1]!;
     const r = harmonyRootPc(sym);
@@ -190,11 +301,12 @@ function applyDescendingSlashPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 2; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) === 'phraseFinal') continue;
+    if (phraseRoleAtBar(b, positions) === 'phraseFinal') continue;
     const sym = out[b - 1]!;
     if (sym.includes('/')) continue;
     if (seededUnit(seed, b, 991201) >= 0.26) continue;
@@ -217,14 +329,15 @@ function applyDeceptiveCadencePass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   if (tonicPc === undefined) return;
   const viPc = (tonicPc + 9) % 12;
   const ivPc = (tonicPc + 5) % 12;
   for (let b = 2; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseFinal') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
     const prev = out[b - 2]!;
     const cur = out[b - 1]!;
     if (!looksPlainDominantSeventh(prev)) continue;
@@ -243,13 +356,14 @@ function applyMixtureBorrowPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   if (tonicPc === undefined) return;
   const bViPc = (tonicPc + 8) % 12;
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseMiddle') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
     if (seededUnit(seed, b, 991401) >= 0.14) continue;
     const sym = out[b - 1]!;
     if (harmonyRootPc(sym) !== tonicPc) continue;
@@ -266,11 +380,12 @@ function applyInnerVoiceSlashPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseStart') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseStart') continue;
     const sym = out[b - 1]!;
     if (sym.includes('/')) continue;
     if (seededUnit(seed, b, 991501) >= 0.18) continue;
@@ -309,12 +424,15 @@ export function precomputeBacharachEffectiveHarmonyBars(context: CompositionCont
   }
 
   const out = [...raw];
+  const positions = computeBacharachPhrasePositions(tb, seed);
 
-  applyChromaticSideDoorPass(out, seed, receipts, tb, context);
-  applyDescendingSlashPass(out, seed, receipts, tb, context);
-  applyDeceptiveCadencePass(out, tonicPc, seed, receipts, tb, context);
-  applyMixtureBorrowPass(out, tonicPc, seed, receipts, tb, context);
-  applyInnerVoiceSlashPass(out, seed, receipts, tb, context);
+  applyChromaticSideDoorPass(out, seed, receipts, tb, context, positions);
+  applyDescendingSlashPass(out, seed, receipts, tb, context, positions);
+  applyBvii9ConnectorPass(out, tonicPc, seed, receipts, tb, context, positions);
+  applyDeceptiveCadencePass(out, tonicPc, seed, receipts, tb, context, positions);
+  applyMixtureBorrowPass(out, tonicPc, seed, receipts, tb, context, positions);
+  applyInnerVoiceSlashPass(out, seed, receipts, tb, context, positions);
+  applySoftExtensionLandingPass(out, tonicPc, seed, receipts, tb, context, positions);
 
   genMeta.bacharachEffectiveHarmonyBars = out;
   genMeta.bacharachDeviceReceipts = receipts;
