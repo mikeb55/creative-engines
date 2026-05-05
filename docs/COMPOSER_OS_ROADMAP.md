@@ -1,10 +1,21 @@
-# Composer OS Roadmap [2026-05-06]
+# Composer OS Roadmap [2026-05-07]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
-**V31 next priorities (sequencing):** (1) **CI smoke on `main`** — one GitHub Actions job, **`npm run test:composer-smoke`** on push to **`main`** → (2) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end → (3) **Duo intent wiring** — **`duoIntent`** → pipeline, voice-weighting → (4) **Deterministic remix controls** — same seed, flip duo intent or drift for instant A/B → (5) **Writer recipe cards** — one screen per songwriter (devices + era) in Generate → (6) **Clave-aware grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
+**V31 — status (2026-05-07):**
+
+- **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`**.
+- **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
+
+### Writer Slice Roadmap — priority order for full slice development
+
+**Priority order:** 1 **Beatles** (`beatles`) · 2 **Bill Evans** (`bill_evans`) · 3 **Frank Zappa** (`frank_zappa`) · 4 **ECM Chamber** (`ecm_chamber`) · 5 **Bacharach** (`bacharach`) · 6 **Wayne Shorter** (`wayne_shorter`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · 9 **Jobim** (`antonio_carlos_jobim`) · 10 **Debussy** (`debussy`).
+
+**Full slice bar:** deliver **harmonic devices (d1–d5)**, **voice leading**, **phrase contour logic**, **formal behaviour**, **arrangement defaults** — output must read **audibly** distinct from generic baseline on **at least 3 of 5** dimensions.
+
+**Missing writers to add eventually:** Miles Davis, Coltrane, Cole Porter, Gershwin, Ornette Coleman.
 
 **Platform:** **Mobile deployment** is a **separate platform milestone** (packaging, stores, UX), **not** a ranked feature line item next to Song Mode / engine tickets.
 
@@ -586,7 +597,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | **G** | **Phrase Engine / Riff redesign** | Shared phrase abstraction + adapters (medium-term). | **§ Phrase Engine / Riff Generator redesign** |
 | **—** | **Near alternates** | **`TEST_DEBT`**, Wyble depth, ECM arrangement, Slonimsky engine-only backlog **#10**. | **§ Next best development** *Near alternates* · **§ Next possible devs (pick list)** |
 
-**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30** shipped per **§ Next best development** (2026-05-05); **V31** default order is listed there (**refreshed 2026-05-06**). Neither maps 1:1 to those tiers.
+**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30** shipped per **§ Next best development** (2026-05-05); **V31** status + remaining items are listed at the top of this doc and under **§ Next best development** (**refreshed 2026-05-07**). Neither maps 1:1 to those tiers.
 
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
@@ -766,7 +777,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
-### Next best development — **V30 complete · V31 sequencing** (refreshed 2026-05-06)
+### Next best development — **V30 complete · V31 sequencing** (refreshed 2026-05-07)
 
 #### V30 — **COMPLETE** (2026-05-05)
 
@@ -776,18 +787,23 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 *Near alternates (unchanged bias):* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass; additional **Tier A** songwriter slices when capacity returns (**§ Overall roadmap priorities**).
 
-#### V31 — **next default order** (2026-05-06)
+#### V31 — **complete vs remaining** (2026-05-07)
 
-1. **CI smoke job on `main`** — **GitHub Actions** workflow: **one job** runs **`npm run test:composer-smoke`** on **push** to **`main`** (repository root). Keeps **`runSmokeTests.ts`** allowlist honest without relying on local-only runs.
-2. **MusicXML import Phase 2** — wire **`parseMusicXml`** / importer through **Generate UI** and **generation path** end-to-end (request → score / harmony lock → smoke/regression). Phase 1 remains library/parser truth; Phase 2 is **product-shippable** chart-in.
-3. **Duo intent wiring** — send **`duoIntent`** (**Conversational** | **Supportive**) on the **API request** into **`compositionContext`** / duo golden-path stages and **manifests**; bias **voice weighting** / spacing behaviour per intent (replace UI-only stub).
-4. **Deterministic remix controls** — **same seed**, flip **duo intent** and/or **emotional drift** (and related vault knobs where applicable) for **instant A/B** without rescrolling unrelated fields.
-5. **Writer recipe cards** — **one panel / screen per primary songwriter** in Generate: **devices (d1–d5)**, **era / posture**, short **“what this writer does”** copy — improves discoverability (**Tier B** alignment).
+**Shipped:**
+
+1. **CI smoke job on `main`** — **GitHub Actions** workflow: **`npm run test:composer-smoke`** on **push** to **`main`**. Commit **`b8d47db`**.
+2. **Deterministic remix controls** — **same seed**, **ChorusArcStrip**, vault/emotional drift + duo remix UX (**Keep A/B/Both**). Commit **`3453292`**.
+3. **Writer recipe cards** — inline **Generate** panel per songwriter select: **display name**, **era tag**, **melody device pills** (**`MELODY_PROFILES`**), **one-line blurb** (profile description or first registry rule), **hover preview** on options. Commit **`c2d9747`**.
+
+**Remaining:**
+
+4. **MusicXML import Phase 2** — wire **`parseMusicXml`** / importer through **Generate UI** and **generation path** end-to-end (request → score / harmony lock → smoke/regression). Phase 1 remains library/parser truth; Phase 2 is **product-shippable** chart-in.
+5. **Duo intent → generation** — send **`duoIntent`** (**Conversational** | **Supportive**) on the **API request** into **`compositionContext`** / duo golden-path stages and **manifests**; bias **voice weighting** / spacing behaviour per intent (replace UI-only stub).
 6. **Clave-aware grid overlay** — **thin Afro-Cuban slice:** optional **clave-aligned meter map** + **groove hints** on the rhythm grid (**not** a full timba-style engine). Pair with existing **`barMeterMap`** / quantiser hooks where safe.
 
 **Deferred / parallel (not in V31 ordering):** **ChorusArcStrip Phase 2–3** (vault chorus tension strip interactions + contour ribbon)—resume when multi-chorus UX capacity returns; see **`ChorusArcStrip.tsx`**.
 
-**Scope note — songwriting engine, profiles, ensembles, arrangers:** V31 prioritises **CI trust**, **import wire-up**, **duo intent truth**, **fast compare UX**, **writer discoverability**, and a **bounded rhythm overlay**; songwriter slice expansion and **Tier A** new slices remain in **Overall roadmap priorities** and **pick list** below.
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** V31 **remaining** work prioritises **import wire-up**, **duo intent truth into audio/export**, and a **bounded rhythm overlay**; **CI**, **deterministic remix**, and **writer recipe cards** are **shipped** (commits **`b8d47db`**, **`3453292`**, **`c2d9747`**). Songwriter **full slice** expansion order lives under **§ Writer Slice Roadmap** at the top of this doc; **Tier A** targets also remain in **Overall roadmap priorities** and **pick list** below.
 
 | Thread | Where it lives in this doc |
 |--------|----------------------------|
