@@ -1,6 +1,6 @@
-# Composer OS Roadmap [2026-05-04]
+# Composer OS Roadmap [2026-05-05]
 
-**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap. **Latest sequencing hint:** section **Next 3 development sessions** below — **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03: optional **`ScoreModel.repeatMarkers`**, **`musicxmlExporter`** forward/backward **`barline`**); next → Fagen/Evans odd meter → import stress or SD3 Big Band validation. **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04).
+**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap. **V30 next priorities (sequencing):** (1) **Odd meter UI parity** → (2) **MusicXML import Phase 1** → (3) **Duo expansion** — preset pairing + ECM diagnostics. **Duo expansion scope:** preset wiring + motif pilots — **not** a slice rebuild. **Earlier sequencing:** **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03). **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04). Detail: **§ Next best development** below.
 
 **Convention:** Whenever the user asks for a “roadmap,” use the title **`Composer OS Roadmap [YYYY-MM-DD]`** (snapshot date, typically today) and align content with this file or replace sections intentionally.
 
@@ -575,7 +575,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | **G** | **Phrase Engine / Riff redesign** | Shared phrase abstraction + adapters (medium-term). | **§ Phrase Engine / Riff Generator redesign** |
 | **—** | **Near alternates** | **`TEST_DEBT`**, Wyble depth, ECM arrangement, Slonimsky engine-only backlog **#10**. | **§ Next best development** *Near alternates* · **§ Next possible devs (pick list)** |
 
-**Alignment:** **Next best development (top 3)** items **1 → 3** map **1:1** to **Tier A → Tier C** above.
+**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30 default sequencing** is defined in **§ Next best development** (2026-05-05) and **does not** map 1:1 to those tiers.
 
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
@@ -755,17 +755,17 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
-### Next best development (top 3 options — refreshed 2026-04-28)
+### Next best development — **V30 sequencing** (refreshed 2026-05-05)
 
-**Maps to Overall roadmap priorities Tier A → Tier C** (see **§ Overall roadmap priorities (2026-05-01)** above).
+**Default order** for the next development stretch (parallel work still allowed where dependencies permit):
 
-1. **Ship more Song Mode songwriter profiles (golden-path slices)** — **Tier A.** Add or deepen **primary writer** behaviour using the **Songwriter profiles — priority 1** pattern above; pair each slice with **smoke** + **manifest receipts** + optional **eval** script row. **Concrete diversity queue:** **§ Top 10 Song Mode songwriter targets**.
-2. **Generate UI: writer & style discoverability** — **Tier B.** Make **primary/secondary songwriter**, **style stack**, **diversity presets**, and **arranger pairing** easy to find so new profiles are testable without API-only workflows.
-3. **Lead-sheet import stages 6–7 + ensemble chart-in** — **Tier C.** Extend **MusicXML harmony import** rollout (`importHarmonyPolicy`, blend modes) toward **String Quartet / Big Band** handoff when **`LeadSheet`** realisers land (**Lead-sheet MusicXML import** below).
+1. **Odd meter UI parity** — surface odd-meter / **`barMeterMap`** style controls in Generate so engine odd-meter paths match discoverable UI (parity with Zappa-class meter intelligence elsewhere in the stack).
+2. **MusicXML import Phase 1** — continue staged **lead-sheet / Song Mode** import work (see **§ MusicXML Harmony Import for Lead Sheets** and **`LeadSheet`** paths); Phase 1 here means the next approved importer slice + gates, not ensemble-only polish in isolation.
+3. **Duo expansion — preset pairing + ECM diagnostics** — deepen duo **songwriter × arranger** pairing wiring and **ECM chamber** diagnostics surfaces so duo runs are easier to read and A/B. **Scope note:** duo expansion here means **preset wiring + motif pilots** — **not** a full duo golden-path slice rebuild.
 
-*Near alternates:* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass.
+*Near alternates (unchanged bias):* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass; additional **Tier A** songwriter slices when capacity returns (**§ Overall roadmap priorities**).
 
-**Scope note — songwriting engine, profiles, ensembles, arrangers:** The **top 3** above centre **songwriter product surface** and **chart input**; infra items (Wyble, chunked harness) remain in **priority stack** and **pick list** below.
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** V30 sequencing above prioritises **meter UX**, **import**, and **duo pairing/diagnostics**; songwriter slice expansion and **Tier B** UI discovery remain active in **Overall roadmap priorities** and **pick list** below.
 
 | Thread | Where it lives in this doc |
 |--------|----------------------------|
@@ -910,6 +910,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-05-02].*
+*End of Composer OS Roadmap [2026-05-05].*
 
 
