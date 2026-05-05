@@ -3,13 +3,10 @@
  * Packaged UI loads from disk (no localhost). API via IPC + shared engine (no HTTP for desktop).
  */
 
-const envPath = require('path').resolve(__dirname, '../../../.env');
-require('dotenv').config({ path: envPath });
-console.log('[main] envPath:', envPath, 'key loaded:', !!process.env.ANTHROPIC_API_KEY);
-
 import { app, BrowserWindow, ipcMain } from 'electron';
-import * as path from 'path';
-import * as fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
+import dotenv from 'dotenv';
 import type { StartupState } from './startupState';
 import * as crypto from 'crypto';
 import {
@@ -27,6 +24,17 @@ import {
   type UiBundleVerifyFail,
 } from './uiBundleVerify';
 import { registerOpenOutputFolderIpc } from './openFolderMain';
+
+function loadEnv(): void {
+  const envPath = app.isPackaged
+    ? path.join(process.resourcesPath, '.env')
+    : path.join(__dirname, '../../../.env');
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+  console.log('[main] envPath:', envPath, 'key loaded:', !!process.env.ANTHROPIC_API_KEY);
+}
+loadEnv();
 
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';

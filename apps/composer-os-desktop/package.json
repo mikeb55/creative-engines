@@ -64,6 +64,10 @@
     ],
     "extraResources": [
       {
+        "from": "../../.env",
+        "to": ".env"
+      },
+      {
         "from": "resources/api.bundle.js",
         "to": "api.bundle.js"
       },
