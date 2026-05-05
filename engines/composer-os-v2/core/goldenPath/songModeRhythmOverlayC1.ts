@@ -292,7 +292,8 @@ function formatIntentSummary(
 export function selectOverlaysForPhrase(
   phraseIdx: number,
   seed: number,
-  syncopationBias: number = 0.5
+  syncopationBias: number = 0.5,
+  bassIndependenceBias: number = 0.5
 ): { id: string; weight: number }[] {
   const u0 = seededUnit(seed, phraseIdx, 93100);
   const low = 0.28 - (syncopationBias - 0.5) * 0.2;
@@ -306,6 +307,18 @@ export function selectOverlaysForPhrase(
     const id = pool[j];
     pool.splice(j, 1);
     out.push({ id, weight: 0.25 + seededUnit(seed, phraseIdx, 93120 + k * 13) * 0.5 + syncopationBias * 0.15 });
+  }
+  /** Higher bass independence → favour ECM / Schneider / Monk / Blade (open texture); trim Fagen on-beat anchor weight. */
+  const ind = Math.max(0, Math.min(1, bassIndependenceBias));
+  const indieBoost = 0.92 + ind * 0.38;
+  const mirrorTrim = Math.max(0.35, 1.18 - ind * 0.42);
+  for (const o of out) {
+    const id = o.id as SongModeRhythmOverlayId;
+    if (id === 'ECM' || id === 'SCHNEIDER' || id === 'MONK' || id === 'BLADE') {
+      o.weight *= indieBoost;
+    } else if (id === 'FAGEN') {
+      o.weight *= mirrorTrim;
+    }
   }
   return out;
 }
@@ -436,6 +449,35 @@ function applyPhraseEarlyIdentityLock(
 
   if (second && !isProtectedBar(second.bar, context)) applyShiftToPhraseNote(guitar, second.bar, second.n, shift);
   if (first && !isProtectedBar(first.bar, context)) applyShiftToPhraseNote(guitar, first.bar, first.n, shift);
+}
+
+/**
+ * ECM surface — phrase-start looseness: probabilistically defer first melodic attack from bar downbeat toward beat 2 /
+ * off-grid (uses same late-shift quantum as identity lock).
+ */
+function applyPhraseStartLoosenessShift(
+  guitar: PartModel,
+  startBar: number,
+  endBar: number,
+  looseness: number,
+  seed: number,
+  phraseIdx: number,
+  context: CompositionContext
+): void {
+  const edge = Math.max(0, Math.min(1, (looseness - 0.5) * 2));
+  if (edge < 1e-6) return;
+  const u = seededUnit(seed, phraseIdx, 92890);
+  if (u > edge * 0.78) return;
+  normalizePhraseBars(guitar, startBar, endBar);
+  const ordered = collectPhraseNotesInOnsetOrder(guitar, startBar, endBar);
+  if (ordered.length === 0) return;
+  const first = ordered[0]!;
+  if (isProtectedBar(first.bar, context)) return;
+  const sb = first.n.startBeat;
+  const onStrongDownbeat = Math.abs(sb - 1) < 0.09 || Math.abs(sb - 0) < 0.09;
+  if (!onStrongDownbeat) return;
+  const shift = fixedShiftLateBeats();
+  applyShiftToPhraseNote(guitar, first.bar, first.n, shift);
 }
 
 /** C2 — Stable guitar: nudge eighth offbeats one step earlier when space allows (fewer syncopations, more on-grid). */
@@ -652,10 +694,16 @@ function softenDelayedBarlineFirstBar(
 function applyBassPhraseRhythmSupport(
   bass: PartModel | undefined,
   startBar: number,
-  strength: SongModeRhythmStrength | undefined
+  strength: SongModeRhythmStrength | undefined,
+  context: CompositionContext
 ): void {
   if (!bass) return;
   const s = strength ?? 'balanced';
+  const ind = Math.max(
+    0,
+    Math.min(1, (context.generationMetadata as GenerationMetadata).songwriterBassIndependenceBias ?? 0.5)
+  );
+  const indSigned = (ind - 0.5) * 2;
   const m = bass.measures.find((x) => x.index === startBar);
   if (!m) return;
   for (const e of m.events) {
@@ -664,13 +712,18 @@ function applyBassPhraseRhythmSupport(
     if (n.startBeat >= 2 - 1e-4) continue;
     const base = n.velocity ?? 88;
     const sb = n.startBeat;
+    const off = isOffbeatStart(sb);
+    let dv = 0;
     if (s === 'stable') {
-      n.velocity = Math.max(1, Math.round(base - 6));
+      dv = -6;
     } else if (s === 'surprise') {
-      const off = isOffbeatStart(sb);
-      n.velocity = Math.min(127, Math.round(base + (off ? 9 : -3)));
+      dv = off ? 9 : -3;
       if (off && !n.articulation) n.articulation = 'accent';
     }
+    /** Higher independence: lift off-beat bass anchors, tuck on-beat doubles so bass can sit apart from guitar onbeat. */
+    if (off) dv += Math.round(7 * indSigned);
+    else dv -= Math.round(5 * Math.max(0, indSigned));
+    n.velocity = Math.max(1, Math.min(127, Math.round(base + dv)));
   }
 }
 
@@ -734,7 +787,7 @@ function applyPhraseRhythmIntentToNotes(
   );
   biasCrossingBarlineVelocity(guitar, startBar, endBar, intent, intentStrength, seed, phraseIdx, context);
   softenDelayedBarlineFirstBar(guitar, startBar, intent, intentStrength);
-  applyBassPhraseRhythmSupport(bass, startBar, strength);
+  applyBassPhraseRhythmSupport(bass, startBar, strength, context);
 
   const sc = intentStrength;
 
@@ -889,7 +942,10 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   const debug: SongModeRhythmOverlayPhraseDebug[] = [];
   const seed = context.seed;
   const strength = (context.generationMetadata as GenerationMetadata).songModeRhythmStrength;
-  const baseSync = (context.generationMetadata as GenerationMetadata).songwriterSyncopationBias ?? 0.5;
+  const genMeta = context.generationMetadata as GenerationMetadata;
+  const baseSync = genMeta.songwriterSyncopationBias ?? 0.5;
+  const bassIndependenceBias = genMeta.songwriterBassIndependenceBias ?? 0.5;
+  const phraseStartLooseness = genMeta.songwriterPhraseStartLooseness ?? 0.5;
   const phraseBuf: PhraseNoteRef[] = [];
 
   for (let pi = 0; pi < segments.length; pi++) {
@@ -899,7 +955,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
       pi,
       baseSync
     );
-    const applied = selectOverlaysForPhrase(pi, seed, syncopationBias);
+    const applied = selectOverlaysForPhrase(pi, seed, syncopationBias, bassIndependenceBias);
     const intent =
       applied.length > 0
         ? strengthAdjustPhraseIntent(derivePhraseRhythmIntent(applied, strength, seed, pi), strength, seed, pi)
@@ -916,6 +972,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
     });
 
     applyPhraseEarlyIdentityLock(guitar, bass, startBar, endBar, strength, context);
+    applyPhraseStartLoosenessShift(guitar, startBar, endBar, phraseStartLooseness, seed, pi, context);
     applyStableGuitarOnbeatSnapping(guitar, startBar, endBar, strength, context);
 
     if (applied.length > 0) {

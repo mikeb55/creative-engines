@@ -905,6 +905,8 @@ const SONG_MODE_STYLE_OPTIONS = [
 ] as const;
 type SongModeStyleProfile = (typeof SONG_MODE_STYLE_OPTIONS)[number];
 const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
+  'STYLE_ECM',
+  'STYLE_ECM_CHAMBER',
   'STYLE_SHORTER_POST_BOP',
   'STYLE_MODERN_JAZZ',
   'STYLE_SOPHISTICATED_POP',
@@ -914,6 +916,28 @@ const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
   'STYLE_JONI_MITCHELL',
   'STYLE_PAT_METHENY',
 ]);
+
+/** Song Mode ECM surface — matches engine `applyEcmChamberStyleSurface` / GenerateRequest.ecmChamberMode. */
+type EcmChamberGenerationMode = 'angel_song' | 'balanced' | 'metheny_scofield';
+
+function ecmChamberFlow01ToMode(flow01: number): EcmChamberGenerationMode {
+  const t = Math.max(0, Math.min(1, flow01));
+  if (t < 1 / 3) return 'angel_song';
+  if (t < 2 / 3) return 'balanced';
+  return 'metheny_scofield';
+}
+
+function ecmChamberModeToFlow01(mode: EcmChamberGenerationMode): number {
+  if (mode === 'angel_song') return 0;
+  if (mode === 'balanced') return 0.5;
+  return 1;
+}
+
+function ecmChamberModeUiLabel(mode: EcmChamberGenerationMode): string {
+  if (mode === 'angel_song') return 'Angel Song';
+  if (mode === 'balanced') return 'Balanced ECM Duo';
+  return 'Metheny·Scofield';
+}
 
 function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {
   for (const o of SONG_MODE_STYLE_OPTIONS) {
@@ -1348,6 +1372,8 @@ export function HomeGenerate({
   const [songwriterStyle, setSongwriterStyle] = useState('donald_fagen');
   const [arrangerStyle, setArrangerStyle] = useState('thad');
   const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
+  /** ECM style (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): 0 = Chamber (Angel Song pole), 0.5 = Balanced, 1 = Flow (Metheny·Scofield pole). */
+  const [ecmChamberFlow01, setEcmChamberFlow01] = useState(0.5);
   const [intentGroove, setIntentGroove] = useState(0.5);
   const [intentSpace, setIntentSpace] = useState(0.5);
   const [intentExpression, setIntentExpression] = useState(0.5);
@@ -1548,6 +1574,7 @@ export function HomeGenerate({
   }, [chordInspectorResult, chordInspectorReharmPanelOpen, chordInspectorReharmDriftSlider]);
 
   const songModeStyleProfileRef = useRef<SongModeStyleProfile>(songModeStyleProfile);
+  const ecmChamberFlow01Ref = useRef(ecmChamberFlow01);
   const alternateTuningEnabledRef = useRef(alternateTuningEnabled);
   const alternateTuningModeRef = useRef<GuitarTuningMode>(alternateTuningMode);
   const sharedTuningPresetIdRef = useRef(sharedTuningPresetId);
@@ -1559,6 +1586,7 @@ export function HomeGenerate({
 
   useEffect(() => {
     songModeStyleProfileRef.current = songModeStyleProfile;
+    ecmChamberFlow01Ref.current = ecmChamberFlow01;
     alternateTuningEnabledRef.current = alternateTuningEnabled;
     alternateTuningModeRef.current = alternateTuningMode;
     sharedTuningPresetIdRef.current = sharedTuningPresetId;
@@ -1569,6 +1597,7 @@ export function HomeGenerate({
     guitar2CustomTuningRef.current = guitar2CustomTuning;
   }, [
     songModeStyleProfile,
+    ecmChamberFlow01,
     alternateTuningEnabled,
     alternateTuningMode,
     sharedTuningPresetId,
@@ -2226,6 +2255,10 @@ export function HomeGenerate({
                       importHarmonyMode: importHarmonyModeUi,
                       harmonyBlend: Math.max(0, Math.min(1, harmonyBlendUi)),
                     }
+                  : {}),
+                ...(liveSongModeStyleProfile === 'STYLE_ECM' ||
+                liveSongModeStyleProfile === 'STYLE_ECM_CHAMBER'
+                  ? { ecmChamberMode: ecmChamberFlow01ToMode(ecmChamberFlow01Ref.current) }
                   : {}),
               }
             : {}),
@@ -4364,6 +4397,106 @@ export function HomeGenerate({
               behavior.
             </p>
           </div>
+          {presetId === 'song_mode' &&
+            (songModeStyleProfile === 'STYLE_ECM' || songModeStyleProfile === 'STYLE_ECM_CHAMBER') && (
+              <details
+                open
+                style={{
+                  marginBottom: '0.65rem',
+                  padding: '0.55rem 0.65rem',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'rgba(15,23,42,0.06)',
+                }}
+              >
+                <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', listStyle: 'none' }}>
+                  Advanced ECM
+                </summary>
+                <div style={{ marginTop: '0.55rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 6,
+                      marginBottom: '0.55rem',
+                    }}
+                    role="group"
+                    aria-label="ECM style surface preset"
+                  >
+                    {(
+                      [
+                        { mode: 'angel_song' as const, label: 'Angel Song' },
+                        { mode: 'balanced' as const, label: 'Balanced ECM Duo' },
+                        { mode: 'metheny_scofield' as const, label: 'Metheny·Scofield' },
+                      ] as const
+                    ).map(({ mode, label }) => {
+                      const active = ecmChamberFlow01ToMode(ecmChamberFlow01) === mode;
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          disabled={loading}
+                          aria-pressed={active}
+                          onClick={() => setEcmChamberFlow01(ecmChamberModeToFlow01(mode))}
+                          style={{
+                            flex: '1 1 120px',
+                            padding: '0.35rem 0.5rem',
+                            fontSize: '0.78rem',
+                            borderRadius: 6,
+                            border: `1px solid ${active ? 'var(--accent, #6366f1)' : 'var(--border)'}`,
+                            background: active ? 'rgba(99,102,241,0.12)' : 'var(--panel-elevated, rgba(15,23,42,0.25))',
+                            color: 'var(--text)',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <label
+                    style={{ display: 'block', marginBottom: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                  >
+                    Chamber ↔ Flow
+                  </label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      marginBottom: 4,
+                      maxWidth: 420,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      Chamber
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={ecmChamberFlow01}
+                      onChange={(e) => setEcmChamberFlow01(Number(e.target.value))}
+                      disabled={loading}
+                      aria-valuetext={`${ecmChamberFlow01ToMode(ecmChamberFlow01)} (${Math.round(ecmChamberFlow01 * 100)}%)`}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      Flow
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Active surface:{' '}
+                    <strong style={{ color: 'var(--text)' }}>
+                      {ecmChamberModeUiLabel(ecmChamberFlow01ToMode(ecmChamberFlow01))}
+                    </strong>{' '}
+                    ({ecmChamberFlow01ToMode(ecmChamberFlow01)}). Centre = Balanced ECM Duo; left emphasises chamber
+                    space; right lifts forward motion.
+                  </p>
+                </div>
+              </details>
+            )}
           <div style={{ marginBottom: '0.65rem', fontSize: '0.85rem' }}>
             <span style={{ display: 'block', marginBottom: 6, color: 'var(--text-muted)' }}>Groove</span>
             <input

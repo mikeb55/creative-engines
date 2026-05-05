@@ -45,6 +45,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Documentation
 
+- **`docs/GCE_LOCK_DCR_STANDARDS.md`** — **GCE v2.0**, **LOCK** pre-commit gates, **DCR** workflow (Design · Commit · Refine), **Style Profile Layer** per composer slice/style surface; applies to all builds including ECM/style surfaces. Canonical GCE math remains **`docs/GCE_FRAMEWORK_V2.md`**.
 - **`docs/COMPOSER_OS_PLAYBOOK.md`** is the primary user-facing playbook (workflows, presets, scenarios, export notes).
 - Update it whenever new composers (songwriter slices), presets, or meter presets are added or materially changed.
 - After any playbook edit, regenerate the Word export: **`node scripts/generateComposerOsPlaybookDocx.mjs`**

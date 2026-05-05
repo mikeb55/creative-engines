@@ -1,0 +1,25 @@
+---
+description: LOCK pre-commit gates, DCR workflow, Style Profile Layer — composer/style output.
+alwaysApply: true
+---
+
+# Composer OS — LOCK · DCR · Style Profile Layer
+
+Full specification: **`docs/GCE_LOCK_DCR_STANDARDS.md`** (includes **GCE v2.0** cross-reference to **`docs/GCE_FRAMEWORK_V2.md`**).
+
+## LOCK (before merging composer/style/generation/export work)
+
+Must pass before committing output-affecting changes unless the commit message documents an explicit exception:
+
+1. **Locked truth** — harmony bars / slice precompute / XML alignment; no drift between pasted symbols, effective bars, and export.
+2. **Output integrity** — export/readiness expectations met for the touched path (shareable XML, integrity receipts where applicable).
+3. **GCE hard gates** — no violation of **`docs/GCE_FRAMEWORK_V2.md`** hard failures (melodic/section contrast/cadential/ending rules).
+4. **Key verification** — follow **`CLAUDE.md`**: smoke tier when engine/smoke lists change; otherwise minimal GCE + LOCK checklist on representative output.
+
+## DCR workflow
+
+**Design** → **Commit** → **Refine** (single pass on weakest GCE category or one blocking LOCK item only). No full rewrite; no infinite refine loops.
+
+## Style Profile Layer
+
+Every composer slice / relevant **`StyleProfile`** must define monitored GCE dimensions, diagnostics (`*:*` receipts), and eval/smoke expectations per **`docs/GCE_LOCK_DCR_STANDARDS.md` §4**. **ECM** (`ecm_chamber`, **`STYLE_ECM`**, **`STYLE_ECM_CHAMBER`**) included.

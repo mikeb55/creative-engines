@@ -266,9 +266,13 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
     const ostinatoActive = ostRows?.[pi]?.ostinatoActive === true;
     const c5 = c5rows?.[pi];
 
-    const densityBias = (context.generationMetadata as any)?.songwriterDensityBias ?? 0.5;
+    const densityBias = meta.songwriterDensityBias ?? 0.5;
+    const spaceBias = meta.songwriterSpaceBias ?? 0.5;
     const densityScale = 1.0 + (0.5 - densityBias) * 0.6;
-    let cap = capForMode(strength) * c7CapScale(c5) * densityScale;
+    const spaceMul = 1 + (spaceBias - 0.5) * 0.4;
+    let effectiveDensityScale = densityScale * spaceMul;
+    effectiveDensityScale = Math.max(0.25, Math.min(1.85, effectiveDensityScale));
+    let cap = capForMode(strength) * c7CapScale(c5) * effectiveDensityScale;
     const noteTotal = countPhraseNotes(guitar, startBar, endBar);
     let maxOps = Math.max(0, Math.floor(noteTotal * cap));
     if (maxOps === 0) {

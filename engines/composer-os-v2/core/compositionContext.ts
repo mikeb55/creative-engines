@@ -386,6 +386,27 @@ export interface GenerationMetadata {
   songwriterSyncopationBias?: number;
   /** Songwriter profile: density bias (0–1). */
   songwriterDensityBias?: number;
+  /**
+   * Song Mode ECM surface (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): silence / breath vs fill (0–1).
+   * Nudged by {@link applyEcmChamberStyleSurface}.
+   */
+  songwriterSpaceBias?: number;
+  /**
+   * Song Mode ECM surface: internal preset for `applyEcmChamberStyleSurface` nudges (default `balanced` when unset).
+   */
+  ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
+  /**
+   * Song Mode ECM surface: phrase-start looseness — beat 2 / off-beat entry bias (0–1).
+   */
+  songwriterPhraseStartLooseness?: number;
+  /**
+   * Song Mode ECM surface: bass line independence vs doubling guitar harmony rhythm (0–1).
+   */
+  songwriterBassIndependenceBias?: number;
+  /**
+   * Song Mode ECM surface: cadential softness / avoided hard cadences (0–1).
+   */
+  songwriterCadenceSoftness?: number;
   /** Golden path era hint: harmony density bias from `resolveEraProfile` (additive metadata; Song Mode when `era` set). */
   harmonyDensityBias?: number;
   fagenMuChordBias?: number;

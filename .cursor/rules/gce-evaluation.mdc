@@ -11,6 +11,9 @@ against GCE v2.0 before confirming success.
 
 Full framework: see docs/GCE_FRAMEWORK_V2.md
 
+**Integrated standards (GCE + LOCK + DCR + Style Profile Layer):** `docs/GCE_LOCK_DCR_STANDARDS.md`  
+**Pre-commit / workflow / per-slice rules:** `.cursor/rules/composer-os-quality-gates.mdc`
+
 Quick reference:
 - 10 categories, all score 0-10
 - Overall must reach 9.0
@@ -22,3 +25,4 @@ Apply this framework whenever:
 - Reviewing chord progressions or melody lines
 - Assessing any musical sketch, song, or arrangement
 - Running gceStyleEval or any evaluation script
+- Changing composer slices, Song Mode style surfaces, ECM/vault layers, or export paths (also satisfy LOCK + Style Profile Layer in `docs/GCE_LOCK_DCR_STANDARDS.md`)

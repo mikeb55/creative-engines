@@ -277,6 +277,12 @@ export function apiGenerate(
           : undefined,
       riffBass: body.riffBass === true ? true : undefined,
       styleProfile: isStyleProfile(body.styleProfile) ? body.styleProfile : undefined,
+      ecmChamberMode:
+        body.ecmChamberMode === 'angel_song' ||
+        body.ecmChamberMode === 'balanced' ||
+        body.ecmChamberMode === 'metheny_scofield'
+          ? body.ecmChamberMode
+          : undefined,
       intent: coerceIntentFromBody(body),
       c4Strength:
         body.c4Strength === 'light' ||

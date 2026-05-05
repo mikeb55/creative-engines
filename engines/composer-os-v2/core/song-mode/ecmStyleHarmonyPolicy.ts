@@ -1,4 +1,4 @@
-import type { CompositionContext } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 
 type EcmGravityBand = 'opening' | 'drift' | 'return';
@@ -135,5 +135,75 @@ export function applyEcmStyleHarmonyMotionPolicy(context: CompositionContext): v
   context.generationMetadata.songModeStyleSurfaceNotes = [
     ...(context.generationMetadata.songModeStyleSurfaceNotes ?? []),
     `${sp}: harmonic motion policy v1 applied (modal colour drift, restrained cadence gravity, occasional bass pedal anchoring).`,
+  ];
+}
+
+function isLikelyHardDominant(symbol: string): boolean {
+  const t = symbol.trim();
+  if (t.includes('/')) return false;
+  const lower = t.toLowerCase();
+  if (/maj7|maj9|dim|ø|o7|alt|m7\b|min7|sus/i.test(lower)) return false;
+  return /\d/.test(t);
+}
+
+/**
+ * Soften return-band dominants toward sus / colour cadences using {@link GenerationMetadata.songwriterCadenceSoftness}.
+ * Neutral at 0.5; higher softness increases sus/add colour vs bare `X7` spellings. Runs after {@link applyEcmStyleHarmonyMotionPolicy}.
+ */
+export function applySongwriterCadenceSoftnessPolicy(context: CompositionContext): void {
+  if (!isGuitarBassDuoFamily(context.presetId)) return;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
+  const sp = context.generationMetadata?.styleProfile;
+  if (sp !== 'STYLE_ECM' && sp !== 'STYLE_ECM_CHAMBER' && sp !== 'STYLE_PAT_METHENY') return;
+  if (context.generationMetadata?.harmonySource !== 'builtin') return;
+  if (context.generationMetadata?.customHarmonyLocked === true) return;
+
+  const md = context.generationMetadata as GenerationMetadata;
+  const softness = md.songwriterCadenceSoftness ?? 0.5;
+  const edge = Math.max(0, Math.min(1, (softness - 0.5) * 2));
+  if (edge < 1e-6) return;
+
+  const plan = context.chordSymbolPlan;
+  if (!plan?.segments?.length || plan.totalBars < 1) return;
+
+  const bars = toBars(plan.segments, plan.totalBars);
+  let changed = 0;
+  for (let i = 0; i < bars.length; i++) {
+    const bar = i + 1;
+    if (gravityBandForBar(bar) !== 'return') continue;
+    const chord = bars[i]!;
+    if (!isLikelyHardDominant(chord)) continue;
+    const u = hash01(context.seed, bar, 909);
+    const pSub = edge * (0.42 + u * 0.48);
+    if (hash01(context.seed, bar, 919) > pSub) continue;
+    const root = rootTokenFromChord(chord);
+    if (!root) continue;
+    const lower = chord.toLowerCase();
+    let nextSym = chord;
+    if (/^([A-G][#b]?)7$/i.test(chord.trim())) {
+      nextSym = u < 0.55 ? `${root}13sus4` : `${root}9sus4`;
+    } else if (/\b9\b/i.test(lower) && !/maj9/i.test(lower)) {
+      nextSym = `${root}13sus4`;
+    } else if (/\b13\b/i.test(lower) && !/sus/i.test(lower)) {
+      nextSym = `${root}13sus4`;
+    } else {
+      nextSym = `${root}9sus4`;
+    }
+    if (nextSym !== chord) {
+      bars[i] = nextSym;
+      changed++;
+    }
+  }
+
+  if (changed === 0) return;
+
+  context.chordSymbolPlan = {
+    ...context.chordSymbolPlan,
+    segments: toSegments(bars),
+  };
+
+  md.songModeStyleSurfaceNotes = [
+    ...(md.songModeStyleSurfaceNotes ?? []),
+    `Cadence softness: softened ${changed} return-band dominant spellings toward sus/add colour (metadata songwriterCadenceSoftness=${softness.toFixed(2)}).`,
   ];
 }

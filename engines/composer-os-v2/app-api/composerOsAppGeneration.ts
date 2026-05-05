@@ -957,6 +957,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       req.styleProfile ??
       defaultStyleProfileForPrimarySongwriter(req.primarySongwriterStyle) ??
       'STYLE_ECM',
+    ...(req.ecmChamberMode === 'angel_song' ||
+    req.ecmChamberMode === 'balanced' ||
+    req.ecmChamberMode === 'metheny_scofield'
+      ? { ecmChamberMode: req.ecmChamberMode }
+      : {}),
     harmonyMode: harmonyModeForRun,
     chordProgressionText,
     ...(lockedHarmonyBarsAuthoritative

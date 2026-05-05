@@ -2,6 +2,10 @@
 # GCE v2.0 — UNIVERSAL MUSIC EVALUATION FRAMEWORK
 # For Composer OS — applies to all musical output
 
+## See also
+
+**Development workflow bundle (LOCK hard gates, DCR, Style Profile Layer):** `docs/GCE_LOCK_DCR_STANDARDS.md`
+
 ## Scope
 Applies to: songs, sketches, études, arrangements,
 works in progress, instrumental pieces, ensemble output.

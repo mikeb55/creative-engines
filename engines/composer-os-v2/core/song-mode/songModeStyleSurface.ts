@@ -43,6 +43,81 @@ export function applyGrooveSoulStyleSurface(metadata: GenerationMetadata, styleP
   ]);
 }
 
+/** ECM Song Mode style surface preset (`applyEcmChamberStyleSurface`). */
+export type EcmChamberSurfaceMode = 'angel_song' | 'balanced' | 'metheny_scofield';
+
+function resolveEcmChamberSurfaceMode(metadata: GenerationMetadata): EcmChamberSurfaceMode {
+  const raw = metadata.ecmChamberMode;
+  if (raw === 'angel_song' || raw === 'balanced' || raw === 'metheny_scofield') return raw;
+  return 'balanced';
+}
+
+/**
+ * **`STYLE_ECM` / `STYLE_ECM_CHAMBER`** — sparse chamber feel: lower density/sync, raise space; phrase-start looseness,
+ * bass independence, cadence softness scale by {@link EcmChamberSurfaceMode}. Velocity shaping remains in `songModeStyleEngine.ts`.
+ */
+export function applyEcmChamberStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (styleProfile !== 'STYLE_ECM' && styleProfile !== 'STYLE_ECM_CHAMBER') return;
+
+  const mode = resolveEcmChamberSurfaceMode(metadata);
+  metadata.ecmChamberMode = mode;
+
+  const dens0 = metadata.songwriterDensityBias ?? 0.5;
+  const sync0 = metadata.songwriterSyncopationBias ?? 0.5;
+  const space0 = metadata.songwriterSpaceBias ?? 0.5;
+
+  let dDens = 0;
+  let dSync = 0;
+  let dSpace = 0;
+  let dPhraseLoose = 0;
+  let dBassInd = 0;
+  let dCadSoft = 0;
+
+  switch (mode) {
+    case 'angel_song':
+      dDens = -0.25;
+      dSync = -0.2;
+      dSpace = 0.3;
+      dPhraseLoose = 0.15;
+      dBassInd = 0.2;
+      dCadSoft = 0.25;
+      break;
+    case 'balanced':
+      dDens = -0.15;
+      dSync = -0.1;
+      dSpace = 0.2;
+      dPhraseLoose = 0.08;
+      dBassInd = 0.15;
+      dCadSoft = 0.18;
+      break;
+    case 'metheny_scofield':
+      dDens = -0.05;
+      dSync = 0.05;
+      dSpace = 0.1;
+      dPhraseLoose = 0.03;
+      dBassInd = 0.1;
+      dCadSoft = 0.1;
+      break;
+  }
+
+  metadata.songwriterDensityBias = clamp01(dens0 + dDens);
+  metadata.songwriterSyncopationBias = clamp01(sync0 + dSync);
+  metadata.songwriterSpaceBias = clamp01(space0 + dSpace);
+  metadata.songwriterPhraseStartLooseness = clamp01((metadata.songwriterPhraseStartLooseness ?? 0.5) + dPhraseLoose);
+  metadata.songwriterBassIndependenceBias = clamp01((metadata.songwriterBassIndependenceBias ?? 0.5) + dBassInd);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + dCadSoft);
+
+  const profileTag = styleProfile === 'STYLE_ECM_CHAMBER' ? 'STYLE_ECM_CHAMBER' : 'STYLE_ECM';
+  appendStyleSurfaceNotes(metadata, [
+    `${profileTag}: ecmChamberMode=${mode} — density bias ${dDens >= 0 ? '+' : ''}${dDens}, syncopation bias ${dSync >= 0 ? '+' : ''}${dSync}, space bias ${dSpace >= 0 ? '+' : ''}${dSpace} (from prior songwriterDensityBias/songwriterSyncopationBias/songwriterSpaceBias defaults 0.5 when unset; clamped 0–1).`,
+    `${profileTag}: phrase-start looseness (beat 2 / off-beat) ${dPhraseLoose >= 0 ? '+' : ''}${dPhraseLoose}.`,
+    `${profileTag}: bass independence bias ${dBassInd >= 0 ? '+' : ''}${dBassInd}.`,
+    `${profileTag}: cadence softness ${dCadSoft >= 0 ? '+' : ''}${dCadSoft}.`,
+    `${profileTag}: Style Engine pass applies profile-specific note velocities (not an imitation of any artist).`,
+  ]);
+}
+
 /**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */

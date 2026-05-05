@@ -137,6 +137,11 @@ export interface GenerateRequest {
   __generateCorrelationId?: string;
   /** Song Mode — Style Engine profile. Omitted on legacy clients; Song Mode defaults to STYLE_ECM in the handler. */
   styleProfile?: StyleProfile;
+  /**
+   * Song Mode — ECM style surface (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): nudges density/sync/space in
+   * `applyEcmChamberStyleSurface` (`angel_song` | `balanced` | `metheny_scofield`). Omitted → engine default.
+   */
+  ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
   /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */
   intent?: RhythmIntentControl;
   /** Riff Generator (`riff_generator`): 1–4 bar riff length. */

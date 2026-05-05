@@ -99,13 +99,14 @@ import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
   applyDonaldFagenSongwriterSurface,
+  applyEcmChamberStyleSurface,
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
 import { chromaticStrengthToOutsideLevel } from '../slonimsky/slonimskyPatternService';
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
-import { applyEcmStyleHarmonyMotionPolicy } from '../song-mode/ecmStyleHarmonyPolicy';
+import { applyEcmStyleHarmonyMotionPolicy, applySongwriterCadenceSoftnessPolicy } from '../song-mode/ecmStyleHarmonyPolicy';
 import { applyJoniStyleFolkModalHarmonyPolicy } from '../song-mode/joniStyleHarmonyPolicy';
 import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
@@ -959,6 +960,8 @@ export interface RunGoldenPathOptions {
   songModeHookFirstIdentity?: boolean;
   /** Song Mode: Style Engine profile (default STYLE_ECM applied in handler if omitted). */
   styleProfile?: StyleProfile;
+  /** Song Mode: ECM style surface mode for `applyEcmChamberStyleSurface` (when STYLE_ECM / STYLE_ECM_CHAMBER). */
+  ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
   /** Song Mode: primary songwriter style key (resolved to blended profile biases on context). */
   primarySongwriterStyle?: string;
   /** Song Mode LeadSheet pilot: compact per-bar melody anchors from imported lead sheet. */
@@ -1557,6 +1560,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
       styleProfile: styleProfileResolved,
+      ...(options.ecmChamberMode === 'angel_song' ||
+      options.ecmChamberMode === 'balanced' ||
+      options.ecmChamberMode === 'metheny_scofield'
+        ? { ecmChamberMode: options.ecmChamberMode }
+        : {}),
       songModeLeadSheetMelodyAnchors:
         isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? options.songModeLeadSheetMelodyAnchors
@@ -1655,6 +1663,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyEcmChamberStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
   }
   if (options?.songModeHookFirstIdentity) {
     applySophisticatedPopStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
@@ -1758,6 +1769,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
 
   if (options?.songModeHookFirstIdentity) {
     applyEcmStyleHarmonyMotionPolicy(context);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applySongwriterCadenceSoftnessPolicy(context);
   }
   if (options?.songModeHookFirstIdentity) {
     applyJoniStyleFolkModalHarmonyPolicy(context);
