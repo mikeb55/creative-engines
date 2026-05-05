@@ -491,6 +491,51 @@ Pat Metheny is **harmony- and metadata-centric** on the duo golden path: there i
 
 **Alternate tunings:** **`STYLE_PAT_METHENY`** is listed in **`STYLE_PROFILES_WITH_ALTERNATE_GUITAR_TUNING`** (**`alternateGuitarTunings.ts`**). See **§11 Alternate tunings workflow**.
 
+### Bill Evans (Song Mode — impressionist / rootless-symbol slice)
+
+**Still current:** **`billEvansSlice.ts`**, **`precomputeBillEvansEffectiveHarmonyBars`**, **`billEvansEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth, smoke **`billEvansSliceSmoke.test.ts`**.
+
+The slice **only rewrites chord symbols** on the duo golden path (Bill Evans–flavoured tertian richness, sus/quartal hints, delayed tonic landings); there is no separate **`ChordEvent`** extension layer.
+
+#### Asymmetric phrase grid
+
+**`computeBillEvansPhrasePositions(totalBars, seed)`** assigns **phraseStart** / **phraseMiddle** / **phraseFinal** using variable phrase lengths **3, 4, or 5 bars** weighted **22% / 56% / 22%** (same rolling-bar layout pattern as ECM Chamber / variable-grid Bacharach). Each **phraseStart** emits **`be:asym_phrase@bar{N}`**.
+
+#### Retuned base pass rates (seeded probability)
+
+| Device | Receipt | Target rate |
+|--------|---------|----------------|
+| Dominant → 13 colour | `be:dom_extension@bar{N}` | **34%** |
+| Maj7 family → maj9 | `be:maj_colour@bar{N}` | **42%** |
+| m7 → m11 quartal hint | `be:quartal_m11@bar{N}` | **24%** |
+| Dominant → 7sus4 | `be:sus_dom@bar{N}` | **18%** |
+| Phrase-final tonic → maj9 / 6/9 | `be:delayed_tonic@bar{N}` | **44%** |
+| Gentle ii–V prep | `be:gentle_ii_V@bar{N}` | **31%** |
+
+#### Six newer passes (five harmony passes + phrase grid)
+
+| Pass | Role | Receipt |
+|------|------|---------|
+| **Asymmetric phrase grid** | Replaces fixed 4-bar cycle; **phraseStart** marks each new phrase | `be:asym_phrase@bar{N}` |
+| **Diminished delayed resolution** | Phrase-final **major** cadence: preceding **dominant** bar may become **#ii°7** or **vii°7** (`dim7` spelling); **skips** dominants already coloured **sus** | `be:dim_delayed_res@bar{N}` |
+| **IV minor borrow** | Phrase-middle, **major-key** context: **IV → ivm9** | `be:iv_minor_borrow@bar{N}` |
+| **Minor detour** | Phrase-middle three-bar **iiø–V–minor i** (major key); skips cadence targets already tied to **dim delayed** resolution | `be:minor_detour@bar{N}` |
+| **Inner voice melody** (lead-sheet proxy) | Phrase-middle, **rich** tertian symbol: adds **slash bass** a semitone either side of the **3rd** (inner-line hint) | `be:inner_voice@bar{N}` |
+| **Locked hands approximation** | Phrase-start: **slash bass** under lighter textures (3rd / m6 / M6 colour rotation); skips dense **alt** / **dim** symbols | `be:locked_hands_approx@bar{N}` |
+
+#### Modern Jazz style surface
+
+**`STYLE_MODERN_JAZZ`** triggers **`applyBillEvansStyleSurface`** (`songModeStyleSurface.ts`): **`songwriterDensityBias`** **−0.05**, **`songwriterCadenceSoftness`** **+0.22**, **`songwriterSpaceBias`** **+0.12** (clamped **0–1**). Wired in **`runGoldenPath.ts`** **after** **`applyBacharachStyleSurface`** and **before** **`applySophisticatedPopStyleSurface`** — stacks with other style surfaces when multiple profiles apply.
+
+#### Example applications
+
+1. **Primary `bill_evans` + Modern Jazz** — Full Evans harmony slice **plus** softer density / softer cadence / more space metadata; default **lesson** preset when teaching impressionist **lead-sheet** colour.
+2. **Evans harmony only** — Pick Evans as songwriter but another **Style Engine** profile if you want **symbol** devices without Modern Jazz surface nudges.
+3. **Custom_locked chart + Evans** — Stress **`be:*`** receipts against a **fixed** progression; phrase grid still reshapes **roles** bar-to-bar.
+4. **Evans + Evans odd-meter preset** — Combine **variable phrase grid** with **`barMeterMap`** (`evans_five_three`, **Peace Piece**, etc.); verify **MusicXML** meter lines vs phrase receipts.
+5. **Seed A/B** — Asymmetric phrase boundaries change which passes fire; **lock seed** when demoing a specific **`be:dim_delayed_res`** or **`be:minor_detour`** outcome.
+6. **Duo guitar–bass + arranger Gil Evans** — Use Evans **slice** for **symbols** on the lead-sheet path while ensemble pairing handles **orchestration** receipts separately.
+
 ### ECM Style vs ECM Chamber songwriter — how the controls differ
 
 Composer OS splits **ECM-flavoured harmony** (what chords are chosen and how they move) from **ECM-flavoured surface behaviour** (how sparse the guitar comp feels, where phrases attack, how soft cadences land, how independent the bass rhythm is). You can use either alone or both together.
