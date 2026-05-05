@@ -141,6 +141,12 @@ import {
   precomputeDukeEllingtonEffectiveHarmonyBars,
 } from './dukeEllingtonSlice';
 import {
+  accumulateMilesDavisHarmonyDiagnostics,
+  createMilesDavisHarmonyAccumulator,
+  finalizeMilesDavisMetadata,
+  precomputeMilesDavisEffectiveHarmonyBars,
+} from './milesDavisSlice';
+import {
   accumulateMariaSchneiderHarmonyDiagnostics,
   createMariaSchneiderHarmonyAccumulator,
   finalizeMariaSchneiderMetadata,
@@ -2259,6 +2265,7 @@ function buildGuitarPart(
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
   const isSongwriterDukeEllington = genMeta?.songwriterStyleId === 'duke_ellington';
+  const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
@@ -2272,6 +2279,7 @@ function buildGuitarPart(
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
   const deAccum = createDukeEllingtonHarmonyAccumulator();
+  const mdAccum = createMilesDavisHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
@@ -2319,6 +2327,9 @@ function buildGuitarPart(
   }
   if (isSongwriterDukeEllington && isDuoGoldenPath) {
     precomputeDukeEllingtonEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterMilesDavis && isDuoGoldenPath) {
+    precomputeMilesDavisEffectiveHarmonyBars(context);
   }
   if (isSongwriterMariaSchneider && isDuoGoldenPath) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
@@ -2526,6 +2537,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         deAccum
+      );
+    }
+    if (isSongwriterMilesDavis) {
+      accumulateMilesDavisHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        mdAccum
       );
     }
     if (isSongwriterMariaSchneider) {
@@ -3120,6 +3138,10 @@ function buildGuitarPart(
 
   if (isSongwriterDukeEllington && context.generationMetadata) {
     finalizeDukeEllingtonMetadata(context.generationMetadata, deAccum);
+  }
+
+  if (isSongwriterMilesDavis && context.generationMetadata) {
+    finalizeMilesDavisMetadata(context.generationMetadata, mdAccum);
   }
 
   if (isSongwriterMariaSchneider && context.generationMetadata) {

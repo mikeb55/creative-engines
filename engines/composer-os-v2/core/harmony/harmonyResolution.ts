@@ -220,6 +220,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Miles Davis: `precomputeMilesDavisEffectiveHarmonyBars` applies modal / space / electric vamp devices — receipts **`md:*`**.
+   * After precompute, `milesDavisEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const mdEff = meta?.milesDavisEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'miles_davis' &&
+    Array.isArray(mdEff) &&
+    mdEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return mdEff[barIndex - 1]!;
+  }
+
+  /**
    * Maria Schneider: `precomputeMariaSchneiderEffectiveHarmonyBars` applies Lydian centre / pedal / colour-stack devices.
    * After precompute, `mariaSchneiderEffectiveHarmonyBars` is full-form and authoritative.
    */

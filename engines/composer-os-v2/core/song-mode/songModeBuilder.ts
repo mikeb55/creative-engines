@@ -1473,6 +1473,57 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G9sus', 'Cmaj9', 'Am9'],
     ],
   },
+  miles_davis_modal_1959: {
+    verse: [
+      ['Dm7', 'Dm7', 'Ebmaj7', 'Dm7'],
+      ['Em7', 'A7', 'Dm7', 'Gm7'],
+    ],
+    chorus: [
+      ['Bbmaj7', 'Am7', 'Gm7', 'C7'],
+      ['Ebmaj7', 'Dm7', 'Cm7', 'F7'],
+    ],
+    bridge: [
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Dm7b5'],
+      ['Gm7', 'C7', 'Fm7', 'Bb7'],
+    ],
+    pre_chorus: [
+      ['Am7', 'Dm7', 'Gm7', 'C7'],
+    ],
+  },
+  miles_davis_quintet_1965: {
+    verse: [
+      ['Em7', 'F7alt', 'Bbmaj7', 'Am7'],
+      ['Dm7', 'G7alt', 'Cm7', 'F7(#11)'],
+    ],
+    chorus: [
+      ['Ebmaj7(#11)', 'Dm7', 'Gm7', 'C7alt'],
+      ['Abmaj7', 'Gm7', 'Fm7', 'Bb7'],
+    ],
+    bridge: [
+      ['Bm7b5', 'E7alt', 'Am7', 'D7alt'],
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Ab7'],
+    ],
+    pre_chorus: [
+      ['Am7', 'D7alt', 'Gm7', 'C7sus4'],
+    ],
+  },
+  miles_davis_electric_1970: {
+    verse: [
+      ['E7(#9)', 'E7sus4', 'Am7', 'D7(#9)'],
+      ['Bm7', 'E7sus4', 'A7(#9)', 'D7sus4'],
+    ],
+    chorus: [
+      ['Gm7', 'C7(#9)', 'Fm7', 'Bb7sus4'],
+      ['Dm7', 'G7sus4', 'Cm7', 'F7(#9)'],
+    ],
+    bridge: [
+      ['Am7', 'D7(#9)', 'Gm7', 'C7sus4'],
+      ['Fm7', 'Bb7(#9)', 'Ebmaj7', 'Ab7sus4'],
+    ],
+    pre_chorus: [
+      ['Em7', 'A7(#9)', 'Dm7', 'G7sus4'],
+    ],
+  },
   duke_ellington: {
     verse: [
       ['Cmaj9(#11)', 'A7(b9#5)', 'Dm9', 'G13'],
@@ -1551,11 +1602,17 @@ function chordSymbolsForSection(
   songwriterId?: string,
   eraProfile?: EraProfile
 ): { chordSymbols: string[]; chosenRowTags: string[] } {
-  const pool = SONGWRITER_CHORD_POOLS[songwriterId ?? ''];
+  let resolvedPoolId = songwriterId ?? '';
+  if (songwriterId === 'miles_davis') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'miles_davis_modal_1959' : tier === 1 ? 'miles_davis_quintet_1965' : 'miles_davis_electric_1970';
+  }
+  const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {
-    const sectionPool = sectionChordPoolRows(kind, songwriterId)!;
+    const sectionPool = sectionChordPoolRows(kind, resolvedPoolId)!;
     const profile = eraProfile ?? resolveEraProfile(undefined);
-    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile, songwriterId, kind);
+    const idx = pickChordPoolRowIndex(sectionPool, Math.abs(seed), profile, resolvedPoolId, kind);
     const raw = sectionPool[idx] ?? pool.verse[0];
     const chosenRowTags = chosenRowTagsFromPoolRow(raw);
     if (raw == null) {

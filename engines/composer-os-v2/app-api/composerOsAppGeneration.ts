@@ -1017,6 +1017,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           frankZappaContext: req.frankZappaContext,
         }
       : {}),
+    ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'miles_davis'
+      ? { milesDavisContext: req.milesDavisContext }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1133,6 +1136,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const bhLockedTruth = mdLockedTruth?.barryHarrisEffectiveHarmonyBars;
   const beLockedTruth = mdLockedTruth?.billEvansEffectiveHarmonyBars;
   const deLockedTruth = mdLockedTruth?.dukeEllingtonEffectiveHarmonyBars;
+  const mdMilesLockedTruth = mdLockedTruth?.milesDavisEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
@@ -1216,12 +1220,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                             lockedHarmonyBarsAuthoritative &&
                             deLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                           ? deLockedTruth
-                          : mdLockedTruth?.songwriterStyleId === 'maria_schneider' &&
-                              Array.isArray(msLockedTruth) &&
-                              msLockedTruth.length === tbLockedTruth &&
+                          : mdLockedTruth?.songwriterStyleId === 'miles_davis' &&
+                              Array.isArray(mdMilesLockedTruth) &&
+                              mdMilesLockedTruth.length === tbLockedTruth &&
                               lockedHarmonyBarsAuthoritative &&
-                              msLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                            ? msLockedTruth
+                              mdMilesLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                            ? mdMilesLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'maria_schneider' &&
+                                Array.isArray(msLockedTruth) &&
+                                msLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                msLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? msLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
                             Array.isArray(baLockedTruth) &&
                             baLockedTruth.length === tbLockedTruth &&

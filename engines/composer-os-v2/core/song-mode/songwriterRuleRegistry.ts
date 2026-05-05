@@ -717,6 +717,12 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('monk.strip_lush', 'Strip maj9/13 lush stacks — angular tertian only (placeholder)', 'songwriter', 'harmony', 9, 'verse'),
     R('monk.semitone_motion', 'Semitone / whole-step root motion bias vs circle-of-fifths default (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
   ],
+  miles_davis: [
+    R('md.modal_center', 'Modal centre spans — Dorian / Mixolydian field locks (`md:modal_center`)', 'songwriter', 'harmony', 9, 'global'),
+    R('md.space_silence', 'Breath space vs fill — cool phrasing bias (`md:cool_phrase`)', 'songwriter', 'rhythm', 9, 'global'),
+    R('md.time_no_changes', 'Suspended / ambiguous harmony regions (`md:time_no_changes`)', 'songwriter', 'harmony', 8, 'form'),
+    R('md.cool_phrasing', 'Mid-register sparse melodic pacing (`md:cool_phrase`)', 'songwriter', 'melody', 8, 'verse'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

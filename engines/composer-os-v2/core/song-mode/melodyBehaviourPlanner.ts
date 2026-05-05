@@ -434,6 +434,17 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'high',
     devices: ['hook_density', 'rise_and_payoff', 'section_lift'],
   },
+  miles_davis: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.72,
+    phraseLength: 4,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.52,
+    cadenceFrequency: 'low',
+    wideLeapPeakPerPhrase: false,
+    devices: ['modal_field', 'breath_space', 'deliberate_silence', 'cool_phrasing', 'motivic_cell'],
+  },
   ecm_chamber: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'whole_bar',

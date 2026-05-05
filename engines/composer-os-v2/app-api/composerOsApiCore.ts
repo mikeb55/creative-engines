@@ -329,6 +329,18 @@ export function apiGenerate(
         body.zappaSoloDissonance === 'extreme'
           ? body.zappaSoloDissonance
           : undefined,
+      frankZappaContext:
+        body.frankZappaContext === 'avant_rock' ||
+        body.frankZappaContext === 'big_band' ||
+        body.frankZappaContext === 'futuristic_jazz'
+          ? body.frankZappaContext
+          : undefined,
+      milesDavisContext:
+        body.milesDavisContext === 'modal_1959' ||
+        body.milesDavisContext === 'quintet_1965' ||
+        body.milesDavisContext === 'electric_1970'
+          ? body.milesDavisContext
+          : undefined,
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

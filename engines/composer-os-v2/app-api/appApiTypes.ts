@@ -3,13 +3,19 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
-import type { FrankZappaContextMode, GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
+import type {
+  FrankZappaContextMode,
+  GenerationMetadata,
+  ImportHarmonyMode,
+  MilesDavisContextMode,
+} from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export type { StyleProfile };
 export type { FrankZappaContextMode };
+export type { MilesDavisContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -216,6 +222,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`avant_rock`** when primary songwriter is **`frank_zappa`**.
    */
   frankZappaContext?: FrankZappaContextMode;
+  /**
+   * Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`).
+   * Omitted → engine default **`modal_1959`** when primary songwriter is **`miles_davis`**.
+   */
+  milesDavisContext?: MilesDavisContextMode;
 }
 
 export interface ValidationSummary {

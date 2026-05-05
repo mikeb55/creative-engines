@@ -3,7 +3,7 @@
  * with short honest receipt lines (no mimic claims).
  */
 
-import type { FrankZappaContextMode, GenerationMetadata } from '../compositionContext';
+import type { FrankZappaContextMode, GenerationMetadata, MilesDavisContextMode } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
 import { registerSongModeSectionBehaviour } from './songModeSectionControl';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
@@ -196,6 +196,44 @@ export function applyFrankZappaStyleSurface(
 
   appendStyleSurfaceNotes(metadata, [
     `Frank Zappa surface (${ctxMode}): density from six-zone arc mean → songwriterDensityBias; syncopation +0.22; space −0.15; synthetic scale bias metadata — generative bias only.`,
+  ]);
+}
+
+/**
+ * Primary **`miles_davis`** — cool / quintet / electric pocket: space-forward metadata by {@link MilesDavisContextMode}.
+ */
+export function applyMilesDavisStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'miles_davis') return;
+
+  const ctx: MilesDavisContextMode = metadata.milesDavisContext ?? 'modal_1959';
+  metadata.milesDavisContext = ctx;
+
+  const dens0 = metadata.songwriterDensityBias ?? 0.5;
+  const sync0 = metadata.songwriterSyncopationBias ?? 0.5;
+  const space0 = metadata.songwriterSpaceBias ?? 0.5;
+  const cad0 = metadata.songwriterCadenceSoftness ?? 0.5;
+
+  if (ctx === 'modal_1959') {
+    metadata.songwriterDensityBias = clamp01(dens0 - 0.25);
+    metadata.songwriterSyncopationBias = clamp01(sync0 - 0.05);
+    metadata.songwriterSpaceBias = clamp01(space0 + 0.35);
+    metadata.songwriterCadenceSoftness = clamp01(cad0 + 0.3);
+  } else if (ctx === 'quintet_1965') {
+    metadata.songwriterDensityBias = clamp01(dens0 - 0.12);
+    metadata.songwriterSyncopationBias = clamp01(sync0 + 0.1);
+    metadata.songwriterSpaceBias = clamp01(space0 + 0.25);
+    metadata.songwriterCadenceSoftness = clamp01(cad0 + 0.2);
+  } else {
+    metadata.songwriterDensityBias = clamp01(dens0 + 0.08);
+    metadata.songwriterSyncopationBias = clamp01(sync0 + 0.22);
+    metadata.songwriterSpaceBias = clamp01(space0 + 0.1);
+    metadata.songwriterCadenceSoftness = clamp01(cad0 + 0.15);
+  }
+
+  appendStyleSurfaceNotes(metadata, [
+    `Miles Davis surface (${ctx}): density/sync/space/cadence biases — generative metadata only.`,
   ]);
 }
 

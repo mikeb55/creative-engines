@@ -42,6 +42,9 @@ import type { HarmonyContext } from './harmony/harmonyContext';
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
 
+/** Miles Davis Song Mode slice — era / ensemble harmonic posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
+export type MilesDavisContextMode = 'modal_1959' | 'quintet_1965' | 'electric_1970';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -762,6 +765,37 @@ export interface GenerationMetadata {
   ellingtonCallResponseMap?: Record<number, 'call' | 'response'>;
   /** Bars tagged by shout-chorus pass (1-based). */
   ellingtonShoutBars?: number[];
+  /** Miles Davis (modal / space / electric vamp) — slice diagnostics + effective harmony. */
+  milesDavisDiagnostics?: {
+    songwriterId: 'miles_davis';
+    barsConsidered: number;
+    modalColourTouches: number;
+    dominantColourTouches: number;
+    minorColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopTonic: number;
+    };
+    deviceReceipts?: string[];
+  };
+  milesDavisSliceReceipt?: string;
+  milesDavisEffectiveHarmonyBars?: string[];
+  milesDavisDeviceReceipts?: string[];
+  milesDavisAntiElaborationGuards?: {
+    noopTonic: number;
+  };
+  /** Modal-centre receipt map (1-based bar → label). */
+  milesDavisModalCenterBars?: Record<number, string>;
+  /** Quintet “time no changes” ambiguity bars (1-based). */
+  milesDavisTimeNoChangesBars?: number[];
+  /** Electric-era groove vamp lock bars (1-based). */
+  milesDavisVampBars?: number[];
+  /** True after cool phrasing pass fired on any bar. */
+  milesDavisCoolMode?: boolean;
+  /**
+   * Miles Davis Song Mode slice mode (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted.
+   */
+  milesDavisContext?: MilesDavisContextMode;
   /** Maria Schneider (modal / pastoral orchestral) — slice diagnostics + effective harmony. */
   mariaSchneiderDiagnostics?: {
     songwriterId: 'maria_schneider';

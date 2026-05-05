@@ -9,6 +9,7 @@ import type {
   GenerationMetadata,
   HarmonyPipelineStage,
   ImportHarmonyMode,
+  MilesDavisContextMode,
 } from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
@@ -113,6 +114,7 @@ import {
   applyMonkStyleSurface,
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
+  applyMilesDavisStyleSurface,
   applyEcmChamberStyleSurface,
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
@@ -1021,6 +1023,8 @@ export interface RunGoldenPathOptions {
   barMeterMap?: BarMeterMap;
   /** Song Mode / Frank Zappa: harmony vocabulary + density arc mode (`frankZappaSlice`). Default **`avant_rock`** when omitted. */
   frankZappaContext?: FrankZappaContextMode;
+  /** Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
+  milesDavisContext?: MilesDavisContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1600,6 +1604,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'frank_zappa'
         ? { frankZappaContext: options.frankZappaContext ?? 'avant_rock' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'miles_davis'
+        ? { milesDavisContext: options.milesDavisContext ?? 'modal_1959' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1693,6 +1700,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyDukeEllingtonStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyMilesDavisStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyMariaSchneiderStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2068,6 +2078,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
+  const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
   const barsForLockedExportTruth =
@@ -2117,8 +2128,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                           ? beEx
                                           : mdEx?.songwriterStyleId === 'duke_ellington' && Array.isArray(deEx) && deEx.length === tbEx
                                             ? deEx
-                                            : mdEx?.songwriterStyleId === 'maria_schneider' && Array.isArray(msEx) && msEx.length === tbEx
-                                              ? msEx
+                                            : mdEx?.songwriterStyleId === 'miles_davis' &&
+                                                Array.isArray(mdMilesEx) &&
+                                                mdMilesEx.length === tbEx
+                                              ? mdMilesEx
+                                              : mdEx?.songwriterStyleId === 'maria_schneider' && Array.isArray(msEx) && msEx.length === tbEx
+                                                ? msEx
                                               : mdEx?.songwriterStyleId === 'frank_zappa' &&
                                               appliedContext.harmonyContext?.styleId === 'frank_zappa' &&
                                               appliedContext.harmonyContext.bars.length === tbEx
