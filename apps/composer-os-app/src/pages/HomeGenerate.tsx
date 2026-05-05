@@ -73,6 +73,7 @@ import {
   type VaultGenerationOptions,
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
+import { WriterRecipeCard } from '../components/WriterRecipeCard';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -558,14 +559,20 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
   return btoa(parts.join(''));
 }
 
-function SongwriterSelectOptionGroups() {
+function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: string | null) => void }) {
+  const optHover = (id: string) =>
+    onOptionHover
+      ? {
+          onMouseEnter: () => onOptionHover(id),
+        }
+      : {};
   return (
     <>
       <optgroup label="Shipped (full slice)">
         {SONGWRITER_GROUP_SHIPPED_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
-            <option key={id} value={o.id}>
+            <option key={id} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -575,7 +582,7 @@ function SongwriterSelectOptionGroups() {
         {SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
-            <option key={id} value={o.id}>
+            <option key={id} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -585,7 +592,7 @@ function SongwriterSelectOptionGroups() {
         {SONGWRITER_GROUP_READY_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
-            <option key={id} value={o.id}>
+            <option key={id} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -593,7 +600,7 @@ function SongwriterSelectOptionGroups() {
       </optgroup>
       <optgroup label="In library">
         {SONGWRITER_LIBRARY_ORDERED.map((o) => (
-          <option key={o.id} value={o.id}>
+          <option key={o.id} value={o.id} {...optHover(o.id)}>
             {o.label}
           </option>
         ))}
@@ -1347,6 +1354,8 @@ export function HomeGenerate({
   const [intentSurprise, setIntentSurprise] = useState(0.5);
   const [intentPattern, setIntentPattern] = useState(0.5);
   const [secondarySongwriterStyle, setSecondarySongwriterStyle] = useState('');
+  const [primarySongwriterHoverId, setPrimarySongwriterHoverId] = useState<string | null>(null);
+  const [secondarySongwriterHoverId, setSecondarySongwriterHoverId] = useState<string | null>(null);
   const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
@@ -4673,15 +4682,19 @@ export function HomeGenerate({
               value={songwriterStyle}
               onChange={(e) => {
                 setSongwriterStyle(e.target.value);
+                setPrimarySongwriterHoverId(null);
                 if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
               }}
+              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
+              onBlur={() => setPrimarySongwriterHoverId(null)}
               disabled={loading}
             >
-              <SongwriterSelectOptionGroups />
+              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
             </select>
             <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
               {ARIA_SONGWRITER_GROUPS_DESC}
             </span>
+            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           </div>
           {composerOddMeterMapBlock}
           {songwriterStyle === 'frank_zappa' && (
@@ -4922,16 +4935,22 @@ export function HomeGenerate({
               value={secondarySongwriterStyle}
               onChange={(e) => {
                 setSecondarySongwriterStyle(e.target.value);
+                setSecondarySongwriterHoverId(null);
                 if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
               }}
+              onMouseLeave={() => setSecondarySongwriterHoverId(null)}
+              onBlur={() => setSecondarySongwriterHoverId(null)}
               disabled={loading}
             >
               <option value="">None</option>
-              <SongwriterSelectOptionGroups />
+              <SongwriterSelectOptionGroups onOptionHover={setSecondarySongwriterHoverId} />
             </select>
             <span id="co-sm-secondary-songwriter-desc" style={VISUALLY_HIDDEN}>
               {ARIA_SONGWRITER_GROUPS_DESC} Optional secondary blend with primary.
             </span>
+            {(secondarySongwriterHoverId ?? secondarySongwriterStyle) ? (
+              <WriterRecipeCard writerId={secondarySongwriterHoverId ?? secondarySongwriterStyle} />
+            ) : null}
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -5024,14 +5043,20 @@ export function HomeGenerate({
               id="co-bb-songwriter"
               aria-describedby="co-bb-songwriter-desc"
               value={songwriterStyle}
-              onChange={(e) => setSongwriterStyle(e.target.value)}
+              onChange={(e) => {
+                setSongwriterStyle(e.target.value);
+                setPrimarySongwriterHoverId(null);
+              }}
+              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
+              onBlur={() => setPrimarySongwriterHoverId(null)}
               disabled={loading}
             >
-              <SongwriterSelectOptionGroups />
+              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
             </select>
             <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
               {ARIA_SONGWRITER_GROUPS_DESC}
             </span>
+            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label
@@ -5112,14 +5137,20 @@ export function HomeGenerate({
               id="co-sq-songwriter"
               aria-describedby="co-sq-songwriter-desc"
               value={songwriterStyle}
-              onChange={(e) => setSongwriterStyle(e.target.value)}
+              onChange={(e) => {
+                setSongwriterStyle(e.target.value);
+                setPrimarySongwriterHoverId(null);
+              }}
+              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
+              onBlur={() => setPrimarySongwriterHoverId(null)}
               disabled={loading}
             >
-              <SongwriterSelectOptionGroups />
+              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
             </select>
             <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
               {ARIA_SONGWRITER_GROUPS_DESC}
             </span>
+            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           </div>
           <div style={{ marginBottom: '0.65rem' }}>
             <label
