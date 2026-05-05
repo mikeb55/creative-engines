@@ -116,7 +116,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (36 research rows)
+### Per-composer profile table (37 research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -136,6 +136,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `charlie_parker` | angular | eighth_patterns | 4 | 0.2 | bebop_arc | chromatic_enclosure; upper_structure_arpeggio; ii_V_outline; bebop_scale |
 | `bill_evans` | stepwise | mixed | 8 | 0.4 | arch | inner_voice_melody; modal_interchange; delayed_resolution; impressionistic_voicing |
 | `bacharach` | mixed | eighth_patterns | 5 | 0.3 | irregular | metric_shift; phrase_extension; suspended_appoggiatura; chromatic_bass |
+| `cole_porter` | stepwise | eighth_patterns | 4 | 0.75 | arch | chromatic_descent; hook_identity; bvi_color; diatonic_density; beguine_feel |
 | `donald_fagen` | mixed | eighth_patterns | 4 | 0.5 | conversational | guide_tone_melody; blues_over_jazz_harmony; syncopated_hook; static_pitch_over_moving_chords |
 | `frank_zappa` | angular | eighth_patterns | 3 | 0.2 | irregular | polyrhythmic_unison; chromatic_sideslip; interval_expansion; synthetic_scale; sudden_meter_change |
 | `joni_mitchell` | angular | mixed | 6 | 0.3 | wide_arc | open_tuning_pitch_field; unresolved_suspension; wide_leap_stepwise_descent; modal_drone |
@@ -159,7 +160,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 
 ### Smoke coverage
 
-**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥36 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥37 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 
@@ -188,51 +189,6 @@ Optional **Classical song influence** on Generate (default **None**): **Schubert
 | **`faure`** | Long arching lines, floating / modal colour, continuous flow, lighter cadential closure | **`prosodyInfluence`** +0.06; **`lineVsCellEmphasis`** +0.12; **`harmonyColourBias`** +0.04; **`hookRepetitionBias`** −0.07; **`phraseRegularity`** −0.05; **`sectionContrast`** −0.06; **`syncopationBias`** +0.04 |
 
 Implementation: **`applyClassicalSongOverlay`** in **`songwriterStyleResolver.ts`**.
-
----
-
-## Maria Schneider (`maria_schneider`) — Song Mode harmony slice
-
-Primary songwriter **`maria_schneider`** runs **`mariaSchneiderSlice.ts`** on the golden-path duo harmony timeline (same locked-export authority pattern as other full slices): **`precomputeMariaSchneiderEffectiveHarmonyBars`** → **`mariaSchneiderEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** disk/export truth, **`composerOsAppGeneration`**. Receipts are prefixed **`ms:`**.
-
-### Phrase grid
-
-**`computeSchneiderPhrasePositions`** assigns each bar **`phraseStart` | `phraseMiddle` | `phraseFinal`** from rolling phrase lengths **4 / 6 / 8 / 5 / 7 / 9** bars at weights **28% / 22% / 22% / 14% / 9% / 5%**. Device **d5** (`planing`) keys off **`phraseMiddle`**; **d4** (`color_stack`) keys off **`phraseFinal`** (lead-sheet “tutti weight” on phrase cadences, not a literal ensemble flag).
-
-### Stage 1 — bare-symbol enrichment (no receipts)
-
-Applied before the **`ms:*`** passes:
-
-- **Tonic (bare major on the inferred tonic PC):** **maj9(#11)** 45%, **maj13(#11)** 25%, **maj7(#11)** 20%, **6/9(#11)** 10%.
-- **Dominant (plain dom7 family):** **7(b9,#11,13)** (Lydian dominant colour) 45%, **7alt** 30%, **9(#11)** 25%.
-- **Minor (bare minor triad / bare m7):** **m(maj7)** 30%, **m7(b6)** 25%, **m9** 25%, **m11** 20%.
-
-### Stage 2 — harmonic devices (receipts)
-
-| Id | Pass | Rate / gate | Receipt | Metadata |
-|----|------|-------------|---------|----------|
-| **d1** | **`applyLydianModalCenterPass`** | **35%** of eligible bars (`1 − 0.65`); all bars; maj7/maj9/maj13 tonic colours get **#11** if absent | **`ms:lyd_center@bar{N}`** | — |
-| **d2** | **`applyPedalOstinatoPass`** | **60%** attempt rate on runs where the **harmonic root stays fixed ≥4 consecutive bars**; slash bass cycles chord tones | **`ms:pedal@bar{N}`** | **`schneiderPedalBars`** |
-| **d3** | **`applyNatureArcTexturePass`** | **15%** on **intro** (first ≤4 bars) and **outro** (last ≤4 bars); sets **`maj7(add9)`** as a narrow pastoral colour | **`ms:nature_arc@bar{N}`** | — |
-| **d4** | **`applyColorStackPass`** | **45%** on **`phraseFinal`**; ensures altered/colour extensions (e.g. **`add9`**) for semitone-adjacent tension in the symbol | **`ms:color_stack@bar{N}`** | **`schneiderColorStackBars`** |
-| **d5** | **`applyNonFunctionalPlaningPass`** | **35%** on **`phraseMiddle`** where a **major-key ii–V–I** is detected; roots shift by **±2 or ±3** semitones with **quality preserved** | **`ms:planing@bar{N}`** | — |
-
-### Style surface (floating rhythm bias)
-
-**`applyMariaSchneiderStyleSurface`** (primary **`maria_schneider`**, hook-first Song Mode): **`songwriterDensityBias` +0.05**, **`songwriterSyncopationBias` −0.20**, **`songwriterSpaceBias` +0.25**, **`songwriterCadenceSoftness` +0.28** — less swing-era pocket, more air and softened cadences (generative bias only; not an imitation claim).
-
-### Melody planner row
-
-**`MELODY_PROFILES['maria_schneider']`** — **`intervalTendency`**: stepwise · **`rhythmicSubdivision`**: mixed · **`repetitionVsVariationBias`**: **0.85** · **`phraseLength`**: **7** · **`contourProfile`**: arch · **`phraseAsymmetryTendency`**: **0.75** · **`cadenceFrequency`**: low · **`devices`**: **`sparse_phrase`**, **`modal_field`**, **`breath_space`**, **`nature_arc`**, **`chamber_texture`**.
-
-### Six example applications (nature arc vs chamber texture vs long-form arc)
-
-1. **Nature arc only (paint intro/outro)** — Short chart (**16 bars**), slow tempo, primary **Maria Schneider**. Expect **`ms:nature_arc`** only at the **first ≤4** and **last ≤4** bars; middle stays driven by **d1/d4/d5** and stage‑1 colours. Use when you want **bookend wash**, not a middle-register pedalled wedge.
-2. **Chamber texture (devices, not ECM preset)** — Same primary; pair with **guitar–bass duo** and a **non-shout** arranger if you want **breath + sparse phrase** without invoking **`STYLE_ECM`** / **`ecm_chamber`** writer. **Chamber texture** here is the **melody device list + high repetition bias**; **ECM Chamber** is a **different writer slice** with its own harmony pipeline and **`ecm_chamber`** profiles.
-3. **Long-form arc (phrase grid + planing)** — **48–64 bars**, same primary. Asymmetric phrase lengths (**4/6/8/5/7/9**) stagger phrase endings; **`ms:planing`** hits **phrase middles** and removes textbook **ii–V–I** loops in favour of **parallel shifts**. Use when the chart needs **sectional unevenness** and **less functional turnaround**.
-4. **Pedal vs nature arc (orthogonal)** — **`ms:pedal`** needs **≥4 bars** of the **same harmonic root** anywhere in the form (slash-bass ostinato). **`ms:nature_arc`** is **intro/outro-only**. Mid-piece **static harmony** → pedal receipts; **opening/closing pastoral colour** → nature arc — they answer different prompts.
-5. **Colour stack phrase endings** — **`ms:color_stack`** on **`phraseFinal`** bars: use when you want **dense altered symbols at phrase borders** (lead-sheet “full ensemble hit”) while keeping **middle bars** lighter via **space/cadence softness** surface.
-6. **Lydian modal center hold** — **`ms:lyd_center`** ensures **#11** on **maj7/maj9/maj13** tonic colours for a **single modal pole**; combine with **long-form** runs so tonic returns **read as colour**, not **bebop ii–V setup**.
 
 ---
 
@@ -280,6 +236,313 @@ Primary songwriter **`miles_davis`** runs **`milesDavisSlice.ts`** on the golden
 4. **Cool vs electric contrast** — Same **seed + locked chords**, run **Generate twice**: **`modal_1959`** vs **`electric_1970`**. Compare **`md:cool_phrase`** density + **`milesDavisCoolMode`** vs **`milesDavisVampBars`** — documents how **period metadata** steers **space vs ostinato** without changing your pasted symbols.
 5. **Harmon colour on ballad sections** — Slow tempo + **phrase-final** weighting: **`md:harmon_color`** stacks **maj9(#11)**, **m9/m11**, **7(9,13)** on cadential bars **without** forcing a faster harmonic rhythm.
 6. **Chord pools per era** — **`songModeBuilder`** exposes **`miles_davis_modal_1959`**, **`miles_davis_quintet_1965`**, **`miles_davis_electric_1970`** pools when **`primarySongwriterStyle === miles_davis`** (deterministic pick). Use when teaching **one writer id** but **three harmonic dialects**.
+
+---
+
+## Burt Bacharach (`bacharach`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Theatre-pop / studio-orchestra harmony: **chromatic side-doors**, **deceptive cadences**, **descending slash bass**, **parallel-minor mixture** touches, lush tertian extensions on the chord row (avoid bare triads on phrase anchors), metric sophistication without dense funk comp.
+
+### How Composer OS implements it
+
+Canonical slice: **`engines/composer-os-v2/core/song-mode/bacharachSlice.ts`** (**`goldenPath/`** re-exports match other writers). Duo golden path runs **`precomputeBacharachEffectiveHarmonyBars`** → **`bacharachEffectiveHarmonyBars`**, which **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`**, and **`composerOsAppGeneration`** treat as locked-export truth for **`songwriterStyleId === 'bacharach'`**. Receipt prefix **`ba:*`** (e.g. **`ba:chromatic_side`**, **`ba:mixture_bVI`**, **`ba:inner_slash`**). Phrase grid: **`computeBacharachPhrasePositions`** with variable lengths **3 / 4 / 5 / 7 / 10 / 14** bars (weighted). Guitar chromatic / cadential melody nudges remain in **`applyBacharachGuitarBarPasses`** (`generateGoldenPathDuoScore.ts`).
+
+### Style surfaces & default profile
+
+Hook-first Song Mode: **`applyBacharachSongModeSurfaceV1`** — lower syncopation/density, slightly lower phrase regularity, raised deceptive-cadence + pedal metadata, **`registerSongModeSectionBehaviour`** (`sliceId: 'bacharach'`). When **`styleProfile === 'STYLE_SOPHISTICATED_POP'`**, **`applyBacharachStyleSurface`** stacks density **−0.08**, syncopation **+0.05**, cadence softness **+0.20**. **`defaultStyleProfileForPrimarySongwriter('bacharach')`** → **`STYLE_SOPHISTICATED_POP`**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['bacharach']`** — mixed intervals · **`eighth_patterns`** · **repetitionVsVariationBias 0.3** · phrase **5** · irregular contour · devices **`metric_shift`**, **`phrase_extension`**, **`suspended_appoggiatura`**, **`chromatic_bass`**.
+
+### Four example applications
+
+1. **Locked progression + Bacharach grammar** — Paste **`custom_locked`** chart; confirm **`ba:*`** devices fire without overwriting protected bars.
+2. **Bridge lift vs return** — Watch section behaviour receipts: bridge harmonic colour bias vs softened return.
+3. **Sophisticated Pop stack** — Pair writer with **`STYLE_SOPHISTICATED_POP`** so both **`applyBacharachSongModeSurfaceV1`** and **`applyBacharachStyleSurface`** contribute (hook-first path).
+4. **Long-form phrases** — **32-bar** forms expose **7–10-bar** phrase windows from **`computeBacharachPhrasePositions`** — useful for teaching **non-four-square** phrase endings.
+
+---
+
+## Brian Wilson — Pet Sounds (`brian_wilson`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+**Pet Sounds**-era harmony: **chromatic bass motion**, **half-dim / aug / dim7** colour touches, **modal mixture** (two-bar tonic major → **i7**), **♭VII as subdominant substitute**, **slash / inverted dominant** colour, **semitone-down** section seams.
+
+### How Composer OS implements it
+
+Slice **`brianWilsonPetSoundsSlice.ts`** ( **`goldenPath/brianWilsonPetSoundsSlice.ts`** re-exports). **`precomputeBrianWilsonEffectiveHarmonyBars`** → **`brianWilsonEffectiveHarmonyBars`** for locked routing + manifests. Five numbered devices emit **`bw:device1…5:*@bar{N}`** receipts (e.g. **`bw:device3:bvii_subdominant`**, **`bw:device5:semitone_mod_down`**). **`inferTonicPitchClassFromBar1`** is shared infrastructure for several slices. **`applyBrianWilsonGuitarBarPasses`** shapes guitar registers/pickups on the duo path.
+
+### Style surface
+
+No dedicated **`applyBrianWilson…StyleSurface`** in **`songModeStyleSurface.ts`**; writer fingerprint is **harmony receipts + guitar passes** (compare **`STYLE_*`** surfaces chosen in Generate).
+
+### Melody planner row
+
+**`MELODY_PROFILES['brian_wilson']`** — stepwise · mixed · **repetitionVsVariationBias 0.5** · phrase **7** · arch · devices **`sequential_expansion`**, **`appoggiatura`**, **`suspension`**.
+
+### Four example applications
+
+1. **Section-boundary modulation** — Form with verse → chorus transitions; watch **`bw:device5`** + modulation hints on metadata.
+2. **♭VII colour** — Major-key verse progressions with IV → **♭VIImaj7** reads.
+3. **Modal mixture bar** — Two-bar tonic hold → **`bw:device4`** **i7** mixture.
+4. **Locked chart regression** — Same seed + locked chords; receipts stable across runs.
+
+---
+
+## Cole Porter (`cole_porter`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Great American Songbook **chromatic approach**, **secondary-dominant density**, **♭VI colour** before cadences, **major/minor shift** on phrase roles, **beguine-aligned** syncopation metadata on the harmony pass.
+
+### How Composer OS implements it
+
+**`colePorterSlice.ts`** — **`precomputeColePorterEffectiveHarmonyBars`** → **`colePorterEffectiveHarmonyBars`**, receipts **`cp:*`** (e.g. **`cp:chrom_descent`**, **`cp:diatonic_density`**, **`cp:bvi_color`**, **`cp:beguine`**). Wired through **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`**, **`composerOsAppGeneration`**. Aliases **`cole_porter`**, **`porter`**. **`defaultStyleProfileForPrimarySongwriter('cole_porter')`** → **`STYLE_SOPHISTICATED_POP`**.
+
+### Style surface
+
+**`applyColePorterStyleSurface`** (hook-first): density **+0.05**, syncopation **+0.08**, space **−0.05**, cadence softness **−0.10** — cleaner cadential theatre-jazz metadata.
+
+### Melody planner row
+
+**`MELODY_PROFILES['cole_porter']`** — stepwise · **`eighth_patterns`** · **repetitionVsVariationBias 0.75** · phrase **4** · arch · cadence **high** · devices **`chromatic_descent`**, **`hook_identity`**, **`bvi_color`**, **`diatonic_density`**, **`beguine_feel`**.
+
+### Four example applications
+
+1. **Cadential chromatic bass** — Progressions targeting **`cp:chrom_descent`** on dominant approaches.
+2. **Bridge tension** — **`cp:bvi_color`** on phrase-middle bars before cadences.
+3. **Beguine pocket** — **`porterBeguineFeelActive`** + receipts for eighth-syncopation teaching.
+4. **A/B with Bacharach** — Same locked chords: **`cole_porter`** vs **`bacharach`** — compare **`cp:*`** vs **`ba:*`** density.
+
+---
+
+## Radiohead (`radiohead`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+**OK Computer / Kid A**-adjacent lead-sheet grammar: **Phrygian pedal** colours (slash pedals), **chromatic insertion** above tonic, **borrowed iv**, **withheld tonic** in verse openings, delayed functional resolution.
+
+### How Composer OS implements it
+
+**`radioheadSlice.ts`** (**`goldenPath/radioheadSlice.ts`** re-export). **`precomputeRadioheadEffectiveHarmonyBars`** → **`radioheadEffectiveHarmonyBars`**, device receipts **`rh:device1…5:*`** (e.g. **`rh:device1:phrygian_pedal`**, **`rh:device5:absent_tonic`**). Uses **`coarseSectionRoleFromBar`** / **`inferTonicPitchClassFromBar1`** from **`brianWilsonPetSoundsSlice`** helpers.
+
+### Style surface
+
+No dedicated primary **`applyRadioheadStyleSurface`** — texture comes from **devices + melody profile**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['radiohead']`** — stepwise · mixed · **repetitionVsVariationBias 0.8** · phrase **5** · **`flat_with_terminal_climax`** · devices **`cell_repetition`**, **`modal_unease`**, **`metric_dislocation`**.
+
+### Four example applications
+
+1. **Verse absence of tonic** — **`rh:device5`** on early verse bars in major or minor.
+2. **Phrygian pedal lesson** — Verse, beats 1–2 of each four-bar cell; **`rh:device1`** slash pedals.
+3. **Borrowed iv peak** — Major key, **`b % 8 === 0`** peaks → **`rh:device4`**.
+4. **Borrowed vs Phrygian** — Contrast **`rh:device3`** chromatic insertion vs **`rh:device1`** pedal rows.
+
+---
+
+## Thelonious Monk (`thelonious_monk`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Angular bebop-era harmony: **♭9 dominant** colour, **tonic maj7/#11**, **strip lush extensions**, **deferred cadence** — space-forward chord symbols.
+
+### How Composer OS implements it
+
+**`theloniousMonkSlice.ts`**. **`precomputeTheloniousMonkEffectiveHarmonyBars`** → **`theloniousMonkEffectiveHarmonyBars`**, receipts **`tm:*`**. Routing identical locked-export pattern. Aliases **`monk`**, **`thelonious`**.
+
+### Style surface
+
+**`applyMonkStyleSurface`**: density **−0.12**, syncopation **+0.30**, space **+0.35**, cadence softness **+0.10**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['thelonious_monk']`** — angular · mixed · **repetitionVsVariationBias 0.6** · phrase **2** · irregular · devices **`tritone`**, **`whole_tone_fragment`**, **`chromatic_enclosure`**, **`deliberate_silence`**.
+
+### Four example applications
+
+1. **Dominant colour** — Compare **`tm:*`** altered dominants vs baseline Barry Harris grammar on same chart.
+2. **Space + angular melody** — Pair Monk surface with **2-bar** phrase melody profile for pedagogy.
+3. **Locked harmony QA** — Verify Monk bars replace **`getChordForBar`** output bar-for-bar.
+4. **Contrast with Bill Evans** — **`thelonious_monk`** primary (**`applyMonkStyleSurface`**, keyed off writer id) vs **`bill_evans`** primary + **`STYLE_MODERN_JAZZ`** (**`applyBillEvansStyleSurface`**) — different pocket metadata.
+
+---
+
+## Duke Ellington (`duke_ellington`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Big-band **jungle growl** dominant alterations, **chromatic diminished** approach, **call/response** mapping, **parallel planing** on tonic pedals, **shout chorus** staging — encoded as **symbol-level** receipts (`de:*`).
+
+### How Composer OS implements it
+
+**`dukeEllingtonSlice.ts`**. **`precomputeDukeEllingtonEffectiveHarmonyBars`** → **`dukeEllingtonEffectiveHarmonyBars`**. Phrase lengths **4 / 8 / 2 / 6** at **60% / 22% / 13% / 5%**. **`ellingtonCallResponseMap`** metadata from **`applyCallResponseFlagPass`**.
+
+### Style surface
+
+**`applyDukeEllingtonStyleSurface`**: density **+0.15**, syncopation **+0.22**, space **−0.10**, cadence softness **+0.08**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['duke_ellington']`** — mixed · **`eighth_patterns`** · **repetitionVsVariationBias 0.6** · phrase **4** · riff contour · devices **`blues_riff`**, **`call_response`**, **`chromatic_inner_voice`**, **`plunger_color`**, **`sectional_shout`**.
+
+### Four example applications
+
+1. **Shout zone** — Long charts: **`de:shout`** staging near form end (see slice **`computeShoutStartBar`**).
+2. **Call/response grid** — Alternate-bar **`de:call`** / **`de:response`** receipts for ensemble rhetoric on duo lead sheet.
+3. **Jungle colour** — Dominant bars → **`de:jungle_growl`** variants.
+4. **Ellington vs Schneider pastoral** — **`de:*`** orchestral density vs **`ms:nature_arc`** — different metaphors on paper.
+
+---
+
+## Maria Schneider (`maria_schneider`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Large-ensemble pastoral **modal tonic colour**, **pedal ostinati**, **intro/outro nature-arc** washes, **colour-stack** phrase endings, **non-functional planing** mid-phrase — expressed as **lead-sheet symbol** transformations.
+
+### How Composer OS implements it
+
+**`mariaSchneiderSlice.ts`**. **`precomputeMariaSchneiderEffectiveHarmonyBars`** → **`mariaSchneiderEffectiveHarmonyBars`**, receipts **`ms:*`**. Phrase grid **`computeSchneiderPhrasePositions`**: lengths **4 / 6 / 8 / 5 / 7 / 9** bars (**28% / 22% / 22% / 14% / 9% / 5%**). Stage‑1 enrichment flavours bare tonic/dominant/minor symbols before **`ms:*`** passes (**Lydian #11**, **7(b9,#11,13)** families, rich minor stacks).
+
+### Stage 2 devices (abbrev.)
+
+| Id | Receipt pattern | Role |
+|----|-----------------|------|
+| **d1** | **`ms:lyd_center`** | Tonic Lydian colour |
+| **d2** | **`ms:pedal`** | ≥4-bar fixed-root ostinato |
+| **d3** | **`ms:nature_arc`** | Intro/outro pastoral **`maj7(add9)`** |
+| **d4** | **`ms:color_stack`** | Phrase-final altered stacks |
+| **d5** | **`ms:planing`** | Phrase-middle parallel shift |
+
+### Style surface
+
+**`applyMariaSchneiderStyleSurface`**: density **+0.05**, syncopation **−0.20**, space **+0.25**, cadence softness **+0.28**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['maria_schneider']`** — stepwise · mixed · **repetitionVsVariationBias 0.85** · phrase **7** · arch · cadence **low** · devices **`sparse_phrase`**, **`modal_field`**, **`breath_space`**, **`nature_arc`**, **`chamber_texture`**.
+
+### Four example applications
+
+1. **Nature arc bookends** — Short forms; **`ms:nature_arc`** only first/last ≤4 bars.
+2. **Pedal vs nature arc** — Static harmony mid-piece (**`ms:pedal`**) vs intro/outro wash (**`ms:nature_arc`**).
+3. **Long-form planing** — 48–64 bars; **`ms:planing`** breaks ii–V–I loops in phrase middles.
+4. **Not ECM Chamber** — **`maria_schneider`** slice ≠ **`ecm_chamber`** writer — different pools + receipts.
+
+---
+
+## Bill Evans (`bill_evans`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Impressionist jazz harmony: **extension-rich** symbols, **sus / quartal** dominant colours, **delayed tonic** resolutions, gentle **ii–V** preparation — all at **chord-symbol** layer.
+
+### How Composer OS implements it
+
+**`billEvansSlice.ts`**. **`precomputeBillEvansEffectiveHarmonyBars`** → **`billEvansEffectiveHarmonyBars`**, receipts **`be:*`**. Phrase lengths **3 / 4 / 5** bars (**22% / 56% / 22%**).
+
+### Style surface (`STYLE_MODERN_JAZZ`)
+
+**`applyBillEvansStyleSurface`** runs when **`styleProfile === 'STYLE_MODERN_JAZZ'`** and **`jobimMode` is not true** — density **−0.05**, cadence softness **+0.22**, space **+0.12**. When primary is **Jobim**, **`jobimMode`** is **true** (`runGoldenPath` style resolution) so **`applyJobimStyleSurface`** replaces Evans on the same profile.
+
+### Melody planner row
+
+**`MELODY_PROFILES['bill_evans']`** — stepwise · mixed · **repetitionVsVariationBias 0.4** · phrase **8** · arch · devices **`inner_voice_melody`**, **`modal_interchange`**, **`delayed_resolution`**, **`impressionistic_voicing`**.
+
+### Four example applications
+
+1. **Evans vs Jobim on Modern Jazz** — Toggle primary **`bill_evans`** vs **`antonio_carlos_jobim`** with **`STYLE_MODERN_JAZZ`**; watch **`applyBillEvansStyleSurface`** vs **`applyJobimStyleSurface`** notes.
+2. **Suspension-heavy dominants** — Scan **`be:*`** receipts on dominants for sus/quartal language.
+3. **Delayed tonic** — Cadential bars where tonic maj colours arrive late in phrase window.
+4. **Phrase asymmetry** — **3-bar** vs **5-bar** weights ≠ typical **4/8** pop phrases.
+
+---
+
+## Frank Zappa (`frank_zappa`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+**Polytonal superimposition**, **metric displacement**, **xenochrony-like** offsets, **style juxtaposition**, **through-composed sectional cuts** — encoded as **`fz:d{1–5}`** devices plus **harmony language floors** (altered density quotas).
+
+### How Composer OS implements it
+
+**`frankZappaSlice.ts`**. Duo path calls **`attachFrankZappaHarmonyContext`**, which runs **`precomputeFrankZappaEffectiveHarmonyBars`**, freezes **`HarmonyContext`**, and exposes **`frankZappaEffectiveHarmonyBars`** for **`getChordForBar`**. **`enforceZappaHarmonyLanguageFloors`** guarantees minimum altered/colour density.
+
+### Context modes
+
+**`FrankZappaContextMode`** on **`GenerationMetadata`** / **`GenerateRequest`**: **`avant_rock`** (default) · **`big_band`** · **`futuristic_jazz`**. Surfaces: **`applyFrankZappaStyleSurface`** reads **`frankZappaContext`**, sets **`frankZappaSyntheticScaleBias`**, **`computeZappaDensityArc`** → per-bar density bias + mean **`songwriterDensityBias`**; syncopation **+0.22**, space **−0.15**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['frank_zappa']`** — angular · **`eighth_patterns`** · **repetitionVsVariationBias 0.2** · phrase **3** · irregular · devices **`polyrhythmic_unison`**, **`chromatic_sideslip`**, **`interval_expansion`**, **`synthetic_scale`**, **`sudden_meter_change`**.
+
+### Four example applications
+
+1. **Context A/B** — Same locked chords, **`frankZappaContext`** **`avant_rock`** vs **`futuristic_jazz`** — compare **`fz:*`** rates + synthetic-scale bias.
+2. **HarmonyContext checksum** — Export truth uses frozen **`harmonyContext.bars`** when attached.
+3. **Odd meter maps** — **`barMeterMap`** + Zappa slice (host-safe MusicXML) for lesson plans.
+4. **Density arc** — **`frankZappaDensityBiasByBar`** teaches sectional density cliffs without manual MIDI editing.
+
+---
+
+## Antônio Carlos Jobim (`antonio_carlos_jobim`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Bossa / Brazilian jazz: **rich tonic** spellings (**6/9**, **maj6**, minor colours), **altered dominants** with voice-leading motivation, **tritone subs**, **backdoor** resolutions, **passing diminished**, **Lydian dominant** touches — receipts **`aj:*`** (James Brown retains **`jb:*`**).
+
+### How Composer OS implements it
+
+**`jobimSlice.ts`**. **`precomputeJobimEffectiveHarmonyBars`** → **`jobimEffectiveHarmonyBars`**. Phrase grid mostly **4 / 8 / 2** bars (**65% / 20% / 15%**). **`finalizeJobimMetadata`** emits consolidated **`jobimSliceReceipt`**. **`jobimBossaAnticipationBars`** marks anticipation targets.
+
+### Style surface vs Bill Evans
+
+Style resolution sets **`jobimMode: true`** when primary resolves to **`antonio_carlos_jobim`** (`runGoldenPath`). With **`STYLE_MODERN_JAZZ`** + **`jobimMode`**, **`applyJobimStyleSurface`** applies density **−0.08**, syncopation **+0.18**, cadence softness **+0.15** — **instead of** **`applyBillEvansStyleSurface`**.
+
+### Melody planner row
+
+**`MELODY_PROFILES['antonio_carlos_jobim']`** — stepwise · **`eighth_patterns`** · **repetitionVsVariationBias 0.5** · phrase **8** · arch · devices **`bossa_anticipation`**, **`lydian_dominant`**, **`chromatic_approach`**, **`sigh_figure`**.
+
+### Four example applications
+
+1. **SubV / backdoor counts** — Read **`jobimDiagnostics.subVOrBackdoorTouches`** + **`aj:tri_sub`** / **`aj:backdoor`** receipts.
+2. **Bossa anticipation bars** — Inspect **`jobimBossaAnticipationBars`** for comp anticipation pedagogy.
+3. **Modern Jazz surface flip** — Same **`STYLE_MODERN_JAZZ`**: swap **`bill_evans`** ↔ **`antonio_carlos_jobim`** primaries to compare surfaces.
+4. **Phrase-final six-nine** — Watch **`applyPhraseFinalSixNineOnTonic`** outcomes on tonic arrivals.
+
+---
+
+## Debussy (`debussy`) — Song Mode harmony slice
+
+### Signature style & key techniques
+
+Impressionist parallel colour: **whole-tone / augmented** touches, **parallel planing**, **pentatonic** contrasts, **appoggiatura** chord symbols, **arabesque** motif flags — lead-sheet only (no Classical orchestration claim).
+
+### How Composer OS implements it
+
+**`debussySlice.ts`**. **`precomputeDebussyEffectiveHarmonyBars`** → **`debussyEffectiveHarmonyBars`**, receipts **`db:*`** (e.g. **`db:arabesque`**, **`db:appoggiatura`**, planing / whole-tone families per slice passes). **`debussyArabesqueBars`** + **`debussyArabesqueMotifByBar`** optional lesson metadata.
+
+### Style surface
+
+**`applyDebussyStyleSurface`**: density **+0.14**, syncopation **+0.09**, space **+0.31**, cadence softness **+0.34** — wash-forward bias separate from **`db:*`** harmony devices.
+
+### Melody planner row
+
+**`MELODY_PROFILES['debussy']`** — stepwise · mixed · **repetitionVsVariationBias 0.5** · phrase **3** · **`dissolving`** contour · devices **`whole_tone_melody`**, **`pentatonic_contrast`**, **`parallel_planing`**, **`unresolved_appoggiatura`**, **`arabesque`**.
+
+### Four example applications
+
+1. **Wash vs cadence** — Pair **high** cadence softness surface with **`db:*`** resolution suppression receipts.
+2. **Arabesque lesson** — **`debussyArabesqueMotifByBar`** kinds (**sequence_by_step**, **register_shift**, …) for motif taxonomy demos.
+3. **Locked harmony** — **`debussy`** locked truth parity same as Bill Evans / Bacharach QA checklist.
+4. **Contrast Cole Porter** — Theatre **`cp:*`** cadential clarity vs **`db:*`** blurred cadence — same classroom chart, two writers.
 
 ---
 
