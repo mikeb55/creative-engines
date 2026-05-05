@@ -39,6 +39,9 @@ import type { BarMeterMap } from './rhythm/barMeterTypes';
 import type { SoloLine, ZappaImitationReceipt, ZappasoloOptions } from './solo/soloTypes';
 import type { HarmonyContext } from './harmony/harmonyContext';
 
+/** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
+export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -679,6 +682,14 @@ export interface GenerationMetadata {
     targetMeanFiresD4: number;
     targetMeanFiresD5: number;
   };
+  /** Frank Zappa — slice mode for additive harmony/metadata passes (`frankZappaSlice.ts`). Default **`avant_rock`** when omitted. */
+  frankZappaContext?: FrankZappaContextMode;
+  /** Context-specific synthetic / modal scale weights for manifests (honest bias labels only). */
+  frankZappaSyntheticScaleBias?: Record<string, number>;
+  /** Per-bar density bias (0–1) from Zappa density arc; refined after hard-cut resets in precompute. */
+  frankZappaDensityBiasByBar?: number[];
+  /** Bars where hard-cut triggers fired (1-based). */
+  frankZappaHardCutTriggerBars?: number[];
   /** String quartet — Frank Zappa SQ harmony slice (`fz:sq:` receipts); see `zappaStringQuartetSlice`. */
   zappaSQHarmonySlice?: boolean;
   zappaSQEffectiveHarmonyBars?: string[];

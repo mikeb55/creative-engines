@@ -3,7 +3,13 @@
  * preset → feel → section roles → density → register map → behaviours → score → integrity → export → validation → manifest
  */
 
-import type { CompositionContext, GenerationMetadata, HarmonyPipelineStage, ImportHarmonyMode } from '../compositionContext';
+import type {
+  CompositionContext,
+  FrankZappaContextMode,
+  GenerationMetadata,
+  HarmonyPipelineStage,
+  ImportHarmonyMode,
+} from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
@@ -93,6 +99,7 @@ import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
 import { defaultStyleProfileForPrimarySongwriter } from '../song-mode/songModeStyleProfileDefaults';
 import type { AuthorRuleId, ClassicalSongRuleId } from '../song-mode/songwritingResearchTypes';
 import { resolveSongwritingStyles } from '../song-mode/songwriterStyleResolver';
+import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
 import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
 import { styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
 import {
@@ -100,6 +107,7 @@ import {
   applyBacharachSongModeSurfaceV1,
   applyBacharachStyleSurface,
   applyBillEvansStyleSurface,
+  applyFrankZappaStyleSurface,
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyEcmChamberStyleSurface,
@@ -1008,6 +1016,8 @@ export interface RunGoldenPathOptions {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Optional per-bar meters (1-based keys); copied to context + `generationMetadata.barMeterMap`. */
   barMeterMap?: BarMeterMap;
+  /** Song Mode / Frank Zappa: harmony vocabulary + density arc mode (`frankZappaSlice`). Default **`avant_rock`** when omitted. */
+  frankZappaContext?: FrankZappaContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1584,6 +1594,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
           ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
           : undefined,
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'frank_zappa'
+        ? { frankZappaContext: options.frankZappaContext ?? 'avant_rock' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1664,6 +1677,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyDonaldFagenSongwriterSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyFrankZappaStyleSurface(
+      context.generationMetadata,
+      options.primarySongwriterStyle,
+      options.totalBars ?? context.form.totalBars
+    );
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);

@@ -1014,6 +1014,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           zappaSoloMidiHigh: req.zappaSoloMidiHigh,
           zappaSoloDensity: req.zappaSoloDensity,
           zappaSoloDissonance: req.zappaSoloDissonance,
+          frankZappaContext: req.frankZappaContext,
         }
       : {}),
   };

@@ -3,10 +3,11 @@
  * with short honest receipt lines (no mimic claims).
  */
 
-import type { GenerationMetadata } from '../compositionContext';
+import type { FrankZappaContextMode, GenerationMetadata } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
 import { registerSongModeSectionBehaviour } from './songModeSectionControl';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
+import { computeZappaDensityArc, resolveFrankZappaSyntheticScaleBias } from './frankZappaSlice';
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
@@ -166,6 +167,35 @@ export function applyJobimStyleSurface(metadata: GenerationMetadata, styleProfil
 
   appendStyleSurfaceNotes(metadata, [
     'STYLE_MODERN_JAZZ (Jobim surface): density −0.08, syncopation +0.18, cadence softness +0.15 — bossa rhythm metadata (generative bias only).',
+  ]);
+}
+
+/**
+ * Primary **`frank_zappa`** — density arc mean from six-zone `computeZappaDensityArc`, raised syncopation, reduced space (dense Zappa pocket metadata).
+ */
+export function applyFrankZappaStyleSurface(
+  metadata: GenerationMetadata,
+  primarySongwriterStyle: string | undefined,
+  totalBarsHint?: number
+): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'frank_zappa') return;
+
+  const ctxMode: FrankZappaContextMode = metadata.frankZappaContext ?? 'avant_rock';
+  metadata.frankZappaContext = ctxMode;
+  metadata.frankZappaSyntheticScaleBias = resolveFrankZappaSyntheticScaleBias(ctxMode);
+
+  const tb = Math.max(8, Math.min(128, totalBarsHint ?? metadata.totalBars ?? 32));
+  const arc = computeZappaDensityArc(tb);
+  metadata.frankZappaDensityBiasByBar = arc;
+  metadata.songwriterDensityBias = clamp01(arc.reduce((a, x) => a + x, 0) / arc.length);
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.22);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.15);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Frank Zappa surface (${ctxMode}): density from six-zone arc mean → songwriterDensityBias; syncopation +0.22; space −0.15; synthetic scale bias metadata — generative bias only.`,
   ]);
 }
 

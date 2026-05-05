@@ -4,7 +4,7 @@
  * Receipts **`fz:d{1–5}:<device>@bar{N}#v1`**.
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, FrankZappaContextMode, GenerationMetadata } from '../compositionContext';
 import type { HarmonyContext } from '../harmony/harmonyContext';
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
 import { getChordForBar } from '../harmony/harmonyResolution';
@@ -288,6 +288,286 @@ function applyThroughComposedCut(symbol: string, seed: number, bar: number): str
   return transposeChordRoot(symbol, delta);
 }
 
+/** Six-zone density arc time shares: intro / build1 / peak1 / drop / peak2 / outro. */
+const ZAPPA_ZONE_SHARES = [0.12, 0.22, 0.12, 0.18, 0.28, 0.08] as const;
+const ZAPPA_ZONE_DENSITY = [0.3, 0.55, 0.85, 0.25, 0.95, 0.35] as const;
+
+/**
+ * Map each bar (1..tb) to a density bias (0–1) using fixed zone shares along the piece span.
+ */
+export function computeZappaDensityArc(tb: number): number[] {
+  const out: number[] = [];
+  if (tb < 1) return out;
+  let cum = 0;
+  const boundaries = ZAPPA_ZONE_SHARES.map((s) => {
+    cum += s;
+    return cum;
+  });
+  for (let b = 1; b <= tb; b++) {
+    const u = (b - 0.5) / tb;
+    let zi = 0;
+    for (; zi < 6; zi++) {
+      if (u <= boundaries[zi]!) break;
+    }
+    out.push(ZAPPA_ZONE_DENSITY[Math.min(5, zi)]!);
+  }
+  return out;
+}
+
+export function resolveFrankZappaSyntheticScaleBias(mode: FrankZappaContextMode): Record<string, number> {
+  switch (mode) {
+    case 'big_band':
+      return { Lydian: 0.5, Mixolydian: 0.25, Dorian: 0.25 };
+    case 'futuristic_jazz':
+      return { Lydian: 0.35, 'Lydian dominant': 0.2, diminished: 0.15, 'whole-tone': 0.1, custom: 0.2 };
+    case 'avant_rock':
+    default:
+      return { Lydian: 0.4, Dorian: 0.3, Mixolydian: 0.2, synthetic: 0.1 };
+  }
+}
+
+function densityArcTailReset(density: number[], tb: number, resetBar: number): number[] {
+  const tailLen = tb - resetBar + 1;
+  if (tailLen < 1) return density;
+  const tail = computeZappaDensityArc(tailLen);
+  const out = [...density];
+  for (let i = 0; i < tailLen; i++) {
+    out[resetBar - 1 + i] = tail[i]!;
+  }
+  return out;
+}
+
+function meanDensity(density: readonly number[]): number {
+  if (density.length === 0) return 0.55;
+  return density.reduce((a, x) => a + x, 0) / density.length;
+}
+
+function isLydianModalField(bar: number, symbol: string, fzCtx: FrankZappaContextMode, seed: number): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  if (/maj7#11|Δ#11|lyd/i.test(hp)) return true;
+  const p =
+    fzCtx === 'futuristic_jazz' ? 0.62 : fzCtx === 'big_band' ? 0.48 : 0.36;
+  return seededUnit(seed, bar, 909100) < p;
+}
+
+function isDominantOrMajorForLydianField(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const head = hp.includes('/') ? hp.slice(0, hp.indexOf('/')) : hp;
+  const tl = head.toLowerCase().replace(/\s/g, '');
+  if (/m(?!aj)|dim|ø|sus/.test(tl)) return false;
+  if (/\bmaj7\b|maj9|maj11|Δ|maj\b|\bmaj$/.test(tl)) return true;
+  if (/\b7|9|11|13|alt/.test(tl) && !/mmaj/.test(tl)) return true;
+  return /^[a-g][#b]?$/i.test(head.trim());
+}
+
+function applyLydianDominantFieldPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  fzCtx: FrankZappaContextMode
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isFrankZappaHookBar(b, context)) continue;
+    if (seededUnit(seed, b, 909111) >= 0.32) continue;
+    const sym = out[b - 1]!;
+    if (sym.includes('/')) continue;
+    if (!isLydianModalField(b, sym, fzCtx, seed)) continue;
+    if (!isDominantOrMajorForLydianField(sym)) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    if (/#11|\(#11\)/i.test(hp)) continue;
+    const slash = slashTail(sym);
+    out[b - 1] = `${hp}(#11)${slash}`;
+    receipts.push(`fz:lyd_dominant@bar${b}#v1`);
+  }
+}
+
+function applyBitonalTriadPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isFrankZappaHookBar(b, context)) continue;
+    if (seededUnit(seed, b, 909121) >= 0.24) continue;
+    const sym = out[b - 1]!;
+    if (sym.includes('/')) continue;
+    const r = harmonyRootPc(sym);
+    if (r === undefined) continue;
+    const delta = seededUnit(seed, b, 909122) < 0.5 ? 4 : 6;
+    const r2 = (r + delta) % 12;
+    const slash = slashTail(sym);
+    const a = pitchClassToSharpName(r);
+    const bName = pitchClassToSharpName(r2);
+    out[b - 1] = `${a}maj+${bName}maj${slash}`;
+    receipts.push(`fz:bitonal_triad@bar${b}#v1`);
+  }
+}
+
+export type FrankZappaMotifRecycleTransform =
+  | 'transposition'
+  | 'rhythmic_displacement'
+  | 'exact_repeat'
+  | 'augmentation_diminution'
+  | 'inversion'
+  | 'combined'
+  | 'retrograde';
+
+const MOTIF_RECYCLE_WEIGHTS: readonly number[] = [0.28, 0.22, 0.2, 0.12, 0.08, 0.07, 0.03];
+
+function pickMotifRecycleTransform(seed: number, bar: number): FrankZappaMotifRecycleTransform {
+  const order: readonly FrankZappaMotifRecycleTransform[] = [
+    'transposition',
+    'rhythmic_displacement',
+    'exact_repeat',
+    'augmentation_diminution',
+    'inversion',
+    'combined',
+    'retrograde',
+  ];
+  const u = seededUnit(seed, bar, 909131);
+  let c = 0;
+  for (let i = 0; i < order.length; i++) {
+    c += MOTIF_RECYCLE_WEIGHTS[i]!;
+    if (u < c) return order[i]!;
+  }
+  return 'transposition';
+}
+
+function applyMotifTransformAtBar(sym: string, t: FrankZappaMotifRecycleTransform): string {
+  switch (t) {
+    case 'transposition':
+      return transposeChordRoot(sym, 2);
+    case 'rhythmic_displacement':
+      return transposeChordRoot(sym, 1);
+    case 'exact_repeat':
+      return sym;
+    case 'augmentation_diminution':
+      return transposeChordRoot(sym, 12);
+    case 'inversion':
+      return transposeChordRoot(sym, -5);
+    case 'combined':
+      return transposeChordRoot(sym, 3);
+    case 'retrograde':
+      return transposeChordRoot(sym, -2);
+    default:
+      return sym;
+  }
+}
+
+function applyMotifRecyclingPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  const sections =
+    context.form.sections.length > 0
+      ? context.form.sections
+      : [{ label: 'form', startBar: 1, length: tb }];
+  const L = 4;
+  for (const sec of sections) {
+    const lo = sec.startBar;
+    const hi = Math.min(tb, sec.startBar + sec.length - 1);
+    let fired = false;
+    for (let start = lo; start + 2 * L - 1 <= hi && !fired; start++) {
+      const pattern = [0, 1, 2, 3].map((i) => out[start + i - 1]!);
+      for (let j = start + L; j + L - 1 <= hi && !fired; j++) {
+        const match = [0, 1, 2, 3].every((k) => out[j + k - 1] === pattern[k]);
+        if (!match) continue;
+        const barApply = j;
+        if (isFrankZappaHookBar(barApply, context)) continue;
+        const sym = out[barApply - 1]!;
+        if (sym.includes('/')) continue;
+        const t = pickMotifRecycleTransform(seed, barApply);
+        const next = applyMotifTransformAtBar(sym, t);
+        if (next !== sym) out[barApply - 1] = next;
+        receipts.push(`fz:motif_recycle_${t}@bar${barApply}#v1`);
+        fired = true;
+      }
+    }
+  }
+}
+
+function applyHardCutTriggerSystem(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  density: number[]
+): { density: number[]; triggers: number[] } {
+  let d = [...density];
+  const triggers: number[] = [];
+  const sections =
+    context.form.sections.length > 0
+      ? context.form.sections
+      : [{ label: 'form', startBar: 1, length: tb }];
+
+  for (const sec of sections) {
+    if (sec.length <= 24) continue;
+    const at = Math.min(tb, sec.startBar + 24);
+    const hiDen = (d[at - 1] ?? 0) >= 0.85;
+    if (hiDen && seededUnit(seed, at, 909201) < 0.45 && !isFrankZappaHookBar(at, context)) {
+      triggers.push(at);
+    }
+  }
+
+  let runStart = 1;
+  for (let b = 2; b <= tb; b++) {
+    if (out[b - 2] !== out[b - 1]) {
+      const runLen = b - 1 - runStart + 1;
+      if (runLen >= 8) {
+        const barHit = Math.min(tb, runStart + 7);
+        if (!isFrankZappaHookBar(barHit, context) && seededUnit(seed, barHit, 909202) < 0.55) {
+          triggers.push(barHit);
+        }
+      }
+      runStart = b;
+    }
+  }
+  {
+    const runLen = tb - runStart + 1;
+    if (runLen >= 8) {
+      const barHit = Math.min(tb, runStart + 7);
+      if (!isFrankZappaHookBar(barHit, context) && seededUnit(seed, barHit, 909204) < 0.55) {
+        triggers.push(barHit);
+      }
+    }
+  }
+
+  for (let b = 4; b <= tb; b++) {
+    if ((d[b - 1] ?? 0) >= 0.92 && (d[b - 2] ?? 0) >= 0.92 && (d[b - 3] ?? 0) >= 0.92) {
+      if (seededUnit(seed, b, 909203) < 0.18 && !isFrankZappaHookBar(b, context)) {
+        triggers.push(b);
+      }
+    }
+  }
+
+  const uniq = [...new Set(triggers)].sort((a, bb) => a - bb);
+  const fired: number[] = [];
+
+  for (const bar of uniq) {
+    if (isFrankZappaHookBar(bar, context)) continue;
+    const sym = out[bar - 1]!;
+    if (sym.includes('/')) continue;
+    const cut = applyThroughComposedCut(sym, seed, bar);
+    if (cut !== sym) {
+      out[bar - 1] = cut;
+      receipts.push(`fz:hard_cut_trigger@bar${bar}#v1`);
+      receipts.push(fzReceipt('d5', FRANK_ZAPPA_DEVICE_THROUGH_COMPOSED_CUT, bar));
+      fired.push(bar);
+      d = densityArcTailReset(d, tb, bar);
+    }
+  }
+
+  return { density: d, triggers: fired };
+}
+
 export function isSongwriterFrankZappa(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'frank_zappa' } {
@@ -456,6 +736,12 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
   const receipts: string[] = [];
   const guards: FrankZappaAntiElaborationGuards = { polytonalNoop: 0, xenochronyNoop: 0 };
 
+  const fzCtx: FrankZappaContextMode = genMeta.frankZappaContext ?? 'avant_rock';
+  genMeta.frankZappaContext = fzCtx;
+  if (genMeta.frankZappaSyntheticScaleBias == null) {
+    genMeta.frankZappaSyntheticScaleBias = resolveFrankZappaSyntheticScaleBias(fzCtx);
+  }
+
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
     raw.push(resolveFrankZappaSliceSourceChordForBar(b, context));
@@ -505,7 +791,22 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
     }
   }
 
+  applyLydianDominantFieldPass(out, seed, receipts, tb, context, fzCtx);
+  applyBitonalTriadPass(out, seed, receipts, tb, context);
+  applyMotifRecyclingPass(out, seed, receipts, tb, context);
+
   enforceZappaHarmonyLanguageFloors({ out, receipts, context, seed });
+
+  let densityArc =
+    Array.isArray(genMeta.frankZappaDensityBiasByBar) && (genMeta.frankZappaDensityBiasByBar as number[]).length === tb
+      ? ([...(genMeta.frankZappaDensityBiasByBar as number[])] as number[])
+      : computeZappaDensityArc(tb);
+
+  const hard = applyHardCutTriggerSystem(out, seed, receipts, tb, context, densityArc);
+  densityArc = hard.density;
+  genMeta.frankZappaDensityBiasByBar = densityArc;
+  genMeta.frankZappaHardCutTriggerBars = hard.triggers.length ? hard.triggers : undefined;
+  genMeta.songwriterDensityBias = Math.max(0, Math.min(1, meanDensity(densityArc)));
 
   genMeta.frankZappaEffectiveHarmonyBars = out;
   genMeta.frankZappaDeviceReceipts = receipts;

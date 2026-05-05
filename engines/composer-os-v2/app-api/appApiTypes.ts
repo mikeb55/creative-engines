@@ -3,12 +3,13 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
-import type { GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
+import type { FrankZappaContextMode, GenerationMetadata, ImportHarmonyMode } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export type { StyleProfile };
+export type { FrankZappaContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -210,6 +211,11 @@ export interface GenerateRequest {
    * When omitted and songwriter is `frank_zappa`, the slice is enabled.
    */
   zappaSQHarmonySlice?: boolean;
+  /**
+   * Song Mode / Frank Zappa: harmonic vocabulary + density arc mode (`frankZappaSlice.ts`).
+   * Omitted → engine default **`avant_rock`** when primary songwriter is **`frank_zappa`**.
+   */
+  frankZappaContext?: FrankZappaContextMode;
 }
 
 export interface ValidationSummary {
