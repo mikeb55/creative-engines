@@ -135,6 +135,12 @@ import {
   precomputeBillEvansEffectiveHarmonyBars,
 } from './billEvansSlice';
 import {
+  accumulateDukeEllingtonHarmonyDiagnostics,
+  createDukeEllingtonHarmonyAccumulator,
+  finalizeDukeEllingtonMetadata,
+  precomputeDukeEllingtonEffectiveHarmonyBars,
+} from './dukeEllingtonSlice';
+import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
@@ -1995,6 +2001,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'laid_back',
       };
+    case 'duke_ellington':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: 0.12,
+        offbeatBias: 0.55,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'syncopated',
+      };
     case 'pat_metheny':
       return {
         phraseIntentBias: 'ascending',
@@ -2230,6 +2244,7 @@ function buildGuitarPart(
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'frank_zappa';
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
+  const isSongwriterDukeEllington = genMeta?.songwriterStyleId === 'duke_ellington';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
@@ -2241,6 +2256,7 @@ function buildGuitarPart(
   const fzAccum = createFrankZappaHarmonyAccumulator();
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
+  const deAccum = createDukeEllingtonHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -2284,6 +2300,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBillEvans && isDuoGoldenPath) {
     precomputeBillEvansEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterDukeEllington && isDuoGoldenPath) {
+    precomputeDukeEllingtonEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -2481,6 +2500,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         beAccum
+      );
+    }
+    if (isSongwriterDukeEllington) {
+      accumulateDukeEllingtonHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        deAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -3064,6 +3090,10 @@ function buildGuitarPart(
 
   if (isSongwriterBillEvans && context.generationMetadata) {
     finalizeBillEvansMetadata(context.generationMetadata, beAccum);
+  }
+
+  if (isSongwriterDukeEllington && context.generationMetadata) {
+    finalizeDukeEllingtonMetadata(context.generationMetadata, deAccum);
   }
 
   if (isSongwriterBacharach && context.generationMetadata) {

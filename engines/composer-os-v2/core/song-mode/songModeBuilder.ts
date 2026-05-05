@@ -1473,6 +1473,23 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G9sus', 'Cmaj9', 'Am9'],
     ],
   },
+  duke_ellington: {
+    verse: [
+      ['Cmaj9(#11)', 'A7(b9#5)', 'Dm9', 'G13'],
+      ['Fmaj13(#11)', 'F#dim7', 'Gm9', 'C13'],
+    ],
+    chorus: [
+      ['Cmaj9(#11)', 'Fmaj9(#11)', 'Bm7b5', 'E7(b9)'],
+      ['Gmaj9(#11)', 'C13', 'F#m7b5', 'B13'],
+    ],
+    bridge: [
+      ['Dm9', 'G13', 'Cmaj9(#11)', 'Ebdim7'],
+      ['Am9', 'D13', 'Gmaj9(#11)', 'Cmaj9(#11)'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'G13', 'Cmaj9(#11)', 'Am9'],
+    ],
+  },
 };
 
 function sectionChordPoolRows(

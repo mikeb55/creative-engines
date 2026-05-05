@@ -739,6 +739,29 @@ export interface GenerationMetadata {
     bareTriadRaised: number;
     strongCadenceSoftened: number;
   };
+  /** Duke Ellington (orchestral / jungle colour) — slice diagnostics + effective harmony. */
+  dukeEllingtonDiagnostics?: {
+    songwriterId: 'duke_ellington';
+    barsConsidered: number;
+    majExtensionTouches: number;
+    domColourTouches: number;
+    minorColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bareMajorRaised: number;
+    };
+    deviceReceipts?: string[];
+  };
+  dukeEllingtonSliceReceipt?: string;
+  dukeEllingtonEffectiveHarmonyBars?: string[];
+  dukeEllingtonDeviceReceipts?: string[];
+  dukeEllingtonAntiElaborationGuards?: {
+    bareMajorRaised: number;
+  };
+  /** Call / response grid (1-based bar index → role). */
+  ellingtonCallResponseMap?: Record<number, 'call' | 'response'>;
+  /** Bars tagged by shout-chorus pass (1-based). */
+  ellingtonShoutBars?: number[];
   /** Bacharach (theatre-pop / studio orchestration) — slice diagnostics + effective harmony. */
   bacharachDiagnostics?: {
     songwriterId: 'bacharach';

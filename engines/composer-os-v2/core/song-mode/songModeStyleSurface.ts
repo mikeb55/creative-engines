@@ -218,6 +218,24 @@ export function applyMonkStyleSurface(metadata: GenerationMetadata, primarySongw
 }
 
 /**
+ * Primary **`duke_ellington`** — dense orchestral pocket metadata (Song Mode hook-first path).
+ */
+export function applyDukeEllingtonStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'duke_ellington') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.15);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.22);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.1);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.08);
+
+  appendStyleSurfaceNotes(metadata, [
+    'duke_ellington surface: density +0.15, syncopation +0.22, space −0.10, cadence softness +0.08 — generative bias only.',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

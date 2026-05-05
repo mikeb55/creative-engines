@@ -205,6 +205,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Duke Ellington: `precomputeDukeEllingtonEffectiveHarmonyBars` applies orchestral extension / jungle / shout devices.
+   * After precompute, `dukeEllingtonEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const deEff = meta?.dukeEllingtonEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'duke_ellington' &&
+    Array.isArray(deEff) &&
+    deEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return deEff[barIndex - 1]!;
+  }
+
+  /**
    * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
    * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
    */

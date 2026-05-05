@@ -417,6 +417,14 @@ export interface OutputEntry {
   billEvansSliceReceipt?: GenerationMetadata['billEvansSliceReceipt'];
   billEvansEffectiveHarmonyBars?: GenerationMetadata['billEvansEffectiveHarmonyBars'];
   billEvansAntiElaborationGuards?: GenerationMetadata['billEvansAntiElaborationGuards'];
+  /** Duke Ellington (orchestral harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  dukeEllingtonDiagnostics?: GenerationMetadata['dukeEllingtonDiagnostics'];
+  dukeEllingtonDeviceReceipts?: GenerationMetadata['dukeEllingtonDeviceReceipts'];
+  dukeEllingtonSliceReceipt?: GenerationMetadata['dukeEllingtonSliceReceipt'];
+  dukeEllingtonEffectiveHarmonyBars?: GenerationMetadata['dukeEllingtonEffectiveHarmonyBars'];
+  dukeEllingtonAntiElaborationGuards?: GenerationMetadata['dukeEllingtonAntiElaborationGuards'];
+  ellingtonCallResponseMap?: GenerationMetadata['ellingtonCallResponseMap'];
+  ellingtonShoutBars?: GenerationMetadata['ellingtonShoutBars'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
   bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];
