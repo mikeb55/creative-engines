@@ -3,9 +3,9 @@
  * Packaged UI loads from disk (no localhost). API via IPC + shared engine (no HTTP for desktop).
  */
 
-require('dotenv').config({
-  path: require('path').resolve(__dirname, '../../../../.env'),
-});
+const envPath = require('path').resolve(__dirname, '../../../.env');
+require('dotenv').config({ path: envPath });
+console.log('[main] envPath:', envPath, 'key loaded:', !!process.env.ANTHROPIC_API_KEY);
 
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
