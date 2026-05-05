@@ -64,9 +64,11 @@ import {
   inspectChordToMusicXml,
   vaultRiffScoreNotesToMusicXml,
   type ChordInspectorResult,
+  type ChorusTensionProgression,
   type EmotionalDrift,
   type IRealVaultOutput,
   type ParsedChart,
+  type PhraseContourTag,
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
 
@@ -111,6 +113,19 @@ function parsedChartHasMixedMeter(chart: ParsedChart): boolean {
     if (distinct.size > 1) return true;
   }
   return false;
+}
+
+/** UI-only: detect multiple `<beats>/<beat-type>` pairs in pasted MusicXML (Song Mode lead sheet). */
+function leadSheetXmlLooksMixedMeter(xml: string): boolean {
+  const s = xml.trim();
+  if (s.length < 24) return false;
+  const beats = [...s.matchAll(/<beats>(\d+)<\/beats>/gi)].map((m) => m[1]!);
+  const types = [...s.matchAll(/<beat-type>(\d+)<\/beat-type>/gi)].map((m) => m[1]!);
+  if (beats.length === 0 || types.length === 0) return false;
+  const sigs = new Set<string>();
+  const n = Math.min(beats.length, types.length);
+  for (let i = 0; i < n; i++) sigs.add(`${beats[i]}/${types[i]}`);
+  return sigs.size > 1;
 }
 
 function MixedMeterBadge() {
@@ -410,6 +425,31 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
+
+/** Song Mode UI hint only — not sent on Generate (no backend contract). */
+const SONG_MODE_DUO_PAIRING_UX: Record<
+  string,
+  { primaryLabel: string; primaryRationale: string; alternateLabel: string; alternateRationale: string }
+> = {
+  pat_metheny: {
+    primaryLabel: 'guitar + melodica',
+    primaryRationale: 'wide register, lyrical answering phrases',
+    alternateLabel: 'guitar + piano',
+    alternateRationale: 'open harmony under lyrical guitar lead',
+  },
+  bacharach: {
+    primaryLabel: 'piano + strings',
+    primaryRationale: 'melodic lead with harmonic cushion',
+    alternateLabel: 'voice + rhythm section',
+    alternateRationale: 'breathy lead over anchored groove',
+  },
+  ecm_chamber: {
+    primaryLabel: 'piano + bass',
+    primaryRationale: 'sparse chamber texture, wide spacing',
+    alternateLabel: 'guitar + bass',
+    alternateRationale: 'electric warmth with anchored upright motion',
+  },
+};
 
 /** Primary ordering inside each optgroup (Shipped = full golden-path slice in core). */
 const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
@@ -1076,6 +1116,132 @@ type GenResult = {
   gceGatePassed?: boolean;
 };
 
+type DuoHealthLevel = 'green' | 'amber' | 'red';
+
+function duoHealthBadgeStyle(level: DuoHealthLevel): { bg: string; border: string; color: string } {
+  if (level === 'green') {
+    return { bg: 'rgba(34,197,94,0.14)', border: 'rgba(34,197,94,0.45)', color: '#166534' };
+  }
+  if (level === 'amber') {
+    return { bg: 'rgba(234,179,8,0.16)', border: 'rgba(234,179,8,0.5)', color: '#a16207' };
+  }
+  return { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.45)', color: '#b91c1c' };
+}
+
+function parsePhraseContoursLoose(v: unknown): PhraseContourTag[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out: PhraseContourTag[] = [];
+  for (const x of v) {
+    if (x === 'rise' || x === 'fall' || x === 'stable') out.push(x);
+  }
+  return out.length ? out : undefined;
+}
+
+function parseTensionProgressionLoose(v: unknown): ChorusTensionProgression | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const pc = (v as { perChorus?: unknown }).perChorus;
+  if (!Array.isArray(pc)) return undefined;
+  const nums = pc.filter((n): n is number => typeof n === 'number' && Number.isFinite(n));
+  return nums.length ? { perChorus: nums.map((n) => Math.min(1, Math.max(0, n))) } : undefined;
+}
+
+/** Best-effort read when API echoes vault diagnostics on the root record or under `runManifest`. */
+function extractVaultEchoFromGenResult(r: GenResult | null): {
+  phraseContours?: PhraseContourTag[];
+  tensionProgression?: ChorusTensionProgression;
+} {
+  if (!r) return {};
+  const rec = r as Record<string, unknown>;
+  const directC = parsePhraseContoursLoose(rec.phraseContours);
+  const directT = parseTensionProgressionLoose(rec.tensionProgression);
+  const rm = rec.runManifest as Record<string, unknown> | undefined;
+  const nestedC = rm ? parsePhraseContoursLoose(rm.phraseContours) : undefined;
+  const nestedT = rm ? parseTensionProgressionLoose(rm.tensionProgression) : undefined;
+  return {
+    phraseContours: directC ?? nestedC,
+    tensionProgression: directT ?? nestedT,
+  };
+}
+
+function meanAbsRegisterBiasFromManifest(rm: GenResult['runManifest']): number | null {
+  const desc = rm?.songModeSectionBehaviourDescriptors;
+  if (!desc?.length) return null;
+  const vals: number[] = [];
+  for (const d of desc) {
+    const rb = d.registerBiasByRole;
+    if (!rb) continue;
+    for (const k of Object.keys(rb)) {
+      const z = rb[k as keyof typeof rb];
+      if (typeof z === 'number') vals.push(Math.abs(z));
+    }
+  }
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+/**
+ * UI-only heuristic: prefers vault `phraseContours` + `tensionProgression` when present on the client record;
+ * otherwise falls back to Voice-2 polyphony + Space slider + register biases.
+ */
+function computeSongModeDuoHealthReadout(r: GenResult | null): {
+  independence: DuoHealthLevel;
+  spacing: DuoHealthLevel;
+  sourceLabel: string;
+} | null {
+  if (!r?.success || r.runManifest?.presetId !== 'song_mode') return null;
+
+  const { phraseContours: pc, tensionProgression: tp } = extractVaultEchoFromGenResult(r);
+  const n = pc?.length ?? 0;
+  const hasTp = (tp?.perChorus?.length ?? 0) > 0;
+
+  if (n > 0 || hasTp) {
+    const riseRatio = n > 0 ? pc!.filter((c) => c === 'rise').length / n : 0;
+    const stableRatio = n > 0 ? pc!.filter((c) => c === 'stable').length / n : 0;
+    const avgT =
+      hasTp && tp!.perChorus.length > 0
+        ? tp!.perChorus.reduce((a, b) => a + b, 0) / tp!.perChorus.length
+        : 0.42;
+
+    const indStress = 0.52 * avgT + 0.48 * riseRatio;
+    const independence: DuoHealthLevel =
+      indStress < 0.38 ? 'green' : indStress < 0.58 ? 'amber' : 'red';
+
+    const spaceStress =
+      0.58 * stableRatio * (1 - avgT) + 0.42 * Math.max(0, 0.32 - avgT) * (0.45 + stableRatio * 0.55);
+    const spacing: DuoHealthLevel =
+      spaceStress < 0.36 ? 'green' : spaceStress < 0.54 ? 'amber' : 'red';
+
+    return { independence, spacing, sourceLabel: 'Contour + tension (vault echo)' };
+  }
+
+  const v2 = r.voice2PolyphonyDiagnostics;
+  const reg = meanAbsRegisterBiasFromManifest(r.runManifest);
+  const spaceEcho = r.requestEcho?.space;
+
+  if (!v2 && reg == null && typeof spaceEcho !== 'number') return null;
+
+  let independence: DuoHealthLevel = 'amber';
+  if (v2 && v2.v2TotalNotes > 0) {
+    const fusion = v2.v2StrongBeatEntries / Math.max(1, v2.v2TotalNotes);
+    const densityStress = Math.min(1, v2.v2AvgNotesPerActiveBar / 3.25);
+    const stress = 0.55 * fusion + 0.45 * densityStress;
+    independence = stress < 0.36 ? 'green' : stress < 0.6 ? 'amber' : 'red';
+  }
+
+  let spacing: DuoHealthLevel = 'green';
+  if (typeof spaceEcho === 'number') {
+    if (spaceEcho < 0.22 || spaceEcho > 0.88) {
+      spacing = spaceEcho < 0.12 || spaceEcho > 0.93 ? 'red' : 'amber';
+    }
+  }
+  if (reg != null) {
+    if (reg > 0.62) spacing = spacing === 'green' ? 'amber' : spacing;
+    if (reg > 0.88) spacing = 'red';
+  }
+
+  return { independence, spacing, sourceLabel: 'Voice-2 + Space slider + register bias (proxy)' };
+}
+
 type SongModeSectionRoleUi = 'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO';
 type SongModeRecentRun = {
   id: string;
@@ -1265,6 +1431,14 @@ export function HomeGenerate({
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
   /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
   const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
+  /** Song Mode duo pairing chip: per-writer index 0 = primary, 1 = alternate (UI only). */
+  const [songModeDuoPairingVariantByWriter, setSongModeDuoPairingVariantByWriter] = useState<
+    Record<string, number>
+  >({});
+  /** Song Mode duo intent — UI only until backend wiring. */
+  const [duoIntent, setDuoIntent] = useState<'conversational' | 'supportive'>('conversational');
+  /** ECM Chamber Song Mode — UI-only override label for sweep depth (no API wiring). */
+  const [ecmFullSweepOverride, setEcmFullSweepOverride] = useState(false);
   const desktopTruthDumpEnabled = useRef(false);
 
   const iRealParsedChart = useMemo((): ParsedChart | null => {
@@ -1443,6 +1617,53 @@ export function HomeGenerate({
     : presetId === 'song_mode' && songwriterStyle === 'frank_zappa'
       ? zappaSongBars
       : clampSongFormBarCount(totalBars, 32);
+
+  const ecmSweepChartRisk = useMemo((): { longForm: boolean; mixedMeter: boolean } => {
+    if (presetId !== 'song_mode' || songwriterStyle.trim().toLowerCase() !== 'ecm_chamber') {
+      return { longForm: false, mixedMeter: false };
+    }
+    let mainLineBars = 0;
+    try {
+      const line = chordProgressionText.trim() || tonalCenter.trim();
+      if (line) {
+        const c = parseChordProgressionText(
+          line,
+          tonalCenter.trim() || 'C',
+          { num: 4, den: 4 },
+          bpm
+        );
+        mainLineBars = c.measures?.length ?? 0;
+      }
+    } catch {
+      mainLineBars = 0;
+    }
+    const irealBars = iRealParsedChart?.measures?.length ?? 0;
+    const pasteBars = chordPastePreviewChart?.measures?.length ?? 0;
+    const longForm =
+      songFormBars > 32 || mainLineBars > 32 || irealBars > 32 || pasteBars > 32;
+    const mixedMeter =
+      (iRealParsedChart != null && parsedChartHasMixedMeter(iRealParsedChart)) ||
+      (chordPastePreviewChart != null && parsedChartHasMixedMeter(chordPastePreviewChart)) ||
+      leadSheetXmlLooksMixedMeter(songModeLeadSheetMusicXml);
+    return { longForm, mixedMeter };
+  }, [
+    presetId,
+    songwriterStyle,
+    songFormBars,
+    chordProgressionText,
+    tonalCenter,
+    bpm,
+    iRealParsedChart,
+    chordPastePreviewChart,
+    songModeLeadSheetMusicXml,
+  ]);
+
+  const ecmSweepRiskEscalated = ecmSweepChartRisk.longForm || ecmSweepChartRisk.mixedMeter;
+  const showEcmAmberSweepBadge = ecmSweepRiskEscalated && !ecmFullSweepOverride;
+
+  useEffect(() => {
+    if (songwriterStyle.trim().toLowerCase() !== 'ecm_chamber') setEcmFullSweepOverride(false);
+  }, [songwriterStyle]);
 
   useEffect(() => {
     if (presetId !== 'song_mode' || songwriterStyle !== 'frank_zappa') return;
@@ -2294,6 +2515,7 @@ export function HomeGenerate({
       })()
     : null;
   const echo = result?.requestEcho;
+  const duoHealthReadout = useMemo(() => computeSongModeDuoHealthReadout(result), [result]);
   const receiptPrimarySongwriterStyle =
     echo?.primarySongwriterStyle?.trim() ||
     rm?.songModeProfileRuleDiagnostics?.primarySongwriterStyleId?.trim() ||
@@ -2740,14 +2962,217 @@ export function HomeGenerate({
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Mode
         </label>
-        <select value={presetId} onChange={(e) => setPresetId(e.target.value)} disabled={loading}>
-          {modePresets.map((m) => (
-            <option key={m.id} value={m.id} disabled={!m.supported}>
-              {m.name}
-              {!m.supported ? ' (coming soon)' : ''}
-            </option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+          <select value={presetId} onChange={(e) => setPresetId(e.target.value)} disabled={loading}>
+            {modePresets.map((m) => (
+              <option key={m.id} value={m.id} disabled={!m.supported}>
+                {m.name}
+                {!m.supported ? ' (coming soon)' : ''}
+              </option>
+            ))}
+          </select>
+          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
+            <span
+              role="status"
+              title={
+                showEcmAmberSweepBadge
+                  ? 'Long-form or mixed-meter chart — ECM Chamber reduces sweep variant depth'
+                  : 'ECM Chamber Song Mode uses conservative sweep defaults'
+              }
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                padding: '0.12rem 0.45rem',
+                borderRadius: 4,
+                border: '1px solid var(--border)',
+                background: showEcmAmberSweepBadge ? 'rgba(245, 158, 11, 0.14)' : 'rgba(100, 116, 139, 0.12)',
+                color: showEcmAmberSweepBadge ? 'rgb(180, 83, 9)' : 'var(--text-muted)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {showEcmAmberSweepBadge
+                ? 'Long-form sparse chart — reduced variant depth'
+                : 'Safe sweep profile'}
+            </span>
+          ) : null}
+        </div>
+        {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
+          <details
+            style={{
+              marginTop: '0.45rem',
+              maxWidth: 520,
+            }}
+          >
+            <summary
+              style={{
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                color: 'var(--text-muted)',
+                userSelect: 'none',
+              }}
+            >
+              Advanced
+            </summary>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                marginTop: '0.4rem',
+                fontSize: '0.82rem',
+                color: 'var(--text)',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={ecmFullSweepOverride}
+                onChange={(e) => setEcmFullSweepOverride(e.target.checked)}
+                disabled={loading}
+              />
+              Try full sweep anyway
+            </label>
+          </details>
+        ) : null}
+        {presetId === 'song_mode' &&
+          (() => {
+            const w = songwriterStyle.trim().toLowerCase();
+            const row = SONG_MODE_DUO_PAIRING_UX[w];
+            if (!row) return null;
+            const ix = songModeDuoPairingVariantByWriter[w] ?? 0;
+            const useAlternate = ix % 2 === 1;
+            const instruments = useAlternate ? row.alternateLabel : row.primaryLabel;
+            const duoRationale = useAlternate ? row.alternateRationale : row.primaryRationale;
+            return (
+              <div
+                role="note"
+                aria-label="Recommended duo pairing"
+                style={{ marginTop: '0.45rem', maxWidth: 560 }}
+              >
+                <span
+                  style={{
+                    display: 'block',
+                    marginBottom: 6,
+                    fontSize: '0.72rem',
+                    color: 'var(--text-muted)',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  Recommended duo pairing
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: 999,
+                      border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+                      background: 'rgba(100,160,255,0.1)',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    {instruments}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSongModeDuoPairingVariantByWriter((prev) => ({
+                        ...prev,
+                        [w]: ((prev[w] ?? 0) + 1) % 2,
+                      }))
+                    }
+                    disabled={loading}
+                    style={{
+                      fontSize: '0.78rem',
+                      padding: 0,
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--accent, #6ae)',
+                      cursor: loading ? 'default' : 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    swap
+                  </button>
+                </div>
+                <p
+                  style={{
+                    margin: '0.35rem 0 0',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {duoRationale}
+                </p>
+              </div>
+            );
+          })()}
+        {presetId === 'song_mode' && (
+          <div
+            role="radiogroup"
+            aria-label="Duo intent"
+            style={{ marginTop: '0.55rem', maxWidth: 560 }}
+          >
+            <span
+              style={{
+                display: 'block',
+                marginBottom: 6,
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Duo intent
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.82rem',
+                  cursor: loading ? 'default' : 'pointer',
+                  color: 'var(--text)',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="co-duo-intent"
+                  checked={duoIntent === 'conversational'}
+                  onChange={() => setDuoIntent('conversational')}
+                  disabled={loading}
+                />
+                Conversational
+              </label>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.82rem',
+                  cursor: loading ? 'default' : 'pointer',
+                  color: 'var(--text)',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="co-duo-intent"
+                  checked={duoIntent === 'supportive'}
+                  onChange={() => setDuoIntent('supportive')}
+                  disabled={loading}
+                />
+                Supportive
+              </label>
+            </div>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+              {duoIntent === 'conversational'
+                ? 'Voices answer each other across phrases.'
+                : 'One voice leads; the other accompanies.'}
+            </p>
+          </div>
+        )}
         {modeUx && (
           <p
             style={{
@@ -6482,6 +6907,77 @@ export function HomeGenerate({
                     </ul>
                   </div>
                 )}
+              {summaryPresetId === 'song_mode' && duoHealthReadout && result?.success && (
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid var(--border)',
+                  }}
+                >
+                  <p style={{ margin: '0 0 0.45rem', fontWeight: 600, fontSize: '0.92rem' }}>Duo Health</p>
+                  <p
+                    style={{
+                      margin: '0 0 0.5rem',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Heuristic only — {duoHealthReadout.sourceLabel}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center' }}>
+                    {(() => {
+                      const indS = duoHealthBadgeStyle(duoHealthReadout.independence);
+                      const spS = duoHealthBadgeStyle(duoHealthReadout.spacing);
+                      const indLabel =
+                        duoHealthReadout.independence === 'green'
+                          ? 'good'
+                          : duoHealthReadout.independence === 'amber'
+                            ? 'some fusion'
+                            : 'crossing / doubling risk';
+                      const spLabel =
+                        duoHealthReadout.spacing === 'green'
+                          ? 'open'
+                          : duoHealthReadout.spacing === 'amber'
+                            ? 'slightly crowded or sparse'
+                            : 'too close or too wide';
+                      return (
+                        <>
+                          <span
+                            title="Fusion vs clear separation between duo voices"
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: 6,
+                              border: `1px solid ${indS.border}`,
+                              background: indS.bg,
+                              color: indS.color,
+                            }}
+                          >
+                            Independence · {indLabel}
+                          </span>
+                          <span
+                            title="Register / vertical space between duo voices"
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: 6,
+                              border: `1px solid ${spS.border}`,
+                              background: spS.bg,
+                              color: spS.color,
+                            }}
+                          >
+                            Spacing · {spLabel}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
               {summaryPresetId === 'song_mode' && (
                 <details
                   style={{
