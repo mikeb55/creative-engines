@@ -33,7 +33,7 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 ## Songwriter slices
 
-**Shipped harmony modules:** **27** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
+**Shipped harmony modules:** **28** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
 
 Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Slice.ts`** (each paired with **`engines/composer-os-v2/core/goldenPath/<name>Slice.ts`** re-exports where present). **Receipt prefixes** below come from the slice sources — search **`engines/composer-os-v2/core/song-mode/<Slice>.ts`** for full device strings.
 
@@ -119,6 +119,17 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`oc:*`** — harmolodic centre (**d1**), asymmetric phrase grid (**d2**), non-resolving turnaround (**d3**), chromatic departure (**d4**), collective density shift (**d5**); see **`ornetteColemanEffectiveHarmonyBars`**. |
 | **Chord pools** | **`ornette_coleman_shape_1959`**, **`ornette_coleman_free_1961`**, **`ornette_coleman_science_1971`** in **`songModeBuilder`** when primary is Ornette (**`seed % 3`**). |
 | **Style surface** | **`applyOrnetteColemanStyleSurface`** — space **+0.35**, density **−0.12**, syncopation **+0.04**, cadence softness **+0.28**. |
+
+### Béla Bartók (3 contexts)
+
+| | |
+|--|--|
+| **Slice** | `engines/composer-os-v2/core/song-mode/bartokSlice.ts` |
+| **Primary id** | `bartok` (aliases e.g. **`bela_bartok`**, **`bela`**) |
+| **Contexts** | **`bartokContext`** / **`GenerateRequest.bartokContext`**: **`mikrokosmos`** \| **`string_quartet`** \| **`music_for_strings`** (default **`mikrokosmos`**). |
+| **Devices / receipts** | **`bk:*`** — axis substitution (**d1**), golden-section climax (**d2**), Bulgarian rhythm accents (**d3**), interval-cell transform (**d4**), arch-form mirror (**d5**); see **`bartokEffectiveHarmonyBars`**. |
+| **Chord pools** | **`bartok_mikrokosmos`**, **`bartok_string_quartet`**, **`bartok_music_for_strings`** in **`songModeBuilder`** when primary is Bartók (**`seed % 3`**). |
+| **Style surface** | **`applyBartokStyleSurface`** — space **+0.28**, syncopation **+0.18**, cadence softness **+0.22**; per-context **density** nudge (**`mikrokosmos`**, **`string_quartet`**, **`music_for_strings`**). |
 
 ### Donald Fagen
 

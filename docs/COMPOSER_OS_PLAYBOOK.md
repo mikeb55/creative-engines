@@ -150,6 +150,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `carole_king` | stepwise | mixed | 4 | 0.5 | rising | gospel_suspension; repeated_note_hook; stepwise_verse_build; rising_chorus_sequence |
 | `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
 | `ornette_coleman` | angular | whole_bar | 5 | 0.42 | irregular | melody_over_harmony; asymmetric_contour; minor_third_departure; tritone_sidestep; low_syncopation; breath_space |
+| `bartok` | angular | mixed | 5 | 0.35 | arch | folk_pentatonic_cell; axis_motion; bulgarian_cell; mirror_fragment; cluster_passing |
 | `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
 | `maria_schneider` | stepwise | mixed | 7 | 0.85 | arch | sparse_phrase; modal_field; breath_space; nature_arc; chamber_texture |
 | `miles_davis` | stepwise | mixed | 4 | 0.72 | arch | modal_field; breath_space; deliberate_silence; cool_phrasing; motivic_cell |
@@ -161,7 +162,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 
 ### Smoke coverage
 
-**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥37 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥38 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 
@@ -237,6 +238,40 @@ Primary songwriter **`miles_davis`** runs **`milesDavisSlice.ts`** on the golden
 4. **Cool vs electric contrast** — Same **seed + locked chords**, run **Generate twice**: **`modal_1959`** vs **`electric_1970`**. Compare **`md:cool_phrase`** density + **`milesDavisCoolMode`** vs **`milesDavisVampBars`** — documents how **period metadata** steers **space vs ostinato** without changing your pasted symbols.
 5. **Harmon colour on ballad sections** — Slow tempo + **phrase-final** weighting: **`md:harmon_color`** stacks **maj9(#11)**, **m9/m11**, **7(9,13)** on cadential bars **without** forcing a faster harmonic rhythm.
 6. **Chord pools per era** — **`songModeBuilder`** exposes **`miles_davis_modal_1959`**, **`miles_davis_quintet_1965`**, **`miles_davis_electric_1970`** pools when **`primarySongwriterStyle === miles_davis`** (deterministic pick). Use when teaching **one writer id** but **three harmonic dialects**.
+
+---
+
+## Béla Bartók (`bartok`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`bartok`** runs **`bartokSlice.ts`** on the golden-path duo timeline (**`precomputeBartokEffectiveHarmonyBars`** → **`bartokEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.bartokContext`** selects the surface (**default `mikrokosmos`**): **`mikrokosmos`** · **`string_quartet`** · **`music_for_strings`**. API contract: **`GenerateRequest.bartokContext`**. Receipts use prefix **`bk:`**. Aliases **`bela_bartok`**, **`bela`** → **`bartok`** via **`normalizeSongwriterStyleKey`**.
+
+**Chord pools (axis / modal / orchestral bias)** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`bartok_mikrokosmos`**, **`bartok_string_quartet`**, **`bartok_music_for_strings`**. When **`primarySongwriterStyle === bartok`**, **`chordSymbolsForSection`** resolves the pool with the same **seed-tier** pattern as Miles (**`Math.abs(seed) % 3`**). Vocabulary leans **axis motion** (minor-third / symmetric root moves), **quartal / add9 / #11** colours, **cluster / alt-dominant** spellings, and **folk-pentatonic** substrate symbols — not functional **ii–V–I** chains: **`breakFrankZappaIiViProgressions`** runs on the **four-bar** row after harmonic rhythm, same guard class as Zappa / Joni pools.
+
+### Contexts (harmonic / density bias)
+
+| Context | Role |
+|---------|------|
+| **`mikrokosmos`** | Piano-study bias: **quartal** / **sus4/** slash colours, **m11** / **add9** enrichment; **d1** axis substitution uses **±3** semitone-class moves on eligible bars (**`bk:axis_substitution@bar{N}`**). |
+| **`string_quartet`** | Chamber spacing: **add9**, **maj7#11**, **m11** surfaces; **d1** axis substitution uses **±6** (tritone-axis) moves on eligible bars. |
+| **`music_for_strings`** | Orchestral weight: **dominant alt** (**7(b9,b13)**), **maj7#11** peaks; **d1** axis substitution uses **±4** semitone-class moves. |
+
+### Harmonic devices (receipts **`bk:`**)
+
+| Id | Pass | Receipt |
+|----|------|---------|
+| **d1** | Axis substitution (context step) | **`bk:axis_substitution@bar{N}`** |
+| **d2** | Golden-section climax (~**0.618 × totalBars** bar, chart **≥8**) | **`bk:golden_section_climax@bar{N}`** |
+| **d3** | Bulgarian-style additive **accent** grid (4/4 scaffold; **metadata / receipt** only) | **`bk:bulgarian_rhythm@bar{N}`** |
+| **d4** | Interval-cell transpose on phrase grid (**2,5,1** / **3,4,1** / **4,3,2** by context) | **`bk:interval_cell_transform@bar{N}`** |
+| **d5** | Arch-form mirror (swap pairs around **pivot** on long forms) | **`bk:arch_form_mirror@bar{N}`** |
+
+### Style surface (metadata nudges)
+
+**`applyBartokStyleSurface`** — for all contexts: **space +0.28**, **syncopation +0.18**, **cadence softness +0.22** (clamped **0–1**). **Density** delta by context: **`mikrokosmos`** **+0.06**, **`string_quartet`** **−0.08**, **`music_for_strings`** **+0.02** (from prior **`songwriterDensityBias`** default **0.5** when unset).
+
+### Melody planner row
+
+**`MELODY_PROFILES['bartok']`** — angular · mixed rhythm · **repetitionVsVariationBias 0.35** · phrase **5** · **arch** contour · cadence **low** · devices **`folk_pentatonic_cell`**, **`axis_motion`**, **`bulgarian_cell`**, **`mirror_fragment`**, **`cluster_passing`**.
 
 ---
 
