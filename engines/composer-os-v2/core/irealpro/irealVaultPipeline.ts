@@ -5,6 +5,7 @@ import {
   type GenerationMode,
   type MelodicContourHint,
 } from '../generation';
+import { deriveVaultRngRoot, mixUint32, mulberry32 } from '../remix/vaultSeedMix';
 import { generateVaultRiff, type ScoreNote } from '../guitar/vaultRiffGenerator';
 import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
 import type { TensionState } from '../harmony/layerStateMachine';
@@ -207,6 +208,8 @@ export type IRealVaultOutput = {
   chordMappings: { barIndex: number; symbol: string; vaultChordTypeId: string; rootPc: number }[];
   unmappedChords: { barIndex: number; symbol: string }[];
   mode: GenerationMode;
+  /** Present when generation ran with {@link VaultGenerationOptions.seed} — base seed for remix / UI storage. */
+  seed?: number;
   /** Per global bar: melodic step bias within the bar (`rise` / `fall` / `stable`). */
   phraseContours?: PhraseContourTag[];
   /** Chorus 1 bar 1 hook vs bar-1 recurrences in later choruses (multi-chorus only). */
@@ -219,7 +222,7 @@ export type IRealVaultOutput = {
 export type VaultGenerationOptions = {
   riffStyle?: 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string' | 'bebop-placement';
   tuningId?: string;
-  /** Reserved for future reharm / candidate bias; not applied in this pipeline yet. */
+  /** Mixed into the vault RNG root when {@link seed} is set; reserved for future reharm consumption elsewhere. */
   drift?: EmotionalDrift;
   /** Build I — solo (dense / bar-reactive) vs melody (sparse / phrase-oriented). */
   mode?: GenerationMode;
@@ -230,6 +233,12 @@ export type VaultGenerationOptions = {
    * (SY slice owns texture state elsewhere).
    */
   songwriterStyleId?: string;
+  /**
+   * When set, vault phrase planning and melody-mode cadence rests use deterministic RNG (sole source of randomness).
+   */
+  seed?: number;
+  /** Optional Song Mode duo intent — mixed into the vault RNG root when {@link seed} is set (remix / A-B). */
+  duoIntent?: 'conversational' | 'supportive';
 };
 
 /** @deprecated Use {@link VaultGenerationOptions}; kept for existing imports. */
@@ -255,12 +264,16 @@ function generateVaultBarsSinglePass(params: {
   tuningId: string;
   /** From prior chorus bar contours — guides {@link planPhrase} per local bar (multi-chorus only). */
   contourHintsPerBar?: readonly PhraseContourTag[];
+  /** When non-null, {@link planPhrase} / melody rests use deterministic RNG derived from the vault root. */
+  rngRoot: number | null;
+  chorusIndex: number;
 }): {
   generatedNotes: ScoreNote[];
   chordMappings: IRealVaultOutput['chordMappings'];
   unmappedChords: IRealVaultOutput['unmappedChords'];
 } {
-  const { chart, measures, mode, profile, effectiveRiffStyle, tuningId, contourHintsPerBar } = params;
+  const { chart, measures, mode, profile, effectiveRiffStyle, tuningId, contourHintsPerBar, rngRoot, chorusIndex } =
+    params;
   const generatedNotes: ScoreNote[] = [];
   const chordMappings: IRealVaultOutput['chordMappings'] = [];
   const unmappedChords: IRealVaultOutput['unmappedChords'] = [];
@@ -269,7 +282,12 @@ function generateVaultBarsSinglePass(params: {
     const rawContour = contourHintsPerBar?.[barIndex];
     const melodicHint: MelodicContourHint | undefined =
       rawContour === 'rise' || rawContour === 'fall' ? rawContour : undefined;
-    const phrasePlan = planPhrase(1, mode, melodicHint);
+    const phraseSeed =
+      rngRoot != null
+        ? mixUint32(rngRoot, ['phrase', String(chorusIndex), String(barIndex)])
+        : undefined;
+    const phrasePlan =
+      phraseSeed !== undefined ? planPhrase(1, mode, melodicHint, phraseSeed) : planPhrase(1, mode, melodicHint);
 
     const measure = measures[barIndex];
     const first = measure?.[0];
@@ -307,11 +325,11 @@ function generateVaultBarsSinglePass(params: {
       });
     }
 
-    if (
-      mode === 'melody' &&
-      barIndex % 2 === 1 &&
-      Math.random() < profile.postCadenceRestProbability
-    ) {
+    const restRoll =
+      rngRoot != null
+        ? mulberry32(mixUint32(rngRoot, ['melodyRest', String(chorusIndex), String(barIndex)]))()
+        : Math.random();
+    if (mode === 'melody' && barIndex % 2 === 1 && restRoll < profile.postCadenceRestProbability) {
       generatedNotes.push({
         pitch: 0,
         startBeat: cumulativeQuarterBeatsThroughBar(chart, barIndex + 1),
@@ -330,7 +348,6 @@ function generateVaultBarsSinglePass(params: {
  * Map each bar’s first chord to the Vault and concatenate **1-bar** riffs using the chart’s time signature (Build I).
  */
 export function generateVaultFromParsedChart(chart: ParsedChart, options?: VaultGenerationOptions): IRealVaultOutput {
-  void options?.drift;
   const measures = chart.measures ?? [];
   const barsPerChorus = measures.length;
   const mode: GenerationMode = options?.mode ?? 'solo';
@@ -339,6 +356,20 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
   const baselineVaultRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
   const tuningId = options?.tuningId ?? 'standard';
   const chorusCount = resolveChorusCount(options?.chorusCount);
+  const explicitSeed =
+    options?.seed != null && Number.isFinite(options.seed) ? Math.floor(Number(options.seed)) : undefined;
+  const rngRoot =
+    explicitSeed !== undefined
+      ? deriveVaultRngRoot(explicitSeed, {
+          mode,
+          drift: String(options?.drift ?? 'neutral'),
+          duoIntent: options?.duoIntent,
+          riffStyle: options?.riffStyle ?? '',
+          tuningId,
+          chorusCount,
+          songwriterStyleId: options?.songwriterStyleId ?? '',
+        })
+      : null;
   const chorusQuarterWidth = totalQuarterLengthForBars(chart, barsPerChorus);
   const skipChorusTensionAdvance = options?.songwriterStyleId === 'sonic_youth';
   const rawRiffOpt = options?.riffStyle;
@@ -370,6 +401,8 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
       effectiveRiffStyle: effectiveRiffStyleForPass,
       tuningId,
       contourHintsPerBar: contourHintsForNextChorus,
+      rngRoot,
+      chorusIndex,
     });
 
     const tensionCycleRotation = skipChorusTensionAdvance ? 0 : chorusIndex;
@@ -437,6 +470,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     chordMappings: shaped.chordMappings,
     unmappedChords: allUnmappedChords,
     mode,
+    ...(explicitSeed !== undefined ? { seed: explicitSeed } : {}),
     phraseContours,
     hookIdentity,
     tensionProgression,

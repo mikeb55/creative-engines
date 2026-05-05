@@ -32,6 +32,7 @@ import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmon
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
+import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
 import { generateFromPdf } from '../core/pdf';
 
@@ -463,11 +464,17 @@ export type PdfGenerateFromPdfRequest = {
   tuningId?: string;
   riffStyle?: string;
   drift?: EmotionalDrift;
+  seed?: number;
+  duoIntent?: 'conversational' | 'supportive';
+  songwriterStyleId?: string;
+  chorusCount?: number;
 };
 
 export type PdfGenerateFromPdfResponse = {
   success: true;
   output: IRealVaultOutput | null;
+  /** Same chart used for {@link output} — enables client-side vault remix without re-OCR. */
+  parsedChart?: ParsedChart | null;
   error?: string;
 };
 
@@ -494,6 +501,10 @@ export async function apiPdfGenerateFromPdf(
       tuningId: body.tuningId,
       riffStyle: body.riffStyle,
       drift: body.drift,
+      seed: body.seed,
+      duoIntent: body.duoIntent,
+      songwriterStyleId: body.songwriterStyleId,
+      chorusCount: body.chorusCount,
     });
     if (!out) {
       return {
@@ -503,7 +514,7 @@ export async function apiPdfGenerateFromPdf(
           'PDF extraction failed. Set ANTHROPIC_API_KEY on the Composer OS API, use a valid page number, or try a clearer lead sheet.',
       };
     }
-    return { success: true, output: out };
+    return { success: true, output: out.output, parsedChart: out.chart };
   } catch (e) {
     return {
       success: true,

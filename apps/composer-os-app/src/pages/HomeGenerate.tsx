@@ -62,6 +62,7 @@ import {
   parseIRealProInput,
   inspectChordSymbol,
   inspectChordToMusicXml,
+  remixSeed,
   vaultRiffScoreNotesToMusicXml,
   type ChordInspectorResult,
   type ChorusTensionProgression,
@@ -69,6 +70,7 @@ import {
   type IRealVaultOutput,
   type ParsedChart,
   type PhraseContourTag,
+  type VaultGenerationOptions,
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
 
@@ -167,6 +169,42 @@ const VAULT_EMOTIONAL_DRIFT_OPTIONS: { value: EmotionalDrift; label: string }[] 
   { value: 'more-unstable', label: 'more-unstable' },
   { value: 'more-cinematic', label: 'more-cinematic' },
 ];
+
+function nextEmotionalDrift(current: EmotionalDrift): EmotionalDrift {
+  const opts = VAULT_EMOTIONAL_DRIFT_OPTIONS;
+  const idx = opts.findIndex((o) => o.value === current);
+  const i = idx >= 0 ? idx : 0;
+  return opts[(i + 1) % opts.length]!.value;
+}
+
+function driftLabel(d: EmotionalDrift): string {
+  return VAULT_EMOTIONAL_DRIFT_OPTIONS.find((o) => o.value === d)?.label ?? d;
+}
+
+function driftToSliderIndex(d: EmotionalDrift): number {
+  const i = VAULT_EMOTIONAL_DRIFT_OPTIONS.findIndex((o) => o.value === d);
+  return i >= 0 ? i : 0;
+}
+
+function sliderIndexToDrift(i: number): EmotionalDrift {
+  const opts = VAULT_EMOTIONAL_DRIFT_OPTIONS;
+  const idx = Math.min(opts.length - 1, Math.max(0, Math.floor(i)));
+  return opts[idx]!.value;
+}
+
+type VaultRemixKind = 'ireal' | 'paste' | 'pdf';
+
+type VaultRemixSession = {
+  kind: VaultRemixKind;
+  chart: ParsedChart;
+  runOptions: VaultGenerationOptions;
+  outputA: IRealVaultOutput;
+  axis: 'drift' | 'duoIntent';
+  driftB: EmotionalDrift;
+  duoB: 'conversational' | 'supportive';
+  outputB: IRealVaultOutput | null;
+  patchForB: Partial<VaultGenerationOptions> | null;
+};
 
 /** Mirrors `driftAffinity` in `reharmCandidateEngine` — UI-only scoring / labels (no engine edits). */
 function reharmDriftAffinityScore(chordTypeId: string, drift: EmotionalDrift): number {
@@ -1439,6 +1477,22 @@ export function HomeGenerate({
   const [duoIntent, setDuoIntent] = useState<'conversational' | 'supportive'>('conversational');
   /** ECM Chamber Song Mode — UI-only override label for sweep depth (no API wiring). */
   const [ecmFullSweepOverride, setEcmFullSweepOverride] = useState(false);
+  /** Last vault RNG options (for remix parity) — set on each successful vault Generate. */
+  const [iRealVaultLastRunOptions, setIRealVaultLastRunOptions] = useState<VaultGenerationOptions | null>(null);
+  const [chordPasteVaultLastRunOptions, setChordPasteVaultLastRunOptions] = useState<VaultGenerationOptions | null>(
+    null
+  );
+  const [pdfVaultLastRunOptions, setPdfVaultLastRunOptions] = useState<VaultGenerationOptions | null>(null);
+  const [pdfVaultParsedChart, setPdfVaultParsedChart] = useState<ParsedChart | null>(null);
+
+  const [vaultRemixSession, setVaultRemixSession] = useState<VaultRemixSession | null>(null);
+
+  /** After "Keep both" — show two saved variants until next vault Generate. */
+  const [iRealVaultDual, setIRealVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(null);
+  const [chordPasteVaultDual, setChordPasteVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(
+    null
+  );
+  const [pdfVaultDual, setPdfVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(null);
   const desktopTruthDumpEnabled = useRef(false);
 
   const iRealParsedChart = useMemo((): ParsedChart | null => {
@@ -5465,14 +5519,25 @@ export function HomeGenerate({
                     setChordPasteError('Add at least one chord symbol (use | between bars).');
                     return;
                   }
-                  const out = generateVaultFromParsedChart(chart, {
+                  const runSeed = Date.now();
+                  const opts: VaultGenerationOptions = {
                     mode: chordPasteMode,
                     tuningId: chordPasteTuningId,
                     riffStyle: chordPasteRiffStyle,
                     drift: chordPasteDrift,
                     chorusCount: chordPasteChorusCount,
-                  });
+                    seed: runSeed,
+                    ...(presetId === 'song_mode'
+                      ? {
+                          duoIntent,
+                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                        }
+                      : {}),
+                  };
+                  setChordPasteVaultLastRunOptions(opts);
+                  const out = generateVaultFromParsedChart(chart, opts);
                   setChordPasteOutput(out);
+                  setChordPasteVaultDual(null);
                 } catch (e) {
                   setChordPasteOutput(null);
                   setChordPasteError(e instanceof Error ? e.message : String(e));
@@ -5545,6 +5610,92 @@ export function HomeGenerate({
                 Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
                 {chordPasteOutput.unmappedChords.length}
               </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {chordPasteOutput.seed ?? '—'}
+              </p>
+              {chordPasteVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    chordPasteBusy ||
+                    !chordPastePreviewChart?.measures?.length ||
+                    chordPasteVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = chordPastePreviewChart;
+                    const output = chordPasteOutput;
+                    const runOpts = chordPasteVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'paste',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {chordPasteVaultDual ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = chordPasteVaultDual[side];
+                    const barsPerChorus =
+                      chordPastePreviewChart?.measures?.length ??
+                      Math.max(1, Math.round(o.bars / chordPasteChorusCount));
+                    return (
+                      <div
+                        key={`paste-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={chordPasteChorusCount}
+                          barsPerChorus={barsPerChorus}
+                          output={o}
+                          locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
+                          onToggleLock={(chorusIndex) => {
+                            setChordPasteChorusLocks((prev) => {
+                              const next = boolArrayToLength(prev, chordPasteChorusCount);
+                              next[chorusIndex] = !next[chorusIndex];
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {chordPasteOutput.unmappedChords.length > 0 && (
                 <div
                   style={{
@@ -5846,14 +5997,25 @@ export function HomeGenerate({
               onClick={() => {
                 setIRealVaultBusy(true);
                 try {
-                  const out = generateFromIReal(iRealPaste, {
+                  const runSeed = Date.now();
+                  const opts: VaultGenerationOptions = {
                     mode: iRealVaultMode,
                     riffStyle: iRealVaultRiffStyle,
                     tuningId: iRealVaultTuningId,
                     drift: iRealVaultDrift,
                     chorusCount: iRealVaultChorusCount,
-                  });
+                    seed: runSeed,
+                    ...(presetId === 'song_mode'
+                      ? {
+                          duoIntent,
+                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                        }
+                      : {}),
+                  };
+                  setIRealVaultLastRunOptions(opts);
+                  const out = generateFromIReal(iRealPaste, opts);
                   setIRealVaultOutput(out);
+                  setIRealVaultDual(null);
                 } finally {
                   setIRealVaultBusy(false);
                 }
@@ -5907,6 +6069,90 @@ export function HomeGenerate({
                 Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
                 {iRealVaultOutput.unmappedChords.length}
               </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {iRealVaultOutput.seed ?? '—'}
+              </p>
+              {iRealVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    iRealVaultBusy || !iRealParsedChart?.measures?.length || iRealVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = iRealParsedChart;
+                    const output = iRealVaultOutput;
+                    const runOpts = iRealVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'ireal',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {iRealVaultDual ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = iRealVaultDual[side];
+                    const barsPerChorus =
+                      iRealParsedChart?.measures?.length ??
+                      Math.max(1, Math.round(o.bars / iRealVaultChorusCount));
+                    return (
+                      <div
+                        key={`ireal-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={iRealVaultChorusCount}
+                          barsPerChorus={barsPerChorus}
+                          output={o}
+                          locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
+                          onToggleLock={(chorusIndex) => {
+                            setIRealVaultChorusLocks((prev) => {
+                              const next = boolArrayToLength(prev, iRealVaultChorusCount);
+                              next[chorusIndex] = !next[chorusIndex];
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {iRealVaultOutput.unmappedChords.length > 0 && (
                 <div
                   style={{
@@ -6336,6 +6582,7 @@ export function HomeGenerate({
               const f = e.target.files?.[0] ?? null;
               setPdfLeadSheetFile(f);
               setPdfVaultOutput(null);
+              setPdfVaultParsedChart(null);
               setPdfVaultError(null);
               setPdfMusicXmlExportError(null);
             }}
@@ -6487,10 +6734,26 @@ export function HomeGenerate({
                   }
                   setPdfVaultBusy(true);
                   setPdfVaultOutput(null);
+                  setPdfVaultParsedChart(null);
                   try {
                     const ab = await pdfLeadSheetFile.arrayBuffer();
                     const u8 = new Uint8Array(ab);
                     const pdfBase64 = uint8ArrayToBase64(u8);
+                    const runSeed = Date.now();
+                    const pdfOpts: VaultGenerationOptions = {
+                      mode: pdfVaultMode,
+                      tuningId: pdfVaultTuningId,
+                      riffStyle: pdfVaultRiffStyle,
+                      drift: pdfVaultDrift,
+                      chorusCount: 1,
+                      seed: runSeed,
+                      ...(presetId === 'song_mode'
+                        ? {
+                            duoIntent,
+                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                          }
+                        : {}),
+                    };
                     const res = await api.generateFromPdf({
                       pdfBase64,
                       pageNumber: pdfPageNumber,
@@ -6498,6 +6761,13 @@ export function HomeGenerate({
                       tuningId: pdfVaultTuningId,
                       riffStyle: pdfVaultRiffStyle,
                       drift: pdfVaultDrift,
+                      seed: runSeed,
+                      ...(presetId === 'song_mode'
+                        ? {
+                            duoIntent,
+                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                          }
+                        : {}),
                     });
                     if (!res.output) {
                       setPdfVaultError(
@@ -6506,7 +6776,10 @@ export function HomeGenerate({
                       );
                       return;
                     }
+                    setPdfVaultLastRunOptions(pdfOpts);
+                    setPdfVaultParsedChart(res.parsedChart ?? null);
                     setPdfVaultOutput(res.output);
+                    setPdfVaultDual(null);
                   } catch (e) {
                     setPdfVaultError(
                       e instanceof Error ? e.message : 'PDF import failed. Is the Composer OS API running?'
@@ -6547,6 +6820,93 @@ export function HomeGenerate({
                 Mapped chords: {pdfVaultOutput.chordMappings.length} · Unmapped:{' '}
                 {pdfVaultOutput.unmappedChords.length}
               </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {pdfVaultOutput.seed ?? '—'}
+              </p>
+              {pdfVaultParsedChart?.measures?.length ? (
+                <ChorusArcStrip
+                  chorusCount={1}
+                  barsPerChorus={pdfVaultParsedChart.measures.length}
+                  output={pdfVaultOutput}
+                  locked={[false]}
+                  onToggleLock={() => {}}
+                />
+              ) : null}
+              {pdfVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Extract clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    pdfVaultBusy ||
+                    !pdfVaultParsedChart?.measures?.length ||
+                    pdfVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = pdfVaultParsedChart;
+                    const output = pdfVaultOutput;
+                    const runOpts = pdfVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'pdf',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {pdfVaultDual && pdfVaultParsedChart?.measures?.length ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = pdfVaultDual[side];
+                    const bpc = pdfVaultParsedChart.measures!.length;
+                    return (
+                      <div
+                        key={`pdf-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={1}
+                          barsPerChorus={bpc}
+                          output={o}
+                          locked={[false]}
+                          onToggleLock={() => {}}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {pdfVaultOutput.unmappedChords.length > 0 && (
                 <div
                   style={{
@@ -6633,6 +6993,321 @@ export function HomeGenerate({
           )}
         </div>
       </details>
+
+      {vaultRemixSession ? (
+        <div
+          role="dialog"
+          aria-label="Vault remix — same seed compare"
+          style={{
+            marginTop: '1rem',
+            marginBottom: '1rem',
+            padding: '1rem 1.1rem',
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-panel)',
+            maxWidth: 960,
+          }}
+        >
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.65rem' }}>
+            <strong style={{ fontSize: '1rem' }}>Remix (same seed)</strong>
+            <button type="button" className="secondary" onClick={() => setVaultRemixSession(null)}>
+              Close
+            </button>
+          </div>
+          <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Other vault controls match your last Generate for this source (locked). Adjust one axis, then generate variant
+            B.
+          </p>
+          {(() => {
+            const s = vaultRemixSession;
+            const ro = s.runOptions;
+            const chorusCount = ro.chorusCount ?? 1;
+            const barsPerChorus = s.chart.measures?.length ?? 1;
+            const pill =
+              s.axis === 'drift'
+                ? `Drift: ${driftLabel(ro.drift ?? 'neutral')} → ${driftLabel(s.driftB)}`
+                : `Duo intent: ${ro.duoIntent ?? 'conversational'} → ${s.duoB}`;
+            const locksForStrip =
+              s.kind === 'ireal'
+                ? boolArrayToLength(iRealVaultChorusLocks, chorusCount)
+                : s.kind === 'paste'
+                  ? boolArrayToLength(chordPasteChorusLocks, chorusCount)
+                  : [false];
+            const onToggleLock =
+              s.kind === 'ireal'
+                ? (chorusIndex: number) => {
+                    setIRealVaultChorusLocks((prev) => {
+                      const next = boolArrayToLength(prev, chorusCount);
+                      next[chorusIndex] = !next[chorusIndex];
+                      return next;
+                    });
+                  }
+                : s.kind === 'paste'
+                  ? (chorusIndex: number) => {
+                      setChordPasteChorusLocks((prev) => {
+                        const next = boolArrayToLength(prev, chorusCount);
+                        next[chorusIndex] = !next[chorusIndex];
+                        return next;
+                      });
+                    }
+                  : () => {};
+            return (
+              <>
+                <div
+                  style={{
+                    marginBottom: '0.65rem',
+                    padding: '0.45rem 0.55rem',
+                    borderRadius: 6,
+                    background: 'var(--bg-elevated, rgba(0,0,0,0.04))',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  Locked: mode <strong>{ro.mode ?? 'solo'}</strong> · tuning <strong>{ro.tuningId ?? 'standard'}</strong>{' '}
+                  · riff <strong>{ro.riffStyle ?? 'bebop-placement'}</strong> · choruses <strong>{chorusCount}</strong>
+                  {s.axis === 'duoIntent' ? (
+                    <>
+                      {' '}
+                      · drift <strong>{driftLabel(ro.drift ?? 'neutral')}</strong>
+                    </>
+                  ) : presetId === 'song_mode' ? (
+                    <>
+                      {' '}
+                      · duo <strong>{ro.duoIntent ?? 'conversational'}</strong>
+                    </>
+                  ) : null}
+                </div>
+                <div style={{ marginBottom: '0.65rem' }}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: 999,
+                      fontSize: '0.78rem',
+                      border: '1px solid var(--border)',
+                      background: 'rgba(99,102,241,0.12)',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    {pill}
+                  </span>
+                </div>
+                <div role="radiogroup" aria-label="Remix axis" style={{ marginBottom: '0.55rem' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 12 }}>
+                    <input
+                      type="radio"
+                      name="co-vault-remix-axis"
+                      checked={s.axis === 'drift'}
+                      onChange={() =>
+                        setVaultRemixSession((prev) =>
+                          prev ? { ...prev, axis: 'drift', outputB: null, patchForB: null } : prev
+                        )
+                      }
+                    />
+                    Emotional drift (slider)
+                  </label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      type="radio"
+                      name="co-vault-remix-axis"
+                      checked={s.axis === 'duoIntent'}
+                      onChange={() =>
+                        setVaultRemixSession((prev) =>
+                          prev ? { ...prev, axis: 'duoIntent', outputB: null, patchForB: null } : prev
+                        )
+                      }
+                      disabled={presetId !== 'song_mode'}
+                    />
+                    Duo intent
+                  </label>
+                </div>
+                {s.axis === 'drift' ? (
+                  <div style={{ marginBottom: '0.65rem', maxWidth: 420 }}>
+                    <label
+                      htmlFor="co-vault-remix-drift-slider"
+                      style={{ display: 'block', marginBottom: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                    >
+                      Drift for variant B: <strong>{driftLabel(s.driftB)}</strong>
+                    </label>
+                    <input
+                      id="co-vault-remix-drift-slider"
+                      type="range"
+                      min={0}
+                      max={VAULT_EMOTIONAL_DRIFT_OPTIONS.length - 1}
+                      step={1}
+                      value={driftToSliderIndex(s.driftB)}
+                      onChange={(e) => {
+                        const nextDrift = sliderIndexToDrift(Number(e.target.value));
+                        setVaultRemixSession((prev) =>
+                          prev ? { ...prev, driftB: nextDrift, outputB: null, patchForB: null } : prev
+                        );
+                      }}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                ) : (
+                  <div role="radiogroup" aria-label="Duo intent for variant B" style={{ marginBottom: '0.65rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <input
+                        type="radio"
+                        name="co-vault-remix-duo-b"
+                        checked={s.duoB === 'conversational'}
+                        onChange={() =>
+                          setVaultRemixSession((prev) =>
+                            prev ? { ...prev, duoB: 'conversational', outputB: null, patchForB: null } : prev
+                          )
+                        }
+                      />
+                      Conversational
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input
+                        type="radio"
+                        name="co-vault-remix-duo-b"
+                        checked={s.duoB === 'supportive'}
+                        onChange={() =>
+                          setVaultRemixSession((prev) =>
+                            prev ? { ...prev, duoB: 'supportive', outputB: null, patchForB: null } : prev
+                          )
+                        }
+                      />
+                      Supportive
+                    </label>
+                  </div>
+                )}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVaultRemixSession((prev) => {
+                        if (!prev || prev.runOptions.seed == null) return prev;
+                        const patch: Partial<VaultGenerationOptions> =
+                          prev.axis === 'drift'
+                            ? { drift: prev.driftB }
+                            : presetId === 'song_mode'
+                              ? { duoIntent: prev.duoB }
+                              : { drift: prev.driftB };
+                        const next = remixSeed(
+                          prev.chart,
+                          { seed: prev.runOptions.seed, options: prev.runOptions },
+                          patch
+                        );
+                        return { ...prev, outputB: next, patchForB: patch };
+                      });
+                    }}
+                  >
+                    Generate variant B
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                    gap: '0.75rem',
+                    alignItems: 'start',
+                  }}
+                >
+                  {(['A', 'B'] as const).map((label, idx) => {
+                    const out = idx === 0 ? s.outputA : s.outputB;
+                    return (
+                      <div
+                        key={`remix-card-${label}`}
+                        style={{
+                          padding: '0.65rem 0.75rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem', marginBottom: 6 }}>
+                          <span style={{ fontWeight: 700 }}>Variant {label}</span>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 600,
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: 4,
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-muted)',
+                            }}
+                          >
+                            Seed held constant
+                          </span>
+                        </div>
+                        {!out ? (
+                          <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                            {label === 'B' ? 'Generate variant B to fill this card.' : ''}
+                          </p>
+                        ) : (
+                          <>
+                            <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                              Bars: {out.bars} · Mapped: {out.chordMappings.length}
+                            </p>
+                            <ChorusArcStrip
+                              chorusCount={chorusCount}
+                              barsPerChorus={barsPerChorus}
+                              output={out}
+                              locked={locksForStrip}
+                              onToggleLock={onToggleLock}
+                            />
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <button type="button" className="secondary" onClick={() => setVaultRemixSession(null)}>
+                    Keep A (discard B)
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!vaultRemixSession.outputB}
+                    onClick={() => {
+                      const sess = vaultRemixSession;
+                      if (!sess.outputB || !sess.patchForB) return;
+                      const merged: VaultGenerationOptions = { ...sess.runOptions, ...sess.patchForB };
+                      if (sess.kind === 'paste') {
+                        setChordPasteOutput(sess.outputB);
+                        setChordPasteVaultLastRunOptions(merged);
+                        if (sess.patchForB.drift !== undefined) setChordPasteDrift(sess.patchForB.drift);
+                        if (sess.patchForB.duoIntent !== undefined) setDuoIntent(sess.patchForB.duoIntent);
+                      } else if (sess.kind === 'ireal') {
+                        setIRealVaultOutput(sess.outputB);
+                        setIRealVaultLastRunOptions(merged);
+                        if (sess.patchForB.drift !== undefined) setIRealVaultDrift(sess.patchForB.drift);
+                        if (sess.patchForB.duoIntent !== undefined) setDuoIntent(sess.patchForB.duoIntent);
+                      } else {
+                        setPdfVaultOutput(sess.outputB);
+                        setPdfVaultLastRunOptions(merged);
+                        if (sess.patchForB.drift !== undefined) setPdfVaultDrift(sess.patchForB.drift);
+                        if (sess.patchForB.duoIntent !== undefined) setDuoIntent(sess.patchForB.duoIntent);
+                      }
+                      setVaultRemixSession(null);
+                    }}
+                  >
+                    Keep B
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!vaultRemixSession.outputB}
+                    onClick={() => {
+                      const sess = vaultRemixSession;
+                      if (!sess.outputB) return;
+                      if (sess.kind === 'paste') setChordPasteVaultDual({ a: sess.outputA, b: sess.outputB });
+                      else if (sess.kind === 'ireal') setIRealVaultDual({ a: sess.outputA, b: sess.outputB });
+                      else setPdfVaultDual({ a: sess.outputA, b: sess.outputB });
+                      setVaultRemixSession(null);
+                    }}
+                  >
+                    Keep both
+                  </button>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      ) : null}
 
       {showBigReceipt && (
         <div

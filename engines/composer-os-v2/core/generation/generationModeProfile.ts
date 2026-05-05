@@ -207,10 +207,16 @@ export function planPhrase(
   bars: number,
   mode: GenerationMode,
   melodicContourHint?: MelodicContourHint,
+  /** When set, overrides the legacy bars+mode seed — use for vault deterministic / remix paths. */
+  phraseSeed?: number,
 ): PhrasePlan {
   const b = clampBars(bars);
   const profile = getProfileForMode(mode);
-  const rand = mulberry32(seedFromBarsMode(b, mode));
+  const rand = mulberry32(
+    phraseSeed !== undefined && Number.isFinite(phraseSeed)
+      ? ((phraseSeed >>> 0) || 1)
+      : seedFromBarsMode(b, mode),
+  );
 
   const strength = profile.contourPlanningStrength;
   let contour: PhraseContour;

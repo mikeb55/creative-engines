@@ -17,3 +17,10 @@ export {
   TRIAD_PAIR_CHORUS_ROTATION,
 } from './irealVaultPipeline';
 export type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
+export { remixSeed } from '../remix/deterministicVaultRemix';
+export {
+  deriveVaultRngRoot,
+  mixUint32,
+  remixVaultSeed,
+  suggestVaultSeedFromChart,
+} from '../remix/vaultSeedMix';

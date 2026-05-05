@@ -287,22 +287,6 @@ function coerceRiffStyle(style: string | undefined): VaultRiffStyle {
   return 'bebop-placement';
 }
 
-function pdfOptionsToVaultOptions(options?: {
-  mode?: GenerationMode;
-  riffStyle?: string;
-  tuningId?: string;
-  drift?: EmotionalDrift;
-}): GenerateFromIRealOptions | undefined {
-  if (!options) return undefined;
-  const out: GenerateFromIRealOptions = {
-    mode: options.mode,
-    tuningId: options.tuningId,
-    riffStyle: coerceRiffStyle(options.riffStyle),
-  };
-  if (options.drift !== undefined) out.drift = options.drift;
-  return out;
-}
-
 export type GenerateFromPdfOptions = {
   mode?: GenerationMode;
   riffStyle?: string;
@@ -313,7 +297,26 @@ export type GenerateFromPdfOptions = {
   pageNumber?: number;
   /** Render scale; default 2.5 */
   scale?: number;
+  chorusCount?: number;
+  seed?: number;
+  duoIntent?: 'conversational' | 'supportive';
+  songwriterStyleId?: string;
 };
+
+function pdfOptionsToVaultOptions(options?: GenerateFromPdfOptions): GenerateFromIRealOptions | undefined {
+  if (!options) return undefined;
+  const out: GenerateFromIRealOptions = {
+    mode: options.mode,
+    tuningId: options.tuningId,
+    riffStyle: coerceRiffStyle(options.riffStyle),
+  };
+  if (options.drift !== undefined) out.drift = options.drift;
+  if (options.chorusCount !== undefined) out.chorusCount = options.chorusCount;
+  if (options.seed !== undefined) out.seed = options.seed;
+  if (options.duoIntent !== undefined) out.duoIntent = options.duoIntent;
+  if (options.songwriterStyleId !== undefined) out.songwriterStyleId = options.songwriterStyleId;
+  return out;
+}
 
 /**
  * Render one page → Claude Vision → {@link ParsedChart} → Vault riffs → {@link IRealVaultOutput}.
@@ -321,7 +324,7 @@ export type GenerateFromPdfOptions = {
 export async function generateFromPdf(
   pdfBytes: Uint8Array,
   options?: GenerateFromPdfOptions
-): Promise<IRealVaultOutput | null> {
+): Promise<{ output: IRealVaultOutput; chart: ParsedChart } | null> {
   const pageNumber = options?.pageNumber ?? 1;
   const scale = options?.scale ?? DEFAULT_RENDER_SCALE;
 
@@ -337,17 +340,6 @@ export async function generateFromPdf(
     return null;
   }
 
-  return generateVaultFromParsedChart(
-    chart,
-    pdfOptionsToVaultOptions(
-      options
-        ? {
-            mode: options.mode,
-            riffStyle: options.riffStyle,
-            tuningId: options.tuningId,
-            drift: options.drift,
-          }
-        : undefined
-    )
-  );
+  const output = generateVaultFromParsedChart(chart, pdfOptionsToVaultOptions(options));
+  return { output, chart };
 }

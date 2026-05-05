@@ -1,5 +1,5 @@
 import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
-import type { IRealVaultOutput } from '@composer-os/core/irealpro';
+import type { IRealVaultOutput, ParsedChart } from '@composer-os/core/irealpro';
 
 const BASE = '/api';
 
@@ -228,8 +228,17 @@ export const api = {
       | 'more-suspended'
       | 'more-unstable'
       | 'more-cinematic';
+    seed?: number;
+    duoIntent?: 'conversational' | 'supportive';
+    songwriterStyleId?: string;
+    chorusCount?: number;
   }) =>
-    post<{ success: true; output: IRealVaultOutput | null; error?: string }>('/pdf/generate-from-pdf', body),
+    post<{
+      success: true;
+      output: IRealVaultOutput | null;
+      parsedChart?: ParsedChart | null;
+      error?: string;
+    }>('/pdf/generate-from-pdf', body),
 };
 
 /** Shape checks for generation receipts (tests). */
