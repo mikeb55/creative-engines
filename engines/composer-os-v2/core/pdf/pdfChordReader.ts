@@ -79,6 +79,26 @@ type VisionChordChartJson = {
   measures?: string[][];
 };
 
+/**
+ * Removes trailing OCR junk from Vision titles: whitespace, page labels ("pg 3", "page 3"),
+ * hyphen-number tails ("- 3"), and a final standalone page digit token ("Song 3" → "Song").
+ */
+function cleanVisionTitle(raw: string): string {
+  let s = raw.trim();
+  if (s === '') return '';
+
+  let prev = '';
+  while (prev !== s) {
+    prev = s;
+    s = s
+      .replace(/\s+-\s*\d+$/i, '')
+      .replace(/\s+(?:pg|page)\.?\s*\d+$/i, '')
+      .replace(/\s+\d+$/, '')
+      .trimEnd();
+  }
+  return s.trim();
+}
+
 function visionJsonToParsedChart(v: VisionChordChartJson): ParsedChart | null {
   if (!v.measures || !Array.isArray(v.measures)) return null;
   const measures: ParsedChord[][] = [];
@@ -114,7 +134,7 @@ function visionJsonToParsedChart(v: VisionChordChartJson): ParsedChart | null {
   }
 
   return {
-    title: typeof v.title === 'string' ? v.title : '',
+    title: typeof v.title === 'string' ? cleanVisionTitle(v.title) : '',
     composer: '',
     key: typeof v.key === 'string' && v.key !== '' ? v.key : null,
     timeSignature,
