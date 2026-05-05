@@ -11,7 +11,15 @@
 
 ### Writer Slice Roadmap — priority order for full slice development
 
-**Priority order (11):** 1 **Beatles** (`beatles`) · 2 **Bill Evans** (`bill_evans`) · 3 **Frank Zappa** (`frank_zappa`) · 4 **ECM Chamber** (`ecm_chamber`) · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · 9 **Jobim** (`antonio_carlos_jobim`) · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
+**Priority order (11):** 1 **Beatles** (`beatles`) · 2 **Bill Evans** (`bill_evans`) · 3 **Frank Zappa** (`frank_zappa`) · **4 ECM Chamber (`ecm_chamber`) — COMPLETE** · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · 9 **Jobim** (`antonio_carlos_jobim`) · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
+
+**4 — ECM Chamber (`ecm_chamber`) — complete**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Harmonic slice | **`85d6454`** | **`ecm_chamber`** golden-path slice: **Lydian** primary colour, **m11no3**-family surfaces, **m7b5** destinations, **asymmetric phrase grid**, **wide leap peaks** (melodic identity lane). |
+| Surface + UI | **`78aea01`** | **Seven-parameter** ECM surface layer wired end-to-end (**density**, **syncopation**, **space**, **phrase-start looseness**, **bass independence**, **cadence softness**, plus **`ecmChamberMode`** preset); **`STYLE_ECM`** / **`STYLE_ECM_CHAMBER`** consumption in **C1** / **C7** / harmony policy; **Angel Song** / **Balanced ECM Duo** / **Metheny·Scofield** presets; **Chamber ↔ Flow** slider → discrete mode; **Advanced** Style Engine group promotion for ECM profiles. |
+| Handbook | **`7b44913`** | **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** — ECM **Style** vs **`ecm_chamber`** songwriter distinction, presets, six example applications, Chamber↔Flow mapping, GCE baseline note. |
 
 **Full slice bar:** deliver **harmonic devices (d1–d5)**, **voice leading**, **phrase contour logic**, **formal behaviour**, **arrangement defaults** — output must read **audibly** distinct from generic baseline on **at least 3 of 5** dimensions.
 
