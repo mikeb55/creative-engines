@@ -83,7 +83,8 @@ function pickMidiFromCandidates(
   seed: number,
   bar: number,
   salt: number,
-  contour: MelodyContourKind
+  contour: MelodyContourKind,
+  wideLeapPeakThisNote?: boolean
 ): number {
   if (candidates.length === 0) return 60;
   const u = seededUnit(seed, bar, salt);
@@ -97,6 +98,21 @@ function pickMidiFromCandidates(
     if (contour === 'ascending') return sortedByHeight[Math.min(sortedByHeight.length - 1, 1 + (seed % 2))]!;
     if (contour === 'descending') return sortedByHeight[Math.max(0, sortedByHeight.length - 2)]!;
     return candidates[Math.floor(u * candidates.length) % candidates.length]!;
+  }
+
+  if (
+    wideLeapPeakThisNote &&
+    intervalTendency === 'stepwise' &&
+    prevMidi !== undefined
+  ) {
+    const leaps = candidates.filter((c) => {
+      const d = Math.abs(c - prevMidi);
+      return d >= 8 && d <= 11;
+    });
+    if (leaps.length > 0 && seededUnit(seed, bar, salt + 991) < 0.62) {
+      const idx = Math.floor(seededUnit(seed, bar, salt + 992) * leaps.length) % leaps.length;
+      return leaps[idx]!;
+    }
   }
 
   if (intervalTendency === 'stepwise') {
@@ -255,6 +271,9 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
     const contour =
       hook.contourHint === 'ascending' && ph.sectionKind === 'chorus' ? 'ascending' : contourFromProfile;
 
+    const apexMeasure =
+      ph.cadenceMeasure > ph.startMeasure ? ph.cadenceMeasure - 1 : ph.startMeasure;
+
     for (let m = ph.startMeasure; m <= ph.endMeasure; m++) {
       const chordSym = harmonyForBar(m);
       const ct = chordTonesForChordSymbol(chordSym, { lockedHarmony: true });
@@ -289,7 +308,8 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
           seed,
           m,
           1101,
-          contour
+          contour,
+          Boolean(melodyBehaviour.wideLeapPeakPerPhrase && m === apexMeasure)
         );
         for (let ci = 0; ci < cells.length; ci++) {
           const cell = cells[ci]!;
@@ -302,6 +322,8 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
           const cell = cells[ci]!;
           const intervalSalt = ci * 17 + m * 31 + melodyBehaviour.phraseLength * 3;
           const prevForPick = ci === 0 ? prevGlobal : prevInBar ?? prevGlobal;
+          const wideLeapPeakThisNote =
+            Boolean(melodyBehaviour.wideLeapPeakPerPhrase) && m === apexMeasure && ci === 0;
           const midi = pickMidiFromCandidates(
             candidates,
             prevForPick,
@@ -309,7 +331,8 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
             seed,
             m,
             intervalSalt,
-            contour
+            contour,
+            wideLeapPeakThisNote
           );
           barNotes.push({ measure: m, beat: cell.startBeat, duration: cell.duration, midi });
           prevInBar = midi;

@@ -1,7 +1,10 @@
 /**
  * ECM Chamber — Nordic / chamber Song Mode / duo golden-path **harmony** slice.
  * Sparse modal spellings: wide intervals at symbol level (maj7, add9, sus2 as resting colours; quartal / sus4;
+ * **Lydian #11** phrase-start primaries; **m11(no3)** phrase-middle ambiguity; phrase-final **m7b5** colour;
  * pedal bass; phrase-final **hang** — no tritone sub, no bebop passing idiom). Receipts `ec:*`.
+ *
+ * Phrase boundaries use **4 / 5 / 7** bar lengths (seeded), aligned with **MELODY_PROFILES.ecm_chamber.phraseAsymmetryTendency** (0.67).
  *
  * No `core/style-modules/ecm-chamber/` package; this file owns symbol-level harmony for primary `ecm_chamber`.
  * (Preset `ecm_chamber` orchestration + Metheny/Schneider modes stay in `runGoldenPath` / duo score — unchanged.)
@@ -34,11 +37,50 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function phrasePositionFromBar(bar: number): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
-  const k = (bar - 1) % 4;
-  if (k === 0) return 'phraseStart';
-  if (k === 3) return 'phraseFinal';
-  return 'phraseMiddle';
+/** Matches {@link MELODY_PROFILES.ecm_chamber.phraseAsymmetryTendency} — biases phrase lengths toward 5 and 7 bars. */
+const ECM_CHAMBER_PHRASE_ASYMMETRY = 0.67;
+
+function ecmPhraseLength(seed: number, phraseIndex: number): number {
+  const u = seededUnit(seed, phraseIndex, 992101);
+  const a = ECM_CHAMBER_PHRASE_ASYMMETRY;
+  const t4 = (1 - a) * 0.42;
+  const t5 = t4 + 0.33;
+  if (u < t4) return 4;
+  if (u < t5) return 5;
+  return 7;
+}
+
+/**
+ * Phrase role per bar using variable 4/5/7 bar phrases (seeded). Single-bar tail phrases are **phraseFinal** only.
+ */
+export function computeEcmPhrasePositions(
+  totalBars: number,
+  seed: number
+): readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] {
+  const out: ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = ecmPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    for (let i = 0; i < span; i++) {
+      const globalBar = bar + i;
+      if (span <= 1) {
+        out.push('phraseFinal');
+      } else if (globalBar === bar) {
+        out.push('phraseStart');
+      } else if (globalBar === end) {
+        out.push('phraseFinal');
+      } else {
+        out.push('phraseMiddle');
+      }
+    }
+    bar = end + 1;
+    phraseIdx++;
+  }
+  while (out.length < totalBars) out.push('phraseMiddle');
+  return out.slice(0, totalBars);
 }
 
 function slashTail(symbol: string): string {
@@ -179,17 +221,126 @@ function phraseFinalDominantToSus(symbol: string): string {
   return `${root}7sus4${slash}`;
 }
 
+function isMajorColourEligibleForLydian(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const tl = hp.toLowerCase();
+  if (/m(?!aj)|dim|ø|sus/.test(tl)) return false;
+  if (/#11/.test(tl)) return false;
+  const m = hp.match(ROOT_AT_START);
+  if (!m?.[1]) return false;
+  const rest = hp.slice(m[1]!.length).replace(/\s/g, '');
+  if (rest === '' || /^major$/i.test(rest) || rest === 'maj' || rest === 'M') return true;
+  if (/^maj7$/i.test(rest) || rest === 'maj7' || rest === 'Δ') return true;
+  return false;
+}
+
+/** Phrase-middle minor triad / m7 family → sus/minor ambiguity via omitted 3rd (Angel Song / ECM research). */
+function isMinorElidableForM11No3(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (!/m(?!aj)|min/.test(tl)) return false;
+  if (/ø|dim|m11|no3|sus/.test(tl)) return false;
+  return true;
+}
+
+/** Phrase-final half-dim colour: simple minor sonorities only (avoid erasing rich minor extensions after hang). */
+function isSimpleMinorForHalfDimColor(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (!/m(?!aj)|min/.test(tl)) return false;
+  if (/ø|m7b5|dim|m9|m11|add|maj|sus/.test(tl)) return false;
+  return true;
+}
+
+function applyLydianPrimaryColorPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (positions[b - 1] !== 'phraseStart') continue;
+    const sym = out[b - 1]!;
+    if (!isMajorColourEligibleForLydian(sym)) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    const root = hp.match(ROOT_AT_START)?.[1];
+    if (!root) continue;
+    const slash = slashTail(sym);
+    const u = seededUnit(seed, b, 992501);
+    if (u < 0.45) {
+      out[b - 1] = `${root}maj7(#11)${slash}`;
+    } else if (u < 0.78) {
+      out[b - 1] = `${root}maj9(#11)${slash}`;
+    } else {
+      out[b - 1] = `${root}add9(#11)${slash}`;
+    }
+    receipts.push(`ec:lyd_primary@bar${b}`);
+  }
+}
+
+function applyMinorElevenNoThreePass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (positions[b - 1] !== 'phraseMiddle') continue;
+    const sym = out[b - 1]!;
+    if (!isMinorElidableForM11No3(sym)) continue;
+    if (seededUnit(seed, b, 992601) >= 0.48) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    const root = hp.match(ROOT_AT_START)?.[1];
+    if (!root) continue;
+    const slash = slashTail(sym);
+    out[b - 1] = `${root}m11(no3)${slash}`;
+    receipts.push(`ec:m11no3@bar${b}`);
+  }
+}
+
+function applyPhraseFinalHalfDimColorPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (positions[b - 1] !== 'phraseFinal') continue;
+    const sym = out[b - 1]!;
+    const rootPc = harmonyRootPc(sym);
+    if (tonicPc === undefined || rootPc === undefined) continue;
+    if (rootPc === tonicPc) continue;
+    if (!isSimpleMinorForHalfDimColor(sym)) continue;
+    if (seededUnit(seed, b, 992701) >= 0.45) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    const root = hp.match(ROOT_AT_START)?.[1];
+    if (!root) continue;
+    const slash = slashTail(sym);
+    out[b - 1] = `${root}m7b5${slash}`;
+    receipts.push(`ec:halfdim_final@bar${b}`);
+  }
+}
+
 function applyPhraseFinalHangPass(
   out: string[],
   tonicPc: number | undefined,
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseFinal') continue;
+    if (positions[b - 1] !== 'phraseFinal') continue;
     let sym = out[b - 1]!;
     const ton = isTonicMajorOrMinor(sym, tonicPc);
     if (ton === 'major') {
@@ -243,11 +394,12 @@ function applyQuartalSusPass(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (phrasePositionFromBar(b) !== 'phraseMiddle') continue;
+    if (positions[b - 1] !== 'phraseMiddle') continue;
     if (seededUnit(seed, b, 991301) >= 0.38) continue;
     const sym = out[b - 1]!;
     const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
@@ -310,10 +462,14 @@ export function precomputeEcmChamberEffectiveHarmonyBars(context: CompositionCon
   }
 
   const out = [...raw];
+  const positions = computeEcmPhrasePositions(tb, seed);
 
   applyDominantSusPass(out, guards, receipts, tb, context);
-  applyPhraseFinalHangPass(out, tonicPc, seed, receipts, tb, context);
-  applyQuartalSusPass(out, seed, receipts, tb, context);
+  applyLydianPrimaryColorPass(out, seed, receipts, tb, context, positions);
+  applyPhraseFinalHangPass(out, tonicPc, seed, receipts, tb, context, positions);
+  applyQuartalSusPass(out, seed, receipts, tb, context, positions);
+  applyMinorElevenNoThreePass(out, seed, receipts, tb, context, positions);
+  applyPhraseFinalHalfDimColorPass(out, tonicPc, seed, receipts, tb, context, positions);
   applyPedalBassPass(out, seed, receipts, tb, context);
 
   genMeta.ecmChamberEffectiveHarmonyBars = out;

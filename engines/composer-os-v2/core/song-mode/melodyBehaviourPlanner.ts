@@ -44,6 +44,11 @@ export interface MelodyBehaviourPlan {
   contourProfile: MelodyContourProfileId;
   /** Named devices for pedagogy / manifests (slice vocabulary hooks). */
   devices: readonly string[];
+  /**
+   * When true with {@link intervalTendency} `stepwise`, the first melodic cell on the phrase apex bar
+   * may take one **8–11 semitone** leap toward a chord tone (ECM-style emotional peak).
+   */
+  wideLeapPeakPerPhrase?: boolean;
 }
 
 function clamp01(n: number): number {
@@ -428,6 +433,7 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     phraseAsymmetryTendency: 0.67,
     cadenceFrequency: 'low',
     devices: ['sparse_phrase', 'modal_field', 'breath_space'],
+    wideLeapPeakPerPhrase: true,
   },
 };
 
