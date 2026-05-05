@@ -1,10 +1,14 @@
-# Composer OS Roadmap [2026-05-05]
+# Composer OS Roadmap [2026-05-06]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
-**V31 next priorities (sequencing):** (1) **MusicXML Phase 2** → (2) **Duo intent wiring** → (3) **ChorusArcStrip Phase 2** → (4) **ChorusArcStrip Phase 3**.
+**V31 next priorities (sequencing):** (1) **CI smoke on `main`** — one GitHub Actions job, **`npm run test:composer-smoke`** on push to **`main`** → (2) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end → (3) **Duo intent wiring** — **`duoIntent`** → pipeline, voice-weighting → (4) **Deterministic remix controls** — same seed, flip duo intent or drift for instant A/B → (5) **Writer recipe cards** — one screen per songwriter (devices + era) in Generate → (6) **Clave-aware grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
+
+**Platform:** **Mobile deployment** is a **separate platform milestone** (packaging, stores, UX), **not** a ranked feature line item next to Song Mode / engine tickets.
+
+**Research parking:** A **full Afro-Cuban rhythmic engine** stays **parked under research** until the **thin clave overlay** slice proves value — do **not** schedule “full engine” as a single backlog row ahead of that proof.
 
 **Earlier sequencing:** **`repeatMarkers` → MusicXML export truth** (**DONE** Session 1, 2026-05-03). **MusicXML `<transpose>`** for fixed-offset tunings (**Drop D** / **Eb standard**) is **COMPLETE** (2026-05-04). Detail: **§ Next best development** below.
 
@@ -582,7 +586,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | **G** | **Phrase Engine / Riff redesign** | Shared phrase abstraction + adapters (medium-term). | **§ Phrase Engine / Riff Generator redesign** |
 | **—** | **Near alternates** | **`TEST_DEBT`**, Wyble depth, ECM arrangement, Slonimsky engine-only backlog **#10**. | **§ Next best development** *Near alternates* · **§ Next possible devs (pick list)** |
 
-**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30** shipped per **§ Next best development** (2026-05-05); **V31** default order is listed there. Neither maps 1:1 to those tiers.
+**Alignment:** **Tier A → Tier C** remains the background product-attention ladder. **V30** shipped per **§ Next best development** (2026-05-05); **V31** default order is listed there (**refreshed 2026-05-06**). Neither maps 1:1 to those tiers.
 
 ### Songwriter profiles & Song Mode writer expansion — **priority 1**
 
@@ -762,7 +766,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 ---
 
-### Next best development — **V30 complete · V31 sequencing** (refreshed 2026-05-05)
+### Next best development — **V30 complete · V31 sequencing** (refreshed 2026-05-06)
 
 #### V30 — **COMPLETE** (2026-05-05)
 
@@ -772,14 +776,18 @@ These items raise **output diversity** without assuming a single engine rewrite:
 
 *Near alternates (unchanged bias):* **`TEST_DEBT`** clear-down for **`runAllTests`**; **Wyble** ensemble inner-line after duo parity; **ECM** arrangement pass; additional **Tier A** songwriter slices when capacity returns (**§ Overall roadmap priorities**).
 
-#### V31 — **next default order**
+#### V31 — **next default order** (2026-05-06)
 
-1. **MusicXML Phase 2** — extend import beyond Phase 1 (deeper part/voice handling, additional MusicXML constructs, ensemble chart-in or Song Mode consumption — scope per approved slice).
-2. **Duo intent wiring** — wire **Duo intent** UI through **`GenerateRequest`** / **`compositionContext`** / manifests so **Conversational** vs **Supportive** affects behaviour (replace stub).
-3. **ChorusArcStrip Phase 2** — next interaction / data-binding pass on **`ChorusArcStrip`** (vault chorus tension UI).
-4. **ChorusArcStrip Phase 3** — polish, optional export/host parity, or advanced multi-chorus tooling as scoped.
+1. **CI smoke job on `main`** — **GitHub Actions** workflow: **one job** runs **`npm run test:composer-smoke`** on **push** to **`main`** (repository root). Keeps **`runSmokeTests.ts`** allowlist honest without relying on local-only runs.
+2. **MusicXML import Phase 2** — wire **`parseMusicXml`** / importer through **Generate UI** and **generation path** end-to-end (request → score / harmony lock → smoke/regression). Phase 1 remains library/parser truth; Phase 2 is **product-shippable** chart-in.
+3. **Duo intent wiring** — send **`duoIntent`** (**Conversational** | **Supportive**) on the **API request** into **`compositionContext`** / duo golden-path stages and **manifests**; bias **voice weighting** / spacing behaviour per intent (replace UI-only stub).
+4. **Deterministic remix controls** — **same seed**, flip **duo intent** and/or **emotional drift** (and related vault knobs where applicable) for **instant A/B** without rescrolling unrelated fields.
+5. **Writer recipe cards** — **one panel / screen per primary songwriter** in Generate: **devices (d1–d5)**, **era / posture**, short **“what this writer does”** copy — improves discoverability (**Tier B** alignment).
+6. **Clave-aware grid overlay** — **thin Afro-Cuban slice:** optional **clave-aligned meter map** + **groove hints** on the rhythm grid (**not** a full timba-style engine). Pair with existing **`barMeterMap`** / quantiser hooks where safe.
 
-**Scope note — songwriting engine, profiles, ensembles, arrangers:** V31 sequencing prioritises **import depth**, **duo intent truth**, and **chorus arc UI**; songwriter slice expansion and **Tier B** UI discovery remain active in **Overall roadmap priorities** and **pick list** below.
+**Deferred / parallel (not in V31 ordering):** **ChorusArcStrip Phase 2–3** (vault chorus tension strip interactions + contour ribbon)—resume when multi-chorus UX capacity returns; see **`ChorusArcStrip.tsx`**.
+
+**Scope note — songwriting engine, profiles, ensembles, arrangers:** V31 prioritises **CI trust**, **import wire-up**, **duo intent truth**, **fast compare UX**, **writer discoverability**, and a **bounded rhythm overlay**; songwriter slice expansion and **Tier A** new slices remain in **Overall roadmap priorities** and **pick list** below.
 
 | Thread | Where it lives in this doc |
 |--------|----------------------------|
@@ -842,6 +850,7 @@ These items raise **output diversity** without assuming a single engine rewrite:
 | 14 | **Phrase Engine / Riff redesign** | **Planned** — motivic phrase core + module adapters + later guitar idiom lane; **not** whole-song generation; see **Future → Phrase Engine / Riff Generator redesign**. |
 | 15 | **Slonimsky Etudes (standalone)** | **Planned** — desktop study tab: pattern family + harmony + key → short etude → notation / playback / MusicXML; optional **12-key** cycle; **PDF** Phase 2 unless pipeline exists. **Before #16.** See **Future → Standalone study tools**. |
 | 16 | **Wyble Etudes (standalone)** | **Planned — after #15** — voice-leading study tool; needs **design brief**; Wyble today is **ensemble pre-passes** only, not a pedagogy API. See **Future → Standalone study tools**; relates to **#3**. |
+| 17 | **Clave-aware grid overlay (thin Afro-Cuban slice)** | **`barMeterMap` + groove/grid hints only** — **not** a full Afro-Cuban engine. A **full rhythmic engine** for Afro-Cuban styles stays **research-parked** until this slice proves value (**§ Next best development · V31**). |
 
 ### Near term (high leverage)
 
@@ -924,6 +933,6 @@ Specific improvements needed:
 
 ---
 
-*End of Composer OS Roadmap [2026-05-05].*
+*End of Composer OS Roadmap [2026-05-06].*
 
 
