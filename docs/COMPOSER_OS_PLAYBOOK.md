@@ -151,6 +151,7 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `debussy` | stepwise | mixed | 3 | 0.5 | dissolving | whole_tone_melody; pentatonic_contrast; parallel_planing; unresolved_appoggiatura; arabesque |
 | `ornette_coleman` | angular | whole_bar | 5 | 0.42 | irregular | melody_over_harmony; asymmetric_contour; minor_third_departure; tritone_sidestep; low_syncopation; breath_space |
 | `bartok` | angular | mixed | 5 | 0.35 | arch | folk_pentatonic_cell; axis_motion; bulgarian_cell; mirror_fragment; cluster_passing |
+| `gershwin` | mixed | eighth_patterns | 8 | 0.38 | cabaret_arc | aaba_form; blue_note_color; syncopated_anticipation; chromatic_passing; minor_third_modulation |
 | `duke_ellington` | mixed | eighth_patterns | 4 | 0.6 | riff | blues_riff; call_response; chromatic_inner_voice; plunger_color; sectional_shout |
 | `maria_schneider` | stepwise | mixed | 7 | 0.85 | arch | sparse_phrase; modal_field; breath_space; nature_arc; chamber_texture |
 | `miles_davis` | stepwise | mixed | 4 | 0.72 | arch | modal_field; breath_space; deliberate_silence; cool_phrasing; motivic_cell |
@@ -272,6 +273,40 @@ Primary songwriter **`bartok`** runs **`bartokSlice.ts`** on the golden-path duo
 ### Melody planner row
 
 **`MELODY_PROFILES['bartok']`** — angular · mixed rhythm · **repetitionVsVariationBias 0.35** · phrase **5** · **arch** contour · cadence **low** · devices **`folk_pentatonic_cell`**, **`axis_motion`**, **`bulgarian_cell`**, **`mirror_fragment`**, **`cluster_passing`**.
+
+---
+
+## George Gershwin (`gershwin`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`gershwin`** runs **`gershwinSlice.ts`** on the golden-path duo timeline (**`precomputeGershwinEffectiveHarmonyBars`** → **`gershwinEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.gershwinContext`** selects the surface (**default `song_aaba`**): **`song_aaba`** · **`rhapsody`** · **`rhythm_changes`**. API contract: **`GenerateRequest.gershwinContext`**. Receipts use prefix **`gg:`**. Aliases **`george_gershwin`** → **`gershwin`** via **`normalizeSongwriterStyleKey`**.
+
+**Chord pools (functional backbone + jazz extensions)** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`gershwin_song_aaba`**, **`gershwin_rhapsody`**, **`gershwin_rhythm_changes`**. When **`primarySongwriterStyle === gershwin`**, **`chordSymbolsForSection`** picks a pool with the same **seed-tier** pattern as Miles / Bartók (**`Math.abs(seed) % 3`**). Vocabulary blends **I / ii7 / IV6(9) / V7(9)**-style functions with **Imaj7 / I6 / V7b9 / V7#5#9** colours, **secondary-dominant** approach, **chromatic passing** spellings, **augmented** and **diminished** connectors — not rolling textbook **ii–V–I** chains: **`breakFrankZappaIiViProgressions`** runs on the row after harmonic rhythm, same guard class as Zappa / Joni / Bartók pools.
+
+### Contexts (form / grid bias)
+
+| Context | Role |
+|---------|------|
+| **`song_aaba`** | Songbook **AABA**-leaning pool: **8-bar**-friendly rows, bridge contrast rows, **I maj7 / ii7 / V(9) / IV6(9)**-flavoured spellings. **d1** tags **AABA** / return anchors in metadata (`gg:d1_aaba_form@…`). |
+| **`rhapsody`** | Concert **rhapsody** arc: wider **chromatic** / **dim** / **alt-dominant** pool rows; **d1** tags a **rhapsody_arc** pivot bar for long forms. |
+| **`rhythm_changes`** | **Rhythm-changes** grid: **I–vi–ii–V**-flavoured and **turnaround**-biased pool rows; **d1** records **rhythm_changes** mode for the generation. |
+
+### Harmonic devices (receipts **`gg:`**)
+
+| Id | Pass | Receipt (examples) |
+|----|------|----------------------|
+| **d1** | AABA / rhapsody / rhythm grid anchors | **`gg:d1_aaba_form:…@…`**, **`gg:d1_aaba_form:rhapsody_arc@bar{N}`**, **`gg:d1_aaba_form:rhythm_changes@{totalBars}`** |
+| **d2** | Blue-note colour (altered / #11 on dominants and colour on tonics) | **`gg:d2_blue_note_color@bar{N}`** |
+| **d3** | Syncopated anticipation (secondary-dominant lead-in to the next bar) | **`gg:d3_syncopated_anticipation@bar{N}`** |
+| **d4** | Chromatic passing (diminished connector on eligible bars) | **`gg:d4_chromatic_passing@bar{N}`** |
+| **d5** | Minor-third modulation (brief **+3** semitone transpose window) | **`gg:d5_minor_third_modulation@bar{N}`** |
+
+### Style surface (metadata nudges)
+
+**`applyGershwinStyleSurface`** — for all contexts: **syncopation +0.26**, **density +0.12**, **space +0.14**, **cadence softness +0.18** (clamped **0–1** from prior **`songwriter*Bias`** defaults **0.5** when unset).
+
+### Melody planner row
+
+**`MELODY_PROFILES['gershwin']`** — mixed intervals · **`eighth_patterns`** · **repetitionVsVariationBias 0.38** · phrase **8** · **cabaret_arc** contour · cadence **high** · devices **`aaba_form`**, **`blue_note_color`**, **`syncopated_anticipation`**, **`chromatic_passing`**, **`minor_third_modulation`**.
 
 ---
 
