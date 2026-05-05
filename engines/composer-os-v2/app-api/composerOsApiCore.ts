@@ -353,6 +353,12 @@ export function apiGenerate(
         body.gershwinContext === 'rhythm_changes'
           ? body.gershwinContext
           : undefined,
+      arvoPartContext:
+        body.arvoPartContext === 'fur_alina' ||
+        body.arvoPartContext === 'spiegel' ||
+        body.arvoPartContext === 'fratres'
+          ? body.arvoPartContext
+          : undefined,
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

@@ -1615,6 +1615,110 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Cm7', 'F7', 'Bbmaj7', 'G7'],
     ],
   },
+  /** Triads only — slice strips extensions; pools stay tertian triads for planner scaffold. */
+  arvo_part_fur_alina: {
+    verse: [
+      ['Am', 'F', 'C', 'G'],
+      ['Dm', 'G', 'C', 'Am'],
+    ],
+    chorus: [
+      ['F', 'C', 'G', 'Am'],
+      ['C', 'G', 'Am', 'F'],
+    ],
+    bridge: [
+      ['Em', 'Am', 'Dm', 'G'],
+      ['Am', 'Dm', 'G', 'C'],
+    ],
+    pre_chorus: [
+      ['G', 'Am', 'F', 'C'],
+    ],
+  },
+  arvo_part_spiegel: {
+    verse: [
+      ['C', 'G', 'Am', 'Em'],
+      ['Am', 'Em', 'F', 'C'],
+    ],
+    chorus: [
+      ['F', 'C', 'G', 'Am'],
+      ['Dm', 'Am', 'G', 'C'],
+    ],
+    bridge: [
+      ['Em', 'Am', 'Dm', 'G'],
+      ['Am', 'G', 'F', 'C'],
+    ],
+    pre_chorus: [
+      ['G', 'C', 'Am', 'Em'],
+    ],
+  },
+  arvo_part_fratres: {
+    verse: [
+      ['Am', 'Am', 'G', 'Am'],
+      ['Dm', 'Am', 'G', 'Am'],
+    ],
+    chorus: [
+      ['Am', 'G', 'F', 'Am'],
+      ['Dm', 'Am', 'G', 'Am'],
+    ],
+    bridge: [
+      ['Em', 'Am', 'Dm', 'G'],
+      ['Am', 'Am', 'G', 'Dm'],
+    ],
+    pre_chorus: [
+      ['G', 'Am', 'F', 'Am'],
+    ],
+  },
+  /** Anti-functional scaffold — slice strips dominants / breaks ii–V rolling triples (`satieSlice.ts`). */
+  satie_gymnopedie: {
+    verse: [
+      ['Am', 'F/A', 'C/G', 'Em'],
+      ['Dm', 'Bb/F', 'C', 'G/B'],
+    ],
+    chorus: [
+      ['F', 'C/E', 'Dm', 'Am'],
+      ['G', 'Em', 'F/C', 'Am'],
+    ],
+    bridge: [
+      ['Em', 'Am/C', 'Dm', 'G'],
+      ['Am', 'F', 'C', 'E/B'],
+    ],
+    pre_chorus: [
+      ['C/G', 'Am', 'F', 'Dm'],
+    ],
+  },
+  satie_gnossienne: {
+    verse: [
+      ['Fsus4', 'Bsus4', 'Esus4', 'Asus4'],
+      ['Gsus4', 'Csus4', 'Fsus4', 'Bsus4'],
+    ],
+    chorus: [
+      ['Csus4', 'Fsus4', 'Bbsus4', 'Esus4'],
+      ['Dsus4', 'Gsus4', 'Csus4', 'Fsus4'],
+    ],
+    bridge: [
+      ['Am', 'Dm/A', 'Gm', 'C/E'],
+      ['Fm', 'Bb/F', 'Eb', 'Ab/Eb'],
+    ],
+    pre_chorus: [
+      ['Gsus4', 'Csus4', 'Fsus4', 'Bsus4'],
+    ],
+  },
+  satie_poire: {
+    verse: [
+      ['Amadd9', 'Fmaj7', 'C6', 'Gadd9'],
+      ['Dmadd9', 'G', 'C', 'F/A'],
+    ],
+    chorus: [
+      ['C6', 'Amadd9', 'Fmaj9', 'G6'],
+      ['Bb', 'F/A', 'Gmadd9', 'C/E'],
+    ],
+    bridge: [
+      ['Em7', 'Amadd9', 'Dm', 'G/B'],
+      ['Fm', 'Ab/Eb', 'Ebadd9', 'Bb/F'],
+    ],
+    pre_chorus: [
+      ['Gadd9', 'Em', 'Amadd9', 'Fmaj7'],
+    ],
+  },
   miles_davis_modal_1959: {
     verse: [
       ['Dm7', 'Dm7', 'Ebmaj7', 'Dm7'],
@@ -1760,6 +1864,16 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'gershwin_song_aaba' : tier === 1 ? 'gershwin_rhapsody' : 'gershwin_rhythm_changes';
   }
+  if (songwriterId === 'arvo_part') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'arvo_part_fur_alina' : tier === 1 ? 'arvo_part_spiegel' : 'arvo_part_fratres';
+  }
+  if (songwriterId === 'satie') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'satie_gymnopedie' : tier === 1 ? 'satie_gnossienne' : 'satie_poire';
+  }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {
     const sectionPool = sectionChordPoolRows(kind, resolvedPoolId)!;
@@ -1779,7 +1893,8 @@ function chordSymbolsForSection(
       songwriterId === 'frank_zappa' ||
       songwriterId === 'joni_mitchell' ||
       songwriterId === 'bartok' ||
-      songwriterId === 'gershwin'
+      songwriterId === 'gershwin' ||
+      songwriterId === 'satie'
     ) {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }

@@ -51,6 +51,12 @@ export type BartokContextMode = 'mikrokosmos' | 'string_quartet' | 'music_for_st
 /** George Gershwin Song Mode slice — Songbook AABA vs concert rhapsody vs rhythm-changes posture (`gershwinSlice.ts`). Default **`song_aaba`** when omitted. */
 export type GershwinContextMode = 'song_aaba' | 'rhapsody' | 'rhythm_changes';
 
+/** Arvo Pärt Song Mode slice — Fur Alina vs Spiegel im Spiegel vs Fratres posture (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted. */
+export type ArvoPartContextMode = 'fur_alina' | 'spiegel' | 'fratres';
+
+/** Erik Satie Song Mode slice — Gymnopédie vs Gnossienne vs cabaret “Piège” posture (`satieSlice.ts`). Default **`gymnopedie`** when omitted. */
+export type SatieContextMode = 'gymnopedie' | 'gnossienne' | 'poire';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -880,6 +886,58 @@ export interface GenerationMetadata {
    * Gershwin Song Mode slice mode (`gershwinSlice.ts`). Default **`song_aaba`** when omitted.
    */
   gershwinContext?: GershwinContextMode;
+  /** Arvo Pärt — tintinnabuli / sparse triadic harmony (`arvoPartSlice.ts`). */
+  arvoPartDiagnostics?: {
+    songwriterId: 'arvo_part';
+    barsConsidered: number;
+    tintinnabuliTouches: number;
+    silenceAsStructureTouches: number;
+    additiveRhythmTouches: number;
+    registerArchTouches: number;
+    triadicTransformTouches: number;
+    pedalTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopTriad: number;
+    };
+    deviceReceipts?: string[];
+  };
+  arvoPartSliceReceipt?: string;
+  arvoPartEffectiveHarmonyBars?: string[];
+  arvoPartDeviceReceipts?: string[];
+  arvoPartAntiElaborationGuards?: {
+    noopTriad: number;
+  };
+  /**
+   * Arvo Pärt Song Mode slice mode (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted.
+   */
+  arvoPartContext?: ArvoPartContextMode;
+  /** Erik Satie — parallel modal plans / anti-functional stasis (`satieSlice.ts`). */
+  satieDiagnostics?: {
+    songwriterId: 'satie';
+    barsConsidered: number;
+    staticFieldTouches: number;
+    parallelPlanningTouches: number;
+    cellRepetitionTouches: number;
+    textureFormTouches: number;
+    modalCollectionTouches: number;
+    parallelColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      dominantStripNoop: number;
+    };
+    deviceReceipts?: string[];
+  };
+  satieSliceReceipt?: string;
+  satieEffectiveHarmonyBars?: string[];
+  satieDeviceReceipts?: string[];
+  satieAntiElaborationGuards?: {
+    dominantStripNoop: number;
+  };
+  /**
+   * Erik Satie Song Mode slice mode (`satieSlice.ts`). Default **`gymnopedie`** when omitted.
+   */
+  satieContext?: SatieContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

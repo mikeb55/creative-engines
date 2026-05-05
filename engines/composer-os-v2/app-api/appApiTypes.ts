@@ -4,6 +4,7 @@
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type {
+  ArvoPartContextMode,
   BartokContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
@@ -16,6 +17,7 @@ import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGu
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export type { StyleProfile };
+export type { ArvoPartContextMode };
 export type { BartokContextMode };
 export type { FrankZappaContextMode };
 export type { GershwinContextMode };
@@ -241,6 +243,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`song_aaba`** when primary songwriter is **`gershwin`**.
    */
   gershwinContext?: GershwinContextMode;
+  /**
+   * Song Mode / Arvo Pärt: Fur Alina vs Spiegel vs Fratres posture (`arvoPartSlice.ts`).
+   * Omitted → engine default **`fur_alina`** when primary songwriter is **`arvo_part`**.
+   */
+  arvoPartContext?: ArvoPartContextMode;
 }
 
 export interface ValidationSummary {

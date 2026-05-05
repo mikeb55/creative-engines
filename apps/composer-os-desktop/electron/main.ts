@@ -35,6 +35,7 @@ function loadEnv(): void {
   console.log('[main] envPath:', envPath, 'key loaded:', !!process.env.ANTHROPIC_API_KEY);
 }
 loadEnv();
+console.log('[main] ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';

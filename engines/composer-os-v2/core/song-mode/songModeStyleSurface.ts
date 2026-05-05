@@ -4,11 +4,13 @@
  */
 
 import type {
+  ArvoPartContextMode,
   BartokContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
   MilesDavisContextMode,
+  SatieContextMode,
 } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
 import { registerSongModeSectionBehaviour } from './songModeSectionControl';
@@ -257,6 +259,48 @@ export function applyGershwinStyleSurface(metadata: GenerationMetadata, primaryS
 
   appendStyleSurfaceNotes(metadata, [
     `Gershwin surface (${ctx}): sync +0.26, density +0.12, space +0.14, cadence softness +0.18 — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`arvo_part`** — sparse tintinnabuli pocket: raised space + cadence softness; lower density + sync (`arvoPartSlice.ts` receipts separate).
+ */
+export function applyArvoPartStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'arvo_part') return;
+
+  const ctx: ArvoPartContextMode = metadata.arvoPartContext ?? 'fur_alina';
+  metadata.arvoPartContext = ctx;
+
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.45);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.28);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.22);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.38);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Arvo Pärt surface (${ctx}): space +0.45, density −0.28, syncopation −0.22, cadence softness +0.38 — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`satie`** — floating modal field: raised space + cadence softness; lower density + sync (`satieSlice.ts` receipts separate).
+ */
+export function applySatieStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'satie') return;
+
+  const ctx: SatieContextMode = metadata.satieContext ?? 'gymnopedie';
+  metadata.satieContext = ctx;
+
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.42);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.24);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.18);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.44);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Satie surface (${ctx}): space +0.42, density −0.24, syncopation −0.18, cadence softness +0.44 — generative metadata only.`,
   ]);
 }
 

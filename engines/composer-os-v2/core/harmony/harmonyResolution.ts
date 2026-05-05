@@ -277,6 +277,34 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Arvo Pärt: `precomputeArvoPartEffectiveHarmonyBars` applies triadic tintinnabuli / pedal devices — receipts **`ap:*`**.
+   */
+  const apEff = meta?.arvoPartEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'arvo_part' &&
+    Array.isArray(apEff) &&
+    apEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return apEff[barIndex - 1]!;
+  }
+
+  /**
+   * Erik Satie: `precomputeSatieEffectiveHarmonyBars` applies anti-functional parallel / stasis devices — receipts **`es:*`**.
+   */
+  const satieEff = meta?.satieEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'satie' &&
+    Array.isArray(satieEff) &&
+    satieEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return satieEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;

@@ -4,6 +4,7 @@
  */
 
 import type {
+  ArvoPartContextMode,
   BartokContextMode,
   CompositionContext,
   FrankZappaContextMode,
@@ -119,6 +120,8 @@ import {
   applyMilesDavisStyleSurface,
   applyBartokStyleSurface,
   applyGershwinStyleSurface,
+  applyArvoPartStyleSurface,
+  applySatieStyleSurface,
   applyColePorterStyleSurface,
   applyDebussyStyleSurface,
   applyEcmChamberStyleSurface,
@@ -1035,6 +1038,8 @@ export interface RunGoldenPathOptions {
   bartokContext?: BartokContextMode;
   /** Song Mode / Gershwin: Songbook AABA vs rhapsody arc vs rhythm grid (`gershwinSlice.ts`). Default **`song_aaba`** when omitted. */
   gershwinContext?: GershwinContextMode;
+  /** Song Mode / Arvo Pärt: Fur Alina vs Spiegel vs Fratres posture (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted. */
+  arvoPartContext?: ArvoPartContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1623,6 +1628,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'gershwin'
         ? { gershwinContext: options.gershwinContext ?? 'song_aaba' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'arvo_part'
+        ? { arvoPartContext: options.arvoPartContext ?? 'fur_alina' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1725,6 +1733,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyGershwinStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyArvoPartStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applySatieStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyColePorterStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2110,6 +2124,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
   const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
+  const apEx = mdEx?.arvoPartEffectiveHarmonyBars;
+  const satieEx = mdEx?.satieEffectiveHarmonyBars;
   const cpPorterEx = mdEx?.colePorterEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
@@ -2174,6 +2190,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                   Array.isArray(ggEx) &&
                                                   ggEx.length === tbEx
                                                 ? ggEx
+                                              : mdEx?.songwriterStyleId === 'arvo_part' &&
+                                                  Array.isArray(apEx) &&
+                                                  apEx.length === tbEx
+                                                ? apEx
+                                              : mdEx?.songwriterStyleId === 'satie' &&
+                                                  Array.isArray(satieEx) &&
+                                                  satieEx.length === tbEx
+                                                ? satieEx
                                               : mdEx?.songwriterStyleId === 'cole_porter' &&
                                                   Array.isArray(cpPorterEx) &&
                                                   cpPorterEx.length === tbEx

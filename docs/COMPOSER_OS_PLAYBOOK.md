@@ -310,6 +310,46 @@ Primary songwriter **`gershwin`** runs **`gershwinSlice.ts`** on the golden-path
 
 ---
 
+## Arvo Pärt (`arvo_part`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`arvo_part`** runs **`arvoPartSlice.ts`** on the golden-path duo timeline (**`precomputeArvoPartEffectiveHarmonyBars`** → **`arvoPartEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.arvoPartContext`** selects the posture (**default `fur_alina`**): **`fur_alina`** · **`spiegel`** · **`fratres`**. API contract: **`GenerateRequest.arvoPartContext`**. Receipts use prefix **`ap:`**. Aliases **`arvo`**, **`part`** → **`arvo_part`** via **`normalizeSongwriterStyleKey`**.
+
+**Chord pools (triads only)** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`arvo_part_fur_alina`**, **`arvo_part_spiegel`**, **`arvo_part_fratres`**. Rows use **tertian triad symbols only** (major / minor / dim / aug); the slice **`stripChordToTriad`** strips **7ths, sus, and extensions** from any upstream symbol before passes. When **`primarySongwriterStyle === arvo_part`**, **`chordSymbolsForSection`** picks a pool with the same **seed-tier** pattern as Miles / Bartók / Gershwin (**`Math.abs(seed) % 3`**). **`breakFrankZappaIiViProgressions`** does **not** run on these pools (slow triadic motion; avoid jazz-cycle substitutions).
+
+### Tintinnabuli M + T rule (metadata)
+
+The slice does **not** emit separate M/T MIDI voices; **`ap:d1_tintinnabuli_voice`** receipts document the **tintinnabuli pairing**: a deterministic **M-voice proxy** pitch class per bar (seeded) maps to a **T-voice** pitch class as the **nearest triad chord tone** — per-bar mode cycles **above** / **below** / **indexed** selection among the triad’s root–third–fifth pitch classes. Harmony symbols on the lead sheet remain triadic; pairing is for manifests / pedagogy.
+
+### Contexts
+
+| Context | Role |
+|---------|------|
+| **`fur_alina`** | Sparse **Fratres / Für Alina**-leaning pools; **triadic transformation** pass favours **±3** semitone root moves; additive receipt cells **`3+3+2`**. |
+| **`spiegel`** | **Spiegel im Spiegel**-leaning mirrored rows; occasional **parallel major ↔ minor** toggle on the same root (**d5**); additive receipt **`2+2+2+2`**. |
+| **`fratres`** | Oscillating / pedal-leaning rows; transformation pass favours **±5** semitone moves; additive receipt **`5+3`**. |
+
+### Harmonic devices (receipts **`ap:`**)
+
+| Id | Pass | Receipt (examples) |
+|----|------|----------------------|
+| **d1** | Tintinnabuli voice (M→T mapping metadata) | **`ap:d1_tintinnabuli_voice@bar{N}|m=…|t=…|mode=above\|below\|indexed`** |
+| **d2** | Silence as structure (hold previous harmony) | **`ap:d2_silence_as_structure@bar{N}`** |
+| **d3** | Additive rhythm (form-level scaffolding) | **`ap:d3_additive_rhythm|cells=…|tb=…`** |
+| **d4** | Register arch (golden-section climax hint) | **`ap:d4_register_arch@bar{N}`** |
+| **d5** | Triadic transformation (transpose / parallel toggle) | **`ap:d5_triadic_transformation@bar{N}|transpose=…`** or **`…|parallel`** |
+
+**Drone / pedal bass** — **`ap:pedal_bass@bar{N}`** when a **tonic slash bass** is applied under shifting triads (`inferTonicPitchClassFromBar1`).
+
+### Style surface (metadata nudges)
+
+**`applyArvoPartStyleSurface`** — for all contexts: **space +0.45**, **density −0.28**, **syncopation −0.22**, **cadence softness +0.38** (clamped **0–1** from prior **`songwriter*Bias`** defaults **0.5** when unset).
+
+### Melody planner row
+
+**`MELODY_PROFILES['arvo_part']`** — stepwise · **`whole_bar`** rhythm · **repetitionVsVariationBias 0.55** · phrase **4** · **flat_with_terminal_climax** contour · cadence **low** · devices **`tintinnabuli_voice`**, **`silence_as_structure`**, **`additive_cell`**, **`register_arch`**, **`triadic_transform`**.
+
+---
+
 ## Burt Bacharach (`bacharach`) — Song Mode harmony slice
 
 ### Signature style & key techniques

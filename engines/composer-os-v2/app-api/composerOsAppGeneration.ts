@@ -67,6 +67,7 @@ import { scoreModelFeatureExtractor } from '../core/evaluation/featureExtractor'
 import { defaultGceWeights } from '../core/evaluation/gceEvaluator';
 import { defaultLockGates } from '../core/evaluation/lockGates';
 import { resolveLongFormRoute } from '../core/form/longFormRouteResolver';
+import { normalizeSongwriterStyleKey } from '../core/song-mode/songwriterStyleProfiles';
 import { resolveFormSections, type FormId } from '../core/form/formPlanner';
 import {
   lockedHarmonyChordSymbolsEquivalent,
@@ -1026,6 +1027,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'gershwin'
       ? { gershwinContext: req.gershwinContext }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'arvo_part'
+      ? { arvoPartContext: req.arvoPartContext }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1146,6 +1150,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const mdMilesLockedTruth = mdLockedTruth?.milesDavisEffectiveHarmonyBars;
   const bkLockedTruth = mdLockedTruth?.bartokEffectiveHarmonyBars;
   const ggLockedTruth = mdLockedTruth?.gershwinEffectiveHarmonyBars;
+  const apLockedTruth = mdLockedTruth?.arvoPartEffectiveHarmonyBars;
+  const satieLockedTruth = mdLockedTruth?.satieEffectiveHarmonyBars;
   const cpPorterLockedTruth = mdLockedTruth?.colePorterEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
@@ -1254,6 +1260,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 ggLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? ggLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'arvo_part' &&
+                                Array.isArray(apLockedTruth) &&
+                                apLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                apLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? apLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'satie' &&
+                                Array.isArray(satieLockedTruth) &&
+                                satieLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                satieLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? satieLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'cole_porter' &&
                                 Array.isArray(cpPorterLockedTruth) &&
                                 cpPorterLockedTruth.length === tbLockedTruth &&

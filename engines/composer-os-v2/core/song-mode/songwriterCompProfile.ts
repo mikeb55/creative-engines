@@ -101,6 +101,8 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   miles_davis: 'keys',
   bartok: 'keys',
   gershwin: 'keys',
+  arvo_part: 'keys',
+  satie: 'keys',
   frank_zappa: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',

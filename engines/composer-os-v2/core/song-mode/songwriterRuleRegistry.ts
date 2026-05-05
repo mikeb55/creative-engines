@@ -743,6 +743,20 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('gg.chromatic_passing', 'Diminished passing connectors (`gg:d4_chromatic_passing`)', 'songwriter', 'harmony', 8, 'global'),
     R('gg.minor_third_modulation', 'Brief minor-third axis shift (`gg:d5_minor_third_modulation`)', 'songwriter', 'harmony', 7, 'bridge'),
   ],
+  arvo_part: [
+    R('ap.tintinnabuli_voice', 'T-voice mapped from M-voice against triad tones (`ap:d1_tintinnabuli_voice`)', 'songwriter', 'harmony', 9, 'global'),
+    R('ap.silence_as_structure', 'Held harmony / harmonic rest bars (`ap:d2_silence_as_structure`)', 'songwriter', 'harmony', 8, 'verse'),
+    R('ap.additive_rhythm', 'Additive pulse scaffolding (`ap:d3_additive_rhythm`)', 'songwriter', 'rhythm', 8, 'global'),
+    R('ap.register_arch', 'Golden-section register climax hint (`ap:d4_register_arch`)', 'songwriter', 'form', 7, 'form'),
+    R('ap.triadic_transformation', 'Uniform triadic transforms / parallel pairs (`ap:d5_triadic_transformation`)', 'songwriter', 'harmony', 8, 'global'),
+  ],
+  satie: [
+    R('sat.static_field', 'Harmonic prolongation / frozen field bars (`es:d1_static_field`)', 'songwriter', 'harmony', 9, 'global'),
+    R('sat.parallel_planning', 'Uniform chromatic parallel planning windows (`es:d2_parallel_planning`)', 'songwriter', 'harmony', 9, 'verse'),
+    R('sat.cell_repetition', 'Two-bar harmonic cell echo (`es:d3_cell_repetition`)', 'songwriter', 'form', 8, 'verse'),
+    R('sat.texture_form', 'Sparse texture form hinge receipts (`es:d4_texture_form`)', 'songwriter', 'form', 7, 'form'),
+    R('sat.modal_collection', 'White-collection modal pitch receipts (`es:d5_modal_collection`)', 'songwriter', 'harmony', 8, 'global'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

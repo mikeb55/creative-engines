@@ -165,6 +165,18 @@ import {
   precomputeGershwinEffectiveHarmonyBars,
 } from './gershwinSlice';
 import {
+  accumulateArvoPartHarmonyDiagnostics,
+  createArvoPartHarmonyAccumulator,
+  finalizeArvoPartMetadata,
+  precomputeArvoPartEffectiveHarmonyBars,
+} from './arvoPartSlice';
+import {
+  accumulateSatieHarmonyDiagnostics,
+  createSatieHarmonyAccumulator,
+  finalizeSatieMetadata,
+  precomputeSatieEffectiveHarmonyBars,
+} from './satieSlice';
+import {
   accumulateColePorterHarmonyDiagnostics,
   createColePorterHarmonyAccumulator,
   finalizeColePorterMetadata,
@@ -2301,6 +2313,8 @@ function buildGuitarPart(
   const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
   const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
+  const isSongwriterArvoPart = genMeta?.songwriterStyleId === 'arvo_part';
+  const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -2319,6 +2333,8 @@ function buildGuitarPart(
   const mdAccum = createMilesDavisHarmonyAccumulator();
   const bkAccum = createBartokHarmonyAccumulator();
   const ggAccum = createGershwinHarmonyAccumulator();
+  const apAccum = createArvoPartHarmonyAccumulator();
+  const satAccum = createSatieHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
@@ -2379,6 +2395,12 @@ function buildGuitarPart(
   }
   if (isSongwriterGershwin && isDuoGoldenPath) {
     precomputeGershwinEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterArvoPart && isDuoGoldenPath) {
+    precomputeArvoPartEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterSatie && isDuoGoldenPath) {
+    precomputeSatieEffectiveHarmonyBars(context);
   }
   if (isSongwriterColePorter && isDuoGoldenPath) {
     precomputeColePorterEffectiveHarmonyBars(context);
@@ -2617,6 +2639,20 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         ggAccum
+      );
+    }
+    if (isSongwriterArvoPart) {
+      accumulateArvoPartHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        apAccum
+      );
+    }
+    if (isSongwriterSatie) {
+      accumulateSatieHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        satAccum
       );
     }
     if (isSongwriterColePorter) {
@@ -3234,6 +3270,14 @@ function buildGuitarPart(
 
   if (isSongwriterGershwin && context.generationMetadata) {
     finalizeGershwinMetadata(context.generationMetadata, ggAccum);
+  }
+
+  if (isSongwriterArvoPart && context.generationMetadata) {
+    finalizeArvoPartMetadata(context.generationMetadata, apAccum);
+  }
+
+  if (isSongwriterSatie && context.generationMetadata) {
+    finalizeSatieMetadata(context.generationMetadata, satAccum);
   }
 
   if (isSongwriterColePorter && context.generationMetadata) {

@@ -33,7 +33,7 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 ## Songwriter slices
 
-**Shipped harmony modules:** **29** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
+**Shipped harmony modules:** **30** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
 
 Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Slice.ts`** (each paired with **`engines/composer-os-v2/core/goldenPath/<name>Slice.ts`** re-exports where present). **Receipt prefixes** below come from the slice sources — search **`engines/composer-os-v2/core/song-mode/<Slice>.ts`** for full device strings.
 
@@ -141,6 +141,17 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`gg:*`** — AABA / rhapsody / rhythm grid (**d1**), blue-note colour (**d2**), syncopated anticipation (**d3**), chromatic passing (**d4**), minor-third modulation (**d5**); see **`gershwinEffectiveHarmonyBars`**. |
 | **Chord pools** | **`gershwin_song_aaba`**, **`gershwin_rhapsody`**, **`gershwin_rhythm_changes`** in **`songModeBuilder`** when primary is Gershwin (**`seed % 3`**). |
 | **Style surface** | **`applyGershwinStyleSurface`** — syncopation **+0.26**, density **+0.12**, space **+0.14**, cadence softness **+0.18**. |
+
+### Arvo Pärt (3 contexts)
+
+| | |
+|--|--|
+| **Slice** | `engines/composer-os-v2/core/song-mode/arvoPartSlice.ts` |
+| **Primary id** | `arvo_part` (aliases e.g. **`arvo`**, **`part`**) |
+| **Contexts** | **`arvoPartContext`** / **`GenerateRequest.arvoPartContext`**: **`fur_alina`** \| **`spiegel`** \| **`fratres`** (default **`fur_alina`**). |
+| **Devices / receipts** | **`ap:*`** — tintinnabuli M/T pairing (**d1**), silence as structure (**d2**), additive rhythm (**d3**), register arch (**d4**), triadic transformation (**d5**); pedal **`ap:pedal_bass`**; **`arvoPartEffectiveHarmonyBars`**. |
+| **Chord pools** | **`arvo_part_fur_alina`**, **`arvo_part_spiegel`**, **`arvo_part_fratres`** in **`songModeBuilder`** when primary is Arvo Pärt (**`seed % 3`**); **triads only** (slice strips extensions). |
+| **Style surface** | **`applyArvoPartStyleSurface`** — space **+0.45**, density **−0.28**, syncopation **−0.22**, cadence softness **+0.38**. |
 
 ### Donald Fagen
 
