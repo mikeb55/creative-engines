@@ -916,6 +916,10 @@ export interface GenerationMetadata {
   theloniousMonkAntiElaborationGuards?: {
     lushExtensionStripped: number;
   };
+  /** Thelonious Monk slice — bars (1-based) with intent: no new melodic onset (full-bar rest / silence). */
+  monkSilenceBars?: number[];
+  /** Thelonious Monk slice — bars (1-based) where melody enters after beat 3 (partial rest). */
+  monkPartialRestBars?: number[];
   /** Andrew Hill (post-bop angular non-functional harmony) — slice diagnostics + effective harmony. */
   andrewHillDiagnostics?: {
     songwriterId: 'andrew_hill';

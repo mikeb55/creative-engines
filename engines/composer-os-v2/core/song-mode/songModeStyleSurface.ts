@@ -200,6 +200,24 @@ export function applyFrankZappaStyleSurface(
 }
 
 /**
+ * Primary **`thelonious_monk`** — angular pocket: lower mean density, raised syncopation + space, softer cadence metadata.
+ */
+export function applyMonkStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'thelonious_monk') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.12);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.3);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.35);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.1);
+
+  appendStyleSurfaceNotes(metadata, [
+    'thelonious_monk surface: density −0.12, syncopation +0.30, space +0.35, cadence softness +0.10 — generative bias only.',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

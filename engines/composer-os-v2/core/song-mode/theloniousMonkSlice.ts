@@ -32,11 +32,57 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function phrasePositionFromBar(bar: number): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
-  const k = (bar - 1) % 4;
-  if (k === 0) return 'phraseStart';
-  if (k === 3) return 'phraseFinal';
-  return 'phraseMiddle';
+/** Phrase lengths: 4-bar 58%, 5-bar 14%, 7-bar 14%, 9-bar 11%, 6-bar 3%. */
+function monkPhraseLength(seed: number, phraseIndex: number): number {
+  const u = seededUnit(seed, phraseIndex, 886800);
+  if (u < 0.58) return 4;
+  if (u < 0.72) return 5;
+  if (u < 0.86) return 7;
+  if (u < 0.97) return 9;
+  return 6;
+}
+
+/**
+ * Rolling asymmetric phrase grid (same layout pattern as Jobim / Bill Evans).
+ * Receipts for phrase starts are emitted in {@link precomputeTheloniousMonkEffectiveHarmonyBars} as **`tm:asym_phrase@bar{N}`**.
+ */
+export function computeMonkPhrasePositions(
+  totalBars: number,
+  seed: number
+): readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] {
+  const out: ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = monkPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    for (let i = 0; i < span; i++) {
+      const globalBar = bar + i;
+      if (span <= 1) {
+        out.push('phraseFinal');
+      } else if (globalBar === bar) {
+        out.push('phraseStart');
+      } else if (globalBar === end) {
+        out.push('phraseFinal');
+      } else {
+        out.push('phraseMiddle');
+      }
+    }
+    bar = end + 1;
+    phraseIdx++;
+  }
+  while (out.length < totalBars) out.push('phraseMiddle');
+  return out.slice(0, totalBars);
+}
+
+function phraseRoleAtBar(
+  bar: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): 'phraseStart' | 'phraseMiddle' | 'phraseFinal' {
+  const idx = bar - 1;
+  if (idx < 0 || idx >= positions.length) return 'phraseMiddle';
+  return positions[idx]!;
 }
 
 function slashTail(symbol: string): string {
@@ -210,11 +256,12 @@ function deferCadenceWithTritoneSub(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
 ): void {
   if (tonicPc === undefined) return;
   for (let b = 1; b < tb; b++) {
-    if (phrasePositionFromBar(b) !== 'phraseFinal') continue;
+    if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
     if (isProtectedBar(b, context) || isProtectedBar(b + 1, context)) continue;
     if (seededUnit(seed, b, 886101) >= 0.38) continue;
     const domSym = out[b - 1]!;
@@ -253,6 +300,106 @@ function applyContrastSectionColour(
   }
 }
 
+function isMonkHarmonicPositionV_bII_IIofV(rootPc: number, tonicPc: number): boolean {
+  const v = (tonicPc + 7) % 12;
+  const bII = (tonicPc + 1) % 12;
+  const iiOfV = (tonicPc + 9) % 12;
+  return rootPc === v || rootPc === bII || rootPc === iiOfV;
+}
+
+/** Dominant 7 / 7b9 / 7alt at V, bII, or II-of-V — whole-tone fragment colouring. */
+function applyWholeToneFragmentPass(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (seededUnit(seed, b, 886401) >= 0.2) continue;
+    const sym = out[b - 1]!;
+    if (!isDominantFunctionSymbol(sym)) continue;
+    const hp = parseChordSymbol(sym).harmonyPart.toLowerCase();
+    if (/sus|maj7|mmaj7|dim|ø/.test(hp)) continue;
+    const r = harmonyRootPc(sym);
+    if (r === undefined || !isMonkHarmonicPositionV_bII_IIofV(r, tonicPc)) continue;
+    const slash = slashTail(sym);
+    const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
+    if (!root) continue;
+    const qual = seededUnit(seed, b, 886402) < 0.5 ? '7(b5#5)' : 'aug7';
+    out[b - 1] = `${root}${qual}${slash}`;
+    receipts.push(`tm:whole_tone@bar${b}`);
+  }
+}
+
+function isHighDensityChord(symbol: string): boolean {
+  const s = symbol.trim();
+  if (s.length > 14) return true;
+  const hp = parseChordSymbol(s).harmonyPart.toLowerCase();
+  return /alt|7b9|#11|13|maj9|add|sus|dim|ø|7alt/.test(hp);
+}
+
+/** Phrase-middle only: after a high-density bar, slash-bass chromatic approach to 3rd or 5th. */
+function applyChromaticEnclosurePass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): void {
+  for (let b = 2; b <= tb; b++) {
+    if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
+    if (seededUnit(seed, b, 886301) >= 0.25) continue;
+    if (isProtectedBar(b, context)) continue;
+    const prevSym = out[b - 2]!;
+    if (!isHighDensityChord(prevSym)) continue;
+    const sym = out[b - 1]!;
+    if (sym.includes('/')) continue;
+    const r = harmonyRootPc(sym);
+    if (r === undefined) continue;
+    const targetPc =
+      seededUnit(seed, b, 886303) < 0.5 ? (r + 4) % 12 : (r + 7) % 12;
+    const delta = seededUnit(seed, b, 886304) < 0.5 ? -1 : 1;
+    const approachPc = (targetPc + delta + 12) % 12;
+    const bassName = pitchClassToSharpName(approachPc);
+    const hp = parseChordSymbol(sym).harmonyPart;
+    const head = hp.includes('/') ? hp.slice(0, hp.indexOf('/')) : hp;
+    out[b - 1] = `${head}/${bassName}`;
+    receipts.push(`tm:chrom_enclosure@bar${b}`);
+  }
+}
+
+function applyDeliberateSilencePass(
+  seed: number,
+  receipts: string[],
+  tb: number,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[],
+  genMeta: GenerationMetadata & Record<string, unknown>
+): void {
+  const silence: number[] = [];
+  const partial: number[] = [];
+  for (let b = 1; b <= tb; b++) {
+    const role = phraseRoleAtBar(b, positions);
+    if (role === 'phraseFinal') {
+      if (seededUnit(seed, b, 886501) < 0.14) {
+        silence.push(b);
+        receipts.push(`tm:deliberate_silence@bar${b}`);
+      }
+    } else if (role === 'phraseMiddle') {
+      if (seededUnit(seed, b, 886502) < 0.1) {
+        partial.push(b);
+        receipts.push(`tm:deliberate_silence@bar${b}`);
+      }
+    }
+  }
+  genMeta.monkSilenceBars = silence.length ? silence : undefined;
+  genMeta.monkPartialRestBars = partial.length ? partial : undefined;
+}
+
 /**
  * Precompute effective one chord per bar after Monk slice devices (primary `thelonious_monk` only).
  */
@@ -266,6 +413,13 @@ export function precomputeTheloniousMonkEffectiveHarmonyBars(context: Compositio
     lushExtensionStripped: 0,
   };
 
+  const positions = computeMonkPhrasePositions(tb, seed);
+  for (let i = 0; i < positions.length; i++) {
+    if (positions[i] === 'phraseStart') {
+      receipts.push(`tm:asym_phrase@bar${i + 1}`);
+    }
+  }
+
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
     let sym = getChordForBar(b, context);
@@ -277,8 +431,11 @@ export function precomputeTheloniousMonkEffectiveHarmonyBars(context: Compositio
 
   const out = [...raw];
 
-  deferCadenceWithTritoneSub(out, tonicPc, seed, receipts, tb, context);
+  deferCadenceWithTritoneSub(out, tonicPc, seed, receipts, tb, context, positions);
   applyContrastSectionColour(out, seed, receipts, tb, context);
+  applyWholeToneFragmentPass(out, tonicPc, seed, receipts, tb, context);
+  applyChromaticEnclosurePass(out, seed, receipts, tb, context, positions);
+  applyDeliberateSilencePass(seed, receipts, tb, positions, genMeta);
 
   genMeta.theloniousMonkEffectiveHarmonyBars = out;
   genMeta.theloniousMonkDeviceReceipts = receipts;

@@ -108,6 +108,7 @@ import {
   applyBacharachStyleSurface,
   applyBillEvansStyleSurface,
   applyFrankZappaStyleSurface,
+  applyMonkStyleSurface,
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyEcmChamberStyleSurface,
@@ -1684,6 +1685,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       options.primarySongwriterStyle,
       options.totalBars ?? context.form.totalBars
     );
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyMonkStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
