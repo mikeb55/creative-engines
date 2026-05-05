@@ -220,6 +220,21 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Maria Schneider: `precomputeMariaSchneiderEffectiveHarmonyBars` applies Lydian centre / pedal / colour-stack devices.
+   * After precompute, `mariaSchneiderEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const msEff = meta?.mariaSchneiderEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'maria_schneider' &&
+    Array.isArray(msEff) &&
+    msEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return msEff[barIndex - 1]!;
+  }
+
+  /**
    * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
    * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
    */

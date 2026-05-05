@@ -63,8 +63,8 @@ export function runVocalMelodySmokeTests(): { name: string; ok: boolean }[] {
 
   const profileKeys = Object.keys(MELODY_PROFILES).filter((k) => MELODY_PROFILES[k as SongwriterRuleId] != null);
   out.push({
-    ok: profileKeys.length >= 34,
-    name: 'MELODY_PROFILES: ≥34 research composer rows',
+    ok: profileKeys.length >= 35,
+    name: 'MELODY_PROFILES: ≥35 research composer rows',
   });
 
   const writerSample: SongwriterRuleId[] = [

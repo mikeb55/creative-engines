@@ -236,6 +236,24 @@ export function applyDukeEllingtonStyleSurface(metadata: GenerationMetadata, pri
 }
 
 /**
+ * Primary **`maria_schneider`** — floating pastoral chamber metadata (Song Mode hook-first path).
+ */
+export function applyMariaSchneiderStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'maria_schneider') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.05);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.2);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.25);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.28);
+
+  appendStyleSurfaceNotes(metadata, [
+    'maria_schneider surface: density +0.05, syncopation −0.20, space +0.25, cadence softness +0.28 — generative bias only.',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

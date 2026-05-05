@@ -1490,6 +1490,23 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G13', 'Cmaj9(#11)', 'Am9'],
     ],
   },
+  maria_schneider: {
+    verse: [
+      ['Cmaj7(#11)', 'Fmaj7(#11)', 'Bbmaj13(#11)', 'G7(b9,#11,13)'],
+      ['Dm9', 'G13', 'Cmaj9(#11)', 'A7alt'],
+    ],
+    chorus: [
+      ['Ebmaj7(add9)', 'Bbmaj7(#11)', 'Gm11', 'C9(#11)'],
+      ['Fmaj13(#11)', 'Dm7(b6)', 'Em7(b6)', 'Am(maj7)'],
+    ],
+    bridge: [
+      ['Bm7(b6)', 'E7alt', 'Amaj7(#11)', 'Dmaj9(#11)'],
+      ['Gm11', 'C13', 'Fmaj7(#11)', 'Bb6/9(#11)'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
+    ],
+  },
 };
 
 function sectionChordPoolRows(

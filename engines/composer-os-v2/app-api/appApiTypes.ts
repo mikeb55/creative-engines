@@ -425,6 +425,14 @@ export interface OutputEntry {
   dukeEllingtonAntiElaborationGuards?: GenerationMetadata['dukeEllingtonAntiElaborationGuards'];
   ellingtonCallResponseMap?: GenerationMetadata['ellingtonCallResponseMap'];
   ellingtonShoutBars?: GenerationMetadata['ellingtonShoutBars'];
+  /** Maria Schneider (modal orchestral harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  mariaSchneiderDiagnostics?: GenerationMetadata['mariaSchneiderDiagnostics'];
+  mariaSchneiderDeviceReceipts?: GenerationMetadata['mariaSchneiderDeviceReceipts'];
+  mariaSchneiderSliceReceipt?: GenerationMetadata['mariaSchneiderSliceReceipt'];
+  mariaSchneiderEffectiveHarmonyBars?: GenerationMetadata['mariaSchneiderEffectiveHarmonyBars'];
+  mariaSchneiderAntiElaborationGuards?: GenerationMetadata['mariaSchneiderAntiElaborationGuards'];
+  schneiderPedalBars?: GenerationMetadata['schneiderPedalBars'];
+  schneiderColorStackBars?: GenerationMetadata['schneiderColorStackBars'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
   bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];

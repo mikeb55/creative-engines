@@ -1133,6 +1133,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const bhLockedTruth = mdLockedTruth?.barryHarrisEffectiveHarmonyBars;
   const beLockedTruth = mdLockedTruth?.billEvansEffectiveHarmonyBars;
   const deLockedTruth = mdLockedTruth?.dukeEllingtonEffectiveHarmonyBars;
+  const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
@@ -1215,7 +1216,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                             lockedHarmonyBarsAuthoritative &&
                             deLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                           ? deLockedTruth
-                          : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
+                          : mdLockedTruth?.songwriterStyleId === 'maria_schneider' &&
+                              Array.isArray(msLockedTruth) &&
+                              msLockedTruth.length === tbLockedTruth &&
+                              lockedHarmonyBarsAuthoritative &&
+                              msLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                            ? msLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
                             Array.isArray(baLockedTruth) &&
                             baLockedTruth.length === tbLockedTruth &&
                             lockedHarmonyBarsAuthoritative &&
@@ -1406,6 +1413,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const eccDisk = mdDisk?.ecmChamberEffectiveHarmonyBars;
     const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const deDisk = mdDisk?.dukeEllingtonEffectiveHarmonyBars;
+    const msDisk = mdDisk?.mariaSchneiderEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -1491,7 +1499,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                     locked &&
                                     deDisk.length === locked.length
                                   ? deDisk
-                                  : mdDisk?.songwriterStyleId === 'frank_zappa' &&
+                                  : mdDisk?.songwriterStyleId === 'maria_schneider' &&
+                                      Array.isArray(msDisk) &&
+                                      msDisk.length === gp.context.form.totalBars &&
+                                      locked &&
+                                      msDisk.length === locked.length
+                                    ? msDisk
+                                    : mdDisk?.songwriterStyleId === 'frank_zappa' &&
                                     Array.isArray(fzDisk) &&
                                     fzDisk.length === gp.context.form.totalBars &&
                                     locked &&

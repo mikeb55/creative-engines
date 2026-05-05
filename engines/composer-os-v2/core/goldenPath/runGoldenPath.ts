@@ -108,6 +108,7 @@ import {
   applyBacharachStyleSurface,
   applyBillEvansStyleSurface,
   applyDukeEllingtonStyleSurface,
+  applyMariaSchneiderStyleSurface,
   applyFrankZappaStyleSurface,
   applyMonkStyleSurface,
   applyJobimStyleSurface,
@@ -1694,6 +1695,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     applyDukeEllingtonStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
+    applyMariaSchneiderStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);
   }
   if (options?.songModeHookFirstIdentity) {
@@ -2064,6 +2068,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
+  const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
   const barsForLockedExportTruth =
     mdEx?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEx) && bwEx.length === tbEx
@@ -2112,7 +2117,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                           ? beEx
                                           : mdEx?.songwriterStyleId === 'duke_ellington' && Array.isArray(deEx) && deEx.length === tbEx
                                             ? deEx
-                                            : mdEx?.songwriterStyleId === 'frank_zappa' &&
+                                            : mdEx?.songwriterStyleId === 'maria_schneider' && Array.isArray(msEx) && msEx.length === tbEx
+                                              ? msEx
+                                              : mdEx?.songwriterStyleId === 'frank_zappa' &&
                                               appliedContext.harmonyContext?.styleId === 'frank_zappa' &&
                                               appliedContext.harmonyContext.bars.length === tbEx
                                             ? [...appliedContext.harmonyContext.bars]
@@ -2205,6 +2212,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
+  const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const expectedBarsForLockedTruth =
       mdLt?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwLt) && bwLt.length === tbLt
@@ -2255,7 +2263,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                               ? beLt
                                               : mdLt?.songwriterStyleId === 'duke_ellington' && Array.isArray(deLt) && deLt.length === tbLt
                                                 ? deLt
-                                                : mdLt?.songwriterStyleId === 'frank_zappa' &&
+                                                : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
+                                                  ? msLt
+                                                  : mdLt?.songwriterStyleId === 'frank_zappa' &&
                                                   appliedContext.harmonyContext?.styleId === 'frank_zappa' &&
                                                   appliedContext.harmonyContext.bars.length === tbLt
                                                 ? [...appliedContext.harmonyContext.bars]

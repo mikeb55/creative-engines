@@ -224,6 +224,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'medium',
     devices: ['inner_voice_melody', 'modal_interchange', 'delayed_resolution', 'impressionistic_voicing'],
   },
+  maria_schneider: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.85,
+    phraseLength: 7,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.75,
+    cadenceFrequency: 'low',
+    devices: ['sparse_phrase', 'modal_field', 'breath_space', 'nature_arc', 'chamber_texture'],
+  },
   bacharach: {
     intervalTendency: 'mixed',
     rhythmicSubdivision: 'eighth_patterns',

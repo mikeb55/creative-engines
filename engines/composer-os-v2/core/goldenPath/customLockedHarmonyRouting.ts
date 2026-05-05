@@ -101,6 +101,7 @@ export function assertScoreMatchesLockedHarmonyWire(
   const bhEff = md?.barryHarrisEffectiveHarmonyBars;
   const beEff = md?.billEvansEffectiveHarmonyBars;
   const deEff = md?.dukeEllingtonEffectiveHarmonyBars;
+  const msEff = md?.mariaSchneiderEffectiveHarmonyBars;
   const baEff = md?.bacharachEffectiveHarmonyBars;
   const dfEff = md?.donaldFagenEffectiveHarmonyBars;
   const eccEff = md?.ecmChamberEffectiveHarmonyBars;
@@ -164,7 +165,12 @@ export function assertScoreMatchesLockedHarmonyWire(
                             deEff.length === tb &&
                             deEff.length === wire.length
                           ? deEff
-                          : md?.songwriterStyleId === 'bacharach' &&
+                          : md?.songwriterStyleId === 'maria_schneider' &&
+                              Array.isArray(msEff) &&
+                              msEff.length === tb &&
+                              msEff.length === wire.length
+                            ? msEff
+                            : md?.songwriterStyleId === 'bacharach' &&
                             Array.isArray(baEff) &&
                             baEff.length === tb &&
                             baEff.length === wire.length

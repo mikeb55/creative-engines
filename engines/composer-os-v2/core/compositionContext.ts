@@ -762,6 +762,31 @@ export interface GenerationMetadata {
   ellingtonCallResponseMap?: Record<number, 'call' | 'response'>;
   /** Bars tagged by shout-chorus pass (1-based). */
   ellingtonShoutBars?: number[];
+  /** Maria Schneider (modal / pastoral orchestral) — slice diagnostics + effective harmony. */
+  mariaSchneiderDiagnostics?: {
+    songwriterId: 'maria_schneider';
+    barsConsidered: number;
+    lydianTouches: number;
+    pedalTouches: number;
+    natureTouches: number;
+    colorStackTouches: number;
+    planingTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bareMajorRaised: number;
+    };
+    deviceReceipts?: string[];
+  };
+  mariaSchneiderSliceReceipt?: string;
+  mariaSchneiderEffectiveHarmonyBars?: string[];
+  mariaSchneiderDeviceReceipts?: string[];
+  mariaSchneiderAntiElaborationGuards?: {
+    bareMajorRaised: number;
+  };
+  /** Pedal ostinato bars (1-based). */
+  schneiderPedalBars?: number[];
+  /** Tutti colour-stack bars (1-based). */
+  schneiderColorStackBars?: number[];
   /** Bacharach (theatre-pop / studio orchestration) — slice diagnostics + effective harmony. */
   bacharachDiagnostics?: {
     songwriterId: 'bacharach';
