@@ -1020,6 +1020,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'miles_davis'
       ? { milesDavisContext: req.milesDavisContext }
       : {}),
+    ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'bartok'
+      ? { bartokContext: req.bartokContext }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1138,6 +1141,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const dbLockedTruth = mdLockedTruth?.debussyEffectiveHarmonyBars;
   const deLockedTruth = mdLockedTruth?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesLockedTruth = mdLockedTruth?.milesDavisEffectiveHarmonyBars;
+  const bkLockedTruth = mdLockedTruth?.bartokEffectiveHarmonyBars;
   const cpPorterLockedTruth = mdLockedTruth?.colePorterEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
@@ -1234,6 +1238,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                               lockedHarmonyBarsAuthoritative &&
                               mdMilesLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                             ? mdMilesLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'bartok' &&
+                                Array.isArray(bkLockedTruth) &&
+                                bkLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                bkLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? bkLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'cole_porter' &&
                                 Array.isArray(cpPorterLockedTruth) &&
                                 cpPorterLockedTruth.length === tbLockedTruth &&

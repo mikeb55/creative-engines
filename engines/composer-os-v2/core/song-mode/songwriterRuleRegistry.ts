@@ -729,6 +729,13 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('md.time_no_changes', 'Suspended / ambiguous harmony regions (`md:time_no_changes`)', 'songwriter', 'harmony', 8, 'form'),
     R('md.cool_phrasing', 'Mid-register sparse melodic pacing (`md:cool_phrase`)', 'songwriter', 'melody', 8, 'verse'),
   ],
+  bartok: [
+    R('bk.axis_substitution', 'Minor-third / symmetric axis substitution vs functional ii–V (`bk:axis_substitution`)', 'songwriter', 'harmony', 9, 'global'),
+    R('bk.golden_section', 'Golden-section climax bar colour (`bk:golden_section_climax`)', 'songwriter', 'form', 8, 'form'),
+    R('bk.bulgarian_rhythm', 'Additive accent receipts (`bk:bulgarian_rhythm`)', 'songwriter', 'rhythm', 8, 'global'),
+    R('bk.interval_cell', 'Interval-cell transposition (`bk:interval_cell_transform`)', 'songwriter', 'harmony', 8, 'verse'),
+    R('bk.arch_mirror', 'Arch-form mirrored swap (`bk:arch_form_mirror`)', 'songwriter', 'form', 7, 'bridge'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

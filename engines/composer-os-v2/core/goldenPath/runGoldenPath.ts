@@ -4,6 +4,7 @@
  */
 
 import type {
+  BartokContextMode,
   CompositionContext,
   FrankZappaContextMode,
   GenerationMetadata,
@@ -115,6 +116,7 @@ import {
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyMilesDavisStyleSurface,
+  applyBartokStyleSurface,
   applyColePorterStyleSurface,
   applyDebussyStyleSurface,
   applyEcmChamberStyleSurface,
@@ -1027,6 +1029,8 @@ export interface RunGoldenPathOptions {
   frankZappaContext?: FrankZappaContextMode;
   /** Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
   milesDavisContext?: MilesDavisContextMode;
+  /** Song Mode / Bartók: Mikrókosmos vs quartet vs orchestral strings (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted. */
+  bartokContext?: BartokContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1609,6 +1613,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'miles_davis'
         ? { milesDavisContext: options.milesDavisContext ?? 'modal_1959' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'bartok'
+        ? { bartokContext: options.bartokContext ?? 'mikrokosmos' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1705,6 +1712,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyMilesDavisStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyBartokStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyColePorterStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2088,6 +2098,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const dbEx = mdEx?.debussyEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
+  const bkEx = mdEx?.bartokEffectiveHarmonyBars;
   const cpPorterEx = mdEx?.colePorterEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
@@ -2144,6 +2155,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                 Array.isArray(mdMilesEx) &&
                                                 mdMilesEx.length === tbEx
                                               ? mdMilesEx
+                                              : mdEx?.songwriterStyleId === 'bartok' &&
+                                                  Array.isArray(bkEx) &&
+                                                  bkEx.length === tbEx
+                                                ? bkEx
                                               : mdEx?.songwriterStyleId === 'cole_porter' &&
                                                   Array.isArray(cpPorterEx) &&
                                                   cpPorterEx.length === tbEx

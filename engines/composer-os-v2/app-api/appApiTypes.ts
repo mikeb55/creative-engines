@@ -4,6 +4,7 @@
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type {
+  BartokContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   ImportHarmonyMode,
@@ -14,6 +15,7 @@ import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGu
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 
 export type { StyleProfile };
+export type { BartokContextMode };
 export type { FrankZappaContextMode };
 export type { MilesDavisContextMode };
 export type { ImportHarmonyMode };
@@ -227,6 +229,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`modal_1959`** when primary songwriter is **`miles_davis`**.
    */
   milesDavisContext?: MilesDavisContextMode;
+  /**
+   * Song Mode / Bartók: Mikrókosmos vs quartet vs orchestral strings posture (`bartokSlice.ts`).
+   * Omitted → engine default **`mikrokosmos`** when primary songwriter is **`bartok`**.
+   */
+  bartokContext?: BartokContextMode;
 }
 
 export interface ValidationSummary {

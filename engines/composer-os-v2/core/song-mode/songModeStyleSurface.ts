@@ -3,7 +3,12 @@
  * with short honest receipt lines (no mimic claims).
  */
 
-import type { FrankZappaContextMode, GenerationMetadata, MilesDavisContextMode } from '../compositionContext';
+import type {
+  BartokContextMode,
+  FrankZappaContextMode,
+  GenerationMetadata,
+  MilesDavisContextMode,
+} from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
 import { registerSongModeSectionBehaviour } from './songModeSectionControl';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
@@ -202,6 +207,37 @@ export function applyFrankZappaStyleSurface(
 /**
  * Primary **`miles_davis`** — cool / quintet / electric pocket: space-forward metadata by {@link MilesDavisContextMode}.
  */
+/**
+ * Primary **`bartok`** — folk-modal axis / chamber space: raised space + sync + cadence softness; density nudges by {@link BartokContextMode}.
+ */
+export function applyBartokStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'bartok') return;
+
+  const ctx: BartokContextMode = metadata.bartokContext ?? 'mikrokosmos';
+  metadata.bartokContext = ctx;
+
+  const dens0 = metadata.songwriterDensityBias ?? 0.5;
+  const sync0 = metadata.songwriterSyncopationBias ?? 0.5;
+  const space0 = metadata.songwriterSpaceBias ?? 0.5;
+  const cad0 = metadata.songwriterCadenceSoftness ?? 0.5;
+
+  let dDens = 0;
+  if (ctx === 'mikrokosmos') dDens = 0.06;
+  else if (ctx === 'string_quartet') dDens = -0.08;
+  else dDens = 0.02;
+
+  metadata.songwriterDensityBias = clamp01(dens0 + dDens);
+  metadata.songwriterSyncopationBias = clamp01(sync0 + 0.18);
+  metadata.songwriterSpaceBias = clamp01(space0 + 0.28);
+  metadata.songwriterCadenceSoftness = clamp01(cad0 + 0.22);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Bartók surface (${ctx}): space +0.28, sync +0.18, cadence softness +0.22; density delta ${dDens >= 0 ? '+' : ''}${dDens} — generative metadata only.`,
+  ]);
+}
+
 export function applyMilesDavisStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;
   if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;

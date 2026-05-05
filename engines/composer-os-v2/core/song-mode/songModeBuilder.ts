@@ -445,8 +445,8 @@ function isMajorKeyIiViTriple(a: string, b: string, c: string): boolean {
   return isIiMinorSeventhLike(a) && isVDominantSeventhFamily(b) && isIMajorTonicLike(c);
 }
 
-/** Blocks rolling major-key ii–V–I cadences for Frank Zappa chord scaffolding (post rhythm shaping). */
-function breakFrankZappaIiViProgressions(chords: readonly string[], seed: number): string[] {
+/** Blocks rolling major-key ii–V–I cadences for Frank Zappa / Bartók chord scaffolding (post rhythm shaping). */
+export function breakFrankZappaIiViProgressions(chords: readonly string[], seed: number): string[] {
   if (chords.length < 3) return [...chords];
   const out = [...chords];
   let salt = seed >>> 0;
@@ -1513,6 +1513,57 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Bm7b5', 'E7', 'Am7', 'D7'],
     ],
   },
+  bartok_mikrokosmos: {
+    verse: [
+      ['Am(add9)', 'Fquartal', 'Dm(add9)', 'Gquartal'],
+      ['Em11', 'Cmaj7#11', 'Am(add9)', 'B7alt'],
+    ],
+    chorus: [
+      ['Fm11', 'Dbmaj7#11', 'Cm11', 'G7alt'],
+      ['Gm11', 'Ebmaj7(add9)', 'Bbmaj7#11', 'Fm11'],
+    ],
+    bridge: [
+      ['Bm11', 'Equartal', 'Gmaj7#11', 'C7(b9,b13)'],
+      ['Am11', 'Fmaj7#11', 'Dm(add9)', 'E7alt'],
+    ],
+    pre_chorus: [
+      ['Dm(add9)', 'Gquartal', 'Cmaj7#11', 'Am11'],
+    ],
+  },
+  bartok_string_quartet: {
+    verse: [
+      ['Cm11', 'Abadd9', 'Ebmaj7', 'Fm11'],
+      ['Gm11', 'Ebmaj7(add9)', 'Bbmaj7#11', 'Fm11'],
+    ],
+    chorus: [
+      ['Dm11', 'Bbmaj7(add9)', 'Gm11', 'C7alt'],
+      ['Am11', 'Fmaj7#11', 'Dm11', 'G7(b9)'],
+    ],
+    bridge: [
+      ['Bm7(b5)', 'Equartal', 'Am11', 'D7alt'],
+      ['Fm11', 'Dbmaj7', 'Cm11', 'Bb7alt'],
+    ],
+    pre_chorus: [
+      ['Gm11', 'Cm11', 'Abmaj7', 'Ebmaj7(add9)'],
+    ],
+  },
+  bartok_music_for_strings: {
+    verse: [
+      ['Dm11', 'G7(b9,b13)', 'Cmaj7#11', 'Am11'],
+      ['Bbmaj7#11', 'Eb9(b13)', 'Abmaj7', 'Fm11'],
+    ],
+    chorus: [
+      ['Em11', 'A7alt', 'Dmaj7#11', 'Bm11'],
+      ['Gm11', 'C7alt', 'Fm11', 'Bbmaj7#11'],
+    ],
+    bridge: [
+      ['Bm11', 'Equartal', 'Am(add9)', 'D7alt'],
+      ['Cm11', 'Abmaj7', 'Fm11', 'G7alt'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm11', 'Gquartal', 'Cmaj7#11'],
+    ],
+  },
   miles_davis_modal_1959: {
     verse: [
       ['Dm7', 'Dm7', 'Ebmaj7', 'Dm7'],
@@ -1648,6 +1699,11 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'miles_davis_modal_1959' : tier === 1 ? 'miles_davis_quintet_1965' : 'miles_davis_electric_1970';
   }
+  if (songwriterId === 'bartok') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'bartok_mikrokosmos' : tier === 1 ? 'bartok_string_quartet' : 'bartok_music_for_strings';
+  }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {
     const sectionPool = sectionChordPoolRows(kind, resolvedPoolId)!;
@@ -1663,7 +1719,7 @@ function chordSymbolsForSection(
       profile.harmonicRhythm,
       seed
     );
-    if (songwriterId === 'frank_zappa' || songwriterId === 'joni_mitchell') {
+    if (songwriterId === 'frank_zappa' || songwriterId === 'joni_mitchell' || songwriterId === 'bartok') {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }
     return { chordSymbols, chosenRowTags };

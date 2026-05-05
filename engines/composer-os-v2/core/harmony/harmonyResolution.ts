@@ -249,6 +249,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Bartók: `precomputeBartokEffectiveHarmonyBars` applies axis / golden-section / Bulgarian / cell / arch devices — receipts **`bk:*`**.
+   */
+  const bkEff = meta?.bartokEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bartok' &&
+    Array.isArray(bkEff) &&
+    bkEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bkEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;

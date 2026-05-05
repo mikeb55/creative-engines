@@ -194,6 +194,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'medium',
     devices: ['odd_meter_alignment', 'quartal_shape', 'additive_cell', 'blues_modal_mixture'],
   },
+  bartok: {
+    intervalTendency: 'angular',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.35,
+    phraseLength: 5,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.68,
+    cadenceFrequency: 'low',
+    devices: ['folk_pentatonic_cell', 'axis_motion', 'bulgarian_cell', 'mirror_fragment', 'cluster_passing'],
+  },
   andrew_hill: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'mixed',

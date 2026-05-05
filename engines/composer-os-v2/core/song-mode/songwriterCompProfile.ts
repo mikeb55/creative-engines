@@ -99,6 +99,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   cole_porter: 'keys',
   dave_brubeck: 'keys',
   miles_davis: 'keys',
+  bartok: 'keys',
   frank_zappa: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',

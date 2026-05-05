@@ -153,6 +153,12 @@ import {
   precomputeMilesDavisEffectiveHarmonyBars,
 } from './milesDavisSlice';
 import {
+  accumulateBartokHarmonyDiagnostics,
+  createBartokHarmonyAccumulator,
+  finalizeBartokMetadata,
+  precomputeBartokEffectiveHarmonyBars,
+} from './bartokSlice';
+import {
   accumulateColePorterHarmonyDiagnostics,
   createColePorterHarmonyAccumulator,
   finalizeColePorterMetadata,
@@ -2287,6 +2293,7 @@ function buildGuitarPart(
   const isSongwriterDebussy = genMeta?.songwriterStyleId === 'debussy';
   const isSongwriterDukeEllington = genMeta?.songwriterStyleId === 'duke_ellington';
   const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
+  const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -2303,6 +2310,7 @@ function buildGuitarPart(
   const dbAccum = createDebussyHarmonyAccumulator();
   const deAccum = createDukeEllingtonHarmonyAccumulator();
   const mdAccum = createMilesDavisHarmonyAccumulator();
+  const bkAccum = createBartokHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
@@ -2357,6 +2365,9 @@ function buildGuitarPart(
   }
   if (isSongwriterMilesDavis && isDuoGoldenPath) {
     precomputeMilesDavisEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterBartok && isDuoGoldenPath) {
+    precomputeBartokEffectiveHarmonyBars(context);
   }
   if (isSongwriterColePorter && isDuoGoldenPath) {
     precomputeColePorterEffectiveHarmonyBars(context);
@@ -2581,6 +2592,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         mdAccum
+      );
+    }
+    if (isSongwriterBartok) {
+      accumulateBartokHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        bkAccum
       );
     }
     if (isSongwriterColePorter) {
@@ -3190,6 +3208,10 @@ function buildGuitarPart(
 
   if (isSongwriterMilesDavis && context.generationMetadata) {
     finalizeMilesDavisMetadata(context.generationMetadata, mdAccum);
+  }
+
+  if (isSongwriterBartok && context.generationMetadata) {
+    finalizeBartokMetadata(context.generationMetadata, bkAccum);
   }
 
   if (isSongwriterColePorter && context.generationMetadata) {

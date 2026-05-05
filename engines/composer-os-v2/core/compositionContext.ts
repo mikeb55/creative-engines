@@ -45,6 +45,9 @@ export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz
 /** Miles Davis Song Mode slice — era / ensemble harmonic posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
 export type MilesDavisContextMode = 'modal_1959' | 'quintet_1965' | 'electric_1970';
 
+/** Béla Bartók Song Mode slice — Mikrókosmos vs quartet vs orchestral strings posture (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted. */
+export type BartokContextMode = 'mikrokosmos' | 'string_quartet' | 'music_for_strings';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -826,6 +829,30 @@ export interface GenerationMetadata {
    * Miles Davis Song Mode slice mode (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted.
    */
   milesDavisContext?: MilesDavisContextMode;
+  /** Bartók — axis symmetry / folk-modal / chamber orchestral harmony (`bartokSlice.ts`). */
+  bartokDiagnostics?: {
+    songwriterId: 'bartok';
+    barsConsidered: number;
+    axisTouches: number;
+    quartalTouches: number;
+    folkModalTouches: number;
+    clusterTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopAxis: number;
+    };
+    deviceReceipts?: string[];
+  };
+  bartokSliceReceipt?: string;
+  bartokEffectiveHarmonyBars?: string[];
+  bartokDeviceReceipts?: string[];
+  bartokAntiElaborationGuards?: {
+    noopAxis: number;
+  };
+  /**
+   * Bartók Song Mode slice mode (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted.
+   */
+  bartokContext?: BartokContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';
