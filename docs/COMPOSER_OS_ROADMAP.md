@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-08]
+# Composer OS Roadmap [2026-05-05]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -11,7 +11,7 @@
 
 ### Writer Slice Roadmap — priority order for full slice development
 
-**Priority order (11):** 1 **Beatles** (`beatles`) · **2 Bill Evans (`bill_evans`) — COMPLETE** · **3 Frank Zappa (`frank_zappa`) — COMPLETE** · **4 ECM Chamber (`ecm_chamber`) — COMPLETE** · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · 8 **Thelonious Monk** (`thelonious_monk`) · **9 Jobim (`antonio_carlos_jobim`) — COMPLETE** · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
+**Priority order (11):** 1 **Beatles** (`beatles`) · **2 Bill Evans (`bill_evans`) — COMPLETE** · **3 Frank Zappa (`frank_zappa`) — COMPLETE** · **4 ECM Chamber (`ecm_chamber`) — COMPLETE** · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · **8 Thelonious Monk (`thelonious_monk`) — COMPLETE** · **9 Jobim (`antonio_carlos_jobim`) — COMPLETE** · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
 
 **2 — Bill Evans (`bill_evans`) — complete**
 
@@ -30,6 +30,12 @@
 | Ship | Commit | Scope |
 |------|--------|--------|
 | Bossa harmony + phrase grid + anticipation + surface | **`1c3c21a`** | **`computeJobimPhrasePositions`** **4/8/2** (**65/20/15**); **Lydian dominant** **`aj:lyd_dom`**; **bVI m6** cadential colour **`aj:bvi_m6`**; **bossa anticipation** **`jobimBossaAnticipationBars`** + **`aj:bossa_anticipation`**; **`jobimMode`** + **`applyJobimStyleSurface`** under **`STYLE_MODERN_JAZZ`** (Bill Evans surface skipped when Jobim primary). |
+
+**8 — Thelonious Monk (`thelonious_monk`) — complete**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Asymmetric phrase grid + harmony passes + surface + bass gate | **`2ed5aa0`** | **`computeMonkPhrasePositions`** **4/5/7/9/6** (**58/14/14/11/3**); **`tm:asym_phrase@bar{N}`**; **whole-tone** dominant fragments **`tm:whole_tone@bar{N}`** (V / bII / II-of-V); **chromatic enclosure** slash hints **`tm:chrom_enclosure@bar{N}`**; **deliberate silence** **`monkSilenceBars`** / **`monkPartialRestBars`** + **`tm:deliberate_silence@bar{N}`**; **`applyMonkStyleSurface`** (density −0.12, sync +0.30, space +0.35, cadence softness +0.10) after **`applyFrankZappaStyleSurface`**; **BH** bass leap budget **18 st** for angular slash harmony (parity with Wayne Shorter gate). |
 
 **4 — ECM Chamber (`ecm_chamber`) — complete**
 

@@ -536,6 +536,43 @@ The slice **only rewrites chord symbols** on the duo golden path (Bill Evans–f
 5. **Seed A/B** — Asymmetric phrase boundaries change which passes fire; **lock seed** when demoing a specific **`be:dim_delayed_res`** or **`be:minor_detour`** outcome.
 6. **Duo guitar–bass + arranger Gil Evans** — Use Evans **slice** for **symbols** on the lead-sheet path while ensemble pairing handles **orchestration** receipts separately.
 
+### Thelonious Monk (Song Mode — angular dominant / whole-tone fragment slice)
+
+**Still current:** **`theloniousMonkSlice.ts`**, **`precomputeTheloniousMonkEffectiveHarmonyBars`**, **`theloniousMonkEffectiveHarmonyBars`** feeding **`getChordForBar`** and locked MusicXML truth, receipts **`tm:*`** on **`theloniousMonkDeviceReceipts`**, smoke **`theloniousMonkSliceSmoke.test.ts`**.
+
+The slice **rewrites chord symbols** on the duo golden path (b9 / angular tonic colour / deferred cadence / contrast sus / whole-tone fragments / chromatic-enclosure slash hints) and writes **silence/rest intent metadata** for downstream melody timing — no dedicated **`ChordEvent`** extension layer beyond standard harmony export.
+
+#### Asymmetric phrase grid
+
+**`computeMonkPhrasePositions(totalBars, seed)`** assigns **phraseStart** / **phraseMiddle** / **phraseFinal** using variable phrase lengths **4, 5, 7, 9, or 6 bars** weighted **58% / 14% / 14% / 11% / 3%**. Each **phraseStart** emits **`tm:asym_phrase@bar{N}`** (same rolling-bar layout pattern as Bill Evans / Jobim / ECM variable grids). Phrase role drives **phrase-final tritone sub**, **chromatic enclosure** (middle only), and **deliberate silence** placement.
+
+#### Harmony passes (rates + receipts)
+
+| Pass | Role | Receipt |
+|------|------|---------|
+| **Whole-tone fragment** | **20%** on dominant-function bars (**7** / **7b9** / **7alt**), roots only at **V**, **bII**, or **II-of-V** vs tonic — spells **`7(b5#5)`** or **`aug7`** | **`tm:whole_tone@bar{N}`** |
+| **Chromatic enclosure** | **25%**, **phraseMiddle** only: if **previous** bar reads as **high-density** chord, add **slash bass** = chromatic approach (±1 semitone) toward current chord **3rd or 5th** | **`tm:chrom_enclosure@bar{N}`** |
+| **Deliberate silence** | **14%** on **phraseFinal** bars → **`monkSilenceBars`** (full-bar silence intent); **10%** of **phraseMiddle** → **`monkPartialRestBars`** (melody after beat **3**) | **`tm:deliberate_silence@bar{N}`** |
+
+Existing Monk passes (**lush strip**, **tonic colour**, **dominant b9/alt**, **phrase-final tritone sub**, **contrast sus**) keep earlier **`tm:*`** receipts (e.g. **`tm:tritone_sub@bar{N}`**, **`tm:contrast_sus@bar{N}`**).
+
+#### Monk style surface (primary songwriter)
+
+When **`normalizeSongwriterStyleKey(primary) === 'thelonious_monk'`**, **`applyMonkStyleSurface`** (`songModeStyleSurface.ts`) runs from **`runGoldenPath`** **immediately after** **`applyFrankZappaStyleSurface`**: **`songwriterDensityBias −0.12`**, **`songwriterSyncopationBias +0.30`**, **`songwriterSpaceBias +0.35`**, **`songwriterCadenceSoftness +0.10`** (clamped **0–1**). Stacks with **STYLE_ECM** / Chamber surfaces when both apply.
+
+#### Duo LOCK note (bass motion)
+
+Angular harmony + slash enclosure can widen **chromatic bass** motion; Barry Harris module validation allows **18 semitone** max consecutive bass leap for **`thelonious_monk`** (same budget as **`wayne_shorter`**) so golden-path gates stay green without relaxing guitar melody gates.
+
+#### Example applications
+
+1. **Primary `thelonious_monk` + STYLE_ECM** — Angular **lead-sheet** harmony plus sparse **space/sync** metadata stack; good for lessons on **off-centre** phrasing vs straight **four-bar** blues grids.
+2. **Long-form 32 bars + Monk** — Asymmetric grid changes **phrase-final** placement vs fixed **4-bar** cycle; compare **`tm:asym_phrase`** timeline to **Bill Evans** **`be:asym_phrase`** on the same **seed** family.
+3. **`custom_locked` chart + Monk** — Fixed progression still runs **slice** devices; watch **`tm:chrom_enclosure`** slash hints vs export **MusicXML** truth (slash bass must round-trip).
+4. **Seed A/B** — Same **writer** + **preset**, different **seeds**: **whole-tone** and **enclosure** rates are seeded bar-local — lock **seed** when demoing a specific **`tm:whole_tone@bar{N}`** outcome.
+5. **Silence metadata inspection** — After Generate, read **`monkSilenceBars`** / **`monkPartialRestBars`** on **`GenerationMetadata`** for arranging **rests** / late melody entry in a DAW (metadata intent, not forced MIDI deletion).
+6. **Paste / iReal chart + Monk** — Vault / paste pipelines feed **harmony** into the same **effective-bar** path; use **multi-chorus** options to hear **phrase-grid** + **motif** tension phase shift chorus-to-chorus while **`tm:*`** receipts stay in the manifest.
+
 ### Frank Zappa (Song Mode — polytonal clash / sectional harmonic slice)
 
 **Still current:** **`frankZappaSlice.ts`**, **`precomputeFrankZappaEffectiveHarmonyBars`**, **`frankZappaEffectiveHarmonyBars`** → **`getChordForBar`** / **`attachFrankZappaHarmonyContext`** / locked export truth; receipts **`fz:d1–d5:…@bar{N}#v1`** plus additive **`fz:lyd_dominant`**, **`fz:bitonal_triad`**, **`fz:motif_recycle_*`**, **`fz:hard_cut_trigger`**.
