@@ -407,8 +407,8 @@ function felaAfrobeatDrumsEventsToXml(
           instrumentId: instId,
           accidentalXml: g.accidentalXml,
         });
-        voiceTickSum += t;
       }
+      voiceTickSum += t;
     }
     cursor = endDiv;
     i = groupLastIdx + 1;

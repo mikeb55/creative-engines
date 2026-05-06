@@ -6,6 +6,15 @@
 
 ---
 
+## Fela Kuti — Tony Allen percussion
+
+Song Mode primary **`fela_kuti`** appends **Afrobeat Percussion** (**GM unpitched** staff, **`fela_afrobeat_drums`**) from **`tonyAllenPatterns.json`** via **`afrobeatRhythmEngine.ts`**. Posture **`zombie_1977` / `water_no_get_enemy` / `lady_1972`** maps to Tony Allen feels **`afrobeat` / `swing` / `straight`**; optional **`felaPercussionFeelOverride`** overrides. Metadata tag **`felaPercussionFeelTag`**: **`fk:straight`**, **`fk:swing`**, **`fk:afrobeat`**. **Auto** preview grid in the app stays tied to **zombie_1977** until posture is selectable in Generate — use the three-way feel toggle for a faithful preview.
+
+**Handbook:** **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** (sources, API, Sibelius checklist). Optional drum-only XML samples:  
+`npx ts-node --project tsconfig.json engines/composer-os-v2/scripts/exportFelaPercussionSibeliusSamples.ts` → **`docs/fela-percussion-sibelius-samples/*.musicxml`**.
+
+---
+
 ## Real Book MusicXML import
 
 Charts saved as **MusicXML** (Finale / MuseScore / Sibelius **partwise** export) can be fed through the **lead-sheet importer** for harmony timelines, keys, repeats, and (limited) melody extraction. This section matches what the engine’s **Real Book stress** regression exercises (`engines/composer-os-v2/tests/realBookStressTest.test.ts`, smoke suite **Real Book MusicXML stress**).

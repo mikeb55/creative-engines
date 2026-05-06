@@ -45,6 +45,20 @@ function clonePattern(p: DrumPattern): DrumPattern {
   };
 }
 
+/** Integer index into `cycleLen` steps (bar wrap — JS `%` keeps negatives). */
+export function modCycle(index: number, cycleLen: number): number {
+  if (cycleLen <= 0 || !Number.isFinite(cycleLen)) {
+    throw new Error('[afrobeatRhythmEngine] cycleLen must be a positive finite number');
+  }
+  return ((Math.round(index) % cycleLen) + cycleLen) % cycleLen;
+}
+
+/** One bar of silence (valid 16-step rows). */
+export function createEmptyDrumPattern(steps = 16): DrumPattern {
+  const z = (): number[] => new Array(steps).fill(0);
+  return { kick: z(), snare: z(), hiHat: z(), bell: z(), conga: z() };
+}
+
 function assertRow(name: string, row: number[], steps: number): void {
   if (row.length !== steps) {
     throw new Error(`[afrobeatRhythmEngine] ${name}: expected ${steps} steps, got ${row.length}`);
@@ -72,12 +86,24 @@ export function parseTonyAllenPatternsBundle(raw: unknown): TonyAllenPatternsBun
   const feelsRaw = o.feels;
   if (!feelsRaw || typeof feelsRaw !== 'object') throw new Error('tonyAllenPatterns: feels missing');
 
+  const empty = createEmptyDrumPattern(16);
   const feels: Record<TonyAllenFeel, DrumPattern> = {
-    straight: extractFeel(feelsRaw, 'straight'),
-    swing: extractFeel(feelsRaw, 'swing'),
-    afrobeat: extractFeel(feelsRaw, 'afrobeat'),
+    straight: extractFeelOrEmpty(feelsRaw, 'straight', empty),
+    swing: extractFeelOrEmpty(feelsRaw, 'swing', empty),
+    afrobeat: extractFeelOrEmpty(feelsRaw, 'afrobeat', empty),
   };
   return { schemaVersion: sv, feels };
+}
+
+function extractFeelOrEmpty(
+  feelsRaw: object,
+  feel: TonyAllenFeel,
+  fallback: DrumPattern
+): DrumPattern {
+  const fr = feelsRaw as Record<string, unknown>;
+  const kit = fr[feel];
+  if (!kit || typeof kit !== 'object') return clonePattern(fallback);
+  return extractFeel(feelsRaw, feel);
 }
 
 function extractFeel(feelsRaw: object, feel: TonyAllenFeel): DrumPattern {
@@ -117,16 +143,17 @@ export interface AfrobeatRhythmEngine {
   quantise(pattern: DrumPattern, grid: 16 | 24): DrumPattern;
 }
 
-/** Even pulse indices on a repeating `cycleLen` grid (default one bar = 16). */
+/** Even pulse indices on a repeating `cycleLen` grid (default one bar = 16). Phase wraps at bar boundary. */
 export function pulseIndices(pulses: number, phaseSteps: number, cycleLen: number): number[] {
   if (pulses <= 0 || !Number.isFinite(pulses)) {
     throw new Error('[afrobeatRhythmEngine] pulses must be a positive finite number');
   }
   const phase = Number.isFinite(phaseSteps) ? phaseSteps : 0;
+  const phaseNorm = modCycle(phase, cycleLen);
   const out: number[] = [];
   for (let i = 0; i < pulses; i++) {
-    const pos = Math.round(phase + (i * cycleLen) / pulses) % cycleLen;
-    out.push(((pos % cycleLen) + cycleLen) % cycleLen);
+    const pos = Math.round(phaseNorm + (i * cycleLen) / pulses);
+    out.push(modCycle(pos, cycleLen));
   }
   return out;
 }
@@ -145,24 +172,24 @@ export function applyPolyrhythm(basePattern: DrumPattern, layers: PolyrhythmLaye
   return next;
 }
 
-/** Map a 16-step row onto a 24-step triplet-sixteenth grid (same bar duration). */
+/** Map a 16-step row onto a 24-step triplet-sixteenth grid (same bar duration). Bar-edge safe: k∈[0,23] → src∈[0,15]. */
 export function expandSixteenthsToTripletGrid(row16: number[]): number[] {
   if (row16.length !== 16) throw new Error('expandSixteenthsToTripletGrid: need length 16');
   const out: number[] = new Array(24).fill(0);
   for (let k = 0; k < 24; k++) {
-    const src = Math.floor((k * 16) / 24);
+    const src = Math.min(15, Math.max(0, Math.floor((k * 16) / 24)));
     if (row16[src]) out[k] = 1;
   }
   return out;
 }
 
-/** Fold a 24-step triplet-sixteenth grid to 16 steps (OR-merge slots that map to each 16th). */
+/** Fold a 24-step triplet-sixteenth grid to 16 steps (OR-merge slots that map to each 16th). Bar-edge safe dest ∈ [0,15]. */
 export function foldTripletGridToSixteenths(row24: number[]): number[] {
   if (row24.length !== 24) throw new Error('foldTripletGridToSixteenths: need length 24');
   const out = new Array(16).fill(0);
   for (let k = 0; k < 24; k++) {
     if (!row24[k]) continue;
-    const dest = Math.floor((k * 16) / 24);
+    const dest = Math.min(15, Math.max(0, Math.floor((k * 16) / 24)));
     out[dest] = 1;
   }
   return out;

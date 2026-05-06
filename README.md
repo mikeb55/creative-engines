@@ -4,7 +4,7 @@
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
 
-- **Current version:** **V32** (baseline slice wiring: git **`29074f3`** — Debussy + Cole Porter harmony slices, golden-path + locked-truth routing).
+- **Current version:** **V37** (Fela Kuti Tony Allen percussion engine polish — tag **`v37`**: **`afrobeatRhythmEngine`** boundaries, **`musicxmlExporter`** Fela chord-stack ticks, handbook **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`**, playbook sync).
 - **Quality gate (local):** **`npm run test:composer-smoke`** — **163** tests passed / **0** failed across **42** labelled suites (`engines/composer-os-v2/tests/runSmokeTests.ts` allowlist).
 - **Repository path:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\`
 
@@ -379,6 +379,7 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **V30** | Multi-chorus quality, odd-meter UI, MusicXML Phase 1 import/export groundwork |
 | **V31** | Composer smoke tier as merge gate, deterministic remix tray, writer recipe cards, ECM Chamber slice + surfaces, bulk new songwriter slices |
 | **V32** | **Debussy** + **Cole Porter** harmony slices (**`29074f3`**), locked-truth wiring; **Composer OS Playbook** handbook refresh (**open** — see **`docs/COMPOSER_OS_PLAYBOOK.md`** / **`.docx`**) |
+| **V37** | **Fela Kuti** Tony Allen percussion — **`afrobeatRhythmEngine`** bar-edge quantise / phase wrap / missing-feel fallback; **`FELA_KUTI_PERCUSSION_HANDBOOK.md`**; Sibelius sample export script; **`fk:*`** feel tags documented in playbook |
 
 ---
 
