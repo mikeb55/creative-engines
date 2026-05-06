@@ -1,10 +1,11 @@
 /**
  * Afrobeat / Tony Allen–style drum grids — loads tidal-derived patterns and applies
  * simple polyrhythm pulses (even spacing across one 16-step bar) plus grid quantisation.
+ *
+ * Default patterns ship as bundled JSON (no `fs`) so Vite/browser can import this module.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import tonyAllenPatternsJson from './data/tonyAllenPatterns.json';
 
 export type TonyAllenFeel = 'straight' | 'swing' | 'afrobeat';
 
@@ -131,9 +132,7 @@ function rowFrom(v: unknown, label: string): number[] {
 }
 
 export function loadDefaultTonyAllenPatternsBundle(): TonyAllenPatternsBundle {
-  const jsonPath = path.join(__dirname, 'data', 'tonyAllenPatterns.json');
-  const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as unknown;
-  return parseTonyAllenPatternsBundle(raw);
+  return parseTonyAllenPatternsBundle(tonyAllenPatternsJson as unknown);
 }
 
 export interface AfrobeatRhythmEngine {

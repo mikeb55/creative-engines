@@ -6,7 +6,6 @@
  * importing this module from `harmonyResolution.ts` while `frankZappaSlice` imports `getChordForBar`.
  */
 
-import { createHash } from 'crypto';
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
@@ -20,8 +19,19 @@ export type HarmonyContext = Readonly<{
   checksum: string;
 }>;
 
+/** Deterministic checksum for harmony snapshots (Node + Vite browser; not cryptographic). */
 export function computeHarmonyChecksum(bars: readonly string[]): string {
-  return createHash('sha256').update(bars.join('\u0001'), 'utf8').digest('hex');
+  const s = bars.join('\u0001');
+  let h = 2166136261 >>> 0;
+  let g = 3590594269 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h ^= c;
+    h = Math.imul(h, 16777619) >>> 0;
+    g ^= c + (i & 0xff);
+    g = Math.imul(g, 2246822519) >>> 0;
+  }
+  return `${h.toString(16).padStart(8, '0')}${g.toString(16).padStart(8, '0')}${s.length.toString(16).padStart(8, '0')}`;
 }
 
 /** Guitar part measure chords must match the immutable timeline (any drift ⇒ named pass failed). */
