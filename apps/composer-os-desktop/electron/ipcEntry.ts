@@ -17,6 +17,7 @@ import {
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
+import { hydrateAnthropicKeyFromWindowsStores } from './winAnthropicEnv';
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
@@ -47,6 +48,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));
   ipcMain.handle('composer-os-api:run-system-check', () => apiSystemCheck());
   ipcMain.handle('composer-os-api:pdf-generate-from-pdf', (_e, body: unknown) => {
+    hydrateAnthropicKeyFromWindowsStores();
     return apiPdfGenerateFromPdf(body as PdfGenerateFromPdfRequest);
   });
   ipcMain.handle('composer-os-api:open-output-folder', (_e, body: unknown) => {

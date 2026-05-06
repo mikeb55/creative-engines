@@ -24,6 +24,7 @@ import {
   type UiBundleVerifyFail,
 } from './uiBundleVerify';
 import { registerOpenOutputFolderIpc } from './openFolderMain';
+import { hydrateAnthropicKeyFromWindowsStores } from './winAnthropicEnv';
 
 function loadEnv(): void {
   const envPath = app.isPackaged
@@ -32,10 +33,10 @@ function loadEnv(): void {
   if (fs.existsSync(envPath)) {
     dotenv.config({ path: envPath });
   }
-  console.log('[main] envPath:', envPath, 'key loaded:', !!process.env.ANTHROPIC_API_KEY);
+  hydrateAnthropicKeyFromWindowsStores();
+  console.log('[main] envPath:', envPath, 'ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 }
 loadEnv();
-console.log('[main] ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';

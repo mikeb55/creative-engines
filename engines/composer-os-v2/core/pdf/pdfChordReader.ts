@@ -3,7 +3,6 @@
  * then Vault riff pipeline (same semantics as {@link generateFromIReal}).
  */
 
-import 'dotenv/config';
 import { createCanvas } from '@napi-rs/canvas';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';

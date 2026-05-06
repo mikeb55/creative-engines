@@ -359,6 +359,21 @@ export function apiGenerate(
         body.arvoPartContext === 'fratres'
           ? body.arvoPartContext
           : undefined,
+      slonimskyPatternId: (() => {
+        if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
+          return body.slonimskyPatternId.trim();
+        }
+        const alt = (body as { patternId?: unknown }).patternId;
+        return typeof alt === 'string' && alt.trim() !== '' ? alt.trim() : undefined;
+      })(),
+      slonimskyKeyPc: (() => {
+        const k = coerceFiniteNumber(body.slonimskyKeyPc);
+        if (k === undefined) return undefined;
+        const i = Math.round(k);
+        if (i < 0 || i > 11) return undefined;
+        return i;
+      })(),
+      slonimskyCycleKeys: body.slonimskyCycleKeys === true ? true : undefined,
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

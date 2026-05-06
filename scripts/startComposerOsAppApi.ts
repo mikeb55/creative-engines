@@ -6,6 +6,7 @@
  * ts-node and requires `composerOsApiCore.ts` explicitly so no stale `composerOsApiCore.js` is needed.
  */
 
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import * as path from 'path';
