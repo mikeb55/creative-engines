@@ -1010,6 +1010,10 @@ export interface GenerationMetadata {
    * Percussion staff feel for Tony Allen grids (`afrobeatRhythmEngine.ts`) — receipt **`fk:*`** (`felaKutiSlice.ts`).
    */
   felaPercussionFeelTag?: 'fk:straight' | 'fk:swing' | 'fk:afrobeat';
+  /**
+   * Song Mode UI / API — fixed drum grid; overrides posture→feel mapping (`felaKutiSlice.ts`).
+   */
+  felaPercussionFeelOverride?: 'straight' | 'swing' | 'afrobeat';
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

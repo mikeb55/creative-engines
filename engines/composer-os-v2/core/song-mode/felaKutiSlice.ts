@@ -185,6 +185,15 @@ export function felaPercussionFeelTagFromTonyAllenFeel(feel: TonyAllenFeel): Fel
   return feel === 'straight' ? 'fk:straight' : feel === 'swing' ? 'fk:swing' : 'fk:afrobeat';
 }
 
+/** Resolve Tony Allen grid: manual override wins; else posture (`felaKutiContext`) mapping. */
+export function resolveFelaPercussionTonyAllenFeel(
+  metadata: Pick<GenerationMetadata, 'felaPercussionFeelOverride' | 'felaKutiContext'>
+): TonyAllenFeel {
+  const o = metadata.felaPercussionFeelOverride;
+  if (o === 'straight' || o === 'swing' || o === 'afrobeat') return o;
+  return felaTonyAllenFeelFromKutiContext(metadata.felaKutiContext);
+}
+
 /** One bar of 16th-note drum hits for MusicXML export (beat units 0..4). */
 export function buildFelaPercussionMeasureEvents(pattern: DrumPattern): ScoreEvent[] {
   const events: ScoreEvent[] = [];
@@ -236,8 +245,7 @@ export function appendFelaPercussionToScore(score: ScoreModel, context: Composit
   if (!md || md.songwriterStyleId !== 'fela_kuti') return;
   if (score.parts.some((p) => p.id === 'fela_drums')) return;
   const tb = context.form.totalBars;
-  const fkCtx: FelaKutiContextMode = md.felaKutiContext ?? 'zombie_1977';
-  const feel = felaTonyAllenFeelFromKutiContext(fkCtx);
+  const feel = resolveFelaPercussionTonyAllenFeel(md);
   const engine = createAfrobeatRhythmEngine();
   const pattern = engine.selectPattern(feel);
   const drumPart = buildFelaAfrobeatPercussionPart(tb, pattern);
@@ -257,9 +265,7 @@ export function finalizeFelaKutiMetadata(metadata: GenerationMetadata, acc: Fela
     deviceReceipts: flat.length ? flat : undefined,
     yorubaPentatonicDegrees: metadata.felaKutiYorubaPentatonicDegrees ?? [...FELA_YORUBA_PENTATONIC_DEGREES],
   } as const;
-  metadata.felaPercussionFeelTag = felaPercussionFeelTagFromTonyAllenFeel(
-    felaTonyAllenFeelFromKutiContext(metadata.felaKutiContext)
-  );
+  metadata.felaPercussionFeelTag = felaPercussionFeelTagFromTonyAllenFeel(resolveFelaPercussionTonyAllenFeel(metadata));
   const receipt = [
     `Fela Kuti (slice): Im7≈${acc.minorSeventhVampTouches}`,
     `bVII7≈${acc.flatSevenDominantTouches}`,

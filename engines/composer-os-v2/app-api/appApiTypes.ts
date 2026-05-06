@@ -269,6 +269,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`zombie_1977`** when primary songwriter is **`fela_kuti`**.
    */
   felaKutiContext?: FelaKutiContextMode;
+  /**
+   * Song Mode / Fela Kuti: manual percussion grid (`felaKutiSlice.ts`).
+   * Omitted → posture drives **`fk:*`** feel (`zombie_1977`→afrobeat, etc.).
+   */
+  felaPercussionFeelOverride?: 'straight' | 'swing' | 'afrobeat';
 }
 
 export interface ValidationSummary {

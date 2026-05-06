@@ -1052,6 +1052,8 @@ export interface RunGoldenPathOptions {
   beatlesContext?: BeatlesContextMode;
   /** Song Mode / Fela Kuti: Afrobeat era posture (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted. */
   felaKutiContext?: FelaKutiContextMode;
+  /** Song Mode / Fela Kuti: manual drum feel vs posture mapping (`felaKutiSlice.ts`). */
+  felaPercussionFeelOverride?: 'straight' | 'swing' | 'afrobeat';
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1650,7 +1652,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ? { beatlesContext: options.beatlesContext ?? 'merseybeat_1962' }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fela_kuti'
-        ? { felaKutiContext: options.felaKutiContext ?? 'zombie_1977' }
+        ? {
+            felaKutiContext: options.felaKutiContext ?? 'zombie_1977',
+            ...(options.felaPercussionFeelOverride === 'straight' ||
+            options.felaPercussionFeelOverride === 'swing' ||
+            options.felaPercussionFeelOverride === 'afrobeat'
+              ? { felaPercussionFeelOverride: options.felaPercussionFeelOverride }
+              : {}),
+          }
         : {}),
     };
   }

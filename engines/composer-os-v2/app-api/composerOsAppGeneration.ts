@@ -1037,7 +1037,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? { beatlesContext: req.beatlesContext }
       : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'fela_kuti'
-      ? { felaKutiContext: req.felaKutiContext }
+      ? {
+          felaKutiContext: req.felaKutiContext,
+          ...(req.felaPercussionFeelOverride === 'straight' ||
+          req.felaPercussionFeelOverride === 'swing' ||
+          req.felaPercussionFeelOverride === 'afrobeat'
+            ? { felaPercussionFeelOverride: req.felaPercussionFeelOverride }
+            : {}),
+        }
       : {}),
   };
 

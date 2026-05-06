@@ -377,6 +377,12 @@ export function apiGenerate(
         body.felaKutiContext === 'lady_1972'
           ? body.felaKutiContext
           : undefined,
+      felaPercussionFeelOverride:
+        body.felaPercussionFeelOverride === 'straight' ||
+        body.felaPercussionFeelOverride === 'swing' ||
+        body.felaPercussionFeelOverride === 'afrobeat'
+          ? body.felaPercussionFeelOverride
+          : undefined,
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();
