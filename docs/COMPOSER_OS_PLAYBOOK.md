@@ -420,6 +420,44 @@ Primary songwriter **`beatles`** runs **`beatlesSlice.ts`** on the golden-path d
 
 ---
 
+## Fela Kuti (`fela_kuti`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`fela_kuti`** runs **`felaKutiSlice.ts`** on the golden-path duo timeline (**`precomputeFelaKutiEffectiveHarmonyBars`** → **`felaKutiEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.felaKutiContext`** selects the era (**default `zombie_1977`**): **`zombie_1977`** · **`water_no_get_enemy`** · **`lady_1972`**. API contract: **`GenerateRequest.felaKutiContext`**. Receipts use prefix **`fk:`** for numbered devices **`d1`–`d5`** (see table); **`applyFelaKutiDeviceReceiptPasses`** may tag **`@sectionB`** on **`B`** sections.
+
+**Chord pools (static vamps)** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`fela_kuti_zombie_1977`**, **`fela_kuti_water_no_get_enemy`**, **`fela_kuti_lady_1972`**. Vocabulary is **non-cadential**: cycling **Im7**, **♭VII7**, **IV7** (lead-sheet roots relative to minor tonic, e.g. **Am7 / G7 / D7**); optional **♭IIImaj7** (e.g. **Cmaj7**) as colour only — no textbook **V7→i** closure rows. When **`primarySongwriterStyle === fela_kuti`**, **`resolveFelaKutiChordPoolId`** picks a pool with **`Math.abs(seed) % 3`** → tier maps **zombie_1977 / water_no_get_enemy / lady_1972**.
+
+**Yoruba pentatonic pitch pool** — analytical degree set **`FELA_YORUBA_PENTATONIC_DEGREES`** in **`felaKutiSlice.ts`**: **{ 1, 2, ♭3, 4, 5, 6, ♭7 }** (seven pitch classes); structural emphasis **1–5–♭7**. Copied to **`generationMetadata.felaKutiYorubaPentatonicDegrees`** during precompute for melody / receipt diagnostics.
+
+**Implementation scope** — Harmony + melodic behaviour / metadata only. A dedicated **percussion / Afrobeat drum engine** is **not** part of this slice; treat as a **future sprint** if layered kit logic is required beyond harmony receipts.
+
+### Contexts
+
+| Context | Role |
+|---------|------|
+| **`zombie_1977`** | Long-form vamp emphasis — device receipts favour **`fk:d1`** / **`fk:d2`**. |
+| **`water_no_get_enemy`** | Call–response + pentatonic layer — **`fk:d2`** + **`fk:d3`** weighted. |
+| **`lady_1972`** | Horn-stack / polymetric stress — **`fk:d4`**, **`fk:d5`**, **`fk:d3`** weighted. |
+
+### Harmonic devices (receipts **`fk:`**)
+
+| Id | Planner device | Receipt (examples) |
+|----|----------------|----------------------|
+| **d1** | Static vamp | **`fk:d1_static_vamp@bar{N}`** |
+| **d2** | Call–response | **`fk:d2_call_response@bar{N}`**, **`fk:d2_call_response@sectionB@bar{N}`** |
+| **d3** | Pentatonic layer | **`fk:d3_pentatonic_layer@bar{N}`** |
+| **d4** | Parallel horns | **`fk:d4_parallel_horns@bar{N}`** |
+| **d5** | Polymetric grid | **`fk:d5_polymetric_grid@bar{N}`** |
+
+### Style surface (metadata nudges)
+
+**`applyFelaKutiStyleSurface`** — for all contexts: **syncopation +0.32**, **density +0.18**, **space −0.14**, **cadence softness +0.38** (clamped **0–1** from prior **`songwriter*Bias`** defaults **0.5** when unset; aligns with **`felaKutiStyleSurface`** in **`felaKutiSlice.ts`**).
+
+### Melody planner row
+
+**`MELODY_PROFILES['fela_kuti']`** — mixed intervals · **`mixed`** rhythm · **repetitionVsVariationBias 0.52** · phrase **4** · **groove_arc** contour · cadence **low** · devices **`static_vamp`**, **`call_response`**, **`pentatonic_layer`**, **`parallel_horns`**, **`polymetric_grid`**.
+
+---
+
 ## Burt Bacharach (`bacharach`) — Song Mode harmony slice
 
 ### Signature style & key techniques

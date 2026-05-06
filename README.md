@@ -33,7 +33,7 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 ## Songwriter slices
 
-**Shipped harmony modules:** **32** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
+**Shipped harmony modules:** **33** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
 
 Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Slice.ts`** (each paired with **`engines/composer-os-v2/core/goldenPath/<name>Slice.ts`** re-exports where present). **Receipt prefixes** below come from the slice sources — search **`engines/composer-os-v2/core/song-mode/<Slice>.ts`** for full device strings.
 
@@ -174,6 +174,17 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`bt:*`** — AABA / section B (**d1**), flat-side modal (**d2**), co-tonic switch (**d3**), chromatic mediant (**d4**), suite form (**d5**); **`precomputeBeatlesEffectiveHarmonyBars`**. |
 | **Chord pools** | **`beatles_merseybeat_1962`**, **`beatles_rubber_soul_1965`**, **`beatles_abbey_road_1968`** in **`songModeBuilder`** when primary is Beatles (**`seed % 3`**). |
 | **Style surface** | **`applyBeatlesStyleSurface`** — density **+0.08**, syncopation **−0.06**, space **+0.12**, cadence softness **+0.22**. |
+
+### Fela Kuti (3 contexts)
+
+| | |
+|--|--|
+| **Slice** | `engines/composer-os-v2/core/song-mode/felaKutiSlice.ts` |
+| **Primary id** | `fela_kuti` |
+| **Contexts** | **`felaKutiContext`** / **`GenerateRequest.felaKutiContext`**: **`zombie_1977`** \| **`water_no_get_enemy`** \| **`lady_1972`** (default **`zombie_1977`**). |
+| **Devices / receipts** | **`fk:*`** — static vamp (**d1**), call–response (**d2**), pentatonic layer (**d3**), parallel horns (**d4**), polymetric grid (**d5**); **`precomputeFelaKutiEffectiveHarmonyBars`**. |
+| **Chord pools** | **`fela_kuti_zombie_1977`**, **`fela_kuti_water_no_get_enemy`**, **`fela_kuti_lady_1972`** in **`songModeBuilder`** when primary is Fela Kuti (**`seed % 3`**). |
+| **Style surface** | **`applyFelaKutiStyleSurface`** — syncopation **+0.32**, density **+0.18**, space **−0.14**, cadence softness **+0.38**. |
 
 ### Donald Fagen
 
