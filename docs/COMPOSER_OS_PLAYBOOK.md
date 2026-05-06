@@ -350,6 +350,42 @@ The slice does **not** emit separate M/T MIDI voices; **`ap:d1_tintinnabuli_voic
 
 ---
 
+## Prince (`prince`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`prince`** runs **`princeSlice.ts`** on the golden-path duo timeline (**`precomputePrinceEffectiveHarmonyBars`** → **`princeEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.princeContext`** selects the posture (**default `purple_rain`**): **`purple_rain`** · **`sign_o_times`** · **`kiss`**. API contract: **`GenerateRequest.princeContext`**. Receipts use prefix **`pr:`** for numbered devices **`d1`–`d5`**; additional borrowed hits use **`pr:borrow_flat_colour@bar{N}`** (not a **`d*`** slot).
+
+**Chord pools (extended harmony)** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`prince_purple_rain`**, **`prince_sign_o_times`**, **`prince_kiss`**. Vocabulary leans **m9 / m11**, dominant **9 / 13**, tonic **maj9 / 6·9**, and **sus9** ( **`9sus4`** ) colours — **`enrichPrinceCore`** lifts bare triads / plain dominants before device passes. When **`primarySongwriterStyle === prince`**, **`chordSymbolsForSection`** picks a pool with the same **seed-tier** pattern as Miles / Bartók / Gershwin (**`Math.abs(seed) % 3`** → tier maps **purple_rain / sign_o_times / kiss**).
+
+### Contexts
+
+| Context | Role |
+|---------|------|
+| **`purple_rain`** | Ballad–anthem-leaning rows; **d1** minor-vamp spans can extend longer than other contexts. |
+| **`sign_o_times`** | Mid-era funk/soul grid; moderate vamp spans. |
+| **`kiss`** | Tight dance-funk grid; shorter default vamp window. |
+
+### Harmonic devices (receipts **`pr:`**)
+
+| Id | Pass | Receipt (examples) |
+|----|------|----------------------|
+| **d1** | Minor vamp ( **`m9`** lock from first minor anchor ) | **`pr:d1_minor_vamp@bar{N}`** |
+| **d2** | Gospel cadence ( **IV / V / I** colour lift on cadential anchors; skips **`B`** bridge bars ) | **`pr:d2_gospel_cadence@bar{N}`** |
+| **d3** | Chromatic bass ( **`dim7`** connector on selected bars ) | **`pr:d3_chromatic_bass@bar{N}`** |
+| **d4** | Stop-time ( phrase-boundary hit receipts ) | **`pr:d4_stop_time@bar{N}`** |
+| **d5** | Bridge modulation ( dominant **+6** semitone transpose in **`B`** only ) | **`pr:d5_bridge_modulation@bar{N}`** |
+
+**Borrowed colours** — occasional **♭VII maj9 / ♭III m9** via **`pr:borrow_flat_colour@bar{N}`** (non-bridge, capped).
+
+### Style surface (metadata nudges)
+
+**`applyPrinceStyleSurface`** — for all contexts: **syncopation +0.28**, **density +0.14**, **space +0.18**, **cadence softness +0.16** (clamped **0–1** from prior **`songwriter*Bias`** defaults **0.5** when unset).
+
+### Melody planner row
+
+**`MELODY_PROFILES['prince']`** — mixed intervals · **`eighth_patterns`** · **repetitionVsVariationBias 0.58** · phrase **4** · **groove_arc** contour · cadence **medium** · devices **`minor_vamp`**, **`gospel_cadence`**, **`chromatic_bass`**, **`stop_time`**, **`bridge_modulation`**.
+
+---
+
 ## Burt Bacharach (`bacharach`) — Song Mode harmony slice
 
 ### Signature style & key techniques
