@@ -42,6 +42,17 @@
 - **Docs:** **`docs/USER_GUIDE.md`**, **`docs/SLONIMSKY_USER_GUIDE.md`**, **`apps/composer-os-app/src/pages/UserGuide.tsx`** — What's New May 2026 (Slonimsky Etudes tab, ensemble lead-sheet import, songwriter Slonimsky profiles); plain English, no code blocks in new USER_GUIDE section.
 - **Docs:** **`docs/COMPOSER_OS_ROADMAP.md`** — **Overall roadmap priorities (2026-05-01)** tier stack (**A–G** + near alternates) linking Song Mode slices, UI discoverability, lead-sheet→ensemble, study tools, altered tuning, motif pilot, phrase/riff redesign; **Top 10 Song Mode songwriter targets** table (**`frank_zappa`** … **`duke_ellington`**, **Zappa** vs Python **`zappa_disruption`** note).
 
+## [2026-05-06] fixes and new composer slices
+
+- **fix(slonimsky / app-api):** **`apiGenerate`** normalization in **`composerOsApiCore.ts`** now forwards **`slonimskyPatternId`** (and top-level **`patternId`** alias) plus **`slonimskyKeyPc`** / **`slonimskyCycleKeys`** — previously dropped before **`runAppGeneration`**, so Slonimsky Etude UI selections reached IPC but not the engine.
+- **fix(pdf / desktop):** **`ANTHROPIC_API_KEY`** for PDF vision extraction — **`reg.exe`** fallback plus **IPC-level hydration** so packaged **`Composer-OS.exe`** can supply the key when env files are absent (**`winAnthropicEnv.ts`**, **`ipcEntry.ts`** / preload path).
+- **feat(song-mode) Satie slice:** Three contexts **`gymnopedie`** / **`gnossienne`** / **`poire`**; devices **`es:`** **d1–d5**; static harmony; parallel planing posture.
+- **feat(song-mode) Arvo Pärt slice:** Three contexts **`fur_alina`** / **`spiegel`** / **`fratres`**; tintinnabuli **M+T** voice rules.
+- **feat(song-mode) Gershwin slice:** Three contexts **`song_aaba`** / **`rhapsody`** / **`rhythm_changes`**.
+- **feat(song-mode) Bartók slice:** Three contexts **`mikrokosmos`** / **`string_quartet`** / **`music_for_strings`**.
+- **feat(song-mode) Ornette Coleman slice:** Three contexts **`shape_1959`** / **`free_1961`** / **`science_1971`**.
+- **feat(song-mode):** **Debussy** slice + **Cole Porter** slice (Song Mode).
+
 ## [2026-04-29] feat: altered tuning presets — 24 zones, grouped UI, 98/98 smoke
 
 - **feat:** **Altered Guitar Tuning Presets** — **24 roadmap zone presets** across **four zones** (`jazz_sophisticated`, `sonic_youth_noise`, `joni_mitchell`, `hybrid_harmonic`) in **`engines/composer-os-v2/core/song-mode/alternateGuitarTunings.ts`**, plus legacy absorbed ids (`standard`, `drop_d`, `dadgad`, `open_d`, `open_g`, drone clusters, open modals, Joni-style labels, `custom`); **`getPresetsByZone`**, **`ROADMAP_ZONE_TUNING_PRESET_IDS`**, **`styleProfileSupportsAlternateGuitarTuning`**, expanded **`resolveIndieArtPopTuningTexture`** drone/open_modal buckets; new **`StyleProfile`** ids **`STYLE_SONIC_YOUTH`**, **`STYLE_JONI_MITCHELL`**, **`STYLE_PAT_METHENY`**, **`STYLE_ECM_CHAMBER`**.
