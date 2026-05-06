@@ -4,6 +4,7 @@
 
 import { runConductorTests } from './conductor.test';
 import { runRhythmEngineTests } from './rhythmEngine.test';
+import { runAfrobeatRhythmEngineTests } from './afrobeatRhythmEngine.test';
 import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
 import { runReadinessTests } from './readiness.test';
@@ -43,6 +44,7 @@ import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 const suites: SuiteEntry[] = [
   { name: 'Conductor', run: runConductorTests },
   { name: 'Rhythm Engine', run: runRhythmEngineTests },
+  { name: 'Afrobeat rhythm engine (Tony Allen grids)', run: runAfrobeatRhythmEngineTests },
   { name: 'Instrument Profiles', run: runInstrumentProfileTests },
   { name: 'Score Integrity', run: runScoreIntegrityTests },
   { name: 'Readiness', run: runReadinessTests },

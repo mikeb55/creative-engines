@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://creative-engines.local/schemas/tonyAllenPatterns.schema.json",
+  "title": "TonyAllenPatterns",
+  "type": "object",
+  "required": ["schemaVersion", "feels"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string" },
+    "generatedFrom": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "sources": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "feels": {
+      "type": "object",
+      "required": ["straight", "swing", "afrobeat"],
+      "properties": {
+        "straight": { "$ref": "#/definitions/drumKitPattern" },
+        "swing": { "$ref": "#/definitions/drumKitPattern" },
+        "afrobeat": { "$ref": "#/definitions/drumKitPattern" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "sixteenthRow": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": { "type": "integer", "enum": [0, 1] }
+    },
+    "drumKitPattern": {
+      "type": "object",
+      "required": ["kick", "snare", "hiHat", "bell", "conga"],
+      "properties": {
+        "kick": { "$ref": "#/definitions/sixteenthRow" },
+        "snare": { "$ref": "#/definitions/sixteenthRow" },
+        "hiHat": { "$ref": "#/definitions/sixteenthRow" },
+        "bell": { "$ref": "#/definitions/sixteenthRow" },
+        "conga": { "$ref": "#/definitions/sixteenthRow" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
