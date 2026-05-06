@@ -9,7 +9,8 @@
       "straight": "Sound/Tidal/Drum/Rock1a.hs",
       "swing": "Sound/Tidal/Drum/Swing3a.hs",
       "afrobeat": "Sound/Tidal/Drum/Afro2a.hs"
-    }
+    },
+    "afrobeatBell": "Afro2a.hs has no bell pattern in upstream repo; afrobeat bell row is hand-authored quarter-note cowbell/agogo at steps 0,4,8,12 (see extractTonyAllenPatterns.py)."
   },
   "feels": {
     "straight": {
@@ -252,19 +253,19 @@
         0
       ],
       "bell": [
+        1,
         0,
         0,
         0,
+        1,
         0,
         0,
         0,
+        1,
         0,
         0,
         0,
-        0,
-        0,
-        0,
-        0,
+        1,
         0,
         0,
         0

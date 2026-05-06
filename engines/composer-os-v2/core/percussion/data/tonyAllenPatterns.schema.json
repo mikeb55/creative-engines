@@ -16,7 +16,8 @@
         "sources": {
           "type": "object",
           "additionalProperties": { "type": "string" }
-        }
+        },
+        "afrobeatBell": { "type": "string" }
       }
     },
     "feels": {

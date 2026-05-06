@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>Fela percussion sample — straight (fk:straight)</work-title></work>
+  <part-list>
+    <score-part id="fela_drums">
+      <part-name>Afrobeat Percussion</part-name>
+      <part-abbreviation>Perc.</part-abbreviation>
+      <score-instrument id="fela_drums-I1"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
+    </score-part>
+  </part-list>
+  <part id="fela_drums">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef number="1"><sign>percussion</sign><line>2</line></clef>
+    </attributes>
+    <direction placement="below"><direction-type><words>Fela percussion: GM unpitched kit (kick/snare/hat/bell/conga). Manual check — open in Sibelius; confirm drum map + playback.</words></direction-type></direction>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>108</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="108"/>
+    </direction>
+        <note><unpitched><display-step>C</display-step><display-octave>2</display-octave></unpitched><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>down</stem><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>F</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note>
+        <note><rest/><duration>360</duration><voice>1</voice><type>eighth</type><dot/><staff>1</staff></note>
+        <note><unpitched><display-step>D</display-step><display-octave>2</display-octave></unpitched><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>down</stem><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>F</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>G</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type><staff>1</staff></note>
+        <note><unpitched><display-step>C</display-step><display-octave>2</display-octave></unpitched><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>down</stem><staff>1</staff></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type><staff>1</staff></note>
+        <note><unpitched><display-step>C</display-step><display-octave>2</display-octave></unpitched><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>down</stem><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>F</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note>
+        <note><rest/><duration>360</duration><voice>1</voice><type>eighth</type><dot/><staff>1</staff></note>
+        <note><unpitched><display-step>D</display-step><display-octave>2</display-octave></unpitched><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>down</stem><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>F</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><notehead>x</notehead><staff>1</staff></note>
+        <note><chord/><unpitched><display-step>G</display-step><display-octave>2</display-octave></unpitched><accidental>sharp</accidental><duration>120</duration><instrument id="fela_drums-I1"/><voice>1</voice><type>16th</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>360</duration><voice>1</voice><type>eighth</type><dot/><staff>1</staff></note>
+  </measure>
+  </part>
+</score-partwise>

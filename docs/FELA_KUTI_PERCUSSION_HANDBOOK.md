@@ -14,7 +14,19 @@ Committed bundle **`engines/composer-os-v2/core/percussion/data/tonyAllenPattern
 | **`swing`** | `feels.swing` | `Sound/Tidal/Drum/Swing3a.hs` |
 | **`afrobeat`** | `feels.afrobeat` | `Sound/Tidal/Drum/Afro2a.hs` |
 
-Extractor script (repo): **`scripts/extractTonyAllenPatterns.py`**. Each feel is **one bar × five voices** × **16** sixteenth steps (`kick`, `snare`, `hiHat`, `bell`, `conga`), values **0** or **1**.
+Extractor script (repo): **`scripts/extractTonyAllenPatterns.py`**. Regenerate committed JSON after upstream/hash policy changes:
+
+```bash
+py -3 scripts/extractTonyAllenPatterns.py
+```
+
+Each feel is **one bar × five voices** × **16** sixteenth steps (`kick`, `snare`, `hiHat`, `bell`, `conga`), values **0** or **1**.
+
+### Afrobeat bell (`feels.afrobeat.bell`)
+
+Upstream **`Sound/Tidal/Drum/Afro2a.hs`** defines **`bd`**, **`ch`**, **`lt`**, **`mt`**, **`rm`** only — **no cowbell/bell pattern string** in that module. The extractor therefore **authors** the bell row: **quarter-note cowbell/agogo** at sixteenth indices **0, 4, 8, 12** (beats 1–4). That matches common Lagos Afrobeat layering where **bell marks four quarter pulses** while hi-hat/snare carry syncopation (Tony Allen–style ensemble recordings; discursive reference rather than a transcribed bar from one master take).
+
+Machine-readable note also appears under **`meta.afrobeatBell`** in **`tonyAllenPatterns.json`** after extraction.
 
 ---
 
@@ -80,7 +92,15 @@ Generate **three** scores (same Song Mode primary **Fela Kuti**, **32 bars** or 
 3. **Noteheads** — hi-hat **x** on **F♯**; bell on **G♯** with sharps; kick/snare/conga standard heads at mapped staff positions.
 4. **Extras** — no duplicate percussion parts; harmony/chords on guitar as usual for Fela Song Mode.
 
-Optional: run **`npx ts-node --project tsconfig.json engines/composer-os-v2/scripts/exportFelaPercussionSibeliusSamples.ts`** from repo root to write **three** one-bar standalone **`.musicxml`** files (drums only) for quick import smoke.
+**Sibelius sample export** (repo root — **`--project tsconfig.json` required** so module paths resolve):
+
+```bash
+npx ts-node --project tsconfig.json engines/composer-os-v2/scripts/exportFelaPercussionSibeliusSamples.ts
+```
+
+Writes **`docs/fela-percussion-sibelius-samples/fela_sample_{straight,swing,afrobeat}.musicxml`** (one bar, drums only). Regenerate after **`tonyAllenPatterns.json`** changes.
+
+**Committed samples:** same paths — open in **Sibelius** for visual QA (percussion clef, unpitched heads, **F♯** hi-hat, **G♯** bell where pattern fires, single part, chord stacks via `<chord/>`).
 
 ---
 

@@ -12,9 +12,6 @@ launchers/logs/
 engines/charlie-parker-engine/stderr.txt
 engines/charlie-parker-engine/outputs/*.musicxml
 
-# Fela percussion — optional local Sibelius sample export (regenerable)
-docs/fela-percussion-sibelius-samples/*.musicxml
-
 # Office lock files
 ~$*.pptx
 ~$*.docx

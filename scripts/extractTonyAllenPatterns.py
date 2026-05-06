@@ -92,13 +92,24 @@ def build_swing(assigns: Dict[str, str]) -> Dict[str, List[int]]:
     return {"kick": kick, "snare": snare, "hiHat": hi_hat, "bell": bell, "conga": conga}
 
 
+def afrobeat_bell_row_quarters() -> List[int]:
+    """
+    Afro2a.hs exposes bd/ch/lt/mt/rm only — no bell/cowbell token row.
+    Author a quarter-note cowbell/agogo layer at sixteenth indices 0,4,8,12 (beats 1–4).
+    Matches typical Lagos Afrobeat ensemble practice: bell locks four quarter pulses while
+    hats/kicks carry syncopation (Tony Allen–era Zombie/Afrobeat recordings).
+    """
+    return [1 if i % 4 == 0 else 0 for i in range(16)]
+
+
 def build_afrobeat(assigns: Dict[str, str]) -> Dict[str, List[int]]:
     kick = to_len16(flatten_tokens(assigns["bd"]))
     snare = to_len16(flatten_tokens(assigns.get("sn", "")))
     if not any(snare):
         snare = to_len16(flatten_tokens(assigns.get("rm", "")))
     hi_hat = to_len16(flatten_tokens(assigns["ch"]))
-    bell = [0] * 16
+    # Upstream pattern file has no bell — see afrobeat_bell_row_quarters docstring.
+    bell = afrobeat_bell_row_quarters()
     conga = or_merge(
         to_len16(flatten_tokens(assigns.get("lt", ""))),
         to_len16(flatten_tokens(assigns.get("mt", ""))),
@@ -147,6 +158,10 @@ def main() -> int:
         "meta": {
             "description": "kick/snare/hiHat/bell/conga — one bar, 16 steps per voice (16th-note grid)",
             "sources": meta_sources,
+            "afrobeatBell": (
+                "Afro2a.hs has no bell pattern in upstream repo; afrobeat bell row is "
+                "hand-authored quarter-note cowbell/agogo at steps 0,4,8,12 (see extractTonyAllenPatterns.py)."
+            ),
         },
         "feels": feels,
     }
