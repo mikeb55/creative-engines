@@ -74,6 +74,7 @@ export type SongwriterRuleId =
   | 'gershwin'
   | 'arvo_part'
   | 'satie'
+  | 'fela_kuti'
   | 'frank_zappa';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';

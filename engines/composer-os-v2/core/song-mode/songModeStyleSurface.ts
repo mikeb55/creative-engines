@@ -7,6 +7,7 @@ import type {
   ArvoPartContextMode,
   BartokContextMode,
   BeatlesContextMode,
+  FelaKutiContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
@@ -345,6 +346,27 @@ export function applyBeatlesStyleSurface(metadata: GenerationMetadata, primarySo
 
   appendStyleSurfaceNotes(metadata, [
     `Beatles surface (${ctx}): density +0.08, sync −0.06, space +0.12, cadence softness +0.22 — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`fela_kuti`** — Afrobeat pocket: raised sync + density, tighter space, very soft cadence closes (`felaKutiSlice.ts` receipts separate).
+ */
+export function applyFelaKutiStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'fela_kuti') return;
+
+  const ctx: FelaKutiContextMode = metadata.felaKutiContext ?? 'zombie_1977';
+  metadata.felaKutiContext = ctx;
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.32);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.18);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.14);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.38);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Fela Kuti surface (${ctx}): sync +0.32, density +0.18, space −0.14, cadence softness +0.38 — generative metadata only.`,
   ]);
 }
 

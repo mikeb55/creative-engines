@@ -344,6 +344,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'medium',
     devices: ['aaba_form', 'flat_side_modal', 'co_tonic_switch', 'chromatic_mediant', 'suite_form'],
   },
+  fela_kuti: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.52,
+    phraseLength: 4,
+    contourProfile: 'groove_arc',
+    phraseAsymmetryTendency: 0.58,
+    cadenceFrequency: 'low',
+    devices: ['static_vamp', 'call_response', 'pentatonic_layer', 'parallel_horns', 'polymetric_grid'],
+  },
   beethoven: {
     intervalTendency: 'mixed',
     rhythmicSubdivision: 'mixed',

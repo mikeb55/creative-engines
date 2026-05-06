@@ -371,6 +371,12 @@ export function apiGenerate(
         body.beatlesContext === 'abbey_road_1968'
           ? body.beatlesContext
           : undefined,
+      felaKutiContext:
+        body.felaKutiContext === 'zombie_1977' ||
+        body.felaKutiContext === 'water_no_get_enemy' ||
+        body.felaKutiContext === 'lady_1972'
+          ? body.felaKutiContext
+          : undefined,
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

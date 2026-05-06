@@ -1230,6 +1230,24 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 3,
     intervalPreference: 'modal',
   },
+  fela_kuti: {
+    id: 'fela_kuti',
+    description:
+      'Afrobeat — static Im7 / bVII7 / IV7 vamps, call–response, Yoruba pentatonic pitch pool, anti-cadential continuity.',
+    lineVsCellEmphasis: 0.55,
+    harmonyColourBias: 0.58,
+    formRegularity: 0.42,
+    prosodyInfluence: 0.32,
+    hookRepetitionBias: 0.7,
+    phraseRegularity: 0.38,
+    hookReturnVariation: 0.32,
+    harmonicSpeed: 0.32,
+    sectionContrast: 0.52,
+    syncopationBias: 0.88,
+    densityBias: 0.64,
+    motifCellSize: 4,
+    intervalPreference: 'pentatonic',
+  },
   frank_zappa: {
     id: 'frank_zappa',
     description:
@@ -1387,6 +1405,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   charlie: 'charlie_parker',
   cole_porter: 'cole_porter',
   porter: 'cole_porter',
+  fela_kuti: 'fela_kuti',
+  fela: 'fela_kuti',
   frank_zappa: 'frank_zappa',
   zappa: 'frank_zappa',
   fz: 'frank_zappa',

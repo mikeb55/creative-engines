@@ -8,6 +8,7 @@ import type {
   BartokContextMode,
   BeatlesContextMode,
   CompositionContext,
+  FelaKutiContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
@@ -122,6 +123,7 @@ import {
   applyMilesDavisStyleSurface,
   applyPrinceStyleSurface,
   applyBeatlesStyleSurface,
+  applyFelaKutiStyleSurface,
   applyBartokStyleSurface,
   applyGershwinStyleSurface,
   applyArvoPartStyleSurface,
@@ -1048,6 +1050,8 @@ export interface RunGoldenPathOptions {
   princeContext?: PrinceContextMode;
   /** Song Mode / The Beatles: era posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
   beatlesContext?: BeatlesContextMode;
+  /** Song Mode / Fela Kuti: Afrobeat era posture (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted. */
+  felaKutiContext?: FelaKutiContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1645,6 +1649,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'beatles'
         ? { beatlesContext: options.beatlesContext ?? 'merseybeat_1962' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fela_kuti'
+        ? { felaKutiContext: options.felaKutiContext ?? 'zombie_1977' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1747,6 +1754,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyBeatlesStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyFelaKutiStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyBartokStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2144,6 +2154,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
   const btEx = mdEx?.beatlesEffectiveHarmonyBars;
+  const fkEx = mdEx?.felaKutiEffectiveHarmonyBars;
   const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
   const apEx = mdEx?.arvoPartEffectiveHarmonyBars;
   const satieEx = mdEx?.satieEffectiveHarmonyBars;
@@ -2211,6 +2222,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                   Array.isArray(btEx) &&
                                                   btEx.length === tbEx
                                                 ? btEx
+                                              : mdEx?.songwriterStyleId === 'fela_kuti' &&
+                                                  Array.isArray(fkEx) &&
+                                                  fkEx.length === tbEx
+                                                ? fkEx
                                               : mdEx?.songwriterStyleId === 'gershwin' &&
                                                   Array.isArray(ggEx) &&
                                                   ggEx.length === tbEx

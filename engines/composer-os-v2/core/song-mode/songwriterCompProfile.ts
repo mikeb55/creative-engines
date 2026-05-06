@@ -103,6 +103,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   gershwin: 'keys',
   arvo_part: 'keys',
   satie: 'keys',
+  fela_kuti: 'keys',
   frank_zappa: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',

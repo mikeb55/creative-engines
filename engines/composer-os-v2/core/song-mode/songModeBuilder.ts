@@ -9,6 +9,7 @@ import { planHookMetadata } from './hookPlanner';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import { resolveBeatlesChordPoolId } from './beatlesSlice';
+import { resolveFelaKutiChordPoolId } from './felaKutiSlice';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
@@ -1865,6 +1866,65 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Cm', 'Ab', 'Eb', 'Bb'],
     ],
   },
+  /** Fela Kuti tier 0 — long-form vamps: **Im7**, **bVII7**, **IV7**; optional **bIIImaj7** colour; no V–I cadential rows. */
+  fela_kuti_zombie_1977: {
+    verse: [
+      ['Am7', 'Am7', 'G7', 'G7'],
+      ['Am7', 'G7', 'Am7', 'G7'],
+      ['Am7', 'Am7', 'Am7', 'G7'],
+      ['Am7', 'D7', 'G7', 'Am7'],
+    ],
+    chorus: [
+      ['Am7', 'G7', 'Am7', 'G7'],
+      ['Am7', 'Am7', 'G7', 'D7'],
+    ],
+    bridge: [
+      ['Am7', 'Cmaj7', 'Am7', 'G7'],
+      ['G7', 'Am7', 'G7', 'Am7'],
+    ],
+    pre_chorus: [
+      ['Am7', 'G7', 'Am7', 'G7'],
+    ],
+  },
+  /** Fela Kuti tier 1 — call/response grid — quicker alternation **Im7 ↔ bVII7**, **IV7** pivots. */
+  fela_kuti_water_no_get_enemy: {
+    verse: [
+      ['Am7', 'G7', 'Am7', 'G7'],
+      ['Am7', 'D7', 'Am7', 'G7'],
+      ['Am7', 'G7', 'D7', 'G7'],
+    ],
+    chorus: [
+      ['Am7', 'G7', 'D7', 'Am7'],
+      ['Am7', 'Am7', 'G7', 'G7'],
+    ],
+    bridge: [
+      ['Am7', 'Cmaj7', 'G7', 'Am7'],
+      ['D7', 'G7', 'Am7', 'G7'],
+    ],
+    pre_chorus: [
+      ['Am7', 'G7', 'Am7', 'D7'],
+    ],
+  },
+  /** Fela Kuti tier 2 — layered horns / metric stress — dense **bVII7** · **IV7** circulation. */
+  fela_kuti_lady_1972: {
+    verse: [
+      ['Am7', 'G7', 'D7', 'G7'],
+      ['Am7', 'Am7', 'G7', 'D7'],
+      ['G7', 'Am7', 'G7', 'D7'],
+      ['Am7', 'G7', 'Am7', 'D7'],
+    ],
+    chorus: [
+      ['G7', 'Am7', 'G7', 'Am7'],
+      ['Am7', 'D7', 'G7', 'Am7'],
+    ],
+    bridge: [
+      ['Am7', 'Cmaj7', 'Am7', 'G7'],
+      ['D7', 'Am7', 'G7', 'D7'],
+    ],
+    pre_chorus: [
+      ['Am7', 'G7', 'D7', 'Am7'],
+    ],
+  },
   prince_purple_rain: {
     verse: [
       ['Am9', 'Dm9', 'G13', 'Cmaj9'],
@@ -2027,6 +2087,9 @@ function chordSymbolsForSection(
   }
   if (songwriterId === 'beatles') {
     resolvedPoolId = resolveBeatlesChordPoolId(seed);
+  }
+  if (songwriterId === 'fela_kuti') {
+    resolvedPoolId = resolveFelaKutiChordPoolId(seed);
   }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {

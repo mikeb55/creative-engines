@@ -63,6 +63,9 @@ export type PrinceContextMode = 'purple_rain' | 'sign_o_times' | 'kiss';
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
+/** Fela Kuti Song Mode slice — Afrobeat era posture (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted. */
+export type FelaKutiContextMode = 'zombie_1977' | 'water_no_get_enemy' | 'lady_1972';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -983,6 +986,26 @@ export interface GenerationMetadata {
    * Beatles Song Mode slice mode (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted.
    */
   beatlesContext?: BeatlesContextMode;
+  /** Fela Kuti — Afrobeat static-vamp / call-response harmony (`felaKutiSlice.ts`). */
+  felaKutiDiagnostics?: {
+    songwriterId: 'fela_kuti';
+    barsConsidered: number;
+    minorSeventhVampTouches: number;
+    flatSevenDominantTouches: number;
+    fourDominantTouches: number;
+    flatThreeMajorColourTouches: number;
+    deviceReceipts?: string[];
+    yorubaPentatonicDegrees?: readonly string[];
+  };
+  felaKutiSliceReceipt?: string;
+  felaKutiEffectiveHarmonyBars?: string[];
+  felaKutiDeviceReceipts?: string[];
+  /** Yoruba pentatonic degree labels for melody planners (1,2,♭3,4,5,6,♭7). */
+  felaKutiYorubaPentatonicDegrees?: readonly string[];
+  /**
+   * Fela Kuti Song Mode slice mode (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted.
+   */
+  felaKutiContext?: FelaKutiContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

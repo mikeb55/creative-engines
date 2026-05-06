@@ -7,6 +7,7 @@ import type {
   ArvoPartContextMode,
   BartokContextMode,
   BeatlesContextMode,
+  FelaKutiContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
@@ -26,6 +27,7 @@ export type { GershwinContextMode };
 export type { MilesDavisContextMode };
 export type { PrinceContextMode };
 export type { BeatlesContextMode };
+export type { FelaKutiContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -262,6 +264,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`merseybeat_1962`** when primary songwriter is **`beatles`**.
    */
   beatlesContext?: BeatlesContextMode;
+  /**
+   * Song Mode / Fela Kuti: Zombie vs Water No Get Enemy vs Lady posture (`felaKutiSlice.ts`).
+   * Omitted → engine default **`zombie_1977`** when primary songwriter is **`fela_kuti`**.
+   */
+  felaKutiContext?: FelaKutiContextMode;
 }
 
 export interface ValidationSummary {

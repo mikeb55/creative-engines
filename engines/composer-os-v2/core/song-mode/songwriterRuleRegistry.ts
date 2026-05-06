@@ -61,6 +61,14 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('beatles.bt_chromatic_mediant', 'Chromatic mediant relation receipts (`bt:d4_chromatic_mediant`)', 'songwriter', 'harmony', 8, 'chorus'),
     R('beatles.bt_suite_form', 'Side-two suite-style linkage receipts (`bt:d5_suite_form`)', 'songwriter', 'form', 7, 'global'),
   ],
+  fela_kuti: [
+    R('fela.fk_static_vamp', 'Two-chord / one-chord vamp holds (`fk:d1_static_vamp`)', 'songwriter', 'harmony', 9, 'verse'),
+    R('fela.fk_call_response', 'Call / response phrase layering (`fk:d2_call_response`)', 'songwriter', 'form', 8, 'chorus'),
+    R('fela.fk_pentatonic_layer', 'Yoruba pentatonic melodic layer (`fk:d3_pentatonic_layer`)', 'songwriter', 'melody', 9, 'global'),
+    R('fela.fk_parallel_horns', 'Parallel horn refrains (`fk:d4_parallel_horns`)', 'songwriter', 'harmony', 8, 'chorus'),
+    R('fela.fk_polymetric_grid', 'Cross-rhythm / polymetric grid stress (`fk:d5_polymetric_grid`)', 'songwriter', 'rhythm', 9, 'global'),
+    R('fela.no_functional_cadence', 'Avoid textbook V–I closures — vamp continuity', 'songwriter', 'harmony', 9, 'global'),
+  ],
   joni_mitchell: [
     R('joni.modal_bias', 'Modal bias — Dorian, Aeolian, Mixolydian fields', 'songwriter', 'harmony', 8, 'global'),
     R('joni.pedal_bass_preference', 'Pedal bass preference — stepwise or static bass', 'songwriter', 'harmony', 8, 'verse'),

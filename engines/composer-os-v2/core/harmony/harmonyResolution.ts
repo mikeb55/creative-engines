@@ -333,6 +333,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Fela Kuti: `precomputeFelaKutiEffectiveHarmonyBars` freezes vamp scaffold harmony + device receipts **`fk:*`** (`felaKutiSlice.ts`).
+   */
+  const felaEff = meta?.felaKutiEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'fela_kuti' &&
+    Array.isArray(felaEff) &&
+    felaEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return felaEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;

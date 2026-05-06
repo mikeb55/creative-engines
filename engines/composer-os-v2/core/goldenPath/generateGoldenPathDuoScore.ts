@@ -189,6 +189,12 @@ import {
   precomputeBeatlesEffectiveHarmonyBars,
 } from './beatlesSlice';
 import {
+  accumulateFelaKutiHarmonyDiagnostics,
+  createFelaKutiHarmonyAccumulator,
+  finalizeFelaKutiMetadata,
+  precomputeFelaKutiEffectiveHarmonyBars,
+} from './felaKutiSlice';
+import {
   accumulateColePorterHarmonyDiagnostics,
   createColePorterHarmonyAccumulator,
   finalizeColePorterMetadata,
@@ -2329,6 +2335,7 @@ function buildGuitarPart(
   const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
   const isSongwriterPrince = genMeta?.songwriterStyleId === 'prince';
   const isSongwriterBeatles = genMeta?.songwriterStyleId === 'beatles';
+  const isSongwriterFelaKuti = genMeta?.songwriterStyleId === 'fela_kuti';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -2351,6 +2358,7 @@ function buildGuitarPart(
   const satAccum = createSatieHarmonyAccumulator();
   const princeAccum = createPrinceHarmonyAccumulator();
   const beatlesAccum = createBeatlesHarmonyAccumulator();
+  const felaKutiAccum = createFelaKutiHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
@@ -2423,6 +2431,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBeatles && isDuoGoldenPath) {
     precomputeBeatlesEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterFelaKuti && isDuoGoldenPath) {
+    precomputeFelaKutiEffectiveHarmonyBars(context);
   }
   if (isSongwriterColePorter && isDuoGoldenPath) {
     precomputeColePorterEffectiveHarmonyBars(context);
@@ -2689,6 +2700,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         beatlesAccum
+      );
+    }
+    if (isSongwriterFelaKuti) {
+      accumulateFelaKutiHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        felaKutiAccum
       );
     }
     if (isSongwriterColePorter) {
@@ -3322,6 +3340,10 @@ function buildGuitarPart(
 
   if (isSongwriterBeatles && context.generationMetadata) {
     finalizeBeatlesMetadata(context.generationMetadata, beatlesAccum);
+  }
+
+  if (isSongwriterFelaKuti && context.generationMetadata) {
+    finalizeFelaKutiMetadata(context.generationMetadata, felaKutiAccum);
   }
 
   if (isSongwriterColePorter && context.generationMetadata) {
