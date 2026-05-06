@@ -190,6 +190,7 @@ import {
 } from './beatlesSlice';
 import {
   accumulateFelaKutiHarmonyDiagnostics,
+  appendFelaPercussionToScore,
   createFelaKutiHarmonyAccumulator,
   finalizeFelaKutiMetadata,
   precomputeFelaKutiEffectiveHarmonyBars,
@@ -5954,6 +5955,13 @@ export function generateGoldenPathDuoScore(
     ...context.generationMetadata,
     wybleConsumptionReceipt: wybleRec,
   };
+  if (
+    context.generationMetadata?.songwriterStyleId === 'fela_kuti' &&
+    afterExpressive.parts.some((p) => p.instrumentIdentity === 'clean_electric_guitar') &&
+    afterExpressive.parts.some((p) => p.instrumentIdentity === 'acoustic_upright_bass')
+  ) {
+    appendFelaPercussionToScore(afterExpressive, context);
+  }
   logEcmInternalPhaseProbe(probeEcm, 'before_return_score', afterExpressive);
   if (context.harmonyContext) {
     assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'before_return_generateGoldenPathDuoScore');

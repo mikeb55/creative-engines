@@ -1006,6 +1006,10 @@ export interface GenerationMetadata {
    * Fela Kuti Song Mode slice mode (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted.
    */
   felaKutiContext?: FelaKutiContextMode;
+  /**
+   * Percussion staff feel for Tony Allen grids (`afrobeatRhythmEngine.ts`) — receipt **`fk:*`** (`felaKutiSlice.ts`).
+   */
+  felaPercussionFeelTag?: 'fk:straight' | 'fk:swing' | 'fk:afrobeat';
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

@@ -6,6 +6,14 @@
 import type { CompositionContext, FelaKutiContextMode, GenerationMetadata } from '../compositionContext';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import {
+  createAfrobeatRhythmEngine,
+  type DrumPattern,
+  type TonyAllenFeel,
+} from '../percussion/afrobeatRhythmEngine';
+import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
+import type { NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import { createPart } from '../score-model/scoreEventBuilder';
 
 /** Pool keys registered under `SONGWRITER_CHORD_POOLS` for `songwriterId === 'fela_kuti'`. */
 export type FelaKutiChordPoolId =
@@ -156,6 +164,87 @@ export function precomputeFelaKutiEffectiveHarmonyBars(context: CompositionConte
   genMeta.felaKutiYorubaPentatonicDegrees = [...FELA_YORUBA_PENTATONIC_DEGREES];
 }
 
+/** GM note numbers — unpitched display C2 / D2 / F#2 / G#2 / D3 (`musicxmlExporter.ts` must stay aligned). */
+export const FELA_GM_DRUM_KICK = 36;
+export const FELA_GM_DRUM_SNARE = 38;
+export const FELA_GM_DRUM_HI_HAT = 42;
+export const FELA_GM_DRUM_BELL = 44;
+export const FELA_GM_DRUM_CONGA = 50;
+
+export type FelaPercussionFeelTag = 'fk:straight' | 'fk:swing' | 'fk:afrobeat';
+
+/** Map slice posture → Tony Allen grid bucket (`tonyAllenPatterns.json`). */
+export function felaTonyAllenFeelFromKutiContext(ctx: FelaKutiContextMode | undefined): TonyAllenFeel {
+  const c = ctx ?? 'zombie_1977';
+  if (c === 'zombie_1977') return 'afrobeat';
+  if (c === 'water_no_get_enemy') return 'swing';
+  return 'straight';
+}
+
+export function felaPercussionFeelTagFromTonyAllenFeel(feel: TonyAllenFeel): FelaPercussionFeelTag {
+  return feel === 'straight' ? 'fk:straight' : feel === 'swing' ? 'fk:swing' : 'fk:afrobeat';
+}
+
+/** One bar of 16th-note drum hits for MusicXML export (beat units 0..4). */
+export function buildFelaPercussionMeasureEvents(pattern: DrumPattern): ScoreEvent[] {
+  const events: ScoreEvent[] = [];
+  const dur = 0.25;
+  for (let step = 0; step < 16; step++) {
+    const startBeat = step * dur;
+    const hits: number[] = [];
+    if (pattern.kick[step]) hits.push(FELA_GM_DRUM_KICK);
+    if (pattern.snare[step]) hits.push(FELA_GM_DRUM_SNARE);
+    if (pattern.hiHat[step]) hits.push(FELA_GM_DRUM_HI_HAT);
+    if (pattern.bell[step]) hits.push(FELA_GM_DRUM_BELL);
+    if (pattern.conga[step]) hits.push(FELA_GM_DRUM_CONGA);
+    hits.sort((a, b) => a - b);
+    for (const midi of hits) {
+      const ev: NoteEvent = { kind: 'note', pitch: midi, startBeat, duration: dur, voice: 1 };
+      events.push(ev);
+    }
+  }
+  return events;
+}
+
+export function buildFelaAfrobeatPercussionPart(totalBars: number, pattern: DrumPattern): PartModel {
+  const part = createPart(
+    'fela_drums',
+    'Afrobeat Percussion',
+    'fela_afrobeat_drums',
+    0,
+    'treble',
+    totalBars,
+    () => undefined,
+    () => undefined
+  );
+  for (const m of part.measures) {
+    m.events = buildFelaPercussionMeasureEvents(pattern);
+  }
+  return part;
+}
+
+function stampFelaDrumMeasureSpans(part: PartModel, context: CompositionContext): void {
+  const map = context.generationMetadata?.barMeterMap ?? context.barMeterMap;
+  for (const m of part.measures) {
+    m.measureBeatSpanQuarters = resolveMeasureBeatSpanQuarters(m.index, map);
+  }
+}
+
+/** Append GM percussion staff for Fela Kuti generations (after duo seal). Idempotent. */
+export function appendFelaPercussionToScore(score: ScoreModel, context: CompositionContext): void {
+  const md = context.generationMetadata as GenerationMetadata | undefined;
+  if (!md || md.songwriterStyleId !== 'fela_kuti') return;
+  if (score.parts.some((p) => p.id === 'fela_drums')) return;
+  const tb = context.form.totalBars;
+  const fkCtx: FelaKutiContextMode = md.felaKutiContext ?? 'zombie_1977';
+  const feel = felaTonyAllenFeelFromKutiContext(fkCtx);
+  const engine = createAfrobeatRhythmEngine();
+  const pattern = engine.selectPattern(feel);
+  const drumPart = buildFelaAfrobeatPercussionPart(tb, pattern);
+  stampFelaDrumMeasureSpans(drumPart, context);
+  score.parts.push(drumPart);
+}
+
 export function finalizeFelaKutiMetadata(metadata: GenerationMetadata, acc: FelaKutiHarmonyAccumulator): void {
   const flat = [...(metadata.felaKutiDeviceReceipts ?? [])];
   const d = {
@@ -168,6 +257,9 @@ export function finalizeFelaKutiMetadata(metadata: GenerationMetadata, acc: Fela
     deviceReceipts: flat.length ? flat : undefined,
     yorubaPentatonicDegrees: metadata.felaKutiYorubaPentatonicDegrees ?? [...FELA_YORUBA_PENTATONIC_DEGREES],
   } as const;
+  metadata.felaPercussionFeelTag = felaPercussionFeelTagFromTonyAllenFeel(
+    felaTonyAllenFeelFromKutiContext(metadata.felaKutiContext)
+  );
   const receipt = [
     `Fela Kuti (slice): Im7≈${acc.minorSeventhVampTouches}`,
     `bVII7≈${acc.flatSevenDominantTouches}`,
@@ -175,6 +267,7 @@ export function finalizeFelaKutiMetadata(metadata: GenerationMetadata, acc: Fela
     `bIIImaj7≈${acc.flatThreeMajorColourTouches}`,
     `bars=${acc.barsConsidered}`,
     `yoruba_degrees=${(d.yorubaPentatonicDegrees ?? []).join(',')}`,
+    `perc_feel=${metadata.felaPercussionFeelTag}`,
     flat.length ? `devices=${flat.join(';')}` : '',
   ]
     .filter(Boolean)

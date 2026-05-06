@@ -105,6 +105,8 @@ function checkMeasureAttacks(
 export function validateScoreDuoAttackGrid(score: ScoreModel): DuoAttackGridValidationResult {
   const errors: string[] = [];
   for (const p of score.parts) {
+    /** Afrobeat drum grid is 16ths — exempt from duo eighth attack seal (`felaKutiSlice.ts`). */
+    if (p.instrumentIdentity === 'fela_afrobeat_drums') continue;
     for (const m of p.measures) {
       checkMeasureAttacks(p.id, m, errors);
     }
