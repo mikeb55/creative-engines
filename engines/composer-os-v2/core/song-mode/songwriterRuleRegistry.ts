@@ -265,10 +265,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('jb.syncop_stack', 'Stacked syncop layers', 'songwriter', 'rhythm', 8, 'chorus'),
   ],
   prince: [
-    R('prince.minneapolis', 'Minneapolis funk pocket', 'songwriter', 'rhythm', 8, 'global'),
-    R('prince.androgyny_hook', 'Androgynous register hook', 'songwriter', 'hook', 8, 'chorus'),
-    R('prince.purple_colour', 'Colour-chord side-slips', 'songwriter', 'harmony', 8, 'verse'),
-    R('prince.arena_peak', 'Arena chorus peak', 'songwriter', 'form', 8, 'chorus'),
+    R('prince.d1_minor_vamp', 'Minor vamp lock pockets (`pr:d1_minor_vamp`)', 'songwriter', 'harmony', 9, 'verse'),
+    R('prince.d2_gospel_cadence', 'IV–V–I extended gospel cadence hits (`pr:d2_gospel_cadence`)', 'songwriter', 'harmony', 9, 'chorus'),
+    R('prince.d3_chromatic_bass', 'Chromatic passing diminished connectors (`pr:d3_chromatic_bass`)', 'songwriter', 'harmony', 8, 'global'),
+    R('prince.d4_stop_time', 'Phrase-boundary stop-time receipts (`pr:d4_stop_time`)', 'songwriter', 'rhythm', 8, 'global'),
+    R('prince.d5_bridge_modulation', 'Bridge-only tritone substitutions (`pr:d5_bridge_modulation`)', 'songwriter', 'harmony', 9, 'bridge'),
   ],
   kendrick_lamar: [
     R('kdot.story_arc', 'Narrative arc over sections', 'songwriter', 'form', 9, 'form'),

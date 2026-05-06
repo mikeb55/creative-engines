@@ -11,6 +11,7 @@ import type {
   GershwinContextMode,
   ImportHarmonyMode,
   MilesDavisContextMode,
+  PrinceContextMode,
 } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
@@ -22,6 +23,7 @@ export type { BartokContextMode };
 export type { FrankZappaContextMode };
 export type { GershwinContextMode };
 export type { MilesDavisContextMode };
+export type { PrinceContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -248,6 +250,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`fur_alina`** when primary songwriter is **`arvo_part`**.
    */
   arvoPartContext?: ArvoPartContextMode;
+  /**
+   * Song Mode / Prince: purple_rain vs sign_o_times vs kiss posture (`princeSlice.ts`).
+   * Omitted → engine default **`purple_rain`** when primary songwriter is **`prince`**.
+   */
+  princeContext?: PrinceContextMode;
 }
 
 export interface ValidationSummary {

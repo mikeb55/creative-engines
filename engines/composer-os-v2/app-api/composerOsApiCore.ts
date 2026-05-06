@@ -359,6 +359,12 @@ export function apiGenerate(
         body.arvoPartContext === 'fratres'
           ? body.arvoPartContext
           : undefined,
+      princeContext:
+        body.princeContext === 'purple_rain' ||
+        body.princeContext === 'sign_o_times' ||
+        body.princeContext === 'kiss'
+          ? body.princeContext
+          : undefined,
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

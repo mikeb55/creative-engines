@@ -10,6 +10,7 @@ import type {
   GenerationMetadata,
   GershwinContextMode,
   MilesDavisContextMode,
+  PrinceContextMode,
   SatieContextMode,
 } from '../compositionContext';
 import type { StyleProfile } from './songModeStyleProfile';
@@ -301,6 +302,27 @@ export function applySatieStyleSurface(metadata: GenerationMetadata, primarySong
 
   appendStyleSurfaceNotes(metadata, [
     `Satie surface (${ctx}): space +0.42, density −0.24, syncopation −0.18, cadence softness +0.44 — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`prince`** — Minneapolis-pocket sync + density; generous space + softer cadence closes (`princeSlice.ts` receipts separate).
+ */
+export function applyPrinceStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'prince') return;
+
+  const ctx: PrinceContextMode = metadata.princeContext ?? 'purple_rain';
+  metadata.princeContext = ctx;
+
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.28);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.14);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.18);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.16);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Prince surface (${ctx}): sync +0.28, density +0.14, space +0.18, cadence softness +0.16 — generative metadata only.`,
   ]);
 }
 

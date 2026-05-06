@@ -305,6 +305,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * Prince: `precomputePrinceEffectiveHarmonyBars` applies Minneapolis-pocket extensions / borrowed colours — receipts **`pr:*`**.
+   */
+  const princeEff = meta?.princeEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'prince' &&
+    Array.isArray(princeEff) &&
+    princeEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return princeEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;

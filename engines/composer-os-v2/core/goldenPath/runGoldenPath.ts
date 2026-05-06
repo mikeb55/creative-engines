@@ -13,6 +13,7 @@ import type {
   HarmonyPipelineStage,
   ImportHarmonyMode,
   MilesDavisContextMode,
+  PrinceContextMode,
 } from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
@@ -118,6 +119,7 @@ import {
   applyJobimStyleSurface,
   applyDonaldFagenSongwriterSurface,
   applyMilesDavisStyleSurface,
+  applyPrinceStyleSurface,
   applyBartokStyleSurface,
   applyGershwinStyleSurface,
   applyArvoPartStyleSurface,
@@ -1040,6 +1042,8 @@ export interface RunGoldenPathOptions {
   gershwinContext?: GershwinContextMode;
   /** Song Mode / Arvo Pärt: Fur Alina vs Spiegel vs Fratres posture (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted. */
   arvoPartContext?: ArvoPartContextMode;
+  /** Song Mode / Prince: era posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
+  princeContext?: PrinceContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1631,6 +1635,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'arvo_part'
         ? { arvoPartContext: options.arvoPartContext ?? 'fur_alina' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'prince'
+        ? { princeContext: options.princeContext ?? 'purple_rain' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1727,6 +1734,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyMilesDavisStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyPrinceStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyBartokStyleSurface(context.generationMetadata, options.primarySongwriterStyle);

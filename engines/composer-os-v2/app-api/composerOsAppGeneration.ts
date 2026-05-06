@@ -1030,6 +1030,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'arvo_part'
       ? { arvoPartContext: req.arvoPartContext }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'prince'
+      ? { princeContext: req.princeContext }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1152,6 +1155,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const ggLockedTruth = mdLockedTruth?.gershwinEffectiveHarmonyBars;
   const apLockedTruth = mdLockedTruth?.arvoPartEffectiveHarmonyBars;
   const satieLockedTruth = mdLockedTruth?.satieEffectiveHarmonyBars;
+  const princeLockedTruth = mdLockedTruth?.princeEffectiveHarmonyBars;
   const cpPorterLockedTruth = mdLockedTruth?.colePorterEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
@@ -1272,6 +1276,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 satieLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? satieLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'prince' &&
+                                Array.isArray(princeLockedTruth) &&
+                                princeLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                princeLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? princeLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'cole_porter' &&
                                 Array.isArray(cpPorterLockedTruth) &&
                                 cpPorterLockedTruth.length === tbLockedTruth &&

@@ -1770,6 +1770,57 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em7', 'A7(#9)', 'Dm7', 'G7sus4'],
     ],
   },
+  prince_purple_rain: {
+    verse: [
+      ['Am9', 'Dm9', 'G13', 'Cmaj9'],
+      ['Fm9', 'Bb13', 'Ebmaj9', 'Ab6/9'],
+    ],
+    chorus: [
+      ['Dm9', 'G13', 'Cmaj9', 'A9sus4'],
+      ['Gm9', 'C13', 'Fmaj9', 'Bb9sus4'],
+    ],
+    bridge: [
+      ['Bm9', 'E13', 'Amaj9', 'D13'],
+      ['Cm9', 'F13', 'Bbmaj9', 'Eb13'],
+    ],
+    pre_chorus: [
+      ['Em9', 'A13', 'Dm9', 'G13'],
+    ],
+  },
+  prince_sign_o_times: {
+    verse: [
+      ['Dm9', 'G13', 'Cmaj9', 'Bb9'],
+      ['Am9', 'D13', 'Gm9', 'C13'],
+    ],
+    chorus: [
+      ['Fm9', 'Bb13', 'Ebmaj9', 'Ab13'],
+      ['Em9', 'A13', 'Dmaj9', 'G13'],
+    ],
+    bridge: [
+      ['Bbm9', 'Eb13', 'Abmaj9', 'Db13'],
+      ['Am9', 'D13', 'Gmaj9', 'C13'],
+    ],
+    pre_chorus: [
+      ['Cm9', 'F13', 'Bbmaj9', 'Eb9'],
+    ],
+  },
+  prince_kiss: {
+    verse: [
+      ['Cmaj9', 'Am9', 'Dm9', 'G13'],
+      ['Bbmaj9', 'Gm9', 'Cm9', 'F13'],
+    ],
+    chorus: [
+      ['Fmaj9', 'Dm9', 'Gm9', 'C13'],
+      ['Abmaj9', 'Fm9', 'Bbm9', 'Eb13'],
+    ],
+    bridge: [
+      ['D9sus4', 'G13', 'Cmaj9', 'A9'],
+      ['Gm9', 'C13', 'Fmaj9', 'Bb13'],
+    ],
+    pre_chorus: [
+      ['Em9', 'A13', 'Dm9', 'G9sus4'],
+    ],
+  },
   duke_ellington: {
     verse: [
       ['Cmaj9(#11)', 'A7(b9#5)', 'Dm9', 'G13'],
@@ -1873,6 +1924,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'satie_gymnopedie' : tier === 1 ? 'satie_gnossienne' : 'satie_poire';
+  }
+  if (songwriterId === 'prince') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'prince_purple_rain' : tier === 1 ? 'prince_sign_o_times' : 'prince_kiss';
   }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {

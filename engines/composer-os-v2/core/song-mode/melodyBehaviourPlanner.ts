@@ -114,6 +114,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'high',
     devices: ['on_the_one', 'blues_note', 'call_response', 'sparse_density'],
   },
+  prince: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.58,
+    phraseLength: 4,
+    contourProfile: 'groove_arc',
+    phraseAsymmetryTendency: 0.5,
+    cadenceFrequency: 'medium',
+    devices: ['minor_vamp', 'gospel_cadence', 'chromatic_bass', 'stop_time', 'bridge_modulation'],
+  },
   sonic_youth: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'mixed',

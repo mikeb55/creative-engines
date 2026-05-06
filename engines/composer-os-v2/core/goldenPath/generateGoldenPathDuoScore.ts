@@ -177,6 +177,12 @@ import {
   precomputeSatieEffectiveHarmonyBars,
 } from './satieSlice';
 import {
+  accumulatePrinceHarmonyDiagnostics,
+  createPrinceHarmonyAccumulator,
+  finalizePrinceMetadata,
+  precomputePrinceEffectiveHarmonyBars,
+} from './princeSlice';
+import {
   accumulateColePorterHarmonyDiagnostics,
   createColePorterHarmonyAccumulator,
   finalizeColePorterMetadata,
@@ -2315,6 +2321,7 @@ function buildGuitarPart(
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
   const isSongwriterArvoPart = genMeta?.songwriterStyleId === 'arvo_part';
   const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
+  const isSongwriterPrince = genMeta?.songwriterStyleId === 'prince';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
@@ -2335,6 +2342,7 @@ function buildGuitarPart(
   const ggAccum = createGershwinHarmonyAccumulator();
   const apAccum = createArvoPartHarmonyAccumulator();
   const satAccum = createSatieHarmonyAccumulator();
+  const princeAccum = createPrinceHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
@@ -2401,6 +2409,9 @@ function buildGuitarPart(
   }
   if (isSongwriterSatie && isDuoGoldenPath) {
     precomputeSatieEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterPrince && isDuoGoldenPath) {
+    precomputePrinceEffectiveHarmonyBars(context);
   }
   if (isSongwriterColePorter && isDuoGoldenPath) {
     precomputeColePorterEffectiveHarmonyBars(context);
@@ -2653,6 +2664,13 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         satAccum
+      );
+    }
+    if (isSongwriterPrince) {
+      accumulatePrinceHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        princeAccum
       );
     }
     if (isSongwriterColePorter) {
@@ -3278,6 +3296,10 @@ function buildGuitarPart(
 
   if (isSongwriterSatie && context.generationMetadata) {
     finalizeSatieMetadata(context.generationMetadata, satAccum);
+  }
+
+  if (isSongwriterPrince && context.generationMetadata) {
+    finalizePrinceMetadata(context.generationMetadata, princeAccum);
   }
 
   if (isSongwriterColePorter && context.generationMetadata) {

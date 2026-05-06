@@ -57,6 +57,9 @@ export type ArvoPartContextMode = 'fur_alina' | 'spiegel' | 'fratres';
 /** Erik Satie Song Mode slice — Gymnopédie vs Gnossienne vs cabaret “Piège” posture (`satieSlice.ts`). Default **`gymnopedie`** when omitted. */
 export type SatieContextMode = 'gymnopedie' | 'gnossienne' | 'poire';
 
+/** Prince Song Mode slice — Minneapolis funk/soul extended harmony posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
+export type PrinceContextMode = 'purple_rain' | 'sign_o_times' | 'kiss';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -938,6 +941,30 @@ export interface GenerationMetadata {
    * Erik Satie Song Mode slice mode (`satieSlice.ts`). Default **`gymnopedie`** when omitted.
    */
   satieContext?: SatieContextMode;
+  /** Prince — extended R&B/jazz harmony (m9 / dom9–13 / maj9·6·9 / sus9; devices `pr:*`) (`princeSlice.ts`). */
+  princeDiagnostics?: {
+    songwriterId: 'prince';
+    barsConsidered: number;
+    extensionTouches: number;
+    borrowedTouches: number;
+    vampTouches: number;
+    bridgeColourTouches: number;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      noopEnrich: number;
+    };
+    deviceReceipts?: string[];
+  };
+  princeSliceReceipt?: string;
+  princeEffectiveHarmonyBars?: string[];
+  princeDeviceReceipts?: string[];
+  princeAntiElaborationGuards?: {
+    noopEnrich: number;
+  };
+  /**
+   * Prince Song Mode slice mode (`princeSlice.ts`). Default **`purple_rain`** when omitted.
+   */
+  princeContext?: PrinceContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';
