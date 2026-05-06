@@ -304,7 +304,13 @@ function drumKitNoteXml(opts: {
   return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}${acc}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
 }
 
-/** GM drum MIDI → unpitched display (matches slice map in `felaKutiSlice.ts`). */
+/**
+ * GM drum MIDI → MusicXML unpitched **display** step/octave.
+ * Use treble-staff–range positions (octaves 4–5) so Sibelius/Finale place notes on the
+ * percussion staff; octave 2–3 glyphs caused “out of range” / notes clustered below staff.
+ * Matches Big Band drum glyph tiers in this file (`F`/`G` @ 5 for hats/ride, `F` @ 4 kick).
+ * Playback pitch stays GM MIDI on `NoteEvent.pitch` — not affected here.
+ */
 function felaAfrobeatDrumGlyph(midi: number): {
   step: string;
   octave: number;
@@ -314,15 +320,15 @@ function felaAfrobeatDrumGlyph(midi: number): {
 } {
   switch (midi) {
     case 36:
-      return { step: 'C', octave: 2, accidentalXml: '', notehead: 'normal', stem: 'down' };
+      return { step: 'F', octave: 4, accidentalXml: '', notehead: 'normal', stem: 'down' };
     case 38:
-      return { step: 'D', octave: 2, accidentalXml: '', notehead: 'normal', stem: 'down' };
+      return { step: 'D', octave: 4, accidentalXml: '', notehead: 'normal', stem: 'down' };
     case 42:
-      return { step: 'F', octave: 2, accidentalXml: '<accidental>sharp</accidental>', notehead: 'x', stem: 'up' };
+      return { step: 'F', octave: 5, accidentalXml: '<accidental>sharp</accidental>', notehead: 'x', stem: 'up' };
     case 44:
-      return { step: 'G', octave: 2, accidentalXml: '<accidental>sharp</accidental>', notehead: 'normal', stem: 'up' };
+      return { step: 'G', octave: 5, accidentalXml: '<accidental>sharp</accidental>', notehead: 'normal', stem: 'up' };
     case 50:
-      return { step: 'D', octave: 3, accidentalXml: '', notehead: 'normal', stem: 'down' };
+      return { step: 'D', octave: 5, accidentalXml: '', notehead: 'normal', stem: 'down' };
     default:
       throw new Error(`MusicXML export: fela_afrobeat_drums unsupported MIDI pitch ${midi}`);
   }

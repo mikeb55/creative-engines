@@ -164,7 +164,7 @@ export function precomputeFelaKutiEffectiveHarmonyBars(context: CompositionConte
   genMeta.felaKutiYorubaPentatonicDegrees = [...FELA_YORUBA_PENTATONIC_DEGREES];
 }
 
-/** GM note numbers — unpitched display C2 / D2 / F#2 / G#2 / D3 (`musicxmlExporter.ts` must stay aligned). */
+/** GM note numbers — MusicXML unpitched **display** uses treble-range steps (`musicxmlExporter.ts` `felaAfrobeatDrumGlyph`). */
 export const FELA_GM_DRUM_KICK = 36;
 export const FELA_GM_DRUM_SNARE = 38;
 export const FELA_GM_DRUM_HI_HAT = 42;

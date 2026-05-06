@@ -1,6 +1,6 @@
 # Fela Kuti — Tony Allen percussion engine
 
-Song Mode primary **`fela_kuti`** adds an **Afrobeat Percussion** staff (**instrument** **`fela_afrobeat_drums`**, part id **`fela_drums`**) after the duo golden-path seal. GM MIDI hits map to **unpitched** notation on a **percussion clef**; hi-hat and bell use **written F♯2** and **G♯2** with explicit **sharp** accidentals (see **`musicxmlExporter.ts`** **`felaAfrobeatDrumGlyph`** — must stay aligned with **`felaKutiSlice.ts`** MIDI constants).
+Song Mode primary **`fela_kuti`** adds an **Afrobeat Percussion** staff (**instrument** **`fela_afrobeat_drums`**, part id **`fela_drums`**) after the duo golden-path seal. GM MIDI hits map to **unpitched** notation on a **percussion clef**. **Display** step/octave uses treble-staff range (**≈** octaves **4–5**) so Sibelius/Finale draw notes on the staff — low octave glyphs caused “out of range” / junk below the staff. Hi-hat = written **F♯5** (x notehead); bell = **G♯5**; kick/snare/conga use **`felaAfrobeatDrumGlyph`** (see **`musicxmlExporter.ts`**). MIDI pitch on events stays GM (**`felaKutiSlice.ts`** constants).
 
 ---
 
