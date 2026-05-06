@@ -292,7 +292,7 @@ function drumKitNoteXml(opts: {
   stem: 'up' | 'down';
   notehead?: 'x' | 'normal';
   instrumentId: string;
-  /** Optional fragment (e.g. `<accidental>sharp</accidental>`) immediately after &lt;unpitched&gt;. */
+  /** Optional (e.g. `<accidental>sharp</accidental>`). Must follow &lt;type&gt;/&lt;dot&gt; and precede &lt;stem&gt; (MusicXML note content model — Sibelius rejects accidental after &lt;unpitched&gt;). */
   accidentalXml?: string;
 }): string {
   const spec = tickSpecForLength(opts.ticks480);
@@ -301,7 +301,7 @@ function drumKitNoteXml(opts: {
   const nh = opts.notehead === 'x' ? '<notehead>x</notehead>' : '';
   const chordEl = opts.chord ? '<chord/>' : '';
   const acc = opts.accidentalXml ?? '';
-  return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}${acc}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
+  return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}${acc}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
 }
 
 /**

@@ -102,6 +102,8 @@ Writes **`docs/fela-percussion-sibelius-samples/fela_sample_{straight,swing,afro
 
 **Committed samples:** same paths — open in **Sibelius** for visual QA (percussion clef, unpitched heads, **F♯** hi-hat, **G♯** bell where pattern fires, single part, chord stacks via `<chord/>`).
 
+**Import sanity:** `<accidental>` must appear **after** `<type>` / dots and **before** `<stem>` per MusicXML note content model — Sibelius errors like “Element accidental is not defined in this scope” were caused by emitting accidental immediately after `<unpitched>` (fixed in **`drumKitNoteXml`**). **Red noteheads** on import usually mean the instrument’s drum map doesn’t assign that staff slot yet — assign sounds in Sibelius **House Style → Instruments** / playback map as needed.
+
 ---
 
 ## Operational notes
