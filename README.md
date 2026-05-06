@@ -33,7 +33,7 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 ## Songwriter slices
 
-**Shipped harmony modules:** **31** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
+**Shipped harmony modules:** **32** (`engines/composer-os-v2/core/song-mode/*Slice.ts`). *(Roadmap copy sometimes cited **25** writers before V32 **Debussy** + **Cole Porter**; disk count is authoritative.)*
 
 Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Slice.ts`** (each paired with **`engines/composer-os-v2/core/goldenPath/<name>Slice.ts`** re-exports where present). **Receipt prefixes** below come from the slice sources — search **`engines/composer-os-v2/core/song-mode/<Slice>.ts`** for full device strings.
 
@@ -163,6 +163,17 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`pr:`** — minor vamp (**d1**), gospel cadence (**d2**), chromatic bass (**d3**), stop-time (**d4**), bridge modulation (**d5**); plus **`pr:borrow_flat_colour`**; **`princeEffectiveHarmonyBars`**. |
 | **Chord pools** | **`prince_purple_rain`**, **`prince_sign_o_times`**, **`prince_kiss`** in **`songModeBuilder`** when primary is Prince (**`seed % 3`**). |
 | **Style surface** | **`applyPrinceStyleSurface`** — syncopation **+0.28**, density **+0.14**, space **+0.18**, cadence softness **+0.16**. |
+
+### Beatles (3 contexts)
+
+| | |
+|--|--|
+| **Slice** | `engines/composer-os-v2/core/song-mode/beatlesSlice.ts` |
+| **Primary id** | `beatles` |
+| **Contexts** | **`beatlesContext`** / **`GenerateRequest.beatlesContext`**: **`merseybeat_1962`** \| **`rubber_soul_1965`** \| **`abbey_road_1968`** (default **`merseybeat_1962`**). |
+| **Devices / receipts** | **`bt:*`** — AABA / section B (**d1**), flat-side modal (**d2**), co-tonic switch (**d3**), chromatic mediant (**d4**), suite form (**d5**); **`precomputeBeatlesEffectiveHarmonyBars`**. |
+| **Chord pools** | **`beatles_merseybeat_1962`**, **`beatles_rubber_soul_1965`**, **`beatles_abbey_road_1968`** in **`songModeBuilder`** when primary is Beatles (**`seed % 3`**). |
+| **Style surface** | **`applyBeatlesStyleSurface`** — density **+0.08**, syncopation **−0.06**, space **+0.12**, cadence softness **+0.22**. |
 
 ### Donald Fagen
 

@@ -386,6 +386,40 @@ Primary songwriter **`prince`** runs **`princeSlice.ts`** on the golden-path duo
 
 ---
 
+## Beatles (`beatles`) — Song Mode harmony slice (three contexts)
+
+Primary songwriter **`beatles`** runs **`beatlesSlice.ts`** on the golden-path duo timeline (**`precomputeBeatlesEffectiveHarmonyBars`** → **`beatlesEffectiveHarmonyBars`** for **`getChordForBar`**, **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked export truth, **`composerOsAppGeneration`**). **`GenerationMetadata.beatlesContext`** selects the era (**default `merseybeat_1962`**): **`merseybeat_1962`** · **`rubber_soul_1965`** · **`abbey_road_1968`**. API contract: **`GenerateRequest.beatlesContext`**. Receipts use prefix **`bt:`** for numbered devices **`d1`–`d5`** (see table below); **`applyBeatlesDeviceReceiptPasses`** may tag **`@sectionB`** on **`B`** sections.
+
+**Chord pools** — Song Mode scaffold rows in **`SONGWRITER_CHORD_POOLS`**: **`beatles_merseybeat_1962`**, **`beatles_rubber_soul_1965`**, **`beatles_abbey_road_1968`**. **`beatlesChordPoolSpec`** documents Roman/analytical roles per era: **Merseybeat** — diatonic major + blues **IV7 / I7**, secondary dominants, borrowed **iv / ♭VII / ♭VI**; **Rubber Soul** — extends Merseybeat with flat-side primaries (**♭III**, **♭VI**, **♭VII**), Mixolydian loops (**I–♭VII–IV**), **II / ♭II** colour resolutions; **Abbey Road** — chromatic mediants (**I→♭III**, **I→♭VI**), double-plagal (**I–♭VII–IV**), co-tonic centres (**vi / VI / ♭III**). When **`primarySongwriterStyle === beatles`**, **`resolveBeatlesChordPoolId`** picks a pool with the same **seed-tier** pattern as Miles / Prince (**`Math.abs(seed) % 3`** → tier maps **merseybeat_1962 / rubber_soul_1965 / abbey_road_1968**).
+
+### Contexts
+
+| Context | Role |
+|---------|------|
+| **`merseybeat_1962`** | Early rock’n’roll scaffold — diatonic + blues dominants; device receipts favour **`bt:d1`** / **`bt:d2`**. |
+| **`rubber_soul_1965`** | Modal / flat-side colour era — **`bt:d2`** + **`bt:d4`** weighted in the pass. |
+| **`abbey_road_1968`** | Studio-era system — **`bt:d3`**, **`bt:d5`**, **`bt:d4`** weighted in the pass. |
+
+### Harmonic devices (receipts **`bt:`**)
+
+| Id | Planner device | Receipt (examples) |
+|----|----------------|----------------------|
+| **d1** | AABA form | **`bt:d1_aaba_form@bar{N}`**, **`bt:d1_aaba_form@sectionB@bar{N}`** |
+| **d2** | Flat-side modal | **`bt:d2_flat_side_modal@bar{N}`** |
+| **d3** | Co-tonic switch | **`bt:d3_co_tonic_switch@bar{N}`** |
+| **d4** | Chromatic mediant | **`bt:d4_chromatic_mediant@bar{N}`** |
+| **d5** | Suite form | **`bt:d5_suite_form@bar{N}`** |
+
+### Style surface (metadata nudges)
+
+**`applyBeatlesStyleSurface`** — for all contexts: **density +0.08**, **syncopation −0.06**, **space +0.12**, **cadence softness +0.22** (clamped **0–1** from prior **`songwriter*Bias`** defaults **0.5** when unset; aligns with **`beatlesStyleSurface`** in **`beatlesSlice.ts`**).
+
+### Melody planner row
+
+**`MELODY_PROFILES['beatles']`** — mixed intervals · **`mixed`** rhythm · **repetitionVsVariationBias 0.5** · phrase **4** · **arch** contour · cadence **medium** · devices **`aaba_form`**, **`flat_side_modal`**, **`co_tonic_switch`**, **`chromatic_mediant`**, **`suite_form`**.
+
+---
+
 ## Burt Bacharach (`bacharach`) — Song Mode harmony slice
 
 ### Signature style & key techniques
