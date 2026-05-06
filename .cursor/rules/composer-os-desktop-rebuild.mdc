@@ -1,0 +1,18 @@
+---
+description: After editing Composer OS desktop / IPC / UI paths, rebuild bundles and relaunch Electron automatically.
+globs: apps/composer-os-desktop/**/*, apps/composer-os-app/**/*, engines/composer-os-v2/app-api/**/*, engines/composer-os-v2/core/pdf/**/*
+alwaysApply: false
+---
+
+# Composer OS Desktop — rebuild + relaunch
+
+When you change code under **Electron**, **preload**, **IPC bundle inputs**, **`composer-os-app` UI**, **`composer-os-v2` app-api**, or **PDF/core paths consumed by the desktop bundle**, finish the task by:
+
+1. **`npm run build`** from **`apps/composer-os-desktop`** (refreshes `api.bundle.js`, `desktop-ipc.bundle.cjs`, `dist/main.js`, `resources/ui`).
+2. **`npm start`** in the same folder (background) so the user gets a running app — do **not** wait for them to ask.
+
+To refresh **`release/Composer-OS.exe`** / **`Composer-OS-Setup.exe`** (packaged portable + installer), run **`npm run dist`** from **`apps/composer-os-desktop`**. If **`EPERM`** on **`skia.win32-x64-msvc.node`**, **`taskkill /IM Composer-OS.exe /F`** and **`taskkill /IM electron.exe /F`** first (running app locks native canvas DLL).
+
+PDF import needs **`scripts/copy-pdfjs-desktop-assets.js`** (runs in **`desktop:build`**): ships **`pdf.worker.mjs`** plus **`pdfjs-dist-assets/`** (**`cmaps`**, **`standard_fonts`**, **`wasm`**) — **`getDocument`** requires these in Node/Electron main, not worker alone.
+
+Skip full desktop rebuild only when the edit is strictly docs-only or engine-only with **no** bundle consumers touched in that session.

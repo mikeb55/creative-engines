@@ -35,6 +35,11 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
   showItemInFolder: (filePath: string) => ipcRenderer.invoke('show-item-in-folder', filePath),
   getRuntimeBuildInfo: (): Promise<Record<string, unknown>> =>
     ipcRenderer.invoke('composer-os-api:get-runtime-build-info'),
+  saveAnthropicApiKey: (apiKey: string) =>
+    ipcRenderer.invoke('composer-os-api:save-anthropic-api-key', { apiKey }) as Promise<{
+      ok: boolean;
+      error?: string;
+    }>,
   onStartupState: (cb: (s: StartupState) => void): void => {
     ipcRenderer.on('composer-os:startup-state', (_e, s: StartupState) => cb(s));
   },

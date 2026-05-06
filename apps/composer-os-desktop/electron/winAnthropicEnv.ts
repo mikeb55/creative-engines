@@ -4,7 +4,8 @@
  */
 import { execFileSync } from 'node:child_process';
 
-function parseRegQueryValue(stdout: string, valueName: string): string | undefined {
+/** Exported for unit tests — sample stdout lines from `reg.exe query`. */
+export function parseRegQueryValue(stdout: string, valueName: string): string | undefined {
   for (const line of stdout.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed.includes(valueName) || !trimmed.includes('REG_')) continue;

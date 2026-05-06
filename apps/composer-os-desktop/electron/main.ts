@@ -24,6 +24,7 @@ import {
   type UiBundleVerifyFail,
 } from './uiBundleVerify';
 import { registerOpenOutputFolderIpc } from './openFolderMain';
+import { hydrateAnthropicKeyFromAllSources } from './anthropicKeyHydration';
 import { hydrateAnthropicKeyFromWindowsStores } from './winAnthropicEnv';
 
 function loadEnv(): void {
@@ -33,6 +34,7 @@ function loadEnv(): void {
   if (fs.existsSync(envPath)) {
     dotenv.config({ path: envPath });
   }
+  /** Registry/PowerShell only — safe before `app.whenReady` (no `app.getPath`). Full DPAPI file hydrate runs after backend registers. */
   hydrateAnthropicKeyFromWindowsStores();
   console.log('[main] envPath:', envPath, 'ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 }
@@ -130,7 +132,42 @@ function injectComposerOsDesktopRuntime(bundlePath: string): void {
   }
 }
 
+/** PDF.js worker must be a file URL; packaged app has no node_modules next to the exe. */
+function ensurePdfJsWorkerPathEnv(): void {
+  const workerPackaged = path.join(process.resourcesPath, 'pdf.worker.mjs');
+  const workerDev = path.join(__dirname, '..', 'resources', 'pdf.worker.mjs');
+  const target = app.isPackaged ? workerPackaged : workerDev;
+  if (fs.existsSync(target)) {
+    process.env.COMPOSER_OS_PDFJS_WORKER_FILE = path.normalize(target);
+  } else {
+    console.warn('[main] pdf.worker.mjs not found (PDF import will fail). Expected:', target);
+  }
+}
+
+/** pdf.js Node needs cmaps + standard_fonts + wasm dirs (see pdfChordReader getDocument). */
+function ensurePdfJsDistDirEnv(): void {
+  const envExisting = process.env.COMPOSER_OS_PDFJS_DIST_DIR?.trim();
+  if (envExisting && fs.existsSync(path.join(envExisting, 'wasm'))) {
+    return;
+  }
+  const packaged = path.join(process.resourcesPath, 'pdfjs-dist-assets');
+  const dev = path.resolve(__dirname, '..', '..', '..', 'node_modules', 'pdfjs-dist');
+  const root = app.isPackaged ? packaged : dev;
+  if (
+    fs.existsSync(path.join(root, 'cmaps')) &&
+    fs.existsSync(path.join(root, 'wasm')) &&
+    fs.existsSync(path.join(root, 'standard_fonts'))
+  ) {
+    process.env.COMPOSER_OS_PDFJS_DIST_DIR = root;
+    console.log('[main] COMPOSER_OS_PDFJS_DIST_DIR', root);
+  } else {
+    console.warn('[main] pdfjs-dist asset dirs missing (PDF render may fail). Expected:', root);
+  }
+}
+
 function registerDesktopIpc(outputDir: string): void {
+  ensurePdfJsWorkerPathEnv();
+  ensurePdfJsDistDirEnv();
   const bundlePath = resolveDesktopIpcBundlePath();
   if (!bundlePath) {
     throw new Error(
@@ -316,6 +353,7 @@ async function launchApp(): Promise<void> {
   try {
     setStartupState('starting_backend');
     registerDesktopIpc(outputDir);
+    hydrateAnthropicKeyFromAllSources();
     const indexHtml = path.join(uiPath, 'index.html');
     if (!fs.existsSync(indexHtml)) {
       throw new Error(`UI index missing: ${indexHtml}`);

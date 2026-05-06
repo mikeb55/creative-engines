@@ -21,21 +21,171 @@ const DEFAULT_RENDER_SCALE = 2.5;
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 
+/** Set on failure so `apiPdfGenerateFromPdf` can show a specific message (not always “missing API key”). */
+export type PdfPipelinePhase =
+  | 'missing_api_key'
+  | 'pdf_render'
+  | 'anthropic_http'
+  | 'anthropic_parse'
+  | 'empty_measures';
+
+export type PdfPipelineDiag = {
+  phase: PdfPipelinePhase;
+  /** Present when phase === anthropic_http */
+  httpStatus?: number;
+  /** Low-level error text (e.g. pdf_render exception message). */
+  detail?: string;
+};
+
+let pdfPipelineDiag: PdfPipelineDiag | null = null;
+
+function setPdfPipelineDiag(d: PdfPipelineDiag): void {
+  pdfPipelineDiag = d;
+}
+
+/** Consume and clear last PDF pipeline failure (call after `generateFromPdf` returns null). */
+export function takePdfPipelineDiag(): PdfPipelineDiag | null {
+  const d = pdfPipelineDiag;
+  pdfPipelineDiag = null;
+  return d;
+}
+
+/** User-facing copy after `generateFromPdf` returned null (consumes diag). */
+export function formatPdfExtractFailureHint(): string {
+  const d = takePdfPipelineDiag();
+  if (!d) {
+    return 'PDF extraction failed for an unknown reason.';
+  }
+  switch (d.phase) {
+    case 'missing_api_key':
+      return 'Missing ANTHROPIC_API_KEY. Desktop: DevTools → await window.composerOsDesktop?.saveAnthropicApiKey?.("sk-ant-…"), set Windows User env (persistent), or add ANTHROPIC_API_KEY to packaged resources/.env.';
+    case 'pdf_render': {
+      const tail = d.detail ? ` ${d.detail}` : '';
+      return `Could not render PDF page.${tail}`;
+    }
+    case 'anthropic_http':
+      return `Anthropic API HTTP ${d.httpStatus ?? '?'}. Check API key, billing, and model access (status ${d.httpStatus}).`;
+    case 'anthropic_parse':
+      return 'Claude vision did not return usable chord JSON for this page. Try another page or a clearer scan.';
+    case 'empty_measures':
+      return 'No chord symbols were extracted (empty measures). Try another page or a scan with larger chord symbols.';
+    default:
+      return 'PDF extraction failed.';
+  }
+}
+
+function resetPdfPipelineDiag(): void {
+  pdfPipelineDiag = null;
+}
+
 type PdfJsLegacy = typeof import('pdfjs-dist/legacy/build/pdf.mjs');
 let pdfJsCached: PdfJsLegacy | null = null;
+let domPolyfilledForPdfJs = false;
 
-/** Walk up from cwd to find `node_modules/pdfjs-dist/.../pdf.worker.mjs` (Node has no `import.meta` in this project’s CJS tsconfig). */
+/**
+ * Electron main / Node has no `DOMMatrix` / `ImageData` / `Path2D`. pdf.js tries to polyfill via
+ * `process.getBuiltinModule('module')`, which fails under Electron — assign globals from `@napi-rs/canvas`
+ * **before** importing `pdf.mjs`.
+ */
+async function ensureNodeDomPolyfillsForPdfJs(): Promise<void> {
+  if (domPolyfilledForPdfJs) return;
+  if (typeof globalThis.DOMMatrix !== 'undefined') {
+    domPolyfilledForPdfJs = true;
+    return;
+  }
+  try {
+    const mod = await import('@napi-rs/canvas');
+    const canvas = (mod as { default?: typeof import('@napi-rs/canvas') }).default ?? mod;
+    if (canvas.DOMMatrix) (globalThis as unknown as { DOMMatrix: unknown }).DOMMatrix = canvas.DOMMatrix;
+    if (canvas.ImageData) (globalThis as unknown as { ImageData: unknown }).ImageData = canvas.ImageData;
+    if (canvas.Path2D) (globalThis as unknown as { Path2D: unknown }).Path2D = canvas.Path2D;
+    if (typeof globalThis.navigator === 'undefined') {
+      (globalThis as unknown as { navigator: { language: string; platform: string; userAgent: string } }).navigator =
+        { language: 'en-US', platform: '', userAgent: '' };
+    }
+    domPolyfilledForPdfJs = true;
+  } catch (e) {
+    console.warn('[pdfChordReader] @napi-rs/canvas DOM polyfill failed — PDF render may error:', e);
+  }
+}
+
+/**
+ * Packaged Electron has no repo `node_modules` — main sets `COMPOSER_OS_PDFJS_WORKER_FILE`
+ * to `resources/pdf.worker.mjs`. Dev falls back to cwd walk / `COMPOSER_OS_REPO_ROOT`.
+ */
 function resolvePdfWorkerFileUrl(): string {
+  const fromEnv = process.env.COMPOSER_OS_PDFJS_WORKER_FILE;
+  if (typeof fromEnv === 'string' && fromEnv.trim() !== '' && existsSync(fromEnv.trim())) {
+    return pathToFileURL(fromEnv.trim()).href;
+  }
+  const repoRoot = process.env.COMPOSER_OS_REPO_ROOT;
+  if (typeof repoRoot === 'string' && repoRoot.trim() !== '') {
+    const p = join(
+      repoRoot.trim(),
+      'node_modules',
+      'pdfjs-dist',
+      'legacy',
+      'build',
+      'pdf.worker.mjs'
+    );
+    if (existsSync(p)) return pathToFileURL(p).href;
+  }
   for (let up = 0; up < 8; up++) {
     const base = up === 0 ? process.cwd() : join(process.cwd(), ...Array(up).fill('..'));
     const p = join(base, 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs');
     if (existsSync(p)) return pathToFileURL(p).href;
   }
-  throw new Error(`pdf.worker.mjs not found near cwd=${process.cwd()}`);
+  throw new Error(
+    `pdf.worker.mjs not found (set COMPOSER_OS_PDFJS_WORKER_FILE or install pdfjs-dist). cwd=${process.cwd()}`
+  );
+}
+
+/** Root containing `cmaps/`, `standard_fonts/`, `wasm/` — desktop sets `COMPOSER_OS_PDFJS_DIST_DIR`. */
+function resolvePdfjsDistRoot(): string | undefined {
+  const fromEnv = process.env.COMPOSER_OS_PDFJS_DIST_DIR?.trim();
+  if (fromEnv && existsSync(join(fromEnv, 'wasm')) && existsSync(join(fromEnv, 'cmaps'))) {
+    return fromEnv;
+  }
+  const repoRoot = process.env.COMPOSER_OS_REPO_ROOT?.trim();
+  if (repoRoot) {
+    const p = join(repoRoot, 'node_modules', 'pdfjs-dist');
+    if (existsSync(join(p, 'wasm'))) return p;
+  }
+  for (let up = 0; up < 10; up++) {
+    const base = up === 0 ? process.cwd() : join(process.cwd(), ...Array(up).fill('..'));
+    const p = join(base, 'node_modules', 'pdfjs-dist');
+    if (existsSync(join(p, 'wasm'))) return p;
+  }
+  return undefined;
+}
+
+function pdfDocumentInitParams(): Record<string, unknown> {
+  const root = resolvePdfjsDistRoot();
+  const base: Record<string, unknown> = {
+    useSystemFonts: true,
+    cMapPacked: true,
+    useWorkerFetch: false,
+  };
+  if (!root) return base;
+  const dirUrl = (sub: string): string | undefined => {
+    const d = join(root, sub);
+    if (!existsSync(d)) return undefined;
+    let href = pathToFileURL(d).href;
+    if (!href.endsWith('/')) href += '/';
+    return href;
+  };
+  const cMapUrl = dirUrl('cmaps');
+  const standardFontDataUrl = dirUrl('standard_fonts');
+  const wasmUrl = dirUrl('wasm');
+  if (cMapUrl) base.cMapUrl = cMapUrl;
+  if (standardFontDataUrl) base.standardFontDataUrl = standardFontDataUrl;
+  if (wasmUrl) base.wasmUrl = wasmUrl;
+  return base;
 }
 
 /** Lazy-load legacy pdf.js so ts-node/CJS resolution stays compatible with sibling `../generation` imports. */
 async function loadPdfJs(): Promise<PdfJsLegacy> {
+  await ensureNodeDomPolyfillsForPdfJs();
   if (!pdfJsCached) {
     pdfJsCached = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const { GlobalWorkerOptions } = pdfJsCached;
@@ -173,7 +323,10 @@ export async function renderPdfPageToBase64(
   scale: number = DEFAULT_RENDER_SCALE
 ): Promise<string> {
   const { getDocument } = await loadPdfJs();
-  const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true });
+  const loadingTask = getDocument({
+    data: pdfBytes,
+    ...pdfDocumentInitParams(),
+  });
   const pdf = await loadingTask.promise;
   const pageIdx = Math.floor(pageNumber);
   if (pageIdx < 1 || pageIdx > pdf.numPages) {
@@ -201,7 +354,8 @@ export async function renderPdfPageToBase64(
  */
 export async function extractChordsFromPdfPage(base64Image: string): Promise<ParsedChart | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || typeof apiKey !== 'string') {
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+    setPdfPipelineDiag({ phase: 'missing_api_key' });
     return null;
   }
 
@@ -242,6 +396,7 @@ export async function extractChordsFromPdfPage(base64Image: string): Promise<Par
     });
 
     if (!res.ok) {
+      setPdfPipelineDiag({ phase: 'anthropic_http', httpStatus: res.status });
       return null;
     }
 
@@ -258,16 +413,24 @@ export async function extractChordsFromPdfPage(base64Image: string): Promise<Par
 
     const trimmed = text.trim();
     if (trimmed === 'null' || trimmed.toLowerCase() === 'null') {
+      setPdfPipelineDiag({ phase: 'anthropic_parse' });
       return null;
     }
 
     const parsed = parseJsonFromAssistantText(trimmed) as VisionChordChartJson | null;
     if (parsed == null || typeof parsed !== 'object') {
+      setPdfPipelineDiag({ phase: 'anthropic_parse' });
       return null;
     }
 
-    return visionJsonToParsedChart(parsed);
+    const converted = visionJsonToParsedChart(parsed);
+    if (!converted) {
+      setPdfPipelineDiag({ phase: 'anthropic_parse' });
+      return null;
+    }
+    return converted;
   } catch {
+    setPdfPipelineDiag({ phase: 'anthropic_parse' });
     return null;
   }
 }
@@ -324,18 +487,24 @@ export async function generateFromPdf(
   pdfBytes: Uint8Array,
   options?: GenerateFromPdfOptions
 ): Promise<{ output: IRealVaultOutput; chart: ParsedChart } | null> {
+  resetPdfPipelineDiag();
   const pageNumber = options?.pageNumber ?? 1;
   const scale = options?.scale ?? DEFAULT_RENDER_SCALE;
 
   let base64: string;
   try {
     base64 = await renderPdfPageToBase64(pdfBytes, pageNumber, scale);
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    setPdfPipelineDiag({ phase: 'pdf_render', detail: msg.slice(0, 500) });
     return null;
   }
 
   const chart = await extractChordsFromPdfPage(base64);
   if (!chart || !chart.measures?.length) {
+    if (!pdfPipelineDiag) {
+      setPdfPipelineDiag({ phase: 'empty_measures' });
+    }
     return null;
   }
 

@@ -7,14 +7,15 @@ import * as path from 'path';
 const desktopRoot = path.resolve(__dirname, '..');
 const electronDir = path.join(desktopRoot, 'electron');
 
-function readAllElectronSources(): string {
+function readAllElectronSources(opts?: { excludeNames?: Set<string> }): string {
+  const exclude = opts?.excludeNames ?? new Set<string>();
   const files: string[] = [];
   const walk = (dir: string) => {
     for (const name of fs.readdirSync(dir)) {
       const p = path.join(dir, name);
       const st = fs.statSync(p);
       if (st.isDirectory()) walk(p);
-      else if (name.endsWith('.ts')) files.push(p);
+      else if (name.endsWith('.ts') && !exclude.has(name)) files.push(p);
     }
   };
   walk(electronDir);
@@ -23,6 +24,10 @@ function readAllElectronSources(): string {
 
 describe('Desktop quarantine (Composer OS only)', () => {
   const combined = readAllElectronSources();
+  /** `ipcEntry.ts` legitimately spawns Python CLIs — substring scans exclude it. */
+  const combinedNoCliHandlers = readAllElectronSources({
+    excludeNames: new Set(['ipcEntry.ts']),
+  });
   const mainPath = path.join(electronDir, 'main.ts');
   const mainSrc = fs.readFileSync(mainPath, 'utf-8');
 
@@ -38,8 +43,8 @@ describe('Desktop quarantine (Composer OS only)', () => {
   });
 
   it('no python invocation in electron sources', () => {
-    expect(combined.toLowerCase()).not.toContain('python');
-    expect(combined.toLowerCase()).not.toContain('.py');
+    expect(combinedNoCliHandlers.toLowerCase()).not.toContain('python');
+    expect(combinedNoCliHandlers.toLowerCase()).not.toContain('.py');
     expect(combined).not.toMatch(/spawn\s*\(\s*['"]python/i);
   });
 

@@ -17,7 +17,10 @@ import {
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
-import { hydrateAnthropicKeyFromWindowsStores } from './winAnthropicEnv';
+import {
+  hydrateAnthropicKeyFromAllSources,
+  saveAnthropicApiKeyToSecretStore,
+} from './anthropicKeyHydration';
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
@@ -48,9 +51,19 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));
   ipcMain.handle('composer-os-api:run-system-check', () => apiSystemCheck());
   ipcMain.handle('composer-os-api:pdf-generate-from-pdf', (_e, body: unknown) => {
-    hydrateAnthropicKeyFromWindowsStores();
+    hydrateAnthropicKeyFromAllSources();
     return apiPdfGenerateFromPdf(body as PdfGenerateFromPdfRequest);
   });
+  ipcMain.handle(
+    'composer-os-api:save-anthropic-api-key',
+    (_e, body: unknown) => {
+      const k =
+        body && typeof body === 'object' && typeof (body as { apiKey?: unknown }).apiKey === 'string'
+          ? (body as { apiKey: string }).apiKey
+          : '';
+      return saveAnthropicApiKeyToSecretStore(k);
+    }
+  );
   ipcMain.handle('composer-os-api:open-output-folder', (_e, body: unknown) => {
     const b = body && typeof body === 'object' ? (body as { path?: string }) : {};
     console.log('[OPEN-FOLDER] ipc composer-os-api:open-output-folder', { path: b.path });

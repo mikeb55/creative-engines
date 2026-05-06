@@ -36,6 +36,8 @@ declare global {
       }>;
       invokeApi: (channel: string, payload?: unknown) => Promise<unknown>;
       getRuntimeBuildInfo?: () => Promise<Record<string, unknown>>;
+      /** Desktop: persist Anthropic key with OS DPAPI (`safeStorage`); enables PDF vision without User env vars. */
+      saveAnthropicApiKey?: (apiKey: string) => Promise<{ ok: boolean; error?: string }>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };

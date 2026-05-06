@@ -34,7 +34,7 @@ import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
-import { generateFromPdf } from '../core/pdf';
+import { formatPdfExtractFailureHint, generateFromPdf } from '../core/pdf';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -561,8 +561,7 @@ export async function apiPdfGenerateFromPdf(
       return {
         success: true,
         output: null,
-        error:
-          'PDF extraction failed. Set ANTHROPIC_API_KEY on the Composer OS API, use a valid page number, or try a clearer lead sheet.',
+        error: formatPdfExtractFailureHint(),
       };
     }
     return { success: true, output: out.output, parsedChart: out.chart };
