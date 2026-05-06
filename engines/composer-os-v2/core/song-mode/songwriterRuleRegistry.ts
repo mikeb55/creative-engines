@@ -55,6 +55,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('beatles.title_peak', 'Title on melodic high point', 'songwriter', 'hook', 8, 'chorus'),
     R('beatles.surprise_chord', 'At least one harmonic surprise', 'songwriter', 'harmony', 6, 'form'),
     R('beatles.singable_range', 'Default ~octave vocal window', 'songwriter', 'melody', 7, 'global'),
+    R('beatles.bt_aaba_form', 'AABA / sectional arc receipts (`bt:d1_aaba_form`)', 'songwriter', 'form', 8, 'form'),
+    R('beatles.bt_flat_side_modal', 'Flat-side modal colour receipts (`bt:d2_flat_side_modal`)', 'songwriter', 'harmony', 8, 'verse'),
+    R('beatles.bt_co_tonic_switch', 'Co-tonic centre pivots (`bt:d3_co_tonic_switch`)', 'songwriter', 'harmony', 8, 'bridge'),
+    R('beatles.bt_chromatic_mediant', 'Chromatic mediant relation receipts (`bt:d4_chromatic_mediant`)', 'songwriter', 'harmony', 8, 'chorus'),
+    R('beatles.bt_suite_form', 'Side-two suite-style linkage receipts (`bt:d5_suite_form`)', 'songwriter', 'form', 7, 'global'),
   ],
   joni_mitchell: [
     R('joni.modal_bias', 'Modal bias — Dorian, Aeolian, Mixolydian fields', 'songwriter', 'harmony', 8, 'global'),

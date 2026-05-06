@@ -6,6 +6,7 @@
 import type {
   ArvoPartContextMode,
   BartokContextMode,
+  BeatlesContextMode,
   CompositionContext,
   FrankZappaContextMode,
   GenerationMetadata,
@@ -120,6 +121,7 @@ import {
   applyDonaldFagenSongwriterSurface,
   applyMilesDavisStyleSurface,
   applyPrinceStyleSurface,
+  applyBeatlesStyleSurface,
   applyBartokStyleSurface,
   applyGershwinStyleSurface,
   applyArvoPartStyleSurface,
@@ -1044,6 +1046,8 @@ export interface RunGoldenPathOptions {
   arvoPartContext?: ArvoPartContextMode;
   /** Song Mode / Prince: era posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
   princeContext?: PrinceContextMode;
+  /** Song Mode / The Beatles: era posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
+  beatlesContext?: BeatlesContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
   era?: string;
   /** Optional style-pairing envelope (UI/app parity). */
@@ -1638,6 +1642,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'prince'
         ? { princeContext: options.princeContext ?? 'purple_rain' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'beatles'
+        ? { beatlesContext: options.beatlesContext ?? 'merseybeat_1962' }
+        : {}),
     };
   }
   const importExpressionPresetEnabled =
@@ -1737,6 +1744,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyPrinceStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyBeatlesStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyBartokStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2133,6 +2143,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
+  const btEx = mdEx?.beatlesEffectiveHarmonyBars;
   const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
   const apEx = mdEx?.arvoPartEffectiveHarmonyBars;
   const satieEx = mdEx?.satieEffectiveHarmonyBars;
@@ -2196,6 +2207,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                   Array.isArray(bkEx) &&
                                                   bkEx.length === tbEx
                                                 ? bkEx
+                                              : mdEx?.songwriterStyleId === 'beatles' &&
+                                                  Array.isArray(btEx) &&
+                                                  btEx.length === tbEx
+                                                ? btEx
                                               : mdEx?.songwriterStyleId === 'gershwin' &&
                                                   Array.isArray(ggEx) &&
                                                   ggEx.length === tbEx

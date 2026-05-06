@@ -8,6 +8,7 @@ import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
+import { resolveBeatlesChordPoolId } from './beatlesSlice';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
@@ -1770,6 +1771,100 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em7', 'A7(#9)', 'Dm7', 'G7sus4'],
     ],
   },
+  /** Beatles tier 0 — I / ii / ii7 / IV / V / V7 / vi + blues I7·IV7, II7, touches iv·bVII·bVI (`beatlesSlice`). */
+  beatles_merseybeat_1962: {
+    verse: [
+      ['C', 'Dm', 'G7', 'C'],
+      ['C', 'Dm7', 'G7', 'C'],
+      ['Am', 'Dm', 'G7', 'C'],
+      ['F', 'F7', 'C', 'G7'],
+      ['C', 'C7', 'F', 'G7'],
+      ['C', 'Am', 'F', 'G7'],
+      ['D7', 'G7', 'C', 'Am'],
+      ['F', 'Fm', 'C', 'G7'],
+      ['Bb', 'F', 'C', 'G7'],
+      ['Ab', 'Bb', 'F', 'C'],
+      ['D7', 'G7', 'C', 'G7'],
+    ],
+    chorus: [
+      ['C', 'G7', 'Am', 'F'],
+      ['F', 'G7', 'C', 'C7'],
+      ['C', 'A7', 'Dm', 'G7'],
+      ['C', 'F', 'C', 'G7'],
+    ],
+    bridge: [
+      ['Fm', 'Bb7', 'C', 'G7'],
+      ['D7', 'G7', 'C', 'E7'],
+      ['Bb', 'F', 'G7', 'C'],
+    ],
+    pre_chorus: [
+      ['Am', 'Dm', 'G7', 'C'],
+      ['Dm', 'G7', 'C', 'Am'],
+    ],
+  },
+  /** Beatles tier 1 — tier 0 + bIII·bVI·bVII primaries, iv, I–bVII–IV loops, II / bII colour. */
+  beatles_rubber_soul_1965: {
+    verse: [
+      ['C', 'Bb', 'F', 'C'],
+      ['C', 'Bb', 'F', 'Bb'],
+      ['Eb', 'Bb', 'F', 'C'],
+      ['Ab', 'Eb', 'Bb', 'F'],
+      ['Am', 'F', 'Dm', 'G7'],
+      ['Fm', 'Bb', 'Eb', 'Ab'],
+      ['Bb', 'F', 'C', 'G7'],
+      ['C', 'G', 'Bb', 'F'],
+      ['Dm', 'G7', 'C', 'Eb'],
+      ['D7', 'G7', 'C', 'Bb'],
+    ],
+    chorus: [
+      ['C', 'Bb', 'F', 'G7'],
+      ['Am', 'Dm', 'G', 'C'],
+      ['F', 'Bb', 'C', 'Bb'],
+      ['Eb', 'Bb', 'Ab', 'Eb'],
+      ['C', 'Bb', 'F', 'C'],
+    ],
+    bridge: [
+      ['Gm', 'C7', 'Fm', 'Bb7'],
+      ['Eb', 'Bb', 'F', 'Dm'],
+      ['Db7', 'G7', 'C', 'Am'],
+      ['Bb', 'Eb', 'Ab', 'F'],
+    ],
+    pre_chorus: [
+      ['Dm', 'G7', 'C', 'Am'],
+      ['F', 'Bb', 'Eb', 'Bb'],
+    ],
+  },
+  /** Beatles tier 2 — flat-side network, chromatic mediants, double-plagal, vi / VI / bIII poles. */
+  beatles_abbey_road_1968: {
+    verse: [
+      ['C', 'Ab', 'Eb', 'Bb'],
+      ['C', 'Ab', 'F', 'C'],
+      ['Am', 'Eb', 'Ab', 'C'],
+      ['Am', 'F', 'Dm', 'Bb'],
+      ['A', 'Ab', 'Eb', 'C'],
+      ['Eb', 'Bb', 'F', 'C'],
+      ['C', 'Bb', 'F', 'C'],
+      ['Am', 'Eb', 'F', 'C'],
+      ['Cm', 'Ab', 'Eb', 'Bb'],
+    ],
+    chorus: [
+      ['F', 'Bb', 'C', 'Am'],
+      ['Dm', 'Bb', 'F', 'C'],
+      ['Ab', 'Eb', 'Bb', 'F'],
+      ['C', 'Ab', 'Eb', 'Ab'],
+      ['Eb', 'C', 'Ab', 'F'],
+    ],
+    bridge: [
+      ['Fm', 'Bb7', 'Eb', 'Ab'],
+      ['Dm', 'G7', 'C', 'F'],
+      ['Bb', 'Eb', 'Ab', 'C'],
+      ['Gm', 'Eb', 'Bb', 'F'],
+    ],
+    pre_chorus: [
+      ['Am', 'Dm', 'Bb', 'G7'],
+      ['Cm', 'Ab', 'Eb', 'Bb'],
+    ],
+  },
   prince_purple_rain: {
     verse: [
       ['Am9', 'Dm9', 'G13', 'Cmaj9'],
@@ -1929,6 +2024,9 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'prince_purple_rain' : tier === 1 ? 'prince_sign_o_times' : 'prince_kiss';
+  }
+  if (songwriterId === 'beatles') {
+    resolvedPoolId = resolveBeatlesChordPoolId(seed);
   }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {

@@ -365,6 +365,12 @@ export function apiGenerate(
         body.princeContext === 'kiss'
           ? body.princeContext
           : undefined,
+      beatlesContext:
+        body.beatlesContext === 'merseybeat_1962' ||
+        body.beatlesContext === 'rubber_soul_1965' ||
+        body.beatlesContext === 'abbey_road_1968'
+          ? body.beatlesContext
+          : undefined,
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

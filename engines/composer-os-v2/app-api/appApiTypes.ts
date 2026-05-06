@@ -6,6 +6,7 @@ import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type {
   ArvoPartContextMode,
   BartokContextMode,
+  BeatlesContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
@@ -24,6 +25,7 @@ export type { FrankZappaContextMode };
 export type { GershwinContextMode };
 export type { MilesDavisContextMode };
 export type { PrinceContextMode };
+export type { BeatlesContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -255,6 +257,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`purple_rain`** when primary songwriter is **`prince`**.
    */
   princeContext?: PrinceContextMode;
+  /**
+   * Song Mode / The Beatles: Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`).
+   * Omitted → engine default **`merseybeat_1962`** when primary songwriter is **`beatles`**.
+   */
+  beatlesContext?: BeatlesContextMode;
 }
 
 export interface ValidationSummary {

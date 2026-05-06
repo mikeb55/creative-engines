@@ -60,6 +60,9 @@ export type SatieContextMode = 'gymnopedie' | 'gnossienne' | 'poire';
 /** Prince Song Mode slice — Minneapolis funk/soul extended harmony posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
 export type PrinceContextMode = 'purple_rain' | 'sign_o_times' | 'kiss';
 
+/** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
+export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -965,6 +968,21 @@ export interface GenerationMetadata {
    * Prince Song Mode slice mode (`princeSlice.ts`). Default **`purple_rain`** when omitted.
    */
   princeContext?: PrinceContextMode;
+  /** The Beatles — diatonic + flat-side / co-tonic pop harmony (`beatlesSlice.ts`). */
+  beatlesDiagnostics?: {
+    songwriterId: 'beatles';
+    barsConsidered: number;
+    functionalColourTouches: number;
+    borrowedColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  beatlesSliceReceipt?: string;
+  beatlesEffectiveHarmonyBars?: string[];
+  beatlesDeviceReceipts?: string[];
+  /**
+   * Beatles Song Mode slice mode (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted.
+   */
+  beatlesContext?: BeatlesContextMode;
   /** Cole Porter — Great American Songbook chromatic / cadential jazz harmony (`colePorterSlice.ts`). */
   colePorterDiagnostics?: {
     songwriterId: 'cole_porter';

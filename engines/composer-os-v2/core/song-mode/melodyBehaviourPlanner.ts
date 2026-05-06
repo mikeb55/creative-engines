@@ -342,7 +342,7 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     contourProfile: 'arch',
     phraseAsymmetryTendency: 0.55,
     cadenceFrequency: 'medium',
-    devices: ['3_note_cell', 'blue_note', 'middle_eight_shift', 'parallel_harmony', 'chromatic_hook'],
+    devices: ['aaba_form', 'flat_side_modal', 'co_tonic_switch', 'chromatic_mediant', 'suite_form'],
   },
   beethoven: {
     intervalTendency: 'mixed',

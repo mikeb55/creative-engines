@@ -6,6 +6,7 @@
 import type {
   ArvoPartContextMode,
   BartokContextMode,
+  BeatlesContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
@@ -323,6 +324,27 @@ export function applyPrinceStyleSurface(metadata: GenerationMetadata, primarySon
 
   appendStyleSurfaceNotes(metadata, [
     `Prince surface (${ctx}): sync +0.28, density +0.14, space +0.18, cadence softness +0.16 — generative metadata only.`,
+  ]);
+}
+
+/**
+ * Primary **`beatles`** — pocket clarity + space; softer cadence closes (`beatlesSlice.ts` receipts separate).
+ */
+export function applyBeatlesStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'beatles') return;
+
+  const ctx: BeatlesContextMode = metadata.beatlesContext ?? 'merseybeat_1962';
+  metadata.beatlesContext = ctx;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.08);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.06);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.12);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.22);
+
+  appendStyleSurfaceNotes(metadata, [
+    `Beatles surface (${ctx}): density +0.08, sync −0.06, space +0.12, cadence softness +0.22 — generative metadata only.`,
   ]);
 }
 

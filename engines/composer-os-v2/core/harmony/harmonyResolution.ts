@@ -319,6 +319,20 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
 
   /**
+   * The Beatles: `precomputeBeatlesEffectiveHarmonyBars` freezes scaffold harmony + device receipts **`bt:*`** (`beatlesSlice.ts`).
+   */
+  const beatlesEff = meta?.beatlesEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'beatles' &&
+    Array.isArray(beatlesEff) &&
+    beatlesEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return beatlesEff[barIndex - 1]!;
+  }
+
+  /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;
