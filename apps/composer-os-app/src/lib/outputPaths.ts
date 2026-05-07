@@ -16,9 +16,16 @@ export const OUTPUT_DIRS = {
   blended: `${COMPOSER_OUTPUT_ROOT}/Blended Rhythms`,
   brazilian: `${COMPOSER_OUTPUT_ROOT}/Brazilian Rhythms`,
   secondLine: `${COMPOSER_OUTPUT_ROOT}/Second Line`,
+  cuban: `${COMPOSER_OUTPUT_ROOT}/Cuban Rhythms`,
 } as const;
 
-export type RhythmOutputEngine = 'fela-kuti' | 'greek' | 'blended' | 'brazilian' | 'second-line';
+export type RhythmOutputEngine =
+  | 'fela-kuti'
+  | 'greek'
+  | 'blended'
+  | 'brazilian'
+  | 'second-line'
+  | 'cuban';
 
 const ENGINE_TO_DIR_KEY: Record<RhythmOutputEngine, keyof typeof OUTPUT_DIRS> = {
   'fela-kuti': 'felaKuti',
@@ -26,6 +33,7 @@ const ENGINE_TO_DIR_KEY: Record<RhythmOutputEngine, keyof typeof OUTPUT_DIRS> = 
   blended: 'blended',
   brazilian: 'brazilian',
   'second-line': 'secondLine',
+  cuban: 'cuban',
 };
 
 export function getOutputDir(engine: RhythmOutputEngine): string {

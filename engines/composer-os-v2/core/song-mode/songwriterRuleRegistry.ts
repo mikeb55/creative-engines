@@ -104,6 +104,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('br.clave_sensitivity', 'Clave-aware syncopation windows', 'songwriter', 'rhythm', 8, 'verse'),
     R('br.guitar_comp_forward', 'Guitar-led comp under perc narrative', 'songwriter', 'harmony', 7, 'global'),
   ],
+  cuban_afro_cuban: [
+    R('cu.clave_governs', 'Clave direction governs ensemble accents / montuno alignment', 'songwriter', 'rhythm', 9, 'global'),
+    R('cu.tumbao_bell_layers', 'Tumbao vs cascara / bell orchestration windows', 'songwriter', 'rhythm', 8, 'verse'),
+    R('cu.montuno_pivot', 'Montuno pivot harmony vs dance phrase lift', 'songwriter', 'harmony', 8, 'chorus'),
+  ],
   paul_simon: [
     R('simon.primary_axis', 'Tag melody/rhythm/harmony primary per song', 'songwriter', 'form', 8, 'global'),
     R('simon.section_contrast', 'Contrast at least one dimension V/C/B', 'songwriter', 'form', 8, 'form'),

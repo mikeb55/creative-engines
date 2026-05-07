@@ -107,6 +107,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   greek_rebetiko: 'guitar',
   brazilian: 'guitar',
   new_orleans_second_line: 'keys',
+  cuban_afro_cuban: 'keys',
   frank_zappa: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',

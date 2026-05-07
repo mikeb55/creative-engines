@@ -47,7 +47,7 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
       fullPath?: string;
       error?: string;
     }>,
-  openExportFolder: (engine: 'fela-kuti' | 'greek' | 'blended' | 'brazilian' | 'second-line') =>
+  openExportFolder: (engine: 'fela-kuti' | 'greek' | 'blended' | 'brazilian' | 'second-line' | 'cuban') =>
     ipcRenderer.invoke('composer-os:open-export-folder', { engine }) as Promise<void>,
   onStartupState: (cb: (s: StartupState) => void): void => {
     ipcRenderer.on('composer-os:startup-state', (_e, s: StartupState) => cb(s));

@@ -78,6 +78,7 @@ export type SongwriterRuleId =
   | 'greek_rebetiko'
   | 'brazilian'
   | 'new_orleans_second_line'
+  | 'cuban_afro_cuban'
   | 'frank_zappa';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';

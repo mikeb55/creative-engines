@@ -66,7 +66,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       eng !== 'greek' &&
       eng !== 'blended' &&
       eng !== 'brazilian' &&
-      eng !== 'second-line'
+      eng !== 'second-line' &&
+      eng !== 'cuban'
     ) {
       return;
     }

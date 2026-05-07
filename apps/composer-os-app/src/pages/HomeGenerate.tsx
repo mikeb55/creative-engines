@@ -23,6 +23,7 @@ import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChord
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import { BrazilianRhythmControls } from '../components/BrazilianRhythmControls';
 import { SecondLineRhythmControls } from '../components/SecondLineRhythmControls';
+import { CubanRhythmControls } from '../components/CubanRhythmControls';
 import {
   AFROBEAT_STARTER_PRESETS,
   GREEK_REBETIKO_STARTER_PRESETS,
@@ -87,6 +88,7 @@ import { ChorusArcStrip } from '../components/ChorusArcStrip';
 import { WriterRecipeCard } from '../components/WriterRecipeCard';
 import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
 import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
+import { DEFAULT_CUBAN_RHYTHM_PRESET_ID } from '../slices/cubanRhythmSlice';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -458,6 +460,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
   { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
+  { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
@@ -1405,6 +1408,7 @@ export function HomeGenerate({
   const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
   const [brazilianRhythmPresetId, setBrazilianRhythmPresetId] = useState(DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID);
   const [secondLineRhythmPresetId, setSecondLineRhythmPresetId] = useState(DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID);
+  const [cubanRhythmPresetId, setCubanRhythmPresetId] = useState(DEFAULT_CUBAN_RHYTHM_PRESET_ID);
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -4887,6 +4891,13 @@ export function HomeGenerate({
             <SecondLineRhythmControls
               activePresetId={secondLineRhythmPresetId}
               onPresetChange={setSecondLineRhythmPresetId}
+              disabled={loading}
+            />
+          )}
+          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'cuban_afro_cuban' && (
+            <CubanRhythmControls
+              activePresetId={cubanRhythmPresetId}
+              onPresetChange={setCubanRhythmPresetId}
               disabled={loading}
             />
           )}
