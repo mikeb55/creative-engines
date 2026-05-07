@@ -43,6 +43,15 @@ export function GreekRhythmControls(props: {
     };
   }, []);
 
+  const showOpenFolder = useMemo(
+    () => typeof window !== 'undefined' && !!window.composerOsDesktop?.openExportFolder,
+    []
+  );
+
+  const handleOpenExportFolder = useCallback(() => {
+    void window.composerOsDesktop?.openExportFolder?.('greek');
+  }, []);
+
   const onDownload = async () => {
     setExportError(null);
     try {
@@ -117,6 +126,27 @@ export function GreekRhythmControls(props: {
       >
         Download MusicXML
       </button>
+      {showOpenFolder ? (
+        <button
+          type="button"
+          disabled={props.disabled}
+          onClick={handleOpenExportFolder}
+          style={{
+            display: 'block',
+            width: '100%',
+            marginTop: '0.35rem',
+            padding: '0.35rem 0.55rem',
+            fontSize: '0.78rem',
+            borderRadius: 4,
+            border: '1px solid var(--border-subtle, rgba(128,128,128,0.45))',
+            background: 'transparent',
+            color: 'var(--text)',
+            cursor: props.disabled ? 'default' : 'pointer',
+          }}
+        >
+          Open Folder
+        </button>
+      ) : null}
       {saveNotice && (
         <p style={{ margin: '0.45rem 0 0', fontSize: '0.72rem', color: 'var(--success, #86efac)' }} role="status">
           {saveNotice}

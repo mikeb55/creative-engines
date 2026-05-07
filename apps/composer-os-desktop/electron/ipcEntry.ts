@@ -1,7 +1,7 @@
 /**
  * Bundled separately (esbuild) — registers Composer OS API IPC; no HTTP server.
  */
-import { app, type IpcMain } from 'electron';
+import { app, shell, type IpcMain } from 'electron';
 import path from 'path';
 import type { GenerateRequest } from '../../../engines/composer-os-v2/app-api/appApiTypes';
 import {
@@ -21,6 +21,12 @@ import {
   hydrateAnthropicKeyFromAllSources,
   saveAnthropicApiKeyToSecretStore,
 } from './anthropicKeyHydration';
+
+const OPEN_EXPORT_SEGMENTS: Record<'fela-kuti' | 'greek' | 'blended', string[]> = {
+  'fela-kuti': ['Composer OS Exports', 'Fela Kuti Rhythms'],
+  greek: ['Composer OS Exports', 'Greek Rhythms'],
+  blended: ['Composer OS Exports', 'Blended Rhythms'],
+};
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle(
@@ -54,6 +60,25 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       }
     }
   );
+
+  ipcMain.handle('composer-os:open-export-folder', async (_e, body: unknown) => {
+    const eng =
+      body && typeof body === 'object' && typeof (body as { engine?: unknown }).engine === 'string'
+        ? (body as { engine: string }).engine
+        : '';
+    if (eng !== 'fela-kuti' && eng !== 'greek' && eng !== 'blended') {
+      return;
+    }
+    const segments = OPEN_EXPORT_SEGMENTS[eng];
+    const target = path.join(app.getPath('documents'), ...segments);
+    try {
+      const fs = await import('fs/promises');
+      await fs.mkdir(target, { recursive: true });
+    } catch {
+      /* still try to open */
+    }
+    await shell.openPath(target);
+  });
 
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());

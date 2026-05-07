@@ -43,6 +43,7 @@ declare global {
         relativePath: string;
         contents: string;
       }) => Promise<{ ok: boolean; fullPath?: string; error?: string }>;
+      openExportFolder?: (engine: 'fela-kuti' | 'greek' | 'blended') => Promise<void>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };

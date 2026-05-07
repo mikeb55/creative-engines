@@ -190,6 +190,12 @@
   cursor: default;
 }
 
+.exportBar__btn--outline {
+  margin-top: 0.35rem;
+  border-color: var(--border-subtle, rgba(128, 128, 128, 0.45));
+  background: transparent;
+}
+
 .exportBar__notice {
   margin: 0.4rem 0 0;
   font-size: 0.72rem;

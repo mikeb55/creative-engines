@@ -5,6 +5,11 @@
  */
 export const COMPOSER_OUTPUT_ROOT = 'Composer OS Exports';
 
+/** Documents-relative folder name for the root export directory only. */
+export function getOutputRootPath(): string {
+  return COMPOSER_OUTPUT_ROOT;
+}
+
 export const OUTPUT_DIRS = {
   felaKuti: `${COMPOSER_OUTPUT_ROOT}/Fela Kuti Rhythms`,
   greek: `${COMPOSER_OUTPUT_ROOT}/Greek Rhythms`,

@@ -13,24 +13,31 @@ import type { ConflictStrategy } from '../rhythm/rhythmLayerMerge';
 /** Matches `RhythmOutputEngine` in app `outputPaths.ts` for save routing. */
 export const BLEND_RHYTHM_EXPORT_ENGINE = 'blended' as const;
 
-const DRUM_KIT_MIDI_ANCHOR_GM = 38;
+/** GM notes referenced across rhythm-blend exports (Fela + Greek presets including bell). */
+const BLEND_GM_NOTES_FULL = [36, 38, 42, 44, 50, 56] as const;
+const BLEND_GM_NOTES_FELA = [36, 38, 42, 44, 50] as const;
 
-function blendPercussionScorePartXml(partId: string, instId: string, partName: string): string {
+function blendPercussionScorePartFromGmSet(partId: string, partName: string, gmNotes: readonly number[]): string {
   const name = escapeXml(partName);
-  return `    <score-part id="${partId}">
-      <part-name>${name}</part-name>
-      <part-abbreviation>Perc.</part-abbreviation>
-      <score-instrument id="${instId}">
-        <instrument-name>GM Drum Kit</instrument-name>
+  let blocks = '';
+  for (const gm of gmNotes) {
+    const id = `${partId}-I${gm}`;
+    blocks += `
+      <score-instrument id="${id}">
+        <instrument-name>GM ${gm}</instrument-name>
         <instrument-sound>drum.kit</instrument-sound>
       </score-instrument>
-      <midi-instrument id="${instId}">
+      <midi-instrument id="${id}">
         <midi-channel>10</midi-channel>
         <midi-program>1</midi-program>
-        <midi-unpitched>${DRUM_KIT_MIDI_ANCHOR_GM}</midi-unpitched>
+        <midi-unpitched>${gm}</midi-unpitched>
         <volume>78.7402</volume>
         <pan>0</pan>
-      </midi-instrument>
+      </midi-instrument>`;
+  }
+  return `    <score-part id="${partId}">
+      <part-name>${name}</part-name>
+      <part-abbreviation>Perc.</part-abbreviation>${blocks}
     </score-part>`;
 }
 
@@ -71,7 +78,7 @@ function extractPartInner(xml: string, partId: string): string {
 
 /** Normalize Fela instrument refs to P1 for single-part song-form concatenation. */
 function normalizeFelaInstrumentRefs(xml: string): string {
-  return xml.replace(/fela_drums-I1/g, 'P1-I1');
+  return xml.replace(/fela_drums-I(\d+)/g, 'P1-I$1');
 }
 
 function wrapSinglePartScore(title: string, measuresBlock: string): string {
@@ -80,7 +87,7 @@ function wrapSinglePartScore(title: string, measuresBlock: string): string {
 <score-partwise version="4.0">
   <work><work-title>${t}</work-title></work>
   <part-list>
-${blendPercussionScorePartXml('P1', 'P1-I1', 'Rhythm blend')}
+${blendPercussionScorePartFromGmSet('P1', 'Rhythm blend', BLEND_GM_NOTES_FULL)}
   </part-list>
   <part id="P1">
 ${measuresBlock}
@@ -169,7 +176,9 @@ export function exportBlendedScoreToMusicXml(plan: BlendExporterBlendedPlan): st
   const greekXml = exportGreekRhythmToMusicXml(greekPreset, 1);
 
   const afroInner = extractPartInner(afroXml, 'fela_drums').replace(/fela_drums/g, 'P1');
-  const greekInner = extractPartInner(greekXml, 'P1').replace(/id="P1"/g, 'id="P2"').replace(/P1-I1/g, 'P2-I1');
+  const greekInner = extractPartInner(greekXml, 'P1')
+    .replace(/id="P1"/g, 'id="P2"')
+    .replace(/P1-I(\d+)/g, 'P2-I$1');
 
   const tag = escapeXml(`${plan.conflictStrategy}`);
   const title = escapeXml(`Layer blend (${plan.conflictStrategy})`);
@@ -178,8 +187,8 @@ export function exportBlendedScoreToMusicXml(plan: BlendExporterBlendedPlan): st
 <score-partwise version="4.0">
   <work><work-title>${title}</work-title></work>
   <part-list>
-${blendPercussionScorePartXml('P1', 'P1-I1', 'Afrobeat layer')}
-${blendPercussionScorePartXml('P2', 'P2-I1', 'Rebetiko layer')}
+${blendPercussionScorePartFromGmSet('P1', 'Afrobeat layer', BLEND_GM_NOTES_FELA)}
+${blendPercussionScorePartFromGmSet('P2', 'Rebetiko layer', BLEND_GM_NOTES_FULL)}
   </part-list>
   <part id="P1">
 ${afroInner}

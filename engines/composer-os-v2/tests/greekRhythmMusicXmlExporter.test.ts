@@ -19,10 +19,14 @@ export function runGreekRhythmMusicXmlExporterTests(): { name: string; ok: boole
     ['<midi-channel>10</midi-channel>', xml.includes('<midi-channel>10</midi-channel>')],
     ['<midi-program>1</midi-program>', xml.includes('<midi-program>1</midi-program>')],
     ['<volume>78.7402</volume>', xml.includes('<volume>78.7402</volume>')],
+    ['no chord stacks', !xml.includes('<chord/>')],
+    ['<backup> for multi-voice', xml.includes('<backup>')],
+    ['<voice>1</voice>', xml.includes('<voice>1</voice>')],
+    ['<voice>3</voice>', xml.includes('<voice>3</voice>')],
   ];
 
   for (const [label, ok] of checks) {
-    rows.push({ name: `Greek rhythm XML contains ${label}`, ok });
+    rows.push({ name: `Greek rhythm XML: ${label}`, ok });
   }
   return rows;
 }

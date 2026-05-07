@@ -304,6 +304,37 @@ function drumKitNoteXml(opts: {
   return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}${acc}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
 }
 
+/** Fela kit instrument ids — one score-instrument per GM pitch for Sibelius unpitched playback. */
+const FELA_AFROBEAT_GM_INSTRUMENTS = [36, 38, 42, 44, 50] as const;
+
+function felaInstrumentId(partId: string, gmMidi: number): string {
+  return `${partId}-I${gmMidi}`;
+}
+
+function felaAfrobeatScorePartXml(partId: string): string {
+  const abbr = PART_ABBREV[partId] ?? 'Perc.';
+  let blocks = '';
+  for (const gm of FELA_AFROBEAT_GM_INSTRUMENTS) {
+    const id = felaInstrumentId(partId, gm);
+    blocks += `
+      <score-instrument id="${id}">
+        <instrument-name>GM ${gm}</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${id}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>${gm}</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>`;
+  }
+  return `    <score-part id="${partId}">
+      <part-name>Afrobeat Percussion</part-name>
+      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>${blocks}
+    </score-part>`;
+}
+
 /**
  * GM drum MIDI → MusicXML unpitched **display** step/octave.
  * Use treble-staff–range positions (octaves 4–5) so Sibelius/Finale place notes on the
@@ -334,7 +365,7 @@ function felaAfrobeatDrumGlyph(midi: number): {
   }
 }
 
-/** Fela kit: single voice, 16th-note grid, chord stacks for simultaneous hits (same `drumKitNoteXml` path as Big Band). */
+/** Fela kit: 16th-note grid; simultaneous hits → voices 1–3 + backup (no chord stacks — Sibelius unpitched). */
 function felaAfrobeatDrumsEventsToXml(
   measure: MeasureModel,
   measureIndex: number,
@@ -343,15 +374,13 @@ function felaAfrobeatDrumsEventsToXml(
   measureCapacity: number
 ): string {
   const partId = part.id;
-  const instId = `${part.id}-I1`;
-  const voice = 1;
+  const staffPolyphonyXml = STAFF_1_XML;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
   raw.sort((a, b) => {
     if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
     if (a.kind === 'note' && b.kind === 'note') return a.pitch - b.pitch;
     return 0;
   });
-  const staffPolyphonyXml = STAFF_1_XML;
   let xml = '';
   let cursor = 0;
   let voiceTickSum = 0;
@@ -370,7 +399,7 @@ function felaAfrobeatDrumsEventsToXml(
     if (safeStart > cursor) {
       const restDiv = safeStart - cursor;
       const parts = decompose(restDiv);
-      xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+      xml += emitRestTicks(parts, 1, staffPolyphonyXml);
       for (const p of parts) voiceTickSum += p;
       cursor = safeStart;
     }
@@ -379,7 +408,7 @@ function felaAfrobeatDrumsEventsToXml(
     const parts = decompose(durDiv);
 
     if (e.kind === 'rest') {
-      xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+      xml += emitRestTicks(parts, 1, staffPolyphonyXml);
       for (const p of parts) voiceTickSum += p;
       cursor = endDiv;
       i++;
@@ -398,21 +427,31 @@ function felaAfrobeatDrumsEventsToXml(
       continue;
     }
 
+    const sorted = [...grouped].sort((a, b) => a.pitch - b.pitch);
     for (const t of parts) {
-      for (let pi = 0; pi < grouped.length; pi++) {
-        const note = grouped[pi]!;
-        const g = felaAfrobeatDrumGlyph(note.pitch);
-        xml += drumKitNoteXml({
-          chord: pi > 0,
-          step: g.step,
-          octave: g.octave,
-          ticks480: t,
-          voice,
-          stem: g.stem,
-          notehead: g.notehead,
-          instrumentId: instId,
-          accidentalXml: g.accidentalXml,
-        });
+      for (let vi = 0; vi < 3; vi++) {
+        const voice = vi + 1;
+        if (vi > 0) {
+          xml += `        <backup><duration>${t}</duration></backup>\n`;
+        }
+        if (vi < sorted.length) {
+          const note = sorted[vi]!;
+          const g = felaAfrobeatDrumGlyph(note.pitch);
+          const stem: 'up' | 'down' = voice === 1 ? 'down' : 'up';
+          xml += drumKitNoteXml({
+            chord: false,
+            step: g.step,
+            octave: g.octave,
+            ticks480: t,
+            voice,
+            stem,
+            notehead: g.notehead,
+            instrumentId: felaInstrumentId(partId, note.pitch),
+            accidentalXml: g.accidentalXml,
+          });
+        } else {
+          xml += emitRestTicks([t], voice, STAFF_1_XML);
+        }
       }
       voiceTickSum += t;
     }
@@ -423,7 +462,7 @@ function felaAfrobeatDrumsEventsToXml(
   if (cursor < measureCapacity) {
     const restDiv = measureCapacity - cursor;
     const parts = decompose(restDiv);
-    xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+    xml += emitRestTicks(parts, 1, staffPolyphonyXml);
     for (const p of parts) voiceTickSum += p;
   }
 
@@ -878,23 +917,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
     </score-part>`;
         }
         if (p.instrumentIdentity === 'fela_afrobeat_drums') {
-          const abbr = PART_ABBREV[p.id] ?? 'Perc.';
-          const inst = `${p.id}-I1`;
-          return `    <score-part id="${p.id}">
-      <part-name>Afrobeat Percussion</part-name>
-      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>
-      <score-instrument id="${inst}">
-        <instrument-name>GM Drum Kit</instrument-name>
-        <instrument-sound>drum.kit</instrument-sound>
-      </score-instrument>
-      <midi-instrument id="${inst}">
-        <midi-channel>10</midi-channel>
-        <midi-program>1</midi-program>
-        <midi-unpitched>38</midi-unpitched>
-        <volume>78.7402</volume>
-        <pan>0</pan>
-      </midi-instrument>
-    </score-part>`;
+          return felaAfrobeatScorePartXml(p.id);
         }
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`) + Song Mode keys comp: piano part-list, GM ch. 1 program 1. */
         if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {

@@ -2,7 +2,7 @@
  * Song Mode — rhythm blend sidebar (Afrobeat × Rebetiko): song-form arrange + dual-layer export.
  */
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BLEND_RHYTHM_EXPORT_ENGINE } from '@composer-os/core/blend';
 import { saveRhythmExportFile } from '../lib/saveRhythmExportFile';
@@ -343,12 +343,23 @@ function LayerBlendPanel(props: {
   );
 }
 
-function ExportBar(props: { busy: boolean; onExport: () => void | Promise<void>; saveNotice: string | null }) {
+function ExportBar(props: {
+  busy: boolean;
+  onExport: () => void | Promise<void>;
+  saveNotice: string | null;
+  onOpenFolder?: () => void;
+  showOpenFolder?: boolean;
+}) {
   return (
     <div className="exportBar">
       <button type="button" className="exportBar__btn" disabled={props.busy} onClick={() => void props.onExport()}>
         {props.busy ? 'Exporting…' : 'Export MusicXML'}
       </button>
+      {props.showOpenFolder ? (
+        <button type="button" className="exportBar__btn exportBar__btn--outline" onClick={props.onOpenFolder}>
+          Open Folder
+        </button>
+      ) : null}
       {props.saveNotice ? (
         <p className="exportBar__notice" role="status">
           {props.saveNotice}
@@ -517,6 +528,15 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     flashSaveNotice,
   ]);
 
+  const showOpenFolder = useMemo(
+    () => typeof window !== 'undefined' && !!window.composerOsDesktop?.openExportFolder,
+    []
+  );
+
+  const handleOpenExportFolder = useCallback(() => {
+    void window.composerOsDesktop?.openExportFolder?.('blended');
+  }, []);
+
   return (
     <div className="rhythmBlendControls">
       <div className="rhythmBlendControls__scroll">
@@ -554,7 +574,13 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
           <LayerBlendPanel layer={layerBlend} afroPresets={afrobeatPresets} rebPresets={rebetikoPresets} onChange={setLayerBlend} />
         )}
       </div>
-      <ExportBar busy={exportBusy} onExport={handleExport} saveNotice={saveNotice} />
+      <ExportBar
+        busy={exportBusy}
+        onExport={handleExport}
+        saveNotice={saveNotice}
+        showOpenFolder={showOpenFolder}
+        onOpenFolder={handleOpenExportFolder}
+      />
     </div>
   );
 }
