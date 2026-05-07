@@ -16,3 +16,4 @@ engines/charlie-parker-engine/outputs/*.musicxml
 ~$*.pptx
 ~$*.docx
 
+apps/composer-os-desktop/dist-electron-release/win-unpacked/
