@@ -1,0 +1,14 @@
+{
+  "productId": "composer-os",
+  "productName": "Composer OS",
+  "appShellVersion": "1.0.41",
+  "buildTimestamp": "2026-05-07T09:35:04.951Z",
+  "gitCommit": "d7d418bfbeb7a2de0076f0f138e4afe324b2a877",
+  "supportedPages": [
+    "Generate",
+    "Presets",
+    "Style Stack",
+    "Outputs",
+    "Diagnostics"
+  ]
+}
