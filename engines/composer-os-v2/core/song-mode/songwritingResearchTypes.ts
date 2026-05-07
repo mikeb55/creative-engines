@@ -83,6 +83,7 @@ export type SongwriterRuleId =
   | 'herrmann'
   | 'morricone'
   | 'quincy_jones_film'
+  | 'john_coltrane'
   | 'frank_zappa';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';

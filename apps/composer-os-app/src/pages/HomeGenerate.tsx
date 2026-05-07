@@ -460,6 +460,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
+  { id: 'john_coltrane', label: 'John Coltrane' },
   { id: 'jeff_tweedy', label: 'Jeff Tweedy' },
   { id: 'kate_bush', label: 'Kate Bush' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
@@ -519,6 +520,9 @@ const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
   ...RHYTHM_SONGWRITER_OPTIONS,
 ];
 
+const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = ['john_coltrane'];
+const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
+
 const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'morricone',
   'herrmann',
@@ -533,15 +537,20 @@ function buildHarmonicVoiceGroups(): Array<{
 }> {
   const all = SONGWRITER_OPTIONS.filter((o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id));
   const libraryVoices = all
-    .filter((o) => !HARMONIC_VOICE_FILM_SET.has(o.id))
+    .filter((o) => !HARMONIC_VOICE_FILM_SET.has(o.id) && !HARMONIC_VOICE_JAZZ_MASTERS_SET.has(o.id))
     .map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }))
     .sort((a, b) => a.label.localeCompare(b.label));
+  const jazzMasterVoices = JAZZ_MASTERS_HARMONIC_VOICE_IDS.map((id) => {
+    const o = all.find((x) => x.id === id);
+    return { id, label: o?.label ?? id };
+  });
   const filmVoices = FILM_HARMONIC_VOICE_IDS.map((id) => {
     const o = all.find((x) => x.id === id);
     return { id, label: o?.label ?? id };
   });
   return [
     { label: 'Library', voices: libraryVoices },
+    { label: 'Jazz Masters', voices: jazzMasterVoices },
     { label: 'Film', voices: filmVoices },
   ];
 }

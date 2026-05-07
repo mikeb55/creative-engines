@@ -113,6 +113,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   new_orleans_second_line: 'keys',
   cuban_afro_cuban: 'keys',
   frank_zappa: 'keys',
+  john_coltrane: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',
   stephen_sondheim: 'keys',
@@ -166,6 +167,27 @@ const BACHARACH_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
+  id: 'john_coltrane',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'quartal_stack_tyner',
+    'perfect_fourth_fifth_inner_chains',
+    'cluster_minor_second_late_period',
+    'major_third_cycle_inner_motion',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: ['changes_burst_cells', 'modal_pedal_even_eighths', 'free_texture_rubato_pockets'],
+  smallMovementRules: [
+    'inner_tritone_structural_pairs',
+    'parallel_quartal_planing_non_functional',
+    'outer_voice_stepwise_over_inner_third_shifts',
+  ],
+  receiptLines: [
+    'Harmonic voice John Coltrane — rhythm pairing hints: Fela Afrobeat (fk) one–two chord vamps + layered ostinati for Dorian pedal + pentatonic superimposition; Brazilian bossa (br) continuous eighths + extended harmony for modal/changes hybrids; Cuban Afro 6/8 (cu) pedal + modal vamp over clave (Africa/Brass / Olé lineage). Not an imitation of any artist.',
+  ],
+};
+
 const JONI_ACOUSTIC_COMP: SongwriterCompProfile = {
   id: 'joni_mitchell',
   primaryCompInstrument: 'guitar',
@@ -214,6 +236,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return FAGEN_KEYS_COMP;
     case 'bacharach':
       return BACHARACH_KEYS_COMP;
+    case 'john_coltrane':
+      return JOHN_COLTRANE_KEYS_COMP;
     default:
       return genericKeysCompProfile(id);
   }

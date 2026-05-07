@@ -63,6 +63,23 @@ export const BADALAMENTI_HARMONIC_STYLE_KEYS: readonly string[] = [
   'sixth_added_warmth',
 ];
 
+export const JOHN_COLTRANE_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'coltrane_changes_cycle',
+  'augmented_triad_tonal_centers',
+  'rapid_modulatory_ii_v',
+  'modal_dorian_pedals',
+  'quartal_tyner_voicings',
+  'lydian_maj7_sharp11',
+  'pentatonic_superimposition',
+  'sheets_of_sound_cells',
+  'altered_dominant_tritone_sub',
+  'minor_major7_tension',
+  'symmetric_mode_collections',
+  'free_cluster_pedal_textures',
+  'third_relation_key_shifts',
+  'planing_quartal_strings',
+];
+
 /** Extra harmonic tags for Style Panel voices (empty when none). */
 export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId): string[] {
   switch (voiceId) {
@@ -74,6 +91,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS];
     case 'badalamenti':
       return [...BADALAMENTI_HARMONIC_STYLE_KEYS];
+    case 'john_coltrane':
+      return [...JOHN_COLTRANE_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

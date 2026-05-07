@@ -685,6 +685,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('qjf.turnaround_language', 'Turnaround / extended dominant film vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('qjf.big_band_spread', 'Big-band spread voicings (harmonic voice tags)', 'songwriter', 'harmony', 8, 'chorus'),
   ],
+  john_coltrane: [
+    R(
+      'coltrane.era_changes',
+      'Classic changes period — augmented triad tonal centres, rapid ii–V modulatory cycles, maj7(#11) / altered dominants; cadences defer to next cycle centre',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'coltrane.era_modal',
+      'Modal period — Dorian/Lydian pedals, quartal Tyner voicings, 9/11/13 emphasis, pentatonic superimposition',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'coltrane.era_free',
+      'Late free period — cluster / symmetric collections over pedal, registral texture over functional harmony',
+      'songwriter',
+      'harmony',
+      9,
+      'form'
+    ),
+  ],
   frank_zappa: [
     R(
       'zappa.polytonal_superimposition',

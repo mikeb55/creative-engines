@@ -43,6 +43,7 @@ const JAZZ = new Set<string>([
   'dave_brubeck',
   'duke_ellington',
   'herbie_hancock',
+  'john_coltrane',
   'pat_metheny',
   'thelonious_monk',
   'wayne_shorter',

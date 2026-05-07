@@ -17,15 +17,16 @@ export type HarmonicVoiceId = Exclude<SongwriterRuleId, RhythmEngineId>;
 
 export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu';
 
-/** Film harmonic voices — labels mirror HomeGenerate `SONGWRITER_OPTIONS`. */
+/** Curated harmonic voice labels — mirror HomeGenerate `SONGWRITER_OPTIONS`. */
 export const HARMONIC_VOICE_LABELS: Pick<
   Record<HarmonicVoiceId, string>,
-  'morricone' | 'herrmann' | 'quincy_jones_film' | 'badalamenti'
+  'morricone' | 'herrmann' | 'quincy_jones_film' | 'badalamenti' | 'john_coltrane'
 > = {
   morricone: 'Ennio Morricone',
   herrmann: 'Bernard Herrmann',
   quincy_jones_film: 'Quincy Jones',
   badalamenti: 'Angelo Badalamenti',
+  john_coltrane: 'John Coltrane',
 };
 
 export interface HarmonicSelection {

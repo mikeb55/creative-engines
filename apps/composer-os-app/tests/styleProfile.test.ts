@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BADALAMENTI_HARMONIC_STYLE_KEYS,
   HERRMANN_HARMONIC_STYLE_KEYS,
+  JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
   MORRICONE_HARMONIC_STYLE_KEYS,
   QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
 } from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
@@ -79,6 +80,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('badalamenti')).toEqual([
       'hv:badalamenti',
       ...BADALAMENTI_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(john_coltrane) returns hv + 14 research tags', () => {
+    expect(JOHN_COLTRANE_HARMONIC_STYLE_KEYS).toHaveLength(14);
+    expect(resolveHarmonicContextKeys('john_coltrane')).toEqual([
+      'hv:john_coltrane',
+      ...JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
     ]);
   });
 });
