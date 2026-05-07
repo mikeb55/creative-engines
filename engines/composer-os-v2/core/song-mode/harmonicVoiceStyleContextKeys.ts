@@ -80,6 +80,24 @@ export const JOHN_COLTRANE_HARMONIC_STYLE_KEYS: readonly string[] = [
   'planing_quartal_strings',
 ];
 
+export const GIL_EVANS_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'non_functional_bass_motion',
+  'modal_pedal_suspension',
+  'mid_register_cluster_stacks',
+  'top_voice_minor_second',
+  'wide_bass_to_cluster_gap',
+  'lydian_color_pads',
+  'phrygian_spanish_flavor',
+  'horn_flute_color_blend',
+  'tuba_dark_root_foundation',
+  'orchestration_as_chord_quality',
+  'static_harmony_melodic_drift',
+  'unresolved_suspension_tension',
+  'parallel_modal_planing',
+  'slow_cloud_harmonic_rhythm',
+  'polyrhythmic_bass_against_pads',
+];
+
 /** Extra harmonic tags for Style Panel voices (empty when none). */
 export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId): string[] {
   switch (voiceId) {
@@ -93,6 +111,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...BADALAMENTI_HARMONIC_STYLE_KEYS];
     case 'john_coltrane':
       return [...JOHN_COLTRANE_HARMONIC_STYLE_KEYS];
+    case 'gil_evans':
+      return [...GIL_EVANS_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

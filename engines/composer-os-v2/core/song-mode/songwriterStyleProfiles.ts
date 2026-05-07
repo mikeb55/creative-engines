@@ -867,6 +867,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   gil_evans: {
     id: 'gil_evans',
+    description:
+      'Cool-orchestration harmony — mid clusters, tuba-root darkness, horn/flute pastel blend; string quartet: viola/Vln2 colour extensions, cello pedal/contrary bass, registral gap, m2 bite inner voices, sul tasto/harmonics as colour.',
     lineVsCellEmphasis: 0.75,
     harmonyColourBias: 0.92,
     formRegularity: 0.4,
@@ -874,12 +876,13 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     hookRepetitionBias: 0.45,
     phraseRegularity: 0.5,
     hookReturnVariation: 0.8,
-    harmonicSpeed: 0.3,
-    sectionContrast: 0.6,
-    syncopationBias: 0.25,
-    densityBias: 0.4,
+    harmonicSpeed: 0.22,
+    sectionContrast: 0.55,
+    syncopationBias: 0.22,
+    densityBias: 0.38,
     motifCellSize: 4,
     intervalPreference: 'chromatic',
+    songwriterEraTag: 'jazz',
   },
   thad_jones: {
     id: 'thad_jones',

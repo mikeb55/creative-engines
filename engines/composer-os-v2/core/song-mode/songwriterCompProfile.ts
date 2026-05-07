@@ -167,6 +167,28 @@ const BACHARACH_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const GIL_EVANS_KEYS_COMP: SongwriterCompProfile = {
+  id: 'gil_evans',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'mid_register_cluster_mid_high_gap',
+    'minor_second_extension_top',
+    'non_tertian_stack_order',
+    'quartet_vla_vln2_extension_carrier',
+    'cello_pedal_contrary_line',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: ['slow_cloud_harmonic_rhythm', 'polyrhythm_in_grid_not_harmony'],
+  smallMovementRules: [
+    'parallel_modal_planing_by_step_or_third',
+    'unresolved_suspension_hold',
+    'wide_bass_to_upper_air',
+  ],
+  receiptLines: [
+    'Harmonic voice Gil Evans — rhythm pairing hints: Brazilian bossa/samba (br) slow changes + extended chords; Cuban/Afro-Cuban (cu) polyrhythmic layering vs static pads (Sketches hybrid); Fela Afrobeat (fk) modal vamps + cluster orchestration; Greek Rebetiko (gr) secondary fit only; New Orleans Second Line (sl) avoid as primary (brassy functional clash). Quartet: inner colour tones on viola/Vln2, cello root/pedal, biting m2 inner not top. Not an imitation of any artist.',
+  ],
+};
+
 const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   id: 'john_coltrane',
   primaryCompInstrument: 'keys',
@@ -238,6 +260,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return BACHARACH_KEYS_COMP;
     case 'john_coltrane':
       return JOHN_COLTRANE_KEYS_COMP;
+    case 'gil_evans':
+      return GIL_EVANS_KEYS_COMP;
     default:
       return genericKeysCompProfile(id);
   }

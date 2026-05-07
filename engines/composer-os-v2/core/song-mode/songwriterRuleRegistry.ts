@@ -313,10 +313,30 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('kdot.section_flip', 'Sudden section flips', 'songwriter', 'form', 8, 'bridge'),
   ],
   gil_evans: [
-    R('evans.cool_pastel', 'Cool pastel voicing clouds', 'songwriter', 'harmony', 8, 'verse'),
-    R('evans.miles_space', 'Space + colour over time', 'songwriter', 'form', 8, 'global'),
-    R('evans.modal_pad', 'Modal pad + moving inner lines', 'songwriter', 'harmony', 8, 'verse'),
-    R('evans.orchestral_register', 'Orchestral register washes', 'songwriter', 'melody', 7, 'chorus'),
+    R(
+      'evans.voicing_language',
+      'Birth of the Cool / Miles Ahead voicing — mid-register clusters, wide bass gap, m2/m9 clashes on top, non-tertian stack order, maj7(#11) / mi9 / altered dominant colours',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'evans.modal_bass_independence',
+      'Sketches-era modal bass counterpoint — Dorian/Aeolian/Lydian/Phrygian fields, bass 2nds/3rds off root, parallel modal planing, mixture at scene boundaries',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'evans.cloud_pedal_scenes',
+      'Slow harmonic rhythm — long pedals, unresolved suspensions, cloud texture with melodic drift and percussion-side polyrhythm',
+      'songwriter',
+      'harmony',
+      9,
+      'form'
+    ),
   ],
   thad_jones: [
     R('thad.brass_shout', 'Brass shout chorus hooks', 'songwriter', 'hook', 8, 'chorus'),

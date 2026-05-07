@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BADALAMENTI_HARMONIC_STYLE_KEYS,
+  GIL_EVANS_HARMONIC_STYLE_KEYS,
   HERRMANN_HARMONIC_STYLE_KEYS,
   JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
   MORRICONE_HARMONIC_STYLE_KEYS,
@@ -88,6 +89,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('john_coltrane')).toEqual([
       'hv:john_coltrane',
       ...JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(gil_evans) returns hv + 15 research tags', () => {
+    expect(GIL_EVANS_HARMONIC_STYLE_KEYS).toHaveLength(15);
+    expect(resolveHarmonicContextKeys('gil_evans')).toEqual([
+      'hv:gil_evans',
+      ...GIL_EVANS_HARMONIC_STYLE_KEYS,
     ]);
   });
 });
