@@ -117,4 +117,33 @@ Every **composer slice** (primary `SongwriterRuleId`) and, where relevant, **Son
 
 ---
 
+## GCE 9.0 Build Sequence
+
+Priority order for maximum score gain per implementation session:
+
+1. Motif Authority Layer — ThemeGenome + MotifCell + recall quotas
+2. Voice Rule Compiler — VoiceRuleBundle per composer voice
+3. Harmonic Scene Engine — scene pipeline + voice-leading solver
+4. RhythmDNA — bound to motif and section identity
+5. Form Controller — three-space, AABA, arch templates + tension scheduler
+
+Milestone ladder:
+
+- 8.4 → 8.7: motif seeding, recall quotas, cadence-aware phrase endings,
+  voice-specific rhythm cells
+- 8.7 → 9.0: deep harmonic scene differentiation, inner-voice motion
+  scoring, form-level recapitulation and tension scheduling
+- Above 9.0: orchestration-as-harmony, cross-section thematic memory,
+  adaptive evaluator-driven repair passes
+
+Implementation principle: every generated note must be explainable by
+one of four authorities — motif, harmonic scene, rhythmic DNA, or form
+role. Notes belonging to none are suppressing the 9.0 ceiling.
+
+Note: style emulation parameters are tendencies not deterministic rules.
+Expose as tunable weights. Especially true for Evans voicing abstractions,
+sheets-of-sound rendering, and Schneider narrative arc intensity curves.
+
+---
+
 *Last integrated: 2026-05-05 — repository standards consolidation.*

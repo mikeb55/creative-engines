@@ -1794,6 +1794,207 @@ Three **`StyleProfile`** modules ship under **`engines/composer-os-v2/core/evalu
 
 ---
 
+## GCE 9.0 Engineering Roadmap
+
+Current benchmark (seed 50021, April 2026): 8.4/10 best, 7.9/10 worst.
+Universal weakness: Melodic Identity. Gap to target: 0.6-1.2 points.
+
+Core principle: Every generated note must be explainable by one of four
+authorities — motif, harmonic scene, rhythmic DNA, or form role. Notes
+belonging to none of these are suppressing the 9.0 ceiling.
+
+### Phase 1 — Motif Authority Layer (target: 8.4 → 8.7)
+
+Highest-yield single change. Directly fixes universal Melodic Identity
+weakness and improves Thematic Recall simultaneously.
+
+ThemeGenome structure per piece:
+
+- 2-4 primary MotifCell objects
+- Each with: interval profile, rhythmic cell, contour code, accent map,
+  register band, harmonic tolerance mask, transform budget
+- Three linked levels: seed (raw identity), phrase-form (section variants),
+  surface (rendered notes)
+
+MotifCell similarity scoring (S = 0.35I + 0.30R + 0.20C + 0.15G):
+
+- I: interval spine similarity (35%)
+- R: rhythmic cell similarity (30%)
+- C: contour similarity (20%)
+- G: register-band adherence (15%)
+
+Section recall contract:
+
+- A section: present primary motif within first 4-8 bars
+- A2/repeat: near-literal restatement with orchestration refresh
+- B/bridge: transform 2+ of contour, harmonic setting, register, density
+- Coda: recover head interval spine or rhythm spine within final 8 bars
+- Recall quota: 55-65% of phrase starts tied to stored motif material
+
+Minimum architecture to move Melodic Identity 8.0 → 9.0+:
+
+- One primary motif (3-7 notes)
+- One contrast motif or cadential tail
+- Mandatory motif at section openings, cadences, one inner-voice echo
+- At least 3 transformations: sequence, augmentation/diminution,
+  registral displacement
+
+Voice-specific motif defaults:
+
+- Evans: sparse durations, modal interval pool, hovering neighbors,
+  low attack density, wide inter-onset spacing
+- Schneider: lyrical arcs, interval-seeded, common-tone pivots,
+  longer breath units, smooth registral climbs tied to narrative growth
+- Coltrane: short dense cells, chromatic side-slips, thirds-cycle
+  compatible intervals, pentatonic fragments, sequential compression,
+  high note density
+
+### Phase 2 — Voice Rule Compiler (target: 8.7 → 8.9)
+
+Replace passive context tags with compiled VoiceRuleBundle per composer.
+Each bundle defines: harmonicRhythm, bassPolicy, voicingPolicy,
+melodicPolicy, orchestrationPolicy, formPolicy, rhythmPolicy, repairPolicy.
+
+Gil Evans concrete rules:
+
+- Harmonic rhythm: 1 sonority per 1-2 bars in A sections, 2-4 bars
+  during suspended tableaux
+- Bass: melodic counterline first; root alignment only at phrase boundary
+  or cadence; 40-60% non-cadential bass notes as stepwise neighbors
+- Voicings: bass low, 10-20 semitone gap, 4-6 notes mid-register,
+  at least one adjacent second, non-root top note
+- Chord construction: omit 5th often, omit 3rd for modal ambiguity;
+  modal subsets: 1-2-3-#4-6 Lydian, 1-b2-4-5-b7 Phrygian over pedal
+- Parallel planing allowed if modal color preserved
+- Reject functional dominant clichés unless cadential repair requires
+
+Evans voicing algorithm:
+
+1. Choose pedal/root below C3
+2. Choose modal subset of 4-5 tones
+3. Place cluster center between C4 and A5
+4. Enforce one top minor second or inner adjacent second
+5. Mixed-family spacing, not sax soli block logic
+
+Maria Schneider concrete rules:
+
+- Harmonic rhythm: 1 chord/bar or 2 chords across 3 bars in lyrical zones
+- Chord morphing: mutate previous voicing by moving one voice stepwise,
+  then another — never replace entire sonority
+- Common-tone engine: identify 2 anchor tones, preserve across 1-3 events,
+  reinterpret function around them
+- Narrative arc: continuous curves for density, register ceiling,
+  dissonance index, attack rate — rise together toward recapitulation
+- Voicing: hybrid quartal/tertian, 4ths in inner voices, color tone on top
+
+Schneider voicing algorithm:
+
+1. Start from prior voicing
+2. Lock common tones with highest melodic salience
+3. Move remaining voices by step or minor third
+4. Permit one quartal insertion in middle voices
+5. Expand top register near peak; contract for recapitulation reset
+
+John Coltrane concrete rules:
+
+- Harmonic rhythm: 2 chord events/bar minimum; up to 4 in transitions
+- Root system: augmented-triad tonal center lattice + ii-V connectors
+- Motif cells: 3-5 note cells from pentatonic/arpeggio, sequenced
+  through cycle
+- Sheets-of-sound: rapid arpeggio/scale hybrids implying substitutions;
+  quantize phrase-start and phrase-end anchors for Phrase Grammar survival
+- Superimposition maps: approved pentatonic by chord class stored in data
+
+Coltrane cell generator alternates:
+
+- Chordal cell: 1-3-5-7-9
+- Pentatonic cell: 1-2-3-5-6 or altered equivalent
+- Symmetric connector: chromatic enclosure or diminished fragment
+- Sequenced displacement: same cell on new thirds-cycle target
+
+### Phase 3 — Harmonic Scene Engine + Voice-Leading Solver (target: 8.9 → 9.0)
+
+Replace chord-label generation with harmonic scene pipeline:
+harmonic scene → voice-led realization → orchestration
+
+Scene types:
+
+- functional_progression
+- modal_pedal_scene
+- morph_scene
+- third_cycle_scene
+- planed_color_scene
+- cadential_lock_scene
+
+Voice-leading cost function penalties:
+
+- Large leap in inner voice: +3 above 4th, +6 above 6th
+- Parallel perfect 5ths/octaves in exposed texture: +5
+- Lost common tone when one exists nearby: +4
+- Unresolved tendency tone at cadence: +4
+- Muddy cluster below register threshold: +5
+- Stepwise contrary motion into cadence: -3 (reward)
+- Preserved motif fragment in inner voice: -4 (reward)
+
+Pedal/modal drift bar-by-bar algorithm:
+
+1. Declare pedal anchor + expected duration range
+2. Per bar: choose modal focus subset relative to pedal
+3. Mutate only 1-2 upper tones per event unless at sectional seam
+4. Insert cadence repair if tension exceeds threshold near ending
+
+Chord morphing graph: nodes = voiced sonorities, edges labeled by
+moved voices, semitone travel, retained common tones, dissonance delta.
+Evans: low-motion/high-common-tone edges.
+Schneider: stepwise mutation edges.
+Coltrane: harmonic target cycling edges regardless of voice-leading cost.
+
+### Phase 4 — RhythmDNA (target: 9.0+)
+
+Each preset owns a RhythmDNA: onset histogram, syncopation window,
+beat-avoidance pattern, tuplet tolerance, cross-rhythm palette,
+cadence compression profile. Motif durations sampled from DNA before
+pitch realization.
+
+Composer rhythmic defaults:
+
+- Evans: floating entrances, low onset density, delayed downbeat,
+  occasional bass/pad polyrhythm, slow harmony over active percussion
+- Schneider: normative 4/8-bar hypermeter, hemiola near transitions,
+  Brazilian subdivision in selected pieces, intensification aligned to
+  Solo-Recapitulation trajectory
+- Coltrane: high subdivision pressure, sequential cells across barlines,
+  dense pickup behavior, tension through continuation not suspension
+
+Cross-rhythm/hemiola rules without breaking Phrase Grammar:
+
+- 3:2 or 2:3 overlays only when phrase accents remain legible every 2/4 bars
+- Local hemiola windows of 1-2 bars then restore meter-confirming cadence
+- Reject cross-rhythm obscuring cadential arrival unless harmonic lock
+  and registral thinning support it
+
+### Phase 5 — Form Controller + Tension Scheduler (target: 9.0+)
+
+Best-scoring formal architectures: AABA, Schneider three-space trajectory,
+arch form with audible A-material transformation and return.
+
+Schneider Solo-Recapitulation model:
+
+1. Exposition: primary motif clear, moderate density
+2. Solo: motif fragmented into accompaniment/riffs; intensity rises
+3. Pre-recap: peak ensemble feature or deliberate deflation
+4. Recapitulation: motif returns recognizably; softened cadence before coda
+
+Tension arc targets (normalized 0-1):
+
+- Intro/setup: 0.20
+- Sectional expansion: 0.45
+- Pre-recap/bridge peak: 0.80
+- Recapitulation reset: 0.35
+- Final cadential bloom: 0.60 (must end below GCE final-bar tension gate)
+
+---
+
 ## Future Workstreams
 
 ### Afro-Cuban Big Band
