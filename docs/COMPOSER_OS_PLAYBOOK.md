@@ -15,6 +15,14 @@ Song Mode primary **`fela_kuti`** appends **Afrobeat Percussion** (**GM unpitche
 
 ---
 
+## Greek Rebetiko — rhythm presets & MusicXML
+
+Song Mode primary **`greek_rebetiko`** surfaces **Greek Rebetiko / dance-metre** planning (style profile + registry rules) and a **client-side rhythm panel**: **`GreekRhythmControls`** — preset dropdown, **layer × step** preview grid, and **Download MusicXML** (default **2 bars**, GM **unpitched** percussion staff **P1**, MusicXML **4.0**, **percussion** clef, **five-line** staff). Export implementation: **`exportGreekRhythmToMusicXml`** in **`engines/composer-os-v2/core/rhythm/greekRhythmMusicXmlExporter.ts`**; shipped preset bundle: **`greekRebetikoRhythmPresets.ts`** (**`hasapiko_4_4`**, **`zeibekiko_9_8`**).
+
+**Handbook:** **`docs/GREEK_REBETIKO_HANDBOOK.md`** — rebetiko context vs Western grids, **13 preset IDs** (roadmap reference table), additive-metre diagrams (**9/8**, **7/8**, **10/8**), UI separator notes, Sibelius ordering checklist.
+
+---
+
 ## Real Book MusicXML import
 
 Charts saved as **MusicXML** (Finale / MuseScore / Sibelius **partwise** export) can be fed through the **lead-sheet importer** for harmony timelines, keys, repeats, and (limited) melody extraction. This section matches what the engine’s **Real Book stress** regression exercises (`engines/composer-os-v2/tests/realBookStressTest.test.ts`, smoke suite **Real Book MusicXML stress**).

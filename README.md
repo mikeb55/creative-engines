@@ -4,7 +4,7 @@
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
 
-- **Current version:** **V37** (Fela Kuti Tony Allen percussion engine polish — tag **`v37`**: **`afrobeatRhythmEngine`** boundaries, **`musicxmlExporter`** Fela chord-stack ticks, handbook **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`**, playbook sync).
+- **Current version:** **V38** (Greek Rebetiko rhythm handbook **`docs/GREEK_REBETIKO_HANDBOOK.md`**, playbook/README sync; Song Mode **`greek_rebetiko`** UI + **`greekRhythmMusicXmlExporter`** Sibelius-safe **`attributes`** ordering).
 - **Quality gate (local):** **`npm run test:composer-smoke`** — **163** tests passed / **0** failed across **42** labelled suites (`engines/composer-os-v2/tests/runSmokeTests.ts` allowlist).
 - **Repository path:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\`
 
@@ -185,6 +185,15 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **Devices / receipts** | **`fk:*`** — static vamp (**d1**), call–response (**d2**), pentatonic layer (**d3**), parallel horns (**d4**), polymetric grid (**d5**); **`precomputeFelaKutiEffectiveHarmonyBars`**. |
 | **Chord pools** | **`fela_kuti_zombie_1977`**, **`fela_kuti_water_no_get_enemy`**, **`fela_kuti_lady_1972`** in **`songModeBuilder`** when primary is Fela Kuti (**`seed % 3`**). |
 | **Style surface** | **`applyFelaKutiStyleSurface`** — syncopation **+0.32**, density **+0.18**, space **−0.14**, cadence softness **+0.38**. |
+
+### Greek Rebetiko
+
+| | |
+|--|--|
+| **Primary id** | **`greek_rebetiko`** |
+| **Rhythm docs** | **`docs/GREEK_REBETIKO_HANDBOOK.md`** — preset roadmap (**13** IDs), additive metres (**7/8**, **9/8**, **10/8** diagrams), MusicXML export notes. |
+| **UI** | **`GreekRhythmControls`** — preset preview grid + **Download MusicXML** (`exportGreekRhythmToMusicXml`). |
+| **Style surface** | **`SONGWRITER_STYLE_PROFILES.greek_rebetiko`** — modal/minor colour bias, high syncopation; guitar-centric comp (**`songwriterCompProfile`**). |
 
 ### Donald Fagen
 
@@ -380,6 +389,7 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **V31** | Composer smoke tier as merge gate, deterministic remix tray, writer recipe cards, ECM Chamber slice + surfaces, bulk new songwriter slices |
 | **V32** | **Debussy** + **Cole Porter** harmony slices (**`29074f3`**), locked-truth wiring; **Composer OS Playbook** handbook refresh (**open** — see **`docs/COMPOSER_OS_PLAYBOOK.md`** / **`.docx`**) |
 | **V37** | **Fela Kuti** Tony Allen percussion — **`afrobeatRhythmEngine`** bar-edge quantise / phase wrap / missing-feel fallback; **`FELA_KUTI_PERCUSSION_HANDBOOK.md`**; Sibelius sample export script; **`fk:*`** feel tags documented in playbook |
+| **V38** | **Greek Rebetiko** — **`GREEK_REBETIKO_HANDBOOK.md`** (preset roadmap table, additive-metre diagrams); **`greek_rebetiko`** Song Mode writer + **`GreekRhythmControls`** / **`exportGreekRhythmToMusicXml`**; playbook + DOCX sync |
 
 ---
 
