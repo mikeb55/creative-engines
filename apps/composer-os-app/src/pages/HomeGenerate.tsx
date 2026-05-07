@@ -21,6 +21,8 @@ import {
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
+import { GreekRhythmControls } from '../components/GreekRhythmControls';
+import { DEFAULT_GREEK_RHYTHM_PRESET_ID } from '../slices/greekRhythmSlice';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
@@ -428,6 +430,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
+  { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
@@ -1441,6 +1444,7 @@ export function HomeGenerate({
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [funkGroove, setFunkGroove] = useState(false);
   const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
+  const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
@@ -1766,6 +1770,12 @@ export function HomeGenerate({
   useEffect(() => {
     if (presetId !== 'song_mode' || songwriterStyle.trim().toLowerCase() !== 'fela_kuti') {
       setFelaPercussionFeelMode('auto');
+    }
+  }, [presetId, songwriterStyle]);
+
+  useEffect(() => {
+    if (presetId !== 'song_mode' || songwriterStyle.trim().toLowerCase() !== 'greek_rebetiko') {
+      setGreekRhythmPresetId(DEFAULT_GREEK_RHYTHM_PRESET_ID);
     }
   }, [presetId, songwriterStyle]);
 
@@ -4849,6 +4859,13 @@ export function HomeGenerate({
             <FelaPercussionControls
               feelMode={felaPercussionFeelMode}
               onFeelModeChange={setFelaPercussionFeelMode}
+              disabled={loading}
+            />
+          )}
+          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'greek_rebetiko' && (
+            <GreekRhythmControls
+              selectedPresetId={greekRhythmPresetId}
+              onPresetIdChange={setGreekRhythmPresetId}
               disabled={loading}
             />
           )}

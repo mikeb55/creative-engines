@@ -69,6 +69,13 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('fela.fk_polymetric_grid', 'Cross-rhythm / polymetric grid stress (`fk:d5_polymetric_grid`)', 'songwriter', 'rhythm', 9, 'global'),
     R('fela.no_functional_cadence', 'Avoid textbook V–I closures — vamp continuity', 'songwriter', 'harmony', 9, 'global'),
   ],
+  greek_rebetiko: [
+    R('gr.hasapiko_ground', 'Hasapiko / zeibekiko ground — dance-meter ostinato cells', 'songwriter', 'rhythm', 9, 'global'),
+    R('gr.modal_minor_colour', 'Modal minor / raised-fourth colour vs tonic pedal', 'songwriter', 'harmony', 8, 'verse'),
+    R('gr.percussion_forward', 'Percussion narrative leads phrase arcs (doumbek / frame)', 'songwriter', 'form', 7, 'global'),
+    R('gr.melismatic_tail', 'Melismatic cadential tails on phrase endings', 'songwriter', 'melody', 7, 'chorus'),
+    R('gr.avoid_brass_band_release', 'Avoid big-band cadential clichés — tavern continuity', 'songwriter', 'harmony', 8, 'global'),
+  ],
   joni_mitchell: [
     R('joni.modal_bias', 'Modal bias — Dorian, Aeolian, Mixolydian fields', 'songwriter', 'harmony', 8, 'global'),
     R('joni.pedal_bass_preference', 'Pedal bass preference — stepwise or static bass', 'songwriter', 'harmony', 8, 'verse'),
