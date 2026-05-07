@@ -63,14 +63,17 @@ describe('styleProfile', () => {
   });
 
   it('resolveHarmonicContextKeys(morricone) includes hv + research tags', () => {
+    expect(MORRICONE_HARMONIC_STYLE_KEYS).toHaveLength(10);
     expect(resolveHarmonicContextKeys('morricone')).toEqual(['hv:morricone', ...MORRICONE_HARMONIC_STYLE_KEYS]);
   });
 
   it('resolveHarmonicContextKeys(herrmann) includes hv + research tags', () => {
+    expect(HERRMANN_HARMONIC_STYLE_KEYS).toHaveLength(10);
     expect(resolveHarmonicContextKeys('herrmann')).toEqual(['hv:herrmann', ...HERRMANN_HARMONIC_STYLE_KEYS]);
   });
 
   it('resolveHarmonicContextKeys(quincy_jones_film) includes hv + research tags', () => {
+    expect(QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS).toHaveLength(10);
     expect(resolveHarmonicContextKeys('quincy_jones_film')).toEqual([
       'hv:quincy_jones_film',
       ...QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
@@ -78,6 +81,7 @@ describe('styleProfile', () => {
   });
 
   it('resolveHarmonicContextKeys(badalamenti) includes hv + research tags', () => {
+    expect(BADALAMENTI_HARMONIC_STYLE_KEYS).toHaveLength(10);
     expect(resolveHarmonicContextKeys('badalamenti')).toEqual([
       'hv:badalamenti',
       ...BADALAMENTI_HARMONIC_STYLE_KEYS,
