@@ -154,8 +154,8 @@ export function exportGreekRhythmToMusicXml(preset: RhythmPreset, bars = 2): str
       <key><fifths>0</fifths><mode>major</mode></key>
       <time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>
       <staves>1</staves>
-      <staff-details number="1"><staff-lines>5</staff-lines></staff-details>
       <clef number="1"><sign>percussion</sign><line>2</line></clef>
+      <staff-details number="1"><staff-lines>5</staff-lines></staff-details>
     </attributes>`;
 
   const tempoDir = `    <direction placement="above">
