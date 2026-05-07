@@ -1,0 +1,49 @@
+.saveNoticeRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0.4rem 0 0;
+}
+
+.saveNoticeRow__text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.saveNoticeRow--success .saveNoticeRow__text {
+  color: var(--success, #86efac);
+}
+
+.saveNoticeRow--error .saveNoticeRow__text {
+  color: var(--error, #f87171);
+}
+
+.saveNoticeRow__dots {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 0.35rem;
+  min-width: 1.65rem;
+  height: 1.45rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, rgba(200, 200, 210, 0.65));
+  cursor: pointer;
+}
+
+.saveNoticeRow__dots:hover {
+  background: rgba(128, 128, 128, 0.18);
+  color: var(--text);
+}
+
+.saveNoticeRow__dots:focus-visible {
+  outline: 2px solid var(--accent, #6366f1);
+  outline-offset: 1px;
+}

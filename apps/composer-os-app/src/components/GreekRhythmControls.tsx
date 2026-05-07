@@ -12,6 +12,7 @@ import {
 } from '@composer-os/core/rhythm/greekRhythmMusicXmlExporter';
 import type { RhythmPreset } from '@composer-os/core/rhythm/greekRebetikoRhythmTypes';
 import { saveRhythmExportFile } from '../lib/saveRhythmExportFile';
+import { SaveNoticeRow, type SaveNoticePayload } from './SaveNoticeRow';
 
 const EXPORT_BARS = 2;
 
@@ -25,16 +26,16 @@ export function GreekRhythmControls(props: {
     [props.selectedPresetId]
   );
   const [exportError, setExportError] = useState<string | null>(null);
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<SaveNoticePayload | null>(null);
   const saveNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flashSaveNotice = useCallback((text: string) => {
+  const flashSaveNotice = useCallback((notice: SaveNoticePayload) => {
     if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
-    setSaveNotice(text);
+    setSaveNotice(notice);
     saveNoticeTimer.current = setTimeout(() => {
       setSaveNotice(null);
       saveNoticeTimer.current = null;
-    }, 3000);
+    }, 4000);
   }, []);
 
   useEffect(() => {
@@ -62,7 +63,11 @@ export function GreekRhythmControls(props: {
         setExportError(res.error);
         return;
       }
-      flashSaveNotice(`Saved to ${res.displayPath}`);
+      flashSaveNotice({
+        message: `Saved to ${res.displayPath}`,
+        copyText: res.displayPath,
+        variant: 'success',
+      });
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     }
@@ -147,11 +152,7 @@ export function GreekRhythmControls(props: {
           Open Folder
         </button>
       ) : null}
-      {saveNotice && (
-        <p style={{ margin: '0.45rem 0 0', fontSize: '0.72rem', color: 'var(--success, #86efac)' }} role="status">
-          {saveNotice}
-        </p>
-      )}
+      {saveNotice ? <SaveNoticeRow {...saveNotice} /> : null}
       {exportError && (
         <p style={{ margin: '0.45rem 0 0', fontSize: '0.75rem', color: 'var(--error, #f87171)' }}>{exportError}</p>
       )}

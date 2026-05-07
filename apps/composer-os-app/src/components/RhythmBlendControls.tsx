@@ -22,6 +22,7 @@ import type {
   SongSection,
 } from './RhythmBlendControls.types';
 import './RhythmBlendControls.css';
+import { SaveNoticeRow, type SaveNoticePayload } from './SaveNoticeRow';
 
 function getDefaultAfrobeatPreset(p: AfrobeatPresetRef[]): AfrobeatPresetRef {
   if (!p.length) throw new Error('No afrobeat presets');
@@ -346,7 +347,7 @@ function LayerBlendPanel(props: {
 function ExportBar(props: {
   busy: boolean;
   onExport: () => void | Promise<void>;
-  saveNotice: string | null;
+  saveNotice: SaveNoticePayload | null;
   onOpenFolder?: () => void;
   showOpenFolder?: boolean;
 }) {
@@ -360,11 +361,7 @@ function ExportBar(props: {
           Open Folder
         </button>
       ) : null}
-      {props.saveNotice ? (
-        <p className="exportBar__notice" role="status">
-          {props.saveNotice}
-        </p>
-      ) : null}
+      {props.saveNotice ? <SaveNoticeRow {...props.saveNotice} /> : null}
     </div>
   );
 }
@@ -466,16 +463,18 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     [afrobeatPresets, rebetikoPresets, updateSectionRhythm]
   );
 
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<SaveNoticePayload | null>(null);
   const saveNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flashSaveNotice = useCallback((text: string) => {
+  const flashSaveNotice = useCallback((notice: string | SaveNoticePayload) => {
+    const normalized: SaveNoticePayload =
+      typeof notice === 'string' ? { message: notice, variant: 'success' } : notice;
     if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
-    setSaveNotice(text);
+    setSaveNotice(normalized);
     saveNoticeTimer.current = setTimeout(() => {
       setSaveNotice(null);
       saveNoticeTimer.current = null;
-    }, 3000);
+    }, 4000);
   }, []);
 
   useEffect(() => {
@@ -509,10 +508,14 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
       const fileName = `${safeBase}.musicxml`;
       const res = await saveRhythmExportFile(BLEND_RHYTHM_EXPORT_ENGINE, fileName, xml);
       if (!res.ok) {
-        flashSaveNotice(res.error);
+        flashSaveNotice({ message: res.error, variant: 'error' });
         return;
       }
-      flashSaveNotice(`Saved to ${res.displayPath}`);
+      flashSaveNotice({
+        message: `Saved to ${res.displayPath}`,
+        copyText: res.displayPath,
+        variant: 'success',
+      });
     } finally {
       setExportBusy(false);
     }
