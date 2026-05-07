@@ -14,14 +14,16 @@ export const OUTPUT_DIRS = {
   felaKuti: `${COMPOSER_OUTPUT_ROOT}/Fela Kuti Rhythms`,
   greek: `${COMPOSER_OUTPUT_ROOT}/Greek Rhythms`,
   blended: `${COMPOSER_OUTPUT_ROOT}/Blended Rhythms`,
+  brazilian: `${COMPOSER_OUTPUT_ROOT}/Brazilian Rhythms`,
 } as const;
 
-export type RhythmOutputEngine = 'fela-kuti' | 'greek' | 'blended';
+export type RhythmOutputEngine = 'fela-kuti' | 'greek' | 'blended' | 'brazilian';
 
 const ENGINE_TO_DIR_KEY: Record<RhythmOutputEngine, keyof typeof OUTPUT_DIRS> = {
   'fela-kuti': 'felaKuti',
   greek: 'greek',
   blended: 'blended',
+  brazilian: 'brazilian',
 };
 
 export function getOutputDir(engine: RhythmOutputEngine): string {

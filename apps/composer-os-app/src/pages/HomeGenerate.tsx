@@ -21,6 +21,7 @@ import {
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
+import { BrazilianRhythmControls } from '../components/BrazilianRhythmControls';
 import {
   AFROBEAT_STARTER_PRESETS,
   GREEK_REBETIKO_STARTER_PRESETS,
@@ -83,6 +84,7 @@ import {
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
 import { WriterRecipeCard } from '../components/WriterRecipeCard';
+import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -430,6 +432,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
+  { id: 'brazilian', label: 'Brazilian' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
   { id: 'carole_king', label: 'Carole King' },
   { id: 'debussy', label: 'Debussy' },
@@ -1397,6 +1400,7 @@ export function HomeGenerate({
   const [primarySongwriterHoverId, setPrimarySongwriterHoverId] = useState<string | null>(null);
   const [secondarySongwriterHoverId, setSecondarySongwriterHoverId] = useState<string | null>(null);
   const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
+  const [brazilianRhythmPresetId, setBrazilianRhythmPresetId] = useState(DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID);
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -4868,6 +4872,13 @@ export function HomeGenerate({
                 }
               />
             )}
+          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'brazilian' && (
+            <BrazilianRhythmControls
+              activePresetId={brazilianRhythmPresetId}
+              onPresetChange={setBrazilianRhythmPresetId}
+              disabled={loading}
+            />
+          )}
           {songwriterStyle === 'frank_zappa' && (
             <>
             <div

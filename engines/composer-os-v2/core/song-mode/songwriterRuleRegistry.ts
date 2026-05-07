@@ -99,6 +99,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('dylan.lyric_primary', 'Lyric density over hook', 'songwriter', 'lyric', 9, 'verse'),
     R('dylan.simple_prog', 'Simple diatonic harmony', 'songwriter', 'harmony', 6, 'global'),
   ],
+  brazilian: [
+    R('br.bossa_samba_baiao', 'Bossa / samba / baião subdivision cells (placeholder)', 'songwriter', 'rhythm', 9, 'global'),
+    R('br.clave_sensitivity', 'Clave-aware syncopation windows', 'songwriter', 'rhythm', 8, 'verse'),
+    R('br.guitar_comp_forward', 'Guitar-led comp under perc narrative', 'songwriter', 'harmony', 7, 'global'),
+  ],
   paul_simon: [
     R('simon.primary_axis', 'Tag melody/rhythm/harmony primary per song', 'songwriter', 'form', 8, 'global'),
     R('simon.section_contrast', 'Contrast at least one dimension V/C/B', 'songwriter', 'form', 8, 'form'),

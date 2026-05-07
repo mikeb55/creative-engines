@@ -61,7 +61,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       body && typeof body === 'object' && typeof (body as { engine?: unknown }).engine === 'string'
         ? (body as { engine: string }).engine
         : '';
-    if (eng !== 'fela-kuti' && eng !== 'greek' && eng !== 'blended') {
+    if (eng !== 'fela-kuti' && eng !== 'greek' && eng !== 'blended' && eng !== 'brazilian') {
       return;
     }
     const relDir = getOutputDir(eng);
