@@ -5,7 +5,8 @@ import React from 'react';
 import { create } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { AfrobeatPresetRef, RebetikoPresetRef, RhythmEngineId } from '../src/components/RhythmBlendControls.types';
+import type { AfrobeatPresetRef, RebetikoPresetRef, RhythmBlendEngineId } from '../src/components/RhythmBlendControls.types';
+import type { RhythmBlendStarterBundles } from '../src/components/RhythmBlendControls.types';
 
 function slugify(s: string): string {
   return s
@@ -13,34 +14,6 @@ function slugify(s: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-}
-
-function getDefaultAfrobeatPreset(p: AfrobeatPresetRef[]): AfrobeatPresetRef {
-  if (!p.length) throw new Error('No afrobeat presets');
-  return p[0];
-}
-function getDefaultRebetikoPreset(p: RebetikoPresetRef[]): RebetikoPresetRef {
-  if (!p.length) throw new Error('No rebetiko presets');
-  return p[0];
-}
-function getDefaultPresetForEngine(
-  engine: RhythmEngineId,
-  a: AfrobeatPresetRef[],
-  r: RebetikoPresetRef[]
-): AfrobeatPresetRef | RebetikoPresetRef {
-  return engine === 'afrobeat' ? getDefaultAfrobeatPreset(a) : getDefaultRebetikoPreset(r);
-}
-
-function downloadMusicXml(filename: string, xml: string) {
-  const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 const SAMPLE_AFRO: AfrobeatPresetRef[] = [
@@ -58,17 +31,79 @@ const SAMPLE_REB: RebetikoPresetRef[] = [
   },
 ];
 
+const SAMPLE_BR = [
+  {
+    engine: 'brazilian' as const,
+    presetId: 'bossa-nova-basic',
+    label: 'B',
+    meterSignature: '2/4',
+    gridSteps: 16,
+  },
+];
+
+const BUNDLES: RhythmBlendStarterBundles = {
+  afrobeat: SAMPLE_AFRO,
+  rebetiko: SAMPLE_REB,
+  brazilian: SAMPLE_BR,
+  secondLine: [
+    {
+      engine: 'second_line',
+      presetId: 'second-line-basic',
+      label: 'SL',
+      meterSignature: '4/4',
+      gridSteps: 16,
+    },
+  ],
+  cuban: [
+    {
+      engine: 'cuban',
+      presetId: 'son-clave-3-2',
+      label: 'CU',
+      meterSignature: '4/4',
+      gridSteps: 16,
+    },
+  ],
+};
+
+function presetsForEngine(engine: RhythmBlendEngineId, b: RhythmBlendStarterBundles) {
+  switch (engine) {
+    case 'afrobeat':
+      return b.afrobeat;
+    case 'rebetiko':
+      return b.rebetiko;
+    case 'brazilian':
+      return b.brazilian;
+    case 'second_line':
+      return b.secondLine;
+    case 'cuban':
+      return b.cuban;
+    default: {
+      const _n: never = engine;
+      return _n;
+    }
+  }
+}
+
+function downloadMusicXml(filename: string, xml: string) {
+  const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 describe('RhythmBlendControls helpers', () => {
   it('slugify normalises titles', () => {
     expect(slugify('  Hello World!!  ')).toBe('hello-world');
   });
 
-  it('getDefaultPresetForEngine returns afrobeat', () => {
-    expect(getDefaultPresetForEngine('afrobeat', SAMPLE_AFRO, SAMPLE_REB).presetId).toBe('straight');
-  });
-
-  it('getDefaultPresetForEngine returns rebetiko', () => {
-    expect(getDefaultPresetForEngine('rebetiko', SAMPLE_AFRO, SAMPLE_REB).presetId).toBe('hasapiko_4_4');
+  it('presetsForEngine returns five engines', () => {
+    expect(presetsForEngine('brazilian', BUNDLES)[0]?.presetId).toBe('bossa-nova-basic');
+    expect(presetsForEngine('cuban', BUNDLES)[0]?.presetId).toBe('son-clave-3-2');
   });
 
   it('downloadMusicXml no-throw', () => {
@@ -99,8 +134,7 @@ describe('RhythmBlendControls', () => {
     let tree: ReturnType<typeof create>;
     tree = create(
       React.createElement(RhythmBlendControls, {
-        afrobeatPresets: SAMPLE_AFRO,
-        rebetikoPresets: SAMPLE_REB,
+        starterBundles: BUNDLES,
         exportSongFormToMusicXml: () => '<?xml version="1.0"?><score-partwise/>',
         exportBlendedScoreToMusicXml: () => '<?xml version="1.0"?><score-partwise/>',
       })

@@ -5,6 +5,12 @@
 export {
   BLEND_RHYTHM_EXPORT_ENGINE,
   exportBlendedScoreToMusicXml,
+  exportEngineRhythmSampleMusicXml,
   exportSongFormToMusicXml,
 } from './blendMusicXmlExporter';
-export type { BlendExporterBlendedPlan, BlendExporterSongForm, BlendExporterSongSection } from './blendMusicXmlExporter';
+export type {
+  BlendExporterBlendedPlan,
+  BlendExporterEnginePreset,
+  BlendExporterSongForm,
+  BlendExporterSongSection,
+} from './blendMusicXmlExporter';

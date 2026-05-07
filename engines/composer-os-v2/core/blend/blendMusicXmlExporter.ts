@@ -8,14 +8,22 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { exportGreekRhythmToMusicXml } from '../rhythm/greekRhythmMusicXmlExporter';
 import { getGreekRebetikoPresetById } from '../rhythm/greekRebetikoRhythmPresets';
+import { exportBrazilianRhythmToMusicXml } from '../rhythm/brazilianRhythmMusicXmlExporter';
+import { getBrazilianRhythmPresetById } from '../rhythm/brazilianRhythmPresets';
+import { exportSecondLineRhythmToMusicXml } from '../rhythm/secondLineRhythmMusicXmlExporter';
+import { getSecondLineRhythmPresetById } from '../rhythm/secondLineRhythmPresets';
+import { exportCubanRhythmToMusicXml } from '../rhythm/cubanRhythmMusicXmlExporter';
+import { getCubanRhythmPresetById } from '../rhythm/cubanRhythmPresets';
 import type { ConflictStrategy } from '../rhythm/rhythmLayerMerge';
+import type { RhythmEngineId } from '../rhythm/songFormRhythmTypes';
 
 /** Matches `RhythmOutputEngine` in app `outputPaths.ts` for save routing. */
 export const BLEND_RHYTHM_EXPORT_ENGINE = 'blended' as const;
 
-/** GM notes referenced across rhythm-blend exports (Fela + Greek presets including bell). */
-const BLEND_GM_NOTES_FULL = [36, 38, 42, 44, 50, 56] as const;
-const BLEND_GM_NOTES_FELA = [36, 38, 42, 44, 50] as const;
+/** Wide GM kit — dual-layer blend may reference any lane from five engines. */
+const BLEND_SCORE_GM_MASTER = [
+  36, 37, 38, 42, 44, 46, 47, 48, 49, 50, 51, 54, 56, 62, 64, 65, 67, 70, 73, 75, 81,
+] as const;
 
 function blendPercussionScorePartFromGmSet(partId: string, partName: string, gmNotes: readonly number[]): string {
   const name = escapeXml(partName);
@@ -47,7 +55,7 @@ function escapeXml(s: string): string {
 
 export interface BlendExporterSongSection {
   bars: { startBar: number; endBar: number };
-  rhythm: { engine: 'afrobeat' | 'rebetiko'; presetId: string };
+  rhythm: { engine: RhythmEngineId; presetId: string };
 }
 
 export interface BlendExporterSongForm {
@@ -55,9 +63,14 @@ export interface BlendExporterSongForm {
   sections: BlendExporterSongSection[];
 }
 
+export interface BlendExporterEnginePreset {
+  engine: RhythmEngineId;
+  presetId: string;
+}
+
 export interface BlendExporterBlendedPlan {
-  afrobeatPreset: { presetId: string };
-  rebetikoPreset: { presetId: string };
+  engineA: BlendExporterEnginePreset;
+  engineB: BlendExporterEnginePreset;
   conflictStrategy: ConflictStrategy;
 }
 
@@ -81,13 +94,105 @@ function normalizeFelaInstrumentRefs(xml: string): string {
   return xml.replace(/fela_drums-I(\d+)/g, 'P1-I$1');
 }
 
+function sourcePartIdForEngine(engine: RhythmEngineId): string {
+  return engine === 'afrobeat' ? 'fela_drums' : 'P1';
+}
+
+/**
+ * Full single-part MusicXML for one engine/preset (native metre each exporter).
+ */
+export function exportEngineRhythmSampleMusicXml(engine: RhythmEngineId, presetId: string, barCount: number): string {
+  const n = Math.max(1, barCount);
+  switch (engine) {
+    case 'afrobeat': {
+      const eng = createAfrobeatRhythmEngine();
+      const pattern = eng.selectPattern(parseTonyAllenFeel(presetId));
+      const part = buildFelaAfrobeatPercussionPart(n, pattern);
+      const score: ScoreModel = {
+        title: 'Rhythm',
+        tempo: 108,
+        timeSignature: { beats: 4, beatType: 4 },
+        parts: [part],
+      };
+      const res = exportScoreModelToMusicXml(score);
+      if (!res.success || !res.xml) {
+        throw new Error(res.errors?.join('; ') ?? 'Afrobeat MusicXML export failed');
+      }
+      return normalizeFelaInstrumentRefs(res.xml);
+    }
+    case 'rebetiko': {
+      const preset = getGreekRebetikoPresetById(presetId);
+      if (!preset) {
+        throw new Error(`blendMusicXmlExporter: unknown rebetiko presetId "${presetId}"`);
+      }
+      return exportGreekRhythmToMusicXml(preset, n);
+    }
+    case 'brazilian': {
+      const preset = getBrazilianRhythmPresetById(presetId);
+      if (!preset) {
+        throw new Error(`blendMusicXmlExporter: unknown Brazilian presetId "${presetId}"`);
+      }
+      return exportBrazilianRhythmToMusicXml(preset, n);
+    }
+    case 'second_line': {
+      const preset = getSecondLineRhythmPresetById(presetId);
+      if (!preset) {
+        throw new Error(`blendMusicXmlExporter: unknown Second Line presetId "${presetId}"`);
+      }
+      return exportSecondLineRhythmToMusicXml(preset, n);
+    }
+    case 'cuban': {
+      const preset = getCubanRhythmPresetById(presetId);
+      if (!preset) {
+        throw new Error(`blendMusicXmlExporter: unknown Cuban presetId "${presetId}"`);
+      }
+      return exportCubanRhythmToMusicXml(preset, n);
+    }
+    default: {
+      const _exhaustive: never = engine;
+      throw new Error(`blendMusicXmlExporter: unsupported engine ${String(_exhaustive)}`);
+    }
+  }
+}
+
+function remapInstrumentRefs(inner: string, sourcePrefix: string, targetPrefix: string): string {
+  return inner.replace(new RegExp(`${sourcePrefix}-I(\\d+)`, 'g'), `${targetPrefix}-I$1`);
+}
+
+function layerDisplayName(engine: RhythmEngineId): string {
+  switch (engine) {
+    case 'afrobeat':
+      return 'Afrobeat layer';
+    case 'rebetiko':
+      return 'Rebetiko layer';
+    case 'brazilian':
+      return 'Brazilian layer';
+    case 'second_line':
+      return 'Second Line layer';
+    case 'cuban':
+      return 'Cuban layer';
+    default: {
+      const _e: never = engine;
+      return String(_e);
+    }
+  }
+}
+
+function extractLayerInner(engine: RhythmEngineId, fullXml: string, targetPartId: 'P1' | 'P2'): string {
+  const src = sourcePartIdForEngine(engine);
+  let inner = extractPartInner(fullXml, src);
+  const prefix = engine === 'afrobeat' ? 'fela_drums' : 'P1';
+  inner = remapInstrumentRefs(inner, prefix, targetPartId);
+  return inner.trim();
+}
+
 function wrapSinglePartScore(title: string, measuresBlock: string): string {
   const t = escapeXml(title);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="4.0">
   <work><work-title>${t}</work-title></work>
   <part-list>
-${blendPercussionScorePartFromGmSet('P1', 'Rhythm blend', BLEND_GM_NOTES_FULL)}
+${blendPercussionScorePartFromGmSet('P1', 'Rhythm blend', BLEND_SCORE_GM_MASTER)}
   </part-list>
   <part id="P1">
 ${measuresBlock}
@@ -106,34 +211,15 @@ export function exportSongFormToMusicXml(form: BlendExporterSongForm): string {
 
   for (const sec of sections) {
     const barCount = Math.max(1, sec.bars.endBar - sec.bars.startBar + 1);
-    let fullXml: string;
+    const fullXml = exportEngineRhythmSampleMusicXml(sec.rhythm.engine, sec.rhythm.presetId, barCount);
 
-    if (sec.rhythm.engine === 'rebetiko') {
-      const preset = getGreekRebetikoPresetById(sec.rhythm.presetId);
-      if (!preset) {
-        throw new Error(`blendMusicXmlExporter: unknown rebetiko presetId "${sec.rhythm.presetId}"`);
-      }
-      fullXml = exportGreekRhythmToMusicXml(preset, barCount);
-    } else {
-      const engine = createAfrobeatRhythmEngine();
-      const pattern = engine.selectPattern(parseTonyAllenFeel(sec.rhythm.presetId));
-      const part = buildFelaAfrobeatPercussionPart(barCount, pattern);
-      const score: ScoreModel = {
-        title: form.title,
-        tempo: 108,
-        timeSignature: { beats: 4, beatType: 4 },
-        parts: [part],
-      };
-      const res = exportScoreModelToMusicXml(score);
-      if (!res.success || !res.xml) {
-        throw new Error(res.errors?.join('; ') ?? 'Afrobeat MusicXML export failed');
-      }
-      fullXml = normalizeFelaInstrumentRefs(res.xml);
-    }
+    const srcPart = sourcePartIdForEngine(sec.rhythm.engine);
+    const inner = extractPartInner(fullXml, srcPart);
+    const normalizedInner =
+      sec.rhythm.engine === 'afrobeat' ? remapInstrumentRefs(inner, 'fela_drums', 'P1') : inner;
 
-    const partId = sec.rhythm.engine === 'rebetiko' ? 'P1' : 'fela_drums';
-    const inner = extractPartInner(fullXml, partId);
-    const wrapped = inner.trim().length > 0 ? `<part id="${partId}">${inner}</part>` : fullXml;
+    const wrapped =
+      normalizedInner.trim().length > 0 ? `<part id="${srcPart}">${normalizedInner}</part>` : fullXml;
     let tags = extractMeasureTags(wrapped);
     if (tags.length === 0) {
       tags = extractMeasureTags(fullXml);
@@ -150,51 +236,33 @@ export function exportSongFormToMusicXml(form: BlendExporterSongForm): string {
 }
 
 /**
- * Two stacked percussion parts (native metre each): Afrobeat **P1**, Rebetiko **P2**.
- * `conflictStrategy` is annotated in the work title for traceability (playback unchanged).
+ * Two stacked percussion parts (native metre each): **P1** = Engine A, **P2** = Engine B.
+ * `conflictStrategy` is annotated in a trailing comment for traceability (playback unchanged).
  */
 export function exportBlendedScoreToMusicXml(plan: BlendExporterBlendedPlan): string {
-  const engine = createAfrobeatRhythmEngine();
-  const pattern = engine.selectPattern(parseTonyAllenFeel(plan.afrobeatPreset.presetId));
-  const afroPart = buildFelaAfrobeatPercussionPart(1, pattern);
-  const afroScore: ScoreModel = {
-    title: 'Afrobeat layer',
-    tempo: 108,
-    timeSignature: { beats: 4, beatType: 4 },
-    parts: [afroPart],
-  };
-  const afroRes = exportScoreModelToMusicXml(afroScore);
-  if (!afroRes.success || !afroRes.xml) {
-    throw new Error(afroRes.errors?.join('; ') ?? 'Afrobeat export failed');
-  }
-  const afroXml = normalizeFelaInstrumentRefs(afroRes.xml);
+  const afXml = exportEngineRhythmSampleMusicXml(plan.engineA.engine, plan.engineA.presetId, 1);
+  const bfXml = exportEngineRhythmSampleMusicXml(plan.engineB.engine, plan.engineB.presetId, 1);
 
-  const greekPreset = getGreekRebetikoPresetById(plan.rebetikoPreset.presetId);
-  if (!greekPreset) {
-    throw new Error(`blendMusicXmlExporter: unknown rebetiko presetId "${plan.rebetikoPreset.presetId}"`);
-  }
-  const greekXml = exportGreekRhythmToMusicXml(greekPreset, 1);
-
-  const afroInner = extractPartInner(afroXml, 'fela_drums').replace(/fela_drums/g, 'P1');
-  const greekInner = extractPartInner(greekXml, 'P1')
-    .replace(/id="P1"/g, 'id="P2"')
-    .replace(/P1-I(\d+)/g, 'P2-I$1');
+  const afInner = extractLayerInner(plan.engineA.engine, afXml, 'P1');
+  const bfInner = extractLayerInner(plan.engineB.engine, bfXml, 'P2');
 
   const tag = escapeXml(`${plan.conflictStrategy}`);
   const title = escapeXml(`Layer blend (${plan.conflictStrategy})`);
+  const nameA = escapeXml(layerDisplayName(plan.engineA.engine));
+  const nameB = escapeXml(layerDisplayName(plan.engineB.engine));
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="4.0">
   <work><work-title>${title}</work-title></work>
   <part-list>
-${blendPercussionScorePartFromGmSet('P1', 'Afrobeat layer', BLEND_GM_NOTES_FELA)}
-${blendPercussionScorePartFromGmSet('P2', 'Rebetiko layer', BLEND_GM_NOTES_FULL)}
+${blendPercussionScorePartFromGmSet('P1', nameA, BLEND_SCORE_GM_MASTER)}
+${blendPercussionScorePartFromGmSet('P2', nameB, BLEND_SCORE_GM_MASTER)}
   </part-list>
   <part id="P1">
-${afroInner}
+${afInner}
   </part>
   <part id="P2">
-${greekInner}
+${bfInner}
   </part>
 <!-- blend strategy: ${tag} -->
 </score-partwise>

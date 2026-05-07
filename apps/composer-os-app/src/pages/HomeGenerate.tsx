@@ -26,6 +26,15 @@ import { CubanRhythmControls } from '../components/CubanRhythmControls';
 import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
 import { GreekRhythmControls } from '../components/GreekRhythmControls';
 import { StylePanel } from '../components/StylePanel';
+import { RhythmBlendControls } from '../components/RhythmBlendControls';
+import {
+  AFROBEAT_STARTER_PRESETS,
+  BRAZILIAN_STARTER_PRESETS,
+  CUBAN_STARTER_PRESETS,
+  GREEK_REBETIKO_STARTER_PRESETS,
+  SECOND_LINE_STARTER_PRESETS,
+} from '../constants/rhythmBlendStarterPresets';
+import { exportBlendedScoreToMusicXml, exportSongFormToMusicXml } from '@composer-os/core/blend';
 import {
   buildGenerationContext,
   migrateLegacySongwriterValue,
@@ -5009,6 +5018,26 @@ export function HomeGenerate({
               }}
               disabled={loading}
             />
+          )}
+          {presetId === 'song_mode' && (
+            <details style={{ marginBottom: '0.65rem', maxWidth: 280 }}>
+              <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Rhythm blend lab (MusicXML export)
+              </summary>
+              <div style={{ marginTop: '0.5rem' }}>
+                <RhythmBlendControls
+                  starterBundles={{
+                    afrobeat: AFROBEAT_STARTER_PRESETS,
+                    rebetiko: GREEK_REBETIKO_STARTER_PRESETS,
+                    brazilian: BRAZILIAN_STARTER_PRESETS,
+                    secondLine: SECOND_LINE_STARTER_PRESETS,
+                    cuban: CUBAN_STARTER_PRESETS,
+                  }}
+                  exportSongFormToMusicXml={exportSongFormToMusicXml}
+                  exportBlendedScoreToMusicXml={exportBlendedScoreToMusicXml}
+                />
+              </div>
+            </details>
           )}
           {songwriterStyle === 'frank_zappa' && (
             <>

@@ -137,7 +137,7 @@ export const simpleBlendPlan: MultiPartScorePlan = {
     {
       partId: 'P2',
       engine: 'rebetiko',
-      presetId: 'zeibekiko_2223_heavy',
+      presetId: 'zeibekiko_9_8',
       meter: '9/8',
       gridSteps: 18,
     },

@@ -1,11 +1,20 @@
 /**
- * Afrobeat rows align with `tonyAllenPatterns.json` feels; Greek rows mirror shipped presets.
+ * Starter rows for Rhythm blend lab — mirrors Tony Allen feels + shipped rhythm preset catalogs.
  */
 
+import { BRAZILIAN_RHYTHM_PRESETS } from '@composer-os/core/rhythm/brazilianRhythmPresets';
+import { CUBAN_RHYTHM_PRESETS } from '@composer-os/core/rhythm/cubanRhythmPresets';
 import { GREEK_REBETIKO_RHYTHM_PRESETS } from '@composer-os/core/rhythm/greekRebetikoRhythmPresets';
 import type { RhythmPreset } from '@composer-os/core/rhythm/greekRebetikoRhythmTypes';
+import { SECOND_LINE_RHYTHM_PRESETS } from '@composer-os/core/rhythm/secondLineRhythmPresets';
 
-import type { AfrobeatPresetRef, RebetikoPresetRef } from '../components/RhythmBlendControls.types';
+import type {
+  AfrobeatPresetRef,
+  BrazilianPresetRef,
+  CubanPresetRef,
+  RebetikoPresetRef,
+  SecondLinePresetRef,
+} from '../components/RhythmBlendControls.types';
 
 const TONY_ALLEN_FEELS: { presetId: string; label: string }[] = [
   { presetId: 'straight', label: 'Tony Allen — straight' },
@@ -49,3 +58,27 @@ export const GREEK_REBETIKO_STARTER_PRESETS: RebetikoPresetRef[] = GREEK_REBETIK
       gridSteps: p.stepsPerBar,
     }) satisfies RebetikoPresetRef
 );
+
+export const BRAZILIAN_STARTER_PRESETS: BrazilianPresetRef[] = BRAZILIAN_RHYTHM_PRESETS.map((p) => ({
+  engine: 'brazilian',
+  presetId: p.id,
+  label: p.label,
+  meterSignature: p.meter.signature,
+  gridSteps: p.meter.gridSteps,
+}));
+
+export const SECOND_LINE_STARTER_PRESETS: SecondLinePresetRef[] = SECOND_LINE_RHYTHM_PRESETS.map((p) => ({
+  engine: 'second_line',
+  presetId: p.id,
+  label: p.label,
+  meterSignature: p.meter.signature,
+  gridSteps: p.meter.gridSteps,
+}));
+
+export const CUBAN_STARTER_PRESETS: CubanPresetRef[] = CUBAN_RHYTHM_PRESETS.map((p) => ({
+  engine: 'cuban',
+  presetId: p.id,
+  label: p.label,
+  meterSignature: p.meter.signature,
+  gridSteps: p.meter.gridSteps,
+}));

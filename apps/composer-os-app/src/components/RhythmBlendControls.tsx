@@ -1,22 +1,21 @@
 /**
- * Song Mode — rhythm blend sidebar (Afrobeat × Rebetiko): song-form arrange + dual-layer export.
+ * Song Mode — rhythm blend sidebar: song-form arrange + dual-layer export across five rhythm engines.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import { BLEND_RHYTHM_EXPORT_ENGINE } from '@composer-os/core/blend';
+import { BLEND_RHYTHM_EXPORT_ENGINE, type BlendExporterBlendedPlan, type BlendExporterSongForm } from '@composer-os/core/blend';
+import { lcm } from '@composer-os/core/rhythm/rhythmPulseGrid';
 import { saveRhythmExportFile } from '../lib/saveRhythmExportFile';
 
 import type {
-  AfrobeatPresetRef,
   BarRange,
   BlendMode,
-  BlendedScorePlan,
   ConflictStrategy,
   LayerBlendForm,
-  RebetikoPresetRef,
   RhythmBlendControlsProps,
-  RhythmEngineId,
+  RhythmBlendEngineId,
+  RhythmBlendStarterBundles,
   RhythmPresetRef,
   SongForm,
   SongSection,
@@ -24,28 +23,62 @@ import type {
 import './RhythmBlendControls.css';
 import { SaveNoticeRow, type SaveNoticePayload } from './SaveNoticeRow';
 
-function getDefaultAfrobeatPreset(p: AfrobeatPresetRef[]): AfrobeatPresetRef {
-  if (!p.length) throw new Error('No afrobeat presets');
-  return p[0];
+const ENGINE_OPTIONS: { id: RhythmBlendEngineId; label: string }[] = [
+  { id: 'afrobeat', label: 'Fela Kuti Afrobeat' },
+  { id: 'rebetiko', label: 'Greek Rebetiko' },
+  { id: 'brazilian', label: 'Brazilian' },
+  { id: 'second_line', label: 'Second Line' },
+  { id: 'cuban', label: 'Cuban' },
+];
+
+const LCM_WARN_AFTER = 144;
+
+function presetsForEngine(engine: RhythmBlendEngineId, b: RhythmBlendStarterBundles): RhythmPresetRef[] {
+  switch (engine) {
+    case 'afrobeat':
+      return b.afrobeat;
+    case 'rebetiko':
+      return b.rebetiko;
+    case 'brazilian':
+      return b.brazilian;
+    case 'second_line':
+      return b.secondLine;
+    case 'cuban':
+      return b.cuban;
+    default: {
+      const _x: never = engine;
+      return _x;
+    }
+  }
 }
-function getDefaultRebetikoPreset(p: RebetikoPresetRef[]): RebetikoPresetRef {
-  if (!p.length) throw new Error('No rebetiko presets');
-  return p[0];
+
+function defaultPresetForEngine(engine: RhythmBlendEngineId, b: RhythmBlendStarterBundles): RhythmPresetRef {
+  const list = presetsForEngine(engine, b);
+  if (!list.length) throw new Error(`RhythmBlendControls: no presets for engine ${engine}`);
+  return list[0]!;
 }
-function getDefaultPresetForEngine(
-  engine: RhythmEngineId,
-  a: AfrobeatPresetRef[],
-  r: RebetikoPresetRef[]
+
+function presetRefOrFirst(
+  engine: RhythmBlendEngineId,
+  presetId: string | undefined,
+  b: RhythmBlendStarterBundles
 ): RhythmPresetRef {
-  return engine === 'afrobeat' ? getDefaultAfrobeatPreset(a) : getDefaultRebetikoPreset(r);
+  const list = presetsForEngine(engine, b);
+  if (!list.length) throw new Error(`RhythmBlendControls: no presets for engine ${engine}`);
+  const hit = presetId ? list.find((p) => p.presetId === presetId) : undefined;
+  return hit ?? list[0]!;
 }
-function getPresetOptionsForEngine(
-  engine: RhythmEngineId,
-  a: AfrobeatPresetRef[],
-  r: RebetikoPresetRef[]
-): RhythmPresetRef[] {
-  return engine === 'afrobeat' ? a : r;
+
+function songFormToExporter(form: SongForm): BlendExporterSongForm {
+  return {
+    title: form.title,
+    sections: form.sections.map((s) => ({
+      bars: s.bars,
+      rhythm: { engine: s.rhythm.engine, presetId: s.rhythm.presetId },
+    })),
+  };
 }
+
 function slugify(s: string): string {
   return s
     .toLowerCase()
@@ -60,7 +93,8 @@ function newSectionId(): string {
     : `sec-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
-function defaultSongForm(afro: AfrobeatPresetRef[], reb: RebetikoPresetRef[]): SongForm {
+function defaultSongForm(b: RhythmBlendStarterBundles): SongForm {
+  const r = defaultPresetForEngine('afrobeat', b);
   return {
     title: 'Rhythm blend',
     sections: [
@@ -68,17 +102,22 @@ function defaultSongForm(afro: AfrobeatPresetRef[], reb: RebetikoPresetRef[]): S
         id: newSectionId(),
         label: 'Section A',
         bars: { startBar: 1, endBar: 4 },
-        rhythm: getDefaultAfrobeatPreset(afro),
+        rhythm: r,
         expanded: true,
       },
     ],
   };
 }
 
-function defaultLayerBlend(afro: AfrobeatPresetRef[], reb: RebetikoPresetRef[]): LayerBlendForm {
+function defaultLayerBlend(b: RhythmBlendStarterBundles): LayerBlendForm {
+  const a = defaultPresetForEngine('afrobeat', b);
+  const g = defaultPresetForEngine('rebetiko', b);
   return {
-    afrobeatPresetId: getDefaultAfrobeatPreset(afro).presetId,
-    rebetikoPresetId: getDefaultRebetikoPreset(reb).presetId,
+    engineA: 'afrobeat',
+    engineAPresetId: a.presetId,
+    engineB: 'rebetiko',
+    engineBPresetId: g.presetId,
+    blendRatio: 0.5,
     conflictStrategy: 'max',
   };
 }
@@ -135,18 +174,17 @@ function SongSectionRow(props: {
   section: SongSection;
   index: number;
   count: number;
-  afroPresets: AfrobeatPresetRef[];
-  rebPresets: RebetikoPresetRef[];
+  bundles: RhythmBlendStarterBundles;
   onUpdate: (id: string, patch: Partial<SongSection>) => void;
   onRemove: (id: string) => void;
   onMove: (id: string, dir: 'up' | 'down') => void;
   onToggleExpand: (id: string) => void;
-  onEngineChange: (id: string, engine: RhythmEngineId) => void;
+  onEngineChange: (id: string, engine: RhythmBlendEngineId) => void;
   onPresetSelect: (id: string, preset: RhythmPresetRef) => void;
 }) {
   const { section } = props;
   const engine = section.rhythm.engine;
-  const options = getPresetOptionsForEngine(engine, props.afroPresets, props.rebPresets);
+  const options = presetsForEngine(engine, props.bundles);
 
   const barPatch = (key: keyof BarRange, raw: string) => {
     const n = parseInt(raw, 10);
@@ -157,7 +195,11 @@ function SongSectionRow(props: {
   return (
     <div className="songSectionRow">
       <div className="songSectionRow__header">
-        <button type="button" onClick={() => props.onToggleExpand(section.id)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: 0 }}>
+        <button
+          type="button"
+          onClick={() => props.onToggleExpand(section.id)}
+          style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: 0 }}
+        >
           <strong>{section.label || 'Section'}</strong>
           <span className="songSectionRow__chevron">{section.expanded !== false ? ' ▾' : ' ▸'}</span>
         </button>
@@ -165,7 +207,12 @@ function SongSectionRow(props: {
           <button type="button" disabled={props.index === 0} onClick={() => props.onMove(section.id, 'up')} aria-label="Move section up">
             Up
           </button>
-          <button type="button" disabled={props.index >= props.count - 1} onClick={() => props.onMove(section.id, 'down')} aria-label="Move section down">
+          <button
+            type="button"
+            disabled={props.index >= props.count - 1}
+            onClick={() => props.onMove(section.id, 'down')}
+            aria-label="Move section down"
+          >
             Down
           </button>
           <button type="button" onClick={() => props.onRemove(section.id)} aria-label="Remove section">
@@ -221,10 +268,13 @@ function SongSectionRow(props: {
             <select
               id={`sec-engine-${section.id}`}
               value={engine}
-              onChange={(e) => props.onEngineChange(section.id, e.target.value as RhythmEngineId)}
+              onChange={(e) => props.onEngineChange(section.id, e.target.value as RhythmBlendEngineId)}
             >
-              <option value="afrobeat">Afrobeat</option>
-              <option value="rebetiko">Rebetiko</option>
+              {ENGINE_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -301,44 +351,119 @@ function ConflictStrategyRadioGroup(props: {
 
 function LayerBlendPanel(props: {
   layer: LayerBlendForm;
-  afroPresets: AfrobeatPresetRef[];
-  rebPresets: RebetikoPresetRef[];
+  bundles: RhythmBlendStarterBundles;
+  lcmWarning: string | null;
   onChange: (next: LayerBlendForm) => void;
 }) {
+  const pa = presetsForEngine(props.layer.engineA, props.bundles);
+  const pb = presetsForEngine(props.layer.engineB, props.bundles);
+
   return (
     <div className="layerBlendPanel">
       <div style={{ marginBottom: '0.45rem' }}>
-        <label className="fieldLabel" htmlFor="layer-afro-preset">
-          Afrobeat preset
+        <label className="fieldLabel" htmlFor="layer-engine-a">
+          Engine A
         </label>
         <select
-          id="layer-afro-preset"
-          value={props.layer.afrobeatPresetId}
-          onChange={(e) => props.onChange({ ...props.layer, afrobeatPresetId: e.target.value })}
+          id="layer-engine-a"
+          value={props.layer.engineA}
+          onChange={(e) => {
+            const eng = e.target.value as RhythmBlendEngineId;
+            const ref = defaultPresetForEngine(eng, props.bundles);
+            props.onChange({
+              ...props.layer,
+              engineA: eng,
+              engineAPresetId: ref.presetId,
+            });
+          }}
         >
-          {props.afroPresets.map((p) => (
-            <option key={p.presetId} value={p.presetId}>
-              {p.label}
+          {ENGINE_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
             </option>
           ))}
         </select>
       </div>
       <div style={{ marginBottom: '0.45rem' }}>
-        <label className="fieldLabel" htmlFor="layer-reb-preset">
-          Rebetiko preset
+        <label className="fieldLabel" htmlFor="layer-preset-a">
+          Engine A preset
         </label>
         <select
-          id="layer-reb-preset"
-          value={props.layer.rebetikoPresetId}
-          onChange={(e) => props.onChange({ ...props.layer, rebetikoPresetId: e.target.value })}
+          id="layer-preset-a"
+          value={props.layer.engineAPresetId}
+          onChange={(e) => props.onChange({ ...props.layer, engineAPresetId: e.target.value })}
         >
-          {props.rebPresets.map((p) => (
+          {pa.map((p) => (
             <option key={p.presetId} value={p.presetId}>
               {p.label}
             </option>
           ))}
         </select>
       </div>
+
+      <div style={{ marginBottom: '0.45rem' }}>
+        <label className="fieldLabel" htmlFor="layer-engine-b">
+          Engine B
+        </label>
+        <select
+          id="layer-engine-b"
+          value={props.layer.engineB}
+          onChange={(e) => {
+            const eng = e.target.value as RhythmBlendEngineId;
+            const ref = defaultPresetForEngine(eng, props.bundles);
+            props.onChange({
+              ...props.layer,
+              engineB: eng,
+              engineBPresetId: ref.presetId,
+            });
+          }}
+        >
+          {ENGINE_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div style={{ marginBottom: '0.45rem' }}>
+        <label className="fieldLabel" htmlFor="layer-preset-b">
+          Engine B preset
+        </label>
+        <select
+          id="layer-preset-b"
+          value={props.layer.engineBPresetId}
+          onChange={(e) => props.onChange({ ...props.layer, engineBPresetId: e.target.value })}
+        >
+          {pb.map((p) => (
+            <option key={p.presetId} value={p.presetId}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: '0.45rem' }}>
+        <label className="fieldLabel" htmlFor="layer-blend-ratio">
+          Blend ratio (A emphasis){' '}
+          <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{props.layer.blendRatio.toFixed(2)}</span>
+        </label>
+        <input
+          id="layer-blend-ratio"
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={props.layer.blendRatio}
+          onChange={(e) => props.onChange({ ...props.layer, blendRatio: Number(e.target.value) })}
+        />
+      </div>
+
+      {props.lcmWarning ? (
+        <p className="rhythmBlendControls__lcmWarn" style={{ margin: '0 0 0.45rem', fontSize: '0.75rem', color: 'var(--warn, #c90)' }}>
+          {props.lcmWarning}
+        </p>
+      ) : null}
+
       <ConflictStrategyRadioGroup value={props.layer.conflictStrategy} onChange={(c) => props.onChange({ ...props.layer, conflictStrategy: c })} />
     </div>
   );
@@ -367,20 +492,28 @@ function ExportBar(props: {
 }
 
 export function RhythmBlendControls(props: RhythmBlendControlsProps) {
-  const {
-    afrobeatPresets,
-    rebetikoPresets,
-    exportSongFormToMusicXml,
-    exportBlendedScoreToMusicXml,
-    defaultFileName,
-  } = props;
+  const { starterBundles, exportSongFormToMusicXml, exportBlendedScoreToMusicXml, defaultFileName } = props;
 
   const [blendMode, setBlendMode] = useState<BlendMode>(() => props.initialBlendMode ?? 'song-form');
-  const [songForm, setSongForm] = useState<SongForm>(() => props.initialSongForm ?? defaultSongForm(afrobeatPresets, rebetikoPresets));
-  const [layerBlend, setLayerBlend] = useState<LayerBlendForm>(() =>
-    props.initialLayerBlend ?? defaultLayerBlend(afrobeatPresets, rebetikoPresets)
-  );
+  const [songForm, setSongForm] = useState<SongForm>(() => props.initialSongForm ?? defaultSongForm(starterBundles));
+  const [layerBlend, setLayerBlend] = useState<LayerBlendForm>(() => props.initialLayerBlend ?? defaultLayerBlend(starterBundles));
   const [exportBusy, setExportBusy] = useState(false);
+
+  const layerLcmWarning = useMemo(() => {
+    const ra = presetRefOrFirst(layerBlend.engineA, layerBlend.engineAPresetId, starterBundles);
+    const rb = presetRefOrFirst(layerBlend.engineB, layerBlend.engineBPresetId, starterBundles);
+    const g = lcm(ra.gridSteps, rb.gridSteps);
+    if (g > LCM_WARN_AFTER) {
+      return `Grid LCM for this pair is ${g} pulses/bar (> ${LCM_WARN_AFTER}). Layer merge uses this raster; export is still valid.`;
+    }
+    return null;
+  }, [
+    layerBlend.engineA,
+    layerBlend.engineAPresetId,
+    layerBlend.engineB,
+    layerBlend.engineBPresetId,
+    starterBundles,
+  ]);
 
   const addSection = useCallback(() => {
     setSongForm((prev) => {
@@ -388,16 +521,17 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
       const start = last ? last.bars.endBar + 1 : 1;
       const end = start + 3;
       const labelLetter = String.fromCharCode(65 + prev.sections.length);
+      const rhythm = last?.rhythm ?? defaultPresetForEngine('afrobeat', starterBundles);
       const sec: SongSection = {
         id: newSectionId(),
         label: `Section ${labelLetter}`,
         bars: { startBar: start, endBar: end },
-        rhythm: getDefaultAfrobeatPreset(afrobeatPresets),
+        rhythm,
         expanded: true,
       };
       return { ...prev, sections: [...prev.sections, sec] };
     });
-  }, [afrobeatPresets]);
+  }, [starterBundles]);
 
   const updateSection = useCallback((id: string, patch: Partial<SongSection>) => {
     setSongForm((prev) => ({
@@ -456,11 +590,11 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
   }, []);
 
   const onEngineChange = useCallback(
-    (id: string, engine: RhythmEngineId) => {
-      const rhythm = getDefaultPresetForEngine(engine, afrobeatPresets, rebetikoPresets);
+    (id: string, engine: RhythmBlendEngineId) => {
+      const rhythm = defaultPresetForEngine(engine, starterBundles);
       updateSectionRhythm(id, rhythm);
     },
-    [afrobeatPresets, rebetikoPresets, updateSectionRhythm]
+    [starterBundles, updateSectionRhythm]
   );
 
   const [saveNotice, setSaveNotice] = useState<SaveNoticePayload | null>(null);
@@ -488,15 +622,11 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     try {
       let xml: string;
       if (blendMode === 'song-form') {
-        xml = exportSongFormToMusicXml(songForm);
+        xml = exportSongFormToMusicXml(songFormToExporter(songForm));
       } else {
-        const afro =
-          afrobeatPresets.find((p) => p.presetId === layerBlend.afrobeatPresetId) ?? getDefaultAfrobeatPreset(afrobeatPresets);
-        const reb =
-          rebetikoPresets.find((p) => p.presetId === layerBlend.rebetikoPresetId) ?? getDefaultRebetikoPreset(rebetikoPresets);
-        const plan: BlendedScorePlan = {
-          afrobeatPreset: afro,
-          rebetikoPreset: reb,
+        const plan: BlendExporterBlendedPlan = {
+          engineA: { engine: layerBlend.engineA, presetId: layerBlend.engineAPresetId },
+          engineB: { engine: layerBlend.engineB, presetId: layerBlend.engineBPresetId },
           conflictStrategy: layerBlend.conflictStrategy,
         };
         xml = exportBlendedScoreToMusicXml(plan);
@@ -523,8 +653,6 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     blendMode,
     songForm,
     layerBlend,
-    afrobeatPresets,
-    rebetikoPresets,
     exportSongFormToMusicXml,
     exportBlendedScoreToMusicXml,
     defaultFileName,
@@ -545,7 +673,7 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
       <div className="rhythmBlendControls__scroll">
         <h3 className="rhythmBlendControls__title">Rhythm blend</h3>
         <p className="rhythmBlendControls__hint">
-          Arrange sections (song form) or stack Afrobeat + Rebetiko layers. Export writes a Sibelius-safe GM percussion staff.
+          Arrange sections (song form) or stack two rhythm engines. Export writes GM percussion; Greek presets keep additive metre/beaming.
         </p>
         <BlendModeToggle mode={blendMode} onChange={setBlendMode} />
 
@@ -558,8 +686,7 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
                   section={sec}
                   index={i}
                   count={songForm.sections.length}
-                  afroPresets={afrobeatPresets}
-                  rebPresets={rebetikoPresets}
+                  bundles={starterBundles}
                   onUpdate={updateSection}
                   onRemove={removeSection}
                   onMove={moveSection}
@@ -574,7 +701,7 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
             </button>
           </SongFormPanel>
         ) : (
-          <LayerBlendPanel layer={layerBlend} afroPresets={afrobeatPresets} rebPresets={rebetikoPresets} onChange={setLayerBlend} />
+          <LayerBlendPanel layer={layerBlend} bundles={starterBundles} lcmWarning={layerLcmWarning} onChange={setLayerBlend} />
         )}
       </div>
       <ExportBar

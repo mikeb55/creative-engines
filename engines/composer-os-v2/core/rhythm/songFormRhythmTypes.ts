@@ -3,7 +3,12 @@
  * Used for multi-section arrangements, meter changes at boundaries, and blend export planning.
  */
 
-export type RhythmEngineId = 'afrobeat' | 'rebetiko';
+export type RhythmEngineId =
+  | 'afrobeat'
+  | 'rebetiko'
+  | 'brazilian'
+  | 'second_line'
+  | 'cuban';
 
 export interface AfrobeatPresetRef {
   engine: 'afrobeat';
@@ -67,7 +72,7 @@ export const BLEND_DEMO_SONG_FORM_EXAMPLE: SongForm = {
       bars: { startBar: 1, endBar: 8 },
       rhythm: {
         engine: 'rebetiko',
-        presetId: 'zeibekiko_2223_heavy',
+        presetId: 'zeibekiko_9_8',
         meter: '9/8',
         groups: [2, 2, 2, 3],
         gridSteps: 18,

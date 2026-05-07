@@ -1,5 +1,13 @@
+import type { BlendExporterBlendedPlan, BlendExporterSongForm } from '@composer-os/core/blend';
+
 export type BlendMode = 'song-form' | 'layer-blend';
-export type RhythmEngineId = 'afrobeat' | 'rebetiko';
+/** Blend lab engines (maps to core `RhythmEngineId` in blend exporter). */
+export type RhythmBlendEngineId =
+  | 'afrobeat'
+  | 'rebetiko'
+  | 'brazilian'
+  | 'second_line'
+  | 'cuban';
 export type ConflictStrategy = 'max' | 'sum-clamped' | 'priority';
 
 export interface BarRange {
@@ -24,7 +32,36 @@ export interface RebetikoPresetRef {
   gridSteps: number;
 }
 
-export type RhythmPresetRef = AfrobeatPresetRef | RebetikoPresetRef;
+export interface BrazilianPresetRef {
+  engine: 'brazilian';
+  presetId: string;
+  label: string;
+  meterSignature: string;
+  gridSteps: number;
+}
+
+export interface SecondLinePresetRef {
+  engine: 'second_line';
+  presetId: string;
+  label: string;
+  meterSignature: string;
+  gridSteps: number;
+}
+
+export interface CubanPresetRef {
+  engine: 'cuban';
+  presetId: string;
+  label: string;
+  meterSignature: string;
+  gridSteps: number;
+}
+
+export type RhythmPresetRef =
+  | AfrobeatPresetRef
+  | RebetikoPresetRef
+  | BrazilianPresetRef
+  | SecondLinePresetRef
+  | CubanPresetRef;
 
 export interface SongSection {
   id: string;
@@ -41,24 +78,29 @@ export interface SongForm {
 }
 
 export interface LayerBlendForm {
-  afrobeatPresetId: string;
-  rebetikoPresetId: string;
+  engineA: RhythmBlendEngineId;
+  engineAPresetId: string;
+  engineB: RhythmBlendEngineId;
+  engineBPresetId: string;
+  /** 0 = all B flavour, 1 = all A flavour — metadata for future merge weighting; export unchanged. */
+  blendRatio: number;
   conflictStrategy: ConflictStrategy;
 }
 
-export interface BlendedScorePlan {
-  afrobeatPreset: AfrobeatPresetRef;
-  rebetikoPreset: RebetikoPresetRef;
-  conflictStrategy: ConflictStrategy;
+export interface RhythmBlendStarterBundles {
+  afrobeat: AfrobeatPresetRef[];
+  rebetiko: RebetikoPresetRef[];
+  brazilian: BrazilianPresetRef[];
+  secondLine: SecondLinePresetRef[];
+  cuban: CubanPresetRef[];
 }
 
 export interface RhythmBlendControlsProps {
-  afrobeatPresets: AfrobeatPresetRef[];
-  rebetikoPresets: RebetikoPresetRef[];
+  starterBundles: RhythmBlendStarterBundles;
   initialSongForm?: SongForm;
   initialBlendMode?: BlendMode;
   initialLayerBlend?: LayerBlendForm;
-  exportSongFormToMusicXml: (form: SongForm) => string;
-  exportBlendedScoreToMusicXml: (plan: BlendedScorePlan) => string;
+  exportSongFormToMusicXml: (form: BlendExporterSongForm) => string;
+  exportBlendedScoreToMusicXml: (plan: BlendExporterBlendedPlan) => string;
   defaultFileName?: string;
 }
