@@ -4,15 +4,25 @@
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
 
-- **Current version:** **V42** (culture rhythm panels **Brazilian V40**, **New Orleans Second Line V41**, **Cuban/Afro-Cuban V42** — **`docs/RHYTHM_ENGINES.md`**, **`docs/COMPOSER_OS_PLAYBOOK.md`** + DOCX, README; Greek Rebetiko handbook **§§1–10** **`docs/GREEK_REBETIKO_HANDBOOK.md`**; Song Mode rhythm blend types **`songFormRhythmTypes`** / **`rhythmPulseGrid`** / **`rhythmLayerMerge`**).
+- **Current version:** **V44** (**StylePanel** — Harmonic Voice + Rhythm Engine selectors **`docs/COMPOSER_OS_PLAYBOOK.md`**); **V43** blend lab (**all five** rhythm engines, Engine A/B, LCM grid **`docs/RHYTHM_ENGINES.md`**); culture rhythms **V40–V42**; **`docs/GREEK_REBETIKO_HANDBOOK.md`** §§1–10; Song Mode **`songFormRhythmTypes`** / **`rhythmPulseGrid`** / **`rhythmLayerMerge`**.
 - **Quality gate (local):** **`npm run test:composer-smoke`** — **163** tests passed / **0** failed across **42** labelled suites (`engines/composer-os-v2/tests/runSmokeTests.ts` allowlist).
 - **Repository path:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\`
 
-**Rhythm engines (Song Mode panels)**
+**Shipped rhythm engines (prefix · presets · version)**
 
-- **Brazilian Rhythm Engine (V40)** — bossa nova, samba, baião
-- **New Orleans Second Line (V41)** — parade, brass band, Mardi Gras
-- **Cuban/Afro-Cuban (V42)** — son clave, mambo, cha-cha, bolero
+| Prefix | Engine | Presets (approx.) | Ver |
+|--------|--------|-------------------|-----|
+| **`fk:*`** | Fela Kuti Afrobeat (Tony Allen grids) | ~12 feels/patterns | **V37** |
+| **`gr:*`** | Greek Rebetiko (additive metres) | 13 roadmap IDs (bundle in repo) | **V38** |
+| **`br:*`** | Brazilian (bossa, samba, baião, son-clave) | **9** | **V40** |
+| **`sl:*`** | New Orleans Second Line | **8** | **V41** |
+| **`cu:*`** | Cuban / Afro-Cuban | **8** | **V42** |
+
+**Blend Engine (V43)** — Generate → Song Mode → **Rhythm blend lab**: cross-blend **any two** of the five engines via **Engine A / Engine B** dropdowns, per-engine presets, **Song form** (sections alternate engines) or **Layer blend** (two stacked GM parts). **`mergeRhythmLayers()`** uses **LCM** pulse normalisation when bar grids differ (e.g. 16 vs 18 steps); UI warns when pair **LCM > 144**. See **`docs/RHYTHM_ENGINES.md`**.
+
+**StylePanel (V44)** — **Harmonic Voice** (songwriter / harmonic palette) and **Rhythm Engine** (culture groove) are **separate** selectors, so combinations like **Bill Evans + Brazilian** or **Debussy + Rebetiko** are valid without tying harmony ID to a single rhythm family.
+
+**Exports (Documents \\ Composer OS Exports \\)** — **`Fela Kuti Rhythms\\`**, **`Greek Rhythms\\`**, **`Brazilian Rhythms\\`**, **`Second Line\\`**, **`Cuban Rhythms\\`**; rhythm-blend MusicXML → **`Blended Rhythms\\`** (**`outputPaths.ts`**).
 
 **Tooling split**
 
@@ -400,6 +410,8 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **V40** | **Brazilian** rhythm engine — bossa nova, samba, baião, son-clave; **`BrazilianRhythmControls`** / **`brazilianRhythmSlice`**; export **`Composer OS Exports/Brazilian Rhythms/`** |
 | **V41** | **New Orleans Second Line** — parade, brass band, Mardi Gras, funk; **`SecondLineRhythmControls`** / **`secondLineRhythmSlice`**; **`Composer OS Exports/Second Line/`** |
 | **V42** | **Cuban/Afro-Cuban** — son, rumba, mambo, cha-cha, bolero, mozambique, Afro 6/8; **`CubanRhythmControls`** / **`cubanRhythmSlice`**; **`Composer OS Exports/Cuban Rhythms/`** |
+| **V43** | **Blend Engine** — **`RhythmBlendControls`**: all **five** rhythm engines, Engine **A** / **B**, preset lists per engine, Song form + Layer blend, LCM merge + warning **`>144`**; **`blendMusicXmlExporter.ts`**; exports **`Blended Rhythms/`** |
+| **V44** | **StylePanel** — independent **Harmonic Voice** + **Rhythm Engine** selectors on Generate (**`StylePanel.tsx`**); arbitrary harmonic × groove pairing |
 
 ---
 

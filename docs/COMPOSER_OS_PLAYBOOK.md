@@ -25,7 +25,17 @@ Song Mode primary **`greek_rebetiko`** surfaces **Greek Rebetiko / dance-metre**
 
 ## Rhythm engines (Afrobeat, Rebetiko, Brazilian, Second Line, Cuban)
 
-Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: compares **`afrobeat`** (Tony Allen / **`fela_kuti`**) vs **`rebetiko`** (**`greek_rebetiko`**) vs culture rhythm panels (**V40–V42**), links **`songFormRhythmTypes`** (**`AfrobeatPresetRef`**, **`RebetikoPresetRef`**, **`BLEND_DEMO_SONG_FORM_EXAMPLE`**), **`rhythmPulseGrid`** / **`rhythmLayerMerge`**, and **`rhythmBlendPolicies`** (hard section cuts, **`pragmaticPlan`**). Pair with **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** for feels and **`fk:*`** tags.
+Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: five shipped **`RhythmEngineId`** values (**`afrobeat`** … **`cuban`**), **`songFormRhythmTypes`**, **`rhythmPulseGrid`** / **`rhythmLayerMerge`**, **`rhythmBlendPolicies`**. Handbooks: **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** (**`fk:*`**), **`docs/GREEK_REBETIKO_HANDBOOK.md`** (**`gr:*`**).
+
+### Ship notes — V40–V44
+
+| Ship | What changed |
+|------|----------------|
+| **V40** | **Brazilian** — **`BrazilianRhythmControls`**, **`br:*`** receipts, **`Documents/Composer OS Exports/Brazilian Rhythms/`** |
+| **V41** | **Second Line** — **`SecondLineRhythmControls`**, **`sl:*`**, **`Documents/Composer OS Exports/Second Line/`** |
+| **V42** | **Cuban** — **`CubanRhythmControls`**, **`cu:*`**, **`Documents/Composer OS Exports/Cuban Rhythms/`** |
+| **V43** | **Blend Engine** — **`RhythmBlendControls`** (all five engines): Engine **A** / **B**, per-engine presets, **Song form** vs **Layer blend**, **LCM** merge + UI warning when **`lcm(gridSteps) > 144`**, conflict strategies **max / sum-clamped / priority**; MusicXML → **`Documents/Composer OS Exports/Blended Rhythms/`** |
+| **V44** | **StylePanel** — **Harmonic Voice** and **Rhythm Engine** are **separate** Generate selectors (combine any shipped harmonic writer with any shipped rhythm engine, e.g. **Bill Evans + Brazilian**, **Debussy + Rebetiko**) |
 
 ### Culture rhythm panels (V40–V42)
 
@@ -35,13 +45,37 @@ Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: compares **`afrobeat`** 
 | **`sl:*`** | New Orleans Second Line (8 presets: parade, brass band, funk) | V41 |
 | **`cu:*`** | Cuban/Afro-Cuban (8 presets: son, mambo, cha-cha, bolero) | V42 |
 
+### StylePanel (V44) — how to combine Harmonic Voice + Rhythm Engine
+
+On **Generate** → Song Mode, **`StylePanel`** shows two dropdowns:
+
+1. **Harmonic Voice** — chooses the **songwriter / harmonic slice** (golden-path harmony behaviour).
+2. **Rhythm Engine** — chooses the **culture rhythm surface** (Fela, Greek, Brazilian, Second Line, Cuban) and its preset wiring.
+
+They **do not** force a fixed pairing: pick harmony and groove independently. Rhythm-specific controls (**`FelaPercussionControls`**, **`GreekRhythmControls`**, etc.) appear when that rhythm engine is selected.
+
+### Blend Engine (V43) — Rhythm blend lab
+
+Open **Rhythm blend lab (MusicXML export)** (collapsible under Song Mode). Configure:
+
+- **Engine A** / **Engine B** — each dropdown lists all **five** engines; presets populate from that engine’s shipped list (Tony Allen feels, **`GREEK_REBETIKO_*`** presets, Brazilian / Second Line / Cuban catalogs).
+- **Blend ratio** slider (**Layer blend** mode) — UI emphasis toward A vs B (metadata for exploration; core **`mergeRhythmLayers`** conflict strategy still applies).
+- **LCM warning** — appears when the selected pair’s bar grids yield **`lcm(steps) > 144`** (wide raster; export remains valid).
+- **Song form** — sections each carry one engine + preset; export concatenates measures.
+- **Layer blend** — dual percussion parts **P1** / **P2** in one MusicXML file.
+
 ### Rules learned
 
 - **Cuban engine:** `claveDirection` is a **preset** field, not a live toggle — flipping 3-2 to 2-3 implies rewriting horn phrasing.
 - **Brazilian:** Bossa nova does **not** need swing ratio — use **`anticipationPush`** instead.
 - **Second line:** “Between the cracks” feel — use **`subdivisionWarp`**, not swing.
 - **All engines:** 6/8 presets use a **12-step** grid, not 16-step.
-- **Output dirs** are per-engine under **`Documents/Composer OS Exports/`** (see **`docs/RHYTHM_ENGINES.md`** registry).
+- **Output dirs** — **`Fela Kuti Rhythms`**, **`Greek Rhythms`**, **`Brazilian Rhythms`**, **`Second Line`**, **`Cuban Rhythms`**, **`Blended Rhythms`** under **`Documents/Composer OS Exports/`** (**`apps/composer-os-app/src/lib/outputPaths.ts`**).
+
+### Desktop packaging fallback & repo hygiene
+
+- If **`npm run desktop:package-no-bump`** fails (locked **`release`** tree, **`app.asar`** in use, etc.), from **`apps/composer-os-desktop`** run: **`electron-builder --win --config.directories.output=dist-electron-release`** (same env vars your packaging script uses, e.g. **`CSC_IDENTITY_AUTO_DISCOVERY=false`** via **`cross-env`** when applicable). Then use artifacts under **`dist-electron-release/`**.
+- **`apps/composer-os-desktop/dist-electron-release/win-unpacked/`** may contain **large** Electron binaries and is **listed in `.gitignore`** — do not commit **`win-unpacked`**; keep portable/installer outputs per your release policy.
 
 ---
 

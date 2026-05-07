@@ -95,6 +95,10 @@ The standalone exporter writes **MusicXML 4.0** with one part **`P1`**, **percus
 
 **Manual Sibelius check:** export from the app (**Download MusicXML**) or call **`exportGreekRhythmToMusicXml(preset, 2)`**; import and confirm **GM** drum map, **unpitched** display octaves **4–5**, and no schema errors on **`<clef>`** scope.
 
+**Beam groups:** additive metre **stress cells** drive notation grouping — MusicXML **`<beam>`** placements follow the preset’s **`meter.groups`** (same additive integers as the dance metre: e.g. **9/8** as **2+2+2+3** eighths → beams reflect those segments).
+
+**Sibelius Mixer:** after import, assign the percussion staff to **GM Drum Kit** (or your house drum kit patch) in **Mixer** if playback sounds wrong — unpitched XML lists GM note numbers; instrument playback depends on the assigned rack sound.
+
 ---
 
 ## 5. Pulse grids, LCM, and cross-engine alignment
@@ -113,7 +117,7 @@ Full API names live under **`engines/composer-os-v2/core/rhythm/rhythmPulseGrid.
 
 ## 6. Song form, sections, and transitions
 
-Typed planning structs (**`songFormRhythmTypes.ts`**) attach a **`RhythmPresetRef`** (**AfrobeatPresetRef** or **RebetikoPresetRef**) to each **`SongSection`** over **`bars: { startBar, endBar }`** (1-based inclusive). Optional **`tempoBpm`**, **`transitionIn`**, **`transitionOut`** (**`hard`** vs **`crossfade`**) describe rehearsal logic — **not** yet a full DAW automation path.
+Typed planning structs (**`songFormRhythmTypes.ts`**) attach a **`RhythmPresetRef`** to each **`SongSection`** over **`bars: { startBar, endBar }`** (1-based inclusive); **`RhythmEngineId`** includes **all five** shipped rhythm engines for blend/lab flows. Optional **`tempoBpm`**, **`transitionIn`**, **`transitionOut`** (**`hard`** vs **`crossfade`**) describe rehearsal logic — **not** yet a full DAW automation path.
 
 **Recommended default:** **hard** switch at the **bar boundary** when metre or engine identity changes; discrete **MusicXML** time signatures match how bands read charts. **Overlap** transitions are arrangement effects (gain ramps, optional polymetry); they complicate notation unless scoped as **separate parts** or explicit tuplets.
 
