@@ -23,9 +23,25 @@ Song Mode primary **`greek_rebetiko`** surfaces **Greek Rebetiko / dance-metre**
 
 ---
 
-## Rhythm engines (Afrobeat & Rebetiko)
+## Rhythm engines (Afrobeat, Rebetiko, Brazilian, Second Line, Cuban)
 
-Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: compares **`afrobeat`** (Tony Allen / **`fela_kuti`**) vs **`rebetiko`** (**`greek_rebetiko`**), links **`songFormRhythmTypes`** (**`AfrobeatPresetRef`**, **`RebetikoPresetRef`**, **`BLEND_DEMO_SONG_FORM_EXAMPLE`**), **`rhythmPulseGrid`** / **`rhythmLayerMerge`**, and **`rhythmBlendPolicies`** (hard section cuts, **`pragmaticPlan`**). Pair with **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** for feels and **`fk:*`** tags.
+Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: compares **`afrobeat`** (Tony Allen / **`fela_kuti`**) vs **`rebetiko`** (**`greek_rebetiko`**) vs culture rhythm panels (**V40–V42**), links **`songFormRhythmTypes`** (**`AfrobeatPresetRef`**, **`RebetikoPresetRef`**, **`BLEND_DEMO_SONG_FORM_EXAMPLE`**), **`rhythmPulseGrid`** / **`rhythmLayerMerge`**, and **`rhythmBlendPolicies`** (hard section cuts, **`pragmaticPlan`**). Pair with **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** for feels and **`fk:*`** tags.
+
+### Culture rhythm panels (V40–V42)
+
+| Prefix | Engine | Ship |
+|--------|--------|------|
+| **`br:*`** | Brazilian (9 presets: bossa nova, samba, baião, son-clave) | V40 |
+| **`sl:*`** | New Orleans Second Line (8 presets: parade, brass band, funk) | V41 |
+| **`cu:*`** | Cuban/Afro-Cuban (8 presets: son, mambo, cha-cha, bolero) | V42 |
+
+### Rules learned
+
+- **Cuban engine:** `claveDirection` is a **preset** field, not a live toggle — flipping 3-2 to 2-3 implies rewriting horn phrasing.
+- **Brazilian:** Bossa nova does **not** need swing ratio — use **`anticipationPush`** instead.
+- **Second line:** “Between the cracks” feel — use **`subdivisionWarp`**, not swing.
+- **All engines:** 6/8 presets use a **12-step** grid, not 16-step.
+- **Output dirs** are per-engine under **`Documents/Composer OS Exports/`** (see **`docs/RHYTHM_ENGINES.md`** registry).
 
 ---
 

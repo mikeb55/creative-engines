@@ -4,9 +4,15 @@
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
 
-- **Current version:** **V39** (Greek Rebetiko handbook **§§1–10** **`docs/GREEK_REBETIKO_HANDBOOK.md`**, **`docs/RHYTHM_ENGINES.md`**, playbook/README + DOCX; Song Mode **`greek_rebetiko`** + rhythm blend types **`songFormRhythmTypes`** / **`rhythmPulseGrid`** / **`rhythmLayerMerge`**).
+- **Current version:** **V42** (culture rhythm panels **Brazilian V40**, **New Orleans Second Line V41**, **Cuban/Afro-Cuban V42** — **`docs/RHYTHM_ENGINES.md`**, **`docs/COMPOSER_OS_PLAYBOOK.md`** + DOCX, README; Greek Rebetiko handbook **§§1–10** **`docs/GREEK_REBETIKO_HANDBOOK.md`**; Song Mode rhythm blend types **`songFormRhythmTypes`** / **`rhythmPulseGrid`** / **`rhythmLayerMerge`**).
 - **Quality gate (local):** **`npm run test:composer-smoke`** — **163** tests passed / **0** failed across **42** labelled suites (`engines/composer-os-v2/tests/runSmokeTests.ts` allowlist).
 - **Repository path:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\`
+
+**Rhythm engines (Song Mode panels)**
+
+- **Brazilian Rhythm Engine (V40)** — bossa nova, samba, baião
+- **New Orleans Second Line (V41)** — parade, brass band, Mardi Gras
+- **Cuban/Afro-Cuban (V42)** — son clave, mambo, cha-cha, bolero
 
 **Tooling split**
 
@@ -391,6 +397,9 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **V37** | **Fela Kuti** Tony Allen percussion — **`afrobeatRhythmEngine`** bar-edge quantise / phase wrap / missing-feel fallback; **`FELA_KUTI_PERCUSSION_HANDBOOK.md`**; Sibelius sample export script; **`fk:*`** feel tags documented in playbook |
 | **V38** | **Greek Rebetiko** — **`GREEK_REBETIKO_HANDBOOK.md`** (preset roadmap table, additive-metre diagrams); **`greek_rebetiko`** Song Mode writer + **`GreekRhythmControls`** / **`exportGreekRhythmToMusicXml`**; playbook + DOCX sync |
 | **V39** | Handbook **§§3–10** (MusicXML § changes, LCM/merge, song form, UI, notation); **`RHYTHM_ENGINES.md`**; playbook/README rhythm-engine links |
+| **V40** | **Brazilian** rhythm engine — bossa nova, samba, baião, son-clave; **`BrazilianRhythmControls`** / **`brazilianRhythmSlice`**; export **`Composer OS Exports/Brazilian Rhythms/`** |
+| **V41** | **New Orleans Second Line** — parade, brass band, Mardi Gras, funk; **`SecondLineRhythmControls`** / **`secondLineRhythmSlice`**; **`Composer OS Exports/Second Line/`** |
+| **V42** | **Cuban/Afro-Cuban** — son, rumba, mambo, cha-cha, bolero, mozambique, Afro 6/8; **`CubanRhythmControls`** / **`cubanRhythmSlice`**; **`Composer OS Exports/Cuban Rhythms/`** |
 
 ---
 
