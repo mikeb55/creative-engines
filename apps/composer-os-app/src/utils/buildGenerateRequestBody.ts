@@ -32,7 +32,9 @@ export function mapCoreUiToGenerationFields(
   };
   const tc = u.tonalCenter.trim();
   if (tc) out.tonalCenter = tc;
-  out.bpm = Number.isFinite(u.bpm) && u.bpm > 0 ? Math.floor(u.bpm) : 120;
+  if (Number.isFinite(u.bpm) && u.bpm > 0) {
+    out.bpm = Math.floor(u.bpm);
+  }
   if (Number.isFinite(u.totalBars) && u.totalBars > 0) out.totalBars = Math.floor(u.totalBars);
   if (vid) out.variationId = vid;
   if (u.stylePairing) out.stylePairing = u.stylePairing;

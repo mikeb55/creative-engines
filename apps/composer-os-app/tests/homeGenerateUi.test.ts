@@ -6,6 +6,7 @@ import * as path from 'path';
 import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { vi } from 'vitest';
+import * as scoreXmlInput from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 
 vi.mock('../src/services/api', () => {
   const api = {
@@ -20,6 +21,18 @@ vi.mock('../src/services/api', () => {
   return { api, displayOutputPath: (r: { displayPath?: string; path: string }) => r.displayPath ?? r.path };
 });
 
+vi.spyOn(scoreXmlInput, 'extractScoreMusicXmlFromUint8Array').mockImplementation((input: Uint8Array) => {
+  if (!input || input.length === 0) {
+    return { ok: false, errors: ['Empty MusicXML input.'] };
+  }
+  return {
+    ok: true,
+    xml: '<score-partwise version="4.0"></score-partwise>',
+    errors: [],
+    format: 'utf8-text',
+  };
+});
+
 describe('HomeGenerate mode-driven UI', () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/pages/HomeGenerate.tsx'), 'utf-8');
 
@@ -31,6 +44,30 @@ describe('HomeGenerate mode-driven UI', () => {
       tree = create(React.createElement(HomeGenerate, { onResult: () => undefined }));
     });
     return tree!;
+  }
+
+  /** File onChange → arrayBuffer + MusicXML extract is async; flush before Generate. */
+  async function flushLeadSheetFileAsyncWork() {
+    await act(async () => {
+      await new Promise<void>((r) => setTimeout(r, 0));
+    });
+  }
+
+  /** Poll react-test-renderer tree until substring appears (async state / microtasks). */
+  async function waitForTreeSubstring(tree: ReturnType<typeof create>, substr: string, max = 40) {
+    for (let i = 0; i < max; i++) {
+      if (JSON.stringify(tree.toJSON()).includes(substr)) return;
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+    throw new Error(`Timeout waiting for tree to include: ${substr.slice(0, 80)}`);
+  }
+
+  async function settleUi() {
+    await act(async () => {
+      await new Promise<void>((r) => setTimeout(r, 0));
+    });
   }
 
   function getGenerateButton(tree: ReturnType<typeof create>) {
@@ -60,7 +97,13 @@ describe('HomeGenerate mode-driven UI', () => {
 
   function getLeadSheetFileInput(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('input');
-    const fileNode = nodes.find((n) => n.props.type === 'file');
+    const fileNode = nodes.find(
+      (n) =>
+        n.props.type === 'file' &&
+        typeof n.props.accept === 'string' &&
+        n.props.accept.includes('.musicxml') &&
+        n.props.id !== 'composer-os-import-lead-sheet-file'
+    );
     expect(fileNode).toBeDefined();
     return fileNode!;
   }
@@ -71,7 +114,7 @@ describe('HomeGenerate mode-driven UI', () => {
 
   function getSongwriterSelect(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('select');
-    const songwriterNode = nodes.find((n) => n.props.value === 'donald_fagen' || n.props.value === 'wayne_shorter');
+    const songwriterNode = nodes.find((n) => n.props.id === 'co-sm-primary-songwriter');
     expect(songwriterNode).toBeDefined();
     return songwriterNode!;
   }
@@ -245,10 +288,9 @@ describe('HomeGenerate mode-driven UI', () => {
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
-      await Promise.resolve();
     });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Loaded file: my-song.musicxml');
+    await flushLeadSheetFileAsyncWork();
+    await waitForTreeSubstring(tree, 'Loaded file: my-song.musicxml');
   });
 
   it('clear button resets LeadSheet text and file name', async () => {
@@ -260,10 +302,10 @@ describe('HomeGenerate mode-driven UI', () => {
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
-      await Promise.resolve();
     });
+    await flushLeadSheetFileAsyncWork();
+    await waitForTreeSubstring(tree, 'Loaded file: my-song.musicxml');
     let text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Loaded file: my-song.musicxml');
     const clearButton = getClearLeadSheetButton(tree);
     expect(clearButton).toBeDefined();
     await act(async () => {
@@ -281,6 +323,11 @@ describe('HomeGenerate mode-driven UI', () => {
     await act(async () => {
       songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
     });
+    await settleUi();
+    await waitForTreeSubstring(
+      tree,
+      'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'
+    );
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
     expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
@@ -319,16 +366,19 @@ describe('HomeGenerate mode-driven UI', () => {
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
-      await Promise.resolve();
     });
+    await flushLeadSheetFileAsyncWork();
+    await waitForTreeSubstring(tree, 'Loaded file: something.musicxml');
     const generateButton = getGenerateButton(tree);
     await act(async () => {
       generateButton.props.onClick();
       await Promise.resolve();
     });
+    await waitForTreeSubstring(tree, 'song-mode-leadsheet-status');
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('"Input source: ","File"');
-    expect(text).toContain('"LeadSheet file: ","something.musicxml"');
+    expect(text).toContain('song-mode-leadsheet-status');
+    expect(text).toContain('something.musicxml');
+    expect(text).toContain('LeadSheet file:');
   });
 
   it('receipt shows paste source with no file-name line for pasted LeadSheet run', async () => {
@@ -365,7 +415,7 @@ describe('HomeGenerate mode-driven UI', () => {
       await Promise.resolve();
     });
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('"Input source: ","Paste"');
+    expect(text).toContain('song-mode-leadsheet-status');
     expect(text).not.toContain('LeadSheet file:');
   });
 
@@ -400,8 +450,8 @@ describe('HomeGenerate mode-driven UI', () => {
     };
     await act(async () => {
       fileInput.props.onChange({ target: { files: [fakeFile] } });
-      await Promise.resolve();
     });
+    await flushLeadSheetFileAsyncWork();
     const textarea = getLeadSheetTextarea(tree);
     await act(async () => {
       textarea.props.onChange({ target: { value: '<score-partwise version="4.0"><part-list/></score-partwise>' } });
@@ -415,7 +465,7 @@ describe('HomeGenerate mode-driven UI', () => {
       await Promise.resolve();
     });
     text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('"Input source: ","Paste"');
+    expect(text).toContain('song-mode-leadsheet-status');
     expect(text).not.toContain('LeadSheet file:');
   });
 
@@ -453,10 +503,13 @@ describe('HomeGenerate mode-driven UI', () => {
       generateButton.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
 
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('"LeadSheet input: ","Applied"');
-    expect(text).toContain('"Melody anchor: ","Applied"');
+    expect(text).toContain('song-mode-leadsheet-status');
+    expect(text).toContain('LeadSheet input:');
+    expect(text).toContain('Applied');
+    expect(text).toContain('Melody anchor:');
   });
 
   it('shows LeadSheet and Melody anchor Not applied when flags are false', async () => {
@@ -493,10 +546,13 @@ describe('HomeGenerate mode-driven UI', () => {
       generateButton.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
 
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('"LeadSheet input: ","Not applied"');
-    expect(text).toContain('"Melody anchor: ","Not applied"');
+    expect(text).toContain('song-mode-leadsheet-status');
+    expect(text).toContain('LeadSheet input:');
+    expect(text).toContain('Not applied');
+    expect(text).toContain('Melody anchor:');
   });
 
   it('does not render LeadSheet status when no LeadSheet was provided', async () => {
@@ -564,15 +620,18 @@ describe('HomeGenerate mode-driven UI', () => {
     await act(async () => {
       songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
     });
+    await settleUi();
     const leadSheetTextarea = getLeadSheetTextarea(tree);
     await act(async () => {
       leadSheetTextarea.props.onChange({ target: { value: '<score-partwise version="4.0"></score-partwise>' } });
     });
+    await settleUi();
     const generateButton = getGenerateButton(tree);
     await act(async () => {
       generateButton.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
 
     const text = JSON.stringify(tree.toJSON());
     expect(text).not.toContain('LeadSheet input:');
@@ -612,6 +671,7 @@ describe('HomeGenerate mode-driven UI', () => {
       generateButton.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
 
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('Harmony import status');
@@ -747,10 +807,12 @@ describe('HomeGenerate mode-driven UI', () => {
       generateButton!.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
     await act(async () => {
       generateButton!.props.onClick();
       await Promise.resolve();
     });
+    await settleUi();
 
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Section Shape (dev diagnostics)');

@@ -42,8 +42,8 @@ describe('generateUiCopy', () => {
     expect(song.headline).toMatch(/MusicXML|score/i);
 
     const bb = describeOutputKind('big_band');
-    expect(bb.category).toBe('planning');
-    expect(bb.headline).toMatch(/Planning/i);
+    expect(bb.category).toBe('full_score_musicxml');
+    expect(bb.headline).toMatch(/Full ensemble MusicXML/i);
 
     const riff = describeOutputKind('riff_generator');
     expect(riff.category).toBe('full_score_musicxml');

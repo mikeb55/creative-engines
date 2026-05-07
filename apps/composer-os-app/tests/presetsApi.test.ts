@@ -14,8 +14,10 @@ describe('Composer OS presets API', () => {
       'guitar_bass_duo',
       'guitar_bass_duo_single_line',
       'riff_generator',
+      'slonimsky_etude',
       'song_mode',
       'string_quartet',
+      'wyble_etude',
     ]);
     expect(presets.every((p) => typeof p.supported === 'boolean')).toBe(true);
   });

@@ -35,6 +35,12 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
     supported: true,
   },
   {
+    id: 'slonimsky_etude',
+    name: 'Slonimsky Etude',
+    description: 'Pattern-based chromatic etude generator',
+    supported: true,
+  },
+  {
     id: 'ecm_chamber',
     name: 'ECM Chamber',
     description:
@@ -66,13 +72,13 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
     id: 'riff_generator',
     name: 'Riff Generator',
     description:
-      'Short loopable riffs (1–4 bars), strict grid — internal riff composite gate before export (not duo GCE); Sibelius-safe MusicXML to your library Riffs folder.',
+      'Short loopable riffs (1–4 bars), strict grid, rehearsal mark — internal riff composite gate before export (not duo GCE); Sibelius-safe MusicXML to your library Riffs folder.',
     supported: true,
   },
 ];
 
 /** Expected count from app API `getPresets()` — used to detect stale desktop bundles. */
-export const EXPECTED_APP_PRESET_COUNT = 8;
+export const EXPECTED_APP_PRESET_COUNT = 9;
 
 /** Merge live API presets over the static registry so every id always appears (API may be partial/stale). */
 export function mergePresetsWithRegistry(
