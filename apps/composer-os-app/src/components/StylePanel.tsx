@@ -5,7 +5,7 @@ import './StylePanel.css';
 export type StylePanelProps = {
   value: StyleProfile;
   onChange: (next: StyleProfile) => void;
-  harmonicVoices: Array<{ id: HarmonicVoiceId; label: string }>;
+  harmonicVoiceGroups: Array<{ label: string; voices: Array<{ id: HarmonicVoiceId; label: string }> }>;
   rhythmEngines: Array<{ id: RhythmEngineId; label: string }>;
   /** Song Mode primary harmonic select — stable id for tests / a11y */
   harmonicSelectId?: string;
@@ -13,14 +13,16 @@ export type StylePanelProps = {
 };
 
 export function StylePanel(props: StylePanelProps) {
-  const { value, onChange, harmonicVoices, rhythmEngines } = props;
+  const { value, onChange, harmonicVoiceGroups, rhythmEngines } = props;
   const harmonicSelectId = props.harmonicSelectId ?? 'co-style-harmonic-voice';
   const rhythmSelectId = props.rhythmSelectId ?? 'co-style-rhythm-engine';
   const [pairOpen, setPairOpen] = useState(false);
 
   const harmonicLabel =
     value.harmonic.voiceId != null
-      ? harmonicVoices.find((h) => h.id === value.harmonic.voiceId)?.label
+      ? harmonicVoiceGroups
+          .flatMap((g) => g.voices)
+          .find((h) => h.id === value.harmonic.voiceId)?.label
       : null;
   const rhythmLabel =
     value.rhythm.engineId != null
@@ -59,10 +61,14 @@ export function StylePanel(props: StylePanelProps) {
           }}
         >
           <option value="">None</option>
-          {harmonicVoices.map((h) => (
-            <option key={h.id} value={h.id}>
-              {h.label}
-            </option>
+          {harmonicVoiceGroups.map((g) => (
+            <optgroup key={g.label} label={g.label}>
+              {g.voices.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <span id={`${harmonicSelectId}-hint`} style={{ display: 'none' }}>

@@ -88,6 +88,13 @@ const INDIE_ALT = new Set<string>([
 
 const SINGER_SONGWRITER = new Set<string>(['joni_mitchell', 'bob_dylan', 'kate_bush', 'richard_thompson']);
 
+const FILM_SCORING = new Set<string>([
+  'badalamenti',
+  'herrmann',
+  'morricone',
+  'quincy_jones_film',
+]);
+
 const BIG_BAND_CHARTS = new Set<string>([
   'gil_evans',
   'thad_jones',
@@ -108,6 +115,7 @@ const BIG_BAND_CHARTS = new Set<string>([
  */
 function deriveSongwriterEraTag(id: SongwriterRuleId): string {
   const s = id;
+  if (FILM_SCORING.has(s)) return 'film scoring';
   if (CLASSICAL.has(s)) return 'classical';
   if (THEATRE.has(s)) return 'theatre / standards';
   if (LATIN_JAZZ.has(s)) return 'bossa / latin jazz';

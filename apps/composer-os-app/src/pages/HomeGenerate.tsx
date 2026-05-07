@@ -441,6 +441,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
+  { id: 'badalamenti', label: 'Angelo Badalamenti' },
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
@@ -450,6 +451,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'brian_wilson', label: 'Brian Wilson' },
   { id: 'carole_king', label: 'Carole King' },
   { id: 'debussy', label: 'Debussy' },
+  { id: 'herrmann', label: 'Bernard Herrmann' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
@@ -467,11 +469,13 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },
   { id: 'messiaen', label: 'Messiaen' },
+  { id: 'morricone', label: 'Ennio Morricone' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
   { id: 'prince', label: 'Prince' },
+  { id: 'quincy_jones_film', label: 'Quincy Jones' },
   { id: 'prokofiev', label: 'Prokofiev' },
   { id: 'randy_newman', label: 'Randy Newman' },
   { id: 'radiohead', label: 'Radiohead' },
@@ -515,9 +519,34 @@ const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
   ...RHYTHM_SONGWRITER_OPTIONS,
 ];
 
-const HARMONIC_VOICE_LIST: { id: HarmonicVoiceId; label: string }[] = SONGWRITER_OPTIONS.filter(
-  (o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id)
-).map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }));
+const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
+  'morricone',
+  'herrmann',
+  'quincy_jones_film',
+  'badalamenti',
+];
+const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
+
+function buildHarmonicVoiceGroups(): Array<{
+  label: string;
+  voices: Array<{ id: HarmonicVoiceId; label: string }>;
+}> {
+  const all = SONGWRITER_OPTIONS.filter((o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id));
+  const libraryVoices = all
+    .filter((o) => !HARMONIC_VOICE_FILM_SET.has(o.id))
+    .map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const filmVoices = FILM_HARMONIC_VOICE_IDS.map((id) => {
+    const o = all.find((x) => x.id === id);
+    return { id, label: o?.label ?? id };
+  });
+  return [
+    { label: 'Library', voices: libraryVoices },
+    { label: 'Film', voices: filmVoices },
+  ];
+}
+
+const HARMONIC_VOICE_GROUPS = buildHarmonicVoiceGroups();
 
 const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
   { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
@@ -4946,7 +4975,7 @@ export function HomeGenerate({
               setPrimarySongwriterHoverId(null);
               if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
             }}
-            harmonicVoices={HARMONIC_VOICE_LIST}
+            harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-sm-primary-songwriter"
             rhythmSelectId="co-sm-rhythm-engine"
@@ -5380,7 +5409,7 @@ export function HomeGenerate({
               setStyleProfile(next);
               setPrimarySongwriterHoverId(null);
             }}
-            harmonicVoices={HARMONIC_VOICE_LIST}
+            harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-bb-songwriter"
             rhythmSelectId="co-bb-rhythm-engine"
@@ -5463,7 +5492,7 @@ export function HomeGenerate({
               setStyleProfile(next);
               setPrimarySongwriterHoverId(null);
             }}
-            harmonicVoices={HARMONIC_VOICE_LIST}
+            harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-sq-songwriter"
             rhythmSelectId="co-sq-rhythm-engine"

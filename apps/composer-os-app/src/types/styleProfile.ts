@@ -3,6 +3,7 @@
  */
 
 import type { SongwriterRuleId } from '@composer-os/core/song-mode/songwritingResearchTypes';
+import { resolveHarmonicVoiceStyleContextKeys } from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
 
 export type RhythmEngineId =
   | 'fela_kuti'
@@ -15,6 +16,17 @@ export type RhythmEngineId =
 export type HarmonicVoiceId = Exclude<SongwriterRuleId, RhythmEngineId>;
 
 export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu';
+
+/** Film harmonic voices — labels mirror HomeGenerate `SONGWRITER_OPTIONS`. */
+export const HARMONIC_VOICE_LABELS: Pick<
+  Record<HarmonicVoiceId, string>,
+  'morricone' | 'herrmann' | 'quincy_jones_film' | 'badalamenti'
+> = {
+  morricone: 'Ennio Morricone',
+  herrmann: 'Bernard Herrmann',
+  quincy_jones_film: 'Quincy Jones',
+  badalamenti: 'Angelo Badalamenti',
+};
 
 export interface HarmonicSelection {
   voiceId: HarmonicVoiceId | null;
@@ -39,7 +51,7 @@ export interface GenerationContext {
 }
 
 export function resolveHarmonicContextKeys(voiceId: HarmonicVoiceId): string[] {
-  return [`hv:${voiceId}`];
+  return [`hv:${voiceId}`, ...resolveHarmonicVoiceStyleContextKeys(voiceId)];
 }
 
 export function resolveRhythmContextKeys(engineId: RhythmEngineId, presetId: string | null): string[] {

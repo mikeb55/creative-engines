@@ -665,6 +665,26 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'chorus'
     ),
   ],
+  badalamenti: [
+    R('bad.hypnotic_loop', 'Hypnotic modal loop / chromatic inner lines (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('bad.minor_major_colour', 'Minor–major 7 dream-jazz surfaces (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
+    R('bad.noir_ballad_pocket', 'Cool jazz ballad pocket behind the beat (harmonic voice tags)', 'songwriter', 'rhythm', 7, 'global'),
+  ],
+  herrmann: [
+    R('bh.cluster_strings', 'Parallel cluster string voicings (harmonic voice tags)', 'songwriter', 'harmony', 9, 'global'),
+    R('bh.diminished_axis', 'Diminished / chromatic sequence vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 9, 'verse'),
+    R('bh.motor_ostinato', 'Motor ostinato anxiety grid (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  morricone: [
+    R('mo.modal_epic', 'Modal pastoral / cadential avoidance (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('mo.parallel_planing', 'Parallel planing / open fifth pads (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
+    R('mo.pedal_narrative', 'Pedal-tone narrative arcs (harmonic voice tags)', 'songwriter', 'form', 8, 'form'),
+  ],
+  quincy_jones_film: [
+    R('qjf.film_groove', 'Film soundtrack groove-first jazz arranging (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),
+    R('qjf.turnaround_language', 'Turnaround / extended dominant film vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('qjf.big_band_spread', 'Big-band spread voicings (harmonic voice tags)', 'songwriter', 'harmony', 8, 'chorus'),
+  ],
   frank_zappa: [
     R(
       'zappa.polytonal_superimposition',

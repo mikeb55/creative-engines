@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BADALAMENTI_HARMONIC_STYLE_KEYS,
+  HERRMANN_HARMONIC_STYLE_KEYS,
+  MORRICONE_HARMONIC_STYLE_KEYS,
+  QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
+} from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
+import {
   buildGenerationContext,
   migrateLegacySongwriterValue,
+  resolveHarmonicContextKeys,
   resolveRhythmContextKeys,
 } from '../src/types/styleProfile';
 
@@ -50,6 +57,28 @@ describe('styleProfile', () => {
     expect(resolveRhythmContextKeys('brazilian', 'bossa-nova-basic')).toEqual([
       'br:core',
       'br:bossa-nova-basic',
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(morricone) includes hv + research tags', () => {
+    expect(resolveHarmonicContextKeys('morricone')).toEqual(['hv:morricone', ...MORRICONE_HARMONIC_STYLE_KEYS]);
+  });
+
+  it('resolveHarmonicContextKeys(herrmann) includes hv + research tags', () => {
+    expect(resolveHarmonicContextKeys('herrmann')).toEqual(['hv:herrmann', ...HERRMANN_HARMONIC_STYLE_KEYS]);
+  });
+
+  it('resolveHarmonicContextKeys(quincy_jones_film) includes hv + research tags', () => {
+    expect(resolveHarmonicContextKeys('quincy_jones_film')).toEqual([
+      'hv:quincy_jones_film',
+      ...QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(badalamenti) includes hv + research tags', () => {
+    expect(resolveHarmonicContextKeys('badalamenti')).toEqual([
+      'hv:badalamenti',
+      ...BADALAMENTI_HARMONIC_STYLE_KEYS,
     ]);
   });
 });
