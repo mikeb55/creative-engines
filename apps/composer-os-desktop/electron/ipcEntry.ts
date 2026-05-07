@@ -21,12 +21,7 @@ import {
   hydrateAnthropicKeyFromAllSources,
   saveAnthropicApiKeyToSecretStore,
 } from './anthropicKeyHydration';
-
-const OPEN_EXPORT_SEGMENTS: Record<'fela-kuti' | 'greek' | 'blended', string[]> = {
-  'fela-kuti': ['Composer OS Exports', 'Fela Kuti Rhythms'],
-  greek: ['Composer OS Exports', 'Greek Rhythms'],
-  blended: ['Composer OS Exports', 'Blended Rhythms'],
-};
+import { getOutputDir } from '../../composer-os-app/src/lib/outputPaths';
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle(
@@ -69,8 +64,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     if (eng !== 'fela-kuti' && eng !== 'greek' && eng !== 'blended') {
       return;
     }
-    const segments = OPEN_EXPORT_SEGMENTS[eng];
-    const target = path.join(app.getPath('documents'), ...segments);
+    const relDir = getOutputDir(eng);
+    const target = path.join(app.getPath('documents'), ...relDir.split(/[/\\]/));
     try {
       const fs = await import('fs/promises');
       await fs.mkdir(target, { recursive: true });
