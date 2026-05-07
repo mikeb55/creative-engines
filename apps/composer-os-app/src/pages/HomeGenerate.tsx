@@ -22,6 +22,7 @@ import {
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import { BrazilianRhythmControls } from '../components/BrazilianRhythmControls';
+import { SecondLineRhythmControls } from '../components/SecondLineRhythmControls';
 import {
   AFROBEAT_STARTER_PRESETS,
   GREEK_REBETIKO_STARTER_PRESETS,
@@ -85,6 +86,7 @@ import {
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
 import { WriterRecipeCard } from '../components/WriterRecipeCard';
 import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
+import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -455,6 +457,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'miles_davis', label: 'Miles Davis' },
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
+  { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
@@ -1401,6 +1404,7 @@ export function HomeGenerate({
   const [secondarySongwriterHoverId, setSecondarySongwriterHoverId] = useState<string | null>(null);
   const [songModeDiversityPresetId, setSongModeDiversityPresetId] = useState('');
   const [brazilianRhythmPresetId, setBrazilianRhythmPresetId] = useState(DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID);
+  const [secondLineRhythmPresetId, setSecondLineRhythmPresetId] = useState(DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID);
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -4876,6 +4880,13 @@ export function HomeGenerate({
             <BrazilianRhythmControls
               activePresetId={brazilianRhythmPresetId}
               onPresetChange={setBrazilianRhythmPresetId}
+              disabled={loading}
+            />
+          )}
+          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'new_orleans_second_line' && (
+            <SecondLineRhythmControls
+              activePresetId={secondLineRhythmPresetId}
+              onPresetChange={setSecondLineRhythmPresetId}
               disabled={loading}
             />
           )}

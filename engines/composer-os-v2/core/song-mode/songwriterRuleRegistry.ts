@@ -185,6 +185,11 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('whitfield.slow_burn', 'Slow harmonic rhythm builds', 'songwriter', 'harmony', 7, 'verse'),
     R('whitfield.density_stack', 'Dense instrumental stacks', 'songwriter', 'form', 7, 'chorus'),
   ],
+  new_orleans_second_line: [
+    R('nola.big_four_arrival', 'Big Four phrase arrivals — cadential lift vs march continuity', 'songwriter', 'rhythm', 9, 'global'),
+    R('nola.second_line_backbeat', 'Second line snare / bass syncopation cells', 'songwriter', 'rhythm', 9, 'verse'),
+    R('nola.brass_lift', 'Brass-band shout vs funeral hymn contrast', 'songwriter', 'form', 8, 'chorus'),
+  ],
   bach: [
     R('bach.sequential', 'Sequential development of motifs', 'songwriter', 'melody', 8, 'global'),
     R('bach.voice_leading', 'Strong voice-leading between chords', 'songwriter', 'harmony', 8, 'verse'),
