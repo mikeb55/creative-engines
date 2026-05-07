@@ -383,6 +383,14 @@ export function apiGenerate(
         body.felaPercussionFeelOverride === 'afrobeat'
           ? body.felaPercussionFeelOverride
           : undefined,
+      styleGenerationContextKeys: (() => {
+        const raw = (body as { styleGenerationContextKeys?: unknown }).styleGenerationContextKeys;
+        if (!Array.isArray(raw)) return undefined;
+        const out = raw
+          .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+          .map((x) => x.trim());
+        return out.length ? out : undefined;
+      })(),
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

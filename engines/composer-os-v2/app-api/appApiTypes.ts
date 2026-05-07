@@ -274,6 +274,11 @@ export interface GenerateRequest {
    * Omitted → posture drives **`fk:*`** feel (`zombie_1977`→afrobeat, etc.).
    */
   felaPercussionFeelOverride?: 'straight' | 'swing' | 'afrobeat';
+  /**
+   * V44 — optional merged harmonic (`hv:*`) + rhythm (`fk:|gr:|…`) context keys from Style Panel.
+   * Forward-compatible; omitted on legacy clients.
+   */
+  styleGenerationContextKeys?: string[];
 }
 
 export interface ValidationSummary {

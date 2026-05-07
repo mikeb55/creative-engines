@@ -20,18 +20,19 @@ import {
   parseChordProgressionInputWithBarCount,
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
-import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import { BrazilianRhythmControls } from '../components/BrazilianRhythmControls';
 import { SecondLineRhythmControls } from '../components/SecondLineRhythmControls';
 import { CubanRhythmControls } from '../components/CubanRhythmControls';
+import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
+import { GreekRhythmControls } from '../components/GreekRhythmControls';
+import { StylePanel } from '../components/StylePanel';
 import {
-  AFROBEAT_STARTER_PRESETS,
-  GREEK_REBETIKO_STARTER_PRESETS,
-} from '../constants/rhythmBlendStarterPresets';
-import {
-  exportBlendedScoreToMusicXml as blendExportBlendedScoreToMusicXml,
-  exportSongFormToMusicXml as blendExportSongFormToMusicXml,
-} from '@composer-os/core/blend';
+  buildGenerationContext,
+  migrateLegacySongwriterValue,
+  type HarmonicVoiceId,
+  type RhythmEngineId,
+  type StyleProfile,
+} from '../types/styleProfile';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
@@ -89,6 +90,7 @@ import { WriterRecipeCard } from '../components/WriterRecipeCard';
 import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
 import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
 import { DEFAULT_CUBAN_RHYTHM_PRESET_ID } from '../slices/cubanRhythmSlice';
+import { DEFAULT_GREEK_RHYTHM_PRESET_ID } from '../slices/greekRhythmSlice';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -436,14 +438,12 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
-  { id: 'brazilian', label: 'Brazilian' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
   { id: 'carole_king', label: 'Carole King' },
   { id: 'debussy', label: 'Debussy' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
-  { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
@@ -459,8 +459,6 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'miles_davis', label: 'Miles Davis' },
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
-  { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
-  { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
@@ -485,6 +483,49 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
 ];
+
+const RHYTHM_ONLY_SONGWRITER_IDS = new Set<string>([
+  'fela_kuti',
+  'greek_rebetiko',
+  'brazilian',
+  'new_orleans_second_line',
+  'cuban_afro_cuban',
+]);
+
+/** Primary Style Panel excludes rhythm engines; secondary blend dropdown still lists them. */
+const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
+  { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
+  { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
+  { id: 'brazilian', label: 'Brazilian' },
+  { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
+  { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
+];
+
+const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
+  ...SONGWRITER_OPTIONS,
+  ...RHYTHM_SONGWRITER_OPTIONS,
+];
+
+const HARMONIC_VOICE_LIST: { id: HarmonicVoiceId; label: string }[] = SONGWRITER_OPTIONS.filter(
+  (o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id)
+).map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }));
+
+const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
+  { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
+  { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
+  { id: 'brazilian', label: 'Brazilian' },
+  { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
+  { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
+];
+
+/** Effective Song Mode primary id for engine routing (harmonic wins; rhythm-only preserves legacy ids). */
+function resolveEffectivePrimarySongwriter(profile: StyleProfile): string {
+  const h = profile.harmonic.voiceId;
+  if (h) return h;
+  const r = profile.rhythm.engineId;
+  if (r) return r;
+  return 'donald_fagen';
+}
 
 /** Song Mode UI hint only — not sent on Generate (no backend contract). */
 const SONG_MODE_DUO_PAIRING_UX: Record<
@@ -543,14 +584,14 @@ const SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER: readonly string[] = ['jo
 
 const SONGWRITER_GROUP_READY_ORDER: readonly string[] = [];
 
-const SONGWRITER_OPTION_BY_ID = new Map(SONGWRITER_OPTIONS.map((o) => [o.id, o]));
+const SONGWRITER_OPTION_BY_ID = new Map(SONGWRITER_OPTIONS_WITH_RHYTHM.map((o) => [o.id, o]));
 const SONGWRITER_GROUP_SHIPPED_IDS = new Set<string>([
   ...SONGWRITER_GROUP_SHIPPED_ORDER,
   ...SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER,
 ]);
 const SONGWRITER_GROUP_READY_IDS = new Set(SONGWRITER_GROUP_READY_ORDER);
 
-const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS.filter(
+const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS_WITH_RHYTHM.filter(
   (o) => !SONGWRITER_GROUP_SHIPPED_IDS.has(o.id) && !SONGWRITER_GROUP_READY_IDS.has(o.id)
 ).sort((a, b) => a.label.localeCompare(b.label));
 
@@ -687,7 +728,7 @@ const TONALITY_VAULT_UI_AVAILABLE = envTruthyFlag(import.meta.env.VITE_COMPOSER_
 function primarySongwriterDisplayLabel(id: string | undefined): string | undefined {
   if (!id?.trim()) return undefined;
   const t = id.trim().toLowerCase();
-  return SONGWRITER_OPTIONS.find((o) => o.id === t)?.label ?? id.trim();
+  return SONGWRITER_OPTIONS_WITH_RHYTHM.find((o) => o.id === t)?.label ?? id.trim();
 }
 
 function isLeadSheetSongModeRoute(presetId?: string, primarySongwriterStyle?: string): boolean {
@@ -1392,7 +1433,11 @@ export function HomeGenerate({
     'stable' | 'balanced' | 'surprise'
   >('stable');
   const [variationEnabled, setVariationEnabled] = useState(false);
-  const [songwriterStyle, setSongwriterStyle] = useState('donald_fagen');
+  const [styleProfile, setStyleProfile] = useState<StyleProfile>(() => ({
+    harmonic: { voiceId: 'donald_fagen' },
+    rhythm: { engineId: null, presetId: null, contextKeys: [] },
+    pairPresetId: null,
+  }));
   const [arrangerStyle, setArrangerStyle] = useState('thad');
   const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
   /** ECM style (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): 0 = Chamber (Angel Song pole), 0.5 = Balanced, 1 = Flow (Metheny·Scofield pole). */
@@ -1409,6 +1454,9 @@ export function HomeGenerate({
   const [brazilianRhythmPresetId, setBrazilianRhythmPresetId] = useState(DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID);
   const [secondLineRhythmPresetId, setSecondLineRhythmPresetId] = useState(DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID);
   const [cubanRhythmPresetId, setCubanRhythmPresetId] = useState(DEFAULT_CUBAN_RHYTHM_PRESET_ID);
+  const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
+  const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
+  const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -1657,6 +1705,16 @@ export function HomeGenerate({
       setCompareRunBId(recentSongModeRuns[1]?.id ?? recentSongModeRuns[0]!.id);
     }
   }, [recentSongModeRuns, compareRunAId, compareRunBId]);
+
+  useEffect(() => {
+    const rid = styleProfile.rhythm.engineId;
+    const pid = styleProfile.rhythm.presetId;
+    if (!pid) return;
+    if (rid === 'brazilian') setBrazilianRhythmPresetId(pid);
+    else if (rid === 'new_orleans_second_line') setSecondLineRhythmPresetId(pid);
+    else if (rid === 'cuban_afro_cuban') setCubanRhythmPresetId(pid);
+    else if (rid === 'greek_rebetiko') setGreekRhythmPresetId(pid);
+  }, [styleProfile.rhythm.engineId, styleProfile.rhythm.presetId]);
 
   useEffect(() => {
     api.getOutputDirectory().then((r) => setOutputDir(r)).catch(() => {});
@@ -2206,6 +2264,26 @@ export function HomeGenerate({
               })()
             : undefined;
 
+        const rhythmPresetForSongModeCtx =
+          styleProfile.rhythm.presetId ??
+          (styleProfile.rhythm.engineId === 'brazilian'
+            ? brazilianRhythmPresetId
+            : styleProfile.rhythm.engineId === 'new_orleans_second_line'
+              ? secondLineRhythmPresetId
+              : styleProfile.rhythm.engineId === 'cuban_afro_cuban'
+                ? cubanRhythmPresetId
+                : styleProfile.rhythm.engineId === 'greek_rebetiko'
+                  ? greekRhythmPresetId
+                  : null);
+
+        const songModeStyleGenerationKeys =
+          presetId === 'song_mode'
+            ? buildGenerationContext({
+                ...styleProfile,
+                rhythm: { ...styleProfile.rhythm, presetId: rhythmPresetForSongModeCtx },
+              }).combinedKeys
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
@@ -2285,6 +2363,19 @@ export function HomeGenerate({
                 ...(liveSongModeStyleProfile === 'STYLE_ECM' ||
                 liveSongModeStyleProfile === 'STYLE_ECM_CHAMBER'
                   ? { ecmChamberMode: ecmChamberFlow01ToMode(ecmChamberFlow01Ref.current) }
+                  : {}),
+                ...(songModeStyleGenerationKeys && songModeStyleGenerationKeys.length > 0
+                  ? { styleGenerationContextKeys: songModeStyleGenerationKeys }
+                  : {}),
+                ...(styleProfile.rhythm.engineId === 'fela_kuti' && felaPercussionFeelMode !== 'auto'
+                  ? {
+                      felaPercussionFeelOverride:
+                        felaPercussionFeelMode === 'straight'
+                          ? ('straight' as const)
+                          : felaPercussionFeelMode === 'swing'
+                            ? ('swing' as const)
+                            : ('afrobeat' as const),
+                    }
                   : {}),
               }
             : {}),
@@ -2424,6 +2515,12 @@ export function HomeGenerate({
       totalBars,
       creativeControlLevel,
       variationEnabled,
+      styleProfile,
+      brazilianRhythmPresetId,
+      secondLineRhythmPresetId,
+      cubanRhythmPresetId,
+      greekRhythmPresetId,
+      felaPercussionFeelMode,
       songwriterStyle,
       arrangerStyle,
       era,
@@ -4803,7 +4900,12 @@ export function HomeGenerate({
                 if (!nextId) return;
                 const preset = resolveSongModeDiversityPreset(nextId);
                 if (!preset) return;
-                setSongwriterStyle(preset.primarySongwriterStyle);
+                const migrated = migrateLegacySongwriterValue(preset.primarySongwriterStyle);
+                setStyleProfile((prev) => ({
+                  harmonic: migrated.harmonic ?? prev.harmonic,
+                  rhythm: migrated.rhythm ?? prev.rhythm,
+                  pairPresetId: null,
+                }));
                 setSecondarySongwriterStyle(preset.secondarySongwriterStyle);
                 const pairing = resolveSongModeDiversityStylePairing(preset.id);
                 if (pairing?.arrangerStyle) setArrangerStyle(String(pairing.arrangerStyle));
@@ -4828,76 +4930,83 @@ export function HomeGenerate({
               </p>
             )}
           </div>
-          <div style={{ marginBottom: '0.65rem' }}>
-            <label
-              htmlFor="co-sm-primary-songwriter"
-              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-            >
-              Songwriter
-            </label>
-            <select
-              id="co-sm-primary-songwriter"
-              aria-describedby="co-sm-primary-songwriter-desc"
-              value={songwriterStyle}
-              onChange={(e) => {
-                setSongwriterStyle(e.target.value);
-                setPrimarySongwriterHoverId(null);
-                if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
-              }}
-              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
-              onBlur={() => setPrimarySongwriterHoverId(null)}
-              disabled={loading}
-            >
-              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
-            </select>
-            <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
-              {ARIA_SONGWRITER_GROUPS_DESC}
-            </span>
-            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
-          </div>
+          <StylePanel
+            value={styleProfile}
+            onChange={(next) => {
+              setStyleProfile(next);
+              setPrimarySongwriterHoverId(null);
+              if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+            }}
+            harmonicVoices={HARMONIC_VOICE_LIST}
+            rhythmEngines={RHYTHM_ENGINE_LIST}
+            harmonicSelectId="co-sm-primary-songwriter"
+            rhythmSelectId="co-sm-rhythm-engine"
+          />
+          <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
+            {ARIA_SONGWRITER_GROUPS_DESC}
+          </span>
+          <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           {composerOddMeterMapBlock}
-          {presetId === 'song_mode' &&
-            (songwriterStyle.trim().toLowerCase() === 'fela_kuti' ||
-              songwriterStyle.trim().toLowerCase() === 'greek_rebetiko') && (
-              <RhythmBlendControls
-                afrobeatPresets={AFROBEAT_STARTER_PRESETS}
-                rebetikoPresets={GREEK_REBETIKO_STARTER_PRESETS}
-                exportSongFormToMusicXml={(form) =>
-                  blendExportSongFormToMusicXml({
-                    title: form.title,
-                    sections: form.sections.map((s) => ({
-                      bars: s.bars,
-                      rhythm: { engine: s.rhythm.engine, presetId: s.rhythm.presetId },
-                    })),
-                  })
-                }
-                exportBlendedScoreToMusicXml={(plan) =>
-                  blendExportBlendedScoreToMusicXml({
-                    afrobeatPreset: { presetId: plan.afrobeatPreset.presetId },
-                    rebetikoPreset: { presetId: plan.rebetikoPreset.presetId },
-                    conflictStrategy: plan.conflictStrategy,
-                  })
-                }
-              />
-            )}
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'brazilian' && (
+          {presetId === 'song_mode' && styleProfile.rhythm.engineId === 'fela_kuti' && (
+            <FelaPercussionControls
+              feelMode={felaPercussionFeelMode}
+              onFeelModeChange={setFelaPercussionFeelMode}
+              disabled={loading}
+            />
+          )}
+          {presetId === 'song_mode' && styleProfile.rhythm.engineId === 'greek_rebetiko' && (
+            <GreekRhythmControls
+              selectedPresetId={greekRhythmPresetId}
+              onPresetIdChange={(id) => {
+                setGreekRhythmPresetId(id);
+                setStyleProfile((p) =>
+                  p.rhythm.engineId === 'greek_rebetiko'
+                    ? { ...p, rhythm: { ...p.rhythm, presetId: id }, pairPresetId: null }
+                    : p
+                );
+              }}
+              disabled={loading}
+            />
+          )}
+          {presetId === 'song_mode' && styleProfile.rhythm.engineId === 'brazilian' && (
             <BrazilianRhythmControls
               activePresetId={brazilianRhythmPresetId}
-              onPresetChange={setBrazilianRhythmPresetId}
+              onPresetChange={(id) => {
+                setBrazilianRhythmPresetId(id);
+                setStyleProfile((p) =>
+                  p.rhythm.engineId === 'brazilian'
+                    ? { ...p, rhythm: { ...p.rhythm, presetId: id }, pairPresetId: null }
+                    : p
+                );
+              }}
               disabled={loading}
             />
           )}
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'new_orleans_second_line' && (
+          {presetId === 'song_mode' && styleProfile.rhythm.engineId === 'new_orleans_second_line' && (
             <SecondLineRhythmControls
               activePresetId={secondLineRhythmPresetId}
-              onPresetChange={setSecondLineRhythmPresetId}
+              onPresetChange={(id) => {
+                setSecondLineRhythmPresetId(id);
+                setStyleProfile((p) =>
+                  p.rhythm.engineId === 'new_orleans_second_line'
+                    ? { ...p, rhythm: { ...p.rhythm, presetId: id }, pairPresetId: null }
+                    : p
+                );
+              }}
               disabled={loading}
             />
           )}
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'cuban_afro_cuban' && (
+          {presetId === 'song_mode' && styleProfile.rhythm.engineId === 'cuban_afro_cuban' && (
             <CubanRhythmControls
               activePresetId={cubanRhythmPresetId}
-              onPresetChange={setCubanRhythmPresetId}
+              onPresetChange={(id) => {
+                setCubanRhythmPresetId(id);
+                setStyleProfile((p) =>
+                  p.rhythm.engineId === 'cuban_afro_cuban'
+                    ? { ...p, rhythm: { ...p.rhythm, presetId: id }, pairPresetId: null }
+                    : p
+                );
+              }}
               disabled={loading}
             />
           )}
@@ -5236,32 +5345,21 @@ export function HomeGenerate({
               12 + Shout 12 + Rideout 4).
             </p>
           </div>
-          <div style={{ marginBottom: '0.65rem' }}>
-            <label
-              htmlFor="co-bb-songwriter"
-              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-            >
-              Songwriter
-            </label>
-            <select
-              id="co-bb-songwriter"
-              aria-describedby="co-bb-songwriter-desc"
-              value={songwriterStyle}
-              onChange={(e) => {
-                setSongwriterStyle(e.target.value);
-                setPrimarySongwriterHoverId(null);
-              }}
-              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
-              onBlur={() => setPrimarySongwriterHoverId(null)}
-              disabled={loading}
-            >
-              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
-            </select>
-            <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
-              {ARIA_SONGWRITER_GROUPS_DESC}
-            </span>
-            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
-          </div>
+          <StylePanel
+            value={styleProfile}
+            onChange={(next) => {
+              setStyleProfile(next);
+              setPrimarySongwriterHoverId(null);
+            }}
+            harmonicVoices={HARMONIC_VOICE_LIST}
+            rhythmEngines={RHYTHM_ENGINE_LIST}
+            harmonicSelectId="co-bb-songwriter"
+            rhythmSelectId="co-bb-rhythm-engine"
+          />
+          <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
+            {ARIA_SONGWRITER_GROUPS_DESC}
+          </span>
+          <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           <div style={{ marginBottom: '0.65rem' }}>
             <label
               htmlFor="co-bb-arranger"
@@ -5330,32 +5428,21 @@ export function HomeGenerate({
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>
             Songwriter and arranger pair with era for planning colour; era selects the built-in chord cycle when chord progression is empty (same options as Big Band).
           </p>
-          <div style={{ marginBottom: '0.65rem' }}>
-            <label
-              htmlFor="co-sq-songwriter"
-              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-            >
-              Songwriter
-            </label>
-            <select
-              id="co-sq-songwriter"
-              aria-describedby="co-sq-songwriter-desc"
-              value={songwriterStyle}
-              onChange={(e) => {
-                setSongwriterStyle(e.target.value);
-                setPrimarySongwriterHoverId(null);
-              }}
-              onMouseLeave={() => setPrimarySongwriterHoverId(null)}
-              onBlur={() => setPrimarySongwriterHoverId(null)}
-              disabled={loading}
-            >
-              <SongwriterSelectOptionGroups onOptionHover={setPrimarySongwriterHoverId} />
-            </select>
-            <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
-              {ARIA_SONGWRITER_GROUPS_DESC}
-            </span>
-            <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
-          </div>
+          <StylePanel
+            value={styleProfile}
+            onChange={(next) => {
+              setStyleProfile(next);
+              setPrimarySongwriterHoverId(null);
+            }}
+            harmonicVoices={HARMONIC_VOICE_LIST}
+            rhythmEngines={RHYTHM_ENGINE_LIST}
+            harmonicSelectId="co-sq-songwriter"
+            rhythmSelectId="co-sq-rhythm-engine"
+          />
+          <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
+            {ARIA_SONGWRITER_GROUPS_DESC}
+          </span>
+          <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           <div style={{ marginBottom: '0.65rem' }}>
             <label
               htmlFor="co-sq-arranger"

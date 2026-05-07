@@ -1,6 +1,9 @@
 /**
  * Generate screen preset ids + labels, and **static Presets tab registry** (always visible).
  * Must stay aligned with `engines/composer-os-v2/app-api/getPresets.ts` (PRESETS array).
+ *
+ * Songwriter/harmonic lists for Generate live in `apps/composer-os-app/src/pages/HomeGenerate.tsx`
+ * (Style Panel harmonic voices + secondary-blend options).
  */
 export type AppPresetCard = {
   id: string;

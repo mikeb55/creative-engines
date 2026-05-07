@@ -201,6 +201,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
           surprise: req.intent.surprise,
         }
       : {}),
+    ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
+      ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
+      : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
 }
 

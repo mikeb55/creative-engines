@@ -1,0 +1,96 @@
+.stylePanel {
+  padding: 12px;
+  border-top: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.28));
+}
+
+.stylePanelHeader h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.stylePanelHeader p {
+  font-size: 11px;
+  opacity: 0.72;
+  margin: 0 0 12px;
+  line-height: 1.35;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fieldGroup label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+}
+
+.fieldGroup select {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 8px;
+}
+
+.summaryRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.summaryChip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.summaryPlus {
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+.pairPresetsToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.pairPresetsToggle:hover {
+  color: var(--text);
+}
+
+.pairPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pairPresets button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.pairPresets button:hover {
+  border-color: var(--accent, #6366f1);
+  background: rgba(99, 102, 241, 0.1);
+}

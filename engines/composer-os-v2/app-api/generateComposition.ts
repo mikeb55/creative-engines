@@ -172,6 +172,8 @@ export interface GenerateResult {
     importHarmonyMode?: ImportHarmonyMode;
     harmonyBlend?: number;
     debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
+    /** V44 Style Panel — harmonic + rhythm context key bundle */
+    styleGenerationContextKeys?: string[];
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
