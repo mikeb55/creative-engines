@@ -468,6 +468,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'kendrick_lamar', label: 'Kendrick Lamar' },
   { id: 'kurt_weill', label: 'Kurt Weill' },
   { id: 'mahler', label: 'Mahler' },
+  { id: 'maria_schneider', label: 'Maria Schneider' },
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },
   { id: 'messiaen', label: 'Messiaen' },
@@ -521,7 +522,7 @@ const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
   ...RHYTHM_SONGWRITER_OPTIONS,
 ];
 
-const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = ['gil_evans', 'john_coltrane'];
+const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = ['gil_evans', 'john_coltrane', 'maria_schneider'];
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
 
 const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [

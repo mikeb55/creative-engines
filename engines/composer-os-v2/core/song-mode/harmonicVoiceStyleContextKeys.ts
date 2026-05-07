@@ -91,6 +91,24 @@ export const GIL_EVANS_HARMONIC_STYLE_KEYS: readonly string[] = [
   'polyrhythmic_bass_against_pads',
 ];
 
+export const MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'organic_chord_morphing',
+  'common_tone_voice_leading',
+  'modal_pastoral_scenes',
+  'lydian_dorian_color_blend',
+  'interval_seeded_harmony',
+  'narrative_harmonic_arc',
+  'flugelhorn_woodwind_blend',
+  'accordion_brass_color_pads',
+  'suspended_but_soft_cadences',
+  'brazilian_influenced_groove_modal',
+  'data_world_dissonant_textures',
+  'nature_world_lyrical_expansion',
+  'mixed_quartal_tertian_stacks',
+  'cross_section_orchestral_voicing',
+  'long_pedal_with_inner_motion',
+];
+
 /** Extra harmonic tags for Style Panel voices (empty when none). */
 export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId): string[] {
   switch (voiceId) {
@@ -106,6 +124,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...JOHN_COLTRANE_HARMONIC_STYLE_KEYS];
     case 'gil_evans':
       return [...GIL_EVANS_HARMONIC_STYLE_KEYS];
+    case 'maria_schneider':
+      return [...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

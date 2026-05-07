@@ -4,6 +4,7 @@ import {
   GIL_EVANS_HARMONIC_STYLE_KEYS,
   HERRMANN_HARMONIC_STYLE_KEYS,
   JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
+  MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
   MORRICONE_HARMONIC_STYLE_KEYS,
   QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
 } from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
@@ -101,6 +102,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('gil_evans')).toEqual([
       'hv:gil_evans',
       ...GIL_EVANS_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(maria_schneider) returns hv + 15 research tags', () => {
+    expect(MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS).toHaveLength(15);
+    expect(resolveHarmonicContextKeys('maria_schneider')).toEqual([
+      'hv:maria_schneider',
+      ...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
     ]);
   });
 });

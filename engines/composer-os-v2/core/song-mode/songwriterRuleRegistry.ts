@@ -363,10 +363,30 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('brook.west_coast', 'West Coast cool voicings', 'songwriter', 'harmony', 7, 'bridge'),
   ],
   maria_schneider: [
-    R('msch.wind_texture', 'Wind texture swells', 'songwriter', 'form', 8, 'verse'),
-    R('msch.improv_slot', 'Improv slots in long forms', 'songwriter', 'form', 8, 'form'),
-    R('msch.natural_image', 'Nature / image harmonic drift', 'songwriter', 'harmony', 9, 'global'),
-    R('msch.pulse_rubato', 'Collective pulse + rubato', 'songwriter', 'rhythm', 7, 'global'),
+    R(
+      'schneider.voicing_language',
+      'Mixed tertian/quartal extensions (9/11/13 + inner 2nds/4ths); non-root tops on 9/#11/13; stepwise inner lines + maximum common tones; free 5th/3rd omissions; hanging long chords with subtle morph; 8–12 note tutti via register/timbre not block brass; cadences rare, landing on rich non-triadic sonorities',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'schneider.modal_nature_arc',
+      'Pastoral palette Dorian/Aeolian/Lydian/Mixolydian vs darker chromatic/altered Data Lords palette; gradual modal degree morph + common-tone pivots (9→3, #11→5); organic density/dissonance waves; interval-seeded 3-pitch cells over root-position thinking',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'schneider.orchestration_rhythm',
+      'Cross-section voicing (flugel/mutes/clarinets/flutes/trombones); timbral morph same pitches; flugel+clarinet/flute warmth, accordion+woodwinds+muted brass beds; saxes as inner weave; Brazilian groove under floating harmony; harmonic rhythm vs narrative motion; long pedals as ground',
+      'songwriter',
+      'harmony',
+      9,
+      'form'
+    ),
   ],
   clare_fischer: [
     R('fisch.poly_plan', 'Poly-planar voicings', 'songwriter', 'harmony', 9, 'verse'),

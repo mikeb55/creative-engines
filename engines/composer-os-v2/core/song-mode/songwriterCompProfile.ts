@@ -210,6 +210,33 @@ const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const MARIA_SCHNEIDER_KEYS_COMP: SongwriterCompProfile = {
+  id: 'maria_schneider',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'mixed_tertian_quartal_extensions_inner_seconds_fourths',
+    'non_root_top_ninth_sharp_eleventh_thirteenth',
+    'omit_fifth_third_for_modal_morph',
+    'thick_transparent_register_spacing',
+    'cross_section_colour_roles',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'static_harmony_over_active_groove_pastoral',
+    'harmonic_rhythm_climax_coupling',
+    'brazilian_bossa_samba_baiao_under_modal',
+  ],
+  smallMovementRules: [
+    'common_tone_maximum_hold_inner_stepwise',
+    'interval_seeded_three_pitch_cells',
+    'pedal_ground_upper_colour_shift',
+  ],
+  receiptLines: [
+    'Harmonic voice Maria Schneider — rhythm pairing hints: Brazilian bossa/samba/baião (br) primary — floating modal harmony over understated groove (Hang Gliding lineage); Cuban/Afro-Cuban (cu) layered propulsion with orchestral pads riding clave; Fela Afrobeat (fk) long vamps + layered ostinati for darker Data Lords material; Greek Rebetiko (gr) secondary / poor fit; New Orleans Second Line (sl) secondary / avoid — idiom clash. Primary instrument map: keys-centred comp lane (see SONGWRITER_PRIMARY_INSTRUMENT). Not an imitation of any artist.',
+    'String quartet translation (when quartet texture): violin I long lyric tops on 9/13/#11; violin II/viola moving inner voices + quartal fragments (sax/woodwind-like); cello pedals roots/fifths + occasional counterlines; favour seconds/thirds stepwise, 4ths/5ths structural; sul tasto/dolce/harmonics as colour morph; bias generators stepwise, penalise wide leaps unless contrast. Not an imitation of any artist.',
+  ],
+};
+
 const JONI_ACOUSTIC_COMP: SongwriterCompProfile = {
   id: 'joni_mitchell',
   primaryCompInstrument: 'guitar',
@@ -262,6 +289,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return JOHN_COLTRANE_KEYS_COMP;
     case 'gil_evans':
       return GIL_EVANS_KEYS_COMP;
+    case 'maria_schneider':
+      return MARIA_SCHNEIDER_KEYS_COMP;
     default:
       return genericKeysCompProfile(id);
   }

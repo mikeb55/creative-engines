@@ -969,6 +969,9 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   maria_schneider: {
     id: 'maria_schneider',
+    displayName: 'Maria Schneider',
+    description:
+      'Large-ensemble pastoral/modal harmony — organic tertian–quartal morphing, interval-seeded cells, narrative harmonic arcs (Concert in the Garden / Thompson Fields / Cerulean Skies vs Data Lords); orchestration-as-harmony with cross-section blends; Brazilian-under-groove modal float; string quartet: V1 colour tops (9/13/#11), V2/vla inner quartal weave, cello pedals/counter—stepwise inner bias.',
     lineVsCellEmphasis: 0.72,
     harmonyColourBias: 0.88,
     formRegularity: 0.25,
@@ -982,6 +985,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     densityBias: 0.55,
     motifCellSize: 5,
     intervalPreference: 'modal',
+    songwriterEraTag: 'jazz',
   },
   clare_fischer: {
     id: 'clare_fischer',

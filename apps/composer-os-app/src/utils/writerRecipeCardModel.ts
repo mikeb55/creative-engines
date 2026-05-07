@@ -36,20 +36,21 @@ const CLASSICAL = new Set<string>([
 ]);
 
 const JAZZ = new Set<string>([
+  'andrew_hill',
   'barry_harris',
   'bill_evans',
   'billy_strayhorn',
   'charlie_parker',
   'dave_brubeck',
   'duke_ellington',
+  'ecm_chamber',
   'gil_evans',
   'herbie_hancock',
   'john_coltrane',
+  'maria_schneider',
   'pat_metheny',
   'thelonious_monk',
   'wayne_shorter',
-  'andrew_hill',
-  'ecm_chamber',
 ]);
 
 const LATIN_JAZZ = new Set<string>(['antonio_carlos_jobim']);
@@ -103,7 +104,6 @@ const BIG_BAND_CHARTS = new Set<string>([
   'sammy_nestico',
   'quincy_jones',
   'bob_brookmeyer',
-  'maria_schneider',
   'clare_fischer',
   'manny_albam',
   'oliver_nelson',
