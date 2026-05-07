@@ -1533,6 +1533,16 @@ Preload **two seeds** (good vs intentionally stressed) to show receipts side-by-
 
 Use project scripts (`desktop:dev`, `desktop:build`) per **README**—don’t mix manual Electron flags with the repo’s pinned versions.
 
+#### Build: locked `release` tree (fallback)
+
+If `desktop:package-no-bump` fails due to a locked `release` tree (for example electron-builder cannot remove `release\win-unpacked\resources\app.asar`):
+
+1. Run `npm run desktop:build` in `apps/composer-os-desktop` (rebuilds IPC bundle).
+2. Run: `electron-builder --win --config.directories.output=dist-electron-release` (from `apps/composer-os-desktop`; use the same environment as `desktop:package-no-bump`, e.g. `CSC_IDENTITY_AUTO_DISCOVERY=false` via `cross-env` if you rely on that script).
+3. Copy `Composer-OS.exe` from `dist-electron-release\` over `release\Composer-OS.exe`.
+4. Launch from `release\Composer-OS.exe` as normal.
+5. If packaging fails again: close anything touching `release\win-unpacked`, delete or rename that folder, then rerun `npm run desktop:package-no-bump` (from `apps/composer-os-desktop`).
+
 ### Scenario 24: Headless or batch generation
 
 Mirror **GenerateRequest** fields exactly; **never** bypass **finalizeAndSeal** expectations when piping scores—downstream XML assumes **bar math** validated.
