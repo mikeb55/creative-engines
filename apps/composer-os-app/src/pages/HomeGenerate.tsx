@@ -20,9 +20,15 @@ import {
   parseChordProgressionInputWithBarCount,
 } from '../utils/chordProgressionClient';
 import { alignChordProgressionToSongFormBars } from '../utils/alignSongFormChordProgression';
-import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
-import { GreekRhythmControls } from '../components/GreekRhythmControls';
-import { DEFAULT_GREEK_RHYTHM_PRESET_ID } from '../slices/greekRhythmSlice';
+import { RhythmBlendControls } from '../components/RhythmBlendControls';
+import {
+  AFROBEAT_STARTER_PRESETS,
+  GREEK_REBETIKO_STARTER_PRESETS,
+} from '../constants/rhythmBlendStarterPresets';
+import {
+  exportBlendedScoreToMusicXml as blendExportBlendedScoreToMusicXml,
+  exportSongFormToMusicXml as blendExportSongFormToMusicXml,
+} from '@composer-os/core/blend';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
@@ -1443,8 +1449,6 @@ export function HomeGenerate({
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [funkGroove, setFunkGroove] = useState(false);
-  const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
-  const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
   const [riffDensity, setRiffDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
@@ -1766,18 +1770,6 @@ export function HomeGenerate({
   useEffect(() => {
     if (songwriterStyle.trim().toLowerCase() !== 'ecm_chamber') setEcmFullSweepOverride(false);
   }, [songwriterStyle]);
-
-  useEffect(() => {
-    if (presetId !== 'song_mode' || songwriterStyle.trim().toLowerCase() !== 'fela_kuti') {
-      setFelaPercussionFeelMode('auto');
-    }
-  }, [presetId, songwriterStyle]);
-
-  useEffect(() => {
-    if (presetId !== 'song_mode' || songwriterStyle.trim().toLowerCase() !== 'greek_rebetiko') {
-      setGreekRhythmPresetId(DEFAULT_GREEK_RHYTHM_PRESET_ID);
-    }
-  }, [presetId, songwriterStyle]);
 
   useEffect(() => {
     if (presetId !== 'song_mode' || songwriterStyle !== 'frank_zappa') return;
@@ -2281,9 +2273,6 @@ export function HomeGenerate({
                 ...(liveSongModeStyleProfile === 'STYLE_ECM' ||
                 liveSongModeStyleProfile === 'STYLE_ECM_CHAMBER'
                   ? { ecmChamberMode: ecmChamberFlow01ToMode(ecmChamberFlow01Ref.current) }
-                  : {}),
-                ...(songwriterStyle.trim().toLowerCase() === 'fela_kuti' && felaPercussionFeelMode !== 'auto'
-                  ? { felaPercussionFeelOverride: felaPercussionFeelMode }
                   : {}),
               }
             : {}),
@@ -4855,20 +4844,30 @@ export function HomeGenerate({
             <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           </div>
           {composerOddMeterMapBlock}
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'fela_kuti' && (
-            <FelaPercussionControls
-              feelMode={felaPercussionFeelMode}
-              onFeelModeChange={setFelaPercussionFeelMode}
-              disabled={loading}
-            />
-          )}
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'greek_rebetiko' && (
-            <GreekRhythmControls
-              selectedPresetId={greekRhythmPresetId}
-              onPresetIdChange={setGreekRhythmPresetId}
-              disabled={loading}
-            />
-          )}
+          {presetId === 'song_mode' &&
+            (songwriterStyle.trim().toLowerCase() === 'fela_kuti' ||
+              songwriterStyle.trim().toLowerCase() === 'greek_rebetiko') && (
+              <RhythmBlendControls
+                afrobeatPresets={AFROBEAT_STARTER_PRESETS}
+                rebetikoPresets={GREEK_REBETIKO_STARTER_PRESETS}
+                exportSongFormToMusicXml={(form) =>
+                  blendExportSongFormToMusicXml({
+                    title: form.title,
+                    sections: form.sections.map((s) => ({
+                      bars: s.bars,
+                      rhythm: { engine: s.rhythm.engine, presetId: s.rhythm.presetId },
+                    })),
+                  })
+                }
+                exportBlendedScoreToMusicXml={(plan) =>
+                  blendExportBlendedScoreToMusicXml({
+                    afrobeatPreset: { presetId: plan.afrobeatPreset.presetId },
+                    rebetikoPreset: { presetId: plan.rebetikoPreset.presetId },
+                    conflictStrategy: plan.conflictStrategy,
+                  })
+                }
+              />
+            )}
           {songwriterStyle === 'frank_zappa' && (
             <>
             <div

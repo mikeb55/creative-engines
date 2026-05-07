@@ -1,0 +1,191 @@
+.rhythmBlendControls {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.25));
+  border-radius: 6px;
+  background: var(--bg-elevated, #1a1a1e);
+  overflow: hidden;
+}
+
+.rhythmBlendControls__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.55rem 0.65rem 4.25rem;
+}
+
+.rhythmBlendControls__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.rhythmBlendControls__hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.blendModeToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 0.65rem;
+}
+
+.blendModeToggle__btn {
+  padding: 0.35rem 0.45rem;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.blendModeToggle__btn--active {
+  border-color: var(--accent, #6366f1);
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.fieldGrid--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.55rem;
+  align-items: end;
+}
+
+.rhythmBlendControls label.fieldLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.rhythmBlendControls input[type='text'],
+.rhythmBlendControls input[type='number'],
+.rhythmBlendControls select {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+  background: var(--bg, #121214);
+  color: var(--text);
+}
+
+.songFormPanel__titleInput {
+  margin-bottom: 0.55rem;
+}
+
+.songSectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.songSectionRow {
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.3));
+  border-radius: 6px;
+  padding: 0.45rem 0.5rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.songSectionRow__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.songSectionRow__headerButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.songSectionRow__headerButtons button {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.72rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.songSectionRow__headerButtons button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.songSectionRow__chevron {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.layerBlendPanel {
+  margin-top: 0.25rem;
+}
+
+.conflictStrategyRadioGroup {
+  margin-top: 0.55rem;
+}
+
+.conflictStrategyRadioGroup__legend {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.conflictStrategyRadioGroup__options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conflictStrategyRadioGroup__options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.exportBar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-top: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.25));
+  background: var(--bg-elevated, #1a1a1e);
+  box-sizing: border-box;
+}
+
+.exportBar__btn {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+  border-radius: 4px;
+  border: 1px solid var(--accent, #6366f1);
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.exportBar__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
