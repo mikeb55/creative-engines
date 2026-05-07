@@ -224,3 +224,6 @@ export function createAfrobeatRhythmEngine(
     quantise,
   };
 }
+
+/** Fela / Afrobeat kit exports use `app` `getOutputPath('fela-kuti', …)` (see `outputPaths.ts`). */
+export const FELA_KUTI_RHYTHM_EXPORT_ENGINE = 'fela-kuti' as const;

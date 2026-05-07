@@ -10,6 +10,30 @@ import { exportGreekRhythmToMusicXml } from '../rhythm/greekRhythmMusicXmlExport
 import { getGreekRebetikoPresetById } from '../rhythm/greekRebetikoRhythmPresets';
 import type { ConflictStrategy } from '../rhythm/rhythmLayerMerge';
 
+/** Matches `RhythmOutputEngine` in app `outputPaths.ts` for save routing. */
+export const BLEND_RHYTHM_EXPORT_ENGINE = 'blended' as const;
+
+const DRUM_KIT_MIDI_ANCHOR_GM = 38;
+
+function blendPercussionScorePartXml(partId: string, instId: string, partName: string): string {
+  const name = escapeXml(partName);
+  return `    <score-part id="${partId}">
+      <part-name>${name}</part-name>
+      <part-abbreviation>Perc.</part-abbreviation>
+      <score-instrument id="${instId}">
+        <instrument-name>GM Drum Kit</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${instId}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>${DRUM_KIT_MIDI_ANCHOR_GM}</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>`;
+}
+
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
@@ -56,10 +80,7 @@ function wrapSinglePartScore(title: string, measuresBlock: string): string {
 <score-partwise version="4.0">
   <work><work-title>${t}</work-title></work>
   <part-list>
-    <score-part id="P1">
-      <part-name>Rhythm blend</part-name>
-      <score-instrument id="P1-I1"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
-    </score-part>
+${blendPercussionScorePartXml('P1', 'P1-I1', 'Rhythm blend')}
   </part-list>
   <part id="P1">
 ${measuresBlock}
@@ -157,14 +178,8 @@ export function exportBlendedScoreToMusicXml(plan: BlendExporterBlendedPlan): st
 <score-partwise version="4.0">
   <work><work-title>${title}</work-title></work>
   <part-list>
-    <score-part id="P1">
-      <part-name>Afrobeat layer</part-name>
-      <score-instrument id="P1-I1"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
-    </score-part>
-    <score-part id="P2">
-      <part-name>Rebetiko layer</part-name>
-      <score-instrument id="P2-I1"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
-    </score-part>
+${blendPercussionScorePartXml('P1', 'P1-I1', 'Afrobeat layer')}
+${blendPercussionScorePartXml('P2', 'P2-I1', 'Rebetiko layer')}
   </part-list>
   <part id="P1">
 ${afroInner}

@@ -24,9 +24,14 @@ export {
   getGreekRebetikoPresetById,
 } from './greekRebetikoRhythmPresets';
 
+/** Matches `RhythmOutputEngine` in app `outputPaths.ts` for save routing. */
+export const GREEK_RHYTHM_EXPORT_ENGINE = 'greek' as const;
+
 const PART_ID = 'P1';
 const INST_ID = `${PART_ID}-I1`;
 const VOICE = 1;
+/** Default GM unpitched anchor for kit routing in hosts (snare). */
+const DRUM_KIT_MIDI_ANCHOR_GM = 38;
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -180,7 +185,18 @@ export function exportGreekRhythmToMusicXml(preset: RhythmPreset, bars = 2): str
   <part-list>
     <score-part id="${PART_ID}">
       <part-name>Greek Rebetiko Percussion</part-name>
-      <score-instrument id="${INST_ID}"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
+      <part-abbreviation>Perc.</part-abbreviation>
+      <score-instrument id="${INST_ID}">
+        <instrument-name>GM Drum Kit</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${INST_ID}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>${DRUM_KIT_MIDI_ANCHOR_GM}</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>
     </score-part>
   </part-list>
   <part id="${PART_ID}">

@@ -40,6 +40,13 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
       ok: boolean;
       error?: string;
     }>,
+  /** Writes UTF-8 MusicXML under Documents (mkdir -p). Payload paths must stay inside Documents. */
+  saveExportFile: (payload: { relativePath: string; contents: string }) =>
+    ipcRenderer.invoke('composer-os:save-export-file', payload) as Promise<{
+      ok: boolean;
+      fullPath?: string;
+      error?: string;
+    }>,
   onStartupState: (cb: (s: StartupState) => void): void => {
     ipcRenderer.on('composer-os:startup-state', (_e, s: StartupState) => cb(s));
   },

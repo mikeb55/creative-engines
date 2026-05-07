@@ -2,14 +2,16 @@
  * Song Mode — Greek rebetiko rhythm preset preview + MusicXML export (client-side).
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_GREEK_RHYTHM_PRESET_ID,
   GREEK_REBETIKO_RHYTHM_PRESETS,
   exportGreekRhythmToMusicXml,
   getGreekRebetikoPresetById,
+  GREEK_RHYTHM_EXPORT_ENGINE,
 } from '@composer-os/core/rhythm/greekRhythmMusicXmlExporter';
 import type { RhythmPreset } from '@composer-os/core/rhythm/greekRebetikoRhythmTypes';
+import { saveRhythmExportFile } from '../lib/saveRhythmExportFile';
 
 const EXPORT_BARS = 2;
 
@@ -23,18 +25,35 @@ export function GreekRhythmControls(props: {
     [props.selectedPresetId]
   );
   const [exportError, setExportError] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const saveNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const onDownload = () => {
+  const flashSaveNotice = useCallback((text: string) => {
+    if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
+    setSaveNotice(text);
+    saveNoticeTimer.current = setTimeout(() => {
+      setSaveNotice(null);
+      saveNoticeTimer.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
+    };
+  }, []);
+
+  const onDownload = async () => {
     setExportError(null);
     try {
       const xml = exportGreekRhythmToMusicXml(preset, EXPORT_BARS);
-      const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `greek-rebetiko-${preset.id}.musicxml`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const fn = `greek-rebetiko-${preset.id}.musicxml`;
+      const res = await saveRhythmExportFile(GREEK_RHYTHM_EXPORT_ENGINE, fn, xml);
+      if (!res.ok) {
+        setExportError(res.error);
+        return;
+      }
+      flashSaveNotice(`Saved to ${res.displayPath}`);
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     }
@@ -98,6 +117,11 @@ export function GreekRhythmControls(props: {
       >
         Download MusicXML
       </button>
+      {saveNotice && (
+        <p style={{ margin: '0.45rem 0 0', fontSize: '0.72rem', color: 'var(--success, #86efac)' }} role="status">
+          {saveNotice}
+        </p>
+      )}
       {exportError && (
         <p style={{ margin: '0.45rem 0 0', fontSize: '0.75rem', color: 'var(--error, #f87171)' }}>{exportError}</p>
       )}

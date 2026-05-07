@@ -879,10 +879,21 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         }
         if (p.instrumentIdentity === 'fela_afrobeat_drums') {
           const abbr = PART_ABBREV[p.id] ?? 'Perc.';
+          const inst = `${p.id}-I1`;
           return `    <score-part id="${p.id}">
       <part-name>Afrobeat Percussion</part-name>
       <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>
-      <score-instrument id="${p.id}-I1"><instrument-name>GM Drum Kit</instrument-name></score-instrument>
+      <score-instrument id="${inst}">
+        <instrument-name>GM Drum Kit</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${inst}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>38</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>
     </score-part>`;
         }
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`) + Song Mode keys comp: piano part-list, GM ch. 1 program 1. */

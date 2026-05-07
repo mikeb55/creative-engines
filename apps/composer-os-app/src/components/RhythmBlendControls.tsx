@@ -2,7 +2,10 @@
  * Song Mode — rhythm blend sidebar (Afrobeat × Rebetiko): song-form arrange + dual-layer export.
  */
 
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+
+import { BLEND_RHYTHM_EXPORT_ENGINE } from '@composer-os/core/blend';
+import { saveRhythmExportFile } from '../lib/saveRhythmExportFile';
 
 import type {
   AfrobeatPresetRef,
@@ -48,17 +51,6 @@ function slugify(s: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-}
-function downloadMusicXml(filename: string, xml: string) {
-  const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 function newSectionId(): string {
@@ -351,12 +343,17 @@ function LayerBlendPanel(props: {
   );
 }
 
-function ExportBar(props: { busy: boolean; onExport: () => void }) {
+function ExportBar(props: { busy: boolean; onExport: () => void | Promise<void>; saveNotice: string | null }) {
   return (
     <div className="exportBar">
-      <button type="button" className="exportBar__btn" disabled={props.busy} onClick={props.onExport}>
+      <button type="button" className="exportBar__btn" disabled={props.busy} onClick={() => void props.onExport()}>
         {props.busy ? 'Exporting…' : 'Export MusicXML'}
       </button>
+      {props.saveNotice ? (
+        <p className="exportBar__notice" role="status">
+          {props.saveNotice}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -458,7 +455,25 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     [afrobeatPresets, rebetikoPresets, updateSectionRhythm]
   );
 
-  const handleExport = useCallback(() => {
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const saveNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashSaveNotice = useCallback((text: string) => {
+    if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
+    setSaveNotice(text);
+    saveNoticeTimer.current = setTimeout(() => {
+      setSaveNotice(null);
+      saveNoticeTimer.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveNoticeTimer.current) clearTimeout(saveNoticeTimer.current);
+    };
+  }, []);
+
+  const handleExport = useCallback(async () => {
     setExportBusy(true);
     try {
       let xml: string;
@@ -480,7 +495,13 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
         defaultFileName?.replace(/\.musicxml$/i, '') ??
         (blendMode === 'song-form' ? slugify(songForm.title || 'rhythm-blend') : 'rhythm-blend-layer');
       const safeBase = rawBase.length ? rawBase : 'rhythm-blend';
-      downloadMusicXml(`${safeBase}.musicxml`, xml);
+      const fileName = `${safeBase}.musicxml`;
+      const res = await saveRhythmExportFile(BLEND_RHYTHM_EXPORT_ENGINE, fileName, xml);
+      if (!res.ok) {
+        flashSaveNotice(res.error);
+        return;
+      }
+      flashSaveNotice(`Saved to ${res.displayPath}`);
     } finally {
       setExportBusy(false);
     }
@@ -493,6 +514,7 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
     exportSongFormToMusicXml,
     exportBlendedScoreToMusicXml,
     defaultFileName,
+    flashSaveNotice,
   ]);
 
   return (
@@ -532,7 +554,7 @@ export function RhythmBlendControls(props: RhythmBlendControlsProps) {
           <LayerBlendPanel layer={layerBlend} afroPresets={afrobeatPresets} rebPresets={rebetikoPresets} onChange={setLayerBlend} />
         )}
       </div>
-      <ExportBar busy={exportBusy} onExport={handleExport} />
+      <ExportBar busy={exportBusy} onExport={handleExport} saveNotice={saveNotice} />
     </div>
   );
 }

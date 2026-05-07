@@ -23,6 +23,38 @@ import {
 } from './anthropicKeyHydration';
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
+  ipcMain.handle(
+    'composer-os:save-export-file',
+    async (_e, body: unknown): Promise<{ ok: boolean; fullPath?: string; error?: string }> => {
+      const b = body && typeof body === 'object' ? (body as { relativePath?: unknown; contents?: unknown }) : {};
+      const relRaw = typeof b.relativePath === 'string' ? b.relativePath : '';
+      const contents = typeof b.contents === 'string' ? b.contents : '';
+      if (!relRaw.trim() || !contents) {
+        return { ok: false, error: 'missing relativePath or contents' };
+      }
+      const normalized = relRaw.replace(/\\/g, '/').split('/').filter((seg) => seg.length > 0);
+      if (normalized.some((seg) => seg === '..')) {
+        return { ok: false, error: 'invalid path' };
+      }
+      const base = app.getPath('documents');
+      const full = path.resolve(path.join(base, ...normalized));
+      const docResolved = path.resolve(base);
+      const relToDoc = path.relative(docResolved, full);
+      if (relToDoc.startsWith('..') || path.isAbsolute(relToDoc)) {
+        return { ok: false, error: 'path outside Documents' };
+      }
+      try {
+        const { mkdir, writeFile } = await import('fs/promises');
+        await mkdir(path.dirname(full), { recursive: true });
+        await writeFile(full, contents, 'utf8');
+        return { ok: true, fullPath: full };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: msg };
+      }
+    }
+  );
+
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
   ipcMain.handle('composer-os-api:get-runtime-build-info', () => getComposerOsRuntimeBuildInfo());

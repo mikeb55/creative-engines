@@ -38,6 +38,11 @@ declare global {
       getRuntimeBuildInfo?: () => Promise<Record<string, unknown>>;
       /** Desktop: persist Anthropic key with OS DPAPI (`safeStorage`); enables PDF vision without User env vars. */
       saveAnthropicApiKey?: (apiKey: string) => Promise<{ ok: boolean; error?: string }>;
+      /** Desktop: write rhythm/export XML under Documents/`relativePath`. */
+      saveExportFile?: (payload: {
+        relativePath: string;
+        contents: string;
+      }) => Promise<{ ok: boolean; fullPath?: string; error?: string }>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };
