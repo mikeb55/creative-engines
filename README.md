@@ -4,7 +4,7 @@
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
 
-- **Current version:** **V38** (Greek Rebetiko rhythm handbook **`docs/GREEK_REBETIKO_HANDBOOK.md`**, playbook/README sync; Song Mode **`greek_rebetiko`** UI + **`greekRhythmMusicXmlExporter`** Sibelius-safe **`attributes`** ordering).
+- **Current version:** **V39** (Greek Rebetiko handbook **§§1–10** **`docs/GREEK_REBETIKO_HANDBOOK.md`**, **`docs/RHYTHM_ENGINES.md`**, playbook/README + DOCX; Song Mode **`greek_rebetiko`** + rhythm blend types **`songFormRhythmTypes`** / **`rhythmPulseGrid`** / **`rhythmLayerMerge`**).
 - **Quality gate (local):** **`npm run test:composer-smoke`** — **163** tests passed / **0** failed across **42** labelled suites (`engines/composer-os-v2/tests/runSmokeTests.ts` allowlist).
 - **Repository path:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines\`
 
@@ -191,7 +191,7 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | | |
 |--|--|
 | **Primary id** | **`greek_rebetiko`** |
-| **Rhythm docs** | **`docs/GREEK_REBETIKO_HANDBOOK.md`** — preset roadmap (**13** IDs), additive metres (**7/8**, **9/8**, **10/8** diagrams), MusicXML export notes. |
+| **Rhythm docs** | **`docs/GREEK_REBETIKO_HANDBOOK.md`** — **§§1–10** (presets, additive metres, XML, LCM merge, song form, UI, notation); **`docs/RHYTHM_ENGINES.md`** — Afrobeat vs Rebetiko, pulse grids, policies. |
 | **UI** | **`GreekRhythmControls`** — preset preview grid + **Download MusicXML** (`exportGreekRhythmToMusicXml`). |
 | **Style surface** | **`SONGWRITER_STYLE_PROFILES.greek_rebetiko`** — modal/minor colour bias, high syncopation; guitar-centric comp (**`songwriterCompProfile`**). |
 
@@ -390,6 +390,7 @@ Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Sli
 | **V32** | **Debussy** + **Cole Porter** harmony slices (**`29074f3`**), locked-truth wiring; **Composer OS Playbook** handbook refresh (**open** — see **`docs/COMPOSER_OS_PLAYBOOK.md`** / **`.docx`**) |
 | **V37** | **Fela Kuti** Tony Allen percussion — **`afrobeatRhythmEngine`** bar-edge quantise / phase wrap / missing-feel fallback; **`FELA_KUTI_PERCUSSION_HANDBOOK.md`**; Sibelius sample export script; **`fk:*`** feel tags documented in playbook |
 | **V38** | **Greek Rebetiko** — **`GREEK_REBETIKO_HANDBOOK.md`** (preset roadmap table, additive-metre diagrams); **`greek_rebetiko`** Song Mode writer + **`GreekRhythmControls`** / **`exportGreekRhythmToMusicXml`**; playbook + DOCX sync |
+| **V39** | Handbook **§§3–10** (MusicXML § changes, LCM/merge, song form, UI, notation); **`RHYTHM_ENGINES.md`**; playbook/README rhythm-engine links |
 
 ---
 

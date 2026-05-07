@@ -19,7 +19,13 @@ Song Mode primary **`fela_kuti`** appends **Afrobeat Percussion** (**GM unpitche
 
 Song Mode primary **`greek_rebetiko`** surfaces **Greek Rebetiko / dance-metre** planning (style profile + registry rules) and a **client-side rhythm panel**: **`GreekRhythmControls`** — preset dropdown, **layer × step** preview grid, and **Download MusicXML** (default **2 bars**, GM **unpitched** percussion staff **P1**, MusicXML **4.0**, **percussion** clef, **five-line** staff). Export implementation: **`exportGreekRhythmToMusicXml`** in **`engines/composer-os-v2/core/rhythm/greekRhythmMusicXmlExporter.ts`**; shipped preset bundle: **`greekRebetikoRhythmPresets.ts`** (**`hasapiko_4_4`**, **`zeibekiko_9_8`**).
 
-**Handbook:** **`docs/GREEK_REBETIKO_HANDBOOK.md`** — rebetiko context vs Western grids, **13 preset IDs** (roadmap reference table), additive-metre diagrams (**9/8**, **7/8**, **10/8**), UI separator notes, Sibelius ordering checklist.
+**Handbook:** **`docs/GREEK_REBETIKO_HANDBOOK.md`** — full **10** sections: (1–2) history + **13** preset IDs table; (3) additive metres + ASCII grids (**9/8**, **7/8**, **10/8**); (4) MusicXML export + **mid-score** `<time>` changes + Sibelius **`<attributes>`** child order; (5) **LCM** pulse grids (**144** for 16 vs 18), **`mergeRhythmLayers`**; (6) **`SongSection` / `SongForm`** & transition policy; (7) **`GreekRhythmControls`** workflow; (8) voices vs separate parts + velocity policy; (9) source file map; (10) related docs + smoke tier.
+
+---
+
+## Rhythm engines (Afrobeat & Rebetiko)
+
+Cross-engine overview — **`docs/RHYTHM_ENGINES.md`**: compares **`afrobeat`** (Tony Allen / **`fela_kuti`**) vs **`rebetiko`** (**`greek_rebetiko`**), links **`songFormRhythmTypes`** (**`AfrobeatPresetRef`**, **`RebetikoPresetRef`**, **`BLEND_DEMO_SONG_FORM_EXAMPLE`**), **`rhythmPulseGrid`** / **`rhythmLayerMerge`**, and **`rhythmBlendPolicies`** (hard section cuts, **`pragmaticPlan`**). Pair with **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** for feels and **`fk:*`** tags.
 
 ---
 

@@ -87,15 +87,85 @@ Authoritative math for export ticks: **`measureTicks / stepsPerBar`** in **`gree
 
 ---
 
-## Related docs
+## 4. MusicXML export and meter changes
 
-- **Playbook:** **`docs/COMPOSER_OS_PLAYBOOK.md`** — Song Mode **`greek_rebetiko`** UI summary.
-- **Afrobeat analogue:** **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** — West African grid / feel tags pattern.
+The standalone exporter writes **MusicXML 4.0** with one part **`P1`**, **percussion** clef, **five-line** staff, and measure **1** attributes: **`<divisions>`** (quarter = 480 in the current implementation), **`<key>`**, **`<time>`**, **`<staves>`**, **`<clef>`**, **`<staff-details><staff-lines>5</staff-lines></staff-details>`** — with **`<clef>`** after **`<staves>`** and before **`<staff-details>`** so Sibelius accepts the child order.
+
+**Mid-score meter change:** when a new section uses a different **`<time>`**, the first measure of that section must include a fresh **`<attributes>`** block; the **`<time>`** there overrides the previous signature. You may keep **`<divisions>`** global and only restate **`<time>`** to avoid re-deriving every duration, or follow a bar-resolution model (e.g. **144** divisions per bar) with consistent tick math — see **`docs/RHYTHM_ENGINES.md`** for the LCM discussion.
+
+**Manual Sibelius check:** export from the app (**Download MusicXML**) or call **`exportGreekRhythmToMusicXml(preset, 2)`**; import and confirm **GM** drum map, **unpitched** display octaves **4–5**, and no schema errors on **`<clef>`** scope.
 
 ---
 
-## Sibelius / MusicXML checklist (manual)
+## 5. Pulse grids, LCM, and cross-engine alignment
 
-1. Export **2-bar** sample from the app (**Download MusicXML**) or call **`exportGreekRhythmToMusicXml`** with **`bars = 2`**.
-2. Import to Sibelius — confirm **percussion clef**, **five-line staff**, **GM playback map** on drum staff.
-3. If editing — keep **`<clef>`** immediately after **`<staves>`** inside **`<attributes>`** (same ordering as main **`musicxmlExporter`** drum path).
+Merging a **16-step** afrobeat bar with an **18-step** zeibekiko bar without **time-stretching** the patterns uses a shared pulse count per bar: **lcm(16, 18) = 144**. On that grid, each 16th-step hits every **9** pulses; each 18-step hits every **8** pulses.
+
+Composer OS implements:
+
+- **`projectStepsToPulseGrid`** — anchor each step velocity at **`step × (pulsesPerBar / stepsPerBar)`**
+- **`getSharedGridResolution`** — returns strides for two grids
+- **`mergeRhythmLayers`** — combines two lanes with **`max`**, **`sum-clamped`**, or **`priority`**; buckets use **`pulseIndex` + `midiNote`** so unrelated drums at the same subdivision remain separate hits
+
+Full API names live under **`engines/composer-os-v2/core/rhythm/rhythmPulseGrid.ts`** and **`rhythmLayerMerge.ts`**. For engine-neutral framing see **`docs/RHYTHM_ENGINES.md`**.
+
+---
+
+## 6. Song form, sections, and transitions
+
+Typed planning structs (**`songFormRhythmTypes.ts`**) attach a **`RhythmPresetRef`** (**AfrobeatPresetRef** or **RebetikoPresetRef**) to each **`SongSection`** over **`bars: { startBar, endBar }`** (1-based inclusive). Optional **`tempoBpm`**, **`transitionIn`**, **`transitionOut`** (**`hard`** vs **`crossfade`**) describe rehearsal logic — **not** yet a full DAW automation path.
+
+**Recommended default:** **hard** switch at the **bar boundary** when metre or engine identity changes; discrete **MusicXML** time signatures match how bands read charts. **Overlap** transitions are arrangement effects (gain ramps, optional polymetry); they complicate notation unless scoped as **separate parts** or explicit tuplets.
+
+Policies: **`SectionTransitionPolicy`**, **`transitionTradeoffs`**, **`defaultTransitionPolicy`** in **`rhythmBlendPolicies.ts`**.
+
+---
+
+## 7. UI: Greek Rhythm Controls
+
+In **Song Mode** with primary **`greek_rebetiko`**, **`GreekRhythmControls`** (**`apps/composer-os-app/src/components/GreekRhythmControls.tsx`**) shows:
+
+- Preset **dropdown** (shipped bundle from **`GREEK_REBETIKO_RHYTHM_PRESETS`**)
+- **Layer × step** preview matrix (**column = step index**)
+- **Download MusicXML** — client-side blob; **2 bars** by default via **`exportGreekRhythmToMusicXml`**
+
+Barrel re-exports for tooling: **`apps/composer-os-app/src/slices/greekRhythmSlice.ts`**.
+
+---
+
+## 8. Notation strategies and velocity
+
+**Same score, two metaphors:** Afrobeat is naturally **4/4 sixteen-step**; rebetiko presets may use **8–20** steps per bar. For **simultaneous** material:
+
+- **Separate parts** (**`PercussionRenderMode`**: **`separate-parts`**): each engine keeps native **divisions** + metre — simplest for rehearsal and mixed-length scores.
+- **Single part, multi-voice**: two **`<voice>`** layers on one staff require **`<backup>`** per MusicXML rules; use when one player must read a blended line.
+
+**Velocity:** different **MIDI** notes at the same tick → **two note elements**. Same note / same tick → resolve with **`VelocityPolicy`** (**`max`** default; **`priority`** uses **`lanePriority`**). See **`resolveVelocityConflict`** and **`defaultVelocityPolicy`** in **`rhythmBlendPolicies.ts`**.
+
+---
+
+## 9. Source map (implementation)
+
+| Concern | Location |
+|---------|----------|
+| Greek **`RhythmPreset`**, validation | **`greekRebetikoRhythmTypes.ts`**, **`greekRebetikoRhythmValidate.ts`**, **`greekRebetikoRhythmPresets.ts`** |
+| Standalone XML export | **`greekRhythmMusicXmlExporter.ts`** |
+| Song form + **`RhythmPresetRef`** | **`songFormRhythmTypes.ts`** |
+| LCM / pulse projection | **`rhythmPulseGrid.ts`** |
+| Layer merge | **`rhythmLayerMerge.ts`** |
+| Transition / velocity / pragmatic defaults | **`rhythmBlendPolicies.ts`** |
+| Fela comparison (export path) | **`musicxmlExporter.ts`**, **`felaKutiSlice.ts`** |
+
+---
+
+## 10. Related documents and quality gate
+
+| Doc | Role |
+|-----|------|
+| **`docs/RHYTHM_ENGINES.md`** | Afrobeat vs Rebetiko overview, blend summary, links |
+| **`docs/FELA_KUTI_PERCUSSION_HANDBOOK.md`** | Tony Allen patterns, **`fk:*`** metadata |
+| **`docs/COMPOSER_OS_PLAYBOOK.md`** | Generate UI, Song Mode contract |
+
+**Smoke tier:** **`npm run test:composer-smoke`** must remain **163** passed / **0** failed / **42** suites before merging composer-facing changes (`engines/composer-os-v2/tests/runSmokeTests.ts`).
+
+**Glossary (quick):** **Additive metre** — bar built from unequal groups; **divisive** — bar split from beat hierarchy; **doumbek** — low drum lane in preset docs; **zeibekiko** — **9/8** dance with **2+2+2+3** eighth grouping.
