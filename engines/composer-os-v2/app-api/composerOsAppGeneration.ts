@@ -648,51 +648,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   });
   const musicXmlSourceRaw =
     typeof req.musicXmlSource === 'string' ? req.musicXmlSource.trim() : '';
+  let musicXmlHarmonyPiped: string | undefined;
   if (musicXmlSourceRaw.length > 0) {
-    const parsedChart = parseMusicXml(musicXmlSourceRaw);
-    try {
-      parsedChartToLeadSheet(parsedChart);
-      const unexpected =
-        'parsedChartToLeadSheet: stub resolved — MusicXML → LeadSheet handoff not implemented';
-      return {
-        success: false,
-        error: unexpected,
-        productKind: 'musicxml',
-        composerOsVersion: COMPOSER_OS_VERSION,
-        validation: validationForStructural(false, [unexpected]),
-        runManifest: {
-          seed: effectiveSeed,
-          presetId: 'song_mode',
-          activeModules: ['song_mode'],
-          timestamp: ts,
-          scoreTitle: title,
-          variationId: req.variationId,
-          creativeControlLevel: req.creativeControlLevel,
-        },
-        scoreTitle: title,
-        requestEcho: requestEchoFromReq(req),
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return {
-        success: false,
-        error: msg,
-        productKind: 'musicxml',
-        composerOsVersion: COMPOSER_OS_VERSION,
-        validation: validationForStructural(false, [msg]),
-        runManifest: {
-          seed: effectiveSeed,
-          presetId: 'song_mode',
-          activeModules: ['song_mode'],
-          timestamp: ts,
-          scoreTitle: title,
-          variationId: req.variationId,
-          creativeControlLevel: req.creativeControlLevel,
-        },
-        scoreTitle: title,
-        requestEcho: requestEchoFromReq(req),
-      };
-    }
+    const mxChart = parseMusicXml(musicXmlSourceRaw);
+    void parsedChartToLeadSheet(mxChart);
+    musicXmlHarmonyPiped = mxChart.harmonies.join('|');
   }
   const secondarySw =
     typeof req.secondarySongwriterStyle === 'string' && req.secondarySongwriterStyle.trim() !== ''
@@ -838,7 +798,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const primarySongwriterSet =
     typeof req.primarySongwriterStyle === 'string' && req.primarySongwriterStyle.trim().length > 0;
 
-  const rawCustomHarmony = typeof req.chordProgressionText === 'string' ? req.chordProgressionText.trim() : '';
+  const rawCustomHarmony =
+    musicXmlHarmonyPiped && musicXmlHarmonyPiped.length > 0
+      ? musicXmlHarmonyPiped
+      : typeof req.chordProgressionText === 'string'
+        ? req.chordProgressionText.trim()
+        : '';
   const useLockedCustomHarmony = rawCustomHarmony.length > 0 && !useLeadSheetHarmony;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
   if (useLockedCustomHarmony) {

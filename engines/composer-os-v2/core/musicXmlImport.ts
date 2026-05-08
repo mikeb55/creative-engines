@@ -6,8 +6,11 @@
 /// <reference lib="dom" />
 
 import { musicXmlKindContentFromKindText } from '../../core/chordSymbolMusicXmlCore';
+import type { CompositionContext } from './compositionContext';
+import { inferKeyFromChords } from './harmony/keyInference';
+import { resolveBarSymbol } from './harmony/harmonySpineProvider';
 import { harmoniesFromMeasures, type ParsedChart, type ParsedChord } from './irealpro/parsedChart';
-import type { LeadSheet } from './lead-sheet/leadSheetTypes';
+import type { LeadSheet, LeadSheetKeySignature } from './lead-sheet/leadSheetTypes';
 import { ensureMusicXmlDomParserPolyfill } from './musicXmlImportDomPolyfill';
 
 function getDomParserClass(): typeof DOMParser {
@@ -85,6 +88,57 @@ function keyStringFromFifthsAndMode(fifths: number, modeRaw: string | undefined)
     return MINOR_KEY_BY_FIFTHS[fifths] ?? null;
   }
   return MAJOR_KEY_BY_FIFTHS[fifths] ?? null;
+}
+
+function matchMajorFifthsForRootName(norm: string): number | undefined {
+  for (const [fifthsStr, name] of Object.entries(MAJOR_KEY_BY_FIFTHS)) {
+    if (name.toLowerCase() === norm.toLowerCase()) return Number(fifthsStr);
+  }
+  return undefined;
+}
+
+function matchMinorFifthsForRootName(norm: string): number | undefined {
+  for (const [fifthsStr, name] of Object.entries(MINOR_KEY_BY_FIFTHS)) {
+    if (name.toLowerCase() === norm.toLowerCase()) return Number(fifthsStr);
+  }
+  return undefined;
+}
+
+function leadSheetKeySignatureFromParsedChart(chart: ParsedChart): LeadSheetKeySignature {
+  const label = chart.key?.trim();
+  if (label) {
+    const minorWord = /\bminor\b/i.test(label);
+    const mSuffix = /^(.*?)\s+m$/i.exec(label.replace(/\s+/g, ' ').trim());
+    const rootOnly = minorWord
+      ? label.replace(/\s*minor\s*/i, '').trim()
+      : mSuffix
+        ? mSuffix[1]!.trim()
+        : label.trim();
+    const wantMinor = minorWord || !!mSuffix;
+    const norm = rootOnly.replace(/♭/g, 'b').replace(/♯/g, '#');
+    const majF = matchMajorFifthsForRootName(norm);
+    const minF = matchMinorFifthsForRootName(norm);
+    if (majF !== undefined && minF !== undefined && !wantMinor) {
+      const votes = chart.harmonies.filter((h) => h && !/^n\.?c\.?$/i.test(h));
+      if (votes.length > 0) {
+        const inf = inferKeyFromChords(votes);
+        if (!inf.noKeySignatureRecommended && inf.confidence >= 0.22) {
+          return { fifths: inf.recommendedFifths, mode: inf.recommendedMode };
+        }
+      }
+      return { fifths: majF, mode: 'major' };
+    }
+    if (wantMinor && minF !== undefined) return { fifths: minF, mode: 'minor' };
+    if (!wantMinor && majF !== undefined) return { fifths: majF, mode: 'major' };
+  }
+  const votes = chart.harmonies.filter((h) => h && !/^n\.?c\.?$/i.test(h));
+  if (votes.length > 0) {
+    const inf = inferKeyFromChords(votes);
+    if (!inf.noKeySignatureRecommended && inf.confidence >= 0.22) {
+      return { fifths: inf.recommendedFifths, mode: inf.recommendedMode };
+    }
+  }
+  return { fifths: 0, mode: 'major' };
 }
 
 function splitChordSymbolForParsedChord(symbol: string): { rootNote: string; chordQuality: string } {
@@ -382,9 +436,61 @@ export function parseMusicXml(xmlString: string): ParsedChart {
 }
 
 /**
- * Future path: unify {@link ParsedChart} (iReal / paste / MusicXML phase-1) with {@link LeadSheet}.
- * Not implemented yet — call sites should continue using slice-specific pipelines until this lands.
+ * Phase-1 {@link ParsedChart} → {@link LeadSheet}: bar-majority harmony line + core metadata.
+ * One chord event per bar (beat 0); melody empty until full MusicXML staff import.
  */
-export function parsedChartToLeadSheet(_chart: ParsedChart): LeadSheet {
-  throw new Error('parsedChartToLeadSheet: not yet implemented');
+export function parsedChartToLeadSheet(chart: ParsedChart): LeadSheet {
+  const titleRaw = chart.title?.trim();
+  const title = titleRaw && titleRaw.length > 0 ? titleRaw : 'Untitled';
+  const composer = chart.composer?.trim() ?? '';
+
+  const harmonies =
+    chart.harmonies.length > 0 ? chart.harmonies : harmoniesFromMeasures(chart.measures);
+
+  const meter = chart.meter ?? chart.timeSignature;
+  const timeSignature =
+    meter && meter.num > 0 && meter.den > 0
+      ? { beats: meter.num, beatType: meter.den }
+      : { beats: 4, beatType: 4 };
+
+  const keySignature = leadSheetKeySignatureFromParsedChart(chart);
+  const totalBars = Math.max(1, harmonies.length);
+
+  const chordEvents = harmonies.map((symbol, i) => ({
+    bar: i + 1,
+    beat: 0,
+    symbol,
+    sourceMeasure: i + 1,
+  }));
+
+  return {
+    sourceFormat: 'musicxml',
+    title,
+    composer: composer.length > 0 ? composer : undefined,
+    tempoBpm: chart.tempo ?? undefined,
+    timeSignature,
+    keySignature,
+    keyChanges: [{ bar: 1, fifths: keySignature.fifths, ...(keySignature.mode ? { mode: keySignature.mode } : {}) }],
+    totalBars,
+    sections: [],
+    chordEvents,
+    melodyEvents: [],
+    repeatMarkers: [],
+  };
+}
+
+/**
+ * Import pipeline before explicit user harmony lock: spine must not classify provenance as `locked`.
+ * Use with contexts built from builtin / slice routes only (e.g. probe after {@link runGoldenPathOnce} without custom lock).
+ */
+export function assertMusicXmlImportSpineNotLocked(context: CompositionContext): void {
+  const tb = context.form.totalBars;
+  for (let b = 1; b <= tb; b++) {
+    const { provenance } = resolveBarSymbol(context, b);
+    if (provenance === 'locked') {
+      throw new Error(
+        `MusicXML import spine: bar ${b} provenance is locked (expected builtin or slice before user lock)`
+      );
+    }
+  }
 }

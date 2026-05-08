@@ -5,6 +5,7 @@
  */
 
 import { getChordForBar } from '../core/harmony/harmonyResolution';
+import { assertMusicXmlImportSpineNotLocked, parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 import { resolveBarSymbol } from '../core/harmony/harmonySpineProvider';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import probeSeed50213 from './harmonySpineCases.seed50213.json';
@@ -84,6 +85,43 @@ function runCaseRow(pilot: HarmonySpineCaseRow): boolean {
   return true;
 }
 
+const XML_SPINE_PROBE = `<?xml version="1.0"?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>P</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <harmony><root><root-step>C</root-step></root><kind>major</kind></harmony>
+    </measure>
+  </part>
+</score-partwise>`;
+
+function runMusicXmlParsedChartSpineProbe(): boolean {
+  const chart = parseMusicXml(XML_SPINE_PROBE);
+  const ls = parsedChartToLeadSheet(chart);
+  if (ls.totalBars !== 1 || ls.chordEvents[0]?.symbol !== 'C') return false;
+  const r = runGoldenPathOnce(424242, {
+    presetId: 'guitar_bass_duo',
+    totalBars: 8,
+    harmonyMode: 'builtin',
+    longFormEnabled: true,
+    songModeHookFirstIdentity: true,
+  });
+  const ctx = r.context;
+  if (!ctx) return false;
+  try {
+    assertMusicXmlImportSpineNotLocked(ctx);
+  } catch {
+    return false;
+  }
+  for (let b = 1; b <= ctx.form.totalBars; b++) {
+    const spine = resolveBarSymbol(ctx, b);
+    if (spine.provenance === 'locked') return false;
+    if (spine.provenance !== 'builtin' && spine.provenance !== 'slice') return false;
+  }
+  return true;
+}
+
 export function runHarmonySpineTests(): { name: string; ok: boolean }[] {
   const rows: { name: string; ok: boolean }[] = [];
   for (const pilot of HARMONY_SPINE_CASE_TABLE) {
@@ -92,5 +130,9 @@ export function runHarmonySpineTests(): { name: string; ok: boolean }[] {
       ok: runCaseRow(pilot),
     });
   }
+  rows.push({
+    name: 'Harmony spine — MusicXML ParsedChart → LeadSheet + builtin spine (not locked)',
+    ok: runMusicXmlParsedChartSpineProbe(),
+  });
   return rows;
 }

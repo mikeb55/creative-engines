@@ -2,7 +2,6 @@
  * {@link parseMusicXml} unit coverage (Node-safe DOM). Full harness chunk 4 — not smoke.
  */
 
-import type { ParsedChart } from '../core/irealpro/parsedChart';
 import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 
 const XML_META = `<?xml version="1.0"?>
@@ -129,13 +128,22 @@ function testMultiBarHarmonySequence(): boolean {
   );
 }
 
-function testParsedChartToLeadSheetStub(): boolean {
-  try {
-    parsedChartToLeadSheet({} as ParsedChart);
-    return false;
-  } catch (e) {
-    return e instanceof Error && e.message === 'parsedChartToLeadSheet: not yet implemented';
-  }
+function testParsedChartToLeadSheet(): boolean {
+  const c = parseMusicXml(XML_META);
+  const ls = parsedChartToLeadSheet(c);
+  return (
+    ls.sourceFormat === 'musicxml' &&
+    ls.title === 'Fixture One' &&
+    ls.composer === 'Fixture Composer' &&
+    ls.keySignature?.fifths === 2 &&
+    ls.keySignature?.mode === 'major' &&
+    ls.timeSignature?.beats === 3 &&
+    ls.timeSignature?.beatType === 4 &&
+    ls.totalBars === 1 &&
+    ls.chordEvents.length === 1 &&
+    ls.chordEvents[0]!.symbol === 'N.C.' &&
+    ls.chordEvents[0]!.bar === 1
+  );
 }
 
 export function runMusicXmlImportTests(): { name: string; ok: boolean }[] {
@@ -143,6 +151,6 @@ export function runMusicXmlImportTests(): { name: string; ok: boolean }[] {
     { name: 'MusicXML import: title / composer / key / meter', ok: testMetadataAndMeter() },
     { name: 'MusicXML import: single harmony bar', ok: testSingleHarmonyBar() },
     { name: 'MusicXML import: multi-bar harmony sequence', ok: testMultiBarHarmonySequence() },
-    { name: 'MusicXML import: parsedChartToLeadSheet stub', ok: testParsedChartToLeadSheetStub() },
+    { name: 'MusicXML import: parsedChartToLeadSheet', ok: testParsedChartToLeadSheet() },
   ];
 }
