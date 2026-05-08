@@ -10,9 +10,11 @@ import {
   MORRICONE_HARMONIC_STYLE_KEYS,
   QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
   WAYNE_SHORTER_HARMONIC_STYLE_KEYS,
+  PAT_METHENY_HARMONIC_STYLE_KEYS,
 } from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
 import {
   buildGenerationContext,
+  HARMONIC_VOICE_LABELS,
   migrateLegacySongwriterValue,
   resolveHarmonicContextKeys,
   resolveRhythmContextKeys,
@@ -138,5 +140,14 @@ describe('styleProfile', () => {
       'hv:charles_mingus',
       ...CHARLES_MINGUS_HARMONIC_STYLE_KEYS,
     ]);
+  });
+
+  it('resolveHarmonicContextKeys(pat_metheny) returns hv + 16 research tags', () => {
+    expect(PAT_METHENY_HARMONIC_STYLE_KEYS).toHaveLength(16);
+    expect(resolveHarmonicContextKeys('pat_metheny')).toEqual([
+      'hv:pat_metheny',
+      ...PAT_METHENY_HARMONIC_STYLE_KEYS,
+    ]);
+    expect(HARMONIC_VOICE_LABELS.pat_metheny).toBe('Pat Metheny');
   });
 });

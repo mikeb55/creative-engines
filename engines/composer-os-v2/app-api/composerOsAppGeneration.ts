@@ -614,6 +614,7 @@ const SONGWRITER_DISPLAY_TITLE_MAP: Record<string, string> = {
   frank_zappa: 'Frank Zappa',
   henry_threadgill: 'Henry Threadgill',
   charles_mingus: 'Charles Mingus',
+  pat_metheny: 'Pat Metheny',
   wayne_shorter: 'Wayne Shorter',
   bill_evans: 'Bill Evans',
   thelonious_monk: 'Thelonious Monk',

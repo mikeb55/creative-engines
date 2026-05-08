@@ -266,6 +266,33 @@ const HENRY_THREADGILL_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const PAT_METHENY_KEYS_COMP: SongwriterCompProfile = {
+  id: 'pat_metheny',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'lydian_major_seven_sharp_eleven_colour',
+    'open_spacing_add_nine_sus_plateau',
+    'pedal_shimmer_long_hold_pairs',
+    'diatonic_planing_non_functional_roots',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'brazilian_bossa_samba_baiao_under_lyrical_line',
+    'afro_cuban_clave_intensity_under_modal_pad',
+    'second_line_swamp_groove_americana_inflection',
+  ],
+  smallMovementRules: [
+    'extension_weight_ninth_eleventh_thirteenth_over_shell',
+    'avoid_dominant_chain_resolution_bias',
+    'parallel_triad_or_constant_structure_over_static_bass',
+  ],
+  receiptLines: [
+    'Harmonic voice Pat Metheny — rhythm pairing hints: Brazilian bossa/samba/baião (br) primary — lush Lydian/add9 harmony over understated groove and long-line melody; Cuban/Afro-Cuban (cu) for rhythmically intense spans — tumbao/clave under modal/Lydian fields; New Orleans Second Line (sl) for Americana-leaning landscapes — swampy groove under hymn-like pentatonic seeds.',
+    'String quartet translation: sustained maj7/Lydian pads; natural harmonics as “open string” resonance; parallel triads over static bass; arching cantabile countermelody in upper strings.',
+    'Big band translation: wide sectional spread — layered ostinati rather than shout choruses; lead trumpet/sax on #11/13 extensions; Brazilian percussion colours integrated as colour grid not funk backbeat. Not an imitation of any artist.',
+  ],
+};
+
 const WAYNE_SHORTER_KEYS_COMP: SongwriterCompProfile = {
   id: 'wayne_shorter',
   primaryCompInstrument: 'sax',
@@ -379,6 +406,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return HENRY_THREADGILL_KEYS_COMP;
     case 'charles_mingus':
       return CHARLES_MINGUS_KEYS_COMP;
+    case 'pat_metheny':
+      return PAT_METHENY_KEYS_COMP;
     case 'wayne_shorter':
       return WAYNE_SHORTER_KEYS_COMP;
     default:

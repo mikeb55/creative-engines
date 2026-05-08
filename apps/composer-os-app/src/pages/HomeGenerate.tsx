@@ -531,6 +531,7 @@ const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'wayne_shorter',
   'henry_threadgill',
   'charles_mingus',
+  'pat_metheny',
 ];
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
 

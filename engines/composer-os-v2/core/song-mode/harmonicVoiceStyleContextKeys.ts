@@ -150,6 +150,26 @@ export const CHARLES_MINGUS_HARMONIC_STYLE_KEYS: readonly string[] = [
   'orchestral_double_big_band_ambition',
 ];
 
+/** Pat Metheny — Lydian open harmony, ECM space, Brazilian inflection, orchestral PMG layers. */
+export const PAT_METHENY_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'lydian_open_harmony',
+  'extended_major_add9_language',
+  'diatonic_nonfunctional_progressions',
+  'pedal_drone_voicing',
+  'open_string_guitar_geometry',
+  'arching_melodic_arc',
+  'motivic_melodic_development',
+  'ecm_space_aesthetic',
+  'brazilian_rhythmic_inflection',
+  'odd_meter_natural_phrase',
+  'orchestral_pmg_layered_textures',
+  'through_composed_episodic_form',
+  'americana_landscape_melody',
+  'luminous_non_cadential_endings',
+  'ostinato_based_large_form',
+  'lydian_pentatonic_mixture',
+];
+
 export const WAYNE_SHORTER_HARMONIC_STYLE_KEYS: readonly string[] = [
   'motivic_harmonic_derivation',
   'non_functional_neighbor_harmony',
@@ -192,6 +212,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...HENRY_THREADGILL_HARMONIC_STYLE_KEYS];
     case 'charles_mingus':
       return [...CHARLES_MINGUS_HARMONIC_STYLE_KEYS];
+    case 'pat_metheny':
+      return [...PAT_METHENY_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

@@ -153,6 +153,41 @@ function cellBalancedDefault(seed: number): MotifCell2 {
   };
 }
 
+const TB_PM: MotifCell2TransformBudget = {
+  transpose: true,
+  invert: false,
+  retrograde: false,
+  augment: true,
+  diminish: false,
+  fragment: true,
+  sequence: true,
+  embedInnerVoice: true,
+};
+
+function cellPatMetheny(): MotifCell2 {
+  const intervals = [2, 2, 2, -5];
+  const durations = [1, 1.5, 0.5, 2, 2];
+  const contour: ('up' | 'down' | 'same')[] = ['same', 'up', 'up', 'same', 'down'];
+  const accents = durations.map((d, i) => 0.4 + (i % 3) * 0.04 + Math.min(0.14, d / 12));
+  return {
+    id: 'pm_primary',
+    role: 'primary',
+    intervals,
+    durations,
+    contour,
+    accents,
+    registerBand: [57, 81],
+    harmonicMask: {
+      chordTonesBias: 0.4,
+      tensionBias: 0.2,
+      avoidStrongLT: true,
+      pedalFriendly: true,
+    },
+    transformBudget: TB_PM,
+    recallWeight: 0.8,
+  };
+}
+
 function cellCharlesMingus(): MotifCell2 {
   const intervals = [3, 2];
   const durations = [1.5, 0.5, 1];
@@ -325,6 +360,7 @@ function primaryForVoice(canon: string, seed: number): MotifCell2 {
   if (canon === 'wayne_shorter') return cellWayneShorter();
   if (canon === 'henry_threadgill') return cellHenryThreadgill();
   if (canon === 'charles_mingus') return cellCharlesMingus();
+  if (canon === 'pat_metheny') return cellPatMetheny();
   return cellBalancedDefault(seed);
 }
 

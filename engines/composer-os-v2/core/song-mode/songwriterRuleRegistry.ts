@@ -477,43 +477,27 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   ],
   pat_metheny: [
     R(
-      'metheny.open_voicing',
-      'Open harmony spacing via diatonic planing between maj-extension chords (`pm:diatonic_planing`) plus quartal/sus/add9 surfaces eligible for sus-float; stacked functional chains are reduced by ii–V–I flattening (`flattenTwoFiveOnePass`) and consecutive-dominant stripping (`stripDominantChainPass`).',
+      'metheny.ecm_early_period',
+      'ECM early (Bright Size Life, Phase Dance): modal spacious harmony — simpler diatonic fields; harmonic rhythm very slow (often one colour per 2–4 bars); palette maj7 / min7 / add9 / sus2–sus4 with 9/13 as stable colours not “tensions”; Lydian default on major — maj7(#11) preferred over plain maj7; avoid dominant chains / strong V–I — roots move by step or third; Phase Dance model: modal centre over pedal with colour shifts via add9/add11/sus rather than functional progression; cadences float to IV, luminous add9 landings, or vamp fade — not textbook resolution; phrase space via rests and long sustains; melodic phrasing breathes like a singer.',
       'songwriter',
       'harmony',
-      7,
+      9,
       'global'
     ),
     R(
-      'metheny.pedal_point',
-      'Pedal rhythm and slash bass: motion-gated `pm:pedal_shimmer` (d2) when harmony changes across barlines; `enforceMethenyTwoBarHold` prolongs chord pairs unless slash-bass matches; harsh blues-colour dominants can strip toward maj9 (`stripBluesDominantColour`).',
+      'metheny.classic_pmg_period',
+      'Classic PMG (First Circle, Letter From Home, Still Life, The Way Up): extended diatonic / mixed-modal progressions with predominantly stepwise or third-wise roots — bIImaj7(#11), bVImaj7 as colour Lydian/Dorian overlays on unexpected chord types; sus chords as stable plateaus not pre-dominants; Brazilian bossa/samba/baião rhythmic inflection under lush major/add9 motion; odd meters (9/8, 22/8, 15/8) with melody crossing barlines so flow dominates meter; episodic form — sections linked by motives + shared harmonic language with recurring themes reharmonized; large-scale tension/release arches via registral and textural climaxes.',
       'songwriter',
       'harmony',
-      7,
+      9,
       'global'
     ),
     R(
-      'metheny.lydian_color',
-      'Tonic Lydian / home colour: `pm:lydian_home` when major-tonic bars carry maj9, maj7#11, or 6/9 after the modal and guard passes (`emitLydianHomeReceipts`).',
+      'metheny.orchestral_period',
+      'Orchestral (Secret Story, Orchestrion, Road to the Sun): expanded ensemble — extended major/modal harmony persists; layered ostinati in conflicting meters building long-span rhythmic fields; stratified orchestration: low voices hold roots/fifths, mid-register colours 3/7/9, high strands #11/13/melody; open-string guitar geometry → orchestral parallel: harmonics, sustained 9/#11 in strings, parallel triads over static bass (constant structures); Orchestrion-like multiple tight loops in separate registers; through-composed suite recurrence with solo episodes condensing the piece’s harmonic DNA; Americana / landscape melody — simple pentatonic or hymn-like cells inside sophisticated modal harmony.',
       'songwriter',
       'harmony',
-      7,
-      'global'
-    ),
-    R(
-      'metheny.stepwise_melody',
-      'Melodic anchor stability: identity / motif / hook bars skip modal side-slip and device eligibility so lyrical lines are not destabilised on structural bars (`isPatMethenyHookBar`); duo path pairs with flowing, stepwise phrase intent.',
-      'songwriter',
-      'melody',
-      7,
-      'global'
-    ),
-    R(
-      'metheny.folk_jazz_color',
-      'Folk-jazz ECM palette: seeded modal side-slip (d5, `pm:modal_sideSlip`) toward bII/bIII maj9 with paired tonic colour; `pm:sus_float` (d4) on sus/add9/maj families; maj/add9 rows from `SONGWRITER_CHORD_POOLS.pat_metheny` feed the floating harmony arc.',
-      'songwriter',
-      'harmony',
-      7,
+      9,
       'global'
     ),
   ],
