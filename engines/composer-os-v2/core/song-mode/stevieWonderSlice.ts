@@ -5,7 +5,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
@@ -279,8 +279,8 @@ export function precomputeStevieWonderEffectiveHarmonyBars(context: CompositionC
   const out: string[] = [];
 
   for (let b = 1; b <= tb; b++) {
-    const raw = getChordForBar(b, context);
-    const next = b < tb ? getChordForBar(b + 1, context) : undefined;
+    const raw = resolveBarSymbol(context, b).symbol;
+    const next = b < tb ? resolveBarSymbol(context, b + 1).symbol : undefined;
     const prevOut = b > 1 ? out[b - 2] : undefined;
     const chord = applyStevieWonderHarmonicDevicesFirstPass({
       bar: b,
@@ -311,13 +311,13 @@ export function resolveStevieWonderEffectiveChordForBar(
   const tb = context.form.totalBars;
   const eff = genMeta.stevieWonderEffectiveHarmonyBars as string[] | undefined;
   if (eff && eff.length === tb && bar >= 1 && bar <= tb) return eff[bar - 1]!;
-  return getChordForBar(bar, context);
+  return resolveBarSymbol(context, bar).symbol;
 }
 
 function inferMajorMinorFromTonicBar(context: CompositionContext): 'major' | 'minor' {
   const t = inferTonicPitchClassFromBar1(context);
   if (t === undefined) return 'major';
-  const sym = getChordForBar(1, context);
+  const sym = resolveBarSymbol(context, 1).symbol;
   return isTonicMinorish(sym, t) ? 'minor' : 'major';
 }
 

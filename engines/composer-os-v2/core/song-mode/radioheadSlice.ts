@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
@@ -129,7 +129,7 @@ export function rhApplyDevice5AbsentTonic(params: {
 }): void {
   const { context, tonicPc, out, receipts, seed } = params;
   if (tonicPc === undefined) return;
-  const bar1Chord = getChordForBar(1, context);
+  const bar1Chord = resolveBarSymbol(context, 1).symbol;
   const keyMinor = (() => {
     const t = bar1Chord.toLowerCase();
     return /^([a-g][#b]?)m(?!aj)/i.test(parseChordSymbol(bar1Chord).harmonyPart) || /\bm(in)?\b/.test(t);
@@ -195,7 +195,7 @@ export function rhApplyDevice4BorrowedIv(params: {
 }): void {
   const { context, tonicPc, out, receipts, seed } = params;
   if (tonicPc === undefined) return;
-  const bar1Chord = getChordForBar(1, context);
+  const bar1Chord = resolveBarSymbol(context, 1).symbol;
   const keyMinor =
     /^([a-g][#b]?)m(?!aj)/i.test(parseChordSymbol(bar1Chord).harmonyPart) ||
     bar1Chord.toLowerCase().includes('m');
@@ -281,7 +281,7 @@ export function precomputeRadioheadEffectiveHarmonyBars(context: CompositionCont
   const seed = context.seed;
   const out: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    out.push(getChordForBar(b, context));
+    out.push(resolveBarSymbol(context, b).symbol);
   }
 
   rhApplyDevice5AbsentTonic({ context, tonicPc, out, receipts, seed });

@@ -14,7 +14,6 @@ import type {
   NinoRotaContextMode,
   PhilipGlassContextMode,
 } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -192,7 +191,7 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
   genMeta.johnWilliamsContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {
@@ -270,7 +269,7 @@ export function precomputeEnnioMorriconeEffectiveHarmonyBars(context: Compositio
   genMeta.ennioMorriconeContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {
@@ -346,7 +345,7 @@ export function precomputeNinoRotaEffectiveHarmonyBars(context: CompositionConte
   genMeta.ninoRotaContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {
@@ -415,7 +414,7 @@ export function precomputeJerryGoldsmithEffectiveHarmonyBars(context: Compositio
   genMeta.jerryGoldsmithContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {
@@ -486,7 +485,7 @@ export function precomputePhilipGlassEffectiveHarmonyBars(context: CompositionCo
   genMeta.philipGlassContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
   const tonicPc = inferTonicPitchClassFromBar1(context);
 
@@ -568,7 +567,7 @@ export function precomputeHansZimmerEffectiveHarmonyBars(context: CompositionCon
   genMeta.hansZimmerContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {
@@ -634,7 +633,7 @@ export function precomputeAngeloBadalamentiEffectiveHarmonyBars(context: Composi
   genMeta.angeloBadalamentiContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
 
   for (let b = 1; b <= tb; b++) {

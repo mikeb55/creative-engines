@@ -7,7 +7,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar } from './brianWilsonPetSoundsSlice';
 import type { SonicYouthExtension, SYTextureState } from '../score-model/sonicYouthChordTypes';
@@ -79,7 +79,7 @@ function frictionFromSymbol(symbol: string): number {
 export function getSonicYouthTextureStateAtBar(context: CompositionContext, bar: number): SYTextureState {
   let s: SYTextureState = 'riff';
   for (let b = 1; b < bar; b++) {
-    const sym = getChordForBar(b, context);
+    const sym = resolveBarSymbol(context, b).symbol;
     const friction = frictionFromSymbol(sym);
     const preset = getSYDissonancePreset(friction);
     const noiseLevel =
@@ -150,7 +150,7 @@ export function buildSonicYouthExtension(
 export function applySonicYouthGuitarBarPasses(m: MeasureModel, bar: number, context: CompositionContext): void {
   const sp = context.generationMetadata?.styleProfile;
   if (!isSongwriterSonicYouth(context.generationMetadata) && sp !== 'STYLE_SONIC_YOUTH') return;
-  const sym = m.chord ?? getChordForBar(bar, context);
+  const sym = m.chord ?? resolveBarSymbol(context, bar).symbol;
   const seed = context.seed;
   for (const e of m.events) {
     if (e.kind !== 'chord') continue;
@@ -170,7 +170,7 @@ export function precomputeSonicYouthEffectiveHarmonyBars(context: CompositionCon
 
   const out: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    out.push(getChordForBar(b, context));
+    out.push(resolveBarSymbol(context, b).symbol);
   }
 
   for (const sec of context.form.sections) {

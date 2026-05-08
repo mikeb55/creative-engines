@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, FelaKutiContextMode, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import {
   createAfrobeatRhythmEngine,
@@ -155,7 +155,7 @@ export function precomputeFelaKutiEffectiveHarmonyBars(context: CompositionConte
   const receipts: string[] = [];
   const out: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    out.push(getChordForBar(b, context));
+    out.push(resolveBarSymbol(context, b).symbol);
   }
   applyFelaKutiDeviceReceiptPasses(seed, receipts, tb, context, fkCtx);
 

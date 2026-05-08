@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -229,7 +229,7 @@ function resolvePatMethenySliceSourceChordForBar(
   if (locked && locked.length === tb && bar >= 1 && bar <= tb) {
     return stripBluesDominantColour(locked[bar - 1]!, guards);
   }
-  return stripBluesDominantColour(getChordForBar(bar, context), guards);
+  return stripBluesDominantColour(resolveBarSymbol(context, bar).symbol, guards);
 }
 
 export function diagnosePatMethenyD2EligibilityBar(

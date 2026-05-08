@@ -143,4 +143,18 @@ Environment: **`COMPOSER_OS_HARMONY_PROVENANCE=1`** logs provenance in **`resolv
 
 ---
 
+## 7. Next migration targets (guitar / bass / phrase — **not** slice precompute)
+
+All Song Mode `precompute*EffectiveHarmonyBars` **read paths** in `core/song-mode/*Slice.ts` and `filmSoundtrackHarmonySlices.ts` are routed through **`resolveBarSymbol`** (delegate → `getChordForBar`). The highest-traffic **remaining** direct `getChordForBar` sites (spine follow-up; **do not batch-migrate** without measuring phrase / voicing invariants):
+
+| Priority | File | Lines (representative) | Role |
+|----------|------|-------------------------|------|
+| 1 | `engines/composer-os-v2/core/goldenPath/generateGoldenPathDuoScore.ts` | **~698**, **~715**, **~885**, **~1621**, **~1719**, **~2173**, **~2244**; dense clusters **~2630–2680+** | Duo guitar/bass bar loops — largest call volume per generation. |
+| 2 | `engines/composer-os-v2/core/goldenPath/songModePhraseEngineV1.ts` | **62**, **378**, **503**, **618**, **1205** | Phrase / hook steps resolving chords per bar. |
+| 3 | `engines/composer-os-v2/core/composer/guitarVoicingEngine.ts` | **~182** | Voicing pipeline reads authoritative symbol per bar. |
+
+**Note:** MusicXML export consumes **`measure.chord`** on `ScoreModel`; it does not call `getChordForBar` directly.
+
+---
+
 *Generated for harmony spine Phase A inventory + Phase E test stub.*

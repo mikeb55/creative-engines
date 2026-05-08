@@ -7,7 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -278,7 +278,7 @@ export function precomputeBarryHarrisEffectiveHarmonyBars(context: CompositionCo
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = sanitizeBarryHarrisSymbol(getChordForBar(b, context), guards);
+    let sym = sanitizeBarryHarrisSymbol(resolveBarSymbol(context, b).symbol, guards);
     sym = maybeFlattenSlashToRoot(sym, seed, b, guards);
     raw.push(sym);
   }

@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, MilesDavisContextMode } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -456,7 +456,7 @@ export function precomputeMilesDavisEffectiveHarmonyBars(context: CompositionCon
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    const rawIn = getChordForBar(b, context);
+    const rawIn = resolveBarSymbol(context, b).symbol;
     let sym = rawIn;
     sym = enrichMilesDavisTonic(sym, tonicPc, seed, b, mdCtx);
     sym = enrichMilesDavisDominant(sym, seed, b, mdCtx);

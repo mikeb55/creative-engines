@@ -5,7 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import {
   bassPitchClassForChordSymbol,
@@ -176,7 +176,7 @@ function resolveWayneShorterSliceSourceChordForBar(bar: number, context: Composi
   if (locked && locked.length === tb && bar >= 1 && bar <= tb) {
     return locked[bar - 1]!;
   }
-  return getChordForBar(bar, context);
+  return resolveBarSymbol(context, bar).symbol;
 }
 
 function transposeChordRoot(symbol: string, deltaPc: number): string {

@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
@@ -296,7 +296,7 @@ export function precomputeJoniMitchellEffectiveHarmonyBars(context: CompositionC
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    raw.push(stripDominantFamily(getChordForBar(b, context), guards));
+    raw.push(stripDominantFamily(resolveBarSymbol(context, b).symbol, guards));
   }
 
   const out = [...raw];

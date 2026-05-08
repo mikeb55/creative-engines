@@ -12,7 +12,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
@@ -305,7 +305,7 @@ export function precomputeJamesBrownEffectiveHarmonyBars(context: CompositionCon
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    raw.push(sanitizeJamesBrownBarChord(getChordForBar(b, context), guards));
+    raw.push(sanitizeJamesBrownBarChord(resolveBarSymbol(context, b).symbol, guards));
   }
 
   applyTurnaroundGuard(raw, tonicPc, guards);

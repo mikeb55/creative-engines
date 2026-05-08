@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, PrinceContextMode } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -335,7 +335,7 @@ export function precomputePrinceEffectiveHarmonyBars(context: CompositionContext
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = getChordForBar(b, context);
+    let sym = resolveBarSymbol(context, b).symbol;
     const before = sym;
     sym = enrichPrinceCore(sym, seed, b, tonicPc);
     if (sym === before && looksBareTriadOrPlain(before)) guards.noopEnrich++;

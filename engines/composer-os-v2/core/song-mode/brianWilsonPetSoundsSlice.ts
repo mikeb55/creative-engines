@@ -5,7 +5,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 export interface BrianWilsonHarmonyAccumulator {
@@ -161,7 +161,7 @@ function harmonyLooksMinorOrHalfDim(symbol: string): boolean {
 export function inferTonicPitchClassFromBar1(context: CompositionContext): number | undefined {
   const tb = context.form.totalBars;
   if (tb < 1) return undefined;
-  return harmonyRootPc(getChordForBar(1, context));
+  return harmonyRootPc(resolveBarSymbol(context, 1).symbol);
 }
 
 /** Device 1 — Chromatic ascending bass: insert ø7 over the raised bass step. */
@@ -362,8 +362,8 @@ export function applyBrianWilsonPetSoundsHarmonicDevicesForBar(params: {
     metaWrite,
   } = params;
   const sectionRole = coarseSectionRoleFromBar(bar, context);
-  const rawTwoBack = bar >= 3 ? getChordForBar(bar - 2, context) : undefined;
-  const rawOneBack = bar >= 2 ? getChordForBar(bar - 1, context) : undefined;
+  const rawTwoBack = bar >= 3 ? resolveBarSymbol(context, bar - 2).symbol : undefined;
+  const rawOneBack = bar >= 2 ? resolveBarSymbol(context, bar - 1).symbol : undefined;
 
   let chord = rawChord;
   chord = bwDevice1ChromaticBassHalfDim7({ bar, prevChord: rawPrevChord, chord, seed, receipts });
@@ -404,9 +404,9 @@ export function precomputeBrianWilsonEffectiveHarmonyBars(context: CompositionCo
   const seed = context.seed;
   const out: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    const raw = getChordForBar(b, context);
-    const prev = b > 1 ? getChordForBar(b - 1, context) : undefined;
-    const next = b < tb ? getChordForBar(b + 1, context) : undefined;
+    const raw = resolveBarSymbol(context, b).symbol;
+    const prev = b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined;
+    const next = b < tb ? resolveBarSymbol(context, b + 1).symbol : undefined;
     const effective = applyBrianWilsonPetSoundsHarmonicDevicesForBar({
       bar: b,
       context,
@@ -434,7 +434,7 @@ export function resolveBrianWilsonEffectiveChordForBar(
   const tb = context.form.totalBars;
   const eff = genMeta.brianWilsonEffectiveHarmonyBars as string[] | undefined;
   if (eff && eff.length === tb && bar >= 1 && bar <= tb) return eff[bar - 1]!;
-  return getChordForBar(bar, context);
+  return resolveBarSymbol(context, bar).symbol;
 }
 
 function clampPitch(p: number, low: number, high: number): number {

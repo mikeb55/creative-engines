@@ -7,7 +7,7 @@
 import type { CompositionContext, FrankZappaContextMode, GenerationMetadata } from '../compositionContext';
 import type { HarmonyContext } from '../harmony/harmonyContext';
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9 } from '../motif/motifEngineTypes';
@@ -189,7 +189,7 @@ export function resolveFrankZappaSliceSourceChordForBar(bar: number, context: Co
   if (locked && locked.length === tb && bar >= 1 && bar <= tb) {
     return locked[bar - 1]!;
   }
-  return getChordForBar(bar, context);
+  return resolveBarSymbol(context, bar).symbol;
 }
 
 function isFrankZappaHookBar(bar: number, context: CompositionContext): boolean {

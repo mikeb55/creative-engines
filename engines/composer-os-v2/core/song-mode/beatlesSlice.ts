@@ -4,7 +4,7 @@
  */
 
 import type { BeatlesContextMode, CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 
 /** Pool keys registered under `SONGWRITER_CHORD_POOLS` for `songwriterId === 'beatles'`. */
@@ -157,7 +157,7 @@ export function precomputeBeatlesEffectiveHarmonyBars(context: CompositionContex
   const receipts: string[] = [];
   const out: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    out.push(getChordForBar(b, context));
+    out.push(resolveBarSymbol(context, b).symbol);
   }
   applyBeatlesDeviceReceiptPasses(seed, receipts, tb, context, btCtx);
 

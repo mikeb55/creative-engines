@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -488,7 +488,7 @@ export function precomputeDebussyEffectiveHarmonyBars(context: CompositionContex
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = getChordForBar(b, context);
+    let sym = resolveBarSymbol(context, b).symbol;
     const before = sym;
     sym = enrichDebussyTonic(sym, tonicPc, seed, b);
     sym = enrichDebussyDominant(sym, seed, b);

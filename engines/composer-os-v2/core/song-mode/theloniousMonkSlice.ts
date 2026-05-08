@@ -6,7 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -422,7 +422,7 @@ export function precomputeTheloniousMonkEffectiveHarmonyBars(context: Compositio
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = getChordForBar(b, context);
+    let sym = resolveBarSymbol(context, b).symbol;
     sym = stripLushExtensions(sym, seed, b, guards);
     sym = colourTonicMonk(sym, tonicPc, seed, b);
     sym = colourDominantMonk(sym, seed, b);

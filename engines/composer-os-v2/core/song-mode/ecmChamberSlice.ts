@@ -11,7 +11,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -455,7 +455,7 @@ export function precomputeEcmChamberEffectiveHarmonyBars(context: CompositionCon
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = sanitizeDenseJazzSymbol(getChordForBar(b, context), guards);
+    let sym = sanitizeDenseJazzSymbol(resolveBarSymbol(context, b).symbol, guards);
     sym = openBareToModalRest(sym, seed, b);
     sym = sanitizeDenseJazzSymbol(sym, guards);
     raw.push(sym);

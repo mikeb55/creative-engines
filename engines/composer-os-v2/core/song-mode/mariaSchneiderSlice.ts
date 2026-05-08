@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -422,7 +422,7 @@ export function precomputeMariaSchneiderEffectiveHarmonyBars(context: Compositio
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    const rawIn = getChordForBar(b, context);
+    const rawIn = resolveBarSymbol(context, b).symbol;
     const bareTonicMajor = looksBareMajorOnTonic(rawIn, tonicPc);
     let sym = rawIn;
     sym = enrichSchneiderTonic(sym, tonicPc, seed, b);

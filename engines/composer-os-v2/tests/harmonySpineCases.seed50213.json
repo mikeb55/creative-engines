@@ -1,0 +1,189 @@
+{
+  "antonio_carlos_jobim": ["Am7", "Gmaj7", "Gmaj7"],
+  "bill_evans": ["Am7", "Gmaj7", "Gmaj7"],
+  "bernard_herrmann": ["Am7", "Gmaj7", "Gmaj7/A"],
+  "donald_fagen": ["Am7", "Gmaj7", "Gmaj7"],
+  "brian_wilson": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "stevie_wonder": [
+    "F#m7",
+    "Amaj7",
+    "Amaj7"
+  ],
+  "radiohead": [
+    "Amaj7/A",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "james_brown": [
+    "Am7",
+    "D7",
+    "D7"
+  ],
+  "joni_mitchell": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "sonic_youth": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "pat_metheny": [
+    "Am7",
+    "Cmaj9",
+    "Gmaj7"
+  ],
+  "wayne_shorter": [
+    "Am7",
+    "Gmaj7/G#",
+    "Gmaj7/F"
+  ],
+  "barry_harris": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "debussy": [
+    "Am7",
+    "G#",
+    "G#6"
+  ],
+  "duke_ellington": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj9(#11)"
+  ],
+  "miles_davis": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "bartok": [
+    "Aquartal",
+    "Cmaj7",
+    "A#quartal"
+  ],
+  "gershwin": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "arvo_part": [
+    "Am",
+    "G",
+    "G"
+  ],
+  "satie": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "prince": [
+    "Am9",
+    "Gmaj9",
+    "Gmaj7"
+  ],
+  "beatles": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "fela_kuti": {
+    "error": "Cannot add property 2, object is not extensible"
+  },
+  "cole_porter": [
+    "Am7",
+    "A#7",
+    "Gmaj7"
+  ],
+  "maria_schneider": [
+    "Am7",
+    "Gmaj7(add9)",
+    "Gmaj7"
+  ],
+  "bacharach": [
+    "Am7",
+    "G9",
+    "Gmaj7"
+  ],
+  "ecm_chamber": [
+    "Am7",
+    "Gmaj7(#11)",
+    "Gmaj7"
+  ],
+  "herbie_hancock": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "stephen_sondheim": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7/A"
+  ],
+  "kate_bush": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "thelonious_monk": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "andrew_hill": [
+    "Am(add9)",
+    "Gsus4",
+    "A#m7"
+  ],
+  "charlie_parker": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "frank_zappa": [
+    "Am7",
+    "Gmaj7/C#",
+    "Gmaj7"
+  ],
+  "john_williams": [
+    "Am7",
+    "Gmaj7",
+    "G7sus4"
+  ],
+  "ennio_morricone": [
+    "Am7",
+    "Gmaj7",
+    "Gm7"
+  ],
+  "nino_rota": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "jerry_goldsmith": [
+    "Am7",
+    "Gsus4",
+    "Gsus4"
+  ],
+  "philip_glass": [
+    "Am7",
+    "Gmaj7",
+    "Gm/A"
+  ],
+  "hans_zimmer": [
+    "Am7",
+    "Gmaj7",
+    "Gmaj7"
+  ],
+  "angelo_badalamenti": [
+    "Am7",
+    "Gmaj7",
+    "Cmaj7"
+  ]
+}
