@@ -5807,7 +5807,7 @@ export function generateGoldenPathDuoScore(
       if (mdHook.songModeHookIdentity) {
         motifPool = seedPoolFromHookIdentity(motifPool, mdHook.songModeHookIdentity);
       }
-      const guitarPhraseV2 = applyPhraseEngineV2(gPhraseV2, motifPool);
+      const guitarPhraseV2 = applyPhraseEngineV2(gPhraseV2, motifPool, { seed: context.seed ?? 0 });
       const pi = afterExpressive.parts.indexOf(gPhraseV2);
       if (pi >= 0) afterExpressive.parts[pi] = guitarPhraseV2;
       const bPhraseV2 = afterExpressive.parts.find((p) => p.id === 'bass');

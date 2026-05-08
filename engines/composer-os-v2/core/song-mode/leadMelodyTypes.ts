@@ -11,6 +11,8 @@ export interface MelodyNoteEvent {
   beat: number;
   duration: number;
   midi: number;
+  /** Optional diagnostics e.g. `post_leap_recovery` (GCE melodic identity). */
+  melodicDiagnostics?: string[];
 }
 
 export interface MelodyPhrasePlanEntry {

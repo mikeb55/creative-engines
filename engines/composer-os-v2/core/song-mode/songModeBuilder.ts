@@ -6,6 +6,7 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
+import { MELODY_PROFILE } from '../generation/generationModeProfile';
 import { buildHarmonicScenesFromFormPlan } from '../composer/harmonicScene';
 import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
 import { buildThemeGenome } from '../motif/themeGenomeBuilder';
@@ -2353,6 +2354,7 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     voiceType,
     melodyBehaviour: melodyBehaviourForLead,
     harmonyBars: flattenChordPlanToHarmonyBars(withRules.chordPlan),
+    contourPlanningStrength: MELODY_PROFILE.contourPlanningStrength,
   });
   const mal = applyMotifAuthorityLayerToLeadMelody(
     leadMelodyPlanRaw,

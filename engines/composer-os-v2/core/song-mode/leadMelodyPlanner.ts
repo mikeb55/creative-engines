@@ -19,6 +19,7 @@ import type {
   MelodyContourProfileId,
   MelodyRhythmicSubdivision,
 } from './melodyBehaviourPlanner';
+import { MELODY_PROFILE } from '../generation/generationModeProfile';
 
 /** Map research contour profile to phrase-level contour used in pitch picking. */
 export function melodyContourProfileToPhraseKind(profile: MelodyContourProfileId): MelodyContourKind {
@@ -36,9 +37,130 @@ export function melodyContourProfileToPhraseKind(profile: MelodyContourProfileId
     case 'dissolving':
     case 'recitation':
       return 'descending';
+    case 'flat':
+    case 'flat_with_terminal_climax':
+    case 'conversational':
+      return 'wave';
+    case 'irregular':
+    case 'dramatic_leap':
+    case 'motivic_development':
+    case 'speech_contour':
+      return 'wave';
     default:
       return 'wave';
   }
+}
+
+/** Bar-index contour bias −1…+1 for pitch-selection bias (not forced melody). */
+export function contourBarBiasForProfile(
+  profile: MelodyContourProfileId,
+  idxInPhrase: number,
+  phraseLenBars: number,
+  seed: number
+): number {
+  const len = Math.max(1, phraseLenBars);
+  const t = len <= 1 ? 0 : idxInPhrase / (len - 1);
+  const u = seededUnit(seed, idxInPhrase, 5021);
+
+  switch (profile) {
+    case 'arch':
+    case 'wide_arc':
+    case 'bebop_arc':
+    case 'cabaret_arc':
+      return t < 0.5 ? t * 2 * 0.85 : (1 - (t - 0.5) * 2) * -0.85;
+    case 'ascending':
+    case 'rising':
+    case 'sequence':
+      return -0.65 + t * 1.2;
+    case 'dissolving':
+      return 0.75 - t * 1.1;
+    case 'flat_with_terminal_climax':
+      return idxInPhrase >= len - 2 ? 0.55 + u * 0.25 : -0.05 + u * 0.08;
+    case 'flat':
+    case 'riff':
+    case 'groove_arc':
+      return (u - 0.5) * 0.15;
+    case 'speech_contour':
+      return idxInPhrase <= 1 ? 0.35 : idxInPhrase >= len - 1 ? -0.45 : -0.05;
+    case 'dramatic_leap':
+      return idxInPhrase === 0 ? 0.75 : -0.15 + u * 0.1;
+    case 'motivic_development':
+      return Math.sin((u + t) * Math.PI * 2) * 0.35;
+    case 'recitation':
+      return idxInPhrase >= len - 1 ? -0.5 : 0.08;
+    case 'irregular':
+      return (seededUnit(seed, idxInPhrase, 7771) - 0.5) * 0.5;
+    default:
+      return (seededUnit(seed, idxInPhrase, 8881) - 0.5) * 0.25;
+  }
+}
+
+function maxLeapSemitonesForTendency(tendency: MelodyBehaviourPlan['intervalTendency']): number {
+  if (tendency === 'stepwise') return 3;
+  if (tendency === 'mixed') return 7;
+  return 11;
+}
+
+function maxLeapsOverThreePerPhrase(tendency: MelodyBehaviourPlan['intervalTendency']): number {
+  if (tendency === 'stepwise') return 1;
+  if (tendency === 'mixed') return 3;
+  return 5;
+}
+
+interface LeapPhraseState {
+  leapsOver3: number;
+  pendingContrary: boolean;
+  prevLeapSign: number;
+}
+
+function filterCandidatesLeapBudget(
+  candidates: number[],
+  prev: number | undefined,
+  tendency: MelodyBehaviourPlan['intervalTendency'],
+  st: LeapPhraseState
+): number[] {
+  if (prev === undefined || candidates.length === 0) return candidates;
+  const maxLeap = maxLeapSemitonesForTendency(tendency);
+  const maxBig = maxLeapsOverThreePerPhrase(tendency);
+  let pool = candidates.filter((c) => Math.abs(c - prev) <= maxLeap);
+  if (pool.length === 0) pool = [...candidates].sort((a, b) => Math.abs(a - prev!) - Math.abs(b - prev!)).slice(0, 4);
+  if (st.leapsOver3 >= maxBig) {
+    const tight = pool.filter((c) => Math.abs(c - prev) <= 3);
+    if (tight.length > 0) pool = tight;
+  }
+  return pool.length > 0 ? pool : candidates;
+}
+
+function pickWithContourBias(
+  candidates: number[],
+  prevMidi: number | undefined,
+  tendency: MelodyBehaviourPlan['intervalTendency'],
+  seed: number,
+  bar: number,
+  salt: number,
+  contourBarBias: number,
+  contourStrength: number,
+  basePick: () => number
+): number {
+  if (prevMidi === undefined || candidates.length === 0) return basePick();
+  const str = Math.max(0, Math.min(1, contourStrength));
+  if (str <= 0.02) return basePick();
+  const bias = contourBarBias;
+  let best = candidates[0]!;
+  let bestScore = -Infinity;
+  for (const c of candidates) {
+    const delta = c - prevMidi;
+    const dir = delta === 0 ? 0 : delta > 0 ? 1 : -1;
+    const contourFit = dir * bias * str * 5;
+    const proximity = -Math.abs(delta) * (1.15 - str * 0.35);
+    const sc = contourFit + proximity;
+    if (sc > bestScore) {
+      bestScore = sc;
+      best = c;
+    }
+  }
+  const maxL = maxLeapSemitonesForTendency(tendency);
+  return Math.abs(best - prevMidi) <= maxL ? best : basePick();
 }
 
 function seededUnit(seed: number, bar: number, salt = 0): number {
@@ -241,10 +363,23 @@ export interface PlanLeadMelodyInput {
    * When omitted or shorter than form, scaffold symbols from `chordPlan` fill the gap.
    */
   harmonyBars?: string[];
+  /** Bar contour bias strength — defaults to {@link MELODY_PROFILE}. */
+  contourPlanningStrength?: number;
+}
+
+function updateLeapPhraseState(st: LeapPhraseState, prev: number | undefined, midi: number): void {
+  if (prev === undefined) return;
+  const iv = midi - prev;
+  if (Math.abs(iv) > 3) st.leapsOver3++;
+  if (Math.abs(iv) > 7) {
+    st.pendingContrary = true;
+    st.prevLeapSign = iv === 0 ? 0 : iv > 0 ? 1 : -1;
+  }
 }
 
 export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
   const { seed, chordPlan, hookPlan, hook, chorusPlan, voiceType, melodyBehaviour } = input;
+  const contourPlanningStrength = input.contourPlanningStrength ?? MELODY_PROFILE.contourPlanningStrength;
   const scaffoldBars = flattenChordPlanToHarmonyBars(chordPlan);
   const override = input.harmonyBars;
   const harmonyForBar = (bar1: number): string => {
@@ -280,12 +415,91 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
 
   for (const ph of phrases) {
     cadenceMeasures.push(ph.cadenceMeasure);
+    const leapSt: LeapPhraseState = { leapsOver3: 0, pendingContrary: false, prevLeapSign: 0 };
+    const phraseLenBars = ph.endMeasure - ph.startMeasure + 1;
     const contourFromProfile = melodyContourProfileToPhraseKind(melodyBehaviour.contourProfile);
     const contour =
       hook.contourHint === 'ascending' && ph.sectionKind === 'chorus' ? 'ascending' : contourFromProfile;
 
     const apexMeasure =
       ph.cadenceMeasure > ph.startMeasure ? ph.cadenceMeasure - 1 : ph.startMeasure;
+
+    const pickMelodicIdentityMidi = (
+      candidatesIn: number[],
+      prevForPick: number | undefined,
+      wideLeapPeakThisNote: boolean,
+      salt: number,
+      measure: number
+    ): { midi: number; melodicDiagnostics?: string[] } => {
+      const barBias = contourBarBiasForProfile(
+        melodyBehaviour.contourProfile,
+        measure - ph.startMeasure,
+        phraseLenBars,
+        seed
+      );
+      let candPool = filterCandidatesLeapBudget(
+        candidatesIn,
+        prevForPick,
+        melodyBehaviour.intervalTendency,
+        leapSt
+      );
+
+      if (prevForPick !== undefined && leapSt.pendingContrary) {
+        const tight = candPool.filter((c) => Math.abs(c - prevForPick) <= 2);
+        const opp = tight.filter(
+          (c) => c !== prevForPick && Math.sign(c - prevForPick) !== leapSt.prevLeapSign
+        );
+        const pool = opp.length > 0 ? opp : tight;
+        const midiFallback = pickMidiFromCandidates(
+          candPool,
+          prevForPick,
+          melodyBehaviour.intervalTendency,
+          seed,
+          measure,
+          salt,
+          contour,
+          wideLeapPeakThisNote
+        );
+        const midi =
+          pool.length > 0
+            ? [...pool].sort((a, b) => Math.abs(a - prevForPick) - Math.abs(b - prevForPick))[0]!
+            : midiFallback;
+        leapSt.pendingContrary = false;
+        updateLeapPhraseState(leapSt, prevForPick, midi);
+        return { midi, melodicDiagnostics: ['post_leap_recovery'] };
+      }
+
+      candPool = filterCandidatesLeapBudget(
+        candidatesIn,
+        prevForPick,
+        melodyBehaviour.intervalTendency,
+        leapSt
+      );
+      const raw = pickMidiFromCandidates(
+        candPool,
+        prevForPick,
+        melodyBehaviour.intervalTendency,
+        seed,
+        measure,
+        salt,
+        contour,
+        wideLeapPeakThisNote
+      );
+      let midi = pickWithContourBias(
+        candPool,
+        prevForPick,
+        melodyBehaviour.intervalTendency,
+        seed,
+        measure,
+        salt,
+        barBias,
+        contourPlanningStrength,
+        () => raw
+      );
+      midi = Math.min(coHi, Math.max(coLo, midi));
+      updateLeapPhraseState(leapSt, prevForPick, midi);
+      return { midi };
+    };
 
     for (let m = ph.startMeasure; m <= ph.endMeasure; m++) {
       const chordSym = harmonyForBar(m);
@@ -320,21 +534,27 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
         Boolean(useMotif && tpl && tpl.semitoneOffsetsFromFirst.length === cells.length);
 
       if (motifOk && tpl) {
-        const anchor = pickMidiFromCandidates(
+        const anchorPick = pickMelodicIdentityMidi(
           candidates,
           prevGlobal,
-          melodyBehaviour.intervalTendency,
-          seed,
-          m,
+          Boolean(melodyBehaviour.wideLeapPeakPerPhrase && m === apexMeasure),
           1101,
-          contour,
-          Boolean(melodyBehaviour.wideLeapPeakPerPhrase && m === apexMeasure)
+          m
         );
+        const anchor = anchorPick.midi;
         for (let ci = 0; ci < cells.length; ci++) {
           const cell = cells[ci]!;
           let midi = anchor + tpl.semitoneOffsetsFromFirst[ci]!;
           midi = Math.min(coHi, Math.max(coLo, midi));
-          barNotes.push({ measure: m, beat: cell.startBeat, duration: cell.duration, midi });
+          const ev: MelodyNoteEvent = {
+            measure: m,
+            beat: cell.startBeat,
+            duration: cell.duration,
+            midi,
+          };
+          if (ci === 0 && anchorPick.melodicDiagnostics)
+            ev.melodicDiagnostics = anchorPick.melodicDiagnostics;
+          barNotes.push(ev);
         }
       } else {
         for (let ci = 0; ci < cells.length; ci++) {
@@ -343,18 +563,22 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
           const prevForPick = ci === 0 ? prevGlobal : prevInBar ?? prevGlobal;
           const wideLeapPeakThisNote =
             Boolean(melodyBehaviour.wideLeapPeakPerPhrase) && m === apexMeasure && ci === 0;
-          const midi = pickMidiFromCandidates(
+          const picked = pickMelodicIdentityMidi(
             candidates,
             prevForPick,
-            melodyBehaviour.intervalTendency,
-            seed,
-            m,
+            wideLeapPeakThisNote,
             intervalSalt,
-            contour,
-            wideLeapPeakThisNote
+            m
           );
-          barNotes.push({ measure: m, beat: cell.startBeat, duration: cell.duration, midi });
-          prevInBar = midi;
+          const ev: MelodyNoteEvent = {
+            measure: m,
+            beat: cell.startBeat,
+            duration: cell.duration,
+            midi: picked.midi,
+          };
+          if (picked.melodicDiagnostics) ev.melodicDiagnostics = picked.melodicDiagnostics;
+          barNotes.push(ev);
+          prevInBar = picked.midi;
         }
       }
 

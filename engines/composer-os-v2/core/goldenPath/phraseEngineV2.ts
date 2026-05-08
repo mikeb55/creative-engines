@@ -1,8 +1,15 @@
 /**
  * Phrase engine V2 — motif pool extraction hook (golden path).
- * Wiring into `generateGoldenPathDuoScore` is intentionally deferred.
  */
 
+import {
+  applyMotifMutation,
+  extractMotifCell,
+  scoreMotifSimilarity as scoreMutationMotifSimilarity,
+  selectMotifTransform,
+  type MotifNoteLite,
+  type MutationMotifCell,
+} from '../song-mode/motifMutationEngine';
 import type {
   ScoreModel,
   PartModel,
@@ -36,6 +43,8 @@ export interface GoldenPathContext {
   /** Stable id for correlating pools with a run. */
   generationId?: string;
   seed?: number;
+  /** Primary extracted motif cell for mutation diagnostics / downstream receipts. */
+  primaryMotifCell?: MutationMotifCell;
 }
 
 /** Phrase length in bars (aligned with Song Mode phrase segmentation). */
@@ -180,6 +189,37 @@ function stepTowardPitch(actual: number, target: number): number {
   return actual - 1;
 }
 
+function nearestMidiCarryingPc(currentMidi: number, pc: number): number {
+  const curPc = ((currentMidi % 12) + 12) % 12;
+  let delta = (((pc - curPc + 12) % 12) + 12) % 12;
+  if (delta > 6) delta -= 12;
+  return currentMidi + delta;
+}
+
+function sectionRoleForDevelopmentBar(bar: number): import('../song-mode/motifMutationEngine').SectionRole {
+  if (bar <= 20) return 'B';
+  if (bar <= 24) return 'bridge';
+  if (bar <= 28) return 'A2';
+  return 'coda';
+}
+
+function primaryMutationCellFromPool(pool: MotifPool): MutationMotifCell | undefined {
+  for (const cell of pool.cells) {
+    if (cell.weight <= 0) continue;
+    if (cell.pitches.length < 2) continue;
+    const notes: MotifNoteLite[] = cell.pitches.map((p, i) => ({
+      pitch: p,
+      duration: cell.durations[i] ?? 1,
+    }));
+    return extractMotifCell(notes, notes.length);
+  }
+  return undefined;
+}
+
+export interface PhraseEngineV2ApplyOptions {
+  seed?: number;
+}
+
 /**
  * Mechanical extraction: first two notes (score order) from each of the first four 4-bar phrases
  * of the guitar part. Exactly four {@link MotifCell}s (empty phrases yield empty cells).
@@ -249,8 +289,12 @@ export function seedPoolFromHookIdentity(pool: MotifPool, hookIdentity: SongMode
  * nudges those note pitches one semitone toward the cell targets. Other notes unchanged.
  * Does not mutate {@link part}; returns a deep-cloned part with edits.
  */
-export function applyPhraseEngineV2(part: PartModel, pool: MotifPool): PartModel {
-  const out = clonePartModel(part);
+export function applyPhraseEngineV2(
+  part: PartModel,
+  pool: MotifPool,
+  opts?: PhraseEngineV2ApplyOptions
+): PartModel {
+  let out = clonePartModel(part);
   const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI);
 
   for (const cell of pool.cells) {
@@ -272,6 +316,32 @@ export function applyPhraseEngineV2(part: PartModel, pool: MotifPool): PartModel
         out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
       }
       break;
+    }
+  }
+
+  const seed = opts?.seed ?? 0;
+  const primary = primaryMutationCellFromPool(pool);
+  if (primary) {
+    const devStarts = [17, 21, 25, 29];
+    for (const bar of devStarts) {
+      const role = sectionRoleForDevelopmentBar(bar);
+      const tr = selectMotifTransform(role, seed + bar * 131);
+      const mutated = applyMotifMutation(primary, tr);
+      const sim = scoreMutationMotifSimilarity(primary, mutated);
+      if (sim < 0.3 || (sim > 0.95 && sim < 0.999)) {
+        console.warn(
+          `[PhraseEngineV2] motif mutation similarity=${sim.toFixed(3)} transform=${String(tr)} role=${role}`
+        );
+      }
+      const refsBar = collectSortedNoteRefs(out, bar, bar);
+      const first = refsBar[0];
+      if (first && mutated.pitchClasses.length > 0) {
+        const ev = out.measures[first.mi]!.events[first.ei] as NoteEvent;
+        const targetPc = mutated.pitchClasses[0]!;
+        const goal = nearestMidiCarryingPc(ev.pitch, targetPc);
+        const stepped = stepTowardPitch(ev.pitch, goal);
+        out.measures[first.mi]!.events[first.ei] = { ...ev, pitch: stepped };
+      }
     }
   }
 
