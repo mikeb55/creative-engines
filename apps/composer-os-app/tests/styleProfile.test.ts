@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BADALAMENTI_HARMONIC_STYLE_KEYS,
   GIL_EVANS_HARMONIC_STYLE_KEYS,
+  HENRY_THREADGILL_HARMONIC_STYLE_KEYS,
   HERRMANN_HARMONIC_STYLE_KEYS,
   JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
   MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
@@ -119,6 +120,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('wayne_shorter')).toEqual([
       'hv:wayne_shorter',
       ...WAYNE_SHORTER_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(henry_threadgill) returns hv + 16 interval-system tags', () => {
+    expect(HENRY_THREADGILL_HARMONIC_STYLE_KEYS).toHaveLength(16);
+    expect(resolveHarmonicContextKeys('henry_threadgill')).toEqual([
+      'hv:henry_threadgill',
+      ...HENRY_THREADGILL_HARMONIC_STYLE_KEYS,
     ]);
   });
 });

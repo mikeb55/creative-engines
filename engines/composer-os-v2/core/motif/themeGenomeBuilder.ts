@@ -153,6 +153,40 @@ function cellBalancedDefault(seed: number): MotifCell2 {
   };
 }
 
+function cellHenryThreadgill(): MotifCell2 {
+  const intervals = [1, 2, -3];
+  const durations = [0.5, 1, 0.5, 1.5];
+  const contour: ('up' | 'down' | 'same')[] = ['same', 'up', 'down', 'up'];
+  const accents = durations.map((d, i) => 0.42 + (i % 2) * 0.08 + Math.min(0.15, d / 10));
+  return {
+    id: 'ht_primary',
+    role: 'primary',
+    intervals,
+    durations,
+    contour,
+    accents,
+    registerBand: [55, 79],
+    harmonicMask: {
+      chordTonesBias: 0.2,
+      tensionBias: 0.7,
+      avoidStrongLT: true,
+      pedalFriendly: false,
+    },
+    transformBudget: {
+      transpose: true,
+      invert: true,
+      retrograde: true,
+      augment: false,
+      diminish: true,
+      fragment: true,
+      sequence: true,
+      embedInnerVoice: true,
+    },
+    recallWeight: 0.7,
+    bluesMarchSeed: true,
+  };
+}
+
 function cellWayneShorter(): MotifCell2 {
   const intervals = [2, 2, 12, -2, -2];
   const durations = [2.5, 2, 0.5, 0.5, 1.5, 2];
@@ -254,6 +288,7 @@ function primaryForVoice(canon: string, seed: number): MotifCell2 {
   if (canon === 'maria_schneider') return cellMariaSchneider();
   if (canon === 'john_coltrane') return cellJohnColtrane();
   if (canon === 'wayne_shorter') return cellWayneShorter();
+  if (canon === 'henry_threadgill') return cellHenryThreadgill();
   return cellBalancedDefault(seed);
 }
 

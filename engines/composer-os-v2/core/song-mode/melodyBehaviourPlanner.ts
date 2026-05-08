@@ -384,6 +384,27 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'medium',
     devices: ['quartal_melody', 'pentatonic_sideslip', 'suspended_dominant', 'funk_ostinato'],
   },
+  henry_threadgill: {
+    intervalTendency: 'angular',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.68,
+    phraseLength: 4,
+    contourProfile: 'irregular',
+    phraseAsymmetryTendency: 0.76,
+    cadenceFrequency: 'low',
+    devices: [
+      'interval_pool_majority_constraint',
+      'angular_jagged_contour',
+      'probabilistic_hocket_rest_after_cell',
+      'unison_octave_arrival_reserved_for_cadence',
+      'mosaic_canon_displacement',
+      'blues_march_seed_then_interval_transform',
+    ],
+    malLeadHints: {
+      attackDensity: 'medium',
+      interOnsetSpacing: 'wide',
+    },
+  },
   bach: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',

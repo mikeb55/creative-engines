@@ -706,6 +706,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('hancock.pedal_upper', 'Pedal bass / upper-structure slash colours (placeholder)', 'songwriter', 'harmony', 8, 'verse'),
     R('hancock.form_reroute', 'Formal return blur vs orthodox turnaround (placeholder)', 'songwriter', 'harmony', 8, 'form'),
   ],
+  henry_threadgill: [
+    R(
+      'threadgill.interval_system_harmony',
+      'Harmony from interval sets — not chord-scale rows: three-note seed cell generates a closed family of six voicings; all voices move only with intervals from the active pool; no ii–V–I, no functional grammar, no chord–scale mapping; sparse three-note cells across registral bands; favour dissonant steps (m2, M2, m3, tritone, m7); reserve unisons/octaves/P5 for cadential convergence; rotate through the six-cell family sequentially.',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'threadgill.orchestration_system',
+      'Orchestration-as-system: unique registral band + role per strand — low anchor (tuba/bass) moves melodically via interval sets; mid guitars/saxes articulate hockets and splits; high horns/violin sustain intervals and mosaic counterpoint; avoid homogeneous blocks; hockets stagger attacks; concurrent duets with independent streams; tutti unisons/octaves only as structural pillars; blues/march seeds fragmented and interval-transformed across instruments.',
+      'songwriter',
+      'harmony',
+      9,
+      'form'
+    ),
+    R(
+      'threadgill.anti_metric_rhythm',
+      'Anti-metric rhythm: drums avoid locking accents to bar 1 of melodic strata; polyrhythmic loops of mismatched lengths (e.g. five-beat drum cycle over 4/4 material; seven-beat loop over 3/4); independent metric streams per layer; rare probabilistic locks only at formal seams; no conventional swing ride ↔ horn accent coupling; march/second-line idioms fragmented via displacement, hocket, and metric independence.',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+  ],
   stephen_sondheim: [
     R('sondheim.dissonant_tonality', 'Chromatic surface over retained tonal centre (placeholder)', 'songwriter', 'harmony', 9, 'global'),
     R('sondheim.added_note_tertian', 'Non-resolving 2nds/4ths/6ths on tertian harmony (placeholder)', 'songwriter', 'harmony', 9, 'verse'),

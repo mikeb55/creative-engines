@@ -62,9 +62,11 @@ export interface SongwriterStyleProfile {
   /** Broad era bucket (e.g. singer-songwriter) for docs / pairing. */
   songwriterEraTag?: string;
   /** Primary melodic lead for receipts/UI (sax-led jazz, etc.). */
-  primaryMelodicInstrument?: 'keys' | 'guitar' | 'sax' | 'ensemble';
+  primaryMelodicInstrument?: 'keys' | 'guitar' | 'sax' | 'ensemble' | 'winds';
   /** Multi-era harmonic lineage (e.g. Wayne Shorter periods). */
   songwriterHarmonicPeriods?: readonly string[];
+  /** Engine routing hint — interval-set grammar vs chord-symbol rows. */
+  songwriterSystemType?: 'interval_set' | 'chord_symbol' | 'hybrid';
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -153,6 +155,28 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 4,
     intervalPreference: 'modal',
     guitarModalPreference: 'lydian_mixolydian_blend',
+  },
+  henry_threadgill: {
+    id: 'henry_threadgill',
+    displayName: 'Henry Threadgill',
+    description:
+      'Henry Threadgill — interval-set harmony, closed chord families, orchestration-as-system, anti-metric polyrhythm. Air trio through Zooid. Systems not styles. Blues and march transformed through interval constraints. Harmony, melody, and counterpoint all derived from the same interval pool per section.',
+    lineVsCellEmphasis: 0.78,
+    harmonyColourBias: 0.88,
+    formRegularity: 0.2,
+    prosodyInfluence: 0.12,
+    hookRepetitionBias: 0.32,
+    phraseRegularity: 0.16,
+    hookReturnVariation: 0.82,
+    harmonicSpeed: 0.38,
+    sectionContrast: 0.8,
+    syncopationBias: 0.62,
+    densityBias: 0.55,
+    motifCellSize: 4,
+    intervalPreference: 'angular',
+    songwriterEraTag: 'jazz',
+    primaryMelodicInstrument: 'winds',
+    songwriterSystemType: 'interval_set',
   },
   stephen_sondheim: {
     id: 'stephen_sondheim',
@@ -1467,6 +1491,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   herbie_hancock: 'herbie_hancock',
   hancock: 'herbie_hancock',
   herbie: 'herbie_hancock',
+  henry_threadgill: 'henry_threadgill',
+  threadgill: 'henry_threadgill',
   stephen_sondheim: 'stephen_sondheim',
   sondheim: 'stephen_sondheim',
   kate_bush: 'kate_bush',

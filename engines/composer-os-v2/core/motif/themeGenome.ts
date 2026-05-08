@@ -35,6 +35,8 @@ export interface MotifCell2 {
   harmonicMask: MotifCell2HarmonicMask;
   transformBudget: MotifCell2TransformBudget;
   recallWeight: number;
+  /** Motif seeder: prefer blues/march micro-cell before interval transforms (Threadgill). */
+  bluesMarchSeed?: boolean;
 }
 
 export interface SectionRecallContract {

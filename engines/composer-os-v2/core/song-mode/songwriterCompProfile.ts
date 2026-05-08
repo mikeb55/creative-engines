@@ -116,6 +116,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   john_coltrane: 'keys',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',
+  henry_threadgill: 'keys',
   stephen_sondheim: 'keys',
   kate_bush: 'keys',
   thelonious_monk: 'keys',
@@ -207,6 +208,33 @@ const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   ],
   receiptLines: [
     'Harmonic voice John Coltrane — rhythm pairing hints: Fela Afrobeat (fk) one–two chord vamps + layered ostinati for Dorian pedal + pentatonic superimposition; Brazilian bossa (br) continuous eighths + extended harmony for modal/changes hybrids; Cuban Afro 6/8 (cu) pedal + modal vamp over clave (Africa/Brass / Olé lineage). Not an imitation of any artist.',
+  ],
+};
+
+const HENRY_THREADGILL_KEYS_COMP: SongwriterCompProfile = {
+  id: 'henry_threadgill',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'three_note_interval_cells_only',
+    'register_stratified_sparse_stacks',
+    'no_functional_root_cycle_in_bass',
+    'closed_family_rotation_hint',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'anti_metric_layers',
+    'polyrhythm_loop_mismatch',
+    'independent_stream_accents',
+  ],
+  smallMovementRules: [
+    'interval_pool_lock_per_section',
+    'hocket_voice_exchange',
+    'cadence_unison_or_texture_flip_only',
+  ],
+  receiptLines: [
+    'Harmonic voice Henry Threadgill — rhythm pairing hints: New Orleans Second Line (sl) march/blues seeds then anti-metric displacement and layer mismatch; Fela Afrobeat (fk) long ostinati + layered polyrhythms for modular cumulative forms with interval-governed riff pitch classes; Cuban Afro 6/8 (cu) clave as ghost metric — melodic strata deliberately avoid downbeat lock with percussion.',
+    'String quartet translation: interval-set counterpoint, hocket time offsets, unison/octave convergence reserved for cadences, concurrent duets on disjoint rhythmic grids.',
+    'Big band translation: sections behave as interval engines — no tutti block stacks; independent lines stratified by register; full-band unisons only as structural markers. Not an imitation of any artist.',
   ],
 };
 
@@ -319,6 +347,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return GIL_EVANS_KEYS_COMP;
     case 'maria_schneider':
       return MARIA_SCHNEIDER_KEYS_COMP;
+    case 'henry_threadgill':
+      return HENRY_THREADGILL_KEYS_COMP;
     case 'wayne_shorter':
       return WAYNE_SHORTER_KEYS_COMP;
     default:

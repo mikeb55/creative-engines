@@ -110,6 +110,26 @@ export const MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS: readonly string[] = [
 ];
 
 /** Wayne Shorter — motivic harmony, axis motion, melody-driven form (research-grounded Style Panel tags). */
+/** Henry Threadgill — interval-set systems, modular forms, anti-metric ensemble logic. */
+export const HENRY_THREADGILL_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'fixed_interval_cell_harmony',
+  'closed_family_chord_series',
+  'interval_pool_melodic_constraints',
+  'non_functional_but_organized_harmony',
+  'modular_formal_architecture',
+  'orchestration_as_system',
+  'anti_metric_drum_conduct',
+  'concurrent_duet_tonal_fusion',
+  'mosaic_block_counterpoint',
+  'blues_march_source_material',
+  'avant_blues_deformation',
+  'hocket_layered_texture',
+  'multi_meter_polyrhythm_streams',
+  'register_stratified_ensembles',
+  'tuba_guitar_interval_engine',
+  'interval_based_cadence_convergence',
+];
+
 export const WAYNE_SHORTER_HARMONIC_STYLE_KEYS: readonly string[] = [
   'motivic_harmonic_derivation',
   'non_functional_neighbor_harmony',
@@ -148,6 +168,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS];
     case 'wayne_shorter':
       return [...WAYNE_SHORTER_HARMONIC_STYLE_KEYS];
+    case 'henry_threadgill':
+      return [...HENRY_THREADGILL_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

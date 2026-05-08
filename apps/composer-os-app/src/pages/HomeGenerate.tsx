@@ -459,6 +459,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
+  { id: 'henry_threadgill', label: 'Henry Threadgill' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
   { id: 'john_coltrane', label: 'John Coltrane' },
@@ -522,7 +523,13 @@ const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
   ...RHYTHM_SONGWRITER_OPTIONS,
 ];
 
-const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = ['gil_evans', 'john_coltrane', 'maria_schneider'];
+const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
+  'gil_evans',
+  'john_coltrane',
+  'maria_schneider',
+  'wayne_shorter',
+  'henry_threadgill',
+];
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
 
 const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [

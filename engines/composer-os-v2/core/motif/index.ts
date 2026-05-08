@@ -42,3 +42,11 @@ export {
   defaultMotifAuthorityPlan,
   nudgeReturnPhraseTowardFingerprint,
 } from './motifAuthorityV1';
+
+export type { IntervalSet, ThreadgillForm, ThreadgillSection } from './intervalSetSystem';
+export {
+  adjacentIntervalsSortedTriad,
+  buildThreadgillForm,
+  buildThreadgillIntervalSet,
+  triadAdjacentIntervalsInPool,
+} from './intervalSetSystem';

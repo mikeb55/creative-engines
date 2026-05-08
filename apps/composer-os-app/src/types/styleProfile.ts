@@ -27,6 +27,8 @@ export const HARMONIC_VOICE_LABELS: Pick<
   | 'john_coltrane'
   | 'gil_evans'
   | 'maria_schneider'
+  | 'wayne_shorter'
+  | 'henry_threadgill'
 > = {
   morricone: 'Ennio Morricone',
   herrmann: 'Bernard Herrmann',
@@ -35,6 +37,8 @@ export const HARMONIC_VOICE_LABELS: Pick<
   john_coltrane: 'John Coltrane',
   gil_evans: 'Gil Evans',
   maria_schneider: 'Maria Schneider',
+  wayne_shorter: 'Wayne Shorter',
+  henry_threadgill: 'Henry Threadgill',
 };
 
 export interface HarmonicSelection {
