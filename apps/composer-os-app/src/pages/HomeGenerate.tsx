@@ -65,6 +65,7 @@ import {
   extractScoreMusicXmlFromString,
   extractScoreMusicXmlFromUint8Array,
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
+import { parseMusicXml } from '@composer-os/core/musicXmlImport';
 import {
   generateReharmCandidates,
   type ReharmCandidate,
@@ -1569,6 +1570,11 @@ export function HomeGenerate({
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  /** Song Mode: harmony-from-file path (`GenerateRequest.musicXmlSource`); overrides pasted chord line when set. */
+  const [musicXmlSource, setMusicXmlSource] = useState('');
+  const [musicXmlFileLabel, setMusicXmlFileLabel] = useState<string | null>(null);
+  const [musicXmlHarmonyError, setMusicXmlHarmonyError] = useState<string | null>(null);
+  const musicXmlHarmonyFileInputRef = useRef<HTMLInputElement | null>(null);
   const [songModeLeadSheetMusicXml, setSongModeLeadSheetMusicXml] = useState('');
   const [leadSheetFileName, setLeadSheetFileName] = useState<string | null>(null);
   const [leadSheetInputSource, setLeadSheetInputSource] = useState<'file' | 'paste' | null>(null);
@@ -2061,6 +2067,58 @@ export function HomeGenerate({
     }
   }
 
+  async function ingestSongModeHarmonyMusicXmlFile(file: File) {
+    setMusicXmlHarmonyError(null);
+    const nameLower = file.name.toLowerCase();
+    const allowedExt = nameLower.endsWith('.mxl') || nameLower.endsWith('.xml') || nameLower.endsWith('.musicxml');
+    if (!allowedExt) {
+      setMusicXmlHarmonyError('Use a .musicxml, .xml, or .mxl file.');
+      setMusicXmlSource('');
+      setMusicXmlFileLabel(null);
+      return;
+    }
+    try {
+      let xml: string;
+      if (nameLower.endsWith('.mxl')) {
+        const buf = await file.arrayBuffer();
+        const extracted = extractScoreMusicXmlFromUint8Array(new Uint8Array(buf));
+        if (!extracted.ok || !extracted.xml) {
+          setMusicXmlHarmonyError(extracted.errors.join(' ') || 'Could not unpack compressed MusicXML (.mxl).');
+          setMusicXmlSource('');
+          setMusicXmlFileLabel(null);
+          return;
+        }
+        xml = extracted.xml;
+      } else {
+        const raw = await file.text();
+        const extracted = extractScoreMusicXmlFromString(raw);
+        if (!extracted.ok || !extracted.xml) {
+          setMusicXmlHarmonyError(extracted.errors.join(' ') || 'Could not read MusicXML file.');
+          setMusicXmlSource('');
+          setMusicXmlFileLabel(null);
+          return;
+        }
+        xml = extracted.xml;
+      }
+      try {
+        parseMusicXml(xml);
+      } catch (e) {
+        setMusicXmlHarmonyError(e instanceof Error ? e.message : String(e));
+        setMusicXmlSource('');
+        setMusicXmlFileLabel(null);
+        return;
+      }
+      setMusicXmlSource(xml);
+      setMusicXmlFileLabel(file.name);
+      setChordProgressionText('');
+      setMusicXmlHarmonyError(null);
+    } catch (e) {
+      setMusicXmlHarmonyError(e instanceof Error ? e.message : String(e));
+      setMusicXmlSource('');
+      setMusicXmlFileLabel(null);
+    }
+  }
+
   const isScorePreset =
     presetId === 'guitar_bass_duo' ||
     presetId === 'guitar_bass_duo_single_line' ||
@@ -2074,6 +2132,22 @@ export function HomeGenerate({
       setLoading(true);
       setError(null);
       notifyGenPhase('running');
+      const musicXmlTrimPreflight = musicXmlSource.trim();
+      if (presetId === 'song_mode' && musicXmlTrimPreflight.length > 0) {
+        try {
+          parseMusicXml(musicXmlTrimPreflight);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          setError(`MusicXML harmony: ${msg}`);
+          setLoading(false);
+          notifyGenPhase('failed');
+          onResult({
+            record: {},
+            summary: { status: 'failed', at: new Date().toISOString() },
+          });
+          return;
+        }
+      }
       try {
         const stylePairingSong =
           presetId === 'song_mode'
@@ -2126,7 +2200,12 @@ export function HomeGenerate({
          * If we only read `chordProgressionText`, the API gets a long string in `tonalCenter` and no
          * `chordProgressionText` → engine falls back to built-in duo32 (Dmin9/G13/…).
          */
-        const songChordLine = presetId === 'song_mode' ? chordTrim || tonalTrim : chordTrim;
+        const songChordLine =
+          presetId === 'song_mode'
+            ? musicXmlSource.trim().length > 0
+              ? ''
+              : chordTrim || tonalTrim
+            : chordTrim;
 
         const tbForm = songFormBarPreset ? songFormBars : totalBars;
         const ensembleEffBarsBigBand = Math.max(
@@ -2452,6 +2531,7 @@ export function HomeGenerate({
                 liveSongModeStyleProfile === 'STYLE_ECM_CHAMBER'
                   ? { ecmChamberMode: ecmChamberFlow01ToMode(ecmChamberFlow01Ref.current) }
                   : {}),
+                ...(musicXmlSource.trim().length > 0 ? { musicXmlSource: musicXmlSource.trim() } : {}),
                 ...(songModeStyleGenerationKeys && songModeStyleGenerationKeys.length > 0
                   ? { styleGenerationContextKeys: songModeStyleGenerationKeys }
                   : {}),
@@ -2629,6 +2709,7 @@ export function HomeGenerate({
       presetId,
       scoreTitle,
       chordProgressionText,
+      musicXmlSource,
       leadSheetFileName,
       leadSheetInputSource,
       ecmMode,
@@ -3789,7 +3870,15 @@ export function HomeGenerate({
           )}
           <textarea
             value={chordProgressionText}
-            onChange={(e) => setChordProgressionText(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setChordProgressionText(v);
+              if (presetId === 'song_mode' && v.trim().length > 0) {
+                setMusicXmlSource('');
+                setMusicXmlFileLabel(null);
+                setMusicXmlHarmonyError(null);
+              }
+            }}
             onBlur={songFormBarPreset ? onSongFormChordProgressionBlur : undefined}
             disabled={loading}
             placeholder={customHarmonyPlaceholder}
@@ -3812,6 +3901,102 @@ export function HomeGenerate({
               fontSize: '0.9rem',
             }}
           />
+          {presetId === 'song_mode' && (
+            <div style={{ marginTop: '0.85rem', maxWidth: 600 }}>
+              <label
+                style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+                htmlFor="co-song-harmony-musicxml-file"
+              >
+                MusicXML harmony (optional)
+              </label>
+              <p
+                style={{
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  margin: '0 0 0.5rem',
+                  lineHeight: 1.45,
+                }}
+              >
+                Import chord symbols from a score file — overrides the chord progression field above for Generate.
+                Compressed scores must use <code style={{ fontSize: '0.8rem' }}>.mxl</code> (unpack uses the same path as
+                lead-sheet import).
+              </p>
+              <input
+                ref={musicXmlHarmonyFileInputRef}
+                id="co-song-harmony-musicxml-file"
+                type="file"
+                accept=".xml,.musicxml,.mxl"
+                style={{ display: 'none' }}
+                aria-hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void ingestSongModeHarmonyMusicXmlFile(f);
+                  e.target.value = '';
+                }}
+              />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={loading}
+                  onClick={() => musicXmlHarmonyFileInputRef.current?.click()}
+                >
+                  Choose MusicXML file…
+                </button>
+                {musicXmlFileLabel && (
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    Loaded: <strong style={{ color: 'var(--text)' }}>{musicXmlFileLabel}</strong>
+                  </span>
+                )}
+                {(musicXmlSource.length > 0 || musicXmlFileLabel) && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={loading}
+                    onClick={() => {
+                      setMusicXmlSource('');
+                      setMusicXmlFileLabel(null);
+                      setMusicXmlHarmonyError(null);
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div
+                role="region"
+                aria-label="Drop MusicXML harmony file"
+                onDragOver={(ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                }}
+                onDrop={(ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  const f = ev.dataTransfer.files?.[0];
+                  if (f) void ingestSongModeHarmonyMusicXmlFile(f);
+                }}
+                style={{
+                  marginTop: '0.55rem',
+                  padding: '0.65rem 0.75rem',
+                  borderRadius: 8,
+                  border: '1px dashed var(--border)',
+                  background: 'var(--bg-panel)',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                Drop a <code style={{ fontSize: '0.75rem' }}>.musicxml</code>,{' '}
+                <code style={{ fontSize: '0.75rem' }}>.xml</code>, or{' '}
+                <code style={{ fontSize: '0.75rem' }}>.mxl</code> file here
+              </div>
+              {musicXmlHarmonyError && (
+                <p style={{ margin: '0.45rem 0 0', fontSize: '0.82rem', color: 'var(--error)' }} role="alert">
+                  {musicXmlHarmonyError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

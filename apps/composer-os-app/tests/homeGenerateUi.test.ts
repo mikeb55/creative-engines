@@ -158,6 +158,12 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).not.toMatch(/guitar_bass_duo[^\n]*harmonyMode:\s*'builtin'/);
   });
 
+  it('wires Song Mode MusicXML harmony file to GenerateRequest.musicXmlSource', () => {
+    expect(src).toContain('musicXmlSource');
+    expect(src).toContain('ingestSongModeHarmonyMusicXmlFile');
+    expect(src).toContain('parseMusicXml');
+  });
+
   it('does not show a Seed label in the UI', () => {
     expect(src).not.toMatch(/>\s*Seed\s*</i);
   });
