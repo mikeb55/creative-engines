@@ -191,3 +191,117 @@ Deliberately **hybrid identities**: rhythm blend lab can stack engines; this tab
 ## How to use this handbook
 
 Open **Generate → Song Mode** (or any surface that shows **Style**). In **`StylePanel`**, set **Harmonic Voice** (library or Film optgroup) and **Rhythm Engine** independently — they do not gate each other. Pick a preset from the rhythm controls for that engine so **`styleGenerationContextKeys`** carry both `hv:*` and rhythm prefix keys (`fk:`, `gr:`, …). Use this chapter to short-list combinations; dial **chromatic strength**, **blend**, and section forms in the main Generate controls as usual. When a pairing feels too polite, switch only the rhythm preset first — harmonic identity stays put.
+
+---
+
+## Deep Harmonic Voice Combinations (V45+)
+
+**Note:** The rows below assume the **Deep Harmonic Voice** layer — **Harmonic Voice** dropdown in **`StylePanel`** — **not** the Songwriter preset alone. Songwriter primaries and harmonic voices can stack; see **`docs/DEEP_HARMONIC_VOICES_GUIDE.md`** for the two-layer distinction and when to use each.
+
+### Wayne Shorter (deep harmonic voice)
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Wayne Shorter (`wayne_shorter`) | Cuban (`cu`) | `mambo` | Neighbour stacks read as horn colour when tumbao/bell lock clave — Footprints-family ambiguity stays dance-literate. |
+| Wayne Shorter (`wayne_shorter`) | Brazilian (`br`) | `bossa-nova-basic` | Static plateaus + anticipation — Infant Eyes/Miyako lyrical float without ECM-only drift. |
+| Wayne Shorter (`wayne_shorter`) | Second Line (`sl`) | `second-line-big-band` | Parade brass grammar carries Wayne chromatic mediant hits without swing-era ride wash. |
+| Wayne Shorter (`wayne_shorter`) | Afrobeat (`fk`) | any | Ostinato grid gives deterministic phrase boundaries for motivic cells — no textbook cadence relief. |
+| Wayne Shorter (`wayne_shorter`) | Greek (`gr`) | `hasapiko_4_4` | Tavern motor removes ECM float without forcing straight-ahead swing ii–V. |
+| Wayne Shorter (`wayne_shorter`) | Cuban (`cu`) | `afro-6-8` | Ritual 6/8 + vamp modal layers — late-period plateau logic with dance-proof metre. |
+| Wayne Shorter (`wayne_shorter`) | Brazilian (`br`) | `baiao-jazz-4-4` | Rural bounce under axis harmony — breath between phrases stays folk-sized. |
+| Wayne Shorter (`wayne_shorter`) | Second Line (`sl`) | `second-line-slow` | Funeral-speed parade — silence-as-device gets groove insurance. |
+
+### Gil Evans
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Gil Evans (`gil_evans`) | Brazilian (`br`) | `bossa-nova-basic` | Dry bossa lets pastel clusters breathe — cloud harmony over breathable pulse. |
+| Gil Evans (`gil_evans`) | Cuban (`cu`) | `son-clave-3-2` | Explicit clave orientation — Evans bass gap reads over Cuban rhythmic chess. |
+| Gil Evans (`gil_evans`) | Afrobeat (`fk`) | any | Long vamps hold modal planing — Lagos motor vs slow harmonic rhythm. |
+| Gil Evans (`gil_evans`) | Second Line (`sl`) | `second-line-slow` | Parade drag supports wide bass-to-cluster spacing without march cliché. |
+| Gil Evans (`gil_evans`) | Cuban (`cu`) | `bolero` | Slow Habanera gravity matches Sketches-era pedal scenes. |
+| Gil Evans (`gil_evans`) | Brazilian (`br`) | `partido-alto-clave-led` | Partido conversation — momentum without forcing functional topside changes. |
+| Gil Evans (`gil_evans`) | Cuban (`cu`) | `mambo` | Horn-stack density meets mid-register cluster voicings. |
+| Gil Evans (`gil_evans`) | Brazilian (`br`) | `baiao-basic` | Baião forward motion under parallel modal slabs. |
+
+### Maria Schneider
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Maria Schneider (`maria_schneider`) | Brazilian (`br`) | `partido-alto-clave-led` | Documented Hang Gliding lineage — landscape harmony over understated groove. |
+| Maria Schneider (`maria_schneider`) | Cuban (`cu`) | `mambo` | Layered propulsion under pastoral modal scenes — climax coupling without salsa stupidity. |
+| Maria Schneider (`maria_schneider`) | Afrobeat (`fk`) | any | Technological ostinato field for Data Lords darkness — narrative arc stays cumulative. |
+| Maria Schneider (`maria_schneider`) | Brazilian (`br`) | `bossa-nova-drumset-light` | Light hat — singer-songwriter transparency for woodwind tops. |
+| Maria Schneider (`maria_schneider`) | Cuban (`cu`) | `son-clave-2-3` | 2-3 orientation locks horn pillars for common-tone morphing. |
+| Maria Schneider (`maria_schneider`) | Second Line (`sl`) | `second-line-basic` | Parade snare humanises orchestral swell — brass kicks stay sectional. |
+| Maria Schneider (`maria_schneider`) | Brazilian (`br`) | `samba-de-gafieira-big-band` | Rio big-band dance clarity for sectional voicings. |
+| Maria Schneider (`maria_schneider`) | Cuban (`cu`) | `cha-cha-cha` | Light danceframe — drama without heavy mambo brass demand. |
+
+### John Coltrane
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| John Coltrane (`john_coltrane`) | Afrobeat (`fk`) | any | One–two chord cells + layered ostinati — modal period pentatonic/quartal stacks stay grounded. |
+| John Coltrane (`john_coltrane`) | Brazilian (`br`) | `bossa-nova-basic` | Continuous eighth support for changes-era burst harmony — forward motion without bop ride wash. |
+| John Coltrane (`john_coltrane`) | Cuban (`cu`) | `afro-6-8` | Ritual tension + percussion strata — late sheets-of-sound alongside clave gravity. |
+| John Coltrane (`john_coltrane`) | Cuban (`cu`) | `mambo` | Horn-favouring density for sheets cells in sectional stacks. |
+| John Coltrane (`john_coltrane`) | Brazilian (`br`) | `baiao-jazz-4-4` | Rural lift under quartal Tyner voicings — fewer romance clichés than bossa. |
+| John Coltrane (`john_coltrane`) | Second Line (`sl`) | `second-line-fast` | Parade velocity for Trane-era urgency without swing tropes. |
+| John Coltrane (`john_coltrane`) | Afrobeat (`fk`) | any | Deterministic vamp boundaries for cyclical augmented-tonic lattice practice. |
+| John Coltrane (`john_coltrane`) | Cuban (`cu`) | `rumba-clave-3-2` | Displacement ethics align with interval-cell melody — both resist four-bar rounding. |
+
+### Pat Metheny
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Pat Metheny (`pat_metheny`) | Brazilian (`br`) | `bossa-nova-basic` | Primary documented pairing — Lydian/add9 majesty over dry bossa anticipation. |
+| Pat Metheny (`pat_metheny`) | Cuban (`cu`) | `mozambique` | Dense tumbao family — intense pieces without losing modal brightness. |
+| Pat Metheny (`pat_metheny`) | Second Line (`sl`) | `second-line-slow` | Swampy Americana procession under pentatonic seeds + luminous endings. |
+| Pat Metheny (`pat_metheny`) | Brazilian (`br`) | `baiao-jazz-4-4` | Baião bounce — Letter From Home rural lift against ECM pastoral pads. |
+| Pat Metheny (`pat_metheny`) | Cuban (`cu`) | `bolero` | Slow romantic grid for orchestral-period cantabile peaks. |
+| Pat Metheny (`pat_metheny`) | Afrobeat (`fk`) | any | Layered ostinati echo PMG cumulative forms — guitar comps stay sparse. |
+| Pat Metheny (`pat_metheny`) | Brazilian (`br`) | `partido-alto-clave-led` | Conversation rhythm — odd-metre phrases cross barlines with clarity. |
+| Pat Metheny (`pat_metheny`) | Second Line (`sl`) | `second-line-shuffle` | Shuffle warp — rotary feel without locking accents to bar 1 (Metheny groove irony). |
+
+### Henry Threadgill
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Henry Threadgill (`henry_threadgill`) | Second Line (`sl`) | `second-line-basic` | March/blues DNA immediately destabilised — anti-metric layers vs parade roots. |
+| Henry Threadgill (`henry_threadgill`) | Afrobeat (`fk`) | any | Long-phase ostinati carry interval-pool riff classes — modular cumulative form. |
+| Henry Threadgill (`henry_threadgill`) | Cuban (`cu`) | `son-clave-3-2` | Clave as ghost grid — melodic strata avoid downbeat lock with percussion. |
+| Henry Threadgill (`henry_threadgill`) | Brazilian (`br`) | `partido-alto-clave-led` | Cross-rhythmic conversation without functional harmony clutter. |
+| Henry Threadgill (`henry_threadgill`) | Greek (`gr`) | `zeibekiko_9_8` | Additive bar warps phrase cells — matches multi-metre streams. |
+| Henry Threadgill (`henry_threadgill`) | Second Line (`sl`) | `brass-band-6-8` | Brass-band lift without tutti block stacks — hocket-friendly. |
+| Henry Threadgill (`henry_threadgill`) | Afrobeat (`fk`) | any | Mismatched loop lengths — anti-metric drum conduct vs Fela motor. |
+| Henry Threadgill (`henry_threadgill`) | Cuban (`cu`) | `cha-cha-cha` | Light dance surface — threads chromatic cells without ii–V flavour. |
+
+### Charles Mingus
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Charles Mingus (`charles_mingus`) | Second Line (`sl`) | `second-line-big-band` | Parade collective energy — gospel shout + blues architecture share NOLA DNA. |
+| Charles Mingus (`charles_mingus`) | Cuban (`cu`) | `mambo` | Horn-stack salsa density meets Mingus mid-register shout voicings. |
+| Charles Mingus (`charles_mingus`) | Afrobeat (`fk`) | any | Protest ostinato + repeating riff cycles — Epitaph-scale cumulative tension. |
+| Charles Mingus (`charles_mingus`) | Cuban (`cu`) | `son-clave-2-3` | Clave grid for blues harmony — Latin suite episodes without ECM cleanliness. |
+| Charles Mingus (`charles_mingus`) | Second Line (`sl`) | `new-orleans-funk` | Meters-adjacent pocket under chromatic bass drivers — grease without hard-bop churn. |
+| Charles Mingus (`charles_mingus`) | Brazilian (`br`) | `bossa-nova-basic` | *(Stretch)* Lush chords — only if bass-led dirt stays foremost; otherwise prefer **`sl`**/**`cu`**. |
+| Charles Mingus (`charles_mingus`) | Second Line (`sl`) | `second-line-fast` | Uptempo shout psychology — collective improv hits stay ritual. |
+| Charles Mingus (`charles_mingus`) | Cuban (`cu`) | `bolero` | Slow bolero for elegy_coda psychology — tension without polite resolution. |
+
+---
+
+## 11. Deep System Composers
+
+Focus: **Threadgill** interval systems + **Mingus** blues suites + **Shorter** motivic harmony — architecturally demanding harmonic voices. Use these when form, ensemble stratification, or non-functional grammar matters more than generic jazz flavour.
+
+| Harmonic Voice | Rhythm Engine | Preset Suggestion | Why It Works |
+|---|---|---|---|
+| Henry Threadgill (`henry_threadgill`) | Afrobeat (`fk`) | any | Ostinato pitch classes stay interval-locked — Lagos persistence carries Zooid-ish loops without chord-symbol rows. |
+| Henry Threadgill (`henry_threadgill`) | Cuban (`cu`) | `afro-6-8` | 6/8 ritual grid — melodic agents dodge implicit downbeats while drums stay contrapuntal. |
+| Charles Mingus (`charles_mingus`) | Afrobeat (`fk`) | any | Extended protest vocabulary — repeating cells support chromatic bass-first counterpoint. |
+| Charles Mingus (`charles_mingus`) | Greek (`gr`) | `zeibekiko_9_8` | Additive metre vs episodic suite sections — monumental procession without Viennese symmetry. |
+| Wayne Shorter (`wayne_shorter`) | Afrobeat (`fk`) | any | Motivic development vs no-cadence continuity — both postpone tonal closure deliberately. |
+| Wayne Shorter (`wayne_shorter`) | Greek (`gr`) | `zeibekiko_9_8` | Long-cell zeibekiko accents — matches asymmetric silence + axis harmony plateaus. |
+| Henry Threadgill (`henry_threadgill`) | Brazilian (`br`) | `bossa-nova-basic` | *(Contrarian stretch)* Bossa breath vs interval pools — viable only if drums stay anti-metric and harmony refuses ii–V. |
+| Charles Mingus (`charles_mingus`) | Second Line (`sl`) | `mardi-gras-indian` | Ritual street vocabulary — collective improvisation form meets ceremonial groove. |

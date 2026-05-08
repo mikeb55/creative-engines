@@ -22,6 +22,8 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 **StylePanel (V44)** — **Harmonic Voice** (songwriter / harmonic palette) and **Rhythm Engine** (culture groove) are **separate** selectors, so combinations like **Bill Evans + Brazilian** or **Debussy + Rebetiko** are valid without tying harmony ID to a single rhythm family.
 
+**Deep harmonic voices (handbook)** — Shipped **Harmonic Voice** ids with full Style Panel depth include **Wayne Shorter**, **Gil Evans**, **Maria Schneider**, **John Coltrane**, **Pat Metheny**, **Henry Threadgill**, **Charles Mingus**, **Morricone**, **Herrmann**, **Badalamenti**, **Quincy Jones (film)** (`quincy_jones_film`). **Songwriter** presets and **Harmonic Voice** are two layers (colour vs architecture); see **`docs/DEEP_HARMONIC_VOICES_GUIDE.md`**.
+
 **Exports (Documents \\ Composer OS Exports \\)** — **`Fela Kuti Rhythms\\`**, **`Greek Rhythms\\`**, **`Brazilian Rhythms\\`**, **`Second Line\\`**, **`Cuban Rhythms\\`**; rhythm-blend MusicXML → **`Blended Rhythms\\`** (**`outputPaths.ts`**).
 
 **Tooling split**

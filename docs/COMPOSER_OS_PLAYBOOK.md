@@ -54,6 +54,12 @@ On **Generate** → Song Mode, **`StylePanel`** shows two dropdowns:
 
 They **do not** force a fixed pairing: pick harmony and groove independently. Rhythm-specific controls (**`FelaPercussionControls`**, **`GreekRhythmControls`**, etc.) appear when that rhythm engine is selected.
 
+### Harmonic Voice Quick Reference
+
+Composer OS separates **Songwriter** presets (primary/secondary dropdown — fast stylistic flavour at the song level) from **Harmonic Voice** (**StylePanel** — research-grounded context keys, ThemeGenome defaults, melody-behaviour profiles). Same composer id can appear in both lists for different jobs: preset ≈ surface colour; harmonic voice ≈ structural “how the engine thinks.” Use **Harmonic Voice** when Melodic Identity, thematic recall, and harmony language must move together; stack a **Songwriter** preset on top for reinforcement or contrast.
+
+**Handbook:** **`docs/DEEP_HARMONIC_VOICES_GUIDE.md`** — two-layer system, per-voice profiles, GCE impact guide, recommended preset × rhythm stacks. Pairings with rhythm engines: **`docs/HARMONIC_RHYTHM_COMBINATIONS.md`** § *Deep Harmonic Voice Combinations (V45+)*.
+
 ### Blend Engine (V43) — Rhythm blend lab
 
 Open **Rhythm blend lab (MusicXML export)** (collapsible under Song Mode). Configure:
