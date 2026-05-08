@@ -51,7 +51,7 @@ function validUnpitchedNote(): string {
 export function runMusicXmlValidatorGateTests(): { name: string; ok: boolean }[] {
   const out: { name: string; ok: boolean }[] = [];
 
-  const goodOrder = validateMusicXml(minimalScorePartwise(validUnpitchedNote()), { silent: true });
+  const goodOrder = validateMusicXml(minimalScorePartwise(validUnpitchedNote()));
   out.push({
     name: 'MusicXML validator: valid unpitched sibling order passes',
     ok: goodOrder.valid && goodOrder.errors.length === 0,
@@ -82,7 +82,7 @@ export function runMusicXmlValidatorGateTests(): { name: string; ok: boolean }[]
       </note>
     </measure>
   </part>`;
-  const badOrder = validateMusicXml(minimalScorePartwise(badOrderXml), { silent: true });
+  const badOrder = validateMusicXml(minimalScorePartwise(badOrderXml));
   out.push({
     name: 'MusicXML validator: voice/duration swap flagged',
     ok: !badOrder.valid && badOrder.errors.some((e) => /element order|sequence violated/i.test(e)),
@@ -103,14 +103,14 @@ export function runMusicXmlValidatorGateTests(): { name: string; ok: boolean }[]
       </note>
     </measure>
   </part>`;
-  const clefOk = validateMusicXml(minimalScorePartwise(clefMeasure), { silent: true });
+  const clefOk = validateMusicXml(minimalScorePartwise(clefMeasure));
   out.push({
     name: 'MusicXML validator: clef inside attributes passes',
     ok: clefOk.valid,
   });
 
   const oct6 = validUnpitchedNote().replace('<display-octave>4</display-octave>', '<display-octave>6</display-octave>');
-  const octBad = validateMusicXml(minimalScorePartwise(oct6), { silent: true });
+  const octBad = validateMusicXml(minimalScorePartwise(oct6));
   out.push({
     name: 'MusicXML validator: unpitched displayOctave 6 rejected',
     ok:

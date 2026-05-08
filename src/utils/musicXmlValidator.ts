@@ -89,16 +89,11 @@ function validateUnpitchedNoteSiblingOrder(noteEl: XmlJsEl, noteIndex: number): 
   return [];
 }
 
-export type ValidateMusicXmlOptions = {
-  /** When true, do not console.warn per error (used by unit/smoke tests). */
-  silent?: boolean;
-};
-
 /**
  * Validates MusicXML string: stringsync document parse + Composer OS ordering / percussion rules.
- * On invalid (and unless `silent`), logs each error with `[MusicXML Validator]`.
+ * Returns structured errors (paths/context in message strings); callers decide logging.
  */
-export function validateMusicXml(xmlString: string, opts?: ValidateMusicXmlOptions): ValidationResult {
+export function validateMusicXml(xmlString: string): ValidationResult {
   const errors: string[] = [];
 
   try {
@@ -119,7 +114,7 @@ export function validateMusicXml(xmlString: string, opts?: ValidateMusicXmlOptio
     roots = doc.elements ?? [];
   } catch (e) {
     errors.push(`xml2js: ${e instanceof Error ? e.message : String(e)}`);
-    return finalize(errors, opts?.silent);
+    return finalize(errors);
   }
 
   const notes: XmlJsEl[] = [];
@@ -135,15 +130,9 @@ export function validateMusicXml(xmlString: string, opts?: ValidateMusicXmlOptio
     }
   });
 
-  return finalize(errors, opts?.silent);
+  return finalize(errors);
 }
 
-function finalize(errors: string[], silent?: boolean): ValidationResult {
-  const valid = errors.length === 0;
-  if (!valid && !silent) {
-    for (const err of errors) {
-      console.warn('[MusicXML Validator]', err);
-    }
-  }
-  return { valid, errors };
+function finalize(errors: string[]): ValidationResult {
+  return { valid: errors.length === 0, errors };
 }

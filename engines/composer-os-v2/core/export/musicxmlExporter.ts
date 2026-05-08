@@ -1142,7 +1142,10 @@ ${transposeXml}    </attributes>
     assertSibeliusExportMeasureStructure(xml);
     assertNoteXmlCanonicalChildOrder(xml);
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
-      validateMusicXml(xml);
+      const result = validateMusicXml(xml);
+      if (!result.valid) {
+        console.warn('[MusicXML Validator]', result.errors);
+      }
     }
     return { success: true, xml, errors: [] };
   } catch (e) {
