@@ -66,8 +66,19 @@ export function buildHarmonicScenesForVoiceBundle(
   return buildHarmonicSceneStubs(form);
 }
 
-/** Effective tension at bar (Schneider rising/falling halves). */
-export function tensionLevelForBar(bar: number, bundle: VoiceRuleBundle, scenes: HarmonicScene[]): number {
+/** Effective tension at bar (Schneider rising/falling halves). Optional Phase 4+5 scheduled envelope overrides scene lookup. */
+export function tensionLevelForBar(
+  bar: number,
+  bundle: VoiceRuleBundle,
+  scenes: HarmonicScene[],
+  scheduledByBar?: number[] | null
+): number {
+  if (scheduledByBar && bar >= 1 && bar <= scheduledByBar.length) {
+    const v = scheduledByBar[bar - 1];
+    if (typeof v === 'number' && !Number.isNaN(v)) {
+      return Math.min(1, Math.max(0, v));
+    }
+  }
   if (bundle.voiceId === 'maria_schneider' && scenes.length >= 2) {
     const tb = Math.max(...scenes.map((s) => s.barRange[1]), bar);
     const half = Math.floor(tb / 2);

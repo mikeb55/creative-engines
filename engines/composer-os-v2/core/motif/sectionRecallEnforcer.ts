@@ -2,6 +2,7 @@
  * Section recall contracts — Motif Authority Layer V2 lead-melody enforcement (Song Mode).
  */
 
+import type { FormSection } from '../composer/formController';
 import type { MeasureModel, NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import type { LeadMelodyPlan, MelodyNoteEvent } from '../song-mode/leadMelodyTypes';
 import type { SectionChordPlan } from '../song-mode/songCompilationTypes';
@@ -183,6 +184,23 @@ function nudgeCodaTowardPrimary(part: PartModel, lo: number, hi: number, primary
   nudgeRangeTowardPrimary(part, lo, hi, primary);
 }
 
+/** Phase 4+5 — extra primary-motif nudge windows driven by harmonic {@link FormSection} arcs. */
+export function applyFormSectionRecallToLeadPart(
+  part: PartModel,
+  genome: ThemeGenome,
+  formSections: FormSection[]
+): PartModel {
+  const work = clonePart(part);
+  for (const sec of formSections) {
+    if (!sec.motifRecallRequired) continue;
+    if (sec.role === 'development') continue;
+    const lo = sec.barRange[0];
+    const hi = sec.barRange[1];
+    nudgeRangeTowardPrimary(work, lo, hi, genome.primaryCell);
+  }
+  return work;
+}
+
 /** Apply recall contracts to a single melodic {@link PartModel} (typically `lead_melody`). */
 export function enforceRecallContract(
   part: PartModel,
@@ -300,12 +318,17 @@ export function applyMotifAuthorityLayerToLeadMelody(
   genome: ThemeGenome,
   sectionPlans: SongSectionPlan[],
   chordPlan: SectionChordPlan[],
-  scorer: typeof scoreMotifSimilarity = scoreMotifSimilarity
+  scorer: typeof scoreMotifSimilarity = scoreMotifSimilarity,
+  formSections?: FormSection[]
 ): MotifAuthorityLayerResult {
   const receipts: string[] = [`mal:genome:${genome.generationId}`, `mal:voice:${genome.voiceId}`];
   const sectionMap = buildSectionRecallMap(sectionPlans, chordPlan);
   const part = leadMelodyPlanToPartModel(plan);
-  const adjustedPart = enforceRecallContract(part, genome, sectionMap, scorer);
+  let adjustedPart = enforceRecallContract(part, genome, sectionMap, scorer);
+  if (formSections?.length) {
+    adjustedPart = applyFormSectionRecallToLeadPart(adjustedPart, genome, formSections);
+    receipts.push('mal:form_section_recall');
+  }
   let nextPlan = mergePartPitchIntoLeadPlan(plan, adjustedPart);
 
   const quota = estimateRecallQuota(nextPlan, genome, scorer);

@@ -39,7 +39,8 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
     for (let mi = 0; mi < measures.length; mi++) {
       const m = measures[mi]!;
       const barNum = m.index;
-      const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes) : 0.5;
+      const sched = context.generationMetadata.scheduledTensionByBar;
+      const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes, sched) : 0.5;
       const minS = Math.min(
         vb.voicingPolicy.maxSpreadSemitones,
         Math.round(vb.voicingPolicy.minSpreadSemitones * (1 + t * 0.12))

@@ -9,7 +9,8 @@ export function applyHarmonicSceneChordBias(barIndex: number, symbol: string, co
   const vb = context.voiceBundle;
   const scenes = context.harmonicScenes;
   if (!vb || !scenes?.length) return symbol;
-  const t = tensionLevelForBar(barIndex, vb, scenes);
+  const sched = context.generationMetadata.scheduledTensionByBar;
+  const t = tensionLevelForBar(barIndex, vb, scenes, sched);
   const s = symbol.trim();
   if (vb.voiceId === 'pat_metheny' && vb.voicingPolicy.lydianMaj7Sharp11Default && /maj7$/i.test(s) && t > 0.45 && !/#11/i.test(s)) {
     return s.replace(/maj7/i, 'maj7#11');

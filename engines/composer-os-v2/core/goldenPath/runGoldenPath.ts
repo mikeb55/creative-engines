@@ -144,6 +144,9 @@ import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionCont
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
+import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
+import { applyRhythmMotifBindingToConstraints } from '../composer/rhythmDnaMotifBinder';
+import { runTensionDeviationAudit } from '../composer/tensionScheduler';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
@@ -841,7 +844,11 @@ function buildGoldenPathPlans(
   const bassMap = planBassRegisterMap(sections);
   const guitarBehaviour = planGuitarBehaviour(sections, densityPlan, guitarMap);
   const bassBehaviour = planBassBehaviour(sections, densityPlan, bassMap);
-  const rhythmConstraints = computeRhythmicConstraints(context.feel);
+  let rhythmConstraints = computeRhythmicConstraints(context.feel);
+  const rbind = context.generationMetadata.rhythmMotifBinding;
+  if (rbind && context.voiceBundle) {
+    rhythmConstraints = applyRhythmMotifBindingToConstraints(rhythmConstraints, context.voiceBundle, rbind);
+  }
 
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
   const styleStack: StyleStack =
@@ -1946,6 +1953,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
 
   /** VoiceRuleBundle + HarmonicScene stubs before plan build so motif / section plans see `context.voiceBundle`. */
   attachVoiceRuleBundleAndHarmonicScenes(context, options);
+  attachFormPlanRhythmAndTension(context, seed);
 
   logEcmPhaseProbe(probeEcm, 'before_plan_build');
   let plans: GoldenPathPlans;
@@ -1961,6 +1969,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
   attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options, { skipHarmonicSceneLog: true });
+  attachFormPlanRhythmAndTension(appliedContext, seed);
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   logEcmPhaseProbe(probeEcm, 'before_render', undefined, {
@@ -1995,6 +2004,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (!score) {
     throw new Error('generateGoldenPathDuoScore did not produce a score');
+  }
+  if (appliedContext.voiceBundle) {
+    runTensionDeviationAudit(appliedContext, score);
   }
   logEcmPhaseProbe(probeEcm, 'before_post', score);
   if (options?.songModeHookFirstIdentity) {

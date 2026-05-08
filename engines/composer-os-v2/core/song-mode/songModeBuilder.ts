@@ -8,7 +8,9 @@ import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
 import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
 import { buildThemeGenome } from '../motif/themeGenomeBuilder';
+import { scoreMotifSimilarity } from '../motif/motifSimilarityScorer';
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
+import { buildFormSections } from '../composer/formController';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
@@ -2294,6 +2296,19 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     stylePairingResolution,
   });
 
+  let formSectionsForMal: ReturnType<typeof buildFormSections> | undefined;
+  if (voiceBundleForCompile) {
+    let bar = 1;
+    const sectionsForm = params.sections.map((sec, i) => {
+      const len = withRules.chordPlan[i]?.chordSymbols.length ?? 0;
+      const row = { label: sec.kind, startBar: bar, length: len };
+      bar += len;
+      return row;
+    });
+    const tbSong = withRules.chordPlan.reduce((s, p) => s + p.chordSymbols.length, 0);
+    formSectionsForMal = buildFormSections({ totalBars: tbSong, sections: sectionsForm }, voiceBundleForCompile);
+  }
+
   const melodyBehaviourForLead =
     withRules.songwriting?.melodyBehaviour ?? planMelodyBehaviour(params.seed, resolution.primaryId);
   const themeVoiceKey =
@@ -2316,7 +2331,9 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     leadMelodyPlanRaw,
     themeGenome,
     params.sections,
-    withRules.chordPlan
+    withRules.chordPlan,
+    scoreMotifSimilarity,
+    formSectionsForMal
   );
   const comfortMidi = getSingerRangeProfile(voiceType).comfortRangeMidi;
   const leadMelodyPlan = {

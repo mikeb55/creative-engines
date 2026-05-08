@@ -23,6 +23,7 @@ export type {
 export {
   enforceRecallContract,
   applyMotifAuthorityLayerToLeadMelody,
+  applyFormSectionRecallToLeadPart,
   buildSectionRecallMap,
   leadMelodyPlanToPartModel,
   mergePartPitchIntoLeadPlan,

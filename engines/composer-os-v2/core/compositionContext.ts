@@ -1394,6 +1394,12 @@ export interface GenerationMetadata {
   voiceBundleRepairMaxVoiceOverlap?: number;
   /** Phase 3b — voice-leading / parallel repair log lines for manifests. */
   voiceBundleVoiceLeadingRepairs?: string[];
+  /** Phase 4+5 — per-bar tension envelope after form scheduler (`tensionLevelForBar` reads this first). */
+  scheduledTensionByBar?: number[];
+  /** Phase 4+5 — RhythmDNA cells allowed/forbidden vs motif R spine. */
+  rhythmMotifBinding?: import('./composer/rhythmDnaMotifBinder').RhythmMotifBinding;
+  /** Phase 4+5 — planned vs heuristic actual tension deviation by section. */
+  tensionAudit?: import('./composer/tensionScheduler').TensionAuditRow[];
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
@@ -1438,6 +1444,8 @@ export interface CompositionContext {
   voiceBundle?: VoiceRuleBundle;
   /** Phase 2+3a — session harmonic scenes (stub rows until Phase 3b). */
   harmonicScenes?: HarmonicScene[];
+  /** Phase 4+5 — harmonic form arc (when VoiceRuleBundle attached). */
+  formSections?: import('./composer/formController').FormSection[];
   validation: ValidationResults;
   styleOverrides?: Record<string, unknown>;
   readiness: {
