@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **205** PASS rows, **47** suites (2026-05-08).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **213** PASS rows, **48** suites (2026-05-08).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -54,6 +54,7 @@ import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValida
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runPhase67InstrumentGroupMusicXmlTests } from './phase67InstrumentGroupMusicXml.test';
 import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReharmStochasticCollision.test';
+import { runHarmonicSceneMotifShoutSmokeTests } from './harmonicSceneMotifShoutSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -105,6 +106,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },
+  { label: 'HarmonicScene motif filter + shout/outro energy', run: runHarmonicSceneMotifShoutSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

@@ -6,6 +6,7 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
+import { buildHarmonicScenesFromFormPlan } from '../composer/harmonicScene';
 import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
 import { buildThemeGenome } from '../motif/themeGenomeBuilder';
 import { scoreMotifSimilarity } from '../motif/motifSimilarityScorer';
@@ -2316,6 +2317,31 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
       ? String(params.harmonicVoice).trim()
       : resolution.primaryId;
   const themeGenome = buildThemeGenome(themeVoiceKey, params.seed, undefined, voiceBundleForCompile);
+
+  let harmonicScenesForMal: ReturnType<typeof buildHarmonicScenesFromFormPlan> | undefined;
+  if (formSectionsForMal?.length && voiceBundleForCompile) {
+    const tbSong = withRules.chordPlan.reduce((s, p) => s + p.chordSymbols.length, 0);
+    const scheduledMal = new Array(tbSong).fill(0.5);
+    for (const sec of formSectionsForMal) {
+      const [lo, hi] = sec.barRange;
+      const span = Math.max(1, hi - lo);
+      for (let b = lo; b <= hi; b++) {
+        if (b >= 1 && b <= tbSong) {
+          const u = span > 1 ? (b - lo) / (span - 1) : 0;
+          scheduledMal[b - 1] = Math.min(
+            1,
+            Math.max(0, sec.targetTensionStart + (sec.targetTensionEnd - sec.targetTensionStart) * u)
+          );
+        }
+      }
+    }
+    harmonicScenesForMal = buildHarmonicScenesFromFormPlan(
+      formSectionsForMal,
+      themeGenome,
+      scheduledMal
+    );
+  }
+
   const leadMelodyPlanRaw = planLeadMelody({
     seed: params.seed,
     sections: params.sections,
@@ -2333,7 +2359,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     params.sections,
     withRules.chordPlan,
     scoreMotifSimilarity,
-    formSectionsForMal
+    formSectionsForMal,
+    harmonicScenesForMal
   );
   const comfortMidi = getSingerRangeProfile(voiceType).comfortRangeMidi;
   const leadMelodyPlan = {

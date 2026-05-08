@@ -2,6 +2,8 @@
  * Phase 3a/3b — HarmonicScene session objects (tension + structural hints).
  */
 
+import type { ThemeGenome } from '../motif/themeGenome';
+import type { FormSection, HarmonicFormSectionRole } from './formController';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 
 export interface HarmonicScene {
@@ -95,4 +97,87 @@ export function tensionLevelForBar(
 
 export function activeSceneForBar(bar: number, scenes: HarmonicScene[]): HarmonicScene | undefined {
   return scenes.find((s) => bar >= s.barRange[0] && bar <= s.barRange[1]);
+}
+
+function clamp01(x: number): number {
+  if (x < 0) return 0;
+  if (x > 1) return 1;
+  return x;
+}
+
+/** Mirrors {@link voicingColorForTension} — kept local to avoid cyclic import with tensionScheduler. */
+function dominantVoicingColorForTensionLevel(t: number): string {
+  if (t < 0.3) return 'stable';
+  if (t < 0.6) return 'modal';
+  if (t < 0.8) return 'altered';
+  return 'tritone-sus';
+}
+
+/** ThemeGenome motif ids eligible for recall in this harmonic role (empty → full pool). */
+export function activeMotifIdsForHarmonicRole(role: HarmonicFormSectionRole, genome: ThemeGenome): string[] {
+  const p = genome.primaryCell.id;
+  const secId = genome.secondaryCell?.id;
+  switch (role) {
+    case 'intro':
+      return [p];
+    case 'development':
+      return secId ? [p, secId] : [p];
+    case 'shout-chorus':
+      return [p];
+    case 'outro':
+      return [p];
+    case 'solo-recapitulation':
+      return [p];
+    default:
+      return [];
+  }
+}
+
+function sceneTensionFromScheduled(scheduled: number[] | undefined, lo: number, hi: number): number {
+  if (!scheduled?.length) return 0.5;
+  let sum = 0;
+  let c = 0;
+  for (let b = lo; b <= hi; b++) {
+    if (b >= 1 && b <= scheduled.length) {
+      sum += scheduled[b - 1]!;
+      c++;
+    }
+  }
+  return c ? clamp01(sum / c) : 0.5;
+}
+
+/**
+ * One HarmonicScene per {@link FormSection}, aligned with ThemeGenome motif ids + shout/outro overrides.
+ * Call after {@link applyTensionScheduleToContext} so `scheduledTensionByBar` can inform non-fixed scenes.
+ */
+export function buildHarmonicScenesFromFormPlan(
+  formSections: FormSection[],
+  genome: ThemeGenome,
+  scheduledTensionByBar: number[] | undefined
+): HarmonicScene[] {
+  return formSections.map((sec) => {
+    const [lo, hi] = sec.barRange;
+    const activeMotifIds = activeMotifIdsForHarmonicRole(sec.role, genome);
+    let tensionLevel: number;
+    let dominantVoicingColor: string;
+
+    if (sec.role === 'shout-chorus') {
+      tensionLevel = 0.95;
+      dominantVoicingColor = dominantVoicingColorForTensionLevel(0.95);
+    } else if (sec.role === 'outro') {
+      tensionLevel = 0.1;
+      dominantVoicingColor = 'stable';
+    } else {
+      tensionLevel = sceneTensionFromScheduled(scheduledTensionByBar, lo, hi);
+      dominantVoicingColor = dominantVoicingColorForTensionLevel(tensionLevel);
+    }
+
+    return {
+      sceneId: sec.sceneId,
+      tensionLevel,
+      dominantVoicingColor,
+      activeMotifIds,
+      barRange: [lo, hi],
+    };
+  });
 }

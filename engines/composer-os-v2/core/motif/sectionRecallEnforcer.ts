@@ -2,6 +2,8 @@
  * Section recall contracts — Motif Authority Layer V2 lead-melody enforcement (Song Mode).
  */
 
+import type { HarmonicScene } from '../composer/harmonicScene';
+import { activeSceneForBar } from '../composer/harmonicScene';
 import type { FormSection } from '../composer/formController';
 import type { MeasureModel, NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import type { LeadMelodyPlan, MelodyNoteEvent } from '../song-mode/leadMelodyTypes';
@@ -19,6 +21,57 @@ export interface SectionRecallEntry {
 }
 
 export type SectionMap = SectionRecallEntry[];
+
+/** ThemeGenome cells eligible for recall at `bar` given harmonic scene {@link HarmonicScene.activeMotifIds}. Empty ids → full pool. */
+export function recallMotifCandidatesAtBar(
+  genome: ThemeGenome,
+  harmonicScenes: HarmonicScene[] | undefined,
+  bar: number
+): MotifCell2[] {
+  const scene = harmonicScenes?.length ? activeSceneForBar(bar, harmonicScenes) : undefined;
+  const ids = scene?.activeMotifIds ?? [];
+  const out: MotifCell2[] = [];
+  const push = (c?: MotifCell2): void => {
+    if (c) out.push(c);
+  };
+  if (!ids.length) {
+    push(genome.primaryCell);
+    push(genome.secondaryCell);
+    push(genome.bridgeCell);
+    push(genome.cadentialTail);
+    return out;
+  }
+  const allow = new Set(ids);
+  if (allow.has(genome.primaryCell.id)) push(genome.primaryCell);
+  if (genome.secondaryCell && allow.has(genome.secondaryCell.id)) push(genome.secondaryCell);
+  if (genome.bridgeCell && allow.has(genome.bridgeCell.id)) push(genome.bridgeCell);
+  if (genome.cadentialTail && allow.has(genome.cadentialTail.id)) push(genome.cadentialTail);
+  return out;
+}
+
+function recallPrimaryTargetForBar(
+  genome: ThemeGenome,
+  harmonicScenes: HarmonicScene[] | undefined,
+  bar: number
+): MotifCell2 {
+  const pool = recallMotifCandidatesAtBar(genome, harmonicScenes, bar);
+  const hit = pool.find((c) => c.id === genome.primaryCell.id);
+  return hit ?? genome.primaryCell;
+}
+
+function recallBridgeTargetForBar(
+  genome: ThemeGenome,
+  harmonicScenes: HarmonicScene[] | undefined,
+  bar: number
+): MotifCell2 | undefined {
+  const pool = recallMotifCandidatesAtBar(genome, harmonicScenes, bar);
+  const bridge = genome.bridgeCell;
+  const secondary = genome.secondaryCell;
+  if (!pool.length) return bridge;
+  if (bridge && pool.some((c) => c.id === bridge.id)) return bridge;
+  if (secondary && pool.some((c) => c.id === secondary.id)) return secondary;
+  return undefined;
+}
 
 export function buildSectionRecallMap(sectionPlans: SongSectionPlan[], chordPlan: SectionChordPlan[]): SectionMap {
   const out: SectionMap = [];
@@ -188,15 +241,19 @@ function nudgeCodaTowardPrimary(part: PartModel, lo: number, hi: number, primary
 export function applyFormSectionRecallToLeadPart(
   part: PartModel,
   genome: ThemeGenome,
-  formSections: FormSection[]
+  formSections: FormSection[],
+  harmonicScenes?: HarmonicScene[]
 ): PartModel {
   const work = clonePart(part);
   for (const sec of formSections) {
-    if (!sec.motifRecallRequired) continue;
+    const recallWindow = sec.motifRecallRequired || sec.role === 'shout-chorus';
+    if (!recallWindow) continue;
     if (sec.role === 'development') continue;
     const lo = sec.barRange[0];
     const hi = sec.barRange[1];
-    nudgeRangeTowardPrimary(work, lo, hi, genome.primaryCell);
+    const primary =
+      harmonicScenes?.length ? recallPrimaryTargetForBar(genome, harmonicScenes, lo) : genome.primaryCell;
+    nudgeRangeTowardPrimary(work, lo, hi, primary);
   }
   return work;
 }
@@ -206,34 +263,38 @@ export function enforceRecallContract(
   part: PartModel,
   genome: ThemeGenome,
   sections: SectionMap,
-  scorer: typeof scoreMotifSimilarity = scoreMotifSimilarity
+  scorer: typeof scoreMotifSimilarity = scoreMotifSimilarity,
+  harmonicScenes?: HarmonicScene[]
 ): PartModel {
   const work = clonePart(part);
   const regionA = sections.find((s) => s.recallRole === 'A');
   if (regionA) {
     const endA = Math.min(regionA.startBar + genome.sectionContracts.A.presentWithin - 1, regionA.endBar);
     const derived = motifCell2FromPartRange(work, regionA.startBar, endA);
-    const sc = scorer(derived, genome.primaryCell);
+    const targetA = recallPrimaryTargetForBar(genome, harmonicScenes, regionA.startBar);
+    const sc = scorer(derived, targetA);
     if (!meetsRecallThreshold(sc, 'A')) {
-      nudgeRangeTowardPrimary(work, regionA.startBar, endA, genome.primaryCell);
+      nudgeRangeTowardPrimary(work, regionA.startBar, endA, targetA);
     }
   }
 
   const regionB = sections.find((s) => s.recallRole === 'B');
-  if (regionB && genome.bridgeCell) {
+  const bridgeTarget = regionB ? recallBridgeTargetForBar(genome, harmonicScenes, regionB.startBar) : undefined;
+  if (regionB && bridgeTarget) {
     const derivedB = motifCell2FromPartRange(work, regionB.startBar, regionB.endBar);
-    const scB = scorer(derivedB, genome.bridgeCell);
+    const scB = scorer(derivedB, bridgeTarget);
     if (!meetsRecallThreshold(scB, 'B')) {
-      nudgeRangeTowardPrimary(work, regionB.startBar, regionB.endBar, genome.bridgeCell);
+      nudgeRangeTowardPrimary(work, regionB.startBar, regionB.endBar, bridgeTarget);
     }
   }
 
   const coda = sections.filter((s) => s.recallRole === 'coda').pop();
   if (coda) {
     const derivedC = motifCell2FromPartRange(work, coda.startBar, coda.endBar);
-    const scC = scorer(derivedC, genome.primaryCell);
+    const targetC = recallPrimaryTargetForBar(genome, harmonicScenes, coda.startBar);
+    const scC = scorer(derivedC, targetC);
     if (!meetsRecallThreshold(scC, 'coda')) {
-      nudgeCodaTowardPrimary(work, coda.startBar, coda.endBar, genome.primaryCell);
+      nudgeCodaTowardPrimary(work, coda.startBar, coda.endBar, targetC);
     }
   }
 
@@ -319,15 +380,19 @@ export function applyMotifAuthorityLayerToLeadMelody(
   sectionPlans: SongSectionPlan[],
   chordPlan: SectionChordPlan[],
   scorer: typeof scoreMotifSimilarity = scoreMotifSimilarity,
-  formSections?: FormSection[]
+  formSections?: FormSection[],
+  harmonicScenes?: HarmonicScene[]
 ): MotifAuthorityLayerResult {
   const receipts: string[] = [`mal:genome:${genome.generationId}`, `mal:voice:${genome.voiceId}`];
   const sectionMap = buildSectionRecallMap(sectionPlans, chordPlan);
   const part = leadMelodyPlanToPartModel(plan);
-  let adjustedPart = enforceRecallContract(part, genome, sectionMap, scorer);
+  let adjustedPart = enforceRecallContract(part, genome, sectionMap, scorer, harmonicScenes);
   if (formSections?.length) {
-    adjustedPart = applyFormSectionRecallToLeadPart(adjustedPart, genome, formSections);
+    adjustedPart = applyFormSectionRecallToLeadPart(adjustedPart, genome, formSections, harmonicScenes);
     receipts.push('mal:form_section_recall');
+  }
+  if (harmonicScenes?.length) {
+    receipts.push('mal:harmonic_scene_motif_filter');
   }
   let nextPlan = mergePartPitchIntoLeadPlan(plan, adjustedPart);
 

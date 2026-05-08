@@ -122,6 +122,22 @@ export function mingusShoutInjectActive(barIndex: number, bundle: VoiceRuleBundl
   return barIndex >= th;
 }
 
+/** Highest-energy RhythmDNA cell in the binding pool (energy proxy ≈ attacks per bar). */
+export function pickHighestEnergyRhythmCellFromBinding(binding: RhythmMotifBinding | undefined): string {
+  const pool = binding?.allowedRhythmCells?.length ? binding.allowedRhythmCells : [...RHYTHM_DNA_CELL_IDS];
+  let bestId = pool[0]!;
+  let bestE = -1;
+  for (const id of pool) {
+    const m = RHYTHM_DNA_CELL_TABLE[id as RhythmDnaCellId];
+    const e = m?.energy ?? 0;
+    if (e > bestE) {
+      bestE = e;
+      bestId = id;
+    }
+  }
+  return bestId;
+}
+
 /** Coltrane — tied / cross-bar cells permitted when mid-bar changes allowed. */
 export function coltraneAllowsTiedSyncopationCell(cellId: string, bundle: VoiceRuleBundle): boolean {
   if (bundle.voiceId !== 'john_coltrane') return false;

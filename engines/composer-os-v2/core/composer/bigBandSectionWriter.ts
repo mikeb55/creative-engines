@@ -6,8 +6,12 @@ import type { FormSection, HarmonicFormSectionRole } from './formController';
 import type { HarmonicScene } from './harmonicScene';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 import type { RhythmMotifBinding } from './rhythmDnaMotifBinder';
+import {
+  mingusShoutInjectActive,
+  pickHighestEnergyRhythmCellFromBinding,
+  RHYTHM_DNA_CELL_TABLE,
+} from './rhythmDnaMotifBinder';
 import { weightedRhythmSample } from './stochasticLayer';
-import { RHYTHM_DNA_CELL_TABLE } from './rhythmDnaMotifBinder';
 
 export type BigBandSectionKind = 'soli' | 'backgrounds' | 'shout-chorus' | 'tutti';
 
@@ -33,7 +37,11 @@ export interface ShoutChorusPlan {
   kind: 'shout-chorus';
   rhythmCellId: string;
   maxSpreadSemitones: number;
+  /** All brass/rhythm voices share one rhythmic shell (TUTTI shout). */
   rhythmicUnison: true;
+  /** Mingus only — bar ≥ gospel shout threshold: gospel grid + collective-improv overlay hint. */
+  mingusGospelShoutInject?: boolean;
+  mingusCollectiveImprovOverlay?: boolean;
 }
 
 export interface TuttiPlan {
@@ -79,17 +87,35 @@ export function pickShoutRhythmCellId(
 export function shoutChorusPlan(
   bundle: VoiceRuleBundle,
   binding: RhythmMotifBinding | undefined,
-  formSection: FormSection | undefined
+  formSection: FormSection | undefined,
+  opts?: { sectionLeadBar?: number }
 ): ShoutChorusPlan {
   const shout =
     formSection?.role === ('shout-chorus' as HarmonicFormSectionRole) ||
     (formSection?.sceneId?.includes('shout') ?? false);
-  const cell = pickShoutRhythmCellId(binding);
+  const leadBar = opts?.sectionLeadBar ?? formSection?.barRange?.[0] ?? 1;
+  const maxSpread = bundle.voicingPolicy.maxSpreadSemitones;
+
+  let rhythmCellId = pickShoutRhythmCellId(binding);
+  let mingusInject = false;
+  if (shout) {
+    rhythmCellId = pickHighestEnergyRhythmCellFromBinding(binding);
+    if (bundle.voiceId === 'charles_mingus' && mingusShoutInjectActive(leadBar, bundle)) {
+      rhythmCellId = 'rd_shout_grid';
+      mingusInject = true;
+    }
+  } else {
+    rhythmCellId = 'rd_eighth_syncop';
+  }
+
   return {
     kind: 'shout-chorus',
-    rhythmCellId: shout ? cell : 'rd_eighth_syncop',
-    maxSpreadSemitones: bundle.voicingPolicy.maxSpreadSemitones,
+    rhythmCellId,
+    maxSpreadSemitones: shout ? maxSpread : bundle.voicingPolicy.maxSpreadSemitones,
     rhythmicUnison: true,
+    ...(mingusInject
+      ? { mingusGospelShoutInject: true as const, mingusCollectiveImprovOverlay: true as const }
+      : {}),
   };
 }
 

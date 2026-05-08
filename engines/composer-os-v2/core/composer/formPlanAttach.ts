@@ -4,6 +4,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { buildThemeGenome } from '../motif/themeGenomeBuilder';
+import { buildHarmonicScenesFromFormPlan } from './harmonicScene';
 import { buildFormSections } from './formController';
 import { computeRhythmMotifBinding } from './rhythmDnaMotifBinder';
 import { applyTensionScheduleToContext } from './tensionScheduler';
@@ -17,6 +18,15 @@ export function attachFormPlanRhythmAndTension(context: CompositionContext, seed
 
   const hv = context.generationMetadata.harmonicVoice ?? vb.voiceId;
   const tg = buildThemeGenome(hv, seed, undefined, vb);
+
+  if (context.formSections.length > 0) {
+    context.harmonicScenes = buildHarmonicScenesFromFormPlan(
+      context.formSections,
+      tg,
+      context.generationMetadata.scheduledTensionByBar
+    );
+  }
+
   context.generationMetadata = {
     ...context.generationMetadata,
     rhythmMotifBinding: computeRhythmMotifBinding(tg.id, tg.primaryCell, vb, false),
