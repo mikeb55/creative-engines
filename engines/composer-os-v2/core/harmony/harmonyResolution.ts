@@ -10,6 +10,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
+import { applyHarmonicSceneChordBias } from '../composer/harmonicSceneChordBias';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { logHarmonyProvenance } from './harmonyContext';
 
@@ -591,7 +592,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 /** Authoritative chord symbol per bar — slice/locked/plan resolution plus VoiceRuleBundle harmonic rhythm overlay. */
 export function getChordForBar(barIndex: number, context: CompositionContext): string {
   const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
-  return applyVoiceBundleHarmonicRhythm(barIndex, sym, context);
+  const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context);
+  if (context.voiceBundle && context.harmonicScenes?.length) {
+    return applyHarmonicSceneChordBias(barIndex, afterRhythm, context);
+  }
+  return afterRhythm;
 }
 
 /**

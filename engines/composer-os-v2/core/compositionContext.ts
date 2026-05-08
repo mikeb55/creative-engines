@@ -1392,6 +1392,8 @@ export interface GenerationMetadata {
   voiceBundleRepairResolveParallelsRequested?: boolean;
   /** Phase 2+3a — echo of repairPolicy.maxVoiceOverlap for downstream scoring. */
   voiceBundleRepairMaxVoiceOverlap?: number;
+  /** Phase 3b — voice-leading / parallel repair log lines for manifests. */
+  voiceBundleVoiceLeadingRepairs?: string[];
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

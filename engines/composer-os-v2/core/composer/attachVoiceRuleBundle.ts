@@ -3,7 +3,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import { buildHarmonicSceneStubs } from './harmonicScene';
+import { buildHarmonicSceneStubs, buildHarmonicScenesForVoiceBundle } from './harmonicScene';
 import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles';
 
 export function attachVoiceRuleBundleAndHarmonicScenes(
@@ -24,7 +24,7 @@ export function attachVoiceRuleBundleAndHarmonicScenes(
   const id = normalizeHarmonicVoiceId(raw);
   const bundle = getVoiceRuleBundle(id);
   context.voiceBundle = bundle;
-  context.harmonicScenes = buildHarmonicSceneStubs(context.form);
+  context.harmonicScenes = buildHarmonicScenesForVoiceBundle(context.form, bundle);
 
   context.generationMetadata = {
     ...context.generationMetadata,

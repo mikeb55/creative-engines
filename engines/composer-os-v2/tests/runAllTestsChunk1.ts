@@ -40,6 +40,7 @@ import { runDuoIdentityV32Tests } from './duoIdentityV32.test';
 import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
+import { runVoiceLeadingSolverPhase3bTests } from './voiceLeadingSolverPhase3b.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
 const suites: SuiteEntry[] = [
@@ -81,6 +82,7 @@ const suites: SuiteEntry[] = [
   { name: 'Duo polish V3.3', run: runDuoPolishV33Tests },
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
+  { name: 'Voice-leading solver + HarmonicScene (Phase 3b)', run: runVoiceLeadingSolverPhase3bTests },
 ];
 
 runHarnessMain(suites, '[harness] chunk 1/4 — duo core + gates');

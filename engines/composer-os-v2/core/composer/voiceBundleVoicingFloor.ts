@@ -1,24 +1,51 @@
 /**
- * Phase 2+3a — widen guitar voicing stacks to satisfy VoiceRuleBundle min spread when active.
+ * Phase 2+3a/3b — guitar chord/note vertical spread with voice-leading solver selection.
  */
 
 import type { CompositionContext } from '../compositionContext';
 import type { ChordEvent, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import { tensionLevelForBar } from './harmonicScene';
+import { solveVoiceLeading, type VoicingCandidate } from './voiceLeadingSolver';
+
+const CEILING = 88;
+
+function widenStack(sorted: number[], minS: number, maxS: number): number[] {
+  const lo = sorted[0]!;
+  const hi = sorted[sorted.length - 1]!;
+  const spread = hi - lo;
+  if (spread >= minS) return sorted;
+  const cappedTarget = Math.min(lo + maxS, CEILING);
+  let newHi = Math.min(lo + minS, cappedTarget);
+  if (newHi <= hi) newHi = Math.min(hi + (minS - spread), cappedTarget);
+  if (newHi <= hi) return sorted;
+  const repl = sorted.slice();
+  repl[repl.length - 1] = newHi;
+  return repl;
+}
 
 export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: CompositionContext): void {
   const vb = context.voiceBundle;
   if (!vb) return;
 
-  const minS = vb.voicingPolicy.minSpreadSemitones;
-  const maxS = vb.voicingPolicy.maxSpreadSemitones;
-  const ceiling = 88;
+  const scenes = context.harmonicScenes ?? [];
 
   for (let pi = 0; pi < score.parts.length; pi++) {
     const part = score.parts[pi]!;
     if (part.id !== 'guitar') continue;
+
+    let prevVoicing: VoicingCandidate | null = null;
     const measures = part.measures.slice();
+
     for (let mi = 0; mi < measures.length; mi++) {
       const m = measures[mi]!;
+      const barNum = m.index;
+      const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes) : 0.5;
+      const minS = Math.min(
+        vb.voicingPolicy.maxSpreadSemitones,
+        Math.round(vb.voicingPolicy.minSpreadSemitones * (1 + t * 0.12))
+      );
+      const maxS = vb.voicingPolicy.maxSpreadSemitones;
+
       let events = [...m.events];
 
       for (let ei = 0; ei < events.length; ei++) {
@@ -29,19 +56,17 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
         if (!pitches || pitches.length < 2) continue;
 
         const sorted = [...pitches].sort((a, b) => a - b);
-        const lo = sorted[0]!;
-        const hi = sorted[sorted.length - 1]!;
-        const spread = hi - lo;
-        if (spread >= minS) continue;
-
-        const cappedTarget = Math.min(lo + maxS, ceiling);
-        let newHi = Math.min(lo + minS, cappedTarget);
-        if (newHi <= hi) newHi = Math.min(hi + (minS - spread), cappedTarget);
-        if (newHi <= hi) continue;
-
-        const repl = sorted.slice();
-        repl[repl.length - 1] = newHi;
-        events[ei] = { ...ch, pitches: repl };
+        const widened = widenStack(sorted, minS, maxS);
+        const res = solveVoiceLeading(
+          [
+            { notes: sorted, cost: 0 },
+            { notes: widened, cost: 0 },
+          ],
+          prevVoicing,
+          vb
+        );
+        events[ei] = { ...ch, pitches: res.chosen.notes };
+        prevVoicing = { notes: res.chosen.notes, cost: 0 };
       }
 
       const byStart = new Map<number, number[]>();
@@ -49,25 +74,33 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
         const e = events[ei]!;
         if (e.kind !== 'note') continue;
         const n = e as NoteEvent;
-        const t = n.startBeat;
-        if (!byStart.has(t)) byStart.set(t, []);
-        byStart.get(t)!.push(ei);
+        const t0 = n.startBeat;
+        if (!byStart.has(t0)) byStart.set(t0, []);
+        byStart.get(t0)!.push(ei);
       }
       for (const indices of byStart.values()) {
         if (indices.length < 2) continue;
         const pitches = indices.map((i) => (events[i] as NoteEvent).pitch);
-        const lo = Math.min(...pitches);
-        const hi = Math.max(...pitches);
-        const spread = hi - lo;
-        if (spread >= minS) continue;
-        const cappedTarget = Math.min(lo + maxS, ceiling);
-        let newHi = Math.min(lo + minS, cappedTarget);
-        if (newHi <= hi) newHi = Math.min(hi + (minS - spread), cappedTarget);
-        if (newHi <= hi) continue;
-        const victimIdx = indices.find((i) => (events[i] as NoteEvent).pitch === hi);
-        if (victimIdx === undefined) continue;
-        const victim = events[victimIdx] as NoteEvent;
-        events[victimIdx] = { ...victim, pitch: newHi };
+        const sorted = [...pitches].sort((a, b) => a - b);
+        const widened = widenStack(sorted, minS, maxS);
+        const res = solveVoiceLeading(
+          [
+            { notes: sorted, cost: 0 },
+            { notes: widened, cost: 0 },
+          ],
+          prevVoicing,
+          vb
+        );
+        const out = res.chosen.notes;
+        const order = indices
+          .map((i) => ({ i, p: (events[i] as NoteEvent).pitch }))
+          .sort((a, b) => a.p - b.p);
+        for (let k = 0; k < order.length; k++) {
+          const i = order[k]!.i;
+          const src = events[i] as NoteEvent;
+          events[i] = { ...src, pitch: out[k] ?? src.pitch };
+        }
+        prevVoicing = { notes: out, cost: 0 };
       }
 
       measures[mi] = { ...m, events };
