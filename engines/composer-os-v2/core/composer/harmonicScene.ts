@@ -2,7 +2,7 @@
  * Phase 3a/3b — HarmonicScene session objects (tension + structural hints).
  */
 
-import type { ThemeGenome } from '../motif/themeGenome';
+import type { MotifCell2, ThemeGenome } from '../motif/themeGenome';
 import type { FormSection, HarmonicFormSectionRole } from './formController';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 
@@ -30,27 +30,62 @@ export function buildHarmonicSceneStubs(form: {
   }));
 }
 
-/** Schneider two-halves arc + Threadgill rotation slots; default stub otherwise. */
+/** Threadgill closed interval families (pitch-class interval classes). */
+const THREADGILL_IC_FAMILIES: readonly (readonly number[])[] = [
+  [1, 2, 3],
+  [5, 6, 7],
+  [8, 10],
+];
+
+function intervalClassesFromMotif(cell: MotifCell2): Set<number> {
+  return new Set(cell.intervals.map((x) => Math.abs(x) % 12));
+}
+
+function motifAllowedForThreadgillFamily(cell: MotifCell2, familyIdx: number): boolean {
+  const allowed = new Set(THREADGILL_IC_FAMILIES[familyIdx % THREADGILL_IC_FAMILIES.length]!);
+  const ics = intervalClassesFromMotif(cell);
+  if (ics.size === 0) return false;
+  for (const ic of ics) {
+    if (!allowed.has(ic)) return false;
+  }
+  return true;
+}
+
+/** Motifs whose interval classes lie entirely in the active Threadgill family slot (empty → full recall pool). */
+export function threadgillMotifIdsMatchingFamily(genome: ThemeGenome, familyIdx: number): string[] {
+  const ids: string[] = [];
+  for (const c of [genome.primaryCell, genome.secondaryCell, genome.bridgeCell, genome.cadentialTail]) {
+    if (c && motifAllowedForThreadgillFamily(c, familyIdx)) ids.push(c.id);
+  }
+  return ids;
+}
+
+/** Schneider two-halves arc + Threadgill rotation slots; default stub otherwise. Optional {@link ThemeGenome} fills activeMotifIds. */
 export function buildHarmonicScenesForVoiceBundle(
   form: { sections: Array<{ label: string; startBar: number; length: number }>; totalBars: number },
-  bundle: VoiceRuleBundle
+  bundle: VoiceRuleBundle,
+  genome?: ThemeGenome
 ): HarmonicScene[] {
   const tb = form.totalBars;
   if (bundle.voiceId === 'maria_schneider') {
     const half = Math.max(1, Math.floor(tb / 2));
+    const devIds =
+      genome != null ? activeMotifIdsForHarmonicRole('development', genome) : ([] as string[]);
+    const recapIds =
+      genome != null ? activeMotifIdsForHarmonicRole('solo-recapitulation', genome) : ([] as string[]);
     return [
       {
         sceneId: 'schneider_development_half',
         tensionLevel: 0.45,
         dominantVoicingColor: 'neutral',
-        activeMotifIds: [],
+        activeMotifIds: devIds,
         barRange: [1, half],
       },
       {
         sceneId: 'schneider_recapitulation_half',
         tensionLevel: 0.55,
         dominantVoicingColor: 'neutral',
-        activeMotifIds: [],
+        activeMotifIds: recapIds,
         barRange: [half + 1, tb],
       },
     ];
@@ -60,7 +95,8 @@ export function buildHarmonicScenesForVoiceBundle(
       sceneId: `threadgill_scene_${s.label.replace(/\s+/g, '_')}_${idx}`,
       tensionLevel: Math.min(1, 0.3 + idx * 0.07),
       dominantVoicingColor: 'neutral',
-      activeMotifIds: [],
+      activeMotifIds:
+        genome != null ? threadgillMotifIdsMatchingFamily(genome, idx % 3) : ([] as string[]),
       barRange: [s.startBar, s.startBar + s.length - 1],
       threadgillIntervalFamily: idx % 3,
     }));
@@ -153,11 +189,19 @@ function sceneTensionFromScheduled(scheduled: number[] | undefined, lo: number, 
 export function buildHarmonicScenesFromFormPlan(
   formSections: FormSection[],
   genome: ThemeGenome,
-  scheduledTensionByBar: number[] | undefined
+  scheduledTensionByBar: number[] | undefined,
+  bundle?: VoiceRuleBundle
 ): HarmonicScene[] {
-  return formSections.map((sec) => {
+  return formSections.map((sec, idx) => {
     const [lo, hi] = sec.barRange;
-    const activeMotifIds = activeMotifIdsForHarmonicRole(sec.role, genome);
+    let activeMotifIds = activeMotifIdsForHarmonicRole(sec.role, genome);
+    if (bundle?.voiceId === 'henry_threadgill') {
+      if (sec.role === 'shout-chorus' || sec.role === 'outro') {
+        activeMotifIds = activeMotifIdsForHarmonicRole(sec.role, genome);
+      } else {
+        activeMotifIds = threadgillMotifIdsMatchingFamily(genome, idx % 3);
+      }
+    }
     let tensionLevel: number;
     let dominantVoicingColor: string;
 
@@ -172,12 +216,16 @@ export function buildHarmonicScenesFromFormPlan(
       dominantVoicingColor = dominantVoicingColorForTensionLevel(tensionLevel);
     }
 
-    return {
+    const scene: HarmonicScene = {
       sceneId: sec.sceneId,
       tensionLevel,
       dominantVoicingColor,
       activeMotifIds,
       barRange: [lo, hi],
     };
+    if (bundle?.voiceId === 'henry_threadgill') {
+      scene.threadgillIntervalFamily = idx % 3;
+    }
+    return scene;
   });
 }

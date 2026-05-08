@@ -2338,7 +2338,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     harmonicScenesForMal = buildHarmonicScenesFromFormPlan(
       formSectionsForMal,
       themeGenome,
-      scheduledMal
+      scheduledMal,
+      voiceBundleForCompile
     );
   }
 

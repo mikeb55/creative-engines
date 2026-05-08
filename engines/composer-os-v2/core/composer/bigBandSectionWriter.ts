@@ -39,9 +39,20 @@ export interface ShoutChorusPlan {
   maxSpreadSemitones: number;
   /** All brass/rhythm voices share one rhythmic shell (TUTTI shout). */
   rhythmicUnison: true;
+  /** First bar of shout section (export / Mingus overlay anchor). */
+  triggerBar?: number;
+  shoutBarRange?: [number, number];
   /** Mingus only — bar ≥ gospel shout threshold: gospel grid + collective-improv overlay hint. */
   mingusGospelShoutInject?: boolean;
   mingusCollectiveImprovOverlay?: boolean;
+}
+
+/** Payload for injecting shout rhythmic-unison block into partwise MusicXML. */
+export interface ShoutChorusScore {
+  shoutBarRange: [number, number];
+  divisions: number;
+  rhythmCellId: string;
+  totalMeasures: number;
 }
 
 export interface TuttiPlan {
@@ -113,9 +124,29 @@ export function shoutChorusPlan(
     rhythmCellId,
     maxSpreadSemitones: shout ? maxSpread : bundle.voicingPolicy.maxSpreadSemitones,
     rhythmicUnison: true,
+    ...(shout && formSection
+      ? {
+          triggerBar: leadBar,
+          shoutBarRange: [formSection.barRange[0], formSection.barRange[1]] as [number, number],
+        }
+      : {}),
     ...(mingusInject
       ? { mingusGospelShoutInject: true as const, mingusCollectiveImprovOverlay: true as const }
       : {}),
+  };
+}
+
+/** Build metadata for shout-chorus MusicXML injection (full-score measure span). */
+export function buildShoutChorusSection(
+  context: { form: { totalBars: number } },
+  plan: ShoutChorusPlan
+): ShoutChorusScore | null {
+  if (plan.kind !== 'shout-chorus' || !plan.shoutBarRange) return null;
+  return {
+    shoutBarRange: plan.shoutBarRange,
+    divisions: 8,
+    rhythmCellId: plan.rhythmCellId,
+    totalMeasures: Math.max(1, context.form.totalBars),
   };
 }
 

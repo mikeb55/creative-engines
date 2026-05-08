@@ -23,7 +23,8 @@ export function attachFormPlanRhythmAndTension(context: CompositionContext, seed
     context.harmonicScenes = buildHarmonicScenesFromFormPlan(
       context.formSections,
       tg,
-      context.generationMetadata.scheduledTensionByBar
+      context.generationMetadata.scheduledTensionByBar,
+      vb
     );
   }
 

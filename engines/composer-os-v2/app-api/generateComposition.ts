@@ -30,6 +30,12 @@ import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildFormSections } from '../core/composer/formController';
 import { buildImprovSkeleton, pass2ImprovMutation } from '../core/composer/improvAgent';
 import { appendImprovPartToPartwiseXml } from '../core/composer/improvMusicXmlAppend';
+import {
+  appendMingusCollectiveImprovPart,
+  injectMingusGospelShoutOverlay,
+  mergeShoutChorusIntoPartwiseXml,
+} from '../core/composer/bigBandShoutMusicXml';
+import { buildShoutChorusSection, shoutChorusPlan } from '../core/composer/bigBandSectionWriter';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { validateMusicXml } from '../../../src/utils/musicXmlValidator';
 import { buildStringQuartetScoreFromContext } from '../core/composer/stringEnsemble';
@@ -381,6 +387,38 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         totalBars: tb,
         seed: effectiveSeed,
       });
+    }
+
+    if (req.presetId === 'big_band') {
+      const ctx = result.context;
+      const vb = ctx.voiceBundle;
+      const fs = ctx.formSections;
+      const shoutSec = fs?.find((s) => s.role === 'shout-chorus');
+      if (vb && shoutSec && xmlOut) {
+        const binding = ctx.generationMetadata.rhythmMotifBinding;
+        const plan = shoutChorusPlan(vb, binding, shoutSec, { sectionLeadBar: shoutSec.barRange[0] });
+        try {
+          const score = buildShoutChorusSection(ctx, plan);
+          if (score) {
+            xmlOut = mergeShoutChorusIntoPartwiseXml(xmlOut, score);
+          }
+          if (vb.voiceId === 'charles_mingus') {
+            if (plan.mingusGospelShoutInject && plan.triggerBar != null && plan.shoutBarRange) {
+              xmlOut = injectMingusGospelShoutOverlay(xmlOut, {
+                triggerBar: plan.triggerBar,
+                shoutHi: plan.shoutBarRange[1],
+              });
+              console.log(`[MingusOverlay] gospelShout injected at bar ${plan.triggerBar}`);
+            }
+            if (plan.mingusCollectiveImprovOverlay) {
+              xmlOut = appendMingusCollectiveImprovPart(xmlOut, ctx.form.totalBars);
+              console.log('[MingusOverlay] collectiveImprov part appended');
+            }
+          }
+        } catch (e) {
+          phase67MxErrors.push(`bigBand shout export: ${(e as Error)?.message ?? e}`);
+        }
+      }
     }
 
     const mxWriteGate = validateMusicXml(xmlOut);
