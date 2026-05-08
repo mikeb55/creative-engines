@@ -215,6 +215,8 @@ export interface GenerateRequest {
   songModeJamesBrownFunkOverlay?: boolean;
   /** Song Mode C5 blend strength; default medium in engine when omitted. */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Song Mode: duo conversational vs supportive posture (optional). */
+  duoIntent?: 'conversational' | 'supportive';
   /** Song Mode / Big Band / String Quartet: Slonimsky chromatic outside level. */
   chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Phase 19: explicit musical form selection. */

@@ -1296,6 +1296,7 @@ type GenResult = {
     styleProfile?: SongModeStyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
     blendStrength?: 'light' | 'medium' | 'strong';
+    duoIntent?: 'conversational' | 'supportive';
     leadSheetHarmonyDisplayMode?: HarmonyDisplayModeUi;
     leadSheetHarmonyDisplayModeEffective?: HarmonyDisplayModeUi;
     groove?: number;
@@ -1676,7 +1677,6 @@ export function HomeGenerate({
   const [songModeDuoPairingVariantByWriter, setSongModeDuoPairingVariantByWriter] = useState<
     Record<string, number>
   >({});
-  /** Song Mode duo intent — UI only until backend wiring. */
   const [duoIntent, setDuoIntent] = useState<'conversational' | 'supportive'>('conversational');
   /** ECM Chamber Song Mode — UI-only override label for sweep depth (no API wiring). */
   const [ecmFullSweepOverride, setEcmFullSweepOverride] = useState(false);
@@ -2492,6 +2492,7 @@ export function HomeGenerate({
                 ...(typeof __generateCorrelationId === 'string' ? { __generateCorrelationId } : {}),
                 /** Reinforces coreFields — visible in `[PAYLOAD]` and survives mapping edge cases. */
                 primarySongwriterStyle: songwriterStyle.trim(),
+                duoIntent,
                 styleProfile: liveSongModeStyleProfile,
                 leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi,
                 intent: {

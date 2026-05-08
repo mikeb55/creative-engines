@@ -1067,6 +1067,8 @@ export interface RunGoldenPathOptions {
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C5 blend strength (metadata → `generationMetadata.blendStrength`). */
   blendStrength?: 'light' | 'medium' | 'strong';
+  /** Song Mode: duo conversational vs supportive (metadata → `generationMetadata.duoIntent`). */
+  duoIntent?: 'conversational' | 'supportive';
   /** User Chromatic Strength — caps Slonimsky `allowedOutsideLevel` vs songwriter profile. */
   chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Feature flag: Motif Authority V1 (default off). */
@@ -1978,6 +1980,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     context.generationMetadata = {
       ...context.generationMetadata,
       blendStrength: options.blendStrength,
+    };
+  }
+  if (options?.duoIntent === 'conversational' || options?.duoIntent === 'supportive') {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoIntent: options.duoIntent,
     };
   }
   if (

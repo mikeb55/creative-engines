@@ -297,6 +297,8 @@ export function apiGenerate(
         body.blendStrength === 'strong'
           ? body.blendStrength
           : undefined,
+      duoIntent:
+        body.duoIntent === 'conversational' || body.duoIntent === 'supportive' ? body.duoIntent : undefined,
       chromaticStrength:
         body.chromaticStrength === 'off' ||
         body.chromaticStrength === 'subtle' ||

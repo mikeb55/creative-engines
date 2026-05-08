@@ -182,6 +182,8 @@ export interface GenerateResult {
     longFormEnabled?: boolean;
     styleProfile?: StyleProfile;
     c4Strength?: 'light' | 'medium' | 'strong';
+    /** Song Mode: duo intent echo when client sends it. */
+    duoIntent?: 'conversational' | 'supportive';
     /** Echo when client sends Slonimsky Chromatic Strength (Song Mode / ensemble). */
     chromaticStrength?: 'off' | 'subtle' | 'prominent';
     importHarmonyMode?: ImportHarmonyMode;

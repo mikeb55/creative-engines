@@ -186,6 +186,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     longFormEnabled: req.longFormEnabled,
     styleProfile: req.styleProfile,
     c4Strength: req.c4Strength,
+    ...(req.duoIntent === 'conversational' || req.duoIntent === 'supportive'
+      ? { duoIntent: req.duoIntent }
+      : {}),
     ...(req.chromaticStrength === 'off' ||
     req.chromaticStrength === 'subtle' ||
     req.chromaticStrength === 'prominent'
@@ -1002,6 +1005,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     c4Strength: req.c4Strength,
     songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
     blendStrength: req.blendStrength ?? 'medium',
+    ...(req.duoIntent === 'conversational' || req.duoIntent === 'supportive'
+      ? { duoIntent: req.duoIntent }
+      : {}),
     ...(req.chromaticStrength === 'off' ||
     req.chromaticStrength === 'subtle' ||
     req.chromaticStrength === 'prominent'

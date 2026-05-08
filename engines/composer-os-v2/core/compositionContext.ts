@@ -185,6 +185,8 @@ export interface GenerationMetadata {
   userExplicitPrimaryStyle?: boolean;
   /** Guitar–Bass Duo family: receipt line for distinct playback modes (e.g. single-line duo). */
   duoModeReceiptLabel?: string;
+  /** Song Mode / duo: conversational vs supportive (optional; omitted = no intent bias). */
+  duoIntent?: 'conversational' | 'supportive';
   /** Phase 18.2B.1 — Voice-2 polyphony snapshot after inject + stabilise (guitar_bass_duo polyphony path). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /**
