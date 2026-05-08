@@ -1,0 +1,135 @@
+/**
+ * Harmony spine — thin facade over {@link getChordForBar} with provenance hints.
+ * Symbol string always matches `getChordForBar` (VoiceRuleBundle harmonic rhythm + scene bias included).
+ *
+ * Provenance classification mirrors the **slice / locked / builtin** order in
+ * `harmonyResolution.ts` (`resolveChordSymbolAuthoritativeForBar`) — keep lists aligned on edits.
+ */
+
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { getChordForBar } from './harmonyResolution';
+
+export type HarmonySpineProvenance = 'builtin' | 'slice' | 'locked' | 'vault';
+
+export type ResolvedHarmonyBar = {
+  symbol: string;
+  provenance: HarmonySpineProvenance;
+  sliceId?: string;
+};
+
+/** Future adapters (per-slice spine hooks) conform to this surface. */
+export type HarmonySpineProvider = {
+  resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar;
+};
+
+/**
+ * Ordered slice/effective-bar pairs — **must** stay aligned with
+ * `resolveChordSymbolAuthoritativeForBar` branch order (single source of behavioural truth is there).
+ */
+const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
+  match: (meta: GenerationMetadata | undefined, context: CompositionContext) => boolean;
+  effKey: keyof GenerationMetadata;
+  sliceId: string;
+}> = [
+  { match: (m) => m?.songwriterStyleId === 'brian_wilson', effKey: 'brianWilsonEffectiveHarmonyBars', sliceId: 'brian_wilson' },
+  { match: (m) => m?.songwriterStyleId === 'stevie_wonder', effKey: 'stevieWonderEffectiveHarmonyBars', sliceId: 'stevie_wonder' },
+  { match: (m) => m?.songwriterStyleId === 'radiohead', effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
+  { match: (m) => m?.songwriterStyleId === 'james_brown', effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
+  {
+    match: (m) => m?.songwriterStyleId === 'joni_mitchell' || m?.styleProfile === 'STYLE_JONI_MITCHELL',
+    effKey: 'joniMitchellEffectiveHarmonyBars',
+    sliceId: 'joni_mitchell',
+  },
+  {
+    match: (m) => m?.songwriterStyleId === 'sonic_youth' || m?.styleProfile === 'STYLE_SONIC_YOUTH',
+    effKey: 'sonicYouthEffectiveHarmonyBars',
+    sliceId: 'sonic_youth',
+  },
+  {
+    match: (m) => m?.songwriterStyleId === 'pat_metheny' || m?.styleProfile === 'STYLE_PAT_METHENY',
+    effKey: 'patMethenyEffectiveHarmonyBars',
+    sliceId: 'pat_metheny',
+  },
+  { match: (m) => m?.songwriterStyleId === 'wayne_shorter', effKey: 'wayneShorterEffectiveHarmonyBars', sliceId: 'wayne_shorter' },
+  { match: (m) => m?.songwriterStyleId === 'barry_harris', effKey: 'barryHarrisEffectiveHarmonyBars', sliceId: 'barry_harris' },
+  { match: (m) => m?.songwriterStyleId === 'bill_evans', effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
+  { match: (m) => m?.songwriterStyleId === 'debussy', effKey: 'debussyEffectiveHarmonyBars', sliceId: 'debussy' },
+  { match: (m) => m?.songwriterStyleId === 'bernard_herrmann', effKey: 'bernardHerrmannEffectiveHarmonyBars', sliceId: 'bernard_herrmann' },
+  { match: (m) => m?.songwriterStyleId === 'john_williams', effKey: 'johnWilliamsEffectiveHarmonyBars', sliceId: 'john_williams' },
+  { match: (m) => m?.songwriterStyleId === 'ennio_morricone', effKey: 'ennioMorriconeEffectiveHarmonyBars', sliceId: 'ennio_morricone' },
+  { match: (m) => m?.songwriterStyleId === 'nino_rota', effKey: 'ninoRotaEffectiveHarmonyBars', sliceId: 'nino_rota' },
+  { match: (m) => m?.songwriterStyleId === 'jerry_goldsmith', effKey: 'jerryGoldsmithEffectiveHarmonyBars', sliceId: 'jerry_goldsmith' },
+  { match: (m) => m?.songwriterStyleId === 'philip_glass', effKey: 'philipGlassEffectiveHarmonyBars', sliceId: 'philip_glass' },
+  { match: (m) => m?.songwriterStyleId === 'hans_zimmer', effKey: 'hansZimmerEffectiveHarmonyBars', sliceId: 'hans_zimmer' },
+  { match: (m) => m?.songwriterStyleId === 'angelo_badalamenti', effKey: 'angeloBadalamentiEffectiveHarmonyBars', sliceId: 'angelo_badalamenti' },
+  { match: (m) => m?.songwriterStyleId === 'duke_ellington', effKey: 'dukeEllingtonEffectiveHarmonyBars', sliceId: 'duke_ellington' },
+  { match: (m) => m?.songwriterStyleId === 'miles_davis', effKey: 'milesDavisEffectiveHarmonyBars', sliceId: 'miles_davis' },
+  { match: (m) => m?.songwriterStyleId === 'bartok', effKey: 'bartokEffectiveHarmonyBars', sliceId: 'bartok' },
+  { match: (m) => m?.songwriterStyleId === 'gershwin', effKey: 'gershwinEffectiveHarmonyBars', sliceId: 'gershwin' },
+  { match: (m) => m?.songwriterStyleId === 'arvo_part', effKey: 'arvoPartEffectiveHarmonyBars', sliceId: 'arvo_part' },
+  { match: (m) => m?.songwriterStyleId === 'satie', effKey: 'satieEffectiveHarmonyBars', sliceId: 'satie' },
+  { match: (m) => m?.songwriterStyleId === 'prince', effKey: 'princeEffectiveHarmonyBars', sliceId: 'prince' },
+  { match: (m) => m?.songwriterStyleId === 'beatles', effKey: 'beatlesEffectiveHarmonyBars', sliceId: 'beatles' },
+  { match: (m) => m?.songwriterStyleId === 'fela_kuti', effKey: 'felaKutiEffectiveHarmonyBars', sliceId: 'fela_kuti' },
+  { match: (m) => m?.songwriterStyleId === 'cole_porter', effKey: 'colePorterEffectiveHarmonyBars', sliceId: 'cole_porter' },
+  { match: (m) => m?.songwriterStyleId === 'maria_schneider', effKey: 'mariaSchneiderEffectiveHarmonyBars', sliceId: 'maria_schneider' },
+  { match: (m) => m?.songwriterStyleId === 'bacharach', effKey: 'bacharachEffectiveHarmonyBars', sliceId: 'bacharach' },
+  { match: (m) => m?.songwriterStyleId === 'donald_fagen', effKey: 'donaldFagenEffectiveHarmonyBars', sliceId: 'donald_fagen' },
+  { match: (m) => m?.songwriterStyleId === 'ecm_chamber', effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
+  { match: (m) => m?.songwriterStyleId === 'antonio_carlos_jobim', effKey: 'jobimEffectiveHarmonyBars', sliceId: 'antonio_carlos_jobim' },
+  { match: (m) => m?.songwriterStyleId === 'herbie_hancock', effKey: 'herbieHancockEffectiveHarmonyBars', sliceId: 'herbie_hancock' },
+  { match: (m) => m?.songwriterStyleId === 'stephen_sondheim', effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },
+  { match: (m) => m?.songwriterStyleId === 'kate_bush', effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },
+  { match: (m) => m?.songwriterStyleId === 'thelonious_monk', effKey: 'theloniousMonkEffectiveHarmonyBars', sliceId: 'thelonious_monk' },
+  { match: (m) => m?.songwriterStyleId === 'andrew_hill', effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
+  { match: (m) => m?.songwriterStyleId === 'charlie_parker', effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
+  { match: (m) => m?.songwriterStyleId === 'frank_zappa', effKey: 'frankZappaEffectiveHarmonyBars', sliceId: 'frank_zappa' },
+];
+
+function classifyAuthoritativeLayer(
+  barIndex: number,
+  context: CompositionContext
+): Pick<ResolvedHarmonyBar, 'provenance' | 'sliceId'> {
+  const tb = context.form.totalBars;
+  const meta = context.generationMetadata;
+  const locked = context.lockedHarmonyBarsRaw;
+  const parsed = meta?.parsedCustomProgressionBars;
+  const barOk = barIndex >= 1 && barIndex <= tb;
+
+  const hc = context.harmonyContext;
+  if (hc && hc.bars.length === tb && barOk) {
+    return { provenance: 'slice', sliceId: hc.styleId };
+  }
+
+  for (const row of SLICE_AUTHORITY_ROWS) {
+    if (!row.match(meta, context)) continue;
+    const arr = meta?.[row.effKey] as string[] | undefined;
+    if (Array.isArray(arr) && arr.length === tb && barOk) {
+      return { provenance: 'slice', sliceId: row.sliceId };
+    }
+  }
+
+  if (locked && locked.length === tb && barOk) {
+    return { provenance: 'locked' };
+  }
+  if (parsed && parsed.length === tb && meta?.harmonySource === 'custom' && barOk) {
+    return { provenance: 'locked' };
+  }
+  if (locked && barIndex >= 1 && barIndex <= locked.length) {
+    return { provenance: 'locked' };
+  }
+  return { provenance: 'builtin' };
+}
+
+/**
+ * Delegates symbol resolution to {@link getChordForBar} (zero behavioural drift vs legacy call sites).
+ */
+export function resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar {
+  const symbol = getChordForBar(bar, context);
+  const layer = classifyAuthoritativeLayer(bar, context);
+  return {
+    symbol,
+    provenance: layer.provenance,
+    sliceId: layer.sliceId,
+  };
+}
