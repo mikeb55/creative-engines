@@ -53,6 +53,10 @@ export interface ShoutChorusScore {
   divisions: number;
   rhythmCellId: string;
   totalMeasures: number;
+  /** Shout section harmonic tension (export receipts). */
+  tensionLevel?: number;
+  /** Voicing colour label when tension maps to altered peak. */
+  dominantVoicingColor?: string;
 }
 
 export interface TuttiPlan {
@@ -147,6 +151,8 @@ export function buildShoutChorusSection(
     divisions: 8,
     rhythmCellId: plan.rhythmCellId,
     totalMeasures: Math.max(1, context.form.totalBars),
+    tensionLevel: 0.95,
+    dominantVoicingColor: 'tritone-sus',
   };
 }
 

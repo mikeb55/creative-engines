@@ -32,8 +32,8 @@ import { buildImprovSkeleton, pass2ImprovMutation } from '../core/composer/impro
 import { appendImprovPartToPartwiseXml } from '../core/composer/improvMusicXmlAppend';
 import {
   appendMingusCollectiveImprovPart,
-  injectMingusGospelShoutOverlay,
-  mergeShoutChorusIntoPartwiseXml,
+  applyMingusGospelShoutInPlace,
+  mergeShoutChorusIntoExistingParts,
 } from '../core/composer/bigBandShoutMusicXml';
 import { buildShoutChorusSection, shoutChorusPlan } from '../core/composer/bigBandSectionWriter';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
@@ -400,15 +400,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         try {
           const score = buildShoutChorusSection(ctx, plan);
           if (score) {
-            xmlOut = mergeShoutChorusIntoPartwiseXml(xmlOut, score);
+            xmlOut = mergeShoutChorusIntoExistingParts(xmlOut, score, vb);
           }
           if (vb.voiceId === 'charles_mingus') {
-            if (plan.mingusGospelShoutInject && plan.triggerBar != null && plan.shoutBarRange) {
-              xmlOut = injectMingusGospelShoutOverlay(xmlOut, {
-                triggerBar: plan.triggerBar,
+            if (plan.mingusGospelShoutInject && plan.shoutBarRange) {
+              xmlOut = applyMingusGospelShoutInPlace(xmlOut, {
+                shoutLo: plan.shoutBarRange[0],
                 shoutHi: plan.shoutBarRange[1],
-              });
-              console.log(`[MingusOverlay] gospelShout injected at bar ${plan.triggerBar}`);
+              }, vb);
+              console.log(`[MingusOverlay] gospelShout injected at bar ${plan.shoutBarRange[0]}`);
             }
             if (plan.mingusCollectiveImprovOverlay) {
               xmlOut = appendMingusCollectiveImprovPart(xmlOut, ctx.form.totalBars);
