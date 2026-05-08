@@ -1,9 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CompositionContext } from '@composer-os/core/compositionContext';
 import { parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
 import { buildReharmPreviewContextFromBars } from '../utils/buildReharmPreviewContext';
-import { executeReharm } from '@composer-os/core/harmony/reharmController';
+import { applyReharmAlternative, executeReharm } from '@composer-os/core/harmony/reharmController';
 import { buildReharmLensConfig } from '@composer-os/core/harmony/reharmLensConfig';
-import type { ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
+import type { AlternativeProgression, ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
+
+function useApplyReharm(
+  context: CompositionContext | null,
+  range: { startBar: number; endBar: number } | null,
+  onApplyBars?: (bars: string[]) => void
+) {
+  return useCallback(
+    (alt: AlternativeProgression) => {
+      if (!context || !range || !onApplyBars) return;
+      const bars = applyReharmAlternative(
+        alt,
+        Math.min(range.startBar, range.endBar),
+        Math.max(range.startBar, range.endBar),
+        context
+      );
+      onApplyBars(bars);
+    },
+    [context, range, onApplyBars]
+  );
+}
 
 const ROOT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
@@ -32,9 +53,17 @@ export type ReharmPanelProps = {
   songFormBars: number;
   baseSeed: number;
   songwriterStyleId: string;
+  /** Persists full progression after apply (preview-only context splice). */
+  onApplyBars?: (bars: string[]) => void;
 };
 
-export function ReharmPanel({ chordProgressionText, songFormBars, baseSeed, songwriterStyleId }: ReharmPanelProps) {
+export function ReharmPanel({
+  chordProgressionText,
+  songFormBars,
+  baseSeed,
+  songwriterStyleId,
+  onApplyBars,
+}: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
   const [endBar, setEndBar] = useState(() => Math.min(8, Math.max(1, songFormBars)));
   const [selectedLens, setSelectedLens] = useState<Set<string>>(new Set());
@@ -110,6 +139,9 @@ export function ReharmPanel({ chordProgressionText, songFormBars, baseSeed, song
   }
 
   const parseIssue = !parsed.ok ? parsed.error : null;
+
+  const applyRange = result ? { startBar: result.startBar, endBar: result.endBar } : null;
+  const handleApplyAlternative = useApplyReharm(previewContext, applyRange, onApplyBars);
 
   return (
     <div style={{ marginTop: '0.85rem' }}>
@@ -270,6 +302,15 @@ export function ReharmPanel({ chordProgressionText, songFormBars, baseSeed, song
                   <strong style={{ color: 'var(--text)' }}>
                     {alt.gceScore !== undefined ? alt.gceScore.toFixed(1) : '—'}
                   </strong>
+                </div>
+                <div style={{ marginBottom: '0.45rem' }}>
+                  <button
+                    type="button"
+                    disabled={!result || !previewContext || !onApplyBars}
+                    onClick={() => handleApplyAlternative(alt)}
+                  >
+                    Apply
+                  </button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                   <thead>

@@ -7241,6 +7241,11 @@ export function HomeGenerate({
           songFormBars={songFormBars}
           baseSeed={baseSeed}
           songwriterStyleId={songwriterStyle}
+          onApplyBars={(bars) => {
+            // TODO: LOCK reconciliation needed — slice-effective harmony metadata vs pasted wire (`customLockedHarmonyRouting`).
+            setChordProgressionText(bars.join(' | '));
+            void generate();
+          }}
         />
       </details>
 

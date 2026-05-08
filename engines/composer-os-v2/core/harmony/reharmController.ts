@@ -1,3 +1,4 @@
+import type { CompositionContext } from '../compositionContext';
 import {
   generateReharmCandidates,
   scoreReharmCandidate,
@@ -10,6 +11,54 @@ import type {
   ReharmResult,
   ReharmSequenceRequest,
 } from './reharmSequenceTypes';
+
+const ROOT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
+
+function formatAppliedChordSymbol(rootPc: number, vaultChordTypeId: string): string {
+  const r = ROOT_NAMES[((rootPc % 12) + 12) % 12]!;
+  return `${r}${vaultChordTypeId}`;
+}
+
+/**
+ * Splices substitute symbols from one {@link AlternativeProgression} into the progression backing the context.
+ * Caller persists returned array to UI / request (`parsedCustomProgressionBars` / `lockedHarmonyBarsRaw`).
+ */
+export function applyReharmAlternative(
+  alternative: AlternativeProgression,
+  startBar: number,
+  endBar: number,
+  context: CompositionContext
+): string[] {
+  const tb = context.form.totalBars;
+  const md = context.generationMetadata;
+  const src =
+    md.parsedCustomProgressionBars && md.parsedCustomProgressionBars.length === tb
+      ? md.parsedCustomProgressionBars
+      : context.lockedHarmonyBarsRaw && context.lockedHarmonyBarsRaw.length === tb
+        ? context.lockedHarmonyBarsRaw
+        : null;
+  if (!src) {
+    throw new Error(
+      `applyReharmAlternative: need parsedCustomProgressionBars or lockedHarmonyBarsRaw length ${tb}`
+    );
+  }
+  const next = [...src];
+  const sb = Math.min(startBar, endBar);
+  const eb = Math.max(startBar, endBar);
+
+  for (const row of alternative.bars) {
+    if (row.barIndex < sb || row.barIndex > eb) continue;
+    const i = row.barIndex - 1;
+    if (i < 0 || i >= next.length) continue;
+    if (row.mappingNull || row.strategy === 'passthrough') continue;
+    if (row.strategy === 'identity') {
+      next[i] = row.originalSymbol;
+      continue;
+    }
+    next[i] = formatAppliedChordSymbol(row.substituteRootPc, row.substituteChordTypeId);
+  }
+  return next;
+}
 
 /** Matches {@link goldenPath/guitarBassDuoHarmony.seededUnit} — deterministic [0,1). */
 function seededUnit(seed: number, bar: number, salt = 0): number {
