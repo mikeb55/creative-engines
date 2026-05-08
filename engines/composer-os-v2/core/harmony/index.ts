@@ -8,3 +8,5 @@ export * from './layerStateMachine';
 export * from './liquidHarmonyPlanner';
 export * from './reharmCandidateEngine';
 export * from './vaultChordRuleSet';
+export * from './harmonyRangeResolver';
+export * from './reharmLensConfig';
