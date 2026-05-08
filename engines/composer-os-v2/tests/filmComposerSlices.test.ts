@@ -1,0 +1,131 @@
+/**
+ * Film soundtrack Song Mode slices — locked harmony + device receipts (not in smoke suite).
+ */
+
+import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+
+const BASE = {
+  presetId: 'guitar_bass_duo',
+  totalBars: 32,
+  longFormEnabled: true,
+  songModeHookFirstIdentity: true,
+} as const;
+
+const SEED = 1;
+
+function testBernardHerrmannEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'bernard_herrmann' });
+  const eff = r.context?.generationMetadata?.bernardHerrmannEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testBernardHerrmannReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'bernard_herrmann' });
+  const rec = r.context?.generationMetadata?.bernardHerrmannDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('bh:'));
+}
+
+function testJohnWilliamsEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'john_williams' });
+  const eff = r.context?.generationMetadata?.johnWilliamsEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testJohnWilliamsReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'john_williams' });
+  const rec = r.context?.generationMetadata?.johnWilliamsDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('jw:'));
+}
+
+function testEnnioMorriconeEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'ennio_morricone' });
+  const eff = r.context?.generationMetadata?.ennioMorriconeEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testEnnioMorriconeReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'ennio_morricone' });
+  const rec = r.context?.generationMetadata?.ennioMorriconeDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('em:'));
+}
+
+function testNinoRotaEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'nino_rota' });
+  const eff = r.context?.generationMetadata?.ninoRotaEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testNinoRotaReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'nino_rota' });
+  const rec = r.context?.generationMetadata?.ninoRotaDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('nr:'));
+}
+
+function testJerryGoldsmithEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'jerry_goldsmith' });
+  const eff = r.context?.generationMetadata?.jerryGoldsmithEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testJerryGoldsmithReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'jerry_goldsmith' });
+  const rec = r.context?.generationMetadata?.jerryGoldsmithDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('jg:'));
+}
+
+function testPhilipGlassEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'philip_glass' });
+  const eff = r.context?.generationMetadata?.philipGlassEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testPhilipGlassReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'philip_glass' });
+  const rec = r.context?.generationMetadata?.philipGlassDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('pg:'));
+}
+
+function testHansZimmerEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'hans_zimmer' });
+  const eff = r.context?.generationMetadata?.hansZimmerEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testHansZimmerReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'hans_zimmer' });
+  const rec = r.context?.generationMetadata?.hansZimmerDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('hz:'));
+}
+
+function testAngeloBadalamentiEffectiveBarsLength(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'angelo_badalamenti' });
+  const eff = r.context?.generationMetadata?.angeloBadalamentiEffectiveHarmonyBars;
+  return r.success && Array.isArray(eff) && eff.length === 32;
+}
+
+function testAngeloBadalamentiReceiptPrefix(): boolean {
+  const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'angelo_badalamenti' });
+  const rec = r.context?.generationMetadata?.angeloBadalamentiDeviceReceipts ?? [];
+  return rec.some((x) => String(x).startsWith('ab:'));
+}
+
+export function runFilmComposerSlicesTests(): { name: string; ok: boolean }[] {
+  return [
+    ['Film slice — Bernard Herrmann effective bars length 32', testBernardHerrmannEffectiveBarsLength],
+    ['Film slice — Bernard Herrmann bh: device receipts', testBernardHerrmannReceiptPrefix],
+    ['Film slice — John Williams effective bars length 32', testJohnWilliamsEffectiveBarsLength],
+    ['Film slice — John Williams jw: device receipts', testJohnWilliamsReceiptPrefix],
+    ['Film slice — Ennio Morricone effective bars length 32', testEnnioMorriconeEffectiveBarsLength],
+    ['Film slice — Ennio Morricone em: device receipts', testEnnioMorriconeReceiptPrefix],
+    ['Film slice — Nino Rota effective bars length 32', testNinoRotaEffectiveBarsLength],
+    ['Film slice — Nino Rota nr: device receipts', testNinoRotaReceiptPrefix],
+    ['Film slice — Jerry Goldsmith effective bars length 32', testJerryGoldsmithEffectiveBarsLength],
+    ['Film slice — Jerry Goldsmith jg: device receipts', testJerryGoldsmithReceiptPrefix],
+    ['Film slice — Philip Glass effective bars length 32', testPhilipGlassEffectiveBarsLength],
+    ['Film slice — Philip Glass pg: device receipts', testPhilipGlassReceiptPrefix],
+    ['Film slice — Hans Zimmer effective bars length 32', testHansZimmerEffectiveBarsLength],
+    ['Film slice — Hans Zimmer hz: device receipts', testHansZimmerReceiptPrefix],
+    ['Film slice — Angelo Badalamenti effective bars length 32', testAngeloBadalamentiEffectiveBarsLength],
+    ['Film slice — Angelo Badalamenti ab: device receipts', testAngeloBadalamentiReceiptPrefix],
+  ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
+}

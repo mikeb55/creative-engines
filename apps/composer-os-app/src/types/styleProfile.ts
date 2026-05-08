@@ -20,10 +20,15 @@ export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu';
 /** Curated harmonic voice labels — mirror HomeGenerate `SONGWRITER_OPTIONS`. */
 export const HARMONIC_VOICE_LABELS: Pick<
   Record<HarmonicVoiceId, string>,
-  | 'morricone'
-  | 'herrmann'
+  | 'ennio_morricone'
+  | 'bernard_herrmann'
+  | 'john_williams'
+  | 'nino_rota'
+  | 'jerry_goldsmith'
+  | 'philip_glass'
+  | 'hans_zimmer'
+  | 'angelo_badalamenti'
   | 'quincy_jones_film'
-  | 'badalamenti'
   | 'john_coltrane'
   | 'gil_evans'
   | 'maria_schneider'
@@ -32,10 +37,15 @@ export const HARMONIC_VOICE_LABELS: Pick<
   | 'charles_mingus'
   | 'pat_metheny'
 > = {
-  morricone: 'Ennio Morricone',
-  herrmann: 'Bernard Herrmann',
+  ennio_morricone: 'Ennio Morricone',
+  bernard_herrmann: 'Bernard Herrmann',
+  john_williams: 'John Williams',
+  nino_rota: 'Nino Rota',
+  jerry_goldsmith: 'Jerry Goldsmith',
+  philip_glass: 'Philip Glass',
+  hans_zimmer: 'Hans Zimmer',
+  angelo_badalamenti: 'Angelo Badalamenti',
   quincy_jones_film: 'Quincy Jones',
-  badalamenti: 'Angelo Badalamenti',
   john_coltrane: 'John Coltrane',
   gil_evans: 'Gil Evans',
   maria_schneider: 'Maria Schneider',

@@ -192,13 +192,13 @@ export const WAYNE_SHORTER_HARMONIC_STYLE_KEYS: readonly string[] = [
 /** Extra harmonic tags for Style Panel voices (empty when none). */
 export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId): string[] {
   switch (voiceId) {
-    case 'morricone':
+    case 'ennio_morricone':
       return [...MORRICONE_HARMONIC_STYLE_KEYS];
-    case 'herrmann':
+    case 'bernard_herrmann':
       return [...HERRMANN_HARMONIC_STYLE_KEYS];
     case 'quincy_jones_film':
       return [...QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS];
-    case 'badalamenti':
+    case 'angelo_badalamenti':
       return [...BADALAMENTI_HARMONIC_STYLE_KEYS];
     case 'john_coltrane':
       return [...JOHN_COLTRANE_HARMONIC_STYLE_KEYS];

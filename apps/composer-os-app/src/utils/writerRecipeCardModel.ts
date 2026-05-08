@@ -94,9 +94,14 @@ const INDIE_ALT = new Set<string>([
 const SINGER_SONGWRITER = new Set<string>(['joni_mitchell', 'bob_dylan', 'kate_bush', 'richard_thompson']);
 
 const FILM_SCORING = new Set<string>([
-  'badalamenti',
-  'herrmann',
-  'morricone',
+  'angelo_badalamenti',
+  'bernard_herrmann',
+  'ennio_morricone',
+  'hans_zimmer',
+  'jerry_goldsmith',
+  'john_williams',
+  'nino_rota',
+  'philip_glass',
   'quincy_jones_film',
 ]);
 

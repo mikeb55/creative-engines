@@ -175,6 +175,46 @@ export function writeOutputManifest(
     debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
     debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
     debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
+    bernardHerrmannContext?: GenerationMetadata['bernardHerrmannContext'];
+    bernardHerrmannDiagnostics?: GenerationMetadata['bernardHerrmannDiagnostics'];
+    bernardHerrmannDeviceReceipts?: GenerationMetadata['bernardHerrmannDeviceReceipts'];
+    bernardHerrmannSliceReceipt?: GenerationMetadata['bernardHerrmannSliceReceipt'];
+    bernardHerrmannEffectiveHarmonyBars?: GenerationMetadata['bernardHerrmannEffectiveHarmonyBars'];
+    johnWilliamsContext?: GenerationMetadata['johnWilliamsContext'];
+    johnWilliamsDiagnostics?: GenerationMetadata['johnWilliamsDiagnostics'];
+    johnWilliamsDeviceReceipts?: GenerationMetadata['johnWilliamsDeviceReceipts'];
+    johnWilliamsSliceReceipt?: GenerationMetadata['johnWilliamsSliceReceipt'];
+    johnWilliamsEffectiveHarmonyBars?: GenerationMetadata['johnWilliamsEffectiveHarmonyBars'];
+    ennioMorriconeContext?: GenerationMetadata['ennioMorriconeContext'];
+    ennioMorriconeDiagnostics?: GenerationMetadata['ennioMorriconeDiagnostics'];
+    ennioMorriconeDeviceReceipts?: GenerationMetadata['ennioMorriconeDeviceReceipts'];
+    ennioMorriconeSliceReceipt?: GenerationMetadata['ennioMorriconeSliceReceipt'];
+    ennioMorriconeEffectiveHarmonyBars?: GenerationMetadata['ennioMorriconeEffectiveHarmonyBars'];
+    ninoRotaContext?: GenerationMetadata['ninoRotaContext'];
+    ninoRotaDiagnostics?: GenerationMetadata['ninoRotaDiagnostics'];
+    ninoRotaDeviceReceipts?: GenerationMetadata['ninoRotaDeviceReceipts'];
+    ninoRotaSliceReceipt?: GenerationMetadata['ninoRotaSliceReceipt'];
+    ninoRotaEffectiveHarmonyBars?: GenerationMetadata['ninoRotaEffectiveHarmonyBars'];
+    jerryGoldsmithContext?: GenerationMetadata['jerryGoldsmithContext'];
+    jerryGoldsmithDiagnostics?: GenerationMetadata['jerryGoldsmithDiagnostics'];
+    jerryGoldsmithDeviceReceipts?: GenerationMetadata['jerryGoldsmithDeviceReceipts'];
+    jerryGoldsmithSliceReceipt?: GenerationMetadata['jerryGoldsmithSliceReceipt'];
+    jerryGoldsmithEffectiveHarmonyBars?: GenerationMetadata['jerryGoldsmithEffectiveHarmonyBars'];
+    philipGlassContext?: GenerationMetadata['philipGlassContext'];
+    philipGlassDiagnostics?: GenerationMetadata['philipGlassDiagnostics'];
+    philipGlassDeviceReceipts?: GenerationMetadata['philipGlassDeviceReceipts'];
+    philipGlassSliceReceipt?: GenerationMetadata['philipGlassSliceReceipt'];
+    philipGlassEffectiveHarmonyBars?: GenerationMetadata['philipGlassEffectiveHarmonyBars'];
+    hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
+    hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
+    hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];
+    hansZimmerSliceReceipt?: GenerationMetadata['hansZimmerSliceReceipt'];
+    hansZimmerEffectiveHarmonyBars?: GenerationMetadata['hansZimmerEffectiveHarmonyBars'];
+    angeloBadalamentiContext?: GenerationMetadata['angeloBadalamentiContext'];
+    angeloBadalamentiDiagnostics?: GenerationMetadata['angeloBadalamentiDiagnostics'];
+    angeloBadalamentiDeviceReceipts?: GenerationMetadata['angeloBadalamentiDeviceReceipts'];
+    angeloBadalamentiSliceReceipt?: GenerationMetadata['angeloBadalamentiSliceReceipt'];
+    angeloBadalamentiEffectiveHarmonyBars?: GenerationMetadata['angeloBadalamentiEffectiveHarmonyBars'];
     bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
     bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];
     bacharachSliceReceipt?: GenerationMetadata['bacharachSliceReceipt'];
@@ -360,6 +400,46 @@ export function writeOutputManifest(
     debussyAntiElaborationGuards: meta.debussyAntiElaborationGuards,
     debussyArabesqueBars: meta.debussyArabesqueBars,
     debussyArabesqueMotifByBar: meta.debussyArabesqueMotifByBar,
+    bernardHerrmannContext: meta.bernardHerrmannContext,
+    bernardHerrmannDiagnostics: meta.bernardHerrmannDiagnostics,
+    bernardHerrmannDeviceReceipts: meta.bernardHerrmannDeviceReceipts,
+    bernardHerrmannSliceReceipt: meta.bernardHerrmannSliceReceipt,
+    bernardHerrmannEffectiveHarmonyBars: meta.bernardHerrmannEffectiveHarmonyBars,
+    johnWilliamsContext: meta.johnWilliamsContext,
+    johnWilliamsDiagnostics: meta.johnWilliamsDiagnostics,
+    johnWilliamsDeviceReceipts: meta.johnWilliamsDeviceReceipts,
+    johnWilliamsSliceReceipt: meta.johnWilliamsSliceReceipt,
+    johnWilliamsEffectiveHarmonyBars: meta.johnWilliamsEffectiveHarmonyBars,
+    ennioMorriconeContext: meta.ennioMorriconeContext,
+    ennioMorriconeDiagnostics: meta.ennioMorriconeDiagnostics,
+    ennioMorriconeDeviceReceipts: meta.ennioMorriconeDeviceReceipts,
+    ennioMorriconeSliceReceipt: meta.ennioMorriconeSliceReceipt,
+    ennioMorriconeEffectiveHarmonyBars: meta.ennioMorriconeEffectiveHarmonyBars,
+    ninoRotaContext: meta.ninoRotaContext,
+    ninoRotaDiagnostics: meta.ninoRotaDiagnostics,
+    ninoRotaDeviceReceipts: meta.ninoRotaDeviceReceipts,
+    ninoRotaSliceReceipt: meta.ninoRotaSliceReceipt,
+    ninoRotaEffectiveHarmonyBars: meta.ninoRotaEffectiveHarmonyBars,
+    jerryGoldsmithContext: meta.jerryGoldsmithContext,
+    jerryGoldsmithDiagnostics: meta.jerryGoldsmithDiagnostics,
+    jerryGoldsmithDeviceReceipts: meta.jerryGoldsmithDeviceReceipts,
+    jerryGoldsmithSliceReceipt: meta.jerryGoldsmithSliceReceipt,
+    jerryGoldsmithEffectiveHarmonyBars: meta.jerryGoldsmithEffectiveHarmonyBars,
+    philipGlassContext: meta.philipGlassContext,
+    philipGlassDiagnostics: meta.philipGlassDiagnostics,
+    philipGlassDeviceReceipts: meta.philipGlassDeviceReceipts,
+    philipGlassSliceReceipt: meta.philipGlassSliceReceipt,
+    philipGlassEffectiveHarmonyBars: meta.philipGlassEffectiveHarmonyBars,
+    hansZimmerContext: meta.hansZimmerContext,
+    hansZimmerDiagnostics: meta.hansZimmerDiagnostics,
+    hansZimmerDeviceReceipts: meta.hansZimmerDeviceReceipts,
+    hansZimmerSliceReceipt: meta.hansZimmerSliceReceipt,
+    hansZimmerEffectiveHarmonyBars: meta.hansZimmerEffectiveHarmonyBars,
+    angeloBadalamentiContext: meta.angeloBadalamentiContext,
+    angeloBadalamentiDiagnostics: meta.angeloBadalamentiDiagnostics,
+    angeloBadalamentiDeviceReceipts: meta.angeloBadalamentiDeviceReceipts,
+    angeloBadalamentiSliceReceipt: meta.angeloBadalamentiSliceReceipt,
+    angeloBadalamentiEffectiveHarmonyBars: meta.angeloBadalamentiEffectiveHarmonyBars,
     bacharachDiagnostics: meta.bacharachDiagnostics,
     bacharachDeviceReceipts: meta.bacharachDeviceReceipts,
     bacharachSliceReceipt: meta.bacharachSliceReceipt,

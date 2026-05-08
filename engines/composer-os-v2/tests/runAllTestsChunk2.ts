@@ -27,6 +27,7 @@ import { runSongModeLeadSheetInputTests } from './songModeLeadSheetInput.test';
 import { runSongwritingResearchParsingTests } from './songwritingResearchParsing.test';
 import { runSongwriterRuleRegistryTests } from './songwriterRuleRegistry.test';
 import { runSongwriterStyleResolverTests } from './songwriterStyleResolver.test';
+import { runFilmComposerSlicesTests } from './filmComposerSlices.test';
 import { runAuthorOverlayResolverTests } from './authorOverlayResolver.test';
 import { runHookPlannerTests } from './hookPlanner.test';
 import { runSongModeBehaviourEncodingTests } from './songModeBehaviourEncoding.test';
@@ -66,6 +67,7 @@ const suites: SuiteEntry[] = [
   { name: 'Songwriting research parsing', run: runSongwritingResearchParsingTests },
   { name: 'Songwriter rule registry', run: runSongwriterRuleRegistryTests },
   { name: 'Songwriter style resolver', run: runSongwriterStyleResolverTests },
+  { name: 'Film soundtrack composer slices', run: runFilmComposerSlicesTests },
   { name: 'Author overlay resolver', run: runAuthorOverlayResolverTests },
   { name: 'Hook planner', run: runHookPlannerTests },
   { name: 'Lead melody planner', run: runLeadMelodyPlannerTests },

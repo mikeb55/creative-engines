@@ -4,15 +4,23 @@
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type {
+  AngeloBadalamentiContextMode,
   ArvoPartContextMode,
   BartokContextMode,
   BeatlesContextMode,
+  BernardHerrmannContextMode,
+  EnnioMorriconeContextMode,
   FelaKutiContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
   GershwinContextMode,
+  HansZimmerContextMode,
   ImportHarmonyMode,
+  JerryGoldsmithContextMode,
+  JohnWilliamsContextMode,
   MilesDavisContextMode,
+  NinoRotaContextMode,
+  PhilipGlassContextMode,
   PrinceContextMode,
 } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
@@ -28,6 +36,14 @@ export type { MilesDavisContextMode };
 export type { PrinceContextMode };
 export type { BeatlesContextMode };
 export type { FelaKutiContextMode };
+export type { BernardHerrmannContextMode };
+export type { JohnWilliamsContextMode };
+export type { EnnioMorriconeContextMode };
+export type { NinoRotaContextMode };
+export type { JerryGoldsmithContextMode };
+export type { PhilipGlassContextMode };
+export type { HansZimmerContextMode };
+export type { AngeloBadalamentiContextMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -257,6 +273,14 @@ export interface GenerateRequest {
    * Omitted → engine default **`modal_1959`** when primary songwriter is **`miles_davis`**.
    */
   milesDavisContext?: MilesDavisContextMode;
+  bernardHerrmannContext?: BernardHerrmannContextMode;
+  johnWilliamsContext?: JohnWilliamsContextMode;
+  ennioMorriconeContext?: EnnioMorriconeContextMode;
+  ninoRotaContext?: NinoRotaContextMode;
+  jerryGoldsmithContext?: JerryGoldsmithContextMode;
+  philipGlassContext?: PhilipGlassContextMode;
+  hansZimmerContext?: HansZimmerContextMode;
+  angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /**
    * Song Mode / Bartók: Mikrókosmos vs quartet vs orchestral strings posture (`bartokSlice.ts`).
    * Omitted → engine default **`mikrokosmos`** when primary songwriter is **`bartok`**.
@@ -506,6 +530,46 @@ export interface OutputEntry {
   debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
   debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
   debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
+  bernardHerrmannContext?: GenerationMetadata['bernardHerrmannContext'];
+  bernardHerrmannDiagnostics?: GenerationMetadata['bernardHerrmannDiagnostics'];
+  bernardHerrmannDeviceReceipts?: GenerationMetadata['bernardHerrmannDeviceReceipts'];
+  bernardHerrmannSliceReceipt?: GenerationMetadata['bernardHerrmannSliceReceipt'];
+  bernardHerrmannEffectiveHarmonyBars?: GenerationMetadata['bernardHerrmannEffectiveHarmonyBars'];
+  johnWilliamsContext?: GenerationMetadata['johnWilliamsContext'];
+  johnWilliamsDiagnostics?: GenerationMetadata['johnWilliamsDiagnostics'];
+  johnWilliamsDeviceReceipts?: GenerationMetadata['johnWilliamsDeviceReceipts'];
+  johnWilliamsSliceReceipt?: GenerationMetadata['johnWilliamsSliceReceipt'];
+  johnWilliamsEffectiveHarmonyBars?: GenerationMetadata['johnWilliamsEffectiveHarmonyBars'];
+  ennioMorriconeContext?: GenerationMetadata['ennioMorriconeContext'];
+  ennioMorriconeDiagnostics?: GenerationMetadata['ennioMorriconeDiagnostics'];
+  ennioMorriconeDeviceReceipts?: GenerationMetadata['ennioMorriconeDeviceReceipts'];
+  ennioMorriconeSliceReceipt?: GenerationMetadata['ennioMorriconeSliceReceipt'];
+  ennioMorriconeEffectiveHarmonyBars?: GenerationMetadata['ennioMorriconeEffectiveHarmonyBars'];
+  ninoRotaContext?: GenerationMetadata['ninoRotaContext'];
+  ninoRotaDiagnostics?: GenerationMetadata['ninoRotaDiagnostics'];
+  ninoRotaDeviceReceipts?: GenerationMetadata['ninoRotaDeviceReceipts'];
+  ninoRotaSliceReceipt?: GenerationMetadata['ninoRotaSliceReceipt'];
+  ninoRotaEffectiveHarmonyBars?: GenerationMetadata['ninoRotaEffectiveHarmonyBars'];
+  jerryGoldsmithContext?: GenerationMetadata['jerryGoldsmithContext'];
+  jerryGoldsmithDiagnostics?: GenerationMetadata['jerryGoldsmithDiagnostics'];
+  jerryGoldsmithDeviceReceipts?: GenerationMetadata['jerryGoldsmithDeviceReceipts'];
+  jerryGoldsmithSliceReceipt?: GenerationMetadata['jerryGoldsmithSliceReceipt'];
+  jerryGoldsmithEffectiveHarmonyBars?: GenerationMetadata['jerryGoldsmithEffectiveHarmonyBars'];
+  philipGlassContext?: GenerationMetadata['philipGlassContext'];
+  philipGlassDiagnostics?: GenerationMetadata['philipGlassDiagnostics'];
+  philipGlassDeviceReceipts?: GenerationMetadata['philipGlassDeviceReceipts'];
+  philipGlassSliceReceipt?: GenerationMetadata['philipGlassSliceReceipt'];
+  philipGlassEffectiveHarmonyBars?: GenerationMetadata['philipGlassEffectiveHarmonyBars'];
+  hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
+  hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
+  hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];
+  hansZimmerSliceReceipt?: GenerationMetadata['hansZimmerSliceReceipt'];
+  hansZimmerEffectiveHarmonyBars?: GenerationMetadata['hansZimmerEffectiveHarmonyBars'];
+  angeloBadalamentiContext?: GenerationMetadata['angeloBadalamentiContext'];
+  angeloBadalamentiDiagnostics?: GenerationMetadata['angeloBadalamentiDiagnostics'];
+  angeloBadalamentiDeviceReceipts?: GenerationMetadata['angeloBadalamentiDeviceReceipts'];
+  angeloBadalamentiSliceReceipt?: GenerationMetadata['angeloBadalamentiSliceReceipt'];
+  angeloBadalamentiEffectiveHarmonyBars?: GenerationMetadata['angeloBadalamentiEffectiveHarmonyBars'];
   /** Duke Ellington (orchestral harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   dukeEllingtonDiagnostics?: GenerationMetadata['dukeEllingtonDiagnostics'];
   dukeEllingtonDeviceReceipts?: GenerationMetadata['dukeEllingtonDeviceReceipts'];

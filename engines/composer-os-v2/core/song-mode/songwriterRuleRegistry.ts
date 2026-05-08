@@ -574,20 +574,45 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'chorus'
     ),
   ],
-  badalamenti: [
+  angelo_badalamenti: [
     R('bad.hypnotic_loop', 'Hypnotic modal loop / chromatic inner lines (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('bad.minor_major_colour', 'Minor–major 7 dream-jazz surfaces (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
     R('bad.noir_ballad_pocket', 'Cool jazz ballad pocket behind the beat (harmonic voice tags)', 'songwriter', 'rhythm', 7, 'global'),
   ],
-  herrmann: [
+  bernard_herrmann: [
     R('bh.cluster_strings', 'Parallel cluster string voicings (harmonic voice tags)', 'songwriter', 'harmony', 9, 'global'),
     R('bh.diminished_axis', 'Diminished / chromatic sequence vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 9, 'verse'),
     R('bh.motor_ostinato', 'Motor ostinato anxiety grid (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),
   ],
-  morricone: [
+  ennio_morricone: [
     R('mo.modal_epic', 'Modal pastoral / cadential avoidance (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('mo.parallel_planing', 'Parallel planing / open fifth pads (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
     R('mo.pedal_narrative', 'Pedal-tone narrative arcs (harmonic voice tags)', 'songwriter', 'form', 8, 'form'),
+  ],
+  john_williams: [
+    R('jw.heroic_brass', 'Triadic brass cadential vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('jw.lydian_colour', 'Lydian / modal brightening (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
+    R('jw.leitmotif_return', 'Leitmotif anchor returns (harmonic voice tags)', 'songwriter', 'form', 8, 'chorus'),
+  ],
+  nino_rota: [
+    R('nr.waltz_glue', 'Waltz harmonic framing (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('nr.carnival_band', 'Bright diatonic parallel motion (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
+    R('nr.cantilena', 'Melancholy cantilena minor colour (harmonic voice tags)', 'songwriter', 'melody', 8, 'global'),
+  ],
+  jerry_goldsmith: [
+    R('jg.polytonal_action', 'Polytonal action stacks (harmonic voice tags)', 'songwriter', 'harmony', 9, 'global'),
+    R('jg.quartal_suspense', 'Quartal / symmetric suspense (harmonic voice tags)', 'songwriter', 'harmony', 9, 'verse'),
+    R('jg.rhythm_ostinato', 'Mixed-meter ostinato drive (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  philip_glass: [
+    R('pg.additive_cell', 'Additive pattern extension (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('pg.pedal_field', 'Static pedal under shifting harmony (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
+    R('pg.modal_loop', 'Modal loop stasis (harmonic voice tags)', 'songwriter', 'form', 7, 'global'),
+  ],
+  hans_zimmer: [
+    R('hz.epic_ostinato', 'Low-register ostinato engine (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
+    R('hz.hybrid_stack', 'Layered orchestral pad vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'chorus'),
+    R('hz.mediant_drift', 'Mediantic lateral shifts (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
   ],
   quincy_jones_film: [
     R('qjf.film_groove', 'Film soundtrack groove-first jazz arranging (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),

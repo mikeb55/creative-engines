@@ -121,6 +121,14 @@ export function assertScoreMatchesLockedHarmonyWire(
   const tmEff = md?.theloniousMonkEffectiveHarmonyBars;
   const ahEff = md?.andrewHillEffectiveHarmonyBars;
   const cpEff = md?.charlieParkerEffectiveHarmonyBars;
+  const bhHerrEff = md?.bernardHerrmannEffectiveHarmonyBars;
+  const jwEff = md?.johnWilliamsEffectiveHarmonyBars;
+  const emEff = md?.ennioMorriconeEffectiveHarmonyBars;
+  const nrEff = md?.ninoRotaEffectiveHarmonyBars;
+  const jgEff = md?.jerryGoldsmithEffectiveHarmonyBars;
+  const pgEff = md?.philipGlassEffectiveHarmonyBars;
+  const hzEff = md?.hansZimmerEffectiveHarmonyBars;
+  const abEff = md?.angeloBadalamentiEffectiveHarmonyBars;
   const expectedWire =
     md?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEff) && bwEff.length === tb && bwEff.length === wire.length
       ? bwEff
@@ -269,11 +277,51 @@ export function assertScoreMatchesLockedHarmonyWire(
                                             ahEff.length === tb &&
                                             ahEff.length === wire.length
                                           ? ahEff
-                                          : md?.songwriterStyleId === 'charlie_parker' &&
+                                            : md?.songwriterStyleId === 'charlie_parker' &&
                                               Array.isArray(cpEff) &&
                                               cpEff.length === tb &&
                                               cpEff.length === wire.length
                                             ? cpEff
+                                            : md?.songwriterStyleId === 'bernard_herrmann' &&
+                                                Array.isArray(bhHerrEff) &&
+                                                bhHerrEff.length === tb &&
+                                                bhHerrEff.length === wire.length
+                                              ? bhHerrEff
+                                              : md?.songwriterStyleId === 'john_williams' &&
+                                                  Array.isArray(jwEff) &&
+                                                  jwEff.length === tb &&
+                                                  jwEff.length === wire.length
+                                                ? jwEff
+                                                : md?.songwriterStyleId === 'ennio_morricone' &&
+                                                    Array.isArray(emEff) &&
+                                                    emEff.length === tb &&
+                                                    emEff.length === wire.length
+                                                  ? emEff
+                                                  : md?.songwriterStyleId === 'nino_rota' &&
+                                                      Array.isArray(nrEff) &&
+                                                      nrEff.length === tb &&
+                                                      nrEff.length === wire.length
+                                                    ? nrEff
+                                                    : md?.songwriterStyleId === 'jerry_goldsmith' &&
+                                                        Array.isArray(jgEff) &&
+                                                        jgEff.length === tb &&
+                                                        jgEff.length === wire.length
+                                                      ? jgEff
+                                                      : md?.songwriterStyleId === 'philip_glass' &&
+                                                          Array.isArray(pgEff) &&
+                                                          pgEff.length === tb &&
+                                                          pgEff.length === wire.length
+                                                        ? pgEff
+                                                        : md?.songwriterStyleId === 'hans_zimmer' &&
+                                                            Array.isArray(hzEff) &&
+                                                            hzEff.length === tb &&
+                                                            hzEff.length === wire.length
+                                                          ? hzEff
+                                                          : md?.songwriterStyleId === 'angelo_badalamenti' &&
+                                                              Array.isArray(abEff) &&
+                                                              abEff.length === tb &&
+                                                              abEff.length === wire.length
+                                                            ? abEff
                                             : md?.songwriterStyleId === 'frank_zappa' &&
                                                 context?.harmonyContext &&
                                                 context.harmonyContext.bars.length === tb &&

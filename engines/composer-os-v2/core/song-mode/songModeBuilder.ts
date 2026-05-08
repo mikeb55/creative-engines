@@ -2018,6 +2018,294 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
     ],
   },
+  bernard_herrmann_thriller: {
+    verse: [
+      ['Cm', 'Db/C', 'Cm', 'Ab'],
+      ['Cm', 'Fm', 'Cm', 'Gm7b5'],
+    ],
+    chorus: [
+      ['Ebmaj7', 'Fm', 'Cm', 'Gm'],
+      ['Cm', 'Bb', 'Ab', 'Gm'],
+    ],
+    bridge: [['Abmaj7', 'G7', 'Cm', 'Fm']],
+    pre_chorus: [['Cm', 'Bb', 'Ab', 'G7']],
+  },
+  bernard_herrmann_romantic: {
+    verse: [
+      ['Cm(add2)', 'Abmaj7', 'Fm', 'Cm'],
+      ['Cm', 'Ebmaj7', 'Fm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Gm', 'Cm', 'Fm'],
+      ['Abmaj7', 'Ebmaj7', 'Cm', 'Gm'],
+    ],
+    bridge: [['Fm', 'Bb', 'Ebmaj7', 'Cm']],
+    pre_chorus: [['Cm', 'Ab', 'Eb', 'Cm']],
+  },
+  bernard_herrmann_minimal: {
+    verse: [
+      ['Cm', 'Cm', 'Cm', 'Cm'],
+      ['Cm', 'Cm', 'Ab', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Cm', 'Gm', 'Cm'],
+      ['Cm', 'Cm', 'Fm', 'Cm'],
+    ],
+    bridge: [['Cm', 'Cm', 'Cm', 'Cm']],
+    pre_chorus: [['Cm', 'Cm', 'Cm', 'Cm']],
+  },
+  john_williams_heroic: {
+    verse: [
+      ['C', 'F', 'Bb', 'C'],
+      ['Cmaj7', 'Gm', 'F', 'C'],
+    ],
+    chorus: [
+      ['C', 'Bb', 'F', 'C'],
+      ['Am', 'Dm', 'G', 'C'],
+    ],
+    bridge: [['Em', 'Am', 'Dm', 'G']],
+    pre_chorus: [['F', 'G', 'Em', 'Am']],
+  },
+  john_williams_magic: {
+    verse: [
+      ['Cmaj7(#11)', 'D/C', 'G/C', 'Cmaj7'],
+      ['Fmaj7(#11)', 'Cmaj7', 'Em7', 'Cmaj7'],
+    ],
+    chorus: [
+      ['Cmaj7', 'A/C', 'Fmaj7', 'Cmaj7'],
+      ['Bbmaj7', 'C/E', 'Fmaj7', 'Cmaj7'],
+    ],
+    bridge: [['Am7', 'D13', 'Gmaj7', 'Cmaj7']],
+    pre_chorus: [['Em7', 'A13', 'Dm7', 'Gmaj7']],
+  },
+  john_williams_drama: {
+    verse: [
+      ['Cmaj9', 'Ab/C', 'Ebmaj7', 'Cm'],
+      ['Fm', 'Bb', 'Ebmaj7', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Ab', 'Eb', 'Bb'],
+      ['Cm', 'Fm', 'Gm', 'Cm'],
+    ],
+    bridge: [['Abmaj7', 'Eb/G', 'Fm', 'Cm']],
+    pre_chorus: [['Cm', 'Abmaj7', 'Gm', 'Cm']],
+  },
+  ennio_morricone_western: {
+    verse: [
+      ['C', 'F', 'G', 'C'],
+      ['Am', 'Dm', 'G', 'C'],
+    ],
+    chorus: [
+      ['C', 'G', 'F', 'C'],
+      ['F', 'C', 'G', 'C'],
+    ],
+    bridge: [['Dm', 'G', 'C', 'F']],
+    pre_chorus: [['Am', 'Em', 'F', 'G']],
+  },
+  ennio_morricone_lyric: {
+    verse: [
+      ['Cmaj7', 'Am7', 'Fmaj7', 'G'],
+      ['C(add2)', 'Em7', 'Fmaj7', 'G'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Fmaj7', 'G', 'Cmaj7'],
+      ['Am7', 'Dm7', 'G', 'Cmaj7'],
+    ],
+    bridge: [['Em7', 'Am7', 'Dm7', 'G']],
+    pre_chorus: [['Fmaj7', 'Em7', 'Dm7', 'G']],
+  },
+  ennio_morricone_serial: {
+    verse: [
+      ['Cm', 'Cm', 'Cm', 'Cm'],
+      ['Cm', 'Db', 'Cm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Bb', 'Cm', 'Cm'],
+      ['Cm', 'Fm', 'Cm', 'Cm'],
+    ],
+    bridge: [['Cm', 'Cm', 'Cm', 'Cm']],
+    pre_chorus: [['Cm', 'Cm', 'Cm', 'Cm']],
+  },
+  nino_rota_waltz: {
+    verse: [
+      ['C', 'G', 'Am', 'Em'],
+      ['F', 'C', 'G', 'C'],
+    ],
+    chorus: [
+      ['C', 'F', 'G', 'C'],
+      ['Am', 'Dm', 'G', 'C'],
+    ],
+    bridge: [['F', 'Dm', 'G', 'C']],
+    pre_chorus: [['Em', 'Am', 'Dm', 'G']],
+  },
+  nino_rota_carnival: {
+    verse: [
+      ['C', 'Am', 'F', 'G'],
+      ['C', 'Em', 'F', 'G'],
+    ],
+    chorus: [
+      ['C', 'Am', 'Dm', 'G'],
+      ['F', 'C', 'G', 'C'],
+    ],
+    bridge: [['Dm', 'G', 'C', 'F']],
+    pre_chorus: [['G', 'Em', 'Am', 'Dm']],
+  },
+  nino_rota_godfather: {
+    verse: [
+      ['Cm', 'Ab', 'Fm', 'Gm'],
+      ['Cm', 'Fm', 'Cm', 'Gm'],
+    ],
+    chorus: [
+      ['Cm', 'Ab', 'Bb', 'Cm'],
+      ['Fm', 'Bb', 'Eb', 'Cm'],
+    ],
+    bridge: [['Ab', 'Gm', 'Fm', 'Cm']],
+    pre_chorus: [['Cm', 'Ab', 'Gm', 'Cm']],
+  },
+  jerry_goldsmith_action: {
+    verse: [
+      ['Csus4', 'Fquartal', 'Gm11', 'C7alt'],
+      ['Bm7b5', 'Equartal', 'Am11', 'D7alt'],
+    ],
+    chorus: [
+      ['Fm11', 'Bb13', 'Ebmaj7#11', 'Cm11'],
+      ['Gm11', 'C13', 'Fmaj7#11', 'Bb13'],
+    ],
+    bridge: [['Am11', 'D13', 'Gm11', 'C13']],
+    pre_chorus: [['Bm11', 'E7alt', 'Am11', 'D13']],
+  },
+  jerry_goldsmith_lyric: {
+    verse: [
+      ['Cmaj7', 'Bb', 'F', 'C'],
+      ['Am7', 'Dm7', 'G', 'Cmaj7'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Am7', 'Fmaj7', 'G'],
+      ['Em7', 'Am7', 'Dm7', 'G'],
+    ],
+    bridge: [['Fmaj7', 'Em7', 'Dm7', 'Cmaj7']],
+    pre_chorus: [['Am7', 'Dm7', 'G', 'Cmaj7']],
+  },
+  jerry_goldsmith_suspense: {
+    verse: [
+      ['Cm', 'Cm/Eb', 'Fm', 'Cm'],
+      ['Cm', 'Gsus4', 'Fm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Fm', 'Cm', 'Gm'],
+      ['Cm', 'Bb', 'Fm', 'Cm'],
+    ],
+    bridge: [['Fm', 'Cm', 'Gm', 'Cm']],
+    pre_chorus: [['Cm', 'Ab', 'Fm', 'Cm']],
+  },
+  philip_glass_minimal: {
+    verse: [
+      ['C', 'Am', 'F', 'G'],
+      ['C', 'G', 'Am', 'Em'],
+    ],
+    chorus: [
+      ['C', 'F', 'C', 'G'],
+      ['Am', 'F', 'C', 'G'],
+    ],
+    bridge: [['F', 'C', 'G', 'Am']],
+    pre_chorus: [['C', 'Am', 'F', 'G']],
+  },
+  philip_glass_lyrical: {
+    verse: [
+      ['Cmaj7', 'Cmaj7/G', 'Fmaj7', 'G'],
+      ['Am7', 'Fmaj7/C', 'G', 'Cmaj7'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Fmaj7', 'G', 'Cmaj7'],
+      ['Am7', 'Dm7', 'Gsus4', 'Cmaj7'],
+    ],
+    bridge: [['Fmaj7', 'G', 'Em7', 'Am7']],
+    pre_chorus: [['Cmaj7', 'Am7', 'Fmaj7', 'G']],
+  },
+  philip_glass_dark: {
+    verse: [
+      ['Cm', 'Cm', 'Fm', 'Cm'],
+      ['Cm', 'Ab', 'Fm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Fm', 'Cm', 'Gm'],
+      ['Cm', 'Eb', 'Fm', 'Cm'],
+    ],
+    bridge: [['Fm', 'Cm', 'Gm', 'Cm']],
+    pre_chorus: [['Cm', 'Fm', 'Cm', 'Cm']],
+  },
+  hans_zimmer_epic: {
+    verse: [
+      ['Cm', 'Ab', 'Eb', 'Bb'],
+      ['Cm', 'Fm', 'Gm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Bb', 'Ab', 'Gm'],
+      ['Cm', 'Eb', 'Bb', 'Cm'],
+    ],
+    bridge: [['Ab', 'Gm', 'Fm', 'Cm']],
+    pre_chorus: [['Cm', 'Ab', 'Gm', 'Cm']],
+  },
+  hans_zimmer_introspective: {
+    verse: [
+      ['Cm(add9)', 'Fm', 'Cm', 'Gm'],
+      ['Am(add9)', 'Dm', 'G', 'C'],
+    ],
+    chorus: [
+      ['Cmaj7', 'Fmaj7', 'G', 'Cmaj7'],
+      ['Am7', 'Dm7', 'G', 'Cmaj7'],
+    ],
+    bridge: [['Em7', 'Am7', 'Dm7', 'G']],
+    pre_chorus: [['Fmaj7', 'G', 'Em7', 'Am7']],
+  },
+  hans_zimmer_tension: {
+    verse: [
+      ['Cm', 'Cm', 'Gm', 'Cm'],
+      ['Cm', 'G', 'Cm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Cm', 'Fm', 'Cm'],
+      ['Cm', 'Bb', 'Cm', 'Cm'],
+    ],
+    bridge: [['Cm', 'Cm', 'Cm', 'Cm']],
+    pre_chorus: [['Cm', 'Cm', 'Cm', 'Cm']],
+  },
+  angelo_badalamenti_dream: {
+    verse: [
+      ['Cm(maj7)', 'Abmaj7', 'Fm7', 'Gm7'],
+      ['Cmaj7', 'Am7', 'Dm7', 'G13'],
+    ],
+    chorus: [
+      ['Cm9', 'Abmaj7', 'Bb', 'Cm'],
+      ['Fm7', 'Bb13', 'Ebmaj7', 'Cm'],
+    ],
+    bridge: [['Abmaj7', 'Gm7', 'Fm7', 'Cm']],
+    pre_chorus: [['Cm7', 'Fm7', 'Gm7', 'Cm']],
+  },
+  angelo_badalamenti_mystery: {
+    verse: [
+      ['Cmaj7', 'Dbmaj7', 'Cmaj7', 'Gm7b5'],
+      ['Am7', 'Bb7', 'Ebmaj7', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Abmaj7', 'Gm7', 'Cm'],
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Cm'],
+    ],
+    bridge: [['Dbmaj7', 'Cm', 'Fm7', 'Bb7']],
+    pre_chorus: [['Cm7', 'Abmaj7', 'Gm7', 'Cm']],
+  },
+  angelo_badalamenti_romantic: {
+    verse: [
+      ['Cm', 'Fm7', 'Cm', 'Gm'],
+      ['Cm(maj7)', 'Ab', 'Fm', 'Cm'],
+    ],
+    chorus: [
+      ['Cm', 'Abmaj7', 'Gm', 'Cm'],
+      ['Fm7', 'Bb', 'Ebmaj7', 'Cm'],
+    ],
+    bridge: [['Abmaj7', 'Gm7', 'Fm7', 'Cm']],
+    pre_chorus: [['Cm7', 'Fm7', 'Gm7', 'Cm']],
+  },
 };
 
 function sectionChordPoolRows(
@@ -2098,6 +2386,45 @@ function chordSymbolsForSection(
   }
   if (songwriterId === 'fela_kuti') {
     resolvedPoolId = resolveFelaKutiChordPoolId(seed);
+  }
+  if (songwriterId === 'bernard_herrmann') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'bernard_herrmann_thriller' : tier === 1 ? 'bernard_herrmann_romantic' : 'bernard_herrmann_minimal';
+  }
+  if (songwriterId === 'john_williams') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'john_williams_heroic' : tier === 1 ? 'john_williams_magic' : 'john_williams_drama';
+  }
+  if (songwriterId === 'ennio_morricone') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'ennio_morricone_western' : tier === 1 ? 'ennio_morricone_lyric' : 'ennio_morricone_serial';
+  }
+  if (songwriterId === 'nino_rota') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'nino_rota_waltz' : tier === 1 ? 'nino_rota_carnival' : 'nino_rota_godfather';
+  }
+  if (songwriterId === 'jerry_goldsmith') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'jerry_goldsmith_action' : tier === 1 ? 'jerry_goldsmith_lyric' : 'jerry_goldsmith_suspense';
+  }
+  if (songwriterId === 'philip_glass') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'philip_glass_minimal' : tier === 1 ? 'philip_glass_lyrical' : 'philip_glass_dark';
+  }
+  if (songwriterId === 'hans_zimmer') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'hans_zimmer_epic' : tier === 1 ? 'hans_zimmer_introspective' : 'hans_zimmer_tension';
+  }
+  if (songwriterId === 'angelo_badalamenti') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'angelo_badalamenti_dream' : tier === 1 ? 'angelo_badalamenti_mystery' : 'angelo_badalamenti_romantic';
   }
   const pool = SONGWRITER_CHORD_POOLS[resolvedPoolId];
   if (pool) {

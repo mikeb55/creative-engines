@@ -148,6 +148,26 @@ import {
   precomputeDebussyEffectiveHarmonyBars,
 } from './debussySlice';
 import {
+  accumulateFilmHarmonyDiagnostics,
+  createFilmHarmonyAccumulator,
+  finalizeAngeloBadalamentiMetadata,
+  finalizeBernardHerrmannMetadata,
+  finalizeEnnioMorriconeMetadata,
+  finalizeHansZimmerMetadata,
+  finalizeJerryGoldsmithMetadata,
+  finalizeJohnWilliamsMetadata,
+  finalizeNinoRotaMetadata,
+  finalizePhilipGlassMetadata,
+  precomputeAngeloBadalamentiEffectiveHarmonyBars,
+  precomputeBernardHerrmannEffectiveHarmonyBars,
+  precomputeEnnioMorriconeEffectiveHarmonyBars,
+  precomputeHansZimmerEffectiveHarmonyBars,
+  precomputeJerryGoldsmithEffectiveHarmonyBars,
+  precomputeJohnWilliamsEffectiveHarmonyBars,
+  precomputeNinoRotaEffectiveHarmonyBars,
+  precomputePhilipGlassEffectiveHarmonyBars,
+} from '../song-mode/filmSoundtrackHarmonySlices';
+import {
   accumulateDukeEllingtonHarmonyDiagnostics,
   createDukeEllingtonHarmonyAccumulator,
   finalizeDukeEllingtonMetadata,
@@ -2335,6 +2355,14 @@ function buildGuitarPart(
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
   const isSongwriterDebussy = genMeta?.songwriterStyleId === 'debussy';
+  const isSongwriterBernardHerrmann = genMeta?.songwriterStyleId === 'bernard_herrmann';
+  const isSongwriterJohnWilliams = genMeta?.songwriterStyleId === 'john_williams';
+  const isSongwriterEnnioMorricone = genMeta?.songwriterStyleId === 'ennio_morricone';
+  const isSongwriterNinoRota = genMeta?.songwriterStyleId === 'nino_rota';
+  const isSongwriterJerryGoldsmith = genMeta?.songwriterStyleId === 'jerry_goldsmith';
+  const isSongwriterPhilipGlass = genMeta?.songwriterStyleId === 'philip_glass';
+  const isSongwriterHansZimmer = genMeta?.songwriterStyleId === 'hans_zimmer';
+  const isSongwriterAngeloBadalamenti = genMeta?.songwriterStyleId === 'angelo_badalamenti';
   const isSongwriterDukeEllington = genMeta?.songwriterStyleId === 'duke_ellington';
   const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
   const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
@@ -2358,6 +2386,7 @@ function buildGuitarPart(
   const bhAccum = createBarryHarrisHarmonyAccumulator();
   const beAccum = createBillEvansHarmonyAccumulator();
   const dbAccum = createDebussyHarmonyAccumulator();
+  const filmHarmAccum = createFilmHarmonyAccumulator();
   const deAccum = createDukeEllingtonHarmonyAccumulator();
   const mdAccum = createMilesDavisHarmonyAccumulator();
   const bkAccum = createBartokHarmonyAccumulator();
@@ -2415,6 +2444,30 @@ function buildGuitarPart(
   }
   if (isSongwriterDebussy && isDuoGoldenPath) {
     precomputeDebussyEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterBernardHerrmann && isDuoGoldenPath) {
+    precomputeBernardHerrmannEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJohnWilliams && isDuoGoldenPath) {
+    precomputeJohnWilliamsEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterEnnioMorricone && isDuoGoldenPath) {
+    precomputeEnnioMorriconeEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterNinoRota && isDuoGoldenPath) {
+    precomputeNinoRotaEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJerryGoldsmith && isDuoGoldenPath) {
+    precomputeJerryGoldsmithEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterPhilipGlass && isDuoGoldenPath) {
+    precomputePhilipGlassEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterHansZimmer && isDuoGoldenPath) {
+    precomputeHansZimmerEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterAngeloBadalamenti && isDuoGoldenPath) {
+    precomputeAngeloBadalamentiEffectiveHarmonyBars(context);
   }
   if (isSongwriterDukeEllington && isDuoGoldenPath) {
     precomputeDukeEllingtonEffectiveHarmonyBars(context);
@@ -2652,6 +2705,22 @@ function buildGuitarPart(
         b > 1 ? getChordForBar(b - 1, context) : undefined,
         getChordForBar(b, context),
         dbAccum
+      );
+    }
+    if (
+      isSongwriterBernardHerrmann ||
+      isSongwriterJohnWilliams ||
+      isSongwriterEnnioMorricone ||
+      isSongwriterNinoRota ||
+      isSongwriterJerryGoldsmith ||
+      isSongwriterPhilipGlass ||
+      isSongwriterHansZimmer ||
+      isSongwriterAngeloBadalamenti
+    ) {
+      accumulateFilmHarmonyDiagnostics(
+        b > 1 ? getChordForBar(b - 1, context) : undefined,
+        getChordForBar(b, context),
+        filmHarmAccum
       );
     }
     if (isSongwriterDukeEllington) {
@@ -3331,6 +3400,31 @@ function buildGuitarPart(
 
   if (isSongwriterDebussy && context.generationMetadata) {
     finalizeDebussyMetadata(context.generationMetadata, dbAccum);
+  }
+
+  if (isSongwriterBernardHerrmann && context.generationMetadata) {
+    finalizeBernardHerrmannMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterJohnWilliams && context.generationMetadata) {
+    finalizeJohnWilliamsMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterEnnioMorricone && context.generationMetadata) {
+    finalizeEnnioMorriconeMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterNinoRota && context.generationMetadata) {
+    finalizeNinoRotaMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterJerryGoldsmith && context.generationMetadata) {
+    finalizeJerryGoldsmithMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterPhilipGlass && context.generationMetadata) {
+    finalizePhilipGlassMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterHansZimmer && context.generationMetadata) {
+    finalizeHansZimmerMetadata(context.generationMetadata, filmHarmAccum);
+  }
+  if (isSongwriterAngeloBadalamenti && context.generationMetadata) {
+    finalizeAngeloBadalamentiMetadata(context.generationMetadata, filmHarmAccum);
   }
 
   if (isSongwriterDukeEllington && context.generationMetadata) {

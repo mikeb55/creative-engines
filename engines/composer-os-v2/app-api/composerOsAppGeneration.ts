@@ -1052,6 +1052,30 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
             : {}),
         }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'bernard_herrmann'
+      ? { bernardHerrmannContext: req.bernardHerrmannContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'john_williams'
+      ? { johnWilliamsContext: req.johnWilliamsContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'ennio_morricone'
+      ? { ennioMorriconeContext: req.ennioMorriconeContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'nino_rota'
+      ? { ninoRotaContext: req.ninoRotaContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'jerry_goldsmith'
+      ? { jerryGoldsmithContext: req.jerryGoldsmithContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'philip_glass'
+      ? { philipGlassContext: req.philipGlassContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'hans_zimmer'
+      ? { hansZimmerContext: req.hansZimmerContext }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'angelo_badalamenti'
+      ? { angeloBadalamentiContext: req.angeloBadalamentiContext }
+      : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
@@ -1189,6 +1213,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
   const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
+  const bhHerrLockedTruth = mdLockedTruth?.bernardHerrmannEffectiveHarmonyBars;
+  const jwLockedTruth = mdLockedTruth?.johnWilliamsEffectiveHarmonyBars;
+  const emLockedTruth = mdLockedTruth?.ennioMorriconeEffectiveHarmonyBars;
+  const nrLockedTruth = mdLockedTruth?.ninoRotaEffectiveHarmonyBars;
+  const jgLockedTruth = mdLockedTruth?.jerryGoldsmithEffectiveHarmonyBars;
+  const pgLockedTruth = mdLockedTruth?.philipGlassEffectiveHarmonyBars;
+  const hzLockedTruth = mdLockedTruth?.hansZimmerEffectiveHarmonyBars;
+  const abLockedTruth = mdLockedTruth?.angeloBadalamentiEffectiveHarmonyBars;
   const fzLockedTruth = mdLockedTruth?.frankZappaEffectiveHarmonyBars;
   const fzHcTruth = gp.context.harmonyContext;
   const harmonyBarsForLockedAssertions =
@@ -1387,6 +1419,54 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                               lockedHarmonyBarsAuthoritative &&
                                               cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                             ? cpLockedTruth
+                                            : mdLockedTruth?.songwriterStyleId === 'bernard_herrmann' &&
+                                                Array.isArray(bhHerrLockedTruth) &&
+                                                bhHerrLockedTruth.length === tbLockedTruth &&
+                                                lockedHarmonyBarsAuthoritative &&
+                                                bhHerrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                              ? bhHerrLockedTruth
+                                              : mdLockedTruth?.songwriterStyleId === 'john_williams' &&
+                                                  Array.isArray(jwLockedTruth) &&
+                                                  jwLockedTruth.length === tbLockedTruth &&
+                                                  lockedHarmonyBarsAuthoritative &&
+                                                  jwLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                ? jwLockedTruth
+                                                : mdLockedTruth?.songwriterStyleId === 'ennio_morricone' &&
+                                                    Array.isArray(emLockedTruth) &&
+                                                    emLockedTruth.length === tbLockedTruth &&
+                                                    lockedHarmonyBarsAuthoritative &&
+                                                    emLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                  ? emLockedTruth
+                                                  : mdLockedTruth?.songwriterStyleId === 'nino_rota' &&
+                                                      Array.isArray(nrLockedTruth) &&
+                                                      nrLockedTruth.length === tbLockedTruth &&
+                                                      lockedHarmonyBarsAuthoritative &&
+                                                      nrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                    ? nrLockedTruth
+                                                    : mdLockedTruth?.songwriterStyleId === 'jerry_goldsmith' &&
+                                                        Array.isArray(jgLockedTruth) &&
+                                                        jgLockedTruth.length === tbLockedTruth &&
+                                                        lockedHarmonyBarsAuthoritative &&
+                                                        jgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                      ? jgLockedTruth
+                                                      : mdLockedTruth?.songwriterStyleId === 'philip_glass' &&
+                                                          Array.isArray(pgLockedTruth) &&
+                                                          pgLockedTruth.length === tbLockedTruth &&
+                                                          lockedHarmonyBarsAuthoritative &&
+                                                          pgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                        ? pgLockedTruth
+                                                        : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
+                                                            Array.isArray(hzLockedTruth) &&
+                                                            hzLockedTruth.length === tbLockedTruth &&
+                                                            lockedHarmonyBarsAuthoritative &&
+                                                            hzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                          ? hzLockedTruth
+                                                          : mdLockedTruth?.songwriterStyleId === 'angelo_badalamenti' &&
+                                                              Array.isArray(abLockedTruth) &&
+                                                              abLockedTruth.length === tbLockedTruth &&
+                                                              lockedHarmonyBarsAuthoritative &&
+                                                              abLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                            ? abLockedTruth
                                             : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
                                                 fzHcTruth &&
                                                 fzHcTruth.bars.length === tbLockedTruth &&
@@ -1733,6 +1813,46 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       debussyAntiElaborationGuards: gp.context.generationMetadata.debussyAntiElaborationGuards,
       debussyArabesqueBars: gp.context.generationMetadata.debussyArabesqueBars,
       debussyArabesqueMotifByBar: gp.context.generationMetadata.debussyArabesqueMotifByBar,
+      bernardHerrmannContext: gp.context.generationMetadata.bernardHerrmannContext,
+      bernardHerrmannDiagnostics: gp.context.generationMetadata.bernardHerrmannDiagnostics,
+      bernardHerrmannDeviceReceipts: gp.context.generationMetadata.bernardHerrmannDeviceReceipts,
+      bernardHerrmannSliceReceipt: gp.context.generationMetadata.bernardHerrmannSliceReceipt,
+      bernardHerrmannEffectiveHarmonyBars: gp.context.generationMetadata.bernardHerrmannEffectiveHarmonyBars,
+      johnWilliamsContext: gp.context.generationMetadata.johnWilliamsContext,
+      johnWilliamsDiagnostics: gp.context.generationMetadata.johnWilliamsDiagnostics,
+      johnWilliamsDeviceReceipts: gp.context.generationMetadata.johnWilliamsDeviceReceipts,
+      johnWilliamsSliceReceipt: gp.context.generationMetadata.johnWilliamsSliceReceipt,
+      johnWilliamsEffectiveHarmonyBars: gp.context.generationMetadata.johnWilliamsEffectiveHarmonyBars,
+      ennioMorriconeContext: gp.context.generationMetadata.ennioMorriconeContext,
+      ennioMorriconeDiagnostics: gp.context.generationMetadata.ennioMorriconeDiagnostics,
+      ennioMorriconeDeviceReceipts: gp.context.generationMetadata.ennioMorriconeDeviceReceipts,
+      ennioMorriconeSliceReceipt: gp.context.generationMetadata.ennioMorriconeSliceReceipt,
+      ennioMorriconeEffectiveHarmonyBars: gp.context.generationMetadata.ennioMorriconeEffectiveHarmonyBars,
+      ninoRotaContext: gp.context.generationMetadata.ninoRotaContext,
+      ninoRotaDiagnostics: gp.context.generationMetadata.ninoRotaDiagnostics,
+      ninoRotaDeviceReceipts: gp.context.generationMetadata.ninoRotaDeviceReceipts,
+      ninoRotaSliceReceipt: gp.context.generationMetadata.ninoRotaSliceReceipt,
+      ninoRotaEffectiveHarmonyBars: gp.context.generationMetadata.ninoRotaEffectiveHarmonyBars,
+      jerryGoldsmithContext: gp.context.generationMetadata.jerryGoldsmithContext,
+      jerryGoldsmithDiagnostics: gp.context.generationMetadata.jerryGoldsmithDiagnostics,
+      jerryGoldsmithDeviceReceipts: gp.context.generationMetadata.jerryGoldsmithDeviceReceipts,
+      jerryGoldsmithSliceReceipt: gp.context.generationMetadata.jerryGoldsmithSliceReceipt,
+      jerryGoldsmithEffectiveHarmonyBars: gp.context.generationMetadata.jerryGoldsmithEffectiveHarmonyBars,
+      philipGlassContext: gp.context.generationMetadata.philipGlassContext,
+      philipGlassDiagnostics: gp.context.generationMetadata.philipGlassDiagnostics,
+      philipGlassDeviceReceipts: gp.context.generationMetadata.philipGlassDeviceReceipts,
+      philipGlassSliceReceipt: gp.context.generationMetadata.philipGlassSliceReceipt,
+      philipGlassEffectiveHarmonyBars: gp.context.generationMetadata.philipGlassEffectiveHarmonyBars,
+      hansZimmerContext: gp.context.generationMetadata.hansZimmerContext,
+      hansZimmerDiagnostics: gp.context.generationMetadata.hansZimmerDiagnostics,
+      hansZimmerDeviceReceipts: gp.context.generationMetadata.hansZimmerDeviceReceipts,
+      hansZimmerSliceReceipt: gp.context.generationMetadata.hansZimmerSliceReceipt,
+      hansZimmerEffectiveHarmonyBars: gp.context.generationMetadata.hansZimmerEffectiveHarmonyBars,
+      angeloBadalamentiContext: gp.context.generationMetadata.angeloBadalamentiContext,
+      angeloBadalamentiDiagnostics: gp.context.generationMetadata.angeloBadalamentiDiagnostics,
+      angeloBadalamentiDeviceReceipts: gp.context.generationMetadata.angeloBadalamentiDeviceReceipts,
+      angeloBadalamentiSliceReceipt: gp.context.generationMetadata.angeloBadalamentiSliceReceipt,
+      angeloBadalamentiEffectiveHarmonyBars: gp.context.generationMetadata.angeloBadalamentiEffectiveHarmonyBars,
       bacharachDiagnostics: gp.context.generationMetadata.bacharachDiagnostics,
       bacharachDeviceReceipts: gp.context.generationMetadata.bacharachDeviceReceipts,
       bacharachSliceReceipt: gp.context.generationMetadata.bacharachSliceReceipt,

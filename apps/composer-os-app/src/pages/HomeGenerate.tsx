@@ -445,7 +445,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
-  { id: 'badalamenti', label: 'Angelo Badalamenti' },
+  { id: 'angelo_badalamenti', label: 'Angelo Badalamenti' },
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
@@ -454,8 +454,8 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bob_dylan', label: 'Bob Dylan' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
   { id: 'carole_king', label: 'Carole King' },
+  { id: 'bernard_herrmann', label: 'Bernard Herrmann' },
   { id: 'debussy', label: 'Debussy' },
-  { id: 'herrmann', label: 'Bernard Herrmann' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
@@ -477,9 +477,14 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'maria_schneider', label: 'Maria Schneider' },
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },
+  { id: 'ennio_morricone', label: 'Ennio Morricone' },
+  { id: 'hans_zimmer', label: 'Hans Zimmer' },
+  { id: 'jerry_goldsmith', label: 'Jerry Goldsmith' },
+  { id: 'john_williams', label: 'John Williams' },
   { id: 'messiaen', label: 'Messiaen' },
-  { id: 'morricone', label: 'Ennio Morricone' },
+  { id: 'nino_rota', label: 'Nino Rota' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
+  { id: 'philip_glass', label: 'Philip Glass' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
   { id: 'paul_simon', label: 'Paul Simon' },
@@ -540,10 +545,15 @@ const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
 
 const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
-  'morricone',
-  'herrmann',
+  'ennio_morricone',
+  'bernard_herrmann',
+  'john_williams',
+  'nino_rota',
+  'jerry_goldsmith',
+  'philip_glass',
+  'hans_zimmer',
+  'angelo_badalamenti',
   'quincy_jones_film',
-  'badalamenti',
 ];
 const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 

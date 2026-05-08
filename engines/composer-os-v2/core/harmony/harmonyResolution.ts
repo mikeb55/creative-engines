@@ -220,6 +220,87 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return dbEff[barIndex - 1]!;
   }
 
+  const bhHerrEff = meta?.bernardHerrmannEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bernard_herrmann' &&
+    Array.isArray(bhHerrEff) &&
+    bhHerrEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bhHerrEff[barIndex - 1]!;
+  }
+  const jwEff = meta?.johnWilliamsEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'john_williams' &&
+    Array.isArray(jwEff) &&
+    jwEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jwEff[barIndex - 1]!;
+  }
+  const emEff = meta?.ennioMorriconeEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'ennio_morricone' &&
+    Array.isArray(emEff) &&
+    emEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return emEff[barIndex - 1]!;
+  }
+  const nrEff = meta?.ninoRotaEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'nino_rota' &&
+    Array.isArray(nrEff) &&
+    nrEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return nrEff[barIndex - 1]!;
+  }
+  const jgEff = meta?.jerryGoldsmithEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'jerry_goldsmith' &&
+    Array.isArray(jgEff) &&
+    jgEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jgEff[barIndex - 1]!;
+  }
+  const pgEff = meta?.philipGlassEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'philip_glass' &&
+    Array.isArray(pgEff) &&
+    pgEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return pgEff[barIndex - 1]!;
+  }
+  const hzEff = meta?.hansZimmerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'hans_zimmer' &&
+    Array.isArray(hzEff) &&
+    hzEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return hzEff[barIndex - 1]!;
+  }
+  const abEff = meta?.angeloBadalamentiEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'angelo_badalamenti' &&
+    Array.isArray(abEff) &&
+    abEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return abEff[barIndex - 1]!;
+  }
+
   /**
    * Duke Ellington: `precomputeDukeEllingtonEffectiveHarmonyBars` applies orchestral extension / jungle / shout devices.
    * After precompute, `dukeEllingtonEffectiveHarmonyBars` is full-form and authoritative.

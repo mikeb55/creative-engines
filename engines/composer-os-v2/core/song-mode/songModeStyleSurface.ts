@@ -600,3 +600,115 @@ export function applyDonaldFagenSongwriterSurface(
     returnVariationType: 'evolved_comp',
   });
 }
+
+/** Primary **`bernard_herrmann`** — film thriller harmonic bias (`filmSoundtrackHarmonySlices.ts`). */
+export function applyBernardHerrmannStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'bernard_herrmann') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.1);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.05);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.1);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) - 0.05);
+  appendStyleSurfaceNotes(metadata, [
+    'bernard_herrmann surface: density +0.10, syncopation −0.05, space +0.10, cadence softness −0.05 — generative bias only (harmony slice emits bh:* device receipts).',
+  ]);
+}
+
+/** Primary **`john_williams`** — Hollywood orchestral colour (`filmSoundtrackHarmonySlices.ts`). */
+export function applyJohnWilliamsStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'john_williams') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.15);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.1);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.05);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.2);
+  appendStyleSurfaceNotes(metadata, [
+    'john_williams surface: density +0.15, syncopation +0.10, space −0.05, cadence softness +0.20 — generative bias only (harmony slice emits jw:* device receipts).',
+  ]);
+}
+
+/** Primary **`ennio_morricone`** — Italian film lyric / western idioms (`filmSoundtrackHarmonySlices.ts`). */
+export function applyEnnioMorriconeStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'ennio_morricone') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.15);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.1);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.05);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.15);
+  appendStyleSurfaceNotes(metadata, [
+    'ennio_morricone surface: density +0.15, syncopation +0.10, space −0.05, cadence softness +0.15 — generative bias only (harmony slice emits em:* device receipts).',
+  ]);
+}
+
+/** Primary **`nino_rota`** — operatic / waltz film lyricism (`filmSoundtrackHarmonySlices.ts`). */
+export function applyNinoRotaStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'nino_rota') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.05);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.05);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.15);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.25);
+  appendStyleSurfaceNotes(metadata, [
+    'nino_rota surface: density +0.05, syncopation +0.05, space +0.15, cadence softness +0.25 — generative bias only (harmony slice emits nr:* device receipts).',
+  ]);
+}
+
+/** Primary **`jerry_goldsmith`** — polytonal action / suspense (`filmSoundtrackHarmonySlices.ts`). */
+export function applyJerryGoldsmithStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'jerry_goldsmith') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.25);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.25);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.15);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) - 0.1);
+  appendStyleSurfaceNotes(metadata, [
+    'jerry_goldsmith surface: density +0.25, syncopation +0.25, space −0.15, cadence softness −0.10 — generative bias only (harmony slice emits jg:* device receipts).',
+  ]);
+}
+
+/** Primary **`philip_glass`** — additive minimal pulse (`filmSoundtrackHarmonySlices.ts`). */
+export function applyPhilipGlassStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'philip_glass') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.2);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.05);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.15);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.15);
+  appendStyleSurfaceNotes(metadata, [
+    'philip_glass surface: density +0.20, syncopation +0.05, space −0.15, cadence softness +0.15 — generative bias only (harmony slice emits pg:* device receipts).',
+  ]);
+}
+
+/** Primary **`hans_zimmer`** — epic ostinato stack bias (`filmSoundtrackHarmonySlices.ts`). */
+export function applyHansZimmerStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'hans_zimmer') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.3);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.2);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.15);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.05);
+  appendStyleSurfaceNotes(metadata, [
+    'hans_zimmer surface: density +0.30, syncopation +0.20, space −0.15, cadence softness +0.05 — generative bias only (harmony slice emits hz:* device receipts).',
+  ]);
+}
+
+/** Primary **`angelo_badalamenti`** — dark lounge dream-pop bias (`filmSoundtrackHarmonySlices.ts`). */
+export function applyAngeloBadalamentiStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'angelo_badalamenti') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.05);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.05);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.15);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.25);
+  appendStyleSurfaceNotes(metadata, [
+    'angelo_badalamenti surface: density −0.05, syncopation −0.05, space +0.15, cadence softness +0.25 — generative bias only (harmony slice emits ab:* device receipts).',
+  ]);
+}

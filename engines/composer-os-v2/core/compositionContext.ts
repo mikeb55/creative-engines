@@ -69,6 +69,30 @@ export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey
 /** Fela Kuti Song Mode slice — Afrobeat era posture (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted. */
 export type FelaKutiContextMode = 'zombie_1977' | 'water_no_get_enemy' | 'lady_1972';
 
+/** Bernard Herrmann — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type BernardHerrmannContextMode = 'bh:thriller_mode' | 'bh:romantic_mode' | 'bh:minimal_pulse';
+
+/** John Williams — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type JohnWilliamsContextMode = 'jw:heroic_mode' | 'jw:magic_mode' | 'jw:drama_mode';
+
+/** Ennio Morricone — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type EnnioMorriconeContextMode = 'em:spaghetti_mode' | 'em:lyric_mode' | 'em:serial_tension';
+
+/** Nino Rota — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type NinoRotaContextMode = 'nr:waltz_mode' | 'nr:carnival_mode' | 'nr:godfather_mode';
+
+/** Jerry Goldsmith — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type JerryGoldsmithContextMode = 'jg:action_mode' | 'jg:lyric_mode' | 'jg:suspense_mode';
+
+/** Philip Glass — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type PhilipGlassContextMode = 'pg:minimal_pulse' | 'pg:lyrical_minimal' | 'pg:dark_pedal';
+
+/** Hans Zimmer — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type HansZimmerContextMode = 'hz:epic_mode' | 'hz:introspective_mode' | 'hz:tension_mode';
+
+/** Angelo Badalamenti — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
+export type AngeloBadalamentiContextMode = 'ab:dream_pop' | 'ab:mystery_mode' | 'ab:romantic_dark';
+
 /** Form map: section labels and bar ranges. */
 export interface FormMap {
   sections: Array<{ label: string; startBar: number; length: number }>;
@@ -850,6 +874,78 @@ export interface GenerationMetadata {
    * Miles Davis Song Mode slice mode (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted.
    */
   milesDavisContext?: MilesDavisContextMode;
+  bernardHerrmannContext?: BernardHerrmannContextMode;
+  bernardHerrmannDiagnostics?: {
+    songwriterId: 'bernard_herrmann';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  bernardHerrmannSliceReceipt?: string;
+  bernardHerrmannEffectiveHarmonyBars?: string[];
+  bernardHerrmannDeviceReceipts?: string[];
+  johnWilliamsContext?: JohnWilliamsContextMode;
+  johnWilliamsDiagnostics?: {
+    songwriterId: 'john_williams';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  johnWilliamsSliceReceipt?: string;
+  johnWilliamsEffectiveHarmonyBars?: string[];
+  johnWilliamsDeviceReceipts?: string[];
+  ennioMorriconeContext?: EnnioMorriconeContextMode;
+  ennioMorriconeDiagnostics?: {
+    songwriterId: 'ennio_morricone';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  ennioMorriconeSliceReceipt?: string;
+  ennioMorriconeEffectiveHarmonyBars?: string[];
+  ennioMorriconeDeviceReceipts?: string[];
+  ninoRotaContext?: NinoRotaContextMode;
+  ninoRotaDiagnostics?: {
+    songwriterId: 'nino_rota';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  ninoRotaSliceReceipt?: string;
+  ninoRotaEffectiveHarmonyBars?: string[];
+  ninoRotaDeviceReceipts?: string[];
+  jerryGoldsmithContext?: JerryGoldsmithContextMode;
+  jerryGoldsmithDiagnostics?: {
+    songwriterId: 'jerry_goldsmith';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  jerryGoldsmithSliceReceipt?: string;
+  jerryGoldsmithEffectiveHarmonyBars?: string[];
+  jerryGoldsmithDeviceReceipts?: string[];
+  philipGlassContext?: PhilipGlassContextMode;
+  philipGlassDiagnostics?: {
+    songwriterId: 'philip_glass';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  philipGlassSliceReceipt?: string;
+  philipGlassEffectiveHarmonyBars?: string[];
+  philipGlassDeviceReceipts?: string[];
+  hansZimmerContext?: HansZimmerContextMode;
+  hansZimmerDiagnostics?: {
+    songwriterId: 'hans_zimmer';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  hansZimmerSliceReceipt?: string;
+  hansZimmerEffectiveHarmonyBars?: string[];
+  hansZimmerDeviceReceipts?: string[];
+  angeloBadalamentiContext?: AngeloBadalamentiContextMode;
+  angeloBadalamentiDiagnostics?: {
+    songwriterId: 'angelo_badalamenti';
+    barsConsidered: number;
+    deviceReceipts?: string[];
+  };
+  angeloBadalamentiSliceReceipt?: string;
+  angeloBadalamentiEffectiveHarmonyBars?: string[];
+  angeloBadalamentiDeviceReceipts?: string[];
   /** Bartók — axis symmetry / folk-modal / chamber orchestral harmony (`bartokSlice.ts`). */
   bartokDiagnostics?: {
     songwriterId: 'bartok';

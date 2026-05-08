@@ -341,6 +341,54 @@ export function apiGenerate(
         body.milesDavisContext === 'electric_1970'
           ? body.milesDavisContext
           : undefined,
+      bernardHerrmannContext:
+        body.bernardHerrmannContext === 'bh:thriller_mode' ||
+        body.bernardHerrmannContext === 'bh:romantic_mode' ||
+        body.bernardHerrmannContext === 'bh:minimal_pulse'
+          ? body.bernardHerrmannContext
+          : undefined,
+      johnWilliamsContext:
+        body.johnWilliamsContext === 'jw:heroic_mode' ||
+        body.johnWilliamsContext === 'jw:magic_mode' ||
+        body.johnWilliamsContext === 'jw:drama_mode'
+          ? body.johnWilliamsContext
+          : undefined,
+      ennioMorriconeContext:
+        body.ennioMorriconeContext === 'em:spaghetti_mode' ||
+        body.ennioMorriconeContext === 'em:lyric_mode' ||
+        body.ennioMorriconeContext === 'em:serial_tension'
+          ? body.ennioMorriconeContext
+          : undefined,
+      ninoRotaContext:
+        body.ninoRotaContext === 'nr:waltz_mode' ||
+        body.ninoRotaContext === 'nr:carnival_mode' ||
+        body.ninoRotaContext === 'nr:godfather_mode'
+          ? body.ninoRotaContext
+          : undefined,
+      jerryGoldsmithContext:
+        body.jerryGoldsmithContext === 'jg:action_mode' ||
+        body.jerryGoldsmithContext === 'jg:lyric_mode' ||
+        body.jerryGoldsmithContext === 'jg:suspense_mode'
+          ? body.jerryGoldsmithContext
+          : undefined,
+      philipGlassContext:
+        body.philipGlassContext === 'pg:minimal_pulse' ||
+        body.philipGlassContext === 'pg:lyrical_minimal' ||
+        body.philipGlassContext === 'pg:dark_pedal'
+          ? body.philipGlassContext
+          : undefined,
+      hansZimmerContext:
+        body.hansZimmerContext === 'hz:epic_mode' ||
+        body.hansZimmerContext === 'hz:introspective_mode' ||
+        body.hansZimmerContext === 'hz:tension_mode'
+          ? body.hansZimmerContext
+          : undefined,
+      angeloBadalamentiContext:
+        body.angeloBadalamentiContext === 'ab:dream_pop' ||
+        body.angeloBadalamentiContext === 'ab:mystery_mode' ||
+        body.angeloBadalamentiContext === 'ab:romantic_dark'
+          ? body.angeloBadalamentiContext
+          : undefined,
       bartokContext:
         body.bartokContext === 'mikrokosmos' ||
         body.bartokContext === 'string_quartet' ||
