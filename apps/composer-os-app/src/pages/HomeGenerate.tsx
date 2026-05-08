@@ -100,6 +100,7 @@ import {
   type VaultGenerationOptions,
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
+import { ReharmPanel } from '../components/ReharmPanel';
 import { WriterRecipeCard } from '../components/WriterRecipeCard';
 import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
 import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
@@ -7212,6 +7213,35 @@ export function HomeGenerate({
             </div>
           )}
         </div>
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 'min(1200px, 100%)',
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Reharm preview
+        </summary>
+        <ReharmPanel
+          chordProgressionText={chordProgressionText}
+          songFormBars={songFormBars}
+          baseSeed={baseSeed}
+          songwriterStyleId={songwriterStyle}
+        />
       </details>
 
       <details

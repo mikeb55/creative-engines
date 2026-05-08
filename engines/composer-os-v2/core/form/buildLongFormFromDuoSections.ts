@@ -86,9 +86,9 @@ export function buildDuoLongFormCompositionContextFromBars(
   opts?: { chordProgressionInputRaw?: string; presetId?: string }
 ): { context: CompositionContext; modulationPlan: ModulationPlan } {
   const n = bars.length;
-  if (n % 8 !== 0 || n < 16 || n > 64) {
+  if (n % 8 !== 0 || n < 8 || n > 64) {
     throw new Error(
-      `buildDuoLongFormCompositionContextFromBars: expected 16–64 bars in steps of 8, got ${n}`
+      `buildDuoLongFormCompositionContextFromBars: expected 8–64 bars in steps of 8, got ${n}`
     );
   }
   const preset = guitarBassDuoPreset;
