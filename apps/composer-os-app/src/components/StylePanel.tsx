@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { HarmonicVoiceId, RhythmEngineId, StyleProfile } from '../types/styleProfile';
+import type { EtudeTechnicalFocus } from '@composer-os/core/composer/etudeGenerator';
 import './StylePanel.css';
+
+export type UiInstrumentGroup = 'big_band' | 'string_quartet' | 'guitar' | 'etude';
 
 export type StylePanelProps = {
   value: StyleProfile;
@@ -10,10 +13,32 @@ export type StylePanelProps = {
   /** Song Mode primary harmonic select — stable id for tests / a11y */
   harmonicSelectId?: string;
   rhythmSelectId?: string;
+  /** Phase 6+7 — output family (echoed in generate metadata). */
+  instrumentGroup?: UiInstrumentGroup;
+  onInstrumentGroupChange?: (next: UiInstrumentGroup) => void;
+  guitarOutputMode?: 'notation' | 'tab' | 'both';
+  onGuitarOutputModeChange?: (next: 'notation' | 'tab' | 'both') => void;
+  etudeInstrument?: string;
+  onEtudeInstrumentChange?: (next: string) => void;
+  etudeTechnicalFocus?: EtudeTechnicalFocus;
+  onEtudeTechnicalFocusChange?: (next: EtudeTechnicalFocus) => void;
 };
 
 export function StylePanel(props: StylePanelProps) {
-  const { value, onChange, harmonicVoiceGroups, rhythmEngines } = props;
+  const {
+    value,
+    onChange,
+    harmonicVoiceGroups,
+    rhythmEngines,
+    instrumentGroup = 'big_band',
+    onInstrumentGroupChange,
+    guitarOutputMode = 'both',
+    onGuitarOutputModeChange,
+    etudeInstrument = 'violin_I',
+    onEtudeInstrumentChange,
+    etudeTechnicalFocus = 'scales',
+    onEtudeTechnicalFocusChange,
+  } = props;
   const harmonicSelectId = props.harmonicSelectId ?? 'co-style-harmonic-voice';
   const rhythmSelectId = props.rhythmSelectId ?? 'co-style-rhythm-engine';
   const [pairOpen, setPairOpen] = useState(false);
@@ -102,6 +127,69 @@ export function StylePanel(props: StylePanelProps) {
           ))}
         </select>
       </div>
+
+      {onInstrumentGroupChange ? (
+        <div className="fieldGroup">
+          <label htmlFor="co-style-instrument-group">Instrument group</label>
+          <select
+            id="co-style-instrument-group"
+            value={instrumentGroup}
+            onChange={(e) => onInstrumentGroupChange(e.target.value as UiInstrumentGroup)}
+          >
+            <option value="big_band">Big Band</option>
+            <option value="string_quartet">String Quartet</option>
+            <option value="guitar">Guitar</option>
+            <option value="etude">Étude</option>
+          </select>
+        </div>
+      ) : null}
+
+      {onInstrumentGroupChange && instrumentGroup === 'guitar' && onGuitarOutputModeChange ? (
+        <div className="fieldGroup">
+          <label htmlFor="co-style-guitar-output">Guitar output</label>
+          <select
+            id="co-style-guitar-output"
+            value={guitarOutputMode}
+            onChange={(e) => onGuitarOutputModeChange(e.target.value as 'notation' | 'tab' | 'both')}
+          >
+            <option value="notation">Standard notation</option>
+            <option value="tab">Tab</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+      ) : null}
+
+      {onInstrumentGroupChange && instrumentGroup === 'etude' && onEtudeInstrumentChange && onEtudeTechnicalFocusChange ? (
+        <>
+          <div className="fieldGroup">
+            <label htmlFor="co-style-etude-inst">Étude instrument</label>
+            <select
+              id="co-style-etude-inst"
+              value={etudeInstrument}
+              onChange={(e) => onEtudeInstrumentChange(e.target.value)}
+            >
+              <option value="violin_I">Violin</option>
+              <option value="cello">Cello</option>
+              <option value="guitar">Guitar</option>
+              <option value="flute">Flute</option>
+            </select>
+          </div>
+          <div className="fieldGroup">
+            <label htmlFor="co-style-etude-focus">Technical focus</label>
+            <select
+              id="co-style-etude-focus"
+              value={etudeTechnicalFocus}
+              onChange={(e) => onEtudeTechnicalFocusChange(e.target.value as EtudeTechnicalFocus)}
+            >
+              <option value="scales">Scales</option>
+              <option value="arpeggios">Arpeggios</option>
+              <option value="interval-skips">Interval skips</option>
+              <option value="chromatic">Chromatic</option>
+              <option value="position-shifts">Position shifts</option>
+            </select>
+          </div>
+        </>
+      ) : null}
 
       {showSummary ? (
         <div className="summaryRow" aria-live="polite">

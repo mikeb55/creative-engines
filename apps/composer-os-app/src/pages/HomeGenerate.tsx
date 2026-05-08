@@ -25,7 +25,8 @@ import { SecondLineRhythmControls } from '../components/SecondLineRhythmControls
 import { CubanRhythmControls } from '../components/CubanRhythmControls';
 import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
 import { GreekRhythmControls } from '../components/GreekRhythmControls';
-import { StylePanel } from '../components/StylePanel';
+import { StylePanel, type UiInstrumentGroup } from '../components/StylePanel';
+import { GuitarFretboardView } from '../components/GuitarFretboardView';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import {
   AFROBEAT_STARTER_PRESETS,
@@ -77,6 +78,8 @@ import {
   tileZappaMeterCycle,
   zappaMeterCycleToPresetPattern,
 } from '@composer-os/core/rhythm/oddMeterQuantiser';
+import { guitarVoicingFromFrets } from '@composer-os/core/composer/guitarVoicingEngine';
+import type { EtudeTechnicalFocus } from '@composer-os/core/composer/etudeGenerator';
 import {
   generateFromIReal,
   generateVaultFromParsedChart,
@@ -1516,6 +1519,13 @@ export function HomeGenerate({
   const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
   const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
+  const demoGuitarVoicingsForFretboard = useMemo(
+    () => [
+      guitarVoicingFromFrets('Cmaj7', [3, 3, 2, 0, 0, 0]),
+      guitarVoicingFromFrets('G7', [3, 2, 0, 0, 0, 1]),
+    ],
+    []
+  );
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -1567,6 +1577,10 @@ export function HomeGenerate({
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
+  const [uiInstrumentGroup, setUiInstrumentGroup] = useState<UiInstrumentGroup>('big_band');
+  const [guitarOutputModeUi, setGuitarOutputModeUi] = useState<'notation' | 'tab' | 'both'>('both');
+  const [etudeInstrumentUi, setEtudeInstrumentUi] = useState('violin_I');
+  const [etudeTechnicalFocusUi, setEtudeTechnicalFocusUi] = useState<EtudeTechnicalFocus>('scales');
   const [funkGroove, setFunkGroove] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
@@ -2446,6 +2460,11 @@ export function HomeGenerate({
           ...((presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') &&
           leadSheetXmlTrim.length > 0
             ? { ensembleLeadSheetMusicXml: leadSheetXmlTrim }
+            : {}),
+          instrumentGroup: uiInstrumentGroup,
+          ...(uiInstrumentGroup === 'guitar' ? { guitarOutputMode: guitarOutputModeUi } : {}),
+          ...(uiInstrumentGroup === 'etude'
+            ? { etudeInstrument: etudeInstrumentUi, etudeTechnicalFocus: etudeTechnicalFocusUi }
             : {}),
         };
 
@@ -5000,6 +5019,14 @@ export function HomeGenerate({
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-sm-primary-songwriter"
             rhythmSelectId="co-sm-rhythm-engine"
+            instrumentGroup={uiInstrumentGroup}
+            onInstrumentGroupChange={setUiInstrumentGroup}
+            guitarOutputMode={guitarOutputModeUi}
+            onGuitarOutputModeChange={setGuitarOutputModeUi}
+            etudeInstrument={etudeInstrumentUi}
+            onEtudeInstrumentChange={setEtudeInstrumentUi}
+            etudeTechnicalFocus={etudeTechnicalFocusUi}
+            onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
           />
           <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5434,6 +5461,14 @@ export function HomeGenerate({
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-bb-songwriter"
             rhythmSelectId="co-bb-rhythm-engine"
+            instrumentGroup={uiInstrumentGroup}
+            onInstrumentGroupChange={setUiInstrumentGroup}
+            guitarOutputMode={guitarOutputModeUi}
+            onGuitarOutputModeChange={setGuitarOutputModeUi}
+            etudeInstrument={etudeInstrumentUi}
+            onEtudeInstrumentChange={setEtudeInstrumentUi}
+            etudeTechnicalFocus={etudeTechnicalFocusUi}
+            onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
           />
           <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5517,6 +5552,14 @@ export function HomeGenerate({
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-sq-songwriter"
             rhythmSelectId="co-sq-rhythm-engine"
+            instrumentGroup={uiInstrumentGroup}
+            onInstrumentGroupChange={setUiInstrumentGroup}
+            guitarOutputMode={guitarOutputModeUi}
+            onGuitarOutputModeChange={setGuitarOutputModeUi}
+            etudeInstrument={etudeInstrumentUi}
+            onEtudeInstrumentChange={setEtudeInstrumentUi}
+            etudeTechnicalFocus={etudeTechnicalFocusUi}
+            onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
           />
           <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -7741,6 +7784,12 @@ export function HomeGenerate({
               Generated (not shareable)
             </p>
           )}
+
+          {result?.success &&
+            uiInstrumentGroup === 'guitar' &&
+            (guitarOutputModeUi === 'tab' || guitarOutputModeUi === 'both') && (
+              <GuitarFretboardView title="Guitar voicing (preview)" voicings={demoGuitarVoicingsForFretboard} />
+            )}
 
           {(result as { planningNotice?: string })?.planningNotice && (
             <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 0 }}>

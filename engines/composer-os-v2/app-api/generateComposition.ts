@@ -267,9 +267,16 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         }
       : {}),
   });
-  result.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
-  result.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
-  result.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
+  result.context.generationMetadata = {
+    ...result.context.generationMetadata,
+    importHarmonyMode: normalizedImportHarmonyMode,
+    importHarmonyModeSource: importHarmonyModeSource,
+    harmonyBlendRaw: harmonyBlendRaw,
+    ...(req.instrumentGroup ? { uiInstrumentGroup: req.instrumentGroup } : {}),
+    ...(req.guitarOutputMode ? { guitarOutputMode: req.guitarOutputMode } : {}),
+    ...(req.etudeInstrument ? { etudeInstrument: req.etudeInstrument } : {}),
+    ...(req.etudeTechnicalFocus ? { etudeTechnicalFocus: req.etudeTechnicalFocus } : {}),
+  };
   // Stage 4: free_harmony is documented default; policy version set in GenerationMetadata (no routing change).
   result.context.generationMetadata.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   if (result.runManifest) {

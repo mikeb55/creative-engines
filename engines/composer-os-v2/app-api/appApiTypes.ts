@@ -140,6 +140,16 @@ export interface GenerateRequest {
   };
   /** Big band horn footprint — `big_band` only. */
   ensembleConfigId?: 'full_band' | 'medium_band' | 'small_band' | 'reeds_only' | 'brass_only' | 'custom';
+  /**
+   * Phase 6+7 — StylePanel: primary instrument / output family (echoed in metadata; routing hooks later).
+   */
+  instrumentGroup?: 'big_band' | 'string_quartet' | 'guitar' | 'etude';
+  /** Phase 6+7 — Guitar / étude tab vs notation (UI). */
+  guitarOutputMode?: 'notation' | 'tab' | 'both';
+  /** Phase 6+7 — Étude target instrument id (`violin_I`, `cello`, …). */
+  etudeInstrument?: string;
+  /** Phase 6+7 — Étude technical focus. */
+  etudeTechnicalFocus?: import('../core/composer/etudeGenerator').EtudeTechnicalFocus;
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
   /** Song Mode: secondary songwriter id — blended ~35% with primary in `resolveSongwritingStyles`. */

@@ -1400,6 +1400,14 @@ export interface GenerationMetadata {
   rhythmMotifBinding?: import('./composer/rhythmDnaMotifBinder').RhythmMotifBinding;
   /** Phase 4+5 — planned vs heuristic actual tension deviation by section. */
   tensionAudit?: import('./composer/tensionScheduler').TensionAuditRow[];
+  /** Phase 6+7 — UI instrument group echo (Big Band | String Quartet | Guitar | Étude). */
+  uiInstrumentGroup?: 'big_band' | 'string_quartet' | 'guitar' | 'etude';
+  /** Phase 6+7 — guitar export mode from StylePanel. */
+  guitarOutputMode?: 'notation' | 'tab' | 'both';
+  /** Phase 6+7 — étude generator instrument id from UI. */
+  etudeInstrument?: string;
+  /** Phase 6+7 — étude technical focus from UI. */
+  etudeTechnicalFocus?: import('./composer/etudeGenerator').EtudeTechnicalFocus;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

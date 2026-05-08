@@ -42,6 +42,7 @@ import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runVoiceLeadingSolverPhase3bTests } from './voiceLeadingSolverPhase3b.test';
 import { runRhythmFormTensionPhase45Tests } from './rhythmFormTensionPhase45.test';
+import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
 const suites: SuiteEntry[] = [
@@ -85,6 +86,7 @@ const suites: SuiteEntry[] = [
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'Voice-leading solver + HarmonicScene (Phase 3b)', run: runVoiceLeadingSolverPhase3bTests },
   { name: 'RhythmDNA + form + tension (Phase 4+5)', run: runRhythmFormTensionPhase45Tests },
+  { name: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
 ];
 
 runHarnessMain(suites, '[harness] chunk 1/4 — duo core + gates');
