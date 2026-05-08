@@ -33,29 +33,46 @@ function getIntervalTarget(songwriterId?: string): {
   skips: number;
   leaps: number;
   wideLeaps: number;
+  /** Preferred absolute melodic interval span (semitones) — tighter bands for lyric/minimal writers. */
+  min: number;
+  max: number;
 } {
   switch (songwriterId) {
+    case 'gil_evans':
+    case 'angelo_badalamenti':
+    case 'ennio_morricone':
+      // Lyric / vocal-adjacent — 2nds & 3rds dominate; narrow semitone band
+      return { steps: 0.58, skips: 0.3, leaps: 0.1, wideLeaps: 0.02, min: 1, max: 5 };
+    case 'bernard_herrmann':
+    case 'jerry_goldsmith':
+    case 'john_williams':
+      // Dramatic scoring — 4ths–7ths + octaves usable; wide permissible span
+      return { steps: 0.38, skips: 0.22, leaps: 0.28, wideLeaps: 0.12, min: 1, max: 12 };
+    case 'philip_glass':
+    case 'nino_rota':
+      // Minimal / song-like — stepwise with occasional 3rds only (no broad leaps)
+      return { steps: 0.73, skips: 0.25, leaps: 0.015, wideLeaps: 0.005, min: 1, max: 4 };
     case 'donald_fagen':
       // Keyboard style — more wide leaps, chromatic
-      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15 };
+      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15, min: 1, max: 12 };
     case 'wayne_shorter':
       // Post-bop horn lines — angular, wide intervals
-      return { steps: 0.4, skips: 0.25, leaps: 0.25, wideLeaps: 0.1 };
+      return { steps: 0.4, skips: 0.25, leaps: 0.25, wideLeaps: 0.1, min: 1, max: 11 };
     case 'bacharach':
       // Vocal/pop — very stepwise, lyrical
-      return { steps: 0.65, skips: 0.25, leaps: 0.08, wideLeaps: 0.02 };
+      return { steps: 0.65, skips: 0.25, leaps: 0.08, wideLeaps: 0.02, min: 1, max: 5 };
     case 'barry_harris':
       // Bebop — mostly steps and skips, few wide leaps
-      return { steps: 0.55, skips: 0.3, leaps: 0.12, wideLeaps: 0.03 };
+      return { steps: 0.55, skips: 0.3, leaps: 0.12, wideLeaps: 0.03, min: 1, max: 7 };
     case 'ecm_chamber':
       // ECM — sparse, wide open intervals acceptable
-      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15 };
+      return { steps: 0.45, skips: 0.2, leaps: 0.2, wideLeaps: 0.15, min: 1, max: 10 };
     case 'pat_metheny':
       // Lyrical guitar — mostly stepwise with nice leaps
-      return { steps: 0.6, skips: 0.25, leaps: 0.12, wideLeaps: 0.03 };
+      return { steps: 0.6, skips: 0.25, leaps: 0.12, wideLeaps: 0.03, min: 1, max: 6 };
     default:
       // Universal jazz target
-      return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05 };
+      return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };
   }
 }
 
