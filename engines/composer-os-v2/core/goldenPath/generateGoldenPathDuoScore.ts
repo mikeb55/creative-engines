@@ -42,6 +42,7 @@ import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from '.
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
 import { applyVoiceBundleVoicingSpreadFloor } from '../composer/voiceBundleVoicingFloor';
+import { applyVoiceBundleRepairReceipt } from '../composer/voiceBundleRepairReceipt';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -5896,6 +5897,7 @@ export function generateGoldenPathDuoScore(
   }
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
   applyVoiceBundleVoicingSpreadFloor(afterExpressive, context);
+  applyVoiceBundleRepairReceipt(afterExpressive, context);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

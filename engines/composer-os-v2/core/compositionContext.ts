@@ -1388,6 +1388,10 @@ export interface GenerationMetadata {
   };
   /** Phase 2+3a — rhythm overlay flag from bundle (Phase 3b consumers). */
   voiceBundleRhythmAntiMetric?: boolean;
+  /** Phase 2+3a — repairPolicy.resolveParallels was true; motion fix pass deferred to Phase 3b. */
+  voiceBundleRepairResolveParallelsRequested?: boolean;
+  /** Phase 2+3a — echo of repairPolicy.maxVoiceOverlap for downstream scoring. */
+  voiceBundleRepairMaxVoiceOverlap?: number;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */

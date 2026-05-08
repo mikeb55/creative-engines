@@ -8,7 +8,8 @@ import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles
 
 export function attachVoiceRuleBundleAndHarmonicScenes(
   context: CompositionContext,
-  options: { harmonicVoice?: string } | undefined
+  options: { harmonicVoice?: string } | undefined,
+  attachOpts?: { skipHarmonicSceneLog?: boolean }
 ): void {
   context.harmonicScenes = buildHarmonicSceneStubs(context.form);
   const raw = options?.harmonicVoice?.trim();
@@ -38,7 +39,7 @@ export function attachVoiceRuleBundleAndHarmonicScenes(
     voiceBundleRhythmAntiMetric: bundle.rhythmPolicy.antiMetric,
   };
 
-  if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_VOICE_BUNDLE !== '0') {
+  if (!attachOpts?.skipHarmonicSceneLog) {
     console.log(
       `[HarmonicScene] voice=${bundle.voiceId} scenes=${JSON.stringify(context.harmonicScenes?.map((s) => s.sceneId) ?? [])}`
     );

@@ -851,9 +851,10 @@ function buildGoldenPathPlans(
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
   const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle, options?.ecmMode);
   const stackIds = styleStackToModuleIds(styleStack);
+  const vbMotif = context.voiceBundle;
   const motifHints: MotifStyleHints = {
     triadPairs: stackIds.includes('triad_pairs'),
-    metheny: stackIds.includes('metheny'),
+    metheny: stackIds.includes('metheny') || vbMotif?.voiceId === 'pat_metheny',
     bacharach: stackIds.includes('bacharach'),
     duoLock: isGuitarBassDuoFamily(context.presetId),
   };
@@ -1943,6 +1944,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   assertContextMatchesLocked32('runGoldenPathOnce:afterBuildContext', context, options);
   assertCustomLockedBeforeScoreGeneration(context, options);
 
+  /** VoiceRuleBundle + HarmonicScene stubs before plan build so motif / section plans see `context.voiceBundle`. */
+  attachVoiceRuleBundleAndHarmonicScenes(context, options);
+
   logEcmPhaseProbe(probeEcm, 'before_plan_build');
   let plans: GoldenPathPlans;
   try {
@@ -1956,7 +1960,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
-  attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options);
+  attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options, { skipHarmonicSceneLog: true });
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   logEcmPhaseProbe(probeEcm, 'before_render', undefined, {

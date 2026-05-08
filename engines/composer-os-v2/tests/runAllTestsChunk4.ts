@@ -31,6 +31,7 @@ import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
 import { runSongModeAbInspectHarnessTests } from './songModeAbInspectHarness.test';
 import { runMotifAuthorityPilotSliceTests } from './motifAuthorityPilotSlice.test';
 import { runGreekRhythmMusicXmlExporterTests } from './greekRhythmMusicXmlExporter.test';
+import { runVoiceRuleBundleHarnessAdditiveTests } from './voiceRuleBundleHarnessAdditive.test';
 import { retroSuites } from './retro/index';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
@@ -64,6 +65,7 @@ const suites: SuiteEntry[] = [
   { name: 'Song Mode A/B inspect harness', run: runSongModeAbInspectHarnessTests },
   { name: 'Motif Authority pilot slice', run: runMotifAuthorityPilotSliceTests },
   { name: 'Greek rhythm MusicXML exporter (drum kit)', run: runGreekRhythmMusicXmlExporterTests },
+  { name: 'VoiceRuleBundle Phase 2+3a harness (additive)', run: runVoiceRuleBundleHarnessAdditiveTests },
   ...retroSuites,
 ];
 
