@@ -30,6 +30,7 @@ import {
 import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
+import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
 import {
   adjacentBarsMeterDiffers,
   resolveMeterForBar,
@@ -1140,6 +1141,9 @@ ${transposeXml}    </attributes>
 `;
     assertSibeliusExportMeasureStructure(xml);
     assertNoteXmlCanonicalChildOrder(xml);
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      validateMusicXml(xml);
+    }
     return { success: true, xml, errors: [] };
   } catch (e) {
     return {
