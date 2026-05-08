@@ -147,6 +147,7 @@ export function accumulateBeatlesHarmonyDiagnostics(
   scanChordForDiagnostics(currentChord, acc);
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBeatlesEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

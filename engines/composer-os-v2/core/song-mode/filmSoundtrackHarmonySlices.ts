@@ -98,6 +98,7 @@ export function accumulateFilmHarmonyDiagnostics(
 /** --- Bernard Herrmann --- */
 export let bernardHerrmannEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBernardHerrmannEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -178,6 +179,7 @@ export function finalizeBernardHerrmannMetadata(metadata: GenerationMetadata, ac
 /** --- John Williams --- */
 export let johnWilliamsEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -256,6 +258,7 @@ export function finalizeJohnWilliamsMetadata(metadata: GenerationMetadata, acc: 
 /** --- Ennio Morricone --- */
 export let ennioMorriconeEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeEnnioMorriconeEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -332,6 +335,7 @@ export function finalizeEnnioMorriconeMetadata(metadata: GenerationMetadata, acc
 /** --- Nino Rota --- */
 export let ninoRotaEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeNinoRotaEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -401,6 +405,7 @@ export function finalizeNinoRotaMetadata(metadata: GenerationMetadata, acc: Film
 /** --- Jerry Goldsmith --- */
 export let jerryGoldsmithEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeJerryGoldsmithEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -472,6 +477,7 @@ export function finalizeJerryGoldsmithMetadata(metadata: GenerationMetadata, acc
 /** --- Philip Glass --- */
 export let philipGlassEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputePhilipGlassEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -554,6 +560,7 @@ export function finalizePhilipGlassMetadata(metadata: GenerationMetadata, acc: F
 /** --- Hans Zimmer --- */
 export let hansZimmerEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeHansZimmerEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
@@ -620,6 +627,7 @@ export function finalizeHansZimmerMetadata(metadata: GenerationMetadata, acc: Fi
 /** --- Angelo Badalamenti --- */
 export let angeloBadalamentiEffectiveHarmonyBars: string[] = [];
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeAngeloBadalamentiEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

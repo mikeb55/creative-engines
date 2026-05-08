@@ -442,6 +442,7 @@ function applyPedalBassPass(
 /**
  * Precompute effective one chord per bar after ECM Chamber slice devices (primary `ecm_chamber` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeEcmChamberEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

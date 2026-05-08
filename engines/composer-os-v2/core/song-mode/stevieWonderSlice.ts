@@ -269,6 +269,7 @@ export function applyStevieWonderHarmonicDevicesFirstPass(params: {
 }
 
 /** Precompute full-form effective harmony when Stevie Wonder + duo golden path. */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeStevieWonderEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

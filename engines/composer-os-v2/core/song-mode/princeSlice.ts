@@ -320,6 +320,7 @@ export interface PrinceAntiElaborationGuards {
   noopEnrich: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputePrinceEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

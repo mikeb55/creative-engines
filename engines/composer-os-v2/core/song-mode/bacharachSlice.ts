@@ -405,6 +405,7 @@ function applyInnerVoiceSlashPass(
 /**
  * Precompute effective one chord per bar after Bacharach slice devices (primary `bacharach` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBacharachEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

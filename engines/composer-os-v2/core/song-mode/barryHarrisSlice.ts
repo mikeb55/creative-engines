@@ -264,6 +264,7 @@ function applyCadentialTwoFivePrepPass(
 /**
  * Precompute effective one chord per bar after Barry Harris slice devices (primary `barry_harris` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBarryHarrisEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

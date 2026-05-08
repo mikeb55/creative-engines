@@ -473,6 +473,7 @@ export interface DebussyAntiElaborationGuards {
   resolutionSuppressed: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeDebussyEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

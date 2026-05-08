@@ -500,6 +500,7 @@ function applyLockedHandsApproxPass(
 /**
  * Precompute effective one chord per bar after Bill Evans slice devices (primary `bill_evans` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBillEvansEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

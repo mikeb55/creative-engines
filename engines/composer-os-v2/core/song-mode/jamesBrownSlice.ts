@@ -295,6 +295,7 @@ function collectHornStabHitRate(args: {
 /**
  * Precompute effective one chord per bar after JB devices + guards (James Brown primary only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeJamesBrownEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

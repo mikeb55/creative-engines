@@ -228,6 +228,7 @@ function applyPedalTonicBass(
 /**
  * Precompute effective one chord per bar after Kate Bush slice devices (primary `kate_bush` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeKateBushEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

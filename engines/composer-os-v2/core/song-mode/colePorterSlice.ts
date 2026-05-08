@@ -369,6 +369,7 @@ export interface ColePorterAntiElaborationGuards {
   noopEnrich: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeColePorterEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

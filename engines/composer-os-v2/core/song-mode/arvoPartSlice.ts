@@ -271,6 +271,7 @@ export interface ArvoPartAntiElaborationGuards {
   noopTriad: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeArvoPartEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

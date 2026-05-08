@@ -281,6 +281,7 @@ function assignTuningPatterns(tb: number, seed: number): string[] {
 /**
  * Precompute effective one chord per bar after Joni devices + guards (joni_mitchell primary only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeJoniMitchellEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

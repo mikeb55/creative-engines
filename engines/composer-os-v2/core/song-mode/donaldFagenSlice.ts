@@ -328,6 +328,7 @@ function applyPhraseAnticipationBiasPass(
 /**
  * Precompute effective one chord per bar after Donald Fagen slice devices (primary `donald_fagen` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeDonaldFagenEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

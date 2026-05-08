@@ -383,6 +383,7 @@ export function applyBrianWilsonPetSoundsHarmonicDevicesForBar(params: {
 }
 
 /** Precompute full-form effective harmony when Brian Wilson + duo golden path. */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBrianWilsonEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

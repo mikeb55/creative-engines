@@ -676,6 +676,7 @@ export function maxSlashBassHoldBars(out: string[]): number {
   return best;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputePatMethenyEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const snap = buildPatMethenyHarmonyPipelineSnapshot(context);

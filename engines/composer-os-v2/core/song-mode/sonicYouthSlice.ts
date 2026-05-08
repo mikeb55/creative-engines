@@ -162,6 +162,7 @@ export function applySonicYouthGuitarBarPasses(m: MeasureModel, bar: number, con
 /**
  * Precompute effective harmony + device receipts (full-form authority for `getChordForBar`).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeSonicYouthEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

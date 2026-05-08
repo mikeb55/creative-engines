@@ -465,6 +465,7 @@ function avoidQuartalAsDefault(symbol: string, seed: number, bar: number): strin
 /**
  * Precompute effective one chord per bar after Jobim slice devices (primary `antonio_carlos_jobim` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeJobimEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

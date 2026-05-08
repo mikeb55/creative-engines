@@ -6,7 +6,7 @@ import { scoreVoicingCandidate, type VoicingCandidate } from './voiceLeadingSolv
 import { getVoiceRuleBundle } from './voiceRuleBundles';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 import type { CompositionContext } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
 
 export interface GuitarVoicing {
@@ -179,7 +179,7 @@ export function buildVoicingsForContext(context: CompositionContext, _seed: numb
   let prev: VoicingCandidate | null = null;
   const out: GuitarVoicing[] = [];
   for (let b = 1; b <= tb; b++) {
-    const sym = getChordForBar(b, context);
+    const sym = resolveBarSymbol(context, b).symbol;
     const tones = chordTonesForChordSymbolWithContext(sym, context);
     const pcs = [tones.root, tones.third, tones.fifth, tones.seventh].map((m) => ((m % 12) + 12) % 12);
     let candidates = filterVoicingsByMaxSpan(buildGuitarVoicingCandidates(sym, pcs), 4);

@@ -400,6 +400,7 @@ function applyBirdEnclosure(
 /**
  * Precompute effective one chord per bar after Charlie Parker slice devices (primary `charlie_parker` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeCharlieParkerEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

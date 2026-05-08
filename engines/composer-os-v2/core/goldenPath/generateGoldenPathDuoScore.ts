@@ -16,7 +16,7 @@ declare module '../compositionContext' {
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import {
   parseChordSymbol,
   pitchClassToBassMidi,
@@ -695,7 +695,7 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
     ? { lockedHarmony: true }
     : undefined;
   for (const m of part.measures) {
-    const chord = m.chord ?? getChordForBar(m.index, context);
+    const chord = m.chord ?? resolveBarSymbol(context, m.index).symbol;
     const tones = duoChordTonesWithOptionalTuningMap(
       chord,
       Math.max(low + 7, 47),
@@ -712,7 +712,7 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
       .sort((a, b) => a.startBeat - b.startBeat);
     if (voice1Anchors.length === 0) continue;
     const prevChordLabel =
-      m.index <= 1 ? null : part.measures.find((x) => x.index === m.index - 1)?.chord ?? getChordForBar(m.index - 1, context);
+      m.index <= 1 ? null : part.measures.find((x) => x.index === m.index - 1)?.chord ?? resolveBarSymbol(context, m.index - 1).symbol;
     const harmonyChangedFromPriorBar = m.index > 1 && prevChordLabel != null && prevChordLabel !== chord;
     const sectionStart = isIndieGuitar2SectionStartBar(m.index, context);
     const largeChange = harmonyChangedFromPriorBar && isIndieGuitar2LargeHarmonyChange(prevChordLabel, chord);
@@ -882,7 +882,7 @@ function applyVoiceRoleFromPartSpec(part: PartModel, context: CompositionContext
   const role = part.voiceRole ?? 'balanced';
   const bias = part.chordBias ?? 0.55;
   for (const m of part.measures) {
-    const chord = m.chord ?? getChordForBar(m.index, context);
+    const chord = m.chord ?? resolveBarSymbol(context, m.index).symbol;
     /** Only suppresses the extra *single-note* v2 pass; existing `ChordEvent` stacks (full voicings) are left unchanged. */
     if (
       part.id === 'guitar_2' &&
@@ -1618,7 +1618,7 @@ function repairBassMotifEchoBars1to8(
   let bestBar = 1;
   let bestFlex = -1;
   for (let bar = 1; bar <= 8; bar++) {
-    const chord = getChordForBar(bar, context);
+    const chord = resolveBarSymbol(context, bar).symbol;
     const tones = chordTonesForChordSymbolWithContext(chord, context);
     const gm = guitarPart.measures.find((x) => x.index === bar);
     let flex = 0;
@@ -1638,7 +1638,7 @@ function repairBassMotifEchoBars1to8(
   const bm = measures.find((x) => x.index === bestBar);
   const gm = guitarPart.measures.find((x) => x.index === bestBar);
   if (!bm || !gm) return;
-  const chord = getChordForBar(bestBar, context);
+  const chord = resolveBarSymbol(context, bestBar).symbol;
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const [low, high] = getBassRegisterForBar(bassMap, bestBar, context);
   const eh = Math.min(high, 52);
@@ -1716,7 +1716,7 @@ function duoEnforcePhraseEndCadence(
   void songModeHook;
   if (bar % 4 !== 0) return;
 
-  const chord = getChordForBar(bar, context);
+  const chord = resolveBarSymbol(context, bar).symbol;
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const v1 = m.events.filter(
     (e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1
@@ -2170,7 +2170,7 @@ function applyDonaldFagenGuitarBarPasses(
     fagenLydianMajorBias?: number;
   }
 ): void {
-  const chord = m.chord ?? getChordForBar(bar, context);
+  const chord = m.chord ?? resolveBarSymbol(context, bar).symbol;
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const h = parseChordSymbol(chord).harmonyPart;
   const isDom7 =
@@ -2241,7 +2241,7 @@ function applyBacharachGuitarBarPasses(
   }
 ): void {
   void biases.bacharachDeceptiveCadenceRate;
-  const chordSym = m.chord ?? getChordForBar(bar, context);
+  const chordSym = m.chord ?? resolveBarSymbol(context, bar).symbol;
   const opts = shouldUseUserChordSemanticsForTones(context) ? { lockedHarmony: true } : undefined;
   const tones = guitarChordTonesInRange(chordSym, low, high, opts);
   const isDominant = isChordDominantForBacharach(chordSym, context);
@@ -2627,85 +2627,85 @@ function buildGuitarPart(
   for (let b = 1; b <= tb; b++) {
     if (isSongwriterBrianWilson) {
       accumulateBrianWilsonHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         bwAccum
       );
     }
     if (isSongwriterStevieWonder) {
       accumulateStevieWonderHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         swAccum
       );
     }
     if (isSongwriterRadiohead) {
       accumulateRadioheadHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         rhAccum
       );
     }
     if (isSongwriterJamesBrown) {
       accumulateJamesBrownHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         jbAccum
       );
     }
     if (isSongwriterJoniMitchell || styleJoniMitchellSurface) {
       accumulateJoniMitchellHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         jmAccum
       );
     }
     if (isSongwriterSonicYouth || styleSonicYouthSurface) {
       accumulateSonicYouthHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         syAccum
       );
     }
     if (isSongwriterPatMetheny || stylePatMethenySurface) {
       accumulatePatMethenyHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         pmAccum
       );
     }
     if (isSongwriterWayneShorter) {
       accumulateWayneShorterHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         wsAccum
       );
     }
     if (isSongwriterFrankZappa) {
       accumulateFrankZappaHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         fzAccum
       );
     }
     if (isSongwriterBarryHarris) {
       accumulateBarryHarrisHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         bhAccum
       );
     }
     if (isSongwriterBillEvans) {
       accumulateBillEvansHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         beAccum
       );
     }
     if (isSongwriterDebussy) {
       accumulateDebussyHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         dbAccum
       );
     }
@@ -2720,159 +2720,159 @@ function buildGuitarPart(
       isSongwriterAngeloBadalamenti
     ) {
       accumulateFilmHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         filmHarmAccum
       );
     }
     if (isSongwriterDukeEllington) {
       accumulateDukeEllingtonHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         deAccum
       );
     }
     if (isSongwriterMilesDavis) {
       accumulateMilesDavisHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         mdAccum
       );
     }
     if (isSongwriterBartok) {
       accumulateBartokHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         bkAccum
       );
     }
     if (isSongwriterGershwin) {
       accumulateGershwinHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         ggAccum
       );
     }
     if (isSongwriterArvoPart) {
       accumulateArvoPartHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         apAccum
       );
     }
     if (isSongwriterSatie) {
       accumulateSatieHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         satAccum
       );
     }
     if (isSongwriterPrince) {
       accumulatePrinceHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         princeAccum
       );
     }
     if (isSongwriterBeatles) {
       accumulateBeatlesHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         beatlesAccum
       );
     }
     if (isSongwriterFelaKuti) {
       accumulateFelaKutiHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         felaKutiAccum
       );
     }
     if (isSongwriterColePorter) {
       accumulateColePorterHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         colePorterAccum
       );
     }
     if (isSongwriterMariaSchneider) {
       accumulateMariaSchneiderHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         msAccum
       );
     }
     if (isSongwriterBacharach) {
       accumulateBacharachHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         baAccum
       );
     }
     if (isSongwriterFagen) {
       accumulateDonaldFagenHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         dfAccum
       );
     }
     if (isSongwriterEcmChamber) {
       accumulateEcmChamberHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         eccAccum
       );
     }
     if (isSongwriterJobim) {
       accumulateJobimHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         ajAccum
       );
     }
     if (isSongwriterHerbieHancock) {
       accumulateHerbieHancockHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         hhAccum
       );
     }
     if (isSongwriterSondheim) {
       accumulateSondheimHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         shAccum
       );
     }
     if (isSongwriterKateBush) {
       accumulateKateBushHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         kbAccum
       );
     }
     if (isSongwriterTheloniousMonk) {
       accumulateTheloniousMonkHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         tmAccum
       );
     }
     if (isSongwriterAndrewHill) {
       accumulateAndrewHillHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         ahAccum
       );
     }
     if (isSongwriterCharlieParker) {
       accumulateCharlieParkerHarmonyDiagnostics(
-        b > 1 ? getChordForBar(b - 1, context) : undefined,
-        getChordForBar(b, context),
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
         cpAccum
       );
     }
-    const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
+    const m = createMeasure(b, resolveBarSymbol(context, b).symbol, rehearsalForBar(b, context));
     stampMeasureBeatSpanQuarters(m, context);
     const placements = getPlacementsForBar(motifState.placements, b);
     const ecmMode = context.generationMetadata?.ecmMode;
@@ -2958,7 +2958,7 @@ function buildGuitarPart(
     const bach = hints.bacharach;
 
     if (hookRuntime) {
-      const m = createMeasure(b, getChordForBar(b, context), rehearsalForBar(b, context));
+      const m = createMeasure(b, resolveBarSymbol(context, b).symbol, rehearsalForBar(b, context));
       stampMeasureBeatSpanQuarters(m, context);
       hookRuntime.emitScheduledBar(b, m);
       normalizeMeasureToEighthBeatGrid(m);
@@ -3026,7 +3026,7 @@ function buildGuitarPart(
     if (bach && (phase === 2 || phase === 6) && context.presetId !== 'ecm_chamber') {
       const bm = buildBacharachAnchorMeasure(
         b,
-        getChordForBar(b, context),
+        resolveBarSymbol(context, b).symbol,
         rehearsalForBar(b, context),
         effectiveLow,
         effectiveHigh,
@@ -3113,7 +3113,7 @@ function buildGuitarPart(
         addEvent(m, createRest(cursor, barCapMotif - cursor));
       } else if (cursor < barCapMotif - 1e-4) {
         const tail = barCapMotif - cursor;
-        const chord = getChordForBar(b, context);
+        const chord = resolveBarSymbol(context, b).symbol;
         const tones = duoChordTonesWithOptionalTuningMap(
           chord,
           effectiveLow,
@@ -3180,7 +3180,7 @@ function buildGuitarPart(
       ) {
         emitEcmGuitarSustainBar({
           m,
-          chord: getChordForBar(b, context),
+          chord: resolveBarSymbol(context, b).symbol,
           low: effectiveLow,
           high: effectiveHigh,
           seed,
@@ -3191,7 +3191,7 @@ function buildGuitarPart(
       } else if ((isEcmM || isEcmS) && tex?.guitarRole === 'inner_motion') {
         emitEcmGuitarInnerMotionBar({
           m,
-          chord: getChordForBar(b, context),
+          chord: resolveBarSymbol(context, b).symbol,
           low: effectiveLow,
           high: effectiveHigh,
           seed,
@@ -3201,7 +3201,7 @@ function buildGuitarPart(
       } else if (isDuoGolden && phase === 7) {
         emitGuitarDuoIdentityBar7({
           m,
-          chord: getChordForBar(b, context),
+          chord: resolveBarSymbol(context, b).symbol,
           effectiveLow,
           effectiveHigh,
           staggerG: staggerGuitar,
@@ -3235,7 +3235,7 @@ function buildGuitarPart(
           isAlternateGuitarTuningPilotActive(genMeta) &&
           styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(genMeta?.styleProfile))
         ) {
-          const chordStr = getChordForBar(b, context);
+          const chordStr = resolveBarSymbol(context, b).symbol;
           const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
           slonimskyBarCtx = buildDuoBarSlonimskyContext({
             duoIntent: phraseIntent,
@@ -3257,7 +3257,7 @@ function buildGuitarPart(
         emitGuitarPhraseBar({
           m,
           bar: phraseShapeBar,
-          chord: getChordForBar(b, context),
+          chord: resolveBarSymbol(context, b).symbol,
           effectiveLow,
           effectiveHigh,
           density: densityLevel,
@@ -3627,7 +3627,7 @@ function applyEcmMethenyMotifDevelopment(
 
     // Suspend: bar 7 long tone + pick-up over barline feel (late entry)
     if (m7) {
-      const chord = m7.chord ?? getChordForBar(bar7, context);
+      const chord = m7.chord ?? resolveBarSymbol(context, bar7).symbol;
       const tones = chordTonesForChordSymbolWithContext(chord, context);
       const sus = clampPitch(tones.seventh + 12, 60, 79);
       m7.events = [];
@@ -3697,7 +3697,7 @@ function simplifyBassAtPeakBar(
   walkLow: number,
   bassCeiling: number
 ): void {
-  const chord = getChordForBar(bar, context);
+  const chord = resolveBarSymbol(context, bar).symbol;
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const parsed = parseChordSymbol(chord);
   const root = tones.root;
@@ -3737,7 +3737,7 @@ function resolveOverlapInDuoScore(
   for (let b = 1; b <= tb; b++) {
     if (climax.has(b)) continue;
     if (activityScoreForBar(guitarPart, b) < HIGH_ACTIVITY || activityScoreForBar(bassPart, b) < HIGH_ACTIVITY) continue;
-    const chord = getChordForBar(b, context);
+    const chord = resolveBarSymbol(context, b).symbol;
     const tones = chordTonesForChordSymbolWithContext(chord, context);
     const parsed = parseChordSymbol(chord);
     const root = tones.root;
@@ -3825,7 +3825,7 @@ function repairSlashBassHonourInDuoScore(
   const seed = context.seed;
   const isDuoPreset = isGuitarBassDuoFamily(context.presetId);
   for (const m of bassPart.measures) {
-    const chord = m.chord ?? getChordForBar(m.index, context);
+    const chord = m.chord ?? resolveBarSymbol(context, m.index).symbol;
     const parsed = parseChordSymbol(chord);
     if (parsed.slashBassPc === undefined) continue;
     const [low, high] = getBassRegisterForBar(bassMap, m.index, context);
@@ -3991,7 +3991,7 @@ function buildBassPart(
       }
     }
     logBassProbe('start_bar_loop', b);
-    const chord = getChordForBar(b, context);
+    const chord = resolveBarSymbol(context, b).symbol;
     const tones = chordTonesForChordSymbolWithContext(chord, context);
     const parsed = parseChordSymbol(chord);
     const root = tones.root;
@@ -4801,8 +4801,8 @@ function buildBassPart(
     let anyViol = false;
     for (const mm of measures) {
       const barIdx = mm.index;
-      const ch = getChordForBar(barIdx, context);
-      const nextCh = barIdx < tb ? getChordForBar(barIdx + 1, context) : undefined;
+      const ch = resolveBarSymbol(context, barIdx).symbol;
+      const nextCh = barIdx < tb ? resolveBarSymbol(context, barIdx + 1).symbol : undefined;
       const r = enforceFrankZappaBassBeatCommitment({
         m: mm,
         chord: ch,
@@ -4841,7 +4841,7 @@ function applyLateClosingGuitarContourNudge(guitar: PartModel, context: Composit
     if (consecutiveChordStreakEndingAtBar(context, bar) < 2) continue;
     const m = guitar.measures.find((x) => x.index === bar);
     if (!m) continue;
-    const chord = getChordForBar(bar, context);
+    const chord = resolveBarSymbol(context, bar).symbol;
     const tones = guitarChordTonesInRange(chord, low, high);
     const pool = [tones.root, tones.third, tones.fifth, tones.seventh];
     let bestI = -1;
@@ -4895,7 +4895,7 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
     if (best) lastPcs.push(best.pitch % 12);
   }
   if (new Set(lastPcs).size >= 3) return;
-  const chord = getChordForBar(5, context);
+  const chord = resolveBarSymbol(context, 5).symbol;
   const tones = chordTonesForChordSymbolWithContext(chord, context);
   const low = 55;
   const high = 79;
@@ -5750,7 +5750,7 @@ export function generateGoldenPathDuoScore(
         }
         if (bestI < 0) continue;
         const n = m.events[bestI] as NoteEvent;
-        const chordSym = m.chord ?? getChordForBar(m.index, context);
+        const chordSym = m.chord ?? resolveBarSymbol(context, m.index).symbol;
         const tones = guitarChordTonesInRange(chordSym, Math.max(lowCad + 7, 47), highCad, chordToneOptsCad);
         let sb = n.startBeat;
         if (!indieGuitar2BeatOneOrThreeLocal(sb)) {

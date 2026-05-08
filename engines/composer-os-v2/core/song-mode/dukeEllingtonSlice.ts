@@ -365,6 +365,7 @@ export interface DukeEllingtonAntiElaborationGuards {
   bareMajorRaised: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeDukeEllingtonEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

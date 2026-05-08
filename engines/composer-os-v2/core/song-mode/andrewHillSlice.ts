@@ -345,6 +345,7 @@ function applyNonfunctionalM7M11(
 /**
  * Precompute effective one chord per bar after Andrew Hill slice devices (primary `andrew_hill` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeAndrewHillEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

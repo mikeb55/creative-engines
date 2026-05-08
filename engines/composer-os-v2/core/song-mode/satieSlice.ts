@@ -222,6 +222,7 @@ export function isSongwriterSatie(
   return genMeta?.songwriterStyleId === 'satie';
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeSatieEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

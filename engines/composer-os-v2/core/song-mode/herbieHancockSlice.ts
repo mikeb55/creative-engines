@@ -278,6 +278,7 @@ function softenPhraseFinalCadence(
 /**
  * Precompute effective one chord per bar after Hancock slice devices (primary `herbie_hancock` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeHerbieHancockEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

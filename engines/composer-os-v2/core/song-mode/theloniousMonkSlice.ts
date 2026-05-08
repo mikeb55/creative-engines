@@ -403,6 +403,7 @@ function applyDeliberateSilencePass(
 /**
  * Precompute effective one chord per bar after Monk slice devices (primary `thelonious_monk` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeTheloniousMonkEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

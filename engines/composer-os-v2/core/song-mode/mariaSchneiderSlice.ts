@@ -408,6 +408,7 @@ export interface MariaSchneiderAntiElaborationGuards {
   bareMajorRaised: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeMariaSchneiderEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

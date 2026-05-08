@@ -439,6 +439,7 @@ export interface MilesDavisAntiElaborationGuards {
 /**
  * Precompute effective one chord per bar after Miles Davis slice devices (primary `miles_davis` only).
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeMilesDavisEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

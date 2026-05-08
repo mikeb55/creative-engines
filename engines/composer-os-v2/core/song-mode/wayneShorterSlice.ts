@@ -365,6 +365,7 @@ function applyPlateauPedal(symbol: string, prevSymbol: string, seed: number, bar
   return `${upper}/${pitchClassToSharpName(pedalPc)}`;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

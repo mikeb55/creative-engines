@@ -145,6 +145,7 @@ export function accumulateFelaKutiHarmonyDiagnostics(
   scanChordForDiagnostics(currentChord, acc);
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeFelaKutiEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

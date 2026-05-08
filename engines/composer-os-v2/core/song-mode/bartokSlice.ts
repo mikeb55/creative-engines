@@ -230,6 +230,7 @@ export interface BartokAntiElaborationGuards {
   noopAxis: number;
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeBartokEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

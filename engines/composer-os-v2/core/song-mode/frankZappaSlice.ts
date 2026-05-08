@@ -729,6 +729,7 @@ function frankZappaDeviceSpecLabel(device: FrankZappaHarmonyDeviceId): string {
   }
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

@@ -273,6 +273,7 @@ export function rhApplyDevice2ParallelAlternation(params: {
   }
 }
 
+/** @deprecated — use resolveBarSymbol */
 export function precomputeRadioheadEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

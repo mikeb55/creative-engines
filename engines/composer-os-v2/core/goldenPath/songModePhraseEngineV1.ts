@@ -10,7 +10,7 @@ import type { Motif } from '../motif/motifEngineTypes';
 import type { MeasureModel, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -59,7 +59,7 @@ function chordToneOpts(context: CompositionContext): ChordTonesOptions | undefin
 
 function tonesForBar(bar: number, context: CompositionContext) {
   const opts = chordToneOpts(context);
-  return guitarChordTonesInRange(getChordForBar(bar, context), LOW, HIGH, opts);
+  return guitarChordTonesInRange(resolveBarSymbol(context, bar).symbol, LOW, HIGH, opts);
 }
 
 function poolMidi(bar: number, context: CompositionContext): number[] {
@@ -375,7 +375,7 @@ function minPitchInteriorExcludingLanding(pitches: number[], peakIdx: number, n:
  */
 function pickPriorityCadenceInRange(bar: number, context: CompositionContext, lo: number, hi: number): number {
   const opts = chordToneOpts(context);
-  const chord = getChordForBar(bar, context);
+  const chord = resolveBarSymbol(context, bar).symbol;
   const g = guitarChordTonesInRange(chord, LOW, HIGH, opts);
   const tiers: number[][] = [
     [Math.round(g.root), Math.round(g.third)],
@@ -500,7 +500,7 @@ function extendLastNoteCadence(m: MeasureModel, minDur: number): void {
 function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionContext, bar: number): void {
   if (isProtectedBar(bar, context)) return;
   const opts = chordToneOpts(context);
-  const chord = getChordForBar(bar, context);
+  const chord = resolveBarSymbol(context, bar).symbol;
   const gtones = guitarChordTonesInRange(chord, 40, 90, opts);
   const poolCore = [gtones.root, gtones.third, gtones.fifth, gtones.seventh].map((x) => Math.round(x));
   const priority = [Math.round(gtones.root), Math.round(gtones.third), Math.round(gtones.fifth), Math.round(gtones.seventh)];
@@ -615,7 +615,7 @@ function shapePhraseOpening(
       }
     }
   }
-  const chord = getChordForBar(startBar, context);
+  const chord = resolveBarSymbol(context, startBar).symbol;
   const tones = guitarChordTonesInRange(chord, LOW, HIGH, opts);
   const set = new Set([tones.root, tones.third, tones.fifth, tones.seventh].map((x) => Math.round(x)));
   const lastN = notes[notes.length - 1].e as { pitch: number; startBeat: number; duration: number };
@@ -1202,7 +1202,7 @@ function validatePhraseDirectionality(
     });
   }
 
-  const chord = getChordForBar(endBar, context);
+  const chord = resolveBarSymbol(context, endBar).symbol;
   const landingMidis = collectPhraseEndLandingMidis(chord, context);
 
   const fallOk =

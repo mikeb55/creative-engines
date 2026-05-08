@@ -148,6 +148,7 @@ export interface ZappaStringQuartetDiagnostics {
  * Precompute one effective harmony bar line: per bar, walk parts in score order and apply each part’s device pipeline
  * with the same Bernoulli targets as the duo slice (per attempt), mutating the working chord sequentially.
  */
+/** @deprecated — use resolveBarSymbol */
 export function precomputeZappaSQEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenMetaSq;
   const tb = context.form.totalBars;
