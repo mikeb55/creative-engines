@@ -2291,6 +2291,21 @@ function applyBacharachGuitarBarPasses(
   }
 }
 
+/** Nudge ensemble attack offsets for product duo intent (tighter dialogue vs wider supportive spacing). */
+function adjustDuoEnsembleStaggerForProductIntent(
+  stagger: { guitar: number; bass: number },
+  productDuoIntent: 'conversational' | 'supportive' | undefined
+): { guitar: number; bass: number } {
+  if (productDuoIntent !== 'conversational' && productDuoIntent !== 'supportive') return stagger;
+  const { guitar: g, bass: bs } = stagger;
+  const mid = (g + bs) / 2;
+  const factor = productDuoIntent === 'conversational' ? 0.66 : 1.2;
+  return {
+    guitar: snapAttackBeatToGrid(Math.max(0, Math.min(3.75, mid + (g - mid) * factor))),
+    bass: snapAttackBeatToGrid(Math.max(0, Math.min(3.75, mid + (bs - mid) * factor))),
+  };
+}
+
 function buildGuitarPart(
   context: CompositionContext,
   _guitarPlan: GuitarBehaviourPlan,
@@ -2312,6 +2327,8 @@ function buildGuitarPart(
     : undefined;
 
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const productDuoIntent: 'conversational' | 'supportive' | undefined =
+    genMeta?.duoIntent === 'conversational' || genMeta?.duoIntent === 'supportive' ? genMeta.duoIntent : undefined;
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
   const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
   const isSongwriterJobim = genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
@@ -2905,9 +2922,12 @@ function buildGuitarPart(
         : isEcmS
           ? getEcmSchneiderPhraseIntent(phase, seed)
           : isDuoGolden
-            ? duoGoldenPathPhraseIntentAtBar(seed, b)
+            ? duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent)
             : getDuoPhraseIntent(phraseBar, seed);
-    const stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
+    let stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
+    if (isDuoGolden && productDuoIntent) {
+      stagger = adjustDuoEnsembleStaggerForProductIntent(stagger, productDuoIntent);
+    }
     const swingBump = duoGuitarSwingStaggerBump(seed, b, isDuoGolden);
     /** 8-bar arc: slight stagger bias so attacks are not evenly spaced on the grid every bar. */
     const phraseShapeBump =
@@ -3924,6 +3944,11 @@ function buildBassPart(
   const [walkLow, walkHigh] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(walkHigh, 52);
   const seed = context.seed;
+  const productDuoIntent: 'conversational' | 'supportive' | undefined =
+    context.generationMetadata?.duoIntent === 'conversational' ||
+    context.generationMetadata?.duoIntent === 'supportive'
+      ? context.generationMetadata.duoIntent
+      : undefined;
   const measures: MeasureModel[] = [];
   const tb = totalBarsFromContext(context);
   let prevBassPitch: number | undefined = walkLow;
@@ -4108,9 +4133,12 @@ function buildBassPart(
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
     const simplify = interaction?.coupling?.bassSimplify;
     const phraseIntent = duoGoldenBass
-      ? duoGoldenPathPhraseIntentAtBar(seed, b)
+      ? duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent)
       : getDuoPhraseIntent(phraseBar, seed);
-    const stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, duoGoldenBass ? s : seed, phraseIntent);
+    let stagger = computeEnsembleStagger(duoGoldenBass ? phase : phraseBar, duoGoldenBass ? s : seed, phraseIntent);
+    if (duoGoldenBass && productDuoIntent) {
+      stagger = adjustDuoEnsembleStaggerForProductIntent(stagger, productDuoIntent);
+    }
     const placements = getPlacementsForBar(motifState.placements, b);
     let firstStart = stagger.bass;
     if (
@@ -5351,6 +5379,11 @@ export function generateGoldenPathDuoScore(
   opts?: GenerateGoldenPathDuoScoreOpts
 ): ScoreModel {
   const tb = totalBarsFromContext(context);
+  const productDuoIntent: 'conversational' | 'supportive' | undefined =
+    context.generationMetadata?.duoIntent === 'conversational' ||
+    context.generationMetadata?.duoIntent === 'supportive'
+      ? context.generationMetadata.duoIntent
+      : undefined;
   const probeEcm = context.presetId === 'ecm_chamber' && process.env?.COMPOSER_OS_DEBUG_ECM_PHASE === '1';
   logEcmInternalPhaseProbe(probeEcm, 'enter_generateGoldenPathDuoScore', undefined, { tb });
   const sp = context.generationMetadata?.styleProfile;
@@ -5434,10 +5467,10 @@ export function generateGoldenPathDuoScore(
       context.generationMetadata
     ) {
       const refBar = Math.min(8, Math.max(1, tb));
-      const duoIntent = duoGoldenPathPhraseIntentAtBar(context.seed, refBar);
+      const phraseIntentForSlonimsky = duoGoldenPathPhraseIntentAtBar(context.seed, refBar, productDuoIntent);
       const phase = ((refBar - 1) % 8) + 1;
       const slonimskyCtx = mapDuoPhraseIntentToSlonimskyContext({
-        duoIntent,
+        duoIntent: phraseIntentForSlonimsky,
         phase,
         seed: context.seed,
         songwriterId: context.generationMetadata.songwriterStyleId,

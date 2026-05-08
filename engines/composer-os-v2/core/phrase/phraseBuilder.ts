@@ -228,22 +228,85 @@ function applyPhraseEngineStage2AtPhraseStart(
 }
 
 /**
- * Bar-level duo golden path intent: V3.1 authority, plus Stage 2 sequencing on each 4-bar phrase downbeat only.
- * Deterministic in `seed`; guitar and bass must both call this with the same `(seed, bar)`.
+ * Product-level duo intent (`metadata.duoIntent`): nudges {@link PhraseIntent} toward conversational alternation
+ * or supportive guitar-primary behaviour — does not replace Stage 1–2 logic wholesale.
  */
-export function duoGoldenPathPhraseIntentAtBar(seed: number, bar: number): PhraseIntent {
+function applyProductDuoIntentPhraseBias(
+  seed: number,
+  bar: number,
+  intent: PhraseIntent,
+  productDuoIntent?: 'conversational' | 'supportive'
+): PhraseIntent {
+  if (productDuoIntent !== 'conversational' && productDuoIntent !== 'supportive') return intent;
+
+  const phraseIx = Math.floor((bar - 1) / 4);
+  const u = seededUnit(seed, bar, 58347 + (productDuoIntent === 'conversational' ? 3 : 29));
+  const v = seededUnit(seed, bar, 58348 + (productDuoIntent === 'conversational' ? 3 : 29));
+  const strength = 0.42;
+  if (u > strength) return intent;
+
+  if (productDuoIntent === 'conversational') {
+    const guitarPhrase = phraseIx % 2 === 0;
+    if (guitarPhrase) {
+      switch (intent) {
+        case 'bass_lead':
+          return v < 0.52 ? 'guitar_lead' : 'answer_guitar';
+        case 'answer_bass':
+          return v < 0.58 ? 'answer_guitar' : 'contrast';
+        default:
+          return intent;
+      }
+    }
+    switch (intent) {
+      case 'guitar_lead':
+        return v < 0.52 ? 'bass_lead' : 'answer_bass';
+      case 'answer_guitar':
+        return v < 0.55 ? 'answer_bass' : 'bass_lead';
+      case 'development':
+        return v < 0.33 ? 'answer_bass' : intent;
+      default:
+        return intent;
+    }
+  }
+
+  switch (intent) {
+    case 'bass_lead':
+      return v < 0.74 ? 'answer_bass' : 'guitar_lead';
+    case 'answer_guitar':
+      return v < 0.63 ? 'guitar_lead' : 'development';
+    case 'contrast':
+      return v < 0.45 ? 'development' : 'guitar_lead';
+    default:
+      return intent;
+  }
+}
+
+/**
+ * Bar-level duo golden path intent: V3.1 authority, plus Stage 2 sequencing on each 4-bar phrase downbeat only.
+ * Deterministic in `seed`; guitar and bass must both call this with the same `(seed, bar[, productDuoIntent])`.
+ */
+export function duoGoldenPathPhraseIntentAtBar(
+  seed: number,
+  bar: number,
+  productDuoIntent?: 'conversational' | 'supportive'
+): PhraseIntent {
   const phase = ((bar - 1) % 8) + 1;
   const phraseNumber8 = Math.floor((bar - 1) / 8) + 1;
   const base = getDuoPhraseIntentV31(phase, phraseNumber8);
-  if ((bar - 1) % 4 !== 0) return base;
+  if ((bar - 1) % 4 !== 0) {
+    return applyProductDuoIntentPhraseBias(seed, bar, base, productDuoIntent);
+  }
 
   const prevPhraseFirstBar = bar - 4;
   const previousPhraseSequencingType =
     prevPhraseFirstBar < 1
       ? undefined
-      : phraseSequencingTypeFromIntent(duoGoldenPathPhraseIntentAtBar(seed, prevPhraseFirstBar));
+      : phraseSequencingTypeFromIntent(
+          duoGoldenPathPhraseIntentAtBar(seed, prevPhraseFirstBar, productDuoIntent)
+        );
 
-  return applyPhraseEngineStage2AtPhraseStart(seed, bar, base, previousPhraseSequencingType);
+  const staged = applyPhraseEngineStage2AtPhraseStart(seed, bar, base, previousPhraseSequencingType);
+  return applyProductDuoIntentPhraseBias(seed, bar, staged, productDuoIntent);
 }
 
 const STAGE3_ANT_EPS = 1e-4;
