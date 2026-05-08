@@ -130,6 +130,26 @@ export const HENRY_THREADGILL_HARMONIC_STYLE_KEYS: readonly string[] = [
   'interval_based_cadence_convergence',
 ];
 
+/** Charles Mingus — blues architecture, gospel shout, collective suite form. */
+export const CHARLES_MINGUS_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'blues_as_architecture',
+  'chromatic_bass_counterpoint',
+  'gospel_harmony_shout_sections',
+  'collective_improvisation_form',
+  'ellington_orchestral_dna',
+  'dense_midrange_horn_voicings',
+  'tonal_modal_free_continuum',
+  'irregular_suite_like_forms',
+  'protest_march_rhythmics',
+  'extended_dominant_alterations',
+  'expressive_melodic_bass_voice',
+  'contrapuntal_collective_textures',
+  'gospel_shout_climax',
+  'variable_length_blues_forms',
+  'programmatic_narrative_suites',
+  'orchestral_double_big_band_ambition',
+];
+
 export const WAYNE_SHORTER_HARMONIC_STYLE_KEYS: readonly string[] = [
   'motivic_harmonic_derivation',
   'non_functional_neighbor_harmony',
@@ -170,6 +190,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...WAYNE_SHORTER_HARMONIC_STYLE_KEYS];
     case 'henry_threadgill':
       return [...HENRY_THREADGILL_HARMONIC_STYLE_KEYS];
+    case 'charles_mingus':
+      return [...CHARLES_MINGUS_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

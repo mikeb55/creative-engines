@@ -3,6 +3,7 @@ import {
   BADALAMENTI_HARMONIC_STYLE_KEYS,
   GIL_EVANS_HARMONIC_STYLE_KEYS,
   HENRY_THREADGILL_HARMONIC_STYLE_KEYS,
+  CHARLES_MINGUS_HARMONIC_STYLE_KEYS,
   HERRMANN_HARMONIC_STYLE_KEYS,
   JOHN_COLTRANE_HARMONIC_STYLE_KEYS,
   MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
@@ -128,6 +129,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('henry_threadgill')).toEqual([
       'hv:henry_threadgill',
       ...HENRY_THREADGILL_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(charles_mingus) returns hv + 16 blues-suite tags', () => {
+    expect(CHARLES_MINGUS_HARMONIC_STYLE_KEYS).toHaveLength(16);
+    expect(resolveHarmonicContextKeys('charles_mingus')).toEqual([
+      'hv:charles_mingus',
+      ...CHARLES_MINGUS_HARMONIC_STYLE_KEYS,
     ]);
   });
 });

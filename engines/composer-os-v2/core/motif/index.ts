@@ -50,3 +50,13 @@ export {
   buildThreadgillIntervalSet,
   triadAdjacentIntervalsInPool,
 } from './intervalSetSystem';
+
+export type {
+  MingusBassMode,
+  MingusCadenceType,
+  MingusHarmonicMode,
+  MingusSection,
+  MingusSectionType,
+  MingusSuiteForm,
+} from './mingusSuiteForm';
+export { buildMingusSuiteForm } from './mingusSuiteForm';

@@ -62,11 +62,11 @@ export interface SongwriterStyleProfile {
   /** Broad era bucket (e.g. singer-songwriter) for docs / pairing. */
   songwriterEraTag?: string;
   /** Primary melodic lead for receipts/UI (sax-led jazz, etc.). */
-  primaryMelodicInstrument?: 'keys' | 'guitar' | 'sax' | 'ensemble' | 'winds';
+  primaryMelodicInstrument?: 'keys' | 'guitar' | 'sax' | 'ensemble' | 'winds' | 'bass';
   /** Multi-era harmonic lineage (e.g. Wayne Shorter periods). */
   songwriterHarmonicPeriods?: readonly string[];
   /** Engine routing hint — interval-set grammar vs chord-symbol rows. */
-  songwriterSystemType?: 'interval_set' | 'chord_symbol' | 'hybrid';
+  songwriterSystemType?: 'interval_set' | 'chord_symbol' | 'hybrid' | 'blues_suite';
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -177,6 +177,28 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     songwriterEraTag: 'jazz',
     primaryMelodicInstrument: 'winds',
     songwriterSystemType: 'interval_set',
+  },
+  charles_mingus: {
+    id: 'charles_mingus',
+    displayName: 'Charles Mingus',
+    description:
+      'Charles Mingus — blues as architecture, chromatic bass counterpoint, gospel shout climaxes, collective improvisation form. Ellington orchestral ambition meets raw blues expressionism. Bass-led chromatic harmony, episodic suite forms, programmatic narratives. Goodbye Pork Pie Hat through Epitaph.',
+    lineVsCellEmphasis: 0.72,
+    harmonyColourBias: 0.84,
+    formRegularity: 0.22,
+    prosodyInfluence: 0.18,
+    hookRepetitionBias: 0.38,
+    phraseRegularity: 0.2,
+    hookReturnVariation: 0.76,
+    harmonicSpeed: 0.52,
+    sectionContrast: 0.82,
+    syncopationBias: 0.58,
+    densityBias: 0.58,
+    motifCellSize: 4,
+    intervalPreference: 'chromatic',
+    songwriterEraTag: 'jazz',
+    primaryMelodicInstrument: 'bass',
+    songwriterSystemType: 'blues_suite',
   },
   stephen_sondheim: {
     id: 'stephen_sondheim',
@@ -1493,6 +1515,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   herbie: 'herbie_hancock',
   henry_threadgill: 'henry_threadgill',
   threadgill: 'henry_threadgill',
+  charles_mingus: 'charles_mingus',
+  mingus: 'charles_mingus',
   stephen_sondheim: 'stephen_sondheim',
   sondheim: 'stephen_sondheim',
   kate_bush: 'kate_bush',

@@ -37,6 +37,8 @@ export interface MotifCell2 {
   recallWeight: number;
   /** Motif seeder: prefer blues/march micro-cell before interval transforms (Threadgill). */
   bluesMarchSeed?: boolean;
+  /** Section builder hint: gospel shout climax density (Mingus). */
+  gospelShoutEnabled?: boolean;
 }
 
 export interface SectionRecallContract {

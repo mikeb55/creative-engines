@@ -460,6 +460,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'holland_dozier_holland', label: 'Holland-Dozier-Holland' },
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
   { id: 'henry_threadgill', label: 'Henry Threadgill' },
+  { id: 'charles_mingus', label: 'Charles Mingus' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
   { id: 'john_coltrane', label: 'John Coltrane' },
@@ -529,6 +530,7 @@ const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'maria_schneider',
   'wayne_shorter',
   'henry_threadgill',
+  'charles_mingus',
 ];
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
 

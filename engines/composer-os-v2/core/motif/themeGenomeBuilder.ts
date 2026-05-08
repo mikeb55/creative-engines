@@ -153,6 +153,41 @@ function cellBalancedDefault(seed: number): MotifCell2 {
   };
 }
 
+function cellCharlesMingus(): MotifCell2 {
+  const intervals = [3, 2];
+  const durations = [1.5, 0.5, 1];
+  const contour: ('up' | 'down' | 'same')[] = ['up', 'up', 'down'];
+  const accents = durations.map((d, i) => 0.44 + (i % 2) * 0.06 + Math.min(0.12, d / 8));
+  return {
+    id: 'cm_primary',
+    role: 'primary',
+    intervals,
+    durations,
+    contour,
+    accents,
+    registerBand: [50, 74],
+    harmonicMask: {
+      chordTonesBias: 0.6,
+      tensionBias: 0.5,
+      avoidStrongLT: false,
+      pedalFriendly: true,
+    },
+    transformBudget: {
+      transpose: true,
+      invert: false,
+      retrograde: false,
+      augment: true,
+      diminish: false,
+      fragment: true,
+      sequence: true,
+      embedInnerVoice: true,
+    },
+    recallWeight: 0.75,
+    bluesMarchSeed: true,
+    gospelShoutEnabled: true,
+  };
+}
+
 function cellHenryThreadgill(): MotifCell2 {
   const intervals = [1, 2, -3];
   const durations = [0.5, 1, 0.5, 1.5];
@@ -289,6 +324,7 @@ function primaryForVoice(canon: string, seed: number): MotifCell2 {
   if (canon === 'john_coltrane') return cellJohnColtrane();
   if (canon === 'wayne_shorter') return cellWayneShorter();
   if (canon === 'henry_threadgill') return cellHenryThreadgill();
+  if (canon === 'charles_mingus') return cellCharlesMingus();
   return cellBalancedDefault(seed);
 }
 

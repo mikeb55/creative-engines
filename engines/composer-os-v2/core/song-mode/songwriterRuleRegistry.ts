@@ -732,6 +732,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'global'
     ),
   ],
+  charles_mingus: [
+    R(
+      'mingus.blues_gospel_harmony',
+      'Blues as architecture — variable-length blues blocks (10/12/14/16) with motives persisting across irregular bar counts via gesture; core gospel/blues harmony (I7, IV7, bVI7, V7/IV, VI7), secondary dominants, plagal IV–I; dominant colours with b9/#9, tritone subs, upper-structure tensions; Ellington wrong-quality-over-root moves; dense mid-register horn stacks (2nds/7ths); cadences as collective ensemble arrivals / shout chords / unison gestures — not tidy V–I; allow functional ii–V, chromatic neighbours, and mode switches per section.',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'mingus.chromatic_bass_counterpoint',
+      'Bass as primary melodic driver — generate chromatic/contrapuntal bass first and derive harmony above it; walks between structural tones, blues walk-ups, pedals with rubato, ostinati with chromatic fills; 2–3 simultaneous independent lines; inner voices melodically free with chord/blues tones on strong beats and chromatic passing on weak; brass/reeds in call–response with registral/timbral contrast; thirds/sixths for grounding, seconds/sevenths at peaks, fourths/fifths in shout/hymn passages.',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'mingus.suite_form_collective',
+      'Episodic suite form free_intro → extended_blues → collective_pedal → gospel_shout → elegy_coda — not head–solo–head; collective improvisation with multiple agents on 2–3 note motives, distinct pitch pools and rhythms, locking only at hits/unison riffs; gospel shout climax with homophonic brass density and call–response; rotary/displaced accents and 3+3+2 cells over 4/4; drums avoid downbeat lock in free strata; programmatic intensity arc; every eight bars optional 1-bar unison blues riff recentre before returning to collective texture.',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+  ],
   stephen_sondheim: [
     R('sondheim.dissonant_tonality', 'Chromatic surface over retained tonal centre (placeholder)', 'songwriter', 'harmony', 9, 'global'),
     R('sondheim.added_note_tertian', 'Non-resolving 2nds/4ths/6ths on tertian harmony (placeholder)', 'songwriter', 'harmony', 9, 'verse'),

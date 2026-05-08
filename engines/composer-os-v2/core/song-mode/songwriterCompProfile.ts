@@ -117,6 +117,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',
   henry_threadgill: 'keys',
+  charles_mingus: 'keys',
   stephen_sondheim: 'keys',
   kate_bush: 'keys',
   thelonious_monk: 'keys',
@@ -208,6 +209,33 @@ const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   ],
   receiptLines: [
     'Harmonic voice John Coltrane — rhythm pairing hints: Fela Afrobeat (fk) one–two chord vamps + layered ostinati for Dorian pedal + pentatonic superimposition; Brazilian bossa (br) continuous eighths + extended harmony for modal/changes hybrids; Cuban Afro 6/8 (cu) pedal + modal vamp over clave (Africa/Brass / Olé lineage). Not an imitation of any artist.',
+  ],
+};
+
+const CHARLES_MINGUS_KEYS_COMP: SongwriterCompProfile = {
+  id: 'charles_mingus',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'dense_mid_register_horn_colour',
+    'altered_dominant_extensions',
+    'chromatic_bass_led_upper_structures',
+    'gospel_shout_cluster_peaks',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'second_line_collective_parade',
+    'clave_grid_without_downbeat_lock',
+    'protest_groove_ostinato_layers',
+  ],
+  smallMovementRules: [
+    'bass_line_first_then_harmony',
+    'call_response_register_split',
+    'collective_arrival_over_functional_cadence',
+  ],
+  receiptLines: [
+    'Harmonic voice Charles Mingus — rhythm pairing hints: New Orleans Second Line (sl) primary — parade/collective improv, blues/gospel shout seams, march roots then displacement; Cuban Afro 6/8 (cu) clave as implicit grid while melodic strata deliberately drift off downbeats; Fela Afrobeat (fk) long protest ostinati + layered collective improvisation with blues-suite pitch grammar on repeating riffs.',
+    'String quartet translation: cello carries Mingus-style bass counterlines; upper strings take shout countermelodies and chorale voicings; inner voices melodically independent with blues/gospel inflection.',
+    'Big band translation: sections as independent contrapuntal choirs — brass vs reeds call–response; gospel-shout homophony reserved for climax; chromatic bass as harmonic driver not mere root pad. Not an imitation of any artist.',
   ],
 };
 
@@ -349,6 +377,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return MARIA_SCHNEIDER_KEYS_COMP;
     case 'henry_threadgill':
       return HENRY_THREADGILL_KEYS_COMP;
+    case 'charles_mingus':
+      return CHARLES_MINGUS_KEYS_COMP;
     case 'wayne_shorter':
       return WAYNE_SHORTER_KEYS_COMP;
     default:
