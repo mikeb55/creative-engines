@@ -3258,6 +3258,7 @@ function buildGuitarPart(
           const chordStr = resolveBarSymbol(context, b).symbol;
           const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
           slonimskyBarCtx = buildDuoBarSlonimskyContext({
+            /** Slonimsky API field name — {@link PhraseIntent}, not `generationMetadata.duoIntent`. */
             duoIntent: phraseIntent,
             phase,
             seed,
@@ -5470,6 +5471,7 @@ export function generateGoldenPathDuoScore(
       const phraseIntentForSlonimsky = duoGoldenPathPhraseIntentAtBar(context.seed, refBar, productDuoIntent);
       const phase = ((refBar - 1) % 8) + 1;
       const slonimskyCtx = mapDuoPhraseIntentToSlonimskyContext({
+        /** Slonimsky API field name — {@link PhraseIntent}, not `generationMetadata.duoIntent`. */
         duoIntent: phraseIntentForSlonimsky,
         phase,
         seed: context.seed,

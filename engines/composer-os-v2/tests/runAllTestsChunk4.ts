@@ -35,6 +35,7 @@ import { runRhythmBlendV43Tests } from './rhythmBlendV43.test';
 import { runHarmonySpineTests } from './harmonySpine.test';
 import { runMusicXmlImportTests } from './musicXmlImport.test';
 import { runVoiceRuleBundleHarnessAdditiveTests } from './voiceRuleBundleHarnessAdditive.test';
+import { runDuoIntentTests } from './duoIntent.test';
 import { retroSuites } from './retro/index';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
@@ -72,6 +73,7 @@ const suites: SuiteEntry[] = [
   { name: 'Harmony spine harness (stub)', run: runHarmonySpineTests },
   { name: 'MusicXML import (ParsedChart)', run: runMusicXmlImportTests },
   { name: 'VoiceRuleBundle Phase 2+3a harness (additive)', run: runVoiceRuleBundleHarnessAdditiveTests },
+  { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   ...retroSuites,
 ];
 
