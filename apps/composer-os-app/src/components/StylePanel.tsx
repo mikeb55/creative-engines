@@ -22,6 +22,11 @@ export type StylePanelProps = {
   onEtudeInstrumentChange?: (next: string) => void;
   etudeTechnicalFocus?: EtudeTechnicalFocus;
   onEtudeTechnicalFocusChange?: (next: EtudeTechnicalFocus) => void;
+  /** Phase 8 — post-pass improv + optional stochastic layer (metadata / future routing). */
+  improvMode?: boolean;
+  onImprovModeChange?: (next: boolean) => void;
+  stochasticVariance?: number;
+  onStochasticVarianceChange?: (next: number) => void;
 };
 
 export function StylePanel(props: StylePanelProps) {
@@ -38,6 +43,10 @@ export function StylePanel(props: StylePanelProps) {
     onEtudeInstrumentChange,
     etudeTechnicalFocus = 'scales',
     onEtudeTechnicalFocusChange,
+    improvMode = false,
+    onImprovModeChange,
+    stochasticVariance = 0,
+    onStochasticVarianceChange,
   } = props;
   const harmonicSelectId = props.harmonicSelectId ?? 'co-style-harmonic-voice';
   const rhythmSelectId = props.rhythmSelectId ?? 'co-style-rhythm-engine';
@@ -189,6 +198,38 @@ export function StylePanel(props: StylePanelProps) {
             </select>
           </div>
         </>
+      ) : null}
+
+      {onImprovModeChange ? (
+        <div className="fieldGroup">
+          <label htmlFor="co-style-improv-mode">Improv mode</label>
+          <select
+            id="co-style-improv-mode"
+            value={improvMode ? 'on' : 'off'}
+            onChange={(e) => onImprovModeChange(e.target.value === 'on')}
+          >
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
+      ) : null}
+
+      {onStochasticVarianceChange && improvMode ? (
+        <div className="fieldGroup">
+          <label htmlFor="co-style-variance">Variance</label>
+          <input
+            id="co-style-variance"
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={stochasticVariance}
+            onChange={(e) => onStochasticVarianceChange(Number(e.target.value))}
+          />
+          <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            {stochasticVariance.toFixed(2)}
+          </span>
+        </div>
       ) : null}
 
       {showSummary ? (

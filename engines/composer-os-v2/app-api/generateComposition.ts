@@ -26,6 +26,10 @@ import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
+import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
+import { buildFormSections } from '../core/composer/formController';
+import { buildImprovSkeleton, pass2ImprovMutation } from '../core/composer/improvAgent';
+import { appendImprovPartToPartwiseXml } from '../core/composer/improvMusicXmlAppend';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -276,6 +280,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     ...(req.guitarOutputMode ? { guitarOutputMode: req.guitarOutputMode } : {}),
     ...(req.etudeInstrument ? { etudeInstrument: req.etudeInstrument } : {}),
     ...(req.etudeTechnicalFocus ? { etudeTechnicalFocus: req.etudeTechnicalFocus } : {}),
+    ...(req.improvMode ? { improvModeEcho: true } : {}),
+    ...(req.improvVoiceId ? { improvVoiceIdEcho: req.improvVoiceId } : {}),
+    ...(typeof req.stochasticVariance === 'number' ? { stochasticVarianceEcho: req.stochasticVariance } : {}),
   };
   // Stage 4: free_harmony is documented default; policy version set in GenerationMetadata (no routing change).
   result.context.generationMetadata.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
@@ -311,7 +318,21 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     filename = `composer_os_${req.presetId}_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
-    fs.writeFileSync(filepath, result.xml, 'utf-8');
+    let xmlOut = result.xml;
+    if (req.improvMode) {
+      const vid = req.improvVoiceId?.trim() || 'neutral';
+      const bundle = getVoiceRuleBundle(vid);
+      const formLike = {
+        totalBars: result.context.form.totalBars,
+        sections: result.context.form.sections,
+      };
+      const formSections = buildFormSections(formLike, bundle);
+      const tb = Math.max(4, Math.min(result.context.form.totalBars, 32));
+      const sk = buildImprovSkeleton(effectiveSeed, bundle, tb, formSections);
+      pass2ImprovMutation(sk, bundle, effectiveSeed);
+      xmlOut = appendImprovPartToPartwiseXml(xmlOut);
+    }
+    fs.writeFileSync(filepath, xmlOut, 'utf-8');
     if (!req.skipDrumGuide) {
       try {
         const barMeterForDrums =

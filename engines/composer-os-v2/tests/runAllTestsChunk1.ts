@@ -43,6 +43,7 @@ import { runChordProgressionTests } from './chordProgression.test';
 import { runVoiceLeadingSolverPhase3bTests } from './voiceLeadingSolverPhase3b.test';
 import { runRhythmFormTensionPhase45Tests } from './rhythmFormTensionPhase45.test';
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
+import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReharmStochasticCollision.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
 const suites: SuiteEntry[] = [
@@ -87,6 +88,7 @@ const suites: SuiteEntry[] = [
   { name: 'Voice-leading solver + HarmonicScene (Phase 3b)', run: runVoiceLeadingSolverPhase3bTests },
   { name: 'RhythmDNA + form + tension (Phase 4+5)', run: runRhythmFormTensionPhase45Tests },
   { name: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
+  { name: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },
 ];
 
 runHarnessMain(suites, '[harness] chunk 1/4 — duo core + gates');

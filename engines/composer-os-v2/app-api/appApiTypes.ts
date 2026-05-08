@@ -150,6 +150,12 @@ export interface GenerateRequest {
   etudeInstrument?: string;
   /** Phase 6+7 — Étude technical focus. */
   etudeTechnicalFocus?: import('../core/composer/etudeGenerator').EtudeTechnicalFocus;
+  /** Phase 8 — Run improv agent post-pass + append improv part to MusicXML when enabled. */
+  improvMode?: boolean;
+  /** Phase 8 — Voice bundle id for improv behaviour (`john_coltrane`, `gil_evans`, …). */
+  improvVoiceId?: string;
+  /** Phase 8 — Bar-level stochastic variance 0–1 (0 = identical to legacy deterministic picks). */
+  stochasticVariance?: number;
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
   /** Song Mode: secondary songwriter id — blended ~35% with primary in `resolveSongwritingStyles`. */

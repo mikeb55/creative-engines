@@ -1581,6 +1581,8 @@ export function HomeGenerate({
   const [guitarOutputModeUi, setGuitarOutputModeUi] = useState<'notation' | 'tab' | 'both'>('both');
   const [etudeInstrumentUi, setEtudeInstrumentUi] = useState('violin_I');
   const [etudeTechnicalFocusUi, setEtudeTechnicalFocusUi] = useState<EtudeTechnicalFocus>('scales');
+  const [improvModeUi, setImprovModeUi] = useState(false);
+  const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [riffStyle, setRiffStyle] = useState<'metheny' | 'scofield' | 'funk' | 'neutral'>('neutral');
@@ -2465,6 +2467,13 @@ export function HomeGenerate({
           ...(uiInstrumentGroup === 'guitar' ? { guitarOutputMode: guitarOutputModeUi } : {}),
           ...(uiInstrumentGroup === 'etude'
             ? { etudeInstrument: etudeInstrumentUi, etudeTechnicalFocus: etudeTechnicalFocusUi }
+            : {}),
+          ...(improvModeUi
+            ? {
+                improvMode: true as const,
+                improvVoiceId: styleProfile.harmonic.voiceId ?? undefined,
+                stochasticVariance: stochasticVarianceUi,
+              }
             : {}),
         };
 
@@ -5027,6 +5036,10 @@ export function HomeGenerate({
             onEtudeInstrumentChange={setEtudeInstrumentUi}
             etudeTechnicalFocus={etudeTechnicalFocusUi}
             onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
+            improvMode={improvModeUi}
+            onImprovModeChange={setImprovModeUi}
+            stochasticVariance={stochasticVarianceUi}
+            onStochasticVarianceChange={setStochasticVarianceUi}
           />
           <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5469,6 +5482,10 @@ export function HomeGenerate({
             onEtudeInstrumentChange={setEtudeInstrumentUi}
             etudeTechnicalFocus={etudeTechnicalFocusUi}
             onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
+            improvMode={improvModeUi}
+            onImprovModeChange={setImprovModeUi}
+            stochasticVariance={stochasticVarianceUi}
+            onStochasticVarianceChange={setStochasticVarianceUi}
           />
           <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5560,6 +5577,10 @@ export function HomeGenerate({
             onEtudeInstrumentChange={setEtudeInstrumentUi}
             etudeTechnicalFocus={etudeTechnicalFocusUi}
             onEtudeTechnicalFocusChange={setEtudeTechnicalFocusUi}
+            improvMode={improvModeUi}
+            onImprovModeChange={setImprovModeUi}
+            stochasticVariance={stochasticVarianceUi}
+            onStochasticVarianceChange={setStochasticVarianceUi}
           />
           <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}

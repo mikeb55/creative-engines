@@ -1408,6 +1408,10 @@ export interface GenerationMetadata {
   etudeInstrument?: string;
   /** Phase 6+7 — étude technical focus from UI. */
   etudeTechnicalFocus?: import('./composer/etudeGenerator').EtudeTechnicalFocus;
+  /** Phase 8 — improv agent echo (post-export improv part optional). */
+  improvModeEcho?: boolean;
+  improvVoiceIdEcho?: string;
+  stochasticVarianceEcho?: number;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
