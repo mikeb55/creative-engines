@@ -79,6 +79,7 @@ import {
   zappaMeterCycleToPresetPattern,
 } from '@composer-os/core/rhythm/oddMeterQuantiser';
 import { guitarVoicingFromFrets } from '@composer-os/core/composer/guitarVoicingEngine';
+import type { GuitarVoicing } from '@composer-os/core/composer/guitarVoicingEngine';
 import type { EtudeTechnicalFocus } from '@composer-os/core/composer/etudeGenerator';
 import {
   generateFromIReal,
@@ -1271,6 +1272,7 @@ type GenResult = {
     importHarmonyLockedBarsCount?: number;
   };
   scoreTitle?: string;
+  guitarVoicings?: GuitarVoicing[];
   requestEcho?: {
     tonalCenter?: string;
     bpm?: number;
@@ -1526,6 +1528,7 @@ export function HomeGenerate({
     ],
     []
   );
+  const [liveGuitarVoicings, setLiveGuitarVoicings] = useState<GuitarVoicing[]>([]);
   const [authorOverlay, setAuthorOverlay] = useState('');
   const [classicalOverlay, setClassicalOverlay] = useState('');
   const [zappaSoloMidiLow, setZappaSoloMidiLow] = useState(40);
@@ -2523,6 +2526,7 @@ export function HomeGenerate({
           );
         }
         const r = (await api.generate(generatePayload)) as GenResult;
+        setLiveGuitarVoicings(Array.isArray(r.guitarVoicings) ? r.guitarVoicings : []);
         setResult({
           ...r,
           _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun,
@@ -7809,7 +7813,10 @@ export function HomeGenerate({
           {result?.success &&
             uiInstrumentGroup === 'guitar' &&
             (guitarOutputModeUi === 'tab' || guitarOutputModeUi === 'both') && (
-              <GuitarFretboardView title="Guitar voicing (preview)" voicings={demoGuitarVoicingsForFretboard} />
+              <GuitarFretboardView
+                title="Guitar voicing (preview)"
+                voicings={uiInstrumentGroup === 'guitar' ? liveGuitarVoicings : demoGuitarVoicingsForFretboard}
+              />
             )}
 
           {(result as { planningNotice?: string })?.planningNotice && (

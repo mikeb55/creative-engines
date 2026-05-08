@@ -31,6 +31,8 @@ import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment } from './musi
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
+import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
+import { GUITAR_STANDARD_OPEN_STRING_MIDI } from '../composer/guitarVoicingEngine';
 import {
   adjacentBarsMeterDiffers,
   resolveMeterForBar,
@@ -652,6 +654,144 @@ function bigBandDrumsEventsToXml(
   return xml;
 }
 
+/** Phase 6+7 — guitar instrument group: notation staff + TAB staff from live voicings (voice 1 / voice 2 + backup). */
+function guitarInstrumentGroupTabEventsToXml(
+  _measure: MeasureModel,
+  measureIndex: number,
+  _part: PartModel,
+  decompose: (ticks: number) => number[],
+  opts: MusicXmlExportOptions,
+  preferFlats: boolean,
+  measureCapacity: number
+): string {
+  const voicing: GuitarVoicing | undefined = opts.guitarInstrumentGroupVoicings?.[measureIndex];
+  const v1 = 1;
+  const v2 = 2;
+  const stemUp = '<stem>up</stem>';
+  const stemDown = '<stem>down</stem>';
+  const parts = decompose(measureCapacity);
+  const primaryTicks = parts[0]!;
+  const spec = tickSpecForLength(primaryTicks);
+  const typeDots = typeAndDotsXml(spec);
+
+  const emitTickSum = (): number => {
+    let s = 0;
+    for (const p of parts) s += p;
+    return s;
+  };
+
+  if (!voicing || voicing.midiNotes.length === 0) {
+    let xml = '';
+    for (const t of parts) {
+      const sp = tickSpecForLength(t);
+      xml += noteXmlRestFragment({
+        durationTicks: t,
+        voice: v1,
+        typeAndDotsXml: typeAndDotsXml(sp),
+        staffXml: '<staff>1</staff>',
+      });
+    }
+    xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
+    for (const t of parts) {
+      const sp = tickSpecForLength(t);
+      xml += noteXmlRestFragment({
+        durationTicks: t,
+        voice: v2,
+        typeAndDotsXml: typeAndDotsXml(sp),
+        staffXml: '<staff>2</staff>',
+      });
+    }
+    return xml;
+  }
+
+  let xml = '';
+  const midis = [...voicing.midiNotes].sort((a, b) => a - b);
+  for (let pi = 0; pi < midis.length; pi++) {
+    const mid = midis[pi]!;
+    const { step, alter, octave } = midiToPitch(mid, preferFlats);
+    const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+    const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
+    xml += noteXmlPitchedFragment({
+      dynamicsAttr: '',
+      chordXml: pi === 0 ? '' : '<chord/>',
+      pitchXml,
+      durationTicks: primaryTicks,
+      tieXml: '',
+      voice: v1,
+      typeAndDotsXml: typeDots,
+      stemXml: stemUp,
+      staffXml: '<staff>1</staff>',
+      notationsXml: '',
+    });
+  }
+
+  let voice1TickSum = 0;
+  for (const p of parts) voice1TickSum += p;
+  if (voice1TickSum !== measureCapacity) {
+    throw new Error(
+      `MusicXML export: guitar TAB voice 1 measure ${measureIndex + 1}: tick sum ${voice1TickSum} ≠ ${measureCapacity}`
+    );
+  }
+
+  xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
+
+  const frets = voicing.frets;
+  const OPEN = GUITAR_STANDARD_OPEN_STRING_MIDI as readonly number[];
+  const voicedStrings: number[] = [];
+  for (let s = 0; s < 6; s++) {
+    if (frets[s]! >= 0) voicedStrings.push(s);
+  }
+
+  const barreAt = voicing.barreAt;
+  const atBarre =
+    barreAt != null && voicedStrings.filter((x) => frets[x] === barreAt).length >= 2
+      ? voicedStrings.filter((x) => frets[x] === barreAt)
+      : [];
+
+  let ti = 0;
+  for (const s of voicedStrings) {
+    const fret = frets[s]!;
+    const stringNum = 6 - s;
+    const mid = OPEN[s]! + fret;
+    const { step, alter, octave } = midiToPitch(mid, preferFlats);
+    const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+    const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
+
+    let barreAttr = '';
+    if (atBarre.length >= 2) {
+      if (s === atBarre[0]) barreAttr = '<barre type="start"/>';
+      else if (s === atBarre[atBarre.length - 1]) barreAttr = '<barre type="stop"/>';
+    }
+
+    const techInner = `<string>${stringNum}</string><fret>${fret}</fret>${barreAttr}`;
+    const notationsXml = `<notations><technical>${techInner}</technical></notations>`;
+
+    xml += noteXmlPitchedFragment({
+      dynamicsAttr: '',
+      chordXml: ti === 0 ? '' : '<chord/>',
+      pitchXml,
+      durationTicks: primaryTicks,
+      tieXml: '',
+      voice: v2,
+      typeAndDotsXml: typeDots,
+      stemXml: stemDown,
+      staffXml: '<staff>2</staff>',
+      notationsXml,
+    });
+    ti++;
+  }
+
+  let voice2TickSum = 0;
+  for (const p of parts) voice2TickSum += p;
+  if (voice2TickSum !== measureCapacity) {
+    throw new Error(
+      `MusicXML export: guitar TAB voice 2 measure ${measureIndex + 1}: tick sum ${voice2TickSum} ≠ ${measureCapacity}`
+    );
+  }
+
+  return xml;
+}
+
 function eventsToXml(
   measure: MeasureModel,
   measureIndex: number,
@@ -980,6 +1120,14 @@ ${partList}
       } else {
         clefXml = `<clef><sign>${clefSign}</sign><line>${clefLine}</line>${clefOctaveChangeXml}</clef>`;
       }
+      const guitarInstrumentGroupTabExport =
+        part.id === 'guitar' &&
+        part.instrumentIdentity === 'clean_electric_guitar' &&
+        Array.isArray(opts.guitarInstrumentGroupVoicings) &&
+        opts.guitarInstrumentGroupVoicings!.length > 0 &&
+        opts.guitarInstrumentGroupTabMode &&
+        opts.guitarInstrumentGroupTabMode !== 'notation';
+
       xml += `  <part id="${part.id}">\n`;
 
       const orderedMeasures = measuresInExportOrder(part);
@@ -1016,13 +1164,19 @@ ${partList}
             transposeSemi !== undefined
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
+          const stavesAndClefXml = guitarInstrumentGroupTabExport
+            ? `      <staves>2</staves>
+      <clef number="1"><sign>G</sign><line>2</line></clef>
+      <clef number="2"><sign>TAB</sign><line>5</line></clef>
+`
+            : `      <staves>1</staves>
+      ${clefXml}
+`;
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       <time><beats>${meter0.numerator}</beats><beat-type>${meter0.denominator}</beat-type></time>
-      <staves>1</staves>
-      ${clefXml}
-${transposeXml}    </attributes>
+${stavesAndClefXml}${transposeXml}    </attributes>
 `;
           if (part.instrumentIdentity === 'fela_afrobeat_drums') {
             xml += `    <direction placement="below"><direction-type><words>${escapeXml(
@@ -1128,7 +1282,9 @@ ${transposeXml}    </attributes>
             ? bigBandDrumsEventsToXml(m, i, part, decompose, opts, measureCapacity)
             : part.instrumentIdentity === 'fela_afrobeat_drums'
               ? felaAfrobeatDrumsEventsToXml(m, i, part, decompose, measureCapacity)
-              : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
+              : guitarInstrumentGroupTabExport
+                ? guitarInstrumentGroupTabEventsToXml(m, i, part, decompose, opts, preferFlats, measureCapacity)
+                : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
         if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_end')) {
           xml += `    <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
         }

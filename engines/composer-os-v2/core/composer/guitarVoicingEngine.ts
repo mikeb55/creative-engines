@@ -5,6 +5,9 @@
 import { scoreVoicingCandidate, type VoicingCandidate } from './voiceLeadingSolver';
 import { getVoiceRuleBundle } from './voiceRuleBundles';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
+import type { CompositionContext } from '../compositionContext';
+import { getChordForBar } from '../harmony/harmonyResolution';
+import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
 
 export interface GuitarVoicing {
   chordId: string;
@@ -16,7 +19,9 @@ export interface GuitarVoicing {
 }
 
 /** Standard tuning MIDI open strings low→high. */
-const OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+export const GUITAR_STANDARD_OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64] as const;
+
+const OPEN_MIDI = GUITAR_STANDARD_OPEN_STRING_MIDI;
 
 function midiFromFret(stringIdx: number, fret: number): number | null {
   if (fret < 0) return null;
@@ -163,4 +168,31 @@ export function guitarVoicingToTechnicalXmlFragments(v: GuitarVoicing): string {
 export function methenyPlainMaj7CostsMoreThanSharp11(v: GuitarVoicing): boolean {
   const pm = getVoiceRuleBundle('pat_metheny');
   return scoreGuitarVoicing(v, null, pm, 'Cmaj7') > scoreGuitarVoicing(v, null, pm, 'Cmaj7#11');
+}
+
+/**
+ * Phase 6+7 — one deterministic voicing per bar from locked/golden harmony + Pat Metheny-style scoring.
+ */
+export function buildVoicingsForContext(context: CompositionContext, _seed: number): GuitarVoicing[] {
+  const tb = context.form.totalBars;
+  const bundle = getVoiceRuleBundle('pat_metheny');
+  let prev: VoicingCandidate | null = null;
+  const out: GuitarVoicing[] = [];
+  for (let b = 1; b <= tb; b++) {
+    const sym = getChordForBar(b, context);
+    const tones = chordTonesForChordSymbolWithContext(sym, context);
+    const pcs = [tones.root, tones.third, tones.fifth, tones.seventh].map((m) => ((m % 12) + 12) % 12);
+    let candidates = filterVoicingsByMaxSpan(buildGuitarVoicingCandidates(sym, pcs), 4);
+    if (candidates.length === 0) {
+      candidates = [guitarVoicingFromFrets(sym, [-1, -1, 0, 2, 1, 0])];
+    }
+    const chosen: GuitarVoicing =
+      pickBestGuitarVoicing(candidates, prev, bundle, sym) ?? candidates[0]!;
+    prev = {
+      notes: chosen.midiNotes.length ? chosen.midiNotes : [48, 55, 60],
+      cost: 0,
+    };
+    out.push(chosen);
+  }
+  return out;
 }

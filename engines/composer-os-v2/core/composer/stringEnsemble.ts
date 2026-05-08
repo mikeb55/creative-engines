@@ -3,6 +3,14 @@
  */
 
 import type { VoiceRuleBundle } from './voiceRuleBundle';
+import type { CompositionContext } from '../compositionContext';
+import { getChordForBar } from '../harmony/harmonyResolution';
+import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
+import { createPart, createNote, createScore, addEvent } from '../score-model/scoreEventBuilder';
+import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import { resolveMeterForBar } from '../rhythm/oddMeterQuantiser';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import { SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC } from '../string-quartet/stringQuartetTypes';
 
 export type StringInstrumentId = 'violin_I' | 'violin_II' | 'viola' | 'cello';
 
@@ -96,4 +104,112 @@ export function validateViolinFirstPitchOrReject(midi: number): { ok: true } | {
     return { ok: false, reason: `violin_I out of range ${v.rangeMin}-${v.rangeMax}` };
   }
   return { ok: true };
+}
+
+function barQuarterSpan(bar1Based: number, map: BarMeterMap | undefined): number {
+  const sig = resolveMeterForBar(bar1Based, map);
+  return (sig.numerator * 4) / sig.denominator;
+}
+
+function liftMidiToRange(midi: number, lo: number, hi: number): number {
+  let m = Math.round(midi);
+  if (!Number.isFinite(m)) return lo;
+  while (m < lo) m += 12;
+  while (m > hi) m -= 12;
+  return Math.max(lo, Math.min(hi, m));
+}
+
+const QUARTET_PART_BUILD_ORDER: StringInstrumentId[] = ['violin_I', 'violin_II', 'viola', 'cello'];
+
+function sqPartMeta(id: StringInstrumentId): {
+  partId: string;
+  name: string;
+  instrumentIdentity: string;
+  midiProgram: number;
+  clef: 'treble' | 'bass';
+} {
+  switch (id) {
+    case 'violin_I':
+      return { partId: SQ_PART_V1, name: 'Violin I', instrumentIdentity: 'violin_1', midiProgram: 40, clef: 'treble' };
+    case 'violin_II':
+      return { partId: SQ_PART_V2, name: 'Violin II', instrumentIdentity: 'violin_2', midiProgram: 40, clef: 'treble' };
+    case 'viola':
+      return { partId: SQ_PART_VA, name: 'Viola', instrumentIdentity: 'viola', midiProgram: 41, clef: 'treble' };
+    case 'cello':
+      return { partId: SQ_PART_VC, name: 'Violoncello', instrumentIdentity: 'cello', midiProgram: 42, clef: 'bass' };
+  }
+}
+
+/** Phase 6+7 — one string quartet part per instrument (monophonic whole-bar tones, no stacked `<chord/>`). */
+export interface StringQuartetPartContext {
+  instrumentId: StringInstrumentId;
+  partId: string;
+  part: PartModel;
+}
+
+export function buildStringQuartetParts(context: CompositionContext): StringQuartetPartContext[] {
+  const tb = context.form.totalBars;
+  const seed = context.seed ?? 1;
+  const barMeterMap = context.barMeterMap ?? context.generationMetadata?.barMeterMap;
+
+  const chordPerBar = (bar: number) => getChordForBar(bar, context);
+  const rehearsalPerBar = (_bar: number): string | undefined => undefined;
+
+  const contexts: StringQuartetPartContext[] = [];
+
+  for (const instId of QUARTET_PART_BUILD_ORDER) {
+    const meta = sqPartMeta(instId);
+    const rangeSpec = STRING_INSTRUMENTS[instId];
+    const part = createPart(
+      meta.partId,
+      meta.name,
+      meta.instrumentIdentity,
+      meta.midiProgram,
+      meta.clef,
+      tb,
+      chordPerBar,
+      rehearsalPerBar
+    );
+
+    for (let bar = 1; bar <= tb; bar++) {
+      const sym = chordPerBar(bar);
+      const tones = chordTonesForChordSymbolWithContext(sym, context);
+      const span = barQuarterSpan(bar, barMeterMap);
+      const m = part.measures[bar - 1]!;
+      m.events = [];
+
+      let midi =
+        instId === 'violin_I'
+          ? tones.seventh
+          : instId === 'violin_II'
+            ? tones.fifth
+            : instId === 'viola'
+              ? tones.third
+              : tones.root;
+
+      const salt = (seed + bar * 17 + instId.charCodeAt(0)) >>> 0;
+      const jitter = (salt % 3) - 1;
+      midi = liftMidiToRange(midi + jitter, rangeSpec.rangeMin, rangeSpec.rangeMax);
+
+      addEvent(m, createNote(midi, 0, span, 1));
+    }
+
+    contexts.push({ instrumentId: instId, partId: meta.partId, part });
+  }
+
+  return contexts;
+}
+
+/** Assemble a MusicXML-ready quartet score (four bowed parts only). */
+export function buildStringQuartetScoreFromContext(context: CompositionContext, baseScore?: ScoreModel): ScoreModel {
+  const ctxs = buildStringQuartetParts(context);
+  const score = createScore(baseScore?.title ?? 'String Quartet', ctxs.map((c) => c.part), {
+    tempo: baseScore?.tempo,
+  });
+  if (baseScore?.keySignature) {
+    score.keySignature = { ...baseScore.keySignature };
+  }
+  const bm = context.barMeterMap ?? baseScore?.barMeterMap;
+  if (bm) score.barMeterMap = bm;
+  return score;
 }

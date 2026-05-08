@@ -3,6 +3,7 @@
  */
 
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
 
 /** MusicXML export result. */
 export interface MusicXmlExportResult {
@@ -33,6 +34,12 @@ export interface MusicXmlExportOptions {
    * MusicXML `<time>` changes at meter boundaries. Omit for legacy all–4/4 export.
    */
   barMeterMap?: BarMeterMap;
+  /**
+   * Phase 6+7 — `instrumentGroup === 'guitar'`: one voicing per measure (0-based index = measure number − 1).
+   * With {@link guitarInstrumentGroupTabMode} `tab` or `both`, the guitar part exports notation + TAB staff.
+   */
+  guitarInstrumentGroupVoicings?: GuitarVoicing[];
+  guitarInstrumentGroupTabMode?: 'notation' | 'tab' | 'both';
 }
 
 /** Schema validation result. */

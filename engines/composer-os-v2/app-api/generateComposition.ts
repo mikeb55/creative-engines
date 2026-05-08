@@ -30,6 +30,11 @@ import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildFormSections } from '../core/composer/formController';
 import { buildImprovSkeleton, pass2ImprovMutation } from '../core/composer/improvAgent';
 import { appendImprovPartToPartwiseXml } from '../core/composer/improvMusicXmlAppend';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import { validateMusicXml } from '../../../src/utils/musicXmlValidator';
+import { buildStringQuartetScoreFromContext } from '../core/composer/stringEnsemble';
+import { buildVoicingsForContext } from '../core/composer/guitarVoicingEngine';
+import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -200,6 +205,8 @@ export interface GenerateResult {
   gceGatePassed?: boolean;
   /** Big Band / String Quartet — Slonimsky Chromatic Strength receipt lines (when set on request). */
   ensembleSlonimskyReceipt?: string[];
+  /** Phase 6+7 — `instrumentGroup === 'guitar'`: voicings for UI fretboard + TAB export. */
+  guitarVoicings?: GuitarVoicing[];
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -309,9 +316,13 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   }
 
   let diskHarmonyTruthErrors: string[] = [];
+  let phase67MxErrors: string[] = [];
+  let guitarVoicingsOut: GuitarVoicing[] | undefined;
 
   let filename: string | undefined;
   let filepath: string | undefined;
+  let outputXml: string | undefined = result.xml;
+  let scoreForDrumGuide = result.score;
 
   if (result.xml) {
     const ts = new Date().toISOString();
@@ -321,6 +332,37 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     let xmlOut = result.xml;
+    const barMeterForExport = result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
+
+    if (req.instrumentGroup === 'string_quartet') {
+      const sqScore = buildStringQuartetScoreFromContext(result.context, result.score);
+      const ex = exportScoreModelToMusicXml(sqScore, { barMeterMap: barMeterForExport, bpm: req.bpm });
+      if (ex.success && ex.xml) {
+        xmlOut = ex.xml;
+        scoreForDrumGuide = sqScore;
+      } else {
+        phase67MxErrors.push(...(ex.errors ?? []).map((e) => `phase67 string_quartet export: ${e}`));
+      }
+    }
+
+    if (req.instrumentGroup === 'guitar') {
+      guitarVoicingsOut = buildVoicingsForContext(result.context, effectiveSeed);
+      const mode = req.guitarOutputMode ?? 'notation';
+      if (mode === 'tab' || mode === 'both') {
+        const ex = exportScoreModelToMusicXml(result.score, {
+          barMeterMap: barMeterForExport,
+          bpm: req.bpm,
+          guitarInstrumentGroupVoicings: guitarVoicingsOut,
+          guitarInstrumentGroupTabMode: mode,
+        });
+        if (ex.success && ex.xml) {
+          xmlOut = ex.xml;
+        } else {
+          phase67MxErrors.push(...(ex.errors ?? []).map((e) => `phase67 guitar export: ${e}`));
+        }
+      }
+    }
+
     if (req.improvMode) {
       const vid = req.improvVoiceId?.trim() || 'neutral';
       const bundle = getVoiceRuleBundle(vid);
@@ -340,13 +382,20 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         seed: effectiveSeed,
       });
     }
+
+    const mxWriteGate = validateMusicXml(xmlOut);
+    if (!mxWriteGate.valid) {
+      phase67MxErrors.push(...mxWriteGate.errors.map((e) => `musicXmlValidator: ${e}`));
+    }
+
     fs.writeFileSync(filepath, xmlOut, 'utf-8');
+    outputXml = xmlOut;
     if (!req.skipDrumGuide) {
       try {
         const barMeterForDrums =
           result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
         const baseName = path.basename(filepath, path.extname(filepath));
-        writeDrumGuide(result.score, outputDir, baseName, barMeterForDrums, req.bpm);
+        writeDrumGuide(scoreForDrumGuide, outputDir, baseName, barMeterForDrums, req.bpm);
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
@@ -431,13 +480,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   }
 
   const allErrors =
-    diskHarmonyTruthErrors.length > 0 ? [...result.errors, ...diskHarmonyTruthErrors] : result.errors;
+    diskHarmonyTruthErrors.length > 0 || phase67MxErrors.length > 0
+      ? [...result.errors, ...diskHarmonyTruthErrors, ...phase67MxErrors]
+      : result.errors;
   const importWarnings = adaptedImport?.warnings ?? [];
   const allWarnings = [...(result.songModePhraseWarnings ?? []), ...importWarnings];
   const validation = {
     integrityPassed: result.integrityPassed,
     behaviourGatesPassed: result.behaviourGatesPassed,
-    mxValidationPassed: result.mxValidationPassed,
+    mxValidationPassed: result.mxValidationPassed && phase67MxErrors.length === 0,
     strictBarMathPassed: result.strictBarMathPassed,
     exportRoundTripPassed: result.exportRoundTripPassed,
     exportIntegrityPassed: result.exportIntegrityPassed,
@@ -449,7 +500,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   };
 
   const scoreTitleResolved = result.runManifest?.scoreTitle;
-  const successFinal = result.success && diskHarmonyTruthErrors.length === 0;
+  const successFinal =
+    result.success && diskHarmonyTruthErrors.length === 0 && phase67MxErrors.length === 0;
   const universalLeadSheet =
     successFinal && result.context
       ? buildUniversalLeadSheetFromCompositionContext(
@@ -463,7 +515,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     error: successFinal ? undefined : allErrors[0] ?? 'Generation failed',
     productKind: 'musicxml',
     composerOsVersion: COMPOSER_OS_VERSION,
-    xml: result.xml,
+    xml: outputXml,
+    guitarVoicings: guitarVoicingsOut,
     filename,
     filepath,
     manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
