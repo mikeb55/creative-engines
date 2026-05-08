@@ -1726,6 +1726,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           : {}),
       };
       appendSongModeStyleSurfaceNotes(context.generationMetadata, compProfile.receiptLines);
+    } else if (compProfile?.primaryCompInstrument === 'sax') {
+      context.generationMetadata = {
+        ...context.generationMetadata,
+        songModeSongwriterCompProfileId: compProfile.id,
+        songModeProfileRuleDiagnostics: {
+          ...(context.generationMetadata.songModeProfileRuleDiagnostics ?? {}),
+          songwriterCompProfileId: compProfile.id,
+        },
+      };
+      appendSongModeStyleSurfaceNotes(context.generationMetadata, compProfile.receiptLines);
     }
     if (resolution.primaryId === 'frank_zappa') {
       context.generationMetadata = {

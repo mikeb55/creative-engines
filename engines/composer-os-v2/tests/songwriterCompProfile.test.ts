@@ -35,4 +35,10 @@ describe('songwriterCompProfile', () => {
     expect(g?.primaryCompInstrument).toBe('keys');
     expect(g?.receiptLines[0]).toContain('keyboard-led comp presentation');
   });
+
+  it('returns Wayne Shorter sax-led profile with rhythm pairing receipts', () => {
+    const w = getSongwriterCompProfile('wayne_shorter');
+    expect(w?.primaryCompInstrument).toBe('sax');
+    expect(w?.receiptLines.some((l) => l.includes('Second Line'))).toBe(true);
+  });
 });

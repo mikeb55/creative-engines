@@ -451,144 +451,29 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   ],
   wayne_shorter: [
     R(
-      'shorter.palette_extensions',
-      'Chord palette prioritise maj7(#11), m7(9,11), m(maj7,9), m7b5(11), 7(#11,b9), sus4(add9)',
+      'shorter.blue_note_period',
+      'Blue Note period (Speak No Evil, Juju, Witch Hunt): non-functional neighbour and passing chords as maj7/min7/sus with roots moving by step or third around an implicit tonal centre; freely omit 3rd or 5th; prefer 9/11/13 in upper voices; wrong bass on extensions or non-root scale degrees (minor third or tritone from root); chromatic mediant shifts without functional preparation; Footprints-style successive upper/lower embellishing chords around an axis; motif-derived chord sequences where a 2–3 note melodic cell defines root-motion intervals.',
       'songwriter',
       'harmony',
       9,
       'global'
     ),
     R(
-      'shorter.root_motion_fav',
-      'Root motion: prefer whole step, minor third, and tritone moves',
-      'songwriter',
-      'harmony',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.avoid_clean_ii_v_i',
-      'Avoid clean II–V–I cadential resolution',
+      'shorter.classic_quartet_period',
+      'Classic quartet (Nefertiti, E.S.P., Miyako, Infant Eyes): harmonic plateaus (2–8 bars) for extended motivic work; plateaus relate by non-functional thirds, tritones, or seconds — not dominant–tonic pairs; sus chords as stable sonorities (sus4 with 9 and 13, no obligatory 4–3); melody-orbit harmony — for focal melodic pitches choose chord families where that pitch is 3rd, 5th, 7th, 9th, or 11th; asymmetric phrases with 1–2 beat breathing spaces; anti-periodic form with displaced returns; through-composed ballad arcs with fragment-only repetition.',
       'songwriter',
       'harmony',
       9,
       'global'
     ),
     R(
-      'shorter.dom_deceptive_sidestep',
-      'When dominant appears: resolve deceptively or by semitone sidestep — not to tonic',
+      'shorter.late_period',
+      'Late period (21st-century quartet, Emanon): long plateaus from texture, axis pitch, pedal, and registral bands; pandiatonic non-functional chord fields with parallel or near-parallel cluster motion; open form — sections chained by texture rules rather than fixed chorus; orchestral colour — strings/ensemble swirls, pedals, planed voicings under motivic lead; broad pandiatonic colour shifts (Copland / Vaughan Williams resonance).',
       'songwriter',
       'harmony',
       9,
       'global'
     ),
-    R(
-      'shorter.pedal_cycle_upper',
-      'Pedal point: hold bass 4–8 bars while cycling upper structures',
-      'songwriter',
-      'harmony',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.interval_steps_and_wide',
-      'Melodic intervals: mix steps (±1, ±2) with leaps of 6th/7th',
-      'songwriter',
-      'melody',
-      9,
-      'global'
-    ),
-    R(
-      'shorter.phrase_len_three_five',
-      'Phrase length: prefer 3- or 5-bar phrases; avoid squared 4+4 grids',
-      'songwriter',
-      'melody',
-      8,
-      'form'
-    ),
-    R(
-      'shorter.phrase_start_offbeat',
-      'Start phrases on & of 1 or & of 2 — not on beat 1',
-      'songwriter',
-      'melody',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.climax_late_in_phrase',
-      'Place melodic climax late in phrase (e.g. bar 3 of a 4-bar unit)',
-      'songwriter',
-      'melody',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.rest_after_dense',
-      'After a dense passage: enforce at least a half-bar rest',
-      'songwriter',
-      'melody',
-      7,
-      'global'
-    ),
-    R(
-      'shorter.offbeat_syncop_quarters',
-      'Rhythm: off-beat accents and syncopated quarter notes',
-      'songwriter',
-      'rhythm',
-      9,
-      'global'
-    ),
-    R(
-      'shorter.density_cap_eighths',
-      'Rhythmic density cap: ≤65% of eighth-note slots filled',
-      'songwriter',
-      'rhythm',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.quarter_triplets_two_beats',
-      'Use quarter-note triplets spanning two beats',
-      'songwriter',
-      'rhythm',
-      7,
-      'global'
-    ),
-    R(
-      'shorter.rests_after_climax',
-      'Force rests immediately after climax moments',
-      'songwriter',
-      'rhythm',
-      8,
-      'global'
-    ),
-    R(
-      'shorter.form_group_asym',
-      'Phrase groupings: prefer 3+2, 5+3, 4+3+1',
-      'songwriter',
-      'form',
-      9,
-      'form'
-    ),
-    R(
-      'shorter.open_final_chords',
-      'Open endings: favour maj7(#11), m(maj7), or 7alt as last harmony',
-      'songwriter',
-      'form',
-      8,
-      'form'
-    ),
-    R(
-      'shorter.no_squared_aaba_textbook',
-      'Avoid squared 8+8 AABA with textbook tonal resolutions',
-      'songwriter',
-      'form',
-      9,
-      'form'
-    ),
-    R('slonimsky.minor_third_cell', 'Slonimsky minor-third cell insertion (placeholder)', 'songwriter', 'melody', 8, 'verse'),
-    R('slonimsky.whole_tone_segment', 'Slonimsky whole-tone segment drift (placeholder)', 'songwriter', 'melody', 8, 'global'),
-    R('slonimsky.non_functional_logic', 'Slonimsky non-functional melodic logic (placeholder)', 'songwriter', 'harmony', 9, 'global'),
   ],
   pat_metheny: [
     R(

@@ -7,6 +7,7 @@ import {
   MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
   MORRICONE_HARMONIC_STYLE_KEYS,
   QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS,
+  WAYNE_SHORTER_HARMONIC_STYLE_KEYS,
 } from '@composer-os/core/song-mode/harmonicVoiceStyleContextKeys';
 import {
   buildGenerationContext,
@@ -110,6 +111,14 @@ describe('styleProfile', () => {
     expect(resolveHarmonicContextKeys('maria_schneider')).toEqual([
       'hv:maria_schneider',
       ...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS,
+    ]);
+  });
+
+  it('resolveHarmonicContextKeys(wayne_shorter) returns hv + 16 research-grounded tags', () => {
+    expect(WAYNE_SHORTER_HARMONIC_STYLE_KEYS).toHaveLength(16);
+    expect(resolveHarmonicContextKeys('wayne_shorter')).toEqual([
+      'hv:wayne_shorter',
+      ...WAYNE_SHORTER_HARMONIC_STYLE_KEYS,
     ]);
   });
 });

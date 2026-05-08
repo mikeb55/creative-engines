@@ -153,6 +153,39 @@ function cellBalancedDefault(seed: number): MotifCell2 {
   };
 }
 
+function cellWayneShorter(): MotifCell2 {
+  const intervals = [2, 2, 12, -2, -2];
+  const durations = [2.5, 2, 0.5, 0.5, 1.5, 2];
+  const contour: ('up' | 'down' | 'same')[] = ['same', 'up', 'up', 'up', 'down', 'down'];
+  const accents = durations.map((d, i) => 0.38 + (i % 3) * 0.06 + Math.min(0.2, d / 10));
+  return {
+    id: 'ws_primary',
+    role: 'primary',
+    intervals,
+    durations,
+    contour,
+    accents,
+    registerBand: [57, 81],
+    harmonicMask: {
+      chordTonesBias: 0.3,
+      tensionBias: 0.4,
+      avoidStrongLT: true,
+      pedalFriendly: true,
+    },
+    transformBudget: {
+      transpose: true,
+      invert: true,
+      retrograde: false,
+      augment: true,
+      diminish: true,
+      fragment: true,
+      sequence: true,
+      embedInnerVoice: true,
+    },
+    recallWeight: 0.85,
+  };
+}
+
 function secondaryFromPrimary(primary: MotifCell2, id: string): MotifCell2 {
   const inv = primary.intervals.map((x) => -x);
   const durAug = primary.durations.map((d) => Math.min(4, d * 1.25));
@@ -220,6 +253,7 @@ function primaryForVoice(canon: string, seed: number): MotifCell2 {
   if (canon === 'gil_evans') return cellGilEvans();
   if (canon === 'maria_schneider') return cellMariaSchneider();
   if (canon === 'john_coltrane') return cellJohnColtrane();
+  if (canon === 'wayne_shorter') return cellWayneShorter();
   return cellBalancedDefault(seed);
 }
 

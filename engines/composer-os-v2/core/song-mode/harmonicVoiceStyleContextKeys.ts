@@ -109,6 +109,26 @@ export const MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS: readonly string[] = [
   'long_pedal_with_inner_motion',
 ];
 
+/** Wayne Shorter — motivic harmony, axis motion, melody-driven form (research-grounded Style Panel tags). */
+export const WAYNE_SHORTER_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'motivic_harmonic_derivation',
+  'non_functional_neighbor_harmony',
+  'axis_root_motion',
+  'chromatic_mediant_shifts',
+  'unresolved_sus_plateaus',
+  'pedal_based_modal_plateaus',
+  'major7_minor_major7_bias',
+  'wrong_bass_upper_structure_voicings',
+  'pentatonic_lyric_melody_core',
+  'octave_leaps_with_contrary_resolution',
+  'asymmetric_phrase_silence',
+  'melody_driven_form_emergence',
+  'postbop_plateau_forms',
+  'quartet_textural_orchestration',
+  'orchestral_coloristic_extensions',
+  'motivic_imitation_across_sections',
+];
+
 /** Extra harmonic tags for Style Panel voices (empty when none). */
 export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId): string[] {
   switch (voiceId) {
@@ -126,6 +146,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...GIL_EVANS_HARMONIC_STYLE_KEYS];
     case 'maria_schneider':
       return [...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS];
+    case 'wayne_shorter':
+      return [...WAYNE_SHORTER_HARMONIC_STYLE_KEYS];
     default:
       return [];
   }

@@ -10,7 +10,7 @@ import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'other';
 
 /** Primary harmony carrier for comp lane routing. */
-export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble';
+export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble' | 'sax';
 
 export type RegisterBiasId = 'mid' | 'wide' | 'low_mid';
 
@@ -210,6 +210,34 @@ const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const WAYNE_SHORTER_KEYS_COMP: SongwriterCompProfile = {
+  id: 'wayne_shorter',
+  primaryCompInstrument: 'sax',
+  voicingBias: [
+    'neighbor_inner_voice_strings',
+    'compound_interval_outer_voices',
+    'perfect_fourth_structural_interval',
+    'upper_structure_extensions_over_axis',
+    'reed_motivic_development_carriers',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'second_line_polyrhythm_modal_neighbor',
+    'bossa_static_plateau_lyrical',
+    'afro_cuban_six_eight_modal_vamp',
+  ],
+  smallMovementRules: [
+    'brass_chromatic_mediant_accents',
+    'bass_axis_outline_not_functional_root_cycle',
+    'inner_neighbor_voice_pairs',
+  ],
+  receiptLines: [
+    'Harmonic voice Wayne Shorter — rhythm pairing hints: New Orleans Second Line (sl) polyrhythmic rolling groove supports non-functional modal harmony + chromatic mediant shifts (Footprints-type axis motion); Brazilian bossa (br) static harmonic plateaus + lyrical melody + lush extensions (classic quartet ballads); Cuban Afro 6/8 (cu) vamp-based modal layers + neighbour chord stacks.',
+    'String quartet translation: neighbour harmony in inner voices; wide compound intervals between outer voices; perfect 4th as structural interval between strands.',
+    'Big band translation: reeds carry motivic development lines; brass punctuate chromatic mediant hits; bass outlines axis progressions rather than textbook functional roots. Sax-forward melodic primacy — keyboard comp is supportive colour only. Not an imitation of any artist.',
+  ],
+};
+
 const MARIA_SCHNEIDER_KEYS_COMP: SongwriterCompProfile = {
   id: 'maria_schneider',
   primaryCompInstrument: 'keys',
@@ -291,6 +319,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return GIL_EVANS_KEYS_COMP;
     case 'maria_schneider':
       return MARIA_SCHNEIDER_KEYS_COMP;
+    case 'wayne_shorter':
+      return WAYNE_SHORTER_KEYS_COMP;
     default:
       return genericKeysCompProfile(id);
   }

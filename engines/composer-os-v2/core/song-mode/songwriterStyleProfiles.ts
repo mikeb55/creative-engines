@@ -61,6 +61,10 @@ export interface SongwriterStyleProfile {
   displayName?: string;
   /** Broad era bucket (e.g. singer-songwriter) for docs / pairing. */
   songwriterEraTag?: string;
+  /** Primary melodic lead for receipts/UI (sax-led jazz, etc.). */
+  primaryMelodicInstrument?: 'keys' | 'guitar' | 'sax' | 'ensemble';
+  /** Multi-era harmonic lineage (e.g. Wayne Shorter periods). */
+  songwriterHarmonicPeriods?: readonly string[];
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {
@@ -1167,7 +1171,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   wayne_shorter: {
     id: 'wayne_shorter',
     description:
-      'Post-bop harmonic language with upper-structure emphasis (9, 11, 13), ambiguous tonality, motivic development. Activates shorterMode chord-tone policy.',
+      'Wayne Shorter — motivic harmony, non-functional neighbor chords, axis root motion, melody-driven form. Blue Note ballads through Emanon orchestral suites. Harmony orbits melody not vice versa.',
     lineVsCellEmphasis: 0.82,
     harmonyColourBias: 0.92,
     formRegularity: 0.22,
@@ -1179,8 +1183,11 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     sectionContrast: 0.72,
     syncopationBias: 0.42,
     densityBias: 0.48,
-    motifCellSize: 5,
-    intervalPreference: 'chromatic',
+    motifCellSize: 4,
+    intervalPreference: 'mixed',
+    songwriterEraTag: 'jazz',
+    primaryMelodicInstrument: 'sax',
+    songwriterHarmonicPeriods: ['blue_note', 'classic_quartet', 'late_period'],
   },
   pat_metheny: {
     id: 'pat_metheny',
