@@ -8,7 +8,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -521,7 +521,7 @@ export function precomputeBillEvansEffectiveHarmonyBars(context: CompositionCont
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = sanitizeBareTriads(getChordForBar(b, context), guards);
+    let sym = sanitizeBareTriads(resolveBarSymbol(context, b).symbol, guards);
     raw.push(sym);
   }
 

@@ -15,6 +15,7 @@ import type {
   PhilipGlassContextMode,
 } from '../compositionContext';
 import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -111,7 +112,7 @@ export function precomputeBernardHerrmannEffectiveHarmonyBars(context: Compositi
   genMeta.bernardHerrmannContext = mode;
 
   const raw: string[] = [];
-  for (let b = 1; b <= tb; b++) raw.push(getChordForBar(b, context));
+  for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
   const out = [...raw];
   const tonicPc = inferTonicPitchClassFromBar1(context);
 

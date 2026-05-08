@@ -8,7 +8,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { getChordForBar } from '../harmony/harmonyResolution';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -341,7 +341,7 @@ export function precomputeDonaldFagenEffectiveHarmonyBars(context: CompositionCo
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
-    let sym = sanitizePrecision(getChordForBar(b, context), guards);
+    let sym = sanitizePrecision(resolveBarSymbol(context, b).symbol, guards);
     sym = enrichTonicLydian(sym, tonicPc, seed, b);
     sym = enrichDominantNineOrThirteen(sym, seed, b);
     sym = sanitizePrecision(sym, guards);
