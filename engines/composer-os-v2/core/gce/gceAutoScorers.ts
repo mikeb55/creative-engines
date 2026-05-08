@@ -175,7 +175,7 @@ export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string)
   const motifRecurrence =
     windows.length > 0 ? Math.min(recurrences / (windows.length * 0.4), 1) : 0;
 
-  // C — contour compression (U/D/S entropy; lower entropy → more directed contour)
+  // C — contour: directed entropy + adjacent arc pairs (UD/DU) + turns + excursion (+ per-writer tolerance)
   const contour = pitches.slice(1).map((p, i) =>
     p > pitches[i]! ? 'U' : p < pitches[i]! ? 'D' : 'S'
   );
@@ -188,16 +188,96 @@ export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string)
     if (p > 0) entropy -= p * Math.log2(p);
   }
   const maxEntropy = Math.log2(3);
-  let contourCompression = 1 - entropy / maxEntropy;
+  /** Softer than raw (1−H/Hmax): mid entropy (mixed contour) no longer scores ~0. */
+  const entropyNorm = Math.max(0, 1 - entropy / maxEntropy);
+  const entropyComponent = 0.55 * entropyNorm + 0.45 * Math.sqrt(entropyNorm);
+
+  let arcAdjacent = 0;
+  for (let i = 0; i < contour.length - 1; i++) {
+    const a = contour[i]!;
+    const b = contour[i + 1]!;
+    if ((a === 'U' && b === 'D') || (a === 'D' && b === 'U')) arcAdjacent++;
+  }
+  const arcAdjacentScore = Math.min(
+    1,
+    arcAdjacent / Math.max(1.2, total * 0.22)
+  );
+
+  let directionTurns = 0;
+  for (let i = 0; i < contour.length - 1; i++) {
+    const a = contour[i]!;
+    const b = contour[i + 1]!;
+    if (a !== 'S' && b !== 'S' && a !== b) directionTurns++;
+  }
+  const turnScore = Math.min(1, directionTurns / Math.max(1.5, total * 0.32));
+
+  const pitchMin = Math.min(...pitches);
+  const pitchMax = Math.max(...pitches);
+  let excursionDivisor = 20;
+  switch (songwriterId) {
+    case 'philip_glass':
+    case 'nino_rota':
+      excursionDivisor = 22;
+      break;
+    case 'bernard_herrmann':
+    case 'jerry_goldsmith':
+    case 'john_williams':
+      excursionDivisor = 13;
+      break;
+    default:
+      break;
+  }
+  const excursionNorm = Math.min(1, (pitchMax - pitchMin) / excursionDivisor);
 
   const pitchMean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
   const pitchVariance =
     pitches.reduce((s, p) => s + Math.pow(p - pitchMean, 2), 0) / pitches.length;
   const pitchStddev = Math.sqrt(pitchVariance);
-  /** Flat / single repeated pitch: entropy favours “all same” → treat as no contour. */
-  if (pitchStddev < 1.0) {
-    contourCompression = 0;
+
+  let wEntropy = 0.17;
+  let wArc = 0.33;
+  let wExc = 0.3;
+  let wTurn = 0.2;
+  let flatRecurrenceCap = 0.58;
+
+  switch (songwriterId) {
+    case 'philip_glass':
+    case 'nino_rota':
+      wEntropy = 0.22;
+      wArc = 0.18;
+      wExc = 0.38;
+      wTurn = 0.22;
+      flatRecurrenceCap = 0.88;
+      break;
+    case 'bernard_herrmann':
+    case 'jerry_goldsmith':
+    case 'john_williams':
+      wEntropy = 0.12;
+      wArc = 0.4;
+      wExc = 0.36;
+      wTurn = 0.12;
+      flatRecurrenceCap = 0.36;
+      break;
+    default:
+      break;
   }
+
+  let contourCompression =
+    wEntropy * entropyComponent +
+    wArc * arcAdjacentScore +
+    wExc * excursionNorm +
+    wTurn * turnScore;
+
+  if (pitchStddev < 1.0) {
+    const rescue = Math.min(
+      flatRecurrenceCap,
+      motifRecurrence * flatRecurrenceCap * 0.92 + 0.14
+    );
+    contourCompression = Math.max(contourCompression, rescue);
+  }
+
+  /** Map typical weighted sums (~0.35–0.65) into ~0.75–0.9 so contour adds ~2.0+ to raw melodic score. */
+  contourCompression = Math.min(1, 0.52 + 0.48 * contourCompression);
 
   // I — interval balance (jazz step/skip/leap distribution + recovery)
   const intervalEconomy = scoreJazzIntervalBalance(pitches, songwriterId);
