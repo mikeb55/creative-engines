@@ -33,6 +33,16 @@ export type MelodyContourProfileId =
   | 'dissolving'
   | 'cabaret_arc';
 
+/** Optional Motif Authority Layer hints — consumed by {@link planLeadMelody} where wired. */
+export interface MalLeadHints {
+  attackDensity?: 'low' | 'medium' | 'high';
+  interOnsetSpacing?: 'narrow' | 'medium' | 'wide';
+  avoidStrongBeatOneAttack?: boolean;
+  commonToneReturnBias?: number;
+  sequentialDisplacementBias?: number;
+  modalIntervalPreference?: boolean;
+}
+
 export interface MelodyBehaviourPlan {
   repetitionVsVariationBias: number;
   intervalTendency: 'stepwise' | 'mixed' | 'angular';
@@ -49,6 +59,7 @@ export interface MelodyBehaviourPlan {
    * may take one **8–11 semitone** leap toward a chord tone (ECM-style emotional peak).
    */
   wideLeapPeakPerPhrase?: boolean;
+  malLeadHints?: MalLeadHints;
 }
 
 function clamp01(n: number): number {
@@ -254,15 +265,51 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'medium',
     devices: ['inner_voice_melody', 'modal_interchange', 'delayed_resolution', 'impressionistic_voicing'],
   },
-  maria_schneider: {
+  gil_evans: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'mixed',
-    repetitionVsVariationBias: 0.85,
-    phraseLength: 7,
-    contourProfile: 'arch',
-    phraseAsymmetryTendency: 0.75,
+    repetitionVsVariationBias: 0.42,
+    phraseLength: 6,
+    contourProfile: 'dissolving',
+    phraseAsymmetryTendency: 0.62,
     cadenceFrequency: 'low',
-    devices: ['sparse_phrase', 'modal_field', 'breath_space', 'nature_arc', 'chamber_texture'],
+    devices: ['modal_cloud', 'floating_register', 'pedal_haze', 'voice_led_strip', 'sparse_density'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      avoidStrongBeatOneAttack: true,
+      modalIntervalPreference: true,
+    },
+  },
+  maria_schneider: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.55,
+    phraseLength: 8,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.72,
+    cadenceFrequency: 'low',
+    devices: ['sparse_phrase', 'modal_field', 'breath_space', 'nature_arc', 'chamber_texture', 'common_tone_return'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      commonToneReturnBias: 0.62,
+    },
+  },
+  john_coltrane: {
+    intervalTendency: 'angular',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.22,
+    phraseLength: 4,
+    contourProfile: 'bebop_arc',
+    phraseAsymmetryTendency: 0.44,
+    cadenceFrequency: 'high',
+    devices: ['chromatic_side_slip', 'sequential_cell', 'third_pairs', 'sheets_of_sound_density'],
+    malLeadHints: {
+      attackDensity: 'high',
+      interOnsetSpacing: 'narrow',
+      sequentialDisplacementBias: 0.65,
+    },
   },
   bacharach: {
     intervalTendency: 'mixed',

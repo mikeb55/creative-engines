@@ -14,6 +14,8 @@ import type { SongSectionKind, SongVoiceType } from './songModeTypes';
 import type { ParsedSongwritingResearch } from './songwritingResearchTypes';
 import type { ResolvedSongwritingStyle } from './songwriterStyleResolver';
 import type { StylePairingResult } from '../style-pairing/stylePairingTypes';
+import type { ThemeGenome } from '../motif/themeGenome';
+import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
 
 /** Placeholder structure for future lyric/prosody lane. */
 export interface LyricProsodyPlaceholderMetadata {
@@ -64,4 +66,8 @@ export interface CompiledSong {
   leadMelodyPlan?: LeadMelodyPlan;
   singerRangeValidation?: SingerRangeValidationResult;
   prosodyPlaceholderPlan?: ProsodyPlaceholderPlan;
+  /** Motif Authority Layer V2 — Song Mode theme genome + diagnostics (`mal:*`). */
+  themeGenome?: ThemeGenome;
+  motifAuthoritySummary?: MotifDevelopmentSummary;
+  motifAuthorityReceipts?: readonly string[];
 }

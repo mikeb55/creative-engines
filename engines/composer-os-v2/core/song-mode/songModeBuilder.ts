@@ -6,6 +6,8 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
+import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
+import { buildThemeGenome } from '../motif/themeGenomeBuilder';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import { resolveBeatlesChordPoolId } from './beatlesSlice';
@@ -2283,7 +2285,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
 
   const melodyBehaviourForLead =
     withRules.songwriting?.melodyBehaviour ?? planMelodyBehaviour(params.seed, resolution.primaryId);
-  const leadMelodyPlan = planLeadMelody({
+  const themeGenome = buildThemeGenome(resolution.primaryId, params.seed, undefined);
+  const leadMelodyPlanRaw = planLeadMelody({
     seed: params.seed,
     sections: params.sections,
     chordPlan: withRules.chordPlan,
@@ -2294,6 +2297,20 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     melodyBehaviour: melodyBehaviourForLead,
     harmonyBars: flattenChordPlanToHarmonyBars(withRules.chordPlan),
   });
+  const mal = applyMotifAuthorityLayerToLeadMelody(
+    leadMelodyPlanRaw,
+    themeGenome,
+    params.sections,
+    withRules.chordPlan
+  );
+  const comfortMidi = getSingerRangeProfile(voiceType).comfortRangeMidi;
+  const leadMelodyPlan = {
+    ...mal.plan,
+    notes: mal.plan.notes.map((n) => ({
+      ...n,
+      midi: Math.min(comfortMidi[1], Math.max(comfortMidi[0], n.midi)),
+    })),
+  };
 
   const singerProfile = getSingerRangeProfile(voiceType);
   const singerRangeValidation = validateMelodyAgainstSingerRange(leadMelodyPlan, singerProfile);
@@ -2309,6 +2326,9 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     leadMelodyPlan,
     singerRangeValidation,
     prosodyPlaceholderPlan,
+    themeGenome,
+    motifAuthoritySummary: mal.summary,
+    motifAuthorityReceipts: mal.receipts,
   };
 }
 

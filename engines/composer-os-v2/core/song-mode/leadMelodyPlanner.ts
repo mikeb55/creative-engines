@@ -181,6 +181,19 @@ function rhythmCellsForBar(
   }
 }
 
+/** Nudge first attack off beat 1 for floating-entrance MAL profiles (e.g. Gil Evans cloud). */
+function delayFloatingEntranceOnCells(
+  cells: Array<{ startBeat: number; duration: number }>
+): Array<{ startBeat: number; duration: number }> {
+  if (cells.length === 0) return cells;
+  const [first, ...rest] = cells;
+  if (first.startBeat > 0.08) return cells;
+  const slack = Math.min(1.75, Math.max(0.35, first.duration * 0.38));
+  const newStart = Math.min(3.25, first.startBeat + slack);
+  const newDur = Math.max(0.25, first.duration - slack);
+  return [{ ...first, startBeat: newStart, duration: newDur }, ...rest];
+}
+
 interface PhraseMotifTemplate {
   cells: Array<{ startBeat: number; duration: number }>;
   semitoneOffsetsFromFirst: number[];
@@ -289,8 +302,14 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
       let cells: Array<{ startBeat: number; duration: number }>;
       if (useMotif && tpl) {
         cells = tpl.cells;
+        if (melodyBehaviour.malLeadHints?.avoidStrongBeatOneAttack && m === ph.startMeasure) {
+          cells = delayFloatingEntranceOnCells(cells.map((c) => ({ ...c })));
+        }
       } else {
         cells = rhythmCellsForBar(rhythmMode, seed, m);
+        if (melodyBehaviour.malLeadHints?.avoidStrongBeatOneAttack) {
+          cells = delayFloatingEntranceOnCells(cells.map((c) => ({ ...c })));
+        }
       }
 
       const barNotes: MelodyNoteEvent[] = [];

@@ -17,6 +17,7 @@ import { runGuitarBassDuoSingleLineTests } from './guitarBassDuoSingleLine.test'
 import { runGuitarBassDuoWybleVoice2Tests } from './guitarBassDuoWybleVoice2.test';
 import { runStage2MusicalCoreTests } from './stage2MusicalCore.test';
 import { runMotifTests } from './motif.test';
+import { runMotifAuthorityLayerTests } from './motifAuthorityLayer.test';
 import { runStyleModuleTests } from './styleModule.test';
 import { runInteractionTests } from './interaction.test';
 import { runControlTests } from './control.test';
@@ -57,6 +58,7 @@ const suites: SuiteEntry[] = [
   { name: 'Guitar–Bass Duo Wyble voice 2 (polyphony)', run: runGuitarBassDuoWybleVoice2Tests },
   { name: 'Stage 2 Musical Core', run: runStage2MusicalCoreTests },
   { name: 'Motif', run: runMotifTests },
+  { name: 'Motif Authority Layer', run: runMotifAuthorityLayerTests },
   { name: 'Style Module', run: runStyleModuleTests },
   { name: 'Interaction', run: runInteractionTests },
   { name: 'Control', run: runControlTests },
