@@ -10,6 +10,7 @@ import type {
   BeatlesContextMode,
   BernardHerrmannContextMode,
   CompositionContext,
+  FormMap,
   EnnioMorriconeContextMode,
   FelaKutiContextMode,
   FrankZappaContextMode,
@@ -89,6 +90,10 @@ import {
 import { LONG_FORM_DUO_BARS, resolveLongFormRoute } from '../form/longFormRouteResolver';
 import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
 import { FormId, resolveFormSections, type FormSection } from '../form/formPlanner';
+import {
+  resolveFormPrecedence,
+  type CompiledSectionSliceInput,
+} from '../form/resolveFormPrecedence';
 import {
   buildDuoLongFormCompositionContext,
   buildDuoLongFormCompositionContextFromBars,
@@ -262,6 +267,25 @@ interface BuildGoldenPathContextExtras {
    * When 8, eight parsed chords stay an 8-bar score (no 8→32 tiling). When absent/≠8, 8 chords still tile ×4 to 32.
    */
   totalBarsForForm?: number;
+  /** Phase 19 template — resolved after harmony span when compatible */
+  formId?: FormId;
+  /** Song Mode compiled chord-plan slices (semantic labels) */
+  compiledSections?: CompiledSectionSliceInput[];
+}
+
+function sectionRoleMapForDuoForm(sections: Array<{ label: string }>): Record<string, SectionRole> {
+  const n = sections.length;
+  if (n <= 1) {
+    return Object.fromEntries(sections.map((s) => [s.label, 'statement' as SectionRole]));
+  }
+  const m: Record<string, SectionRole> = {};
+  for (let i = 0; i < n; i++) {
+    const lab = sections[i]!.label;
+    if (i === 0) m[lab] = 'statement';
+    else if (i === n - 1) m[lab] = 'return';
+    else m[lab] = i === 1 ? 'contrast' : 'development';
+  }
+  return m;
 }
 
 function buildGoldenPathContext(
@@ -291,44 +315,47 @@ function buildGoldenPathContext(
     { label: 'A', startBar: 17, length: 8 },
     { label: 'B', startBar: 25, length: 8 },
   ];
-  const tb = useCustom ? (useCustom8Native ? 8 : 32) : 8;
   const harmony = useCustom32
     ? buildHarmonyPlanFromBars(expandedChordBars)
     : useCustom8Native
       ? buildHarmonyPlanFromBars(parsedChordBars!)
       : BUILTIN_HARMONY;
-  const form = useCustom32
+  const builtDefaultForm: FormMap = useCustom32
     ? {
         sections: sections32.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
         totalBars: 32,
       }
     : { sections, totalBars: 8 };
-  const phrase = useCustom32
-    ? { segments: sections32.map((s) => ({ ...s, density: undefined })), totalBars: 32 }
-    : useCustom8Native
-      ? {
-          segments: [
-            { label: 'A', startBar: 1, length: 4, density: undefined },
-            { label: 'B', startBar: 5, length: 4, density: undefined },
-          ],
-          totalBars: 8,
-        }
-      : {
-          segments: [
-            { label: 'A', startBar: 1, length: 4, density: undefined },
-            { label: 'B', startBar: 5, length: 4, density: undefined },
-          ],
-          totalBars: 8,
-        };
+  const barsForLock =
+    useCustom32 && expandedChordBars ? expandedChordBars : useCustom8Native && parsedChordBars ? parsedChordBars : undefined;
+  const form = resolveFormPrecedence({
+    formId: extras?.formId,
+    compiledSections: extras?.compiledSections,
+    totalBars: builtDefaultForm.totalBars,
+    lockedHarmonyBarCount: barsForLock?.length,
+    defaultForm: builtDefaultForm,
+  });
+  const tb = form.totalBars;
+  const phrase = {
+    segments: form.sections.map((s) => ({
+      label: s.label,
+      startBar: s.startBar,
+      length: s.length,
+      density: undefined,
+    })),
+    totalBars: form.totalBars,
+  };
   const chordSymbolPlan = useCustom32
     ? buildChordSymbolPlanFromBars(expandedChordBars)
     : useCustom8Native
       ? buildChordSymbolPlanFromBars(parsedChordBars!)
       : BUILTIN_CHORD_SYMBOL_PLAN;
-  const rehearsalMarkPlan = { marks: [{ label: 'A', bar: 1 }, { label: 'B', bar: 5 }] };
+  const rehearsalMarkPlan = {
+    marks: form.sections.map((s) => ({ label: s.label, bar: s.startBar })),
+  };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
 
-  const sectionRoles = planSectionRoles(sections, { A: 'statement', B: 'contrast' });
+  const sectionRoles = planSectionRoles(form.sections, sectionRoleMapForDuoForm(form.sections));
   const densityPlan = planDensityCurve(sectionRoles, tb);
   const densityCurve = { segments: densityPlan.segments, totalBars: tb };
 
@@ -348,9 +375,6 @@ function buildGoldenPathContext(
     : extras?.progressionMode ?? (useCustom ? 'custom' : 'builtin');
 
   const raw = extras?.chordProgressionInputRaw?.trim();
-
-  const barsForLock =
-    useCustom32 && expandedChordBars ? expandedChordBars : useCustom8Native && parsedChordBars ? parsedChordBars : undefined;
 
   const resolvedPresetId = extras?.resolvedPresetId ?? 'guitar_bass_duo';
 
@@ -397,21 +421,6 @@ const DUO_BUILTIN_EIGHT_BAR_CYCLE: readonly string[] = [
   'Cmaj9',
   'A7alt',
 ];
-
-function sectionRoleMapForDuoForm(sections: Array<{ label: string }>): Record<string, SectionRole> {
-  const n = sections.length;
-  if (n <= 1) {
-    return Object.fromEntries(sections.map((s) => [s.label, 'statement' as SectionRole]));
-  }
-  const m: Record<string, SectionRole> = {};
-  for (let i = 0; i < n; i++) {
-    const lab = sections[i]!.label;
-    if (i === 0) m[lab] = 'statement';
-    else if (i === n - 1) m[lab] = 'return';
-    else m[lab] = i === 1 ? 'contrast' : 'development';
-  }
-  return m;
-}
 
 /** 24-bar duo context: avoids `duo32` → `buildDuoLongFormCompositionContext` defaulting to 32 measures. */
 function buildDuoTwentyFourBarCompositionContext(
@@ -654,6 +663,10 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       harmonyModeRequested: 'custom_locked',
       resolvedPresetId: presetId,
       totalBarsForForm: 8,
+      ...(options?.formId ? { formId: options.formId } : {}),
+      ...(options?.songModeCompiledSectionForm?.length
+        ? { compiledSections: options.songModeCompiledSectionForm }
+        : {}),
     });
   }
   /** 16 / 32 / 40–64 explicit bars → long-form FromBars (non–custom_locked; locked uses branch above). */
@@ -753,6 +766,10 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     harmonyModeRequested,
     resolvedPresetId: presetId,
     totalBarsForForm: options?.totalBars,
+    ...(options?.formId ? { formId: options.formId } : {}),
+    ...(options?.songModeCompiledSectionForm?.length
+      ? { compiledSections: options.songModeCompiledSectionForm }
+      : {}),
   });
   })();
   const resolvedEra = options?.stylePairing?.era ?? options?.era;
@@ -1018,6 +1035,8 @@ export interface RunGoldenPathOptions {
    *  If omitted, form is inferred from totalBars
    *  and longFormEnabled as before. */
   formId?: FormId;
+  /** Song Mode realise: compiled chord-plan slices (`verse_0`, …) for form precedence when aligned with bar lock */
+  songModeCompiledSectionForm?: CompiledSectionSliceInput[];
   longFormEnabled?: boolean;
   /** V3.4 — key signature: infer (default), user override, or hide. */
   keySignatureMode?: 'auto' | 'override' | 'none';
@@ -1582,6 +1601,22 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   return best ?? last!;
 }
 
+function applyResolvedFormMapToContext(context: CompositionContext, form: FormMap): void {
+  context.form = form;
+  context.phrase = {
+    segments: form.sections.map((s) => ({
+      label: s.label,
+      startBar: s.startBar,
+      length: s.length,
+      density: undefined,
+    })),
+    totalBars: form.totalBars,
+  };
+  context.rehearsalMarkPlan = {
+    marks: form.sections.map((s) => ({ label: s.label, bar: s.startBar })),
+  };
+}
+
 /**
  * Single seed, no duo lock candidate sweep — use for deterministic inspection / tests.
  * For `custom_locked` / parsed text, pass `parsedChordBars` + `lockedHarmonyBarsRaw` as `runGoldenPath` does after its resolve step; text alone is not enough.
@@ -1599,7 +1634,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (effectiveOptions?.formId) {
     const formSections = resolveFormSections(effectiveOptions.formId);
     const formTotalBars = formSections.reduce((sum, s) => sum + s.length, 0);
-    effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
+    const lockedN = effectiveOptions.lockedHarmonyBarsRaw?.length;
+    const lockedOk =
+      effectiveOptions.harmonyMode !== 'custom_locked' ||
+      (typeof lockedN === 'number' && lockedN === formTotalBars);
+    if (lockedOk) {
+      effectiveOptions = { ...effectiveOptions, totalBars: formTotalBars };
+    }
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
   const barMeterFromRequest = sanitizeBarMeterMap(options?.barMeterMap);
@@ -1634,13 +1675,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       wybleVoiceLayout: undefined,
     };
   }
-  if (options?.formId) {
-    const formSections = resolveFormSections(options.formId);
-    context.form = {
-      ...context.form,
-      sections: formSections,
-      totalBars: formSections.reduce((sum, s) => sum + s.length, 0),
-    };
+  {
+    const lockedN = options?.lockedHarmonyBarsRaw?.length;
+    const resolvedForm = resolveFormPrecedence({
+      formId: options?.formId,
+      compiledSections: options?.songModeCompiledSectionForm,
+      totalBars: context.form.totalBars,
+      lockedHarmonyBarCount: lockedN,
+      defaultForm: context.form,
+    });
+    applyResolvedFormMapToContext(context, resolvedForm);
   }
   if (options?.creativeControlLevel) {
     context.generationMetadata = {
@@ -2134,10 +2178,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity) {
     finalizeSongModeSectionShaping(appliedContext.generationMetadata);
   }
-  if (options?.formId && context.form?.sections) {
+  if (
+    (options?.formId || options?.songModeCompiledSectionForm?.length) &&
+    appliedContext.form?.sections?.length
+  ) {
     (score as unknown as {
       formSections?: { startBar: number; label: string }[];
-    }).formSections = context.form.sections.map((s) => ({
+    }).formSections = appliedContext.form.sections.map((s) => ({
       startBar: s.startBar,
       label: s.label,
     }));

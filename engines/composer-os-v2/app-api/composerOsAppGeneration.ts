@@ -786,6 +786,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         }
       : undefined,
   });
+  const songModeCompiledSectionForm =
+    sm.compiledSong.chordPlan?.map((p) => ({
+      kind: p.sectionKind,
+      barLength: p.chordSymbols.length,
+    })) ?? [];
   let expectedSongFormBars: number = barTarget;
   if (req.formId != null) {
     const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
@@ -1096,6 +1101,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'angelo_badalamenti'
       ? { angeloBadalamentiContext: req.angeloBadalamentiContext }
       : {}),
+    ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() as FormId } : {}),
+    ...(songModeCompiledSectionForm.length > 0 ? { songModeCompiledSectionForm } : {}),
   };
 
   let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);

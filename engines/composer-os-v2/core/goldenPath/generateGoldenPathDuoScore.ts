@@ -1081,11 +1081,7 @@ function collectGuitarNotesInBarRange(
   return out;
 }
 
-/**
- * Wayne Shorter: align motif checkpoints with first verse / first chorus / (bridge | 2nd verse).
- * Returns null → caller uses {@link defaultMotifAuthorityPlan}.
- */
-function tryWayneFormAwareMotifAuthorityPlan(
+function tryWayneSemanticFormMotifAuthorityPlan(
   context: CompositionContext,
   totalBars: number
 ): MotifAuthorityPlan | null {
@@ -1117,6 +1113,60 @@ function tryWayneFormAwareMotifAuthorityPlan(
     returnThreshold: 0.54,
     variationMiddleBand: [0.28, 0.9],
   };
+}
+
+/** Letter forms: first `A`, first `B`, return = `A'` / `A''` or second `A` / last section. */
+function tryWayneLetterFormMotifAuthorityPlan(
+  context: CompositionContext,
+  totalBars: number
+): MotifAuthorityPlan | null {
+  const sections = [...(context.form?.sections ?? [])].sort((a, b) => a.startBar - b.startBar);
+  if (sections.length < 2) return null;
+
+  const norm = (lab: string) => lab.trim();
+  const isPlainA = (lab: string) => /^A$/i.test(norm(lab));
+  const isBSlot = (lab: string) => /^B$/i.test(norm(lab)) || /^B-\d+$/i.test(norm(lab));
+  const isAprimeSlot = (lab: string) => {
+    const t = norm(lab);
+    return /^A''$/i.test(t) || /^A'$/i.test(t) || /^A''-\d+$/i.test(t) || /^A'-\d+$/i.test(t);
+  };
+
+  const firstA = sections.find((s) => isPlainA(s.label));
+  const firstB = sections.find((s) => isBSlot(s.label));
+  if (!firstA || !firstB) return null;
+
+  const phraseA = motifRangeFromFormSection(firstA, totalBars);
+  const phraseB = motifRangeFromFormSection(firstB, totalBars);
+  if (!phraseA || !phraseB || motifRangesOverlap(phraseA, phraseB)) return null;
+
+  const plainAs = sections.filter((s) => isPlainA(s.label));
+  const returnSrc =
+    sections.find((s) => isAprimeSlot(s.label)) ?? plainAs[1] ?? sections[sections.length - 1];
+  if (!returnSrc) return null;
+  const phraseReturn = motifRangeFromFormSection(returnSrc, totalBars);
+  if (!phraseReturn) return null;
+
+  return {
+    phraseA,
+    phraseB,
+    phraseReturn,
+    returnThreshold: 0.54,
+    variationMiddleBand: [0.28, 0.9],
+  };
+}
+
+/**
+ * Wayne Shorter: align motif checkpoints with verse/chorus/bridge or letter form (A / B / A′…).
+ * Returns null → caller uses {@link defaultMotifAuthorityPlan}.
+ */
+function tryWayneFormAwareMotifAuthorityPlan(
+  context: CompositionContext,
+  totalBars: number
+): MotifAuthorityPlan | null {
+  return (
+    tryWayneSemanticFormMotifAuthorityPlan(context, totalBars) ??
+    tryWayneLetterFormMotifAuthorityPlan(context, totalBars)
+  );
 }
 
 function snapshotPhrasePitches(part: PartModel, range: MotifPhraseRange): Array<{ bar: number; idx: number; pitch: number }> {

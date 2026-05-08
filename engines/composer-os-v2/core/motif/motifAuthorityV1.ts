@@ -339,6 +339,20 @@ export function wayneFormSectionRoleFromLabel(label: string): 'verse' | 'chorus'
   return null;
 }
 
+/**
+ * Wayne motif-development transforms (chorus vs bridge slots): semantic labels + letter-form fallback.
+ * `B` / `B-*` → chorus slot; `A'` / `A''` / primes → bridge slot.
+ */
+export function wayneMotifDevelopmentSectionRoleFromLabel(label: string): 'verse' | 'chorus' | 'bridge' | null {
+  const semantic = wayneFormSectionRoleFromLabel(label);
+  if (semantic) return semantic;
+  const raw = label.trim();
+  if (/^B$/i.test(raw) || /^B-\d+$/i.test(raw)) return 'chorus';
+  if (/^A''$/i.test(raw) || /^A'$/i.test(raw) || /^A''-\d+$/i.test(raw) || /^A'-\d+$/i.test(raw))
+    return 'bridge';
+  return null;
+}
+
 export function wayneMotifPhraseRangeFromFormSection(
   sec: { startBar: number; length: number },
   totalBars: number
@@ -431,7 +445,7 @@ export function applyWayneShorterChorusBridgeMotifDevelopment(
 
   let salt = 0;
   for (const sec of sections) {
-    const role = wayneFormSectionRoleFromLabel(sec.label);
+    const role = wayneMotifDevelopmentSectionRoleFromLabel(sec.label);
     if (role !== 'chorus' && role !== 'bridge') continue;
     const range = wayneMotifPhraseRangeFromFormSection(sec, totalBars);
     if (!range) continue;
