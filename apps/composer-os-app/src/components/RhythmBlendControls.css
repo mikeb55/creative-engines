@@ -137,6 +137,67 @@
   margin-top: 0.25rem;
 }
 
+.layerBlendPanel__engineGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.35rem;
+  margin-bottom: 0.45rem;
+  align-items: start;
+}
+
+.layerBlendPanel__engineCol {
+  min-width: 0;
+}
+
+.engineSelectWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.35rem;
+}
+
+.engineSelectWrap select {
+  flex: 1;
+  min-width: 0;
+}
+
+.engineSelectWrap__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.mergedPulseStrip {
+  margin: 0.35rem 0 0.55rem;
+}
+
+.mergedPulseStrip__label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.mergedPulseStrip__grid {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+}
+
+.mergedPulseStrip__cell {
+  aspect-ratio: 1;
+  min-height: 6px;
+  border-radius: 1px;
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.mergedPulseStrip__empty {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .conflictStrategyRadioGroup {
   margin-top: 0.55rem;
 }

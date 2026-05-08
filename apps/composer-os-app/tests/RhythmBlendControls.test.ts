@@ -5,7 +5,14 @@ import React from 'react';
 import { create } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { AfrobeatPresetRef, RebetikoPresetRef, RhythmBlendEngineId } from '../src/components/RhythmBlendControls.types';
+import type {
+  BrazilianPresetRef,
+  CubanPresetRef,
+  FelaKutiPresetRef,
+  GreekRebetikoPresetRef,
+  SecondLinePresetRef,
+  RhythmBlendEngineId,
+} from '../src/components/RhythmBlendControls.types';
 import type { RhythmBlendStarterBundles } from '../src/components/RhythmBlendControls.types';
 
 function slugify(s: string): string {
@@ -16,13 +23,13 @@ function slugify(s: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-const SAMPLE_AFRO: AfrobeatPresetRef[] = [
-  { engine: 'afrobeat', presetId: 'straight', label: 'A', meter: '4/4', gridSteps: 16 },
+const SAMPLE_FELA: FelaKutiPresetRef[] = [
+  { engine: 'felaKuti', presetId: 'straight', label: 'A', meter: '4/4', gridSteps: 16 },
 ];
 
-const SAMPLE_REB: RebetikoPresetRef[] = [
+const SAMPLE_GRE: GreekRebetikoPresetRef[] = [
   {
-    engine: 'rebetiko',
+    engine: 'greekRebetiko',
     presetId: 'hasapiko_4_4',
     label: 'G',
     meter: '4/4',
@@ -31,9 +38,9 @@ const SAMPLE_REB: RebetikoPresetRef[] = [
   },
 ];
 
-const SAMPLE_BR = [
+const SAMPLE_BR: BrazilianPresetRef[] = [
   {
-    engine: 'brazilian' as const,
+    engine: 'brazilian',
     presetId: 'bossa-nova-basic',
     label: 'B',
     meterSignature: '2/4',
@@ -41,39 +48,44 @@ const SAMPLE_BR = [
   },
 ];
 
+const SAMPLE_SL: SecondLinePresetRef[] = [
+  {
+    engine: 'secondLine',
+    presetId: 'second-line-basic',
+    label: 'SL',
+    meterSignature: '4/4',
+    gridSteps: 16,
+  },
+];
+
+const SAMPLE_CU: CubanPresetRef[] = [
+  {
+    engine: 'cuban',
+    presetId: 'son-clave-3-2',
+    label: 'CU',
+    meterSignature: '4/4',
+    gridSteps: 16,
+    claveDirection: '3-2',
+  },
+];
+
 const BUNDLES: RhythmBlendStarterBundles = {
-  afrobeat: SAMPLE_AFRO,
-  rebetiko: SAMPLE_REB,
+  felaKuti: SAMPLE_FELA,
+  greekRebetiko: SAMPLE_GRE,
   brazilian: SAMPLE_BR,
-  secondLine: [
-    {
-      engine: 'second_line',
-      presetId: 'second-line-basic',
-      label: 'SL',
-      meterSignature: '4/4',
-      gridSteps: 16,
-    },
-  ],
-  cuban: [
-    {
-      engine: 'cuban',
-      presetId: 'son-clave-3-2',
-      label: 'CU',
-      meterSignature: '4/4',
-      gridSteps: 16,
-    },
-  ],
+  secondLine: SAMPLE_SL,
+  cuban: SAMPLE_CU,
 };
 
 function presetsForEngine(engine: RhythmBlendEngineId, b: RhythmBlendStarterBundles) {
   switch (engine) {
-    case 'afrobeat':
-      return b.afrobeat;
-    case 'rebetiko':
-      return b.rebetiko;
+    case 'felaKuti':
+      return b.felaKuti;
+    case 'greekRebetiko':
+      return b.greekRebetiko;
     case 'brazilian':
       return b.brazilian;
-    case 'second_line':
+    case 'secondLine':
       return b.secondLine;
     case 'cuban':
       return b.cuban;

@@ -1,13 +1,11 @@
 import type { BlendExporterBlendedPlan, BlendExporterSongForm } from '@composer-os/core/blend';
+import type { RhythmEngineId as RhythmBlendCatalogId } from '@composer-os/core/blend/rhythmBlendTypes';
 
 export type BlendMode = 'song-form' | 'layer-blend';
-/** Blend lab engines (maps to core `RhythmEngineId` in blend exporter). */
-export type RhythmBlendEngineId =
-  | 'afrobeat'
-  | 'rebetiko'
-  | 'brazilian'
-  | 'second_line'
-  | 'cuban';
+
+/** V43 blend lab engine IDs (catalog). */
+export type RhythmBlendEngineId = RhythmBlendCatalogId;
+
 export type ConflictStrategy = 'max' | 'sum-clamped' | 'priority';
 
 export interface BarRange {
@@ -15,16 +13,16 @@ export interface BarRange {
   endBar: number;
 }
 
-export interface AfrobeatPresetRef {
-  engine: 'afrobeat';
+export interface FelaKutiPresetRef {
+  engine: 'felaKuti';
   presetId: string;
   label: string;
   meter: '4/4';
   gridSteps: 16;
 }
 
-export interface RebetikoPresetRef {
-  engine: 'rebetiko';
+export interface GreekRebetikoPresetRef {
+  engine: 'greekRebetiko';
   presetId: string;
   label: string;
   meter: '9/8' | '7/8' | '10/8' | '6/8' | '2/4' | '4/4';
@@ -41,7 +39,7 @@ export interface BrazilianPresetRef {
 }
 
 export interface SecondLinePresetRef {
-  engine: 'second_line';
+  engine: 'secondLine';
   presetId: string;
   label: string;
   meterSignature: string;
@@ -54,11 +52,13 @@ export interface CubanPresetRef {
   label: string;
   meterSignature: string;
   gridSteps: number;
+  /** From preset — display-only in blend UI. */
+  claveDirection?: '3-2' | '2-3' | '6-8';
 }
 
 export type RhythmPresetRef =
-  | AfrobeatPresetRef
-  | RebetikoPresetRef
+  | FelaKutiPresetRef
+  | GreekRebetikoPresetRef
   | BrazilianPresetRef
   | SecondLinePresetRef
   | CubanPresetRef;
@@ -82,14 +82,14 @@ export interface LayerBlendForm {
   engineAPresetId: string;
   engineB: RhythmBlendEngineId;
   engineBPresetId: string;
-  /** 0 = all B flavour, 1 = all A flavour — metadata for future merge weighting; export unchanged. */
+  /** 0 = all B flavour, 1 = all A flavour — metadata for exploration. */
   blendRatio: number;
   conflictStrategy: ConflictStrategy;
 }
 
 export interface RhythmBlendStarterBundles {
-  afrobeat: AfrobeatPresetRef[];
-  rebetiko: RebetikoPresetRef[];
+  felaKuti: FelaKutiPresetRef[];
+  greekRebetiko: GreekRebetikoPresetRef[];
   brazilian: BrazilianPresetRef[];
   secondLine: SecondLinePresetRef[];
   cuban: CubanPresetRef[];

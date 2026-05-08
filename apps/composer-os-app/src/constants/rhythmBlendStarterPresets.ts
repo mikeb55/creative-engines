@@ -9,10 +9,10 @@ import type { RhythmPreset } from '@composer-os/core/rhythm/greekRebetikoRhythmT
 import { SECOND_LINE_RHYTHM_PRESETS } from '@composer-os/core/rhythm/secondLineRhythmPresets';
 
 import type {
-  AfrobeatPresetRef,
   BrazilianPresetRef,
   CubanPresetRef,
-  RebetikoPresetRef,
+  FelaKutiPresetRef,
+  GreekRebetikoPresetRef,
   SecondLinePresetRef,
 } from '../components/RhythmBlendControls.types';
 
@@ -22,15 +22,18 @@ const TONY_ALLEN_FEELS: { presetId: string; label: string }[] = [
   { presetId: 'afrobeat', label: 'Tony Allen — afrobeat' },
 ];
 
-export const AFROBEAT_STARTER_PRESETS: AfrobeatPresetRef[] = TONY_ALLEN_FEELS.map((f) => ({
-  engine: 'afrobeat',
+export const FELA_KUTI_STARTER_PRESETS: FelaKutiPresetRef[] = TONY_ALLEN_FEELS.map((f) => ({
+  engine: 'felaKuti',
   presetId: f.presetId,
   label: f.label,
   meter: '4/4',
   gridSteps: 16,
 }));
 
-function rebetikoMeter(p: RhythmPreset): RebetikoPresetRef['meter'] {
+/** Legacy export name — same as {@link FELA_KUTI_STARTER_PRESETS}. */
+export const AFROBEAT_STARTER_PRESETS = FELA_KUTI_STARTER_PRESETS;
+
+function rebetikoMeter(p: RhythmPreset): GreekRebetikoPresetRef['meter'] {
   const { beats, beatType } = p.timeSignature;
   if (beats === 9 && beatType === 8) return '9/8';
   if (beats === 7 && beatType === 8) return '7/8';
@@ -47,16 +50,16 @@ function rebetikoGroups(p: RhythmPreset): number[] {
   return [2, 2, 2, 2];
 }
 
-export const GREEK_REBETIKO_STARTER_PRESETS: RebetikoPresetRef[] = GREEK_REBETIKO_RHYTHM_PRESETS.map(
+export const GREEK_REBETIKO_STARTER_PRESETS: GreekRebetikoPresetRef[] = GREEK_REBETIKO_RHYTHM_PRESETS.map(
   (p) =>
     ({
-      engine: 'rebetiko',
+      engine: 'greekRebetiko',
       presetId: p.id,
       label: p.label,
       meter: rebetikoMeter(p),
       groups: rebetikoGroups(p),
       gridSteps: p.stepsPerBar,
-    }) satisfies RebetikoPresetRef
+    }) satisfies GreekRebetikoPresetRef
 );
 
 export const BRAZILIAN_STARTER_PRESETS: BrazilianPresetRef[] = BRAZILIAN_RHYTHM_PRESETS.map((p) => ({
@@ -68,7 +71,7 @@ export const BRAZILIAN_STARTER_PRESETS: BrazilianPresetRef[] = BRAZILIAN_RHYTHM_
 }));
 
 export const SECOND_LINE_STARTER_PRESETS: SecondLinePresetRef[] = SECOND_LINE_RHYTHM_PRESETS.map((p) => ({
-  engine: 'second_line',
+  engine: 'secondLine',
   presetId: p.id,
   label: p.label,
   meterSignature: p.meter.signature,
@@ -81,4 +84,5 @@ export const CUBAN_STARTER_PRESETS: CubanPresetRef[] = CUBAN_RHYTHM_PRESETS.map(
   label: p.label,
   meterSignature: p.meter.signature,
   gridSteps: p.meter.gridSteps,
+  claveDirection: p.claveDirection,
 }));

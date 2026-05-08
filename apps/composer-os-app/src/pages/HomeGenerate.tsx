@@ -5131,8 +5131,8 @@ export function HomeGenerate({
               <div style={{ marginTop: '0.5rem' }}>
                 <RhythmBlendControls
                   starterBundles={{
-                    afrobeat: AFROBEAT_STARTER_PRESETS,
-                    rebetiko: GREEK_REBETIKO_STARTER_PRESETS,
+                    felaKuti: AFROBEAT_STARTER_PRESETS,
+                    greekRebetiko: GREEK_REBETIKO_STARTER_PRESETS,
                     brazilian: BRAZILIAN_STARTER_PRESETS,
                     secondLine: SECOND_LINE_STARTER_PRESETS,
                     cuban: CUBAN_STARTER_PRESETS,
