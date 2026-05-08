@@ -71,9 +71,15 @@ function testMetadataAndMeter(): boolean {
     c.title === 'Fixture One' &&
     c.composer === 'Fixture Composer' &&
     c.key === 'D' &&
+    c.meter !== null &&
+    c.meter.num === 3 &&
+    c.meter.den === 4 &&
     c.timeSignature !== null &&
     c.timeSignature.num === 3 &&
     c.timeSignature.den === 4 &&
+    c.meter === c.timeSignature &&
+    c.harmonies.length === 1 &&
+    c.harmonies[0] === 'N.C.' &&
     c.barMeterMap &&
     Object.keys(c.barMeterMap).length === 0 &&
     c.tempo === null &&
@@ -89,6 +95,7 @@ function testMetadataAndMeter(): boolean {
 function testSingleHarmonyBar(): boolean {
   const c = parseMusicXml(XML_ONE_HARMONY);
   if (c.measures.length !== 1) return false;
+  if (c.harmonies.length !== 1 || c.harmonies[0] !== 'F7') return false;
   const row = c.measures[0]!;
   if (row.length !== 1) return false;
   const [ch] = row;
@@ -106,6 +113,7 @@ function testSingleHarmonyBar(): boolean {
 function testMultiBarHarmonySequence(): boolean {
   const c = parseMusicXml(XML_MULTI_HARMONY);
   if (c.measures.length !== 2) return false;
+  if (c.harmonies.join('|') !== 'C|G7') return false;
   const m0 = c.measures[0]!;
   const m1 = c.measures[1]!;
   if (m0.length !== 1 || m1.length !== 1) return false;

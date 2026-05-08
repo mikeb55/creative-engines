@@ -122,6 +122,11 @@ export interface GenerateRequest {
    * Only used when `harmonyMode` is `custom` or inferred from non-empty text (legacy).
    */
   chordProgressionText?: string;
+  /**
+   * Song Mode — raw MusicXML string for future import parity with paste/iReal (`parseMusicXml` → LeadSheet).
+   * Stub: fails generation until `parsedChartToLeadSheet` is implemented.
+   */
+  musicXmlSource?: string;
   /** When `presetId` is `ecm_chamber`, selects Metheny vs Schneider chamber logic */
   ecmMode?: EcmChamberMode;
   /** User-facing variation label — maps to deterministic engine seed when set. */

@@ -6,7 +6,7 @@
 /// <reference lib="dom" />
 
 import { musicXmlKindContentFromKindText } from '../../core/chordSymbolMusicXmlCore';
-import type { ParsedChart, ParsedChord } from './irealpro/parsedChart';
+import { harmoniesFromMeasures, type ParsedChart, type ParsedChord } from './irealpro/parsedChart';
 import type { LeadSheet } from './lead-sheet/leadSheetTypes';
 import { ensureMusicXmlDomParserPolyfill } from './musicXmlImportDomPolyfill';
 
@@ -293,7 +293,9 @@ export function parseMusicXml(xmlString: string): ParsedChart {
       title: '',
       composer: '',
       key: null,
+      meter: null,
       timeSignature: null,
+      harmonies: [],
       barMeterMap: {},
       repeatMarkers: [],
       tempo: null,
@@ -361,11 +363,14 @@ export function parseMusicXml(xmlString: string): ParsedChart {
       ? { num: state.beatsPerBar, den: state.beatType }
       : null;
 
+  const meter = timeSignature;
   return {
     title,
     composer,
     key,
+    meter,
     timeSignature,
+    harmonies: harmoniesFromMeasures(measuresOut),
     barMeterMap: {},
     repeatMarkers: [],
     tempo: null,

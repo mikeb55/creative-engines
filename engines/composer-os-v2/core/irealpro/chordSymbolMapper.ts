@@ -2,7 +2,7 @@ import type { FretboardRealization } from '../guitar/fretboardRealization';
 import { buildGuitarGripLibrary } from '../guitar/guitarGripLibrary';
 import { selectQuadratonicMelodySpec } from '../harmony/quadratonicMelodySelector';
 import { TONALITY_VAULT_DATABASE } from '../harmony/tonalityVaultDatabase';
-import type { ParsedChord, ParsedChart, ParsedSection } from './parsedChart';
+import { harmoniesFromMeasures, type ParsedChord, type ParsedChart, type ParsedSection } from './parsedChart';
 
 const VAULT_TYPE_IDS = new Set(TONALITY_VAULT_DATABASE.map((row) => row.chordType));
 
@@ -266,11 +266,14 @@ export function parseChordProgressionText(
     barCount <= 0 ? [] : [{ label: 'A', startBar: 0, endBar: barCount - 1 }];
 
   const t = Number(tempo);
+  const meter = timeSignature;
   return {
     title: '',
     composer: '',
     key: key.trim() !== '' ? key.trim() : null,
+    meter,
     timeSignature,
+    harmonies: harmoniesFromMeasures(measures),
     barMeterMap: {},
     repeatMarkers: [],
     tempo: Number.isFinite(t) ? t : null,

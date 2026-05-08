@@ -1,6 +1,6 @@
 /// <reference path="./ireal-reader.d.ts" />
 import iRealReader from 'ireal-reader';
-import type { ParsedChart, ParsedChord, ParsedSection } from './parsedChart';
+import { harmoniesFromMeasures, type ParsedChart, type ParsedChord, type ParsedSection } from './parsedChart';
 import {
   buildBarMeterMapFromUnscrambledMusic,
   extractUnscrambledMusicFromIrealInput,
@@ -94,7 +94,9 @@ function emptyChart(): ParsedChart {
     title: '',
     composer: '',
     key: null,
+    meter: null,
     timeSignature: null,
+    harmonies: [],
     barMeterMap: {},
     repeatMarkers: [],
     tempo: null,
@@ -143,7 +145,9 @@ export function parseIRealProInput(input: string): ParsedChart {
     title: typeof song.title === 'string' ? song.title : '',
     composer: typeof song.composer === 'string' ? song.composer : '',
     key: typeof song.key === 'string' && song.key !== '' ? song.key : null,
+    meter: globalTs,
     timeSignature: globalTs,
+    harmonies: harmoniesFromMeasures(measures),
     barMeterMap,
     repeatMarkers,
     tempo,

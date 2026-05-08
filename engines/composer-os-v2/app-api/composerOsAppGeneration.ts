@@ -87,6 +87,7 @@ import {
 import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwritingBridgeLeadSheet';
 import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
+import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
@@ -645,6 +646,54 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
+  const musicXmlSourceRaw =
+    typeof req.musicXmlSource === 'string' ? req.musicXmlSource.trim() : '';
+  if (musicXmlSourceRaw.length > 0) {
+    const parsedChart = parseMusicXml(musicXmlSourceRaw);
+    try {
+      parsedChartToLeadSheet(parsedChart);
+      const unexpected =
+        'parsedChartToLeadSheet: stub resolved — MusicXML → LeadSheet handoff not implemented';
+      return {
+        success: false,
+        error: unexpected,
+        productKind: 'musicxml',
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [unexpected]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'song_mode',
+          activeModules: ['song_mode'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+        },
+        scoreTitle: title,
+        requestEcho: requestEchoFromReq(req),
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        success: false,
+        error: msg,
+        productKind: 'musicxml',
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'song_mode',
+          activeModules: ['song_mode'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+        },
+        scoreTitle: title,
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+  }
   const secondarySw =
     typeof req.secondarySongwriterStyle === 'string' && req.secondarySongwriterStyle.trim() !== ''
       ? req.secondarySongwriterStyle.trim()

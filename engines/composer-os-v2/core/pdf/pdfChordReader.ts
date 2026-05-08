@@ -15,7 +15,7 @@ import {
   type IRealVaultOutput,
   type GenerateFromIRealOptions,
 } from '../irealpro/irealVaultPipeline';
-import type { ParsedChart, ParsedChord, ParsedSection } from '../irealpro/parsedChart';
+import { harmoniesFromMeasures, type ParsedChart, type ParsedChord, type ParsedSection } from '../irealpro/parsedChart';
 
 const DEFAULT_RENDER_SCALE = 2.5;
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -286,7 +286,9 @@ function visionJsonToParsedChart(v: VisionChordChartJson): ParsedChart | null {
     title: typeof v.title === 'string' ? cleanVisionTitle(v.title) : '',
     composer: '',
     key: typeof v.key === 'string' && v.key !== '' ? v.key : null,
+    meter: timeSignature,
     timeSignature,
+    harmonies: harmoniesFromMeasures(measures),
     barMeterMap: {},
     repeatMarkers: [],
     tempo: typeof v.tempo === 'number' && Number.isFinite(v.tempo) ? v.tempo : null,
