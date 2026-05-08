@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **163** PASS rows, **42** suites (2026-05-03).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **168** PASS rows, **43** suites (2026-05-07).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -49,6 +49,7 @@ import { runEvaluationSmokeTests } from '../core/evaluation/evaluation.smoke.tes
 import { runPhraseEngineV2SmokeTests } from './phraseEngineV2Smoke.test';
 import { runPhraseEngineV2IntegrationTests } from './phraseEngineV2Integration.test';
 import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
+import { runVoiceRuleBundleTests } from './voiceRuleBundle.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -95,6 +96,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'SD3 drum guide export (MIDI + JSON sidecar)', run: runDrumGuideExportSmokeTests },
   { label: 'Zappa Big Band (FZ harmony + Zappa Classic meter)', run: runZappaBigBandSmokeTests },
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
+  { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

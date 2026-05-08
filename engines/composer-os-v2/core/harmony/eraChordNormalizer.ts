@@ -61,6 +61,8 @@ export interface EraNormalizerContext {
   nextChordSymbol?: string;
   debug?: boolean;
   debugCounters?: EraNormalizerDebugCounters;
+  /** Phase 2+3a — optional voice bundle for voicing policy nudges (parallel-fifth bias stub). */
+  voiceBundle?: import('../composer/voiceRuleBundle').VoiceRuleBundle;
 }
 
 interface RewriteCandidate {
@@ -361,6 +363,9 @@ export function scoreRewriteCandidate(
   if (classifyChordFunction(original) !== classifyChordFunction(candidate)) score -= 100;
   score -= voiceLeadingDisruptionPenalty(candidate.body, context);
   score -= Math.min(0.2, Math.abs(candidate.body.length - original.body.length) * 0.01);
+  if (context.voiceBundle?.voicingPolicy.forbidParallelFifths) {
+    score -= 0.02;
+  }
   return score;
 }
 

@@ -47,6 +47,8 @@ export interface SongModeRunInput {
   stylePairing?: StylePairingInput | null;
   /** Optional imported lead sheet (threaded for Song Mode input slices). */
   leadSheet?: LeadSheet;
+  /** Phase 2+3a — harmonic voice bundle id (engine policy shadow). */
+  harmonicVoice?: string | null;
 }
 
 export interface SongModeRunManifestHints {
@@ -105,6 +107,7 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     authorOverlay: authorTrimmed,
     classicalOverlay: input.classicalOverlay ?? undefined,
     stylePairing: input.stylePairing ?? undefined,
+    harmonicVoice: input.harmonicVoice ?? undefined,
   });
   const lead = buildLeadSheetContractFromCompiled(compiled);
 

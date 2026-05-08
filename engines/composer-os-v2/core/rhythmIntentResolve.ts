@@ -157,6 +157,9 @@ export function getEffectiveRhythmStrength(
   meta: GenerationMetadata,
   phraseIndex: number
 ): 'stable' | 'balanced' | 'surprise' {
+  if (meta.voiceBundleRhythmAntiMetric === true) {
+    return 'surprise';
+  }
   const fallback = meta.songModeRhythmStrength ?? 'balanced';
   const r = meta.rhythmIntentResolvedByPhrase?.[phraseIndex];
   if (!r) return fallback;

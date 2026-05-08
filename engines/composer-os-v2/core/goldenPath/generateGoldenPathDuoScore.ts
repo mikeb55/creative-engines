@@ -41,6 +41,7 @@ import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '..
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
+import { applyVoiceBundleVoicingSpreadFloor } from '../composer/voiceBundleVoicingFloor';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -5894,6 +5895,7 @@ export function generateGoldenPathDuoScore(
     validateBarryHarrisConformance(afterExpressive, context.generationMetadata);
   }
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
+  applyVoiceBundleVoicingSpreadFloor(afterExpressive, context);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

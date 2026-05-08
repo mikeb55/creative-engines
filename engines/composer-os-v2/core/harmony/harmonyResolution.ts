@@ -9,6 +9,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { logHarmonyProvenance } from './harmonyContext';
 
@@ -32,7 +33,7 @@ function assertLockedMatchesParsedWhenBothFull(
   }
 }
 
-export function getChordForBar(barIndex: number, context: CompositionContext): string {
+function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: CompositionContext): string {
   const locked = context.lockedHarmonyBarsRaw;
   const meta = context.generationMetadata;
   const tb = context.form.totalBars;
@@ -585,6 +586,12 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   throw new Error(
     `Chord symbol plan does not define bar ${barIndex} — plan must cover bars 1–${context.form.totalBars} contiguously.`
   );
+}
+
+/** Authoritative chord symbol per bar — slice/locked/plan resolution plus VoiceRuleBundle harmonic rhythm overlay. */
+export function getChordForBar(barIndex: number, context: CompositionContext): string {
+  const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
+  return applyVoiceBundleHarmonicRhythm(barIndex, sym, context);
 }
 
 /**

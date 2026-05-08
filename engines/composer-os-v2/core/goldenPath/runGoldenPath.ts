@@ -143,6 +143,8 @@ import { getSongwriterCompProfile } from '../song-mode/songwriterCompProfile';
 import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionControl';
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
+import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { normalizeChordSymbolsForEra, type EraId } from '../harmony/eraChordNormalizer';
 import type { MotifAuthorityLevel } from '../motif/motifAuthorityV1';
@@ -1063,6 +1065,8 @@ export interface RunGoldenPathOptions {
    * compared against the default portable Wyble map without forking the full planner.
    */
   suppressWybleVoiceLayoutForTest?: boolean;
+  /** Phase 2+3a — harmonic voice id (`hv:*` prefix stripped when normalizing). Shadows bundle-driven policy. */
+  harmonicVoice?: string;
 }
 
 function clamp01(n: number): number {
@@ -1897,9 +1901,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (options?.songModeHookFirstIdentity && eraForNormalization && options?.harmonyMode !== 'custom_locked') {
     const segments = context.chordSymbolPlan?.segments;
     if (segments && segments.length > 0) {
+      const vbEra =
+        typeof options.harmonicVoice === 'string' && options.harmonicVoice.trim() !== ''
+          ? getVoiceRuleBundle(options.harmonicVoice.trim())
+          : undefined;
       const rewritten = normalizeChordSymbolsForEra(
         segments.map((s) => s.chord),
-        eraForNormalization
+        eraForNormalization,
+        vbEra ? { voiceBundle: vbEra } : {}
       );
       for (let i = 0; i < segments.length; i++) {
         segments[i]!.chord = rewritten[i] ?? segments[i]!.chord;
@@ -1947,6 +1956,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
+  attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options);
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   logEcmPhaseProbe(probeEcm, 'before_render', undefined, {

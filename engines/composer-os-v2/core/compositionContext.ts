@@ -38,6 +38,9 @@ import type {
 import type { BarMeterMap } from './rhythm/barMeterTypes';
 import type { SoloLine, ZappaImitationReceipt, ZappasoloOptions } from './solo/soloTypes';
 import type { HarmonyContext } from './harmony/harmonyContext';
+import type { HarmonicScene } from './composer/harmonicScene';
+import type { VoiceRuleBundle } from './composer/voiceRuleBundle';
+import type { VoiceBundleHarmonicRhythmState } from './composer/voiceBundleHarmonicRhythm';
 
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
@@ -1372,6 +1375,19 @@ export interface GenerationMetadata {
     clampApplied?: RhythmIntentControl;
     phraseCount?: number;
   };
+  /** Phase 2+3a — harmonic voice id (normalized); drives VoiceRuleBundle when set. */
+  harmonicVoice?: string;
+  /** Phase 2+3a — bar-hold state for harmonic rhythm overlay (`getChordForBar`). */
+  voiceBundleHarmonicRhythmState?: VoiceBundleHarmonicRhythmState;
+  /** Phase 2+3a — inspectability echo of active bundle policy (does not replace receipts). */
+  voiceBundlePolicyEcho?: {
+    bassRole: string;
+    voicingMinSpreadSemitones: number;
+    melodicMaxLeapSemitones: number;
+    rhythmAntiMetric?: boolean;
+  };
+  /** Phase 2+3a — rhythm overlay flag from bundle (Phase 3b consumers). */
+  voiceBundleRhythmAntiMetric?: boolean;
 }
 
 /** Shared CompositionContext — required by every core system and style module. */
@@ -1412,6 +1428,10 @@ export interface CompositionContext {
    * `getChordForBar`, score guitar measures, pipeline truth, and lock validation.
    */
   harmonyContext?: HarmonyContext;
+  /** Phase 2+3a — compiled harmonic voice policy (when harmonicVoice requested). */
+  voiceBundle?: VoiceRuleBundle;
+  /** Phase 2+3a — session harmonic scenes (stub rows until Phase 3b). */
+  harmonicScenes?: HarmonicScene[];
   validation: ValidationResults;
   styleOverrides?: Record<string, unknown>;
   readiness: {

@@ -8,6 +8,8 @@ import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
 import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
 import { buildThemeGenome } from '../motif/themeGenomeBuilder';
+import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import { resolveBeatlesChordPoolId } from './beatlesSlice';
@@ -2149,7 +2151,8 @@ export function buildSectionChordPlans(
   seed: number,
   songwriterId?: string,
   eraProfile?: EraProfile,
-  eraId?: EraId | null
+  eraId?: EraId | null,
+  voiceBundle?: VoiceRuleBundle | null
 ): SectionChordPlan[] {
   const debugCounters = eraId ? createEraNormalizerDebugCounters(eraId) : undefined;
   /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
@@ -2213,6 +2216,7 @@ export function buildSectionChordPlans(
       nextChordSymbol: planned[idx + 1]?.chordSymbols[0],
       debug: process.env.COMPOSER_OS_ERA_CHORD_DEBUG === '1',
       debugCounters,
+      voiceBundle: voiceBundle ?? undefined,
     }),
   }));
 }
@@ -2229,6 +2233,8 @@ export interface BuildCompiledSongParams {
   classicalOverlay?: ClassicalSongRuleId | null;
   /** Optional songwriter ↔ arranger pairing (metadata + light contrast nudge). */
   stylePairing?: StylePairingInput | null;
+  /** Phase 2+3a — harmonic voice id (shadows motif/theme policy when set). */
+  harmonicVoice?: string | null;
 }
 
 export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
@@ -2253,12 +2259,17 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   const eraProfile = resolveEraProfile(params.stylePairing?.era);
   const eraId = normalizeEraId(params.stylePairing?.era);
   const hook = buildSongHook(params.seed);
+  const voiceBundleForCompile =
+    params.harmonicVoice != null && String(params.harmonicVoice).trim() !== ''
+      ? getVoiceRuleBundle(String(params.harmonicVoice).trim())
+      : null;
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
     resolution.primaryId,
     eraProfile,
-    eraId
+    eraId,
+    voiceBundleForCompile
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {
@@ -2285,7 +2296,11 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
 
   const melodyBehaviourForLead =
     withRules.songwriting?.melodyBehaviour ?? planMelodyBehaviour(params.seed, resolution.primaryId);
-  const themeGenome = buildThemeGenome(resolution.primaryId, params.seed, undefined);
+  const themeVoiceKey =
+    params.harmonicVoice != null && String(params.harmonicVoice).trim() !== ''
+      ? String(params.harmonicVoice).trim()
+      : resolution.primaryId;
+  const themeGenome = buildThemeGenome(themeVoiceKey, params.seed, undefined, voiceBundleForCompile);
   const leadMelodyPlanRaw = planLeadMelody({
     seed: params.seed,
     sections: params.sections,

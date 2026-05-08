@@ -11,6 +11,8 @@ import type {
   SectionRecallContract,
   ThemeGenome,
 } from './themeGenome';
+import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
+import { applyVoiceBundleMelodicPolicy } from '../composer/voiceBundleMotif';
 
 function intervalsFromPitches(pitches: number[]): number[] {
   const out: number[] = [];
@@ -398,13 +400,21 @@ function extractPrimaryFromPool(pool: MotifPool): MotifCell2 | null {
   return null;
 }
 
-export function buildThemeGenome(voiceId: string, seed: number, existingPool?: MotifPool): ThemeGenome {
+export function buildThemeGenome(
+  voiceId: string,
+  seed: number,
+  existingPool?: MotifPool,
+  voiceBundle?: VoiceRuleBundle | null
+): ThemeGenome {
   const canon = normalizeSongwriterStyleKey(voiceId) ?? voiceId;
   const generationId = `mal-gen_${canon}_${seed}`;
   const id = `tg_${canon}_${seed}`;
 
   const fromPool = existingPool ? extractPrimaryFromPool(existingPool) : null;
-  const primary = fromPool ?? primaryForVoice(canon, seed);
+  let primary = fromPool ?? primaryForVoice(canon, seed);
+  if (voiceBundle) {
+    primary = applyVoiceBundleMelodicPolicy(primary, voiceBundle);
+  }
   const secondary = secondaryFromPrimary(primary, `${primary.id}_secondary`);
   const cadentialTail = cadentialFromPrimary(primary);
   const bridgeCell = bridgeFromVoicing(primary, secondary);
