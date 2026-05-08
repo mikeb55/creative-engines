@@ -1411,6 +1411,12 @@ export interface GenerationMetadata {
   /** Phase 8 — improv agent echo (post-export improv part optional). */
   improvModeEcho?: boolean;
   improvVoiceIdEcho?: string;
+  /** Phase 8 — live weighted chord/rhythm pools (0–1). */
+  stochasticVariance?: number;
+  /** Phase 8 — second-render discriminator for weighted pools (same seed → different sample when variance > 0). */
+  stochasticRenderOrdinal?: number;
+  /** Phase 8 — per-bar RhythmDNA cell pick after weightedRhythmSample. */
+  phase8RhythmDnaCellByBar?: string[];
   stochasticVarianceEcho?: number;
 }
 

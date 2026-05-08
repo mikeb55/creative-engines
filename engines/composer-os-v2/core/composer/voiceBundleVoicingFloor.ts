@@ -39,6 +39,8 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
     for (let mi = 0; mi < measures.length; mi++) {
       const m = measures[mi]!;
       const barNum = m.index;
+      const mdSt =
+        context.generationMetadata as { stochasticVariance?: number; stochasticRenderOrdinal?: number } | undefined;
       const sched = context.generationMetadata.scheduledTensionByBar;
       const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes, sched) : 0.5;
       const minS = Math.min(
@@ -64,7 +66,13 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
             { notes: widened, cost: 0 },
           ],
           prevVoicing,
-          vb
+          vb,
+          {
+            stochasticVariance: mdSt?.stochasticVariance,
+            seed: context.seed,
+            barIndex: barNum,
+            renderOrdinal: mdSt?.stochasticRenderOrdinal ?? 0,
+          }
         );
         events[ei] = { ...ch, pitches: res.chosen.notes };
         prevVoicing = { notes: res.chosen.notes, cost: 0 };
@@ -90,7 +98,13 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
             { notes: widened, cost: 0 },
           ],
           prevVoicing,
-          vb
+          vb,
+          {
+            stochasticVariance: mdSt?.stochasticVariance,
+            seed: context.seed,
+            barIndex: barNum,
+            renderOrdinal: mdSt?.stochasticRenderOrdinal ?? 0,
+          }
         );
         const out = res.chosen.notes;
         const order = indices

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **197** PASS rows, **46** suites (2026-05-08).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **202** PASS rows, **46** suites (2026-05-08).
  */
 
 import { runReadinessTests } from './readiness.test';

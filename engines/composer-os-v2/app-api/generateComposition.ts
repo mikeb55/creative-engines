@@ -269,7 +269,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
             ? { secondarySongwriterStyle: req.secondarySongwriterStyle.trim() }
             : {}),
         }
-      : {}),
+            : {}),
+    ...(typeof req.stochasticVariance === 'number' ? { stochasticVariance: req.stochasticVariance } : {}),
+    ...(typeof req.stochasticRenderOrdinal === 'number' ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal } : {}),
   });
   result.context.generationMetadata = {
     ...result.context.generationMetadata,
@@ -329,8 +331,14 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       const formSections = buildFormSections(formLike, bundle);
       const tb = Math.max(4, Math.min(result.context.form.totalBars, 32));
       const sk = buildImprovSkeleton(effectiveSeed, bundle, tb, formSections);
-      pass2ImprovMutation(sk, bundle, effectiveSeed);
-      xmlOut = appendImprovPartToPartwiseXml(xmlOut);
+      const mut = pass2ImprovMutation(sk, bundle, effectiveSeed);
+      xmlOut = appendImprovPartToPartwiseXml(xmlOut, {
+        skeleton: sk,
+        mutation: mut,
+        bundle,
+        totalBars: tb,
+        seed: effectiveSeed,
+      });
     }
     fs.writeFileSync(filepath, xmlOut, 'utf-8');
     if (!req.skipDrumGuide) {

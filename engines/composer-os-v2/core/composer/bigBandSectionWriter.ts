@@ -6,6 +6,7 @@ import type { FormSection, HarmonicFormSectionRole } from './formController';
 import type { HarmonicScene } from './harmonicScene';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 import type { RhythmMotifBinding } from './rhythmDnaMotifBinder';
+import { weightedRhythmSample } from './stochasticLayer';
 import { RHYTHM_DNA_CELL_TABLE } from './rhythmDnaMotifBinder';
 
 export type BigBandSectionKind = 'soli' | 'backgrounds' | 'shout-chorus' | 'tutti';
@@ -60,19 +61,19 @@ export function backgroundsPlanFromScene(scene: HarmonicScene | undefined): Back
   };
 }
 
-/** Highest-energy rhythm DNA cell id for shout. */
-export function pickShoutRhythmCellId(binding: RhythmMotifBinding | undefined): string {
+/** Rhythm DNA cell id — deterministic lowest-cost (highest energy) when variance 0; weighted top-N when variance > 0. */
+export function pickShoutRhythmCellId(
+  binding: RhythmMotifBinding | undefined,
+  opts?: { stochasticVariance?: number; seed?: number; barIndex?: number; renderOrdinal?: number }
+): string {
   const pool = binding?.allowedRhythmCells?.length ? binding.allowedRhythmCells : Object.keys(RHYTHM_DNA_CELL_TABLE);
-  let best = pool[0] ?? 'rd_shout_grid';
-  let bestE = -1;
-  for (const id of pool) {
-    const m = RHYTHM_DNA_CELL_TABLE[id as keyof typeof RHYTHM_DNA_CELL_TABLE];
-    if (m && m.energy > bestE) {
-      bestE = m.energy;
-      best = id;
-    }
-  }
-  return best;
+  return weightedRhythmSample(
+    pool,
+    opts?.stochasticVariance ?? 0,
+    opts?.seed ?? 0,
+    opts?.barIndex ?? 0,
+    opts?.renderOrdinal ?? 0
+  );
 }
 
 export function shoutChorusPlan(

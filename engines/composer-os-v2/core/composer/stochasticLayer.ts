@@ -2,6 +2,11 @@
  * Phase 8 — Controlled stochastic layer (bar-level sampling; form arc stays deterministic upstream).
  */
 
+import {
+  RHYTHM_DNA_CELL_TABLE,
+  type RhythmDnaCellId,
+} from './rhythmDnaMotifBinder';
+
 export interface StochasticConfig {
   enabled: boolean;
   varianceLevel: number;
@@ -20,14 +25,60 @@ function clamp01(x: number): number {
   return x;
 }
 
-function seededUnit(seed: number, barIndex: number, salt: number, renderOrdinal: number): number {
+export function seededUnit(seed: number, barIndex: number, salt: number, renderOrdinal: number): number {
   const x = Math.sin(seed * 0.001 + barIndex * 3.7 + salt * 11.13 + renderOrdinal * 79.123) * 10000;
   return x - Math.floor(x);
 }
 
 /** Top-N pool size from variance (3 … 8). */
-export function chordPoolTopN(varianceLevel: number): number {
-  return 3 + Math.floor(clamp01(varianceLevel) * 5);
+export function chordPoolTopN(stochasticVariance: number): number {
+  return 3 + Math.floor(clamp01(stochasticVariance) * 5);
+}
+
+/** Generic weighted sample: top-N by ascending cost, inverse-cost weights when variance > 0. */
+export function weightedChordSample<T extends { cost: number }>(
+  candidates: T[],
+  stochasticVariance: number,
+  seed: number,
+  barIndex: number,
+  renderOrdinal: number
+): T | undefined {
+  if (candidates.length === 0) return undefined;
+  const sorted = [...candidates].sort((a, b) => a.cost - b.cost);
+  const n = Math.min(sorted.length, chordPoolTopN(stochasticVariance));
+  const pool = sorted.slice(0, Math.max(1, n));
+  if (stochasticVariance <= 0) {
+    return pool[0];
+  }
+  const weights = pool.map((c) => 1 / (0.01 + c.cost));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  let r = seededUnit(seed, barIndex, 901, renderOrdinal) * sum;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i]!;
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+
+/** Inverse-energy cost so lower cost = higher rhythmic preference (matches prior “best energy” shout pick). */
+export function rhythmCellCostForId(cellId: string): number {
+  const m = RHYTHM_DNA_CELL_TABLE[cellId as RhythmDnaCellId];
+  if (!m) return 1;
+  return 1 - m.energy * 0.85;
+}
+
+/** Weighted sample over allowed RhythmDNA ids using inverse-energy costs. */
+export function weightedRhythmSample(
+  allowedCellIds: string[],
+  stochasticVariance: number,
+  seed: number,
+  barIndex: number,
+  renderOrdinal: number
+): string {
+  if (allowedCellIds.length === 0) return '';
+  const rows = allowedCellIds.map((id) => ({ id, cost: rhythmCellCostForId(id) }));
+  const picked = weightedChordSample(rows, stochasticVariance, seed, barIndex, renderOrdinal);
+  return picked?.id ?? allowedCellIds[0]!;
 }
 
 /** Weighted pick from top candidates by inverse cost; deterministic when varianceLevel = 0. */
@@ -39,23 +90,11 @@ export function sampleChordSymbolFromCandidates(
   renderOrdinal: number
 ): string {
   if (candidates.length === 0) return '';
-  const sorted = [...candidates].sort((a, b) => a.cost - b.cost);
-  const n = Math.min(sorted.length, chordPoolTopN(varianceLevel));
-  const pool = sorted.slice(0, Math.max(1, n));
-  if (varianceLevel <= 0) {
-    return pool[0]!.symbol;
-  }
-  const weights = pool.map((c) => 1 / (0.01 + c.cost));
-  const sum = weights.reduce((a, b) => a + b, 0);
-  let r = seededUnit(seed, barIndex, 901, renderOrdinal) * sum;
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[i]!;
-    if (r <= 0) return pool[i]!.symbol;
-  }
-  return pool[pool.length - 1]!.symbol;
+  const picked = weightedChordSample(candidates, varianceLevel, seed, barIndex, renderOrdinal);
+  return picked?.symbol ?? '';
 }
 
-/** Rhythm cell pool — weighted sample from allowed ids. */
+/** Rhythm cell pool — weighted sample from allowed ids (deterministic best-cost when variance ≤ 0). */
 export function sampleRhythmCellId(
   allowedIds: string[],
   varianceLevel: number,
@@ -63,10 +102,7 @@ export function sampleRhythmCellId(
   barIndex: number,
   renderOrdinal: number
 ): string {
-  if (allowedIds.length === 0) return '';
-  if (varianceLevel <= 0) return allowedIds[barIndex % allowedIds.length]!;
-  const idx = Math.floor(seededUnit(seed, barIndex, 602, renderOrdinal) * allowedIds.length);
-  return allowedIds[Math.min(allowedIds.length - 1, idx)]!;
+  return weightedRhythmSample(allowedIds, varianceLevel, seed, barIndex, renderOrdinal);
 }
 
 /** Motif recall: secondary motif allowed when variance > 0.5 and roll under 0.2. */

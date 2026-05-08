@@ -156,6 +156,8 @@ export interface GenerateRequest {
   improvVoiceId?: string;
   /** Phase 8 — Bar-level stochastic variance 0–1 (0 = identical to legacy deterministic picks). */
   stochasticVariance?: number;
+  /** Phase 8 — Optional render ordinal for weighted pool draws (same seed + variance > 0). */
+  stochasticRenderOrdinal?: number;
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
   /** Song Mode: secondary songwriter id — blended ~35% with primary in `resolveSongwritingStyles`. */

@@ -145,7 +145,8 @@ import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
 import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
-import { applyRhythmMotifBindingToConstraints } from '../composer/rhythmDnaMotifBinder';
+import { applyRhythmMotifBindingToConstraints, RHYTHM_DNA_CELL_IDS } from '../composer/rhythmDnaMotifBinder';
+import { weightedRhythmSample, type StochasticConfig, DEFAULT_STOCHASTIC_CONFIG } from '../composer/stochasticLayer';
 import { runTensionDeviationAudit } from '../composer/tensionScheduler';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
@@ -850,6 +851,22 @@ function buildGoldenPathPlans(
     rhythmConstraints = applyRhythmMotifBindingToConstraints(rhythmConstraints, context.voiceBundle, rbind);
   }
 
+  const sv = Math.max(
+    0,
+    Math.min(1, typeof options?.stochasticVariance === 'number' ? options.stochasticVariance : 0)
+  );
+  const renderOrd = options?.stochasticRenderOrdinal ?? 0;
+  const stochasticConfig: StochasticConfig = {
+    ...DEFAULT_STOCHASTIC_CONFIG,
+    enabled: sv > 0,
+    varianceLevel: sv,
+  };
+  const phase8RhythmDnaCellByBar: string[] = [];
+  for (let b = 0; b < tb; b++) {
+    const allowed = rbind && rbind.allowedRhythmCells.length > 0 ? rbind.allowedRhythmCells : [...RHYTHM_DNA_CELL_IDS];
+    phase8RhythmDnaCellByBar.push(weightedRhythmSample(allowed, sv, seed, b, renderOrd));
+  }
+
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
   const styleStack: StyleStack =
     context.presetId === 'ecm_chamber'
@@ -890,6 +907,8 @@ function buildGoldenPathPlans(
     styleStack,
     interactionPlan,
     scoreTitle,
+    stochasticConfig,
+    phase8RhythmDnaCellByBar,
   };
 }
 
@@ -1075,6 +1094,10 @@ export interface RunGoldenPathOptions {
   suppressWybleVoiceLayoutForTest?: boolean;
   /** Phase 2+3a — harmonic voice id (`hv:*` prefix stripped when normalizing). Shadows bundle-driven policy. */
   harmonicVoice?: string;
+  /** Phase 8 — 0–1 stochastic chord/rhythm pool variance (`weightedChordSample` / `weightedRhythmSample`). */
+  stochasticVariance?: number;
+  /** Phase 8 — discriminates weighted draws across renders with the same seed when variance > 0. */
+  stochasticRenderOrdinal?: number;
 }
 
 function clamp01(n: number): number {
@@ -1971,6 +1994,24 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options, { skipHarmonicSceneLog: true });
   attachFormPlanRhythmAndTension(appliedContext, seed);
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
+  if (typeof options?.stochasticVariance === 'number') {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      stochasticVariance: options.stochasticVariance,
+    };
+  }
+  if (options?.stochasticRenderOrdinal !== undefined) {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      stochasticRenderOrdinal: options.stochasticRenderOrdinal,
+    };
+  }
+  if (plans.phase8RhythmDnaCellByBar && plans.phase8RhythmDnaCellByBar.length > 0) {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      phase8RhythmDnaCellByBar: plans.phase8RhythmDnaCellByBar,
+    };
+  }
   errors.push(...assertDuoEightBarInputTruthEarly(appliedContext, options));
   logEcmPhaseProbe(probeEcm, 'before_render', undefined, {
     ecmShapingEnabled: options?.ecmShapingEnabled,

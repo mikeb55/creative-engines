@@ -18,13 +18,19 @@ import {
 import {
   sequenceChordChoicesForBars,
   fixedFormSectionLabels,
+  weightedRhythmSample,
+  sampleChordSymbolFromCandidates,
 } from '../core/composer/stochasticLayer';
+import { RHYTHM_DNA_CELL_IDS } from '../core/composer/rhythmDnaMotifBinder';
 import {
   detectVoiceCollisions,
   resolveCollisionTransposeSecondVoice,
   maxContourSimilarityAcrossPair,
 } from '../core/composer/voiceCollisionDetector';
 import { appendImprovPartToPartwiseXml } from '../core/composer/improvMusicXmlAppend';
+import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+import type { ScoreModel, ChordEvent, NoteEvent } from '../core/score-model/scoreModelTypes';
+import { validateMusicXml } from '../../../src/utils/musicXmlValidator';
 
 function testColtraneAugmentedTriadInSkeleton(): boolean {
   const b = getVoiceRuleBundle('john_coltrane');
@@ -133,10 +139,106 @@ function testVoiceCollisionResolutionDropsSimilarity(): boolean {
   return before > 0.85 && after < 0.85;
 }
 
+/** Notes + chord-stack pitches per bar (captures voice-leading voicing floor). */
+function guitarChordVoicingFingerprint(score: ScoreModel): string {
+  const g = score.parts.find((p) => p.id === 'guitar');
+  if (!g) return '';
+  const bars: string[] = [];
+  for (const m of [...g.measures].sort((a, b) => a.index - b.index)) {
+    const pitches: number[] = [];
+    for (const e of m.events) {
+      if (e.kind === 'note') pitches.push((e as NoteEvent).pitch);
+      if (e.kind === 'chord') pitches.push(...((e as ChordEvent).pitches ?? []));
+    }
+    pitches.sort((x, y) => x - y);
+    bars.push(pitches.join(',') || '_');
+  }
+  return bars.join('|');
+}
+
+function testGoldenPathZeroVarianceDeterministicVoicing(): boolean {
+  const a = runGoldenPathOnce(91300, { presetId: 'guitar_bass_duo', stochasticVariance: 0 });
+  const b = runGoldenPathOnce(91300, {
+    presetId: 'guitar_bass_duo',
+    stochasticVariance: 0,
+    stochasticRenderOrdinal: 9,
+  });
+  return (
+    a.success &&
+    b.success &&
+    guitarChordVoicingFingerprint(a.score) === guitarChordVoicingFingerprint(b.score)
+  );
+}
+
+function testWeightedRhythmOrdinalChangesPick(): boolean {
+  const ids = [...RHYTHM_DNA_CELL_IDS];
+  for (let b = 0; b < 40; b++) {
+    if (weightedRhythmSample(ids, 1, 88001, b, 0) !== weightedRhythmSample(ids, 1, 88001, b, 7)) return true;
+  }
+  return false;
+}
+
+function testWeightedChordOrdinalChangesPick(): boolean {
+  const pool = [
+    { symbol: 'Dm7', cost: 2 },
+    { symbol: 'G7', cost: 3.2 },
+    { symbol: 'Cmaj7', cost: 4 },
+    { symbol: 'Am7', cost: 3.5 },
+  ];
+  for (let bar = 0; bar < 24; bar++) {
+    const a = sampleChordSymbolFromCandidates(pool, 1, 99001, bar, 0);
+    const b = sampleChordSymbolFromCandidates(pool, 1, 99001, bar, 9);
+    if (a !== b) return true;
+  }
+  return false;
+}
+
+function testFormAndMotifStableAcrossStochasticOrdinal(): boolean {
+  const a = runGoldenPathOnce(91234, {
+    presetId: 'guitar_bass_duo',
+    stochasticVariance: 1,
+    stochasticRenderOrdinal: 0,
+  });
+  const b = runGoldenPathOnce(91234, {
+    presetId: 'guitar_bass_duo',
+    stochasticVariance: 1,
+    stochasticRenderOrdinal: 9,
+  });
+  if (!a.success || !b.success) return false;
+  const fa = a.context.form.sections.map((s) => `${s.label}:${s.startBar}:${s.length}`).join('|');
+  const fb = b.context.form.sections.map((s) => `${s.label}:${s.startBar}:${s.length}`).join('|');
+  const ma = a.plans.motifState.baseMotifs.map((m) => m.id).join(',');
+  const mb = b.plans.motifState.baseMotifs.map((m) => m.id).join(',');
+  return fa === fb && ma === mb && ma.length > 0;
+}
+
 function testAppendImprovXml(): boolean {
   const base = `<?xml version="1.0"?><score-partwise><part-list></part-list></score-partwise>`;
   const out = appendImprovPartToPartwiseXml(base);
   return out.includes('P_IMPROV_PHASE8') && out.includes('<part-name>Improv</part-name>');
+}
+
+function testImprovTranscriptionMultiNoteAndMx(): boolean {
+  const b = getVoiceRuleBundle('neutral');
+  const form = { totalBars: 8, sections: [{ label: 'A', startBar: 0, length: 8 }] };
+  const sections = buildFormSections(form, b);
+  const sk = buildImprovSkeleton(4243, b, 8, sections);
+  const mut = pass2ImprovMutation(sk, b, 4244);
+  const base = `<?xml version="1.0"?><score-partwise><part-list></part-list></score-partwise>`;
+  const xml = appendImprovPartToPartwiseXml(base, {
+    skeleton: sk,
+    mutation: mut,
+    bundle: b,
+    totalBars: 8,
+    seed: 4243,
+  });
+  const part = xml.split('<part id="P_IMPROV_PHASE8">')[1]?.split('</part>')[0] ?? '';
+  const noteCount = (part.match(/<note>/g) ?? []).length;
+  const measures = (part.match(/<measure/g) ?? []).length;
+  const v = validateMusicXml(xml);
+  const octs = [...xml.matchAll(/<display-octave>(\d)<\/display-octave>/g)].map((m) => parseInt(m[1]!, 10));
+  const octOk = octs.length > 0 && octs.every((o) => o >= 2 && o <= 5);
+  return measures === 8 && noteCount >= 24 && v.valid && octOk;
 }
 
 export function runPhase8ImprovReharmStochasticCollisionTests(): { name: string; ok: boolean }[] {
@@ -154,5 +256,10 @@ export function runPhase8ImprovReharmStochasticCollisionTests(): { name: string;
     ['Phase 8 — collision: >0.85 contour for ≥3 bars', testVoiceCollisionTriggers],
     ['Phase 8 — collision resolution drops similarity below 0.85', testVoiceCollisionResolutionDropsSimilarity],
     ['Phase 8 — improv MusicXML append inserts part', testAppendImprovXml],
+    ['Phase 8 — stochastic v=0 identical guitar chord voicing fingerprint', testGoldenPathZeroVarianceDeterministicVoicing],
+    ['Phase 8 — weightedRhythmSample differs by render ordinal (v=1)', testWeightedRhythmOrdinalChangesPick],
+    ['Phase 8 — weightedChordSample symbol differs by render ordinal (v=1)', testWeightedChordOrdinalChangesPick],
+    ['Phase 8 — form + motif ids stable across stochastic ordinal', testFormAndMotifStableAcrossStochasticOrdinal],
+    ['Phase 8 — improv transcription multi-note bars + validateMusicXml', testImprovTranscriptionMultiNoteAndMx],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

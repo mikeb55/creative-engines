@@ -4,6 +4,7 @@
  */
 
 import type { VoiceRuleBundle } from './voiceRuleBundle';
+import { weightedChordSample } from './stochasticLayer';
 
 export interface VoicingCandidate {
   notes: number[];
@@ -227,13 +228,21 @@ export function scoreVoicingCandidate(
   return { totalCost: Math.max(0, cost), detail };
 }
 
+export interface SolveVoiceLeadingStochasticOpts {
+  stochasticVariance?: number;
+  seed?: number;
+  barIndex?: number;
+  renderOrdinal?: number;
+}
+
 /**
- * Pick lowest-cost voicing from enumerated candidates (discrete Dijkstra frontier of size N).
+ * Pick lowest-cost voicing from enumerated candidates, or weighted top-N sample when variance > 0.
  */
 export function solveVoiceLeading(
   candidates: VoicingCandidate[],
   previous: VoicingCandidate | null,
-  bundle: VoiceRuleBundle
+  bundle: VoiceRuleBundle,
+  stochastic?: SolveVoiceLeadingStochasticOpts
 ): VoiceLeadingResult {
   if (candidates.length === 0) {
     return {
@@ -242,17 +251,22 @@ export function solveVoiceLeading(
       repairsApplied: ['no-candidates'],
     };
   }
-  let best = candidates[0]!;
-  let bestCost = Infinity;
-  const repairs: string[] = [];
-  for (const c of candidates) {
-    const { totalCost, detail } = scoreVoicingCandidate(c, previous, bundle);
-    if (totalCost < bestCost) {
-      bestCost = totalCost;
-      best = c;
-      repairs.length = 0;
-      repairs.push(...detail);
+
+  const variance = stochastic?.stochasticVariance ?? 0;
+  const rows = candidates.map((c) => {
+    const scored = scoreVoicingCandidate(c, previous, bundle);
+    return { cand: c, cost: scored.totalCost, detail: scored.detail };
+  });
+
+  if (variance <= 0 || stochastic?.seed === undefined) {
+    let best = rows[0]!;
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i]!.cost < best.cost) best = rows[i]!;
     }
+    return { chosen: best.cand, totalCost: best.cost, repairsApplied: best.detail };
   }
-  return { chosen: best, totalCost: bestCost, repairsApplied: repairs };
+
+  const pick = weightedChordSample(rows, variance, stochastic.seed, stochastic.barIndex ?? 0, stochastic.renderOrdinal ?? 0);
+  const chosen = pick ?? rows[0]!;
+  return { chosen: chosen.cand, totalCost: chosen.cost, repairsApplied: chosen.detail };
 }

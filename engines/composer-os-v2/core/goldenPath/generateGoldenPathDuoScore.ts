@@ -41,6 +41,7 @@ import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '..
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
+import { RHYTHM_DNA_CELL_TABLE, type RhythmDnaCellId } from '../composer/rhythmDnaMotifBinder';
 import { applyVoiceBundleVoicingSpreadFloor } from '../composer/voiceBundleVoicingFloor';
 import { applyVoiceBundleRepairReceipt } from '../composer/voiceBundleRepairReceipt';
 import {
@@ -2860,8 +2861,23 @@ function buildGuitarPart(
       effectiveLow = anchored[0];
       effectiveHigh = anchored[1];
     }
+    let rhythmBar = rhythm;
+    const rDna = genMeta?.phase8RhythmDnaCellByBar?.[b - 1];
+    if (rDna && (genMeta?.stochasticVariance ?? 0) > 0) {
+      const rMeta = RHYTHM_DNA_CELL_TABLE[rDna as RhythmDnaCellId];
+      if (rMeta) {
+        rhythmBar = {
+          ...rhythm,
+          offbeatWeight: Math.min(1, Math.max(0, rhythm.offbeatWeight * (0.75 + rMeta.offbeatBias * 0.45))),
+          attackDensityTendency: Math.min(
+            1,
+            Math.max(0, rhythm.attackDensityTendency * (0.8 + rMeta.energy * 0.35))
+          ),
+        };
+      }
+    }
     let useOffbeat =
-      (rhythm.offbeatWeight > 0.2 && (phase === 2 || phase === 4 || phase === 6 || phase === 8)) || !!reduceAttack;
+      (rhythmBar.offbeatWeight > 0.2 && (phase === 2 || phase === 4 || phase === 6 || phase === 8)) || !!reduceAttack;
     if (isEcmM || isEcmS) useOffbeat = false;
     /** 2-bar unit: bar 2 = resolution — less grid-like offbeat chatter. */
     if (isDuoGolden && b % 2 === 0) useOffbeat = false;
@@ -4912,6 +4928,9 @@ export interface GoldenPathPlans {
   styleStack?: StyleStack;
   interactionPlan?: InteractionPlan;
   scoreTitle: string;
+  stochasticConfig?: import('../composer/stochasticLayer').StochasticConfig;
+  /** Phase 8 — per-bar weighted RhythmDNA cell id (planner; also copied to generationMetadata for guitar pass). */
+  phase8RhythmDnaCellByBar?: string[];
 }
 
 export interface GenerateGoldenPathDuoScoreOpts {
