@@ -1,14 +1,17 @@
 /**
  * MusicXML → {@link ParsedChart} (Phase 1): metadata + per-measure `<harmony>` chords.
- * Uses browser-style {@link DOMParser}; callers must provide a runtime with `DOMParser` (web or polyfill).
+ * Uses {@link DOMParser}; Node loads `@xmldom/xmldom` via {@link ensureMusicXmlDomParserPolyfill}.
  */
 
 /// <reference lib="dom" />
 
 import { musicXmlKindContentFromKindText } from '../../core/chordSymbolMusicXmlCore';
 import type { ParsedChart, ParsedChord } from './irealpro/parsedChart';
+import type { LeadSheet } from './lead-sheet/leadSheetTypes';
+import { ensureMusicXmlDomParserPolyfill } from './musicXmlImportDomPolyfill';
 
 function getDomParserClass(): typeof DOMParser {
+  ensureMusicXmlDomParserPolyfill();
   const g = globalThis as unknown as { DOMParser?: typeof DOMParser };
   if (!g.DOMParser) {
     throw new Error('parseMusicXml requires DOMParser (browser or a DOMParser polyfill in Node).');
@@ -139,11 +142,19 @@ function kindBodyText(harmonyEl: Element): string {
   return (k0?.textContent ?? '').trim();
 }
 
+/** MusicXML nests `root-step` under `<root>` (and bass under `<bass>`); support both shapes. */
+function textFromHarmonyWrapper(harmonyEl: Element, wrapperLocal: string, fieldLocal: string): string | undefined {
+  const direct = firstChildText(harmonyEl, fieldLocal);
+  if (direct !== undefined) return direct;
+  const wrap = childElementsByLocalName(harmonyEl, wrapperLocal)[0];
+  return wrap ? firstChildText(wrap, fieldLocal) : undefined;
+}
+
 /** Best-effort jazz-style chord string from a `<harmony>` element (aligned with lead-sheet importer). */
 function parseHarmonySymbolFromElement(harmonyEl: Element): string | null {
-  const rootStep = firstChildText(harmonyEl, 'root-step');
+  const rootStep = textFromHarmonyWrapper(harmonyEl, 'root', 'root-step');
   if (!rootStep) return null;
-  const rootAlterRaw = firstChildText(harmonyEl, 'root-alter');
+  const rootAlterRaw = textFromHarmonyWrapper(harmonyEl, 'root', 'root-alter');
   const rootAlter = rootAlterRaw ? parseInt(rootAlterRaw, 10) : 0;
   const acc = rootAlter === 1 ? '#' : rootAlter === -1 ? 'b' : '';
   const root = `${rootStep.toUpperCase()}${acc}`;
@@ -169,10 +180,10 @@ function parseHarmonySymbolFromElement(harmonyEl: Element): string | null {
     else suffix = musicXmlKindContentFromKindText(kindBody);
   }
 
-  const bassStep = firstChildText(harmonyEl, 'bass-step');
+  const bassStep = textFromHarmonyWrapper(harmonyEl, 'bass', 'bass-step');
   let slash = '';
   if (bassStep) {
-    const bassAlterRaw = firstChildText(harmonyEl, 'bass-alter');
+    const bassAlterRaw = textFromHarmonyWrapper(harmonyEl, 'bass', 'bass-alter');
     const bassAlter = bassAlterRaw ? parseInt(bassAlterRaw, 10) : 0;
     const bassAcc = bassAlter === 1 ? '#' : bassAlter === -1 ? 'b' : '';
     slash = `/${bassStep.toUpperCase()}${bassAcc}`;
@@ -363,4 +374,12 @@ export function parseMusicXml(xmlString: string): ParsedChart {
     measures: measuresOut,
     repeats: [],
   };
+}
+
+/**
+ * Future path: unify {@link ParsedChart} (iReal / paste / MusicXML phase-1) with {@link LeadSheet}.
+ * Not implemented yet — call sites should continue using slice-specific pipelines until this lands.
+ */
+export function parsedChartToLeadSheet(_chart: ParsedChart): LeadSheet {
+  throw new Error('parsedChartToLeadSheet: not yet implemented');
 }
