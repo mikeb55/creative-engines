@@ -94,6 +94,7 @@ import {
   resolveFormPrecedence,
   type CompiledSectionSliceInput,
 } from '../form/resolveFormPrecedence';
+import { macroGoalsForBar, planMacroForm } from '../form/macroFormPlanner';
 import {
   buildDuoLongFormCompositionContext,
   buildDuoLongFormCompositionContextFromBars,
@@ -271,6 +272,8 @@ interface BuildGoldenPathContextExtras {
   formId?: FormId;
   /** Song Mode compiled chord-plan slices (semantic labels) */
   compiledSections?: CompiledSectionSliceInput[];
+  /** Optional primary songwriter key for early macro plan in default duo builder */
+  primarySongwriterStyleForMacro?: string | null;
 }
 
 function sectionRoleMapForDuoForm(sections: Array<{ label: string }>): Record<string, SectionRole> {
@@ -378,6 +381,15 @@ function buildGoldenPathContext(
 
   const resolvedPresetId = extras?.resolvedPresetId ?? 'guitar_bass_duo';
 
+  const macroFormPlanEarly =
+    form.sections.length > 0 && extras?.primarySongwriterStyleForMacro
+      ? planMacroForm(
+          form,
+          normalizeSongwriterStyleKey(extras.primarySongwriterStyleForMacro) ?? undefined,
+          undefined
+        )
+      : undefined;
+
   return {
     systemVersion: '2.0.0',
     presetId: resolvedPresetId,
@@ -404,6 +416,7 @@ function buildGoldenPathContext(
       builtInHarmonyFallbackOccurred: false,
       customHarmonyLocked: useCustom && extras?.harmonyModeRequested === 'custom_locked',
       wybleVoiceLayout: wybleVoiceLayoutForPreset(resolvedPresetId),
+      ...(macroFormPlanEarly ? { macroFormPlan: macroFormPlanEarly } : {}),
     },
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
@@ -667,6 +680,9 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       ...(options?.songModeCompiledSectionForm?.length
         ? { compiledSections: options.songModeCompiledSectionForm }
         : {}),
+      ...(options?.primarySongwriterStyle
+        ? { primarySongwriterStyleForMacro: options.primarySongwriterStyle }
+        : {}),
     });
   }
   /** 16 / 32 / 40–64 explicit bars → long-form FromBars (non–custom_locked; locked uses branch above). */
@@ -770,6 +786,9 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     ...(options?.songModeCompiledSectionForm?.length
       ? { compiledSections: options.songModeCompiledSectionForm }
       : {}),
+    ...(options?.primarySongwriterStyle
+      ? { primarySongwriterStyleForMacro: options.primarySongwriterStyle }
+      : {}),
   });
   })();
   const resolvedEra = options?.stylePairing?.era ?? options?.era;
@@ -869,7 +888,21 @@ function buildGoldenPathPlans(
   }
   const isDuoLong = isGuitarBassDuoFamily(context.presetId) && context.form.totalBars > 8;
   const duoRoles = isDuoLong ? duoRolesForLongFormSections(context.form.sections) : duoRoles8;
-  const sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
+  let sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
+  const macroPlan = context.generationMetadata?.macroFormPlan;
+  if (macroPlan && isGuitarBassDuoFamily(context.presetId)) {
+    sections = sections.map((sec) => {
+      const g = macroGoalsForBar(sec.startBar, macroPlan);
+      if (!g) return sec;
+      let densityTendency = sec.metadata.densityTendency;
+      if (g.energyCurve === 'peak' || g.energyCurve === 'high') densityTendency = 'dense';
+      else if (g.energyCurve === 'low') densityTendency = 'sparse';
+      return {
+        ...sec,
+        metadata: { ...sec.metadata, densityTendency },
+      };
+    });
+  }
   const tb = context.form.totalBars;
   const densityPlan =
     context.presetId === 'ecm_chamber'
@@ -1601,6 +1634,19 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   return best ?? last!;
 }
 
+function attachMacroFormPlanToContext(context: CompositionContext, options?: RunGoldenPathOptions): void {
+  const songwriterId =
+    context.generationMetadata?.songwriterStyleId ??
+    (options?.primarySongwriterStyle
+      ? normalizeSongwriterStyleKey(options.primarySongwriterStyle) ?? undefined
+      : undefined);
+  if (!context.form?.sections?.length) return;
+  context.generationMetadata = {
+    ...context.generationMetadata,
+    macroFormPlan: planMacroForm(context.form, songwriterId, context.generationMetadata),
+  };
+}
+
 function applyResolvedFormMapToContext(context: CompositionContext, form: FormMap): void {
   context.form = form;
   context.phrase = {
@@ -2102,6 +2148,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   /** VoiceRuleBundle + HarmonicScene stubs before plan build so motif / section plans see `context.voiceBundle`. */
   attachVoiceRuleBundleAndHarmonicScenes(context, options);
   attachFormPlanRhythmAndTension(context, seed);
+  attachMacroFormPlanToContext(context, options);
 
   logEcmPhaseProbe(probeEcm, 'before_plan_build');
   let plans: GoldenPathPlans;

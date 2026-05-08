@@ -431,6 +431,12 @@ import {
   type MotifDevelopmentSummary,
   type MotifPhraseRange,
 } from '../motif/motifAuthorityV1';
+import {
+  macroGoalsForBar,
+  macroMotifReturnThresholdNudge,
+  macroRegisterMidiOffset,
+  mergeHarmonyPacingDensityHint,
+} from '../form/macroFormPlanner';
 import { buildPhrase } from '../phrase/phraseBuilder';
 import type { SongModeLeadSheetMelodyAnchor } from '../song-mode/songModeLeadSheetAdapter';
 import { DEFAULT_LEADSHEET_PERFORMANCE_BLEND } from '../lead-sheet/leadSheetPerformanceRendering';
@@ -2997,6 +3003,12 @@ function buildGuitarPart(
     const sectionBump = lab === 'B' ? 5 : 0;
     let effectiveLow = Math.max(zLow, effectiveBase) + sectionBump;
     let effectiveHigh = Math.min(79, zHigh + sectionBump);
+    const macroBarGoals = macroGoalsForBar(b, genMeta?.macroFormPlan);
+    if (macroBarGoals && isDuoGolden) {
+      const off = macroRegisterMidiOffset(macroBarGoals);
+      effectiveLow = Math.max(28, effectiveLow + off);
+      effectiveHigh = Math.min(96, effectiveHigh + off);
+    }
     if (isEcmM || isEcmS) {
       const anchored = anchorGuitarRegister(effectiveLow, effectiveHigh);
       effectiveLow = anchored[0];
@@ -3240,6 +3252,12 @@ function buildGuitarPart(
       }
       if (isDuoGolden && phase === 7 && phraseIntent === 'guitar_lead') {
         if (densityLevel === 'sparse') densityLevel = 'medium';
+      }
+      if (isDuoGolden) {
+        const mg = macroGoalsForBar(b, genMeta?.macroFormPlan);
+        if (mg) {
+          densityLevel = mergeHarmonyPacingDensityHint(mg.harmonyPacing, densityLevel);
+        }
       }
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
         addEvent(m, createRest(0, measureBeatSpanQuartersOf(m)));
@@ -4708,20 +4726,31 @@ function buildBassPart(
                       : duoGoldenBass
                         ? 'mixed'
                         : undefined,
-        densityHint:
-          duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 2
-            ? 'dense'
-            : duoGoldenBass && (phase === 1 || phase === 2)
-              ? 'sparse'
-              : duoGoldenBass && (phase === 5 || phase === 6)
-                ? 'dense'
-                : duoGoldenBass && duoPhraseMode === 'pedal'
-                  ? 'sparse'
-                  : duoGoldenBass && duoPhraseMode === 'stepwise'
+        densityHint: (() => {
+          let hint:
+            | 'dense'
+            | 'sparse'
+            | 'normal' =
+            duoGoldenBass && isLateClosingSlice(b, tb) && consecutiveChordStreakEndingAtBar(context, b) >= 2
+              ? 'dense'
+              : duoGoldenBass && (phase === 1 || phase === 2)
+                ? 'sparse'
+                : duoGoldenBass && (phase === 5 || phase === 6)
+                  ? 'dense'
+                  : duoGoldenBass && duoPhraseMode === 'pedal'
                     ? 'sparse'
-                    : duoGoldenBass && duoPhraseMode === 'rhythmic'
-                      ? 'dense'
-                      : 'normal',
+                    : duoGoldenBass && duoPhraseMode === 'stepwise'
+                      ? 'sparse'
+                      : duoGoldenBass && duoPhraseMode === 'rhythmic'
+                        ? 'dense'
+                        : 'normal';
+          const mb = macroGoalsForBar(b, context.generationMetadata?.macroFormPlan);
+          if (mb && duoGoldenBass) {
+            if (mb.harmonyPacing === 'dense') hint = 'dense';
+            else if (mb.harmonyPacing === 'static') hint = hint === 'dense' ? 'normal' : 'sparse';
+          }
+          return hint;
+        })(),
         phraseRhythmVariant: phraseRetryAttempt % 3,
         phraseBehaviourMode: duoGoldenBass ? duoPhraseMode : undefined,
         bassPhraseRetryAttempt: phraseRetryAttempt,
@@ -5581,10 +5610,20 @@ export function generateGoldenPathDuoScore(
           }),
         };
       } else {
-        const motifPlan =
+        let motifPlan =
           songwriterId === 'wayne_shorter'
             ? tryWayneFormAwareMotifAuthorityPlan(context, tb) ?? defaultMotifAuthorityPlan(tb)
             : defaultMotifAuthorityPlan(tb);
+        const macroReturnGoals =
+          motifPlan.phraseReturn &&
+          macroGoalsForBar(motifPlan.phraseReturn.startBar, context.generationMetadata?.macroFormPlan);
+        const rtNudge = macroMotifReturnThresholdNudge(macroReturnGoals?.motifTreatment);
+        if (rtNudge !== 0) {
+          motifPlan = {
+            ...motifPlan,
+            returnThreshold: Math.max(0.35, Math.min(0.75, motifPlan.returnThreshold + rtNudge)),
+          };
+        }
         if (songwriterId === 'wayne_shorter') {
           const phraseARange = motifPlan.phraseA;
           const phraseANotes = collectGuitarNotesInBarRange(guitarPart, phraseARange);

@@ -41,6 +41,7 @@ import type { HarmonyContext } from './harmony/harmonyContext';
 import type { HarmonicScene } from './composer/harmonicScene';
 import type { VoiceRuleBundle } from './composer/voiceRuleBundle';
 import type { VoiceBundleHarmonicRhythmState } from './composer/voiceBundleHarmonicRhythm';
+import type { MacroFormPlan } from './form/macroFormPlanner';
 
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
@@ -227,6 +228,8 @@ export interface GenerationMetadata {
   modulationPlanActive?: boolean;
   /** Explicit bar count when long-form or extended forms are used */
   totalBars?: number;
+  /** Macro section goals (harmony pacing, motif treatment, energy/register) from `macroFormPlanner.planMacroForm`. */
+  macroFormPlan?: MacroFormPlan;
   /**
    * Phase A — optional per-bar time signatures (1-based bar indices).
    * When absent, export + quantiser behave as all measures 4/4.
