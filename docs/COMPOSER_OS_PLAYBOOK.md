@@ -1796,13 +1796,13 @@ Three **`StyleProfile`** modules ship under **`engines/composer-os-v2/core/evalu
 
 ### Smoke baseline
 
-**`npm run test:composer-smoke`** — aggregate **157** PASS rows, **41** suites (**`runSmokeTests.ts`** allowlist).
+**`npm run test:composer-smoke`** — aggregate **233** PASS rows, **50** suites (**`runSmokeTests.ts`** allowlist).
 
 ---
 
 ## GCE 9.0 Engineering Roadmap
 
-Current benchmark (seed 50021, April 2026): 8.4/10 best, 7.9/10 worst.
+Current benchmark (seed 50021, May 2026): 8.4/10 best, 7.9/10 worst. Melodic Identity (~5.7–5.9) is the universal bottleneck. Target: 8.7–8.9 overall, MI 7.5+.
 Universal weakness: Melodic Identity. Gap to target: 0.6-1.2 points.
 
 Core principle: Every generated note must be explainable by one of four
