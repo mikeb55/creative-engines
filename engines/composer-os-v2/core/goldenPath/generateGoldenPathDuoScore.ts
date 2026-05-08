@@ -367,8 +367,10 @@ import { planMotifReuse } from '../motif-plus/motifReusePlanner';
 import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from './songModePhraseEngineV1';
 import {
   applyBassMotifEcho,
+  applyMotifToASection,
   applyPhraseEngineV2,
   buildMotifPool,
+  primaryMutationCellFromPool,
   seedPoolFromHookIdentity,
 } from './phraseEngineV2';
 import { applySongModeMelodicContinuityPass } from './songModeMelodicContinuity';
@@ -5882,36 +5884,6 @@ export function generateGoldenPathDuoScore(
   }
   applySongwriterKeysCompPresentation(afterExpressive, context);
   applySongModeFagenKeysCompV15(afterExpressive, context);
-  if (
-    context.generationMetadata?.songModeHookFirstIdentity === true &&
-    isGuitarBassDuoFamily(context.presetId) &&
-    tb === 32
-  ) {
-    const gPhraseV2 =
-      afterExpressive.parts.find((p) => p.id === 'guitar') ??
-      afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
-    if (gPhraseV2) {
-      let motifPool = buildMotifPool(afterExpressive, {
-        seed: context.seed,
-        generationId: context.generationMetadata?.generatedAt,
-      });
-      const mdHook = context.generationMetadata as GenerationMetadata & {
-        songModeHookIdentity?: SongModeHookIdentity;
-      };
-      if (mdHook.songModeHookIdentity) {
-        motifPool = seedPoolFromHookIdentity(motifPool, mdHook.songModeHookIdentity);
-      }
-      const guitarPhraseV2 = applyPhraseEngineV2(gPhraseV2, motifPool, { seed: context.seed ?? 0 });
-      const pi = afterExpressive.parts.indexOf(gPhraseV2);
-      if (pi >= 0) afterExpressive.parts[pi] = guitarPhraseV2;
-      const bPhraseV2 = afterExpressive.parts.find((p) => p.id === 'bass');
-      if (bPhraseV2) {
-        const bassPhraseV2 = applyBassMotifEcho(bPhraseV2, motifPool);
-        const bi = afterExpressive.parts.indexOf(bPhraseV2);
-        if (bi >= 0) afterExpressive.parts[bi] = bassPhraseV2;
-      }
-    }
-  }
   let songModeHookBarsPostFinalize: Map<number, HookBarNoteIdentity[]> | undefined;
   /**
    * No mid-pipeline hook-bar identity assert here (pre-overlay vs post-melodic): later Song Mode passes
@@ -6017,6 +5989,40 @@ export function generateGoldenPathDuoScore(
   applyVoiceBundleRepairReceipt(afterExpressive, context);
   applyVoiceBundleParallelRepairPass(afterExpressive, context);
   applyVoiceBundleOverlapMitigation(afterExpressive, context);
+  /** Last pitch pass before seal — GCE melodicIdentity reads final guitar MIDI. */
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    isGuitarBassDuoFamily(context.presetId) &&
+    tb === 32
+  ) {
+    const gPhraseV2 =
+      afterExpressive.parts.find((p) => p.id === 'guitar') ??
+      afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    if (gPhraseV2) {
+      let motifPool = buildMotifPool(afterExpressive, {
+        seed: context.seed,
+        generationId: context.generationMetadata?.generatedAt,
+      });
+      const mdHook = context.generationMetadata as GenerationMetadata & {
+        songModeHookIdentity?: SongModeHookIdentity;
+      };
+      if (mdHook.songModeHookIdentity) {
+        motifPool = seedPoolFromHookIdentity(motifPool, mdHook.songModeHookIdentity);
+      }
+      const primaryMotif = primaryMutationCellFromPool(motifPool);
+      const guitarAfterA =
+        primaryMotif !== undefined ? applyMotifToASection(gPhraseV2, primaryMotif) : gPhraseV2;
+      const guitarPhraseV2 = applyPhraseEngineV2(guitarAfterA, motifPool, { seed: context.seed ?? 0 });
+      const pi = afterExpressive.parts.indexOf(gPhraseV2);
+      if (pi >= 0) afterExpressive.parts[pi] = guitarPhraseV2;
+      const bPhraseV2 = afterExpressive.parts.find((p) => p.id === 'bass');
+      if (bPhraseV2) {
+        const bassPhraseV2 = applyBassMotifEcho(bPhraseV2, motifPool);
+        const bi = afterExpressive.parts.indexOf(bPhraseV2);
+        if (bi >= 0) afterExpressive.parts[bi] = bassPhraseV2;
+      }
+    }
+  }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');

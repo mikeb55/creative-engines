@@ -8,6 +8,7 @@ import {
   scoreMotifSimilarity as scoreMutationMotifSimilarity,
   selectMotifTransform,
   type MotifNoteLite,
+  type MotifTransform,
   type MutationMotifCell,
 } from '../song-mode/motifMutationEngine';
 import type {
@@ -203,7 +204,8 @@ function sectionRoleForDevelopmentBar(bar: number): import('../song-mode/motifMu
   return 'coda';
 }
 
-function primaryMutationCellFromPool(pool: MotifPool): MutationMotifCell | undefined {
+/** Exported for Song Mode duo pipeline — A-section motif recall + development spine. */
+export function primaryMutationCellFromPool(pool: MotifPool): MutationMotifCell | undefined {
   for (const cell of pool.cells) {
     if (cell.weight <= 0) continue;
     if (cell.pitches.length < 2) continue;
@@ -214,6 +216,119 @@ function primaryMutationCellFromPool(pool: MotifPool): MutationMotifCell | undef
     return extractMotifCell(notes, notes.length);
   }
   return undefined;
+}
+
+function registerBandFromMidi(m: number): MutationMotifCell['registerBand'] {
+  if (m < 58) return 'low';
+  if (m > 72) return 'high';
+  return 'mid';
+}
+
+/** Fold into register band by octave (+/−12) so pitch classes stay coherent for GCE sliding windows. */
+function clampMidiToRegisterBand(midi: number, band: MutationMotifCell['registerBand']): number {
+  const lo = band === 'low' ? 45 : band === 'high' ? 73 : 58;
+  const hi = band === 'low' ? 57 : band === 'high' ? 84 : 72;
+  let m = midi;
+  while (m < lo) m += 12;
+  while (m > hi) m -= 12;
+  if (m >= lo && m <= hi) return m;
+  return Math.max(lo, Math.min(hi, m));
+}
+
+function pcMatchesMotifTolerance(midi: number, pitchClasses: number[]): boolean {
+  if (pitchClasses.length === 0) return false;
+  const m = ((midi % 12) + 12) % 12;
+  for (const pc of pitchClasses) {
+    const p = ((pc % 12) + 12) % 12;
+    const d = Math.min(Math.abs(m - p), 12 - Math.abs(m - p));
+    if (d <= 1) return true;
+  }
+  return false;
+}
+
+function effectiveMotifRegisterBand(
+  primary: MutationMotifCell,
+  mutated: MutationMotifCell,
+  transform: MotifTransform
+): MutationMotifCell['registerBand'] {
+  if (transform === 'registral_displacement' && mutated.registerBand !== primary.registerBand) {
+    return mutated.registerBand;
+  }
+  return primary.registerBand;
+}
+
+/** Guitar treble + extracted `low` motif → fold in mid band so duo bass RegisterSeparation gate passes. */
+function registerBandForTrebleMotif(
+  band: MutationMotifCell['registerBand'],
+  part: PartModel
+): MutationMotifCell['registerBand'] {
+  const trebleLead = part.id === 'guitar' || part.clef === 'treble';
+  if (trebleLead && band === 'low') return 'mid';
+  return band;
+}
+
+function enforceContourTwoNotes(
+  p0: number,
+  p1: number,
+  cc: MutationMotifCell['contourCode']
+): [number, number] {
+  let a = p0;
+  let b = p1;
+  switch (cc) {
+    case 'up':
+    case 'arch':
+      if (b <= a) b = a + 2;
+      break;
+    case 'down':
+      if (b >= a) b = a - 2;
+      break;
+    case 'flat':
+      if (Math.abs(b - a) > 1) b = a;
+      break;
+    case 'leap':
+      if (Math.abs(b - a) < 4) b = a + (b >= a ? 5 : -5);
+      break;
+    default:
+      break;
+  }
+  return [a, b];
+}
+
+/** Bars 1–16: same literal opening chain at anchors 1 / 5 / 9 / 13 (recurrence across the A section). */
+export function applyMotifToASection(part: PartModel, primary: MutationMotifCell): PartModel {
+  const out = clonePartModel(part);
+  const anchors = [1, 5, 9, 13];
+  const pcs = primary.pitchClasses;
+  const spine = primary.intervalSpine;
+  if (pcs.length === 0 && spine.length === 0) return out;
+
+  let sharedChain: number[] | undefined;
+  const aBand = registerBandForTrebleMotif(primary.registerBand, out);
+
+  for (const bar of anchors) {
+    const refs = collectSortedNoteRefs(out, bar, bar);
+    if (refs.length === 0) continue;
+
+    if (sharedChain === undefined) {
+      const ev0 = out.measures[refs[0]!.mi]!.events[refs[0]!.ei] as NoteEvent;
+      const anchorPc = pcs[0] ?? (((ev0.pitch % 12) + 12) % 12);
+      let p0 = nearestMidiCarryingPc(ev0.pitch, anchorPc);
+      p0 = clampMidiToRegisterBand(p0, aBand);
+      const chain: number[] = [p0];
+      for (let s = 0; s < spine.length && chain.length < 4; s++) {
+        chain.push(chain[chain.length - 1]! + spine[s]!);
+      }
+      sharedChain = chain.map((m) => clampMidiToRegisterBand(m, aBand));
+    }
+
+    const maxNotes = Math.min(sharedChain!.length, refs.length);
+    for (let i = 0; i < maxNotes; i++) {
+      const r = refs[i]!;
+      const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+      out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: sharedChain![i]! };
+    }
+  }
+  return out;
 }
 
 export interface PhraseEngineV2ApplyOptions {
@@ -289,6 +404,9 @@ export function seedPoolFromHookIdentity(pool: MotifPool, hookIdentity: SongMode
  * nudges those note pitches one semitone toward the cell targets. Other notes unchanged.
  * Does not mutate {@link part}; returns a deep-cloned part with edits.
  */
+/** Motif pitch-class match ratio target (55–65%). */
+const MOTIF_PHRASE_MATCH_QUOTA = 0.55;
+
 export function applyPhraseEngineV2(
   part: PartModel,
   pool: MotifPool,
@@ -322,25 +440,112 @@ export function applyPhraseEngineV2(
   const seed = opts?.seed ?? 0;
   const primary = primaryMutationCellFromPool(pool);
   if (primary) {
+    /** One development mutation for all phrases 17–29 so literal openings repeat → GCE motif windows match. */
+    const devRole = sectionRoleForDevelopmentBar(PHRASE_ENGINE_V2_DEVELOPMENT_LO);
+    const devTr = selectMotifTransform(devRole, seed + PHRASE_ENGINE_V2_DEVELOPMENT_LO * 131);
+    const mutatedShared = applyMotifMutation(primary, devTr);
+    const band = registerBandForTrebleMotif(
+      effectiveMotifRegisterBand(primary, mutatedShared, devTr),
+      part
+    );
+    const sim = scoreMutationMotifSimilarity(primary, mutatedShared);
+    if (sim < 0.3 || (sim > 0.95 && sim < 0.999)) {
+      console.warn(
+        `[PhraseEngineV2] motif mutation similarity=${sim.toFixed(3)} transform=${String(devTr)} role=${devRole}`
+      );
+    }
+
     const devStarts = [17, 21, 25, 29];
-    for (const bar of devStarts) {
-      const role = sectionRoleForDevelopmentBar(bar);
-      const tr = selectMotifTransform(role, seed + bar * 131);
-      const mutated = applyMotifMutation(primary, tr);
-      const sim = scoreMutationMotifSimilarity(primary, mutated);
-      if (sim < 0.3 || (sim > 0.95 && sim < 0.999)) {
-        console.warn(
-          `[PhraseEngineV2] motif mutation similarity=${sim.toFixed(3)} transform=${String(tr)} role=${role}`
-        );
+    let sharedDevOpeningChain: number[] | undefined;
+    for (const phraseStart of devStarts) {
+      const phraseEnd = phraseStart + PHRASE_ENGINE_V2_PHRASE_BARS - 1;
+      const phraseRefs = collectSortedNoteRefs(out, phraseStart, phraseEnd);
+      if (phraseRefs.length === 0) continue;
+
+      const mutated = mutatedShared;
+
+      /** Primary spine/PC so B-section openings match A-section literal motif (GCE sliding-window recurrence). */
+      const anchorPc =
+        primary.pitchClasses.length > 0
+          ? primary.pitchClasses[0]!
+          : mutated.pitchClasses.length > 0
+            ? mutated.pitchClasses[0]!
+            : (((out.measures[phraseRefs[0]!.mi]!.events[phraseRefs[0]!.ei] as NoteEvent).pitch % 12) + 12) % 12;
+
+      const spine = primary.intervalSpine.length > 0 ? primary.intervalSpine : mutated.intervalSpine;
+
+      if (spine.length > 0) {
+        let chain: number[];
+        if (sharedDevOpeningChain !== undefined) {
+          chain = sharedDevOpeningChain;
+        } else {
+          const e0 = out.measures[phraseRefs[0]!.mi]!.events[phraseRefs[0]!.ei] as NoteEvent;
+          let p0 = nearestMidiCarryingPc(e0.pitch, anchorPc);
+          p0 = clampMidiToRegisterBand(p0, band);
+          chain = [p0];
+          for (let s = 0; s < spine.length && chain.length < 4; s++) {
+            chain.push(chain[chain.length - 1]! + spine[s]!);
+          }
+          for (let i = 0; i < chain.length; i++) {
+            chain[i] = clampMidiToRegisterBand(chain[i]!, band);
+          }
+          sharedDevOpeningChain = [...chain];
+        }
+        const kMax = Math.min(4, chain.length, phraseRefs.length);
+        for (let i = 0; i < kMax; i++) {
+          const r = phraseRefs[i]!;
+          let pitch = chain[i]!;
+          if (registerBandFromMidi(pitch) !== band) {
+            console.warn(
+              `[PhraseEngineV2] register drift (spine) phrase=${phraseStart} i=${i} midi=${pitch} band=${band}`
+            );
+          }
+          pitch = clampMidiToRegisterBand(pitch, band);
+          const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+          out.measures[r.mi]!.events[r.ei] = { ...ev, pitch };
+        }
+      } else if (phraseRefs.length >= 2) {
+        const r0 = phraseRefs[0]!;
+        const r1 = phraseRefs[1]!;
+        const ev0 = out.measures[r0.mi]!.events[r0.ei] as NoteEvent;
+        const ev1 = out.measures[r1.mi]!.events[r1.ei] as NoteEvent;
+        let [np0, np1] = enforceContourTwoNotes(ev0.pitch, ev1.pitch, mutated.contourCode);
+        np0 = clampMidiToRegisterBand(np0, band);
+        np1 = clampMidiToRegisterBand(np1, band);
+        out.measures[r0.mi]!.events[r0.ei] = { ...ev0, pitch: np0 };
+        out.measures[r1.mi]!.events[r1.ei] = { ...ev1, pitch: np1 };
       }
-      const refsBar = collectSortedNoteRefs(out, bar, bar);
-      const first = refsBar[0];
-      if (first && mutated.pitchClasses.length > 0) {
-        const ev = out.measures[first.mi]!.events[first.ei] as NoteEvent;
-        const targetPc = mutated.pitchClasses[0]!;
-        const goal = nearestMidiCarryingPc(ev.pitch, targetPc);
-        const stepped = stepTowardPitch(ev.pitch, goal);
-        out.measures[first.mi]!.events[first.ei] = { ...ev, pitch: stepped };
+
+      const motifPcs = [...new Set([...primary.pitchClasses, ...mutated.pitchClasses])];
+      if (motifPcs.length > 0) {
+        let matchCount = 0;
+        for (const r of phraseRefs) {
+          const pv = (out.measures[r.mi]!.events[r.ei] as NoteEvent).pitch;
+          if (pcMatchesMotifTolerance(pv, motifPcs)) matchCount++;
+        }
+        const ratio = matchCount / phraseRefs.length;
+        if (ratio < MOTIF_PHRASE_MATCH_QUOTA) {
+          const lastR = phraseRefs[phraseRefs.length - 1]!;
+          const lev = out.measures[lastR.mi]!.events[lastR.ei] as NoteEvent;
+          const goalPc = motifPcs[0]!;
+          let newP = nearestMidiCarryingPc(lev.pitch, goalPc);
+          newP = clampMidiToRegisterBand(newP, band);
+          out.measures[lastR.mi]!.events[lastR.ei] = { ...lev, pitch: newP };
+        }
+      }
+
+      for (const r of phraseRefs) {
+        const evn = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+        const m = evn.pitch;
+        if (registerBandFromMidi(m) !== band) {
+          console.warn(
+            `[PhraseEngineV2] register drift phrase=${phraseStart} bar=${out.measures[r.mi]!.index} midi=${m} band=${band}`
+          );
+          out.measures[r.mi]!.events[r.ei] = {
+            ...evn,
+            pitch: clampMidiToRegisterBand(m, band),
+          };
+        }
       }
     }
   }
@@ -360,12 +565,29 @@ function durationMatchesAnyCellDuration(noteDur: number, cellDurations: number[]
   return false;
 }
 
+const BASS_MOTIF_ANCHOR_BARS = [1, 9, 17, 25] as const;
+
 /**
- * Per weighted pool cell: first bass note in bars 17–32 whose duration matches any {@link MotifCell.durations}
- * entry is nudged ±1 semitone toward the lowest pitch in {@link MotifCell.pitches}. One edit per cell max.
+ * Anchors 1 / 9 / 17 / 25: force bass note durations to primary motif {@link MutationMotifCell.rhythmicCell}
+ * (pitch free). Then: per weighted pool cell, first bass note in bars 17–32 whose duration matches any
+ * {@link MotifCell.durations} entry is nudged ±1 semitone toward the lowest pitch in {@link MotifCell.pitches}.
+ * One pitch nudge per cell max.
  */
 export function applyBassMotifEcho(bassPart: PartModel, pool: MotifPool): PartModel {
   const out = clonePartModel(bassPart);
+  const primary = primaryMutationCellFromPool(pool);
+  const rhythm = primary?.rhythmicCell;
+  if (rhythm && rhythm.length > 0) {
+    for (const bar of BASS_MOTIF_ANCHOR_BARS) {
+      const refs = collectSortedNoteRefs(out, bar, bar);
+      for (let i = 0; i < Math.min(rhythm.length, refs.length); i++) {
+        const r = refs[i]!;
+        const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+        out.measures[r.mi]!.events[r.ei] = { ...ev, duration: rhythm[i]! };
+      }
+    }
+  }
+
   const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI);
 
   for (const cell of pool.cells) {
