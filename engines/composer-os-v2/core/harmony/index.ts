@@ -12,3 +12,4 @@ export * from './harmonyRangeResolver';
 export * from './reharmLensConfig';
 export * from './reharmSequenceTypes';
 export * from './reharmSequenceRanker';
+export * from './reharmController';

@@ -25,6 +25,14 @@ export type AlternativeBar = {
 export type AlternativeProgression = {
   lensId: string;
   bars: AlternativeBar[];
-  /** Reserved for Phase C GCE hook — unset until wired. */
+  /** Placeholder mean combined-rank score (0–10) until full GCE wiring. */
   gceScore?: number;
+};
+
+export type ReharmResult = {
+  alternatives: AlternativeProgression[];
+  requestedLens: string[];
+  startBar: number;
+  endBar: number;
+  seed: number;
 };
