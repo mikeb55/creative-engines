@@ -48,6 +48,7 @@ import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { validateLockedHarmonyMusicXmlTruth } from '../export/validateLockedHarmonyMusicXml';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
+import { assertHarmonySpineMatchesScore } from '../harmony/harmonySpineProvider';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
 import { validateExportIntegrity } from '../export/exportHardening';
@@ -2172,6 +2173,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
   try {
     assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
+    assertHarmonySpineMatchesScore(score, options, appliedContext, 'runGoldenPath:after_score_build');
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }

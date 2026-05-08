@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **233** PASS rows, **50** suites (2026-05-08).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **234** PASS rows, **51** suites (2026-05-08).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -57,6 +57,7 @@ import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReh
 import { runHarmonicSceneMotifShoutSmokeTests } from './harmonicSceneMotifShoutSmoke.test';
 import { runFollowup4MingusSchneiderThreadgillSmokeTests } from './followup4MingusSchneiderThreadgillSmoke.test';
 import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassInPlaceSmoke.test';
+import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -108,6 +109,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },
+  { label: 'Harmony spine LOCK harness (mismatch throws)', run: runHarmonySpineLockSmokeTests },
   { label: 'HarmonicScene motif filter + shout/outro energy', run: runHarmonicSceneMotifShoutSmokeTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },

@@ -7,6 +7,10 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CustomLockedRoutingWire } from '../goldenPath/customLockedHarmonyRouting';
+import type { ScoreModel } from '../score-model/scoreModelTypes';
+import { isAllowedSongFormBarCount } from './songFormBarCounts';
+import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { getChordForBar } from './harmonyResolution';
 
 export type HarmonySpineProvenance = 'builtin' | 'slice' | 'locked' | 'vault';
@@ -132,4 +136,34 @@ export function resolveBarSymbol(context: CompositionContext, bar: number): Reso
     provenance: layer.provenance,
     sliceId: layer.sliceId,
   };
+}
+
+/**
+ * Post-build LOCK (same gate as `assertScoreMatchesLockedHarmonyWire`): on `custom` / `custom_locked`
+ * long-form paths, each guitar measure `chord` matches {@link resolveBarSymbol} for that bar.
+ * No-op when there is no `clean_electric_guitar` part.
+ */
+export function assertHarmonySpineMatchesScore(
+  score: ScoreModel,
+  options: CustomLockedRoutingWire | undefined,
+  context: CompositionContext | undefined,
+  layer = 'assertHarmonySpineMatchesScore'
+): void {
+  if (!context) return;
+  const wire = options?.lockedHarmonyBarsRaw ?? options?.parsedChordBars;
+  if (!wire || !isAllowedSongFormBarCount(wire.length)) return;
+  if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
+  const tb = context.form.totalBars;
+  if (!Number.isFinite(tb) || tb < 1) return;
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) return;
+  for (let b = 1; b <= tb; b++) {
+    const spine = resolveBarSymbol(context, b).symbol;
+    const got = g.measures.find((m) => m.index === b)?.chord ?? '';
+    if (!lockedHarmonyChordSymbolsEquivalent(got, spine)) {
+      throw new Error(
+        `HARMONY_SPINE_LOCK [${layer}]: bar ${b} guitar chord "${got}" !== spine "${spine}"`
+      );
+    }
+  }
 }
