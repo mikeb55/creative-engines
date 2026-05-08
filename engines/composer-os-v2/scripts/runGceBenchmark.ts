@@ -62,6 +62,32 @@ function weightedOverall(cats: Record<string, { score: number; weight: number }>
   return Math.round((sum / w) * 10) / 10;
 }
 
+/** Parses Melodic Identity justification sub-scores (0–10 display scale). */
+function parseMelodicIdentityBreakdown(justification: string): {
+  motifRecurrence: number | null;
+  contour: number | null;
+  intervalBalance: number | null;
+  registerCohesion: number | null;
+} {
+  const m = justification.match(
+    /motif recurrence ([\d.]+),\s*contour ([\d.]+),\s*interval balance ([\d.]+),\s*register cohesion ([\d.]+)/i
+  );
+  if (!m) {
+    return {
+      motifRecurrence: null,
+      contour: null,
+      intervalBalance: null,
+      registerCohesion: null,
+    };
+  }
+  return {
+    motifRecurrence: Number(m[1]),
+    contour: Number(m[2]),
+    intervalBalance: Number(m[3]),
+    registerCohesion: Number(m[4]),
+  };
+}
+
 function main(): void {
   const { seed, voices } = parseArgs();
   const primary = 'donald_fagen';
@@ -88,9 +114,12 @@ function main(): void {
     const sections = gceSectionsFromFormMap(result.context.form);
     const sw = result.context.generationMetadata?.songwriterStyleId;
 
+    const miCat = scoreMelodicIdentity(melody, sw);
+    const miBreak = parseMelodicIdentityBreakdown(miCat.justification);
+
     const pillars = {
       cadentialClarity: { score: scoreCadentialClarity(melody, chords, sections).score, weight: 2 },
-      melodicIdentity: { score: scoreMelodicIdentity(melody, sw).score, weight: 2 },
+      melodicIdentity: { score: miCat.score, weight: 2 },
       phraseGrammar: { score: scorePhraseGrammar(melody).score, weight: 1 },
       harmonyAndLanguage: { score: scoreHarmonyAndLanguage(chords).score, weight: 1 },
       rhythmicIdentity: { score: scoreRhythmicIdentity(melody).score, weight: 1 },
@@ -104,6 +133,11 @@ function main(): void {
     rows.push({
       voice: hv,
       overall: weightedOverall(pillars),
+      melodicIdentity: miCat.score,
+      motifRecurrence: miBreak.motifRecurrence,
+      contour: miBreak.contour,
+      intervalBalance: miBreak.intervalBalance,
+      registerCohesion: miBreak.registerCohesion,
       pillars: Object.fromEntries(Object.entries(pillars).map(([k, v]) => [k, v.score])),
     });
   }
