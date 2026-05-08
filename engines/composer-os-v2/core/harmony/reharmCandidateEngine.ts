@@ -235,3 +235,13 @@ export function generateReharmCandidates(
     return combinedRank(b, drift, melodyPc, rowB) - combinedRank(a, drift, melodyPc, rowA);
   });
 }
+
+/** Same scalar used to sort {@link generateReharmCandidates} output — for downstream re-ranking (sequence ranker). */
+export function scoreReharmCandidate(
+  c: ReharmCandidate,
+  drift: EmotionalDrift,
+  melodyPc: number | null
+): number {
+  const subRow = ROW_BY_TYPE.get(c.substituteChordTypeId);
+  return combinedRank(c, drift, melodyPc, subRow);
+}

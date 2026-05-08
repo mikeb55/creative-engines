@@ -10,3 +10,5 @@ export * from './reharmCandidateEngine';
 export * from './vaultChordRuleSet';
 export * from './harmonyRangeResolver';
 export * from './reharmLensConfig';
+export * from './reharmSequenceTypes';
+export * from './reharmSequenceRanker';
