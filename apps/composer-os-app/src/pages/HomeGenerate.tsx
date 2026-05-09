@@ -1218,6 +1218,10 @@ function validateMusicXmlScoreDocument(xml: string): boolean {
 type GenResult = {
   success?: boolean;
   error?: string;
+  /** Raw MusicXML string when the engine returns it (same as API `GenerateResult.xml`). */
+  xml?: string;
+  /** API echo — `musicxml` when a score file was produced. */
+  productKind?: 'musicxml' | 'planning' | 'song_structure';
   filename?: string;
   filepath?: string;
   harmonySource?: 'builtin' | 'custom';
@@ -2668,13 +2672,25 @@ export function HomeGenerate({
           _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
           _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
         });
-        if (r.xml) {
+        {
           const bpm = r.requestEcho?.bpm ?? 120;
           const ts = iRealParsedChart?.timeSignature;
           const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
-          setPlaybackSeq(parseXmlToPlaybackSequence(r.xml, bpm, timeSig));
-          setPlaybackBeat(0);
-          setIsPlaying(false);
+          const applyPlaybackFromXml = (xml: string) => {
+            setPlaybackSeq(parseXmlToPlaybackSequence(xml, bpm, timeSig));
+            setPlaybackBeat(0);
+            setIsPlaying(false);
+          };
+          if (r.filepath && typeof window !== 'undefined' && window.composerOsDesktop?.invokeApi) {
+            void window.composerOsDesktop
+              .invokeApi('composer-os-api:read-file', { path: r.filepath })
+              .then((xml) => {
+                if (typeof xml === 'string') applyPlaybackFromXml(xml);
+              })
+              .catch(() => {});
+          } else if (r.xml) {
+            applyPlaybackFromXml(r.xml);
+          }
         }
         if (
           r.runManifest?.presetId === 'song_mode' &&

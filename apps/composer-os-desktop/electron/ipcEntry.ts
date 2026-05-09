@@ -2,6 +2,7 @@
  * Bundled separately (esbuild) — registers Composer OS API IPC; no HTTP server.
  */
 import { app, shell, type IpcMain } from 'electron';
+import { readFile } from 'node:fs/promises';
 import path from 'path';
 import type { GenerateRequest } from '../../../engines/composer-os-v2/app-api/appApiTypes';
 import {
@@ -85,6 +86,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
   ipcMain.handle('composer-os-api:get-runtime-build-info', () => getComposerOsRuntimeBuildInfo());
+  ipcMain.handle('composer-os-api:read-file', async (_event, body: unknown) => {
+    const pathRaw =
+      body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+        ? (body as { path: string }).path
+        : '';
+    if (!pathRaw.trim()) {
+      throw new Error('composer-os-api:read-file: missing path');
+    }
+    return readFile(pathRaw, 'utf-8');
+  });
   ipcMain.handle('composer-os-api:generate', (_e, body: unknown) => {
     const prevIpc = process.env.COMPOSER_OS_IPC_GENERATE_BODY_JSON;
     try {
