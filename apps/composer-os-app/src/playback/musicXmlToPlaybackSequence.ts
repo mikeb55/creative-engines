@@ -67,11 +67,10 @@ function parseAttributes(attributesEl: Element, state: {
   }
 }
 
-function firstPartElement(doc: Document): Element | null {
+function allPartElements(doc: Document): Element[] {
   const root = doc.documentElement;
-  if (!root) return null;
-  const parts = Array.from(root.children).filter((c) => c.localName === 'part');
-  return parts[0] ?? null;
+  if (!root) return [];
+  return Array.from(root.children).filter((c) => c.localName === 'part');
 }
 
 function measureChildrenSorted(partEl: Element): Element[] {
@@ -83,26 +82,11 @@ function measureChildrenSorted(partEl: Element): Element[] {
   });
 }
 
-/**
- * Parse MusicXML (browser {@link DOMParser}) into a flat note list + meter context.
- */
-export function parseXmlToPlaybackSequence(
-  xml: string,
-  bpm: number,
-  timeSig: string
-): PlaybackSequence {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  const parserErr = doc.getElementsByTagName('parsererror');
-  if (parserErr.length > 0) {
-    return {
-      notes: [],
-      bpm,
-      beatsPerBar: beatsPerBarFromTimeSig(timeSig),
-      totalBars: 0,
-    };
-  }
-
+function collectNotesFromPart(partEl: Element, timeSig: string): {
+  notes: PlaybackNote[];
+  maxBar: number;
+  beatsPerBar: number;
+} {
   const state = {
     divisions: 1,
     beatsPerBar: beatsPerBarFromTimeSig(timeSig),
@@ -111,12 +95,7 @@ export function parseXmlToPlaybackSequence(
   const notes: PlaybackNote[] = [];
   let maxBar = 0;
 
-  const part = firstPartElement(doc);
-  if (!part) {
-    return { notes: [], bpm, beatsPerBar: state.beatsPerBar, totalBars: 0 };
-  }
-
-  const measures = measureChildrenSorted(part);
+  const measures = measureChildrenSorted(partEl);
   for (const measureEl of measures) {
     const barNumRaw = measureEl.getAttribute('number');
     const barIndex = Math.max(1, parseInt(barNumRaw ?? '1', 10) || 1);
@@ -199,10 +178,69 @@ export function parseXmlToPlaybackSequence(
     }
   }
 
+  return { notes, maxBar, beatsPerBar: state.beatsPerBar };
+}
+
+/**
+ * Parse MusicXML (browser {@link DOMParser}) into a flat note list + meter context.
+ */
+export function parseXmlToPlaybackSequence(
+  xml: string,
+  bpm: number,
+  timeSig: string
+): PlaybackSequence {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  const parserErr = doc.getElementsByTagName('parsererror');
+  if (parserErr.length > 0) {
+    return {
+      notes: [],
+      bpm,
+      beatsPerBar: beatsPerBarFromTimeSig(timeSig),
+      totalBars: 0,
+    };
+  }
+
+  const parts = allPartElements(doc);
+  if (parts.length === 0) {
+    return {
+      notes: [],
+      bpm,
+      beatsPerBar: beatsPerBarFromTimeSig(timeSig),
+      totalBars: 0,
+    };
+  }
+
+  const flat: PlaybackNote[] = [];
+  let maxBar = 0;
+  let beatsPerBarOut = beatsPerBarFromTimeSig(timeSig);
+
+  for (const partEl of parts) {
+    const { notes, maxBar: mb, beatsPerBar } = collectNotesFromPart(partEl, timeSig);
+    flat.push(...notes);
+    maxBar = Math.max(maxBar, mb);
+    beatsPerBarOut = beatsPerBar;
+  }
+
+  const seen = new Set<string>();
+  const deduped: PlaybackNote[] = [];
+  for (const n of flat) {
+    const key = `${n.pitch}-${n.startBeat}-${n.barIndex}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(n);
+  }
+
+  deduped.sort((a, b) => {
+    if (a.barIndex !== b.barIndex) return a.barIndex - b.barIndex;
+    if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
+    return a.pitch - b.pitch;
+  });
+
   return {
-    notes,
+    notes: deduped,
     bpm,
-    beatsPerBar: state.beatsPerBar,
+    beatsPerBar: beatsPerBarOut,
     totalBars: maxBar,
   };
 }
