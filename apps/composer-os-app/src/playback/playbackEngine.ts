@@ -22,7 +22,8 @@ function clearScheduledIds(transport: ReturnType<typeof Tone.getTransport>): voi
 }
 
 /**
- * Ensures browser audio unlock (call from UI gesture or before first {@link play}).
+ * Unlocks the AudioContext (browser/Electron requires this during a user gesture).
+ * Await this before {@link play}; do not schedule Transport until it resolves.
  */
 export async function initPlayback(): Promise<void> {
   await Tone.start();

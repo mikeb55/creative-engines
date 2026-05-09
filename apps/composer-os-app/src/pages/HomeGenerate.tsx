@@ -1731,11 +1731,10 @@ export function HomeGenerate({
     return c;
   }, [iRealPaste]);
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (!playbackSeq) return;
-    void initPlayback().then(() => {
-      void play(playbackSeq, (beat) => setPlaybackBeat(beat));
-    });
+    await initPlayback();
+    await play(playbackSeq, (beat) => setPlaybackBeat(beat));
     setIsPlaying(true);
   };
   const handlePause = () => {
