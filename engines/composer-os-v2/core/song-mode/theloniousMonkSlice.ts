@@ -11,6 +11,26 @@ import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAn
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 
+/**
+ * Research-backed knobs — reharm lens + slice passes stay aligned with these defaults.
+ * Voicing is symbolic (lead-sheet grammar); shells described for exporter/guitar hints only.
+ */
+export const MONK_SLICE_PARAMETERS = {
+  tensionHierarchyPrimary: '#11/b5',
+  tensionDominant: 'b9/#9',
+  tensionMinorBlues: 'b13',
+  tensionTonicColour: 'maj7_root_semitone_cluster',
+  tritoneRate: 0.35,
+  susBias: 0.05,
+  chromaticMediantBias: 0.75,
+  staticDominantBias: 0.7,
+  voicingRule:
+    '3-note shells — semitone at bottom + 3rd above chord root; omit 5th; avoid tall stacks',
+  harmonicRhythmNotes:
+    'chord changes may sit ±1 beat off barline; strong-beat clash → weak-beat resolution',
+  vaultPhraseTemplates: ['angular', 'displaced'] as const,
+} as const;
+
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -122,8 +142,9 @@ function scanChordForDiagnostics(chord: string, acc: TheloniousMonkHarmonyAccumu
   const hp = parseChordSymbol(c).harmonyPart;
   const t = hp.toLowerCase();
   if (/7b9|b9|7alt|\balt\b/.test(t)) acc.b9DominantTouches++;
-  if (/dim|ø|7sus|#11|maj7/.test(t) || /sus/.test(t)) acc.angularHarmonyTouches++;
-  if (/maj7|#11|\b6\b/.test(t) && !/maj9|maj13/.test(t)) acc.tonicColourTouches++;
+  // Monk: clash (#11, dim, altered) — not sus voicing (near-zero sus bias in lens).
+  if ((/dim|ø|#11|maj7|b5|#5|\(b5/.test(t)) && !/sus/.test(t)) acc.angularHarmonyTouches++;
+  if ((/maj7|#11|\b6\b/.test(t)) && !/maj9|maj13/.test(t)) acc.tonicColourTouches++;
 }
 
 export function accumulateTheloniousMonkHarmonyDiagnostics(
@@ -237,16 +258,16 @@ function colourTonicMonk(
   return symbol;
 }
 
-/** Dominant: 7b9 primary; sometimes 7alt; avoid slick unresolved 13s (handled in strip). */
+/** Dominant: prolonged V7alt / 7b9 — moderate tritone-sub cadences elsewhere; avoid plain 13s (strip pass). */
 function colourDominantMonk(symbol: string, seed: number, bar: number): string {
   if (!isPlainDominantSeventh(symbol)) return symbol;
   const slash = slashTail(symbol);
   const root = parseChordSymbol(symbol).harmonyPart.match(ROOT_AT_START)?.[1];
   if (!root) return symbol;
   const u = seededUnit(seed, bar, 886030);
-  if (u < 0.72) return `${root}7b9${slash}`;
-  if (u < 0.92) return `${root}7alt${slash}`;
-  return `${root}7${slash}`;
+  if (u < 0.42) return `${root}7b9${slash}`;
+  if (u < 0.9) return `${root}7alt${slash}`;
+  return `${root}7b9${slash}`;
 }
 
 /** Phrase-final dominant before tonic: tritone sub + b9 — deferred cadence, angular root motion. */
@@ -263,7 +284,8 @@ function deferCadenceWithTritoneSub(
   for (let b = 1; b < tb; b++) {
     if (phraseRoleAtBar(b, positions) !== 'phraseFinal') continue;
     if (isProtectedBar(b, context) || isProtectedBar(b + 1, context)) continue;
-    if (seededUnit(seed, b, 886101) >= 0.38) continue;
+    // ~35% cadences attempt tritone sub — moderate vs prolonged V7alt (MONK_SLICE_PARAMETERS.tritoneRate)
+    if (seededUnit(seed, b, 886101) >= 0.35) continue;
     const domSym = out[b - 1]!;
     const tonSym = out[b]!;
     if (!isDominantFunctionSymbol(domSym)) continue;
@@ -278,7 +300,7 @@ function deferCadenceWithTritoneSub(
   }
 }
 
-/** Bridge/contrast: more 7sus / dim colour vs blues core. */
+/** Bridge/contrast: clash (#9/b5) — Monk avoids sus colours (see MONK_SLICE_PARAMETERS.susBias). */
 function applyContrastSectionColour(
   out: string[],
   seed: number,
@@ -295,8 +317,8 @@ function applyContrastSectionColour(
     const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
     const slash = slashTail(sym);
-    out[b - 1] = `${root}7sus4${slash}`;
-    receipts.push(`tm:contrast_sus@bar${b}`);
+    out[b - 1] = seededUnit(seed, b, 886202) < 0.5 ? `${root}7b9#11${slash}` : `${root}7#9${slash}`;
+    receipts.push(`tm:contrast_clash@bar${b}`);
   }
 }
 
@@ -353,7 +375,8 @@ function applyChromaticEnclosurePass(
 ): void {
   for (let b = 2; b <= tb; b++) {
     if (phraseRoleAtBar(b, positions) !== 'phraseMiddle') continue;
-    if (seededUnit(seed, b, 886301) >= 0.25) continue;
+    // Higher chromatic-mediant / neighbour approaches (MONK_SLICE_PARAMETERS.chromaticMediantBias)
+    if (seededUnit(seed, b, 886301) >= 0.42) continue;
     if (isProtectedBar(b, context)) continue;
     const prevSym = out[b - 2]!;
     if (!isHighDensityChord(prevSym)) continue;
@@ -371,6 +394,36 @@ function applyChromaticEnclosurePass(
     out[b - 1] = `${head}/${bassName}`;
     receipts.push(`tm:chrom_enclosure@bar${b}`);
   }
+}
+
+/** Blues turn — bars 9–12 descending chromatic dominant chain (optional when ≥12 bars). */
+function applyBluesBarsNineToTwelveDominantChain(
+  out: string[],
+  tonicPc: number | undefined,
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined || tb < 12) return;
+  if (seededUnit(seed, 12, 886701) > 0.45) return;
+  if (
+    isProtectedBar(9, context) ||
+    isProtectedBar(10, context) ||
+    isProtectedBar(11, context) ||
+    isProtectedBar(12, context)
+  ) {
+    return;
+  }
+  const bVII = pitchClassToSharpName((tonicPc + 10) % 12);
+  const IV = pitchClassToSharpName((tonicPc + 5) % 12);
+  const bII = pitchClassToSharpName((tonicPc + 1) % 12);
+  const I = pitchClassToSharpName(tonicPc);
+  out[8] = `${bVII}7`;
+  out[9] = `${IV}7`;
+  out[10] = `${bII}7`;
+  out[11] = `${I}7alt`;
+  receipts.push('tm:blues_desc_dom_chain@bars9-12');
 }
 
 function applyDeliberateSilencePass(
@@ -432,6 +485,7 @@ export function precomputeTheloniousMonkEffectiveHarmonyBars(context: Compositio
 
   const out = [...raw];
 
+  applyBluesBarsNineToTwelveDominantChain(out, tonicPc, seed, receipts, tb, context);
   deferCadenceWithTritoneSub(out, tonicPc, seed, receipts, tb, context, positions);
   applyContrastSectionColour(out, seed, receipts, tb, context);
   applyWholeToneFragmentPass(out, tonicPc, seed, receipts, tb, context);
@@ -463,6 +517,12 @@ export function finalizeTheloniousMonkMetadata(
     antiElaborationGuardTriggers: guardTotal,
     antiElaborationGuards: { ...g },
     deviceReceipts: flat.length ? flat : undefined,
+    sliceParameters: {
+      tritoneRate: MONK_SLICE_PARAMETERS.tritoneRate,
+      susBias: MONK_SLICE_PARAMETERS.susBias,
+      chromaticMediantBias: MONK_SLICE_PARAMETERS.chromaticMediantBias,
+      staticDominantBias: MONK_SLICE_PARAMETERS.staticDominantBias,
+    },
   } as const;
   const receipt = [
     `Thelonious Monk (angular harmony slice): b9≈${acc.b9DominantTouches}`,

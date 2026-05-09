@@ -229,7 +229,13 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     contourProfile: 'irregular',
     phraseAsymmetryTendency: 0.69,
     cadenceFrequency: 'medium',
-    devices: ['tritone', 'whole_tone_fragment', 'chromatic_enclosure', 'deliberate_silence'],
+    devices: [
+      'tritone',
+      'whole_tone_fragment',
+      'chromatic_enclosure',
+      'deliberate_silence',
+      'rhythmic_displacement',
+    ],
   },
   dave_brubeck: {
     intervalTendency: 'stepwise',

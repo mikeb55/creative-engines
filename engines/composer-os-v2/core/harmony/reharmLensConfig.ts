@@ -42,9 +42,9 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
   },
   thelonious_monk: {
     displayName: 'Thelonious Monk',
-    tritoneRate: 0.64,
-    susBias: 0.34,
-    chromaticMediantBias: 0.44,
+    tritoneRate: 0.35,
+    susBias: 0.05,
+    chromaticMediantBias: 0.75,
     poolSampling: false,
   },
   donald_fagen: {

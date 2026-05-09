@@ -455,6 +455,48 @@ function isMajorKeyIiViTriple(a: string, b: string, c: string): boolean {
   return isIiMinorSeventhLike(a) && isVDominantSeventhFamily(b) && isIMajorTonicLike(c);
 }
 
+/** Monk — same ii–V–I guard as Zappa but **no** sus relief (static / altered dominant prolongation). */
+export function breakMonkRollingIiViProgressions(chords: readonly string[], seed: number): string[] {
+  if (chords.length < 3) return [...chords];
+  const out = [...chords];
+  let salt = seed >>> 0;
+  let changed = true;
+  let guard = 0;
+  while (changed && guard++ < 10) {
+    changed = false;
+    for (let i = 0; i <= out.length - 3; i++) {
+      const a = out[i]!;
+      const b = out[i + 1]!;
+      const c = out[i + 2]!;
+      if (!isMajorKeyIiViTriple(a, b, c)) continue;
+      const rb = harmonyRootPcPool(b);
+      const rc = harmonyRootPcPool(c);
+      if (rb === undefined) continue;
+      salt = (salt * 1664525 + 1013904223) >>> 0;
+      const mode = salt % 3;
+      if (mode === 0) {
+        out[i + 1] = `${pitchClassToSharpNamePool((rb + 6) % 12)}7alt`;
+      } else if (mode === 1 && rc !== undefined) {
+        out[i + 2] = `${pitchClassToSharpNamePool(rc)}maj7#11`;
+      } else {
+        out[i + 1] = `${pitchClassToSharpNamePool(rb)}7alt`;
+      }
+      changed = true;
+    }
+  }
+  return out;
+}
+
+function applyMonkChordRowDisplacement(chords: string[], seed: number): string[] {
+  if (chords.length !== 4) return chords;
+  let s = (seed ^ 887701) >>> 0;
+  s = (s * 1664525 + 1013904223) >>> 0;
+  const u = s / 0xffffffff;
+  if (u < 0.34) return chords;
+  if (u < 0.67) return [chords[1]!, chords[2]!, chords[3]!, chords[0]!];
+  return [chords[3]!, chords[0]!, chords[1]!, chords[2]!];
+}
+
 /** Blocks rolling major-key ii–V–I cadences for Frank Zappa / Bartók chord scaffolding (post rhythm shaping). */
 export function breakFrankZappaIiViProgressions(chords: readonly string[], seed: number): string[] {
   if (chords.length < 3) return [...chords];
@@ -2306,6 +2348,33 @@ const SONGWRITER_CHORD_POOLS: Record<
     bridge: [['Abmaj7', 'Gm7', 'Fm7', 'Cm']],
     pre_chorus: [['Cm7', 'Fm7', 'Gm7', 'Cm']],
   },
+  /** Altered dominants + maj7#11 — no sus rows (`MONK_SLICE_PARAMETERS`). Chorus row 2 = blues bVII→IV→bII→Ialt shell. */
+  thelonious_monk: {
+    verse: [
+      ['Cmaj7#11', 'G7alt', 'Dm7b5', 'G7b9'],
+      ['Bb7b13', 'Eb7alt', 'Abmaj7#11', 'Db7b9'],
+      ['Fmaj7#11', 'E7b9', 'Am7', 'D7alt'],
+      ['Gm7', 'C7b9', 'Fmaj7#11', 'Bb7#11'],
+    ],
+    chorus: [
+      ['Cmaj7#11', 'A7alt', 'Dm7', 'G7b9'],
+      ['Bb7', 'F7', 'Db7', 'C7alt'],
+      ['Fm7', 'Bb7alt', 'Ebmaj7#11', 'Ab7b9'],
+      ['D7b9', 'G7alt', 'Cmaj7#11', 'F7#9'],
+    ],
+    bridge: [
+      ['E7alt', 'A7b9', 'Dmaj7#11', 'G7alt'],
+      ['C#m7b5', 'F#7b9', 'Bmaj7#11', 'E7alt'],
+      ['Am7', 'D7b9', 'Gmaj7#11', 'C7alt'],
+      ['F#m7b5', 'B7b9', 'Emaj7#11', 'A7alt'],
+    ],
+    pre_chorus: [
+      ['Em7b5', 'A7alt', 'Dm7', 'G7b9'],
+      ['Cm7', 'F7alt', 'Bbmaj7#11', 'Eb7b9'],
+      ['Am7b5', 'D7b9', 'Gmaj7#11', 'C7alt'],
+      ['Fm7', 'Bb7b9', 'Ebmaj7#11', 'Ab7alt'],
+    ],
+  },
 };
 
 function sectionChordPoolRows(
@@ -2441,6 +2510,10 @@ function chordSymbolsForSection(
       profile.harmonicRhythm,
       seed
     );
+    if (songwriterId === 'thelonious_monk') {
+      chordSymbols = breakMonkRollingIiViProgressions(chordSymbols, seed);
+      chordSymbols = applyMonkChordRowDisplacement(chordSymbols, seed);
+    }
     if (
       songwriterId === 'frank_zappa' ||
       songwriterId === 'joni_mitchell' ||

@@ -71,6 +71,22 @@ function phraseTemplatesForChord(chordTypeId: string): VaultChordRuleSet['phrase
   return [...out];
 }
 
+/**
+ * Vault phrase bias for **`thelonious_monk`** — angular / displaced phrasing; drop smooth liquid-resolution sweep.
+ * Maps research labels `angular` / `displaced` onto existing template ids.
+ */
+export function phraseTemplatesForChordTheloniousMonk(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  const base = phraseTemplatesForChord(chordTypeId);
+  const out = new Set(base);
+  out.delete('liquid-resolution');
+  if (out.has('triad-sweep') && out.size > 2) out.delete('triad-sweep');
+  if (!out.has('tension-climb')) out.add('tension-climb');
+  if (!out.has('bebop-insertion')) out.add('bebop-insertion');
+  if (!out.has('dyad-bounce')) out.add('dyad-bounce');
+  if (!out.has('quadratonic-enclosure')) out.add('quadratonic-enclosure');
+  return [...out];
+}
+
 function topReharmStrategies(chordTypeId: string, limit: number): ReharmStrategy[] {
   const cands = generateReharmCandidates(chordTypeId, 0, null, 'neutral');
   const freq = new Map<ReharmStrategy, number>();
@@ -95,7 +111,10 @@ function recommendedTensionStatesFor(chordTypeId: string): TensionState[] {
   return ['primary', 'tension', 'resolve', 'recover'];
 }
 
-function buildVaultChordRuleSet(row: TonalityVaultChordRow): VaultChordRuleSet | null {
+function buildVaultChordRuleSet(
+  row: TonalityVaultChordRow,
+  phrasePick: (chordTypeId: string) => VaultChordRuleSet['phraseTemplates']
+): VaultChordRuleSet | null {
   const spec = selectQuadratonicMelodySpec(row.chordType);
   if (!spec) return null;
 
@@ -117,7 +136,7 @@ function buildVaultChordRuleSet(row: TonalityVaultChordRow): VaultChordRuleSet |
     melodicTriadDegrees,
     primaryQuadratonic,
     tensionHierarchy: [...row.tensionHierarchy],
-    phraseTemplates: phraseTemplatesForChord(row.chordType),
+    phraseTemplates: phrasePick(row.chordType),
     beatAffinityProfile: buildBeatAffinityProfile(row.chordType),
     guitarGripCount: grips.length,
     reharmStrategies: topReharmStrategies(row.chordType, 3),
@@ -127,11 +146,16 @@ function buildVaultChordRuleSet(row: TonalityVaultChordRow): VaultChordRuleSet |
 
 /**
  * One complete ruleset per Tonality Vault chord type (melodic triad, quadratonic, beats, grips, reharm, arc hints).
+ * Pass **`songwriterId: 'thelonious_monk'`** for angular/displaced phrase template bias (Monk research parity).
  */
-export function buildAllVaultChordRuleSets(): VaultChordRuleSet[] {
+export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): VaultChordRuleSet[] {
+  const phrasePick =
+    opts?.songwriterId === 'thelonious_monk'
+      ? phraseTemplatesForChordTheloniousMonk
+      : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
-    const rs = buildVaultChordRuleSet(row);
+    const rs = buildVaultChordRuleSet(row, phrasePick);
     if (rs) out.push(rs);
   }
   return out;

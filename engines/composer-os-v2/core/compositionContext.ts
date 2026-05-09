@@ -1338,6 +1338,13 @@ export interface GenerationMetadata {
       lushExtensionStripped: number;
     };
     deviceReceipts?: string[];
+    /** Mirrors `MONK_SLICE_PARAMETERS` numeric fields (`theloniousMonkSlice.ts`) for receipts / UI. */
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+    };
   };
   theloniousMonkSliceReceipt?: string;
   theloniousMonkEffectiveHarmonyBars?: string[];

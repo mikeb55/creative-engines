@@ -20,6 +20,7 @@ export function runTheloniousMonkSliceSmokeTests(): { name: string; ok: boolean 
   const receipt = md?.theloniousMonkSliceReceipt ?? '';
   const eff = md?.theloniousMonkEffectiveHarmonyBars;
 
+  const sp = diag?.sliceParameters;
   out.push({
     ok:
       r.success &&
@@ -28,7 +29,11 @@ export function runTheloniousMonkSliceSmokeTests(): { name: string; ok: boolean 
       (diag?.barsConsidered ?? 0) >= 32 &&
       Array.isArray(eff) &&
       eff.length === 32 &&
-      receipt.includes('Thelonious Monk (angular harmony slice)'),
+      receipt.includes('Thelonious Monk (angular harmony slice)') &&
+      sp?.tritoneRate === 0.35 &&
+      sp?.susBias === 0.05 &&
+      sp?.chromaticMediantBias === 0.75 &&
+      sp?.staticDominantBias === 0.7,
     name: 'Thelonious Monk slice: golden path + angular harmony diagnostics receipt',
   });
 
