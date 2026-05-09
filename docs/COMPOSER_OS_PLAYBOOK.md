@@ -661,6 +661,67 @@ No dedicated primary **`applyRadioheadStyleSurface`** — texture comes from **d
 
 ---
 
+## New Composer Slices — Shipped (Session 2)
+
+Five Song Mode / duo golden-path **harmony slices** landed in one engineering batch (slice modules under **`engines/composer-os-v2/core/song-mode/`**, golden-path barrels under **`core/goldenPath/`**, **`buildReharmLensConfig`**, **`SONGWRITER_CHORD_POOLS`**, **`buildAllVaultChordRuleSets`** phrase bias). Below: **git commit** for the slice integration, **phase / posture**, **reharm lens triad** (**tritoneRate**, **susBias**, **chromaticMediantBias** where applicable), **core device**, and **phrase templates** (research labels → vault / slice metadata).
+
+### `thelonious_monk` — **dac9251f**
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | No era phase — angular Monk grammar (**`MONK_SLICE_PARAMETERS`**). |
+| **Tritone / sus / chromatic mediant** | **0.35** / **0.05** / **0.75** |
+| **Core device** | ♭9 dominants, tonic **maj7/#11**, strip lush stacks, deferred cadence (**`tm:*`** receipts). |
+| **Phrase templates** | **`angular`**, **`displaced`** (`vaultPhraseTemplates` / vault **`phraseTemplatesForChordTheloniousMonk`**). |
+
+Primary implementation: **`theloniousMonkSlice.ts`**, **`precomputeTheloniousMonkEffectiveHarmonyBars`** → **`theloniousMonkEffectiveHarmonyBars`**. Aliases **`monk`**, **`thelonious`**.
+
+### `john_coltrane` — **3da53e5f**
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`coltranePhase`**: **`changes`** (dense third-cycle, default) vs **`modal`** (long vamp / quartal) — **`COLTRANE_SLICE_PARAMETERS.defaultPhase`** **`changes`**. |
+| **Tritone / sus / chromatic mediant** | **0.15** / **0.5** / **0.95** |
+| **Core device** | Three-tonic augmented cycle + optional modal quartal pedals (**`jc:*`**). |
+| **Phrase templates** | **`ascending_thirds`**, **`quartal`** (`vaultPhraseTemplates`; vault **`phraseTemplatesForChordJohnColtrane`**). |
+
+Primary implementation: **`johnColtraneSlice.ts`**, **`precomputeJohnColtraneEffectiveHarmonyBars`** → **`johnColtraneEffectiveHarmonyBars`**.
+
+### `herbie_hancock` — **bcffe159**
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`hancockPhase`**: **`modal`** (default) · **`funk`** · **`vsop`** — **`HANCOCK_SLICE_PARAMETERS.defaultPhase`** **`modal`**. |
+| **Tritone / sus / chromatic mediant** | **0.15** / **0.85** / **0.6** |
+| **Core device** | Quartal / sus9 modal pedals, side-slip chromaticism, fusion upper-structure (**`hh:*`**). |
+| **Phrase templates** | Quartal / modal pedal / side-slip — **`phraseTemplatesForChordHerbieHancock`** (no bebop-insertion sweep). |
+
+Primary implementation: **`herbieHancockSlice.ts`**, barrel **`goldenPath/herbie_hancock.ts`**, **`precomputeHerbieHancockEffectiveHarmonyBars`** → **`herbieHancockEffectiveHarmonyBars`**.
+
+### `wayne_shorter` — **ce688b70**
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`shorterPhase`**: **`hardbop+`** · **`mid60s`** (default) · **`fusion`** · **`late`** — **`SHORTER_SLICE_PARAMETERS.defaultPhase`** **`mid60s`**. |
+| **Tritone / sus / chromatic mediant** | **0.2** / **0.45** / **0.85** |
+| **Core device** | Chromatic mediant root motion + chord-scale networks; chromatic wedge (**`ws:*`** / **`ws:wedge:*`**). |
+| **Phrase templates** | **`floating`** / **`mediant_chain`** / **`wedge_pass`** (mapped in vault via **`phraseTemplatesForChordWayneShorter`**). |
+
+Primary implementation: **`wayneShorterSlice.ts`**, barrel **`goldenPath/wayne_shorter.ts`**, **`precomputeWayneShorterEffectiveHarmonyBars`** → **`wayneShorterEffectiveHarmonyBars`**.
+
+### `andrew_hill` — **db2a3183**
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`hillMode`**: **`postbop_free`** (default) vs **`modal_cluster`** — **`HILL_SLICE_PARAMETERS.defaultMode`**. |
+| **Tritone / sus / chromatic mediant** | **0.4** / **0.15** / **0.7** |
+| **Core device** | Hybrid cluster voicings over pitch fields; loose function (**`ah:*`**). |
+| **Phrase templates** | **`angular`** / **`cluster_field`** / **`displaced`** (**`phraseTemplatesForChordAndrewHill`**). |
+
+Primary implementation: **`andrewHillSlice.ts`**, barrel **`goldenPath/andrew_hill.ts`**, **`precomputeAndrewHillEffectiveHarmonyBars`** → **`andrewHillEffectiveHarmonyBars`**.
+
+---
+
 ## Thelonious Monk (`thelonious_monk`) — Song Mode harmony slice
 
 ### Signature style & key techniques
