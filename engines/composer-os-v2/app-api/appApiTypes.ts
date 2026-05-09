@@ -18,11 +18,13 @@ import type {
   ImportHarmonyMode,
   JerryGoldsmithContextMode,
   JohnWilliamsContextMode,
+  JoniMitchellPhaseMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
   PrinceContextMode,
   SteveReichProcessMode,
+  ThadJonesPhaseMode,
 } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
@@ -332,6 +334,10 @@ export interface GenerateRequest {
    * Forward-compatible; omitted on legacy clients.
    */
   styleGenerationContextKeys?: string[];
+  /** Song Mode / Thad Jones (`thadJonesSlice.ts`). Default **`swing`** in engine when omitted. */
+  thadPhase?: ThadJonesPhaseMode;
+  /** Song Mode / Joni Mitchell (`joniMitchellSlice.ts`). Default **`folk_modal`** in engine when omitted. */
+  joniPhase?: JoniMitchellPhaseMode;
 }
 
 export interface ValidationSummary {
@@ -605,6 +611,15 @@ export interface OutputEntry {
   mariaSchneiderAntiElaborationGuards?: GenerationMetadata['mariaSchneiderAntiElaborationGuards'];
   schneiderPedalBars?: GenerationMetadata['schneiderPedalBars'];
   schneiderColorStackBars?: GenerationMetadata['schneiderColorStackBars'];
+  thadPhase?: GenerationMetadata['thadPhase'];
+  thadResolvedPhase?: GenerationMetadata['thadResolvedPhase'];
+  thadJonesDiagnostics?: GenerationMetadata['thadJonesDiagnostics'];
+  thadJonesDeviceReceipts?: GenerationMetadata['thadJonesDeviceReceipts'];
+  thadJonesSliceReceipt?: GenerationMetadata['thadJonesSliceReceipt'];
+  thadJonesEffectiveHarmonyBars?: GenerationMetadata['thadJonesEffectiveHarmonyBars'];
+  thadJonesShoutBars?: GenerationMetadata['thadJonesShoutBars'];
+  joniPhase?: GenerationMetadata['joniPhase'];
+  joniResolvedPhase?: GenerationMetadata['joniResolvedPhase'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   bacharachDiagnostics?: GenerationMetadata['bacharachDiagnostics'];
   bacharachDeviceReceipts?: GenerationMetadata['bacharachDeviceReceipts'];

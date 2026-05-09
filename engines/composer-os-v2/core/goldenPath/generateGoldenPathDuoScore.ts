@@ -235,6 +235,12 @@ import {
   precomputeMariaSchneiderEffectiveHarmonyBars,
 } from './mariaSchneiderSlice';
 import {
+  accumulateThadJonesHarmonyDiagnostics,
+  createThadJonesHarmonyAccumulator,
+  finalizeThadJonesMetadata,
+  precomputeThadJonesEffectiveHarmonyBars,
+} from './thad_jones';
+import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
@@ -2195,6 +2201,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'flowing',
       };
+    case 'thad_jones':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: 0.14,
+        offbeatBias: 0.58,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'syncopated',
+      };
     case 'pat_metheny':
       return {
         phraseIntentBias: 'ascending',
@@ -2470,6 +2484,7 @@ function buildGuitarPart(
   const isSongwriterFelaKuti = genMeta?.songwriterStyleId === 'fela_kuti';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
+  const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
@@ -2494,6 +2509,7 @@ function buildGuitarPart(
   const felaKutiAccum = createFelaKutiHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
+  const tjAccum = createThadJonesHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -2603,6 +2619,9 @@ function buildGuitarPart(
   }
   if (isSongwriterMariaSchneider && isDuoGoldenPath) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterThadJones && isDuoGoldenPath) {
+    precomputeThadJonesEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -2906,6 +2925,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         msAccum
+      );
+    }
+    if (isSongwriterThadJones) {
+      accumulateThadJonesHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        tjAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -3614,6 +3640,10 @@ function buildGuitarPart(
 
   if (isSongwriterMariaSchneider && context.generationMetadata) {
     finalizeMariaSchneiderMetadata(context.generationMetadata, msAccum);
+  }
+
+  if (isSongwriterThadJones && context.generationMetadata) {
+    finalizeThadJonesMetadata(context.generationMetadata, tjAccum);
   }
 
   if (isSongwriterBacharach && context.generationMetadata) {

@@ -316,6 +316,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return deEff[barIndex - 1]!;
   }
 
+  const tjEff = meta?.thadJonesEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'thad_jones' &&
+    Array.isArray(tjEff) &&
+    tjEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return tjEff[barIndex - 1]!;
+  }
+
   /**
    * Miles Davis: `precomputeMilesDavisEffectiveHarmonyBars` applies modal / space / electric vamp devices — receipts **`md:*`**.
    * After precompute, `milesDavisEffectiveHarmonyBars` is full-form and authoritative.

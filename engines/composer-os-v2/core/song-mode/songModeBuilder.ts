@@ -2060,6 +2060,58 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
     ],
   },
+  /** Thad Jones — nonachord-heavy big-band rows (`THAD_JONES_SLICE_PARAMETERS`). */
+  thad_jones_swing: {
+    verse: [
+      ['Cmaj13(#11)', 'Cm9', 'F13', 'Bb13'],
+      ['Bbmaj9(11,13)', 'G7alt', 'Cm9', 'F13(b9)'],
+    ],
+    chorus: [
+      ['Dm9', 'G13(#11)', 'Cmaj9(11,13)', 'A7(b9,b13)'],
+      ['Fm9', 'Bb13', 'Ebmaj13(#11)', 'C7alt'],
+    ],
+    bridge: [
+      ['Em9', 'A13', 'Dmaj13(#11)', 'B7alt'],
+      ['Gm9', 'C13(#11)', 'Fmaj9(11,13)', 'D7(b9,#11,13)'],
+    ],
+    pre_chorus: [
+      ['Am9', 'D13', 'Gmaj13(#11)', 'E7alt'],
+    ],
+  },
+  thad_jones_ballad: {
+    verse: [
+      ['Ebmaj13(#11)', 'Cm9', 'Fm9', 'Bb13'],
+      ['Dbmaj9(11,13)', 'Bb9', 'Ebmaj9', 'Cm9'],
+    ],
+    chorus: [
+      ['Abmaj13', 'Fm9', 'Bbm9', 'Eb13'],
+      ['Gbmaj9(#11)', 'Eb9', 'Abmaj13(#11)', 'Fm9'],
+    ],
+    bridge: [
+      ['Gm9', 'C13', 'Fmaj13(#11)', 'Dm9'],
+      ['Am9', 'D13', 'Gmaj13(#11)', 'Em9'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'G13', 'Cmaj13(#11)', 'Am9'],
+    ],
+  },
+  thad_jones_groove: {
+    verse: [
+      ['G13(#11)', 'G13(#11)', 'C13', 'C13'],
+      ['F13(b9)', 'Bb13', 'Ebmaj13(#11)', 'Bb13'],
+    ],
+    chorus: [
+      ['D7alt', 'G13', 'Cmaj13(#11)', 'A7(b9,b13)'],
+      ['Bb13', 'Eb13', 'Abmaj13', 'F13'],
+    ],
+    bridge: [
+      ['E7alt', 'A13', 'Dmaj13(#11)', 'B7alt'],
+      ['C13', 'F13', 'Bbmaj13(#11)', 'G13'],
+    ],
+    pre_chorus: [
+      ['Am9', 'D13', 'G13', 'G13'],
+    ],
+  },
   bernard_herrmann_thriller: {
     verse: [
       ['Cm', 'Db/C', 'Cm', 'Ab'],
@@ -2676,6 +2728,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'steve_reich_phasing' : tier === 1 ? 'steve_reich_additive' : 'steve_reich_cycle';
+  }
+  if (songwriterId === 'thad_jones') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'thad_jones_swing' : tier === 1 ? 'thad_jones_ballad' : 'thad_jones_groove';
   }
   if (songwriterId === 'hans_zimmer') {
     const tier = Math.abs(seed) % 3;

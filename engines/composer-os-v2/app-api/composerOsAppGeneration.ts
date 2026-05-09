@@ -1104,6 +1104,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'angelo_badalamenti'
       ? { angeloBadalamentiContext: req.angeloBadalamentiContext }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'thad_jones'
+      ? { thadPhase: req.thadPhase }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'joni_mitchell'
+      ? { joniPhase: req.joniPhase }
+      : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() as FormId } : {}),
     ...(songModeCompiledSectionForm.length > 0 ? { songModeCompiledSectionForm } : {}),
   };
@@ -1233,6 +1239,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const felaKutiLockedTruth = mdLockedTruth?.felaKutiEffectiveHarmonyBars;
   const cpPorterLockedTruth = mdLockedTruth?.colePorterEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
+  const tjLockedTruth = mdLockedTruth?.thadJonesEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
@@ -1392,6 +1399,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 msLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? msLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'thad_jones' &&
+                                Array.isArray(tjLockedTruth) &&
+                                tjLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                tjLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? tjLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
                             Array.isArray(baLockedTruth) &&
                             baLockedTruth.length === tbLockedTruth &&
@@ -1650,6 +1663,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const deDisk = mdDisk?.dukeEllingtonEffectiveHarmonyBars;
     const msDisk = mdDisk?.mariaSchneiderEffectiveHarmonyBars;
+    const tjDisk = mdDisk?.thadJonesEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -1741,6 +1755,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                       locked &&
                                       msDisk.length === locked.length
                                     ? msDisk
+                                    : mdDisk?.songwriterStyleId === 'thad_jones' &&
+                                        Array.isArray(tjDisk) &&
+                                        tjDisk.length === gp.context.form.totalBars &&
+                                        locked &&
+                                        tjDisk.length === locked.length
+                                      ? tjDisk
                                     : mdDisk?.songwriterStyleId === 'frank_zappa' &&
                                     Array.isArray(fzDisk) &&
                                     fzDisk.length === gp.context.form.totalBars &&
@@ -1830,6 +1850,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       joniMitchellTuningPatternByBar: gp.context.generationMetadata.joniMitchellTuningPatternByBar,
       joniMitchellModalFieldLockLengthBars: gp.context.generationMetadata.joniMitchellModalFieldLockLengthBars,
       joniMitchellSliceMeta: gp.context.generationMetadata.joniMitchellSliceMeta,
+      joniPhase: gp.context.generationMetadata.joniPhase,
+      joniResolvedPhase: gp.context.generationMetadata.joniResolvedPhase,
+      thadPhase: gp.context.generationMetadata.thadPhase,
+      thadResolvedPhase: gp.context.generationMetadata.thadResolvedPhase,
+      thadJonesDiagnostics: gp.context.generationMetadata.thadJonesDiagnostics,
+      thadJonesDeviceReceipts: gp.context.generationMetadata.thadJonesDeviceReceipts,
+      thadJonesSliceReceipt: gp.context.generationMetadata.thadJonesSliceReceipt,
+      thadJonesEffectiveHarmonyBars: gp.context.generationMetadata.thadJonesEffectiveHarmonyBars,
+      thadJonesShoutBars: gp.context.generationMetadata.thadJonesShoutBars,
       sonicYouthDiagnostics: gp.context.generationMetadata.sonicYouthDiagnostics,
       sonicYouthDeviceReceipts: gp.context.generationMetadata.sonicYouthDeviceReceipts,
       sonicYouthSliceReceipt: gp.context.generationMetadata.sonicYouthSliceReceipt,

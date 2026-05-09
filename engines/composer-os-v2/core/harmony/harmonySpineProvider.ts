@@ -67,6 +67,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'hans_zimmer', effKey: 'hansZimmerEffectiveHarmonyBars', sliceId: 'hans_zimmer' },
   { match: (m) => m?.songwriterStyleId === 'angelo_badalamenti', effKey: 'angeloBadalamentiEffectiveHarmonyBars', sliceId: 'angelo_badalamenti' },
   { match: (m) => m?.songwriterStyleId === 'duke_ellington', effKey: 'dukeEllingtonEffectiveHarmonyBars', sliceId: 'duke_ellington' },
+  { match: (m) => m?.songwriterStyleId === 'thad_jones', effKey: 'thadJonesEffectiveHarmonyBars', sliceId: 'thad_jones' },
   { match: (m) => m?.songwriterStyleId === 'miles_davis', effKey: 'milesDavisEffectiveHarmonyBars', sliceId: 'miles_davis' },
   { match: (m) => m?.songwriterStyleId === 'bartok', effKey: 'bartokEffectiveHarmonyBars', sliceId: 'bartok' },
   { match: (m) => m?.songwriterStyleId === 'gershwin', effKey: 'gershwinEffectiveHarmonyBars', sliceId: 'gershwin' },

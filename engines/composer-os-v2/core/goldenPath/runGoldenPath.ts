@@ -21,11 +21,13 @@ import type {
   ImportHarmonyMode,
   JerryGoldsmithContextMode,
   JohnWilliamsContextMode,
+  JoniMitchellPhaseMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
   PrinceContextMode,
   SteveReichProcessMode,
+  ThadJonesPhaseMode,
 } from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
@@ -1163,6 +1165,10 @@ export interface RunGoldenPathOptions {
   philipGlassContext?: PhilipGlassContextMode;
   /** Song Mode / Steve Reich: pitch-field process (`steveReichSlice.ts`). Default **`phasing`** when omitted. */
   reichProcess?: SteveReichProcessMode;
+  /** Song Mode / Thad Jones: big-band phase (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
+  thadPhase?: ThadJonesPhaseMode;
+  /** Song Mode / Joni Mitchell: sus/modal phase (`joniMitchellSlice.ts`). Default **`folk_modal`** when omitted. */
+  joniPhase?: JoniMitchellPhaseMode;
   hansZimmerContext?: HansZimmerContextMode;
   angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /** Optional era hint (e.g. `stylePairing.era`); copied to `generationMetadata.era` when set. */
@@ -1837,6 +1843,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'steve_reich'
         ? { reichProcess: options.reichProcess ?? 'phasing' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'thad_jones'
+        ? { thadPhase: options.thadPhase ?? 'swing' }
+        : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'joni_mitchell'
+        ? { joniPhase: options.joniPhase ?? 'folk_modal' }
+        : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'hans_zimmer'
         ? { hansZimmerContext: options.hansZimmerContext ?? 'hz:epic_mode' }
         : {}),
@@ -2421,6 +2433,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const dbEx = mdEx?.debussyEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
+  const tjEx = mdEx?.thadJonesEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
   const btEx = mdEx?.beatlesEffectiveHarmonyBars;
@@ -2493,7 +2506,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                 ? dbEx
                                                 : mdEx?.songwriterStyleId === 'duke_ellington' && Array.isArray(deEx) && deEx.length === tbEx
                                                   ? deEx
-                                                  : mdEx?.songwriterStyleId === 'miles_davis' &&
+                                                  : mdEx?.songwriterStyleId === 'thad_jones' && Array.isArray(tjEx) && tjEx.length === tbEx
+                                                    ? tjEx
+                                                    : mdEx?.songwriterStyleId === 'miles_davis' &&
                                                       Array.isArray(mdMilesEx) &&
                                                       mdMilesEx.length === tbEx
                                                     ? mdMilesEx
@@ -2645,6 +2660,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
   const dbLt = mdLt?.debussyEffectiveHarmonyBars;
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
+  const tjLt = mdLt?.thadJonesEffectiveHarmonyBars;
   const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const bhHerrLt = mdLt?.bernardHerrmannEffectiveHarmonyBars;
@@ -2711,8 +2727,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                     ? dbLt
                                                     : mdLt?.songwriterStyleId === 'duke_ellington' && Array.isArray(deLt) && deLt.length === tbLt
                                                       ? deLt
-                                                      : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
-                                                        ? msLt
+                                                      : mdLt?.songwriterStyleId === 'thad_jones' && Array.isArray(tjLt) && tjLt.length === tbLt
+                                                        ? tjLt
+                                                        : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
+                                                          ? msLt
                                                         : mdLt?.songwriterStyleId === 'bernard_herrmann' &&
                                                             Array.isArray(bhHerrLt) &&
                                                             bhHerrLt.length === tbLt

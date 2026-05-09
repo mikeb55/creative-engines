@@ -3,10 +3,34 @@
  * Modal fields, sus/add9 colour, non-functional harmony — layered on locked harmony.
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, JoniMitchellPhaseMode } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+
+/** Research defaults — `buildReharmLensConfig('joni_mitchell')`, sus-first pitch-field grammar. */
+export const JONI_MITCHELL_SLICE_PARAMETERS = {
+  coreDevice: 'sus_to_sus_motion' as const,
+  defaultPhase: 'folk_modal' as JoniMitchellPhaseMode,
+  phaseComment:
+    "'folk_modal' = early Mixolydian/Dorian sus clusters | 'jazz_folk' = Court/Spark ii–V + sus hybrid | 'modal_jazz' = Hejira long vamps + floating centres",
+  tritoneRate: 0.05,
+  susBias: 0.9,
+  susBiasComment: '// Joni: never stay on sus too long? She does exactly that',
+  chromaticMediantBias: 0.15,
+  staticDominantBias: 0.65,
+  pitchFieldAnchor: true,
+  pitchFieldComment: '// melody chooses harmony, not function',
+  susResolutionRate: 0.15,
+  tuningFieldComment: '// emulates open-string tuning interval logic for non-guitar instruments',
+  openStringSimulation: true,
+} as const;
+
+function resolveJoniPhase(genMeta: GenerationMetadata & Record<string, unknown>): JoniMitchellPhaseMode {
+  const raw = genMeta.joniPhase as JoniMitchellPhaseMode | undefined;
+  if (raw === 'folk_modal' || raw === 'jazz_folk' || raw === 'modal_jazz') return raw;
+  return JONI_MITCHELL_SLICE_PARAMETERS.defaultPhase;
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -294,6 +318,10 @@ export function precomputeJoniMitchellEffectiveHarmonyBars(context: CompositionC
   };
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const seed = context.seed;
+
+  genMeta.joniResolvedPhase = resolveJoniPhase(genMeta);
+  genMeta.pitchFieldAnchor = JONI_MITCHELL_SLICE_PARAMETERS.pitchFieldAnchor;
+  genMeta.openStringSimulation = JONI_MITCHELL_SLICE_PARAMETERS.openStringSimulation;
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {

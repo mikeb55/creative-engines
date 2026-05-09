@@ -1757,6 +1757,7 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   gil_evans: 'gil_evans',
   evans: 'gil_evans',
   thad_jones: 'thad_jones',
+  thad: 'thad_jones',
   sammy_nestico: 'sammy_nestico',
   quincy_jones: 'quincy_jones',
   quincy_jones_film: 'quincy_jones_film',

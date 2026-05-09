@@ -131,6 +131,20 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
     chromaticMediantBias: 0.58,
     poolSampling: true,
   },
+  thad_jones: {
+    displayName: 'Thad Jones',
+    tritoneRate: 0.45,
+    susBias: 0.1,
+    chromaticMediantBias: 0.3,
+    poolSampling: true,
+  },
+  joni_mitchell: {
+    displayName: 'Joni Mitchell',
+    tritoneRate: 0.05,
+    susBias: 0.9,
+    chromaticMediantBias: 0.15,
+    poolSampling: true,
+  },
   gil_evans: {
     displayName: 'Gil Evans',
     tritoneRate: 0.32,

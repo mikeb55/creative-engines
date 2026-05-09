@@ -343,6 +343,14 @@ export function apiGenerate(
         body.milesDavisContext === 'electric_1970'
           ? body.milesDavisContext
           : undefined,
+      thadPhase:
+        body.thadPhase === 'swing' || body.thadPhase === 'ballad' || body.thadPhase === 'groove'
+          ? body.thadPhase
+          : undefined,
+      joniPhase:
+        body.joniPhase === 'folk_modal' || body.joniPhase === 'jazz_folk' || body.joniPhase === 'modal_jazz'
+          ? body.joniPhase
+          : undefined,
       bernardHerrmannContext:
         body.bernardHerrmannContext === 'bh:thriller_mode' ||
         body.bernardHerrmannContext === 'bh:romantic_mode' ||

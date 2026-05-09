@@ -103,6 +103,35 @@ export function phraseTemplatesForChordJohnColtrane(chordTypeId: string): VaultC
   return [...out];
 }
 
+/** Nonachord stacks / soli vs shout — map research labels onto Vault templates (`THAD_JONES_SLICE_PARAMETERS`). */
+export function phraseTemplatesForChordThadJones(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  void chordTypeId;
+  const out = new Set<VaultChordRuleSet['phraseTemplates'][number]>();
+  out.add('bebop-insertion');
+  out.add('tension-climb');
+  out.add('dyad-bounce');
+  out.add('quadratonic-enclosure');
+  out.add('side_slip');
+  return [...out];
+}
+
+/** Sus clusters / modal vap — no bebop-insertion (`JONI_MITCHELL_SLICE_PARAMETERS`). */
+export function phraseTemplatesForChordJoniMitchellVault(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  const id = chordTypeId;
+  const out = new Set<VaultChordRuleSet['phraseTemplates'][number]>();
+  out.add('quartal');
+  out.add('modal_pedal');
+  out.add('side_slip');
+  out.add('liquid-resolution');
+  out.add('dyad-bounce');
+  out.add('triad-sweep');
+  out.delete('bebop-insertion');
+  if (/sus/.test(id)) {
+    out.add('quadratonic-enclosure');
+  }
+  return [...out];
+}
+
 /** Pitch-field additive / phase drift / drone — no functional cadential sweep (`STEVE_REICH_SLICE_PARAMETERS`). */
 export function phraseTemplatesForChordSteveReich(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
   void chordTypeId;
@@ -239,7 +268,7 @@ function buildVaultChordRuleSet(
 
 /**
  * One complete ruleset per Tonality Vault chord type (melodic triad, quadratonic, beats, grips, reharm, arc hints).
- * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** / **`'herbie_hancock'`** / **`'wayne_shorter'`** / **`'andrew_hill'`** / **`'steve_reich'`** for composer-specific phrase template bias.
+ * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** / **`'herbie_hancock'`** / **`'wayne_shorter'`** / **`'andrew_hill'`** / **`'steve_reich'`** / **`'thad_jones'`** / **`'joni_mitchell'`** for composer-specific phrase template bias.
  */
 export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): VaultChordRuleSet[] {
   const phrasePick =
@@ -257,7 +286,11 @@ export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): Va
                 ? phraseTemplatesForChordJimHall
                 : opts?.songwriterId === 'steve_reich'
                   ? phraseTemplatesForChordSteveReich
-                  : phraseTemplatesForChord;
+                  : opts?.songwriterId === 'thad_jones'
+                    ? phraseTemplatesForChordThadJones
+                    : opts?.songwriterId === 'joni_mitchell'
+                      ? phraseTemplatesForChordJoniMitchellVault
+                      : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
     const rs = buildVaultChordRuleSet(row, phrasePick);

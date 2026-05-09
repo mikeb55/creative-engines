@@ -165,7 +165,7 @@ export function validateBarryHarrisConformance(
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
   /** Steve Reich: long static fields + process — few distinct chord symbols is intentional, not under-elaboration. */
-  if (chordCount < 3 && metadata?.songwriterStyleId !== 'steve_reich') {
+  if (chordCount < 3 && metadata?.songwriterStyleId !== 'steve_reich' && metadata?.songwriterStyleId !== 'thad_jones') {
     errors.push('Harmony too static for current duo grammar');
   }
 

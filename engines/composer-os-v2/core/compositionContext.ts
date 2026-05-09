@@ -79,6 +79,12 @@ export type JimHallMode = 'duo' | 'trio' | 'solo';
 /** Steve Reich — pitch-field process engine (`steveReichSlice.ts`). Default **`phasing`**. */
 export type SteveReichProcessMode = 'phasing' | 'additive' | 'cycle';
 
+/** Thad Jones — big-band extended common-practice slice (`thadJonesSlice.ts`). Default **`swing`**. */
+export type ThadJonesPhaseMode = 'swing' | 'ballad' | 'groove';
+
+/** Joni Mitchell — sus/modal pitch-field slice (`joniMitchellSlice.ts`). Default **`folk_modal`**. */
+export type JoniMitchellPhaseMode = 'folk_modal' | 'jazz_folk' | 'modal_jazz';
+
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
@@ -873,6 +879,38 @@ export interface GenerationMetadata {
   ellingtonCallResponseMap?: Record<number, 'call' | 'response'>;
   /** Bars tagged by shout-chorus pass (1-based). */
   ellingtonShoutBars?: number[];
+  /** Thad Jones Song Mode slice posture (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
+  thadPhase?: ThadJonesPhaseMode;
+  /** Effective Thad phase after resolve. */
+  thadResolvedPhase?: ThadJonesPhaseMode;
+  thadJonesDiagnostics?: {
+    songwriterId: 'thad_jones';
+    thadResolvedPhase?: ThadJonesPhaseMode;
+    sliceParameters?: {
+      nonachordBias: number;
+      sideSlipRate: number;
+      shoutAlterationMultiplier: number;
+      bluesInflectionBias: number;
+      defaultPhase: ThadJonesPhaseMode;
+    };
+    barsConsidered: number;
+    nonachordTouches: number;
+    shoutTouches: number;
+    dominantAlterTouches: number;
+    deviceReceipts?: string[];
+  };
+  thadJonesSliceReceipt?: string;
+  thadJonesEffectiveHarmonyBars?: string[];
+  thadJonesDeviceReceipts?: string[];
+  /** Shout region bars (1-based), big-band vertical density. */
+  thadJonesShoutBars?: number[];
+  /** Joni Mitchell Song Mode slice posture (`joniMitchellSlice.ts`). Default **`folk_modal`** when omitted. */
+  joniPhase?: JoniMitchellPhaseMode;
+  joniResolvedPhase?: JoniMitchellPhaseMode;
+  /** Melody-first harmony anchor (`JONI_MITCHELL_SLICE_PARAMETERS`). */
+  pitchFieldAnchor?: boolean;
+  /** Pedal common-tone emulation across changes. */
+  openStringSimulation?: boolean;
   /** Miles Davis (modal / space / electric vamp) — slice diagnostics + effective harmony. */
   milesDavisDiagnostics?: {
     songwriterId: 'miles_davis';

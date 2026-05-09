@@ -141,6 +141,15 @@ export function writeOutputManifest(
     joniMitchellTuningPatternByBar?: GenerationMetadata['joniMitchellTuningPatternByBar'];
     joniMitchellModalFieldLockLengthBars?: GenerationMetadata['joniMitchellModalFieldLockLengthBars'];
     joniMitchellSliceMeta?: GenerationMetadata['joniMitchellSliceMeta'];
+    joniPhase?: GenerationMetadata['joniPhase'];
+    joniResolvedPhase?: GenerationMetadata['joniResolvedPhase'];
+    thadPhase?: GenerationMetadata['thadPhase'];
+    thadResolvedPhase?: GenerationMetadata['thadResolvedPhase'];
+    thadJonesDiagnostics?: GenerationMetadata['thadJonesDiagnostics'];
+    thadJonesDeviceReceipts?: GenerationMetadata['thadJonesDeviceReceipts'];
+    thadJonesSliceReceipt?: GenerationMetadata['thadJonesSliceReceipt'];
+    thadJonesEffectiveHarmonyBars?: GenerationMetadata['thadJonesEffectiveHarmonyBars'];
+    thadJonesShoutBars?: GenerationMetadata['thadJonesShoutBars'];
     sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
     sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
     sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
@@ -389,6 +398,15 @@ export function writeOutputManifest(
     joniMitchellTuningPatternByBar: meta.joniMitchellTuningPatternByBar,
     joniMitchellModalFieldLockLengthBars: meta.joniMitchellModalFieldLockLengthBars,
     joniMitchellSliceMeta: meta.joniMitchellSliceMeta,
+    joniPhase: meta.joniPhase,
+    joniResolvedPhase: meta.joniResolvedPhase,
+    thadPhase: meta.thadPhase,
+    thadResolvedPhase: meta.thadResolvedPhase,
+    thadJonesDiagnostics: meta.thadJonesDiagnostics,
+    thadJonesDeviceReceipts: meta.thadJonesDeviceReceipts,
+    thadJonesSliceReceipt: meta.thadJonesSliceReceipt,
+    thadJonesEffectiveHarmonyBars: meta.thadJonesEffectiveHarmonyBars,
+    thadJonesShoutBars: meta.thadJonesShoutBars,
     sonicYouthDiagnostics: meta.sonicYouthDiagnostics,
     sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
     sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,
