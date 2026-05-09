@@ -8,7 +8,7 @@
 
 ## Thread summary — Reharm Panel (shipped)
 
-**Status:** Reharm preview — **fully shipped** (phases **A–D2** + **LOCK** reconciliation). **Smoke:** **234** / **0** PASS throughout. **Open TODOs (reharm):** none.
+**Status:** Reharm preview — **fully shipped** (phases **A–D2** + **LOCK** reconciliation + per-writer lens rows). **Smoke tier** (aggregate PASS rows) tracks **`runSmokeTests.ts`** — see repo **`CLAUDE.md`**. **Open TODOs (reharm):** none.
 
 | Phase | What shipped | Commit (short) |
 |-------|----------------|----------------|
@@ -17,8 +17,9 @@
 | **C** | Controller + GCE placeholder scoring | `1971a8d` |
 | **D1 + D2** | **`ReharmPanel`** UI + Apply path | `d2c9e55` |
 | **LOCK fix** | Apply arms one-shot **`harmonyMode: custom`** so the next request reparses wire before LOCK assert | `c26f91c` |
+| **`barry_harris` reharm lens** | **`buildReharmLensConfig('barry_harris')`** entry so vault / inspector lens matches Song Mode slice | `5cce9784` |
 
-**Span on main:** `dfdf71a` → `c26f91c`.
+**Span on main:** `dfdf71a` → `c26f91c` (panel phases); Barry Harris lens fix: **`5cce9784`**.
 
 ---
 
@@ -719,6 +720,60 @@ Primary implementation: **`wayneShorterSlice.ts`**, barrel **`goldenPath/wayne_s
 | **Phrase templates** | **`angular`** / **`cluster_field`** / **`displaced`** (**`phraseTemplatesForChordAndrewHill`**). |
 
 Primary implementation: **`andrewHillSlice.ts`**, barrel **`goldenPath/andrew_hill.ts`**, **`precomputeAndrewHillEffectiveHarmonyBars`** → **`andrewHillEffectiveHarmonyBars`**.
+
+---
+
+## New Composer Slices — Shipped (Session 3)
+
+Four Song Mode / duo golden-path **harmony slices** (plus infrastructure above): slice modules under **`engines/composer-os-v2/core/song-mode/`**, golden-path barrels **`core/goldenPath/{steve_reich,jim_hall,thad_jones,joni_mitchell}.ts`**, **`buildReharmLensConfig`**, **`SONGWRITER_CHORD_POOLS`**, **`buildAllVaultChordRuleSets`** (`phraseTemplatesForChordSteveReich` · **`JimHall`** · **`ThadJones`** · **`JoniMitchellVault`**). Commits on **`main`**:
+
+### `steve_reich` — **`8b9dfad57e3b26d1055886ee4880de97feec61d3`** (short: **`8b9dfad5`**)
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`reichProcess`**: **`phasing`** (default) · **`additive`** · **`cycle`** — **`STEVE_REICH_SLICE_PARAMETERS.defaultProcess`** **`phasing`**. |
+| **Tritone / sus / chromatic mediant** | **0.02** / **0.4** / **0.05** |
+| **Static dominant bias** | **0.95** (long pedal / slow functional motion in lens terms). |
+| **Core device** | **`pitch_field_process`** — one diatonic field + rhythmic/phasing process (**`sr:*`**); **not** Glass-like modular chord streams (**distinction:** Glass = more changes + sequences; Reich = single field + process). |
+| **Phrase templates (research → vault)** | **`additive_build` \| `phase_drift` \| `drone_field`** — vault prefers **`modal_pedal`**, **`quartal`**, **`triad-sweep`**, **`dyad-bounce`**, **`side_slip`**; strips **`bebop-insertion`** / **`liquid-resolution`**. |
+
+Primary implementation: **`steveReichSlice.ts`**, **`precomputeSteveReichEffectiveHarmonyBars`** → **`steveReichEffectiveHarmonyBars`**. **Closest neighbour:** **`philip_glass`** — Reich keeps **high pulse density under one field** vs Glass **modular harmonic rhythm**; **`arvo_part`** — tintinnabuli / silence grid vs Reich **rhythm-busy process**.
+
+### `jim_hall` — **`f516d22d56c51777e7214152a775dba93436fa6e`** (short: **`f516d22d`**)
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`jimHallMode`**: **`duo`** (default) · **`trio`** · **`solo`** — **`JIM_HALL_SLICE_PARAMETERS.defaultMode`** **`duo`**. |
+| **Tritone / sus / chromatic mediant** | **0.25** / **0.3** / **0.35** |
+| **Static dominant bias** | **0.3** |
+| **Core device** | **`interval_first_guitar`** — shell+one comping, warm extensions, inner-voice chromaticism as colour (**`jh:*`**). **`maxVoicingNotes`**: **3**. |
+| **Phrase templates (research → vault)** | **`sparse_interval` \| `inner_chromatic` \| `counter_melody`** — vault adds **`triad-sweep`**, **`dyad-bounce`**, **`quadratonic-enclosure`**, **`modal_pedal`**, **`side_slip`**, **`tension-climb`**; drops **`bebop-insertion`**. |
+
+Primary implementation: **`jimHallSlice.ts`**, **`precomputeJimHallEffectiveHarmonyBars`** → **`jimHallEffectiveHarmonyBars`**. **Closest neighbour:** **`pat_metheny`** — Hall is **sparse interval economy + duo counter-melody**; Metheny allows **wider voicing spread / ECM lyrical arcs**. **`bill_evans`** — Evans stacks **voice-led seventh colours**; Hall **limits vertical density** and favours **guide-tone + one colour**.
+
+### `thad_jones` — **`aa2172c30dd59aa9ebb60ec5e1c6dd089ea1d154`** (short: **`aa2172c3`**)
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`thadPhase`**: **`swing`** (default) · **`ballad`** · **`groove`** — **`THAD_JONES_SLICE_PARAMETERS.defaultPhase`** **`swing`**. |
+| **Tritone / sus / chromatic mediant** | **0.45** / **0.1** / **0.3** |
+| **Static dominant bias** | **0.2** |
+| **Core device** | **`extended_common_practice_big_band`** — nonachord / poly-chord default stacks; **SOLI** vs **SHOUT** regions (**`tj:*`**), side-slip on dominants, blues IVm borrow. **`nonachordBias`**: **0.7**. |
+| **Phrase templates (research → vault)** | **`nonachord_stack` \| `bebop_soli` \| `shout_chorus`** — vault **`phraseTemplatesForChordThadJones`**: **`bebop-insertion`**, **`tension-climb`**, **`dyad-bounce`**, **`quadratonic-enclosure`**, **`side_slip`**. |
+
+Primary implementation: **`thadJonesSlice.ts`**, barrel **`goldenPath/thad_jones.ts`**, **`precomputeThadJonesEffectiveHarmonyBars`** → **`thadJonesEffectiveHarmonyBars`**. **Closest neighbour:** **`duke_ellington`** — Duke maps **call/response / jungle / orchestral shout staging**; Thad defaults **bebop-era vertical density** (nonachord everyday) and **explicit SOLI vs SHOUT** alteration tiers.
+
+### `joni_mitchell` — **`35e18bdb1bba782ec20b85b47babfb88f45c286c`** (short: **`35e18bdb`**)
+
+| Field | Value |
+|-------|--------|
+| **Phase / posture** | **`joniPhase`**: **`folk_modal`** (default) · **`jazz_folk`** · **`modal_jazz`** — **`JONI_MITCHELL_SLICE_PARAMETERS.defaultPhase`** **`folk_modal`**. |
+| **Tritone / sus / chromatic mediant** | **0.05** / **0.9** / **0.15** |
+| **Static dominant bias** | **0.65** |
+| **Core device** | **`sus_to_sus_motion`** — tuning-derived pitch-field voicings; **`pitchFieldAnchor`**, **`openStringSimulation`**; sus resolves to plain triads mainly at cadences (**`susResolutionRate`** **0.15**). |
+| **Phrase templates (research → vault)** | **`sus_cluster` \| `modal_vamp` \| `melody_led`** — vault **`phraseTemplatesForChordJoniMitchellVault`**: **`quartal`**, **`modal_pedal`**, **`liquid-resolution`**, **`dyad-bounce`**, **`triad-sweep`**; **removes `bebop-insertion`**. |
+
+Primary implementation: **`joniMitchellSlice.ts`**, barrel **`goldenPath/joni_mitchell.ts`**, **`precomputeJoniMitchellEffectiveHarmonyBars`** → **`joniMitchellEffectiveHarmonyBars`**. **Closest neighbour:** **`radiohead`** — both use **modal colour + pedals**; Joni is **sus-first songwriter pitch-field / tuning metaphor** vs Radiohead **Phrygian pedal + rock chromatic insertion**. **`steve_reich`** — both can sit on fields; Joni is **harmony led by melody + sus grammar**, Reich by **additive/phasing process**.
 
 ---
 
