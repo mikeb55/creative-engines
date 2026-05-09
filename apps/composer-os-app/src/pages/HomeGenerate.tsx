@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback, useRef, Fragment, useMemo } from 'react';
 import type { CSSProperties } from 'react';
+import {
+  initPlayback,
+  parseXmlToPlaybackSequence,
+  pause,
+  play,
+  stop,
+} from '../playback';
+import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
@@ -1676,6 +1684,9 @@ export function HomeGenerate({
   const [pdfMusicXmlExportError, setPdfMusicXmlExportError] = useState<string | null>(null);
   const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
+  const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
+  const [playbackBeat, setPlaybackBeat] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
   const [compareRunBId, setCompareRunBId] = useState('');
@@ -1715,6 +1726,23 @@ export function HomeGenerate({
     if (!c.measures?.length && !c.title?.trim()) return null;
     return c;
   }, [iRealPaste]);
+
+  const handlePlay = () => {
+    if (!playbackSeq) return;
+    void initPlayback().then(() => {
+      void play(playbackSeq, (beat) => setPlaybackBeat(beat));
+    });
+    setIsPlaying(true);
+  };
+  const handlePause = () => {
+    pause();
+    setIsPlaying(false);
+  };
+  const handleStop = () => {
+    stop();
+    setIsPlaying(false);
+    setPlaybackBeat(0);
+  };
 
   const chordPastePreviewChart = useMemo((): ParsedChart | null => {
     try {
@@ -2640,6 +2668,14 @@ export function HomeGenerate({
           _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
           _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
         });
+        if (r.xml) {
+          const bpm = r.requestEcho?.bpm ?? 120;
+          const ts = iRealParsedChart?.timeSignature;
+          const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
+          setPlaybackSeq(parseXmlToPlaybackSequence(r.xml, bpm, timeSig));
+          setPlaybackBeat(0);
+          setIsPlaying(false);
+        }
         if (
           r.runManifest?.presetId === 'song_mode' &&
           (r.runManifest.songModeSectionShapingDiagnostics ||
@@ -2695,6 +2731,9 @@ export function HomeGenerate({
         const displayMessage = leadSheetHint ? `LeadSheet MusicXML import failed: ${msg}` : msg;
         setError(displayMessage);
         setResult(null);
+        setPlaybackSeq(null);
+        setPlaybackBeat(0);
+        setIsPlaying(false);
         notifyGenPhase('failed');
         onResult({
           record: {},
@@ -2773,6 +2812,7 @@ export function HomeGenerate({
       zappaSoloMidiHigh,
       zappaSoloDensity,
       zappaSoloDissonance,
+      iRealParsedChart,
       onResult,
     ]
   );
@@ -8875,6 +8915,16 @@ export function HomeGenerate({
               Open this file&apos;s folder
             </button>
           </div>
+          {playbackSeq && (
+            <div className="co-playback-controls">
+              <button type="button" onClick={isPlaying ? handlePause : handlePlay}>
+                {isPlaying ? 'Pause' : 'Play'}
+              </button>
+              <button type="button" onClick={handleStop} disabled={!isPlaying}>
+                Stop
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>
