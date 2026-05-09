@@ -6,6 +6,22 @@
 
 ---
 
+## Thread summary — Reharm Panel (shipped)
+
+**Status:** Reharm preview — **fully shipped** (phases **A–D2** + **LOCK** reconciliation). **Smoke:** **234** / **0** PASS throughout. **Open TODOs (reharm):** none.
+
+| Phase | What shipped | Commit (short) |
+|-------|----------------|----------------|
+| **A** | Range resolver + lens config | `dfdf71a` |
+| **B** | Sequence ranker | `580d536` |
+| **C** | Controller + GCE placeholder scoring | `1971a8d` |
+| **D1 + D2** | **`ReharmPanel`** UI + Apply path | `d2c9e55` |
+| **LOCK fix** | Apply arms one-shot **`harmonyMode: custom`** so the next request reparses wire before LOCK assert | `c26f91c` |
+
+**Span on main:** `dfdf71a` → `c26f91c`.
+
+---
+
 ## Fela Kuti — Tony Allen percussion
 
 Song Mode primary **`fela_kuti`** appends **Afrobeat Percussion** (**GM unpitched** staff, **`fela_afrobeat_drums`**) from **`tonyAllenPatterns.json`** via **`afrobeatRhythmEngine.ts`**. Posture **`zombie_1977` / `water_no_get_enemy` / `lady_1972`** maps to Tony Allen feels **`afrobeat` / `swing` / `straight`**; optional **`felaPercussionFeelOverride`** overrides. Metadata tag **`felaPercussionFeelTag`**: **`fk:straight`**, **`fk:swing`**, **`fk:afrobeat`**. **Auto** preview grid in the app stays tied to **zombie_1977** until posture is selectable in Generate — use the three-way feel toggle for a faithful preview.
@@ -1552,7 +1568,7 @@ This is a **personal instrument**, not a product feature in the marketing sense:
 | **`reharmController`** | **`executeReharm`** (preview scores), **`applyReharmAlternative`** (full-bar array splice). |
 | **`HomeGenerate` + `ReharmPanel`** | Collapsible UI; **Apply** updates **`chordProgressionText`** and calls **`generate()`**. |
 
-**LOCK reality (must-read):** Apply updates the **pasted wire**. Slice **effective harmony** metadata may still diverge until LOCK reconciliation is wired—see code **`// TODO: LOCK reconciliation needed`** at the apply site. Treat Apply as **authoritative paste edit**, then verify notation vs ear on the next export.
+**LOCK (after reconciliation):** **Apply** updates **`chordProgressionText`**; the following **Generate** uses **`harmonyMode: custom`** once when the UI would otherwise send **`custom_locked`**, so **`lockedHarmonyBarsRaw`** / **`parsedChordBars`** reparse from the edited text before **`assertScoreMatchesLockedHarmonyWire`**. Still verify notation vs ear in the host after export.
 
 ### The eleven lenses (preview checklist)
 
