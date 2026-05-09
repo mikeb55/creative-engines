@@ -73,6 +73,9 @@ export type ShorterPhase = 'hardbop+' | 'mid60s' | 'fusion' | 'late';
 /** Andrew Hill — loose post-bop form vs modal cluster field (`andrewHillSlice.ts`). Default **`postbop_free`**. */
 export type HillMode = 'postbop_free' | 'modal_cluster';
 
+/** Jim Hall guitar comp slice — duo shell voicing vs fuller trio vs solo spread (`jimHallSlice.ts`). Default **`duo`**. */
+export type JimHallMode = 'duo' | 'trio' | 'solo';
+
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
@@ -1292,6 +1295,17 @@ export interface GenerationMetadata {
   hillMode?: HillMode;
   /** Effective Hill mode after precompute (set when slice runs). */
   hillResolvedMode?: HillMode;
+  /** Jim Hall slice posture — resolver defaults to **`duo`** (`jimHallSlice.ts`). */
+  jimHallMode?: JimHallMode;
+  /** Effective Jim Hall mode after precompute (set when slice runs). */
+  jimHallResolvedMode?: JimHallMode;
+  /** Voicing / economy hints for comp exporter (max notes, shell rule). */
+  jimHallVoicingCap?: {
+    maxVoicingNotes: number;
+    harmonicEconomy: string;
+    guitarIntervalBias: boolean;
+    contrapuntalMode: boolean;
+  };
   /** Herbie Hancock — quartal/sus modal harmony slice (`HANCOCK_SLICE_PARAMETERS` + receipts **`hh:*`**). */
   herbieHancockDiagnostics?: {
     songwriterId: 'herbie_hancock';
@@ -1454,6 +1468,28 @@ export interface GenerationMetadata {
     lushExtensionStripped: number;
     twoFiveChainMuted: number;
   };
+  /** Jim Hall (interval-first guitar / shell+one duo harmony) — slice diagnostics + effective harmony. */
+  jimHallDiagnostics?: {
+    songwriterId: 'jim_hall';
+    jimHallResolvedMode?: JimHallMode;
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+      maxVoicingNotes: number;
+      innerVoiceChromaticRate: number;
+      defaultMode: JimHallMode;
+    };
+    barsConsidered: number;
+    warmExtensionTouches: number;
+    innerVoiceReceiptTouches: number;
+    shellEconomyTouches: number;
+    deviceReceipts?: string[];
+  };
+  jimHallSliceReceipt?: string;
+  jimHallEffectiveHarmonyBars?: string[];
+  jimHallDeviceReceipts?: string[];
   /** Charlie Parker (bebop ii–V–I / tritone sub / turnaround) — slice diagnostics + effective harmony. */
   charlieParkerDiagnostics?: {
     songwriterId: 'charlie_parker';
@@ -1468,39 +1504,6 @@ export interface GenerationMetadata {
   charlieParkerSliceReceipt?: string;
   charlieParkerEffectiveHarmonyBars?: string[];
   charlieParkerDeviceReceipts?: string[];
-  /** Frank Zappa (polytonal clash / metric displacement / xenochrony / style juxtaposition / through-composed) — slice diagnostics + effective harmony. */
-  frankZappaDiagnostics?: {
-    songwriterId: 'frank_zappa';
-    barsConsidered: number;
-    polytonalSlashHitRate: number;
-    alteredColourHitRate: number;
-    triadClashHitRate: number;
-    deviceFireCounts: { d1: number; d2: number; d3: number; d4: number; d5: number };
-    antiElaborationGuardTriggers: number;
-    antiElaborationGuards: { polytonalNoop: number; xenochronyNoop: number };
-    deviceReceipts?: string[];
-    zappaVoiceLeadingScore?: number;
-    zappaInnerVoiceNudgeBars?: number[];
-    zappaContraryMotionSections?: string[];
-    zappaImitationReceipt?: ZappaImitationReceipt;
-  };
-  frankZappaSliceReceipt?: string;
-  frankZappaEffectiveHarmonyBars?: string[];
-  frankZappaDeviceReceipts?: string[];
-  frankZappaAntiElaborationGuards?: { polytonalNoop: number; xenochronyNoop: number };
-  frankZappaEligibilityStats?: {
-    totalBars: number;
-    d1EligibleBars: number;
-    d2EligibleBars: number;
-    d3EligibleBars: number;
-    d4EligibleBars: number;
-    d5EligibleBars: number;
-    targetMeanFiresD1: number;
-    targetMeanFiresD2: number;
-    targetMeanFiresD3: number;
-    targetMeanFiresD4: number;
-    targetMeanFiresD5: number;
-  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

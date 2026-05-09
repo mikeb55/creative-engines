@@ -31,6 +31,7 @@ export interface SongwriterCompProfile {
 export const GUITAR_CENTRIC_SONGWRITER_IDS: ReadonlySet<SongwriterRuleId> = new Set([
   'beatles',
   'joni_mitchell',
+  'jim_hall',
   'richard_thompson',
   'paul_simon',
 ]);
@@ -119,6 +120,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   cuban_afro_cuban: 'keys',
   frank_zappa: 'keys',
   john_coltrane: 'keys',
+  jim_hall: 'guitar',
   antonio_carlos_jobim: 'keys',
   herbie_hancock: 'keys',
   henry_threadgill: 'keys',

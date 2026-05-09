@@ -295,6 +295,12 @@ import {
   precomputeAndrewHillEffectiveHarmonyBars,
 } from './andrew_hill';
 import {
+  accumulateJimHallHarmonyDiagnostics,
+  createJimHallHarmonyAccumulator,
+  finalizeJimHallMetadata,
+  precomputeJimHallEffectiveHarmonyBars,
+} from './jim_hall';
+import {
   accumulateCharlieParkerHarmonyDiagnostics,
   createCharlieParkerHarmonyAccumulator,
   finalizeCharlieParkerMetadata,
@@ -2400,6 +2406,7 @@ function buildGuitarPart(
   const isSongwriterTheloniousMonk = genMeta?.songwriterStyleId === 'thelonious_monk';
   const isSongwriterJohnColtrane = genMeta?.songwriterStyleId === 'john_coltrane';
   const isSongwriterAndrewHill = genMeta?.songwriterStyleId === 'andrew_hill';
+  const isSongwriterJimHall = genMeta?.songwriterStyleId === 'jim_hall';
   const isSongwriterCharlieParker = genMeta?.songwriterStyleId === 'charlie_parker';
   const fagenAlteredDominantBiasR =
     typeof genMeta?.fagenAlteredDominantBias === 'number' ? genMeta.fagenAlteredDominantBias : 0;
@@ -2490,6 +2497,7 @@ function buildGuitarPart(
   const tmAccum = createTheloniousMonkHarmonyAccumulator();
   const jcAccum = createJohnColtraneHarmonyAccumulator();
   const ahAccum = createAndrewHillHarmonyAccumulator();
+  const jhHallAccum = createJimHallHarmonyAccumulator();
   const cpAccum = createCharlieParkerHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
@@ -2614,6 +2622,9 @@ function buildGuitarPart(
   }
   if (isSongwriterAndrewHill && isDuoGoldenPath) {
     precomputeAndrewHillEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJimHall && isDuoGoldenPath) {
+    precomputeJimHallEffectiveHarmonyBars(context);
   }
   if (isSongwriterCharlieParker && isDuoGoldenPath) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
@@ -2954,6 +2965,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         ahAccum
+      );
+    }
+    if (isSongwriterJimHall) {
+      accumulateJimHallHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        jhHallAccum
       );
     }
     if (isSongwriterCharlieParker) {
@@ -3618,6 +3636,10 @@ function buildGuitarPart(
 
   if (isSongwriterAndrewHill && context.generationMetadata) {
     finalizeAndrewHillMetadata(context.generationMetadata, ahAccum);
+  }
+
+  if (isSongwriterJimHall && context.generationMetadata) {
+    finalizeJimHallMetadata(context.generationMetadata, jhHallAccum);
   }
 
   if (isSongwriterCharlieParker && context.generationMetadata) {

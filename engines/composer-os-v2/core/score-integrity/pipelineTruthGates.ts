@@ -438,6 +438,7 @@ export function runPipelineTruthGates(params: {
     const tmT = mdT.theloniousMonkEffectiveHarmonyBars;
     const jcT = mdT.johnColtraneEffectiveHarmonyBars;
     const ahT = mdT.andrewHillEffectiveHarmonyBars;
+    const jhT = mdT.jimHallEffectiveHarmonyBars;
     const cpT = mdT.charlieParkerEffectiveHarmonyBars;
     const beT = mdT.billEvansEffectiveHarmonyBars;
     const fzT = mdT.frankZappaEffectiveHarmonyBars;
@@ -497,46 +498,48 @@ export function runPipelineTruthGates(params: {
                                           ? [...jcT]
                                           : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === 32
                                             ? [...ahT]
-                                            : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === 32
-                                              ? [...cpT]
-                                            : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
-                                              ? [...beT]
-                                              : mdT.songwriterStyleId === 'bernard_herrmann' &&
-                                                  Array.isArray(bhFilmT) &&
-                                                  bhFilmT.length === 32
-                                                ? [...bhFilmT]
-                                                : mdT.songwriterStyleId === 'john_williams' &&
-                                                    Array.isArray(jwFilmT) &&
-                                                    jwFilmT.length === 32
-                                                  ? [...jwFilmT]
-                                                  : mdT.songwriterStyleId === 'ennio_morricone' &&
-                                                      Array.isArray(emFilmT) &&
-                                                      emFilmT.length === 32
-                                                    ? [...emFilmT]
-                                                    : mdT.songwriterStyleId === 'nino_rota' &&
-                                                        Array.isArray(nrFilmT) &&
-                                                        nrFilmT.length === 32
-                                                      ? [...nrFilmT]
-                                                      : mdT.songwriterStyleId === 'jerry_goldsmith' &&
-                                                          Array.isArray(jgFilmT) &&
-                                                          jgFilmT.length === 32
-                                                        ? [...jgFilmT]
-                                                        : mdT.songwriterStyleId === 'philip_glass' &&
-                                                            Array.isArray(pgFilmT) &&
-                                                            pgFilmT.length === 32
-                                                          ? [...pgFilmT]
-                                                          : mdT.songwriterStyleId === 'hans_zimmer' &&
-                                                              Array.isArray(hzFilmT) &&
-                                                              hzFilmT.length === 32
-                                                            ? [...hzFilmT]
-                                                            : mdT.songwriterStyleId === 'angelo_badalamenti' &&
-                                                                Array.isArray(abFilmT) &&
-                                                                abFilmT.length === 32
-                                                              ? [...abFilmT]
-                                                              : Array.isArray(context.lockedHarmonyBarsRaw) &&
-                                                                  context.lockedHarmonyBarsRaw.length === 32
-                                                                ? [...context.lockedHarmonyBarsRaw]
-                                                                : [...parsedBars];
+                                            : mdT.songwriterStyleId === 'jim_hall' && Array.isArray(jhT) && jhT.length === 32
+                                              ? [...jhT]
+                                              : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === 32
+                                                ? [...cpT]
+                                                : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
+                                                  ? [...beT]
+                                                  : mdT.songwriterStyleId === 'bernard_herrmann' &&
+                                                      Array.isArray(bhFilmT) &&
+                                                      bhFilmT.length === 32
+                                                    ? [...bhFilmT]
+                                                    : mdT.songwriterStyleId === 'john_williams' &&
+                                                        Array.isArray(jwFilmT) &&
+                                                        jwFilmT.length === 32
+                                                      ? [...jwFilmT]
+                                                      : mdT.songwriterStyleId === 'ennio_morricone' &&
+                                                          Array.isArray(emFilmT) &&
+                                                          emFilmT.length === 32
+                                                        ? [...emFilmT]
+                                                        : mdT.songwriterStyleId === 'nino_rota' &&
+                                                            Array.isArray(nrFilmT) &&
+                                                            nrFilmT.length === 32
+                                                          ? [...nrFilmT]
+                                                          : mdT.songwriterStyleId === 'jerry_goldsmith' &&
+                                                              Array.isArray(jgFilmT) &&
+                                                              jgFilmT.length === 32
+                                                            ? [...jgFilmT]
+                                                            : mdT.songwriterStyleId === 'philip_glass' &&
+                                                                Array.isArray(pgFilmT) &&
+                                                                pgFilmT.length === 32
+                                                              ? [...pgFilmT]
+                                                              : mdT.songwriterStyleId === 'hans_zimmer' &&
+                                                                  Array.isArray(hzFilmT) &&
+                                                                  hzFilmT.length === 32
+                                                                ? [...hzFilmT]
+                                                                : mdT.songwriterStyleId === 'angelo_badalamenti' &&
+                                                                    Array.isArray(abFilmT) &&
+                                                                    abFilmT.length === 32
+                                                                  ? [...abFilmT]
+                                                                  : Array.isArray(context.lockedHarmonyBarsRaw) &&
+                                                                      context.lockedHarmonyBarsRaw.length === 32
+                                                                    ? [...context.lockedHarmonyBarsRaw]
+                                                                    : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
     const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
     let exportStage: PipelineTruthStageResult = 'fail';

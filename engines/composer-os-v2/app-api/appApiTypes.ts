@@ -656,6 +656,14 @@ export interface OutputEntry {
   andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
   andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
   andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
+  /** Jim Hall (interval-first guitar / shell+one) slice — diagnostics / receipts (Song Mode manifest echo). */
+  jimHallDiagnostics?: GenerationMetadata['jimHallDiagnostics'];
+  jimHallDeviceReceipts?: GenerationMetadata['jimHallDeviceReceipts'];
+  jimHallSliceReceipt?: GenerationMetadata['jimHallSliceReceipt'];
+  jimHallEffectiveHarmonyBars?: GenerationMetadata['jimHallEffectiveHarmonyBars'];
+  jimHallMode?: GenerationMetadata['jimHallMode'];
+  jimHallResolvedMode?: GenerationMetadata['jimHallResolvedMode'];
+  jimHallVoicingCap?: GenerationMetadata['jimHallVoicingCap'];
   frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
   frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
   frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];

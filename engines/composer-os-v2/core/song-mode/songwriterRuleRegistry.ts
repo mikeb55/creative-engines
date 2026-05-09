@@ -475,6 +475,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'global'
     ),
   ],
+  jim_hall: [
+    R(
+      'hall.shell_guide_tone',
+      'Shell + one economy — guide tones present, root implied by bass, fifth omitted unless altered (`jh:shell_economy`)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'hall.inner_chromatic',
+      'Inner chromatic strand — one mid voice moves by semitone per bar while outer lines favour steps/thirds (`jh:inner:chromatic`)',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
+    R(
+      'hall.duo_counter',
+      'Duo counterpoint — bass / inner line / melody treated as independent sparse strands (`contrapuntalMode`)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+  ],
   pat_metheny: [
     R(
       'metheny.ecm_early_period',

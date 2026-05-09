@@ -191,6 +191,27 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       interOnsetSpacing: 'medium',
     },
   },
+  jim_hall: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.55,
+    phraseLength: 6,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.62,
+    cadenceFrequency: 'medium',
+    devices: [
+      'sparse_interval_shell',
+      'inner_voice_chromatic_pass',
+      'counter_melody_to_bass',
+      'guide_tone_anchor',
+      'third_sixth_tenth_voicing_bias',
+      'breath_between_phrases',
+    ],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+    },
+  },
   barry_harris: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',

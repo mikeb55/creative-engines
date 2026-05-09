@@ -268,6 +268,13 @@ export function writeOutputManifest(
     andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
     andrewHillEffectiveHarmonyBars?: GenerationMetadata['andrewHillEffectiveHarmonyBars'];
     andrewHillAntiElaborationGuards?: GenerationMetadata['andrewHillAntiElaborationGuards'];
+    jimHallDiagnostics?: GenerationMetadata['jimHallDiagnostics'];
+    jimHallDeviceReceipts?: GenerationMetadata['jimHallDeviceReceipts'];
+    jimHallSliceReceipt?: GenerationMetadata['jimHallSliceReceipt'];
+    jimHallEffectiveHarmonyBars?: GenerationMetadata['jimHallEffectiveHarmonyBars'];
+    jimHallMode?: GenerationMetadata['jimHallMode'];
+    jimHallResolvedMode?: GenerationMetadata['jimHallResolvedMode'];
+    jimHallVoicingCap?: GenerationMetadata['jimHallVoicingCap'];
     frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
     frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
     frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];
@@ -501,6 +508,13 @@ export function writeOutputManifest(
     andrewHillSliceReceipt: meta.andrewHillSliceReceipt,
     andrewHillEffectiveHarmonyBars: meta.andrewHillEffectiveHarmonyBars,
     andrewHillAntiElaborationGuards: meta.andrewHillAntiElaborationGuards,
+    jimHallDiagnostics: meta.jimHallDiagnostics,
+    jimHallDeviceReceipts: meta.jimHallDeviceReceipts,
+    jimHallSliceReceipt: meta.jimHallSliceReceipt,
+    jimHallEffectiveHarmonyBars: meta.jimHallEffectiveHarmonyBars,
+    jimHallMode: meta.jimHallMode,
+    jimHallResolvedMode: meta.jimHallResolvedMode,
+    jimHallVoicingCap: meta.jimHallVoicingCap,
     frankZappaDiagnostics: meta.frankZappaDiagnostics,
     frankZappaDeviceReceipts: meta.frankZappaDeviceReceipts,
     frankZappaSliceReceipt: meta.frankZappaSliceReceipt,

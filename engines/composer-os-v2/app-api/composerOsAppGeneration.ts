@@ -1240,6 +1240,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
   const jcLockedTruth = mdLockedTruth?.johnColtraneEffectiveHarmonyBars;
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
+  const jhLockedTruth = mdLockedTruth?.jimHallEffectiveHarmonyBars;
   const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
   const bhHerrLockedTruth = mdLockedTruth?.bernardHerrmannEffectiveHarmonyBars;
   const jwLockedTruth = mdLockedTruth?.johnWilliamsEffectiveHarmonyBars;
@@ -1447,73 +1448,79 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                               lockedHarmonyBarsAuthoritative &&
                                               ahLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                             ? ahLockedTruth
-                                          : mdLockedTruth?.songwriterStyleId === 'charlie_parker' &&
-                                              Array.isArray(cpLockedTruth) &&
-                                              cpLockedTruth.length === tbLockedTruth &&
-                                              lockedHarmonyBarsAuthoritative &&
-                                              cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                            ? cpLockedTruth
-                                            : mdLockedTruth?.songwriterStyleId === 'bernard_herrmann' &&
-                                                Array.isArray(bhHerrLockedTruth) &&
-                                                bhHerrLockedTruth.length === tbLockedTruth &&
+                                            : mdLockedTruth?.songwriterStyleId === 'jim_hall' &&
+                                                Array.isArray(jhLockedTruth) &&
+                                                jhLockedTruth.length === tbLockedTruth &&
                                                 lockedHarmonyBarsAuthoritative &&
-                                                bhHerrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                              ? bhHerrLockedTruth
-                                              : mdLockedTruth?.songwriterStyleId === 'john_williams' &&
-                                                  Array.isArray(jwLockedTruth) &&
-                                                  jwLockedTruth.length === tbLockedTruth &&
+                                                jhLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                              ? jhLockedTruth
+                                              : mdLockedTruth?.songwriterStyleId === 'charlie_parker' &&
+                                                  Array.isArray(cpLockedTruth) &&
+                                                  cpLockedTruth.length === tbLockedTruth &&
                                                   lockedHarmonyBarsAuthoritative &&
-                                                  jwLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                ? jwLockedTruth
-                                                : mdLockedTruth?.songwriterStyleId === 'ennio_morricone' &&
-                                                    Array.isArray(emLockedTruth) &&
-                                                    emLockedTruth.length === tbLockedTruth &&
+                                                  cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                ? cpLockedTruth
+                                                : mdLockedTruth?.songwriterStyleId === 'bernard_herrmann' &&
+                                                    Array.isArray(bhHerrLockedTruth) &&
+                                                    bhHerrLockedTruth.length === tbLockedTruth &&
                                                     lockedHarmonyBarsAuthoritative &&
-                                                    emLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                  ? emLockedTruth
-                                                  : mdLockedTruth?.songwriterStyleId === 'nino_rota' &&
-                                                      Array.isArray(nrLockedTruth) &&
-                                                      nrLockedTruth.length === tbLockedTruth &&
+                                                    bhHerrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                  ? bhHerrLockedTruth
+                                                  : mdLockedTruth?.songwriterStyleId === 'john_williams' &&
+                                                      Array.isArray(jwLockedTruth) &&
+                                                      jwLockedTruth.length === tbLockedTruth &&
                                                       lockedHarmonyBarsAuthoritative &&
-                                                      nrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                    ? nrLockedTruth
-                                                    : mdLockedTruth?.songwriterStyleId === 'jerry_goldsmith' &&
-                                                        Array.isArray(jgLockedTruth) &&
-                                                        jgLockedTruth.length === tbLockedTruth &&
+                                                      jwLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                    ? jwLockedTruth
+                                                    : mdLockedTruth?.songwriterStyleId === 'ennio_morricone' &&
+                                                        Array.isArray(emLockedTruth) &&
+                                                        emLockedTruth.length === tbLockedTruth &&
                                                         lockedHarmonyBarsAuthoritative &&
-                                                        jgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                      ? jgLockedTruth
-                                                      : mdLockedTruth?.songwriterStyleId === 'philip_glass' &&
-                                                          Array.isArray(pgLockedTruth) &&
-                                                          pgLockedTruth.length === tbLockedTruth &&
+                                                        emLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                      ? emLockedTruth
+                                                      : mdLockedTruth?.songwriterStyleId === 'nino_rota' &&
+                                                          Array.isArray(nrLockedTruth) &&
+                                                          nrLockedTruth.length === tbLockedTruth &&
                                                           lockedHarmonyBarsAuthoritative &&
-                                                          pgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                        ? pgLockedTruth
-                                                        : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
-                                                            Array.isArray(hzLockedTruth) &&
-                                                            hzLockedTruth.length === tbLockedTruth &&
+                                                          nrLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                        ? nrLockedTruth
+                                                        : mdLockedTruth?.songwriterStyleId === 'jerry_goldsmith' &&
+                                                            Array.isArray(jgLockedTruth) &&
+                                                            jgLockedTruth.length === tbLockedTruth &&
                                                             lockedHarmonyBarsAuthoritative &&
-                                                            hzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                          ? hzLockedTruth
-                                                          : mdLockedTruth?.songwriterStyleId === 'angelo_badalamenti' &&
-                                                              Array.isArray(abLockedTruth) &&
-                                                              abLockedTruth.length === tbLockedTruth &&
+                                                            jgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                          ? jgLockedTruth
+                                                          : mdLockedTruth?.songwriterStyleId === 'philip_glass' &&
+                                                              Array.isArray(pgLockedTruth) &&
+                                                              pgLockedTruth.length === tbLockedTruth &&
                                                               lockedHarmonyBarsAuthoritative &&
-                                                              abLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                            ? abLockedTruth
-                                            : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
-                                                fzHcTruth &&
-                                                fzHcTruth.bars.length === tbLockedTruth &&
-                                                lockedHarmonyBarsAuthoritative &&
-                                                fzHcTruth.bars.length === lockedHarmonyBarsAuthoritative.length
-                                              ? [...fzHcTruth.bars]
-                                              : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
-                                                  Array.isArray(fzLockedTruth) &&
-                                                  fzLockedTruth.length === tbLockedTruth &&
-                                                  lockedHarmonyBarsAuthoritative &&
-                                                  fzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                                ? fzLockedTruth
-                                                : lockedHarmonyBarsAuthoritative;
+                                                              pgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                            ? pgLockedTruth
+                                                            : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
+                                                                Array.isArray(hzLockedTruth) &&
+                                                                hzLockedTruth.length === tbLockedTruth &&
+                                                                lockedHarmonyBarsAuthoritative &&
+                                                                hzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                              ? hzLockedTruth
+                                                              : mdLockedTruth?.songwriterStyleId === 'angelo_badalamenti' &&
+                                                                  Array.isArray(abLockedTruth) &&
+                                                                  abLockedTruth.length === tbLockedTruth &&
+                                                                  lockedHarmonyBarsAuthoritative &&
+                                                                  abLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                                ? abLockedTruth
+                                                                : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
+                                                                    fzHcTruth &&
+                                                                    fzHcTruth.bars.length === tbLockedTruth &&
+                                                                    lockedHarmonyBarsAuthoritative &&
+                                                                    fzHcTruth.bars.length === lockedHarmonyBarsAuthoritative.length
+                                                                  ? [...fzHcTruth.bars]
+                                                                  : mdLockedTruth?.songwriterStyleId === 'frank_zappa' &&
+                                                                      Array.isArray(fzLockedTruth) &&
+                                                                      fzLockedTruth.length === tbLockedTruth &&
+                                                                      lockedHarmonyBarsAuthoritative &&
+                                                                      fzLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                                    ? fzLockedTruth
+                                                                    : lockedHarmonyBarsAuthoritative;
 
   /** Compare score/XML only when Song Mode actually ran `custom_locked` (engine metadata), not when local parse arrays exist without lock wiring. */
   const songModeHarmonyLockAssertionsActive =

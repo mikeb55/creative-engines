@@ -103,6 +103,20 @@ export function phraseTemplatesForChordJohnColtrane(chordTypeId: string): VaultC
   return [...out];
 }
 
+/** Sparse intervals / inner chromaticism / counter-melody — no dense_stack (`JIM_HALL_SLICE_PARAMETERS`). */
+export function phraseTemplatesForChordJimHall(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  void chordTypeId;
+  const out = new Set<VaultChordRuleSet['phraseTemplates'][number]>();
+  out.add('triad-sweep');
+  out.add('dyad-bounce');
+  out.add('quadratonic-enclosure');
+  out.add('modal_pedal');
+  out.add('side_slip');
+  out.add('tension-climb');
+  out.delete('bebop-insertion');
+  return [...out];
+}
+
 /** Angular / cluster-field / displaced — Monk-angular base, no smooth liquid-resolution (`HILL_SLICE_PARAMETERS`). */
 export function phraseTemplatesForChordAndrewHill(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
   const base = phraseTemplatesForChordTheloniousMonk(chordTypeId);
@@ -225,7 +239,9 @@ export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): Va
             ? phraseTemplatesForChordWayneShorter
             : opts?.songwriterId === 'andrew_hill'
               ? phraseTemplatesForChordAndrewHill
-              : phraseTemplatesForChord;
+              : opts?.songwriterId === 'jim_hall'
+                ? phraseTemplatesForChordJimHall
+                : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
     const rs = buildVaultChordRuleSet(row, phrasePick);

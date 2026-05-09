@@ -470,6 +470,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
   { id: 'john_coltrane', label: 'John Coltrane' },
+  { id: 'jim_hall', label: 'Jim Hall' },
   { id: 'jeff_tweedy', label: 'Jeff Tweedy' },
   { id: 'kate_bush', label: 'Kate Bush' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
@@ -538,6 +539,7 @@ const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
 const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'gil_evans',
   'john_coltrane',
+  'jim_hall',
   'maria_schneider',
   'wayne_shorter',
   'henry_threadgill',
@@ -635,6 +637,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'james_brown',
   'sonic_youth',
   'pat_metheny',
+  'jim_hall',
   'wayne_shorter',
   'barry_harris',
   'stephen_sondheim',

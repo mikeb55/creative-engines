@@ -121,6 +121,7 @@ export function assertScoreMatchesLockedHarmonyWire(
   const tmEff = md?.theloniousMonkEffectiveHarmonyBars;
   const jcEff = md?.johnColtraneEffectiveHarmonyBars;
   const ahEff = md?.andrewHillEffectiveHarmonyBars;
+  const jhEff = md?.jimHallEffectiveHarmonyBars;
   const cpEff = md?.charlieParkerEffectiveHarmonyBars;
   const bhHerrEff = md?.bernardHerrmannEffectiveHarmonyBars;
   const jwEff = md?.johnWilliamsEffectiveHarmonyBars;
@@ -283,11 +284,16 @@ export function assertScoreMatchesLockedHarmonyWire(
                                               ahEff.length === tb &&
                                               ahEff.length === wire.length
                                             ? ahEff
-                                            : md?.songwriterStyleId === 'charlie_parker' &&
-                                              Array.isArray(cpEff) &&
-                                              cpEff.length === tb &&
-                                              cpEff.length === wire.length
-                                            ? cpEff
+                                            : md?.songwriterStyleId === 'jim_hall' &&
+                                                Array.isArray(jhEff) &&
+                                                jhEff.length === tb &&
+                                                jhEff.length === wire.length
+                                              ? jhEff
+                                              : md?.songwriterStyleId === 'charlie_parker' &&
+                                                Array.isArray(cpEff) &&
+                                                cpEff.length === tb &&
+                                                cpEff.length === wire.length
+                                              ? cpEff
                                             : md?.songwriterStyleId === 'bernard_herrmann' &&
                                                 Array.isArray(bhHerrEff) &&
                                                 bhHerrEff.length === tb &&

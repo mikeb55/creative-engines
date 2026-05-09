@@ -605,6 +605,20 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Jim Hall: `precomputeJimHallEffectiveHarmonyBars` applies shell+one / warm extension grammar — receipts **`jh:*`**.
+   */
+  const jhEff = meta?.jimHallEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'jim_hall' &&
+    Array.isArray(jhEff) &&
+    jhEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jhEff[barIndex - 1]!;
+  }
+
+  /**
    * Charlie Parker: `precomputeCharlieParkerEffectiveHarmonyBars` applies bebop ii–V / tritone-sub devices — receipts **`cp:*`**.
    * After precompute, `charlieParkerEffectiveHarmonyBars` is full-form and authoritative.
    */

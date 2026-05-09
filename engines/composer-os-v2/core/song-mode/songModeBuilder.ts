@@ -2429,6 +2429,33 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em7b5', 'A7alt', 'Dmaj9#11', 'G7b9'],
     ],
   },
+  /** Interval-first shells — warm extensions, sparse voicing (`JIM_HALL_SLICE_PARAMETERS`). */
+  jim_hall: {
+    verse: [
+      ['Dm9', 'G13', 'Cmaj9', 'Am11'],
+      ['Em11', 'A13', 'Dmaj9', 'Bm11'],
+      ['Fm11', 'Bb13', 'Ebmaj9', 'Cm11'],
+      ['Gm11', 'C13', 'Fmaj9', 'Dm11'],
+    ],
+    chorus: [
+      ['Am11', 'D13', 'Gmaj9', 'Em11'],
+      ['Bm11', 'E13', 'Amaj9', 'F#m11'],
+      ['Cm11', 'F13', 'Bbmaj9', 'Gm11'],
+      ['Dm11', 'G13', 'Cmaj9', 'Am11'],
+    ],
+    bridge: [
+      ['Ebm11', 'Ab13', 'Dbmaj9', 'Bbm11'],
+      ['Fm11', 'Bb13', 'Ebmaj9', 'Cm11'],
+      ['Gm11', 'C13', 'Fmaj9', 'Dm11'],
+      ['Am11', 'D13', 'Gmaj9', 'Em11'],
+    ],
+    pre_chorus: [
+      ['Bm11', 'E13', 'Amaj9', 'F#m11'],
+      ['C#m11', 'F#13', 'Bmaj9', 'G#m11'],
+      ['Dm11', 'G13', 'Cmaj9', 'Am11'],
+      ['Em11', 'A13', 'Dmaj9', 'Bm11'],
+    ],
+  },
   /** Quartal/sus9 modal pedals — Maiden Voyage / VSOP zone (`HANCOCK_SLICE_PARAMETERS`). */
   herbie_hancock: {
     verse: [
