@@ -33,6 +33,13 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
     chromaticMediantBias: 0.56,
     poolSampling: false,
   },
+  barry_harris: {
+    displayName: 'Barry Harris',
+    tritoneRate: 0.6,
+    susBias: 0.05,
+    chromaticMediantBias: 0.4,
+    poolSampling: true,
+  },
   wayne_shorter: {
     displayName: 'Wayne Shorter',
     tritoneRate: 0.2,
