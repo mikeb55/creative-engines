@@ -28,8 +28,20 @@ function copyNapiCanvasToResources() {
   for (const name of names) {
     const src = path.join(srcNapiRs, name);
     const dest = path.join(destNapiRs, name);
-    fs.rmSync(dest, { recursive: true, force: true });
-    fs.cpSync(src, dest, { recursive: true });
+    try {
+      fs.rmSync(dest, { recursive: true, force: true });
+    } catch (e) {
+      const code = e && typeof e === 'object' ? e.code : '';
+      if (code === 'EPERM' || code === 'EBUSY') {
+        console.warn(
+          '[copy-napi-canvas] could not delete existing tree (native .node may be locked — close Composer OS / Electron). Merging copy over:',
+          dest
+        );
+      } else {
+        throw e;
+      }
+    }
+    fs.cpSync(src, dest, { recursive: true, force: true });
     console.log('[copy-napi-canvas]', dest);
   }
 }
