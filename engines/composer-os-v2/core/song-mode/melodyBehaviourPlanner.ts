@@ -400,8 +400,8 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     phraseLength: 4,
     contourProfile: 'groove_arc',
     phraseAsymmetryTendency: 0.49,
-    cadenceFrequency: 'medium',
-    devices: ['quartal_melody', 'pentatonic_sideslip', 'suspended_dominant', 'funk_ostinato'],
+    cadenceFrequency: 'low',
+    devices: ['quartal', 'modal_pedal', 'side_slip', 'upper_structure_triad'],
   },
   henry_threadgill: {
     intervalTendency: 'angular',

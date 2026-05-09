@@ -1,5 +1,5 @@
 /**
- * Smoke — Herbie Hancock (Blue Note post-bop) songwriter slice (symbol-level harmony + golden path).
+ * Smoke — Herbie Hancock (quartal/modal) songwriter slice (symbol-level harmony + golden path).
  */
 
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
@@ -28,8 +28,8 @@ export function runHerbieHancockSliceSmokeTests(): { name: string; ok: boolean }
       (diag?.barsConsidered ?? 0) >= 32 &&
       Array.isArray(eff) &&
       eff.length === 32 &&
-      receipt.includes('Herbie Hancock (Blue Note harmony slice)'),
-    name: 'Herbie Hancock slice: golden path + Blue Note harmony diagnostics receipt',
+      receipt.includes('Herbie Hancock (quartal/modal slice'),
+    name: 'Herbie Hancock slice: golden path + quartal/modal diagnostics receipt',
   });
 
   return out;

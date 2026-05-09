@@ -263,7 +263,7 @@ import {
   createHerbieHancockHarmonyAccumulator,
   finalizeHerbieHancockMetadata,
   precomputeHerbieHancockEffectiveHarmonyBars,
-} from './herbieHancockSlice';
+} from './herbie_hancock';
 import {
   accumulateSondheimHarmonyDiagnostics,
   createSondheimHarmonyAccumulator,

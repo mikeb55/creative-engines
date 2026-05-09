@@ -2402,6 +2402,33 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Fm7', 'Bb7alt', 'Ebmaj7#11', 'Am7'],
     ],
   },
+  /** Quartal/sus9 modal pedals — Maiden Voyage / VSOP zone (`HANCOCK_SLICE_PARAMETERS`). */
+  herbie_hancock: {
+    verse: [
+      ['Dm9', 'Dsus13', 'Dm11', 'Dsus9'],
+      ['Ebmaj7#11', 'Esus9', 'Fm11', 'Bb13sus4'],
+      ['Am11', 'Asus9', 'D9sus4', 'Gmaj7#11'],
+      ['Cm11', 'Fsus9', 'Bb13sus4', 'Ebmaj9#11'],
+    ],
+    chorus: [
+      ['Gm11', 'C9sus4', 'Fmaj7#11', 'Bb13sus4'],
+      ['Dm11', 'G13sus4', 'Cmaj9#11', 'Fsus9'],
+      ['Em9', 'A13sus4', 'Dmaj7#11', 'G13sus4'],
+      ['Am11', 'Dsus9', 'Gmaj7#11', 'Csus13'],
+    ],
+    bridge: [
+      ['Fm11', 'Bb9sus4', 'Ebmaj7#11', 'Ab13sus4'],
+      ['Gm11', 'Csus9', 'Fmaj9#11', 'Bb13sus4'],
+      ['Bm11', 'E9sus4', 'Amaj7#11', 'D13sus4'],
+      ['Cm11', 'Fsus9', 'Bbmaj7#11', 'Eb13sus4'],
+    ],
+    pre_chorus: [
+      ['Dm11', 'Gsus9', 'Cmaj7#11', 'F13sus4'],
+      ['Em11', 'Asus9', 'Dmaj9#11', 'G13sus4'],
+      ['Fm11', 'Bbsus9', 'Ebmaj7#11', 'Ab13sus4'],
+      ['Gm11', 'Csus9', 'Fmaj7#11', 'Bb13sus4'],
+    ],
+  },
 };
 
 function sectionChordPoolRows(

@@ -20,6 +20,9 @@ export type VaultChordRuleSet = {
     | 'bebop-insertion'
     | 'tension-climb'
     | 'liquid-resolution'
+    | 'quartal'
+    | 'modal_pedal'
+    | 'side_slip'
   )[];
   beatAffinityProfile: Record<'strong' | 'weak' | 'offbeat', number[]>;
   guitarGripCount: number;
@@ -100,6 +103,27 @@ export function phraseTemplatesForChordJohnColtrane(chordTypeId: string): VaultC
   return [...out];
 }
 
+/** Quartal / modal pedal / side-slip — no bebop-insertion (`HANCOCK_SLICE_PARAMETERS`). */
+export function phraseTemplatesForChordHerbieHancock(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  const id = chordTypeId;
+  const out = new Set<VaultChordRuleSet['phraseTemplates'][number]>();
+  out.add('quartal');
+  out.add('modal_pedal');
+  out.add('side_slip');
+  out.add('quadratonic-enclosure');
+  out.add('dyad-bounce');
+  out.delete('bebop-insertion');
+  out.delete('liquid-resolution');
+  if (id.includes('sus')) {
+    out.add('triad-sweep');
+  } else if (/dim|13b9|7#9|min7b5|#11#9/i.test(id)) {
+    out.add('tension-climb');
+  } else {
+    out.add('triad-sweep');
+  }
+  return [...out];
+}
+
 function topReharmStrategies(chordTypeId: string, limit: number): ReharmStrategy[] {
   const cands = generateReharmCandidates(chordTypeId, 0, null, 'neutral');
   const freq = new Map<ReharmStrategy, number>();
@@ -159,7 +183,7 @@ function buildVaultChordRuleSet(
 
 /**
  * One complete ruleset per Tonality Vault chord type (melodic triad, quadratonic, beats, grips, reharm, arc hints).
- * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** for composer-specific phrase template bias.
+ * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** / **`'herbie_hancock'`** for composer-specific phrase template bias.
  */
 export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): VaultChordRuleSet[] {
   const phrasePick =
@@ -167,7 +191,9 @@ export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): Va
       ? phraseTemplatesForChordTheloniousMonk
       : opts?.songwriterId === 'john_coltrane'
         ? phraseTemplatesForChordJohnColtrane
-        : phraseTemplatesForChord;
+        : opts?.songwriterId === 'herbie_hancock'
+          ? phraseTemplatesForChordHerbieHancock
+          : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
     const rs = buildVaultChordRuleSet(row, phrasePick);

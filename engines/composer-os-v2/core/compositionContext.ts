@@ -64,6 +64,9 @@ export type SatieContextMode = 'gymnopedie' | 'gnossienne' | 'poire';
 /** Prince Song Mode slice — Minneapolis funk/soul extended harmony posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
 export type PrinceContextMode = 'purple_rain' | 'sign_o_times' | 'kiss';
 
+/** Herbie Hancock Song Mode slice — quartal modal pedal vs Headhunters funk vs VSOP (`herbieHancockSlice.ts`). Default **`modal`**. */
+export type HancockPhase = 'modal' | 'funk' | 'vsop';
+
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
@@ -1261,9 +1264,22 @@ export interface GenerationMetadata {
    * Song Mode: primary is Jobim — use with `STYLE_MODERN_JAZZ` so {@link applyJobimStyleSurface} runs instead of Bill Evans surface nudges.
    */
   jobimMode?: boolean;
-  /** Herbie Hancock (Blue Note post-bop / fusion harmony) — slice diagnostics + effective harmony. */
+  /** Herbie Hancock slice posture — resolver defaults to **`modal`** when omitted (`herbieHancockSlice.ts`). */
+  hancockPhase?: HancockPhase;
+  /** Effective Hancock phase after precompute (always set when slice runs). */
+  hancockResolvedPhase?: HancockPhase;
+  /** Herbie Hancock — quartal/sus modal harmony slice (`HANCOCK_SLICE_PARAMETERS` + receipts **`hh:*`**). */
   herbieHancockDiagnostics?: {
     songwriterId: 'herbie_hancock';
+    hancockResolvedPhase?: HancockPhase;
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+      sideSlipRate: number;
+      defaultPhase: HancockPhase;
+    };
     barsConsidered: number;
     susFieldTouches: number;
     alteredDominantTouches: number;

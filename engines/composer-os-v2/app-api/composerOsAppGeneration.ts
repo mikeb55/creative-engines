@@ -1912,6 +1912,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       herbieHancockSliceReceipt: gp.context.generationMetadata.herbieHancockSliceReceipt,
       herbieHancockEffectiveHarmonyBars: gp.context.generationMetadata.herbieHancockEffectiveHarmonyBars,
       herbieHancockAntiElaborationGuards: gp.context.generationMetadata.herbieHancockAntiElaborationGuards,
+      hancockPhase: gp.context.generationMetadata.hancockPhase,
+      hancockResolvedPhase: gp.context.generationMetadata.hancockResolvedPhase,
       sondheimDiagnostics: gp.context.generationMetadata.sondheimDiagnostics,
       sondheimDeviceReceipts: gp.context.generationMetadata.sondheimDeviceReceipts,
       sondheimSliceReceipt: gp.context.generationMetadata.sondheimSliceReceipt,

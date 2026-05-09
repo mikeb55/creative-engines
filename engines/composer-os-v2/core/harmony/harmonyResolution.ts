@@ -519,7 +519,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
-   * Herbie Hancock: `precomputeHerbieHancockEffectiveHarmonyBars` applies Blue Note post-bop harmony devices + receipts.
+   * Herbie Hancock: `precomputeHerbieHancockEffectiveHarmonyBars` applies quartal/sus modal harmony devices + receipts.
    * After precompute, `herbieHancockEffectiveHarmonyBars` is full-form and authoritative.
    */
   const hhEff = meta?.herbieHancockEffectiveHarmonyBars;

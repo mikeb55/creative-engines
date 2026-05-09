@@ -1,16 +1,29 @@
 /**
- * Herbie Hancock — Blue Note post-bop / fusion harmony Song Mode / duo golden-path **harmony** slice.
- * Suspended fields, altered dominants, tritone colour-regions, ambiguous tonic rests — receipts **`hh:*`**.
+ * Herbie Hancock — quartal / sus9 modal pedals, side-slip chromaticism, fusion upper-structure — receipts **`hh:*`**.
  *
- * Modelled as Maiden Voyage / Dolphin Dance zone: engineered ambiguity + structural control (not random side-slipping).
- * No `core/style-modules/herbie-hancock/` package; symbol-level harmony lives here for primary `herbie_hancock`.
+ * **Evans distinction:** parent-scale / quartal tops (not tertian formula voicings); engineered for **side-slip** not smooth ii–V resolution.
+ * Phases: **`modal`** (Maiden Voyage sus pedal), **`funk`** (Headhunters static groove + upper triads), **`vsop`** (post-bop + quartal overlay).
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, HancockPhase } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/** Research-backed defaults — align `buildReharmLensConfig('herbie_hancock')` + diagnostics. */
+export const HANCOCK_SLICE_PARAMETERS = {
+  tritoneRate: 0.15,
+  susBias: 0.85,
+  chromaticMediantBias: 0.6,
+  staticDominantBias: 0.6,
+  sideSlipRate: 0.4,
+  /** `'modal'` = quartal/sus pedal · `'funk'` = groove + upper-structure · `'vsop'` = changes + quartal overlay */
+  defaultPhase: 'modal' as HancockPhase,
+  voicingNotes:
+    'Quartal/sus9 over pedals; Lydian/acoustic maj colour; Lydian dom sus-shapes — not strict ii–V; 5th omitted unless altered',
+  innerVoiceComment: '// Hancock chromatic breathing — Clare Fischer influence (inner-voice semitone toward nearest scale tone)',
+} as const;
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -49,6 +62,14 @@ export function isSongwriterHerbieHancock(
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'herbie_hancock' } {
   return genMeta?.songwriterStyleId === 'herbie_hancock';
 }
+
+function resolveHancockPhase(genMeta: GenerationMetadata & Record<string, unknown>, _seed: number): HancockPhase {
+  const p = genMeta.hancockPhase;
+  if (p === 'modal' || p === 'funk' || p === 'vsop') return p;
+  return HANCOCK_SLICE_PARAMETERS.defaultPhase;
+}
+
+export type { HancockPhase } from '../compositionContext';
 
 export interface HerbieHancockHarmonyAccumulator {
   barsConsidered: number;
@@ -112,7 +133,7 @@ function tritoneSubChord(symbol: string): string {
   return `${pitchClassToSharpName(subPc)}7${slash}`;
 }
 
-/** Bare major / minor tertians → Hancock palette (never naked triads / plain shells). */
+/** Bare major / minor tertians → Hancock palette — quartal/sus-first (never naked triads / plain shells). */
 function colourBareTertian(symbol: string, seed: number, bar: number): string {
   const hp = parseChordSymbol(symbol).harmonyPart;
   const slash = slashTail(symbol);
@@ -124,38 +145,42 @@ function colourBareTertian(symbol: string, seed: number, bar: number): string {
   if (/sus|maj|m7|m9|m11|m13|dim|ø|add|6\/9|alt|mmaj|maj7|#11|13|11\(/.test(tl)) return symbol;
   if (/[79]|maj/.test(rest)) return symbol;
 
+  const susW = HANCOCK_SLICE_PARAMETERS.susBias;
+
   if (/m$/i.test(rest) || /^m[^a]/i.test(rest)) {
     const u = seededUnit(seed, bar, 883010);
-    if (u < 0.28) return `${root}m(maj7)${slash}`;
-    if (u < 0.55) return `${root}m11${slash}`;
-    if (u < 0.82) return `${root}m9${slash}`;
-    return `${root}m13${slash}`;
+    if (u < 0.42) return `${root}m11${slash}`;
+    if (u < 0.68) return `${root}m9${slash}`;
+    if (u < 0.88) return `${root}m13${slash}`;
+    if (u < 0.96) return `${root}m(maj7)${slash}`;
+    return `${root}m11${slash}`;
   }
   if (rest === '' || rest === 'major' || rest === 'maj') {
     const u = seededUnit(seed, bar, 883011);
-    if (u < 0.22) return `${root}sus9${slash}`;
-    if (u < 0.44) return `${root}sus13${slash}`;
-    if (u < 0.66) return `${root}maj7#11${slash}`;
-    if (u < 0.88) return `${root}maj9${slash}`;
-    return `${root}maj13#11${slash}`;
+    if (u < susW * 0.38) return `${root}sus9${slash}`;
+    if (u < susW * 0.58) return `${root}sus13${slash}`;
+    if (u < susW * 0.72) return `${root}maj7#11${slash}`;
+    if (u < susW * 0.86) return `${root}maj9#11${slash}`;
+    if (u < susW) return `${root}maj13#11${slash}`;
+    return `${root}maj9${slash}`;
   }
   return symbol;
 }
 
-/** Plain V7 → altered / sus-dominant colour (underweight literal resolution spelling). */
+/** Plain V7 → Lydian-dominant sus-shapes / sparse colour — rare altered (`staticDominantBias`). */
 function colourPlainDominant(symbol: string, seed: number, bar: number): string {
   if (!isPlainDominantSeventh(symbol)) return symbol;
   const slash = slashTail(symbol);
   const root = parseChordSymbol(symbol).harmonyPart.match(ROOT_AT_START)?.[1];
   if (!root) return symbol;
   const u = seededUnit(seed, bar, 883020);
-  if (u < 0.18) return `${root}7alt${slash}`;
-  if (u < 0.32) return `${root}7b9#11${slash}`;
-  if (u < 0.46) return `${root}7#11${slash}`;
-  if (u < 0.62) return `${root}7b9${slash}`;
-  if (u < 0.78) return `${root}7#9${slash}`;
+  const sb = HANCOCK_SLICE_PARAMETERS.staticDominantBias;
+  if (u < sb * 0.45) return `${root}9sus4${slash}`;
+  if (u < sb * 0.78) return `${root}13sus4${slash}`;
+  if (u < 0.82) return `${root}7#11${slash}`;
   if (u < 0.9) return `${root}9${slash}`;
-  return `${root}13${slash}`;
+  if (u < 0.96) return `${root}13${slash}`;
+  return `${root}7b9${slash}`;
 }
 
 function isTonicAtPc(symbol: string, tonicPc: number | undefined): boolean {
@@ -170,15 +195,17 @@ function applyPhraseStartTonicField(
   seed: number,
   receipts: string[],
   tb: number,
-  context: CompositionContext
+  context: CompositionContext,
+  phase: HancockPhase
 ): void {
   if (tonicPc === undefined) return;
+  const skipThreshold = phase === 'vsop' ? 0.35 : 0.42;
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
     if (phrasePositionFromBar(b) !== 'phraseStart') continue;
     const sym = out[b - 1]!;
     if (!isTonicAtPc(sym, tonicPc)) continue;
-    if (seededUnit(seed, b, 883101) >= 0.42) continue;
+    if (seededUnit(seed, b, 883101) >= skipThreshold) continue;
     const root = parseChordSymbol(sym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
     const slash = slashTail(sym);
@@ -217,7 +244,7 @@ function applyCadentialSubVPass(
     const next = out[b]!;
     if (harmonyRootPc(next) !== tonicPc) continue;
     if (!looksDominantFunction(dom)) continue;
-    if (seededUnit(seed, b + 1, 883201) >= 0.36) continue;
+    if (seededUnit(seed, b + 1, 883201) >= HANCOCK_SLICE_PARAMETERS.tritoneRate) continue;
     out[b - 1] = tritoneSubChord(dom);
     receipts.push(`hh:tri_colour@bar${b}`);
   }
@@ -263,15 +290,97 @@ function softenPhraseFinalCadence(
     if (!root) continue;
     const slash = slashTail(domSym);
     const mode = seededUnit(seed, b, 883302);
-    if (mode < 0.4) {
-      out[b - 2] = `${root}7sus4${slash}`;
-    } else if (mode < 0.75) {
-      out[b - 2] = `${root}7alt${slash}`;
+    if (mode < 0.55) {
+      out[b - 2] = `${root}9sus4${slash}`;
+    } else if (mode < 0.82) {
+      out[b - 2] = `${root}13sus4${slash}`;
     } else {
       out[b - 2] = `${root}7#11${slash}`;
     }
     guards.orthodoxTurnaroundSoftened++;
     receipts.push(`hh:seam_soft@bar${b - 1}`);
+  }
+}
+
+/** ±1 semitone or chromatic-mediant block side-slip (one bar in coarse harmony grid). */
+function applySideSlipPass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  const rate = HANCOCK_SLICE_PARAMETERS.sideSlipRate;
+  const cm = HANCOCK_SLICE_PARAMETERS.chromaticMediantBias;
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (seededUnit(seed, b, 883501) >= rate) continue;
+    const sym = out[b - 1]!;
+    const r = harmonyRootPc(sym);
+    if (r === undefined) continue;
+    const slash = slashTail(sym);
+    const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
+    const u2 = seededUnit(seed, b, 883503);
+    let newPc: number;
+    if (u2 < cm) {
+      const delta = seededUnit(seed, b, 883504) < 0.5 ? 4 : -4;
+      newPc = (r + delta + 12) % 12;
+    } else {
+      const dir = seededUnit(seed, b, 883504) < 0.5 ? -1 : 1;
+      newPc = (r + dir + 12) % 12;
+    }
+    const newRoot = pitchClassToSharpName(newPc);
+    let coloured: string;
+    if (/m(?!aj)|min/.test(tl)) {
+      coloured = `${newRoot}m11${slash}`;
+    } else if (/sus|maj7|maj|Δ/.test(tl)) {
+      coloured = `${newRoot}sus9${slash}`;
+    } else {
+      coloured = `${newRoot}9sus4${slash}`;
+    }
+    out[b - 1] = coloured;
+    receipts.push(`hh:side_slip@bar${b}`);
+  }
+}
+
+/** `funk` phase: static slash bass; upper harmony shifts by major 3rd or semitone. */
+function applyFunkUpperStructurePass(
+  out: string[],
+  seed: number,
+  receipts: string[],
+  tb: number,
+  context: CompositionContext,
+  phase: HancockPhase
+): void {
+  if (phase !== 'funk') return;
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    if (seededUnit(seed, b, 883601) >= 0.35) continue;
+    const sym = out[b - 1]!;
+    const slash = slashTail(sym);
+    if (!slash) continue;
+    const hp = parseChordSymbol(sym).harmonyPart;
+    const m = hp.match(ROOT_AT_START);
+    if (!m?.[1]) continue;
+    const root = m[1];
+    const r = harmonyRootPc(sym);
+    if (r === undefined) continue;
+    const u = seededUnit(seed, b, 883602);
+    const delta = u < 0.55 ? 4 : u < 0.78 ? 1 : -1;
+    const newPc = (r + delta + 12) % 12;
+    const newRoot = pitchClassToSharpName(newPc);
+    const rest = hp.slice(root.length);
+    out[b - 1] = `${newRoot}${rest}${slash}`;
+    receipts.push(`hh:funk_upper@bar${b}`);
+  }
+}
+
+/** Hancock chromatic breathing — see Clare Fischer influence (sparse receipt only). */
+function stampInnerBreathReceipts(seed: number, receipts: string[], tb: number): void {
+  for (let b = 1; b <= tb; b++) {
+    if (seededUnit(seed, b, 883701) < 0.14) {
+      receipts.push(`hh:inner_breath@bar${b}`);
+    }
   }
 }
 
@@ -300,8 +409,14 @@ export function precomputeHerbieHancockEffectiveHarmonyBars(context: Composition
 
   const out = [...raw];
 
-  applyPhraseStartTonicField(out, tonicPc, seed, receipts, tb, context);
+  const phase = resolveHancockPhase(genMeta, seed);
+  genMeta.hancockResolvedPhase = phase;
+
+  applyPhraseStartTonicField(out, tonicPc, seed, receipts, tb, context, phase);
   applyCadentialSubVPass(out, tonicPc, seed, receipts, tb, context);
+  applySideSlipPass(out, seed, receipts, tb, context);
+  applyFunkUpperStructurePass(out, seed, receipts, tb, context, phase);
+  stampInnerBreathReceipts(seed, receipts, tb);
   softenPhraseFinalCadence(out, tonicPc, seed, receipts, tb, context, guards);
   throttleAdjacentQuartal(out, guards);
 
@@ -321,8 +436,18 @@ export function finalizeHerbieHancockMetadata(
   };
   const guardTotal = g.quartalThrottleHits + g.orthodoxTurnaroundSoftened;
   const tri = flat.filter((r) => r.includes('hh:tri_colour')).length;
+  const phase = metadata.hancockResolvedPhase ?? HANCOCK_SLICE_PARAMETERS.defaultPhase;
   const d = {
     songwriterId: 'herbie_hancock' as const,
+    hancockResolvedPhase: phase,
+    sliceParameters: {
+      tritoneRate: HANCOCK_SLICE_PARAMETERS.tritoneRate,
+      susBias: HANCOCK_SLICE_PARAMETERS.susBias,
+      chromaticMediantBias: HANCOCK_SLICE_PARAMETERS.chromaticMediantBias,
+      staticDominantBias: HANCOCK_SLICE_PARAMETERS.staticDominantBias,
+      sideSlipRate: HANCOCK_SLICE_PARAMETERS.sideSlipRate,
+      defaultPhase: HANCOCK_SLICE_PARAMETERS.defaultPhase,
+    },
     barsConsidered: acc.barsConsidered,
     susFieldTouches: acc.susFieldTouches,
     alteredDominantTouches: acc.alteredDominantTouches,
@@ -333,7 +458,7 @@ export function finalizeHerbieHancockMetadata(
     deviceReceipts: flat.length ? flat : undefined,
   } as const;
   const receipt = [
-    `Herbie Hancock (Blue Note harmony slice): sus≈${acc.susFieldTouches}`,
+    `Herbie Hancock (quartal/modal slice · phase=${phase}): sus≈${acc.susFieldTouches}`,
     `altDom≈${acc.alteredDominantTouches}`,
     `colour≈${acc.colourTonicTouches}`,
     `tri=${tri}`,

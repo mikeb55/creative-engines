@@ -617,12 +617,14 @@ export interface OutputEntry {
   jobimSliceReceipt?: GenerationMetadata['jobimSliceReceipt'];
   jobimEffectiveHarmonyBars?: GenerationMetadata['jobimEffectiveHarmonyBars'];
   jobimAntiElaborationGuards?: GenerationMetadata['jobimAntiElaborationGuards'];
-  /** Herbie Hancock (Blue Note post-bop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
+  /** Herbie Hancock (quartal/modal harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   herbieHancockDiagnostics?: GenerationMetadata['herbieHancockDiagnostics'];
   herbieHancockDeviceReceipts?: GenerationMetadata['herbieHancockDeviceReceipts'];
   herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
   herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
   herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
+  hancockPhase?: GenerationMetadata['hancockPhase'];
+  hancockResolvedPhase?: GenerationMetadata['hancockResolvedPhase'];
   /** Stephen Sondheim (dramatic theatre harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   sondheimDiagnostics?: GenerationMetadata['sondheimDiagnostics'];
   sondheimDeviceReceipts?: GenerationMetadata['sondheimDeviceReceipts'];

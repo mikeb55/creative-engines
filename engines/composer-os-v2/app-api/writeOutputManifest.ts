@@ -240,6 +240,8 @@ export function writeOutputManifest(
     herbieHancockSliceReceipt?: GenerationMetadata['herbieHancockSliceReceipt'];
     herbieHancockEffectiveHarmonyBars?: GenerationMetadata['herbieHancockEffectiveHarmonyBars'];
     herbieHancockAntiElaborationGuards?: GenerationMetadata['herbieHancockAntiElaborationGuards'];
+    hancockPhase?: GenerationMetadata['hancockPhase'];
+    hancockResolvedPhase?: GenerationMetadata['hancockResolvedPhase'];
     sondheimDiagnostics?: GenerationMetadata['sondheimDiagnostics'];
     sondheimDeviceReceipts?: GenerationMetadata['sondheimDeviceReceipts'];
     sondheimSliceReceipt?: GenerationMetadata['sondheimSliceReceipt'];
@@ -471,6 +473,8 @@ export function writeOutputManifest(
     herbieHancockSliceReceipt: meta.herbieHancockSliceReceipt,
     herbieHancockEffectiveHarmonyBars: meta.herbieHancockEffectiveHarmonyBars,
     herbieHancockAntiElaborationGuards: meta.herbieHancockAntiElaborationGuards,
+    hancockPhase: meta.hancockPhase,
+    hancockResolvedPhase: meta.hancockResolvedPhase,
     sondheimDiagnostics: meta.sondheimDiagnostics,
     sondheimDeviceReceipts: meta.sondheimDeviceReceipts,
     sondheimSliceReceipt: meta.sondheimSliceReceipt,

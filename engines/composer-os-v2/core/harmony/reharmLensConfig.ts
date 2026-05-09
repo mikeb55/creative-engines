@@ -54,6 +54,13 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
     chromaticMediantBias: 0.95,
     poolSampling: true,
   },
+  herbie_hancock: {
+    displayName: 'Herbie Hancock',
+    tritoneRate: 0.15,
+    susBias: 0.85,
+    chromaticMediantBias: 0.6,
+    poolSampling: true,
+  },
   donald_fagen: {
     displayName: 'Donald Fagen',
     tritoneRate: 0.5,
