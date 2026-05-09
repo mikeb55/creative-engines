@@ -5,11 +5,38 @@
  * Symbol-level harmony only for primary `andrew_hill` (research brief — no external engine bridge).
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, HillMode } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+export type { HillMode } from '../compositionContext';
+
+/** Hybrid cluster voicings over pitch fields — align `buildReharmLensConfig('andrew_hill')`, vault phrase bias, diagnostics. */
+export const HILL_SLICE_PARAMETERS = {
+  coreDevice: 'hybrid_cluster_pitch_fields' as const,
+  defaultMode: 'postbop_free' as HillMode,
+  modeComment:
+    "'postbop_free' = standard form + loose function | 'modal_cluster' = field-based, minimal cadence",
+  tensionHierarchyNotes:
+    'b5/#11 + b9/#9 on minor centres (+ adjacent 2nd cluster); maj7 vs minor/blues centre; dominant altered set; #11/b9 on major blur',
+  tritoneRate: 0.4,
+  susBias: 0.15,
+  chromaticMediantBias: 0.7,
+  staticDominantBias: 0.5,
+  clusterDensity: 0.75,
+  pitchFieldAnchor: true,
+  rhythmicDisplacementBias: 0.65,
+  bluesInflectionBias: 0.6,
+  phraseTemplatesComment: 'angular | cluster_field | displaced — no smooth/functional',
+} as const;
+
+function resolveHillMode(genMeta: GenerationMetadata & Record<string, unknown>): HillMode {
+  const m = genMeta.hillMode as HillMode | undefined;
+  if (m === 'postbop_free' || m === 'modal_cluster') return m;
+  return HILL_SLICE_PARAMETERS.defaultMode;
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -142,18 +169,27 @@ function enrichBareTertian(symbol: string, seed: number, bar: number): string {
   if (/sus|maj7|mmaj|dim|ø|\bm7\b|\bm11\b|add|quartal/.test(tl)) return symbol;
   if (/m$/i.test(rest) || /^m[^a]/i.test(rest)) {
     const u = seededUnit(seed, bar, 887020);
-    if (u < 0.34) return `${root}m11${slash}`;
-    if (u < 0.7) return `${root}m7${slash}`;
+    const cd = HILL_SLICE_PARAMETERS.clusterDensity;
+    const bi = HILL_SLICE_PARAMETERS.bluesInflectionBias;
+    if (u < cd * 0.42) return `${root}m11${slash}`;
+    if (u < cd * 0.72) return `${root}m7${slash}`;
+    if (u < 0.72 + bi * 0.12) return `${root}m11${slash}`;
     return `${root}m(add9)${slash}`;
   }
   if (rest === '' || rest === 'major' || rest === 'maj') {
     const u = seededUnit(seed, bar, 887021);
-    if (u < 0.4) return `${root}maj7(#11)${slash}`;
-    if (u < 0.72) return `${root}maj7${slash}`;
-    return `${root}sus2${slash}`;
+    const cd = HILL_SLICE_PARAMETERS.clusterDensity;
+    if (u < cd * 0.48) return `${root}maj7(#11)${slash}`;
+    if (u < cd * 0.78) return `${root}maj7${slash}`;
+    if (seededUnit(seed, bar, 887023) < HILL_SLICE_PARAMETERS.susBias * 0.4) return `${root}sus2${slash}`;
+    return `${root}maj7(#11)${slash}`;
   }
   if (isPlainDominantSeventh(symbol)) {
-    return seededUnit(seed, bar, 887022) < 0.65 ? `${root}7sus4${slash}` : `${root}sus4${slash}`;
+    const u = seededUnit(seed, bar, 887022);
+    const cd = HILL_SLICE_PARAMETERS.clusterDensity;
+    if (u < HILL_SLICE_PARAMETERS.susBias * 0.35) return `${root}7sus4${slash}`;
+    if (u < cd * 0.55) return `${root}7(#11,b9)${slash}`;
+    return `${root}7alt${slash}`;
   }
   return symbol;
 }
@@ -187,7 +223,7 @@ function applyDomSuppress(
     const nextSym = out[b]!;
     if (!isFunctionalV7ToTonic(domSym, tonicPc)) continue;
     if (!isTonicAtPc(nextSym, tonicPc)) continue;
-    if (seededUnit(seed, b, 887101) >= 0.55) continue;
+    if (seededUnit(seed, b, 887101) >= HILL_SLICE_PARAMETERS.staticDominantBias * 0.9) continue;
     const slash = slashTail(domSym);
     const root = parseChordSymbol(domSym).harmonyPart.match(ROOT_AT_START)?.[1];
     if (!root) continue;
@@ -214,7 +250,7 @@ function applySusClusterSubstitution(
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (seededUnit(seed, b, 887201) >= 0.34) continue;
+    if (seededUnit(seed, b, 887201) >= HILL_SLICE_PARAMETERS.susBias * 0.45) continue;
     const sym = out[b - 1]!;
     const hp = parseChordSymbol(sym).harmonyPart;
     const tl = hp.toLowerCase();
@@ -251,7 +287,7 @@ function applyTritoneRootMotion(
 ): void {
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
-    if (seededUnit(seed, b, 887301) >= 0.28) continue;
+    if (seededUnit(seed, b, 887301) >= 1 - HILL_SLICE_PARAMETERS.tritoneRate * 0.85) continue;
     const sym = out[b - 1]!;
     if (isPlainDominantSeventh(sym)) continue;
     const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
@@ -348,6 +384,7 @@ function applyNonfunctionalM7M11(
 /** @deprecated — use resolveBarSymbol */
 export function precomputeAndrewHillEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  genMeta.hillResolvedMode = resolveHillMode(genMeta);
   const tb = context.form.totalBars;
   const seed = context.seed;
   const tonicPc = inferTonicPitchClassFromBar1(context);
@@ -386,8 +423,21 @@ export function finalizeAndrewHillMetadata(metadata: GenerationMetadata, acc: An
   };
   const guardTotal = g.lushExtensionStripped + g.twoFiveChainMuted;
   const tritoneRoots = flat.filter((r) => r.includes('ah:tritone_root')).length;
+  const hp = HILL_SLICE_PARAMETERS;
   const d = {
     songwriterId: 'andrew_hill' as const,
+    hillResolvedMode: metadata.hillResolvedMode,
+    sliceParameters: {
+      tritoneRate: hp.tritoneRate,
+      susBias: hp.susBias,
+      chromaticMediantBias: hp.chromaticMediantBias,
+      staticDominantBias: hp.staticDominantBias,
+      clusterDensity: hp.clusterDensity,
+      pitchFieldAnchor: hp.pitchFieldAnchor,
+      rhythmicDisplacementBias: hp.rhythmicDisplacementBias,
+      bluesInflectionBias: hp.bluesInflectionBias,
+      defaultMode: hp.defaultMode,
+    },
     barsConsidered: acc.barsConsidered,
     susClusterTouches: acc.susClusterTouches,
     tritoneFieldTouches: acc.tritoneFieldTouches,

@@ -103,6 +103,16 @@ export function phraseTemplatesForChordJohnColtrane(chordTypeId: string): VaultC
   return [...out];
 }
 
+/** Angular / cluster-field / displaced — Monk-angular base, no smooth liquid-resolution (`HILL_SLICE_PARAMETERS`). */
+export function phraseTemplatesForChordAndrewHill(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  const base = phraseTemplatesForChordTheloniousMonk(chordTypeId);
+  const out = new Set(base);
+  out.delete('liquid-resolution');
+  if (!out.has('tension-climb')) out.add('tension-climb');
+  if (!out.has('bebop-insertion')) out.add('bebop-insertion');
+  return [...out];
+}
+
 /** Floating / mediant-chain / wedge_pass vocabulary — no bebop-insertion (`SHORTER_SLICE_PARAMETERS`). */
 export function phraseTemplatesForChordWayneShorter(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
   const id = chordTypeId;
@@ -201,7 +211,7 @@ function buildVaultChordRuleSet(
 
 /**
  * One complete ruleset per Tonality Vault chord type (melodic triad, quadratonic, beats, grips, reharm, arc hints).
- * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** / **`'herbie_hancock'`** / **`'wayne_shorter'`** for composer-specific phrase template bias.
+ * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** / **`'herbie_hancock'`** / **`'wayne_shorter'`** / **`'andrew_hill'`** for composer-specific phrase template bias.
  */
 export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): VaultChordRuleSet[] {
   const phrasePick =
@@ -213,7 +223,9 @@ export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): Va
           ? phraseTemplatesForChordHerbieHancock
           : opts?.songwriterId === 'wayne_shorter'
             ? phraseTemplatesForChordWayneShorter
-            : phraseTemplatesForChord;
+            : opts?.songwriterId === 'andrew_hill'
+              ? phraseTemplatesForChordAndrewHill
+              : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
     const rs = buildVaultChordRuleSet(row, phrasePick);

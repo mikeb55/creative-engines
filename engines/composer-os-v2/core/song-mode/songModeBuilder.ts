@@ -2402,6 +2402,33 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Fm7', 'Bb7alt', 'Ebmaj7#11', 'Am7'],
     ],
   },
+  /** Hybrid cluster / pitch-field angular harmony (`HILL_SLICE_PARAMETERS`). */
+  andrew_hill: {
+    verse: [
+      ['Cm11', 'F7alt', 'Bbmaj7#11', 'Eb7b9'],
+      ['Am11', 'D7alt', 'Gmaj7#11', 'C7b9'],
+      ['Fm11', 'Bb7#11', 'Ebmaj7#11', 'Ab13'],
+      ['Dm7b5', 'G7alt', 'Cmaj7#11', 'F7b9'],
+    ],
+    chorus: [
+      ['Em11', 'A7alt', 'Dmaj7#11', 'Gm7b5'],
+      ['Cm9', 'F7#9', 'Bbmaj7#11', 'Eb7alt'],
+      ['Am11', 'D7b13', 'Gmaj7#11', 'C13'],
+      ['Fm7b5', 'Bb7alt', 'Ebmaj9#11', 'Ab7b9'],
+    ],
+    bridge: [
+      ['Gm11', 'C7alt', 'Fmaj7#11', 'Bm7b5'],
+      ['Em9', 'A7b9', 'Dmaj7#11', 'G7alt'],
+      ['Cm11', 'F7#11', 'Bbmaj7#11', 'Eb13'],
+      ['Am7b5', 'D7alt', 'Gmaj7#11', 'C7b9'],
+    ],
+    pre_chorus: [
+      ['Dm11', 'G7alt', 'Cmaj7#11', 'Fm7'],
+      ['Bm7b5', 'E7alt', 'Amaj7#11', 'Dm9'],
+      ['Gm11', 'C7b9', 'Fmaj7#11', 'Bb13'],
+      ['Em7b5', 'A7alt', 'Dmaj9#11', 'G7b9'],
+    ],
+  },
   /** Quartal/sus9 modal pedals — Maiden Voyage / VSOP zone (`HANCOCK_SLICE_PARAMETERS`). */
   herbie_hancock: {
     verse: [

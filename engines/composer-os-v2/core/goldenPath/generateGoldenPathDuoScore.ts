@@ -293,7 +293,7 @@ import {
   createAndrewHillHarmonyAccumulator,
   finalizeAndrewHillMetadata,
   precomputeAndrewHillEffectiveHarmonyBars,
-} from './andrewHillSlice';
+} from './andrew_hill';
 import {
   accumulateCharlieParkerHarmonyDiagnostics,
   createCharlieParkerHarmonyAccumulator,

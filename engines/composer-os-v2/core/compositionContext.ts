@@ -1423,6 +1423,18 @@ export interface GenerationMetadata {
   /** Andrew Hill (post-bop angular non-functional harmony) — slice diagnostics + effective harmony. */
   andrewHillDiagnostics?: {
     songwriterId: 'andrew_hill';
+    hillResolvedMode?: HillMode;
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+      clusterDensity: number;
+      pitchFieldAnchor: boolean;
+      rhythmicDisplacementBias: number;
+      bluesInflectionBias: number;
+      defaultMode: HillMode;
+    };
     barsConsidered: number;
     susClusterTouches: number;
     tritoneFieldTouches: number;
