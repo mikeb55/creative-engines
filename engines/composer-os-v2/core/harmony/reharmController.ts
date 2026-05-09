@@ -21,7 +21,14 @@ function formatAppliedChordSymbol(rootPc: number, vaultChordTypeId: string): str
 
 /**
  * Splices substitute symbols from one {@link AlternativeProgression} into the progression backing the context.
- * Caller persists returned array to UI / request (`parsedCustomProgressionBars` / `lockedHarmonyBarsRaw`).
+ *
+ * Callers must persist the returned bar array into UI chord text and, on the **next generation**, repopulate
+ * `lockedHarmonyBarsRaw` and `parsedChordBars` from parsing that text — they stay in sync only after the request
+ * pipeline runs. Do not invoke generation with `harmonyMode: custom_locked` unless those wire arrays already
+ * reflect the edited symbols (otherwise LOCK asserts may compare stale locks).
+ *
+ * Frank Zappa: `frankZappaEffectiveHarmonyBars` / harmony context are rebuilt on regen from the new progression;
+ * no extra handling here.
  */
 export function applyReharmAlternative(
   alternative: AlternativeProgression,

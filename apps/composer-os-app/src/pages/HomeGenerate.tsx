@@ -1572,6 +1572,8 @@ export function HomeGenerate({
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  /** Reharm Apply: next request uses `harmonyMode: custom` once so the engine reparses wire before LOCK assert (vs stale `custom_locked`). */
+  const reharmApplyHarmonyUnlockRef = useRef(false);
   /** Song Mode: harmony-from-file path (`GenerateRequest.musicXmlSource`); overrides pasted chord line when set. */
   const [musicXmlSource, setMusicXmlSource] = useState('');
   const [musicXmlFileLabel, setMusicXmlFileLabel] = useState<string | null>(null);
@@ -2237,6 +2239,7 @@ export function HomeGenerate({
           formId: presetId === 'big_band' ? bigBandFormId : formId,
         });
         /** Duo / Song Form: chord count matches selected total bars, or 8 bars (tiled) when length > 8. */
+        const unlockHarmonyAfterReharmApply = reharmApplyHarmonyUnlockRef.current;
         let duoHarmonyFields: {
           harmonyMode: 'custom' | 'custom_locked';
           chordProgressionText: string;
@@ -2262,7 +2265,7 @@ export function HomeGenerate({
           const duoBarCount = parsedDuo.bars.length;
           if (duoBarCount === tbForm) {
             duoHarmonyFields = {
-              harmonyMode: 'custom_locked',
+              harmonyMode: unlockHarmonyAfterReharmApply ? 'custom' : 'custom_locked',
               chordProgressionText: chordTrim,
               totalBars: tbForm,
               longFormEnabled: tbForm >= 16,
@@ -2293,7 +2296,8 @@ export function HomeGenerate({
           }
           const lineBarCount = pLine.bars.length;
           duoHarmonyFields = {
-            harmonyMode: lineBarCount === tbForm ? 'custom_locked' : 'custom',
+            harmonyMode:
+              lineBarCount === tbForm ? (unlockHarmonyAfterReharmApply ? 'custom' : 'custom_locked') : 'custom',
             chordProgressionText: chordTrim,
             totalBars: tbForm,
             longFormEnabled: lineBarCount === tbForm ? tbForm >= 16 : true,
@@ -2468,7 +2472,7 @@ export function HomeGenerate({
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
-                harmonyMode: 'custom_locked' as const,
+                harmonyMode: (unlockHarmonyAfterReharmApply ? 'custom' : 'custom_locked') as const,
                 chordProgressionText: songChordLine,
                 totalBars: tbForm,
                 longFormEnabled: tbForm >= 16,
@@ -2618,6 +2622,9 @@ export function HomeGenerate({
           );
         }
         const r = (await api.generate(generatePayload)) as GenResult;
+        if (unlockHarmonyAfterReharmApply) {
+          reharmApplyHarmonyUnlockRef.current = false;
+        }
         setLiveGuitarVoicings(Array.isArray(r.guitarVoicings) ? r.guitarVoicings : []);
         setResult({
           ...r,
@@ -7242,8 +7249,8 @@ export function HomeGenerate({
           baseSeed={baseSeed}
           songwriterStyleId={songwriterStyle}
           onApplyBars={(bars) => {
-            // TODO: LOCK reconciliation needed — slice-effective harmony metadata vs pasted wire (`customLockedHarmonyRouting`).
             setChordProgressionText(bars.join(' | '));
+            reharmApplyHarmonyUnlockRef.current = true;
             void generate();
           }}
         />
