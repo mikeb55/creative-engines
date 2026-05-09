@@ -82,14 +82,46 @@ function measureChildrenSorted(partEl: Element): Element[] {
   });
 }
 
-function collectNotesFromPart(partEl: Element, timeSig: string): {
+/**
+ * MusicXML `<duration>` is in **divisions** per quarter (score-level). Part 1 usually carries
+ * `<divisions>` in measure 1; other parts often omit it and inherit. Without this seed, parts 2+
+ * default to `divisions: 1` and every timestamp is wrong → notes scheduled far off → silence.
+ */
+function inferScoreMeterSeed(firstPartEl: Element | null, timeSig: string): {
+  divisions: number;
+  beatsPerBar: number;
+} {
+  const seed = {
+    divisions: 1,
+    beatsPerBar: beatsPerBarFromTimeSig(timeSig),
+  };
+  if (!firstPartEl) return seed;
+  let measureIdx = 0;
+  for (const measureEl of measureChildrenSorted(firstPartEl)) {
+    measureIdx += 1;
+    if (measureIdx > 12) break;
+    for (let i = 0; i < measureEl.children.length; i++) {
+      const child = measureEl.children[i]!;
+      if (child.localName === 'attributes') {
+        parseAttributes(child, seed);
+      }
+    }
+  }
+  return seed;
+}
+
+function collectNotesFromPart(
+  partEl: Element,
+  timeSig: string,
+  meterSeed: { divisions: number; beatsPerBar: number }
+): {
   notes: PlaybackNote[];
   maxBar: number;
   beatsPerBar: number;
 } {
   const state = {
-    divisions: 1,
-    beatsPerBar: beatsPerBarFromTimeSig(timeSig),
+    divisions: meterSeed.divisions,
+    beatsPerBar: meterSeed.beatsPerBar,
   };
 
   const notes: PlaybackNote[] = [];
@@ -211,15 +243,18 @@ export function parseXmlToPlaybackSequence(
     };
   }
 
+  const meterSeed = inferScoreMeterSeed(parts[0] ?? null, timeSig);
+
   const flat: PlaybackNote[] = [];
   let maxBar = 0;
-  let beatsPerBarOut = beatsPerBarFromTimeSig(timeSig);
+  let beatsPerBarOut = meterSeed.beatsPerBar;
 
-  for (const partEl of parts) {
-    const { notes, maxBar: mb, beatsPerBar } = collectNotesFromPart(partEl, timeSig);
+  for (let pi = 0; pi < parts.length; pi++) {
+    const partEl = parts[pi]!;
+    const { notes, maxBar: mb, beatsPerBar } = collectNotesFromPart(partEl, timeSig, meterSeed);
     flat.push(...notes);
     maxBar = Math.max(maxBar, mb);
-    beatsPerBarOut = beatsPerBar;
+    if (pi === 0) beatsPerBarOut = beatsPerBar;
   }
 
   const seen = new Set<string>();

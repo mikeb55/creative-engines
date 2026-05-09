@@ -47,6 +47,10 @@ export async function play(
   await Tone.start();
   stop();
 
+  if (!seq.notes.length) {
+    return;
+  }
+
   const transport = Tone.getTransport();
   transport.bpm.value = seq.bpm;
   transport.stop();
