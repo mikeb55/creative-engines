@@ -578,6 +578,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return tmEff[barIndex - 1]!;
   }
 
+  const jcEff = meta?.johnColtraneEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'john_coltrane' &&
+    Array.isArray(jcEff) &&
+    jcEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jcEff[barIndex - 1]!;
+  }
+
   /**
    * Andrew Hill: `precomputeAndrewHillEffectiveHarmonyBars` applies angular non-functional devices — receipts **`ah:*`**.
    * After precompute, `andrewHillEffectiveHarmonyBars` is full-form and authoritative.

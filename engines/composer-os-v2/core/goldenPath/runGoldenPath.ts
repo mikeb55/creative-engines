@@ -2408,6 +2408,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const shEx = mdEx?.sondheimEffectiveHarmonyBars;
   const kbEx = mdEx?.kateBushEffectiveHarmonyBars;
   const tmEx = mdEx?.theloniousMonkEffectiveHarmonyBars;
+  const jcEx = mdEx?.johnColtraneEffectiveHarmonyBars;
   const ahEx = mdEx?.andrewHillEffectiveHarmonyBars;
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
@@ -2470,10 +2471,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                   ? kbEx
                                   : mdEx?.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmEx) && tmEx.length === tbEx
                                     ? tmEx
-                                    : mdEx?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahEx) && ahEx.length === tbEx
-                                      ? ahEx
-                                      : mdEx?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpEx) && cpEx.length === tbEx
-                                        ? cpEx
+                                    : mdEx?.songwriterStyleId === 'john_coltrane' && Array.isArray(jcEx) && jcEx.length === tbEx
+                                      ? jcEx
+                                      : mdEx?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahEx) && ahEx.length === tbEx
+                                        ? ahEx
+                                        : mdEx?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpEx) && cpEx.length === tbEx
+                                          ? cpEx
                                         : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
                                           ? beEx
                                           : mdEx?.songwriterStyleId === 'debussy' && Array.isArray(dbEx) && dbEx.length === tbEx
@@ -2623,6 +2626,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const shLt = mdLt?.sondheimEffectiveHarmonyBars;
   const kbLt = mdLt?.kateBushEffectiveHarmonyBars;
   const tmLt = mdLt?.theloniousMonkEffectiveHarmonyBars;
+  const jcLt = mdLt?.johnColtraneEffectiveHarmonyBars;
   const ahLt = mdLt?.andrewHillEffectiveHarmonyBars;
   const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
@@ -2679,10 +2683,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                       ? kbLt
                                       : mdLt?.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmLt) && tmLt.length === tbLt
                                         ? tmLt
-                                        : mdLt?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahLt) && ahLt.length === tbLt
-                                          ? ahLt
-                                          : mdLt?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpLt) && cpLt.length === tbLt
-                                            ? cpLt
+                                        : mdLt?.songwriterStyleId === 'john_coltrane' && Array.isArray(jcLt) && jcLt.length === tbLt
+                                          ? jcLt
+                                          : mdLt?.songwriterStyleId === 'andrew_hill' && Array.isArray(ahLt) && ahLt.length === tbLt
+                                            ? ahLt
+                                            : mdLt?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpLt) && cpLt.length === tbLt
+                                              ? cpLt
                                             : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
                                               ? beLt
                                               : mdLt?.songwriterStyleId === 'debussy' && Array.isArray(dbLt) && dbLt.length === tbLt

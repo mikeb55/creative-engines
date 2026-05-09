@@ -255,6 +255,12 @@ export function writeOutputManifest(
     theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
     theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
     theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
+    johnColtraneDiagnostics?: GenerationMetadata['johnColtraneDiagnostics'];
+    johnColtraneDeviceReceipts?: GenerationMetadata['johnColtraneDeviceReceipts'];
+    johnColtraneSliceReceipt?: GenerationMetadata['johnColtraneSliceReceipt'];
+    johnColtraneEffectiveHarmonyBars?: GenerationMetadata['johnColtraneEffectiveHarmonyBars'];
+    coltranePhase?: GenerationMetadata['coltranePhase'];
+    coltraneHarmonicDensity?: GenerationMetadata['coltraneHarmonicDensity'];
     andrewHillDiagnostics?: GenerationMetadata['andrewHillDiagnostics'];
     andrewHillDeviceReceipts?: GenerationMetadata['andrewHillDeviceReceipts'];
     andrewHillSliceReceipt?: GenerationMetadata['andrewHillSliceReceipt'];
@@ -480,6 +486,12 @@ export function writeOutputManifest(
     theloniousMonkSliceReceipt: meta.theloniousMonkSliceReceipt,
     theloniousMonkEffectiveHarmonyBars: meta.theloniousMonkEffectiveHarmonyBars,
     theloniousMonkAntiElaborationGuards: meta.theloniousMonkAntiElaborationGuards,
+    johnColtraneDiagnostics: meta.johnColtraneDiagnostics,
+    johnColtraneDeviceReceipts: meta.johnColtraneDeviceReceipts,
+    johnColtraneSliceReceipt: meta.johnColtraneSliceReceipt,
+    johnColtraneEffectiveHarmonyBars: meta.johnColtraneEffectiveHarmonyBars,
+    coltranePhase: meta.coltranePhase,
+    coltraneHarmonicDensity: meta.coltraneHarmonicDensity,
     andrewHillDiagnostics: meta.andrewHillDiagnostics,
     andrewHillDeviceReceipts: meta.andrewHillDeviceReceipts,
     andrewHillSliceReceipt: meta.andrewHillSliceReceipt,

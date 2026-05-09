@@ -436,6 +436,7 @@ export function runPipelineTruthGates(params: {
     const shT = mdT.sondheimEffectiveHarmonyBars;
     const kbT = mdT.kateBushEffectiveHarmonyBars;
     const tmT = mdT.theloniousMonkEffectiveHarmonyBars;
+    const jcT = mdT.johnColtraneEffectiveHarmonyBars;
     const ahT = mdT.andrewHillEffectiveHarmonyBars;
     const cpT = mdT.charlieParkerEffectiveHarmonyBars;
     const beT = mdT.billEvansEffectiveHarmonyBars;
@@ -492,10 +493,12 @@ export function runPipelineTruthGates(params: {
                                       ? [...kbT]
                                       : mdT.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmT) && tmT.length === 32
                                         ? [...tmT]
-                                        : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === 32
-                                          ? [...ahT]
-                                          : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === 32
-                                            ? [...cpT]
+                                        : mdT.songwriterStyleId === 'john_coltrane' && Array.isArray(jcT) && jcT.length === 32
+                                          ? [...jcT]
+                                          : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === 32
+                                            ? [...ahT]
+                                            : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === 32
+                                              ? [...cpT]
                                             : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
                                               ? [...beT]
                                               : mdT.songwriterStyleId === 'bernard_herrmann' &&

@@ -1238,6 +1238,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const shLockedTruth = mdLockedTruth?.sondheimEffectiveHarmonyBars;
   const kbLockedTruth = mdLockedTruth?.kateBushEffectiveHarmonyBars;
   const tmLockedTruth = mdLockedTruth?.theloniousMonkEffectiveHarmonyBars;
+  const jcLockedTruth = mdLockedTruth?.johnColtraneEffectiveHarmonyBars;
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
   const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
   const bhHerrLockedTruth = mdLockedTruth?.bernardHerrmannEffectiveHarmonyBars;
@@ -1434,12 +1435,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                           lockedHarmonyBarsAuthoritative &&
                                           tmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                         ? tmLockedTruth
-                                        : mdLockedTruth?.songwriterStyleId === 'andrew_hill' &&
-                                            Array.isArray(ahLockedTruth) &&
-                                            ahLockedTruth.length === tbLockedTruth &&
+                                        : mdLockedTruth?.songwriterStyleId === 'john_coltrane' &&
+                                            Array.isArray(jcLockedTruth) &&
+                                            jcLockedTruth.length === tbLockedTruth &&
                                             lockedHarmonyBarsAuthoritative &&
-                                            ahLockedTruth.length === lockedHarmonyBarsAuthoritative.length
-                                          ? ahLockedTruth
+                                            jcLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                          ? jcLockedTruth
+                                          : mdLockedTruth?.songwriterStyleId === 'andrew_hill' &&
+                                              Array.isArray(ahLockedTruth) &&
+                                              ahLockedTruth.length === tbLockedTruth &&
+                                              lockedHarmonyBarsAuthoritative &&
+                                              ahLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                            ? ahLockedTruth
                                           : mdLockedTruth?.songwriterStyleId === 'charlie_parker' &&
                                               Array.isArray(cpLockedTruth) &&
                                               cpLockedTruth.length === tbLockedTruth &&
@@ -1920,6 +1927,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       theloniousMonkSliceReceipt: gp.context.generationMetadata.theloniousMonkSliceReceipt,
       theloniousMonkEffectiveHarmonyBars: gp.context.generationMetadata.theloniousMonkEffectiveHarmonyBars,
       theloniousMonkAntiElaborationGuards: gp.context.generationMetadata.theloniousMonkAntiElaborationGuards,
+      johnColtraneDiagnostics: gp.context.generationMetadata.johnColtraneDiagnostics,
+      johnColtraneDeviceReceipts: gp.context.generationMetadata.johnColtraneDeviceReceipts,
+      johnColtraneSliceReceipt: gp.context.generationMetadata.johnColtraneSliceReceipt,
+      johnColtraneEffectiveHarmonyBars: gp.context.generationMetadata.johnColtraneEffectiveHarmonyBars,
+      coltranePhase: gp.context.generationMetadata.coltranePhase,
+      coltraneHarmonicDensity: gp.context.generationMetadata.coltraneHarmonicDensity,
       andrewHillDiagnostics: gp.context.generationMetadata.andrewHillDiagnostics,
       andrewHillDeviceReceipts: gp.context.generationMetadata.andrewHillDeviceReceipts,
       andrewHillSliceReceipt: gp.context.generationMetadata.andrewHillSliceReceipt,

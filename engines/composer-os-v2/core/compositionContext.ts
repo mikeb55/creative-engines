@@ -1356,6 +1356,30 @@ export interface GenerationMetadata {
   monkSilenceBars?: number[];
   /** Thelonious Monk slice — bars (1-based) where melody enters after beat 3 (partial rest). */
   monkPartialRestBars?: number[];
+  /** John Coltrane slice — three-tonic cycle phase (`changes` default). */
+  coltranePhase?: 'changes' | 'modal';
+  /** John Coltrane — scaffold harmonic-density hint for UI / receipts (`COLTRANE_SLICE_PARAMETERS`). */
+  coltraneHarmonicDensity?: { chordsPerBar: number };
+  johnColtraneDiagnostics?: {
+    songwriterId: 'john_coltrane';
+    barsConsidered: number;
+    thirdCycleTouches: number;
+    lydianTonicTouches: number;
+    alteredDominantTouches: number;
+    modalPedalTouches: number;
+    /** Effective phase after resolve (`COLTRANE_SLICE_PARAMETERS.defaultPhase` when unset). */
+    coltranePhase: 'changes' | 'modal';
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+    };
+    deviceReceipts?: string[];
+  };
+  johnColtraneSliceReceipt?: string;
+  johnColtraneEffectiveHarmonyBars?: string[];
+  johnColtraneDeviceReceipts?: string[];
   /** Andrew Hill (post-bop angular non-functional harmony) — slice diagnostics + effective harmony. */
   andrewHillDiagnostics?: {
     songwriterId: 'andrew_hill';

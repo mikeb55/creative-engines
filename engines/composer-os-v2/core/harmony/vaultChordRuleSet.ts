@@ -87,6 +87,19 @@ export function phraseTemplatesForChordTheloniousMonk(chordTypeId: string): Vaul
   return [...out];
 }
 
+/** Ascending-thirds / quartal bias — maps research labels onto Vault template ids (no blues sweep). */
+export function phraseTemplatesForChordJohnColtrane(chordTypeId: string): VaultChordRuleSet['phraseTemplates'] {
+  const base = phraseTemplatesForChord(chordTypeId);
+  const out = new Set(base);
+  out.delete('liquid-resolution');
+  out.delete('triad-sweep');
+  out.add('tension-climb');
+  out.add('bebop-insertion');
+  out.add('quadratonic-enclosure');
+  out.add('dyad-bounce');
+  return [...out];
+}
+
 function topReharmStrategies(chordTypeId: string, limit: number): ReharmStrategy[] {
   const cands = generateReharmCandidates(chordTypeId, 0, null, 'neutral');
   const freq = new Map<ReharmStrategy, number>();
@@ -146,13 +159,15 @@ function buildVaultChordRuleSet(
 
 /**
  * One complete ruleset per Tonality Vault chord type (melodic triad, quadratonic, beats, grips, reharm, arc hints).
- * Pass **`songwriterId: 'thelonious_monk'`** for angular/displaced phrase template bias (Monk research parity).
+ * Pass **`songwriterId: 'thelonious_monk'`** / **`'john_coltrane'`** for composer-specific phrase template bias.
  */
 export function buildAllVaultChordRuleSets(opts?: { songwriterId?: string }): VaultChordRuleSet[] {
   const phrasePick =
     opts?.songwriterId === 'thelonious_monk'
       ? phraseTemplatesForChordTheloniousMonk
-      : phraseTemplatesForChord;
+      : opts?.songwriterId === 'john_coltrane'
+        ? phraseTemplatesForChordJohnColtrane
+        : phraseTemplatesForChord;
   const out: VaultChordRuleSet[] = [];
   for (const row of TONALITY_VAULT_DATABASE) {
     const rs = buildVaultChordRuleSet(row, phrasePick);

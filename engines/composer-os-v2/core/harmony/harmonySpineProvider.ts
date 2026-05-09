@@ -85,6 +85,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'stephen_sondheim', effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },
   { match: (m) => m?.songwriterStyleId === 'kate_bush', effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },
   { match: (m) => m?.songwriterStyleId === 'thelonious_monk', effKey: 'theloniousMonkEffectiveHarmonyBars', sliceId: 'thelonious_monk' },
+  { match: (m) => m?.songwriterStyleId === 'john_coltrane', effKey: 'johnColtraneEffectiveHarmonyBars', sliceId: 'john_coltrane' },
   { match: (m) => m?.songwriterStyleId === 'andrew_hill', effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
   { match: (m) => m?.songwriterStyleId === 'charlie_parker', effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
   { match: (m) => m?.songwriterStyleId === 'frank_zappa', effKey: 'frankZappaEffectiveHarmonyBars', sliceId: 'frank_zappa' },

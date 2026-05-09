@@ -641,6 +641,13 @@ export interface OutputEntry {
   theloniousMonkSliceReceipt?: GenerationMetadata['theloniousMonkSliceReceipt'];
   theloniousMonkEffectiveHarmonyBars?: GenerationMetadata['theloniousMonkEffectiveHarmonyBars'];
   theloniousMonkAntiElaborationGuards?: GenerationMetadata['theloniousMonkAntiElaborationGuards'];
+  /** John Coltrane (three-tonic cycle) slice — diagnostics / receipts (Song Mode manifest echo). */
+  johnColtraneDiagnostics?: GenerationMetadata['johnColtraneDiagnostics'];
+  johnColtraneDeviceReceipts?: GenerationMetadata['johnColtraneDeviceReceipts'];
+  johnColtraneSliceReceipt?: GenerationMetadata['johnColtraneSliceReceipt'];
+  johnColtraneEffectiveHarmonyBars?: GenerationMetadata['johnColtraneEffectiveHarmonyBars'];
+  coltranePhase?: GenerationMetadata['coltranePhase'];
+  coltraneHarmonicDensity?: GenerationMetadata['coltraneHarmonicDensity'];
   /** Andrew Hill (angular non-functional harmony) slice — diagnostics / receipts (Song Mode manifest echo). */
   andrewHillDiagnostics?: GenerationMetadata['andrewHillDiagnostics'];
   andrewHillDeviceReceipts?: GenerationMetadata['andrewHillDeviceReceipts'];

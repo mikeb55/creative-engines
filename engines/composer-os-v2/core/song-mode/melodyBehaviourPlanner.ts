@@ -336,7 +336,7 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     contourProfile: 'bebop_arc',
     phraseAsymmetryTendency: 0.44,
     cadenceFrequency: 'high',
-    devices: ['chromatic_side_slip', 'sequential_cell', 'third_pairs', 'sheets_of_sound_density'],
+    devices: ['sequential_cell', 'third_pairs', 'quartal_stack', 'sheets_of_sound_density'],
     malLeadHints: {
       attackDensity: 'high',
       interOnsetSpacing: 'narrow',

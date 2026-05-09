@@ -2375,6 +2375,33 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Fm7', 'Bb7b9', 'Ebmaj7#11', 'Ab7alt'],
     ],
   },
+  /** Third-cycle centres + altered bridges (`COLTRANE_SLICE_PARAMETERS`) — giant-steps–style motion, no tritone-sub clichés. */
+  john_coltrane: {
+    verse: [
+      ['Bm7', 'E7alt', 'Am7', 'D7alt'],
+      ['Ebmaj7#11', 'Am7', 'D7alt', 'Gm7'],
+      ['Bbmaj7#11', 'Em7', 'A7alt', 'Dm7'],
+      ['Gbmaj7#11', 'Cm7', 'F7alt', 'Bbm7'],
+    ],
+    chorus: [
+      ['Gmaj7#11', 'Cm7', 'F7alt', 'Bbmaj7#11'],
+      ['Ebmaj7#11', 'Abm7', 'Db7alt', 'F#maj7#11'],
+      ['Bm7', 'E7alt', 'Am7', 'D7alt'],
+      ['Gm7', 'C7alt', 'Fm7', 'Bb7alt'],
+    ],
+    bridge: [
+      ['Am7', 'D7alt', 'Gmaj7#11', 'Cm7'],
+      ['Fm7', 'Bb7alt', 'Ebmaj7#11', 'Am7'],
+      ['Dm7', 'G7alt', 'Cmaj7#11', 'Fm7'],
+      ['Bbm7', 'Eb7alt', 'Abmaj7#11', 'Dm7'],
+    ],
+    pre_chorus: [
+      ['Em7', 'A7alt', 'Dmaj7#11', 'Gm7'],
+      ['Cm7', 'F7alt', 'Bbmaj7#11', 'Em7'],
+      ['Am7', 'D7alt', 'Gmaj7#11', 'Cm7'],
+      ['Fm7', 'Bb7alt', 'Ebmaj7#11', 'Am7'],
+    ],
+  },
 };
 
 function sectionChordPoolRows(

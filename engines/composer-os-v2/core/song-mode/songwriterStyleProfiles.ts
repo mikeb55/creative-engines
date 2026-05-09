@@ -1565,7 +1565,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     hookRepetitionBias: 0.38,
     phraseRegularity: 0.22,
     hookReturnVariation: 0.82,
-    harmonicSpeed: 0.58,
+    harmonicSpeed: 0.72,
     sectionContrast: 0.76,
     syncopationBias: 0.62,
     densityBias: 0.56,
