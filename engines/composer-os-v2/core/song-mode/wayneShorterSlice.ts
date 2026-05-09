@@ -4,7 +4,7 @@
  * planned key-center shifts, harmonic plateau pedals — layered on locked harmony.
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata, ShorterPhase } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import {
@@ -14,6 +14,36 @@ import {
 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9 } from '../motif/motifEngineTypes';
+
+/**
+ * Chromatic mediant motion + chord-scale networks — align `buildReharmLensConfig('wayne_shorter')`, vault phrase bias, diagnostics.
+ * `shorterPhase`: **`hardbop+`** = functional + mediant insertions · **`mid60s`** = floating centres, non-functional · **`fusion`** = modal/textural · **`late`** = spacious, complex inner harmony.
+ */
+export const SHORTER_SLICE_PARAMETERS = {
+  coreDevice: 'chromatic_mediant_network' as const,
+  defaultPhase: 'mid60s' as ShorterPhase,
+  tensionHierarchyNotes:
+    '9/#11 primary on maj7 (Lydian); 9/13/#11 on dom7 (Lydian dominant); b9/#9 on altered dominants; 9/11 + m(maj7) hints on min7',
+  tritoneRate: 0.2,
+  susBias: 0.45,
+  chromaticMediantBias: 0.85,
+  staticDominantBias: 0.55,
+  chromaticWedgeRate: 0.5,
+  pitchCentreAnchorBias: 0.7,
+  phraseTemplatesComment: 'floating | mediant_chain | wedge_pass — no bebop/blues_direct',
+} as const;
+
+export type { ShorterPhase } from '../compositionContext';
+
+function resolveShorterPhase(genMeta: GenerationMetadata & Record<string, unknown>): ShorterPhase {
+  const p = genMeta.shorterPhase as ShorterPhase | undefined;
+  if (p === 'hardbop+' || p === 'mid60s' || p === 'fusion' || p === 'late') return p;
+  return SHORTER_SLICE_PARAMETERS.defaultPhase;
+}
+
+function slashTail(symbol: string): string {
+  return symbol.includes('/') ? symbol.slice(symbol.indexOf('/')) : '';
+}
 
 /** Target stochastic fire rates among eligible bars (seeded). */
 const D1_NON_FUNCTIONAL_NEIGHBOR_RATE = 0.62;
@@ -116,6 +146,79 @@ function isTurnaroundLikeBar(
   if (tonicPc !== undefined && harmonyRootPc(cur) === tonicPc) return true;
   const role = coarseSectionRoleFromBar(bar, context);
   return role === 'verse' || role === 'chorus';
+}
+
+function looksMajorKeyIiMinorSeven(symbol: string, tonicPc: number | undefined): boolean {
+  if (tonicPc === undefined) return false;
+  const expectedIi = (tonicPc + 2) % 12;
+  const r = harmonyRootPc(symbol);
+  if (r !== expectedIi) return false;
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (/maj|dim|ø/.test(tl)) return false;
+  return /\bm7\b|\bm9\b|\bm11\b|min7|m\(7\)/.test(tl);
+}
+
+function applyShorterTensionColour(symbol: string, seed: number, bar: number): string {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const slash = slashTail(symbol);
+  const tl = hp.toLowerCase();
+  const m = hp.match(ROOT_AT_START);
+  if (!m?.[1]) return symbol;
+  const root = m[1];
+  const rest = hp.slice(root.length).replace(/\s/g, '');
+  const sb = SHORTER_SLICE_PARAMETERS.staticDominantBias;
+
+  if (/dim|ø|quartal/.test(tl)) return symbol;
+
+  if ((/\bm7\b|^m7|^m9|^m11/i.test(rest) || /\bm7\b/.test(tl)) && !/maj|mmaj/.test(tl)) {
+    if (/m9|m11|m\(maj7\)|mmaj/.test(tl)) return symbol;
+    const u = seededUnit(seed, bar, 88610);
+    if (u < 0.38) return `${root}m9${slash}`;
+    if (u < 0.62) return `${root}m11${slash}`;
+    if (u < 0.78) return `${root}m(maj7)${slash}`;
+    return `${root}m9${slash}`;
+  }
+
+  if (/\bmaj7\b/i.test(tl) && !/#11|maj9|maj13/.test(tl)) {
+    const u = seededUnit(seed, bar, 88611);
+    return u < 0.52 ? `${root}maj9#11${slash}` : `${root}maj7#11${slash}`;
+  }
+
+  if ((rest === '' || rest === 'maj' || /^maj\d?$/.test(rest)) && !/min|dim|m7|mmaj/.test(tl)) {
+    if (/maj7|#11/.test(tl)) return symbol;
+    const u = seededUnit(seed, bar, 88613);
+    return u < 0.48 ? `${root}maj9#11${slash}` : `${root}maj7#11${slash}`;
+  }
+
+  if (looksPlainDominantSeventh(symbol)) {
+    const u = seededUnit(seed, bar, 88612);
+    if (u < sb * 0.52) return `${root}13#11${slash}`;
+    if (u < sb * 0.78) return `${root}9#11${slash}`;
+    if (u < 0.9) return `${root}7b9${slash}`;
+    return `${root}7#9${slash}`;
+  }
+
+  return symbol;
+}
+
+function applyChromaticWedgePass(
+  out: string[],
+  receipts: WayneShorterDeviceReceipts,
+  tb: number,
+  seed: number,
+  tonicPc: number | undefined
+): void {
+  const rate = SHORTER_SLICE_PARAMETERS.chromaticWedgeRate;
+  for (let b = 2; b <= tb; b++) {
+    if (!looksPlainDominantSeventh(out[b - 2]!)) continue;
+    if (!looksMajorKeyIiMinorSeven(out[b - 1]!, tonicPc)) continue;
+    if (seededUnit(seed, b, 82001) >= rate) continue;
+    const iiRoot = harmonyRootPc(out[b - 1]!);
+    if (iiRoot === undefined) continue;
+    const passRoot = (iiRoot - 1 + 12) % 12;
+    out[b - 1] = `${pitchClassToSharpName(passRoot)}m7`;
+    receipts.deviceReceipts.push(`ws:wedge:chromaticPassingMin7@bar${b}#v1`);
+  }
 }
 
 /** Shortest interval class between two pitch classes (0–6 semitones). */
@@ -368,11 +471,14 @@ function applyPlateauPedal(symbol: string, prevSymbol: string, seed: number, bar
 /** @deprecated — use resolveBarSymbol */
 export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  genMeta.shorterResolvedPhase = resolveShorterPhase(genMeta);
   const tb = context.form.totalBars;
   const seed = context.seed;
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const receipts: WayneShorterDeviceReceipts = { deviceReceipts: [] };
   const guards: WayneShorterAntiElaborationGuards = { neighborClamp: 0, plateauClamp: 0 };
+  const d4FireRate =
+    D4_INTERVAL_PLANNED_KEY_SHIFT_RATE * (1 - SHORTER_SLICE_PARAMETERS.pitchCentreAnchorBias * 0.55);
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
@@ -435,7 +541,7 @@ export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionC
     if (d1Base && seededUnit(seed, b, 81101) < D1_NON_FUNCTIONAL_NEIGHBOR_RATE) plan[b - 1]!.d1 = true;
     if (d2Ok && seededUnit(seed, b, 81201) < D2_STEPWISE_BASS_DISPLACEMENT_RATE) plan[b - 1]!.d2 = true;
     if (d3Ok && seededUnit(seed, b, 81301) < D3_WRONG_QUALITY_RIGHT_ROOT_RATE) plan[b - 1]!.d3 = true;
-    if (d4Ok && seededUnit(seed, b, 81401) < D4_INTERVAL_PLANNED_KEY_SHIFT_RATE) plan[b - 1]!.d4 = true;
+    if (d4Ok && seededUnit(seed, b, 81401) < d4FireRate) plan[b - 1]!.d4 = true;
     if (d5Ok && seededUnit(seed, b, 81501) < D5_HARMONIC_PLATEAU_PEDAL_RATE) plan[b - 1]!.d5 = true;
 
     mutualExclusiveDevices(plan[b - 1]!, secTag);
@@ -447,7 +553,10 @@ export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionC
   for (let b = 1; b <= tb; b++) {
     const p = plan[b - 1]!;
     if (!p.d4 || d4Consumed.has(b)) continue;
-    const choices = [-5, -4, -3, 3, 4, 5];
+    const mediantMoves = [-3, -4, 3, 4];
+    const wideMoves = [-5, -4, -3, 3, 4, 5];
+    const cmb = SHORTER_SLICE_PARAMETERS.chromaticMediantBias;
+    const choices = seededUnit(seed, b, 81403) < cmb ? mediantMoves : wideMoves;
     const delta = choices[Math.floor(seededUnit(seed, b, 81402) * choices.length)]!;
     out[b - 1] = transposeChordRoot(out[b - 1]!, delta);
     if (b < tb) out[b] = transposeChordRoot(out[b]!, delta);
@@ -497,6 +606,11 @@ export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionC
     }
   }
 
+  for (let b = 1; b <= tb; b++) {
+    out[b - 1] = applyShorterTensionColour(out[b - 1]!, seed, b);
+  }
+  applyChromaticWedgePass(out, receipts, tb, seed, tonicPc);
+
   genMeta.wayneShorterEffectiveHarmonyBars = out;
   genMeta.wayneShorterDeviceReceipts = receipts.deviceReceipts;
   genMeta.wayneShorterAntiElaborationGuards = guards;
@@ -520,8 +634,19 @@ export function finalizeWayneShorterMetadata(metadata: GenerationMetadata, acc: 
   const g = metadata.wayneShorterAntiElaborationGuards ?? { neighborClamp: 0, plateauClamp: 0 };
   const guardTotal = g.neighborClamp + g.plateauClamp;
   const tb = Math.max(1, acc.barsConsidered);
+  const sp = SHORTER_SLICE_PARAMETERS;
   const d = {
     songwriterId: 'wayne_shorter' as const,
+    shorterResolvedPhase: metadata.shorterResolvedPhase,
+    sliceParameters: {
+      tritoneRate: sp.tritoneRate,
+      susBias: sp.susBias,
+      chromaticMediantBias: sp.chromaticMediantBias,
+      staticDominantBias: sp.staticDominantBias,
+      chromaticWedgeRate: sp.chromaticWedgeRate,
+      pitchCentreAnchorBias: sp.pitchCentreAnchorBias,
+      defaultPhase: sp.defaultPhase,
+    },
     barsConsidered: acc.barsConsidered,
     alteredDominantHitRate: acc.alteredDominantTouches / tb,
     slashPedalHitRate: acc.slashPedalTouches / tb,

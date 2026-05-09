@@ -35,9 +35,9 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
   },
   wayne_shorter: {
     displayName: 'Wayne Shorter',
-    tritoneRate: 0.52,
-    susBias: 0.54,
-    chromaticMediantBias: 0.5,
+    tritoneRate: 0.2,
+    susBias: 0.45,
+    chromaticMediantBias: 0.85,
     poolSampling: true,
   },
   thelonious_monk: {

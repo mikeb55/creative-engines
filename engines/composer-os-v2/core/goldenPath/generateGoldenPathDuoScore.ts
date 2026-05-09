@@ -117,7 +117,7 @@ import {
   createWayneShorterHarmonyAccumulator,
   finalizeWayneShorterMetadata,
   precomputeWayneShorterEffectiveHarmonyBars,
-} from './wayneShorterSlice';
+} from './wayne_shorter';
 import {
   accumulateFrankZappaHarmonyDiagnostics,
   attachFrankZappaHarmonyContext,

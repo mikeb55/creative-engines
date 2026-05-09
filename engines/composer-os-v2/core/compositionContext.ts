@@ -67,6 +67,12 @@ export type PrinceContextMode = 'purple_rain' | 'sign_o_times' | 'kiss';
 /** Herbie Hancock Song Mode slice — quartal modal pedal vs Headhunters funk vs VSOP (`herbieHancockSlice.ts`). Default **`modal`**. */
 export type HancockPhase = 'modal' | 'funk' | 'vsop';
 
+/** Wayne Shorter — functional + mediant insertions vs floating centres vs fusion vs late (`wayneShorterSlice.ts`). Default **`mid60s`**. */
+export type ShorterPhase = 'hardbop+' | 'mid60s' | 'fusion' | 'late';
+
+/** Andrew Hill — loose post-bop form vs modal cluster field (`andrewHillSlice.ts`). Default **`postbop_free`**. */
+export type HillMode = 'postbop_free' | 'modal_cluster';
+
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
@@ -656,6 +662,16 @@ export interface GenerationMetadata {
   /** Wayne Shorter (post-bop) — per-bar harmony vocabulary scan + device receipts. */
   wayneShorterDiagnostics?: {
     songwriterId: 'wayne_shorter';
+    shorterResolvedPhase?: ShorterPhase;
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+      chromaticWedgeRate: number;
+      pitchCentreAnchorBias: number;
+      defaultPhase: ShorterPhase;
+    };
     barsConsidered: number;
     alteredDominantHitRate: number;
     slashPedalHitRate: number;
@@ -1268,6 +1284,14 @@ export interface GenerationMetadata {
   hancockPhase?: HancockPhase;
   /** Effective Hancock phase after precompute (always set when slice runs). */
   hancockResolvedPhase?: HancockPhase;
+  /** Wayne Shorter slice posture — resolver defaults to **`mid60s`** (`wayneShorterSlice.ts`). */
+  shorterPhase?: ShorterPhase;
+  /** Effective Shorter era after precompute (set when slice runs). */
+  shorterResolvedPhase?: ShorterPhase;
+  /** Andrew Hill slice posture — resolver defaults to **`postbop_free`** (`andrewHillSlice.ts`). */
+  hillMode?: HillMode;
+  /** Effective Hill mode after precompute (set when slice runs). */
+  hillResolvedMode?: HillMode;
   /** Herbie Hancock — quartal/sus modal harmony slice (`HANCOCK_SLICE_PARAMETERS` + receipts **`hh:*`**). */
   herbieHancockDiagnostics?: {
     songwriterId: 'herbie_hancock';
