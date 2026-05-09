@@ -379,6 +379,10 @@ export function apiGenerate(
         body.philipGlassContext === 'pg:dark_pedal'
           ? body.philipGlassContext
           : undefined,
+      reichProcess:
+        body.reichProcess === 'phasing' || body.reichProcess === 'additive' || body.reichProcess === 'cycle'
+          ? body.reichProcess
+          : undefined,
       hansZimmerContext:
         body.hansZimmerContext === 'hz:epic_mode' ||
         body.hansZimmerContext === 'hz:introspective_mode' ||

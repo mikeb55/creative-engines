@@ -76,6 +76,9 @@ export type HillMode = 'postbop_free' | 'modal_cluster';
 /** Jim Hall guitar comp slice — duo shell voicing vs fuller trio vs solo spread (`jimHallSlice.ts`). Default **`duo`**. */
 export type JimHallMode = 'duo' | 'trio' | 'solo';
 
+/** Steve Reich — pitch-field process engine (`steveReichSlice.ts`). Default **`phasing`**. */
+export type SteveReichProcessMode = 'phasing' | 'additive' | 'cycle';
+
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
 
@@ -1490,6 +1493,35 @@ export interface GenerationMetadata {
   jimHallSliceReceipt?: string;
   jimHallEffectiveHarmonyBars?: string[];
   jimHallDeviceReceipts?: string[];
+  /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
+  reichProcess?: SteveReichProcessMode;
+  /** Effective process mode after resolve (`steveReichSlice.ts`). */
+  reichResolvedProcess?: SteveReichProcessMode;
+  /** Locked harmonic rhythm window (bars per static field segment). */
+  steveReichHarmonicRhythmBars?: number;
+  /** Rhythmic subdivision density under static harmony — exporter / phrase hints. */
+  steveReichPulseGridDensity?: 'high' | 'medium' | 'low';
+  steveReichDiagnostics?: {
+    songwriterId: 'steve_reich';
+    reichResolvedProcess?: SteveReichProcessMode;
+    sliceParameters?: {
+      tritoneRate: number;
+      susBias: number;
+      chromaticMediantBias: number;
+      staticDominantBias: number;
+      chromaticAlterationRate: number;
+      harmonicRhythmBars: number;
+      defaultProcess: SteveReichProcessMode;
+    };
+    barsConsidered: number;
+    fieldHoldTouches: number;
+    susQuartalTouches: number;
+    additiveTouches: number;
+    deviceReceipts?: string[];
+  };
+  steveReichSliceReceipt?: string;
+  steveReichEffectiveHarmonyBars?: string[];
+  steveReichDeviceReceipts?: string[];
   /** Charlie Parker (bebop ii–V–I / tritone sub / turnaround) — slice diagnostics + effective harmony. */
   charlieParkerDiagnostics?: {
     songwriterId: 'charlie_parker';

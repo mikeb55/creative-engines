@@ -205,6 +205,14 @@ export function writeOutputManifest(
     philipGlassDeviceReceipts?: GenerationMetadata['philipGlassDeviceReceipts'];
     philipGlassSliceReceipt?: GenerationMetadata['philipGlassSliceReceipt'];
     philipGlassEffectiveHarmonyBars?: GenerationMetadata['philipGlassEffectiveHarmonyBars'];
+    reichProcess?: GenerationMetadata['reichProcess'];
+    reichResolvedProcess?: GenerationMetadata['reichResolvedProcess'];
+    steveReichDiagnostics?: GenerationMetadata['steveReichDiagnostics'];
+    steveReichDeviceReceipts?: GenerationMetadata['steveReichDeviceReceipts'];
+    steveReichSliceReceipt?: GenerationMetadata['steveReichSliceReceipt'];
+    steveReichEffectiveHarmonyBars?: GenerationMetadata['steveReichEffectiveHarmonyBars'];
+    steveReichHarmonicRhythmBars?: GenerationMetadata['steveReichHarmonicRhythmBars'];
+    steveReichPulseGridDensity?: GenerationMetadata['steveReichPulseGridDensity'];
     hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
     hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
     hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];
@@ -445,6 +453,14 @@ export function writeOutputManifest(
     philipGlassDeviceReceipts: meta.philipGlassDeviceReceipts,
     philipGlassSliceReceipt: meta.philipGlassSliceReceipt,
     philipGlassEffectiveHarmonyBars: meta.philipGlassEffectiveHarmonyBars,
+    reichProcess: meta.reichProcess,
+    reichResolvedProcess: meta.reichResolvedProcess,
+    steveReichDiagnostics: meta.steveReichDiagnostics,
+    steveReichDeviceReceipts: meta.steveReichDeviceReceipts,
+    steveReichSliceReceipt: meta.steveReichSliceReceipt,
+    steveReichEffectiveHarmonyBars: meta.steveReichEffectiveHarmonyBars,
+    steveReichHarmonicRhythmBars: meta.steveReichHarmonicRhythmBars,
+    steveReichPulseGridDensity: meta.steveReichPulseGridDensity,
     hansZimmerContext: meta.hansZimmerContext,
     hansZimmerDiagnostics: meta.hansZimmerDiagnostics,
     hansZimmerDeviceReceipts: meta.hansZimmerDeviceReceipts,

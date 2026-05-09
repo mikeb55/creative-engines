@@ -78,6 +78,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   nino_rota: 'keys',
   jerry_goldsmith: 'keys',
   philip_glass: 'keys',
+  steve_reich: 'keys',
   hans_zimmer: 'keys',
   duke_ellington: 'keys',
   billy_strayhorn: 'keys',

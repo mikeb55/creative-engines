@@ -22,6 +22,7 @@ import type {
   NinoRotaContextMode,
   PhilipGlassContextMode,
   PrinceContextMode,
+  SteveReichProcessMode,
 } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
@@ -42,6 +43,7 @@ export type { EnnioMorriconeContextMode };
 export type { NinoRotaContextMode };
 export type { JerryGoldsmithContextMode };
 export type { PhilipGlassContextMode };
+export type { SteveReichProcessMode };
 export type { HansZimmerContextMode };
 export type { AngeloBadalamentiContextMode };
 export type { ImportHarmonyMode };
@@ -286,6 +288,8 @@ export interface GenerateRequest {
   ninoRotaContext?: NinoRotaContextMode;
   jerryGoldsmithContext?: JerryGoldsmithContextMode;
   philipGlassContext?: PhilipGlassContextMode;
+  /** Song Mode / Steve Reich — pitch-field process mode (`steveReichSlice.ts`). */
+  reichProcess?: SteveReichProcessMode;
   hansZimmerContext?: HansZimmerContextMode;
   angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /**
@@ -567,6 +571,14 @@ export interface OutputEntry {
   philipGlassDeviceReceipts?: GenerationMetadata['philipGlassDeviceReceipts'];
   philipGlassSliceReceipt?: GenerationMetadata['philipGlassSliceReceipt'];
   philipGlassEffectiveHarmonyBars?: GenerationMetadata['philipGlassEffectiveHarmonyBars'];
+  reichProcess?: GenerationMetadata['reichProcess'];
+  reichResolvedProcess?: GenerationMetadata['reichResolvedProcess'];
+  steveReichDiagnostics?: GenerationMetadata['steveReichDiagnostics'];
+  steveReichDeviceReceipts?: GenerationMetadata['steveReichDeviceReceipts'];
+  steveReichSliceReceipt?: GenerationMetadata['steveReichSliceReceipt'];
+  steveReichEffectiveHarmonyBars?: GenerationMetadata['steveReichEffectiveHarmonyBars'];
+  steveReichHarmonicRhythmBars?: GenerationMetadata['steveReichHarmonicRhythmBars'];
+  steveReichPulseGridDensity?: GenerationMetadata['steveReichPulseGridDensity'];
   hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
   hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
   hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];

@@ -635,6 +635,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('pg.pedal_field', 'Static pedal under shifting harmony (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),
     R('pg.modal_loop', 'Modal loop stasis (harmonic voice tags)', 'songwriter', 'form', 7, 'global'),
   ],
+  steve_reich: [
+    R(
+      'reich.pitch_field',
+      'Pitch-field process — harmony from phasing/additive drift inside one diatonic field (`sr:phase_hold`, `sr:field_anchor`)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'reich.static_rhythm',
+      'Dense pulse grid over extremely slow harmonic rhythm (`steveReichPulseGridDensity`)',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'reich.quartal_emerge',
+      'Quartal/sus sonorities from field grammar — not functional cadences (`maybeQuartalSusColour`)',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
+  ],
   hans_zimmer: [
     R('hz.epic_ostinato', 'Low-register ostinato engine (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('hz.hybrid_stack', 'Layered orchestral pad vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'chorus'),

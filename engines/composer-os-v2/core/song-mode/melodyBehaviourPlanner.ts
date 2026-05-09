@@ -608,6 +608,26 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'low',
     devices: ['additive_cell', 'arpeggio_engine', 'static_pedal', 'micro_variation', 'modal_stasis'],
   },
+  steve_reich: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.92,
+    phraseLength: 8,
+    contourProfile: 'sequence',
+    phraseAsymmetryTendency: 0.28,
+    cadenceFrequency: 'low',
+    devices: [
+      'additive_build',
+      'phase_cell_canon',
+      'drone_field_anchor',
+      'diatonic_cluster_byproduct',
+      'pulse_grid_dense',
+    ],
+    malLeadHints: {
+      attackDensity: 'high',
+      interOnsetSpacing: 'narrow',
+    },
+  },
   hans_zimmer: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',

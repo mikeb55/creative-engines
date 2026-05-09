@@ -92,6 +92,7 @@ export type SongwriterRuleId =
   | 'quincy_jones_film'
   | 'john_coltrane'
   | 'jim_hall'
+  | 'steve_reich'
   | 'frank_zappa';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';

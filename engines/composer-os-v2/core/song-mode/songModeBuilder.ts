@@ -2276,6 +2276,85 @@ const SONGWRITER_CHORD_POOLS: Record<
     bridge: [['Fm', 'Cm', 'Gm', 'Cm']],
     pre_chorus: [['Cm', 'Fm', 'Cm', 'Cm']],
   },
+  /** Static pitch-field rows — long holds (`STEVE_REICH_SLICE_PARAMETERS`). */
+  steve_reich_phasing: {
+    verse: [
+      ['D', 'D', 'D', 'D'],
+      ['G', 'G', 'G', 'G'],
+      ['Am', 'Am', 'Am', 'Am'],
+      ['Em', 'Em', 'Em', 'Em'],
+    ],
+    chorus: [
+      ['C', 'C', 'C', 'C'],
+      ['F', 'F', 'F', 'F'],
+      ['G', 'G', 'G', 'G'],
+      ['C', 'C', 'C', 'C'],
+    ],
+    bridge: [
+      ['Dm', 'Dm', 'Dm', 'Dm'],
+      ['Bb', 'Bb', 'Bb', 'Bb'],
+      ['F', 'F', 'F', 'F'],
+      ['C', 'C', 'C', 'C'],
+    ],
+    pre_chorus: [
+      ['Gsus4', 'Gsus4', 'Gsus4', 'Gsus4'],
+      ['Am7', 'Am7', 'Am7', 'Am7'],
+      ['Fmaj7', 'Fmaj7', 'Fmaj7', 'Fmaj7'],
+      ['C', 'C', 'C', 'C'],
+    ],
+  },
+  steve_reich_additive: {
+    verse: [
+      ['Cmaj7', 'Cmaj7', 'Cmaj7', 'Cmaj7'],
+      ['Am7', 'Am7', 'Am7', 'Am7'],
+      ['Fmaj7', 'Fmaj7', 'Fmaj7', 'Fmaj7'],
+      ['Gsus2', 'Gsus2', 'Gsus2', 'Gsus2'],
+    ],
+    chorus: [
+      ['Dm7', 'Dm7', 'Dm7', 'Dm7'],
+      ['Bbmaj7', 'Bbmaj7', 'Bbmaj7', 'Bbmaj7'],
+      ['F', 'F', 'F', 'F'],
+      ['Cmaj9', 'Cmaj9', 'Cmaj9', 'Cmaj9'],
+    ],
+    bridge: [
+      ['Em7', 'Em7', 'Em7', 'Em7'],
+      ['Am7', 'Am7', 'Am7', 'Am7'],
+      ['D7sus4', 'D7sus4', 'D7sus4', 'D7sus4'],
+      ['G', 'G', 'G', 'G'],
+    ],
+    pre_chorus: [
+      ['Fmaj7', 'Fmaj7', 'Fmaj7', 'Fmaj7'],
+      ['G', 'G', 'G', 'G'],
+      ['Em7', 'Em7', 'Em7', 'Em7'],
+      ['Am7', 'Am7', 'Am7', 'Am7'],
+    ],
+  },
+  steve_reich_cycle: {
+    verse: [
+      ['Bm11', 'Bm11', 'Bm11', 'Bm11'],
+      ['E7sus4', 'E7sus4', 'E7sus4', 'E7sus4'],
+      ['A', 'A', 'A', 'A'],
+      ['Dmaj7', 'Dmaj7', 'Dmaj7', 'Dmaj7'],
+    ],
+    chorus: [
+      ['Gmaj7', 'Gmaj7', 'Gmaj7', 'Gmaj7'],
+      ['Em7', 'Em7', 'Em7', 'Em7'],
+      ['Am7', 'Am7', 'Am7', 'Am7'],
+      ['D7', 'D7', 'D7', 'D7'],
+    ],
+    bridge: [
+      ['Cm7', 'Cm7', 'Cm7', 'Cm7'],
+      ['Fm7', 'Fm7', 'Fm7', 'Fm7'],
+      ['Bb', 'Bb', 'Bb', 'Bb'],
+      ['Ebmaj7', 'Ebmaj7', 'Ebmaj7', 'Ebmaj7'],
+    ],
+    pre_chorus: [
+      ['Abmaj7', 'Abmaj7', 'Abmaj7', 'Abmaj7'],
+      ['Eb', 'Eb', 'Eb', 'Eb'],
+      ['Fm7', 'Fm7', 'Fm7', 'Fm7'],
+      ['Bb7', 'Bb7', 'Bb7', 'Bb7'],
+    ],
+  },
   hans_zimmer_epic: {
     verse: [
       ['Cm', 'Ab', 'Eb', 'Bb'],
@@ -2592,6 +2671,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'philip_glass_minimal' : tier === 1 ? 'philip_glass_lyrical' : 'philip_glass_dark';
+  }
+  if (songwriterId === 'steve_reich') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'steve_reich_phasing' : tier === 1 ? 'steve_reich_additive' : 'steve_reich_cycle';
   }
   if (songwriterId === 'hans_zimmer') {
     const tier = Math.abs(seed) % 3;

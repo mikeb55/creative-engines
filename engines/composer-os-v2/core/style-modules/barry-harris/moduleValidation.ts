@@ -164,7 +164,10 @@ export function validateBarryHarrisConformance(
   }
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
-  if (chordCount < 3) errors.push('Harmony too static for current duo grammar');
+  /** Steve Reich: long static fields + process — few distinct chord symbols is intentional, not under-elaboration. */
+  if (chordCount < 3 && metadata?.songwriterStyleId !== 'steve_reich') {
+    errors.push('Harmony too static for current duo grammar');
+  }
 
   if (metadata?.songwriterStyleId === 'frank_zappa' && metadata) {
     zappaVoiceLeadingScore = computeFrankZappaVoiceLeadingScore(score, metadata);

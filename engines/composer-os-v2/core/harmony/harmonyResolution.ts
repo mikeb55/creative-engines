@@ -618,6 +618,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return jhEff[barIndex - 1]!;
   }
 
+  const srEff = meta?.steveReichEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'steve_reich' &&
+    Array.isArray(srEff) &&
+    srEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return srEff[barIndex - 1]!;
+  }
+
   /**
    * Charlie Parker: `precomputeCharlieParkerEffectiveHarmonyBars` applies bebop ii–V / tritone-sub devices — receipts **`cp:*`**.
    * After precompute, `charlieParkerEffectiveHarmonyBars` is full-form and authoritative.

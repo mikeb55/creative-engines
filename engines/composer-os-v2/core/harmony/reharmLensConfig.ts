@@ -103,6 +103,13 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
     chromaticMediantBias: 0.26,
     poolSampling: false,
   },
+  steve_reich: {
+    displayName: 'Steve Reich',
+    tritoneRate: 0.02,
+    susBias: 0.4,
+    chromaticMediantBias: 0.05,
+    poolSampling: true,
+  },
   bernard_herrmann: {
     displayName: 'Bernard Herrmann',
     tritoneRate: 0.46,

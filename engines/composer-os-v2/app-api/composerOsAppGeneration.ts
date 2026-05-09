@@ -1095,6 +1095,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'philip_glass'
       ? { philipGlassContext: req.philipGlassContext }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'steve_reich'
+      ? { reichProcess: req.reichProcess }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'hans_zimmer'
       ? { hansZimmerContext: req.hansZimmerContext }
       : {}),
@@ -1248,6 +1251,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const nrLockedTruth = mdLockedTruth?.ninoRotaEffectiveHarmonyBars;
   const jgLockedTruth = mdLockedTruth?.jerryGoldsmithEffectiveHarmonyBars;
   const pgLockedTruth = mdLockedTruth?.philipGlassEffectiveHarmonyBars;
+  const srLockedTruth = mdLockedTruth?.steveReichEffectiveHarmonyBars;
   const hzLockedTruth = mdLockedTruth?.hansZimmerEffectiveHarmonyBars;
   const abLockedTruth = mdLockedTruth?.angeloBadalamentiEffectiveHarmonyBars;
   const fzLockedTruth = mdLockedTruth?.frankZappaEffectiveHarmonyBars;
@@ -1496,7 +1500,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                                               lockedHarmonyBarsAuthoritative &&
                                                               pgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                                             ? pgLockedTruth
-                                                            : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
+                                                            : mdLockedTruth?.songwriterStyleId === 'steve_reich' &&
+                                                                Array.isArray(srLockedTruth) &&
+                                                                srLockedTruth.length === tbLockedTruth &&
+                                                                lockedHarmonyBarsAuthoritative &&
+                                                                srLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                              ? srLockedTruth
+                                                              : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
                                                                 Array.isArray(hzLockedTruth) &&
                                                                 hzLockedTruth.length === tbLockedTruth &&
                                                                 lockedHarmonyBarsAuthoritative &&
@@ -1884,6 +1894,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       philipGlassDeviceReceipts: gp.context.generationMetadata.philipGlassDeviceReceipts,
       philipGlassSliceReceipt: gp.context.generationMetadata.philipGlassSliceReceipt,
       philipGlassEffectiveHarmonyBars: gp.context.generationMetadata.philipGlassEffectiveHarmonyBars,
+      reichProcess: gp.context.generationMetadata.reichProcess,
+      reichResolvedProcess: gp.context.generationMetadata.reichResolvedProcess,
+      steveReichDiagnostics: gp.context.generationMetadata.steveReichDiagnostics,
+      steveReichDeviceReceipts: gp.context.generationMetadata.steveReichDeviceReceipts,
+      steveReichSliceReceipt: gp.context.generationMetadata.steveReichSliceReceipt,
+      steveReichEffectiveHarmonyBars: gp.context.generationMetadata.steveReichEffectiveHarmonyBars,
+      steveReichHarmonicRhythmBars: gp.context.generationMetadata.steveReichHarmonicRhythmBars,
+      steveReichPulseGridDensity: gp.context.generationMetadata.steveReichPulseGridDensity,
       hansZimmerContext: gp.context.generationMetadata.hansZimmerContext,
       hansZimmerDiagnostics: gp.context.generationMetadata.hansZimmerDiagnostics,
       hansZimmerDeviceReceipts: gp.context.generationMetadata.hansZimmerDeviceReceipts,

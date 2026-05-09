@@ -29,7 +29,7 @@ export interface MacroFormPlan {
 
 function classifySongwriterBias(songwriterId?: string | null): MacroSongwriterBias {
   if (!songwriterId) return 'neutral';
-  if (songwriterId === 'philip_glass') return 'glass_flat';
+  if (songwriterId === 'philip_glass' || songwriterId === 'steve_reich') return 'glass_flat';
   if (songwriterId === 'bernard_herrmann') return 'herrmann_contrast';
   if (songwriterId === 'bill_evans') return 'evans_moderate';
   return 'neutral';

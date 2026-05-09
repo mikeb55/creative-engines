@@ -88,6 +88,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'john_coltrane', effKey: 'johnColtraneEffectiveHarmonyBars', sliceId: 'john_coltrane' },
   { match: (m) => m?.songwriterStyleId === 'andrew_hill', effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
   { match: (m) => m?.songwriterStyleId === 'jim_hall', effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
+  { match: (m) => m?.songwriterStyleId === 'steve_reich', effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },
   { match: (m) => m?.songwriterStyleId === 'charlie_parker', effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
   { match: (m) => m?.songwriterStyleId === 'frank_zappa', effKey: 'frankZappaEffectiveHarmonyBars', sliceId: 'frank_zappa' },
 ];
