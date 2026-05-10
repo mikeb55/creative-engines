@@ -5,6 +5,7 @@
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { CompositionContext } from '../compositionContext';
 import { scoreModelToMelodicLine } from './scoreModelToMelodicLine';
+import { resolveMelodicPartId } from './resolveMelodicPartId';
 import {
   scoreMelodicIdentity,
   scoreHarmonyAndLanguage,
@@ -35,7 +36,7 @@ export function scoreResultForGce(
   sections: GceStructureSection[],
   songwriterId?: string
 ): GceGateResult {
-  const melody = scoreModelToMelodicLine(score);
+  const melody = scoreModelToMelodicLine(score, resolveMelodicPartId(score));
 
   const scores: Array<{ name: string; score: number; weight: number }> = [
     { name: 'Cadential Clarity', weight: 2, score: scoreCadentialClarity(melody, chords, sections).score },
@@ -60,6 +61,18 @@ export function scoreResultForGce(
     overallScore,
     weakestCategory: weakest.name,
     passed: overallScore >= GCE_GATE_MIN,
+  };
+}
+
+/** Fallback chord timeline + single section when no `CompositionContext` (combined evaluator / BB). */
+export function buildFallbackChordsAndSectionsFromScore(score: ScoreModel): {
+  chords: string[];
+  sections: GceStructureSection[];
+} {
+  const tb = Math.max(1, maxMeasureIndexAcrossParts(score));
+  return {
+    chords: chordsPerBarFromScore(score, tb),
+    sections: [{ label: 'full', barStart: 1, barEnd: tb, role: 'full' }],
   };
 }
 

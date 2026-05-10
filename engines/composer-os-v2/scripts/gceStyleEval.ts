@@ -5,6 +5,7 @@
 
 import { runGoldenPath, type GoldenPathResult } from '../core/goldenPath/runGoldenPath';
 import { scoreModelToMelodicLine } from '../core/gce/scoreModelToMelodicLine';
+import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import {
   scoreMelodicIdentity,
   scoreHarmonyAndLanguage,
@@ -138,7 +139,7 @@ function printGceCategories(result: GoldenPathResult): void {
     console.warn(result.errors?.join('; ') ?? '');
   }
 
-  const melody = scoreModelToMelodicLine(result.score);
+  const melody = scoreModelToMelodicLine(result.score, resolveMelodicPartId(result.score));
   const chords = chordsForGceScoring(result, GCE_HARMONIC_BAR_TARGET);
   const sections = gceSectionsFromFormMap(result.context.form);
 

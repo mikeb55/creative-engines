@@ -5,6 +5,7 @@
 
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { scoreModelToMelodicLine } from '../core/gce/scoreModelToMelodicLine';
+import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import {
   scoreCadentialClarity,
   scoreMelodicIdentity,
@@ -109,7 +110,7 @@ function main(): void {
       rows.push({ voice: hv, error: 'no_score_or_failed', errors: result.errors });
       continue;
     }
-    const melody = scoreModelToMelodicLine(result.score);
+    const melody = scoreModelToMelodicLine(result.score, resolveMelodicPartId(result.score));
     const chords = buildChordsForGceGate(result.score, result.context, GCE_GATE_HARMONIC_BAR_TARGET);
     const sections = gceSectionsFromFormMap(result.context.form);
     const sw = result.context.generationMetadata?.songwriterStyleId;

@@ -30,6 +30,8 @@ export interface GceEvaluationInput<
   output: TGeneratedOutput;
   features: TFeatures;
   weights: GceWeights;
+  /** Optional — e.g. `songwriterStyleId` for melodic GCE targets when `output` is a {@link ScoreModel}. */
+  metadata?: Record<string, unknown>;
 }
 export interface GceEvaluationResult {
   categories: GceScoreMap;

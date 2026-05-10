@@ -5,8 +5,24 @@ import type {
   GceScoreMap,
   GceWeights,
 } from './evaluationTypes';
+import type { ScoreModel } from '../score-model/scoreModelTypes';
+import { resolveMelodicPartId } from '../gce/resolveMelodicPartId';
+import { scoreModelToMelodicLine } from '../gce/scoreModelToMelodicLine';
+import { buildFallbackChordsAndSectionsFromScore } from '../gce/gceGate';
+import {
+  scoreCadentialClarity,
+  scoreMelodicIdentity,
+  scorePhraseGrammar,
+  scoreHarmonyAndLanguage,
+  scoreRhythmicIdentity,
+  scoreStructureAndForm,
+  scoreArrangementAndOrchestration,
+  scoreEconomyAndFocus,
+  scoreTensionAndRelease,
+  scoreThematicRecallPotential,
+} from '../gce/gceAutoScorers';
 
-const GCE_CATEGORY_ORDER: GceCategory[] = [
+export const GCE_CATEGORY_ORDER: GceCategory[] = [
   'cadentialClarity',
   'melodicIdentity',
   'phraseGrammar',
@@ -34,19 +50,93 @@ export const defaultGceWeights: GceWeights = {
   thematicRecallPotential: 0.08,
 };
 
+function isScoreModelOutput(output: unknown): output is ScoreModel {
+  return output != null && typeof output === 'object' && Array.isArray((output as ScoreModel).parts);
+}
+
+/** Real `gceAutoScorers` pillar blend — same melodic extraction as {@link scoreResultForGce} (BB-aware part id). */
+function evaluateGceFromScoreModel(
+  score: ScoreModel,
+  weights: GceWeights,
+  songwriterId: string | undefined,
+  threshold: number
+): GceEvaluationResult {
+  const { chords, sections } = buildFallbackChordsAndSectionsFromScore(score);
+  const melodicPartId = resolveMelodicPartId(score);
+  const melody = scoreModelToMelodicLine(score, melodicPartId);
+
+  const raw: Record<GceCategory, number> = {
+    cadentialClarity: scoreCadentialClarity(melody, chords, sections).score,
+    melodicIdentity: scoreMelodicIdentity(melody, songwriterId).score,
+    phraseGrammar: scorePhraseGrammar(melody).score,
+    harmonyAndLanguage: scoreHarmonyAndLanguage(chords).score,
+    rhythmicIdentity: scoreRhythmicIdentity(melody).score,
+    structureAndForm: scoreStructureAndForm(score, chords, sections).score,
+    arrangementAndOrchestration: scoreArrangementAndOrchestration(score).score,
+    economyAndFocus: scoreEconomyAndFocus(melody).score,
+    tensionAndRelease: scoreTensionAndRelease(chords).score,
+    thematicRecallPotential: scoreThematicRecallPotential(melody, sections).score,
+  };
+
+  const categories = {} as GceScoreMap;
+  let finalScore = 0;
+  let minScore = Infinity;
+  let maxScore = -Infinity;
+  let weakestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
+  let strongestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
+
+  for (const cat of GCE_CATEGORY_ORDER) {
+    const scoreVal = raw[cat];
+    const w = weights[cat];
+    const weightedScore = scoreVal * w;
+    categories[cat] = {
+      category: cat,
+      score: scoreVal,
+      weight: w,
+      weightedScore,
+    };
+    finalScore += weightedScore;
+    if (scoreVal <= minScore) {
+      minScore = scoreVal;
+      weakestCategory = cat;
+    }
+    if (scoreVal >= maxScore) {
+      maxScore = scoreVal;
+      strongestCategory = cat;
+    }
+  }
+
+  finalScore = Math.round(finalScore * 10) / 10;
+
+  return {
+    categories,
+    finalScore,
+    weakestCategory,
+    strongestCategory,
+    pass: finalScore >= threshold,
+    threshold,
+  };
+}
+
 export function evaluateGce(input: GceEvaluationInput): GceEvaluationResult {
   const weights: GceWeights = {
     ...defaultGceWeights,
     ...input.weights,
   };
 
+  const threshold = DEFAULT_GCE_PASS_THRESHOLD;
+
+  if (isScoreModelOutput(input.output)) {
+    const songwriterId =
+      typeof input.metadata?.songwriterStyleId === 'string' ? input.metadata.songwriterStyleId : undefined;
+    return evaluateGceFromScoreModel(input.output, weights, songwriterId, threshold);
+  }
+
   const placeholderScore = 5.0;
   const categories = {} as GceScoreMap;
   let finalScore = 0;
-  let minScore = Infinity;
-  let maxScore = -Infinity;
-  let weakestCategory: GceCategory = GCE_CATEGORY_ORDER[0];
-  let strongestCategory: GceCategory = GCE_CATEGORY_ORDER[0];
+  let weakestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
+  let strongestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
 
   for (const category of GCE_CATEGORY_ORDER) {
     const w = weights[category];
@@ -58,18 +148,7 @@ export function evaluateGce(input: GceEvaluationInput): GceEvaluationResult {
       weightedScore,
     };
     finalScore += weightedScore;
-
-    if (placeholderScore < minScore) {
-      minScore = placeholderScore;
-      weakestCategory = category;
-    }
-    if (placeholderScore > maxScore) {
-      maxScore = placeholderScore;
-      strongestCategory = category;
-    }
   }
-
-  const threshold = DEFAULT_GCE_PASS_THRESHOLD;
 
   return {
     categories,

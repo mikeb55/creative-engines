@@ -45,6 +45,7 @@ export function createCombinedEvaluator(
         output: input.output,
         features,
         weights: input.gceWeights,
+        metadata: input.metadata,
       });
 
       const style = input.styleProfile.score({
