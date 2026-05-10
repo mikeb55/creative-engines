@@ -4,6 +4,8 @@
 
 - **`COMPOSER_HANDBOOK.md`** — **GCE Structural Memory** user-facing section (fingerprints, extract/store/validate/retry, five Steely V2 gate rules, **`formatGateOverrides`**, adding fingerprints, **`validateAgainstFingerprint`** for targeted fixes, cross-format use).
 
+- **Steely Orbit V17** — **`enforceFill48Shout49Contrast`** in **`orbitSteelyV17Finishing.ts`**: bar **48** „Fill” = tacet **trumpets, trombones, piano, tenor** (alto + bass + drums only); bar **49** „Shout Chorus” = **tutti** shell (piano + brass sustain + tenor) so **`section_transition_min_density_delta`** passes.
+
 - **`steely_orbit_target` fingerprint** — **`gce-memory/fingerprints/steely_orbit_target.json`**: cloned from **`orbit_v6_64`** with **bars 57–64** density thinned for Steely handoff; **`validateDensityEightBarVsReference`** supports **`DensityEightBarTransitionZone`** ( **`generateSteelyOrbitV1.ts`** default **`STEELY_V2_DENSITY_ZONE_START`/`END`** **57–64**, **`STEELY_V2_DENSITY_ZONE_MAX`** **0.65**). V2 gate loads **`steely_orbit_target`** instead of **`orbit_v6_64`**.
 
 - **GCE structural memory (Phase 1)** — **`core/gce/gceStructuralMemory.ts`** + **`core/gce/gceMemoryRegistry.ts`**; JSON fingerprints in **`engines/composer-os-v2/gce-memory/fingerprints/`** (`orbit_v6_64`, `steely_orbit_v1_7`). **`validateAgainstFingerprint`** + **`validateMelodicPitchSequenceStreaks`** (no three consecutive identical melodic bar signatures outside intro **1–4**). **`scripts/generateSteelyOrbitV1.ts`** gates attempts against **`orbit_v6_64`** before combined eval; **`npm run gce:seed-structural-fingerprints`** ( **`engines/composer-os-v2`** ) refreshes seeds from Orbit MusicXML. Docs: **`COMPOSER_OS_ARCHITECTURE.md`**, **`COMPOSER_OS_ROADMAP.md`**.
