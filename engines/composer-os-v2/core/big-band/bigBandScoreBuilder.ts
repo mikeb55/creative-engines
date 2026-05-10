@@ -360,6 +360,10 @@ function addBigBandDrumPattern(
 
 const USE_CHORD_QUALITY_VOICING_BB = true;
 
+/** Big Band upright bass written pitches (GM 32); walking lines must stay in bass register (≈E1–G3). */
+const BB_UPRIGHT_BASS_MIDI_MIN = 28;
+const BB_UPRIGHT_BASS_MIDI_MAX = 55;
+
 /** Minor / diminished surface matcher (exclude maj-bearing symbols via `maj` guard in caller). */
 const BB_MINOR_DIM_CHORD_RE = /m|min|dim|ø|°/;
 
@@ -1014,9 +1018,13 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         addWindOrBassNotes(m, pitch, useHalfHalfWind, effectiveBeats);
         continue;
       }
-      /** Upright bass (`bb_rhythm_section`) */
-      const rootWalk = snapMidiToRange(bassMidi + 12, 36, 60);
-      const fifthWalk = snapMidiToRange(bassMidi + 19, 36, 60);
+      /** Upright bass (`bb_rhythm_section`) — root/fifth from stacked bass anchor (no +12 “lead bass” lift). */
+      const rootWalk = snapMidiToRange(bassMidi, BB_UPRIGHT_BASS_MIDI_MIN, BB_UPRIGHT_BASS_MIDI_MAX);
+      const fifthWalk = snapMidiToRange(
+        bassMidi + 7,
+        BB_UPRIGHT_BASS_MIDI_MIN,
+        BB_UPRIGHT_BASS_MIDI_MAX
+      );
       const qBass = effectiveBeats / 4;
       if (USE_BASS_WALK) {
         addEvent(m, createNote(rootWalk, 0, qBass, 1));
@@ -1028,7 +1036,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         barNotes.push({ partId: BB_PART_RHYTHM, midi: rootWalk, durationBeats: qBass });
         barNotes.push({ partId: BB_PART_RHYTHM, midi: fifthWalk, durationBeats: qBass });
       } else {
-        const pitch = bassMidi + 12;
+        const pitch = snapMidiToRange(bassMidi, BB_UPRIGHT_BASS_MIDI_MIN, BB_UPRIGHT_BASS_MIDI_MAX);
         barNotes.push({ partId: BB_PART_RHYTHM, midi: pitch, durationBeats: effectiveBeats });
         addWindOrBassNotes(m, pitch, false, effectiveBeats);
       }
