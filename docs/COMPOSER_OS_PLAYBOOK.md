@@ -46,6 +46,70 @@
 
 ---
 
+## MIDI export (Generate — `.mid` next to `.musicxml`)
+
+**What it does:** After a successful **MusicXML** write, **`generateComposition`** runs **`writeScoreMidi`** (`engines/composer-os-v2/core/export/midiScoreWriter.ts`). Output is a **Type-1 Standard MIDI File**: **tempo** on a conductor meta track plus **one melodic track per `PartModel`**, **480 PPQ** (same pulse grid as score divisions). Time signatures follow **`barMeterMap`** / per-measure spans like export.
+
+**When you get a `.mid`:** Engine writes **`<same_base_name>.mid`** in the **same folder** as the `.musicxml` whenever **`writeScoreModelMidiFile`** finds **at least one renderable pitched note** across the score (`hasRenderableNotes`). If the score is empty of notes, **no MIDI file** is produced (`midiFilepath` omitted).
+
+**Modes:** Any preset path that lands **MusicXML on disk** runs this step — **Song Mode**, **Big Band**, **String Quartet** (after SQ XML substitution where applicable), **guitar** tab/both export, etc. Same **`scoreForDrumGuide`** snapshot the XML export used (includes instrument-group overrides).
+
+**GM program per part:** Each part gets **`ProgramChange`** using **`part.midiProgram`** (0–127) on a **non–channel-10** melodic channel (**channel 10 reserved for GM drums** in hosts); parts round-robin channels **1–16** skipping **10**.
+
+**Open file:** On **desktop**, after Generate, **`Open MIDI file`** appears when the API returns **`midiFilepath`** — opens that path via **`composer-os-api:open-midi-file`** (`feat(midi): Phase B — Open MIDI file button + IPC handler`, **`7ce31651`**).
+
+---
+
+## Big Band — upright bass MIDI register (28–55)
+
+**Target:** Walking / rhythm bass (**GM 32 acoustic bass**) stays **E1–G3** written pitch ≈ **MIDI 28–55**.
+
+**Fix:** **`bigBandScoreBuilder`** builds walking quarter notes from **root / fifth** off the stacked bass anchor with **`snapMidiToRange(..., BB_UPRIGHT_BASS_MIDI_MIN, BB_UPRIGHT_BASS_MIDI_MAX)`** — **no +12 “lead bass” lift`** on those steps (`fix(big-band): clamp upright bass to correct MIDI register`, **`5888f4d3`**).
+
+---
+
+## Big Band drums — per-section feel
+
+**Feel classes A / B / C** (`bigBandDrumFeelClass`): **`solo_section` → C**; **`shout_chorus`** or **`background_figures` → B**; otherwise **rotate A/B/C** from **form slice index** (not literal rehearsal letters).
+
+**Bar content:** With **drum variation** on, **`addBigBandDrumPattern`** picks **Pattern A** (quarters + sparse kicks), **Pattern B** (eighth hats / ride–open-hat mix + four-on-floor style kicks), or **Pattern C** (half-time shell). **Intro / ending** use a lighter **two-beat** cymbal + kick layout; **shout** forces **Pattern B**. **Transition** bars can request **`transitionFill`** (hat / kick fill length capped by policy).
+
+**Auto tie to form:** Each bar’s **`BigBandFormPhase`** + **section tag** decide pattern family and whether transitions fire (`feat(big-band): per-section drum pattern variation`, **`ed83a78d`**).
+
+---
+
+## Big Band drums — feel intensity (Sparse / Standard / Driving)
+
+**UI:** **Home → Generate**, instrument group **Big Band** — **Feel intensity** pills (**Sparse** / **Standard** / **Driving**). Choice is sent as **`drumIntensity`** on the generate payload (`feat(big-band): drum feel intensity UI pill control`, **`666a1218`**).
+
+**Engine:** **`getDrumPolicy`** (`bigBandDrumIntensity.ts`) maps **form phase** × **intensity** to five controls: **`timeTexture`** (`ride` | `hihat` | `brush` | `broken`), **`cueSelectivity`**, **`setupStrength`**, **`fillLengthCeiling`**, **`dynamicCeiling`**. They gate **ensemble-hit probability**, **fill length**, **velocity ceiling**, and **ride vs brush vs broken** cymbal choice (`feat(big-band): drum intensity system — 5-lever policy per section`, **`9449c39c`**).
+
+**Phase mapping:** Planner phases map to policy keys **`intro`**, **`melody_head`**, **`solo_section`**, **`shout_chorus`**, **`ending`**; **`background_figures`** reads as **`melody_head`**.
+
+**Matrix (abbrev.):** Rows = phase; columns = Sparse | Standard | Driving — values are **`timeTexture`** / **`dynamicCeiling`** (full numbers in source **`MATRIX`**).
+
+| Phase | Sparse | Standard | Driving |
+|-------|--------|----------|---------|
+| **intro** | brush / 0.50 | ride / 0.65 | ride / 0.70 |
+| **melody_head** | ride / 0.60 | ride / 0.70 | **hihat** / 0.80 |
+| **solo_section** | broken / 0.55 | broken / 0.65 | broken / 0.75 |
+| **shout_chorus** | ride / 0.75 | ride / 0.85 | **hihat** / 0.95 |
+| **ending** | brush / 0.50 | ride / 0.65 | ride / 0.80 |
+
+*`cueSelectivity`, `setupStrength`, `fillLengthCeiling` scale fills and hit density inside each cell — see **`bigBandDrumIntensity.ts`**.
+
+### Git history (MIDI + Big Band drum/bass lines, since playbook snapshot `27fb2d3a`)
+
+| Commit | Focus |
+|--------|--------|
+| `7ce31651` | Open MIDI file — desktop IPC + UI button |
+| `5888f4d3` | Big Band bass clamp **28–55** |
+| `ed83a78d` | Per-section drum pattern variation |
+| `9449c39c` | Drum intensity **5-lever** policy matrix |
+| `666a1218` | Drum intensity UI pills |
+
+---
+
 ## Thread summary — Reharm Panel (shipped)
 
 **Status:** Reharm preview — **fully shipped** (phases **A–D2** + **LOCK** reconciliation + per-writer lens rows). **Smoke tier** (aggregate PASS rows) tracks **`runSmokeTests.ts`** — see repo **`CLAUDE.md`**. **Open TODOs (reharm):** none.
