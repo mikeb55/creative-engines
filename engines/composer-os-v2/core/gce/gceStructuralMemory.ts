@@ -32,12 +32,23 @@ function pitchToMidi(step: string, octave: number, alter: number): number {
   return (octave + 1) * 12 + pc + alter;
 }
 
+/** Declared macro shape for a reference chart — validators may relax rules that fight the tag. */
+export type GceIntentTag =
+  | 'bright_opening'
+  | 'gradual_darkening'
+  | 'sparse_ending'
+  | 'constant_density'
+  | 'climax_driven'
+  | 'through_composed';
+
 export interface StructuralFingerprint {
   id: string;
   format: 'big_band' | 'string_quartet' | 'duo' | 'ecm';
   songwriterId: string;
   gceScore: number;
   gceGateOverride?: number;
+  /** Optional authorial/structural labels for rule relaxation (see handbook). */
+  intentTags?: GceIntentTag[];
   /** active parts per bar, normalised 0–1, length = barCount */
   densityCurve: number[];
   melodicRestSpans: {
@@ -63,6 +74,7 @@ export interface StructuralFingerprintMeta {
   songwriterId: string;
   gceScore: number;
   gceGateOverride?: number;
+  intentTags?: GceIntentTag[];
   notes?: string;
 }
 
@@ -124,7 +136,8 @@ function collectRestRunLengths(part: PartModel): { maxRun: number; distribution:
   return { maxRun, distribution: runs.sort((a, b) => a - b) };
 }
 
-function activePartsNormalizedBigBand(score: ScoreModel, bar: number): number {
+/** Exported for BB GCE arrangement pillar — same counting as fingerprint density curve. */
+export function activePartsNormalizedBigBand(score: ScoreModel, bar: number): number {
   const ids = score.parts.map((p) => p.id);
   let active = 0;
   for (const p of score.parts) {
@@ -248,6 +261,7 @@ export function extractFingerprint(
     sectionTransitions,
     drumNarrativeShape,
     melodicVarietyScore,
+    ...(meta.intentTags?.length ? { intentTags: meta.intentTags } : {}),
     ...(meta.notes ? { notes: meta.notes } : {}),
   };
 }
@@ -563,9 +577,22 @@ export function validateSteelyOrbitV2FingerprintGate(
     disableMelodicPitchStreak?: boolean;
   }
 ): SteelyOrbitV2FingerprintGateResult {
+  const tags = orbitRef.intentTags ?? [];
   const densityMax = options?.densityEightBarMaxMeanAbs ?? 0.4;
   const drumVarMin = options?.drumSixteenBarMinVariance ?? 0.05;
-  const secMin = options?.sectionMinAbsDensityDelta ?? 0.1;
+  let secMin = options?.sectionMinAbsDensityDelta ?? 0.1;
+  if (tags.includes('constant_density')) {
+    secMin = 0;
+  }
+
+  let densityTransitionZone = options?.densityTransitionZone ?? null;
+  if (tags.includes('sparse_ending') && densityTransitionZone) {
+    densityTransitionZone = {
+      ...densityTransitionZone,
+      maxMeanAbsDeviation: densityTransitionZone.maxMeanAbsDeviation + 0.15,
+    };
+  }
+
   const skipStreak = options?.disableMelodicPitchStreak === true;
 
   const rules: Record<string, boolean> = {
@@ -607,7 +634,7 @@ export function validateSteelyOrbitV2FingerprintGate(
       cand.densityCurve,
       orbitRef.densityCurve,
       densityMax,
-      options?.densityTransitionZone ?? null
+      densityTransitionZone
     );
     rules.density_eight_bar_vs_orbit_v6 = dens.pass;
     if (!dens.pass) failures.push(...dens.failures);

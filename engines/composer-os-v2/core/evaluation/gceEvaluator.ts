@@ -16,9 +16,9 @@ import {
   scoreHarmonyAndLanguage,
   scoreRhythmicIdentity,
   scoreStructureAndForm,
-  scoreArrangementAndOrchestration,
-  scoreEconomyAndFocus,
-  scoreTensionAndRelease,
+  scoreArrangementAndOrchestrationForEnsemble,
+  scoreEconomyAndFocusForEnsemble,
+  scoreTensionAndReleaseForEnsemble,
   scoreThematicRecallPotential,
 } from '../gce/gceAutoScorers';
 
@@ -72,9 +72,9 @@ function evaluateGceFromScoreModel(
     harmonyAndLanguage: scoreHarmonyAndLanguage(chords).score,
     rhythmicIdentity: scoreRhythmicIdentity(melody).score,
     structureAndForm: scoreStructureAndForm(score, chords, sections).score,
-    arrangementAndOrchestration: scoreArrangementAndOrchestration(score).score,
-    economyAndFocus: scoreEconomyAndFocus(melody).score,
-    tensionAndRelease: scoreTensionAndRelease(chords).score,
+    arrangementAndOrchestration: scoreArrangementAndOrchestrationForEnsemble(score).score,
+    economyAndFocus: scoreEconomyAndFocusForEnsemble(melody, sections, score).score,
+    tensionAndRelease: scoreTensionAndReleaseForEnsemble(score, chords, melody).score,
     thematicRecallPotential: scoreThematicRecallPotential(melody, sections).score,
   };
 

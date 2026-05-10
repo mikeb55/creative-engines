@@ -228,5 +228,9 @@
     0
   ],
   "melodicVarietyScore": 0.25,
-  "notes": "V6.0 orbit — BB (projects/Orbit)"
+  "notes": "V6.0 orbit — BB (projects/Orbit)",
+  "intentTags": [
+    "gradual_darkening",
+    "constant_density"
+  ]
 }

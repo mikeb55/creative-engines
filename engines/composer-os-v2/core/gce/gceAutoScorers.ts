@@ -1,6 +1,7 @@
 import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
 import type { NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import { activePartsNormalizedBigBand } from './gceStructuralMemory';
 
 /** Mirror **`uprightBassProfile`** hard range — inlined to avoid any module-init edge cases in GCE-only imports. */
 const UPRIGHT_BASS_HARD_LOW = 28;
@@ -898,6 +899,136 @@ export function scoreArrangementAndOrchestration(score: ScoreModel): CategorySco
     justification:
       `density Δ ${densityDifference.toFixed(2)} (mean |guitar−bass| notes/bar ÷ 4), register gap ${registerSeparation.toFixed(0)} st (melody guitar min − bass max), part activity σ ${activePartVariety.toFixed(1)}`,
   };
+}
+
+function isBigBandScoreModel(score: ScoreModel): boolean {
+  return score.parts.some((p) => p.id.startsWith('bb_'));
+}
+
+function bbScoreBarCount(score: ScoreModel): number {
+  let n = 0;
+  for (const p of score.parts) {
+    if (p.measures.length > n) n = p.measures.length;
+  }
+  return n;
+}
+
+/** Big-band arrangement: ensemble density motion / contrast across bars (not guitar–bass duo). */
+export function scoreArrangementAndOrchestrationBigBand(score: ScoreModel): CategoryScore {
+  const barCount = bbScoreBarCount(score);
+  if (barCount < 1) return { score: 0, justification: 'BB: no bars' };
+  const dens: number[] = [];
+  for (let b = 1; b <= barCount; b++) {
+    dens.push(activePartsNormalizedBigBand(score, b));
+  }
+  let motion = 0;
+  for (let i = 1; i < dens.length; i++) {
+    motion += Math.abs(dens[i]! - dens[i - 1]!);
+  }
+  const boundaryMotion = motion / Math.max(1, dens.length - 1);
+  const rangeSpread = Math.max(...dens) - Math.min(...dens);
+  const mean = dens.reduce((a, b) => a + b, 0) / dens.length;
+  const varD = dens.reduce((s, v) => s + (v - mean) ** 2, 0) / dens.length;
+  const sigma = Math.sqrt(varD);
+  const rawScore =
+    10 *
+    (0.38 * Math.min(boundaryMotion / 0.18, 1) +
+      0.37 * Math.min(rangeSpread / 0.55, 1) +
+      0.25 * Math.min(sigma / 0.14, 1));
+  const sc = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  return {
+    score: sc,
+    justification: `BB motion ${boundaryMotion.toFixed(3)}, spread ${rangeSpread.toFixed(3)}, σ ${sigma.toFixed(3)}`,
+  };
+}
+
+export function scoreArrangementAndOrchestrationForEnsemble(score: ScoreModel): CategoryScore {
+  if (isBigBandScoreModel(score)) return scoreArrangementAndOrchestrationBigBand(score);
+  return scoreArrangementAndOrchestration(score);
+}
+
+function chordTimelineCoverage(chords: string[]): number {
+  if (!chords.length) return 0;
+  let k = 0;
+  for (const c of chords) {
+    if (c != null && String(c).trim().length > 0) k++;
+  }
+  return k / chords.length;
+}
+
+/** Melodic peaks / valleys when chord-symbol tension arcs are thin. */
+export function scoreTensionAndReleaseMelodicContour(line: MelodicNote[]): CategoryScore {
+  const pitches = line.filter((n) => !n.rest && n.midi > 0).map((n) => n.midi);
+  if (pitches.length < 5) {
+    return { score: 4, justification: 'melodic contour: too few notes' };
+  }
+  let peaks = 0;
+  for (let i = 2; i < pitches.length - 2; i++) {
+    const pk = pitches[i]!;
+    if (pk > pitches[i - 1]! && pk > pitches[i + 1]! && pk >= pitches[i - 2]! && pk >= pitches[i + 2]!) peaks++;
+  }
+  let score = 4;
+  if (peaks >= 10) score = 10;
+  else if (peaks >= 8) score = 9;
+  else if (peaks >= 6) score = 8;
+  else if (peaks >= 4) score = 7;
+  else if (peaks >= 2) score = 6;
+  else if (peaks >= 1) score = 5;
+  return { score, justification: `melodic contour peaks ${peaks}` };
+}
+
+export function scoreTensionAndReleaseForEnsemble(
+  score: ScoreModel,
+  chords: string[],
+  melody: MelodicNote[]
+): CategoryScore {
+  if (!isBigBandScoreModel(score)) return scoreTensionAndRelease(chords);
+  const cov = chordTimelineCoverage(chords);
+  const chordSc = scoreTensionAndRelease(chords);
+  const melSc = scoreTensionAndReleaseMelodicContour(melody);
+  if (cov >= 0.35 && chordSc.score >= 7) return chordSc;
+  if (cov < 0.22) return melSc;
+  const blended = Math.round((0.45 * chordSc.score + 0.55 * melSc.score) * 10) / 10;
+  const scoreVal = Math.min(10, Math.max(chordSc.score, melSc.score, blended));
+  return {
+    score: scoreVal,
+    justification: `BB tension chord=${chordSc.score} cov=${cov.toFixed(2)} melodic=${melSc.score} → ${scoreVal.toFixed(1)}`,
+  };
+}
+
+export function scoreEconomyAndFocusBigBand(line: MelodicNote[], sections: GceStructureSection[]): CategoryScore {
+  const duo = scoreEconomyAndFocus(line);
+  if (!sections.length) return duo;
+  const densities: number[] = [];
+  for (const sec of sections) {
+    const span = Math.max(1, sec.barEnd - sec.barStart + 1);
+    const notesIn = line.filter(
+      (n) => !n.rest && n.midi > 0 && n.bar >= sec.barStart && n.bar <= sec.barEnd
+    );
+    densities.push(notesIn.length / (span * 4));
+  }
+  if (densities.length < 2) return duo;
+  const spread = Math.max(...densities) - Math.min(...densities);
+  const mean = densities.reduce((a, b) => a + b, 0) / densities.length;
+  const varD = densities.reduce((s, v) => s + (v - mean) ** 2, 0) / densities.length;
+  const secScore = Math.min(
+    10,
+    Math.max(4, Math.round((4 + spread * 22 + Math.sqrt(varD) * 28) * 10) / 10)
+  );
+  const blended = Math.round((0.35 * duo.score + 0.65 * secScore) * 10) / 10;
+  return {
+    score: Math.min(10, blended),
+    justification: `BB economy duo=${duo.score.toFixed(1)} secSpread=${spread.toFixed(3)} → ${blended.toFixed(1)}`,
+  };
+}
+
+export function scoreEconomyAndFocusForEnsemble(
+  line: MelodicNote[],
+  sections: GceStructureSection[],
+  score: ScoreModel
+): CategoryScore {
+  if (isBigBandScoreModel(score)) return scoreEconomyAndFocusBigBand(line, sections);
+  return scoreEconomyAndFocus(line);
 }
 
 function sectionIndexForBar(bar: number, sections: GceStructureSection[]): number {

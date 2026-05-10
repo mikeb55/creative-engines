@@ -11,11 +11,11 @@ import {
   scoreHarmonyAndLanguage,
   scoreRhythmicIdentity,
   scoreStructureAndForm,
-  scoreEconomyAndFocus,
-  scoreTensionAndRelease,
+  scoreEconomyAndFocusForEnsemble,
+  scoreTensionAndReleaseForEnsemble,
   scoreCadentialClarity,
   scorePhraseGrammar,
-  scoreArrangementAndOrchestration,
+  scoreArrangementAndOrchestrationForEnsemble,
   scoreThematicRecallPotential,
   gceSectionsFromFormMap,
 } from '../core/gce/gceAutoScorers';
@@ -149,9 +149,9 @@ function printGceCategories(result: GoldenPathResult): void {
   const harmony = scoreHarmonyAndLanguage(chords);
   const rhythm = scoreRhythmicIdentity(melody);
   const structure = scoreStructureAndForm(result.score, chords, sections);
-  const arrangement = scoreArrangementAndOrchestration(result.score);
-  const economy = scoreEconomyAndFocus(melody);
-  const tension = scoreTensionAndRelease(chords);
+  const arrangement = scoreArrangementAndOrchestrationForEnsemble(result.score);
+  const economy = scoreEconomyAndFocusForEnsemble(melody, sections, result.score);
+  const tension = scoreTensionAndReleaseForEnsemble(result.score, chords, melody);
   const thematicRecall = scoreThematicRecallPotential(melody, sections);
 
   /** Weights: Cadential + Melodic weighted 2× (critical pillars); others 1×. */

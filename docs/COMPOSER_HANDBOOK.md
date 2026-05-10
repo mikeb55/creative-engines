@@ -63,6 +63,21 @@ Load the reference fingerprint, run **`validateAgainstFingerprint`** on your can
 
 For Big Band iteration specifically, **`validateSteelyOrbitV2FingerprintGate`** narrows the five-rule pack before combined evaluation so you do not chase a high style score on a structurally broken chart.
 
+### Intent tags (reference fingerprints)
+
+Optional **`intentTags`** on a fingerprint JSON declare **macro dramaturgy** so validators do not punish charts for the wrong aesthetic:
+
+| Tag | Effect on Steely V2 gate (when present on the **reference** fingerprint) |
+|-----|---------------------------------------------------------------------------|
+| **`sparse_ending`** | Loosens the **57–64 density** transition tolerance slightly (adds **+0.15** to the zone mean-abs cap — stacks with env overrides). |
+| **`constant_density`** | Sets **section rehearsal |densityΔ|** floor to **0** — allows flat orchestration between formally labelled sections when the reference chart is **texture-static by design**. |
+| **`bright_opening`** | Documentary tag today — reserved for future gates (brightness vs darkness scoring). |
+| **`gradual_darkening`** | Documentary — pairs with sparse-ending drains or long arcs. |
+| **`climax_driven`** | Future use: expect a mid-form ensemble spike (validators may tighten mid-thirds rather than relax globally). |
+| **`through_composed`** | Documentary — minimal sectional rehearsal contrast expected. |
+
+Shipped examples: **`steely_orbit_target`** uses **`bright_opening`**, **`gradual_darkening`**, **`sparse_ending`**; **`orbit_v6_64`** uses **`gradual_darkening`**, **`constant_density`**.
+
 ### Works across formats
 
 Fingerprints carry a **format** tag (**big band**, **string quartet**, **duo**, **ECM**). Extraction targets that format’s scoring layout; the **workflow** is the same everywhere—extract trusted output, validate new runs against it, retry.

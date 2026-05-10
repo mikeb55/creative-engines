@@ -11,11 +11,11 @@ import {
   scoreHarmonyAndLanguage,
   scoreRhythmicIdentity,
   scoreStructureAndForm,
-  scoreEconomyAndFocus,
-  scoreTensionAndRelease,
+  scoreEconomyAndFocusForEnsemble,
+  scoreTensionAndReleaseForEnsemble,
   scoreCadentialClarity,
   scorePhraseGrammar,
-  scoreArrangementAndOrchestration,
+  scoreArrangementAndOrchestrationForEnsemble,
   scoreThematicRecallPotential,
   type GceStructureSection,
 } from '../core/gce/gceAutoScorers';
@@ -76,9 +76,9 @@ function main(): void {
   const harmony = scoreHarmonyAndLanguage(badChords);
   const rhythm = scoreRhythmicIdentity(badMelody);
   const structure = scoreStructureAndForm(badScore, badChords, badSections);
-  const arrangement = scoreArrangementAndOrchestration(badScore);
-  const economy = scoreEconomyAndFocus(badMelody);
-  const tension = scoreTensionAndRelease(badChords);
+  const arrangement = scoreArrangementAndOrchestrationForEnsemble(badScore);
+  const economy = scoreEconomyAndFocusForEnsemble(badMelody, badSections, badScore);
+  const tension = scoreTensionAndReleaseForEnsemble(badScore, badChords, badMelody);
   const thematicRecall = scoreThematicRecallPotential(badMelody, badSections);
 
   const scores = {

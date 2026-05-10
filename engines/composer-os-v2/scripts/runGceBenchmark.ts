@@ -13,9 +13,9 @@ import {
   scoreHarmonyAndLanguage,
   scoreRhythmicIdentity,
   scoreStructureAndForm,
-  scoreArrangementAndOrchestration,
-  scoreEconomyAndFocus,
-  scoreTensionAndRelease,
+  scoreArrangementAndOrchestrationForEnsemble,
+  scoreEconomyAndFocusForEnsemble,
+  scoreTensionAndReleaseForEnsemble,
   scoreThematicRecallPotential,
   gceSectionsFromFormMap,
 } from '../core/gce/gceAutoScorers';
@@ -125,9 +125,9 @@ function main(): void {
       harmonyAndLanguage: { score: scoreHarmonyAndLanguage(chords).score, weight: 1 },
       rhythmicIdentity: { score: scoreRhythmicIdentity(melody).score, weight: 1 },
       structureAndForm: { score: scoreStructureAndForm(result.score, chords, sections).score, weight: 1 },
-      arrangementAndOrchestration: { score: scoreArrangementAndOrchestration(result.score).score, weight: 1 },
-      economyAndFocus: { score: scoreEconomyAndFocus(melody).score, weight: 1 },
-      tensionAndRelease: { score: scoreTensionAndRelease(chords).score, weight: 1 },
+      arrangementAndOrchestration: { score: scoreArrangementAndOrchestrationForEnsemble(result.score).score, weight: 1 },
+      economyAndFocus: { score: scoreEconomyAndFocusForEnsemble(melody, sections, result.score).score, weight: 1 },
+      tensionAndRelease: { score: scoreTensionAndReleaseForEnsemble(result.score, chords, melody).score, weight: 1 },
       thematicRecallPotential: { score: scoreThematicRecallPotential(melody, sections).score, weight: 1 },
     };
 

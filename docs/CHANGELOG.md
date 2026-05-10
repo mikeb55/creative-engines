@@ -2,6 +2,9 @@
 
 ### Added
 
+- **BB-aware GCE pillars** — **`scoreArrangementAndOrchestrationForEnsemble`** / **`scoreArrangementAndOrchestrationBigBand`** (ensemble density motion / spread vs duo guitar–bass); **`scoreTensionAndReleaseForEnsemble`** + **`scoreTensionAndReleaseMelodicContour`** (melodic contour when chord-symbol arcs thin); **`scoreEconomyAndFocusForEnsemble`** / **`scoreEconomyAndFocusBigBand`** (section-wise lead density spread blended with duo density). **`gceEvaluator.ts`** + **`gceGate.ts`** route BB **`bb_*`** scores; **`activePartsNormalizedBigBand`** exported from **`gceStructuralMemory.ts`**.
+- **`GceIntentTag`** + **`intentTags`** on **`StructuralFingerprint`** — **`sparse_ending`** widens drain-zone density cap; **`constant_density`** disables section |Δ| floor in **`validateSteelyOrbitV2FingerprintGate`**. **`steely_orbit_target.json`** / **`orbit_v6_64.json`** tagged; handbook **Intent tags** subsection.
+
 - **`COMPOSER_HANDBOOK.md`** — **GCE Structural Memory** user-facing section (fingerprints, extract/store/validate/retry, five Steely V2 gate rules, **`formatGateOverrides`**, adding fingerprints, **`validateAgainstFingerprint`** for targeted fixes, cross-format use).
 
 - **Steely Orbit V17** — **`enforceFill48Shout49Contrast`** in **`orbitSteelyV17Finishing.ts`**: bar **48** „Fill” = tacet **trumpets, trombones, piano, tenor** (alto + bass + drums only); bar **49** „Shout Chorus” = **tutti** shell (piano + brass sustain + tenor) so **`section_transition_min_density_delta`** passes.

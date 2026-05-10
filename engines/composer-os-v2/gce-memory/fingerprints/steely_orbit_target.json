@@ -228,5 +228,10 @@
     0
   ],
   "melodicVarietyScore": 0.25,
-  "notes": "Steely Orbit structural target — cloned from orbit_v6_64 with bars 57–64 density thinned for drain/handoff (not V6 Bill Evans dense ending)."
+  "notes": "Steely Orbit structural target — cloned from orbit_v6_64 with bars 57–64 density thinned for drain/handoff (not V6 Bill Evans dense ending).",
+  "intentTags": [
+    "bright_opening",
+    "gradual_darkening",
+    "sparse_ending"
+  ]
 }
