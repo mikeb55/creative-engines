@@ -1,5 +1,6 @@
 /**
- * Steely Orbit Prelude V2.0 — fingerprint-gated generation vs `orbit_v6_64`.
+ * Steely Orbit Prelude V2.0 — fingerprint-gated generation vs `steely_orbit_target`
+ * (V6-compatible through bar 56; bars 57–64 reference thinning + optional zone tolerance).
  * Default run: STEELY_GCE_GATE=7.5 STEELY_MAX_TRIES=16 (override via env).
  * Requires local Orbit sources under repo `projects/Orbit/` (see paths below).
  *
@@ -79,11 +80,30 @@ const TARGET_GCE = 9.0;
 const MAX_TRIES = Math.max(1, Math.floor(envFloat('STEELY_MAX_TRIES', 16)));
 const BPM = 129;
 
-/** V2 = spec defaults: 40% mean abs density / 8 bars, drum var ≥0.05, |section Δ|≥0.1. Set `STEELY_V2_*` to relax. */
+/** V2 = spec defaults: 40% mean abs density / 8 bars (outside drain zone), drum var ≥0.05, |section Δ|≥0.1. Set `STEELY_V2_*` to relax. */
 const V2_DENSITY_EIGHT_MAX = envFloat('STEELY_V2_DENSITY_EIGHT_MAX', 0.4);
+/** Windows overlapping bars 57–64 use this looser cap (Steely drains vs V6 dense tail); higher = more permissive. Default tuned so typical orchestration clears vs `steely_orbit_target` thinning curve. */
+const V2_DENSITY_ZONE_MAX = envFloat('STEELY_V2_DENSITY_ZONE_MAX', 0.65);
+const V2_DENSITY_ZONE_START = Math.max(1, Math.floor(envFloat('STEELY_V2_DENSITY_ZONE_START', 57)));
+const V2_DENSITY_ZONE_END = Math.max(V2_DENSITY_ZONE_START, Math.floor(envFloat('STEELY_V2_DENSITY_ZONE_END', 64)));
 const V2_DRUM_VAR_MIN = envFloat('STEELY_V2_DRUM_VARIANCE_MIN', 0.05);
 const V2_SECTION_DELTA_MIN = envFloat('STEELY_V2_SECTION_ABS_DELTA_MIN', 0.1);
 const V2_DISABLE_MELODY_STREAK = envBool('STEELY_V2_DISABLE_MELODY_STREAK', false);
+
+const STEELY_ORBIT_FP_ID = 'steely_orbit_target';
+
+function densityTransitionZoneForSteely(): {
+  startBar: number;
+  endBar: number;
+  maxMeanAbsDeviation: number;
+} | null {
+  if (!(V2_DENSITY_ZONE_MAX > 0 && V2_DENSITY_ZONE_END >= V2_DENSITY_ZONE_START)) return null;
+  return {
+    startBar: V2_DENSITY_ZONE_START,
+    endBar: V2_DENSITY_ZONE_END,
+    maxMeanAbsDeviation: V2_DENSITY_ZONE_MAX,
+  };
+}
 
 function buildBarMeterMap64(): BarMeterMap {
   const m: BarMeterMap = {};
@@ -361,9 +381,11 @@ function main(): void {
     process.exit(1);
   }
 
-  const orbitFp = loadFingerprint('orbit_v6_64');
+  const orbitFp = loadFingerprint(STEELY_ORBIT_FP_ID);
   if (!orbitFp) {
-    console.error('Missing fingerprint orbit_v6_64 — run npm run gce:seed-structural-fingerprints in engines/composer-os-v2');
+    console.error(
+      `Missing fingerprint ${STEELY_ORBIT_FP_ID} — expected engines/composer-os-v2/gce-memory/fingerprints/${STEELY_ORBIT_FP_ID}.json`
+    );
     process.exit(1);
   }
 
@@ -461,13 +483,14 @@ function main(): void {
 
     const fpGate = validateSteelyOrbitV2FingerprintGate(realised.score, orbitFp, {
       densityEightBarMaxMeanAbs: V2_DENSITY_EIGHT_MAX,
+      densityTransitionZone: densityTransitionZoneForSteely(),
       drumSixteenBarMinVariance: V2_DRUM_VAR_MIN,
       sectionMinAbsDensityDelta: V2_SECTION_DELTA_MIN,
       disableMelodicPitchStreak: V2_DISABLE_MELODY_STREAK,
     });
     bumpFailedRules(fpGate.rules);
 
-    console.log('Fingerprint rules (orbit_v6_64):', JSON.stringify(fpGate.rules));
+    console.log(`Fingerprint rules (${STEELY_ORBIT_FP_ID}):`, JSON.stringify(fpGate.rules));
 
     if (!fpGate.pass) {
       const evFail = evaluateBigBandSteely(realised.score);
@@ -577,6 +600,7 @@ function main(): void {
 
   const fpFinal = validateSteelyOrbitV2FingerprintGate(bestScoreForReport, orbitFp, {
     densityEightBarMaxMeanAbs: V2_DENSITY_EIGHT_MAX,
+    densityTransitionZone: densityTransitionZoneForSteely(),
     drumSixteenBarMinVariance: V2_DRUM_VAR_MIN,
     sectionMinAbsDensityDelta: V2_SECTION_DELTA_MIN,
     disableMelodicPitchStreak: V2_DISABLE_MELODY_STREAK,

@@ -415,7 +415,7 @@ export function validateAgainstFingerprint(
   return { pass: failures.length === 0, failures };
 }
 
-/** Steely Orbit V2.0 — primary fingerprint gate (5 independent checks vs orbit_v6_64 + score metrics). */
+/** Steely Orbit V2.0 — primary fingerprint gate (5 independent checks vs Steely target reference + score metrics). */
 export const STEELY_ORBIT_V2_FINGERPRINT_RULE_IDS = [
   'melodic_pitch_sequence_streak',
   'alto_rest_span',
@@ -426,11 +426,24 @@ export const STEELY_ORBIT_V2_FINGERPRINT_RULE_IDS = [
 
 export const STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT = STEELY_ORBIT_V2_FINGERPRINT_RULE_IDS.length;
 
-/** Mean absolute deviation in any 8-bar window must stay ≤ maxMeanAbsDeviation (default 0.4 = 40% on 0–1 density). */
+/** Optional looser cap for 8-bar windows that overlap a transition span (e.g. Steely Orbit 57–64 drain vs V6 dense ending). */
+export interface DensityEightBarTransitionZone {
+  /** 1-based inclusive */
+  startBar: number;
+  endBar: number;
+  maxMeanAbsDeviation: number;
+}
+
+function windowOverlapsBarSpan(windowStart1Based: number, windowEnd1Based: number, spanStart: number, spanEnd: number): boolean {
+  return windowStart1Based <= spanEnd && windowEnd1Based >= spanStart;
+}
+
+/** Mean absolute deviation in any 8-bar window must stay ≤ cap (global or zone when window overlaps transition span). */
 export function validateDensityEightBarVsReference(
   candidateDensity: number[],
   referenceDensity: number[],
-  maxMeanAbsDeviation: number
+  maxMeanAbsDeviation: number,
+  transitionZone?: DensityEightBarTransitionZone | null
 ): { pass: boolean; failures: string[] } {
   const failures: string[] = [];
   const n = candidateDensity.length;
@@ -444,9 +457,19 @@ export function validateDensityEightBarVsReference(
       sum += Math.abs(candidateDensity[s + i]! - referenceDensity[s + i]!);
     }
     const meanAbs = sum / 8;
-    if (meanAbs > maxMeanAbsDeviation) {
+    const wStart = s + 1;
+    const wEnd = s + 8;
+    let cap = maxMeanAbsDeviation;
+    if (
+      transitionZone &&
+      windowOverlapsBarSpan(wStart, wEnd, transitionZone.startBar, transitionZone.endBar)
+    ) {
+      cap = transitionZone.maxMeanAbsDeviation;
+    }
+    if (meanAbs > cap) {
       failures.push(
-        `density_eight_bar: bars ${s + 1}–${s + 8} mean_abs_dev=${meanAbs.toFixed(4)} > ${maxMeanAbsDeviation}`
+        `density_eight_bar: bars ${wStart}–${wEnd} mean_abs_dev=${meanAbs.toFixed(4)} > ${cap}` +
+          (cap !== maxMeanAbsDeviation ? ` (transition_zone)` : '')
       );
     }
   }
@@ -524,12 +547,14 @@ export const STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS = new Set([
   'bb_piano',
 ]);
 
-/** Full Steely Orbit V2.0 gate vs `orbit_v6_64` reference density + derived candidate fingerprint. */
+/** Full Steely Orbit V2.0 gate vs structural reference fingerprint (e.g. `steely_orbit_target`) + derived candidate fingerprint. */
 export function validateSteelyOrbitV2FingerprintGate(
   score: ScoreModel,
   orbitRef: StructuralFingerprint,
   options?: {
     densityEightBarMaxMeanAbs?: number;
+    /** Looser 8-bar mean-abs cap for windows overlapping this span (Steely 57–64 drain vs Bill Evans dense tail). */
+    densityTransitionZone?: DensityEightBarTransitionZone | null;
     drumSixteenBarMinVariance?: number;
     sectionMinAbsDensityDelta?: number;
     /** When set, limit pitch-sequence streak to these parts; omit for **all** melodic BB parts. */
@@ -581,7 +606,8 @@ export function validateSteelyOrbitV2FingerprintGate(
     const dens = validateDensityEightBarVsReference(
       cand.densityCurve,
       orbitRef.densityCurve,
-      densityMax
+      densityMax,
+      options?.densityTransitionZone ?? null
     );
     rules.density_eight_bar_vs_orbit_v6 = dens.pass;
     if (!dens.pass) failures.push(...dens.failures);
