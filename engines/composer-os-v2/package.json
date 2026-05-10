@@ -34,6 +34,8 @@
     "eval:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
     "workflow:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachWorkflow.ts",
     "mine:bacharach": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runBacharachReferenceMining.ts",
+    "orbit:steely-v1": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/generateSteelyOrbitV1.ts",
+    "gce:seed-structural-fingerprints": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/seedGceStructuralFingerprints.ts",
     "eval:gce-styles": "npx ts-node --project ../../tsconfig.json scripts/gceStyleEval.ts",
     "verify:eras": "ts-node scripts/eraVerification.ts",
     "test:ecm": "ts-node scripts/testEcmStability.ts",

@@ -8,6 +8,7 @@
 
 - **Complete:** (1) **CI smoke on `main`** — **`b8d47db`** · (2) **Deterministic remix** (seed wiring, A/B cards, ChorusArcStrip, Keep A/B/Both) — **`3453292`** · (3) **Writer recipe cards** (inline Generate: display name, era, melody device pills, one-line blurb, hover preview on songwriter select) — **`c2d9747`** · (4) **Duke Ellington** full Song Mode harmony slice + handbook — **`21b06fb`** · (5) **Maria Schneider** full Song Mode harmony slice + handbook — **`3b68085`** · (6) **Miles Davis** full Song Mode harmony slice (three period contexts) + handbook — **`263b4e9`**.
 - **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
+- **Structural memory (Phase 1, 2026-05-10):** **`gceStructuralMemory`** JSON fingerprints + melodic consecutive-bar guard; Steely Orbit script **`orbit_v6_64`** pre-GCE gate; seeds **`orbit_v6_64`** / **`steely_orbit_v1_7`** under **`engines/composer-os-v2/gce-memory/fingerprints/`**.
 
 ### Writer Slice Roadmap — priority order for full slice development
 

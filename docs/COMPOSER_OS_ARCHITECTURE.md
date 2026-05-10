@@ -6,6 +6,16 @@
 
 **Song Mode — Fripp / King Crimson (`fripp_king_crimson`):** optional **`GenerateRequest.asymmetricRhythm`** (preset id or validated custom **`CycleDefinition`**) and **`frippPolymeterSecondaryPresetId`** map to **`GenerationMetadata.asymmetricRhythmRequest`** / **`frippPolymeterSecondaryPresetId`**. **`precomputeFrippKingCrimsonEffectiveHarmonyBars`** (`core/song-mode/frippKingCrimsonSlice.ts`) applies a **uniform** **`barMeterMap`** from the **primary** cycle (odd meters such as **7/8**, **15/16**); optional **`frippKingCrimsonPolymeterReceipt`** records **LCM** alignment on a shared **16th** grid vs the secondary preset. Custom **`barMeterMap`** on the request is superseded when this writer is primary — use **`asymmetricRhythm`** for meter authority.
 
+## GCE structural memory (Phase 1)
+
+Lightweight **JSON fingerprints** (no ML, no new scoring engine) under **`engines/composer-os-v2/gce-memory/fingerprints/`**.
+
+- **Core:** **`core/gce/gceStructuralMemory.ts`** — `StructuralFingerprint`, **`extractFingerprint`**, **`validateAgainstFingerprint`**, **`saveFingerprint` / `loadFingerprint`**, **`parseComposerOsBigBandMusicXml`** (Composer OS BB part ids `bb_*`), **`extractFingerprintFromMusicXmlFile`** for seeding from exported MusicXML.
+- **Registry:** **`core/gce/gceMemoryRegistry.ts`** — **`formatGateOverrides`** (hint floors per ensemble format) and **`bestFingerprintIdByFormatSongwriter`** (`big_band:bill_evans` → **`orbit_v6_64`**, `big_band:donald_fagen` → **`steely_orbit_v1_7`**).
+- **Critical guard:** melodic parts must not reach **three consecutive bars** with identical voice-1 pitch-sequence signatures outside intro bars **1–4** (targets stuck repetition such as bars **17–24**).
+- **Steely Orbit script:** **`scripts/generateSteelyOrbitV1.ts`** loads **`orbit_v6_64`** and runs validation **before** the combined GCE evaluator on each attempt; report prints **`GCE_STRUCTURAL_VALIDATION_RULE_COUNT`** rule buckets.
+- **Maintenance:** **`npm run gce:seed-structural-fingerprints`** in **`engines/composer-os-v2`** regenerates JSON from **`projects/Orbit/V6.0 orbit - BB.musicxml`** and **`projects/Orbit/Steely Orbit - 1st 64 bars/V1.7-Steely-Orbit.musicxml`**.
+
 ## HTTP API — `POST /api/melodic-variation-pack`
 
 Local dev server: **`scripts/startComposerOsAppApi.ts`** (default **`http://127.0.0.1:3001`**). **Desktop:** same payload via IPC **`composer-os-api:melodic-variation-pack`**.
