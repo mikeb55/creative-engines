@@ -79,10 +79,10 @@ const TARGET_GCE = 9.0;
 const MAX_TRIES = Math.max(1, Math.floor(envFloat('STEELY_MAX_TRIES', 16)));
 const BPM = 129;
 
-/** V2 fingerprint tolerances (`STEELY_V2_SECTION_ABS_DELTA_MIN=0` disables section Δ gate until exports carry real rehearsal deltas). */
-const V2_DENSITY_EIGHT_MAX = envFloat('STEELY_V2_DENSITY_EIGHT_MAX', 0.5);
+/** V2 = spec defaults: 40% mean abs density / 8 bars, drum var ≥0.05, |section Δ|≥0.1. Set `STEELY_V2_*` to relax. */
+const V2_DENSITY_EIGHT_MAX = envFloat('STEELY_V2_DENSITY_EIGHT_MAX', 0.4);
 const V2_DRUM_VAR_MIN = envFloat('STEELY_V2_DRUM_VARIANCE_MIN', 0.05);
-const V2_SECTION_DELTA_MIN = envFloat('STEELY_V2_SECTION_ABS_DELTA_MIN', 0);
+const V2_SECTION_DELTA_MIN = envFloat('STEELY_V2_SECTION_ABS_DELTA_MIN', 0.1);
 const V2_DISABLE_MELODY_STREAK = envBool('STEELY_V2_DISABLE_MELODY_STREAK', false);
 
 function buildBarMeterMap64(): BarMeterMap {
@@ -386,6 +386,11 @@ function main(): void {
   let bestGateSeed = 0;
   let bestGateScore = -1;
 
+  /** Best combined score among attempts that failed fingerprint (for abort report). */
+  let bestFpFailScore = -1;
+  let bestFpFailEval: CombinedEvaluationResult | null = null;
+  let bestFpFailSeed = 0;
+
   let anyFpPass = false;
   let failureHint = '';
 
@@ -465,7 +470,13 @@ function main(): void {
     console.log('Fingerprint rules (orbit_v6_64):', JSON.stringify(fpGate.rules));
 
     if (!fpGate.pass) {
-      console.log('Combined GCE: n/a (fingerprint gate failed)');
+      const evFail = evaluateBigBandSteely(realised.score);
+      console.log('Combined GCE (fingerprint failed):', evFail.finalScore.toFixed(2));
+      if (evFail.finalScore > bestFpFailScore) {
+        bestFpFailScore = evFail.finalScore;
+        bestFpFailEval = evFail;
+        bestFpFailSeed = seed;
+      }
       const preview = fpGate.failures.slice(0, 8);
       console.log('Failures (sample):', preview.join('; '), fpGate.failures.length > 8 ? `…(+${fpGate.failures.length - 8})` : '');
       failureHint = fpGate.failures[0] ?? 'fingerprint_v2';
@@ -501,6 +512,15 @@ function main(): void {
     console.error('No attempt passed the V2 fingerprint gate.');
     console.error('Rule fail counts:', JSON.stringify(ruleFailCounts));
     console.error('Hint:', failureHint);
+    if (bestFpFailEval && bestFpFailScore >= 0) {
+      console.error('\nBest combined GCE among fingerprint-failing attempts:', bestFpFailScore.toFixed(2), 'seed', bestFpFailSeed);
+      console.error('Commit:', gitHeadShort());
+      printWinningEvalBreakdown(bestFpFailEval);
+    }
+    console.error(
+      '\nHardest fingerprint rules (fail counts — typically co-occur):',
+      sortedHardest.map(([r, c]) => `${r}:${c}`).join(', ')
+    );
     process.exit(1);
   }
 

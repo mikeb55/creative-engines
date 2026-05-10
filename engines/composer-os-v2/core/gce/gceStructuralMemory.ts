@@ -481,13 +481,9 @@ export function validateDrumVarianceSixteenBarSpans(
   for (let s = 0; s <= n - 16; s++) {
     const w = drumShape.slice(s, s + 16);
     const v = variancePopulation(w);
-    const mx = Math.max(...w);
-    const mn = Math.min(...w);
-    const range = mx - mn;
-    /* Both zero variance and zero range means identical counts every bar (flat narrative). */
-    if (v < minVariance && range < 1) {
+    if (v < minVariance) {
       failures.push(
-        `drum_variance: bars ${s + 1}–${s + 16} variance=${v.toFixed(6)} range=${range} (flat; minVar=${minVariance})`
+        `drum_variance: bars ${s + 1}–${s + 16} population_variance=${v.toFixed(6)} < ${minVariance}`
       );
     }
   }
@@ -506,8 +502,6 @@ export function validateSectionTransitionsMinAbsoluteDelta(
   for (const t of transitions) {
     const introish = t.barNumber <= 1 || /^intro$/i.test(t.label.trim());
     if (introish) continue;
-    /* Pickup / fill marks often sit on unchanged density vs prior bar */
-    if (/^fill$/i.test(t.label.trim())) continue;
     if (Math.abs(t.densityDelta) < minAbs) {
       failures.push(
         `section_transition_delta: bar ${t.barNumber} "${t.label}" |Δ|=${Math.abs(t.densityDelta).toFixed(4)} < ${minAbs}`
@@ -523,7 +517,7 @@ export interface SteelyOrbitV2FingerprintGateResult {
   failures: string[];
 }
 
-/** Primary phrase-bearing staves for Steely V2 repeated-bar pitch streak (not brass pad figures). */
+/** Optional subset for pitch-streak checks; omit from gate options to enforce **all** melodic BB parts. */
 export const STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS = new Set([
   'bb_alto_sax',
   'bb_tenor_sax',
@@ -538,7 +532,7 @@ export function validateSteelyOrbitV2FingerprintGate(
     densityEightBarMaxMeanAbs?: number;
     drumSixteenBarMinVariance?: number;
     sectionMinAbsDensityDelta?: number;
-    /** Override default {@link STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS} for pitch-sequence streak. */
+    /** When set, limit pitch-sequence streak to these parts; omit for **all** melodic BB parts. */
     melodyStreakPartIds?: Set<string>;
     /** Turn off pitch-sequence streak (orchestration iteration hook). */
     disableMelodicPitchStreak?: boolean;
@@ -547,7 +541,6 @@ export function validateSteelyOrbitV2FingerprintGate(
   const densityMax = options?.densityEightBarMaxMeanAbs ?? 0.4;
   const drumVarMin = options?.drumSixteenBarMinVariance ?? 0.05;
   const secMin = options?.sectionMinAbsDensityDelta ?? 0.1;
-  const streakParts = options?.melodyStreakPartIds ?? STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS;
   const skipStreak = options?.disableMelodicPitchStreak === true;
 
   const rules: Record<string, boolean> = {
@@ -559,12 +552,13 @@ export function validateSteelyOrbitV2FingerprintGate(
   };
   const failures: string[] = [];
 
+  const streakOpts: PitchSequenceStreakOptions = {
+    introExemptMaxBar: 4,
+    ...(options?.melodyStreakPartIds ? { partIdFilter: options.melodyStreakPartIds } : {}),
+  };
   const streak = skipStreak
     ? { pass: true, failures: [] as string[] }
-    : validateMelodicPitchSequenceStreaks(score, {
-        introExemptMaxBar: 4,
-        partIdFilter: streakParts,
-      });
+    : validateMelodicPitchSequenceStreaks(score, streakOpts);
   rules.melodic_pitch_sequence_streak = streak.pass;
   if (!streak.pass) failures.push(...streak.failures);
 
