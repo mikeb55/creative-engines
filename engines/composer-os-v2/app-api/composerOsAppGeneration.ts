@@ -33,7 +33,12 @@ import {
   buildUniversalLeadSheetFromCompositionContext,
 } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
-import { runGoldenPath, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
+import { runGoldenPath, type GoldenPathResult, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
+import { runSongModeSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
+import {
+  runBigBandSectionRegenerationPipeline,
+  runStringQuartetSectionRegenerationPipeline,
+} from '../core/regeneration/ensembleSectionRegeneration';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug } from '../core/goldenPath/customLockedHarmonyRouting';
 import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
@@ -172,6 +177,12 @@ function indieDualGuitarTuningProofFixtureRequested(req: GenerateRequest): boole
 }
 
 function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['requestEcho']> {
+  const sectionRegenEcho =
+    req.sectionRegeneration &&
+    typeof req.sectionRegeneration.startBar === 'number' &&
+    typeof req.sectionRegeneration.endBar === 'number'
+      ? { startBar: req.sectionRegeneration.startBar, endBar: req.sectionRegeneration.endBar }
+      : undefined;
   return {
     tonalCenter: req.tonalCenter,
     bpm: req.bpm,
@@ -209,7 +220,37 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),
+    ...(sectionRegenEcho ? { sectionRegeneration: sectionRegenEcho } : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
+}
+
+function sectionRegenerationUnsupportedPresetResult(req: GenerateRequest): GenerateResult | undefined {
+  if (!req.sectionRegeneration?.baseMusicXml?.trim()) return undefined;
+  const pid = req.presetId as string;
+  if (
+    pid === 'guitar_bass_duo' ||
+    pid === 'guitar_bass_duo_single_line' ||
+    pid === 'ecm_chamber' ||
+    pid === 'song_mode' ||
+    pid === 'big_band' ||
+    pid === 'string_quartet'
+  ) {
+    return undefined;
+  }
+  const msg = `section regeneration is not supported for preset "${pid}"`;
+  return {
+    success: false,
+    error: msg,
+    composerOsVersion: COMPOSER_OS_VERSION,
+    validation: validationForStructural(false, [msg]),
+    runManifest: {
+      seed: req.seed,
+      presetId: pid,
+      activeModules: [],
+      timestamp: new Date().toISOString(),
+    },
+    requestEcho: requestEchoFromReq(req),
+  };
 }
 
 /** Big band / string quartet Slonimsky: prefer style-pairing songwriter, then Song Mode primary. */
@@ -375,6 +416,11 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         timestamp: new Date().toISOString(),
       },
     };
+  }
+
+  const sectionRegenUnsupported = sectionRegenerationUnsupportedPresetResult(req);
+  if (sectionRegenUnsupported) {
+    return sectionRegenUnsupported;
   }
 
   if (id === 'wyble_etude') {
@@ -1115,7 +1161,77 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(songModeCompiledSectionForm.length > 0 ? { songModeCompiledSectionForm } : {}),
   };
 
-  let gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+  const wantsSongModeSectionRegen =
+    typeof req.sectionRegeneration?.baseMusicXml === 'string' &&
+    req.sectionRegeneration.baseMusicXml.trim().length > 0 &&
+    Array.isArray(lockedHarmonyBarsAuthoritative) &&
+    lockedHarmonyBarsAuthoritative.length === resolvedSongModeTotalBars;
+
+  if (
+    req.sectionRegeneration?.baseMusicXml &&
+    req.sectionRegeneration.baseMusicXml.trim().length > 0 &&
+    !wantsSongModeSectionRegen
+  ) {
+    return {
+      success: false,
+      error:
+        'Song Mode section regeneration requires lockedHarmonyBarsAuthoritative matching resolvedSongModeTotalBars (paste/custom_locked harmony).',
+      productKind: 'musicxml',
+      composerOsVersion: COMPOSER_OS_VERSION,
+      validation: validationForStructural(false, [
+        'sectionRegeneration: full harmony lock bars required for splice validation',
+      ]),
+      runManifest: {
+        seed: effectiveSeed,
+        presetId: 'song_mode',
+        activeModules: ['song_mode_compile'],
+        timestamp: ts,
+        scoreTitle: title,
+        variationId: req.variationId,
+        creativeControlLevel: req.creativeControlLevel,
+      },
+      scoreTitle: title,
+      requestEcho: requestEchoFromReq(req),
+    };
+  }
+
+  let gp: GoldenPathResult;
+  let songModeSectionRegenApplied = false;
+
+  if (wantsSongModeSectionRegen) {
+    const regen = runSongModeSectionRegeneration(
+      req,
+      effectiveSeed,
+      resolvedSongModeTotalBars,
+      lockedHarmonyBarsAuthoritative!,
+      songModeGoldenPathOptions
+    );
+    if (!regen.ok) {
+      return {
+        success: false,
+        error: regen.error,
+        productKind: 'musicxml',
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [regen.error]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'song_mode',
+          activeModules: ['song_mode_compile'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+        },
+        scoreTitle: title,
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+    gp = regen.result;
+    songModeSectionRegenApplied = true;
+  } else {
+    gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+  }
+
   gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
   gp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
   gp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
@@ -1154,7 +1270,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const GCE_RETRY_SEED_OFFSETS = [77777, 88883, 99991] as const;
 
   let bestGceScore = -1;
-  if (gp.xml && gp.score) {
+  if (!songModeSectionRegenApplied && gp.xml && gp.score) {
     const gceResult = scoreGoldenPathResultForGce(gp.score, gp.context);
     bestGceScore = gceResult.overallScore;
 
@@ -1187,7 +1303,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       }
     }
   }
-  if (gp.score) {
+  if (!songModeSectionRegenApplied && gp.score) {
     const adjusted = applyRepeatTruthToScoreModel(gp.score, sm.universalLeadSheet);
     gp.score = adjusted;
     const mb = adjusted.parts[0]?.measures.length;
@@ -1549,6 +1665,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   /** Compare score/XML only when Song Mode actually ran `custom_locked` (engine metadata), not when local parse arrays exist without lock wiring. */
   const songModeHarmonyLockAssertionsActive =
     mdLockedTruth.customHarmonyLocked === true &&
+    gp.context.generationMetadata.sectionRegenerationPartialScore !== true &&
     lockedHarmonyBarsAuthoritative &&
     lockedHarmonyBarsAuthoritative.length >= 8 &&
     lockedHarmonyBarsAuthoritative.length === tbLockedTruth &&
@@ -1625,7 +1742,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
-    if (!req.skipDrumGuide) {
+    const skipMidiDrumFromPartialRegen = gp.context.generationMetadata.sectionRegenerationPartialScore === true;
+    if (!req.skipDrumGuide && !skipMidiDrumFromPartialRegen) {
       try {
         const barMeterForDrums =
           gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
@@ -1635,15 +1753,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
     }
-    try {
-      const barMeterForScore =
-        gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
-      const baseName = path.basename(filepath, path.extname(filepath));
-      midiFilepath = writeScoreMidi(gp.score, outputDir, baseName, barMeterForScore, req.bpm);
-    } catch (e) {
-      console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
+    if (!skipMidiDrumFromPartialRegen) {
+      try {
+        const barMeterForScore =
+          gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
+        const baseName = path.basename(filepath, path.extname(filepath));
+        midiFilepath = writeScoreMidi(gp.score, outputDir, baseName, barMeterForScore, req.bpm);
+      } catch (e) {
+        console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
+      }
     }
-    if (req.includeVocalLeadSheet) {
+    if (req.includeVocalLeadSheet && !skipMidiDrumFromPartialRegen) {
       const bridgeScriptPath = resolveSongwritingBridgeExportScriptPath();
       const vocalXml = exportVocalLeadSheetMusicXmlViaPython(sm.compiledSong, gp.score, {
         bridgeScriptPath,
@@ -2328,12 +2448,53 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
     ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
   };
+  const sectionRegenBase = req.sectionRegeneration?.baseMusicXml?.trim();
   let realised: ReturnType<typeof runBigBandRealisation>;
-  try {
-    realised = runBigBandRealisation(bigBandRealisationInput);
-  } catch (err) {
-    console.error('[composer-os][big_band] runBigBandRealisation threw:', err);
-    throw err;
+  let ensembleXmlBodyOverride: string | undefined;
+  let sectionRegenReceipt: string | undefined;
+  let sectionRegenPartial = false;
+
+  if (sectionRegenBase) {
+    const regen = runBigBandSectionRegenerationPipeline({
+      req,
+      baseMusicXml: sectionRegenBase,
+      ensembleInput: bigBandRealisationInput,
+      totalBars: bb.formPlan.totalBars,
+    });
+    if (!regen.ok) {
+      return {
+        success: false,
+        error: regen.error,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [regen.error]),
+        runManifest: {
+          seed: runSeed,
+          presetId: 'big_band',
+          activeModules: ['big_band_plan'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+          experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+          importHarmonyMode: normalizedImportHarmonyMode,
+          importHarmonyModeSource: req.importHarmonyMode !== undefined ? 'explicit' : 'not_supplied',
+          harmonyBlendRaw,
+          importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
+        },
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+    realised = regen.fragmentRealised;
+    ensembleXmlBodyOverride = regen.mergedXml;
+    sectionRegenReceipt = regen.receipt;
+    sectionRegenPartial = true;
+  } else {
+    try {
+      realised = runBigBandRealisation(bigBandRealisationInput);
+    } catch (err) {
+      console.error('[composer-os][big_band] runBigBandRealisation threw:', err);
+      throw err;
+    }
   }
   if (!realised.exportPipeline.ok) {
     console.error(
@@ -2347,12 +2508,15 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   let ensembleMusicXmlFilename: string | undefined;
   let ensembleMusicXmlFilepath: string | undefined;
   let ensembleMidiFilepath: string | undefined;
-  if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
+  const ensembleXmlOut =
+    ensembleXmlBodyOverride ??
+    (realised.exportPipeline.ok ? realised.exportPipeline.xml : undefined);
+  if (ensembleXmlOut?.trim()) {
     ensembleMusicXmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
-    fs.writeFileSync(ensembleMusicXmlFilepath, realised.exportPipeline.xml, 'utf-8');
-    if (!req.skipDrumGuide) {
+    fs.writeFileSync(ensembleMusicXmlFilepath, ensembleXmlOut, 'utf-8');
+    if (!sectionRegenPartial && !req.skipDrumGuide) {
       try {
         if (realised.score) {
           const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
@@ -2363,7 +2527,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       }
     }
     try {
-      if (realised.score && ensembleMusicXmlFilepath) {
+      if (!sectionRegenPartial && realised.score && ensembleMusicXmlFilepath) {
         const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
         ensembleMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
       }
@@ -2375,7 +2539,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   /** Observational evaluation (GCE + style + LOCK); requires realised score — runs after realisation, not planning-only. */
   let evaluationResult: CombinedEvaluationResult | undefined;
   try {
-    if (realised.score) {
+    if (realised.score && !sectionRegenPartial) {
       const cs = bb.composerStyle;
       const styleProfile = bigBandEvaluationStyleProfile(cs);
       const evaluator = createCombinedEvaluator({ lockRequired: false });
@@ -2466,7 +2630,11 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     runManifest: {
       seed: runSeed,
       presetId: 'big_band',
-      activeModules: ensembleMusicXmlFilepath ? ['big_band_plan', 'big_band_realise'] : ['big_band_plan'],
+      activeModules: ensembleMusicXmlFilepath
+        ? sectionRegenReceipt
+          ? ['big_band_plan', 'big_band_realise', 'big_band_section_regen']
+          : ['big_band_plan', 'big_band_realise']
+        : ['big_band_plan'],
       timestamp: ts,
       scoreTitle: title,
       variationId: req.variationId,
@@ -2481,6 +2649,12 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
       importHarmonyBlendActive: blendMergeActive ? true : false,
       importHarmonyBlendEffective: blendMergeActive ? harmonyBlendRaw : undefined,
+      ...(sectionRegenReceipt
+        ? {
+            sectionRegenerationReceipt: sectionRegenReceipt,
+            sectionRegenerationPartialScore: true,
+          }
+        : {}),
       ...(realised.referenceInfluence
         ? {
             referenceSourceKind: 'musicxml',
@@ -2598,14 +2772,67 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
-  const realised = runQuartetRealisation(quartetRealisationInput);
+  const sectionRegenBaseSq = req.sectionRegeneration?.baseMusicXml?.trim();
+  let realised: ReturnType<typeof runQuartetRealisation>;
+  let quartetXmlOverride: string | undefined;
+  let sectionRegenReceiptSq: string | undefined;
+  let sectionRegenPartialSq = false;
+
+  if (sectionRegenBaseSq) {
+    const regenSq = runStringQuartetSectionRegenerationPipeline({
+      req,
+      baseMusicXml: sectionRegenBaseSq,
+      quartetInput: quartetRealisationInput,
+      totalBars: sq.formPlan.totalBars,
+      buildFragmentGenerationMetadata: (span, sliceText, fragMeter) => {
+        const meta = buildStringQuartetGenerationMetadata(req, span, sliceText);
+        if (meta && fragMeter) {
+          meta.barMeterMap = fragMeter;
+        }
+        return meta;
+      },
+    });
+    if (!regenSq.ok) {
+      return {
+        success: false,
+        error: regenSq.error,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        validation: validationForStructural(false, [regenSq.error]),
+        runManifest: {
+          seed: effectiveSeed,
+          presetId: 'string_quartet',
+          activeModules: ['string_quartet_plan'],
+          timestamp: ts,
+          scoreTitle: title,
+          variationId: req.variationId,
+          creativeControlLevel: req.creativeControlLevel,
+          experimentalCreativeLabel: experimentalLabelForLevel(req.creativeControlLevel),
+          importHarmonyMode: normalizedImportHarmonyMode,
+          importHarmonyModeSource: req.importHarmonyMode !== undefined ? 'explicit' : 'not_supplied',
+          harmonyBlendRaw,
+          importHarmonyPolicyVersion: IMPORT_HARMONY_POLICY_VERSION,
+        },
+        requestEcho: requestEchoFromReq(req),
+      };
+    }
+    realised = regenSq.fragmentRealised;
+    quartetXmlOverride = regenSq.mergedXml;
+    sectionRegenReceiptSq = regenSq.receipt;
+    sectionRegenPartialSq = true;
+  } else {
+    realised = runQuartetRealisation(quartetRealisationInput);
+  }
+
   let quartetMidiFilepath: string | undefined;
-  if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
+  const quartetXmlOut =
+    quartetXmlOverride ??
+    (realised.exportPipeline.ok ? realised.exportPipeline.xml : undefined);
+  if (realised.exportPipeline.ok && quartetXmlOut?.trim()) {
     const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
-    fs.writeFileSync(xmlFilepath, realised.exportPipeline.xml, 'utf-8');
-    if (!req.skipDrumGuide) {
+    fs.writeFileSync(xmlFilepath, quartetXmlOut, 'utf-8');
+    if (!sectionRegenPartialSq && !req.skipDrumGuide) {
       try {
         if (realised.score) {
           const baseName = path.basename(xmlFilepath, '.musicxml');
@@ -2616,7 +2843,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       }
     }
     try {
-      if (realised.score) {
+      if (!sectionRegenPartialSq && realised.score) {
         const baseName = path.basename(xmlFilepath, '.musicxml');
         quartetMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
       }
@@ -2634,7 +2861,9 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       runManifest: {
         seed: effectiveSeed,
         presetId: 'string_quartet',
-        activeModules: ['string_quartet_plan', 'string_quartet_realise'],
+        activeModules: sectionRegenReceiptSq
+          ? ['string_quartet_plan', 'string_quartet_realise', 'string_quartet_section_regen']
+          : ['string_quartet_plan', 'string_quartet_realise'],
         timestamp: ts,
         scoreTitle: title,
         variationId: req.variationId,
@@ -2649,6 +2878,12 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
         importHarmonyLockedBarsCount: freeHarmony ? 0 : (leadSheet?.chordEvents?.length ?? 0),
         importHarmonyBlendActive: blendMergeActive ? true : false,
         importHarmonyBlendEffective: blendMergeActive ? harmonyBlendRaw : undefined,
+        ...(sectionRegenReceiptSq
+          ? {
+              sectionRegenerationReceipt: sectionRegenReceiptSq,
+              sectionRegenerationPartialScore: true,
+            }
+          : {}),
         ...(realised.referenceInfluence
           ? {
               referenceSourceKind: 'musicxml',

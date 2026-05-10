@@ -46,6 +46,51 @@
 
 ---
 
+## Section-scoped regeneration (API)
+
+**What it does:** Regenerate only bars **`startBar`–`endBar`** (1-based, inclusive), then **splice** the fragment MusicXML into a **prior full-score export** (`baseMusicXml`). Uses **`musicXmlSectionSplice.ts`** (partwise XML, matching `<part id>` per staff); fragment runs use **`fragmentBarMeterMapFromFull`** so **odd-meter / `barMeterMap`** stays consistent inside the span.
+
+**Supported presets**
+
+| Preset | Engine path |
+|--------|-------------|
+| `guitar_bass_duo`, `guitar_bass_duo_single_line`, `ecm_chamber` | `generateComposition` → `runDuoSectionRegeneration` |
+| `song_mode` | `runSongStructure` → `runSongModeSectionRegeneration` |
+| `big_band` | `runBigBandPlanning` → `runBigBandSectionRegenerationPipeline` |
+| `string_quartet` | `runStringQuartetPlanning` → `runStringQuartetSectionRegenerationPipeline` |
+
+**Shared helpers:** `ensembleChordBars.ts` (chord-per-bar from progression + optional lead-sheet lock), `sliceLeadSheetChordSpan.ts` (ensemble fragment lock), `ensembleSectionRegeneration.ts`, `sectionRegenerationPlanning.ts`, `barMeterMapFragment.ts`.
+
+**Request (on `GenerateRequest`):**
+
+```ts
+sectionRegeneration?: {
+  startBar: number;
+  endBar: number;
+  baseMusicXml: string; // prior score-partwise export, same layout/preset family
+};
+```
+
+You must still send **full-chart harmony** compatible with **`totalBars`** (custom progression, Song Mode locked bars, or ensemble chord source); the engine validates span + locks. **`locks.melody`** rejects regen (would overwrite melody).
+
+**Response**
+
+- **`runManifest.sectionRegenerationReceipt`** — e.g. `section_regen bars 5-8 span=4`.
+- **`runManifest.sectionRegenerationPartialScore`** — `true` when the internal score model is **fragment-length** (skip full-score MIDI/drum side effects where implemented).
+- Duo / Song Mode also set **`generationMetadata`** on the returned composition context when applicable.
+
+**Explicitly unsupported (error if `sectionRegeneration.baseMusicXml` is non-empty)**
+
+| Preset | Reason |
+|--------|--------|
+| `riff_generator` | **1–4 bar** loop preset; product model is “whole riff”, not a bar-range splice inside a longer chart. |
+| `wyble_etude` | Dedicated **Wyble** guitar engine path — no golden-path / ensemble splice branch today. |
+| `slonimsky_etude` | **Pattern catalogue** etude generator — global Slonimsky structure (`cycleKeys`, pattern id) does not decompose cleanly into a local fragment without new design. |
+
+**UI:** No Generate UI for section regen yet — **API / integrations only** until a surface ships.
+
+---
+
 ## MIDI export (Generate — `.mid` next to `.musicxml`)
 
 **What it does:** After a successful **MusicXML** write, **`generateComposition`** runs **`writeScoreMidi`** (`engines/composer-os-v2/core/export/midiScoreWriter.ts`). Output is a **Type-1 Standard MIDI File**: **tempo** on a conductor meta track plus **one melodic track per `PartModel`**, **480 PPQ** (same pulse grid as score divisions). Time signatures follow **`barMeterMap`** / per-measure spans like export.

@@ -108,6 +108,20 @@ export interface AppLocks {
   sectionB?: boolean;
 }
 
+/**
+ * Section-scoped regeneration — splice a newly generated bar span into prior MusicXML (`baseMusicXml`).
+ * Wired presets: guitar–bass duo family, `ecm_chamber`, `song_mode`, `big_band`, `string_quartet`.
+ * Unsupported (API returns error if `baseMusicXml` is set): `riff_generator`, `wyble_etude`, `slonimsky_etude`.
+ */
+export interface SectionRegenerationParams {
+  /** 1-based inclusive start bar */
+  startBar: number;
+  /** 1-based inclusive end bar */
+  endBar: number;
+  /** Full-score MusicXML from a prior export (same preset/settings). */
+  baseMusicXml: string;
+}
+
 export interface GenerateRequest {
   presetId: string;
   styleStack: AppStyleStack;
@@ -225,6 +239,8 @@ export interface GenerateRequest {
   duoIntent?: 'conversational' | 'supportive';
   /** Song Mode / Big Band / String Quartet: Slonimsky chromatic outside level. */
   chromaticStrength?: 'off' | 'subtle' | 'prominent';
+  /** Guitar–Bass Duo / ECM chamber: regenerate bars `[startBar,endBar]` and splice into `baseMusicXml`. */
+  sectionRegeneration?: SectionRegenerationParams;
   /** Phase 19: explicit musical form selection. */
   formId?: string;
   /** Song Mode: after duo MusicXML, run Python bridge for vocal lead sheet (optional). */

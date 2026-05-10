@@ -10,6 +10,8 @@ import { runMotifExtractorPlusTests } from './motifExtractorPlus.test';
 import { runMotifReusePlannerTests } from './motifReusePlanner.test';
 import { runContinuationPlannerTests } from './continuationPlanner.test';
 import { runSectionRegeneratorTests } from './sectionRegenerator.test';
+import { runSectionRegenerationPlanningTests } from './sectionRegenerationPlanning.test';
+import { runSectionRegenerationBarMeterTests } from './sectionRegenerationBarMeter.test';
 import { runStyleStackPresetLibraryTests } from './styleStackPresetLibrary.test';
 import { runHumanisationToggleTests } from './humanisationToggle.test';
 import { runReferenceImportTypesTests } from './referenceImportTypes.test';
@@ -47,6 +49,8 @@ const suites: SuiteEntry[] = [
   { name: 'Motif reuse planner', run: runMotifReusePlannerTests },
   { name: 'Continuation planner', run: runContinuationPlannerTests },
   { name: 'Section regenerator', run: runSectionRegeneratorTests },
+  { name: 'Section regeneration planning', run: runSectionRegenerationPlanningTests },
+  { name: 'Section regeneration barMeterMap fragment', run: runSectionRegenerationBarMeterTests },
   { name: 'Style stack preset library', run: runStyleStackPresetLibraryTests },
   { name: 'Humanisation toggle', run: runHumanisationToggleTests },
   { name: 'Reference import types', run: runReferenceImportTypesTests },

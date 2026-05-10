@@ -2,7 +2,8 @@
  * Composer OS V2 — App API: generate composition
  */
 
-import type { GenerateRequest, ImportHarmonyMode, StyleProfile } from './appApiTypes';
+import type { GenerateRequest, ImportHarmonyMode, SectionRegenerationParams, StyleProfile } from './appApiTypes';
+import { runDuoSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
@@ -26,6 +27,7 @@ import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
+import { writeScoreMidi } from '../core/export/midiScoreWriter';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildFormSections } from '../core/composer/formController';
 import { buildImprovSkeleton, pass2ImprovMutation } from '../core/composer/improvAgent';
@@ -68,6 +70,8 @@ export interface GenerateResult {
   xml?: string;
   filename?: string;
   filepath?: string;
+  /** Full-score `.mid` path when written next to the MusicXML export. */
+  midiFilepath?: string;
   /**
    * Big Band: primary `filepath` may point at planning JSON; when ensemble MusicXML was written,
    * this is the `.musicxml` path for preview/playback (same folder).
@@ -167,6 +171,9 @@ export interface GenerateResult {
     referenceInfluenceMode?: string;
     referenceInfluenceStrength?: string;
     referenceBehaviourHints?: string[];
+    /** Section-scoped regen receipt (ensemble / golden path partial score merge). */
+    sectionRegenerationReceipt?: string;
+    sectionRegenerationPartialScore?: boolean;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -196,6 +203,8 @@ export interface GenerateResult {
     debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
     /** V44 Style Panel — harmonic + rhythm context key bundle */
     styleGenerationContextKeys?: string[];
+    /** Bar-range regen (duo/ECM) — echo without full base XML payload. */
+    sectionRegeneration?: Pick<SectionRegenerationParams, 'startBar' | 'endBar'>;
   };
   /** Big Band planning: resolved pairing metadata when `stylePairing` was sent. */
   stylePairingReceipt?: {
@@ -246,53 +255,90 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   const normalizedImportHarmonyMode = normalizeImportHarmonyMode(req.importHarmonyMode);
   const importHarmonyModeSource: 'defaulted' | 'explicit' = modeExplicitlyProvided ? 'explicit' : 'defaulted';
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
-  const result = runGoldenPath(effectiveSeed, {
-    styleStack: mapAppStyleStackToEngine(req.styleStack),
-    presetId: req.presetId,
-    scoreTitle: req.title,
-    harmonyMode: duo ? req.harmonyMode : undefined,
-    chordProgressionText: chordText,
-    ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
-    totalBars: req.totalBars,
-    longFormEnabled: req.longFormEnabled,
-    keySignatureMode: req.keySignatureMode,
-    tonalCenterOverride: req.tonalCenterOverride,
-    tonalCenter: req.tonalCenter,
-    variationEnabled: req.variationEnabled === true ? true : undefined,
-    creativeControlLevel: req.creativeControlLevel,
-    intent: req.intent,
-    c4Strength: req.c4Strength,
-    songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
-    blendStrength: req.blendStrength ?? 'medium',
-    ...(req.chromaticStrength === 'off' ||
-    req.chromaticStrength === 'subtle' ||
-    req.chromaticStrength === 'prominent'
-      ? { chromaticStrength: req.chromaticStrength }
-      : {}),
-    songModeLeadSheetMelodyAnchors: importedAnchors,
-    leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
-    importHarmonyMode: normalizedImportHarmonyMode,
-    harmonyBlend: harmonyBlendRaw,
-    ...(req.formId ? { formId: req.formId as FormId } : {}),
-    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
-    zappaSoloMidiLow: req.zappaSoloMidiLow,
-    zappaSoloMidiHigh: req.zappaSoloMidiHigh,
-    zappaSoloDensity: req.zappaSoloDensity,
-    zappaSoloDissonance: req.zappaSoloDissonance,
-    ...(typeof req.primarySongwriterStyle === 'string' &&
-    req.primarySongwriterStyle.trim().toLowerCase() === 'frank_zappa'
-      ? {
-          primarySongwriterStyle: req.primarySongwriterStyle.trim(),
-          songModeHookFirstIdentity: true,
-          styleProfile: req.styleProfile ?? 'STYLE_ECM',
-          ...(typeof req.secondarySongwriterStyle === 'string' && req.secondarySongwriterStyle.trim() !== ''
-            ? { secondarySongwriterStyle: req.secondarySongwriterStyle.trim() }
+  const sectionRegen =
+    duo && req.sectionRegeneration
+      ? runDuoSectionRegeneration(req, effectiveSeed, totalBars)
+      : null;
+  if (sectionRegen && !sectionRegen.ok) {
+    const err = sectionRegen.error;
+    return {
+      success: false,
+      error: err,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      productKind: 'musicxml',
+      validation: {
+        integrityPassed: false,
+        behaviourGatesPassed: false,
+        mxValidationPassed: false,
+        strictBarMathPassed: false,
+        exportRoundTripPassed: false,
+        exportIntegrityPassed: false,
+        instrumentMetadataPassed: false,
+        sibeliusSafe: false,
+        readiness: { shareable: false, release: 0, mx: 0 },
+        errors: [err],
+      },
+      runManifest: {
+        seed: req.seed,
+        presetId: req.presetId,
+        activeModules: [],
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+  const result =
+    sectionRegen && sectionRegen.ok
+      ? sectionRegen.result
+      : runGoldenPath(effectiveSeed, {
+          styleStack: mapAppStyleStackToEngine(req.styleStack),
+          presetId: req.presetId,
+          scoreTitle: req.title,
+          harmonyMode: duo ? req.harmonyMode : undefined,
+          chordProgressionText: chordText,
+          ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
+          totalBars: req.totalBars,
+          longFormEnabled: req.longFormEnabled,
+          keySignatureMode: req.keySignatureMode,
+          tonalCenterOverride: req.tonalCenterOverride,
+          tonalCenter: req.tonalCenter,
+          variationEnabled: req.variationEnabled === true ? true : undefined,
+          creativeControlLevel: req.creativeControlLevel,
+          intent: req.intent,
+          c4Strength: req.c4Strength,
+          songModeJamesBrownFunkOverlay: req.songModeJamesBrownFunkOverlay === true ? true : undefined,
+          blendStrength: req.blendStrength ?? 'medium',
+          ...(req.chromaticStrength === 'off' ||
+          req.chromaticStrength === 'subtle' ||
+          req.chromaticStrength === 'prominent'
+            ? { chromaticStrength: req.chromaticStrength }
             : {}),
-        }
+          songModeLeadSheetMelodyAnchors: importedAnchors,
+          leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
+          importHarmonyMode: normalizedImportHarmonyMode,
+          harmonyBlend: harmonyBlendRaw,
+          ...(req.formId ? { formId: req.formId as FormId } : {}),
+          ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+          zappaSoloMidiLow: req.zappaSoloMidiLow,
+          zappaSoloMidiHigh: req.zappaSoloMidiHigh,
+          zappaSoloDensity: req.zappaSoloDensity,
+          zappaSoloDissonance: req.zappaSoloDissonance,
+          ...(typeof req.primarySongwriterStyle === 'string' &&
+          req.primarySongwriterStyle.trim().toLowerCase() === 'frank_zappa'
+            ? {
+                primarySongwriterStyle: req.primarySongwriterStyle.trim(),
+                songModeHookFirstIdentity: true,
+                styleProfile: req.styleProfile ?? 'STYLE_ECM',
+                ...(typeof req.secondarySongwriterStyle === 'string' &&
+                req.secondarySongwriterStyle.trim() !== ''
+                  ? { secondarySongwriterStyle: req.secondarySongwriterStyle.trim() }
+                  : {}),
+              }
             : {}),
-    ...(typeof req.stochasticVariance === 'number' ? { stochasticVariance: req.stochasticVariance } : {}),
-    ...(typeof req.stochasticRenderOrdinal === 'number' ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal } : {}),
-  });
+          ...(typeof req.stochasticVariance === 'number' ? { stochasticVariance: req.stochasticVariance } : {}),
+          ...(typeof req.stochasticRenderOrdinal === 'number'
+            ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal }
+            : {}),
+        });
   result.context.generationMetadata = {
     ...result.context.generationMetadata,
     importHarmonyMode: normalizedImportHarmonyMode,
@@ -334,6 +380,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
   let filename: string | undefined;
   let filepath: string | undefined;
+  let midiFilepath: string | undefined;
   let outputXml: string | undefined = result.xml;
   let scoreForDrumGuide = result.score;
 
@@ -435,7 +482,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
     fs.writeFileSync(filepath, xmlOut, 'utf-8');
     outputXml = xmlOut;
-    if (!req.skipDrumGuide) {
+    const skipMidiDrumGuides = result.context.generationMetadata.sectionRegenerationPartialScore === true;
+    if (!req.skipDrumGuide && !skipMidiDrumGuides) {
       try {
         const barMeterForDrums =
           result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
@@ -443,6 +491,16 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         writeDrumGuide(scoreForDrumGuide, outputDir, baseName, barMeterForDrums, req.bpm);
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
+      }
+    }
+    if (!skipMidiDrumGuides) {
+      try {
+        const barMeterForScore =
+          result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
+        const baseName = path.basename(filepath, path.extname(filepath));
+        midiFilepath = writeScoreMidi(scoreForDrumGuide, outputDir, baseName, barMeterForScore, req.bpm);
+      } catch (e) {
+        console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
       }
     }
     const locked = result.context.lockedHarmonyBarsRaw;
@@ -564,6 +622,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     guitarVoicings: guitarVoicingsOut,
     filename,
     filepath,
+    midiFilepath,
     manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
     harmonySource: result.context.generationMetadata.harmonySource,
     customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,
@@ -651,6 +710,14 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       c4Strength: req.c4Strength,
       importHarmonyMode: normalizedImportHarmonyMode,
       harmonyBlend: harmonyBlendRaw,
+      ...(req.sectionRegeneration
+        ? {
+            sectionRegeneration: {
+              startBar: req.sectionRegeneration.startBar,
+              endBar: req.sectionRegeneration.endBar,
+            },
+          }
+        : {}),
     },
     voice2PolyphonyDiagnostics: result.context.generationMetadata.voice2PolyphonyDiagnostics,
   };

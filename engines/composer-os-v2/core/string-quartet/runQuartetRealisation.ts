@@ -15,6 +15,7 @@ import {
   isSongwriterFrankZappaStringQuartet,
   precomputeZappaSQEffectiveHarmonyBars,
 } from './zappaStringQuartetSlice';
+import { deriveChordBarsFromProgressionOrLeadSheet } from '../regeneration/ensembleChordBars';
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
 import { runStringQuartetMode, type StringQuartetRunInput, type StringQuartetRunResult } from './runStringQuartetMode';
@@ -139,33 +140,11 @@ export function runQuartetRealisation(
       : undefined;
 
   const tb = planning.formPlan.totalBars;
-  let raw =
-    typeof input.chordProgressionText === 'string' ? input.chordProgressionText.trim() : '';
-  if (input.leadSheet?.chordEvents?.length) {
-    /** Event field is `symbol` (not chordSymbol). Pipe-separated cells → one chord per bar for parseChordProgressionInputWithBarCount. */
-    const sorted = [...input.leadSheet.chordEvents].sort(
-      (a, b) => a.bar - b.bar || a.beat - b.beat
-    );
-    const primaryByBar = new Map<number, string>();
-    for (const e of sorted) {
-      if (e.bar >= 1 && e.bar <= tb && !primaryByBar.has(e.bar)) {
-        primaryByBar.set(e.bar, e.symbol);
-      }
-    }
-    let carry = 'C';
-    const cells: string[] = [];
-    for (let bar = 1; bar <= tb; bar++) {
-      const sym = primaryByBar.get(bar);
-      if (sym !== undefined) carry = sym;
-      cells.push(carry);
-    }
-    raw = cells.join(' | ');
-  }
-  let chordBars: string[] | undefined;
-  if (raw) {
-    const p = parseChordProgressionInputWithBarCount(raw, tb);
-    chordBars = p.ok ? p.bars : undefined;
-  }
+  const chordBars = deriveChordBarsFromProgressionOrLeadSheet({
+    chordProgressionText: typeof input.chordProgressionText === 'string' ? input.chordProgressionText : undefined,
+    leadSheet: input.leadSheet,
+    totalBars: tb,
+  });
 
   const wybleLayout =
     input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;

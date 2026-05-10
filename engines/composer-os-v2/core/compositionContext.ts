@@ -191,6 +191,10 @@ export interface GenerationMetadata {
   chordProgressionInputRaw?: string;
   /** Parsed one chord per bar when custom harmony was applied successfully */
   parsedCustomProgressionBars?: string[];
+  /** Section-scoped regen: receipt when a fragment run was spliced into prior MusicXML. */
+  sectionRegenerationReceipt?: string;
+  /** Score model may reflect fragment bars only; skip full-score MIDI/drum guides when true. */
+  sectionRegenerationPartialScore?: boolean;
   /** True after written MusicXML harmony blocks match `lockedHarmonyBarsRaw` bar-for-bar (release gate). */
   customHarmonyMusicXmlTruthPassed?: boolean;
   /** V3.6b — Receipt echo of `harmonySource` for clarity (chord source vs style grammar). */
