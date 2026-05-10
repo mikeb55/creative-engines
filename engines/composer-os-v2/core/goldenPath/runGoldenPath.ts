@@ -9,6 +9,7 @@ import type {
   BartokContextMode,
   BeatlesContextMode,
   BernardHerrmannContextMode,
+  ArvoPartTintinnabuliParams,
   CompositionContext,
   FormMap,
   EnnioMorriconeContextMode,
@@ -1149,6 +1150,8 @@ export interface RunGoldenPathOptions {
   gershwinContext?: GershwinContextMode;
   /** Song Mode / Arvo Pärt: Fur Alina vs Spiegel vs Fratres posture (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted. */
   arvoPartContext?: ArvoPartContextMode;
+  /** Tintinnabuli engine params (`arvoPartSlice.ts`). */
+  arvoPartTintinnabuli?: ArvoPartTintinnabuliParams;
   /** Song Mode / Prince: era posture (`princeSlice.ts`). Default **`purple_rain`** when omitted. */
   princeContext?: PrinceContextMode;
   /** Song Mode / The Beatles: era posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
@@ -1804,7 +1807,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ? { gershwinContext: options.gershwinContext ?? 'song_aaba' }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'arvo_part'
-        ? { arvoPartContext: options.arvoPartContext ?? 'fur_alina' }
+        ? {
+            arvoPartContext: options.arvoPartContext ?? 'fur_alina',
+            ...(options.arvoPartTintinnabuli ? { arvoPartTintinnabuli: options.arvoPartTintinnabuli } : {}),
+          }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'prince'
         ? { princeContext: options.princeContext ?? 'purple_rain' }

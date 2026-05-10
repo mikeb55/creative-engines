@@ -6,6 +6,7 @@ import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
 import type {
   AngeloBadalamentiContextMode,
   ArvoPartContextMode,
+  ArvoPartTintinnabuliParams,
   BartokContextMode,
   BeatlesContextMode,
   BernardHerrmannContextMode,
@@ -30,9 +31,11 @@ import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { BigBandFormPhase } from '../core/big-band/bigBandPlanTypes';
+import type { MotifTransform } from '../core/song-mode/motifMutationEngine';
 
 export type { StyleProfile };
 export type { ArvoPartContextMode };
+export type { ArvoPartTintinnabuliParams };
 export type { BartokContextMode };
 export type { FrankZappaContextMode };
 export type { GershwinContextMode };
@@ -339,6 +342,8 @@ export interface GenerateRequest {
    * Omitted → engine default **`fur_alina`** when primary songwriter is **`arvo_part`**.
    */
   arvoPartContext?: ArvoPartContextMode;
+  /** Optional tintinnabuli triad field / M–T voicing (`arvoPartSlice.ts`). */
+  arvoPartTintinnabuli?: ArvoPartTintinnabuliParams;
   /**
    * Song Mode / Prince: purple_rain vs sign_o_times vs kiss posture (`princeSlice.ts`).
    * Omitted → engine default **`purple_rain`** when primary songwriter is **`prince`**.
@@ -728,3 +733,32 @@ export interface OutputEntry {
   frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];
   frankZappaEligibilityStats?: GenerationMetadata['frankZappaEligibilityStats'];
 }
+
+/** POST /api/melodic-variation-pack — minimal note (HTTP contract calls this NoteEvent: pitch MIDI + duration in quarters). */
+export type MelodicVariationPackNoteEvent = {
+  pitch: number;
+  duration: number;
+};
+
+export type MelodicVariationPackRequest = {
+  melody: MelodicVariationPackNoteEvent[];
+  chords: string[];
+  variationCount: number;
+  songwriterId: string;
+};
+
+export type MelodicVariationPackSuccessResponse = {
+  success: true;
+  /** Stub duo score + {@link scoreResultForGce}; arrangement pillar uses bass-rests placeholder. */
+  scoringMode: 'melody-only';
+  melody: MelodicVariationPackNoteEvent[];
+  variations: Array<{
+    melody: MelodicVariationPackNoteEvent[];
+    gceScore: number;
+    transform: MotifTransform;
+  }>;
+};
+
+export type MelodicVariationPackResponse =
+  | MelodicVariationPackSuccessResponse
+  | { success: false; error: string };

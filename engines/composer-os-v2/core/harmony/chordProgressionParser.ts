@@ -120,6 +120,10 @@ export function parseChordProgressionInputWithBarCount(
     }
     const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
     const primary = normalizeChordToken(rawCell);
+    if (/^tonic_wash$/i.test(primary.replace(/\s+/g, ''))) {
+      bars.push('tonic_wash');
+      continue;
+    }
     if (!isValidChordShape(primary)) {
       const fb = chordWithFallback(rawCell);
       bars.push(fb.chord);
@@ -163,6 +167,10 @@ export function parseChordProgressionInputFlexible(input: string): ParseChordPro
     }
     const rawCell = tokens[0].trim().replace(/\s+/g, ' ');
     const primary = normalizeChordToken(rawCell);
+    if (/^tonic_wash$/i.test(primary.replace(/\s+/g, ''))) {
+      bars.push('tonic_wash');
+      continue;
+    }
     if (!isValidChordShape(primary)) {
       const fb = chordWithFallback(rawCell);
       bars.push(fb.chord);

@@ -63,6 +63,7 @@ export function normalizeChordSymbol(input: string): string {
 export function normalizeLeadSheetChordSpelling(input: string): string {
   const s = input.trim();
   if (!s) return s;
+  if (/^tonic_wash$/i.test(s)) return 'tonic_wash';
   const m = s.match(/^([A-G](?:#|b)?)(.*)$/i);
   if (!m) return s;
   const root = m[1]!;

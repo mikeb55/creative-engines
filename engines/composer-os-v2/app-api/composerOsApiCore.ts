@@ -13,7 +13,12 @@ import { listOutputs } from './listOutputs';
 import { openOutputFolder, type OpenOutputFolderResult } from './openOutputFolder';
 import { buildDiagnostics } from './buildDiagnostics';
 import { friendlyGenerateError, friendlyOutputDirError } from './apiErrorMessages';
-import type { GenerateRequest } from './appApiTypes';
+import type {
+  GenerateRequest,
+  MelodicVariationPackResponse,
+  MelodicVariationPackRequest,
+  MelodicVariationPackNoteEvent,
+} from './appApiTypes';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
@@ -35,6 +40,12 @@ import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
 import { formatPdfExtractFailureHint, generateFromPdf } from '../core/pdf';
+import type { GceStructureSection } from '../core/gce/gceAutoScorers';
+import { normalizeSongwriterStyleKey } from '../core/song-mode/songwriterStyleProfiles';
+import {
+  generateMelodicVariations,
+  scoreMelodicVariationsForPack,
+} from '../core/song-mode/melodicVariationPack';
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -421,6 +432,25 @@ export function apiGenerate(
         body.arvoPartContext === 'fratres'
           ? body.arvoPartContext
           : undefined,
+      arvoPartTintinnabuli: (() => {
+        const raw = (body as { arvoPartTintinnabuli?: unknown }).arvoPartTintinnabuli;
+        if (!raw || typeof raw !== 'object') return undefined;
+        const o = raw as Record<string, unknown>;
+        const triadRoot = typeof o.triadRoot === 'string' ? o.triadRoot.trim() : undefined;
+        const position =
+          o.position === 'above' || o.position === 'below' || o.position === 'alternating'
+            ? o.position
+            : undefined;
+        const mode = o.mode === 'M1' || o.mode === 'M2' ? o.mode : undefined;
+        const triadQuality = o.triadQuality === 'major' || o.triadQuality === 'minor' ? o.triadQuality : undefined;
+        if (!triadRoot && !position && !mode && !triadQuality) return undefined;
+        return {
+          ...(triadRoot ? { triadRoot } : {}),
+          ...(position ? { position } : {}),
+          ...(mode ? { mode } : {}),
+          ...(triadQuality ? { triadQuality } : {}),
+        };
+      })(),
       princeContext:
         body.princeContext === 'purple_rain' ||
         body.princeContext === 'sign_o_times' ||
@@ -622,6 +652,87 @@ export type PdfGenerateFromPdfResponse = {
   parsedChart?: ParsedChart | null;
   error?: string;
 };
+
+export type {
+  MelodicVariationPackRequest,
+  MelodicVariationPackResponse,
+  MelodicVariationPackNoteEvent,
+  MelodicVariationPackSuccessResponse,
+} from './appApiTypes';
+
+export type MelodicVariationPackApiBody = MelodicVariationPackRequest & {
+  /** Optional section map for GCE Structure & Form (defaults to one section spanning `chords`). */
+  sections?: Array<{ label: string; barStart: number; barEnd: number; role?: string }>;
+};
+
+/**
+ * Motif mutations + GCE overall via {@link scoreResultForGce} (same auto-scorers as gate).
+ * Dedup threshold 0.92 is applied inside {@link generateMelodicVariations} before scoring.
+ */
+export function apiMelodicVariationPack(
+  body: Partial<MelodicVariationPackApiBody>
+): MelodicVariationPackResponse {
+  const melody = body.melody;
+  if (!Array.isArray(melody) || melody.length === 0) {
+    return { success: false, error: 'melody must be a non-empty array of { pitch, duration }.' };
+  }
+  const chords = body.chords;
+  if (!Array.isArray(chords) || chords.length === 0) {
+    return { success: false, error: 'chords must be a non-empty string array.' };
+  }
+  for (const n of melody) {
+    if (
+      !n ||
+      typeof (n as { pitch?: unknown }).pitch !== 'number' ||
+      typeof (n as { duration?: unknown }).duration !== 'number'
+    ) {
+      return { success: false, error: 'Each melody note needs numeric pitch and duration.' };
+    }
+  }
+
+  const vcRaw = body.variationCount;
+  if (typeof vcRaw !== 'number' || !Number.isFinite(vcRaw)) {
+    return { success: false, error: 'variationCount must be a finite number (clamped to 3–5).' };
+  }
+  const variationSlots = Math.max(3, Math.min(5, Math.floor(vcRaw)));
+
+  const sidRaw = body.songwriterId;
+  if (typeof sidRaw !== 'string' || !sidRaw.trim()) {
+    return { success: false, error: 'songwriterId is required.' };
+  }
+  const songwriterResolved = normalizeSongwriterStyleKey(sidRaw);
+  if (!songwriterResolved) {
+    return { success: false, error: `Unknown songwriterId: ${sidRaw.trim()}` };
+  }
+
+  const m = melody as MelodicVariationPackNoteEvent[];
+  const candidates = generateMelodicVariations(m, variationSlots);
+  const sections: GceStructureSection[] =
+    body.sections && body.sections.length > 0
+      ? body.sections.map((s) => ({
+          label: s.label,
+          barStart: s.barStart,
+          barEnd: s.barEnd,
+          role: s.role ?? s.label,
+        }))
+      : [{ label: 'A', barStart: 1, barEnd: Math.max(1, chords.length), role: 'A' }];
+  const scored = scoreMelodicVariationsForPack(candidates, {
+    chords,
+    sections,
+    songwriterId: songwriterResolved,
+  });
+  const top = scored.slice(0, variationSlots);
+  return {
+    success: true,
+    scoringMode: 'melody-only',
+    melody: melody.map((x) => ({ pitch: x.pitch, duration: x.duration })),
+    variations: top.map((s) => ({
+      melody: s.variation.notes.map((n) => ({ pitch: n.pitch, duration: n.duration })),
+      gceScore: s.gceScore,
+      transform: s.variation.transform,
+    })),
+  };
+}
 
 /**
  * Node-only: render PDF page → vision → vault riff (same as {@link generateFromPdf}).

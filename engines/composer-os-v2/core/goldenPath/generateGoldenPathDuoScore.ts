@@ -193,6 +193,7 @@ import {
 } from './gershwinSlice';
 import {
   accumulateArvoPartHarmonyDiagnostics,
+  applyArvoPartTintinnabuliToDuoScore,
   createArvoPartHarmonyAccumulator,
   finalizeArvoPartMetadata,
   precomputeArvoPartEffectiveHarmonyBars,
@@ -3615,7 +3616,7 @@ function buildGuitarPart(
   }
 
   if (isSongwriterArvoPart && context.generationMetadata) {
-    finalizeArvoPartMetadata(context.generationMetadata, apAccum);
+    context.generationMetadata.arvoPartHarmonyAccumulatorHold = apAccum;
   }
 
   if (isSongwriterSatie && context.generationMetadata) {
@@ -5860,7 +5861,30 @@ export function generateGoldenPathDuoScore(
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   tagMomentBarsOnParts([guitarPart, bassPart]);
-  if (context.presetId !== 'ecm_chamber' && context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) {
+  const skipStandardDuoBassMassaging =
+    context.generationMetadata?.songwriterStyleId === 'arvo_part';
+  if (
+    context.generationMetadata?.songwriterStyleId === 'arvo_part' &&
+    isGuitarBassDuoFamily(context.presetId)
+  ) {
+    applyArvoPartTintinnabuliToDuoScore(guitarPart, bassPart, context, {
+      guitarMap: plans.guitarMap,
+      bassMap: plans.bassMap,
+      walkLow,
+      bassCeiling,
+    });
+    if (context.generationMetadata) {
+      const hold =
+        context.generationMetadata.arvoPartHarmonyAccumulatorHold ?? createArvoPartHarmonyAccumulator();
+      finalizeArvoPartMetadata(context.generationMetadata, hold);
+      delete context.generationMetadata.arvoPartHarmonyAccumulatorHold;
+    }
+  }
+  if (
+    context.presetId !== 'ecm_chamber' &&
+    context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
+    !skipStandardDuoBassMassaging
+  ) {
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
   }
@@ -5871,7 +5895,8 @@ export function generateGoldenPathDuoScore(
   if (
     isGuitarBassDuoFamily(context.presetId) &&
     context.presetId !== 'ecm_chamber' &&
-    !useIndieDualGuitar
+    !useIndieDualGuitar &&
+    context.generationMetadata?.songwriterStyleId !== 'arvo_part'
   ) {
     /**
      * Wyble-style V2/bass register coupling is for true guitar–bass duo. The Indie + separate

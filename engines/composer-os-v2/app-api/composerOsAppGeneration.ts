@@ -1106,7 +1106,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? { gershwinContext: req.gershwinContext }
       : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'arvo_part'
-      ? { arvoPartContext: req.arvoPartContext }
+      ? {
+          arvoPartContext: req.arvoPartContext,
+          ...(req.arvoPartTintinnabuli ? { arvoPartTintinnabuli: req.arvoPartTintinnabuli } : {}),
+        }
       : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'prince'
       ? { princeContext: req.princeContext }

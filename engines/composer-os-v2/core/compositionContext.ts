@@ -58,6 +58,20 @@ export type GershwinContextMode = 'song_aaba' | 'rhapsody' | 'rhythm_changes';
 /** Arvo Pärt Song Mode slice — Fur Alina vs Spiegel im Spiegel vs Fratres posture (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted. */
 export type ArvoPartContextMode = 'fur_alina' | 'spiegel' | 'fratres';
 
+/** Tintinnabuli T-voice placement vs M-voice (`arvoPartSlice.ts`). */
+export type ArvoPartTintinnabuliPosition = 'above' | 'below' | 'alternating';
+
+/** M1 = one T-voice line; M2 = simultaneous T above + T below (`arvoPartSlice.ts`). */
+export type ArvoPartTintinnabuliVoiceMode = 'M1' | 'M2';
+
+/** Optional tintinnabuli engine overrides — static triad field / progression bypass uses wash symbol (`arvoPartSlice.ts`). */
+export interface ArvoPartTintinnabuliParams {
+  triadRoot?: string;
+  position?: ArvoPartTintinnabuliPosition;
+  mode?: ArvoPartTintinnabuliVoiceMode;
+  triadQuality?: 'major' | 'minor';
+}
+
 /** Erik Satie Song Mode slice — Gymnopédie vs Gnossienne vs cabaret “Piège” posture (`satieSlice.ts`). Default **`gymnopedie`** when omitted. */
 export type SatieContextMode = 'gymnopedie' | 'gnossienne' | 'poire';
 
@@ -1092,6 +1106,12 @@ export interface GenerationMetadata {
    * Arvo Pärt Song Mode slice mode (`arvoPartSlice.ts`). Default **`fur_alina`** when omitted.
    */
   arvoPartContext?: ArvoPartContextMode;
+  /** Tintinnabuli dual-voice params (`arvoPartSlice.ts`). */
+  arvoPartTintinnabuli?: ArvoPartTintinnabuliParams;
+  /**
+   * Duo golden-path only: holds harmony diagnostics accumulator until real tintinnabuli notes are merged (`arvoPartSlice.ts`).
+   */
+  arvoPartHarmonyAccumulatorHold?: { barsConsidered: number; pedalTouches: number };
   /** Erik Satie — parallel modal plans / anti-functional stasis (`satieSlice.ts`). */
   satieDiagnostics?: {
     songwriterId: 'satie';

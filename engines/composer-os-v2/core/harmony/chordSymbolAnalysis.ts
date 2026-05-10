@@ -50,7 +50,11 @@ export interface ParsedChordSymbol {
 
 /** Split "D/F#" → harmony D, slash F#. */
 export function parseChordSymbol(symbol: string): ParsedChordSymbol {
-  const s = normalizeLeadSheetChordSpelling(symbol.trim());
+  const rawTrim = symbol.trim();
+  if (/^tonic_wash$/i.test(rawTrim)) {
+    return { display: 'tonic_wash', harmonyPart: 'tonic_wash' };
+  }
+  const s = normalizeLeadSheetChordSpelling(rawTrim);
   const slash = s.indexOf('/');
   if (slash < 0) {
     return { display: s, harmonyPart: s };
