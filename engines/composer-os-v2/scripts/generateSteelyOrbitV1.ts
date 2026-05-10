@@ -1,5 +1,5 @@
 /**
- * Steely Orbit Prelude V1.3 — drum narrative arc + V1.2 alto/motif (orbit_steely_v1_3_64).
+ * Steely Orbit Prelude V1.4 — alto melodic development pass + V1.3 drums/motif (orbit_steely_v1_4_64).
  * Requires local Orbit sources under repo `projects/Orbit/` (see paths below).
  *
  * Survey:
@@ -23,12 +23,13 @@ import type { CombinedEvaluationResult } from '../core/evaluation/evaluationType
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import { auditDrumVoice1FourBarRepeats } from '../core/big-band/orbitSteelyV13DrumNarrative';
+import { validateAlto917Vs58 } from '../core/big-band/orbitSteelyV14MelodicDevelopment';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const LEAD_REL = 'projects/Orbit/Orbit_lead_V5.1.musicxml';
 const REF_REL = 'projects/Orbit/V6.0 orbit - BB.musicxml';
 const OUT_DIR_REL = 'projects/Orbit/Steely Orbit - 1st 64 bars';
-const OUT_FILE = 'V1.3-Steely-Orbit.musicxml';
+const OUT_FILE = 'V1.4-Steely-Orbit.musicxml';
 
 function envFloat(name: string, fallback: number): number {
   const v = process.env[name];
@@ -145,7 +146,7 @@ function main(): void {
     const seed = baseSeed + attempt;
     const realised = runBigBandRealisation({
       seed,
-      title: 'Steely Orbit Prelude V1.3',
+      title: 'Steely Orbit Prelude V1.4',
       totalBars: 64,
       formId: 'orbit_bb_64',
       bpm: BPM,
@@ -183,7 +184,7 @@ function main(): void {
       },
       suppressDesignatedSaxSoli: true,
       songwriterStyleId: 'donald_fagen',
-      bigBandArrangementProfile: 'orbit_steely_v1_3_64',
+      bigBandArrangementProfile: 'orbit_steely_v1_4_64',
       stylePairing: {
         songwriterStyle: 'donald_fagen',
         arrangerStyle: 'clare_fischer',
@@ -243,7 +244,7 @@ function main(): void {
   const outFinal = path.join(outDir, OUT_FILE);
   let writePath = outFinal;
   if (fs.existsSync(outFinal)) {
-    writePath = path.join(outDir, `V1.3-Steely-Orbit-${bestSeed}.musicxml`);
+    writePath = path.join(outDir, `V1.4-Steely-Orbit-${bestSeed}.musicxml`);
     console.warn(`Preserving existing ${OUT_FILE} — writing ${path.basename(writePath)}`);
   }
 
@@ -265,12 +266,15 @@ function main(): void {
     ? auditDrumVoice1FourBarRepeats(bestScoreForReport)
     : { ok: true, messages: [] as string[] };
 
-  console.log('\n--- STEELY ORBIT V1.3 REPORT ---');
+  const melodicDev = bestScoreForReport ? validateAlto917Vs58(bestScoreForReport) : { ok: false, detail: 'no score' };
+
+  console.log('\n--- STEELY ORBIT V1.4 REPORT ---');
   console.log(
     'Drum variation audit (voice 1 / four-bar repeats):',
     drumAudit.ok ? 'PASS' : 'FLAG',
     drumAudit.messages.length ? drumAudit.messages.join('; ') : ''
   );
+  console.log('Melodic development audit (bars 9–17 vs 5–8):', melodicDev.ok ? 'PASS' : 'FLAG', melodicDev.detail);
   console.log(
     'Melodic GCE source part:',
     bestScoreForReport ? resolveMelodicPartId(bestScoreForReport) : '(unknown)'
