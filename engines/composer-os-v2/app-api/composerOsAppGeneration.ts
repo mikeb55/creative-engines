@@ -2447,6 +2447,12 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       : {}),
     ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
     ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
+    ...(req.sectionIntensityOverrides && Object.keys(req.sectionIntensityOverrides).length > 0
+      ? { sectionIntensityOverrides: req.sectionIntensityOverrides }
+      : {}),
+    ...(req.figureResponse ? { figureResponse: req.figureResponse } : {}),
+    ...(req.feelMode ? { feelMode: req.feelMode } : {}),
+    ...(req.drumArticulation ? { drumArticulation: req.drumArticulation } : {}),
   };
   const sectionRegenBase = req.sectionRegeneration?.baseMusicXml?.trim();
   let realised: ReturnType<typeof runBigBandRealisation>;

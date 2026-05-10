@@ -143,6 +143,33 @@ You must still send **full-chart harmony** compatible with **`totalBars`** (cust
 
 *`cueSelectivity`, `setupStrength`, `fillLengthCeiling` scale fills and hit density inside each cell — see **`bigBandDrumIntensity.ts`**.
 
+### Section intensity overrides / figure response / rhythm feel / drum articulation
+
+**API (`GenerateRequest`):**
+
+| Field | Values | Default | Effect |
+|-------|--------|---------|--------|
+| **`sectionIntensityOverrides`** | Partial map **`intro`** \| **`melody_head`** \| **`background_figures`** \| **`solo_section`** \| **`shout_chorus`** \| **`ending`** → **`sparse`** \| **`standard`** \| **`driving`** | *(omit)* | Per-form-slice **`drumIntensity`** override; omitted keys use global **`drumIntensity`**. |
+| **`figureResponse`** | **`low`** \| **`medium`** \| **`high`** | **`medium`** | **`low`** — thins brass punch / shout maps + sparser piano comp on melody; **`medium`** — baseline **`generateBrassPunches`** / **`generateShoutChorus`** + **`applyFigureResponseToPunchMaps`** passthrough; **`high`** — extra deterministic brass punch bars + shout-adjacent hits. |
+| **`feelMode`** | **`in2`** \| **`in4`** | **`in4`** | **`in4`** — walking bass (per-bar quarters on **4/4**, three beats on **3/4**) + existing drum feel-class rotation; **`in2`** — half-time bass (**4/4**: roots on beats **1** and **3**; **3/4**: long root bar); pushes drum patterns toward half-time shells on melody / soli / solo slices (intro / shout / ending keep existing specials). |
+| **`drumArticulation`** | **`auto`** \| **`brushes`** \| **`sticks`** | **`auto`** | **`auto`** — matrix **`timeTexture`** only; **`brushes`** — forces **`brush`** texture after policy lookup; **`sticks`** — maps **`brush`** → **`ride`** so sparse intros stay brighter. |
+
+**UI:** **Home → Generate**, instrument group **Big Band** — **Figure response**, **Rhythm feel** (*In four* / *In two*), **Drum articulation**; **Advanced — section intensity overrides** (`<details>`) for **`sectionIntensityOverrides`**.
+
+**Per-bar drum articulation (`drumArticulationBarOverrides`):** optional on **`BigBandRunInput`** / **`buildBigBandScoreModel`** — map **1-based bar index** → **`auto`** \| **`brushes`** \| **`sticks`**, merged after global **`drumArticulation`** for that measure (**`bigBandScoreBuilder.ts`** **`addBigBandDrumPattern`**). Used by **`generateOrbitBbV5.ts`** / **`generateOrbitBbV6.ts`** (e.g. sticks on shout bars without changing global brushes). App **`GenerateRequest`** may omit this field; scripts and API extensions pass it through **`runBigBandRealisation`** when present.
+
+### Orbit BB — 64-bar chart (`orbit_bb_64`)
+
+**Lead:** **`projects/Orbit/Orbit_lead_V5.1.musicxml`** — imported as ensemble lead + **`leadSheet`**; alto **bars 5–32** remain the fixed head against **`orbit_v4_64` / `orbit_v5_64` / `orbit_v6_64`** (**`orbitLeadLocked`** + **`addLockedLeadAltoMeasure`**).
+
+**Form:** **`planOrbitBigBandForm64`** — intro **1–4**, melody head **5–32**, development **33–48**, shout chorus **49–60**, ending **61–64**; **64×** **3/4** via **`barMeterMap`**.
+
+**Profiles (stacked post-passes):** **`orbit_v4_64`** → **`applyOrbitBbV64Overlay`**; **`orbit_v5_64`** → V64 + **`applyOrbitBbV5Extended`**; **`orbit_v6_64`** → V64 + V5 + **`applyOrbitBbV6Extended`** (micro-orchestration: shout motif, inner motion, coda, silence bar **57**, fragile duo **38–39**, vacuum bass **F2–Eb2–Bb1**, drum architecture).
+
+**Scripts:** **`engines/composer-os-v2/scripts/generateOrbitBbV4.ts`**, **`generateOrbitBbV5.ts`**, **`generateOrbitBbV6.ts`** → **`projects/Orbit/V4.0 orbit - BB.musicxml`**, **`V5.0 …`**, **`V6.0 …`**.
+
+**Evaluation:** staged manual GCE passes for this chart land roughly **8.9–9.1** overall depending on iteration; ship path still satisfies **LOCK** + Style Profile layer (**`docs/GCE_LOCK_DCR_STANDARDS.md`**).
+
 ### Git history (MIDI + Big Band drum/bass lines, since playbook snapshot `27fb2d3a`)
 
 | Commit | Focus |

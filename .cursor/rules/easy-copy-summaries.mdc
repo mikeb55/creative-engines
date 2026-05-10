@@ -1,0 +1,15 @@
+---
+description: Session summaries and outcomes must be one-click copy friendly.
+alwaysApply: true
+---
+
+# Easy-copy summaries (outcomes / handoffs)
+
+When reporting **summaries**, **outcomes**, **session results**, or **roadmap snapshots** for the user to reuse:
+
+1. **Always include one contiguous fenced block** (Markdown code fence: opening ``` on its own line, body, closing ```) containing the **full** summary—numbered or plain lines inside the fence so **triple-click one paragraph or drag one block** selects everything.
+2. **Do not** scatter the only copy of the outcome across paragraphs outside the fence unless you **duplicate** the same text inside the fence for paste.
+3. Prefer **` ```text `** or bare **```** for the fence language when the content is not source code.
+4. For roadmap refreshes, align with **`docs/COMPOSER_OS_ROADMAP.md`** and mirror critical bullets inside a single copy block when the user asks for handoff material.
+
+This repo expects paste-ready blocks for assistants (Claude/Cursor) sharing decisions with humans or other tools.

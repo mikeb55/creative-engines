@@ -40,11 +40,49 @@ export function planBigBandBlues12Form(): BigBandFormPlan {
   return { totalBars, slices };
 }
 
+/**
+ * Orbit (Mike Bryant) — 32-bar jazz waltz: intro + A×2 + B + head out (no shout chorus).
+ * Matches `projects/Orbit/orbit-structure.json`.
+ */
+export function planOrbitBigBandForm(): BigBandFormPlan {
+  const totalBars = 32;
+  const slices: BigBandFormSlice[] = [
+    { index: 0, phase: 'intro', startBar: 1, endBar: 4 },
+    { index: 1, phase: 'melody_head', startBar: 5, endBar: 12 },
+    { index: 2, phase: 'background_figures', startBar: 13, endBar: 20 },
+    { index: 3, phase: 'solo_section', startBar: 21, endBar: 28 },
+    { index: 4, phase: 'ending', startBar: 29, endBar: 32 },
+  ];
+  return { totalBars, slices };
+}
+
+/**
+ * Orbit BB V4 — 64-bar chart: 32-bar head + development/shout/coda.
+ * Development vacuum + soli + transition → shout chorus → atmospheric ending.
+ */
+export function planOrbitBigBandForm64(): BigBandFormPlan {
+  const totalBars = 64;
+  const slices: BigBandFormSlice[] = [
+    { index: 0, phase: 'intro', startBar: 1, endBar: 4 },
+    { index: 1, phase: 'melody_head', startBar: 5, endBar: 32 },
+    { index: 2, phase: 'solo_section', startBar: 33, endBar: 48 },
+    { index: 3, phase: 'shout_chorus', startBar: 49, endBar: 60 },
+    { index: 4, phase: 'ending', startBar: 61, endBar: 64 },
+  ];
+  return { totalBars, slices };
+}
+
 /** Resolve form plan from optional API/UI `formId`; defaults to weighted {@link planDefaultBigBandForm}. */
 export function planBigBandForm(formId: string | undefined, seed: number, opts?: PlanBigBandFormOpts): BigBandFormPlan {
   const id = formId?.trim();
   if (id === 'big_band_blues12') {
     return planBigBandBlues12Form();
+  }
+  if (id === 'orbit_bb' || id === 'orbit_32') {
+    return planOrbitBigBandForm();
+  }
+  if (id === 'orbit_bb_64') {
+    return planOrbitBigBandForm64();
   }
   return planDefaultBigBandForm(seed, opts);
 }

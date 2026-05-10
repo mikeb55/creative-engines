@@ -1511,6 +1511,206 @@ function notifyGenPhase(phase: 'running' | 'succeeded' | 'failed' | 'idle'): voi
   window.composerOsDesktop?.notifyGenerationPhase(phase);
 }
 
+type BigBandPhaseOverrideKey =
+  | 'intro'
+  | 'melody_head'
+  | 'background_figures'
+  | 'solo_section'
+  | 'shout_chorus'
+  | 'ending';
+
+const BIG_BAND_SECTION_OVERRIDE_LABELS: Record<BigBandPhaseOverrideKey, string> = {
+  intro: 'Intro',
+  melody_head: 'Melody head',
+  background_figures: 'Soli chorus',
+  solo_section: 'Solo section',
+  shout_chorus: 'Shout chorus',
+  ending: 'Rideout',
+};
+
+function BigBandRhythmControls(props: {
+  drumIntensity: 'sparse' | 'standard' | 'driving';
+  onDrumIntensity: (v: 'sparse' | 'standard' | 'driving') => void;
+  figureResponse: 'low' | 'medium' | 'high';
+  onFigureResponse: (v: 'low' | 'medium' | 'high') => void;
+  feelMode: 'in2' | 'in4';
+  onFeelMode: (v: 'in2' | 'in4') => void;
+  drumArticulation: 'auto' | 'brushes' | 'sticks';
+  onDrumArticulation: (v: 'auto' | 'brushes' | 'sticks') => void;
+  sectionOverrides: Partial<Record<BigBandPhaseOverrideKey, '' | 'sparse' | 'standard' | 'driving'>>;
+  onSectionOverride: (phase: BigBandPhaseOverrideKey, v: '' | 'sparse' | 'standard' | 'driving') => void;
+  advancedOpen: boolean;
+  onAdvancedOpen: (open: boolean) => void;
+  disabled?: boolean;
+}) {
+  const {
+    drumIntensity,
+    onDrumIntensity,
+    figureResponse,
+    onFigureResponse,
+    feelMode,
+    onFeelMode,
+    drumArticulation,
+    onDrumArticulation,
+    sectionOverrides,
+    onSectionOverride,
+    advancedOpen,
+    onAdvancedOpen,
+    disabled,
+  } = props;
+  const pill = (active: boolean) =>
+    active
+      ? '1px solid var(--accent, #6366f1)'
+      : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))';
+  const bg = (active: boolean) => (active ? 'rgba(99, 102, 241, 0.15)' : 'transparent');
+  return (
+    <div style={{ marginBottom: '0.65rem', maxWidth: 560 }}>
+      <div style={{ marginBottom: '0.55rem' }} role="group" aria-label="Drum feel intensity">
+        <span style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Feel intensity
+        </span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {(['sparse', 'standard', 'driving'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              disabled={disabled}
+              onClick={() => onDrumIntensity(v)}
+              style={{
+                padding: '0.35rem 0.45rem',
+                fontSize: '0.78rem',
+                borderRadius: 4,
+                border: pill(drumIntensity === v),
+                background: bg(drumIntensity === v),
+                color: 'var(--text)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {v.charAt(0).toUpperCase() + v.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginBottom: '0.55rem' }} role="group" aria-label="Figure response">
+        <span style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Figure response
+        </span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {(['low', 'medium', 'high'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              disabled={disabled}
+              onClick={() => onFigureResponse(v)}
+              style={{
+                padding: '0.35rem 0.45rem',
+                fontSize: '0.78rem',
+                borderRadius: 4,
+                border: pill(figureResponse === v),
+                background: bg(figureResponse === v),
+                color: 'var(--text)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {v.charAt(0).toUpperCase() + v.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginBottom: '0.55rem' }} role="group" aria-label="Rhythm section feel">
+        <span style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Rhythm feel
+        </span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {([
+            { id: 'in4' as const, label: 'In four' },
+            { id: 'in2' as const, label: 'In two (half time)' },
+          ]).map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onFeelMode(id)}
+              style={{
+                padding: '0.35rem 0.45rem',
+                fontSize: '0.78rem',
+                borderRadius: 4,
+                border: pill(feelMode === id),
+                background: bg(feelMode === id),
+                color: 'var(--text)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginBottom: '0.55rem' }} role="group" aria-label="Drum articulation">
+        <span style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Drum articulation
+        </span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {([
+            { id: 'auto' as const, label: 'Auto' },
+            { id: 'brushes' as const, label: 'Brushes' },
+            { id: 'sticks' as const, label: 'Sticks' },
+          ]).map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onDrumArticulation(id)}
+              style={{
+                padding: '0.35rem 0.45rem',
+                fontSize: '0.78rem',
+                borderRadius: 4,
+                border: pill(drumArticulation === id),
+                background: bg(drumArticulation === id),
+                color: 'var(--text)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <details
+        open={advancedOpen}
+        onToggle={(e) => onAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)}
+      >
+        <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Advanced — section intensity overrides
+        </summary>
+        <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {(Object.keys(BIG_BAND_SECTION_OVERRIDE_LABELS) as BigBandPhaseOverrideKey[]).map((phase) => (
+            <label
+              key={phase}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', flexWrap: 'wrap' }}
+            >
+              <span style={{ minWidth: 88 }}>{BIG_BAND_SECTION_OVERRIDE_LABELS[phase]}</span>
+              <select
+                value={sectionOverrides[phase] ?? ''}
+                disabled={disabled}
+                onChange={(e) =>
+                  onSectionOverride(phase, e.target.value as '' | 'sparse' | 'standard' | 'driving')
+                }
+                style={{ fontSize: '0.78rem', maxWidth: 200 }}
+              >
+                <option value="">Use global feel intensity</option>
+                <option value="sparse">Sparse</option>
+                <option value="standard">Standard</option>
+                <option value="driving">Driving</option>
+              </select>
+            </label>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export function HomeGenerate({
   onResult,
 }: {
@@ -1624,6 +1824,15 @@ export function HomeGenerate({
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [uiInstrumentGroup, setUiInstrumentGroup] = useState<UiInstrumentGroup>('big_band');
   const [drumIntensity, setDrumIntensity] = useState<'sparse' | 'standard' | 'driving'>('standard');
+  const [bigBandFigureResponse, setBigBandFigureResponse] = useState<'low' | 'medium' | 'high'>('medium');
+  const [bigBandFeelMode, setBigBandFeelMode] = useState<'in2' | 'in4'>('in4');
+  const [bigBandDrumArticulation, setBigBandDrumArticulation] = useState<'auto' | 'brushes' | 'sticks'>(
+    'auto'
+  );
+  const [bigBandAdvancedRhythmOpen, setBigBandAdvancedRhythmOpen] = useState(false);
+  const [bigBandSectionIntensityOverrides, setBigBandSectionIntensityOverrides] = useState<
+    Partial<Record<BigBandPhaseOverrideKey, '' | 'sparse' | 'standard' | 'driving'>>
+  >({});
   const [guitarOutputModeUi, setGuitarOutputModeUi] = useState<'notation' | 'tab' | 'both'>('both');
   const [etudeInstrumentUi, setEtudeInstrumentUi] = useState('violin_I');
   const [etudeTechnicalFocusUi, setEtudeTechnicalFocusUi] = useState<EtudeTechnicalFocus>('scales');
@@ -2616,7 +2825,23 @@ export function HomeGenerate({
             ? { ensembleLeadSheetMusicXml: leadSheetXmlTrim }
             : {}),
           instrumentGroup: uiInstrumentGroup,
-          ...(uiInstrumentGroup === 'big_band' ? { drumIntensity } : {}),
+          ...(uiInstrumentGroup === 'big_band'
+            ? {
+                drumIntensity,
+                ...(bigBandFigureResponse !== 'medium' ? { figureResponse: bigBandFigureResponse } : {}),
+                ...(bigBandFeelMode !== 'in4' ? { feelMode: bigBandFeelMode } : {}),
+                ...(bigBandDrumArticulation !== 'auto' ? { drumArticulation: bigBandDrumArticulation } : {}),
+                ...(Object.entries(bigBandSectionIntensityOverrides).some(([, v]) => v && v !== '')
+                  ? {
+                      sectionIntensityOverrides: Object.fromEntries(
+                        Object.entries(bigBandSectionIntensityOverrides).filter(
+                          ([, v]) => v !== '' && v !== undefined
+                        )
+                      ) as Record<BigBandPhaseOverrideKey, 'sparse' | 'standard' | 'driving'>,
+                    }
+                  : {}),
+              }
+            : {}),
           ...(uiInstrumentGroup === 'guitar' ? { guitarOutputMode: guitarOutputModeUi } : {}),
           ...(uiInstrumentGroup === 'etude'
             ? { etudeInstrument: etudeInstrumentUi, etudeTechnicalFocus: etudeTechnicalFocusUi }
@@ -5334,41 +5559,23 @@ export function HomeGenerate({
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
           {uiInstrumentGroup === 'big_band' && (
-            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
-              <span
-                style={{
-                  display: 'block',
-                  marginBottom: 6,
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                Feel intensity
-              </span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(['sparse', 'standard', 'driving'] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setDrumIntensity(v)}
-                    style={{
-                      padding: '0.35rem 0.45rem',
-                      fontSize: '0.78rem',
-                      borderRadius: 4,
-                      border:
-                        drumIntensity === v
-                          ? '1px solid var(--accent, #6366f1)'
-                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
-                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {v.charAt(0).toUpperCase() + v.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <BigBandRhythmControls
+              drumIntensity={drumIntensity}
+              onDrumIntensity={setDrumIntensity}
+              figureResponse={bigBandFigureResponse}
+              onFigureResponse={setBigBandFigureResponse}
+              feelMode={bigBandFeelMode}
+              onFeelMode={setBigBandFeelMode}
+              drumArticulation={bigBandDrumArticulation}
+              onDrumArticulation={setBigBandDrumArticulation}
+              sectionOverrides={bigBandSectionIntensityOverrides}
+              onSectionOverride={(phase, v) =>
+                setBigBandSectionIntensityOverrides((prev) => ({ ...prev, [phase]: v }))
+              }
+              advancedOpen={bigBandAdvancedRhythmOpen}
+              onAdvancedOpen={setBigBandAdvancedRhythmOpen}
+              disabled={loading}
+            />
           )}
           <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5817,41 +6024,23 @@ export function HomeGenerate({
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
           {uiInstrumentGroup === 'big_band' && (
-            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
-              <span
-                style={{
-                  display: 'block',
-                  marginBottom: 6,
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                Feel intensity
-              </span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(['sparse', 'standard', 'driving'] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setDrumIntensity(v)}
-                    style={{
-                      padding: '0.35rem 0.45rem',
-                      fontSize: '0.78rem',
-                      borderRadius: 4,
-                      border:
-                        drumIntensity === v
-                          ? '1px solid var(--accent, #6366f1)'
-                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
-                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {v.charAt(0).toUpperCase() + v.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <BigBandRhythmControls
+              drumIntensity={drumIntensity}
+              onDrumIntensity={setDrumIntensity}
+              figureResponse={bigBandFigureResponse}
+              onFigureResponse={setBigBandFigureResponse}
+              feelMode={bigBandFeelMode}
+              onFeelMode={setBigBandFeelMode}
+              drumArticulation={bigBandDrumArticulation}
+              onDrumArticulation={setBigBandDrumArticulation}
+              sectionOverrides={bigBandSectionIntensityOverrides}
+              onSectionOverride={(phase, v) =>
+                setBigBandSectionIntensityOverrides((prev) => ({ ...prev, [phase]: v }))
+              }
+              advancedOpen={bigBandAdvancedRhythmOpen}
+              onAdvancedOpen={setBigBandAdvancedRhythmOpen}
+              disabled={loading}
+            />
           )}
           <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
@@ -5949,41 +6138,23 @@ export function HomeGenerate({
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
           {uiInstrumentGroup === 'big_band' && (
-            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
-              <span
-                style={{
-                  display: 'block',
-                  marginBottom: 6,
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                Feel intensity
-              </span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(['sparse', 'standard', 'driving'] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setDrumIntensity(v)}
-                    style={{
-                      padding: '0.35rem 0.45rem',
-                      fontSize: '0.78rem',
-                      borderRadius: 4,
-                      border:
-                        drumIntensity === v
-                          ? '1px solid var(--accent, #6366f1)'
-                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
-                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {v.charAt(0).toUpperCase() + v.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <BigBandRhythmControls
+              drumIntensity={drumIntensity}
+              onDrumIntensity={setDrumIntensity}
+              figureResponse={bigBandFigureResponse}
+              onFigureResponse={setBigBandFigureResponse}
+              feelMode={bigBandFeelMode}
+              onFeelMode={setBigBandFeelMode}
+              drumArticulation={bigBandDrumArticulation}
+              onDrumArticulation={setBigBandDrumArticulation}
+              sectionOverrides={bigBandSectionIntensityOverrides}
+              onSectionOverride={(phase, v) =>
+                setBigBandSectionIntensityOverrides((prev) => ({ ...prev, [phase]: v }))
+              }
+              advancedOpen={bigBandAdvancedRhythmOpen}
+              onAdvancedOpen={setBigBandAdvancedRhythmOpen}
+              disabled={loading}
+            />
           )}
           <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}

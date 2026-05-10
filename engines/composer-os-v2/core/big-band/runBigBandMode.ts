@@ -34,7 +34,9 @@ import {
 import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
-import type { DrumIntensity } from './bigBandDrumIntensity';
+import type { FigureResponseLevel } from '../arranging/bigBandPatterns';
+import type { DrumArticulationMode, DrumIntensity } from './bigBandDrumIntensity';
+import type { BigBandFormPhase } from './bigBandPlanTypes';
 
 export interface BigBandRunInput {
   seed: number;
@@ -70,6 +72,28 @@ export interface BigBandRunInput {
   barMeterMap?: BarMeterMap;
   /** Drum intensity tier — passed to `buildBigBandScoreModel`. */
   drumIntensity?: DrumIntensity;
+  /** Per-form-slice drum tier overrides (same keys as plan slices). */
+  sectionIntensityOverrides?: Partial<Record<BigBandFormPhase, DrumIntensity>>;
+  /** Ensemble figure / fill dialogue density — passed to score realisation. */
+  figureResponse?: FigureResponseLevel;
+  /** Rhythm-section half-time vs full walk — passed to score realisation. */
+  feelMode?: 'in2' | 'in4';
+  /** Brush vs stick timbre — passed to score realisation. */
+  drumArticulation?: DrumArticulationMode;
+  /** When true, skips bars 17–24 sax-soli substitute (custom charts e.g. Orbit). */
+  suppressDesignatedSaxSoli?: boolean;
+  /** Orbit BB orchestration profile (score builder). */
+  bigBandArrangementProfile?:
+    | 'default'
+    | 'orbit_v2'
+    | 'orbit_v3_melody_authority'
+    | 'orbit_v4_64'
+    | 'orbit_v5_64'
+    | 'orbit_v6_64';
+  /** Per-bar drum tier overrides (1-based bar index). */
+  barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
+  /** Per-bar brush vs sticks override (1-based bar index). */
+  drumArticulationBarOverrides?: Partial<Record<number, DrumArticulationMode>>;
 }
 
 export interface BigBandRunManifestHints {
@@ -119,7 +143,9 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
   const title = input.title ?? `Big Band Plan ${runSeed}`;
   const requestedBars = Math.max(16, input.totalBars ?? 32);
   const blues12 = input.formId?.trim() === 'big_band_blues12';
-  const totalBars = blues12 ? 42 : requestedBars;
+  const orbitForm32 = input.formId?.trim() === 'orbit_bb' || input.formId?.trim() === 'orbit_32';
+  const orbitForm64 = input.formId?.trim() === 'orbit_bb_64';
+  const totalBars = blues12 ? 42 : orbitForm32 ? 32 : orbitForm64 ? 64 : requestedBars;
   const era = input.era ?? 'post_bop';
   const composerStyle = input.composerStyle === undefined ? null : input.composerStyle;
 

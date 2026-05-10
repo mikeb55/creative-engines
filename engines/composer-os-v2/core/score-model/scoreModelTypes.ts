@@ -197,5 +197,10 @@ export interface ScoreModel {
    * Generators may omit; pipeline/tests attach for repeat truth.
    */
   repeatMarkers?: ScoreRepeatMarker[];
+  /**
+   * 1-based measure number → written dynamics token (`pp`, `mf`, `ff`, …) on staff 1 of part 0.
+   * Exporter maps to MusicXML &lt;direction&gt;&lt;dynamics&gt;.
+   */
+  measureDynamicsMarkings?: Record<number, string>;
   parts: PartModel[];
 }

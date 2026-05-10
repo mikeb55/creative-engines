@@ -36,6 +36,7 @@ import { runBigBandResearchParsingTests } from './bigBandResearchParsing.test';
 import { runBigBandEraSystemTests } from './bigBandEraSystem.test';
 import { runBebopLinePlannerTests } from './bebopLinePlanner.test';
 import { runBigBandRuleApplicationTests } from './bigBandRuleApplication.test';
+import { runBigBandOutputQualityControlsTests } from './bigBandOutputQualityControls.test';
 import { runVariationAdapterTests } from './variationAdapter.test';
 import { runCreativeControlResolverTests } from './creativeControlResolver.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
@@ -75,6 +76,7 @@ const suites: SuiteEntry[] = [
   { name: 'Big Band era system', run: runBigBandEraSystemTests },
   { name: 'Bebop line planner', run: runBebopLinePlannerTests },
   { name: 'Big Band rule application', run: runBigBandRuleApplicationTests },
+  { name: 'Big Band output quality controls', run: runBigBandOutputQualityControlsTests },
   { name: 'Variation adapter', run: runVariationAdapterTests },
   { name: 'Creative control resolver', run: runCreativeControlResolverTests },
 ];

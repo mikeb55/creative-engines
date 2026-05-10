@@ -32,7 +32,8 @@ export function createNote(
   duration: number,
   voice = 1,
   motifRef?: string,
-  pitches?: number[]
+  pitches?: number[],
+  velocity?: number
 ): NoteEvent {
   return {
     kind: 'note',
@@ -42,6 +43,7 @@ export function createNote(
     duration,
     voice,
     ...(motifRef ? { motifRef } : {}),
+    ...(velocity !== undefined ? { velocity } : {}),
   };
 }
 

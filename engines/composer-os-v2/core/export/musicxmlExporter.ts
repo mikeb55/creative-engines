@@ -1218,6 +1218,29 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
 `;
         }
 
+        const dynTok = score.measureDynamicsMarkings?.[measureNumber];
+        if (dynTok && partIndex === 0) {
+          const allowed = new Set([
+            'pp',
+            'p',
+            'mp',
+            'mf',
+            'f',
+            'ff',
+            'fff',
+            'fp',
+            'sfz',
+          ]);
+          if (allowed.has(dynTok)) {
+            xml += `    <direction placement="below">
+      <direction-type>
+        <dynamics><${dynTok}/></dynamics>
+      </direction-type>
+    </direction>
+`;
+          }
+        }
+
         /**
          * Sibelius-strict sibling order: beat-1 &lt;harmony&gt; BEFORE first &lt;note&gt; (not after &lt;sound&gt;/&lt;direction&gt;).
          * Single chord writer: lead-sheet harmony only on the guitar part (not bass, not by index).

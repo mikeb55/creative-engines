@@ -49,40 +49,34 @@ const MELODY_MIDI: number[][] = [
   [73, 71, 68],
 ];
 
-/** One chord symbol per measure — slow harmonic rhythm; maj7/maj9 resting; unresolved dominants (hint). */
+/**
+ * 32-bar form (3/4): C intro 1–4 | A 5–20 (8-bar phrase ×2) | B 21–28 | C head-out 29–32.
+ * Option A harmony (May 2026 structure lock).
+ */
+const A8: string[] = [
+  'Fmaj7#11',
+  'Ebmaj7#5',
+  'Dbmaj7',
+  'Bmaj7',
+  'Bbm9',
+  'Abmaj7',
+  'Gbmaj7',
+  'Emaj7',
+];
+const B4: string[] = ['Gmaj7/F', 'Gmaj7/F', 'Ebmaj7/F', 'Ebmaj7/F'];
 const CHORDS: string[] = [
-  'Dbmaj9',
-  'Dbmaj9',
-  'Bbm7',
-  'Bbm7',
-  'G13sus',
-  'G13sus',
-  'Fmaj7#11',
-  'Fmaj7#11',
-  'Em7b5',
-  'Em7b5',
-  'A7alt',
-  'A7alt',
-  'Dmaj9',
-  'Dmaj9',
-  'Cmaj9/B',
-  'Cmaj9/B',
-  'Gm9',
-  'Gm9',
-  'C13',
-  'C13',
-  'Abmaj9',
-  'Abmaj9',
-  'E7#9',
-  'E7#9',
-  'Dbmaj9',
-  'Dbmaj9',
-  'Bbm7',
-  'Bbm7',
-  'G13sus',
-  'G13sus',
-  'Fmaj9',
-  'Fmaj9',
+  'Dbmaj7',
+  'Bb7',
+  'Fmaj7',
+  'Fmaj7',
+  ...A8,
+  ...A8,
+  ...B4,
+  ...B4,
+  'Dbmaj7',
+  'Bb7',
+  'Fmaj7',
+  'Fmaj7',
 ];
 
 const DIVISIONS = 24;

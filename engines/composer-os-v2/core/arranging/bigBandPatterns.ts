@@ -1,3 +1,5 @@
+import { drumDeterministicUnit } from '../big-band/bigBandDrumIntensity';
+
 /** V1.5 default sax-soli semitone offsets (cycle) over the soli window. */
 export const BB_V1_5_SOLI_MOTIF: readonly number[] = [0, 2, 4, 5, 7, 5, 4, 2];
 
@@ -82,4 +84,53 @@ export function generateShoutChorus(chordSequence: string[]): Map<number, number
     out.set(bar, [0, 1, 2, 3]);
   }
   return out;
+}
+
+export type FigureResponseLevel = 'low' | 'medium' | 'high';
+
+/**
+ * Scales brass/shout hit maps for ensemble “dialogue” vs background comping.
+ * `medium` copies baseline generators; `low` thins hits; `high` adds secondary punches.
+ */
+export function applyFigureResponseToPunchMaps(
+  brass: Map<number, number[]>,
+  shout: Map<number, number[]>,
+  chordLen: number,
+  opts: { figureResponse?: FigureResponseLevel; seed: number }
+): { brass: Map<number, number[]>; shout: Map<number, number[]> } {
+  const fr = opts.figureResponse ?? 'medium';
+  if (fr === 'medium') {
+    return { brass: new Map(brass), shout: new Map(shout) };
+  }
+  const seed = opts.seed;
+
+  if (fr === 'low') {
+    const brassOut = new Map<number, number[]>();
+    const shoutOut = new Map<number, number[]>();
+    for (const [bar, beats] of brass) {
+      if (drumDeterministicUnit(seed, bar, 88101) < 0.28) {
+        brassOut.set(bar, beats);
+      }
+    }
+    for (const [bar, beats] of shout) {
+      if (drumDeterministicUnit(seed, bar, 88201) < 0.35) {
+        shoutOut.set(bar, beats);
+      }
+    }
+    return { brass: brassOut, shout: shoutOut };
+  }
+
+  const brassOut = new Map<number, number[]>(brass);
+  const shoutOut = new Map<number, number[]>(shout);
+  for (let bar = 1; bar <= chordLen; bar++) {
+    if (!brassOut.has(bar) && bar % 2 === 0 && drumDeterministicUnit(seed, bar, 88301) < 0.45) {
+      brassOut.set(bar, [1, 3]);
+    }
+  }
+  for (let bar = Math.max(1, chordLen - 8); bar <= chordLen; bar++) {
+    if (!shoutOut.has(bar) && drumDeterministicUnit(seed, bar, 88401) < 0.22) {
+      shoutOut.set(bar, [0, 2]);
+    }
+  }
+  return { brass: brassOut, shout: shoutOut };
 }

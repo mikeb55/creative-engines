@@ -49,7 +49,6 @@ export function validateFormSequence(formPlan: BigBandFormPlan): BigBandValidati
   const errors: string[] = [];
   const phases = formPlan.slices.map((s) => s.phase);
   if (!phases.includes('ending')) errors.push('form must include ending');
-  if (!phases.includes('shout_chorus')) errors.push('form must include shout_chorus');
   const shoutIdx = phases.indexOf('shout_chorus');
   const endIdx = phases.indexOf('ending');
   if (shoutIdx >= 0 && endIdx >= 0 && shoutIdx > endIdx) errors.push('shout_chorus must occur before ending');

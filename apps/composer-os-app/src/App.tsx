@@ -3,11 +3,12 @@ import { HomeGenerate } from './pages/HomeGenerate';
 import { Presets } from './pages/Presets';
 import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
+import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
 
-type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'slonimsky-etudes' | 'guide';
+type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'slonimsky-etudes' | 'guide' | 'credits';
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
@@ -443,6 +444,14 @@ export default function App() {
           >
             Help
           </button>
+          <button
+            className={tab === 'credits' ? '' : 'secondary'}
+            onClick={() => setTab('credits')}
+            type="button"
+            title="Credits and how Composer OS is developed"
+          >
+            Credits
+          </button>
         </nav>
       </header>
 
@@ -456,6 +465,7 @@ export default function App() {
       )}
       {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
       {tab === 'guide' && <UserGuide />}
+      {tab === 'credits' && <ComposerCredits />}
     </div>
   );
 }

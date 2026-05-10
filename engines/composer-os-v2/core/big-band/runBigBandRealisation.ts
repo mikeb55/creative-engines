@@ -3,6 +3,9 @@
  */
 
 import { buildBigBandScoreModel } from './bigBandScoreBuilder';
+import { applyOrbitBbV64Overlay } from './orbitBbV64Overlay';
+import { applyOrbitBbV5Extended } from './orbitBbV5Extended';
+import { applyOrbitBbV6Extended } from './orbitBbV6Extended';
 import type { BigBandFormPlan } from './bigBandPlanTypes';
 import type { CompositionContext } from '../compositionContext';
 import type { GenerationMetadata } from '../compositionContext';
@@ -146,7 +149,39 @@ export function runBigBandRealisation(
         : {}),
       ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
       ...(input.drumIntensity ? { drumIntensity: input.drumIntensity } : {}),
+      ...(input.sectionIntensityOverrides && Object.keys(input.sectionIntensityOverrides).length > 0
+        ? { sectionIntensityOverrides: input.sectionIntensityOverrides }
+        : {}),
+      ...(input.figureResponse ? { figureResponse: input.figureResponse } : {}),
+      ...(input.feelMode ? { feelMode: input.feelMode } : {}),
+      ...(input.drumArticulation ? { drumArticulation: input.drumArticulation } : {}),
+      ...(input.suppressDesignatedSaxSoli === true ? { suppressDesignatedSaxSoli: true } : {}),
+      ...(input.bigBandArrangementProfile ? { bigBandArrangementProfile: input.bigBandArrangementProfile } : {}),
+      ...(input.barDrumIntensityOverrides && Object.keys(input.barDrumIntensityOverrides).length > 0
+        ? { barDrumIntensityOverrides: input.barDrumIntensityOverrides }
+        : {}),
+      ...(input.drumArticulationBarOverrides && Object.keys(input.drumArticulationBarOverrides).length > 0
+        ? { drumArticulationBarOverrides: input.drumArticulationBarOverrides }
+        : {}),
+      ...(input.leadSheet ? { leadSheetMelodyLock: input.leadSheet } : {}),
     });
+
+    if (
+      input.bigBandArrangementProfile === 'orbit_v4_64' ||
+      input.bigBandArrangementProfile === 'orbit_v5_64' ||
+      input.bigBandArrangementProfile === 'orbit_v6_64'
+    ) {
+      applyOrbitBbV64Overlay(score);
+    }
+    if (
+      input.bigBandArrangementProfile === 'orbit_v5_64' ||
+      input.bigBandArrangementProfile === 'orbit_v6_64'
+    ) {
+      applyOrbitBbV5Extended(score);
+    }
+    if (input.bigBandArrangementProfile === 'orbit_v6_64') {
+      applyOrbitBbV6Extended(score);
+    }
 
     exportPipeline = runEnsembleExportPipeline(score, {
       ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),

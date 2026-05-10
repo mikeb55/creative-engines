@@ -29,6 +29,7 @@ import type {
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
+import type { BigBandFormPhase } from '../core/big-band/bigBandPlanTypes';
 
 export type { StyleProfile };
 export type { ArvoPartContextMode };
@@ -164,6 +165,17 @@ export interface GenerateRequest {
   totalBars?: number;
   /** Big Band only — drum intensity policy tier. Default `standard`. */
   drumIntensity?: 'sparse' | 'standard' | 'driving';
+  /**
+   * Big Band — optional per-form-slice drum intensity (intro / melody head / soli / solo / shout / rideout).
+   * Omitted keys use {@link drumIntensity} or `standard`.
+   */
+  sectionIntensityOverrides?: Partial<Record<BigBandFormPhase, 'sparse' | 'standard' | 'driving'>>;
+  /** Big Band — ensemble fills / brass-shout dialogue vs background comping. Default `medium`. */
+  figureResponse?: 'low' | 'medium' | 'high';
+  /** Big Band — rhythm-section subdivision feel (`in2` half-time vs `in4` full swing/walk). Default `in4`. */
+  feelMode?: 'in2' | 'in4';
+  /** Big Band — drum timbre: explicit brushes/sticks or `auto` (intensity-driven matrix). Default `auto`. */
+  drumArticulation?: 'auto' | 'brushes' | 'sticks';
   /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16 or 32 (with matching chord length). */
   longFormEnabled?: boolean;
   /**

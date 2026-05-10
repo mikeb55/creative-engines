@@ -34,7 +34,7 @@
 <per-minute>168</per-minute>
 </metronome>
 </direction-type>
-</direction>    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+</direction>    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -58,7 +58,7 @@
 </note>
 </measure>
 <measure number="2">
-    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="7">dominant</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -82,7 +82,7 @@
 </note>
 </measure>
 <measure number="3">
-    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m7">minor-seventh</kind></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -106,7 +106,7 @@
 </note>
 </measure>
 <measure number="4">
-    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m7">minor-seventh</kind></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>A</step><alter>-1</alter><octave>4</octave></pitch>
 <duration>24</duration>
@@ -130,7 +130,7 @@
 </note>
 </measure>
 <measure number="5">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="13sus">other</kind><degree print-object="no"><degree-value>3</degree-value><degree-alter>0</degree-alter><degree-type>subtract</degree-type></degree><degree print-object="no"><degree-value>4</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
 <note>
 <pitch><step>G</step><alter>-1</alter><octave>4</octave></pitch>
 <duration>24</duration>
@@ -154,7 +154,7 @@
 </note>
 </measure>
 <measure number="6">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="13sus">other</kind><degree print-object="no"><degree-value>3</degree-value><degree-alter>0</degree-alter><degree-type>subtract</degree-type></degree><degree print-object="no"><degree-value>4</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7#5">other</kind><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
 <note>
 <pitch><step>A</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -178,7 +178,7 @@
 </note>
 </measure>
 <measure number="7">
-    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -202,7 +202,7 @@
 </note>
 </measure>
 <measure number="8">
-    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -226,7 +226,7 @@
 </note>
 </measure>
 <measure number="9">
-    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="m7b5">half-diminished</kind><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -250,7 +250,7 @@
 </note>
 </measure>
 <measure number="10">
-    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="m7b5">half-diminished</kind><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>A</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>A</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -274,7 +274,7 @@
 </note>
 </measure>
 <measure number="11">
-    <harmony><staff>1</staff><root><root-step>A</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>E</step><octave>5</octave></pitch>
 <duration>24</duration>
@@ -298,7 +298,7 @@
 </note>
 </measure>
 <measure number="12">
-    <harmony><staff>1</staff><root><root-step>A</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -322,7 +322,7 @@
 </note>
 </measure>
 <measure number="13">
-    <harmony><staff>1</staff><root><root-step>D</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
 <note>
 <pitch><step>A</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -346,7 +346,7 @@
 </note>
 </measure>
 <measure number="14">
-    <harmony><staff>1</staff><root><root-step>D</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7#5">other</kind><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
 <note>
 <pitch><step>D</step><octave>5</octave></pitch>
 <duration>24</duration>
@@ -370,7 +370,7 @@
 </note>
 </measure>
 <measure number="15">
-    <harmony><staff>1</staff><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><bass><bass-step>B</bass-step></bass><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -394,7 +394,7 @@
 </note>
 </measure>
 <measure number="16">
-    <harmony><staff>1</staff><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><bass><bass-step>B</bass-step></bass><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -418,7 +418,7 @@
 </note>
 </measure>
 <measure number="17">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -442,7 +442,7 @@
 </note>
 </measure>
 <measure number="18">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>A</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>G</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -466,7 +466,7 @@
 </note>
 </measure>
 <measure number="19">
-    <harmony><staff>1</staff><root><root-step>C</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -490,7 +490,7 @@
 </note>
 </measure>
 <measure number="20">
-    <harmony><staff>1</staff><root><root-step>C</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -514,7 +514,7 @@
 </note>
 </measure>
 <measure number="21">
-    <harmony><staff>1</staff><root><root-step>A</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>E</step><octave>5</octave></pitch>
 <duration>24</duration>
@@ -538,7 +538,7 @@
 </note>
 </measure>
 <measure number="22">
-    <harmony><staff>1</staff><root><root-step>A</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>D</step><octave>5</octave></pitch>
 <duration>24</duration>
@@ -562,7 +562,7 @@
 </note>
 </measure>
 <measure number="23">
-    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="7#9">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>E</step><octave>5</octave></pitch>
 <duration>24</duration>
@@ -586,7 +586,7 @@
 </note>
 </measure>
 <measure number="24">
-    <harmony><staff>1</staff><root><root-step>E</root-step></root><kind text="7#9">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -610,7 +610,7 @@
 </note>
 </measure>
 <measure number="25">
-    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -634,7 +634,7 @@
 </note>
 </measure>
 <measure number="26">
-    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -658,7 +658,7 @@
 </note>
 </measure>
 <measure number="27">
-    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m7">minor-seventh</kind></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -682,7 +682,7 @@
 </note>
 </measure>
 <measure number="28">
-    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="m7">minor-seventh</kind></harmony>
+    <harmony><staff>1</staff><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind><bass><bass-step>F</bass-step></bass></harmony>
 <note>
 <pitch><step>A</step><alter>-1</alter><octave>4</octave></pitch>
 <duration>24</duration>
@@ -706,7 +706,7 @@
 </note>
 </measure>
 <measure number="29">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="13sus">other</kind><degree print-object="no"><degree-value>3</degree-value><degree-alter>0</degree-alter><degree-type>subtract</degree-type></degree><degree print-object="no"><degree-value>4</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>D</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -730,7 +730,7 @@
 </note>
 </measure>
 <measure number="30">
-    <harmony><staff>1</staff><root><root-step>G</root-step></root><kind text="13sus">other</kind><degree print-object="no"><degree-value>3</degree-value><degree-alter>0</degree-alter><degree-type>subtract</degree-type></degree><degree print-object="no"><degree-value>4</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>B</root-step><root-alter>-1</root-alter></root><kind text="7">dominant</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>
@@ -754,7 +754,7 @@
 </note>
 </measure>
 <measure number="31">
-    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>B</step><octave>4</octave></pitch>
 <duration>24</duration>
@@ -778,7 +778,7 @@
 </note>
 </measure>
 <measure number="32">
-    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony><staff>1</staff><root><root-step>F</root-step></root><kind text="maj7">major-seventh</kind></harmony>
 <note>
 <pitch><step>D</step><alter>-1</alter><octave>5</octave></pitch>
 <duration>24</duration>

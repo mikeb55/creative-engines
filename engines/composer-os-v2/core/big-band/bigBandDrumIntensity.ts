@@ -160,6 +160,51 @@ export function getDrumPolicy(phase: BigBandPhase, intensity: DrumIntensity): Dr
   return { ...pol };
 }
 
+/** Explicit brushes/sticks vs intensity-driven `timeTexture`; `auto` leaves matrix values. */
+export type DrumArticulationMode = 'auto' | 'brushes' | 'sticks';
+
+export function applyDrumArticulationToPolicy(
+  policy: DrumPolicy,
+  articulation: DrumArticulationMode | undefined
+): DrumPolicy {
+  if (articulation === undefined || articulation === 'auto') {
+    return { ...policy };
+  }
+  const p = { ...policy };
+  if (articulation === 'brushes') {
+    p.timeTexture = 'brush';
+  } else if (articulation === 'sticks') {
+    if (p.timeTexture === 'brush') {
+      p.timeTexture = 'ride';
+    }
+  }
+  return p;
+}
+
+/** Effective drum tier for a bar: per-slice override ?? global. */
+export function resolveBigBandDrumIntensityForPhase(
+  globalIntensity: DrumIntensity,
+  phase: BigBandFormPhase | undefined,
+  overrides: Partial<Record<BigBandFormPhase, DrumIntensity>> | undefined
+): DrumIntensity {
+  if (!phase || !overrides) return globalIntensity;
+  return overrides[phase] ?? globalIntensity;
+}
+
+/** Per-bar drum tier wins over section/phase (e.g. A′ tail → `driving` while slice stays `standard`). */
+export function resolveBigBandDrumIntensityForBar(
+  globalIntensity: DrumIntensity,
+  phase: BigBandFormPhase | undefined,
+  sectionOverrides: Partial<Record<BigBandFormPhase, DrumIntensity>> | undefined,
+  barOverrides: Partial<Record<number, DrumIntensity>> | undefined,
+  barIndex1: number
+): DrumIntensity {
+  if (barOverrides && barOverrides[barIndex1] !== undefined) {
+    return barOverrides[barIndex1]!;
+  }
+  return resolveBigBandDrumIntensityForPhase(globalIntensity, phase, sectionOverrides);
+}
+
 /** Deterministic 0–1 unit for Big Band drum stochastic gates (cue selectivity, etc.). */
 export function drumDeterministicUnit(seed: number, barIndex: number, salt: number): number {
   const x = Math.imul(seed ^ salt, barIndex * 7919 + 104729) >>> 0;
