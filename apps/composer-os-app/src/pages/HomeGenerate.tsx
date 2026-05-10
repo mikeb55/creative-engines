@@ -1623,6 +1623,7 @@ export function HomeGenerate({
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
   const [uiInstrumentGroup, setUiInstrumentGroup] = useState<UiInstrumentGroup>('big_band');
+  const [drumIntensity, setDrumIntensity] = useState<'sparse' | 'standard' | 'driving'>('standard');
   const [guitarOutputModeUi, setGuitarOutputModeUi] = useState<'notation' | 'tab' | 'both'>('both');
   const [etudeInstrumentUi, setEtudeInstrumentUi] = useState('violin_I');
   const [etudeTechnicalFocusUi, setEtudeTechnicalFocusUi] = useState<EtudeTechnicalFocus>('scales');
@@ -1637,6 +1638,7 @@ export function HomeGenerate({
     'single_line' | 'guitar_bass' | 'octave_double'
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [iRealPaste, setIRealPaste] = useState('');
   const [iRealVaultRiffStyle, setIRealVaultRiffStyle] = useState<
@@ -1724,6 +1726,13 @@ export function HomeGenerate({
     null
   );
   const [pdfVaultDual, setPdfVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(null);
+
+  useEffect(() => {
+    if (uiInstrumentGroup !== 'big_band') {
+      setDrumIntensity('standard');
+    }
+  }, [uiInstrumentGroup]);
+
   const desktopTruthDumpEnabled = useRef(false);
 
   const iRealParsedChart = useMemo((): ParsedChart | null => {
@@ -2607,6 +2616,7 @@ export function HomeGenerate({
             ? { ensembleLeadSheetMusicXml: leadSheetXmlTrim }
             : {}),
           instrumentGroup: uiInstrumentGroup,
+          ...(uiInstrumentGroup === 'big_band' ? { drumIntensity } : {}),
           ...(uiInstrumentGroup === 'guitar' ? { guitarOutputMode: guitarOutputModeUi } : {}),
           ...(uiInstrumentGroup === 'etude'
             ? { etudeInstrument: etudeInstrumentUi, etudeTechnicalFocus: etudeTechnicalFocusUi }
@@ -5323,6 +5333,43 @@ export function HomeGenerate({
             stochasticVariance={stochasticVarianceUi}
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
+          {uiInstrumentGroup === 'big_band' && (
+            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
+              <span
+                style={{
+                  display: 'block',
+                  marginBottom: 6,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                Feel intensity
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(['sparse', 'standard', 'driving'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setDrumIntensity(v)}
+                    style={{
+                      padding: '0.35rem 0.45rem',
+                      fontSize: '0.78rem',
+                      borderRadius: 4,
+                      border:
+                        drumIntensity === v
+                          ? '1px solid var(--accent, #6366f1)'
+                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
+                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <span id="co-sm-primary-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
           </span>
@@ -5769,6 +5816,43 @@ export function HomeGenerate({
             stochasticVariance={stochasticVarianceUi}
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
+          {uiInstrumentGroup === 'big_band' && (
+            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
+              <span
+                style={{
+                  display: 'block',
+                  marginBottom: 6,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                Feel intensity
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(['sparse', 'standard', 'driving'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setDrumIntensity(v)}
+                    style={{
+                      padding: '0.35rem 0.45rem',
+                      fontSize: '0.78rem',
+                      borderRadius: 4,
+                      border:
+                        drumIntensity === v
+                          ? '1px solid var(--accent, #6366f1)'
+                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
+                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <span id="co-bb-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
           </span>
@@ -5864,6 +5948,43 @@ export function HomeGenerate({
             stochasticVariance={stochasticVarianceUi}
             onStochasticVarianceChange={setStochasticVarianceUi}
           />
+          {uiInstrumentGroup === 'big_band' && (
+            <div style={{ marginBottom: '0.65rem', maxWidth: 520 }} role="group" aria-label="Drum feel intensity">
+              <span
+                style={{
+                  display: 'block',
+                  marginBottom: 6,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                Feel intensity
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(['sparse', 'standard', 'driving'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setDrumIntensity(v)}
+                    style={{
+                      padding: '0.35rem 0.45rem',
+                      fontSize: '0.78rem',
+                      borderRadius: 4,
+                      border:
+                        drumIntensity === v
+                          ? '1px solid var(--accent, #6366f1)'
+                          : '1px solid var(--border-subtle, rgba(128, 128, 128, 0.35))',
+                      background: drumIntensity === v ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <span id="co-sq-songwriter-desc" style={VISUALLY_HIDDEN}>
             {ARIA_SONGWRITER_GROUPS_DESC}
           </span>
