@@ -280,6 +280,8 @@ export function computeVoiceExportDivisionSum(
 const DRUM_GM_HH = 42;
 const DRUM_GM_RIDE = 51;
 const DRUM_GM_OHH = 46;
+/** Big Band brush layer (`timeTexture: brush`) — GM electric snare / brush articulation. */
+const DRUM_GM_BRUSH = 40;
 const DRUM_GM_BD = 36;
 const DRUM_GM_SN = 38;
 
@@ -553,26 +555,30 @@ function bigBandDrumsEventsToXml(
       if (voice === 1) {
         if (
           e.kind !== 'note' ||
-          (e.pitch !== DRUM_GM_HH && e.pitch !== DRUM_GM_RIDE && e.pitch !== DRUM_GM_OHH)
+          (e.pitch !== DRUM_GM_HH &&
+            e.pitch !== DRUM_GM_RIDE &&
+            e.pitch !== DRUM_GM_OHH &&
+            e.pitch !== DRUM_GM_BRUSH)
         ) {
           const eMsg = e as ScoreEvent;
           throw new Error(
-            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), ride (GM ${DRUM_GM_RIDE}), or open hi-hat (GM ${DRUM_GM_OHH}), got ${
+            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), ride (GM ${DRUM_GM_RIDE}), open hi-hat (GM ${DRUM_GM_OHH}), or brush (GM ${DRUM_GM_BRUSH}), got ${
               eMsg.kind === 'note' ? `pitch ${eMsg.pitch}` : eMsg.kind
             }`
           );
         }
         const rideLayer = e.pitch === DRUM_GM_RIDE;
         const openHatLayer = e.pitch === DRUM_GM_OHH;
+        const brushLayer = e.pitch === DRUM_GM_BRUSH;
         for (const t of parts) {
           xml += drumKitNoteXml({
             chord: false,
-            step: openHatLayer ? 'E' : rideLayer ? 'G' : 'F',
-            octave: 5,
+            step: brushLayer ? 'D' : openHatLayer ? 'E' : rideLayer ? 'G' : 'F',
+            octave: brushLayer ? 4 : 5,
             ticks480: t,
             voice: 1,
             stem: 'up',
-            notehead: openHatLayer ? 'circle-x' : rideLayer ? 'normal' : 'x',
+            notehead: brushLayer ? 'normal' : openHatLayer ? 'circle-x' : rideLayer ? 'normal' : 'x',
             instrumentId: instId,
           });
           voiceTickSum += t;

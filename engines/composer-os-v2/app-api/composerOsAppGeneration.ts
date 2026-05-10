@@ -91,6 +91,7 @@ import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
+import { writeScoreMidi } from '../core/export/midiScoreWriter';
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -1618,6 +1619,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let filename: string | undefined;
   let filepath: string | undefined;
   let vocalLeadSheetFilepath: string | undefined;
+  let midiFilepath: string | undefined;
   if (gp.xml) {
     filename = `composer_os_song_mode_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
@@ -1632,6 +1634,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
+    }
+    try {
+      const barMeterForScore =
+        gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
+      const baseName = path.basename(filepath, path.extname(filepath));
+      midiFilepath = writeScoreMidi(gp.score, outputDir, baseName, barMeterForScore, req.bpm);
+    } catch (e) {
+      console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
     }
     if (req.includeVocalLeadSheet) {
       const bridgeScriptPath = resolveSongwritingBridgeExportScriptPath();
@@ -2139,6 +2149,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     universalLeadSheet,
     requestEcho: requestEchoFromReq(req),
     vocalLeadSheetFilepath,
+    ...(midiFilepath ? { midiFilepath } : {}),
     gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
     gceGatePassed: bestGceScore >= GCE_GATE_MIN,
   };
@@ -2315,6 +2326,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
     ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
+    ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
   };
   let realised: ReturnType<typeof runBigBandRealisation>;
   try {
@@ -2334,6 +2346,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   /** App boundary contract: IPC/UI receives **planning JSON** as primary `filepath` (`productKind: planning`). Companion MusicXML is written when export succeeds — path is echoed inside JSON so hosts can open the score without switching the API surface to `musicxml`-first. */
   let ensembleMusicXmlFilename: string | undefined;
   let ensembleMusicXmlFilepath: string | undefined;
+  let ensembleMidiFilepath: string | undefined;
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     ensembleMusicXmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
@@ -2348,6 +2361,14 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
+    }
+    try {
+      if (realised.score && ensembleMusicXmlFilepath) {
+        const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
+        ensembleMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+      }
+    } catch (e) {
+      console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
     }
   }
 
@@ -2476,6 +2497,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(ensReceipt ? { ensembleSlonimskyReceipt: ensReceipt } : {}),
     ...(evaluationResult !== undefined ? { evaluationResult } : {}),
     ...(ensembleMusicXmlFilepath ? { ensembleMusicXmlFilepath } : {}),
+    ...(ensembleMidiFilepath ? { midiFilepath: ensembleMidiFilepath } : {}),
   } as GenerateResult;
 }
 
@@ -2577,6 +2599,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
   const realised = runQuartetRealisation(quartetRealisationInput);
+  let quartetMidiFilepath: string | undefined;
   if (realised.exportPipeline.ok && realised.exportPipeline.xml) {
     const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;
     fs.mkdirSync(outputDir, { recursive: true });
@@ -2591,6 +2614,14 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
+    }
+    try {
+      if (realised.score) {
+        const baseName = path.basename(xmlFilepath, '.musicxml');
+        quartetMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+      }
+    } catch (e) {
+      console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
     }
     const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
     return {
@@ -2631,6 +2662,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       scoreTitle: title,
       requestEcho: requestEchoFromReq(req),
       ...(ensReceiptXml ? { ensembleSlonimskyReceipt: ensReceiptXml } : {}),
+      ...(quartetMidiFilepath ? { midiFilepath: quartetMidiFilepath } : {}),
     };
   }
   const ok = sq.validation.ok;

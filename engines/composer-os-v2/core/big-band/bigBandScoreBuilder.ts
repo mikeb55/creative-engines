@@ -9,6 +9,12 @@ import type {
   BigBandFormPlan,
   BigBandSectionPlan,
 } from './bigBandPlanTypes';
+import type { DrumIntensity, DrumPolicy } from './bigBandDrumIntensity';
+import {
+  drumDeterministicUnit,
+  getDrumPolicy,
+  mapBigBandFormPhaseToPolicyPhase,
+} from './bigBandDrumIntensity';
 import type { OrchestrationPlan } from '../orchestration/orchestrationPlanTypes';
 import type { HornCloningBarInput, ScoredNote, SectionTag } from '../ensemble-scoring/ensembleLayoutHeuristics';
 import {
@@ -28,7 +34,7 @@ import {
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
-import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { applyBigBandWybleLeadInnerSaxMidis } from './bigBandWybleHornVoicing';
 import { wybleConsumptionReceiptForBigBand } from '../wyble/wybleConsumptionReceipt';
@@ -281,6 +287,8 @@ const DRUM_BD = 36;
 const DRUM_HH = 42;
 const DRUM_RIDE = 51;
 const DRUM_OHH = 46;
+/** GM brush / electric snare — Big Band `timeTexture: brush`. */
+const DRUM_BRUSH = 40;
 
 /** Section-style drum cell for Big Band (maps form slices + phases — not literal rehearsal letters). */
 export function bigBandDrumFeelClass(
@@ -295,21 +303,57 @@ export function bigBandDrumFeelClass(
   return 'C';
 }
 
-function addDrumPatternA(measure: MeasureModel, barLen: number, hatMidi: number): void {
+function cymbalMidiFromTexture(texture: DrumPolicy['timeTexture'], quarterIndex0to3: number): number {
+  switch (texture) {
+    case 'ride':
+      return DRUM_RIDE;
+    case 'hihat':
+      return DRUM_HH;
+    case 'brush':
+      return DRUM_BRUSH;
+    case 'broken':
+      return quarterIndex0to3 % 2 === 0 ? DRUM_RIDE : DRUM_HH;
+    default:
+      return DRUM_HH;
+  }
+}
+
+function finalizeBigBandDrumVelocities(measure: MeasureModel, policy: DrumPolicy): void {
+  for (const e of measure.events) {
+    if (e.kind !== 'note') continue;
+    const n = e as NoteEvent;
+    let v = Math.max(1, Math.min(127, Math.round(127 * policy.dynamicCeiling)));
+    if (n.motifRef === 'bb_drum_bs') {
+      v = Math.max(1, Math.min(127, Math.round(v * policy.setupStrength)));
+    }
+    n.velocity = v;
+  }
+}
+
+function addDrumPatternA(measure: MeasureModel, barLen: number, texture: DrumPolicy['timeTexture']): void {
   const q = barLen / 4;
   for (let b = 0; b < 4; b++) {
-    addEvent(measure, createNote(hatMidi, b * q, q, 1));
+    addEvent(measure, createNote(cymbalMidiFromTexture(texture, b), b * q, q, 1));
   }
   addEvent(measure, createNote(DRUM_BD, 0, q, 2));
   addEvent(measure, createRest(q, barLen - q, 2));
 }
 
-function addDrumPatternB(measure: MeasureModel, barLen: number): void {
+function addDrumPatternB(measure: MeasureModel, barLen: number, texture: DrumPolicy['timeTexture']): void {
   const q = barLen / 4;
   const eighth = barLen / 8;
   for (let i = 0; i < 8; i++) {
-    const midi = i % 2 === 0 ? DRUM_HH : DRUM_OHH;
-    addEvent(measure, createNote(midi, i * eighth, eighth, 1));
+    let top: number;
+    if (texture === 'ride') {
+      top = i % 2 === 0 ? DRUM_RIDE : DRUM_OHH;
+    } else if (texture === 'brush') {
+      top = i % 2 === 0 ? DRUM_BRUSH : DRUM_OHH;
+    } else if (texture === 'broken') {
+      top = i % 2 === 0 ? DRUM_RIDE : DRUM_HH;
+    } else {
+      top = i % 2 === 0 ? DRUM_HH : DRUM_OHH;
+    }
+    addEvent(measure, createNote(top, i * eighth, eighth, 1));
   }
   addEvent(measure, createNote(DRUM_BD, 0, q, 2));
   addEvent(measure, createNote(DRUM_BD, q, q, 2, 'bb_drum_bs'));
@@ -317,35 +361,53 @@ function addDrumPatternB(measure: MeasureModel, barLen: number): void {
   addEvent(measure, createNote(DRUM_BD, 3 * q, q, 2, 'bb_drum_bs'));
 }
 
-function addDrumPatternC(measure: MeasureModel, barLen: number): void {
+function addDrumPatternC(measure: MeasureModel, barLen: number, texture: DrumPolicy['timeTexture']): void {
   const q = barLen / 4;
-  addEvent(measure, createNote(DRUM_HH, 0, q, 1));
+  addEvent(measure, createNote(cymbalMidiFromTexture(texture, 0), 0, q, 1));
   addEvent(measure, createRest(q, q, 1));
-  addEvent(measure, createNote(DRUM_HH, 2 * q, q, 1));
+  addEvent(measure, createNote(cymbalMidiFromTexture(texture, 2), 2 * q, q, 1));
   addEvent(measure, createRest(3 * q, q, 1));
   addEvent(measure, createNote(DRUM_BD, 0, q, 2));
   addEvent(measure, createRest(q, barLen - q, 2));
 }
 
-function addDrumTransitionFill(measure: MeasureModel, barLen: number): void {
+function addDrumTransitionFill(
+  measure: MeasureModel,
+  barLen: number,
+  policy: DrumPolicy,
+  texture: DrumPolicy['timeTexture']
+): void {
   const q = barLen / 4;
   const eighth = barLen / 8;
-  addEvent(measure, createNote(DRUM_HH, 0, q, 1));
-  addEvent(measure, createNote(DRUM_HH, q, q, 1));
-  for (let i = 0; i < 4; i++) {
-    addEvent(measure, createNote(DRUM_HH, 2 * q + i * eighth, eighth, 1));
+  const half = barLen / 2;
+  const maxFillBeats = Math.min(half, Math.max(0, policy.fillLengthCeiling));
+  const numFillNotes = Math.min(4, Math.max(1, Math.floor(maxFillBeats * 2)));
+
+  addEvent(measure, createNote(cymbalMidiFromTexture(texture, 0), 0, q, 1));
+  addEvent(measure, createNote(cymbalMidiFromTexture(texture, 1), q, q, 1));
+
+  let t1 = 2 * q;
+  for (let i = 0; i < numFillNotes; i++) {
+    addEvent(measure, createNote(DRUM_HH, t1, eighth, 1));
+    t1 += eighth;
   }
+  if (t1 < barLen) {
+    addEvent(measure, createRest(t1, barLen - t1, 1));
+  }
+
   addEvent(measure, createRest(0, 2 * q, 2));
-  for (let i = 0; i < 4; i++) {
-    addEvent(measure, createNote(DRUM_BD, 2 * q + i * eighth, eighth, 2, 'bb_drum_bs'));
+  let t2 = 2 * q;
+  for (let i = 0; i < numFillNotes; i++) {
+    addEvent(measure, createNote(DRUM_BD, t2, eighth, 2, 'bb_drum_bs'));
+    t2 += eighth;
+  }
+  if (t2 < barLen) {
+    addEvent(measure, createRest(t2, barLen - t2, 2));
   }
 }
 
 /**
- * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = BD layer (composite snare via `bb_drum_bs` on hits).
- * Voice 2 must sum to exactly 4 beats — chord snare is encoded via motifRef on the bass-drum note (not a second event).
- *
- * Per-section variation: A/B/C feels + transition fills before slice boundaries (`transitionFill`).
+ * Sibelius-style drum layer + intensity policy (velocities, cue selectivity, fill cap, time texture).
  */
 function addBigBandDrumPattern(
   measure: MeasureModel,
@@ -356,10 +418,11 @@ function addBigBandDrumPattern(
     useDrumVariation?: boolean;
     /** Measure length in quarter-note beat units (defaults to 4). */
     barBeats?: number;
-    /** True when this bar immediately precedes another form slice (`bar+1` is a slice start bar). */
     transitionFill?: boolean;
-    /** Derived from {@link bigBandDrumFeelClass} — ignored when shout/ensemble overrides apply. */
     drumFeelClass?: 'A' | 'B' | 'C';
+    drumIntensity?: DrumIntensity;
+    seed?: number;
+    barIndex?: number;
   }
 ): void {
   const barLen = opts?.barBeats ?? 4;
@@ -370,10 +433,22 @@ function addBigBandDrumPattern(
   const phase = opts?.formPhase;
   const transitionFill = opts?.transitionFill === true;
   const feel = opts?.drumFeelClass ?? 'A';
+  const intensity = opts?.drumIntensity ?? 'standard';
+  const seed = opts?.seed ?? 0;
+  const barIndex = opts?.barIndex ?? 1;
+
+  const policyPhase = mapBigBandFormPhaseToPolicyPhase(phase);
+  const policy = getDrumPolicy(policyPhase, intensity);
+  const tex = policy.timeTexture;
+
+  let effectiveEnsembleHit = ensembleHit;
+  if (useV && ensembleHit) {
+    effectiveEnsembleHit = drumDeterministicUnit(seed, barIndex, 90210) < policy.cueSelectivity;
+  }
 
   const legacyFullEnsemble = () => {
     for (let b = 0; b < 4; b++) {
-      addEvent(measure, createNote(DRUM_HH, b * q, q, 1));
+      addEvent(measure, createNote(cymbalMidiFromTexture(tex, b), b * q, q, 1));
     }
     addEvent(measure, createNote(DRUM_BD, 0, q, 2));
     addEvent(measure, createNote(DRUM_BD, q, q, 2, 'bb_drum_bs'));
@@ -381,59 +456,62 @@ function addBigBandDrumPattern(
     addEvent(measure, createNote(DRUM_BD, 3 * q, q, 2, 'bb_drum_bs'));
   };
 
-  const legacySimple = (hatMidi: number = DRUM_HH) => {
-    addDrumPatternA(measure, barLen, hatMidi);
+  const legacySimple = () => {
+    addDrumPatternA(measure, barLen, tex);
   };
 
-  if (!useV) {
-    if (!ensembleHit) {
-      legacySimple();
-    } else {
-      legacyFullEnsemble();
+  try {
+    if (!useV) {
+      if (!ensembleHit) {
+        legacySimple();
+      } else {
+        legacyFullEnsemble();
+      }
+      return;
     }
-    return;
-  }
 
-  if (ensembleHit) {
-    legacyFullEnsemble();
-    return;
-  }
+    if (effectiveEnsembleHit) {
+      legacyFullEnsemble();
+      return;
+    }
 
-  if (transitionFill) {
-    addDrumTransitionFill(measure, barLen);
-    return;
-  }
+    if (transitionFill) {
+      addDrumTransitionFill(measure, barLen, policy, tex);
+      return;
+    }
 
-  if (phase === 'intro' || phase === 'ending') {
-    addEvent(measure, createNote(DRUM_HH, 0, q, 1));
-    addEvent(measure, createRest(q, q, 1));
-    addEvent(measure, createNote(DRUM_HH, 2 * q, q, 1));
-    addEvent(measure, createRest(3 * q, q, 1));
-    addEvent(measure, createNote(DRUM_BD, 0, q, 2));
-    addEvent(measure, createRest(q, q, 2));
-    addEvent(measure, createNote(DRUM_BD, 2 * q, q, 2));
-    addEvent(measure, createRest(3 * q, q, 2));
-    return;
-  }
+    if (phase === 'intro' || phase === 'ending') {
+      addEvent(measure, createNote(cymbalMidiFromTexture(tex, 0), 0, q, 1));
+      addEvent(measure, createRest(q, q, 1));
+      addEvent(measure, createNote(cymbalMidiFromTexture(tex, 2), 2 * q, q, 1));
+      addEvent(measure, createRest(3 * q, q, 1));
+      addEvent(measure, createNote(DRUM_BD, 0, q, 2));
+      addEvent(measure, createRest(q, q, 2));
+      addEvent(measure, createNote(DRUM_BD, 2 * q, q, 2));
+      addEvent(measure, createRest(3 * q, q, 2));
+      return;
+    }
 
-  if (phase === 'shout_chorus' || st === 'shout') {
-    addDrumPatternB(measure, barLen);
-    return;
-  }
+    if (phase === 'shout_chorus' || st === 'shout') {
+      addDrumPatternB(measure, barLen, tex);
+      return;
+    }
 
-  const hatA = phase === 'melody_head' ? DRUM_RIDE : DRUM_HH;
-  switch (feel) {
-    case 'A':
-      addDrumPatternA(measure, barLen, hatA);
-      break;
-    case 'B':
-      addDrumPatternB(measure, barLen);
-      break;
-    case 'C':
-      addDrumPatternC(measure, barLen);
-      break;
-    default:
-      addDrumPatternA(measure, barLen, hatA);
+    switch (feel) {
+      case 'A':
+        addDrumPatternA(measure, barLen, tex);
+        break;
+      case 'B':
+        addDrumPatternB(measure, barLen, tex);
+        break;
+      case 'C':
+        addDrumPatternC(measure, barLen, tex);
+        break;
+      default:
+        addDrumPatternA(measure, barLen, tex);
+    }
+  } finally {
+    finalizeBigBandDrumVelocities(measure, policy);
   }
 }
 
@@ -586,6 +664,8 @@ export interface BuildBigBandScoreModelInput {
   allowedOutsideOverride?: 0 | 1 | 2;
   /** Optional per-bar meter — drives measure span and rhythmic scaling (defaults to 4 quarter-note beats). */
   barMeterMap?: BarMeterMap;
+  /** Drum playback intensity (`GenerateRequest.drumIntensity`). Default `standard`. */
+  drumIntensity?: DrumIntensity;
 }
 
 function addWindOrBassNotes(
@@ -700,6 +780,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     songwriterStyleId,
     allowedOutsideOverride,
     barMeterMap,
+    drumIntensity = 'standard',
   } = input;
   const totalBars = formPlan.totalBars;
   const zappaBbActive = songwriterStyleId?.trim().toLowerCase() === 'frank_zappa';
@@ -920,6 +1001,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
             barBeats: effectiveBeats,
             transitionFill,
             drumFeelClass: bigBandDrumFeelClass(slice?.phase, slice?.index ?? 0),
+            drumIntensity,
+            seed,
+            barIndex: bar,
           });
         }
         continue;

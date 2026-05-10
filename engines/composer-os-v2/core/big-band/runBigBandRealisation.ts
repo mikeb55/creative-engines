@@ -167,6 +167,7 @@ export function runBigBandRealisation(
         ? { allowedOutsideOverride: input.allowedOutsideOverride }
         : {}),
       ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
+      ...(input.drumIntensity ? { drumIntensity: input.drumIntensity } : {}),
     });
 
     exportPipeline = runEnsembleExportPipeline(score, {

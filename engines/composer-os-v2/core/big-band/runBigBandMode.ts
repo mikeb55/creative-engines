@@ -34,6 +34,7 @@ import {
 import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import type { DrumIntensity } from './bigBandDrumIntensity';
 
 export interface BigBandRunInput {
   seed: number;
@@ -67,6 +68,8 @@ export interface BigBandRunInput {
   formId?: string;
   /** Optional per-bar meter map — passed through to score realisation (`buildBigBandScoreModel`). */
   barMeterMap?: BarMeterMap;
+  /** Drum intensity tier — passed to `buildBigBandScoreModel`. */
+  drumIntensity?: DrumIntensity;
 }
 
 export interface BigBandRunManifestHints {

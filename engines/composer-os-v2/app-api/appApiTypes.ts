@@ -148,6 +148,8 @@ export interface GenerateRequest {
   bpm?: number;
   /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). Song/Form duo presets: 8, 16, or 32 only. */
   totalBars?: number;
+  /** Big Band only — drum intensity policy tier. Default `standard`. */
+  drumIntensity?: 'sparse' | 'standard' | 'driving';
   /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16 or 32 (with matching chord length). */
   longFormEnabled?: boolean;
   /**
