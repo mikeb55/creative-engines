@@ -130,7 +130,9 @@ function maxMeasureIndexAcrossParts(score: ScoreModel): number {
 
 function chordsPerBarFromScore(score: ScoreModel, totalBars: number): string[] {
   const chordByBar = new Map<number, string>();
-  for (const p of score.parts) {
+  const piano = score.parts.find((p) => p.id === 'bb_piano');
+  const sources = piano ? [piano] : score.parts;
+  for (const p of sources) {
     for (const m of p.measures) {
       if (m.chord) chordByBar.set(m.index, m.chord);
     }

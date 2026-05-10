@@ -722,8 +722,50 @@ function parseNoteBlock(nb: string): {
   return { isRest: false, isChord, voice, durationTicks, midi };
 }
 
+/** First `<harmony>` in measure → compact symbol for GCE (extended jazz tokens). */
+function chordLabelFromMeasureHarmonyXml(measureXml: string): string | undefined {
+  const block = measureXml.match(/<harmony>([\s\S]*?)<\/harmony>/i)?.[1];
+  if (!block) return undefined;
+  const rs = block.match(/<root-step>([A-G])<\/root-step>/i)?.[1];
+  const ra = block.match(/<root-alter>(-?\d+)<\/root-alter>/i);
+  let root = rs ?? '';
+  if (rs && ra) {
+    const a = parseInt(ra[1], 10);
+    if (a === -1) root = `${rs}b`;
+    else if (a === 1) root = `${rs}#`;
+  }
+  const kindText =
+    block.match(/<kind[^>]*\s+text="([^"]*)"/i)?.[1]?.trim() ??
+    block.match(/<kind[^>]*>([^<]+)<\/kind>/i)?.[1]?.trim() ??
+    '';
+  let suffix = kindText;
+  if (!suffix) {
+    const k = block.match(/<kind[^>]*>([^<]+)<\/kind>/i)?.[1]?.trim();
+    if (k === 'major-seventh') suffix = 'maj7';
+    else if (k === 'minor-seventh') suffix = 'm7';
+    else if (k === 'dominant') suffix = '7';
+    else if (k === 'major-minor') suffix = 'mM7';
+    else if (k === 'half-diminished') suffix = 'm7b5';
+    else if (k === 'diminished') suffix = 'dim';
+    else if (k === 'suspended-fourth') suffix = 'sus4';
+  }
+  const bassStep = block.match(/<bass-step>([A-G])<\/bass-step>/i)?.[1];
+  const bassAlt = block.match(/<bass-alter>(-?\d+)<\/bass-alter>/i);
+  let slash = '';
+  if (bassStep) {
+    let bs = bassStep;
+    if (bassAlt && parseInt(bassAlt[1], 10) === -1) bs = `${bassStep}b`;
+    else if (bassAlt && parseInt(bassAlt[1], 10) === 1) bs = `${bassStep}#`;
+    slash = `/${bs}`;
+  }
+  if (!root) return undefined;
+  return `${root}${suffix}${slash}`;
+}
+
 function parseMeasureXmlToMeasureModel(measureXml: string, measureNumber: number): MeasureModel {
   const measure: MeasureModel = createMeasure(measureNumber);
+  const chordLab = chordLabelFromMeasureHarmonyXml(measureXml);
+  if (chordLab) measure.chord = chordLab;
   const noteBlocks = measureXml.match(/<note[\s\S]*?<\/note>/gi) ?? [];
   let tickCursor = 0;
   let lastAttackTick = 0;
