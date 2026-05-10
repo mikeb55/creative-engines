@@ -139,6 +139,14 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     console.log('[OPEN-FOLDER] ipc composer-os-api:open-output-folder', { path: b.path });
     return apiOpenOutputFolder(outputDir, b);
   });
+  ipcMain.handle('composer-os-api:open-midi-file', async (_event, body: unknown) => {
+    const pathRaw =
+      body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+        ? (body as { path: string }).path.trim()
+        : '';
+    if (!pathRaw) return;
+    await shell.showItemInFolder(pathRaw);
+  });
   console.log('[ipcEntry] registering generate-wayne-shorter');
   ipcMain.handle(
     'composer-os-api:generate-wayne-shorter',

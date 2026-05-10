@@ -1224,6 +1224,7 @@ type GenResult = {
   productKind?: 'musicxml' | 'planning' | 'song_structure';
   filename?: string;
   filepath?: string;
+  midiFilepath?: string;
   /** Big Band: actual score path when `filepath` is planning JSON (`GenerateResult.ensembleMusicXmlFilepath`). */
   ensembleMusicXmlFilepath?: string;
   harmonySource?: 'builtin' | 'custom';
@@ -8940,6 +8941,19 @@ export function HomeGenerate({
             >
               Open this file&apos;s folder
             </button>
+            {result?.midiFilepath && (
+              <button
+                type="button"
+                className="secondary"
+                onClick={() =>
+                  void window.composerOsDesktop?.invokeApi('composer-os-api:open-midi-file', {
+                    path: result.midiFilepath,
+                  })
+                }
+              >
+                Open MIDI file
+              </button>
+            )}
           </div>
           {playbackSeq && (
             <div className="co-playback-controls">
