@@ -6,6 +6,46 @@
 
 ---
 
+## Playback (Generate — Play / Pause / Stop)
+
+**What it does:** After a successful **Generate**, the app can **preview the written score in the browser** using a lightweight software synth — not a full DAW, but enough to sanity-check **pitch + timing** before opening Sibelius or another host.
+
+**Where in the app:** On **Home → Generate**, when a run returns MusicXML, **Play** / **Pause** / **Stop** appear when a **playback sequence** is available (see below).
+
+### How it works (stack)
+
+1. **Audio engine — Tone.js**  
+   **PolySynth** + **Transport** schedule note onsets. **`Tone.start()`** runs on the first **user click** (Play) to unlock the **AudioContext** (required in Chromium / Electron).
+
+2. **MusicXML → schedule**  
+   **`parseXmlToPlaybackSequence`** (`apps/composer-os-app/src/playback/musicXmlToPlaybackSequence.ts`) uses the browser **DOMParser** to walk **all** `<part>` elements, flattens every **non-rest** note with a **`<pitch>`** child into a list of `{ pitch (MIDI), startBeat, duration, barIndex }`, dedupes by pitch+start+bar, and sorts. **BPM** and **beats per bar** come from the generate result / UI; the parser also **infers `divisions` and meter** from the **first part’s** early `<attributes>` (so parts that omit `<divisions>` still align in time with the lead part).
+
+3. **How the UI gets the XML string**  
+   - **Web (dev / API):** the generate response can include an inline **`xml`** string — playback uses it directly.  
+   - **Desktop (IPC):** the response often has a **`filepath`** on disk. The renderer calls **`composer-os-api:read-file`** to load UTF-8 text. For **Big Band**, the primary artifact is a **planning JSON**; the engine also writes a companion **ensemble `.musicxml`**. The API exposes **`ensembleMusicXmlFilepath`** on the result so playback reads the **score file**, not the JSON (see `GenerateResult` in `generateComposition.ts` and `runBigBandPlanning` in `composerOsAppGeneration.ts`).
+
+4. **Desktop window**  
+   The Electron main process shows the window as soon as the **loading** page is ready, **before** the heavy IPC bundle `require()` finishes, so the app does not look “stuck” with no window.
+
+### Git history (playback line, from `46add138`)
+
+| Commit   | Focus |
+|----------|--------|
+| `46add138` | Phase A+B — `PlaybackSequence` + Tone engine |
+| `b50e799c` | Read MusicXML from `filepath` over IPC |
+| `412ea896` | Await `Tone.start()` on user gesture |
+| `ada590bd` | Parse **all** parts (not only the first) |
+| `ce402075` | Inherit **divisions** from first part for multi-staff timing |
+| `fix(playback):` (latest) | **Big Band:** `ensembleMusicXmlFilepath` + read that path; **empty-sequence** guard; **read-file** errors logged; main **early show** |
+
+### Known limitations
+
+- **Unpitched / GM drum** notes (`<unpitched>`, e.g. Big Band or Fela percussion) are **not** mapped to synth pitches — only **`<pitch>`** is heard. Melody, comp, and pitched brass still preview when present in the XML.
+- **Big Band web client:** if the API returns planning JSON **without** inline `xml` and without a fetch path to the ensemble file, preview may not hydrate until the desktop-style path story exists — **desktop IPC** is the supported path for ensemble playback today.
+- **Meter label:** when no iReal chart is loaded, the UI may default time-signature label for parsing while the XML **attributes** still override divisions inside the file.
+
+---
+
 ## Thread summary — Reharm Panel (shipped)
 
 **Status:** Reharm preview — **fully shipped** (phases **A–D2** + **LOCK** reconciliation + per-writer lens rows). **Smoke tier** (aggregate PASS rows) tracks **`runSmokeTests.ts`** — see repo **`CLAUDE.md`**. **Open TODOs (reharm):** none.
