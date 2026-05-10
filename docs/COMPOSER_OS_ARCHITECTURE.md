@@ -4,6 +4,31 @@
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset → planning → score build → integrity → MusicXML export → validation → readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 
+## HTTP API — `POST /api/melodic-variation-pack`
+
+Local dev server: **`scripts/startComposerOsAppApi.ts`** (default **`http://127.0.0.1:3001`**). **Desktop:** same payload via IPC **`composer-os-api:melodic-variation-pack`**.
+
+**Request (JSON)**
+
+| Field | Type | Notes |
+|--------|------|--------|
+| `melody` | `{ pitch: number, duration: number }[]` | Pitch = MIDI; `duration` = quarter-note units. Contract name **NoteEvent** in product docs = this minimal shape (not full score `NoteEvent`). |
+| `chords` | `string[]` | Lead-sheet symbols per bar or harmonic span (e.g. **`Cmaj7`**, **`Am9`**); length drives default GCE section span when `sections` omitted. |
+| `variationCount` | `number` | Clamped **3–5** server-side. |
+| `songwriterId` | `string` | Canonical or alias (**`normalizeSongwriterStyleKey`**); unknown → **400**. |
+| `sections` | optional | Override GCE Structure & Form (`label`, `barStart`, `barEnd`, optional `role`). |
+
+**Response (success)**
+
+| Field | Type | Notes |
+|--------|------|--------|
+| `success` | `true` | |
+| `scoringMode` | `"melody-only"` | Stub duo score for GCE; arrangement pillar reflects placeholder bass part. |
+| `melody` | same as request | Echoed. |
+| `variations` | array | Length ≤ `variationCount`; sorted by **`gceScore`** descending. Each item: **`melody`**, **`gceScore`** (0–10 overall), **`transform`** (`MotifTransform` — which mutation produced the row). |
+
+**Response (error)** — `{ "success": false, "error": string }` with HTTP **400** for validation failures when using the HTTP route.
+
 ## V9.0 baseline (chords & export)
 
 **Unified chord semantics (#19)** — Done: normalization before parsing, shared parser/validator behaviour, standard jazz symbols accepted without hard failure (see guarantee in [CHANGELOG.md](./CHANGELOG.md) V9.0 section).

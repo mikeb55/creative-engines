@@ -450,8 +450,9 @@ Ordered for **product leverage** (what to schedule first). Adjust when ship goal
 3. **Harness + composer stability** — Keep **`test:smoke`** / **`test:fast`** green; use chunked **`runAllTests`** for full matrix; triage **`TEST_DEBT_COMPOSER_OS_V2.md`** so refactors stay safe while profile count grows.
 4. **Lead-sheet MusicXML import** — Finish staged harmony import (ensemble presets, evals) where product needs **chart-in**; complements writers but is a **different axis** than “more profiles.”
 5. **Phrase Engine / riff-motif layer** — **DONE.** V2: motif pool, hook seeding, guitar nudge, bass echo — wired before C1, 32-bar duo gate.
-6. **ECM arrangement & orchestration depth** — Weakest GCE pillar on ECM; after profiles/harness pressure eases.
-7. **Wyble parity + ensemble Wyble** — Duo single-line alignment first; BB/SQ inner-line depth after.
+6. **Melodic variation pack** — **DONE (2026-05-10).** **`POST /api/melodic-variation-pack`** — motif mutations + **`scoreResultForGce`** on stub duo score; **`transform`** + **`scoringMode: "melody-only"`**; **`reharmController`** progression scores aligned. See [CHANGELOG.md](CHANGELOG.md) **[Unreleased] · Added**, [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md) § HTTP API.
+7. **ECM arrangement & orchestration depth** — Weakest GCE pillar on ECM; after profiles/harness pressure eases.
+8. **Wyble parity + ensemble Wyble** — Duo single-line alignment first; BB/SQ inner-line depth after.
 
 ---
 
