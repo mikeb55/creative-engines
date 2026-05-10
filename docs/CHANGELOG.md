@@ -2,7 +2,13 @@
 
 ### Added
 
-- **feat(song-mode):** **Arvo Pärt** tintinnabuli — real duo **M/T** layers (`applyArvoPartTintinnabuliToDuoScore` in **`arvoPartSlice.ts`**): diatonic **M-voice** + triad **T-voice** (strict above/below per beat, **M2** = simultaneous **T_above** + **T_below**); **`selectMotifTransform`** contour bias per section role. Progression bypass: **`tonic_wash`** chord token (**`chordProgressionParser.ts`**, **`parseChordSymbol`**); single-chord / wash **stasis** skips triadic reharm pass. Request **`arvoPartTintinnabuli`** (`triadRoot`, `position`, `mode`, `triadQuality`) on **`GenerateRequest`**, **`composerOsApiCore`**, **`runGoldenPath`**. **`generateGoldenPathDuoScore`** applies tintinnabuli after guitar+bass build; skips overlap / Wyble register coupling for **`arvo_part`**.
+- **Arvo Pärt tintinnabuli slice** — real dual-voice M/T engine (`applyArvoPartTintinnabuliToDuoScore`, **`arvoPartSlice.ts`**; **`generateGoldenPathDuoScore`** after guitar+bass build; skips overlap / Wyble register coupling for **`arvo_part`**)
+  - **M-voice:** stepwise diatonic within triad field (`selectMotifTransform` contour bias per section role)
+  - **T-voice:** nearest **{1,3,5}** above / below / alternating per **`position`** param (strict MIDI above/below M per beat)
+  - **M2 mode:** dual T-voices (above + below simultaneously — guitar v2 + bass)
+  - **`tonic_wash`:** static harmonic field; single-symbol / wash **stasis** bypasses triadic transform pass (**`chordProgressionParser.ts`**, **`parseChordSymbol`**, **`normalizeLeadSheetChordSpelling`**)
+  - **Registered:** **`arvoPartTintinnabuli`** on **`GenerateRequest`**, **`composerOsApiCore`**, **`runGoldenPath`** (`triadRoot`, `position`, **`mode`** M1/M2, **`triadQuality`**)
+  - **`tonic_wash`** valid in chord pipeline only (not **`normalizeSongwriterStyleKey`**)
 
 - **POST `/api/melodic-variation-pack`** — **3–5** GCE-scored melodic variations per melody (`scripts/startComposerOsAppApi.ts`, **`apiMelodicVariationPack`** in **`composerOsApiCore.ts`**). **Mutations:** `rhythmic_displacement`, `contour_inversion`, `registral_displacement`, `augmentation`, `diminution`, `fragmentation` (`melodicVariationPack.ts`). **Dedup:** `scoreMotifSimilarity` **> 0.92** vs base / peers dropped before scoring. **`scoringMode`: `"melody-only"`** — stub duo `ScoreModel` (guitar line + bass rests); full **`scoreResultForGce`** / **`gceAutoScorers`** weighted overall. **`songwriterId`** validated via **`normalizeSongwriterStyleKey`** (aliases e.g. **`harris`** → **`barry_harris`**); unknown id → **400**. **Desktop IPC:** `composer-os-api:melodic-variation-pack`. **`reharmController`:** **`gceScore`** on alternatives uses real **`scoreResultForGce`** (replaces prior placeholder mean).
 
