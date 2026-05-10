@@ -2,7 +2,7 @@
   "id": "steely_orbit_target",
   "format": "big_band",
   "songwriterId": "donald_fagen",
-  "gceScore": 9,
+  "gceScore": 7.42,
   "densityCurve": [
     0.2857142857142857,
     0.2857142857142857,
@@ -228,7 +228,7 @@
     0
   ],
   "melodicVarietyScore": 0.25,
-  "notes": "Steely Orbit structural target — cloned from orbit_v6_64 with bars 57–64 density thinned for drain/handoff (not V6 Bill Evans dense ending).",
+  "notes": "Steely Orbit structural target — cloned from orbit_v6_64 with bars 57–64 density thinned for drain/handoff (not V6 Bill Evans dense ending). V2.1 baseline export (fixed BB GCE scorers): combined 7.42 @ STEELY_GCE_GATE 7.3. V2.2 targets: rhythmicIdentity, structureAndForm.",
   "intentTags": [
     "bright_opening",
     "gradual_darkening",

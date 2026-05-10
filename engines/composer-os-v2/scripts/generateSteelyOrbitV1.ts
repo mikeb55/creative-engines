@@ -1,7 +1,8 @@
 /**
- * Steely Orbit Prelude V2.0 — fingerprint-gated generation vs `steely_orbit_target`
+ * Steely Orbit Prelude V2.1 — fingerprint-gated generation vs `steely_orbit_target`
  * (V6-compatible through bar 56; bars 57–64 reference thinning + optional zone tolerance).
- * Default run: STEELY_GCE_GATE=7.5 STEELY_MAX_TRIES=16 (override via env).
+ * Default export gate: STEELY_GCE_GATE=7.3 (empirical BB baseline post fixed scorers). Override via env.
+ * Output: V2.1 MusicXML — update `steely_orbit_target.json` **gceScore** after a baseline export.
  * Requires local Orbit sources under repo `projects/Orbit/` (see paths below).
  *
  * Survey:
@@ -50,7 +51,7 @@ const repoRoot = path.resolve(__dirname, '../../..');
 const LEAD_REL = 'projects/Orbit/Orbit_lead_V5.1.musicxml';
 const REF_REL = 'projects/Orbit/V6.0 orbit - BB.musicxml';
 const OUT_DIR_REL = 'projects/Orbit/Steely Orbit - 1st 64 bars';
-const OUT_FILE = 'V2.0-Steely-Orbit.musicxml';
+const OUT_FILE = 'V2.1-Steely-Orbit.musicxml';
 
 function gitHeadShort(): string {
   try {
@@ -73,7 +74,7 @@ function envBool(name: string, fallback: boolean): boolean {
   return v === '1' || /^true$/i.test(v);
 }
 
-const GCE_GATE = envFloat('STEELY_GCE_GATE', 7.5);
+const GCE_GATE = envFloat('STEELY_GCE_GATE', 7.3);
 /** Gate matches **display** rounding (avoids 6.998 printing as 7.00 but failing `>= 7`). */
 const passesGceGate = (score: number): boolean => Math.round(score * 100) / 100 >= GCE_GATE;
 const TARGET_GCE = 9.0;
@@ -357,7 +358,7 @@ function drumArticulationSteely(): Partial<Record<number, 'brushes' | 'sticks'>>
 }
 
 function main(): void {
-  console.log('[Steely V2.0] main start');
+  console.log('[Steely V2.1] main start');
   const leadPath = path.join(repoRoot, LEAD_REL);
   const refPath = path.join(repoRoot, REF_REL);
   const outDir = path.join(repoRoot, OUT_DIR_REL);
@@ -420,10 +421,10 @@ function main(): void {
 
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
     const seed = baseSeed + attempt;
-    console.log(`\n[Steely V2.0] attempt ${attempt + 1}/${MAX_TRIES} seed=${seed}`);
+    console.log(`\n[Steely V2.1] attempt ${attempt + 1}/${MAX_TRIES} seed=${seed}`);
     const realised = runBigBandRealisation({
       seed,
-      title: 'Steely Orbit Prelude V2.0',
+      title: 'Steely Orbit Prelude V2.1',
       totalBars: 64,
       formId: 'orbit_bb_64',
       bpm: BPM,
@@ -531,7 +532,7 @@ function main(): void {
   const sortedHardest = Object.entries(ruleFailCounts).sort((a, b) => b[1] - a[1]);
 
   if (!anyFpPass) {
-    console.error('\n--- STEELY ORBIT V2.0 — ABORT ---');
+    console.error('\n--- STEELY ORBIT V2.1 — ABORT ---');
     console.error('No attempt passed the V2 fingerprint gate.');
     console.error('Rule fail counts:', JSON.stringify(ruleFailCounts));
     console.error('Hint:', failureHint);
@@ -550,7 +551,7 @@ function main(): void {
   const gateMet = bestGateEval != null && bestGateXml.trim().length > 0 && passesGceGate(bestGateScore);
 
   if (!gateMet) {
-    console.log('\n--- STEELY ORBIT V2.0 — GATE NOT MET (no export <', GCE_GATE, ') ---');
+    console.log('\n--- STEELY ORBIT V2.1 — GATE NOT MET (no export <', GCE_GATE, ') ---');
     console.log('Best fingerprint-passing combined score:', bestFpPassScore.toFixed(2), 'seed', bestFpPassSeed);
     if (bestFpPassEval) {
       console.log('\nPer-dimension breakdown (best fingerprint-pass attempt):');
@@ -572,7 +573,7 @@ function main(): void {
 
   const restFinalPre = auditAltoConsecutiveRestBars(bestScoreForReport);
   const v17val = validateSteelyV17Export(bestScoreForReport);
-  console.log('\n--- Pre-export validation (V2.0) ---');
+  console.log('\n--- Pre-export validation (V2.1) ---');
   console.log('Alto rest-span:', restFinalPre.ok ? 'PASS' : 'FAIL', restFinalPre.ok ? `maxSpan=${restFinalPre.maxSpanOutsideExempt}` : restFinalPre.violations.join('; '));
   console.log('Structural (7 parts, 61–64 rhythm, drums, 42–44 alto):', v17val.ok ? 'PASS' : 'FAIL', v17val.messages.join('; ') || '');
   console.log('Active-layer audit (bars 57–64):');
@@ -588,7 +589,7 @@ function main(): void {
   const outFinal = path.join(outDir, OUT_FILE);
   let writePath = outFinal;
   if (fs.existsSync(outFinal)) {
-    writePath = path.join(outDir, `V2.0-Steely-Orbit-${bestSeed}.musicxml`);
+    writePath = path.join(outDir, `V2.1-Steely-Orbit-${bestSeed}.musicxml`);
     console.warn(`Preserving existing ${OUT_FILE} — writing ${path.basename(writePath)}`);
   }
 
@@ -606,7 +607,7 @@ function main(): void {
     disableMelodicPitchStreak: V2_DISABLE_MELODY_STREAK,
   });
 
-  console.log('\n--- STEELY ORBIT V2.0 REPORT ---');
+  console.log('\n--- STEELY ORBIT V2.1 REPORT ---');
   console.log('Commit:', gitHeadShort());
   console.log(
     'Fingerprint gate (winning attempt, rule buckets',

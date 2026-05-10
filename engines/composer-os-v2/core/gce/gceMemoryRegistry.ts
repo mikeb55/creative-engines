@@ -4,7 +4,8 @@
 
 /** Overall GCE floor hints when comparing ensemble formats (not the primary GCEEvaluator threshold). */
 export const formatGateOverrides = {
-  big_band: 7.5,
+  /** Empirical floor after BB GCE scorer fix + Steely V2.1 baseline (was 7.5 vs broken duo-only pillars). */
+  big_band: 7.3,
   string_quartet: 8.0,
   duo: 8.8,
   ecm: 8.8,

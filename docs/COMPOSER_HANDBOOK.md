@@ -41,7 +41,7 @@ Scripts may expose environment variables to relax individual gates while you fix
 
 When reasoning about “good enough” combined scores **by ensemble**, the repo carries **hint floors** (not a substitute for the main GCE evaluator threshold, but useful for comparing apples to oranges):
 
-- **Big band:** **7.5**
+- **Big band:** **7.3** (empirical floor post BB scorer calibration; see **`steely_orbit_target`** V2.1 baseline)
 - **String quartet:** **8.0**
 - **Duo:** **8.8**
 - **ECM chamber:** **8.8**

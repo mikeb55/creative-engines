@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Steely Orbit V2.1** — export **`V2.1-Steely-Orbit.musicxml`**; **`STEELY_GCE_GATE`** default **7.3**; **`formatGateOverrides.big_band`** **7.3**; **`steely_orbit_target.json`** **`gceScore`** **7.42** (V2.1 combined baseline). **V2.2** targets: **`rhythmicIdentity`**, **`structureAndForm`**.
+
 - **BB-aware GCE pillars** — **`scoreArrangementAndOrchestrationForEnsemble`** / **`scoreArrangementAndOrchestrationBigBand`** (ensemble density motion / spread vs duo guitar–bass); **`scoreTensionAndReleaseForEnsemble`** + **`scoreTensionAndReleaseMelodicContour`** (melodic contour when chord-symbol arcs thin); **`scoreEconomyAndFocusForEnsemble`** / **`scoreEconomyAndFocusBigBand`** (section-wise lead density spread blended with duo density). **`gceEvaluator.ts`** + **`gceGate.ts`** route BB **`bb_*`** scores; **`activePartsNormalizedBigBand`** exported from **`gceStructuralMemory.ts`**.
 - **`GceIntentTag`** + **`intentTags`** on **`StructuralFingerprint`** — **`sparse_ending`** widens drain-zone density cap; **`constant_density`** disables section |Δ| floor in **`validateSteelyOrbitV2FingerprintGate`**. **`steely_orbit_target.json`** / **`orbit_v6_64.json`** tagged; handbook **Intent tags** subsection.
 
