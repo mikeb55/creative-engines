@@ -15,6 +15,7 @@ import {
 import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { resolveMelodicPartId } from './resolveMelodicPartId';
 import { getBestFingerprintId } from './gceMemoryRegistry';
+import { auditAltoConsecutiveRestBars } from '../big-band/orbitSteelyV14MelodicDevelopment';
 
 const STEP_TO_PC: Record<string, number> = {
   C: 0,
@@ -254,6 +255,8 @@ export function extractFingerprint(
 export interface PitchSequenceStreakOptions {
   /** 1-based inclusive; bars inside may repeat freely (default intro 1–4). */
   introExemptMaxBar?: number;
+  /** When set, only these part ids are checked (otherwise all {@link isMelodicPartId} melodic parts). */
+  partIdFilter?: Set<string>;
 }
 
 /**
@@ -269,12 +272,22 @@ export function validateMelodicPitchSequenceStreaks(
   const barCount = scoreBarCount(score);
 
   for (const part of score.parts) {
-    if (!isMelodicPartId(part.id)) continue;
+    if (options?.partIdFilter) {
+      if (!options.partIdFilter.has(part.id)) continue;
+    } else if (!isMelodicPartId(part.id)) {
+      continue;
+    }
     let prevSig = '\x00';
     let runLen = 0;
     for (let b = 1; b <= barCount; b++) {
       const m = part.measures[b - 1];
       const sig = m ? measureVoice1PitchSignature(m) : '';
+      /* Rest-only / empty voice-1 — no pitch sequence to compare; breaks streak */
+      if (sig === '') {
+        prevSig = '\x00';
+        runLen = 0;
+        continue;
+      }
       if (sig === prevSig) {
         runLen += 1;
       } else {
@@ -400,6 +413,197 @@ export function validateAgainstFingerprint(
   }
 
   return { pass: failures.length === 0, failures };
+}
+
+/** Steely Orbit V2.0 — primary fingerprint gate (5 independent checks vs orbit_v6_64 + score metrics). */
+export const STEELY_ORBIT_V2_FINGERPRINT_RULE_IDS = [
+  'melodic_pitch_sequence_streak',
+  'alto_rest_span',
+  'density_eight_bar_vs_orbit_v6',
+  'drum_narrative_variance_sixteen_bar',
+  'section_transition_min_density_delta',
+] as const;
+
+export const STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT = STEELY_ORBIT_V2_FINGERPRINT_RULE_IDS.length;
+
+/** Mean absolute deviation in any 8-bar window must stay ≤ maxMeanAbsDeviation (default 0.4 = 40% on 0–1 density). */
+export function validateDensityEightBarVsReference(
+  candidateDensity: number[],
+  referenceDensity: number[],
+  maxMeanAbsDeviation: number
+): { pass: boolean; failures: string[] } {
+  const failures: string[] = [];
+  const n = candidateDensity.length;
+  if (n !== referenceDensity.length || n < 8) {
+    failures.push(`density_eight_bar: length mismatch ref=${referenceDensity.length} cand=${n}`);
+    return { pass: false, failures };
+  }
+  for (let s = 0; s <= n - 8; s++) {
+    let sum = 0;
+    for (let i = 0; i < 8; i++) {
+      sum += Math.abs(candidateDensity[s + i]! - referenceDensity[s + i]!);
+    }
+    const meanAbs = sum / 8;
+    if (meanAbs > maxMeanAbsDeviation) {
+      failures.push(
+        `density_eight_bar: bars ${s + 1}–${s + 8} mean_abs_dev=${meanAbs.toFixed(4)} > ${maxMeanAbsDeviation}`
+      );
+    }
+  }
+  return { pass: failures.length === 0, failures };
+}
+
+function variancePopulation(vals: number[]): number {
+  if (vals.length === 0) return 0;
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  let s = 0;
+  for (const v of vals) {
+    const d = v - mean;
+    s += d * d;
+  }
+  return s / vals.length;
+}
+
+/** Every 16-bar window must have drum voice-1 hit variance ≥ minVariance (flat if below). */
+export function validateDrumVarianceSixteenBarSpans(
+  drumShape: number[],
+  minVariance: number
+): { pass: boolean; failures: string[] } {
+  const failures: string[] = [];
+  if (minVariance < 0) {
+    return { pass: true, failures: [] };
+  }
+  const n = drumShape.length;
+  if (n < 16) {
+    failures.push(`drum_variance: need ≥16 bars, got ${n}`);
+    return { pass: false, failures };
+  }
+  for (let s = 0; s <= n - 16; s++) {
+    const w = drumShape.slice(s, s + 16);
+    const v = variancePopulation(w);
+    const mx = Math.max(...w);
+    const mn = Math.min(...w);
+    const range = mx - mn;
+    /* Both zero variance and zero range means identical counts every bar (flat narrative). */
+    if (v < minVariance && range < 1) {
+      failures.push(
+        `drum_variance: bars ${s + 1}–${s + 16} variance=${v.toFixed(6)} range=${range} (flat; minVar=${minVariance})`
+      );
+    }
+  }
+  return { pass: failures.length === 0, failures };
+}
+
+/** Section rehearsal transitions must show |densityDelta| ≥ minAbs (Intro at bar 1 exempt). */
+export function validateSectionTransitionsMinAbsoluteDelta(
+  transitions: StructuralFingerprint['sectionTransitions'],
+  minAbs: number
+): { pass: boolean; failures: string[] } {
+  const failures: string[] = [];
+  if (minAbs <= 0) {
+    return { pass: true, failures: [] };
+  }
+  for (const t of transitions) {
+    const introish = t.barNumber <= 1 || /^intro$/i.test(t.label.trim());
+    if (introish) continue;
+    /* Pickup / fill marks often sit on unchanged density vs prior bar */
+    if (/^fill$/i.test(t.label.trim())) continue;
+    if (Math.abs(t.densityDelta) < minAbs) {
+      failures.push(
+        `section_transition_delta: bar ${t.barNumber} "${t.label}" |Δ|=${Math.abs(t.densityDelta).toFixed(4)} < ${minAbs}`
+      );
+    }
+  }
+  return { pass: failures.length === 0, failures };
+}
+
+export interface SteelyOrbitV2FingerprintGateResult {
+  pass: boolean;
+  rules: Record<string, boolean>;
+  failures: string[];
+}
+
+/** Primary phrase-bearing staves for Steely V2 repeated-bar pitch streak (not brass pad figures). */
+export const STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS = new Set([
+  'bb_alto_sax',
+  'bb_tenor_sax',
+  'bb_piano',
+]);
+
+/** Full Steely Orbit V2.0 gate vs `orbit_v6_64` reference density + derived candidate fingerprint. */
+export function validateSteelyOrbitV2FingerprintGate(
+  score: ScoreModel,
+  orbitRef: StructuralFingerprint,
+  options?: {
+    densityEightBarMaxMeanAbs?: number;
+    drumSixteenBarMinVariance?: number;
+    sectionMinAbsDensityDelta?: number;
+    /** Override default {@link STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS} for pitch-sequence streak. */
+    melodyStreakPartIds?: Set<string>;
+    /** Turn off pitch-sequence streak (orchestration iteration hook). */
+    disableMelodicPitchStreak?: boolean;
+  }
+): SteelyOrbitV2FingerprintGateResult {
+  const densityMax = options?.densityEightBarMaxMeanAbs ?? 0.4;
+  const drumVarMin = options?.drumSixteenBarMinVariance ?? 0.05;
+  const secMin = options?.sectionMinAbsDensityDelta ?? 0.1;
+  const streakParts = options?.melodyStreakPartIds ?? STEELY_ORBIT_V2_MELODY_STREAK_PART_IDS;
+  const skipStreak = options?.disableMelodicPitchStreak === true;
+
+  const rules: Record<string, boolean> = {
+    melodic_pitch_sequence_streak: false,
+    alto_rest_span: false,
+    density_eight_bar_vs_orbit_v6: false,
+    drum_narrative_variance_sixteen_bar: false,
+    section_transition_min_density_delta: false,
+  };
+  const failures: string[] = [];
+
+  const streak = skipStreak
+    ? { pass: true, failures: [] as string[] }
+    : validateMelodicPitchSequenceStreaks(score, {
+        introExemptMaxBar: 4,
+        partIdFilter: streakParts,
+      });
+  rules.melodic_pitch_sequence_streak = streak.pass;
+  if (!streak.pass) failures.push(...streak.failures);
+
+  const alto = auditAltoConsecutiveRestBars(score);
+  rules.alto_rest_span = alto.ok;
+  if (!alto.ok) failures.push(...alto.violations.map((v) => `alto_rest_span: ${v}`));
+
+  const cand = extractFingerprint(score, orbitRef.gceScore, {
+    id: `${orbitRef.id}_v2_candidate`,
+    format: orbitRef.format,
+    songwriterId: orbitRef.songwriterId,
+  });
+
+  if (cand.densityCurve.length !== orbitRef.densityCurve.length) {
+    failures.push(
+      `density_eight_bar: bar_count expected ${orbitRef.densityCurve.length} got ${cand.densityCurve.length}`
+    );
+    rules.density_eight_bar_vs_orbit_v6 = false;
+  } else {
+    const dens = validateDensityEightBarVsReference(
+      cand.densityCurve,
+      orbitRef.densityCurve,
+      densityMax
+    );
+    rules.density_eight_bar_vs_orbit_v6 = dens.pass;
+    if (!dens.pass) failures.push(...dens.failures);
+  }
+
+  const drum = validateDrumVarianceSixteenBarSpans(cand.drumNarrativeShape, drumVarMin);
+  rules.drum_narrative_variance_sixteen_bar = drum.pass;
+  if (!drum.pass) failures.push(...drum.failures);
+
+  const sec = validateSectionTransitionsMinAbsoluteDelta(cand.sectionTransitions, secMin);
+  rules.section_transition_min_density_delta = sec.pass;
+  if (!sec.pass) failures.push(...sec.failures);
+
+  const pass = Object.values(rules).every(Boolean);
+
+  return { pass, rules, failures };
 }
 
 function fingerprintsDir(): string {

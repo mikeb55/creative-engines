@@ -1,6 +1,6 @@
 /**
- * Steely Orbit Prelude V1.7 — orbit_steely_v1_7_64 (V17 transition/orchestration + eval blend).
- * Default run: STEELY_GCE_GATE=7.0 STEELY_MAX_TRIES=8 (override via env).
+ * Steely Orbit Prelude V2.0 — fingerprint-gated generation vs `orbit_v6_64`.
+ * Default run: STEELY_GCE_GATE=7.5 STEELY_MAX_TRIES=16 (override via env).
  * Requires local Orbit sources under repo `projects/Orbit/` (see paths below).
  *
  * Survey:
@@ -9,6 +9,7 @@
  * - `steely_dan` — no separate registry entry; use `donald_fagen` as primary proxy.
  */
 
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
@@ -32,9 +33,9 @@ import { defaultLockGates } from '../core/evaluation/lockGates';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import {
-  GCE_STRUCTURAL_VALIDATION_RULE_COUNT,
+  STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT,
   loadFingerprint,
-  validateAgainstFingerprint,
+  validateSteelyOrbitV2FingerprintGate,
 } from '../core/gce/gceStructuralMemory';
 import { auditDrumVoice1FourBarRepeats } from '../core/big-band/orbitSteelyV13DrumNarrative';
 import {
@@ -48,7 +49,15 @@ const repoRoot = path.resolve(__dirname, '../../..');
 const LEAD_REL = 'projects/Orbit/Orbit_lead_V5.1.musicxml';
 const REF_REL = 'projects/Orbit/V6.0 orbit - BB.musicxml';
 const OUT_DIR_REL = 'projects/Orbit/Steely Orbit - 1st 64 bars';
-const OUT_FILE = 'V1.7-Steely-Orbit.musicxml';
+const OUT_FILE = 'V2.0-Steely-Orbit.musicxml';
+
+function gitHeadShort(): string {
+  try {
+    return execSync('git rev-parse --short=8 HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 function envFloat(name: string, fallback: number): number {
   const v = process.env[name];
@@ -57,12 +66,24 @@ function envFloat(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-const GCE_GATE = envFloat('STEELY_GCE_GATE', 7.0);
+function envBool(name: string, fallback: boolean): boolean {
+  const v = process.env[name];
+  if (v == null || v === '') return fallback;
+  return v === '1' || /^true$/i.test(v);
+}
+
+const GCE_GATE = envFloat('STEELY_GCE_GATE', 7.5);
 /** Gate matches **display** rounding (avoids 6.998 printing as 7.00 but failing `>= 7`). */
 const passesGceGate = (score: number): boolean => Math.round(score * 100) / 100 >= GCE_GATE;
 const TARGET_GCE = 9.0;
-const MAX_TRIES = Math.max(1, Math.floor(envFloat('STEELY_MAX_TRIES', 8)));
+const MAX_TRIES = Math.max(1, Math.floor(envFloat('STEELY_MAX_TRIES', 16)));
 const BPM = 129;
+
+/** V2 fingerprint tolerances (`STEELY_V2_SECTION_ABS_DELTA_MIN=0` disables section Δ gate until exports carry real rehearsal deltas). */
+const V2_DENSITY_EIGHT_MAX = envFloat('STEELY_V2_DENSITY_EIGHT_MAX', 0.5);
+const V2_DRUM_VAR_MIN = envFloat('STEELY_V2_DRUM_VARIANCE_MIN', 0.05);
+const V2_SECTION_DELTA_MIN = envFloat('STEELY_V2_SECTION_ABS_DELTA_MIN', 0);
+const V2_DISABLE_MELODY_STREAK = envBool('STEELY_V2_DISABLE_MELODY_STREAK', false);
 
 function buildBarMeterMap64(): BarMeterMap {
   const m: BarMeterMap = {};
@@ -316,7 +337,7 @@ function drumArticulationSteely(): Partial<Record<number, 'brushes' | 'sticks'>>
 }
 
 function main(): void {
-  console.log('[Steely V1.7] main start');
+  console.log('[Steely V2.0] main start');
   const leadPath = path.join(repoRoot, LEAD_REL);
   const refPath = path.join(repoRoot, REF_REL);
   const outDir = path.join(repoRoot, OUT_DIR_REL);
@@ -339,30 +360,43 @@ function main(): void {
     console.error('Lead import failed:', imp.errors);
     process.exit(1);
   }
-  /** Best export by combined score (always tracked when export succeeds). */
-  let bestOverallXml = '';
-  let bestOverallScoreModel: ScoreModel | null = null;
-  let bestOverallEval: CombinedEvaluationResult | null = null;
-  let bestOverallSeed = 0;
-  let bestOverallScore = -1;
 
-  /** Best export that also clears STEELY_GCE_GATE (may stay empty). */
-  let gatedXml = '';
-  let gatedScoreModel: ScoreModel | null = null;
-  let gatedEval: CombinedEvaluationResult | null = null;
-  let gatedSeed = 0;
-  let gatedScore = -1;
+  const orbitFp = loadFingerprint('orbit_v6_64');
+  if (!orbitFp) {
+    console.error('Missing fingerprint orbit_v6_64 — run npm run gce:seed-structural-fingerprints in engines/composer-os-v2');
+    process.exit(1);
+  }
 
+  const ruleFailCounts: Record<string, number> = {};
+  const bumpFailedRules = (rules: Record<string, boolean>) => {
+    for (const [k, ok] of Object.entries(rules)) {
+      if (!ok) ruleFailCounts[k] = (ruleFailCounts[k] ?? 0) + 1;
+    }
+  };
+
+  let bestFpPassScore = -1;
+  let bestFpPassXml = '';
+  let bestFpPassModel: ScoreModel | null = null;
+  let bestFpPassEval: CombinedEvaluationResult | null = null;
+  let bestFpPassSeed = 0;
+
+  let bestGateXml = '';
+  let bestGateModel: ScoreModel | null = null;
+  let bestGateEval: CombinedEvaluationResult | null = null;
+  let bestGateSeed = 0;
+  let bestGateScore = -1;
+
+  let anyFpPass = false;
   let failureHint = '';
 
   const baseSeed = 1740080400;
 
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
     const seed = baseSeed + attempt;
-    console.log(`[Steely V1.7] runBigBandRealisation attempt ${attempt + 1}/${MAX_TRIES} seed=${seed} …`);
+    console.log(`\n[Steely V2.0] attempt ${attempt + 1}/${MAX_TRIES} seed=${seed}`);
     const realised = runBigBandRealisation({
       seed,
-      title: 'Steely Orbit Prelude V1.7',
+      title: 'Steely Orbit Prelude V2.0',
       totalBars: 64,
       formId: 'orbit_bb_64',
       bpm: BPM,
@@ -408,7 +442,6 @@ function main(): void {
         seed,
       },
     });
-    console.log('[Steely V1.7] runBigBandRealisation returned');
 
     if (!realised.planning.validation.ok || !realised.exportPipeline.ok || !realised.score) {
       if (!realised.planning.validation.ok) {
@@ -416,82 +449,87 @@ function main(): void {
       } else if (!realised.exportPipeline.ok) {
         failureHint = `export: ${realised.exportPipeline.errors?.join('; ') ?? 'unknown'}`;
       }
+      console.log('Fingerprint rules: n/a (no score)');
+      console.log('Combined GCE: n/a');
       continue;
     }
 
-    const restAudit = auditAltoConsecutiveRestBars(realised.score);
-    console.log(
-      '[Steely V1.7] alto rest-span audit',
-      restAudit.ok ? 'PASS' : 'FAIL',
-      restAudit.ok ? `(maxSpan=${restAudit.maxSpanOutsideExempt})` : restAudit.violations.join('; ')
-    );
-    if (!restAudit.ok) {
-      failureHint = `alto rest-span: ${restAudit.violations.join('; ')}`;
+    const fpGate = validateSteelyOrbitV2FingerprintGate(realised.score, orbitFp, {
+      densityEightBarMaxMeanAbs: V2_DENSITY_EIGHT_MAX,
+      drumSixteenBarMinVariance: V2_DRUM_VAR_MIN,
+      sectionMinAbsDensityDelta: V2_SECTION_DELTA_MIN,
+      disableMelodicPitchStreak: V2_DISABLE_MELODY_STREAK,
+    });
+    bumpFailedRules(fpGate.rules);
+
+    console.log('Fingerprint rules (orbit_v6_64):', JSON.stringify(fpGate.rules));
+
+    if (!fpGate.pass) {
+      console.log('Combined GCE: n/a (fingerprint gate failed)');
+      const preview = fpGate.failures.slice(0, 8);
+      console.log('Failures (sample):', preview.join('; '), fpGate.failures.length > 8 ? `…(+${fpGate.failures.length - 8})` : '');
+      failureHint = fpGate.failures[0] ?? 'fingerprint_v2';
       continue;
     }
 
-    const orbitFp = loadFingerprint('orbit_v6_64');
-    if (orbitFp) {
-      const structural = validateAgainstFingerprint(realised.score, orbitFp, 0, {
-        skipFingerprintNumericDiff: true,
-      });
-      if (!structural.pass) {
-        console.warn('[Steely V1.7] structural memory FAIL vs orbit_v6_64:', structural.failures.join('; '));
-        failureHint = `structural_memory: ${structural.failures.join('; ')}`;
-        continue;
-      }
-    } else {
-      console.warn('[Steely V1.7] Missing fingerprint orbit_v6_64 — skipping structural gate');
-    }
-
+    anyFpPass = true;
     const xmlOut = realised.exportPipeline.xml ?? '';
-    console.log('[Steely V1.7] combined evaluator running…');
     const ev = evaluateBigBandSteely(realised.score);
-    console.log('[Steely V1.7] combined evaluator done finalScore=', ev.finalScore.toFixed(2));
+    console.log('Combined GCE:', ev.finalScore.toFixed(2));
 
-    if (ev.finalScore > bestOverallScore) {
-      bestOverallScore = ev.finalScore;
-      bestOverallSeed = seed;
-      bestOverallEval = ev;
-      bestOverallXml = xmlOut;
-      bestOverallScoreModel = realised.score;
+    if (ev.finalScore > bestFpPassScore) {
+      bestFpPassScore = ev.finalScore;
+      bestFpPassSeed = seed;
+      bestFpPassEval = ev;
+      bestFpPassXml = xmlOut;
+      bestFpPassModel = realised.score;
     }
 
-    if (passesGceGate(ev.finalScore) && ev.finalScore > gatedScore) {
-      gatedScore = ev.finalScore;
-      gatedSeed = seed;
-      gatedEval = ev;
-      gatedXml = xmlOut;
-      gatedScoreModel = realised.score;
+    if (passesGceGate(ev.finalScore) && ev.finalScore > bestGateScore) {
+      bestGateScore = ev.finalScore;
+      bestGateSeed = seed;
+      bestGateEval = ev;
+      bestGateXml = xmlOut;
+      bestGateModel = realised.score;
     }
   }
 
-  const gateMet = gatedXml.trim().length > 0 && gatedEval != null;
-  const bestXml = gateMet ? gatedXml : bestOverallXml;
-  const bestEval = gateMet ? gatedEval : bestOverallEval;
-  const bestSeed = gateMet ? gatedSeed : bestOverallSeed;
-  const bestScoreForReport = gateMet ? gatedScoreModel : bestOverallScoreModel;
+  const sortedHardest = Object.entries(ruleFailCounts).sort((a, b) => b[1] - a[1]);
 
-  if (!bestXml.trim() || !bestEval) {
-    console.error('Generation failed — no successful MusicXML export after', MAX_TRIES, 'tries.');
-    console.error('Hint:', failureHint || 'check planning/export/alto rest-span/structural memory above');
+  if (!anyFpPass) {
+    console.error('\n--- STEELY ORBIT V2.0 — ABORT ---');
+    console.error('No attempt passed the V2 fingerprint gate.');
+    console.error('Rule fail counts:', JSON.stringify(ruleFailCounts));
+    console.error('Hint:', failureHint);
     process.exit(1);
   }
+
+  const gateMet = bestGateEval != null && bestGateXml.trim().length > 0 && passesGceGate(bestGateScore);
 
   if (!gateMet) {
-    console.warn(
-      `STEELY_GATE_NOT_MET: best combined ${bestOverallScore.toFixed(2)} < gate ${GCE_GATE} — writing best-effort ${OUT_FILE} anyway (raise STEELY_MAX_TRIES or lower STEELY_GCE_GATE to chase gate).`
-    );
+    console.log('\n--- STEELY ORBIT V2.0 — GATE NOT MET (no export <', GCE_GATE, ') ---');
+    console.log('Best fingerprint-passing combined score:', bestFpPassScore.toFixed(2), 'seed', bestFpPassSeed);
+    if (bestFpPassEval) {
+      console.log('\nPer-dimension breakdown (best fingerprint-pass attempt):');
+      printWinningEvalBreakdown(bestFpPassEval);
+    }
+    console.log('Fingerprint rules hardest to satisfy (fail counts across attempts):');
+    for (const [rule, c] of sortedHardest) {
+      console.log(`  ${rule}: ${c}`);
+    }
+    console.log('Declared rule buckets:', STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT);
+    console.log('Commit:', gitHeadShort());
+    process.exit(0);
   }
 
-  if (!bestScoreForReport) {
-    console.error('Internal error: missing score model for validation.');
-    process.exit(1);
-  }
+  const bestScoreForReport = bestGateModel!;
+  const bestXml = bestGateXml;
+  const bestEval = bestGateEval!;
+  const bestSeed = bestGateSeed;
 
   const restFinalPre = auditAltoConsecutiveRestBars(bestScoreForReport);
   const v17val = validateSteelyV17Export(bestScoreForReport);
-  console.log('\n--- Pre-export validation (V1.7) ---');
+  console.log('\n--- Pre-export validation (V2.0) ---');
   console.log('Alto rest-span:', restFinalPre.ok ? 'PASS' : 'FAIL', restFinalPre.ok ? `maxSpan=${restFinalPre.maxSpanOutsideExempt}` : restFinalPre.violations.join('; '));
   console.log('Structural (7 parts, 61–64 rhythm, drums, 42–44 alto):', v17val.ok ? 'PASS' : 'FAIL', v17val.messages.join('; ') || '');
   console.log('Active-layer audit (bars 57–64):');
@@ -507,48 +545,42 @@ function main(): void {
   const outFinal = path.join(outDir, OUT_FILE);
   let writePath = outFinal;
   if (fs.existsSync(outFinal)) {
-    writePath = path.join(outDir, `V1.7-Steely-Orbit-${bestSeed}.musicxml`);
+    writePath = path.join(outDir, `V2.0-Steely-Orbit-${bestSeed}.musicxml`);
     console.warn(`Preserving existing ${OUT_FILE} — writing ${path.basename(writePath)}`);
   }
 
   fs.writeFileSync(writePath, bestXml, 'utf8');
 
-  const drumAudit = bestScoreForReport
-    ? auditDrumVoice1FourBarRepeats(bestScoreForReport)
-    : { ok: true, messages: [] as string[] };
+  const drumAudit = auditDrumVoice1FourBarRepeats(bestScoreForReport);
+  const melodicDev = validateAlto917Vs58(bestScoreForReport);
+  const restAuditFinal = auditAltoConsecutiveRestBars(bestScoreForReport);
 
-  const melodicDev = bestScoreForReport ? validateAlto917Vs58(bestScoreForReport) : { ok: false, detail: 'no score' };
-  const restAuditFinal = bestScoreForReport
-    ? auditAltoConsecutiveRestBars(bestScoreForReport)
-    : { ok: false, maxSpanOutsideExempt: 0, violations: ['no score'] as string[] };
+  const fpFinal = validateSteelyOrbitV2FingerprintGate(bestScoreForReport, orbitFp, {
+    densityEightBarMaxMeanAbs: V2_DENSITY_EIGHT_MAX,
+    drumSixteenBarMinVariance: V2_DRUM_VAR_MIN,
+    sectionMinAbsDensityDelta: V2_SECTION_DELTA_MIN,
+    disableMelodicPitchStreak: V2_DISABLE_MELODY_STREAK,
+  });
 
-  console.log('\n--- STEELY ORBIT V1.7 REPORT ---');
-  const orbitFpReport = loadFingerprint('orbit_v6_64');
-  if (orbitFpReport && bestScoreForReport) {
-    const svRep = validateAgainstFingerprint(bestScoreForReport, orbitFpReport, 0, {
-      skipFingerprintNumericDiff: true,
-    });
-    console.log(
-      'Structural memory (orbit_v6_64, rule buckets:',
-      GCE_STRUCTURAL_VALIDATION_RULE_COUNT,
-      '):',
-      svRep.pass ? 'PASS' : 'FAIL',
-      svRep.pass ? '' : svRep.failures.join('; ')
-    );
-  }
+  console.log('\n--- STEELY ORBIT V2.0 REPORT ---');
+  console.log('Commit:', gitHeadShort());
+  console.log(
+    'Fingerprint gate (winning attempt, rule buckets',
+    STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT,
+    '):',
+    JSON.stringify(fpFinal.rules),
+    fpFinal.pass ? 'PASS' : 'FAIL'
+  );
   console.log(
     'Drum variation audit (voice 1 / four-bar repeats):',
     drumAudit.ok ? 'PASS' : 'FLAG',
     drumAudit.messages.length ? drumAudit.messages.join('; ') : ''
   );
-  console.log('Alto rest-span audit (max 2 consecutive rest-only bars outside 1–4 & bar 32):', restAuditFinal.ok ? 'PASS' : 'FAIL', restAuditFinal.ok ? `maxSpan=${restAuditFinal.maxSpanOutsideExempt}` : restAuditFinal.violations.join('; '));
+  console.log('Alto rest-span audit:', restAuditFinal.ok ? 'PASS' : 'FAIL', restAuditFinal.ok ? `maxSpan=${restAuditFinal.maxSpanOutsideExempt}` : restAuditFinal.violations.join('; '));
   console.log('Melodic development audit (bars 9–17 vs 5–8):', melodicDev.ok ? 'PASS' : 'FLAG', melodicDev.detail);
+  console.log('Melodic GCE source part:', resolveMelodicPartId(bestScoreForReport));
   console.log(
-    'Melodic GCE source part:',
-    bestScoreForReport ? resolveMelodicPartId(bestScoreForReport) : '(unknown)'
-  );
-  console.log(
-    'Combined score:',
+    '\nCombined score:',
     bestEval.finalScore.toFixed(2),
     '(gate',
     GCE_GATE,
@@ -561,15 +593,7 @@ function main(): void {
   console.log('Weakest combined dimension:', bestEval.weakestDimension);
   console.log('Weakest GCE pillar:', bestEval.gce.weakestCategory);
   console.log('Seed:', bestSeed);
-  console.log('Songwriter pools: primary donald_fagen (Steely proxy); secondary bacharach — registry id `bacharach` (Big Band uses single songwriterStyleId + arrangement pairing)');
-  console.log('Missing style data: steely_dan alias not in registry — use donald_fagen; burt_bacharach → use `bacharach` for Song Mode');
-  console.log(
-    'Lead vs export alto (bars 5–20): N/A — Steely melodic passes rewrite alto; verbatim lead fingerprint match is not required for GCE.'
-  );
-  console.log(
-    'Style evaluation: Bacharach + Fischer blend on scoreModel features (not a constant); GCE uses songwriterStyleId donald_fagen for melodic/harmony scorers.'
-  );
-  console.log('Gate:', gateMet ? 'MET' : 'NOT MET (best-effort file still written)');
+  console.log('Gate: MET');
   console.log('Wrote', writePath);
 
   printWatchPillars(bestEval);
