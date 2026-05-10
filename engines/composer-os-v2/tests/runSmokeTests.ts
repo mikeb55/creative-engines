@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **238** PASS rows, **55** suites (2026-05-09).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **240** PASS rows, **56** suites (2026-05-10).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -24,6 +24,7 @@ import { runJimHallSliceSmokeTests } from './jimHallSliceSmoke.test';
 import { runSteveReichSliceSmokeTests } from './steveReichSliceSmoke.test';
 import { runFrankZappaSliceSmokeTests } from './frankZappaSliceSmoke.test';
 import { runOddMeterInfrastructureSmokeTests } from './oddMeterInfrastructureSmoke.test';
+import { runAsymmetricRhythmIntegrationTests } from './asymmetricRhythmIntegration.test';
 import { runZappaSoloSmokeTests } from './zappasoloSmoke.test';
 import { runBarryHarrisSliceSmokeTests } from './barryHarrisSliceSmoke.test';
 import { runBillEvansSliceSmokeTests } from './billEvansSliceSmoke.test';
@@ -90,6 +91,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Jim Hall songwriter slice', run: runJimHallSliceSmokeTests },
   { label: 'Steve Reich songwriter slice', run: runSteveReichSliceSmokeTests },
   { label: 'Odd meter infrastructure (Phase A)', run: runOddMeterInfrastructureSmokeTests },
+  { label: 'Asymmetric rhythm engine (preset → NoteEvent)', run: runAsymmetricRhythmIntegrationTests },
   { label: 'Zappa solo engine (Phase B)', run: runZappaSoloSmokeTests },
   { label: 'Frank Zappa songwriter slice', run: runFrankZappaSliceSmokeTests },
   { label: 'Barry Harris songwriter slice', run: runBarryHarrisSliceSmokeTests },

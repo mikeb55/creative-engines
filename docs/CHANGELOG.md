@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Asymmetric rhythm engine** — **`core/rhythm/asymmetricRhythmEngine.ts`** (additive **`CycleDefinition`**, **`materializeOnsets`**, **`generateCycle`**, **`rhythmicEventsToNoteEvents`**, **`cycleSpanQuarters`**) + **`asymmetricPresets.ts`** (**`five_two`**, **`seven_three`**, **`seven_two`**, **`nine_two`**, **`eleven_four`**, **`thirteen_five`**). Smoke **`asymmetricRhythmIntegration.test.ts`** (**`seven_three`** → **7/8** quarter span **3.5** vs **`measureBeatSpanQuartersOf`**). **`runSmokeTests.ts`** +**2** PASS rows, +**1** suite; **`npm run test:composer-smoke`:** **240**/0 (**56** suites).
+
 - **Arvo Pärt tintinnabuli slice** — real dual-voice M/T engine (`applyArvoPartTintinnabuliToDuoScore`, **`arvoPartSlice.ts`**; **`generateGoldenPathDuoScore`** after guitar+bass build; skips overlap / Wyble register coupling for **`arvo_part`**)
   - **M-voice:** stepwise diatonic within triad field (`selectMotifTransform` contour bias per section role)
   - **T-voice:** nearest **{1,3,5}** above / below / alternating per **`position`** param (strict MIDI above/below M per beat)
