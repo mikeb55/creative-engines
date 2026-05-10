@@ -64,16 +64,58 @@ export function scoreResultForGce(
   };
 }
 
-/** Fallback chord timeline + single section when no `CompositionContext` (combined evaluator / BB). */
+/** Fallback chord timeline + sections (from rehearsal marks when present — BB / Orbit). */
 export function buildFallbackChordsAndSectionsFromScore(score: ScoreModel): {
   chords: string[];
   sections: GceStructureSection[];
 } {
   const tb = Math.max(1, maxMeasureIndexAcrossParts(score));
-  return {
-    chords: chordsPerBarFromScore(score, tb),
-    sections: [{ label: 'full', barStart: 1, barEnd: tb, role: 'full' }],
-  };
+  const chords = chordsPerBarFromScore(score, tb);
+  const fromMarks = gceSectionsFromRehearsalMarks(score, tb);
+  const sections =
+    fromMarks && fromMarks.length >= 2
+      ? fromMarks
+      : [{ label: 'full', barStart: 1, barEnd: tb, role: 'full' }];
+  return { chords, sections };
+}
+
+/** Derive GCE sections from measure rehearsal marks (typically BB slice starts — intro / head / solo / shout / ending). */
+export function gceSectionsFromRehearsalMarks(
+  score: ScoreModel,
+  totalBars: number
+): GceStructureSection[] | null {
+  const part =
+    score.parts.find((p) => p.id === 'bb_alto_sax') ??
+    score.parts.find((p) => p.measures.some((m) => m.rehearsalMark?.trim())) ??
+    score.parts[0];
+  if (!part) return null;
+
+  const breaks: Array<{ bar: number; label: string }> = [];
+  for (const m of part.measures) {
+    const rm = m.rehearsalMark?.trim();
+    if (rm) breaks.push({ bar: m.index, label: rm });
+  }
+  breaks.sort((a, b) => a.bar - b.bar);
+  if (breaks.length === 0) return null;
+  if (breaks[0]!.bar > 1) {
+    breaks.unshift({ bar: 1, label: 'opening' });
+  }
+
+  const sections: GceStructureSection[] = [];
+  for (let i = 0; i < breaks.length; i++) {
+    const start = breaks[i]!.bar;
+    const end =
+      i + 1 < breaks.length ? Math.min(breaks[i + 1]!.bar - 1, totalBars) : totalBars;
+    if (start > totalBars) continue;
+    const lab = breaks[i]!.label;
+    sections.push({
+      label: lab,
+      barStart: start,
+      barEnd: Math.max(start, end),
+      role: lab,
+    });
+  }
+  return sections.length >= 2 ? sections : null;
 }
 
 function maxMeasureIndexAcrossParts(score: ScoreModel): number {

@@ -6,6 +6,8 @@ import { buildBigBandScoreModel } from './bigBandScoreBuilder';
 import { applyOrbitBbV64Overlay } from './orbitBbV64Overlay';
 import { applyOrbitBbV5Extended } from './orbitBbV5Extended';
 import { applyOrbitBbV6Extended } from './orbitBbV6Extended';
+import { applySteelyOrbitV11DrumEnding } from './orbitSteelyV11DrumEnding';
+import { applySteelyOrbitV12MotifRecurrence } from './orbitSteelyV12MotifRecurrence';
 import type { BigBandFormPlan } from './bigBandPlanTypes';
 import type { CompositionContext } from '../compositionContext';
 import type { GenerationMetadata } from '../compositionContext';
@@ -169,18 +171,39 @@ export function runBigBandRealisation(
     if (
       input.bigBandArrangementProfile === 'orbit_v4_64' ||
       input.bigBandArrangementProfile === 'orbit_v5_64' ||
-      input.bigBandArrangementProfile === 'orbit_v6_64'
+      input.bigBandArrangementProfile === 'orbit_v6_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64'
     ) {
       applyOrbitBbV64Overlay(score);
     }
     if (
       input.bigBandArrangementProfile === 'orbit_v5_64' ||
-      input.bigBandArrangementProfile === 'orbit_v6_64'
+      input.bigBandArrangementProfile === 'orbit_v6_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64'
     ) {
       applyOrbitBbV5Extended(score);
     }
     if (input.bigBandArrangementProfile === 'orbit_v6_64') {
       applyOrbitBbV6Extended(score);
+    } else if (
+      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
+      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64'
+    ) {
+      applyOrbitBbV6Extended(score, 'steely_v1');
+      if (
+        input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
+        input.bigBandArrangementProfile === 'orbit_steely_v1_2_64'
+      ) {
+        applySteelyOrbitV11DrumEnding(score);
+      }
+      if (input.bigBandArrangementProfile === 'orbit_steely_v1_2_64' && input.leadSheet) {
+        applySteelyOrbitV12MotifRecurrence(score, input.leadSheet);
+      }
     }
 
     exportPipeline = runEnsembleExportPipeline(score, {

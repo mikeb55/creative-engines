@@ -89,7 +89,10 @@ export interface BigBandRunInput {
     | 'orbit_v3_melody_authority'
     | 'orbit_v4_64'
     | 'orbit_v5_64'
-    | 'orbit_v6_64';
+    | 'orbit_v6_64'
+    | 'orbit_steely_v1_64'
+    | 'orbit_steely_v1_1_64'
+    | 'orbit_steely_v1_2_64';
   /** Per-bar drum tier overrides (1-based bar index). */
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Per-bar brush vs sticks override (1-based bar index). */

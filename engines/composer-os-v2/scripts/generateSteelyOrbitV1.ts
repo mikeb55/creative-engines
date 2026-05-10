@@ -1,5 +1,5 @@
 /**
- * Steely Orbit Prelude V1.1 — Donald Fagen–leaning BB realisation (orbit_steely_v1_1_64: V1.0 + drum coda 61–64).
+ * Steely Orbit Prelude V1.2 — motif returns + rehearsal-aware GCE sections (orbit_steely_v1_2_64: V1.1 + alto cell recall).
  * Requires local Orbit sources under repo `projects/Orbit/` (see paths below).
  *
  * Survey:
@@ -27,7 +27,7 @@ const repoRoot = path.resolve(__dirname, '../../..');
 const LEAD_REL = 'projects/Orbit/Orbit_lead_V5.1.musicxml';
 const REF_REL = 'projects/Orbit/V6.0 orbit - BB.musicxml';
 const OUT_DIR_REL = 'projects/Orbit/Steely Orbit - 1st 64 bars';
-const OUT_FILE = 'V1.1-Steely-Orbit.musicxml';
+const OUT_FILE = 'V1.2-Steely-Orbit.musicxml';
 
 function envFloat(name: string, fallback: number): number {
   const v = process.env[name];
@@ -54,8 +54,9 @@ function melodyFingerprint(events: LeadSheetMelodyNoteEvent[]): string {
   return sorted.map((e) => `${e.bar}|${e.beat.toFixed(4)}|${e.midi}|${e.durationBeats.toFixed(4)}`).join(';');
 }
 
+/** Core head fingerprint only — bars 21–32 may carry varied motif returns (V1.2). */
 function eventsHeadBody(events: LeadSheetMelodyNoteEvent[]): LeadSheetMelodyNoteEvent[] {
-  return events.filter((e) => e.bar >= 5 && e.bar <= 32);
+  return events.filter((e) => e.bar >= 5 && e.bar <= 20);
 }
 
 /** Same blend as `composerOsAppGeneration` big_band path — not raw `scoreGoldenPathResultForGce` (ensemble-unfriendly). */
@@ -139,7 +140,7 @@ function main(): void {
     const seed = baseSeed + attempt;
     const realised = runBigBandRealisation({
       seed,
-      title: 'Steely Orbit Prelude V1.1',
+      title: 'Steely Orbit Prelude V1.2',
       totalBars: 64,
       formId: 'orbit_bb_64',
       bpm: BPM,
@@ -177,7 +178,7 @@ function main(): void {
       },
       suppressDesignatedSaxSoli: true,
       songwriterStyleId: 'donald_fagen',
-      bigBandArrangementProfile: 'orbit_steely_v1_1_64',
+      bigBandArrangementProfile: 'orbit_steely_v1_2_64',
       stylePairing: {
         songwriterStyle: 'donald_fagen',
         arrangerStyle: 'clare_fischer',
@@ -237,7 +238,7 @@ function main(): void {
   const outFinal = path.join(outDir, OUT_FILE);
   let writePath = outFinal;
   if (fs.existsSync(outFinal)) {
-    writePath = path.join(outDir, `V1.1-Steely-Orbit-${bestSeed}.musicxml`);
+    writePath = path.join(outDir, `V1.2-Steely-Orbit-${bestSeed}.musicxml`);
     console.warn(`Preserving existing ${OUT_FILE} — writing ${path.basename(writePath)}`);
   }
 
@@ -255,7 +256,7 @@ function main(): void {
     }
   }
 
-  console.log('\n--- STEELY ORBIT V1.1 REPORT ---');
+  console.log('\n--- STEELY ORBIT V1.2 REPORT ---');
   console.log(
     'Melodic GCE source part:',
     bestScoreForReport ? resolveMelodicPartId(bestScoreForReport) : '(unknown)'
@@ -271,11 +272,12 @@ function main(): void {
     'style:',
     bestEval.style.finalStyleScore.toFixed(2)
   );
-  console.log('Weakest dimension:', bestEval.weakestDimension);
+  console.log('Weakest combined dimension:', bestEval.weakestDimension);
+  console.log('Weakest GCE pillar:', bestEval.gce.weakestCategory);
   console.log('Seed:', bestSeed);
   console.log('Songwriter pools: primary donald_fagen (Steely proxy); secondary bacharach — registry id `bacharach` (Big Band uses single songwriterStyleId + arrangement pairing)');
   console.log('Missing style data: steely_dan alias not in registry — use donald_fagen; burt_bacharach → use `bacharach` for Song Mode');
-  console.log('Melody lock 5–32:', melOk ? 'PASS' : 'SKIP/FAIL');
+  console.log('Melody lock (source bars 5–20 vs export alto):', melOk ? 'PASS' : 'SKIP/FAIL');
   console.log('Gate:', gateMet ? 'MET' : 'NOT MET (best-effort file still written)');
   console.log('Wrote', writePath);
 

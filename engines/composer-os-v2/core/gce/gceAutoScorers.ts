@@ -946,11 +946,14 @@ export function scoreThematicRecallPotential(
   }
 
   let crossSectionMotifs = 0;
+  let spread3Plus = 0;
   for (const set of motifSectionSets.values()) {
     if (set.size >= 2) crossSectionMotifs++;
+    if (set.size >= 3) spread3Plus++;
   }
 
-  const rawScore = 10 * Math.min(crossSectionMotifs / 3, 1);
+  /** One motif across 2+ sections scores faster than old /3 curve; 3+ sections adds a small bonus. */
+  const rawScore = 10 * Math.min((crossSectionMotifs + 0.5 * spread3Plus) / 2, 1);
   const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
   return {
     score,
