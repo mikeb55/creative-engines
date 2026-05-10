@@ -308,6 +308,10 @@ async function launchApp(): Promise<void> {
   mainWindow = createWindowShell();
   const win = mainWindow;
   loadLoadingPage(win);
+  // Show immediately once the splash paints — backend `require()` can take many seconds; hidden window looked like "won't open".
+  win.once('ready-to-show', () => {
+    if (!win.isDestroyed()) win.show();
+  });
 
   const uiPath = resolveUiPath();
   const vr = verifyUiBundleAtPath(uiPath);
@@ -316,7 +320,6 @@ async function launchApp(): Promise<void> {
     cachedUiPath = vr.resolvedPath;
     setStartupState('fatal_error');
     loadWrongBundleUiPage(win, vr);
-    win.once('ready-to-show', () => win.show());
     return;
   }
   cachedUiStamp = vr.stamp;
@@ -346,7 +349,6 @@ async function launchApp(): Promise<void> {
       win,
       'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
     );
-    win.once('ready-to-show', () => win.show());
     return;
   }
 
@@ -361,12 +363,10 @@ async function launchApp(): Promise<void> {
     setStartupState('loading_ui');
     await win.loadFile(indexHtml);
     setStartupState('ready');
-    win.once('ready-to-show', () => win.show());
   } catch (err) {
     setStartupState('fatal_error');
     const msg = err instanceof Error ? err.message : String(err);
     loadErrorPage(win, msg);
-    win.once('ready-to-show', () => win.show());
   }
 }
 

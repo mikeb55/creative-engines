@@ -2475,6 +2475,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     stylePairingReceipt,
     ...(ensReceipt ? { ensembleSlonimskyReceipt: ensReceipt } : {}),
     ...(evaluationResult !== undefined ? { evaluationResult } : {}),
+    ...(ensembleMusicXmlFilepath ? { ensembleMusicXmlFilepath } : {}),
   } as GenerateResult;
 }
 

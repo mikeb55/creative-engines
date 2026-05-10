@@ -1224,6 +1224,8 @@ type GenResult = {
   productKind?: 'musicxml' | 'planning' | 'song_structure';
   filename?: string;
   filepath?: string;
+  /** Big Band: actual score path when `filepath` is planning JSON (`GenerateResult.ensembleMusicXmlFilepath`). */
+  ensembleMusicXmlFilepath?: string;
   harmonySource?: 'builtin' | 'custom';
   customChordProgressionSummary?: string;
   progressionMode?: 'builtin' | 'custom';
@@ -1732,7 +1734,10 @@ export function HomeGenerate({
   }, [iRealPaste]);
 
   const handlePlay = async () => {
-    if (!playbackSeq) return;
+    if (!playbackSeq?.notes?.length) {
+      console.warn('[playback] no notes in sequence (parse mismatch or empty score)');
+      return;
+    }
     await initPlayback();
     await play(playbackSeq, (beat) => setPlaybackBeat(beat));
     setIsPlaying(true);
@@ -2680,13 +2685,19 @@ export function HomeGenerate({
             setPlaybackBeat(0);
             setIsPlaying(false);
           };
-          if (r.filepath && typeof window !== 'undefined' && window.composerOsDesktop?.invokeApi) {
+          const playbackFilepath =
+            typeof r.ensembleMusicXmlFilepath === 'string' && r.ensembleMusicXmlFilepath.trim().length > 0
+              ? r.ensembleMusicXmlFilepath.trim()
+              : r.filepath;
+          if (playbackFilepath && typeof window !== 'undefined' && window.composerOsDesktop?.invokeApi) {
             void window.composerOsDesktop
-              .invokeApi('composer-os-api:read-file', { path: r.filepath })
+              .invokeApi('composer-os-api:read-file', { path: playbackFilepath })
               .then((xml) => {
                 if (typeof xml === 'string') applyPlaybackFromXml(xml);
               })
-              .catch(() => {});
+              .catch((e) => {
+                console.warn('[playback] desktop read-file failed:', playbackFilepath, e);
+              });
           } else if (r.xml) {
             applyPlaybackFromXml(r.xml);
           }

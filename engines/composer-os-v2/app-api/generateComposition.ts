@@ -68,6 +68,11 @@ export interface GenerateResult {
   xml?: string;
   filename?: string;
   filepath?: string;
+  /**
+   * Big Band: primary `filepath` may point at planning JSON; when ensemble MusicXML was written,
+   * this is the `.musicxml` path for preview/playback (same folder).
+   */
+  ensembleMusicXmlFilepath?: string;
   /** Path to run manifest JSON alongside MusicXML, when written */
   manifestPath?: string;
   /** Guitar–Bass Duo: harmony source when engine ran */
