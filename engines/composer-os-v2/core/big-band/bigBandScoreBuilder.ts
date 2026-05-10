@@ -280,13 +280,72 @@ function barChord(bar: number, seed: number, era?: BigBandEraId): string {
 const DRUM_BD = 36;
 const DRUM_HH = 42;
 const DRUM_RIDE = 51;
+const DRUM_OHH = 46;
+
+/** Section-style drum cell for Big Band (maps form slices + phases — not literal rehearsal letters). */
+export function bigBandDrumFeelClass(
+  phase: BigBandFormPhase | undefined,
+  sliceIndex: number
+): 'A' | 'B' | 'C' {
+  if (phase === 'solo_section') return 'C';
+  if (phase === 'shout_chorus' || phase === 'background_figures') return 'B';
+  const k = ((sliceIndex % 3) + 3) % 3;
+  if (k === 0) return 'A';
+  if (k === 1) return 'B';
+  return 'C';
+}
+
+function addDrumPatternA(measure: MeasureModel, barLen: number, hatMidi: number): void {
+  const q = barLen / 4;
+  for (let b = 0; b < 4; b++) {
+    addEvent(measure, createNote(hatMidi, b * q, q, 1));
+  }
+  addEvent(measure, createNote(DRUM_BD, 0, q, 2));
+  addEvent(measure, createRest(q, barLen - q, 2));
+}
+
+function addDrumPatternB(measure: MeasureModel, barLen: number): void {
+  const q = barLen / 4;
+  const eighth = barLen / 8;
+  for (let i = 0; i < 8; i++) {
+    const midi = i % 2 === 0 ? DRUM_HH : DRUM_OHH;
+    addEvent(measure, createNote(midi, i * eighth, eighth, 1));
+  }
+  addEvent(measure, createNote(DRUM_BD, 0, q, 2));
+  addEvent(measure, createNote(DRUM_BD, q, q, 2, 'bb_drum_bs'));
+  addEvent(measure, createNote(DRUM_BD, 2 * q, q, 2));
+  addEvent(measure, createNote(DRUM_BD, 3 * q, q, 2, 'bb_drum_bs'));
+}
+
+function addDrumPatternC(measure: MeasureModel, barLen: number): void {
+  const q = barLen / 4;
+  addEvent(measure, createNote(DRUM_HH, 0, q, 1));
+  addEvent(measure, createRest(q, q, 1));
+  addEvent(measure, createNote(DRUM_HH, 2 * q, q, 1));
+  addEvent(measure, createRest(3 * q, q, 1));
+  addEvent(measure, createNote(DRUM_BD, 0, q, 2));
+  addEvent(measure, createRest(q, barLen - q, 2));
+}
+
+function addDrumTransitionFill(measure: MeasureModel, barLen: number): void {
+  const q = barLen / 4;
+  const eighth = barLen / 8;
+  addEvent(measure, createNote(DRUM_HH, 0, q, 1));
+  addEvent(measure, createNote(DRUM_HH, q, q, 1));
+  for (let i = 0; i < 4; i++) {
+    addEvent(measure, createNote(DRUM_HH, 2 * q + i * eighth, eighth, 1));
+  }
+  addEvent(measure, createRest(0, 2 * q, 2));
+  for (let i = 0; i < 4; i++) {
+    addEvent(measure, createNote(DRUM_BD, 2 * q + i * eighth, eighth, 2, 'bb_drum_bs'));
+  }
+}
 
 /**
  * Sibelius-style drum layer: v1 = hi-hat (F5/x) all four beats; v2 = BD layer (composite snare via `bb_drum_bs` on hits).
  * Voice 2 must sum to exactly 4 beats — chord snare is encoded via motifRef on the bass-drum note (not a second event).
  *
- * V2: non–ensemble-hit bars keep time with HH + downbeat BD only; punch/shout bars use fuller kicks aligned with horns.
- * Optional variation: section/form-aware sparse patterns and ride vs hi-hat (`useDrumVariation`).
+ * Per-section variation: A/B/C feels + transition fills before slice boundaries (`transitionFill`).
  */
 function addBigBandDrumPattern(
   measure: MeasureModel,
@@ -297,6 +356,10 @@ function addBigBandDrumPattern(
     useDrumVariation?: boolean;
     /** Measure length in quarter-note beat units (defaults to 4). */
     barBeats?: number;
+    /** True when this bar immediately precedes another form slice (`bar+1` is a slice start bar). */
+    transitionFill?: boolean;
+    /** Derived from {@link bigBandDrumFeelClass} — ignored when shout/ensemble overrides apply. */
+    drumFeelClass?: 'A' | 'B' | 'C';
   }
 ): void {
   const barLen = opts?.barBeats ?? 4;
@@ -305,6 +368,8 @@ function addBigBandDrumPattern(
   const useV = opts?.useDrumVariation === true;
   const st = opts?.sectionTag;
   const phase = opts?.formPhase;
+  const transitionFill = opts?.transitionFill === true;
+  const feel = opts?.drumFeelClass ?? 'A';
 
   const legacyFullEnsemble = () => {
     for (let b = 0; b < 4; b++) {
@@ -317,11 +382,7 @@ function addBigBandDrumPattern(
   };
 
   const legacySimple = (hatMidi: number = DRUM_HH) => {
-    for (let b = 0; b < 4; b++) {
-      addEvent(measure, createNote(hatMidi, b * q, q, 1));
-    }
-    addEvent(measure, createNote(DRUM_BD, 0, q, 2));
-    addEvent(measure, createRest(q, barLen - q, 2));
+    addDrumPatternA(measure, barLen, hatMidi);
   };
 
   if (!useV) {
@@ -333,12 +394,13 @@ function addBigBandDrumPattern(
     return;
   }
 
-  if (ensembleHit || st === 'shout') {
-    if (!ensembleHit) {
-      legacySimple();
-    } else {
-      legacyFullEnsemble();
-    }
+  if (ensembleHit) {
+    legacyFullEnsemble();
+    return;
+  }
+
+  if (transitionFill) {
+    addDrumTransitionFill(measure, barLen);
     return;
   }
 
@@ -354,8 +416,25 @@ function addBigBandDrumPattern(
     return;
   }
 
-  const hatMidi = st === 'solo' || phase === 'melody_head' ? DRUM_RIDE : DRUM_HH;
-  legacySimple(hatMidi);
+  if (phase === 'shout_chorus' || st === 'shout') {
+    addDrumPatternB(measure, barLen);
+    return;
+  }
+
+  const hatA = phase === 'melody_head' ? DRUM_RIDE : DRUM_HH;
+  switch (feel) {
+    case 'A':
+      addDrumPatternA(measure, barLen, hatA);
+      break;
+    case 'B':
+      addDrumPatternB(measure, barLen);
+      break;
+    case 'C':
+      addDrumPatternC(measure, barLen);
+      break;
+    default:
+      addDrumPatternA(measure, barLen, hatA);
+  }
 }
 
 const USE_CHORD_QUALITY_VOICING_BB = true;
@@ -659,6 +738,8 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     return BIG_BAND_REHEARSAL_MARK_DISPLAY[sl.phase];
   };
 
+  const sliceStartBarSet = new Set(formPlan.slices.map((s) => s.startBar));
+
   const parts: PartModel[] = BB_PART_IDS.map((partId, idx) => {
     const meta = PART_META[idx];
     return createPart(
@@ -827,12 +908,18 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
         } else {
           const ensembleHitBar =
             (brassBeatsThisBar?.length ?? 0) > 0 || (shoutBeatsThisBar?.length ?? 0) > 0;
+          const transitionFill =
+            bar < totalBars &&
+            sliceStartBarSet.has(bar + 1) &&
+            !sliceStartBarSet.has(bar);
           addBigBandDrumPattern(m, {
             ensembleHit: ensembleHitBar,
             sectionTag,
             formPhase: slice?.phase,
             useDrumVariation: USE_DRUM_VARIATION,
             barBeats: effectiveBeats,
+            transitionFill,
+            drumFeelClass: bigBandDrumFeelClass(slice?.phase, slice?.index ?? 0),
           });
         }
         continue;

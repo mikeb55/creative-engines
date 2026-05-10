@@ -279,6 +279,7 @@ export function computeVoiceExportDivisionSum(
 
 const DRUM_GM_HH = 42;
 const DRUM_GM_RIDE = 51;
+const DRUM_GM_OHH = 46;
 const DRUM_GM_BD = 36;
 const DRUM_GM_SN = 38;
 
@@ -293,7 +294,7 @@ function drumKitNoteXml(opts: {
   ticks480: number;
   voice: number;
   stem: 'up' | 'down';
-  notehead?: 'x' | 'normal';
+  notehead?: 'x' | 'normal' | 'circle-x';
   instrumentId: string;
   /** Optional (e.g. `<accidental>sharp</accidental>`). Must follow &lt;type&gt;/&lt;dot&gt; and precede &lt;stem&gt; (MusicXML note content model — Sibelius rejects accidental after &lt;unpitched&gt;). */
   accidentalXml?: string;
@@ -301,7 +302,12 @@ function drumKitNoteXml(opts: {
   const spec = tickSpecForLength(opts.ticks480);
   const typeDots = typeAndDotsXml(spec);
   const durXml = opts.ticks480;
-  const nh = opts.notehead === 'x' ? '<notehead>x</notehead>' : '';
+  const nh =
+    opts.notehead === 'x'
+      ? '<notehead>x</notehead>'
+      : opts.notehead === 'circle-x'
+        ? '<notehead>circle-x</notehead>'
+        : '';
   const chordEl = opts.chord ? '<chord/>' : '';
   const acc = opts.accidentalXml ?? '';
   return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}${acc}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
@@ -547,25 +553,26 @@ function bigBandDrumsEventsToXml(
       if (voice === 1) {
         if (
           e.kind !== 'note' ||
-          (e.pitch !== DRUM_GM_HH && e.pitch !== DRUM_GM_RIDE)
+          (e.pitch !== DRUM_GM_HH && e.pitch !== DRUM_GM_RIDE && e.pitch !== DRUM_GM_OHH)
         ) {
           const eMsg = e as ScoreEvent;
           throw new Error(
-            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}) or ride (GM ${DRUM_GM_RIDE}), got ${
+            `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 drum layer expects hi-hat (GM ${DRUM_GM_HH}), ride (GM ${DRUM_GM_RIDE}), or open hi-hat (GM ${DRUM_GM_OHH}), got ${
               eMsg.kind === 'note' ? `pitch ${eMsg.pitch}` : eMsg.kind
             }`
           );
         }
         const rideLayer = e.pitch === DRUM_GM_RIDE;
+        const openHatLayer = e.pitch === DRUM_GM_OHH;
         for (const t of parts) {
           xml += drumKitNoteXml({
             chord: false,
-            step: rideLayer ? 'G' : 'F',
+            step: openHatLayer ? 'E' : rideLayer ? 'G' : 'F',
             octave: 5,
             ticks480: t,
             voice: 1,
             stem: 'up',
-            notehead: rideLayer ? 'normal' : 'x',
+            notehead: openHatLayer ? 'circle-x' : rideLayer ? 'normal' : 'x',
             instrumentId: instId,
           });
           voiceTickSum += t;
