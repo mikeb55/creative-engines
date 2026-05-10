@@ -2,6 +2,8 @@
 
 ### Added
 
+- **`COMPOSER_HANDBOOK.md`** — **GCE Structural Memory** user-facing section (fingerprints, extract/store/validate/retry, five Steely V2 gate rules, **`formatGateOverrides`**, adding fingerprints, **`validateAgainstFingerprint`** for targeted fixes, cross-format use).
+
 - **GCE structural memory (Phase 1)** — **`core/gce/gceStructuralMemory.ts`** + **`core/gce/gceMemoryRegistry.ts`**; JSON fingerprints in **`engines/composer-os-v2/gce-memory/fingerprints/`** (`orbit_v6_64`, `steely_orbit_v1_7`). **`validateAgainstFingerprint`** + **`validateMelodicPitchSequenceStreaks`** (no three consecutive identical melodic bar signatures outside intro **1–4**). **`scripts/generateSteelyOrbitV1.ts`** gates attempts against **`orbit_v6_64`** before combined eval; **`npm run gce:seed-structural-fingerprints`** ( **`engines/composer-os-v2`** ) refreshes seeds from Orbit MusicXML. Docs: **`COMPOSER_OS_ARCHITECTURE.md`**, **`COMPOSER_OS_ROADMAP.md`**.
 - **Steely Orbit V2.0 fingerprint gate** — **`validateSteelyOrbitV2FingerprintGate`** (density 8-bar vs **`orbit_v6_64`**, drum 16-bar non-flat, section |Δ|, alto rest span, melody streak); **`npm run orbit:steely-v2`**; export **`V2.0-Steely-Orbit.musicxml`** only when fingerprint passes **and** combined ≥ **`STEELY_GCE_GATE`** (default **7.5**).
 
