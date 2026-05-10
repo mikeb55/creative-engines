@@ -661,6 +661,32 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'verse'
     ),
   ],
+  fripp_king_crimson: [
+    R(
+      'fk.asymmetric_cycle',
+      'Additive asymmetric pulse cycles — Fripp/KC presets (`asymmetricPresets`) + optional polymeter LCM receipt (`frippPolymeterGrid`)',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'fk.third_cycle_roots',
+      'Major/minor third root cycles — quartal/sus surfaces; de-prioritise functional V→I (`frippKingCrimsonSlice`)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'fk.symmetric_collections',
+      'Whole-tone / octatonic pitch-field bias with bass-root anchoring',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
+  ],
   hans_zimmer: [
     R('hz.epic_ostinato', 'Low-register ostinato engine (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('hz.hybrid_stack', 'Layered orchestral pad vocabulary (harmonic voice tags)', 'songwriter', 'harmony', 8, 'chorus'),

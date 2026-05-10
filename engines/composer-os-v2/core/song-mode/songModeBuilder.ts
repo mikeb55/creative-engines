@@ -2616,6 +2616,8 @@ const SONGWRITER_CHORD_POOLS: Record<
   },
 };
 
+SONGWRITER_CHORD_POOLS.fripp_king_crimson = SONGWRITER_CHORD_POOLS.frank_zappa;
+
 function sectionChordPoolRows(
   kind: SongSectionKind,
   songwriterId: string | undefined

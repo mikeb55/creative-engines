@@ -4,6 +4,8 @@
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset → planning → score build → integrity → MusicXML export → validation → readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 
+**Song Mode — Fripp / King Crimson (`fripp_king_crimson`):** optional **`GenerateRequest.asymmetricRhythm`** (preset id or validated custom **`CycleDefinition`**) and **`frippPolymeterSecondaryPresetId`** map to **`GenerationMetadata.asymmetricRhythmRequest`** / **`frippPolymeterSecondaryPresetId`**. **`precomputeFrippKingCrimsonEffectiveHarmonyBars`** (`core/song-mode/frippKingCrimsonSlice.ts`) applies a **uniform** **`barMeterMap`** from the **primary** cycle (odd meters such as **7/8**, **15/16**); optional **`frippKingCrimsonPolymeterReceipt`** records **LCM** alignment on a shared **16th** grid vs the secondary preset. Custom **`barMeterMap`** on the request is superseded when this writer is primary — use **`asymmetricRhythm`** for meter authority.
+
 ## HTTP API — `POST /api/melodic-variation-pack`
 
 Local dev server: **`scripts/startComposerOsAppApi.ts`** (default **`http://127.0.0.1:3001`**). **Desktop:** same payload via IPC **`composer-os-api:melodic-variation-pack`**.

@@ -93,7 +93,8 @@ export type SongwriterRuleId =
   | 'john_coltrane'
   | 'jim_hall'
   | 'steve_reich'
-  | 'frank_zappa';
+  | 'frank_zappa'
+  | 'fripp_king_crimson';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

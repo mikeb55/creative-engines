@@ -1634,6 +1634,24 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 3,
     intervalPreference: 'angular',
   },
+  fripp_king_crimson: {
+    id: 'fripp_king_crimson',
+    description:
+      'Additive odd-meter guitar lineage — asymmetric cells, chromatic density scaffold; metre from asymmetric rhythm preset.',
+    lineVsCellEmphasis: 0.82,
+    harmonyColourBias: 0.86,
+    formRegularity: 0.12,
+    prosodyInfluence: 0.22,
+    hookRepetitionBias: 0.32,
+    phraseRegularity: 0.14,
+    hookReturnVariation: 0.88,
+    harmonicSpeed: 0.58,
+    sectionContrast: 0.96,
+    syncopationBias: 0.82,
+    densityBias: 0.7,
+    motifCellSize: 3,
+    intervalPreference: 'angular',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -1818,6 +1836,10 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   frank_zappa: 'frank_zappa',
   zappa: 'frank_zappa',
   fz: 'frank_zappa',
+  fripp_king_crimson: 'fripp_king_crimson',
+  fripp: 'fripp_king_crimson',
+  king_crimson: 'fripp_king_crimson',
+  crimson: 'fripp_king_crimson',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
 };

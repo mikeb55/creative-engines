@@ -298,6 +298,10 @@ export interface GenerateRequest {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Song Mode / Frank Zappa: per-bar time signatures (1-based bar keys). Omitted → all 4/4. */
   barMeterMap?: BarMeterMap;
+  /** Song Mode / Fripp–King Crimson: asymmetric pulse cycle — preset id or validated custom (`asymmetricPresets.ts`). */
+  asymmetricRhythm?: import('../core/rhythm/asymmetricPresets').AsymmetricRhythmRequest;
+  /** Optional second asymmetric preset id for polymeter LCM diagnostics (`frippKingCrimsonSlice`). */
+  frippPolymeterSecondaryPresetId?: string;
   /**
    * When `true`, skip writing SD3-style drum guide MIDI/JSON next to the score. Omitted → guides are written.
    */

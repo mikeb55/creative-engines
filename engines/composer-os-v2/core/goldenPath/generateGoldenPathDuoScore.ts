@@ -319,6 +319,7 @@ import {
   finalizeCharlieParkerMetadata,
   precomputeCharlieParkerEffectiveHarmonyBars,
 } from './charlieParkerSlice';
+import { precomputeFrippKingCrimsonEffectiveHarmonyBars } from './frippKingCrimsonSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -2486,6 +2487,7 @@ function buildGuitarPart(
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
+  const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
@@ -2659,6 +2661,9 @@ function buildGuitarPart(
   }
   if (isSongwriterCharlieParker && isDuoGoldenPath) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterFrippKingCrimson && isDuoGoldenPath) {
+    precomputeFrippKingCrimsonEffectiveHarmonyBars(context);
   }
 
   const seed = context.seed;

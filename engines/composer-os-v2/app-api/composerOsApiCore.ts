@@ -35,6 +35,7 @@ import {
 } from './composerOsOutputPaths';
 import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmony/songFormBarCounts';
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
+import { coerceAsymmetricRhythmRequestFromUnknown } from '../core/rhythm/asymmetricPresets';
 import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
@@ -328,6 +329,14 @@ export function apiGenerate(
           ? (body.barMeterMap as GenerateRequest['barMeterMap'])
           : undefined
       ),
+      asymmetricRhythm: coerceAsymmetricRhythmRequestFromUnknown(
+        (body as { asymmetricRhythm?: unknown }).asymmetricRhythm
+      ),
+      frippPolymeterSecondaryPresetId:
+        typeof (body as { frippPolymeterSecondaryPresetId?: unknown }).frippPolymeterSecondaryPresetId === 'string' &&
+        (body as { frippPolymeterSecondaryPresetId: string }).frippPolymeterSecondaryPresetId.trim()
+          ? (body as { frippPolymeterSecondaryPresetId: string }).frippPolymeterSecondaryPresetId.trim()
+          : undefined,
       zappaSoloMidiLow: coerceFiniteNumber(body.zappaSoloMidiLow),
       zappaSoloMidiHigh: coerceFiniteNumber(body.zappaSoloMidiHigh),
       zappaSoloDensity:

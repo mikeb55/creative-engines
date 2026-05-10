@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-05]
+# Composer OS Roadmap [2026-05-10]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -11,7 +11,7 @@
 
 ### Writer Slice Roadmap — priority order for full slice development
 
-**Priority order (11):** 1 **Beatles** (`beatles`) · **2 Bill Evans (`bill_evans`) — COMPLETE** · **3 Frank Zappa (`frank_zappa`) — COMPLETE** · **4 ECM Chamber (`ecm_chamber`) — COMPLETE** · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · **8 Thelonious Monk (`thelonious_monk`) — COMPLETE** · **9 Jobim (`antonio_carlos_jobim`) — COMPLETE** · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`).
+**Priority order (12):** 1 **Beatles** (`beatles`) · **2 Bill Evans (`bill_evans`) — COMPLETE** · **3 Frank Zappa (`frank_zappa`) — COMPLETE** · **4 ECM Chamber (`ecm_chamber`) — COMPLETE** · 5 **Bacharach** (`bacharach`) · 6 **Brian Wilson** (`brian_wilson`) · 7 **Radiohead** (`radiohead`) · **8 Thelonious Monk (`thelonious_monk`) — COMPLETE** · **9 Jobim (`antonio_carlos_jobim`) — COMPLETE** · 10 **Debussy** (`debussy`) · 11 **Wayne Shorter** (`wayne_shorter`) · **13 Fripp / King Crimson (`fripp_king_crimson`) — COMPLETE**.
 
 **2 — Bill Evans (`bill_evans`) — complete**
 
@@ -54,6 +54,12 @@
 | Ship | Commit | Scope |
 |------|--------|--------|
 | Three contexts + slice + surface + authority chain | **`263b4e9`** | **`milesDavisContext`** **`modal_1959`** / **`quintet_1965`** / **`electric_1970`** (default modal); **`computeMilesDavisPhrasePositions`** period-specific grids; stage‑1 **tonic / dominant / minor** enrichments; **d1–d5** **`md:*`** (**modal center**, **time no changes**, **groove vamp**, **cool phrasing**, **harmon mute colour**); **`milesDavisEffectiveHarmonyBars`** + metadata maps (**`milesDavisModalCenterBars`**, **`milesDavisTimeNoChangesBars`**, **`milesDavisVampBars`**); **`applyMilesDavisStyleSurface`** per context; **`SONGWRITER_CHORD_POOLS`** keys **`miles_davis_modal_1959`**, **`miles_davis_quintet_1965`**, **`miles_davis_electric_1970`** via **`chordSymbolsForSection`**; **`MELODY_PROFILES`** row; handbook **[COMPOSER_OS_PLAYBOOK.md](COMPOSER_OS_PLAYBOOK.md)** § Miles Davis. |
+
+**13 — Fripp / King Crimson (`fripp_king_crimson`) — complete (2026-05-10)**
+
+| Ship | Commit | Scope |
+|------|--------|--------|
+| Asymmetric rhythm + third-cycle harmony + polymeter receipt | — | **`precomputeFrippKingCrimsonEffectiveHarmonyBars`**; **`asymmetricPresets`** **`discipline_a`** / **`discipline_b`** / **`frame_by_frame`** / **`fracture`** / **`red`**; **`frippPolymeterGrid`** LCM on **16th** grid; **`GenerateRequest.asymmetricRhythm`** + **`frippPolymeterSecondaryPresetId`**; **`frippKingCrimsonMelodyHints`** / diagnostics; routing through **`customLockedHarmonyRouting`**, **`runGoldenPath`** locked truth, **`harmonySpineProvider`**; **`SONGWRITER_CHORD_POOLS.fripp_king_crimson`** → **`frank_zappa`** pool alias; smoke **`frippKingCrimsonSliceSmoke.test.ts`**. |
 
 **4 — ECM Chamber (`ecm_chamber`) — complete**
 
@@ -381,7 +387,7 @@
 ## Current (as of 2026-05-05 snapshot)
 
 - **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** · **MusicXML import Phase 1** · **Duo expansion** (pairing cards, duo intent selector, Duo Health readout, ECM safe sweep badge + Advanced checkbox) — detail under **§ Next best development — V30 complete · V31 sequencing**.
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-10):** **240** passed / **0** failed (**56** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of suites). **Snapshot (2026-05-10):** **242** passed / **0** failed (**57** suites) — re-run after editing **`runSmokeTests.ts`** or any smoke suite and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Tonality Vault — iReal / paste / PDF multi-chorus variation (2026-05-05) — SHIPPED:** **`VaultGenerationOptions.chorusCount`** (default **1**, max **64**) runs **`generateVaultFromParsedChart`** once per chorus and concatenates output with continuous **`barIndex`** / global **`startBeat`**; return **`bars`** = chart length × **`chorusCount`**. **Melody** mode: per-chorus **`tensionCycleRotation`** steps the **Build F** **`transformMotifThroughLayers`** pick through **primary → tension → chaos → recover → resolve** (length **5**), unless **`songwriterStyleId === 'sonic_youth'`** (no per-chorus tension advance). **Solo** mode: no motif pass; when **`riffStyle`** is omitted or **`triad-pair-pendulum`**, **`TRIAD_PAIR_CHORUS_ROTATION`** varies effective vault **`generateVaultRiff`** **style** per chorus (also suppressed for **SY**). See **`engines/composer-os-v2/core/irealpro/irealVaultPipeline.ts`**, playbook **Multi-Chorus Variation**.
 - **Generate — Chord Inspector — Reharm UI (2026-05-04) — SHIPPED:** **`HomeGenerate.tsx`** collapsible **Chord Inspector** — **Reharmonise** runs **`generateReharmCandidates`**; **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) remaps to a target emotional drift and **reorders** substitutes; **top 8** list with substitute symbol, dominant drift label, **Use this chord** (fills inspector input); reharm panel **clears on new Inspect Chord**. See **`reharmCandidateEngine.ts`**, **`CHANGELOG.md`**, **`CLAUDE.md`**.
 - **Evaluation system (2026-05-05) — SHIPPED:** Combined **GCE + LOCK + style profiles** evaluation path; **Basie**, **Ellington**, **Schneider**, **Quincy Jones** arranger **`StyleProfile`** scoring; **`createCombinedEvaluator`** invoked after Big Band realisation in **`composerOsAppGeneration.ts`** (observational **`evaluationResult`**, non-blocking). Playbook **Evaluation System** + **Future Workstreams** (Afro-Cuban, Odd-Meter).
@@ -426,7 +432,7 @@
 
 1. **Run** **`npm run test:composer-smoke`** from **repository root**; read **`Passed: N`** in **`=== Smoke summary ===`** (**N** = aggregate of every **`PASS:`** row — not the number of labelled suites).
 2. **Update** **`CLAUDE.md`** — Testing comment with **N** and suite count **`smokeSuites.length`** in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (currently **56** suites as of 2026-05-10).
-3. **Update** this doc — **Current** harness bullet above (**172** / date) so assistants do not cite a stale total.
+3. **Update** this doc — **Current** harness bullet above (**242** / date) so assistants do not cite a stale total.
 4. **Optional:** **[CHANGELOG.md](CHANGELOG.md)** **[Unreleased]** line if the change is user-facing.
 
 ### SD3 Drum Guide Export

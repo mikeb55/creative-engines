@@ -34,6 +34,7 @@ export const GUITAR_CENTRIC_SONGWRITER_IDS: ReadonlySet<SongwriterRuleId> = new 
   'jim_hall',
   'richard_thompson',
   'paul_simon',
+  'fripp_king_crimson',
 ]);
 
 /** Canonical map: guitar trio explicit; all other Song Mode writers default to keys-centred comp for this slice. */
@@ -120,6 +121,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   new_orleans_second_line: 'keys',
   cuban_afro_cuban: 'keys',
   frank_zappa: 'keys',
+  fripp_king_crimson: 'guitar',
   john_coltrane: 'keys',
   jim_hall: 'guitar',
   antonio_carlos_jobim: 'keys',

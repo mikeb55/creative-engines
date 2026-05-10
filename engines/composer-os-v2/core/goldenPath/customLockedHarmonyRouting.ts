@@ -124,6 +124,7 @@ export function assertScoreMatchesLockedHarmonyWire(
   const ahEff = md?.andrewHillEffectiveHarmonyBars;
   const jhEff = md?.jimHallEffectiveHarmonyBars;
   const cpEff = md?.charlieParkerEffectiveHarmonyBars;
+  const fkcEff = md?.frippKingCrimsonEffectiveHarmonyBars;
   const bhHerrEff = md?.bernardHerrmannEffectiveHarmonyBars;
   const jwEff = md?.johnWilliamsEffectiveHarmonyBars;
   const emEff = md?.ennioMorriconeEffectiveHarmonyBars;
@@ -297,11 +298,16 @@ export function assertScoreMatchesLockedHarmonyWire(
                                                 jhEff.length === wire.length
                                               ? jhEff
                                               : md?.songwriterStyleId === 'charlie_parker' &&
-                                                Array.isArray(cpEff) &&
-                                                cpEff.length === tb &&
-                                                cpEff.length === wire.length
-                                              ? cpEff
-                                            : md?.songwriterStyleId === 'bernard_herrmann' &&
+                                                  Array.isArray(cpEff) &&
+                                                  cpEff.length === tb &&
+                                                  cpEff.length === wire.length
+                                                ? cpEff
+                                              : md?.songwriterStyleId === 'fripp_king_crimson' &&
+                                                  Array.isArray(fkcEff) &&
+                                                  fkcEff.length === tb &&
+                                                  fkcEff.length === wire.length
+                                                ? fkcEff
+                                              : md?.songwriterStyleId === 'bernard_herrmann' &&
                                                 Array.isArray(bhHerrEff) &&
                                                 bhHerrEff.length === tb &&
                                                 bhHerrEff.length === wire.length

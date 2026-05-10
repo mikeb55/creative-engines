@@ -655,6 +655,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return cpEff[barIndex - 1]!;
   }
 
+  const fkcEff = meta?.frippKingCrimsonEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'fripp_king_crimson' &&
+    Array.isArray(fkcEff) &&
+    fkcEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return fkcEff[barIndex - 1]!;
+  }
+
   /**
    * Frank Zappa effective harmony is served only via `context.harmonyContext` (see `attachFrankZappaHarmonyContext`).
    * If missing here, slice precompute did not run or HarmonyContext was not attached — fall through (tests only).

@@ -1598,6 +1598,28 @@ export interface GenerationMetadata {
   charlieParkerSliceReceipt?: string;
   charlieParkerEffectiveHarmonyBars?: string[];
   charlieParkerDeviceReceipts?: string[];
+  /** Fripp / King Crimson — optional polymeter companion preset id (LCM alignment receipt). */
+  frippPolymeterSecondaryPresetId?: string;
+  /** Echo of {@link import('./rhythm/asymmetricPresets').AsymmetricRhythmRequest} from golden-path options. */
+  asymmetricRhythmRequest?: import('./rhythm/asymmetricPresets').AsymmetricRhythmRequest;
+  frippKingCrimsonEffectiveHarmonyBars?: string[];
+  frippKingCrimsonSliceReceipt?: string;
+  frippKingCrimsonAsymmetricPresetResolved?: string;
+  frippKingCrimsonPolymeterReceipt?: string;
+  frippKingCrimsonMelodyHints?: {
+    phraseMultipleSixteenths: number;
+    nonStepwiseMotionTarget: number;
+    periodicLeapMinSemitones: number;
+    melodicRegisterCentreMidi: number;
+    staticRootCeilingMidi: number;
+  };
+  frippKingCrimsonDiagnostics?: {
+    songwriterId: 'fripp_king_crimson';
+    barsConsidered: number;
+    pitchCollectionBarsWholeTone: number;
+    thirdCycleSteps: number;
+    polymeterLcmSixteenths?: number;
+  };
   /** Anti–art-rock / Brian Wilson / Radiohead elaboration guard hits (detailed; also folded into diagnostics). */
   jamesBrownAntiElaborationGuards?: { reharmBlock: number; turnaroundBlock: number; extensionBeyond13: number };
   /** Bars (1-based) where blues-tension colour was applied (device 5). */

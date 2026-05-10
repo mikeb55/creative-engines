@@ -31,6 +31,7 @@ import type {
   ThadJonesPhaseMode,
 } from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
+import type { AsymmetricRhythmRequest } from '../rhythm/asymmetricPresets';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
@@ -1140,6 +1141,10 @@ export interface RunGoldenPathOptions {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Optional per-bar meters (1-based keys); copied to context + `generationMetadata.barMeterMap`. */
   barMeterMap?: BarMeterMap;
+  /** Song Mode / Fripp–King Crimson: asymmetric cycle (`asymmetricPresets` id or validated custom cycle). */
+  asymmetricRhythm?: AsymmetricRhythmRequest;
+  /** Optional second asymmetric preset id — polymeter LCM receipt (`frippKingCrimsonSlice`). */
+  frippPolymeterSecondaryPreset?: string;
   /** Song Mode / Frank Zappa: harmony vocabulary + density arc mode (`frankZappaSlice`). Default **`avant_rock`** when omitted. */
   frankZappaContext?: FrankZappaContextMode;
   /** Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
@@ -1849,6 +1854,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'steve_reich'
         ? { reichProcess: options.reichProcess ?? 'phasing' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
+        ? {
+            ...(options.asymmetricRhythm ? { asymmetricRhythmRequest: options.asymmetricRhythm } : {}),
+            ...(typeof options.frippPolymeterSecondaryPreset === 'string' && options.frippPolymeterSecondaryPreset.trim()
+              ? { frippPolymeterSecondaryPresetId: options.frippPolymeterSecondaryPreset.trim() }
+              : {}),
+          }
+        : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'thad_jones'
         ? { thadPhase: options.thadPhase ?? 'swing' }
         : {}),
@@ -2436,6 +2449,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahEx = mdEx?.andrewHillEffectiveHarmonyBars;
   const jhEx = mdEx?.jimHallEffectiveHarmonyBars;
   const cpEx = mdEx?.charlieParkerEffectiveHarmonyBars;
+  const fkcEx = mdEx?.frippKingCrimsonEffectiveHarmonyBars;
   const beEx = mdEx?.billEvansEffectiveHarmonyBars;
   const dbEx = mdEx?.debussyEffectiveHarmonyBars;
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
@@ -2506,8 +2520,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                           ? jhEx
                                           : mdEx?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpEx) && cpEx.length === tbEx
                                             ? cpEx
-                                            : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
-                                              ? beEx
+                                            : mdEx?.songwriterStyleId === 'fripp_king_crimson' &&
+                                                Array.isArray(fkcEx) &&
+                                                fkcEx.length === tbEx
+                                              ? fkcEx
+                                              : mdEx?.songwriterStyleId === 'bill_evans' && Array.isArray(beEx) && beEx.length === tbEx
+                                                ? beEx
                                               : mdEx?.songwriterStyleId === 'debussy' && Array.isArray(dbEx) && dbEx.length === tbEx
                                                 ? dbEx
                                                 : mdEx?.songwriterStyleId === 'duke_ellington' && Array.isArray(deEx) && deEx.length === tbEx
@@ -2663,6 +2681,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const ahLt = mdLt?.andrewHillEffectiveHarmonyBars;
   const jhLt = mdLt?.jimHallEffectiveHarmonyBars;
   const cpLt = mdLt?.charlieParkerEffectiveHarmonyBars;
+  const fkcLt = mdLt?.frippKingCrimsonEffectiveHarmonyBars;
   const beLt = mdLt?.billEvansEffectiveHarmonyBars;
   const dbLt = mdLt?.debussyEffectiveHarmonyBars;
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
@@ -2727,8 +2746,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                               ? jhLt
                                               : mdLt?.songwriterStyleId === 'charlie_parker' && Array.isArray(cpLt) && cpLt.length === tbLt
                                                 ? cpLt
-                                                : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
-                                                  ? beLt
+                                                : mdLt?.songwriterStyleId === 'fripp_king_crimson' &&
+                                                    Array.isArray(fkcLt) &&
+                                                    fkcLt.length === tbLt
+                                                  ? fkcLt
+                                                  : mdLt?.songwriterStyleId === 'bill_evans' && Array.isArray(beLt) && beLt.length === tbLt
+                                                    ? beLt
                                                   : mdLt?.songwriterStyleId === 'debussy' && Array.isArray(dbLt) && dbLt.length === tbLt
                                                     ? dbLt
                                                     : mdLt?.songwriterStyleId === 'duke_ellington' && Array.isArray(deLt) && deLt.length === tbLt

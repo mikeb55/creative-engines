@@ -1148,6 +1148,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'steve_reich'
       ? { reichProcess: req.reichProcess }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
+      ? {
+          ...(req.asymmetricRhythm ? { asymmetricRhythm: req.asymmetricRhythm } : {}),
+          ...(typeof req.frippPolymeterSecondaryPresetId === 'string' && req.frippPolymeterSecondaryPresetId.trim()
+            ? { frippPolymeterSecondaryPreset: req.frippPolymeterSecondaryPresetId.trim() }
+            : {}),
+        }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'hans_zimmer'
       ? { hansZimmerContext: req.hansZimmerContext }
       : {}),
@@ -1372,6 +1380,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const ahLockedTruth = mdLockedTruth?.andrewHillEffectiveHarmonyBars;
   const jhLockedTruth = mdLockedTruth?.jimHallEffectiveHarmonyBars;
   const cpLockedTruth = mdLockedTruth?.charlieParkerEffectiveHarmonyBars;
+  const fkcLockedTruth = mdLockedTruth?.frippKingCrimsonEffectiveHarmonyBars;
   const bhHerrLockedTruth = mdLockedTruth?.bernardHerrmannEffectiveHarmonyBars;
   const jwLockedTruth = mdLockedTruth?.johnWilliamsEffectiveHarmonyBars;
   const emLockedTruth = mdLockedTruth?.ennioMorriconeEffectiveHarmonyBars;
@@ -1597,6 +1606,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                                   lockedHarmonyBarsAuthoritative &&
                                                   cpLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                                 ? cpLockedTruth
+                                                : mdLockedTruth?.songwriterStyleId === 'fripp_king_crimson' &&
+                                                    Array.isArray(fkcLockedTruth) &&
+                                                    fkcLockedTruth.length === tbLockedTruth &&
+                                                    lockedHarmonyBarsAuthoritative &&
+                                                    fkcLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                  ? fkcLockedTruth
                                                 : mdLockedTruth?.songwriterStyleId === 'bernard_herrmann' &&
                                                     Array.isArray(bhHerrLockedTruth) &&
                                                     bhHerrLockedTruth.length === tbLockedTruth &&
