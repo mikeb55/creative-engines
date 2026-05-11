@@ -73,6 +73,19 @@ const GIL_EVANS: VoiceRuleBundle = {
     anchorToneCount: 0,
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Voicing: wide-spread open stacks; horns double motives across octaves — registral air, not compact block voicings',
+      'Anti-block: avoid uniform section homophony — blend families so single lines double across brass/reeds/strings',
+      'Colour primaries: bass clarinet + French horn as timbral anchors alongside pastel muted brass',
+      'Harmony: modal / sus centres, slow harmonic rhythm, lateral non-functional root motion over pedals',
+      'Melody rides above static or slowly morphing fields — not bar-by-bar chord-tone chasing',
+      'Texture layers: flutes + muted brass + low reeds simultaneously — pastel cluster fields',
+      'Density discipline: medium-low default; reserve full tutti for single climax windows',
+      'Inner parts: independent slow-moving counterlines — not pad filling behind a single lead',
+      'Pulse: loose floating grid — rhythm section supports colour washes; backbeat secondary to timbre',
+      'Orchestration matches GIL_EVANS_KEYS_COMP: mid cluster gap, m2 inner bite, cello/contrary bass colour',
+      'BB/Song Mode: cluster orchestration receipts echo slow-cloud harmonic rhythm + polyrhythm-in-grid-not-harmony posture',
+    ],
   },
   formPolicy: {
     narrativeArc: 'continuous-curve',
@@ -111,6 +124,19 @@ const MARIA_SCHNEIDER: VoiceRuleBundle = {
     anchorToneCount: 2,
     mutateSingleVoiceAtTime: true,
     allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Form: through-composed arcs — continuous development vs repeating chorus templates',
+      'Harmony: modal + impressionist stacks; long pedals; tertian–quartal morph with common-tone holds',
+      'Orchestration blend: families fuse on colour lines — e.g. flute + muted trumpet + vibraphone as one strand',
+      'Density arc: slow accumulation over multi-bar spans — avoid sudden tutti drops except scripted seams',
+      'Melody: long-breathed vocal arcs; wide registral span; apex coupled to harmonic rhythm lifts',
+      'Rhythm: metric modulation / tempo seams between sections — not locked swing-grid loops throughout',
+      'Backgrounds: developmental inner motion — evolving pads rather than static riff loops',
+      'Programmatic texture: landscape/nature imagery drives orchestration choices (wind vs brass vs metal)',
+      'Brass colour: flutter-tongue, cup / harmon mute colours as timbre — not raw dynamic spikes alone',
+      'Align MARIA_SCHNEIDER_KEYS_COMP: cross-section roles, interval-seeded cells, pedal + upper colour shift',
+      'Slice authority: ms:pedal / ms:color_stack / ms:nature_arc receipts inform pad vs climax voicing bias',
+    ],
   },
   formPolicy: {
     narrativeArc: 'continuous-curve',
@@ -188,6 +214,19 @@ const WAYNE_SHORTER: VoiceRuleBundle = {
     anchorToneCount: 1,
     mutateSingleVoiceAtTime: true,
     allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Harmony: non-functional chromatic motion — lateral roots (thirds, tritones) vs textbook cycles',
+      'Melody: compact motivic cells + wide intervallic leaps — penalise long scalar fills',
+      'Form: ambiguous / through-composed seams — avoid tidy repeating AABA plates',
+      'Rhythm: metric ambiguity; phrases may avoid bar-1 resolution — floating phrase toes',
+      'Voicing: quartal / quintal / sus stacks — floating tonal centre, axis bass outlines',
+      'Orchestration: instruments enter/exit unpredictably — roles swap phrase-to-phrase',
+      'Space: rests and thin textures as structural device — silence between phrases is intentional',
+      'Big band: backgrounds deliberately avoid locking kicks to soloist rhythm — commentary not mimicry',
+      'Wedge / spine: ws:wedge + chromatic compression toward focal pitch — harmonic telescope receipts',
+      'Align WAYNE_SHORTER_KEYS_COMP: axis bass, chromatic mediant brass hits, reed motivic carriers',
+      'Colour: neighbour inner voices + compound outer intervals — perfect fourth as structural hinge',
+    ],
   },
   formPolicy: {
     narrativeArc: 'free',
@@ -714,8 +753,62 @@ const CHARLES_MINGUS: VoiceRuleBundle = {
   },
 };
 
+/** Duke Ellington — jungle timbre, call/response, stride piano vs sparse Basie (`dukeEllingtonSlice.ts` `de:*`). */
+const DUKE_ELLINGTON: VoiceRuleBundle = {
+  voiceId: 'duke_ellington',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 3,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 26,
+    clusterSizeNotes: [4, 8],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 10,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: true,
+    fingerprintReceipts: [
+      'Timbre identity: plunger / growl / wa-wa muted brass as melodic dialogue — not polish-first section blends',
+      'Jungle palette: low brass + woodwind colour threads vs tidy sax/brass block homophony',
+      'Reeds: close-position sax soli + frequent unison/instrument doubles as structural pillars',
+      'Form: AABA-family with Ellington extensions — intros/outros carry compositional weight',
+      'Solo frames: featured voices steer the chart — accompaniment reorganises around soloists',
+      'Piano: stride / active swing comp fills phrase seams — higher structural duty than sparse Basie pad',
+      'Sax choir: warm harmonic pad + recurring soli leads — registers mapped to call/response roles',
+      'Brass: antiphonal plunger conversations — effects as pitch/rhythm language',
+      'Rhythm feel: early two-beat vs later four-beat swing — era-appropriate quarter pulse staging',
+      'Narrative arc: programmatic / suite logic — short charts still imply journey + recap transforms',
+      'Locked harmony echo: align `ellingtonCallResponseMap` / `de:call` · `de:response` registral contrast',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
 const BY_ID: Record<string, VoiceRuleBundle> = {
   gil_evans: GIL_EVANS,
+  duke_ellington: DUKE_ELLINGTON,
+  ellington: DUKE_ELLINGTON,
   thad_jones: THAD_JONES,
   maria_schneider: MARIA_SCHNEIDER,
   john_coltrane: JOHN_COLTRANE,

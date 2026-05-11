@@ -41,6 +41,7 @@ function testResolvableBundlesSatisfyShape(): boolean {
   for (const id of [
     'thad_jones',
     'gil_evans',
+    'duke_ellington',
     'maria_schneider',
     'john_coltrane',
     'wayne_shorter',

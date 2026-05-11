@@ -17,7 +17,23 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   const okNeutral = getVoiceRuleBundle('unknown_writer_phase23a').voiceId === 'neutral';
 
   const ge = getVoiceRuleBundle('gil_evans');
-  const okRepair = ge.repairPolicy.resolveParallels === true && ge.repairPolicy.maxVoiceOverlap >= 0;
+  const okGil =
+    ge.voiceId === 'gil_evans' &&
+    ge.repairPolicy.resolveParallels === true &&
+    ge.repairPolicy.maxVoiceOverlap >= 0 &&
+    (ge.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 10;
+
+  const duke = getVoiceRuleBundle('duke_ellington');
+  const okDuke =
+    duke.voiceId === 'duke_ellington' && (duke.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 10;
+
+  const ws = getVoiceRuleBundle('wayne_shorter');
+  const okWsFp =
+    ws.voiceId === 'wayne_shorter' && (ws.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 10;
+
+  const ms = getVoiceRuleBundle('maria_schneider');
+  const okMsFp =
+    ms.voiceId === 'maria_schneider' && (ms.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 10;
 
   const berg = getVoiceRuleBundle('berg');
   const okBerg =
@@ -53,7 +69,10 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
-    { name: 'Phase 2+3a harness additive: gil_evans repairPolicy gate', ok: okRepair },
+    { name: 'Phase 2+3a harness additive: gil_evans repairPolicy + ≥10 fingerprints', ok: okGil },
+    { name: 'Phase 2+3a harness additive: duke_ellington ≥10 fingerprints', ok: okDuke },
+    { name: 'Phase 2+3a harness additive: wayne_shorter ≥10 fingerprints', ok: okWsFp },
+    { name: 'Phase 2+3a harness additive: maria_schneider ≥10 fingerprints', ok: okMsFp },
     { name: 'Phase 2+3a harness additive: berg bundle + row clarity', ok: okBerg },
     { name: 'Phase 2+3a harness additive: sammy_nestico fingerprints', ok: okNestico },
     { name: 'Phase 2+3a harness additive: bob_brookmeyer fingerprints', ok: okBrook },

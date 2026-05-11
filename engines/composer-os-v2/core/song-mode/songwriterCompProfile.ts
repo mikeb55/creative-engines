@@ -203,6 +203,27 @@ const GIL_EVANS_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const DUKE_ELLINGTON_KEYS_COMP: SongwriterCompProfile = {
+  id: 'duke_ellington',
+  primaryCompInstrument: 'keys',
+  voicingBias: [
+    'close_sax_soli_unison_doubles',
+    'plunger_brass_dialogue_register',
+    'warm_reed_pad_and_soli_lead',
+    'stride_fill_structural_gaps',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: ['two_beat_early_four_beat_later', 'swing_piano_push_pull'],
+  smallMovementRules: [
+    'soloist_led_arrangement_frames',
+    'intro_outro_compositional_weight',
+    'call_response_map_registers',
+  ],
+  receiptLines: [
+    'Harmonic voice Duke Ellington — plunger/growl brass identity; jungle low brass + woodwind colour vs tutti homophony; stride/active piano comp (fills gaps vs sparse Basie); AABA + weighted intros/outros; solo frames steer orchestration; VRB fingerprints align BigBandResearch + playbook slice. Not an imitation of any artist.',
+  ],
+};
+
 const JOHN_COLTRANE_KEYS_COMP: SongwriterCompProfile = {
   id: 'john_coltrane',
   primaryCompInstrument: 'keys',
@@ -412,6 +433,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return JOHN_COLTRANE_KEYS_COMP;
     case 'gil_evans':
       return GIL_EVANS_KEYS_COMP;
+    case 'duke_ellington':
+      return DUKE_ELLINGTON_KEYS_COMP;
     case 'maria_schneider':
       return MARIA_SCHNEIDER_KEYS_COMP;
     case 'henry_threadgill':
