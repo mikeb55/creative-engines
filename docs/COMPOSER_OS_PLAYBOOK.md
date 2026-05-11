@@ -388,7 +388,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (38 research rows)
+### Per-composer profile table (39 research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -432,6 +432,9 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `jeff_tweedy` | stepwise | mixed | 4 | 0.7 | flat | deadpan_repeated_note; modal_bVII; unresolved_suspension; folk_drone; understated_chorus |
 | `kendrick_lamar` | stepwise | eighth_patterns | 3 | 0.5 | speech_contour | flow_modulation; syllabic_ostinato; pitch_zone_contrast; barline_displacement; triplet_switch |
 | `kurt_weill` | stepwise | mixed | 4 | 0.6 | cabaret_arc | descending_minor_3rd; tritone_bitterness; chant_repeated_tone; major_minor_irony; mechanical_ostinato |
+| `messiaen` | angular | mixed | 7 | 0.55 | irregular | mode_colour_field; birdsong_ornament; non_retrogradable_cell; additive_prime_pulse |
+
+**Olivier Messiaen (`messiaen`) — harmony rail:** **`messiaenEffectiveHarmonyBars`** enforces **slow harmonic rhythm** at the spine (**minimum ~2 bars per chord**). **No functional cadential resolution** (**V→I** and similar) on the locked rail—motion is **colour-field** oriented.
 
 ### Smoke coverage
 

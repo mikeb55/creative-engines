@@ -14,6 +14,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Gil Evans** (`gil_evans`) | 11 | **deep** |
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
+| **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
 | **Bob Brookmeyer** (`bob_brookmeyer`) | 6 | thin |
 | **Clare Fischer** (`clare_fischer`) | 6 | thin |
 | **Sammy Nestico** (`sammy_nestico`) | 6 | thin |
@@ -22,7 +23,23 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 
 **Also bundled** (not in the thin/deep split above): **Thad Jones** (`thad_jones`) **12** receipts · **Charles Mingus** (`charles_mingus`) **11** · **Count Basie** (`count_basie`) **8** · **Alban Berg** (`berg` / `alban_berg`) **4** — see source file for authoritative counts.
 
-**Ship:** deep VRB for Ellington / Gil / Shorter / Schneider — commit **`4aa848a5`** (see **`CHANGELOG.md`** `[Unreleased]`).
+**Messiaen period flag** — **`CompositionContext`** / **`GenerateRequest`** expose **`messiaenPeriodMode`**: **`early_messiaen`** · **`middle_messiaen`** · **`late_messiaen`** (early = modes + theological programme; middle = structural birdsong + CTI-type colour stacks; late = birdsong-heavy + colour organisation primary).
+
+**Messiaen colour stub** (`generationMetadata.colourTag`) — until **`engines/messiaen-colour-engine`** supplies live tags, the slice maps active limited-transposition mode tag → catalogue colour:
+
+| Mode tag | Colour label |
+|----------|--------------|
+| Mode 2¹ | violet-blue |
+| Mode 2² | gold-brown |
+| Mode 2³ | green |
+| Mode 3¹ | orange-gold |
+| Mode 3² | grey-mauve-gold |
+| Mode 3³ | blue-green |
+| Mode 3⁴ | orange-red |
+| Mode 4¹ | grey-gold-blue |
+| Mode 6¹ | grey-gold-orange |
+
+**Ship:** deep VRB for Ellington / Gil / Shorter / Schneider — commit **`4aa848a5`** · Messiaen **`a4ae08de`** (see **`CHANGELOG.md`** `[Unreleased]`).
 
 ---
 
