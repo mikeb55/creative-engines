@@ -94,7 +94,9 @@ export interface BigBandRunInput {
     | 'orbit_steely_v1_1_64'
     | 'orbit_steely_v1_2_64'
     | 'orbit_steely_v1_3_64'
-    | 'orbit_steely_v1_4_64';
+    | 'orbit_steely_v1_4_64'
+    | 'orbit_steely_v1_5_64'
+    | 'orbit_steely_v1_7_64';
   /** Per-bar drum tier overrides (1-based bar index). */
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Per-bar brush vs sticks override (1-based bar index). */

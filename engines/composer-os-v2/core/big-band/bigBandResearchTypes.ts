@@ -6,14 +6,15 @@
 export type BigBandComposerId =
   | 'ellington'
   | 'basie'
-  | 'thad'
+  | 'thad_jones'
   | 'schneider'
   | 'quincy_jones'
   | 'gil_evans'
   | 'bob_brookmeyer'
   | 'clare_fischer'
   | 'oliver_nelson'
-  | 'sammy_nestico';
+  | 'sammy_nestico'
+  | 'wayne_shorter';
 
 export type BigBandEraId =
   | 'swing'
@@ -126,6 +127,7 @@ export interface BigBandRuleTuning {
   schneiderProofOfConcept?: BigBandArrangerProfileReceiptV1;
   quincyJonesProofOfConcept?: BigBandArrangerProfileReceiptV1;
   thadProofOfConcept?: BigBandArrangerProfileReceiptV1;
+  wayneShorterProofOfConcept?: BigBandArrangerProfileReceiptV1;
   gilEvansProofOfConcept?: BigBandArrangerProfileReceiptV1;
   bobBrookmeyerProofOfConcept?: BigBandArrangerProfileReceiptV1;
   clareFischerProofOfConcept?: BigBandArrangerProfileReceiptV1;

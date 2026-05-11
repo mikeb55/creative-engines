@@ -375,7 +375,49 @@ function codaRewrite6164(score: ScoreModel): void {
   }
 }
 
-export function applyOrbitBbV6Extended(score: ScoreModel): void {
+/** V6 default dramatic arc vs Steely Orbit Prelude — open 61–64 handoff, no shock/silence cadence. */
+export type OrbitBbV6ExtendedVariant = 'default' | 'steely_v1';
+
+/** Brass tacet 49–52 — dream-state thin layer (Steely variant). */
+function thinBrass4952(score: ScoreModel): void {
+  const trp = findPart(score, BB_PART_TRUMPETS);
+  const tbn = findPart(score, BB_PART_TROMBONES);
+  for (let b = 49; b <= 52; b++) {
+    const len = effBeats(score, b);
+    if (trp) wipeVoice1Rest(trp.measures[b - 1]!, len);
+    if (tbn) wipeVoice1Rest(tbn.measures[b - 1]!, len);
+  }
+}
+
+function steelyV1Dynamics(score: ScoreModel): void {
+  const base = score.measureDynamicsMarkings ?? {};
+  score.measureDynamicsMarkings = {
+    ...base,
+    38: 'pp',
+    39: 'pp',
+    49: 'ppp',
+    50: 'ppp',
+    51: 'pp',
+    52: 'pp',
+    53: 'mf',
+    54: 'mf',
+    57: 'pp',
+    58: 'pp',
+    59: 'p',
+    60: 'p',
+    61: 'p',
+    62: 'pp',
+    63: 'ppp',
+    64: 'ppp',
+  };
+}
+
+export function applyOrbitBbV6Extended(
+  score: ScoreModel,
+  variant: OrbitBbV6ExtendedVariant = 'default'
+): void {
+  const steely = variant === 'steely_v1';
+
   fragileExposed3839(score);
   headInnerVoiceTenor(score, 9, 'suspension');
   headInnerVoiceTenor(score, 17, 'suspension');
@@ -389,28 +431,40 @@ export function applyOrbitBbV6Extended(score: ScoreModel): void {
   vacuumBassExact(score);
   drumBar48TomFill(score);
 
-  for (const b of [49, 50]) shoutMotifAntiphony(score, b, false);
+  if (!steely) {
+    for (const b of [49, 50]) shoutMotifAntiphony(score, b, false);
+  } else {
+    thinBrass4952(score);
+  }
   for (const b of [53, 54]) shoutMotifAntiphony(score, b, true);
   for (const b of [59, 60]) shoutMotifAntiphony(score, b, false);
 
-  shockZone556WithoutMotif(score);
-  totalSilenceBar(score, 57);
-  shockBar58(score);
+  if (!steely) {
+    shockZone556WithoutMotif(score);
+    totalSilenceBar(score, 57);
+    shockBar58(score);
+  }
 
   drumBar53KickBeat3(score);
 
-  codaRewrite6164(score);
+  if (!steely) {
+    codaRewrite6164(score);
+  }
 
-  const base = score.measureDynamicsMarkings ?? {};
-  score.measureDynamicsMarkings = {
-    ...base,
-    38: 'pp',
-    39: 'pp',
-    57: 'ppp',
-    58: 'fff',
-    61: 'ppp',
-    62: 'pp',
-    63: 'pppp',
-    64: 'ppp',
-  };
+  if (steely) {
+    steelyV1Dynamics(score);
+  } else {
+    const base = score.measureDynamicsMarkings ?? {};
+    score.measureDynamicsMarkings = {
+      ...base,
+      38: 'pp',
+      39: 'pp',
+      57: 'ppp',
+      58: 'fff',
+      61: 'ppp',
+      62: 'pp',
+      63: 'pppp',
+      64: 'ppp',
+    };
+  }
 }

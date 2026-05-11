@@ -732,7 +732,9 @@ export interface BuildBigBandScoreModelInput {
     | 'orbit_steely_v1_1_64'
     | 'orbit_steely_v1_2_64'
     | 'orbit_steely_v1_3_64'
-    | 'orbit_steely_v1_4_64';
+    | 'orbit_steely_v1_4_64'
+    | 'orbit_steely_v1_5_64'
+    | 'orbit_steely_v1_7_64';
   /** 1-based bar → drum tier (overrides phase/slice for that measure only). */
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Imported lead (`runBigBandRealisation` handoff) — alto melody lock when profile is `orbit_v3_melody_authority`. */
@@ -936,7 +938,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-    bigBandArrangementProfile === 'orbit_steely_v1_4_64';
+    bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_7_64';
   const orbitV464 = bigBandArrangementProfile === 'orbit_v4_64';
   const orbitV564 = bigBandArrangementProfile === 'orbit_v5_64';
   const orbitV664 =
@@ -945,7 +949,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-    bigBandArrangementProfile === 'orbit_steely_v1_4_64';
+    bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_7_64';
   const orbitLeadLocked =
     bigBandArrangementProfile === 'orbit_v3_melody_authority' ||
     bigBandArrangementProfile === 'orbit_v4_64' ||
@@ -955,7 +961,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-    bigBandArrangementProfile === 'orbit_steely_v1_4_64';
+    bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
+    bigBandArrangementProfile === 'orbit_steely_v1_7_64';
   const zappaBbActive = songwriterStyleId?.trim().toLowerCase() === 'frank_zappa';
 
   const chordForBar = (b: number) => {

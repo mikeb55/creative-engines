@@ -46,9 +46,14 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     smoothTransitions = true;
     shoutMotivicClimax = false;
   }
-  if (composer === 'thad') {
+  if (composer === 'thad_jones') {
     densityArc = true;
     shoutMotivicClimax = true;
+  }
+  if (composer === 'wayne_shorter') {
+    densityArc = true;
+    smoothTransitions = true;
+    riffVsLine = 'line_primary';
   }
   if (composer === 'gil_evans') {
     smoothTransitions = true;
@@ -83,6 +88,7 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
   let schneiderProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let quincyJonesProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let thadProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
+  let wayneShorterProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let gilEvansProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let bobBrookmeyerProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
   let clareFischerProofOfConcept: BigBandArrangerProfileReceiptV1 | undefined;
@@ -168,7 +174,7 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     };
   }
 
-  if (composer === 'thad') {
+  if (composer === 'thad_jones') {
     thadProofOfConcept = {
       chordDensity: 4,
       extensionsPolicy: '9ths–13ths, altered dominants, poly-chords, side-step shifts',
@@ -182,6 +188,23 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
       hornRelationship: 'motive-led dialogue',
       buildStrategy: 'extended forms; interludes and shout sequences',
       spaceUsage: 'continuous motion with arranged peaks',
+    };
+  }
+
+  if (composer === 'wayne_shorter') {
+    wayneShorterProofOfConcept = {
+      chordDensity: 4,
+      extensionsPolicy: '9ths–13ths; altered dominants; sus colours; chromatic mediants',
+      functionalHarmonyPercent: 52,
+      harmonicRhythm: 'medium–slow plateaus',
+      overallDensity: 3,
+      textureArc: 'floating centres with lateral pivots',
+      sectionBlending: 'cross-section colour stacks',
+      rhythmSectionWeight: 3,
+      timeFeel: 'elastic swing pocket',
+      hornRelationship: 'motivic dialogue',
+      buildStrategy: 'development arcs; mosaic cadences',
+      spaceUsage: 'breaths between colour shifts',
     };
   }
 
@@ -281,6 +304,7 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     ...(schneiderProofOfConcept ? { schneiderProofOfConcept } : {}),
     ...(quincyJonesProofOfConcept ? { quincyJonesProofOfConcept } : {}),
     ...(thadProofOfConcept ? { thadProofOfConcept } : {}),
+    ...(wayneShorterProofOfConcept ? { wayneShorterProofOfConcept } : {}),
     ...(gilEvansProofOfConcept ? { gilEvansProofOfConcept } : {}),
     ...(bobBrookmeyerProofOfConcept ? { bobBrookmeyerProofOfConcept } : {}),
     ...(clareFischerProofOfConcept ? { clareFischerProofOfConcept } : {}),

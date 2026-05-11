@@ -100,6 +100,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/pdf/generate-from-pdf') {
       return ipcInvoke<T>('composer-os-api:pdf-generate-from-pdf', body ?? {});
     }
+    if (path === '/melodic-variation-pack') {
+      return ipcInvoke<T>('composer-os-api:melodic-variation-pack', body ?? {});
+    }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -239,6 +242,23 @@ export const api = {
       parsedChart?: ParsedChart | null;
       error?: string;
     }>('/pdf/generate-from-pdf', body),
+  melodicVariationPack: (body: {
+    melody: Array<{ pitch: number; duration: number }>;
+    variationCount: number;
+    chords: string[];
+    songwriterId: string;
+    sections?: Array<{ label: string; barStart: number; barEnd: number; role?: string }>;
+  }) =>
+    post<{
+      success: true;
+      scoringMode: 'melody-only';
+      melody: Array<{ pitch: number; duration: number }>;
+      variations: Array<{
+        melody: Array<{ pitch: number; duration: number }>;
+        gceScore: number;
+        transform: string;
+      }>;
+    }>('/melodic-variation-pack', body),
 };
 
 /** Shape checks for generation receipts (tests). */

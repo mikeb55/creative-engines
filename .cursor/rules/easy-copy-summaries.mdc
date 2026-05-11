@@ -11,5 +11,8 @@ When reporting **summaries**, **outcomes**, **session results**, or **roadmap sn
 2. **Do not** scatter the only copy of the outcome across paragraphs outside the fence unless you **duplicate** the same text inside the fence for paste.
 3. Prefer **` ```text `** or bare **```** for the fence language when the content is not source code.
 4. For roadmap refreshes, align with **`docs/COMPOSER_OS_ROADMAP.md`** and mirror critical bullets inside a single copy block when the user asks for handoff material.
+5. **Icon at the very end:** After the closing ` ``` ` of the summary fence, put **one line containing only** the clipboard emoji **`📋`** as the last line of the assistant message. That marks end-of-summary; Cursor’s copy control on fenced blocks stays on the block itself—never put prose after `📋`.
+
+Apply points 1–5 **throughout** (every handoff, outcome, roadmap snapshot, and compact session summary—not optional).
 
 This repo expects paste-ready blocks for assistants (Claude/Cursor) sharing decisions with humans or other tools.

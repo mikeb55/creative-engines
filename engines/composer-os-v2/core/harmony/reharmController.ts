@@ -11,12 +11,54 @@ import type {
   ReharmResult,
   ReharmSequenceRequest,
 } from './reharmSequenceTypes';
+import { scoreResultForGce } from '../gce/gceGate';
+import { gceSectionsFromFormMap } from '../gce/gceAutoScorers';
+import {
+  buildStubDuoScoreFromMelodicLine,
+  stubMelodicLineFromMelodyPcs,
+} from '../song-mode/melodicVariationPack';
 
 const ROOT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
 function formatAppliedChordSymbol(rootPc: number, vaultChordTypeId: string): string {
   const r = ROOT_NAMES[((rootPc % 12) + 12) % 12]!;
   return `${r}${vaultChordTypeId}`;
+}
+
+function chordSourceForContext(context: CompositionContext): string[] | null {
+  const tb = context.form.totalBars;
+  const md = context.generationMetadata;
+  const src =
+    md.parsedCustomProgressionBars && md.parsedCustomProgressionBars.length === tb
+      ? md.parsedCustomProgressionBars
+      : context.lockedHarmonyBarsRaw && context.lockedHarmonyBarsRaw.length === tb
+        ? context.lockedHarmonyBarsRaw
+        : null;
+  return src;
+}
+
+function spliceAlternativeIntoChordStrip(
+  src: string[],
+  alternative: AlternativeProgression,
+  startBar: number,
+  endBar: number
+): string[] {
+  const next = [...src];
+  const sb = Math.min(startBar, endBar);
+  const eb = Math.max(startBar, endBar);
+
+  for (const row of alternative.bars) {
+    if (row.barIndex < sb || row.barIndex > eb) continue;
+    const i = row.barIndex - 1;
+    if (i < 0 || i >= next.length) continue;
+    if (row.mappingNull || row.strategy === 'passthrough') continue;
+    if (row.strategy === 'identity') {
+      next[i] = row.originalSymbol;
+      continue;
+    }
+    next[i] = formatAppliedChordSymbol(row.substituteRootPc, row.substituteChordTypeId);
+  }
+  return next;
 }
 
 /**
@@ -49,22 +91,7 @@ export function applyReharmAlternative(
       `applyReharmAlternative: need parsedCustomProgressionBars or lockedHarmonyBarsRaw length ${tb}`
     );
   }
-  const next = [...src];
-  const sb = Math.min(startBar, endBar);
-  const eb = Math.max(startBar, endBar);
-
-  for (const row of alternative.bars) {
-    if (row.barIndex < sb || row.barIndex > eb) continue;
-    const i = row.barIndex - 1;
-    if (i < 0 || i >= next.length) continue;
-    if (row.mappingNull || row.strategy === 'passthrough') continue;
-    if (row.strategy === 'identity') {
-      next[i] = row.originalSymbol;
-      continue;
-    }
-    next[i] = formatAppliedChordSymbol(row.substituteRootPc, row.substituteChordTypeId);
-  }
-  return next;
+  return spliceAlternativeIntoChordStrip(src, alternative, startBar, endBar);
 }
 
 /** Matches {@link goldenPath/guitarBassDuoHarmony.seededUnit} — deterministic [0,1). */
@@ -83,11 +110,8 @@ function melodyPcForBar(request: ReharmSequenceRequest, barIndex: number): numbe
   return v === undefined ? null : v;
 }
 
-/**
- * Placeholder GCE-style score: mean {@link scoreReharmCandidate} over scored bars, scaled ×10 into **[0, 10]**.
- * // TODO: wire gceAutoScorers (`engines/composer-os-v2/core/gce/gceAutoScorers.ts`) for real evaluation.
- */
-function gceScorePlaceholderForProgression(
+/** Legacy fit score when chord strip / context is incomplete — same mean×10 as former placeholder. */
+function reharmFallbackMeanCandidateScore(
   prog: AlternativeProgression,
   entries: BarChordEntry[],
   request: ReharmSequenceRequest,
@@ -114,13 +138,41 @@ function gceScorePlaceholderForProgression(
   return Math.min(10, Math.max(0, scaled));
 }
 
+/**
+ * Full GCE weighted overall ({@link scoreResultForGce}) on a stub duo score with the **merged** progression
+ * and optional per-bar melody pitch classes — same pillars as melodic variation pack scoring.
+ */
+function gceOverallForReharmProgression(
+  prog: AlternativeProgression,
+  request: ReharmSequenceRequest,
+  drift: EmotionalDrift,
+  entries: BarChordEntry[]
+): number {
+  const ctx = request.context;
+  const tb = Math.max(1, ctx.form.totalBars | 0);
+  const src = chordSourceForContext(ctx);
+  if (!src) {
+    return reharmFallbackMeanCandidateScore(prog, entries, request, drift);
+  }
+  const merged = spliceAlternativeIntoChordStrip(src, prog, request.startBar, request.endBar);
+  const line = stubMelodicLineFromMelodyPcs(tb, request.startBar, request.endBar, request.melodyPcs);
+  const scoreModel = buildStubDuoScoreFromMelodicLine(line, merged);
+  const sections = gceSectionsFromFormMap(ctx.form);
+  return scoreResultForGce(
+    scoreModel,
+    merged,
+    sections,
+    ctx.generationMetadata?.songwriterStyleId
+  ).overallScore;
+}
+
 function resolveSeed(requested: number | undefined): number {
   if (requested !== undefined && Number.isFinite(requested)) return Math.floor(requested);
   return (Math.floor(seededUnit(4242, 17, 90211) * 0xffffffff) >>> 0) % 2147483647;
 }
 
 /**
- * Runs sequence generation + placeholder per-progression scores for API surfaces.
+ * Runs sequence generation + per-progression GCE overall scores (same pipeline as melodic variation pack).
  */
 export function executeReharm(request: ReharmSequenceRequest): ReharmResult {
   const { startBar, endBar, lensIds } = request;
@@ -132,7 +184,7 @@ export function executeReharm(request: ReharmSequenceRequest): ReharmResult {
   const entries = getChordRangeForBars(startBar, endBar, request.context);
 
   for (const alt of alternatives) {
-    alt.gceScore = gceScorePlaceholderForProgression(alt, entries, seqRequest, drift);
+    alt.gceScore = gceOverallForReharmProgression(alt, seqRequest, drift, entries);
   }
 
   return {

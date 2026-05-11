@@ -1255,6 +1255,30 @@ export interface GenerationMetadata {
   schneiderPedalBars?: number[];
   /** Tutti colour-stack bars (1-based). */
   schneiderColorStackBars?: number[];
+  /** Gil Evans — cool modal / orchestral colour slice (`gilEvansSlice.ts`). */
+  gilEvansDiagnostics?: {
+    songwriterId: 'gil_evans';
+    barsConsidered: number;
+    modalTouches: number;
+    susTouches: number;
+    sideSlipTouches: number;
+    deviceReceipts?: string[];
+  };
+  gilEvansSliceReceipt?: string;
+  gilEvansEffectiveHarmonyBars?: string[];
+  gilEvansDeviceReceipts?: string[];
+  /** Charles Mingus — blues-episodic slice (`charlesMingusSlice.ts`). */
+  charlesMingusDiagnostics?: {
+    songwriterId: 'charles_mingus';
+    barsConsidered: number;
+    bluesDominantTouches: number;
+    slashTouches: number;
+    sideStepTouches: number;
+    deviceReceipts?: string[];
+  };
+  charlesMingusSliceReceipt?: string;
+  charlesMingusEffectiveHarmonyBars?: string[];
+  charlesMingusDeviceReceipts?: string[];
   /** Bacharach (theatre-pop / studio orchestration) — slice diagnostics + effective harmony. */
   bacharachDiagnostics?: {
     songwriterId: 'bacharach';

@@ -1,6 +1,7 @@
 /**
- * Steely Orbit V1.4 — alto-only melodic development (seed cell + transformations).
+ * Steely Orbit V1.4 / V1.5 — alto-only melodic development (seed cell + transformations).
  * Seed: F5 D#5 A#4 C#5 C5 → MIDI [77,75,70,73,72]. Runs after V12 + V13.
+ * V1.5: snapshot bars 9–16 pre-pass (V1.3 orchestration) + eighth shift; rebuild 37–48; rest-span audit helper.
  */
 
 import type { LeadSheet, LeadSheetMelodyNoteEvent } from '../lead-sheet/leadSheetTypes';
@@ -20,6 +21,10 @@ const MINOR_THIRD = 3;
 const INV_AXIS = 77;
 
 export type PhraseNote = { t: number; midi: number; dur: number };
+
+export type SteelyOrbitMelodicVariant = 'v14' | 'v15';
+
+type BarNoteSnap = { bar: number; startBeat: number; midi: number; dur: number };
 
 /** Global beat from score bar 1 beat 0 (sum of prior measure lengths). */
 export type AbsNote = { gb: number; midi: number; dur: number };
@@ -49,7 +54,7 @@ function clearVoice1(measure: MeasureModel): void {
   });
 }
 
-function emitVoice1Segments(measure: MeasureModel, L: number, segments: Array<{ st: number; midi?: number; dur: number }>): void {
+export function emitVoice1Segments(measure: MeasureModel, L: number, segments: Array<{ st: number; midi?: number; dur: number }>): void {
   clearVoice1(measure);
   const sorted = [...segments].sort((a, b) => a.st - b.st);
   let t = 0;
@@ -63,6 +68,45 @@ function emitVoice1Segments(measure: MeasureModel, L: number, segments: Array<{ 
     t = Math.max(t, st + Math.max(0, dur));
   }
   if (t < L - 1e-5) addEvent(measure, createRest(t, L - t, 1));
+}
+
+function snapshotVoice1BarNotes(alto: PartModel, barLow: number, barHigh: number): BarNoteSnap[] {
+  const out: BarNoteSnap[] = [];
+  for (let bar = barLow; bar <= barHigh; bar++) {
+    const m = alto.measures[bar - 1];
+    if (!m) continue;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      if ((e.voice ?? 1) !== 1) continue;
+      const n = e as NoteEvent;
+      out.push({ bar, startBeat: n.startBeat, midi: n.pitch, dur: n.duration });
+    }
+  }
+  return out;
+}
+
+function snapped916ToAbs(score: ScoreModel, rows: BarNoteSnap[], deltaBeats: number): AbsNote[] {
+  return rows.map((r) => {
+    const g0 = cumulativeBarStart(score, r.bar);
+    return { gb: g0 + r.startBeat + deltaBeats, midi: r.midi, dur: r.dur };
+  });
+}
+
+/** Two cycles of seed phrase on bars 9–16 (24 quarters), displaced +1 eighth from bar 9 beat 0. */
+function fallback916DoubledPhrase(score: ScoreModel, phrase58: PhraseNote[]): AbsNote[] {
+  const anchor9 = cumulativeBarStart(score, 9);
+  const cap17 = cumulativeBarStart(score, 17);
+  const cycleLen = 12;
+  const out: AbsNote[] = [];
+  for (let cycle = 0; cycle < 2; cycle++) {
+    for (const p of phrase58) {
+      const gb = anchor9 + cycle * cycleLen + p.t + EIGHTH;
+      if (gb >= cap17 - 1e-5) break;
+      const dur = Math.min(p.dur, cap17 - gb);
+      if (dur > 1e-5) out.push({ gb, midi: p.midi, dur });
+    }
+  }
+  return out;
 }
 
 function leadSorted(lead: LeadSheet, bar: number): LeadSheetMelodyNoteEvent[] {
@@ -189,9 +233,62 @@ function invertMidi(m: number): number {
   return snapAlto(INV_AXIS + (INV_AXIS - m));
 }
 
-export function applySteelyOrbitMelodicDevelopment(score: ScoreModel, lead: LeadSheet): void {
+/**
+ * Alto voice 1: no more than 2 consecutive rest-only bars outside bars 1–4 and bar 32.
+ */
+export function auditAltoConsecutiveRestBars(score: ScoreModel): {
+  ok: boolean;
+  maxSpanOutsideExempt: number;
+  violations: string[];
+} {
+  const alto = findAlto(score);
+  if (!alto) return { ok: false, maxSpanOutsideExempt: 0, violations: ['no bb_alto_sax'] };
+  const exempt = (b: number) => (b >= 1 && b <= 4) || b === 32;
+  const n = alto.measures.length;
+  const barHasAltoV1Pitch = (bar: number): boolean => {
+    const m = alto.measures[bar - 1];
+    if (!m) return false;
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      if ((e.voice ?? 1) !== 1) continue;
+      return true;
+    }
+    return false;
+  };
+  let maxSpan = 0;
+  const violations: string[] = [];
+  let i = 1;
+  while (i <= n) {
+    if (exempt(i)) {
+      i++;
+      continue;
+    }
+    if (barHasAltoV1Pitch(i)) {
+      i++;
+      continue;
+    }
+    const start = i;
+    while (i <= n && !exempt(i) && !barHasAltoV1Pitch(i)) {
+      i++;
+    }
+    const len = i - start;
+    maxSpan = Math.max(maxSpan, len);
+    if (len > 2) {
+      violations.push(`bars ${start}–${i - 1}: ${len} consecutive alto voice-1 rest-only measures`);
+    }
+  }
+  return { ok: violations.length === 0, maxSpanOutsideExempt: maxSpan, violations };
+}
+
+export function applySteelyOrbitMelodicDevelopment(
+  score: ScoreModel,
+  lead: LeadSheet,
+  variant: SteelyOrbitMelodicVariant = 'v14'
+): void {
   const alto = findAlto(score);
   if (!alto) return;
+
+  const snapshot916 = variant === 'v15' ? snapshotVoice1BarNotes(alto, 9, 16) : [];
 
   const phrase58 = extractSeedPhraseFromLead(score, lead);
   const anchor5gb = cumulativeBarStart(score, 5);
@@ -200,13 +297,19 @@ export function applySteelyOrbitMelodicDevelopment(score: ScoreModel, lead: Lead
   const abs58 = phraseToAbsolute(score, phrase58, 5);
   emitAbsoluteRange(alto, score, 5, 8, abs58);
 
-  /** Bars 9–16: eighth-note displacement of seed phrase timeline */
-  const shifted: AbsNote[] = phrase58.map((p) => ({
-    gb: anchor5gb + p.t + EIGHTH,
-    midi: p.midi,
-    dur: p.dur,
-  }));
-  emitAbsoluteRange(alto, score, 9, 16, shifted);
+  /** Bars 9–16: V14 seed timeline shifted from bar 5 anchor (legacy); V15 = snapshot pre-pass + eighth shift, fallback doubled phrase @ bar 9 */
+  if (variant === 'v15') {
+    let abs916 = snapped916ToAbs(score, snapshot916, EIGHTH);
+    if (abs916.length === 0) abs916 = fallback916DoubledPhrase(score, phrase58);
+    emitAbsoluteRange(alto, score, 9, 16, abs916);
+  } else {
+    const shifted: AbsNote[] = phrase58.map((p) => ({
+      gb: anchor5gb + p.t + EIGHTH,
+      midi: p.midi,
+      dur: p.dur,
+    }));
+    emitAbsoluteRange(alto, score, 9, 16, shifted);
+  }
 
   /** Bars 17–24: neighbour on beat 1 + contour raised minor third */
   const notes1724: AbsNote[] = [];
@@ -250,21 +353,87 @@ export function applySteelyOrbitMelodicDevelopment(score: ScoreModel, lead: Lead
     ]);
   }
 
-  /** Bars 33–48: inverted contour — same rhythm as seed phrase, inverted pitches */
+  /** Bars 33–48: V14 inverted contour over full span (only fills ~4 bars — legacy); V15 split region */
   const t0 = phrase58.length ? phrase58[0]!.t : 0;
   const anchor33 = cumulativeBarStart(score, 33);
-  const cap49 = cumulativeBarStart(score, 49);
-  const abs3348: AbsNote[] = [];
-  for (const p of phrase58) {
-    const gb = anchor33 + (p.t - t0);
-    if (gb >= cap49 - 1e-5) break;
-    abs3348.push({
-      gb,
-      midi: invertMidi(p.midi),
-      dur: Math.min(p.dur, cap49 - gb),
-    });
+
+  if (variant === 'v15') {
+    const cap37 = cumulativeBarStart(score, 37);
+    const abs3336: AbsNote[] = [];
+    for (const p of phrase58) {
+      const gb = anchor33 + (p.t - t0);
+      if (gb >= cap37 - 1e-5) break;
+      abs3336.push({
+        gb,
+        midi: invertMidi(p.midi),
+        dur: Math.min(p.dur, cap37 - gb),
+      });
+    }
+    emitAbsoluteRange(alto, score, 33, 36, abs3336);
+
+    /** 37–40 conversational figures */
+    for (let bar = 37; bar <= 40; bar++) {
+      const L = effBar(score, bar);
+      const m = alto.measures[bar - 1]!;
+      const off = (bar - 37) % 2 === 1 ? EIGHTH : 0;
+      const a = snapAlto(STEELY_ORBIT_V14_SEED_MIDI[(bar - 37) % 5]!);
+      const b = snapAlto(STEELY_ORBIT_V14_SEED_MIDI[(bar - 37 + 2) % 5]!);
+      emitVoice1Segments(m, L, [
+        { st: off, midi: a, dur: EIGHTH },
+        { st: off + EIGHTH, midi: b, dur: EIGHTH },
+        { st: off + 1, midi: a, dur: Math.max(0, L - off - 1) },
+      ]);
+    }
+
+    /** Bar 41 bridge */
+    {
+      const L = effBar(score, 41);
+      emitVoice1Segments(alto.measures[40]!, L, [
+        { st: 0, midi: snapAlto(STEELY_ORBIT_V14_SEED_MIDI[0]!), dur: EIGHTH },
+        { st: 1, midi: snapAlto(STEELY_ORBIT_V14_SEED_MIDI[2]!), dur: EIGHTH },
+        { st: 2, midi: snapAlto(STEELY_ORBIT_V14_SEED_MIDI[4]!), dur: EIGHTH },
+      ]);
+    }
+
+    /** 42–44 singable head */
+    const singRows: Array<{ seedI: number; dur: number }> = [
+      { seedI: 0, dur: 2.25 },
+      { seedI: 1, dur: 2.25 },
+      { seedI: 4, dur: 2.5 },
+    ];
+    for (let bar = 42; bar <= 44; bar++) {
+      const L = effBar(score, bar);
+      const spec = singRows[bar - 42]!;
+      emitVoice1Segments(alto.measures[bar - 1]!, L, [
+        { st: 0, midi: snapAlto(STEELY_ORBIT_V14_SEED_MIDI[spec.seedI]!), dur: Math.min(spec.dur, L) },
+      ]);
+    }
+
+    /** 45–48 chromatic descent (support line) */
+    let ch = snapAlto(72);
+    for (let bar = 45; bar <= 48; bar++) {
+      const L = effBar(score, bar);
+      const segs: Array<{ st: number; midi?: number; dur: number }> = [];
+      for (let beat = 0; beat < 3; beat++) {
+        segs.push({ st: beat, midi: ch, dur: 1 });
+        ch = snapAlto(ch - 1);
+      }
+      emitVoice1Segments(alto.measures[bar - 1]!, L, segs);
+    }
+  } else {
+    const cap49 = cumulativeBarStart(score, 49);
+    const abs3348: AbsNote[] = [];
+    for (const p of phrase58) {
+      const gb = anchor33 + (p.t - t0);
+      if (gb >= cap49 - 1e-5) break;
+      abs3348.push({
+        gb,
+        midi: invertMidi(p.midi),
+        dur: Math.min(p.dur, cap49 - gb),
+      });
+    }
+    emitAbsoluteRange(alto, score, 33, 48, abs3348);
   }
-  emitAbsoluteRange(alto, score, 33, 48, abs3348);
 
   /** Bars 49–52: held C#5 */
   for (let bar = 49; bar <= 52; bar++) {

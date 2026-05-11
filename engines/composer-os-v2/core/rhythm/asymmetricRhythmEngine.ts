@@ -3,6 +3,7 @@
  * Complements {@link BarMeterMap} / odd-meter quantisation — does not replace bar signatures.
  */
 
+import type { BarMeterSignature } from './barMeterTypes';
 import type { NoteEvent } from '../score-model/scoreModelTypes';
 
 export type AccentClass = 'strong' | 'halfStrong' | 'weak';
@@ -128,4 +129,13 @@ export function rhythmicEventsToNoteEvents(
 export function cycleSpanQuarters(cycle: CycleDefinition): number {
   validateCycle(cycle);
   return cycle.pulsesPerCycle * quartersPerPulse(cycle.pulseUnit);
+}
+
+/** Time signature matching one full additive cycle (eighth- or sixteenth-note numerator). */
+export function meterSignatureFromCycle(cycle: CycleDefinition): BarMeterSignature {
+  validateCycle(cycle);
+  if (cycle.pulseUnit === 'eighth') {
+    return { numerator: cycle.pulsesPerCycle, denominator: 8 };
+  }
+  return { numerator: cycle.pulsesPerCycle, denominator: 16 };
 }

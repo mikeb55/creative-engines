@@ -2043,21 +2043,243 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G13', 'Cmaj9(#11)', 'Am9'],
     ],
   },
-  maria_schneider: {
+  /** Swing tier — dance-floor clarity + sectional pivots (reading-room momentum). */
+  maria_schneider_swing: {
     verse: [
-      ['Cmaj7(#11)', 'Fmaj7(#11)', 'Bbmaj13(#11)', 'G7(b9,#11,13)'],
       ['Dm9', 'G13', 'Cmaj9(#11)', 'A7alt'],
+      ['Gm11', 'C13', 'Fmaj7(#11)', 'Bb13'],
+      ['Am11', 'D13', 'Gmaj9', 'E7alt'],
+      ['Cm11', 'F13', 'Bbmaj9(#11)', 'G7alt'],
     ],
     chorus: [
       ['Ebmaj7(add9)', 'Bbmaj7(#11)', 'Gm11', 'C9(#11)'],
-      ['Fmaj13(#11)', 'Dm7(b6)', 'Em7(b6)', 'Am(maj7)'],
+      ['Fmaj13(#11)', 'Dm9', 'G13', 'Cmaj9(#11)'],
+      ['Bbmaj9(#11)', 'Ebmaj9', 'Cm11', 'F13'],
+      ['Am11', 'D13', 'Gmaj7(#11)', 'C13'],
     ],
     bridge: [
       ['Bm7(b6)', 'E7alt', 'Amaj7(#11)', 'Dmaj9(#11)'],
       ['Gm11', 'C13', 'Fmaj7(#11)', 'Bb6/9(#11)'],
+      ['Em11', 'A13', 'Dmaj9(#11)', 'B7alt'],
+      ['Fm11', 'Bb13', 'Ebmaj7(#11)', 'Ab13'],
     ],
     pre_chorus: [
       ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
+      ['Bm11', 'E13', 'Amaj9', 'F#m11'],
+      ['Cm11', 'Fm9', 'Bbmaj9', 'G13'],
+      ['Dm11', 'G13', 'Cmaj9', 'A7alt'],
+    ],
+  },
+  /** Ballad tier — breath + pastel extensions (Cerulean / pastoral float). */
+  maria_schneider_ballad: {
+    verse: [
+      ['Cmaj7(#11)', 'Fmaj7(#11)', 'Bbmaj13(#11)', 'G7sus(b9,13)'],
+      ['Em11', 'A13sus', 'Dmaj9(#11)', 'Bm11'],
+      ['Am11', 'Dmaj9', 'Gmaj7(add9)', 'Em11'],
+      ['Fm11', 'Bbmaj9(#11)', 'Ebmaj7(add9)', 'Cm11'],
+    ],
+    chorus: [
+      ['Ebmaj7(add9)', 'Bbmaj7(#11)', 'Gm11', 'Cmaj7(#11)'],
+      ['Fmaj13(#11)', 'Dm7(b6)', 'Em7(b6)', 'Am(maj7)'],
+      ['Dbmaj7(#11)', 'Abmaj9', 'Fm11', 'Bb13sus'],
+      ['Gm11', 'C9sus', 'Fmaj7(#11)', 'Dm11'],
+    ],
+    bridge: [
+      ['Bm7(b6)', 'E7alt', 'Amaj7(#11)', 'Dmaj9(#11)'],
+      ['Gm11', 'C13', 'Fmaj7(#11)', 'Bb6/9(#11)'],
+      ['C#m7(b5)', 'F#7alt', 'Bmaj7(#11)', 'G#m11'],
+      ['Am11', 'Dmaj9', 'Gmaj7(#11)', 'Em9'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
+      ['Bm11', 'Emaj9', 'Amaj7(#11)', 'F#m11'],
+      ['Cm11', 'Fm9', 'Bbmaj7(#11)', 'Gm11'],
+      ['Dm11', 'Gmaj9', 'Cmaj7(#11)', 'Am11'],
+    ],
+  },
+  /** Through-composed tier — mosaic turns + colour-stack pivots (Garden / Data Lords arc). */
+  maria_schneider_through_composed: {
+    verse: [
+      ['Cmaj7(#11)', 'Fmaj7(#11)', 'Bbmaj13(#11)', 'G7(b9,#11,13)'],
+      ['Dm9', 'G13', 'Cmaj9(#11)', 'A7alt'],
+      ['Bm11', 'E13', 'Amaj9(#11)', 'Dmaj7(#11)/F#'],
+      ['Gm11', 'C13(#11)', 'Fmaj9(#11)', 'Bb13sus'],
+    ],
+    chorus: [
+      ['Ebmaj7(add9)', 'Bbmaj7(#11)', 'Gm11', 'C9(#11)'],
+      ['Fmaj13(#11)', 'Dm7(b6)', 'Em7(b6)', 'Am(maj7)'],
+      ['Abmaj7(#11)', 'Eb13', 'Cm11', 'Fm9'],
+      ['Dbmaj9(#11)', 'Ab13', 'Fm11', 'Bb13(#11)'],
+    ],
+    bridge: [
+      ['Bm7(b6)', 'E7alt', 'Amaj7(#11)', 'Dmaj9(#11)'],
+      ['Gm11', 'C13', 'Fmaj7(#11)', 'Bb6/9(#11)'],
+      ['Em11', 'A13(#11)', 'Dmaj9(#11)', 'B7(#9,b13)'],
+      ['Cm11', 'Fsus13', 'Bbmaj7(#11)', 'Eb9(#11)'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm9', 'Gmaj7(add9)', 'Cmaj7(#11)'],
+      ['Gm11', 'C13', 'Fmaj7(#11)', 'Dm11'],
+      ['Bm11', 'E13', 'Amaj9', 'C#m7(b5)'],
+      ['Fm11', 'Bb13', 'Ebmaj9(#11)', 'Cm11'],
+    ],
+  },
+  /** Gil Evans — modal colour-field scaffolding (`gilEvansSlice.ts`). */
+  gil_evans_modal: {
+    verse: [
+      ['Fmaj7sus13', 'Ebmaj7(#11)', 'Dm11', 'G13sus'],
+      ['Bbmaj7(#11)', 'Am11', 'D7sus(b9)', 'Gm11'],
+      ['Cmaj7(#11)', 'Fm9', 'Bb13sus', 'Ebmaj9'],
+      ['Em11', 'A13sus', 'Dmaj7(#11)', 'Bm11'],
+    ],
+    chorus: [
+      ['Dbmaj7(#11)', 'Ab13sus', 'Fm11', 'Bb13'],
+      ['Ebmaj9(#11)', 'Cm11', 'Fsus13', 'Bbmaj9'],
+      ['Gm11', 'C13sus', 'Fmaj7(#11)', 'Dm11'],
+      ['Am11', 'D13(b9)', 'Gmaj7(#11)', 'Em11'],
+    ],
+    bridge: [
+      ['Bm11', 'E7alt', 'Amaj7(#11)', 'F#m11'],
+      ['Gm11', 'C13sus', 'Fmaj9(#11)', 'Bb13'],
+      ['Fm11', 'Bb13', 'Ebmaj7(#11)', 'Cm11'],
+      ['Dmaj7(#11)', 'G13sus', 'Cm11', 'F13'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm9', 'G13sus', 'Cmaj7(#11)'],
+      ['Gm11', 'Cmaj9', 'Fmaj7(#11)', 'Bb13'],
+      ['Em11', 'A13', 'Dmaj9(#11)', 'Bm11'],
+      ['Fm11', 'Bbmaj9', 'Ebmaj7(#11)', 'Cm11'],
+    ],
+  },
+  gil_evans_impressionist: {
+    verse: [
+      ['Cmaj9(#11)', 'Bbmaj7(#11)/D', 'Ebmaj7(#11)', 'Dm11'],
+      ['Fmaj7(#11)', 'Em11', 'A13(b9)', 'Dmaj7(#11)'],
+      ['Gm11', 'Gbmaj7(#11)', 'Fm11', 'Bb13sus'],
+      ['Am11', 'Ab13', 'Gm11', 'C13sus'],
+    ],
+    chorus: [
+      ['Ebmaj7(add9)', 'Dbmaj7(#11)', 'Cm11', 'F13(b9)'],
+      ['Bbmaj7(#11)', 'Am11', 'Dm11', 'G13sus'],
+      ['Abmaj7(#11)', 'Gm11', 'Cm11', 'F13'],
+      ['Dbmaj9(#11)', 'C13sus', 'Fm11', 'Bb13'],
+    ],
+    bridge: [
+      ['Bm11', 'Bb13', 'Amaj7(#11)', 'G#m11'],
+      ['Gm11', 'Gbmaj7(#11)', 'Fm11', 'E7alt'],
+      ['Am11', 'Abmaj7(#11)', 'Gm11', 'Gb13'],
+      ['Dm11', 'Dbmaj7(#11)', 'Cm11', 'B13'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Abmaj7(#11)', 'Gm11', 'G13sus'],
+      ['Dm11', 'Dbmaj7(#11)', 'Cm11', 'C13'],
+      ['Gm11', 'Gbmaj7(#11)', 'Fm11', 'F13'],
+      ['Cm11', 'Bm11', 'Bbmaj7(#11)', 'Bb13'],
+    ],
+  },
+  gil_evans_wide_interval: {
+    verse: [
+      ['Cmaj7(#11)', 'Abmaj7(#11)', 'Dm11', 'Bb13'],
+      ['Fm11', 'Dbmaj9(#11)', 'Gm11', 'Eb13'],
+      ['Bbmaj7(#11)', 'Gm11', 'C13sus', 'Fmaj9(#11)'],
+      ['Em11', 'Cmaj7(#11)', 'Am11', 'D13sus'],
+    ],
+    chorus: [
+      ['Ebmaj9(#11)', 'Bmaj7(#11)', 'Gm11', 'D13'],
+      ['Abmaj7(#11)', 'Em11', 'Bbmaj9', 'F13'],
+      ['Dbmaj9(#11)', 'Am11', 'Ebmaj7(#11)', 'Bm11'],
+      ['Gbmaj7(#11)', 'Dm11', 'Ab13', 'Em11'],
+    ],
+    bridge: [
+      ['Bm11', 'Gmaj7(#11)', 'E7alt', 'Cmaj7(#11)'],
+      ['Fm11', 'Dbmaj9(#11)', 'Bb13', 'Gm11'],
+      ['Cm11', 'Abmaj7(#11)', 'F13', 'Dm11'],
+      ['Gm11', 'Ebmaj9(#11)', 'C13', 'Am11'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Fmaj7(#11)', 'Dm11', 'Bb13'],
+      ['Gm11', 'Ebmaj9(#11)', 'Cm11', 'Ab13'],
+      ['Dm11', 'Bbmaj7(#11)', 'Gm11', 'Eb13'],
+      ['Em11', 'Cmaj7(#11)', 'Am11', 'F13'],
+    ],
+  },
+  /** Charles Mingus — blues architecture pools (`charlesMingusSlice.ts`). */
+  charles_mingus_blues_jazz: {
+    verse: [
+      ['C7', 'F7', 'C7', 'G7'],
+      ['Bb7', 'Eb7', 'Bb7', 'F7'],
+      ['G7', 'C7', 'G7', 'D7'],
+      ['F7', 'Bb7', 'F7', 'C7'],
+    ],
+    chorus: [
+      ['C13', 'F9', 'C13', 'G13'],
+      ['Bb13', 'Eb9', 'Bb13', 'F13'],
+      ['G13', 'C9', 'G13', 'D13'],
+      ['F13', 'Bb9', 'F13', 'C13'],
+    ],
+    bridge: [
+      ['Dm7', 'G7', 'Cmaj7', 'Am7'],
+      ['Fm7', 'Bb7', 'Ebmaj7', 'Cm7'],
+      ['Em7b5', 'A7alt', 'Dm7', 'G7'],
+      ['Gm7', 'C7', 'Fmaj7', 'Dm7'],
+    ],
+    pre_chorus: [
+      ['C7', 'A7', 'Dm7', 'G7'],
+      ['Bb7', 'G7', 'Cm7', 'F7'],
+      ['G7', 'E7', 'Am7', 'D7'],
+      ['F7', 'D7', 'Gm7', 'C7'],
+    ],
+  },
+  charles_mingus_gospel: {
+    verse: [
+      ['Cmaj7', 'F/C', 'Cmaj7', 'G7sus'],
+      ['Bbmaj7', 'Eb/Bb', 'Bbmaj7', 'F7sus'],
+      ['Gmaj7', 'C/G', 'Gmaj7', 'D7sus'],
+      ['Fmaj7', 'Bb/F', 'Fmaj7', 'C7sus'],
+    ],
+    chorus: [
+      ['C13', 'F9/C', 'C13', 'G13'],
+      ['Bb13', 'Eb9/Bb', 'Bb13', 'F13'],
+      ['G13', 'C9/G', 'G13', 'D13'],
+      ['F13', 'Bb9/F', 'F13', 'C13'],
+    ],
+    bridge: [
+      ['Dm9', 'G13', 'Cmaj9', 'Am11'],
+      ['Fm9', 'Bb13', 'Ebmaj9', 'Cm11'],
+      ['Em11', 'A13', 'Dmaj9', 'Bm11'],
+      ['Gm11', 'C13', 'Fmaj9', 'Dm11'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dm9', 'G13', 'Cmaj9'],
+      ['Gm11', 'Cm9', 'F13', 'Bbmaj9'],
+      ['Em11', 'Am9', 'D13', 'Gmaj9'],
+      ['Fm11', 'Bb13', 'Ebmaj9', 'Cm11'],
+    ],
+  },
+  charles_mingus_chromatic: {
+    verse: [
+      ['C7#9', 'F7b13', 'C7alt', 'G7#9'],
+      ['Bb7b9', 'Eb7#11', 'Bb13', 'F7alt'],
+      ['G7#9', 'C7b9', 'G7alt', 'D7#11'],
+      ['F7b13', 'Bb7alt', 'F13', 'C7#9'],
+    ],
+    chorus: [
+      ['C13(b9)', 'F7(#11)', 'C7alt', 'G13(b9)'],
+      ['Bb13', 'Eb7alt', 'Bb7#9', 'F13'],
+      ['G13(#11)', 'C7alt', 'G13(b9)', 'D7#9'],
+      ['F13(b9)', 'Bb7#11', 'F7alt', 'C13'],
+    ],
+    bridge: [
+      ['Dm7b5', 'G7alt', 'Cm11', 'F7#11'],
+      ['Fm7b5', 'Bb7alt', 'Ebmaj7#11', 'Ab13'],
+      ['Em7b5', 'A7alt', 'Dm11', 'G7b13'],
+      ['Gm7b5', 'C7alt', 'Fm11', 'Bb13'],
+    ],
+    pre_chorus: [
+      ['C7alt', 'A7#9', 'Dm11', 'G7b13'],
+      ['Bb7alt', 'G7#9', 'Cm11', 'F13'],
+      ['G7alt', 'E7#9', 'Am11', 'D13'],
+      ['F7alt', 'D7#11', 'Gm11', 'C13'],
     ],
   },
   /** Thad Jones — nonachord-heavy big-band rows (`THAD_JONES_SLICE_PARAMETERS`). */
@@ -2730,6 +2952,33 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'steve_reich_phasing' : tier === 1 ? 'steve_reich_additive' : 'steve_reich_cycle';
+  }
+  if (songwriterId === 'maria_schneider') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0
+        ? 'maria_schneider_swing'
+        : tier === 1
+          ? 'maria_schneider_ballad'
+          : 'maria_schneider_through_composed';
+  }
+  if (songwriterId === 'gil_evans') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0
+        ? 'gil_evans_modal'
+        : tier === 1
+          ? 'gil_evans_impressionist'
+          : 'gil_evans_wide_interval';
+  }
+  if (songwriterId === 'charles_mingus') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0
+        ? 'charles_mingus_blues_jazz'
+        : tier === 1
+          ? 'charles_mingus_gospel'
+          : 'charles_mingus_chromatic';
   }
   if (songwriterId === 'thad_jones') {
     const tier = Math.abs(seed) % 3;

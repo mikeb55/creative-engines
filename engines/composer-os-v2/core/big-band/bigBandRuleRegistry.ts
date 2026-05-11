@@ -35,12 +35,19 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('basie.functional_harmony', 'Mostly functional harmony', 'composer', 'harmony', 72),
     R('basie.shout_homophony', 'Shout homophony + earlier riff reuse', 'composer', 'orchestration', 84),
   ],
-  thad: [
-    R('thad.extended_form', 'Extended forms with interludes/tags', 'composer', 'form', 80),
-    R('thad.solo_background_arc', 'Solo backgrounds evolve toward near-shout', 'composer', 'density', 82),
-    R('thad.voice_leading', 'Strong inner voice-leading', 'composer', 'harmony', 78),
-    R('thad.metric_tension', 'Metric tension near climaxes', 'composer', 'rhythm', 76),
-    R('thad.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
+  thad_jones: [
+    R('thad_jones.extended_form', 'Extended forms with interludes/tags', 'composer', 'form', 80),
+    R('thad_jones.solo_background_arc', 'Solo backgrounds evolve toward near-shout', 'composer', 'density', 82),
+    R('thad_jones.voice_leading', 'Strong inner voice-leading', 'composer', 'harmony', 78),
+    R('thad_jones.metric_tension', 'Metric tension near climaxes', 'composer', 'rhythm', 76),
+    R('thad_jones.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
+  ],
+  wayne_shorter: [
+    R('wayne.lateral_root', 'Modal plateaus + lateral dominants without ii–V wallpaper', 'composer', 'harmony', 81),
+    R('wayne.section_colour_turn', 'Orchestral colour turns at phrase seams', 'composer', 'orchestration', 79),
+    R('wayne.metric_float', 'Elastic phrase placement vs rigid riff grid', 'composer', 'rhythm', 77),
+    R('wayne.counter_line_peak', 'Counter-lines bloom toward climax without shout cliché', 'composer', 'density', 78),
+    R('wayne.development_arc', 'Small-cell development across sections', 'composer', 'form', 80),
   ],
   schneider: [
     R('schneider.through_composed', 'Through-composed form graph', 'composer', 'form', 79),

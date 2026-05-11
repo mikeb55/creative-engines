@@ -22,6 +22,7 @@ import {
   apiOpenOutputFolder,
   apiSystemCheck,
   apiPdfGenerateFromPdf,
+  apiMelodicVariationPack,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -74,6 +75,22 @@ app.get('/api/style-modules', (_req: Request, res: Response) => {
     res.json(apiGetStyleModules());
   } catch (err) {
     res.status(500).json({ error: String(err) });
+  }
+});
+
+app.post('/api/melodic-variation-pack', (req: Request, res: Response) => {
+  try {
+    const result = apiMelodicVariationPack(req.body as Parameters<typeof apiMelodicVariationPack>[0]);
+    if (!result.success) {
+      res.status(400).json(result);
+      return;
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: String(err),
+    });
   }
 });
 

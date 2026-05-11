@@ -15,6 +15,7 @@ import {
   apiOpenOutputFolder,
   apiSystemCheck,
   apiPdfGenerateFromPdf,
+  apiMelodicVariationPack,
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
@@ -96,6 +97,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     }
     return readFile(pathRaw, 'utf-8');
   });
+  ipcMain.handle('composer-os-api:melodic-variation-pack', (_e, body: unknown) =>
+    Promise.resolve(apiMelodicVariationPack(body as Parameters<typeof apiMelodicVariationPack>[0]))
+  );
   ipcMain.handle('composer-os-api:generate', (_e, body: unknown) => {
     const prevIpc = process.env.COMPOSER_OS_IPC_GENERATE_BODY_JSON;
     try {
