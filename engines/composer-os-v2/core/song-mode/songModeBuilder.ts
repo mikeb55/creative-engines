@@ -3089,7 +3089,8 @@ function chordSymbolsForSection(
   }
   if (songwriterId === 'oliver_nelson') {
     const tier = Math.abs(seed) % 3;
-    resolvedPoolId = tier === 0 ? 'nelson_blues' : tier === 1 ? 'nelson_modal' : 'nelson_swing';
+    resolvedPoolId =
+      tier === 0 ? 'nelson_minor_modal' : tier === 1 ? 'nelson_minor_blues' : 'nelson_orchestral';
   }
   if (songwriterId === 'quincy_jones') {
     const tier = Math.abs(seed) % 3;
@@ -3140,10 +3141,19 @@ function chordSymbolsForSection(
     ) {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }
-    const rowTags =
-      songwriterId === 'bob_brookmeyer'
-        ? [...chosenRowTags, 'line_first:true', `brookmeyer_pool:${resolvedPoolId}`]
-        : chosenRowTags;
+    let rowTags = chosenRowTags;
+    if (songwriterId === 'bob_brookmeyer') {
+      rowTags = [...chosenRowTags, 'line_first:true', `brookmeyer_pool:${resolvedPoolId}`];
+    }
+    if (songwriterId === 'oliver_nelson') {
+      rowTags = [
+        ...rowTags,
+        'pedalBased:true',
+        'bluesModalHybrid:true',
+        'twoLayerForm:true',
+        `nelson_pool:${resolvedPoolId}`,
+      ];
+    }
     return { chordSymbols, chosenRowTags: rowTags };
   }
 

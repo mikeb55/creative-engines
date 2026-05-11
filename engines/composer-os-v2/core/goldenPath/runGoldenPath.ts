@@ -26,6 +26,8 @@ import type {
   JohnWilliamsContextMode,
   JoniMitchellPhaseMode,
   MessiaenPeriodMode,
+  NelsonBluesFormVariant,
+  NelsonPeriodMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
@@ -1182,6 +1184,10 @@ export interface RunGoldenPathOptions {
   messiaenPeriodMode?: MessiaenPeriodMode;
   /** Song Mode / Bob Brookmeyer: early vs late posture (`bobBrookmeyerSlice.ts`). Omitted → seeded resolve. */
   brookmeyerPeriodMode?: BrookmeyerPeriodMode;
+  /** Song Mode / Oliver Nelson: era posture (`oliverNelsonSlice.ts`). Omitted → seeded resolve. */
+  nelsonPeriodMode?: NelsonPeriodMode;
+  /** Song Mode / Oliver Nelson: 12 vs 16-bar minor blues surface (`oliverNelsonSlice.ts`). Omitted → seeded resolve. */
+  nelsonBluesFormVariant?: NelsonBluesFormVariant;
   /** Song Mode / Thad Jones: big-band phase (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Song Mode / Joni Mitchell: sus/modal phase (`joniMitchellSlice.ts`). Default **`folk_modal`** when omitted. */
@@ -1872,6 +1878,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'bob_brookmeyer' &&
       (options.brookmeyerPeriodMode === 'early_brookmeyer' || options.brookmeyerPeriodMode === 'late_brookmeyer')
         ? { brookmeyerPeriodMode: options.brookmeyerPeriodMode }
+        : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'oliver_nelson' &&
+      (options.nelsonPeriodMode === 'early_nelson' ||
+        options.nelsonPeriodMode === 'middle_nelson' ||
+        options.nelsonPeriodMode === 'late_nelson')
+        ? { nelsonPeriodMode: options.nelsonPeriodMode }
+        : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'oliver_nelson' &&
+      (options.nelsonBluesFormVariant === 'twelve_bar' || options.nelsonBluesFormVariant === 'sixteen_bar')
+        ? { nelsonBluesFormVariant: options.nelsonBluesFormVariant }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
         ? {
@@ -2756,6 +2772,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const tjLt = mdLt?.thadJonesEffectiveHarmonyBars;
   const cbLt = mdLt?.basieEffectiveHarmonyBars;
   const brookmeyerLt = mdLt?.bobBrookmeyerEffectiveHarmonyBars;
+  const nelsonLt = mdLt?.oliverNelsonEffectiveHarmonyBars;
   const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const bhHerrLt = mdLt?.bernardHerrmannEffectiveHarmonyBars;
@@ -2835,6 +2852,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                             Array.isArray(brookmeyerLt) &&
                                                             brookmeyerLt.length === tbLt
                                                           ? brookmeyerLt
+                                                        : mdLt?.songwriterStyleId === 'oliver_nelson' &&
+                                                            Array.isArray(nelsonLt) &&
+                                                            nelsonLt.length === tbLt
+                                                          ? nelsonLt
                                                         : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
                                                           ? msLt
                                                         : mdLt?.songwriterStyleId === 'bernard_herrmann' &&

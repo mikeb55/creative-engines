@@ -23,6 +23,8 @@ import type {
   BasieTestamentMode,
   BrookmeyerPeriodMode,
   MessiaenPeriodMode,
+  NelsonBluesFormVariant,
+  NelsonPeriodMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
@@ -58,6 +60,8 @@ export type { HansZimmerContextMode };
 export type { AngeloBadalamentiContextMode };
 export type { BasieTestamentMode };
 export type { BrookmeyerPeriodMode };
+export type { NelsonPeriodMode };
+export type { NelsonBluesFormVariant };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -339,6 +343,10 @@ export interface GenerateRequest {
   messiaenPeriodMode?: MessiaenPeriodMode;
   /** Song Mode / Bob Brookmeyer — early (chorus-based) vs late (through-composed) (`bobBrookmeyerSlice.ts`). */
   brookmeyerPeriodMode?: BrookmeyerPeriodMode;
+  /** Song Mode / Oliver Nelson — era posture (`oliverNelsonSlice.ts`). Omitted → seeded resolve. */
+  nelsonPeriodMode?: NelsonPeriodMode;
+  /** Song Mode / Oliver Nelson — 12 vs 16-bar blues variant (`oliverNelsonSlice.ts`). */
+  nelsonBluesFormVariant?: NelsonBluesFormVariant;
   hansZimmerContext?: HansZimmerContextMode;
   angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /**
@@ -699,6 +707,14 @@ export interface OutputEntry {
   bobBrookmeyerEffectiveHarmonyBars?: GenerationMetadata['bobBrookmeyerEffectiveHarmonyBars'];
   lineFirstHierarchy?: GenerationMetadata['lineFirstHierarchy'];
   contrapuntalLineCount?: GenerationMetadata['contrapuntalLineCount'];
+  nelsonPeriodMode?: GenerationMetadata['nelsonPeriodMode'];
+  nelsonPeriodModeResolved?: GenerationMetadata['nelsonPeriodModeResolved'];
+  nelsonBluesFormVariant?: GenerationMetadata['nelsonBluesFormVariant'];
+  nelsonBluesFormVariantResolved?: GenerationMetadata['nelsonBluesFormVariantResolved'];
+  activePedal?: GenerationMetadata['activePedal'];
+  upperModalChords?: GenerationMetadata['upperModalChords'];
+  nelsonTwoLayerForm?: GenerationMetadata['nelsonTwoLayerForm'];
+  oliverNelsonEpisodePlanSummary?: GenerationMetadata['oliverNelsonEpisodePlanSummary'];
   joniPhase?: GenerationMetadata['joniPhase'];
   joniResolvedPhase?: GenerationMetadata['joniResolvedPhase'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */

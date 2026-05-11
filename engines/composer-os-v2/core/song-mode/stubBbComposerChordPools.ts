@@ -101,29 +101,57 @@ export const fischer_latin = chunk64((i) => {
   return [`${a}m9`, `${b}13`, `${c}maj9`, `${d}m11`];
 });
 
-/** Nelson — blues backbone; modal centres; swing shout functional clarity. */
-export const nelson_blues = chunk64((i) => {
-  const a = ROOTS[(i + 7) % 12];
-  const b = ROOTS[(i + 10) % 12];
-  const c = ROOTS[(i + 5) % 12];
-  const d = ROOTS[(i + 3) % 12];
-  return [`${a}9`, `${b}13`, `${c}m9`, `${d}7(b9)`];
+/** C minor 12-bar backbone for minor-blues tier (tile rows). */
+const NELSON_MINOR_BLUES12 = [
+  'Cm7',
+  'Cm7',
+  'Cm7',
+  'Cm7',
+  'Fm7',
+  'Fm7',
+  'Cm7',
+  'Cm7',
+  'Ab7(9,13)',
+  'G7(9,13)',
+  'Cm7',
+  'G7',
+] as const;
+
+/**
+ * Nelson — minor modal: C pedal + E♭maj7 / Fmaj7 upper field; Cm9/11; quartal min11 planing;
+ * Dm11→E♭dim7→C7/E→Fm7 chromatic cells (`seed % 3` tier).
+ */
+export const nelson_minor_modal = chunk64((i) => {
+  const eb = 'Ebmaj7/C';
+  const fmaj = 'Fmaj7/C';
+  const cm9 = 'Cm9';
+  const cm11 = 'Cm11';
+  const dm11 = 'Dm11';
+  const ebdim = 'Ebdim7';
+  const c7e = 'C7/E';
+  const fm7 = 'Fm7';
+  const pat = i % 4;
+  if (pat === 0) return [eb, fmaj, cm9, cm11];
+  if (pat === 1) return [fmaj, eb, cm11, dm11];
+  if (pat === 2) return [dm11, ebdim, c7e, fm7];
+  const q = ['Cm11', 'Dbm11', 'Dm11', 'Ebm11'];
+  const qi = i % 4;
+  return [`${q[qi]}`, `${q[(qi + 1) % 4]}`, eb, fmaj];
 });
 
-export const nelson_modal = chunk64((i) => {
-  const a = ROOTS[i % 12];
-  const b = ROOTS[(i + 5) % 12];
-  const c = ROOTS[(i + 10) % 12];
-  const d = ROOTS[(i + 3) % 12];
-  return [`${a}m11`, `${b}sus13`, `${c}maj7#11`, `${d}m9`];
+/** Nelson — exact C minor 12-bar blues cycle (ivm7; bVI7–V7–i turnaround). */
+export const nelson_minor_blues = chunk64((i) => {
+  const base = i * 4;
+  return [0, 1, 2, 3].map((k) => NELSON_MINOR_BLUES12[(base + k) % 12]!);
 });
 
-export const nelson_swing = chunk64((i) => {
-  const a = ROOTS[(i + 2) % 12];
-  const b = ROOTS[(i + 9) % 12];
-  const c = ROOTS[(i + 4) % 12];
-  const d = ROOTS[(i + 11) % 12];
-  return [`${a}m7`, `${b}9`, `${c}maj13`, `${d}13`];
+/** Nelson — late orchestral chromaticism (*Sound Pieces*): min11 planing, dim passing, maj pivot. */
+export const nelson_orchestral = chunk64((i) => {
+  const r = (o: number) => ROOTS[(i + o) % 12]!;
+  const u = i % 3;
+  if (u === 0) return [`${r(0)}m11`, `${r(1)}m11`, 'Cmaj7(9)', `${r(3)}dim7`];
+  if (u === 1) return [`${r(2)}m11`, `${r(3)}m11`, 'Ebdim7', `${r(5)}m11`];
+  return [`${r(0)}m9`, `${r(4)}maj7(9)`, `${r(6)}m11`, `${r(8)}m11`];
 });
 
 /** Quincy Jones — punchy swing shout vocabulary / soul–pop crossover / orchestral lifts. */
@@ -196,9 +224,9 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   fischer_polytonal,
   fischer_ballad,
   fischer_latin,
-  nelson_blues,
-  nelson_modal,
-  nelson_swing,
+  nelson_minor_modal,
+  nelson_minor_blues,
+  nelson_orchestral,
   quincy_jones_swing,
   quincy_jones_soul,
   quincy_jones_orchestral,

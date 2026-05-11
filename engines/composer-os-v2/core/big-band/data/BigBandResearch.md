@@ -279,6 +279,45 @@
 
 ---
 
+### Oliver Nelson
+
+#### Blues–modal hybrid template
+
+- **Two-layer form** — modal / pedal **head** harmonic environment vs **functional** **12-bar C minor blues** for **solo** sections within the same chart.
+
+#### *Stolen Moments* orientation (formal sketch)
+
+- **Intro** — Im7–IIm7/I–♭IIImaj7/I–IIm7/I establishing **C** pedal and **maj7** upper colours.
+- **16-bar A+B head** — **A**: **C** pedal with **IIImaj7 / IVmaj7** alternation (**E♭maj7** / **Fmaj7** over **C**); **bar 4** **Cmaj7(9)** pivot (E natural approached from E♭); **B**: **Cm11** quartal planing + chromatic pull (**Dm11–E♭dim7–C7/E–Fm7**).
+- **Solos** — **12-bar minor blues** on **Cm7**; **bVI7–V7–i** turnaround **A♭7(9,13)→G7(9,13)→Cm7** (bars 9–11); bar **12** optional **Dø7–G7** variation.
+
+#### Voicing formulas (engine-facing)
+
+- **Pedal + IIImaj7 / IVmaj7** upper field over sustained **i**.
+- **9–♭3 rub** — **D** vs **E♭** in mid–upper voices when maj7 colours sit over minor pedal.
+- **Quartal min11 planing** — parallel **m11** shells by semitone / whole step.
+- **Dominants** — **A♭7(9,13)** / **G7(9,13)** — **3–7–9–13** shell, **unaltered** alterations list.
+
+#### Three periods
+
+- ***Meet Oliver Nelson*** (**1959**) — hard bop, conventional functional bridges.
+- ***Blues and the Abstract Truth*** (**1961**) — **pedal–modal** hybrid + sectional orchestration peak (*Stolen Moments*, *Yearnin’*).
+- ***Sound Pieces*** (**1966**) — orchestral chromaticism and denser **min11** planing.
+
+#### Sextet → big-band orchestration
+
+- **Register staggering** — trumpet (high), alto (mid), tenor (mid-low), bari (low anchor); **triad + extensions** spread across **3–4** horns; **bari + bass** on **root / 5th**.
+
+#### Cascades & variants
+
+- **16-bar A section** — minor-blues **surface length** variant for long **A** sections (**Cascades** orientation).
+
+#### Formal boundary signals
+
+- Section changes signalled by **orchestration shift + harmonic colour change + density change** — not bar-count templates alone.
+
+---
+
 ## SECTION 2 — BIG BAND ERAS (CRITICAL)
 
 ### Swing Era (Ellington / Basie)

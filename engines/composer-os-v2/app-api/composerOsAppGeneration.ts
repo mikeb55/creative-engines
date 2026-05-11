@@ -1158,6 +1158,16 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     (req.brookmeyerPeriodMode === 'early_brookmeyer' || req.brookmeyerPeriodMode === 'late_brookmeyer')
       ? { brookmeyerPeriodMode: req.brookmeyerPeriodMode }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'oliver_nelson' &&
+    (req.nelsonPeriodMode === 'early_nelson' ||
+      req.nelsonPeriodMode === 'middle_nelson' ||
+      req.nelsonPeriodMode === 'late_nelson')
+      ? { nelsonPeriodMode: req.nelsonPeriodMode }
+      : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'oliver_nelson' &&
+    (req.nelsonBluesFormVariant === 'twelve_bar' || req.nelsonBluesFormVariant === 'sixteen_bar')
+      ? { nelsonBluesFormVariant: req.nelsonBluesFormVariant }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
       ? {
           ...(req.asymmetricRhythm ? { asymmetricRhythm: req.asymmetricRhythm } : {}),
@@ -2134,6 +2144,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       bobBrookmeyerEffectiveHarmonyBars: gp.context.generationMetadata.bobBrookmeyerEffectiveHarmonyBars,
       lineFirstHierarchy: gp.context.generationMetadata.lineFirstHierarchy,
       contrapuntalLineCount: gp.context.generationMetadata.contrapuntalLineCount,
+      nelsonPeriodMode: gp.context.generationMetadata.nelsonPeriodMode,
+      nelsonPeriodModeResolved: gp.context.generationMetadata.nelsonPeriodModeResolved,
+      nelsonBluesFormVariant: gp.context.generationMetadata.nelsonBluesFormVariant,
+      nelsonBluesFormVariantResolved: gp.context.generationMetadata.nelsonBluesFormVariantResolved,
+      activePedal: gp.context.generationMetadata.activePedal,
+      upperModalChords: gp.context.generationMetadata.upperModalChords,
+      nelsonTwoLayerForm: gp.context.generationMetadata.nelsonTwoLayerForm,
+      oliverNelsonEpisodePlanSummary: gp.context.generationMetadata.oliverNelsonEpisodePlanSummary,
       sonicYouthDiagnostics: gp.context.generationMetadata.sonicYouthDiagnostics,
       sonicYouthDeviceReceipts: gp.context.generationMetadata.sonicYouthDeviceReceipts,
       sonicYouthSliceReceipt: gp.context.generationMetadata.sonicYouthSliceReceipt,

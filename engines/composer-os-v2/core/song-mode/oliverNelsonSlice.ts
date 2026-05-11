@@ -1,14 +1,35 @@
 /**
- * Oliver Nelson — blues-functional backbone / sectional contrast (`on:*` receipts).
+ * Oliver Nelson — pedal modal head + minor blues solo layer (`on:*` receipts).
  */
 
-import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type {
+  CompositionContext,
+  GenerationMetadata,
+  NelsonBluesFormVariant,
+  NelsonPeriodMode,
+} from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { breakFrankZappaIiViProgressions } from './songModeBuilder';
+import { buildNelsonEpisodePlan, episodeForNelsonBar } from './nelsonEpisodeTypes';
 
-const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+export type { NelsonPeriodMode, NelsonBluesFormVariant } from '../compositionContext';
+
+const MINOR_BLUES_12 = [
+  'Cm7',
+  'Cm7',
+  'Cm7',
+  'Cm7',
+  'Fm7',
+  'Fm7',
+  'Cm7',
+  'Cm7',
+  'Ab7(9,13)',
+  'G7(9,13)',
+  'Cm7',
+  'G7',
+] as const;
 
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
@@ -16,19 +37,63 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   return s / 0xffffffff;
 }
 
-function slashTail(symbol: string): string {
-  return symbol.includes('/') ? symbol.slice(symbol.indexOf('/')) : '';
+export function resolveNelsonPeriodMode(
+  context: CompositionContext,
+  genMeta: GenerationMetadata & Record<string, unknown>
+): NelsonPeriodMode {
+  const ctx = context.nelsonPeriodMode;
+  if (ctx === 'early_nelson' || ctx === 'middle_nelson' || ctx === 'late_nelson') return ctx;
+  const meta = genMeta.nelsonPeriodMode as NelsonPeriodMode | undefined;
+  if (meta === 'early_nelson' || meta === 'middle_nelson' || meta === 'late_nelson') return meta;
+  const r = Math.abs(context.seed) % 3;
+  return r === 0 ? 'early_nelson' : r === 1 ? 'middle_nelson' : 'late_nelson';
 }
 
-function bluesDominantColour(symbol: string, seed: number, bar: number): string {
-  const hp = parseChordSymbol(symbol).harmonyPart;
-  const root = hp.match(ROOT_AT_START)?.[1];
-  if (!root) return symbol;
-  const tl = hp.toLowerCase();
-  if (!/\b7|dom/.test(tl) && !/^([a-g][#b]?)7/.test(tl.replace(/\s/g, ''))) return symbol;
-  const slash = slashTail(symbol);
-  if (seededUnit(seed, bar, 884101) < 0.42) return `${root}9(b13)${slash}`;
-  return symbol;
+export function resolveNelsonBluesFormVariant(
+  context: CompositionContext,
+  genMeta: GenerationMetadata & Record<string, unknown>
+): NelsonBluesFormVariant {
+  const ctx = context.nelsonBluesFormVariant;
+  if (ctx === 'twelve_bar' || ctx === 'sixteen_bar') return ctx;
+  const meta = genMeta.nelsonBluesFormVariant as NelsonBluesFormVariant | undefined;
+  if (meta === 'twelve_bar' || meta === 'sixteen_bar') return meta;
+  return Math.abs(context.seed) % 5 === 0 ? 'sixteen_bar' : 'twelve_bar';
+}
+
+function pedalTwoLayer(localBar: number, seed: number): string {
+  const u = seededUnit(seed, localBar, 501);
+  if (localBar <= 2) return u < 0.5 ? 'Ebmaj7/C' : 'Fmaj7/C';
+  return u < 0.5 ? 'Fmaj7/C' : 'Ebmaj7/C';
+}
+
+function modalHeadChord(
+  rb: number,
+  period: NelsonPeriodMode,
+  seed: number,
+  bluesVariant: NelsonBluesFormVariant
+): string {
+  const span = bluesVariant === 'sixteen_bar' ? 16 : 13;
+  const effectiveRb = ((rb - 1) % span) + 1;
+  if (effectiveRb <= 3) return seededUnit(seed, effectiveRb, 601) < 0.5 ? 'Ebmaj7/C' : 'Fmaj7/C';
+  if (effectiveRb === 4) return period === 'early_nelson' ? 'Cm9' : 'Cmaj7(9)';
+  if (effectiveRb <= 8) return 'Cm11';
+  if (effectiveRb <= 12) {
+    const q = ['Cm11', 'Dm11', 'Ebm11', 'Fm11'] as const;
+    return q[(effectiveRb + seed) % 4]!;
+  }
+  return ['Dm11', 'Ebdim7', 'C7/E', 'Fm7'][(effectiveRb - 1) % 4]!;
+}
+
+function orchestralChord(bar: number, seed: number): string {
+  const roots = ['C', 'Db', 'D', 'Eb', 'E', 'F'];
+  const r = roots[(bar + seed * 3) % roots.length]!;
+  return `${r}m11`;
+}
+
+function minorBluesAt(rel: number, seed: number, bar: number): string {
+  const i = (rel - 1) % 12;
+  if (i === 11 && seededUnit(seed, bar, 901) < 0.35) return 'Dø7';
+  return MINOR_BLUES_12[i]!;
 }
 
 export function isSongwriterOliverNelson(
@@ -52,8 +117,8 @@ function scanChord(chord: string, acc: OliverNelsonHarmonyAccumulator): void {
   if (!c) return;
   acc.barsConsidered++;
   const t = parseChordSymbol(c).harmonyPart.toLowerCase();
-  if (/b13|b9|blues|9/.test(t)) acc.bluesTouches++;
-  if (/m11|sus|maj7#11/.test(t)) acc.modalTouches++;
+  if (/m7|blues|9\(9,13\)|\(9,13\)/.test(t) || /b13|b9/.test(t)) acc.bluesTouches++;
+  if (/m11|maj7\/|dim|ø|maj7\(9\)/.test(t)) acc.modalTouches++;
 }
 
 export function accumulateOliverNelsonHarmonyDiagnostics(
@@ -74,10 +139,10 @@ export function finalizeOliverNelsonMetadata(metadata: GenerationMetadata, acc: 
     deviceReceipts: flat.length ? flat : undefined,
   };
   metadata.oliverNelsonSliceReceipt = [
-    `Nelson (slice): blues≈${acc.bluesTouches}`,
+    `Nelson (slice): pedal-modal + minor blues; blues≈${acc.bluesTouches}`,
     `modal≈${acc.modalTouches}`,
-    `bars=${acc.barsConsidered}`,
-    flat.length ? `devices=${flat.join(';')}` : '',
+    `period=${String(metadata.nelsonPeriodModeResolved ?? metadata.nelsonPeriodMode ?? '?')}`,
+    flat.length ? `on_devices=${flat.length}` : '',
   ]
     .filter(Boolean)
     .join('; ');
@@ -87,7 +152,35 @@ export function precomputeOliverNelsonEffectiveHarmonyBars(context: CompositionC
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
   const seed = context.seed;
+
+  const periodResolved = resolveNelsonPeriodMode(context, genMeta);
+  const bluesVariantResolved = resolveNelsonBluesFormVariant(context, genMeta);
+  genMeta.nelsonPeriodModeResolved = periodResolved;
+  genMeta.nelsonBluesFormVariantResolved = bluesVariantResolved;
+  if (
+    genMeta.nelsonPeriodMode !== 'early_nelson' &&
+    genMeta.nelsonPeriodMode !== 'middle_nelson' &&
+    genMeta.nelsonPeriodMode !== 'late_nelson'
+  ) {
+    genMeta.nelsonPeriodMode = periodResolved;
+  }
+  if (genMeta.nelsonBluesFormVariant !== 'twelve_bar' && genMeta.nelsonBluesFormVariant !== 'sixteen_bar') {
+    genMeta.nelsonBluesFormVariant = bluesVariantResolved;
+  }
+  context.nelsonPeriodMode = periodResolved;
+  context.nelsonBluesFormVariant = bluesVariantResolved;
+
+  genMeta.activePedal = 0;
+  genMeta.upperModalChords = ['Ebmaj7', 'Fmaj7'];
+  genMeta.nelsonTwoLayerForm = periodResolved !== 'early_nelson';
+
+  const plan = buildNelsonEpisodePlan(tb, periodResolved === 'late_nelson');
+  genMeta.oliverNelsonEpisodePlanSummary = plan.episodes.map((e) => `${e.episodeType}:${e.startBar}-${e.endBar}`).join('|');
+
   const receipts: string[] = [];
+  receipts.push(`on:period@${periodResolved}`);
+  receipts.push(`on:blues_form@${bluesVariantResolved}`);
+  receipts.push('on:two_layer_engine');
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) raw.push(resolveBarSymbol(context, b).symbol);
@@ -95,20 +188,46 @@ export function precomputeOliverNelsonEffectiveHarmonyBars(context: CompositionC
   let out = [...raw];
   out = breakFrankZappaIiViProgressions(out, seed);
 
-  for (let i = 0; i < out.length; i++) {
-    const bar = i + 1;
-    const before = out[i]!;
-    const after = bluesDominantColour(before, seed, bar);
-    if (after !== before) {
-      out[i] = after;
-      receipts.push(`on:blues_functional@bar${bar}`);
+  for (let b = 1; b <= tb; b++) {
+    if (isProtectedBar(b, context)) continue;
+    const ep = episodeForNelsonBar(plan, b);
+    if (!ep) continue;
+    receipts.push(`on:episode@${ep.episodeType}@bar${b}`);
+    if (ep.episodeType === 'minor_blues_solo') {
+      const rb = b - ep.startBar + 1;
+      out[b - 1] = minorBluesAt(rb, seed, b);
+      receipts.push(`on:minor_blues_cycle@${((rb - 1) % 12) + 1}@bar${b}`);
+    } else if (ep.episodeType === 'turnaround') {
+      const pos = b - ep.startBar + 1;
+      out[b - 1] = pos === 1 ? 'Ab7(9,13)' : pos === 2 ? 'G7(9,13)' : 'Cm7';
+      receipts.push(`on:bVI_V_i@bar${b}`);
+    } else if (ep.episodeType === 'pedal_field') {
+      out[b - 1] = pedalTwoLayer(b - ep.startBar + 1, seed);
+      receipts.push(`on:pedal_two_layer@bar${b}`);
+    } else if (ep.episodeType === 'modal_head') {
+      const rb = b - ep.startBar + 1;
+      out[b - 1] = modalHeadChord(rb, periodResolved, seed, bluesVariantResolved);
+      if (rb === 4 && periodResolved !== 'early_nelson') receipts.push(`on:pivot_Cmaj9@bar${b}`);
+      receipts.push(`on:modal_head_rb${rb}@bar${b}`);
+    } else if (ep.episodeType === 'orchestral_build') {
+      out[b - 1] = orchestralChord(b, seed);
+      receipts.push(`on:orchestral_build@bar${b}`);
     }
   }
 
   for (let b = 1; b <= tb; b++) {
-    if (isProtectedBar(b, context)) continue;
-    if (seededUnit(seed, b, 884201) < 0.24) receipts.push(`on:section_contrast@bar${b}`);
-    if (seededUnit(seed, b, 884301) < 0.2) receipts.push(`on:swing_authority@bar${b}`);
+    const sym = out[b - 1] ?? '';
+    if (/Ebmaj7|Cmaj7\(9\)|Ebmaj7\/C/.test(sym)) receipts.push(`on:rub_9_b3@bar${b}`);
+  }
+
+  const minPedal = 4;
+  for (const ep of plan.episodes) {
+    if (ep.episodeType !== 'pedal_field' && ep.episodeType !== 'modal_head') continue;
+    const segLen = ep.endBar - ep.startBar + 1;
+    if (segLen < minPedal) continue;
+    for (let k = ep.startBar + 1; k <= Math.min(ep.endBar, ep.startBar + minPedal - 1); k++) {
+      if (!isProtectedBar(k, context)) receipts.push(`on:pedal_sustain@${minPedal}b@bar${k}`);
+    }
   }
 
   genMeta.oliverNelsonEffectiveHarmonyBars = out;

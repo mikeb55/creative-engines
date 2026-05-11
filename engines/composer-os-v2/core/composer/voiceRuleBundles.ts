@@ -567,8 +567,8 @@ const QUINCY_JONES: VoiceRuleBundle = {
 const OLIVER_NELSON: VoiceRuleBundle = {
   voiceId: 'oliver_nelson',
   harmonicRhythm: {
-    minChordDurationBars: 1,
-    maxChordDurationBars: 2,
+    minChordDurationBars: 2,
+    maxChordDurationBars: 4,
     allowMidBarChange: false,
   },
   bassPolicy: {
@@ -583,7 +583,7 @@ const OLIVER_NELSON: VoiceRuleBundle = {
     forbidOctaveDoubling: false,
   },
   melodicPolicy: {
-    contour: 'angular',
+    contour: 'descending-arc',
     maxLeapSemitones: 10,
   },
   orchestrationPolicy: {
@@ -591,12 +591,18 @@ const OLIVER_NELSON: VoiceRuleBundle = {
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
     fingerprintReceipts: [
-      'Blues-functional backbone with arranged extensions — shout lifts recycle blues degrees',
-      'Section contrast via register orchestration — thin reed choir vs brass punches',
-      'Chart economy: punches breathe — rests between hits clarify phrase seams',
-      'Swing authority: phrase articulation matches rhythm-section hat/kick language',
-      'Head–solos–shout arc explicit — mid-piece modal plateau bridges transitions',
-      'Modal centres voiced open-voiced stacks — avoid muddy clusters low brass',
+      'Minor pedal + IIImaj7 / IVmaj7 alternation — bass on i, upper field alternates E♭maj7 and Fmaj7 (Stolen Moments signature)',
+      '9–♭3 rub — D against E♭ in mid–upper inner voices when maj7 colours sit over minor pedal',
+      'Quartal min11 planing — same voicing shape moved by semitone or whole step; parallel quartal legal',
+      'Blues–modal two-layer form — modal / pedal head vs functional 12-bar C minor blues for solo sections',
+      'ivm7 not IV7 — Fm7 minor IV; IV7 only optional gospel colour',
+      'bVI7–V7–i turnaround — A♭7(9,13)→G7(9,13)→Cm7 as hard default, not ii–V–I',
+      'Dominants unaltered 3–7–9–13 — A♭7(9,13) and G7(9,13); colour from context not dense alterations',
+      'Sax soli: 4-way close, lyrical blues-inflected lead, quartal inner voices, bari on root/5th anchor',
+      'Sextet register staggering — trumpet high / alto mid / tenor mid-low / bari low; triad + extensions across 3–4 horns',
+      'Melody pool — C blues scale degrees plus 9 (D) and 13 (A); ♭3→3 semitone slide at structural cadences',
+      'Cmaj7(9) pivot at bar-4 head target only — E natural approached from E♭; solo layer stays minor throughout',
+      'Formal boundaries — orchestration + harmonic colour + density shift encode sections (not bar count alone)',
     ],
   },
   formPolicy: {

@@ -59,7 +59,9 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
 
   const nelson = getVoiceRuleBundle('oliver_nelson');
   const okNelson =
-    nelson.voiceId === 'oliver_nelson' && (nelson.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 6;
+    nelson.voiceId === 'oliver_nelson' &&
+    nelson.harmonicRhythm.minChordDurationBars >= 2 &&
+    (nelson.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 12;
 
   const quincy = getVoiceRuleBundle('quincy_jones');
   const okQuincy =
@@ -86,7 +88,7 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: sammy_nestico fingerprints', ok: okNestico },
     { name: 'Phase 2+3a harness additive: bob_brookmeyer ≥12 fingerprints + line-first', ok: okBrook },
     { name: 'Phase 2+3a harness additive: clare_fischer fingerprints', ok: okFischer },
-    { name: 'Phase 2+3a harness additive: oliver_nelson fingerprints', ok: okNelson },
+    { name: 'Phase 2+3a harness additive: oliver_nelson ≥12 fingerprints + pedal rhythm', ok: okNelson },
     { name: 'Phase 2+3a harness additive: quincy_jones fingerprints', ok: okQuincy },
     { name: 'Phase 2+3a harness additive: count_basie fingerprints', ok: okBasie },
     { name: 'Phase 2+3a harness additive: messiaen ≥12 fingerprints + slow rhythm', ok: okMessiaenFp },

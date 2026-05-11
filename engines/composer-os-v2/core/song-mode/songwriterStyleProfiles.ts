@@ -1845,6 +1845,7 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   albam: 'manny_albam',
   oliver_nelson: 'oliver_nelson',
   nelson: 'oliver_nelson',
+  'oliver nelson': 'oliver_nelson',
   gerald_wilson: 'gerald_wilson',
   neal_hefti: 'neal_hefti',
   hefti: 'neal_hefti',

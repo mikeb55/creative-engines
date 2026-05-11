@@ -105,6 +105,12 @@ export type MessiaenPeriodMode = 'early_messiaen' | 'middle_messiaen' | 'late_me
 /** Bob Brookmeyer — chorus-based vs through-composed counterpoint posture (`bobBrookmeyerSlice.ts`). Seeded when omitted. */
 export type BrookmeyerPeriodMode = 'early_brookmeyer' | 'late_brookmeyer';
 
+/** Oliver Nelson — era posture (`oliverNelsonSlice.ts`). Seeded when omitted. */
+export type NelsonPeriodMode = 'early_nelson' | 'middle_nelson' | 'late_nelson';
+
+/** Oliver Nelson — minor blues cycle length vs Cascades-style 16-bar A (`oliverNelsonSlice.ts`). */
+export type NelsonBluesFormVariant = 'twelve_bar' | 'sixteen_bar';
+
 /** Thad Jones — big-band extended common-practice slice (`thadJonesSlice.ts`). Default **`swing`**. */
 export type ThadJonesPhaseMode = 'swing' | 'ballad' | 'groove';
 
@@ -1151,6 +1157,18 @@ export interface GenerationMetadata {
   oliverNelsonSliceReceipt?: string;
   oliverNelsonEffectiveHarmonyBars?: string[];
   oliverNelsonDeviceReceipts?: string[];
+  /** Oliver Nelson — resolved programme period (`oliverNelsonSlice.ts`). */
+  nelsonPeriodMode?: NelsonPeriodMode;
+  nelsonPeriodModeResolved?: NelsonPeriodMode;
+  /** Pitch class (0–11) of sustained pedal root (`oliverNelsonSlice.ts`). */
+  activePedal?: number;
+  /** Upper maj7 colours over minor pedal (symbol roots, not slash bass). */
+  upperModalChords?: readonly [string, string];
+  nelsonBluesFormVariant?: NelsonBluesFormVariant;
+  nelsonBluesFormVariantResolved?: NelsonBluesFormVariant;
+  /** Head/modal layer vs 12-bar minor blues solo layer (`oliverNelsonSlice.ts`). */
+  nelsonTwoLayerForm?: boolean;
+  oliverNelsonEpisodePlanSummary?: string;
   /** Quincy Jones — crossover brass arranging (`quincyJonesSlice.ts`). */
   quincyJonesDiagnostics?: {
     songwriterId: 'quincy_jones';
@@ -1961,6 +1979,9 @@ export interface CompositionContext {
   messiaenPeriodMode?: MessiaenPeriodMode;
   /** Bob Brookmeyer Song Mode — early (chorus-based) vs late (through-composed) (`bobBrookmeyerSlice.ts`). */
   brookmeyerPeriodMode?: BrookmeyerPeriodMode;
+  /** Oliver Nelson Song Mode — era + blues form variant (`oliverNelsonSlice.ts`). */
+  nelsonPeriodMode?: NelsonPeriodMode;
+  nelsonBluesFormVariant?: NelsonBluesFormVariant;
   /** When true, harmonic voicing yields to melodic line (`bobBrookmeyerSlice.ts` + `voiceLeadingSolver.ts`). */
   lineFirstHierarchy?: boolean;
 }

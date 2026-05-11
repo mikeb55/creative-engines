@@ -12,6 +12,8 @@
 
 **Song Mode — Bob Brookmeyer (`bob_brookmeyer`):** stub pools **`brookmeyer_quartal`** / **`brookmeyer_linear`** / **`brookmeyer_cluster`** (**`seed % 3`**); planner tags **`line_first:true`**. **`precomputeBobBrookmeyerEffectiveHarmonyBars`** (`core/song-mode/bobBrookmeyerSlice.ts`) → **`bobBrookmeyerEffectiveHarmonyBars`** (**`brk:*`** receipts), **3-note `activePitchModule`**, episode plan + solo gate, **`brookmeyerPeriodMode`** (**`early_brookmeyer`** vs **`late_brookmeyer`**). **`lineFirstHierarchy`** on **`GenerationMetadata`** drives **`voiceLeadingSolver`** (harmony yields to melody). **`GenerateRequest.brookmeyerPeriodMode`** + diagnostics echo on **`OutputEntry`**. **`VoiceRuleBundle`** **`bob_brookmeyer`** (12 **`fingerprintReceipts`**).
 
+**Song Mode — Oliver Nelson (`oliver_nelson`):** stub pools **`nelson_minor_modal`** / **`nelson_minor_blues`** / **`nelson_orchestral`**; planner tags **`pedalBased` / `bluesModalHybrid` / `twoLayerForm`**. **`precomputeOliverNelsonEffectiveHarmonyBars`** (`core/song-mode/oliverNelsonSlice.ts`) → **`oliverNelsonEffectiveHarmonyBars`** (**`on:*`** receipts), **`buildNelsonEpisodePlan`** (pedal · modal head · orchestral wedge · turnaround · 12-bar minor blues), **`NelsonPeriodMode`**, **`NelsonBluesFormVariant`**, **`activePedal`**, **`upperModalChords`**. **`GenerateRequest.nelsonPeriodMode` / `nelsonBluesFormVariant`** + manifest echo. **`VoiceRuleBundle`** **`oliver_nelson`** (12 **`fingerprintReceipts`**).
+
 ## GCE structural memory (Phase 1)
 
 Lightweight **JSON fingerprints** (no ML, no new scoring engine) under **`engines/composer-os-v2/gce-memory/fingerprints/`**.

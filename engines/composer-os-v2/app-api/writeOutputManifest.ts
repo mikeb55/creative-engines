@@ -169,6 +169,14 @@ export function writeOutputManifest(
     bobBrookmeyerEffectiveHarmonyBars?: GenerationMetadata['bobBrookmeyerEffectiveHarmonyBars'];
     lineFirstHierarchy?: GenerationMetadata['lineFirstHierarchy'];
     contrapuntalLineCount?: GenerationMetadata['contrapuntalLineCount'];
+    nelsonPeriodMode?: GenerationMetadata['nelsonPeriodMode'];
+    nelsonPeriodModeResolved?: GenerationMetadata['nelsonPeriodModeResolved'];
+    nelsonBluesFormVariant?: GenerationMetadata['nelsonBluesFormVariant'];
+    nelsonBluesFormVariantResolved?: GenerationMetadata['nelsonBluesFormVariantResolved'];
+    activePedal?: GenerationMetadata['activePedal'];
+    upperModalChords?: GenerationMetadata['upperModalChords'];
+    nelsonTwoLayerForm?: GenerationMetadata['nelsonTwoLayerForm'];
+    oliverNelsonEpisodePlanSummary?: GenerationMetadata['oliverNelsonEpisodePlanSummary'];
     sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
     sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
     sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
@@ -456,6 +464,14 @@ export function writeOutputManifest(
     bobBrookmeyerEffectiveHarmonyBars: meta.bobBrookmeyerEffectiveHarmonyBars,
     lineFirstHierarchy: meta.lineFirstHierarchy,
     contrapuntalLineCount: meta.contrapuntalLineCount,
+    nelsonPeriodMode: meta.nelsonPeriodMode,
+    nelsonPeriodModeResolved: meta.nelsonPeriodModeResolved,
+    nelsonBluesFormVariant: meta.nelsonBluesFormVariant,
+    nelsonBluesFormVariantResolved: meta.nelsonBluesFormVariantResolved,
+    activePedal: meta.activePedal,
+    upperModalChords: meta.upperModalChords,
+    nelsonTwoLayerForm: meta.nelsonTwoLayerForm,
+    oliverNelsonEpisodePlanSummary: meta.oliverNelsonEpisodePlanSummary,
     sonicYouthDiagnostics: meta.sonicYouthDiagnostics,
     sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
     sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,
