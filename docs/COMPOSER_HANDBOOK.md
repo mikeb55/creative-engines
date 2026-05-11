@@ -4,6 +4,28 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
+## VoiceRuleBundle (VRB) fingerprint status
+
+Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
+
+| Composer (harmonic voice id) | Fingerprint count | Status |
+|------------------------------|-------------------|--------|
+| **Duke Ellington** (`duke_ellington`, alias `ellington`) | 11 | **deep** |
+| **Gil Evans** (`gil_evans`) | 11 | **deep** |
+| **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
+| **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
+| **Bob Brookmeyer** (`bob_brookmeyer`) | 6 | thin |
+| **Clare Fischer** (`clare_fischer`) | 6 | thin |
+| **Sammy Nestico** (`sammy_nestico`) | 6 | thin |
+| **Oliver Nelson** (`oliver_nelson`) | 6 | thin |
+| **Quincy Jones** (`quincy_jones`) | 6 | thin |
+
+**Also bundled** (not in the thin/deep split above): **Thad Jones** (`thad_jones`) **12** receipts · **Charles Mingus** (`charles_mingus`) **11** · **Count Basie** (`count_basie`) **8** · **Alban Berg** (`berg` / `alban_berg`) **4** — see source file for authoritative counts.
+
+**Ship:** deep VRB for Ellington / Gil / Shorter / Schneider — commit **`4aa848a5`** (see **`CHANGELOG.md`** `[Unreleased]`).
+
+---
+
 ## GCE Structural Memory
 
 ### What it is

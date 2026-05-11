@@ -1874,15 +1874,15 @@ Each lens is a **`buildReharmLensConfig`** preset keyed by songwriter id. The UI
 |---|-----------|-----------------------------------|
 | 1 | **Antônio Carlos Jobim** (`antonio_carlos_jobim`) | Bossa chromatic side-doors; moderate tritone colour; **poolSampling** on. |
 | 2 | **Bill Evans** (`bill_evans`) | Sus / colour extensions over functional roots; **low** tritone appetite. |
-| 3 | **Wayne Shorter** (`wayne_shorter`) | Post-bop lateral roots + modal plateaus; balanced tri/tension. |
+| 3 | **Wayne Shorter** (`wayne_shorter`) | Post-bop lateral roots + modal plateaus; balanced tri/tension. **VRB:** **`wayne_shorter`** bundle — **11** `fingerprintReceipts` active (not neutral). |
 | 4 | **Thelonious Monk** (`thelonious_monk`) | Angular substitutions—**high** tritone weight, **low** sus bias. |
 | 5 | **Donald Fagen** (`donald_fagen`) | Jazz-rock altered dominant vocabulary; chromatic mediants weighted. |
 | 6 | **Radiohead** (`radiohead`) | Alternative-rock ambiguity—**high sus**, restrained tritone. |
 | 7 | **Philip Glass** (`philip_glass`) | Minimal motion bias—**low** chromatic-mediant and tritone weights. |
 | 8 | **Bernard Herrmann** (`bernard_herrmann`) | Thriller string chromaticism—strong altered-colour affinity in ranking. |
-| 9 | **Duke Ellington** (`duke_ellington`) | Orchestral jazz vocabulary—balanced colours + **poolSampling**. |
-|10 | **Maria Schneider** (`maria_schneider`) | Large-ensemble colour washes—high chromatic-mediant bias. |
-|11 | **Gil Evans** (`gil_evans`) | Cool-jazz colour fields—mid sus + **high** chromatic-mediant bias. |
+| 9 | **Duke Ellington** (`duke_ellington`) | Orchestral jazz vocabulary—balanced colours + **poolSampling**. **VRB:** **`duke_ellington`** / **`ellington`** — **11** `fingerprintReceipts` active (not neutral). |
+|10 | **Maria Schneider** (`maria_schneider`) | Large-ensemble colour washes—high chromatic-mediant bias. **VRB:** **`maria_schneider`** — **11** `fingerprintReceipts` active (not neutral). |
+|11 | **Gil Evans** (`gil_evans`) | Cool-jazz colour fields—mid sus + **high** chromatic-mediant bias. **VRB:** **`gil_evans`** — **11** `fingerprintReceipts` active (not neutral). |
 
 Aliases: UI accepts **`jobim`** → canonical **`antonio_carlos_jobim`** in lens resolution elsewhere in the engine.
 
@@ -2228,15 +2228,17 @@ Big Band **combined** evaluation uses **`lockRequired: false`** in the app so in
 | Profile id | Name | Threshold | Dimensions (ids × weight) |
 |------------|------|-----------|----------------------------|
 | **`basie`** | Count Basie | 7.0 | densityScore **0.25**, riffRepetitionScore **0.25**, swingClarityScore **0.25**, compSparsityScore **0.25** |
-| **`ellington`** | Duke Ellington | 7.0 | voicingUniqueness **0.30**, harmonicDensity **0.30**, textureFluidity **0.20**, orchestrationColor **0.20** |
-| **`schneider`** | Maria Schneider | 7.0 | harmonicComplexity **0.35**, textureMosaic **0.30**, narrativeArc **0.20**, rhythmicFloat **0.15** |
-| **`quincy_jones`** | Quincy Jones | 7.0 | grooveStrength **0.35**, cinematicDensity **0.25**, functionalHarmony **0.25**, rhythmLeads **0.15** |
+| **`ellington`** | Duke Ellington | 7.0 | voicingUniqueness **0.30**, harmonicDensity **0.30**, textureFluidity **0.20**, orchestrationColor **0.20** — **VRB deep** (**11** `fingerprintReceipts` on **`duke_ellington`** / **`ellington`** bundle). |
+| **`schneider`** | Maria Schneider | 7.0 | harmonicComplexity **0.35**, textureMosaic **0.30**, narrativeArc **0.20**, rhythmicFloat **0.15** — **VRB deep** (**11** on **`maria_schneider`**). |
+| **`quincy_jones`** | Quincy Jones | 7.0 | grooveStrength **0.35**, cinematicDensity **0.25**, functionalHarmony **0.25**, rhythmLeads **0.15** — **VRB thin** (**6** on **`quincy_jones`**). |
 | **`thad`** | Thad Jones | 7.0 | waveDensity **0.30**, polyHarmonicMotion **0.30**, swingDrive **0.25**, extendedFormLine **0.15** |
-| **`gil_evans`** | Gil Evans | 7.0 | colourWash **0.30**, modalOpenness **0.35**, elasticPulse **0.25**, horizonBlend **0.10** |
-| **`bob_brookmeyer`** | Bob Brookmeyer | 7.0 | linearCounterpoint **0.35**, quartalHarmonyField **0.25**, modernPocket **0.25**, sectionalVariety **0.15** |
-| **`clare_fischer`** | Clare Fischer | 7.0 | harmonicMass **0.35**, chromaticLattice **0.30**, grooveLattice **0.20**, pianoColour **0.15** |
-| **`oliver_nelson`** | Oliver Nelson | 7.0 | bluesFunctional **0.35**, sectionalContrast **0.30**, swingAuthority **0.20**, chartOrchestration **0.15** |
-| **`sammy_nestico`** | Sammy Nestico | 7.0 | punchEconomy **0.30**, riffHits **0.30**, lockedGroove **0.25**, kickAlignment **0.15** |
+| **`gil_evans`** | Gil Evans | 7.0 | colourWash **0.30**, modalOpenness **0.35**, elasticPulse **0.25**, horizonBlend **0.10** — **VRB deep** (**11** on **`gil_evans`**). |
+| **`bob_brookmeyer`** | Bob Brookmeyer | 7.0 | linearCounterpoint **0.35**, quartalHarmonyField **0.25**, modernPocket **0.25**, sectionalVariety **0.15** — **VRB thin** (**6**). |
+| **`clare_fischer`** | Clare Fischer | 7.0 | harmonicMass **0.35**, chromaticLattice **0.30**, grooveLattice **0.20**, pianoColour **0.15** — **VRB thin** (**6**). |
+| **`oliver_nelson`** | Oliver Nelson | 7.0 | bluesFunctional **0.35**, sectionalContrast **0.30**, swingAuthority **0.20**, chartOrchestration **0.15** — **VRB thin** (**6**). |
+| **`sammy_nestico`** | Sammy Nestico | 7.0 | punchEconomy **0.30**, riffHits **0.30**, lockedGroove **0.25**, kickAlignment **0.15** — **VRB thin** (**6**). |
+
+**Wayne Shorter** (`wayne_shorter`) is **not** a row in this Big Band **`StyleProfile`** table; as Song Mode primary / harmonic voice it still resolves **`getVoiceRuleBundle('wayne_shorter')`** with **VRB deep** (**11** `fingerprintReceipts`) — same ship as **`4aa848a5`**.
 
 ### Light Touch style profiles (Folk, Classical, Bebop)
 
