@@ -230,6 +230,17 @@ export function writeOutputManifest(
     steveReichEffectiveHarmonyBars?: GenerationMetadata['steveReichEffectiveHarmonyBars'];
     steveReichHarmonicRhythmBars?: GenerationMetadata['steveReichHarmonicRhythmBars'];
     steveReichPulseGridDensity?: GenerationMetadata['steveReichPulseGridDensity'];
+    messiaenPeriodMode?: GenerationMetadata['messiaenPeriodMode'];
+    messiaenPeriodModeResolved?: GenerationMetadata['messiaenPeriodModeResolved'];
+    periodMode?: GenerationMetadata['periodMode'];
+    activeMode?: GenerationMetadata['activeMode'];
+    colourTag?: GenerationMetadata['colourTag'];
+    birdsongSpecies?: GenerationMetadata['birdsongSpecies'];
+    messiaenHarmonicRhythmMinBars?: GenerationMetadata['messiaenHarmonicRhythmMinBars'];
+    messiaenDiagnostics?: GenerationMetadata['messiaenDiagnostics'];
+    messiaenDeviceReceipts?: GenerationMetadata['messiaenDeviceReceipts'];
+    messiaenSliceReceipt?: GenerationMetadata['messiaenSliceReceipt'];
+    messiaenEffectiveHarmonyBars?: GenerationMetadata['messiaenEffectiveHarmonyBars'];
     hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
     hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
     hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];
@@ -495,6 +506,17 @@ export function writeOutputManifest(
     steveReichEffectiveHarmonyBars: meta.steveReichEffectiveHarmonyBars,
     steveReichHarmonicRhythmBars: meta.steveReichHarmonicRhythmBars,
     steveReichPulseGridDensity: meta.steveReichPulseGridDensity,
+    messiaenPeriodMode: meta.messiaenPeriodMode,
+    messiaenPeriodModeResolved: meta.messiaenPeriodModeResolved,
+    periodMode: meta.periodMode,
+    activeMode: meta.activeMode,
+    colourTag: meta.colourTag,
+    birdsongSpecies: meta.birdsongSpecies,
+    messiaenHarmonicRhythmMinBars: meta.messiaenHarmonicRhythmMinBars,
+    messiaenDiagnostics: meta.messiaenDiagnostics,
+    messiaenDeviceReceipts: meta.messiaenDeviceReceipts,
+    messiaenSliceReceipt: meta.messiaenSliceReceipt,
+    messiaenEffectiveHarmonyBars: meta.messiaenEffectiveHarmonyBars,
     hansZimmerContext: meta.hansZimmerContext,
     hansZimmerDiagnostics: meta.hansZimmerDiagnostics,
     hansZimmerDeviceReceipts: meta.hansZimmerDeviceReceipts,

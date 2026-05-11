@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **243** PASS rows, **58** suites (2026-05-11).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **244** PASS rows, **59** suites (2026-05-11).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -22,6 +22,7 @@ import { runPatMethenySliceSmokeTests } from './patMethenySliceSmoke.test';
 import { runWayneShorterSliceSmokeTests } from './wayneShorterSliceSmoke.test';
 import { runJimHallSliceSmokeTests } from './jimHallSliceSmoke.test';
 import { runSteveReichSliceSmokeTests } from './steveReichSliceSmoke.test';
+import { runMessiaenSliceSmokeTests } from './messiaenSliceSmoke.test';
 import { runFrankZappaSliceSmokeTests } from './frankZappaSliceSmoke.test';
 import { runOddMeterInfrastructureSmokeTests } from './oddMeterInfrastructureSmoke.test';
 import { runAsymmetricRhythmIntegrationTests } from './asymmetricRhythmIntegration.test';
@@ -92,6 +93,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Wayne Shorter songwriter slice', run: runWayneShorterSliceSmokeTests },
   { label: 'Jim Hall songwriter slice', run: runJimHallSliceSmokeTests },
   { label: 'Steve Reich songwriter slice', run: runSteveReichSliceSmokeTests },
+  { label: 'Olivier Messiaen songwriter slice', run: runMessiaenSliceSmokeTests },
   { label: 'Odd meter infrastructure (Phase A)', run: runOddMeterInfrastructureSmokeTests },
   { label: 'Asymmetric rhythm engine (preset → NoteEvent)', run: runAsymmetricRhythmIntegrationTests },
   { label: 'Zappa solo engine (Phase B)', run: runZappaSoloSmokeTests },

@@ -1148,6 +1148,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'steve_reich'
       ? { reichProcess: req.reichProcess }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'messiaen' &&
+    (req.messiaenPeriodMode === 'early_messiaen' ||
+      req.messiaenPeriodMode === 'middle_messiaen' ||
+      req.messiaenPeriodMode === 'late_messiaen')
+      ? { messiaenPeriodMode: req.messiaenPeriodMode }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
       ? {
           ...(req.asymmetricRhythm ? { asymmetricRhythm: req.asymmetricRhythm } : {}),
@@ -1404,6 +1410,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const jgLockedTruth = mdLockedTruth?.jerryGoldsmithEffectiveHarmonyBars;
   const pgLockedTruth = mdLockedTruth?.philipGlassEffectiveHarmonyBars;
   const srLockedTruth = mdLockedTruth?.steveReichEffectiveHarmonyBars;
+  const omLockedTruth = mdLockedTruth?.messiaenEffectiveHarmonyBars;
   const hzLockedTruth = mdLockedTruth?.hansZimmerEffectiveHarmonyBars;
   const abLockedTruth = mdLockedTruth?.angeloBadalamentiEffectiveHarmonyBars;
   const fzLockedTruth = mdLockedTruth?.frankZappaEffectiveHarmonyBars;
@@ -1724,6 +1731,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                                                 lockedHarmonyBarsAuthoritative &&
                                                                 srLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                                                               ? srLockedTruth
+                                                              : mdLockedTruth?.songwriterStyleId === 'messiaen' &&
+                                                                  Array.isArray(omLockedTruth) &&
+                                                                  omLockedTruth.length === tbLockedTruth &&
+                                                                  lockedHarmonyBarsAuthoritative &&
+                                                                  omLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                                                                ? omLockedTruth
                                                               : mdLockedTruth?.songwriterStyleId === 'hans_zimmer' &&
                                                                 Array.isArray(hzLockedTruth) &&
                                                                 hzLockedTruth.length === tbLockedTruth &&
@@ -2178,6 +2191,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       steveReichEffectiveHarmonyBars: gp.context.generationMetadata.steveReichEffectiveHarmonyBars,
       steveReichHarmonicRhythmBars: gp.context.generationMetadata.steveReichHarmonicRhythmBars,
       steveReichPulseGridDensity: gp.context.generationMetadata.steveReichPulseGridDensity,
+      messiaenPeriodMode: gp.context.generationMetadata.messiaenPeriodMode,
+      messiaenPeriodModeResolved: gp.context.generationMetadata.messiaenPeriodModeResolved,
+      periodMode: gp.context.generationMetadata.periodMode,
+      activeMode: gp.context.generationMetadata.activeMode,
+      colourTag: gp.context.generationMetadata.colourTag,
+      birdsongSpecies: gp.context.generationMetadata.birdsongSpecies,
+      messiaenHarmonicRhythmMinBars: gp.context.generationMetadata.messiaenHarmonicRhythmMinBars,
+      messiaenDiagnostics: gp.context.generationMetadata.messiaenDiagnostics,
+      messiaenDeviceReceipts: gp.context.generationMetadata.messiaenDeviceReceipts,
+      messiaenSliceReceipt: gp.context.generationMetadata.messiaenSliceReceipt,
+      messiaenEffectiveHarmonyBars: gp.context.generationMetadata.messiaenEffectiveHarmonyBars,
       hansZimmerContext: gp.context.generationMetadata.hansZimmerContext,
       hansZimmerDiagnostics: gp.context.generationMetadata.hansZimmerDiagnostics,
       hansZimmerDeviceReceipts: gp.context.generationMetadata.hansZimmerDeviceReceipts,

@@ -66,6 +66,12 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   const okBasie =
     basie.voiceId === 'count_basie' && (basie.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 8;
 
+  const messiaen = getVoiceRuleBundle('messiaen');
+  const okMessiaenFp =
+    messiaen.voiceId === 'messiaen' &&
+    messiaen.harmonicRhythm.minChordDurationBars >= 2 &&
+    (messiaen.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 12;
+
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
@@ -80,5 +86,6 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: oliver_nelson fingerprints', ok: okNelson },
     { name: 'Phase 2+3a harness additive: quincy_jones fingerprints', ok: okQuincy },
     { name: 'Phase 2+3a harness additive: count_basie fingerprints', ok: okBasie },
+    { name: 'Phase 2+3a harness additive: messiaen ≥12 fingerprints + slow rhythm', ok: okMessiaenFp },
   ];
 }

@@ -158,14 +158,23 @@ export function validateBarryHarrisConformance(
       metadata?.songwriterStyleId === 'wayne_shorter' || metadata?.songwriterStyleId === 'thelonious_monk'
         ? 18
         : 14;
-    if (metadata?.songwriterStyleId !== 'frank_zappa' && maxJump > maxBassJump) {
+    if (
+      metadata?.songwriterStyleId !== 'frank_zappa' &&
+      metadata?.songwriterStyleId !== 'messiaen' &&
+      maxJump > maxBassJump
+    ) {
       errors.push('Bass voice-leading jumps excessive');
     }
   }
 
   const chordCount = new Set(score.parts.flatMap((p) => p.measures.map((m) => m.chord).filter(Boolean))).size;
   /** Steve Reich: long static fields + process — few distinct chord symbols is intentional, not under-elaboration. */
-  if (chordCount < 3 && metadata?.songwriterStyleId !== 'steve_reich' && metadata?.songwriterStyleId !== 'thad_jones') {
+  if (
+    chordCount < 3 &&
+    metadata?.songwriterStyleId !== 'steve_reich' &&
+    metadata?.songwriterStyleId !== 'messiaen' &&
+    metadata?.songwriterStyleId !== 'thad_jones'
+  ) {
     errors.push('Harmony too static for current duo grammar');
   }
 

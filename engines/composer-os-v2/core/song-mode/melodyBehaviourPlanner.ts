@@ -628,6 +628,20 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       interOnsetSpacing: 'narrow',
     },
   },
+  messiaen: {
+    intervalTendency: 'angular',
+    rhythmicSubdivision: 'mixed',
+    repetitionVsVariationBias: 0.55,
+    phraseLength: 7,
+    contourProfile: 'irregular',
+    phraseAsymmetryTendency: 0.72,
+    cadenceFrequency: 'low',
+    devices: ['mode_colour_field', 'birdsong_ornament', 'non_retrogradable_cell', 'additive_prime_pulse'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+    },
+  },
   hans_zimmer: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',

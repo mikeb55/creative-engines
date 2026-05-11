@@ -24,6 +24,7 @@ import type {
   JerryGoldsmithContextMode,
   JohnWilliamsContextMode,
   JoniMitchellPhaseMode,
+  MessiaenPeriodMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
@@ -1176,6 +1177,8 @@ export interface RunGoldenPathOptions {
   philipGlassContext?: PhilipGlassContextMode;
   /** Song Mode / Steve Reich: pitch-field process (`steveReichSlice.ts`). Default **`phasing`** when omitted. */
   reichProcess?: SteveReichProcessMode;
+  /** Song Mode / Messiaen: programme period posture (`messiaenSlice.ts`). Omitted → seeded resolve. */
+  messiaenPeriodMode?: MessiaenPeriodMode;
   /** Song Mode / Thad Jones: big-band phase (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Song Mode / Joni Mitchell: sus/modal phase (`joniMitchellSlice.ts`). Default **`folk_modal`** when omitted. */
@@ -1857,6 +1860,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'steve_reich'
         ? { reichProcess: options.reichProcess ?? 'phasing' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'messiaen' &&
+      (options.messiaenPeriodMode === 'early_messiaen' ||
+        options.messiaenPeriodMode === 'middle_messiaen' ||
+        options.messiaenPeriodMode === 'late_messiaen')
+        ? { messiaenPeriodMode: options.messiaenPeriodMode }
+        : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
         ? {
             ...(options.asymmetricRhythm ? { asymmetricRhythmRequest: options.asymmetricRhythm } : {}),
@@ -2490,6 +2499,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const jgEx = mdEx?.jerryGoldsmithEffectiveHarmonyBars;
   const pgEx = mdEx?.philipGlassEffectiveHarmonyBars;
   const srEx = mdEx?.steveReichEffectiveHarmonyBars;
+  const omEx = mdEx?.messiaenEffectiveHarmonyBars;
   const hzEx = mdEx?.hansZimmerEffectiveHarmonyBars;
   const abEx = mdEx?.angeloBadalamentiEffectiveHarmonyBars;
   const barsForLockedExportTruth =
@@ -2631,6 +2641,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                                                 ? pgEx
                                                                                 : mdEx?.songwriterStyleId === 'steve_reich' && Array.isArray(srEx) && srEx.length === tbEx
                                                                                   ? srEx
+                                                                                  : mdEx?.songwriterStyleId === 'messiaen' && Array.isArray(omEx) && omEx.length === tbEx
+                                                                                    ? omEx
                                                                                   : mdEx?.songwriterStyleId === 'hans_zimmer' && Array.isArray(hzEx) && hzEx.length === tbEx
                                                                                   ? hzEx
                                                                                   : mdEx?.songwriterStyleId === 'angelo_badalamenti' &&
@@ -2745,6 +2757,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const jgLt = mdLt?.jerryGoldsmithEffectiveHarmonyBars;
   const pgLt = mdLt?.philipGlassEffectiveHarmonyBars;
   const srLt = mdLt?.steveReichEffectiveHarmonyBars;
+  const omLt = mdLt?.messiaenEffectiveHarmonyBars;
   const hzLt = mdLt?.hansZimmerEffectiveHarmonyBars;
   const abLt = mdLt?.angeloBadalamentiEffectiveHarmonyBars;
   const expectedBarsForLockedTruth =
@@ -2828,6 +2841,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                                     ? pgLt
                                                                     : mdLt?.songwriterStyleId === 'steve_reich' && Array.isArray(srLt) && srLt.length === tbLt
                                                                       ? srLt
+                                                                      : mdLt?.songwriterStyleId === 'messiaen' && Array.isArray(omLt) && omLt.length === tbLt
+                                                                        ? omLt
                                                                       : mdLt?.songwriterStyleId === 'hans_zimmer' && Array.isArray(hzLt) && hzLt.length === tbLt
                                                                       ? hzLt
                                                                       : mdLt?.songwriterStyleId === 'angelo_badalamenti' &&

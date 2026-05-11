@@ -805,6 +805,58 @@ const DUKE_ELLINGTON: VoiceRuleBundle = {
   },
 };
 
+const MESSIAEN: VoiceRuleBundle = {
+  voiceId: 'messiaen',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 24,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 14,
+    maxSpreadSemitones: 38,
+    clusterSizeNotes: [4, 10],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 24,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Harmony: Mode 3² as primary colour — 9-note limited-transposition set; favour this transposition in harmony spine',
+      'Melodic posture: modes are harmonic reservoirs — avoid monophonic modal scale runs as structural melody (post-1940 vocabulary)',
+      'Colour gate: track ≥3 chord symbols in same mode family before treating registral colour shifts as “loaded”',
+      'Chord of Resonance: Mode-3 resonance sonorities anchored in pool rows (`maj9/E` shells) — not tonic resolution',
+      'Orchestration: stained-glass CTI voicing — four distinct chord colours over a shared bass anchor across families',
+      'Rhythm: non-retrogradable cells — palindrome durational DNA at phrase windows; barlines mark phrases not march beats',
+      'Rhythm: additive inserts — sneak +1 sixteenth into ostinati; phrase totals favour primes (17/19/23 sixteenths)',
+      'Birdsong: extreme treble ornamental strata — 16th/32nd filament streams independent of harmonic grid',
+      'Temporal layering: eternal palindrome layer vs fleeting birdsong layer sounding simultaneously',
+      'Voice-leading: colour translation — lateral symmetric moves; ban classical V→I functional discharge in rail',
+      'Register: cathedral spacing — keep bass tower ≥3 octaves under birdsong glitter unless texture brief says otherwise',
+      'Period posture: early=modes+theology · middle=birdsong-as-architecture + ondes-colour · late=birdsong-dominant colour cosmology',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'free',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: { antiMetric: true },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+};
+
 const BY_ID: Record<string, VoiceRuleBundle> = {
   gil_evans: GIL_EVANS,
   duke_ellington: DUKE_ELLINGTON,
@@ -824,6 +876,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   quincy_jones: QUINCY_JONES,
   berg: BERG,
   alban_berg: BERG,
+  messiaen: MESSIAEN,
+  olivier_messiaen: MESSIAEN,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

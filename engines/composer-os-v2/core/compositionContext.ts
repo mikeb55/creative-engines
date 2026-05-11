@@ -99,6 +99,9 @@ export type JimHallMode = 'duo' | 'trio' | 'solo';
 /** Steve Reich — pitch-field process engine (`steveReichSlice.ts`). Default **`phasing`**. */
 export type SteveReichProcessMode = 'phasing' | 'additive' | 'cycle';
 
+/** Olivier Messiaen — early vs middle vs late structural posture (`messiaenSlice.ts`). Seeded when omitted. */
+export type MessiaenPeriodMode = 'early_messiaen' | 'middle_messiaen' | 'late_messiaen';
+
 /** Thad Jones — big-band extended common-practice slice (`thadJonesSlice.ts`). Default **`swing`**. */
 export type ThadJonesPhaseMode = 'swing' | 'ballad' | 'groove';
 
@@ -1714,6 +1717,34 @@ export interface GenerationMetadata {
   steveReichSliceReceipt?: string;
   steveReichEffectiveHarmonyBars?: string[];
   steveReichDeviceReceipts?: string[];
+  /** Olivier Messiaen — optional API posture; copied to context (`messiaenSlice.ts`). */
+  messiaenPeriodMode?: MessiaenPeriodMode;
+  /** Resolved period after slice normalize (`messiaenSlice.ts`). */
+  messiaenPeriodModeResolved?: MessiaenPeriodMode;
+  /** Compact period tag for manifests — **`early` | `middle` | `late`**. */
+  periodMode?: 'early' | 'middle' | 'late';
+  /** Active limited-transposition / pool tier label (`messiaenSlice.ts`). */
+  activeMode?: string;
+  /** Research colour association stub (`messiaenSlice.ts` / messiaen-colour-engine placeholder). */
+  colourTag?: string;
+  /** Birdsong ornamental species tag (`messiaenSlice.ts`). */
+  birdsongSpecies?: string;
+  messiaenHarmonicRhythmMinBars?: number;
+  messiaenDiagnostics?: {
+    songwriterId: 'messiaen';
+    barsConsidered: number;
+    slowRhythmTouches: number;
+    cadenceBlocks: number;
+    episodeReceipts: number;
+    sliceParameters?: {
+      harmonicRhythmMinBars: number;
+      modeRegisterChordMinimum: number;
+    };
+    deviceReceipts?: string[];
+  };
+  messiaenSliceReceipt?: string;
+  messiaenEffectiveHarmonyBars?: string[];
+  messiaenDeviceReceipts?: string[];
   /** Charlie Parker (bebop ii–V–I / tritone sub / turnaround) — slice diagnostics + effective harmony. */
   charlieParkerDiagnostics?: {
     songwriterId: 'charlie_parker';
@@ -1905,6 +1936,8 @@ export interface CompositionContext {
   };
   /** Count Basie Song Mode — resolved Old vs New Testament flag (`basieSlice.ts`). */
   basieTestamentMode?: BasieTestamentMode;
+  /** Olivier Messiaen Song Mode — early / middle / late programme posture (`messiaenSlice.ts`). */
+  messiaenPeriodMode?: MessiaenPeriodMode;
 }
 
 export type { BasieTestamentMode } from './song-mode/basieSlice';

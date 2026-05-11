@@ -21,6 +21,7 @@ import type {
   JohnWilliamsContextMode,
   JoniMitchellPhaseMode,
   BasieTestamentMode,
+  MessiaenPeriodMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
@@ -51,6 +52,7 @@ export type { NinoRotaContextMode };
 export type { JerryGoldsmithContextMode };
 export type { PhilipGlassContextMode };
 export type { SteveReichProcessMode };
+export type { MessiaenPeriodMode };
 export type { HansZimmerContextMode };
 export type { AngeloBadalamentiContextMode };
 export type { BasieTestamentMode };
@@ -331,6 +333,8 @@ export interface GenerateRequest {
   philipGlassContext?: PhilipGlassContextMode;
   /** Song Mode / Steve Reich — pitch-field process mode (`steveReichSlice.ts`). */
   reichProcess?: SteveReichProcessMode;
+  /** Song Mode / Messiaen — programme period (`messiaenSlice.ts`). Omitted → seeded resolve. */
+  messiaenPeriodMode?: MessiaenPeriodMode;
   hansZimmerContext?: HansZimmerContextMode;
   angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /**
@@ -628,6 +632,17 @@ export interface OutputEntry {
   steveReichEffectiveHarmonyBars?: GenerationMetadata['steveReichEffectiveHarmonyBars'];
   steveReichHarmonicRhythmBars?: GenerationMetadata['steveReichHarmonicRhythmBars'];
   steveReichPulseGridDensity?: GenerationMetadata['steveReichPulseGridDensity'];
+  messiaenPeriodMode?: GenerationMetadata['messiaenPeriodMode'];
+  messiaenPeriodModeResolved?: GenerationMetadata['messiaenPeriodModeResolved'];
+  periodMode?: GenerationMetadata['periodMode'];
+  activeMode?: GenerationMetadata['activeMode'];
+  colourTag?: GenerationMetadata['colourTag'];
+  birdsongSpecies?: GenerationMetadata['birdsongSpecies'];
+  messiaenHarmonicRhythmMinBars?: GenerationMetadata['messiaenHarmonicRhythmMinBars'];
+  messiaenDiagnostics?: GenerationMetadata['messiaenDiagnostics'];
+  messiaenDeviceReceipts?: GenerationMetadata['messiaenDeviceReceipts'];
+  messiaenSliceReceipt?: GenerationMetadata['messiaenSliceReceipt'];
+  messiaenEffectiveHarmonyBars?: GenerationMetadata['messiaenEffectiveHarmonyBars'];
   hansZimmerContext?: GenerationMetadata['hansZimmerContext'];
   hansZimmerDiagnostics?: GenerationMetadata['hansZimmerDiagnostics'];
   hansZimmerDeviceReceipts?: GenerationMetadata['hansZimmerDeviceReceipts'];

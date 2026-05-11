@@ -3043,6 +3043,10 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'steve_reich_phasing' : tier === 1 ? 'steve_reich_additive' : 'steve_reich_cycle';
   }
+  if (songwriterId === 'messiaen') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'messiaen_mode2' : tier === 1 ? 'messiaen_mode3' : 'messiaen_birdsong';
+  }
   if (songwriterId === 'maria_schneider') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =

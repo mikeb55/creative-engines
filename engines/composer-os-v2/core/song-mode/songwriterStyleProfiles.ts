@@ -823,6 +823,9 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   messiaen: {
     id: 'messiaen',
+    displayName: 'Olivier Messiaen',
+    description:
+      'Olivier Messiaen — limited transposition modes, birdsong layers, non-retrogradable rhythm (`om:*`). No functional cadential rail.',
     lineVsCellEmphasis: 0.55,
     harmonyColourBias: 0.98,
     formRegularity: 0.1,
@@ -1780,6 +1783,8 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   prokofiev: 'prokofiev',
   shostakovich: 'shostakovich',
   messiaen: 'messiaen',
+  olivier_messiaen: 'messiaen',
+  'olivier messiaen': 'messiaen',
   miles: 'miles_davis',
   miles_davis: 'miles_davis',
   morricone: 'ennio_morricone',

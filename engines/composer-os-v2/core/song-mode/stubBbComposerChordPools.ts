@@ -201,4 +201,25 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   basie_blues,
   basie_swing,
   basie_ballad,
+  /** Messiaen Mode 2 — octatonic (1-2-1-2): dim7 / aug / dom7(b9) as colour (transpositions 1–3 via row). */
+  messiaen_mode2: chunk64((i) => {
+    const trans = (i % 3) + 1;
+    const base = (i * 7 + trans * 3) % 12;
+    const r = (o: number) => ROOTS[(base + o) % 12];
+    return [`${r(0)}dim7`, `${r(6)}dim7`, `${r(4)}aug`, `${r(10)}7(b9)`];
+  }),
+  /** Messiaen Mode 3 — 9-note subsets; Chord of Resonance rows (`maj9/E`); Mode 3² skew via `preferSq`. */
+  messiaen_mode3: chunk64((i) => {
+    const preferSq = i % 4 === 0 ? 2 : i % 3;
+    const base = (i * 5 + preferSq + 5) % 12;
+    const r = (o: number) => ROOTS[(base + o) % 12];
+    const chordOfResonance = i % 8 === 0 ? `${r(0)}maj9/E` : `${r(0)}maj7(#11)`;
+    return [chordOfResonance, `${r(4)}aug`, `${r(9)}dim7`, `${r(2)}m7(b5)`];
+  }),
+  /** Messiaen birdsong — ornamental chromatic / cluster surfaces (non-functional). */
+  messiaen_birdsong: chunk64((i) => {
+    const base = (i * 11 + 2) % 12;
+    const r = (o: number) => ROOTS[(base + o) % 12];
+    return [`${r(0)}maj7(#11)`, `${r(1)}add(b9)`, `${r(6)}dim7`, `${r(3)}maj13(#11)`];
+  }),
 };
