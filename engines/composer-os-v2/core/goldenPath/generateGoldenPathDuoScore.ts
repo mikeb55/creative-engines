@@ -186,6 +186,12 @@ import {
   precomputeBartokEffectiveHarmonyBars,
 } from './bartokSlice';
 import {
+  accumulateBergHarmonyDiagnostics,
+  createBergHarmonyAccumulator,
+  finalizeBergMetadata,
+  precomputeBergEffectiveHarmonyBars,
+} from './bergSlice';
+import {
   accumulateGershwinHarmonyDiagnostics,
   createGershwinHarmonyAccumulator,
   finalizeGershwinMetadata,
@@ -253,6 +259,30 @@ import {
   finalizeCharlesMingusMetadata,
   precomputeCharlesMingusEffectiveHarmonyBars,
 } from './charlesMingusSlice';
+import {
+  accumulateSammyNesticoHarmonyDiagnostics,
+  createSammyNesticoHarmonyAccumulator,
+  finalizeSammyNesticoMetadata,
+  precomputeSammyNesticoEffectiveHarmonyBars,
+} from './sammyNesticoSlice';
+import {
+  accumulateBobBrookmeyerHarmonyDiagnostics,
+  createBobBrookmeyerHarmonyAccumulator,
+  finalizeBobBrookmeyerMetadata,
+  precomputeBobBrookmeyerEffectiveHarmonyBars,
+} from './bobBrookmeyerSlice';
+import {
+  accumulateClareFischerHarmonyDiagnostics,
+  createClareFischerHarmonyAccumulator,
+  finalizeClareFischerMetadata,
+  precomputeClareFischerEffectiveHarmonyBars,
+} from './clareFischerSlice';
+import {
+  accumulateOliverNelsonHarmonyDiagnostics,
+  createOliverNelsonHarmonyAccumulator,
+  finalizeOliverNelsonMetadata,
+  precomputeOliverNelsonEffectiveHarmonyBars,
+} from './oliverNelsonSlice';
 import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
@@ -2490,6 +2520,7 @@ function buildGuitarPart(
   const isSongwriterDukeEllington = genMeta?.songwriterStyleId === 'duke_ellington';
   const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
   const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
+  const isSongwriterBerg = genMeta?.songwriterStyleId === 'berg';
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
   const isSongwriterArvoPart = genMeta?.songwriterStyleId === 'arvo_part';
   const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
@@ -2502,6 +2533,14 @@ function buildGuitarPart(
   const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
   const isSongwriterCharlesMingus =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'charles_mingus';
+  const isSongwriterSammyNestico =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'sammy_nestico';
+  const isSongwriterBobBrookmeyer =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'bob_brookmeyer';
+  const isSongwriterClareFischer =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'clare_fischer';
+  const isSongwriterOliverNelson =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'oliver_nelson';
   const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
@@ -2519,6 +2558,7 @@ function buildGuitarPart(
   const deAccum = createDukeEllingtonHarmonyAccumulator();
   const mdAccum = createMilesDavisHarmonyAccumulator();
   const bkAccum = createBartokHarmonyAccumulator();
+  const bgAccum = createBergHarmonyAccumulator();
   const ggAccum = createGershwinHarmonyAccumulator();
   const apAccum = createArvoPartHarmonyAccumulator();
   const satAccum = createSatieHarmonyAccumulator();
@@ -2530,6 +2570,10 @@ function buildGuitarPart(
   const geAccum = createGilEvansHarmonyAccumulator();
   const tjAccum = createThadJonesHarmonyAccumulator();
   const cmAccum = createCharlesMingusHarmonyAccumulator();
+  const snNesticoAccum = createSammyNesticoHarmonyAccumulator();
+  const brookmeyerAccum = createBobBrookmeyerHarmonyAccumulator();
+  const clareFischerAccum = createClareFischerHarmonyAccumulator();
+  const nelsonAccum = createOliverNelsonHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -2616,6 +2660,9 @@ function buildGuitarPart(
   if (isSongwriterBartok && isDuoGoldenPath) {
     precomputeBartokEffectiveHarmonyBars(context);
   }
+  if (isSongwriterBerg && isDuoGoldenPath) {
+    precomputeBergEffectiveHarmonyBars(context);
+  }
   if (isSongwriterGershwin && isDuoGoldenPath) {
     precomputeGershwinEffectiveHarmonyBars(context);
   }
@@ -2648,6 +2695,18 @@ function buildGuitarPart(
   }
   if (isSongwriterCharlesMingus && isDuoGoldenPath) {
     precomputeCharlesMingusEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterSammyNestico && isDuoGoldenPath) {
+    precomputeSammyNesticoEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterBobBrookmeyer && isDuoGoldenPath) {
+    precomputeBobBrookmeyerEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterClareFischer && isDuoGoldenPath) {
+    precomputeClareFischerEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterOliverNelson && isDuoGoldenPath) {
+    precomputeOliverNelsonEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -2900,6 +2959,13 @@ function buildGuitarPart(
         bkAccum
       );
     }
+    if (isSongwriterBerg) {
+      accumulateBergHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        bgAccum
+      );
+    }
     if (isSongwriterGershwin) {
       accumulateGershwinHarmonyDiagnostics(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
@@ -2975,6 +3041,34 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         cmAccum
+      );
+    }
+    if (isSongwriterSammyNestico) {
+      accumulateSammyNesticoHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        snNesticoAccum
+      );
+    }
+    if (isSongwriterBobBrookmeyer) {
+      accumulateBobBrookmeyerHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        brookmeyerAccum
+      );
+    }
+    if (isSongwriterClareFischer) {
+      accumulateClareFischerHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        clareFischerAccum
+      );
+    }
+    if (isSongwriterOliverNelson) {
+      accumulateOliverNelsonHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        nelsonAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -3653,6 +3747,10 @@ function buildGuitarPart(
     finalizeBartokMetadata(context.generationMetadata, bkAccum);
   }
 
+  if (isSongwriterBerg && context.generationMetadata) {
+    finalizeBergMetadata(context.generationMetadata, bgAccum);
+  }
+
   if (isSongwriterGershwin && context.generationMetadata) {
     finalizeGershwinMetadata(context.generationMetadata, ggAccum);
   }
@@ -3695,6 +3793,22 @@ function buildGuitarPart(
 
   if (isSongwriterCharlesMingus && context.generationMetadata) {
     finalizeCharlesMingusMetadata(context.generationMetadata, cmAccum);
+  }
+
+  if (isSongwriterSammyNestico && context.generationMetadata) {
+    finalizeSammyNesticoMetadata(context.generationMetadata, snNesticoAccum);
+  }
+
+  if (isSongwriterBobBrookmeyer && context.generationMetadata) {
+    finalizeBobBrookmeyerMetadata(context.generationMetadata, brookmeyerAccum);
+  }
+
+  if (isSongwriterClareFischer && context.generationMetadata) {
+    finalizeClareFischerMetadata(context.generationMetadata, clareFischerAccum);
+  }
+
+  if (isSongwriterOliverNelson && context.generationMetadata) {
+    finalizeOliverNelsonMetadata(context.generationMetadata, nelsonAccum);
   }
 
   if (isSongwriterBacharach && context.generationMetadata) {

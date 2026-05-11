@@ -105,6 +105,11 @@ export function assertScoreMatchesLockedHarmonyWire(
   const tjEff = md?.thadJonesEffectiveHarmonyBars;
   const mdEff = md?.milesDavisEffectiveHarmonyBars;
   const bkEff = md?.bartokEffectiveHarmonyBars;
+  const bgEff = md?.bergEffectiveHarmonyBars;
+  const snNesticoEff = md?.sammyNesticoEffectiveHarmonyBars;
+  const brookmeyerEff = md?.bobBrookmeyerEffectiveHarmonyBars;
+  const clareFischerEff = md?.clareFischerEffectiveHarmonyBars;
+  const nelsonEff = md?.oliverNelsonEffectiveHarmonyBars;
   const btEff = md?.beatlesEffectiveHarmonyBars;
   const fkEff = md?.felaKutiEffectiveHarmonyBars;
   const ggEff = md?.gershwinEffectiveHarmonyBars;
@@ -207,6 +212,31 @@ export function assertScoreMatchesLockedHarmonyWire(
                                 bkEff.length === tb &&
                                 bkEff.length === wire.length
                               ? bkEff
+                            : md?.songwriterStyleId === 'berg' &&
+                                Array.isArray(bgEff) &&
+                                bgEff.length === tb &&
+                                bgEff.length === wire.length
+                              ? bgEff
+                            : md?.songwriterStyleId === 'sammy_nestico' &&
+                                Array.isArray(snNesticoEff) &&
+                                snNesticoEff.length === tb &&
+                                snNesticoEff.length === wire.length
+                              ? snNesticoEff
+                            : md?.songwriterStyleId === 'bob_brookmeyer' &&
+                                Array.isArray(brookmeyerEff) &&
+                                brookmeyerEff.length === tb &&
+                                brookmeyerEff.length === wire.length
+                              ? brookmeyerEff
+                            : md?.songwriterStyleId === 'clare_fischer' &&
+                                Array.isArray(clareFischerEff) &&
+                                clareFischerEff.length === tb &&
+                                clareFischerEff.length === wire.length
+                              ? clareFischerEff
+                            : md?.songwriterStyleId === 'oliver_nelson' &&
+                                Array.isArray(nelsonEff) &&
+                                nelsonEff.length === tb &&
+                                nelsonEff.length === wire.length
+                              ? nelsonEff
                             : md?.songwriterStyleId === 'beatles' &&
                                 Array.isArray(btEff) &&
                                 btEff.length === tb &&

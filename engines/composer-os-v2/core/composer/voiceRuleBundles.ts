@@ -334,6 +334,238 @@ const THAD_JONES: VoiceRuleBundle = {
   },
 };
 
+const SAMMY_NESTICO: VoiceRuleBundle = {
+  voiceId: 'sammy_nestico',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [4, 7],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 9,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Kick figures: brass accents locked to rhythm-section pushes on beat 1 / &-of beats',
+      'Chart hygiene: phrase corners tidy — minimal conflicting extensions on weak beats',
+      'Density via riff punches vs pads — avoid continuous tutti wash',
+      'Functional backbone: dominants resolve cleanly unless shout lift approaching',
+      'Section purity: reeds on interior harmony; brass on rhythmic punctuation',
+      'Bridge strips texture before chorus shout recap — staged dynamics',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
+const BOB_BROOKMEYER: VoiceRuleBundle = {
+  voiceId: 'bob_brookmeyer',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 3,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'chromatic-first',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 7,
+    maxSpreadSemitones: 26,
+    clusterSizeNotes: [4, 8],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 11,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Quartal/quintal harmonic stacks as structural colour fields — not passing ornament',
+      'Counter-lines at simultaneous thirds/fifths avoided — prefer contrary motion',
+      'Metric displacement hooks arrive mid-phrase — never random beat-one resets',
+      'Section takeover: lead transfers sax→bone→full ensemble without doubling creep',
+      'Dense passes anchor outer voices — interior clusters spell alterations explicitly',
+      'Swing bounce restored after quartal plateaus via ii–V pocket before shout',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
+const CLARE_FISCHER: VoiceRuleBundle = {
+  voiceId: 'clare_fischer',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 24,
+    clusterSizeNotes: [5, 9],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 10,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Dense tertian layers — upper-structure clusters voiced compact mid-register',
+      'Latin groove coupling: harmonic rhythm aligns with clave-sidekick ostinati',
+      'Inner voices carry alterations — top line sings consonant melodic anchors',
+      'Section turns pivot via slash chords / bass pedal rather than wholesale modulation',
+      'Ballad mode favours maj9 / m11 pillars — avoid abrupt brightness spikes',
+      'Controlled orchestral density — fewer simultaneous doubles on shout peaks',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 4,
+  },
+};
+
+const OLIVER_NELSON: VoiceRuleBundle = {
+  voiceId: 'oliver_nelson',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [4, 7],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 10,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Blues-functional backbone with arranged extensions — shout lifts recycle blues degrees',
+      'Section contrast via register orchestration — thin reed choir vs brass punches',
+      'Chart economy: punches breathe — rests between hits clarify phrase seams',
+      'Swing authority: phrase articulation matches rhythm-section hat/kick language',
+      'Head–solos–shout arc explicit — mid-piece modal plateau bridges transitions',
+      'Modal centres voiced open-voiced stacks — avoid muddy clusters low brass',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
+const BERG: VoiceRuleBundle = {
+  voiceId: 'berg',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 6,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'chromatic-first',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [3, 8],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 12,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Four planes: melodic / contrapuntal / harmonic-pad / rhythmic',
+      'Foreground row: allow octave doublings; background: wide registral spread',
+      'Brass: muted pads vs open structural peaks; strings: clarity vs density divisi',
+      'Extended techniques: sul ponticello (tension), col legno (brutality), Sprechstimme (raw speech)',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 7,
+  },
+  bergVoiceLeading: {
+    rowClarityLevel: 'balanced',
+    contrapuntalStrandTarget: 6,
+  },
+};
+
 const CHARLES_MINGUS: VoiceRuleBundle = {
   voiceId: 'charles_mingus',
   harmonicRhythm: {
@@ -397,6 +629,12 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   pat_metheny: PAT_METHENY,
   henry_threadgill: HENRY_THREADGILL,
   charles_mingus: CHARLES_MINGUS,
+  sammy_nestico: SAMMY_NESTICO,
+  bob_brookmeyer: BOB_BROOKMEYER,
+  clare_fischer: CLARE_FISCHER,
+  oliver_nelson: OLIVER_NELSON,
+  berg: BERG,
+  alban_berg: BERG,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

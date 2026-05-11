@@ -386,6 +386,61 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return bkEff[barIndex - 1]!;
   }
 
+  const bgEff = meta?.bergEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'berg' &&
+    Array.isArray(bgEff) &&
+    bgEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bgEff[barIndex - 1]!;
+  }
+
+  const snEff = meta?.sammyNesticoEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'sammy_nestico' &&
+    Array.isArray(snEff) &&
+    snEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return snEff[barIndex - 1]!;
+  }
+
+  const bbEff = meta?.bobBrookmeyerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bob_brookmeyer' &&
+    Array.isArray(bbEff) &&
+    bbEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bbEff[barIndex - 1]!;
+  }
+
+  const cfEff = meta?.clareFischerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'clare_fischer' &&
+    Array.isArray(cfEff) &&
+    cfEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return cfEff[barIndex - 1]!;
+  }
+
+  const onEff = meta?.oliverNelsonEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'oliver_nelson' &&
+    Array.isArray(onEff) &&
+    onEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return onEff[barIndex - 1]!;
+  }
+
   /**
    * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
    */

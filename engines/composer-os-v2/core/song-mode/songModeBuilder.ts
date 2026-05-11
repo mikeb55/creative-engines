@@ -18,6 +18,7 @@ import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlann
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 import { resolveBeatlesChordPoolId } from './beatlesSlice';
 import { resolveFelaKutiChordPoolId } from './felaKutiSlice';
+import { STUB_BB_COMPOSER_CHORD_POOLS } from './stubBbComposerChordPools';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
@@ -1616,6 +1617,57 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Am11', 'Dm11', 'Gquartal', 'Cmaj7#11'],
     ],
   },
+  berg_wozzeck: {
+    verse: [
+      ['Fm7(b5)', 'B7alt', 'Em7', 'A7alt'],
+      ['Cm11', 'F7alt', 'Bbmaj7#11', 'Eb9(b13)'],
+    ],
+    chorus: [
+      ['D7alt', 'G7alt', 'Cm7', 'F7(b9)'],
+      ['Am7b5', 'D7alt', 'Gm7', 'C7alt'],
+    ],
+    bridge: [
+      ['Bm7(b5)', 'E7alt', 'Am7', 'D7alt'],
+      ['Fm7', 'Bb7alt', 'Ebmaj7', 'Ab13'],
+    ],
+    pre_chorus: [
+      ['Em7', 'A7alt', 'Dm7', 'G7alt'],
+    ],
+  },
+  berg_lyric_suite: {
+    verse: [
+      ['Bm11', 'E7alt', 'Amaj7', 'D7#11'],
+      ['Gm11', 'C7alt', 'Fmaj7', 'Bb13'],
+    ],
+    chorus: [
+      ['Am11', 'D7alt', 'Gmaj7', 'C7alt'],
+      ['Fm11', 'Bb7alt', 'Ebmaj7', 'Ab13'],
+    ],
+    bridge: [
+      ['F#m7(b5)', 'B7alt', 'Em7', 'A7alt'],
+      ['Cm11', 'F7alt', 'Bbmaj7', 'Eb9'],
+    ],
+    pre_chorus: [
+      ['Dm7', 'G7alt', 'Cm7', 'F7alt'],
+    ],
+  },
+  berg_concerto: {
+    verse: [
+      ['Am11', 'D7alt', 'Gmaj7', 'C7#11'],
+      ['Fm11', 'Bb7alt', 'Ebmaj7', 'Ab13'],
+    ],
+    chorus: [
+      ['Em11', 'A7alt', 'Dmaj7', 'G7alt'],
+      ['Cm11', 'F7alt', 'Bbmaj7', 'Eb9(b13)'],
+    ],
+    bridge: [
+      ['Gm7(b5)', 'C7alt', 'Fm7', 'Bb7alt'],
+      ['Bm7(b5)', 'E7alt', 'Am11', 'D7alt'],
+    ],
+    pre_chorus: [
+      ['Bm7', 'E7alt', 'Am7', 'D7alt'],
+    ],
+  },
   gershwin_song_aaba: {
     verse: [
       ['Cmaj7', 'Dm7', 'G7(9)', 'C6/9'],
@@ -2872,6 +2924,7 @@ const SONGWRITER_CHORD_POOLS: Record<
 };
 
 SONGWRITER_CHORD_POOLS.fripp_king_crimson = SONGWRITER_CHORD_POOLS.frank_zappa;
+Object.assign(SONGWRITER_CHORD_POOLS, STUB_BB_COMPOSER_CHORD_POOLS);
 
 function sectionChordPoolRows(
   kind: SongSectionKind,
@@ -2925,6 +2978,10 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'bartok_mikrokosmos' : tier === 1 ? 'bartok_string_quartet' : 'bartok_music_for_strings';
+  }
+  if (songwriterId === 'berg') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'berg_wozzeck' : tier === 1 ? 'berg_lyric_suite' : 'berg_concerto';
   }
   if (songwriterId === 'gershwin') {
     const tier = Math.abs(seed) % 3;
@@ -3009,6 +3066,23 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'thad_jones_swing' : tier === 1 ? 'thad_jones_dorian' : 'thad_jones_shout';
   }
+  if (songwriterId === 'sammy_nestico') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'nestico_swing' : tier === 1 ? 'nestico_ballad' : 'nestico_blues';
+  }
+  if (songwriterId === 'bob_brookmeyer') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'brookmeyer_modal' : tier === 1 ? 'brookmeyer_contrapuntal' : 'brookmeyer_swing';
+  }
+  if (songwriterId === 'clare_fischer') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'fischer_polytonal' : tier === 1 ? 'fischer_ballad' : 'fischer_latin';
+  }
+  if (songwriterId === 'oliver_nelson') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'nelson_blues' : tier === 1 ? 'nelson_modal' : 'nelson_swing';
+  }
   if (songwriterId === 'hans_zimmer') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
@@ -3042,6 +3116,11 @@ function chordSymbolsForSection(
       songwriterId === 'frank_zappa' ||
       songwriterId === 'joni_mitchell' ||
       songwriterId === 'bartok' ||
+      songwriterId === 'berg' ||
+      songwriterId === 'sammy_nestico' ||
+      songwriterId === 'bob_brookmeyer' ||
+      songwriterId === 'clare_fischer' ||
+      songwriterId === 'oliver_nelson' ||
       songwriterId === 'gershwin' ||
       songwriterId === 'satie'
     ) {

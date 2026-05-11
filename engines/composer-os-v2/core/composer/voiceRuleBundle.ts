@@ -21,6 +21,15 @@ export type MelodicContourPolicy =
 
 export type NarrativeArcPolicy = 'continuous-curve' | 'suite' | 'blues-backbone' | 'free';
 
+export type BergRowClarityLevel = 'foreground' | 'balanced' | 'background';
+
+/** Alban Berg — contrapuntal row clarity / strand hints (`voiceLeadingSolver.ts`). */
+export interface BergVoiceLeadingParams {
+  rowClarityLevel: BergRowClarityLevel;
+  /** Preferred independent strands (4–8); informational for orchestration planning. */
+  contrapuntalStrandTarget?: number;
+}
+
 export interface VoiceRuleBundle {
   voiceId: string;
 
@@ -79,4 +88,7 @@ export interface VoiceRuleBundle {
     resolveParallels: boolean;
     maxVoiceOverlap: number;
   };
+
+  /** Alban Berg — optional row-aware scoring (`voiceLeadingSolver.ts`). */
+  bergVoiceLeading?: BergVoiceLeadingParams;
 }

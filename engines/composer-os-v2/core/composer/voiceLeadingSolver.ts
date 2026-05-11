@@ -39,7 +39,13 @@ function parallelFifthPenalty(prev: number[] | null, curr: number[]): number {
   return 0;
 }
 
-function parallelOctavePenalty(prev: number[] | null, curr: number[]): number {
+function parallelOctavePenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  if (
+    bundle.voiceId === 'berg' &&
+    (bundle.bergVoiceLeading?.rowClarityLevel ?? 'balanced') === 'foreground'
+  ) {
+    return 0;
+  }
   if (!prev || prev.length < 2 || curr.length < 2) return 0;
   const ps = sortedNotes(prev);
   const cs = sortedNotes(curr);
@@ -175,6 +181,33 @@ function mingusRewards(bundle: VoiceRuleBundle, prev: number[] | null, curr: num
   return r;
 }
 
+/** Alban Berg — reward sorted-voice stepwise motion / octave doubling when foreground row clarity is set. */
+function bergVoiceLeadingAdjustments(bundle: VoiceRuleBundle, prev: number[] | null, curr: number[]): number {
+  if (bundle.voiceId !== 'berg') return 0;
+  const clarity = bundle.bergVoiceLeading?.rowClarityLevel ?? 'balanced';
+  let cost = 0;
+  if (prev && prev.length === curr.length) {
+    const ps = [...prev].sort((a, b) => a - b);
+    const cs = [...curr].sort((a, b) => a - b);
+    for (let i = 0; i < ps.length; i++) {
+      const mov = Math.abs(cs[i]! - ps[i]!);
+      if (mov <= 2) cost -= 14;
+      const ic = intervalClass(ps[i]!, cs[i]!);
+      if ((ic === 1 || ic === 6) && mov <= 12) cost -= 10;
+    }
+  }
+  if (clarity === 'foreground') {
+    const s = sortedNotes(curr);
+    for (let i = 0; i < s.length; i++) {
+      for (let j = i + 1; j < s.length; j++) {
+        if (intervalClass(s[i]!, s[j]!) === 0 && Math.abs(s[i]! - s[j]!) >= 12) cost -= 28;
+      }
+    }
+  }
+  if (clarity === 'background') cost -= 12;
+  return cost;
+}
+
 /** Shorter: non-functional neighbour — no extra penalty when bass stepwise and upper voices unrelated. */
 export function shorterNonFunctionalNeighbourBonus(
   bundle: VoiceRuleBundle,
@@ -203,7 +236,7 @@ export function scoreVoicingCandidate(
 
   let cost = candidate.cost + voiceMovementCost(prev, curr);
   cost += parallelFifthPenalty(prev, curr);
-  cost += parallelOctavePenalty(prev, curr);
+  cost += parallelOctavePenalty(prev, curr, bundle);
   cost += voiceOverlapPenalty(curr, bundle.repairPolicy.maxVoiceOverlap);
   cost += spreadPenalty(curr, bundle.voicingPolicy.minSpreadSemitones, bundle.voicingPolicy.maxSpreadSemitones);
   cost += anchorTonePenalty(prev, curr, bundle.orchestrationPolicy.anchorToneCount);
@@ -218,10 +251,11 @@ export function scoreVoicingCandidate(
   cost += patMethenyRewards(bundle, curr);
   cost += threadgillIntervalPenalty(bundle, curr);
   cost += mingusRewards(bundle, prev, curr);
+  cost += bergVoiceLeadingAdjustments(bundle, prev, curr);
   cost += shorterNonFunctionalNeighbourBonus(bundle, prev, curr);
 
   if (parallelFifthPenalty(prev, curr) > 0) detail.push('parallel-fifth');
-  if (parallelOctavePenalty(prev, curr) > 0) detail.push('parallel-octave');
+  if (parallelOctavePenalty(prev, curr, bundle) > 0) detail.push('parallel-octave');
   if (spreadPenalty(curr, bundle.voicingPolicy.minSpreadSemitones, bundle.voicingPolicy.maxSpreadSemitones) > 0)
     detail.push('spread');
 

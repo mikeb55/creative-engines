@@ -882,6 +882,13 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('bk.interval_cell', 'Interval-cell transposition (`bk:interval_cell_transform`)', 'songwriter', 'harmony', 8, 'verse'),
     R('bk.arch_mirror', 'Arch-form mirrored swap (`bk:arch_form_mirror`)', 'songwriter', 'form', 7, 'bridge'),
   ],
+  berg: [
+    R('ab.row_module', 'Row segment tags triadic-tonal / whole-tone / chromatic-link (`ab:row_module`)', 'songwriter', 'harmony', 9, 'global'),
+    R('ab.hexachord_pr', 'Hexachord halves + P/R/I/RI preference (`ab:hexachord`)', 'songwriter', 'harmony', 9, 'global'),
+    R('ab.trichord_motif', 'Shared trichord index across derived rows (`ab:trichord_motif`)', 'songwriter', 'melody', 8, 'verse'),
+    R('ab.climax_density', 'Climax funnel 0.6–0.7 via density + ic1/ic6 emphasis (`ab:climax`)', 'songwriter', 'form', 8, 'form'),
+    R('ab.structural_silence', 'Silence / fermata punctuation tags (`ab:silence`)', 'songwriter', 'form', 7, 'global'),
+  ],
   gershwin: [
     R('gg.aaba_form', 'AABA / rhapsody section anchors (`gg:d1_aaba_form`)', 'songwriter', 'form', 8, 'form'),
     R('gg.blue_note_color', 'Blue-note harmonic tint on cadential colours (`gg:d2_blue_note_color`)', 'songwriter', 'harmony', 8, 'global'),

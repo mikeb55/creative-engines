@@ -1359,6 +1359,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const deLockedTruth = mdLockedTruth?.dukeEllingtonEffectiveHarmonyBars;
   const mdMilesLockedTruth = mdLockedTruth?.milesDavisEffectiveHarmonyBars;
   const bkLockedTruth = mdLockedTruth?.bartokEffectiveHarmonyBars;
+  const bgLockedTruth = mdLockedTruth?.bergEffectiveHarmonyBars;
+  const snNesticoLockedTruth = mdLockedTruth?.sammyNesticoEffectiveHarmonyBars;
+  const brookmeyerLockedTruth = mdLockedTruth?.bobBrookmeyerEffectiveHarmonyBars;
+  const clareFischerLockedTruth = mdLockedTruth?.clareFischerEffectiveHarmonyBars;
+  const nelsonLockedTruth = mdLockedTruth?.oliverNelsonEffectiveHarmonyBars;
   const ggLockedTruth = mdLockedTruth?.gershwinEffectiveHarmonyBars;
   const apLockedTruth = mdLockedTruth?.arvoPartEffectiveHarmonyBars;
   const satieLockedTruth = mdLockedTruth?.satieEffectiveHarmonyBars;
@@ -1482,6 +1487,36 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 bkLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? bkLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'berg' &&
+                                Array.isArray(bgLockedTruth) &&
+                                bgLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                bgLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? bgLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'sammy_nestico' &&
+                                Array.isArray(snNesticoLockedTruth) &&
+                                snNesticoLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                snNesticoLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? snNesticoLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'bob_brookmeyer' &&
+                                Array.isArray(brookmeyerLockedTruth) &&
+                                brookmeyerLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                brookmeyerLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? brookmeyerLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'clare_fischer' &&
+                                Array.isArray(clareFischerLockedTruth) &&
+                                clareFischerLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                clareFischerLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? clareFischerLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'oliver_nelson' &&
+                                Array.isArray(nelsonLockedTruth) &&
+                                nelsonLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                nelsonLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? nelsonLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'gershwin' &&
                                 Array.isArray(ggLockedTruth) &&
                                 ggLockedTruth.length === tbLockedTruth &&

@@ -43,6 +43,9 @@ import type { HarmonicScene } from './composer/harmonicScene';
 import type { VoiceRuleBundle } from './composer/voiceRuleBundle';
 import type { VoiceBundleHarmonicRhythmState } from './composer/voiceBundleHarmonicRhythm';
 import type { MacroFormPlan } from './form/macroFormPlanner';
+import type { BergStyleMode } from './style/berg/bergStyleModes';
+import type { BergTrichordIndexEntry } from './style/berg/bergRowEngine';
+import type { BergClimaxPlan, BergSilenceTag } from './style/berg/bergFormModules';
 
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
@@ -1057,6 +1060,71 @@ export interface GenerationMetadata {
    * Bartók Song Mode slice mode (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted.
    */
   bartokContext?: BartokContextMode;
+  /**
+   * Alban Berg — Song Mode slice posture (`bergSlice.ts`). Default **`middle_berg`** when omitted.
+   */
+  bergStyleMode?: BergStyleMode;
+  /** Alban Berg — twelve-tone / derived-row diagnostics (`bergSlice.ts`). */
+  bergDiagnostics?: {
+    songwriterId: 'berg';
+    barsConsidered: number;
+    alteredTouches: number;
+    chromaticTouches: number;
+    deviceReceipts?: string[];
+  };
+  bergSliceReceipt?: string;
+  bergEffectiveHarmonyBars?: string[];
+  bergDeviceReceipts?: string[];
+  bergRowPrimePcs?: number[];
+  bergPreferredTransform?: 'P' | 'R' | 'I' | 'RI';
+  bergRowIc16Score?: number;
+  bergSharedTrichordIndex?: BergTrichordIndexEntry[];
+  bergClimaxPlan?: BergClimaxPlan;
+  bergStructuralSilences?: BergSilenceTag[];
+  /** Sammy Nestico — Basie-school chart clarity (`sammyNesticoSlice.ts`). */
+  sammyNesticoDiagnostics?: {
+    songwriterId: 'sammy_nestico';
+    barsConsidered: number;
+    dominantTouches: number;
+    extensionTouches: number;
+    deviceReceipts?: string[];
+  };
+  sammyNesticoSliceReceipt?: string;
+  sammyNesticoEffectiveHarmonyBars?: string[];
+  sammyNesticoDeviceReceipts?: string[];
+  /** Bob Brookmeyer — quartal counterpoint (`bobBrookmeyerSlice.ts`). */
+  bobBrookmeyerDiagnostics?: {
+    songwriterId: 'bob_brookmeyer';
+    barsConsidered: number;
+    quartalTouches: number;
+    alteredTouches: number;
+    deviceReceipts?: string[];
+  };
+  bobBrookmeyerSliceReceipt?: string;
+  bobBrookmeyerEffectiveHarmonyBars?: string[];
+  bobBrookmeyerDeviceReceipts?: string[];
+  /** Clare Fischer — dense Latin harmony (`clareFischerSlice.ts`). */
+  clareFischerDiagnostics?: {
+    songwriterId: 'clare_fischer';
+    barsConsidered: number;
+    clusterTouches: number;
+    latinGrooveHints: number;
+    deviceReceipts?: string[];
+  };
+  clareFischerSliceReceipt?: string;
+  clareFischerEffectiveHarmonyBars?: string[];
+  clareFischerDeviceReceipts?: string[];
+  /** Oliver Nelson — blues-functional arranging (`oliverNelsonSlice.ts`). */
+  oliverNelsonDiagnostics?: {
+    songwriterId: 'oliver_nelson';
+    barsConsidered: number;
+    bluesTouches: number;
+    modalTouches: number;
+    deviceReceipts?: string[];
+  };
+  oliverNelsonSliceReceipt?: string;
+  oliverNelsonEffectiveHarmonyBars?: string[];
+  oliverNelsonDeviceReceipts?: string[];
   /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
   gershwinDiagnostics?: {
     songwriterId: 'gershwin';

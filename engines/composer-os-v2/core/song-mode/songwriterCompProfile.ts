@@ -112,6 +112,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   dave_brubeck: 'keys',
   miles_davis: 'keys',
   bartok: 'keys',
+  berg: 'ensemble',
   gershwin: 'keys',
   arvo_part: 'keys',
   satie: 'keys',

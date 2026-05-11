@@ -73,6 +73,7 @@ export type SongwriterRuleId =
   | 'dave_brubeck'
   | 'miles_davis'
   | 'bartok'
+  | 'berg'
   | 'gershwin'
   | 'arvo_part'
   | 'satie'

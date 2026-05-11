@@ -2457,6 +2457,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const cmEx = mdEx?.charlesMingusEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
+  const bgEx = mdEx?.bergEffectiveHarmonyBars;
+  const snNesticoEx = mdEx?.sammyNesticoEffectiveHarmonyBars;
+  const brookmeyerEx = mdEx?.bobBrookmeyerEffectiveHarmonyBars;
+  const clareFischerEx = mdEx?.clareFischerEffectiveHarmonyBars;
+  const nelsonEx = mdEx?.oliverNelsonEffectiveHarmonyBars;
   const btEx = mdEx?.beatlesEffectiveHarmonyBars;
   const fkEx = mdEx?.felaKutiEffectiveHarmonyBars;
   const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
@@ -2544,6 +2549,26 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                         Array.isArray(bkEx) &&
                                                         bkEx.length === tbEx
                                                       ? bkEx
+                                                      : mdEx?.songwriterStyleId === 'berg' &&
+                                                          Array.isArray(bgEx) &&
+                                                          bgEx.length === tbEx
+                                                        ? bgEx
+                                                      : mdEx?.songwriterStyleId === 'sammy_nestico' &&
+                                                          Array.isArray(snNesticoEx) &&
+                                                          snNesticoEx.length === tbEx
+                                                        ? snNesticoEx
+                                                      : mdEx?.songwriterStyleId === 'bob_brookmeyer' &&
+                                                          Array.isArray(brookmeyerEx) &&
+                                                          brookmeyerEx.length === tbEx
+                                                        ? brookmeyerEx
+                                                      : mdEx?.songwriterStyleId === 'clare_fischer' &&
+                                                          Array.isArray(clareFischerEx) &&
+                                                          clareFischerEx.length === tbEx
+                                                        ? clareFischerEx
+                                                      : mdEx?.songwriterStyleId === 'oliver_nelson' &&
+                                                          Array.isArray(nelsonEx) &&
+                                                          nelsonEx.length === tbEx
+                                                        ? nelsonEx
                                                       : mdEx?.songwriterStyleId === 'beatles' &&
                                                           Array.isArray(btEx) &&
                                                           btEx.length === tbEx
