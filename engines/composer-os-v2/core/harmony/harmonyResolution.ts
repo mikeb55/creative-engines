@@ -316,6 +316,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return deEff[barIndex - 1]!;
   }
 
+  /**
+   * Gil Evans: `precomputeGilEvansEffectiveHarmonyBars` applies cool-orchestration modal/sus colour — receipts **`ge:*`**.
+   * After precompute, `gilEvansEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const geEff = meta?.gilEvansEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'gil_evans' &&
+    Array.isArray(geEff) &&
+    geEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return geEff[barIndex - 1]!;
+  }
+
   const tjEff = meta?.thadJonesEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'thad_jones' &&

@@ -1367,6 +1367,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const felaKutiLockedTruth = mdLockedTruth?.felaKutiEffectiveHarmonyBars;
   const cpPorterLockedTruth = mdLockedTruth?.colePorterEffectiveHarmonyBars;
   const msLockedTruth = mdLockedTruth?.mariaSchneiderEffectiveHarmonyBars;
+  const geLockedTruth = mdLockedTruth?.gilEvansEffectiveHarmonyBars;
   const tjLockedTruth = mdLockedTruth?.thadJonesEffectiveHarmonyBars;
   const cmLockedTruth = mdLockedTruth?.charlesMingusEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
@@ -1523,6 +1524,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 cpPorterLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? cpPorterLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'gil_evans' &&
+                                Array.isArray(geLockedTruth) &&
+                                geLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                geLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? geLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'maria_schneider' &&
                                 Array.isArray(msLockedTruth) &&
                                 msLockedTruth.length === tbLockedTruth &&
@@ -1818,6 +1825,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const beDisk = mdDisk?.billEvansEffectiveHarmonyBars;
     const deDisk = mdDisk?.dukeEllingtonEffectiveHarmonyBars;
     const msDisk = mdDisk?.mariaSchneiderEffectiveHarmonyBars;
+    const geDisk = mdDisk?.gilEvansEffectiveHarmonyBars;
     const tjDisk = mdDisk?.thadJonesEffectiveHarmonyBars;
     const cmDisk = mdDisk?.charlesMingusEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
@@ -1905,6 +1913,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                     locked &&
                                     deDisk.length === locked.length
                                   ? deDisk
+                                  : mdDisk?.songwriterStyleId === 'gil_evans' &&
+                                      Array.isArray(geDisk) &&
+                                      geDisk.length === gp.context.form.totalBars &&
+                                      locked &&
+                                      geDisk.length === locked.length
+                                    ? geDisk
                                   : mdDisk?.songwriterStyleId === 'maria_schneider' &&
                                       Array.isArray(msDisk) &&
                                       msDisk.length === gp.context.form.totalBars &&
@@ -2320,6 +2334,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
   if (a === 'schneider') return 'schneider';
   if (a === 'quincy_jones') return 'quincy_jones';
+  if (a === 'wayne_shorter' || a === 'wayne' || a === 'shorter') return 'wayne_shorter';
   if (a === 'gil_evans') return 'gil_evans';
   if (a === 'bob_brookmeyer') return 'bob_brookmeyer';
   if (a === 'clare_fischer') return 'clare_fischer';
@@ -2357,6 +2372,8 @@ function bigBandEvaluationStyleProfile(
       return oliverNelsonStyleProfile;
     case 'sammy_nestico':
       return sammyNesticoStyleProfile;
+    case 'wayne_shorter':
+      return basieStyleProfile;
     case 'basie':
     default:
       return basieStyleProfile;

@@ -2464,6 +2464,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const satieEx = mdEx?.satieEffectiveHarmonyBars;
   const cpPorterEx = mdEx?.colePorterEffectiveHarmonyBars;
   const msEx = mdEx?.mariaSchneiderEffectiveHarmonyBars;
+  const geEx = mdEx?.gilEvansEffectiveHarmonyBars;
   const fzEx = mdEx?.frankZappaEffectiveHarmonyBars;
   const bhHerrEx = mdEx?.bernardHerrmannEffectiveHarmonyBars;
   const jwEx = mdEx?.johnWilliamsEffectiveHarmonyBars;
@@ -2563,10 +2564,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                                   Array.isArray(satieEx) &&
                                                                   satieEx.length === tbEx
                                                                 ? satieEx
-                                                                : mdEx?.songwriterStyleId === 'cole_porter' &&
+                                                                  : mdEx?.songwriterStyleId === 'cole_porter' &&
                                                                     Array.isArray(cpPorterEx) &&
                                                                     cpPorterEx.length === tbEx
                                                                   ? cpPorterEx
+                                                                  : mdEx?.songwriterStyleId === 'gil_evans' && Array.isArray(geEx) && geEx.length === tbEx
+                                                                    ? geEx
                                                                   : mdEx?.songwriterStyleId === 'maria_schneider' && Array.isArray(msEx) && msEx.length === tbEx
                                                                     ? msEx
                                                                     : mdEx?.songwriterStyleId === 'bernard_herrmann' &&

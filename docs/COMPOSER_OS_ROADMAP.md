@@ -11,6 +11,7 @@
 - **Structural memory (Phase 1, 2026-05-10):** **`gceStructuralMemory`** JSON fingerprints + melodic consecutive-bar guard; Steely Orbit script **`orbit_v6_64`** pre-GCE gate; seeds **`orbit_v6_64`** / **`steely_orbit_v1_7`** under **`engines/composer-os-v2/gce-memory/fingerprints/`**.
 - **Big Band — Thad Jones vocabulary (2026-05-11):** Research-aligned **`SONGWRITER_CHORD_POOLS`** (**`swing` / `dorian` / `shout`**) + **`VoiceRuleBundle`** **`thad_jones`** (fingerprint receipts); BB registry **`thad`** alias ↔ **`thad_jones`**; arranger mapping normalises to **`thad_jones`**. See [CHANGELOG.md](CHANGELOG.md) `[Unreleased]`.
 - **Charles Mingus — pools + episode slice (2026-05-11):** **`mingus_blues` / `mingus_modal` / `mingus_chromatic`** + **`charlesMingusSlice`** episode plan + **`cm:*`** receipts; **`VoiceRuleBundle`** fingerprints; BB **`charles_mingus`** + **`mingus`**. See [CHANGELOG.md](CHANGELOG.md) `[Unreleased]` · [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md).
+- **BB gap-fills — Gil / Schneider pools + Gil harmony rail + Wayne preset (2026-05-11):** Renamed **`gil_evans_*`** / **`schneider_*`** tier pools; **`gil_evans`** effective harmony wired like other slices; **`wayne_shorter`** on BB preset + arranger map. See [CHANGELOG.md](CHANGELOG.md) `[Unreleased]`.
 
 ### Writer Slice Roadmap — priority order for full slice development
 
